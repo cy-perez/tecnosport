@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tecnosport-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}
+    username: ${DB_USUARIO:tecnosport}
+    password: ${DB_CLAVE:tecnosport}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration

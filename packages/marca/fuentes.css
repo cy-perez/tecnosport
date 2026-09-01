@@ -1,0 +1,35 @@
+/* Tipografias autoalojadas. Enlaza este archivo ANTES de tokens.css.
+   font-display: swap hace que el texto se vea con la fuente de respaldo
+   mientras descarga, en vez de quedar invisible. */
+
+@font-face {
+  font-family: "Archivo";
+  src: url('./fuentes/archivo-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url('./fuentes/ibmplexsans-variable.woff2') format('woff2');
+  font-weight: 100 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url('./fuentes/ibmplexmono-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url('./fuentes/ibmplexmono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

@@ -1,0 +1,142 @@
+/* Generado por kit_ui.py. Los estados son derivados: no los edites a mano,
+   cambia el color base y vuelve a generar. */
+
+/* TIPOGRAFIA — viene autoalojada en este mismo kit. En el <head>,
+   ANTES de esta hoja de estilos:
+
+   <link rel="stylesheet" href="fuentes.css">
+
+   Copia la carpeta fuentes/ completa, con sus licencias dentro:
+   distribuirlas es condicion de la licencia OFL. */
+
+:root {
+  --color-primario: #1B1F26;
+  --color-primario-hover: #3B3E44;
+  --color-primario-pressed: #121419;
+  --color-primario-suave: #E8E9E9;
+  --color-sobre-primario: #FFFFFF;
+  --color-acento: #F5B301;
+  --color-acento-hover: #D89E01;
+  --color-acento-pressed: #BF8C01;
+  --color-sobre-acento: #14171C;
+  --color-marca: #1B1F26;
+  --color-marca-alt: #3B3E44;
+  --color-marca-fuerte: #121419;
+  --color-sobre-marca: #FFFFFF;
+  --color-fondo: #F5F6F8;
+  --color-superficie: #FFFFFF;
+  --color-superficie-alt: #E9ECF0;
+  --color-texto: #14171C;
+  --color-texto-suave: #5B6472;
+  --color-borde: #DFE3E9;
+  --color-exito: #14804A;
+  --color-aviso: #A15C00;
+  --color-error: #B3261E;
+  --color-deshabilitado: #B0B4BC;
+  --color-sobre-deshabilitado: #14171C;
+  --color-foco: #1B1F26;
+  --color-borde-control: #7C8595;
+  --fuente-texto: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --fuente-display: "Archivo", "Arial Narrow", "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --peso-regular: 400;
+  --peso-medio: 500;
+  --peso-fuerte: 700;
+  --interlineado-titulares: 1.08;
+  --interlineado-texto: 1.55;
+  --texto-xs: 12px;
+  --texto-sm: 14px;
+  --texto-base: 16px;
+  --texto-lg: 20px;
+  --texto-xl: 26px;
+  --texto-2xl: 34px;
+  --texto-3xl: 46px;
+  --texto-4xl: 62px;
+  --esp-4: 4px;
+  --esp-8: 8px;
+  --esp-12: 12px;
+  --esp-16: 16px;
+  --esp-24: 24px;
+  --esp-32: 32px;
+  --esp-48: 48px;
+  --esp-64: 64px;
+  --esp-96: 96px;
+  --radio-sm: 0px;
+  --radio-md: 0px;
+  --radio-lg: 0px;
+  --radio-completo: 0px;
+  --chaflan-sm: 8px;
+  --chaflan-md: 12px;
+  --chaflan-lg: 20px;
+  --chaflan-xl: 34px;
+  --sombra-sm: 0 1px 2px rgba(0,0,0,.06);
+  --sombra-md: 0 4px 12px rgba(0,0,0,.08);
+  --sombra-lg: 0 12px 32px rgba(0,0,0,.12);
+  --bp-movil: 640px;
+  --bp-tableta: 1024px;
+  --bp-escritorio: 1280px;
+  --header-alto-escritorio: 72px;
+  --header-alto-movil: 60px;
+  --header-alto-logo: 34px;
+  --header-alto-logo-movil: 30px;
+  --ancho-max: 1200px;
+}
+
+[data-tema="oscuro"] {
+  --color-fondo: #0E1217;
+  --color-superficie: #191E26;
+  --color-superficie-alt: #242A34;
+  --color-texto: #EDF0F4;
+  --color-texto-suave: #98A2B3;
+  --color-borde: #2A313C;
+  --color-borde-control: #636972;
+  --color-primario: #F5B301;
+  --color-primario-hover: #D89E01;
+  --color-primario-pressed: #BF8C01;
+  --color-primario-suave: #2E2914;
+  --color-sobre-primario: #14171C;
+  --color-acento: #F5B301;
+  --color-marca: #191E26;
+  --color-marca-alt: #393E44;
+  --color-marca-fuerte: #101419;
+  --color-sobre-marca: #EDF0F4;
+  --color-sobre-acento: #14171C;
+  --color-exito: #3DBB7E;
+  --color-aviso: #E5912F;
+  --color-error: #F27168;
+  --color-deshabilitado: #4C535D;
+  --color-foco: #F5B301;
+}
+
+/* LA FIRMA DE LA MARCA. Ninguna esquina se redondea: se corta a 45 grados,
+   siempre en la superior izquierda y la inferior derecha. Aplicala a
+   botones, tarjetas, etiquetas de precio y recortes de fotografia. */
+.chaflan {
+  --ch: var(--chaflan-md);
+  border-radius: 0;
+  clip-path: polygon(
+    var(--ch) 0, 100% 0,
+    100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%,
+    0 100%, 0 var(--ch)
+  );
+}
+.chaflan--sm { --ch: var(--chaflan-sm); }
+.chaflan--lg { --ch: var(--chaflan-lg); }
+.chaflan--xl { --ch: var(--chaflan-xl); }
+
+/* clip-path recorta tambien el anillo de foco. Mientras el elemento esta
+   enfocado con teclado se renuncia al chaflan y se muestra el rectangulo
+   completo con su outline: el foco visible pesa mas que la esquina. */
+.chaflan:focus-visible { clip-path: none; }
+
+/* Precios, referencias y cantidades: monoespaciada con cifras tabulares,
+   para que las columnas de una lista de precios alineen solas. */
+.precio, .sku, .cantidad {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Respeta a quien pide menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

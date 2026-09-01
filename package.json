@@ -13,5 +13,11 @@
   "scripts": {
     "verificar": "node tools/verificar.mjs",
     "contratos": "node tools/generar-contratos.mjs"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "lmdb": true,
+    "msgpackr-extract": true,
+    "@parcel/watcher": true
   }
 }

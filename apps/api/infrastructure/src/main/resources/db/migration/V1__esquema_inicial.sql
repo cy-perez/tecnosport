@@ -1,0 +1,1 @@
+-- Esquema inicial. El modelo de datos real llega en la Fase 1 (docs/02-modelo-datos.md).

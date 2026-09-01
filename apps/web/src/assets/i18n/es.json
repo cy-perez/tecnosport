@@ -1,0 +1,18 @@
+{
+  "app": {
+    "titulo": "Tecno Sport"
+  },
+  "tema": {
+    "etiqueta": "Tema",
+    "claro": "Claro",
+    "oscuro": "Oscuro",
+    "sistema": "Sistema"
+  },
+  "idioma": {
+    "etiqueta": "Idioma"
+  },
+  "portada": {
+    "bienvenida": "Ropa y calzado deportivo, bolsos y celulares.",
+    "boton_demo": "Ver el producto"
+  }
+}

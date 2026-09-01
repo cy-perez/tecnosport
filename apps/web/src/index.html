@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tecno Sport</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0E1217" />
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <script>
+      // El servidor ya resuelve claro/oscuro explícitos vía cookie (server.ts).
+      // "sistema" (o sin cookie) se resuelve aquí, antes del primer pintado,
+      // para no parpadear.
+      (function () {
+        var tema = document.documentElement.getAttribute('data-tema');
+        if (!tema || tema === 'sistema') {
+          var oscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-tema', oscuro ? 'oscuro' : 'claro');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript>Activa JavaScript para usar Tecno Sport.</noscript>
+  </body>
+</html>

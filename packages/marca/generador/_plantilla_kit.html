@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="claro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit de interfaz — __MARCA__</title>
+__ENLACE_FUENTE__
+<link rel="stylesheet" href="tokens.css">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--fuente-texto);background:var(--color-fondo);
+     color:var(--color-texto);line-height:var(--interlineado-texto);-webkit-font-smoothing:antialiased}
+.env{max-width:var(--ancho-max);margin:0 auto;padding:0 var(--esp-24)}
+h1,h2,h3,h4{font-family:var(--fuente-display);line-height:var(--interlineado-titulares);
+     margin:0 0 var(--esp-12);font-weight:var(--peso-fuerte)}
+h1{font-size:var(--texto-3xl);letter-spacing:-.01em}
+h2{font-size:var(--texto-2xl)}
+h3{font-size:var(--texto-lg)}
+h4{font-size:var(--texto-base)}
+p{margin:0 0 var(--esp-12)}
+a{color:inherit}
+code{font-family:var(--fuente-mono);font-size:.85em;background:var(--color-superficie-alt);
+     color:var(--color-texto);padding:2px 6px}
+pre{background:var(--color-superficie-alt);padding:var(--esp-16);overflow-x:auto;
+    font-size:var(--texto-sm);margin:0 0 var(--esp-12)}
+pre code{background:none;padding:0}
+section.doc{padding:var(--esp-64) 0;border-top:1px solid var(--color-borde)}
+.nota{color:var(--color-texto-suave);font-size:var(--texto-sm);max-width:68ch}
+.nota b{color:var(--color-texto)}
+.rejilla{display:grid;gap:var(--esp-16);grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.cols-2{display:grid;gap:var(--esp-24);grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.fila{display:flex;flex-wrap:wrap;gap:var(--esp-12);align-items:center}
+
+/* --- indice --- */
+.indice{display:flex;flex-wrap:wrap;gap:var(--esp-8);list-style:none;padding:0;margin:var(--esp-16) 0 0}
+.indice a{display:flex;align-items:center;min-height:44px;padding:8px 14px;background:var(--color-superficie);
+  border:1px solid var(--color-borde);font-size:var(--texto-sm);text-decoration:none;font-weight:var(--peso-medio)}
+.indice a:hover{border-color:var(--color-primario);color:var(--color-primario)}
+
+/* --- fichas de color --- */
+.ficha{background:var(--color-superficie);border:1px solid var(--color-borde);
+       padding:var(--esp-12);font-size:var(--texto-sm)}
+.ficha b{display:block;margin-top:var(--esp-8);font-weight:var(--peso-fuerte)}
+.ficha code{background:none;padding:0;color:var(--color-texto-suave)}
+.muestra{height:64px;border:1px solid var(--color-borde)}
+
+/* --- tablas --- */
+table{width:100%;border-collapse:collapse;font-size:var(--texto-sm)}
+th,td{text-align:left;padding:var(--esp-8) var(--esp-12);border-bottom:1px solid var(--color-borde);
+      vertical-align:top}
+th{font-weight:var(--peso-fuerte);background:var(--color-superficie-alt)}
+tr.falla td{background:color-mix(in srgb,var(--color-error) 14%,transparent);font-weight:var(--peso-medio)}
+tr.grupo td{background:var(--color-marca);color:var(--color-sobre-marca);
+            font-family:var(--fuente-display);letter-spacing:var(--tracking-titular)}
+.num{text-align:right;font-family:var(--fuente-mono);font-variant-numeric:tabular-nums}
+.tabla-scroll{overflow-x:auto;border:1px solid var(--color-borde);background:var(--color-superficie)}
+.tabla-scroll table{min-width:560px}
+
+/* --- texto de muestra: TODO lo marcado se reemplaza antes de publicar --- */
+.mx{border-bottom:2px dotted color-mix(in srgb,currentColor 55%,transparent)}
+.leyenda-mx{display:inline-flex;align-items:center;gap:8px;font-size:var(--texto-sm);
+  background:var(--color-superficie);border:1px solid var(--color-borde);
+  border-left:4px solid var(--color-aviso);padding:var(--esp-12) var(--esp-16)}
+
+/* ============================================================
+   COMPONENTES — esto es lo que se copia al proyecto
+   ============================================================ */
+
+/* Botones. Alto minimo 44px: por debajo no se atina en celular. */
+.btn{font-family:inherit;font-size:var(--texto-base);font-weight:var(--peso-fuerte);
+     border:2px solid transparent;cursor:pointer;padding:10px 22px;min-height:44px;
+     display:inline-flex;align-items:center;justify-content:center;gap:8px;
+     text-decoration:none;line-height:1.2;white-space:nowrap;
+     transition:background .15s ease,color .15s ease,transform .05s ease}
+.btn:focus-visible{outline:3px solid var(--color-foco);outline-offset:2px;clip-path:none}
+.btn-primario{background:var(--color-primario);color:var(--color-sobre-primario)}
+.btn-primario:hover{background:var(--color-primario-hover)}
+.btn-primario:active{background:var(--color-primario-pressed);transform:translateY(1px)}
+.btn-acento{background:var(--color-acento);color:var(--color-sobre-acento)}
+.btn-acento:hover{background:var(--color-acento-hover)}
+.btn-acento:active{background:var(--color-acento-pressed);transform:translateY(1px)}
+.btn-secundario{background:transparent;color:var(--color-primario);border-color:var(--color-primario)}
+.btn-secundario:hover{background:var(--color-primario);color:var(--color-sobre-primario)}
+.btn-secundario:active{background:var(--color-primario-pressed);color:var(--color-sobre-primario);transform:translateY(1px)}
+.btn-texto{background:transparent;color:var(--color-primario);padding:10px 8px;border-color:transparent}
+.btn-texto:hover{text-decoration:underline;text-underline-offset:4px}
+.btn:disabled,.btn[aria-disabled="true"]{background:var(--color-deshabilitado);
+  color:var(--color-sobre-deshabilitado);border-color:transparent;cursor:not-allowed;transform:none}
+.btn-sm{min-height:44px;padding:8px 16px;font-size:var(--texto-sm)}
+.btn-bloque{width:100%}
+
+/* Campos. 16px de tipografia o el navegador movil hace zoom al enfocar. */
+.campo{display:block;margin-bottom:var(--esp-16);max-width:440px}
+.campo label{display:block;font-size:var(--texto-sm);font-weight:var(--peso-fuerte);margin-bottom:6px}
+.campo .opcional{font-weight:var(--peso-regular);color:var(--color-texto-suave)}
+.campo input,.campo textarea,.campo select{width:100%;font-family:inherit;font-size:var(--texto-base);
+  padding:11px 12px;min-height:44px;border:1px solid var(--color-borde-control);border-radius:0;
+  background:var(--color-superficie);color:var(--color-texto)}
+.campo input::placeholder,.campo textarea::placeholder{color:var(--color-texto-suave)}
+.campo input:focus,.campo textarea:focus,.campo select:focus{outline:3px solid var(--color-foco);
+  outline-offset:2px;border-color:var(--color-primario)}
+.campo .ayuda{font-size:var(--texto-sm);color:var(--color-texto-suave);margin-top:6px}
+.campo.error input,.campo.error textarea,.campo.error select{border-color:var(--color-error);border-width:2px}
+.campo.error .ayuda{color:var(--color-error);font-weight:var(--peso-medio);
+  display:flex;gap:6px;align-items:flex-start}
+.campo-check{display:flex;gap:12px;align-items:center;min-height:44px;max-width:440px;
+  margin-bottom:var(--esp-16)}
+.campo-check input{width:24px;height:24px;min-height:0;margin:0;accent-color:var(--color-primario);flex:0 0 auto}
+.campo-check label{font-size:var(--texto-sm);font-weight:var(--peso-regular);margin:0}
+
+/* Tarjetas. El chaflan es la firma: nunca una esquina redondeada. */
+.tarjeta{background:var(--color-superficie);border:1px solid var(--color-borde);padding:var(--esp-24)}
+.tarjeta-producto{background:var(--color-superficie);border:1px solid var(--color-borde);
+  display:flex;flex-direction:column;height:100%}
+.tarjeta-producto .medio{position:relative;aspect-ratio:1/1;background:var(--color-superficie-alt);
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tarjeta-producto .cuerpo{padding:var(--esp-16);display:flex;flex-direction:column;gap:var(--esp-8);flex:1}
+.tarjeta-producto h3,.tarjeta-producto h4{margin:0;font-family:var(--fuente-texto);font-size:var(--texto-base);
+  font-weight:var(--peso-fuerte);line-height:1.35}
+.tarjeta-producto .pie{margin-top:auto;padding-top:var(--esp-12)}
+.eyebrow{font-size:var(--texto-xs);letter-spacing:var(--tracking-titular);text-transform:uppercase;
+  color:var(--color-texto-suave);font-weight:var(--peso-fuerte)}
+.precio{font-family:var(--fuente-mono);font-variant-numeric:tabular-nums;
+  font-size:var(--texto-lg);font-weight:var(--peso-medio)}
+.precio-antes{font-family:var(--fuente-mono);font-size:var(--texto-sm);
+  color:var(--color-texto-suave);text-decoration:line-through;margin-left:8px}
+.sku,.cantidad{font-family:var(--fuente-mono);font-variant-numeric:tabular-nums;
+  font-size:var(--texto-xs);color:var(--color-texto-suave)}
+
+/* Etiquetas. Nunca solo color: cada una lleva su texto. */
+.etiqueta{display:inline-flex;align-items:center;gap:6px;font-size:var(--texto-xs);
+  font-weight:var(--peso-fuerte);padding:4px 10px;letter-spacing:.02em}
+.et-oferta{background:var(--color-acento);color:var(--color-sobre-acento)}
+.et-stock{background:color-mix(in srgb,var(--color-exito) 14%,var(--color-superficie));
+  color:var(--color-exito);border:1px solid color-mix(in srgb,var(--color-exito) 40%,transparent)}
+.et-agotado{background:color-mix(in srgb,var(--color-error) 12%,var(--color-superficie));
+  color:var(--color-error);border:1px solid color-mix(in srgb,var(--color-error) 40%,transparent)}
+.et-neutra{background:var(--color-primario-suave);color:var(--color-texto)}
+.et-flotante{position:absolute;top:0;right:0}
+
+/* Avisos. Barra lateral + icono + texto: se entienden sin percibir el color. */
+.aviso{border:1px solid var(--color-borde);border-left:4px solid;padding:var(--esp-12) var(--esp-16);
+  margin-bottom:var(--esp-12);background:var(--color-superficie);display:flex;gap:12px;
+  align-items:flex-start;font-size:var(--texto-sm)}
+.aviso .ico{flex:0 0 auto;font-weight:var(--peso-fuerte);font-family:var(--fuente-mono)}
+.aviso-info{border-left-color:var(--color-primario)}
+.aviso-exito{border-left-color:var(--color-exito)}
+.aviso-exito .ico{color:var(--color-exito)}
+.aviso-aviso{border-left-color:var(--color-aviso)}
+.aviso-aviso .ico{color:var(--color-aviso)}
+.aviso-error{border-left-color:var(--color-error)}
+.aviso-error .ico{color:var(--color-error)}
+
+/* Carga y vacio: los estados que nunca se disenan y siempre aparecen */
+.esqueleto{background:linear-gradient(90deg,var(--color-borde) 25%,
+  color-mix(in srgb,var(--color-borde) 40%,var(--color-superficie)) 50%,var(--color-borde) 75%);
+  background-size:200% 100%;animation:brillo 1.4s infinite}
+@keyframes brillo{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.vacio{text-align:center;padding:var(--esp-48) var(--esp-24);background:var(--color-superficie);
+  border:1px dashed var(--color-borde-control)}
+
+/* ============================================================
+   MAQUETAS
+   ============================================================ */
+.maqueta{border:1px solid var(--color-borde);overflow:hidden;margin-top:var(--esp-16);
+  background:var(--color-superficie)}
+.rotulo{font-size:var(--texto-xs);font-weight:var(--peso-fuerte);text-transform:uppercase;
+  letter-spacing:var(--tracking-titular);color:var(--color-texto-suave);
+  margin:var(--esp-24) 0 var(--esp-8)}
+
+.mk-header{background:var(--color-superficie);border-bottom:1px solid var(--color-borde);
+  height:var(--header-alto-escritorio);padding:0 var(--esp-24);display:flex;align-items:center;gap:var(--esp-24)}
+.mk-nav{display:flex;gap:var(--esp-24);font-size:var(--texto-sm);font-weight:var(--peso-medio)}
+.mk-nav a{color:var(--color-texto);text-decoration:none;padding:6px 0;
+  border-bottom:2px solid transparent;white-space:nowrap}
+.mk-nav a:hover{border-bottom-color:var(--color-borde-control)}
+.mk-nav a[aria-current]{border-bottom-color:var(--color-primario);font-weight:var(--peso-fuerte)}
+.mk-buscador{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:200px;
+  border:1px solid var(--color-borde-control);padding:0 12px;height:40px;
+  background:var(--color-superficie);color:var(--color-texto-suave);font-size:var(--texto-sm);
+  white-space:nowrap;overflow:hidden}
+.logotexto{font-family:var(--fuente-display);font-weight:var(--peso-fuerte);font-size:var(--texto-lg)}
+.logo-par{display:inline-flex;align-items:center}
+.logo-marca{height:var(--header-alto-logo);width:auto;display:block}
+/* Logo monocromo: el positivo desaparece sobre fondo oscuro y para eso existe
+   la variante negativa. Van las dos en la pagina y el tema decide cual se ve. */
+.logo-neg{display:none}
+[data-tema="oscuro"] .logo-pos{display:none}
+[data-tema="oscuro"] .logo-neg{display:block}
+.logo-isotipo{height:var(--header-alto-logo-movil);width:auto;display:block}
+.mk-header .solo-estrecho{display:none}
+.mk-header .solo-ancho{display:flex;align-items:center}
+
+.mk-hero{background:var(--color-marca);color:var(--color-sobre-marca);
+  padding:var(--esp-64) var(--esp-32);display:grid;gap:var(--esp-32);
+  grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center}
+.mk-hero h2{font-size:var(--texto-2xl);margin-bottom:var(--esp-12);text-transform:uppercase;
+  letter-spacing:var(--tracking-titular)}
+.mk-hero p{max-width:46ch;opacity:.88;margin-bottom:var(--esp-24)}
+.mk-hero .figura{aspect-ratio:4/3;background:color-mix(in srgb,var(--color-sobre-marca) 12%,transparent);
+  display:flex;align-items:center;justify-content:center;font-size:var(--texto-sm);opacity:.75}
+.confianza{display:flex;flex-wrap:wrap;gap:var(--esp-24);padding:var(--esp-16) var(--esp-32);
+  background:var(--color-marca-fuerte);color:var(--color-sobre-marca);font-size:var(--texto-sm)}
+.confianza b{font-family:var(--fuente-mono)}
+
+.mk-body{padding:var(--esp-48) var(--esp-32);background:var(--color-fondo)}
+.ejes{display:grid;gap:var(--esp-24);grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.eje{background:var(--color-marca);color:var(--color-sobre-marca);padding:var(--esp-32);
+  min-height:180px;display:flex;flex-direction:column;justify-content:flex-end;text-decoration:none}
+.eje h3{text-transform:uppercase;letter-spacing:var(--tracking-titular);margin-bottom:4px}
+.eje span{font-size:var(--texto-sm);opacity:.85}
+.catalogo{display:grid;gap:var(--esp-24);grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.franja{background:var(--color-acento);color:var(--color-sobre-acento);
+  padding:var(--esp-32);display:flex;flex-wrap:wrap;gap:var(--esp-24);align-items:center;
+  justify-content:space-between}
+.franja h3{margin:0;text-transform:uppercase;letter-spacing:var(--tracking-titular)}
+/* Dentro de la franja de acento el boton se pinta con la superficie de marca:
+   con el primario, en modo oscuro seria ambar sobre ambar. */
+.franja .btn{background:var(--color-marca);color:var(--color-sobre-marca);border-color:transparent}
+.franja .btn:hover{background:var(--color-marca-fuerte)}
+
+.mk-footer{background:var(--color-marca);color:var(--color-sobre-marca);padding:var(--esp-48) var(--esp-32);
+  font-size:var(--texto-sm);display:grid;gap:var(--esp-32);
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.mk-footer h4{color:var(--color-sobre-marca);font-size:var(--texto-sm);text-transform:uppercase;
+  letter-spacing:var(--tracking-titular);margin-bottom:var(--esp-12);opacity:.7}
+.mk-footer a{color:var(--color-sobre-marca);text-decoration:none;display:block;padding:10px 0;
+  min-height:44px;line-height:1.4}
+.mk-footer a:hover{text-decoration:underline;text-underline-offset:4px}
+.mk-footer .dato{opacity:.8;line-height:1.8}
+.mk-legal{background:var(--color-marca-fuerte);color:var(--color-sobre-marca);
+  padding:var(--esp-16) var(--esp-32);font-size:var(--texto-xs);opacity:.85}
+
+/* Telefono: la columna estrecha se disena primero y se ensancha despues */
+.telefonos{display:flex;gap:var(--esp-24);flex-wrap:wrap}
+.telefono{width:340px;max-width:100%;border:1px solid var(--color-borde-control);
+  background:var(--color-fondo);overflow:hidden}
+.tel-header{height:var(--header-alto-movil);background:var(--color-superficie);
+  border-bottom:1px solid var(--color-borde);display:flex;align-items:center;
+  gap:var(--esp-12);padding:0 var(--esp-16)}
+.icono-btn{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;
+  background:transparent;border:none;cursor:pointer;color:var(--color-texto);
+  font-family:var(--fuente-mono);font-size:var(--texto-lg)}
+.icono-btn:focus-visible{outline:3px solid var(--color-foco);outline-offset:-2px}
+.tel-cuerpo{padding:var(--esp-16)}
+.menu-movil{background:var(--color-marca);color:var(--color-sobre-marca);
+  padding:var(--esp-16);min-height:380px}
+.menu-movil a{display:block;color:var(--color-sobre-marca);text-decoration:none;
+  padding:var(--esp-16) 0;border-bottom:1px solid color-mix(in srgb,var(--color-sobre-marca) 22%,transparent);
+  font-family:var(--fuente-display);font-size:var(--texto-lg);font-weight:var(--peso-fuerte);
+  text-transform:uppercase;letter-spacing:var(--tracking-titular)}
+.barra-fija{position:sticky;bottom:0;background:var(--color-superficie);
+  border-top:1px solid var(--color-borde);padding:var(--esp-12) var(--esp-16)}
+
+/* barra del kit */
+.barra{position:sticky;top:0;z-index:9;background:var(--color-superficie);
+  border-bottom:1px solid var(--color-borde);padding:var(--esp-12) 0}
+.barra .env{display:flex;align-items:center;gap:var(--esp-16);flex-wrap:wrap;min-height:44px}
+.barra .logo-marca{height:28px}
+
+@media (max-width:640px){
+  h1{font-size:var(--texto-2xl)} h2{font-size:var(--texto-xl)}
+  .env{padding:0 var(--esp-16)}
+  section.doc{padding:var(--esp-32) 0}
+  .mk-hero{grid-template-columns:1fr;padding:var(--esp-32) var(--esp-16)}
+  .mk-hero .figura{order:-1}
+  .mk-body,.mk-footer,.mk-legal,.confianza{padding-left:var(--esp-16);padding-right:var(--esp-16)}
+  .barra strong{display:none}
+  .mk-header{height:var(--header-alto-movil);padding:0 var(--esp-16);gap:var(--esp-12)}
+  .mk-nav,.mk-buscador{display:none}
+  .mk-header .solo-ancho{display:none}
+  .mk-header .solo-estrecho{display:inline-flex}
+  .mk-header .btn{margin-left:auto}
+  .telefono{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="barra"><div class="env">
+  __LOGO__
+  <strong style="font-family:var(--fuente-display)">Kit de interfaz</strong>
+  <button class="btn btn-secundario btn-sm" style="margin-left:auto"
+          onclick="document.documentElement.dataset.tema=document.documentElement.dataset.tema==='oscuro'?'claro':'oscuro'">
+    Cambiar modo
+  </button>
+</div></div>
+
+<div class="env">
+
+<section class="doc" style="border-top:none">
+  <h1>__MARCA__ · interfaz web</h1>
+  <p class="nota">Guía visual del sitio. Todo lo que se ve en esta página sale de
+  <code>tokens.css</code>: si cambia un token, cambia el sitio entero. Este kit
+  <b>parte del manual de marca y no lo reinventa</b>; añade lo que una interfaz
+  necesita y una identidad no tiene: estados, foco visible, semánticos completos,
+  puntos de quiebre y reglas de formulario.</p>
+  <p class="nota">Pruébalo de verdad antes de aprobarlo: pulsa <b>Cambiar modo</b>,
+  recorre la página con la tecla <kbd>Tab</kbd> y reduce la ventana por debajo de
+  640px.</p>
+  <ul class="indice">
+    <li><a href="#decisiones">Decisiones</a></li>
+    <li><a href="#paleta">Paleta</a></li>
+    <li><a href="#contraste">Contraste</a></li>
+    <li><a href="#tipografia">Tipografía</a></li>
+    <li><a href="#geometria">Chaflán y espaciado</a></li>
+    <li><a href="#botones">Botones</a></li>
+    <li><a href="#formularios">Formularios</a></li>
+    <li><a href="#catalogo">Catálogo</a></li>
+    <li><a href="#avisos">Avisos y estados</a></li>
+    <li><a href="#tablas">Tablas</a></li>
+    <li><a href="#maqueta">Header, body y footer</a></li>
+    <li><a href="#movil">Móvil</a></li>
+    <li><a href="#uso">Cómo se usa</a></li>
+  </ul>
+  <p style="margin-top:var(--esp-24)"><span class="leyenda-mx">
+    <b>Ojo:</b> todo lo que aparece <span class="mx">subrayado con puntos</span>
+    es texto de muestra y hay que reemplazarlo antes de publicar.
+  </span></p>
+</section>
+
+<section class="doc" id="decisiones">
+  <h2>Las cuatro decisiones que gobiernan el sitio</h2>
+  <p class="nota">Si alguien programa algo y duda, la respuesta está aquí.</p>
+  <div class="cols-2" style="margin-top:var(--esp-24)">
+    <div class="tarjeta chaflan">
+      <span class="eyebrow">01 · Geometría</span>
+      <h3 style="margin-top:8px">Ninguna esquina se redondea</h3>
+      <p class="nota">La firma de la marca es el corte a 45° en la esquina superior
+      izquierda y la inferior derecha, heredado del isotipo. Va en botones, tarjetas
+      de producto, etiquetas de precio y recortes de foto. Está resuelto en la clase
+      <code>.chaflan</code>: no lo reimplementes.</p>
+    </div>
+    <div class="tarjeta chaflan">
+      <span class="eyebrow">02 · Color</span>
+      <h3 style="margin-top:8px">El ámbar es una sola cosa por pantalla</h3>
+      <p class="nota">Y nunca como texto: sobre blanco da 1.85:1. Solo como
+      <b>relleno con grafito encima</b>. En una pantalla de catálogo el ámbar es el
+      botón «Mi cotización» del header; en una ficha de producto es «Agregar a la
+      cotización» y entonces el del header pasa a contorno.</p>
+    </div>
+    <div class="tarjeta chaflan">
+      <span class="eyebrow">03 · Cifras</span>
+      <h3 style="margin-top:8px">Precios y referencias en monoespaciada</h3>
+      <p class="nota">Con cifras tabulares, para que las columnas de una lista de
+      precios y los SKU alineen solos. Clases <code>.precio</code>,
+      <code>.sku</code> y <code>.cantidad</code>.</p>
+    </div>
+    <div class="tarjeta chaflan">
+      <span class="eyebrow">04 · Conversión</span>
+      <h3 style="margin-top:8px">No hay carrito: hay cotización</h3>
+      <p class="nota">El sitio es vitrina. El visitante arma una lista y pide
+      cotización; el cierre es humano, por WhatsApp o correo. Todo lo que en una
+      tienda sería «Comprar» aquí es «Agregar a la cotización», y el contador del
+      header cuenta ítems de esa lista.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="paleta">
+  <h2>Paleta</h2>
+  <p class="nota">Cada color tiene un rol, no un gusto. Los estados (hover, pressed,
+  foco, deshabilitado, borde de control) <b>no se eligen</b>: los calcula el
+  generador desde el color base, y por eso siguen siendo coherentes cuando la marca
+  cambia.</p>
+  <div class="rejilla" style="margin-top:var(--esp-24)">__PALETA__</div>
+  <div class="aviso aviso-aviso" style="margin-top:var(--esp-24);max-width:68ch">
+    <span class="ico">!</span>
+    <div><b>El hover del botón principal aclara, no oscurece.</b> El grafito ya es
+    casi negro: oscurecerlo un 12% no se percibe y el botón parece roto. Lo decide
+    la luminancia del color base, no el gusto — si mañana el primario fuera claro,
+    el mismo cálculo lo oscurecería.</div>
+  </div>
+</section>
+
+<section class="doc" id="contraste">
+  <h2>Contraste</h2>
+  <p class="nota">Verificado contra WCAG 2.1 en los dos modos, porque el gris suave
+  que funciona sobre blanco casi nunca funciona sobre negro. Las filas marcadas no
+  se pueden entregar así. El informe completo está en <code>contraste.md</code>.</p>
+  <div class="tabla-scroll" style="margin-top:var(--esp-16)">
+  <table><thead><tr><th>Par</th><th>Frente</th><th>Fondo</th><th>Ratio</th><th>Nivel</th></tr></thead>
+  <tbody>__CONTRASTE__</tbody></table>
+  </div>
+  <h3 style="margin-top:var(--esp-32)">Prohibido, aunque se vea bonito</h3>
+  <div class="fila" style="margin-top:var(--esp-12);align-items:stretch">
+    <div style="background:var(--color-superficie);border:1px solid var(--color-borde);
+                padding:var(--esp-16);flex:1;min-width:220px">
+      <div style="color:var(--color-acento);font-size:var(--texto-xl);
+                  font-family:var(--fuente-display);font-weight:700">$1.899.000</div>
+      <p class="nota" style="margin:8px 0 0"><b>NO.</b> Ámbar como texto sobre claro:
+      1.85:1. Para mucha gente esto no existe.</p>
+    </div>
+    <div style="background:var(--color-acento);color:var(--color-sobre-acento);
+                padding:var(--esp-16);flex:1;min-width:220px" class="chaflan">
+      <div style="font-size:var(--texto-xl);font-family:var(--fuente-display);font-weight:700">$1.899.000</div>
+      <p style="margin:8px 0 0;font-size:var(--texto-sm)"><b>SÍ.</b> Ámbar como
+      relleno con grafito encima: 8.92:1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="tipografia">
+  <h2>Tipografía</h2>
+  __AVISO_TIPO__
+  <p class="nota">Titulares en <b>__FAM_DISPLAY__</b>, texto e interfaz en
+  <b>__FAM_TEXTO__</b>. Las muestras de abajo se ven en la tipografía real: si las
+  ves en la fuente del sistema, es que no cargó — revisa el enlace de instalación.</p>
+
+  <h3 style="margin-top:var(--esp-24)">Familias</h3>
+  <div class="tabla-scroll">
+  <table><thead><tr><th>Rol</th><th>Familia</th><th>Pesos</th><th>Licencia</th></tr></thead>
+  <tbody>__FAMILIAS__</tbody></table>
+  </div>
+
+  <h3 style="margin-top:var(--esp-32)">Cómo se instala</h3>
+  <p class="nota">En el <code>&lt;head&gt;</code>, antes de la hoja de estilos del sitio.
+  La ficha completa está en <code>tipografia.md</code>.</p>
+  <pre><code>__CODIGO_CARGA__</code></pre>
+
+  <h3 style="margin-top:var(--esp-32)">Escala y jerarquía</h3>
+  <p class="nota">El cuerpo nunca baja de 16px: por debajo, el navegador móvil hace
+  zoom solo al enfocar un campo y descuadra la maqueta.</p>
+  <div class="tabla-scroll">
+  <table><thead><tr><th>Token</th><th>Tamaño</th><th>Dónde se usa</th><th>Muestra</th></tr></thead>
+  <tbody>__TIPO__</tbody></table>
+  </div>
+</section>
+
+<section class="doc" id="geometria">
+  <h2>Chaflán, espaciado y rejilla</h2>
+  <p class="nota">Las cuatro medidas del corte a 45°. Se elige por el tamaño del
+  elemento, no al azar: <code>sm</code> en etiquetas, <code>md</code> en botones y
+  tarjetas, <code>lg</code> en bloques grandes, <code>xl</code> en franjas a ancho
+  completo.</p>
+  <div class="fila" style="margin-top:var(--esp-16)">
+    <div class="chaflan chaflan--sm" style="background:var(--color-primario);
+      color:var(--color-sobre-primario);padding:var(--esp-16) var(--esp-24)">sm · 8px</div>
+    <div class="chaflan" style="background:var(--color-primario);
+      color:var(--color-sobre-primario);padding:var(--esp-16) var(--esp-24)">md · 12px</div>
+    <div class="chaflan chaflan--lg" style="background:var(--color-primario);
+      color:var(--color-sobre-primario);padding:var(--esp-24) var(--esp-32)">lg · 20px</div>
+    <div class="chaflan chaflan--xl" style="background:var(--color-acento);
+      color:var(--color-sobre-acento);padding:var(--esp-32) var(--esp-48)">xl · 34px</div>
+  </div>
+  <div class="aviso aviso-info" style="margin-top:var(--esp-24);max-width:68ch">
+    <span class="ico">i</span>
+    <div><b>Un detalle que muerde al programar.</b> <code>clip-path</code> recorta
+    también el anillo de foco. Por eso <code>tokens.css</code> desactiva el chaflán
+    en <code>:focus-visible</code>: mientras el elemento está enfocado se ve
+    rectangular y con su anillo completo. Es un intercambio deliberado — el foco
+    visible pesa más que la esquina.</div>
+  </div>
+
+  <h3 style="margin-top:var(--esp-32)">Escala de espaciado</h3>
+  <p class="nota">Todos los márgenes salen de aquí. Un valor de 17px es la señal de
+  que se está decidiendo a ojo, y a los tres meses el sitio está descuadrado.</p>
+  <div class="fila" style="align-items:flex-end;margin-top:var(--esp-16)">
+    <div style="text-align:center"><div style="width:4px;height:4px;background:var(--color-primario)"></div><span class="sku">4</span></div>
+    <div style="text-align:center"><div style="width:8px;height:8px;background:var(--color-primario)"></div><span class="sku">8</span></div>
+    <div style="text-align:center"><div style="width:12px;height:12px;background:var(--color-primario)"></div><span class="sku">12</span></div>
+    <div style="text-align:center"><div style="width:16px;height:16px;background:var(--color-primario)"></div><span class="sku">16</span></div>
+    <div style="text-align:center"><div style="width:24px;height:24px;background:var(--color-primario)"></div><span class="sku">24</span></div>
+    <div style="text-align:center"><div style="width:32px;height:32px;background:var(--color-primario)"></div><span class="sku">32</span></div>
+    <div style="text-align:center"><div style="width:48px;height:48px;background:var(--color-primario)"></div><span class="sku">48</span></div>
+    <div style="text-align:center"><div style="width:64px;height:64px;background:var(--color-primario)"></div><span class="sku">64</span></div>
+    <div style="text-align:center"><div style="width:96px;height:96px;background:var(--color-primario)"></div><span class="sku">96</span></div>
+  </div>
+
+  <h3 style="margin-top:var(--esp-32)">Rejilla y puntos de quiebre</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Punto</th><th>Ancho</th><th>Catálogo</th><th>Qué cambia</th></tr></thead>
+    <tbody>
+      <tr><td>Móvil</td><td class="num">&lt; 640px</td><td class="num">2 columnas</td>
+        <td>Menú plegado, header de 60px con isotipo, barra fija abajo, hero en una columna con la imagen arriba</td></tr>
+      <tr><td>Tableta</td><td class="num">640–1024px</td><td class="num">3 columnas</td>
+        <td>Navegación visible, buscador colapsado a icono</td></tr>
+      <tr><td>Escritorio</td><td class="num">&gt; 1024px</td><td class="num">4 columnas</td>
+        <td>Rejilla completa, buscador desplegado, ancho máximo de 1200px</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="nota" style="margin-top:var(--esp-12)"><b>Dos columnas en móvil y no una:</b>
+  en un catálogo, una sola tarjeta por pantalla obliga a un scroll interminable. La
+  tarjeta de producto está diseñada para funcionar a 160px de ancho.</p>
+</section>
+
+<section class="doc" id="botones">
+  <h2>Botones y estados</h2>
+  <p class="nota">Alto mínimo de 44px y separación de 8px entre destinos contiguos.
+  El foco visible no se elimina nunca: es como navega quien usa teclado — y quien
+  tiene el mouse dañado.</p>
+
+  <p class="rotulo">Jerarquía</p>
+  <div class="fila">
+    <button class="btn btn-acento chaflan">Agregar a la cotización</button>
+    <button class="btn btn-primario chaflan">Ver el producto</button>
+    <button class="btn btn-secundario chaflan">Comparar</button>
+    <button class="btn btn-texto">Ver ficha técnica</button>
+    <button class="btn btn-primario chaflan" disabled>Enviando…</button>
+  </div>
+  <p class="nota" style="margin-top:var(--esp-12)">De izquierda a derecha:
+  <b>acento</b> (uno por pantalla, la acción que gana), <b>principal</b> (los que
+  hagan falta), <b>secundario</b>, <b>de texto</b> y <b>deshabilitado</b>. El texto
+  empieza por verbo y dice qué pasa: «Agregar a la cotización», no «Enviar».</p>
+
+  <p class="rotulo">Los cinco estados, uno al lado del otro</p>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Estado</th><th>Cómo se ve</th><th>Color</th><th>Cuándo</th></tr></thead>
+    <tbody>
+      <tr><td>Normal</td>
+        <td><span class="btn btn-primario btn-sm chaflan">Cotizar</span></td>
+        <td><code>--color-primario</code></td><td>Reposo</td></tr>
+      <tr><td>Hover</td>
+        <td><span class="btn btn-sm chaflan" style="background:var(--color-primario-hover);color:var(--color-sobre-primario)">Cotizar</span></td>
+        <td><code>--color-primario-hover</code></td><td>Solo con ratón. Nunca es el único medio de dar información</td></tr>
+      <tr><td>Pressed</td>
+        <td><span class="btn btn-sm chaflan" style="background:var(--color-primario-pressed);color:var(--color-sobre-primario);transform:translateY(1px)">Cotizar</span></td>
+        <td><code>--color-primario-pressed</code></td><td>Mientras se pulsa, con 1px de desplazamiento</td></tr>
+      <tr><td>Foco</td>
+        <td><span class="btn btn-primario btn-sm" style="outline:3px solid var(--color-foco);outline-offset:2px">Cotizar</span></td>
+        <td><code>--color-foco</code></td><td>Anillo de 3px separado 2px. Con <code>:focus-visible</code> solo lo ve quien usa teclado</td></tr>
+      <tr><td>Deshabilitado</td>
+        <td><span class="btn btn-sm chaflan" style="background:var(--color-deshabilitado);color:var(--color-sobre-deshabilitado)">Cotizar</span></td>
+        <td><code>--color-deshabilitado</code></td><td>Último recurso: mejor explicar qué falta que apagar el botón</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="nota" style="margin-top:var(--esp-12)">Pasa el cursor por los botones de
+  arriba, mantén pulsado y recorre con <kbd>Tab</kbd>: los cinco estados son reales,
+  no una tabla de colores.</p>
+
+  <p class="rotulo">En móvil, el botón principal a ancho completo</p>
+  <div style="max-width:340px">
+    <button class="btn btn-acento btn-bloque chaflan">Agregar a la cotización</button>
+  </div>
+</section>
+
+<section class="doc" id="formularios">
+  <h2>Formularios</h2>
+  <p class="nota">Este es el sitio: la conversión del sitio entero es un formulario
+  de cotización, así que aquí no se improvisa nada.</p>
+  <div class="cols-2" style="margin-top:var(--esp-24)">
+    <div>
+      <div class="campo">
+        <label for="f-nombre">Nombre y apellido</label>
+        <input id="f-nombre" placeholder="Como aparece en la factura">
+      </div>
+      <div class="campo">
+        <label for="f-tel">WhatsApp</label>
+        <input id="f-tel" inputmode="tel" placeholder="300 000 0000">
+        <div class="ayuda">Por aquí te enviamos la cotización.</div>
+      </div>
+      <div class="campo">
+        <label for="f-tipo">Tipo de compra</label>
+        <select id="f-tipo">
+          <option>Al detal — una o pocas unidades</option>
+          <option>Al por mayor — desde 10 unidades</option>
+        </select>
+      </div>
+      <div class="campo error">
+        <label for="f-correo">Correo</label>
+        <input id="f-correo" value="cristhian@" aria-invalid="true" aria-describedby="e-correo">
+        <div class="ayuda" id="e-correo"><span aria-hidden="true">✕</span>
+          <span>Falta completar el correo para poder responderte. Ejemplo: nombre@dominio.com</span></div>
+      </div>
+      <div class="campo">
+        <label for="f-nota">Detalle del pedido <span class="opcional">(opcional)</span></label>
+        <textarea id="f-nota" rows="3" placeholder="Referencias, cantidades, tallas"></textarea>
+      </div>
+      <div class="campo-check">
+        <input type="checkbox" id="f-datos">
+        <label for="f-datos">Autorizo el tratamiento de mis datos personales según la
+        <a href="#">política de privacidad</a>.</label>
+      </div>
+      <button class="btn btn-acento chaflan">Pedir la cotización</button>
+    </div>
+    <div>
+      <h3>Las reglas, y por qué</h3>
+      <ul class="nota" style="padding-left:1.2em">
+        <li><b>Etiqueta visible siempre, encima del campo.</b> El texto dentro del
+          campo desaparece al escribir y la gente olvida qué iba ahí.</li>
+        <li><b>44px de alto y 16px de tipografía.</b> Por debajo, el navegador móvil
+          hace zoom al enfocar y descuadra la página.</li>
+        <li><b>Borde con <code>--color-borde-control</code></b>, no con
+          <code>--color-borde</code>: el divisor decorativo puede ser sutil, el borde
+          de un campo es el único indicador de que ahí se escribe.</li>
+        <li><b>El error no depende del color.</b> Lleva icono, texto que explica cómo
+          arreglarlo y borde de 2px. Y va junto al campo, no todo junto arriba.</li>
+        <li><b>Se marca lo opcional, no lo obligatorio.</b> Intimida menos y la
+          mayoría de campos son obligatorios de todas formas.</li>
+        <li><b>El botón de envío no se deshabilita mientras se escribe.</b> Se valida
+          al enviar y se explica qué falta.</li>
+        <li><b>La casilla de tratamiento de datos es obligatoria en Colombia</b>
+          cuando el formulario captura datos personales, y el enlace tiene que ser
+          legible, no letra de 10px.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="catalogo">
+  <h2>Catálogo</h2>
+  <p class="nota">La pieza que más se repite en el sitio. Altura pareja, proporción
+  de imagen fija en 1:1 y toda la tarjeta clicable hacia la ficha; el botón es la
+  única acción que no navega.</p>
+  <div class="catalogo" style="margin-top:var(--esp-24)">
+
+    <article class="tarjeta-producto chaflan">
+      <div class="medio">
+        <span class="etiqueta et-oferta et-flotante">Oferta</span>
+        <span class="nota" style="margin:0">Imagen 1:1<br>1000×1000px</span>
+      </div>
+      <div class="cuerpo">
+        <span class="eyebrow">Tecnología</span>
+        <h3 class="mx">Celular Marca X Modelo 12 · 256 GB</h3>
+        <span class="sku">SKU TS-CEL-0412</span>
+        <div><span class="etiqueta et-stock"><span aria-hidden="true">●</span> En stock</span></div>
+        <div class="pie">
+          <div class="precio mx">$1.899.000<span class="precio-antes">$2.150.000</span></div>
+          <button class="btn btn-primario btn-sm btn-bloque chaflan chaflan--sm"
+                  style="margin-top:var(--esp-12)">Agregar a la cotización</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="tarjeta-producto chaflan">
+      <div class="medio"><span class="nota" style="margin:0">Imagen 1:1</span></div>
+      <div class="cuerpo">
+        <span class="eyebrow">Deportivo</span>
+        <h3 class="mx">Tenis de running · tallas 38 a 44</h3>
+        <span class="sku">SKU TS-CAL-1180</span>
+        <div><span class="etiqueta et-stock"><span aria-hidden="true">●</span> En stock</span></div>
+        <div class="pie">
+          <div class="precio mx">$289.900</div>
+          <button class="btn btn-primario btn-sm btn-bloque chaflan chaflan--sm"
+                  style="margin-top:var(--esp-12)">Agregar a la cotización</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="tarjeta-producto chaflan">
+      <div class="medio"><span class="nota" style="margin:0">Imagen 1:1</span></div>
+      <div class="cuerpo">
+        <span class="eyebrow">Tecnología</span>
+        <h3 class="mx">Audífonos inalámbricos con estuche</h3>
+        <span class="sku">SKU TS-AUD-0233</span>
+        <div><span class="etiqueta et-agotado"><span aria-hidden="true">✕</span> Agotado</span></div>
+        <div class="pie">
+          <div class="precio mx" style="color:var(--color-texto-suave)">$219.000</div>
+          <button class="btn btn-secundario btn-sm btn-bloque chaflan chaflan--sm"
+                  style="margin-top:var(--esp-12)">Avisarme cuando llegue</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="tarjeta-producto chaflan" aria-hidden="true">
+      <div class="medio esqueleto"></div>
+      <div class="cuerpo">
+        <div class="esqueleto" style="height:12px;width:40%"></div>
+        <div class="esqueleto" style="height:16px;width:90%"></div>
+        <div class="esqueleto" style="height:16px;width:60%"></div>
+        <div class="pie"><div class="esqueleto" style="height:24px;width:50%"></div>
+          <div class="esqueleto" style="height:40px;margin-top:var(--esp-12)"></div></div>
+      </div>
+    </article>
+
+  </div>
+  <p class="nota" style="margin-top:var(--esp-16)">La cuarta tarjeta es el
+  <b>esqueleto de carga</b>: ocupa exactamente el mismo espacio que una tarjeta real,
+  así que la rejilla no salta cuando llegan los datos. Es mejor que un indicador
+  giratorio, que además obliga a reservar el hueco a ojo.</p>
+  <p class="nota"><b>El agotado no se esconde.</b> Cambia de etiqueta, apaga el
+  precio y el botón pasa a «Avisarme cuando llegue»: la pieza sigue capturando el
+  contacto en vez de perderlo.</p>
+
+  <p class="rotulo">Cuando no hay resultados</p>
+  <div class="vacio chaflan chaflan--lg">
+    <h3>No encontramos nada con esos filtros</h3>
+    <p class="nota" style="margin:0 auto var(--esp-16)">Prueba con menos filtros, o
+    escríbenos: si no está en la vitrina, es posible que podamos conseguirlo.</p>
+    <div class="fila" style="justify-content:center">
+      <button class="btn btn-secundario chaflan">Quitar los filtros</button>
+      <button class="btn btn-primario chaflan">Preguntar por WhatsApp</button>
+    </div>
+  </div>
+  <p class="nota" style="margin-top:var(--esp-12)">Un catálogo vacío sin mensaje
+  parece un sitio roto. Explica por qué no hay nada y ofrece el siguiente paso.</p>
+</section>
+
+<section class="doc" id="avisos">
+  <h2>Avisos y estados</h2>
+  <p class="nota">Cuatro tipos, cada uno con barra lateral, icono y texto. Nunca solo
+  color: un aviso que únicamente se distingue por ser rojo no existe para una parte
+  de los usuarios.</p>
+  <div class="cols-2" style="margin-top:var(--esp-24)">
+    <div>
+      <div class="aviso aviso-info"><span class="ico">i</span>
+        <div><b>Envíos.</b> <span class="mx">Despachamos a todo el país; en Medellín
+        entregamos el mismo día.</span></div></div>
+      <div class="aviso aviso-exito"><span class="ico">✓</span>
+        <div><b>Listo.</b> <span class="mx">Recibimos tu solicitud. Te escribimos por
+        WhatsApp en menos de 2 horas hábiles.</span></div></div>
+      <div class="aviso aviso-aviso"><span class="ico">!</span>
+        <div><b>Quedan pocas unidades.</b> <span class="mx">3 disponibles de esta
+        referencia.</span></div></div>
+      <div class="aviso aviso-error"><span class="ico">✕</span>
+        <div><b>No pudimos enviar el formulario.</b> <span class="mx">Revisa el correo
+        y vuelve a intentarlo.</span></div></div>
+    </div>
+    <div>
+      <h3>Etiquetas</h3>
+      <div class="fila" style="margin-top:var(--esp-12)">
+        <span class="etiqueta et-oferta">Oferta</span>
+        <span class="etiqueta et-stock"><span aria-hidden="true">●</span> En stock</span>
+        <span class="etiqueta et-agotado"><span aria-hidden="true">✕</span> Agotado</span>
+        <span class="etiqueta et-neutra">Nuevo</span>
+        <span class="etiqueta et-neutra">Precio al por mayor</span>
+      </div>
+      <p class="nota" style="margin-top:var(--esp-16)">La etiqueta de oferta es el
+      <b>único</b> lugar del catálogo donde aparece el ámbar. Si además el botón de
+      la tarjeta fuera ámbar, la rejilla entera se volvería ámbar y no destacaría
+      nada.</p>
+      <p class="nota">«En stock» y «Agotado» llevan símbolo además del color, porque
+      verde y rojo son justo el par que más gente confunde.</p>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="tablas">
+  <h2>Tablas: precios por volumen</h2>
+  <p class="nota">La pieza del mayorista. Cifras a la derecha y en monoespaciada
+  tabular, encabezado con fondo, divisores en vez de filas alternas.</p>
+  <div class="tabla-scroll" style="margin-top:var(--esp-16)">
+  <table>
+    <thead><tr><th>Referencia</th><th>Presentación</th><th style="text-align:right">Desde 10</th>
+      <th style="text-align:right">Desde 50</th><th style="text-align:right">Desde 100</th></tr></thead>
+    <tbody>
+      <tr><td><span class="mx">Tenis running TS-CAL-1180</span></td><td>Par</td>
+        <td class="num mx">$246.400</td><td class="num mx">$231.900</td><td class="num mx">$219.000</td></tr>
+      <tr><td><span class="mx">Camiseta deportiva TS-ROP-0920</span></td><td>Unidad</td>
+        <td class="num mx">$38.900</td><td class="num mx">$34.500</td><td class="num mx">$31.200</td></tr>
+      <tr><td><span class="mx">Audífonos TS-AUD-0233</span></td><td>Caja x 6</td>
+        <td class="num mx">$186.000</td><td class="num mx">$174.500</td><td class="num mx">$165.900</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="nota" style="margin-top:var(--esp-12)"><b>En móvil esta tabla no cabe, y
+  eso ya está decidido:</b> se desplaza en horizontal dentro de su propio contenedor
+  —la página nunca se desplaza de lado— y la primera columna queda fija. Reduce la
+  ventana y compruébalo aquí mismo. La alternativa, convertir cada fila en tarjeta,
+  se descartó: rompe la comparación de precios entre escalas, que es justo para lo
+  que se mira esta tabla.</p>
+</section>
+
+<section class="doc" id="maqueta">
+  <h2>Maqueta: header, body y footer</h2>
+  <p class="nota">La composición real, con los tokens aplicados. No es una imagen:
+  cambia el modo y reduce la ventana.</p>
+
+  <p class="rotulo">Escritorio</p>
+  <div class="maqueta">
+    <header class="mk-header">
+      <span class="solo-ancho">__LOGO__</span>
+      <span class="solo-estrecho">__ISOTIPO__</span>
+      <nav class="mk-nav" aria-label="Principal">
+        <a href="#" aria-current="page">Tecnología</a>
+        <a href="#">Deportivo</a>
+        <a href="#">Mayoristas</a>
+        <a href="#">Nosotros</a>
+        <a href="#">Contacto</a>
+      </nav>
+      <div class="mk-buscador"><span aria-hidden="true">⌕</span> Buscar referencia o marca</div>
+      <button class="btn btn-acento btn-sm chaflan chaflan--sm">Mi cotización · <span class="cantidad">2</span></button>
+      <button class="icono-btn solo-estrecho" aria-label="Abrir el menú">☰</button>
+    </header>
+
+    <div class="mk-hero">
+      <div>
+        <span class="eyebrow" style="opacity:.8">Medellín · al por mayor y al detal</span>
+        <h2 class="mx">Tecnología y deporte, surtidos por el mismo distribuidor</h2>
+        <p class="mx">Diez años surtiendo tiendas, gimnasios y compradores directos.
+        Arma tu lista y te cotizamos el mismo día.</p>
+        <div class="fila">
+          <button class="btn btn-acento chaflan">Pedir una cotización</button>
+          <button class="btn btn-secundario chaflan"
+            style="color:var(--color-sobre-marca);border-color:var(--color-sobre-marca)">Ver el catálogo</button>
+        </div>
+      </div>
+      <div class="figura chaflan chaflan--lg">Imagen 4:3 · 1200×900px</div>
+    </div>
+
+    <div class="confianza">
+      <span><b>10</b> años en el mercado</span>
+      <span><b>+2.400</b> referencias</span>
+      <span>Despacho <b>el mismo día</b> en Medellín</span>
+      <span>Al por mayor desde <b>10</b> unidades</span>
+    </div>
+
+    <div class="mk-body">
+      <p class="rotulo" style="margin-top:0">Los dos ejes del negocio</p>
+      <div class="ejes">
+        <a class="eje chaflan chaflan--lg" href="#"><h3>Tecnología</h3>
+          <span class="mx">Celulares, audio, accesorios y cómputo</span></a>
+        <a class="eje chaflan chaflan--lg" href="#"
+           style="background:var(--color-marca-alt)"><h3>Deportivo</h3>
+          <span class="mx">Calzado, ropa y accesorios de entrenamiento</span></a>
+      </div>
+
+      <p class="rotulo">Destacados</p>
+      <div class="catalogo" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+        <article class="tarjeta-producto chaflan">
+          <div class="medio"><span class="etiqueta et-oferta et-flotante">Oferta</span>
+            <span class="nota" style="margin:0">1:1</span></div>
+          <div class="cuerpo"><span class="eyebrow">Tecnología</span>
+            <h4 class="mx">Celular Modelo 12 · 256 GB</h4>
+            <div class="pie"><div class="precio mx">$1.899.000</div></div></div>
+        </article>
+        <article class="tarjeta-producto chaflan">
+          <div class="medio"><span class="nota" style="margin:0">1:1</span></div>
+          <div class="cuerpo"><span class="eyebrow">Deportivo</span>
+            <h4 class="mx">Tenis de running</h4>
+            <div class="pie"><div class="precio mx">$289.900</div></div></div>
+        </article>
+        <article class="tarjeta-producto chaflan">
+          <div class="medio"><span class="nota" style="margin:0">1:1</span></div>
+          <div class="cuerpo"><span class="eyebrow">Tecnología</span>
+            <h4 class="mx">Audífonos inalámbricos</h4>
+            <div class="pie"><div class="precio mx">$219.000</div></div></div>
+        </article>
+        <article class="tarjeta-producto chaflan">
+          <div class="medio"><span class="nota" style="margin:0">1:1</span></div>
+          <div class="cuerpo"><span class="eyebrow">Deportivo</span>
+            <h4 class="mx">Camiseta deportiva</h4>
+            <div class="pie"><div class="precio mx">$38.900</div></div></div>
+        </article>
+      </div>
+    </div>
+
+    <div class="franja chaflan chaflan--xl">
+      <div><h3 class="mx">¿Comprando para tu negocio?</h3>
+        <p style="margin:4px 0 0;font-size:var(--texto-sm)" class="mx">Precios por
+        volumen desde 10 unidades, con despacho a todo el país.</p></div>
+      <button class="btn btn-primario chaflan">Ver precios al por mayor</button>
+    </div>
+
+    <footer class="mk-footer">
+      <div>
+        __LOGO_NEG__
+        <p class="dato" style="margin-top:var(--esp-16)">
+          Tecno Sport<br>
+          NIT 1054994043-1<br>
+          Cra. 26C #38B-31<br>
+          Medellín, Antioquia, Colombia
+        </p>
+      </div>
+      <div><h4>Catálogo</h4>
+        <a href="#">Tecnología</a><a href="#">Deportivo</a><a href="#">Ofertas</a></div>
+      <div><h4>Empresa</h4>
+        <a href="#">Nosotros</a><a href="#">Mayoristas</a><a href="#">Contacto</a></div>
+      <div><h4>Legal</h4>
+        <a href="#">Política de tratamiento de datos</a><a href="#">Términos y condiciones</a></div>
+      <div><h4>Escríbenos</h4>
+        <a href="https://wa.me/573104209655">WhatsApp 310 420 9655</a>
+        <a href="tel:+573104209655">Tel. 310 420 9655</a>
+        <a href="mailto:contact@tecnosport.co">contact@tecnosport.co</a>
+        <a href="#">Instagram</a></div>
+    </footer>
+    <div class="mk-legal">
+      © 2026 Tecno Sport. Todos los derechos reservados.
+      · Formas de pago: <span class="mx">transferencia, PSE y contraentrega en Medellín.</span>
+    </div>
+  </div>
+
+  <div class="cols-2" style="margin-top:var(--esp-32)">
+    <div>
+      <h3>Header</h3>
+      <ul class="nota" style="padding-left:1.2em">
+        <li><b>72px en escritorio, 60px en móvil</b>, fijo al hacer scroll y con
+          fondo sólido. Nunca transparente sobre una foto: en la maqueta se ve bien
+          y con la foto real del cliente el texto se pierde.</li>
+        <li><b>Logo horizontal a 34px</b>, con el área de respeto del manual (1/4 del
+          alto del isotipo). Enlaza al inicio y lleva texto alternativo.</li>
+        <li><b>Cinco entradas y ni una más.</b> Tecnología y Deportivo son los dos
+          ejes del negocio y por eso van primero; Mayoristas es la tercera porque es
+          el cliente que más factura.</li>
+        <li><b>La acción principal es la única con relleno.</b> Ámbar, con el contador
+          de la lista de cotización en monoespaciada.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Footer</h3>
+      <ul class="nota" style="padding-left:1.2em">
+        <li><b>Logo en monocromo negativo.</b> El logo es de un solo color oscuro: sobre
+          el fondo grafito del pie desaparecería. Esta es la variante que existe justo
+          para eso.</li>
+        <li><b>NIT y dirección física visibles.</b> En Colombia son la señal de que la
+          empresa existe, y pesan más que cualquier sello de confianza genérico.</li>
+        <li><b>El enlace a la política de datos es obligatorio</b> porque el sitio
+          tiene formulario, y va a tamaño legible, no en letra de 10px.</li>
+        <li><b>Cada enlace ocupa 44px de alto.</b> Los pies de página son donde más se
+          incumple: listas de enlaces pegados donde en el celular nadie atina.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="doc" id="movil">
+  <h2>Móvil</h2>
+  <p class="nota">La mayor parte del tráfico va a entrar por aquí, así que la columna
+  estrecha se diseña primero. Lo que sigue está resuelto para que nadie tenga que
+  improvisarlo mientras programa.</p>
+  <div class="telefonos" style="margin-top:var(--esp-24)">
+
+    <div class="telefono">
+      <div class="tel-header">
+        __ISOTIPO__
+        <div style="margin-left:auto;display:flex;gap:4px">
+          <button class="icono-btn" aria-label="Buscar">⌕</button>
+          <button class="icono-btn" aria-label="Mi cotización">☰</button>
+        </div>
+      </div>
+      <div class="tel-cuerpo">
+        <div class="catalogo" style="grid-template-columns:1fr 1fr;gap:var(--esp-12)">
+          <article class="tarjeta-producto chaflan chaflan--sm">
+            <div class="medio"><span class="sku">1:1</span></div>
+            <div class="cuerpo" style="padding:var(--esp-12)">
+              <h3 style="font-size:var(--texto-sm)" class="mx">Celular 256 GB</h3>
+              <div class="pie"><div class="precio mx" style="font-size:var(--texto-base)">$1.899.000</div></div>
+            </div>
+          </article>
+          <article class="tarjeta-producto chaflan chaflan--sm">
+            <div class="medio"><span class="sku">1:1</span></div>
+            <div class="cuerpo" style="padding:var(--esp-12)">
+              <h3 style="font-size:var(--texto-sm)" class="mx">Tenis running</h3>
+              <div class="pie"><div class="precio mx" style="font-size:var(--texto-base)">$289.900</div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="barra-fija">
+        <a class="btn btn-acento btn-bloque chaflan" href="https://wa.me/573104209655">Pedir cotización por WhatsApp</a>
+      </div>
+      <p class="nota" style="padding:var(--esp-12) var(--esp-16);margin:0">
+        Catálogo en <b>dos columnas</b> y barra fija abajo con la acción principal.</p>
+    </div>
+
+    <div class="telefono">
+      <div class="tel-header">
+        __ISOTIPO__
+        <button class="icono-btn" style="margin-left:auto" aria-label="Cerrar el menú">✕</button>
+      </div>
+      <nav class="menu-movil" aria-label="Principal">
+        <a href="#">Tecnología</a>
+        <a href="#">Deportivo</a>
+        <a href="#">Mayoristas</a>
+        <a href="#">Nosotros</a>
+        <a href="#">Contacto</a>
+        <button class="btn btn-acento btn-bloque chaflan" style="margin-top:var(--esp-24)">
+          Mi cotización · <span class="cantidad">2</span></button>
+      </nav>
+      <p class="nota" style="padding:var(--esp-12) var(--esp-16);margin:0">
+        Menú a <b>pantalla completa</b>, cierre de 44px arriba a la derecha.</p>
+    </div>
+
+  </div>
+
+  <h3 style="margin-top:var(--esp-32)">Lo que cambia al bajar de 640px</h3>
+  <div class="tabla-scroll">
+  <table>
+    <thead><tr><th>Elemento</th><th>Escritorio</th><th>Móvil</th></tr></thead>
+    <tbody>
+      <tr><td>Logo</td><td>Horizontal, 34px</td><td>Isotipo solo, 30px — el horizontal
+        no llega legible a su mínimo de 132px de ancho</td></tr>
+      <tr><td>Navegación</td><td>Cinco enlaces visibles</td><td>Menú a pantalla completa
+        tras un botón de 44×44px</td></tr>
+      <tr><td>Buscador</td><td>Campo desplegado</td><td>Icono; al pulsarlo ocupa el ancho del header</td></tr>
+      <tr><td>Acción principal</td><td>Botón ámbar en el header</td><td>Barra fija abajo.
+        Ocupa espacio permanente y se acepta: es la conversión del sitio</td></tr>
+      <tr><td>Hero</td><td>Texto e imagen en dos columnas</td><td>Una columna, <b>imagen
+        arriba</b> y en ese mismo orden en todos los bloques del sitio</td></tr>
+      <tr><td>Catálogo</td><td>4 columnas</td><td>2 columnas</td></tr>
+      <tr><td>Tabla de mayoristas</td><td>Completa</td><td>Desplazamiento horizontal
+        dentro de su contenedor, primera columna fija</td></tr>
+      <tr><td>Footer</td><td>Cinco columnas</td><td>Apiladas, cada enlace con 44px de alto</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="doc" id="uso">
+  <h2>Cómo se usa</h2>
+  <ol class="nota" style="padding-left:1.2em">
+    <li>Copia <code>tokens.css</code> (y <code>fuentes.css</code> con la carpeta
+      <code>fuentes/</code>, si vienen) al proyecto, y enlázalos <b>antes</b> de tus
+      estilos.</li>
+    <li>Usa siempre las variables. Un <code>#1B1F26</code> suelto en el código es una
+      decisión que deja de estar en el sistema.</li>
+    <li>Modo oscuro: <code>data-tema="oscuro"</code> en el <code>&lt;html&gt;</code>.</li>
+    <li>Si cambia un color de marca, edita <code>tokens.json</code> y vuelve a generar:
+      los estados y el informe de contraste se recalculan solos.</li>
+  </ol>
+  <p class="rotulo">En un proyecto Angular</p>
+  <pre><code>/* angular.json → styles, en este orden */
+"styles": [
+  "src/assets/marca/fuentes.css",
+  "src/assets/marca/tokens.css",
+  "src/styles.scss"
+]</code></pre>
+  <p class="nota">Los tokens son CSS puro, así que atraviesan el encapsulamiento de
+  estilos de los componentes sin necesidad de <code>::ng-deep</code>: dentro de
+  cualquier componente, <code>var(--color-primario)</code> funciona tal cual.</p>
+</section>
+
+</div>
+</body>
+</html>
