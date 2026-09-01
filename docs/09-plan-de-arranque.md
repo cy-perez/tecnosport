@@ -1,0 +1,177 @@
+# Plan de arranque y prompts
+
+El orden importa. Cada fase termina con algo que funciona y está probado, no con
+una capa a medias. No pases a la siguiente sin cerrar la anterior.
+
+Antes de nada: `git init`, primer commit con `docs/`, los `CLAUDE.md` y los
+`README.md`. La documentación se versiona antes que el código.
+
+## Fase 0. Monorepo y esqueleto
+
+Objetivo: los dos proyectos compilan, corren, se prueban y sirven una página en
+blanco. Sin lógica de negocio.
+
+```
+Lee CLAUDE.md y docs/01-arquitectura.md.
+
+Crea la base del monorepo: package.json raíz con workspaces para apps/web,
+packages/marca y packages/contratos; .gitignore; .env.example con las variables
+de docs/07-infra-gcp.md; docker-compose.yml con PostgreSQL 16, Mailpit y Adminer;
+y los scripts npm de la tabla del README raíz.
+
+No crees todavía el contenido de apps/api ni de apps/web. Solo el andamiaje del
+monorepo.
+```
+
+Backend, en una conversación aparte:
+
+```
+Lee CLAUDE.md, docs/01-arquitectura.md y apps/api/CLAUDE.md.
+
+Crea el esqueleto del backend en apps/api: proyecto Gradle multi-módulo con
+Kotlin DSL y los cinco módulos domain, application, infrastructure, presentation
+y bootstrap, con las dependencias entre ellos exactamente como dice la tabla del
+documento de arquitectura.
+
+Incluye: Spring Boot 4.1.0 con Java 21, un endpoint /api/v1/salud que responda
+200, la prueba de ArchUnit que verifica las flechas de dependencia, Spotless y
+Flyway con una migración vacía.
+
+Nada de JPA, ni seguridad, ni nada más todavía.
+
+Muéstrame el plan de archivos y espera mi aprobación antes de escribir. Si no
+estás seguro de la sintaxis del plugin de Spring Boot 4.1 en Gradle, dímelo en
+vez de suponerla.
+```
+
+Frontend, en otra conversación:
+
+```
+Lee CLAUDE.md, apps/web/CLAUDE.md y docs/04-ui-marca.md.
+
+Crea el esqueleto del frontend en apps/web: Angular 22.5 con npm, SSR con
+hidratación, zoneless, standalone, SCSS, Vitest configurado y corriendo,
+Transloco con es y en, TanStack Query, Angular CDK y PWA.
+
+Copia el kit de packages/marca a src/assets/marca como paso del build y enlázalo
+en angular.json en el orden del documento de interfaz.
+
+Deja una portada mínima que solo demuestre: el logo cambiando entre positivo y
+negativo según el tema, el selector de idioma, el selector de tema con las tres
+opciones, y un botón con la clase .chaflan con su anillo de foco visible.
+
+Una prueba de Vitest que pase. Nada más.
+```
+
+Cierre de fase: ambos arrancan en Windows, `gradlew.bat build` y `npm test`
+pasan, y `docker compose up -d` levanta la base.
+
+## Fase 1. Catálogo de solo lectura
+
+```
+Lee docs/02-modelo-datos.md.
+
+Implementa el catálogo de lectura, capa por capa, empezando por domain.
+
+Dominio: Producto, Variante, Categoria, Marca, Atributo, ImagenProducto,
+SetRotacion, y los objetos de valor Dinero y Sku, con sus invariantes y sus
+pruebas unitarias. Incluye la regla de que un set de rotación incompleto no se
+publica.
+
+Después application con BuscarProductos y VerFichaDeProducto, y el puerto
+RepositorioProductos.
+
+Después infrastructure: entidades JPA separadas del dominio con su mapeador,
+migración Flyway con el esquema del documento, y datos de siembra con productos
+de las tres líneas y sus variantes según la tabla de variantes por categoría.
+
+Al final presentation con los endpoints de docs/03-api.md y springdoc.
+
+Un commit por capa. Para después de domain y muéstrame el resultado.
+```
+
+Luego la vitrina en Angular: rejilla, filtros, ficha, galería y selector de
+variante, con TanStack Query y los componentes de `shared/`. El visor 360 todavía
+no.
+
+## Fase 2. Carrito e inventario
+
+Inventario por movimientos, reserva con bloqueo pesimista, vencimiento con
+`Reloj` inyectado, carrito persistente reconciliado en el servidor. Aquí van las
+pruebas de concurrencia: dos compradores por la última unidad.
+
+## Fase 3. Checkout, envío y pago
+
+Cotizador de envío detrás del puerto, con la tabla de tarifas propia como primera
+implementación. Creación de pedido con revalidación de precios y existencias.
+Wompi con firma de integridad, webhook firmado, idempotencia y conciliación
+programada. Transferencia manual. Correos transaccionales.
+
+**Contraentrega va en esta fase, pero al final y con su propio ciclo de
+revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
+servidor, reserva sin vencimiento, verificación previa al despacho y estados de
+recaudo. Léete `docs/11-pagos-y-envios.md` completo antes de empezarla.
+
+Esta fase va despacio, con pruebas primero en todo lo que toca dinero, y con la
+pasarela en pruebas hasta que los recorridos pasen.
+
+## Fase 4. Cuentas y panel administrativo
+
+Autenticación según `docs/08-seguridad-legal.md`. Panel: productos, variantes,
+existencias, imágenes con URL firmada, pedidos, despacho y conciliación de
+recaudo.
+
+## Fase 5. Sistema 360
+
+Se hace al final a propósito: necesita el panel, la autenticación, el
+almacenamiento y las URL firmadas ya funcionando.
+
+```
+Lee docs/10-captura-360.md completo.
+
+Empieza por el visor, que es lo más simple y no depende de nada: el componente
+ts-visor-360 en shared/, que recibe un arreglo ordenado de imágenes.
+
+Implementa primero las funciones puras con sus pruebas: mapeo de desplazamiento
+a índice, con vueltas circulares y valores negativos. Después el componente con
+PointerEvent, teclado, botones visibles y la estrategia de carga.
+
+No toques todavía el asistente de captura.
+```
+
+Después el asistente, y dentro de él, en este orden: funciones puras de recorte y
+escala con sus pruebas, luego el nivelador con sus lecturas simuladas, luego la
+cámara y la superposición, y al final la carga con URL firmadas.
+
+El recorte y la escala común a todo el set son la parte que decide si el
+resultado se ve bien o se ve casero. Van primero y van probadas.
+
+## Fase 6. Cierre para publicar
+
+Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
+SEO con sitemap, hreflang y datos estructurados de producto, auditoría de
+accesibilidad, Lighthouse con el visor 360 activo, respaldo restaurado de prueba,
+y el DNS movido con el cuidado de `docs/07-infra-gcp.md`.
+
+## Cómo conversar con Claude Code en este proyecto
+
+**Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
+contexto largo y sucio produce código que contradice lo que se decidió antes.
+
+**Empieza cada sesión nombrando los documentos** que hay que leer. No asumas que
+se acuerda.
+
+**Pide el plan antes del código** en todo lo que toque más de tres archivos.
+Léelo, corrígelo. Ahí se ahorra el tiempo, no revisando seiscientas líneas ya
+escritas.
+
+**Una capa por vez, un commit por capa.** Revertir un commit pequeño no duele.
+
+**Cuando algo salga mal, no pidas un parche encima.** Vuelve al plan, corrige la
+premisa y regenera. Los parches encadenados sobre un diseño equivocado son la
+forma más rápida de terminar con código que nadie entiende.
+
+**Al terminar cada fase, pide una revisión adversarial** con `/revisar`.
+
+**Actualiza los documentos cuando la realidad cambie.** Un `CLAUDE.md` que
+describe un proyecto que ya no existe envenena cada respuesta que venga después.

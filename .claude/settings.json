@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm ci)",
+      "Bash(npm install)",
+      "Bash(./gradlew:*)",
+      "Bash(gradlew.bat:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(docker compose:*)",
+      "Bash(terraform plan:*)",
+      "Bash(terraform fmt:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(rm -rf:*)",
+      "Bash(gcloud sql:*)",
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)",
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./**/*secret*)",
+      "Read(./**/*credential*)"
+    ]
+  }
+}
