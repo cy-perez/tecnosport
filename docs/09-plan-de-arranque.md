@@ -112,14 +112,34 @@ revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
 servidor, reserva sin vencimiento, verificación previa al despacho y estados de
 recaudo. Léete `docs/11-pagos-y-envios.md` completo antes de empezarla.
 
+**Contraentrega y transferencia manual necesitan una acción humana que todavía
+no tiene dónde vivir:** marcar un contraentrega como verificado antes de
+despachar, conciliar el comprobante de una transferencia, y ver el recaudo
+pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
+
+- Autenticación con rol `ADMIN` (login y JWT según `docs/08-seguridad-legal.md`,
+  sin registro de cliente ni cuenta opcional — eso es de la Fase 4).
+- Una vista de operación mínima, sin diseño de marca todavía: lista de pedidos
+  con su estado, acción para marcar verificado un contraentrega, acción para
+  conciliar una transferencia, y el recaudo pendiente a la vista.
+
+El resto del panel (productos, variantes, existencias, imágenes, cuenta de
+cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el
+dinero no quede colgado, no el panel completo.
+
 Esta fase va despacio, con pruebas primero en todo lo que toca dinero, y con la
 pasarela en pruebas hasta que los recorridos pasen.
 
 ## Fase 4. Cuentas y panel administrativo
 
-Autenticación según `docs/08-seguridad-legal.md`. Panel: productos, variantes,
-existencias, imágenes con URL firmada, pedidos, despacho y conciliación de
-recaudo.
+Autenticación completa según `docs/08-seguridad-legal.md`: registro de cliente,
+verificación de correo, recuperación de contraseña y la cuenta opcional que se
+ofrece al final del checkout. El login de `ADMIN` ya existe desde la Fase 3;
+aquí se completa con roles y autorización por recurso.
+
+Panel completo: productos, variantes, existencias, imágenes con URL firmada.
+La vista de operación de pedidos y conciliación de recaudo de la Fase 3 pasa a
+tener aquí el diseño y los componentes definitivos.
 
 ## Fase 5. Sistema 360
 

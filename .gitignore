@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+
+# Entorno
+.env.local
+.env.*.local
+
+# Backend (Gradle)
+apps/api/.gradle/
+apps/api/**/build/
+apps/api/.kotlin/
+
+# Frontend (Angular)
+apps/web/dist/
+apps/web/.angular/
+apps/web/coverage/
+
+# Terraform
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/.terraform.lock.hcl
+
+# Editores y SO
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+*.log

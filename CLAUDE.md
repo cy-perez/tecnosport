@@ -87,3 +87,9 @@ Windows: `gradlew.bat`, rutas con `/` en configuración, scripts en Node o Gradl
 - **No agregues dependencias sin preguntar.** Cada librería nueva es deuda.
 - **No inventes datos de negocio.** Si falta una tarifa, un porcentaje o un
   plazo, déjalo como `TODO` con el nombre del dato y pregúntame.
+- **Una sola conversación para frontend y backend.** Al ser un monorepo, trabajo
+  siempre desde la raíz del repo (nunca abras Claude Code parado dentro de
+  `apps/api` o `apps/web` por separado), así los cambios de ambos lados quedan
+  en el mismo hilo. Para retomar esta conversación en vez de abrir una nueva,
+  arranca con `claude --continue` (o `claude -c`); si hay varias, `claude
+  --resume` (o `/resume`) deja elegir cuál.

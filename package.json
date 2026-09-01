@@ -1,0 +1,17 @@
+{
+  "name": "tecnosport",
+  "private": true,
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "workspaces": [
+    "apps/web",
+    "packages/marca",
+    "packages/contratos"
+  ],
+  "scripts": {
+    "verificar": "node tools/verificar.mjs",
+    "contratos": "node tools/generar-contratos.mjs"
+  }
+}
