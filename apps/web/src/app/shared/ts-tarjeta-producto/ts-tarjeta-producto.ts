@@ -1,5 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { hayExistencia, precioDesde, Producto } from '../../features/catalogo/domain/producto.model';
 import { TsEtiquetaStock } from '../ts-etiqueta-stock/ts-etiqueta-stock';
@@ -7,7 +8,7 @@ import { TsPrecio } from '../ts-precio/ts-precio';
 
 @Component({
   selector: 'ts-tarjeta-producto',
-  imports: [NgOptimizedImage, TsPrecio, TsEtiquetaStock],
+  imports: [NgOptimizedImage, TsPrecio, TsEtiquetaStock, RouterLink],
   templateUrl: './ts-tarjeta-producto.html',
   styleUrl: './ts-tarjeta-producto.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

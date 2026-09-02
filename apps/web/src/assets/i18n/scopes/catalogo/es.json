@@ -27,5 +27,10 @@
       "precio_desc": "Precio: mayor a menor",
       "mas_recientes": "Más recientes"
     }
+  },
+  "ficha": {
+    "volver": "Volver al catálogo",
+    "no_encontrado": "No encontramos este producto.",
+    "error": "No se pudo cargar el producto. Intenta de nuevo."
   }
 }

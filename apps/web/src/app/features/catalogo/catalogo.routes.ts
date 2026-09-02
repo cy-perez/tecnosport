@@ -1,5 +1,6 @@
 import { ActivatedRouteSnapshot, Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { precargarFichaProducto } from './application/buscar-ficha-producto.consulta';
 import { precargarProductos } from './application/buscar-productos.consulta';
 import { precargarOpcionesFiltro } from './application/listar-opciones-filtro.consulta';
 import { filtroDesdeQueryParams } from './domain/query-params-filtro';
@@ -26,18 +27,32 @@ export const catalogoRoutes: Routes = [
     children: [
       {
         path: 'productos',
-        // resolve, no solo loadComponent: calienta la caché de TanStack Query
-        // antes de crear el componente, para que el SSR sea determinista —
-        // con los mismos query params que va a leer la página, si no, vuelve
-        // el bug de skeletons pero solo para URLs con filtros.
-        resolve: {
-          _precarga: (route: ActivatedRouteSnapshot) =>
-            Promise.all([
-              precargarProductos(filtroDesdeQueryParams(route.queryParams)),
-              precargarOpcionesFiltro(),
-            ]),
-        },
-        loadComponent: () => import('./presentation/rejilla/rejilla.page').then((m) => m.RejillaPage),
+        children: [
+          {
+            path: '',
+            // resolve, no solo loadComponent: calienta la caché de TanStack
+            // Query antes de crear el componente, para que el SSR sea
+            // determinista — con los mismos query params que va a leer la
+            // página, si no, vuelve el bug de skeletons pero solo para URLs
+            // con filtros.
+            resolve: {
+              _precarga: (route: ActivatedRouteSnapshot) =>
+                Promise.all([
+                  precargarProductos(filtroDesdeQueryParams(route.queryParams)),
+                  precargarOpcionesFiltro(),
+                ]),
+            },
+            loadComponent: () => import('./presentation/rejilla/rejilla.page').then((m) => m.RejillaPage),
+          },
+          {
+            path: ':slug',
+            resolve: {
+              _precarga: (route: ActivatedRouteSnapshot) =>
+                precargarFichaProducto(route.paramMap.get('slug') ?? ''),
+            },
+            loadComponent: () => import('./presentation/ficha/ficha.page').then((m) => m.FichaPage),
+          },
+        ],
       },
     ],
   },

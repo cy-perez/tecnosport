@@ -27,5 +27,10 @@
       "precio_desc": "Price: high to low",
       "mas_recientes": "Newest"
     }
+  },
+  "ficha": {
+    "volver": "Back to catalog",
+    "no_encontrado": "We couldn't find this product.",
+    "error": "We couldn't load this product. Please try again."
   }
 }

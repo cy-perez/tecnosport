@@ -1,0 +1,39 @@
+<section class="ficha">
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="ficha__error" role="alert">{{ 'catalogo.ficha.error' | transloco }}</p>
+  } @else if (producto(); as p) {
+    <a class="ficha__volver" [routerLink]="['..']">{{ 'catalogo.ficha.volver' | transloco }}</a>
+
+    <div class="ficha__contenido">
+      @if (p.imagenPrincipal; as imagen) {
+        <img
+          class="ficha__imagen"
+          [ngSrc]="imagen.url"
+          [width]="imagen.ancho"
+          [height]="imagen.alto"
+          [alt]="alt()"
+          priority
+        />
+      }
+
+      <div class="ficha__info">
+        <p class="ficha__marca">{{ p.marca.nombre }}</p>
+        <h1 class="ficha__nombre">{{ p.nombre }}</h1>
+        <p class="ficha__categoria">{{ p.categoria.nombre }}</p>
+
+        <div class="ficha__compra">
+          @if (precio(); as precioValor) {
+            <ts-precio [valor]="precioValor.valor" [moneda]="precioValor.moneda" [desde]="true" />
+          }
+          <ts-etiqueta-stock [disponible]="disponible()" />
+        </div>
+
+        <p class="ficha__descripcion">{{ p.descripcion }}</p>
+      </div>
+    </div>
+  } @else {
+    <p class="ficha__error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
+  }
+</section>

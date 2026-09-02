@@ -1,4 +1,4 @@
-<article class="ts-tarjeta-producto chaflan">
+<a class="ts-tarjeta-producto chaflan" [routerLink]="[producto().slug]">
   @if (producto().imagenPrincipal; as imagen) {
     <img
       class="ts-tarjeta-producto__imagen"
@@ -18,4 +18,4 @@
       <ts-etiqueta-stock [disponible]="disponible()" />
     </div>
   </div>
-</article>
+</a>

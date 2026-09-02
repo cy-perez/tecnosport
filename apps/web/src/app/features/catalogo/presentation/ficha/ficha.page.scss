@@ -1,0 +1,63 @@
+.ficha {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: var(--esp-32) var(--esp-16);
+}
+
+.ficha__volver {
+  display: inline-block;
+  margin-bottom: var(--esp-24);
+  color: var(--color-primario);
+}
+
+.ficha__contenido {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--esp-32);
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ficha__imagen {
+  width: 100%;
+  height: auto;
+}
+
+.ficha__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-8);
+}
+
+.ficha__marca {
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.ficha__nombre {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-2xl);
+  margin: 0;
+}
+
+.ficha__categoria {
+  color: var(--color-texto-suave);
+  font-size: var(--texto-sm);
+}
+
+.ficha__compra {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-16);
+  margin: var(--esp-16) 0;
+}
+
+.ficha__descripcion {
+  color: var(--color-texto);
+}
+
+.ficha__error {
+  color: var(--color-error);
+}
