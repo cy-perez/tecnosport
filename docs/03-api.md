@@ -62,6 +62,22 @@ POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 ```
 
+### Filtros, orden y paginación de `GET /api/v1/productos`
+
+| Parámetro | Qué hace |
+|---|---|
+| `categoria` | slug de la categoría |
+| `marca` | id de la marca |
+| `linea` | `ROPA_Y_CALZADO`, `BOLSOS` o `CELULARES` |
+| `precioMin`, `precioMax` | rango sobre el precio "desde" del producto (el menor precio entre sus variantes activas, el precio vive en la variante) |
+| `texto` | búsqueda libre por nombre, por similitud (`pg_trgm`), no exige substring exacto |
+| `orden` | `RELEVANCIA` (predeterminado; sin `texto` cae a `MAS_RECIENTES`), `PRECIO_ASC`, `PRECIO_DESC`, `MAS_RECIENTES` |
+| `cursor` | opaco — viene de `cursorSiguiente` de la página anterior, nunca se construye a mano |
+| `tamano` | entero entre 1 y 60, 24 por defecto |
+
+La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
+`cursorSiguiente` es `null` cuando no hay más páginas.
+
 El set de rotación viaja dentro de la ficha del producto, ya ordenado y con las
 URL absolutas:
 

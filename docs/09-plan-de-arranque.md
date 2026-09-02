@@ -90,9 +90,18 @@ Al final presentation con los endpoints de docs/03-api.md y springdoc.
 Un commit por capa. Para después de domain y muéstrame el resultado.
 ```
 
+**Backend cerrado** (2026-09-02): `domain` (`ec73c94`), `application`
+(`ac68640`), `infrastructure` (`ab747b8`), `presentation` (`22f199d`).
+`gradlew.bat build` pasa completo (Testcontainers incluido) y `bootRun` sirve
+`GET /api/v1/productos` y `GET /api/v1/productos/{slug}` contra PostgreSQL
+real con datos de siembra (`docs/adr/0009`, `docs/adr/0010`). `GET
+/api/v1/categorias` y `GET /api/v1/marcas` quedaron fuera a propósito: no
+tienen caso de uso todavía.
+
 Luego la vitrina en Angular: rejilla, filtros, ficha, galería y selector de
 variante, con TanStack Query y los componentes de `shared/`. El visor 360 todavía
-no.
+no. **Fase 1 no cierra del todo hasta que exista esto** — el backend de solo
+lectura no es, por sí solo, la fase completa.
 
 ## Fase 2. Carrito e inventario
 

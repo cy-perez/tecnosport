@@ -18,7 +18,12 @@ Tres niveles, porque las tres líneas del catálogo se comportan distinto:
 - **Producto** — lo que el cliente reconoce: "Camiseta running Dry-Fit",
   "iPhone 15". Nombre, descripción, marca, categoría, imágenes.
 - **Variante** — lo que se compra y lo que tiene existencia y SKU propio:
-  "Camiseta running Dry-Fit, azul, talla M". Es la unidad de inventario.
+  "Camiseta running Dry-Fit, azul, talla M". Es la unidad de inventario. El
+  SKU es único en todo el catálogo, no solo dentro de su producto — se
+  aprovechó la implementación de Fase 1 para dejarlo como `UNIQUE` de base
+  de datos, porque el dominio, al construir un `Producto`, no tiene forma de
+  ver el resto del catálogo y por eso solo puede evitar el duplicado dentro
+  de sí mismo.
 - **Unidad serializada** — solo celulares. Un equipo físico con IMEI.
 
 Un producto tiene N variantes. Una variante tiene existencia numérica; si es de
@@ -182,4 +187,8 @@ lee el catálogo actual para reconstruir su total.
 - `creado_en` y `actualizado_en` en `timestamptz`, siempre UTC.
 - Borrado lógico solo donde el negocio lo pida (`producto.estado`), no como norma.
 - Índices explícitos y justificados en la migración, con un comentario del porqué.
-- Búsqueda de texto con `pg_trgm` o `tsvector`, nunca `LIKE '%...%'`.
+- Búsqueda de texto con `pg_trgm` o `tsvector`, nunca `LIKE '%...%'`. El
+  catálogo (Fase 1) usa `pg_trgm`: `similarity()` sobre un índice GIN de
+  `lower(nombre)`, menos piezas que mantener que un `tsvector` generado. Un
+  buscador con más volumen o que necesite pesar campos puede justificar
+  cambiar a `tsvector` más adelante; no hace falta las dos a la vez.

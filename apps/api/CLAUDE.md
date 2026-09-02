@@ -60,3 +60,53 @@ infraestructura, falta un caso de uso.
 - `bootstrap`: ArchUnit y las pruebas de extremo a extremo.
 
 Detalle en `docs/06-testing.md`.
+
+## Notas de Spring Boot 4.1 / Testcontainers 2.x
+
+Versiones muy recientes. Esto ya costó varias vueltas de diagnóstico en Fase 1
+(`infrastructure` y `presentation`) — que quede escrito para no repetirlo.
+Antes de agregar una dependencia nueva en este backend, asume que su versión
+"estable" puede no conocer Boot 4.1 todavía y verifica contra el POM real en
+`~/.gradle/caches` o Maven Central, no de memoria (regla dura #9).
+
+- **`spring-boot-autoconfigure` se partió en módulos por función.** Tener
+  `flyway-database-postgresql` en el classpath ya no basta: hace falta
+  `spring-boot-starter-flyway` explícito, o Flyway nunca migra y Hibernate
+  falla validando contra un esquema vacío, en silencio (sin ningún log de
+  Flyway).
+- **`@EnableJpaRepositories` y `@EntityScan` no siguen `scanBasePackages`.**
+  Cada uno por defecto solo mira el paquete de la clase
+  `@SpringBootApplication` (`co.tecnosport.api.bootstrap`), nunca
+  `infrastructure`. Se declaran aparte, en una `@Configuration` que vive en
+  el módulo dueño de las entidades (`infrastructure/ConfiguracionJpa.java`),
+  no en `bootstrap` — así `bootstrap` no necesita saber que existe JPA.
+  `@EntityScan` además cambió de paquete:
+  `org.springframework.boot.persistence.autoconfigure`.
+- **`application` es framework-free a propósito** (sin `@Component` en sus
+  casos de uso), así que alguien tiene que registrar cada caso de uso como
+  bean. Eso es trabajo de `bootstrap` (`bootstrap/.../ConfiguracionCatalogo.java`
+  es el ejemplo): una `@Configuration` con un `@Bean` por caso de uso,
+  inyectando el puerto que ya resolvió el `@ComponentScan`.
+- **`@WebMvcTest` se movió** a
+  `org.springframework.boot.webmvc.test.autoconfigure`.
+- **`HttpStatus.UNPROCESSABLE_ENTITY` quedó obsoleto**: usar
+  `UNPROCESSABLE_CONTENT` (IANA renombró el estado 422 a "Unprocessable
+  Content"). Lo mismo aplica al método equivalente en `StatusResultMatchers`
+  de las pruebas (`isUnprocessableContent()`).
+- **Falta el flag `-parameters` de javac por defecto en Gradle.** Sin él,
+  Spring MVC no resuelve el nombre de un `@PathVariable`/`@RequestParam` por
+  reflexión salvo que se anote explícito (`@PathVariable("slug")`). Ya está
+  puesto en el `build.gradle.kts` raíz, para todos los módulos — no hace
+  falta repetirlo ni anotar cada parámetro a mano.
+- **Testcontainers 2.x renombró los artefactos de Gradle** con el prefijo
+  `testcontainers-` (`org.testcontainers:testcontainers-postgresql`, no
+  `org.testcontainers:postgresql`; igual con `testcontainers-junit-jupiter`)
+  y movió `PostgreSQLContainer` a `org.testcontainers.postgresql`, sin
+  parámetro de tipo genérico.
+- **El BOM de `spring-boot-dependencies` importa `testcontainers-bom` de
+  forma anidada** y el plugin `io.spring.dependency-management` no sigue esa
+  cadena. Se importa aparte en el `build.gradle.kts` raíz
+  (`mavenBom("org.testcontainers:testcontainers-bom:2.0.5")`).
+- **`springdoc-openapi-starter-webmvc-ui:2.8.6`** (la última en Maven
+  Central; no hay todavía una línea propia para Boot 4.1) sí funciona:
+  `/api/docs` y `/api/openapi.json` responden bien contra `bootRun` real.
