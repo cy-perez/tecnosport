@@ -100,6 +100,34 @@ class RepositorioProductosJpaTest {
   }
 
   @Test
+  void buscarPorSlugExcluyeVariantesInactivas() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t7", "CELULARES");
+    ProductoJpaEntity producto =
+        producto("Celular con variante de baja", "celular-t7", "PUBLICADO", marca, categoria);
+    variante(producto, "SKU-T7-ACTIVA", "1000000");
+    variantes.save(
+        new VarianteJpaEntity(
+            UUID.randomUUID(),
+            producto.getId(),
+            "SKU-T7-INACTIVA",
+            new BigDecimal("1000000"),
+            new BigDecimal("0.19"),
+            0,
+            null,
+            "INACTIVA",
+            Instant.now()));
+    imagenPrincipal(producto);
+
+    Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("celular-t7"));
+
+    assertThat(encontrado).isPresent();
+    assertThat(encontrado.orElseThrow().variantes())
+        .extracting(v -> v.sku().valor())
+        .containsExactly("SKU-T7-ACTIVA");
+  }
+
+  @Test
   void buscarPorSlugDevuelveUnProductoEnBorrador() {
     MarcaJpaEntity marca = marca("TecnoSport");
     CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t2", "BOLSOS");

@@ -90,6 +90,10 @@ public class SembradorCatalogo implements ApplicationRunner {
     AtributoJpaEntity almacenamiento =
         guardarAtributo("Almacenamiento", "TEXTO", List.of("64GB", "128GB", "256GB"), ahora);
     AtributoJpaEntity ram = guardarAtributo("RAM", "TEXTO", List.of("4GB", "6GB", "8GB"), ahora);
+    // "12" meses es un valor de siembra de desarrollo, no una política de garantía real —
+    // docs/02-modelo-datos.md exige el atributo, pero el valor lo define el negocio cuando exista
+    // un panel para cargarlo (Fase 4). Mismo criterio que los precios y las fotos de picsum.photos.
+    AtributoJpaEntity garantia = guardarAtributo("Garantía", "NUMERO", List.of(), ahora);
 
     ProductoJpaEntity camiseta =
         guardarProductoPublicado(
@@ -180,7 +184,8 @@ public class SembradorCatalogo implements ApplicationRunner {
         List.of(
             valor(almacenamiento, "128GB", null),
             valor(ram, "8GB", null),
-            valor(color, "Negro", "#111111")));
+            valor(color, "Negro", "#111111"),
+            valor(garantia, "12", null)));
     guardarVariante(
         celular,
         "TS-CEL-AUR-256",
@@ -191,12 +196,18 @@ public class SembradorCatalogo implements ApplicationRunner {
         List.of(
             valor(almacenamiento, "256GB", null),
             valor(ram, "8GB", null),
-            valor(color, "Azul marino", "#1E3A8A")));
+            valor(color, "Azul marino", "#1E3A8A"),
+            valor(garantia, "12", null)));
 
     guardarImagenPrincipal(camiseta, ahora);
     guardarImagenPrincipal(tenis, ahora);
     guardarImagenPrincipal(morral, ahora);
     guardarImagenPrincipal(celular, ahora);
+
+    guardarGaleria(camiseta, ahora);
+    guardarGaleria(tenis, ahora);
+    guardarGaleria(morral, ahora);
+    guardarGaleria(celular, ahora);
   }
 
   private MarcaJpaEntity guardarMarca(String nombre, Instant ahora) {
@@ -292,5 +303,29 @@ public class SembradorCatalogo implements ApplicationRunner {
             producto.getNombre(),
             producto.getNombre(),
             ahora));
+  }
+
+  private void guardarGaleria(ProductoJpaEntity producto, Instant ahora) {
+    for (int orden = 0; orden < 2; orden++) {
+      String url =
+          "https://picsum.photos/seed/" + producto.getSlug() + "-galeria-" + orden + "/800/600";
+      imagenes.save(
+          new ImagenProductoJpaEntity(
+              GeneradorIdentificador.nuevo(),
+              producto.getId(),
+              null,
+              null,
+              "GALERIA",
+              orden,
+              url,
+              url,
+              800,
+              600,
+              120_000,
+              "seed-" + producto.getSlug() + "-galeria-" + orden,
+              producto.getNombre(),
+              producto.getNombre(),
+              ahora));
+    }
   }
 }

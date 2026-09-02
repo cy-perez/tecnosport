@@ -174,6 +174,9 @@ public class MapeadorCatalogo {
 
     List<Variante> variantes =
         variantesJpa.stream()
+            // La ficha pública no expone variantes dadas de baja: mismo principio que ya aplica a
+            // Producto.estado == PUBLICADO, el servidor no expone lo que no debe.
+            .filter(v -> "ACTIVA".equals(v.getEstado()))
             .map(
                 v ->
                     aVariante(
