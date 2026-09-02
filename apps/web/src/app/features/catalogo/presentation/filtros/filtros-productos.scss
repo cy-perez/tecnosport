@@ -1,0 +1,9 @@
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  align-items: end;
+  gap: var(--esp-16);
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 0 var(--esp-16) var(--esp-24);
+}

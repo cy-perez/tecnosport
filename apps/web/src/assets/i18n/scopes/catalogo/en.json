@@ -5,5 +5,27 @@
   "error": "We couldn't load the catalog. Please try again.",
   "disponible": "In stock",
   "agotado": "Out of stock",
-  "precio_desde": "From"
+  "precio_desde": "From",
+  "filtros": {
+    "linea_label": "Category group",
+    "categoria": "Category",
+    "marca": "Brand",
+    "precio_min": "Min price",
+    "precio_max": "Max price",
+    "texto": "Search",
+    "orden_label": "Sort by",
+    "todas": "All",
+    "limpiar": "Clear filters",
+    "linea": {
+      "ropa_y_calzado": "Apparel and footwear",
+      "bolsos": "Bags",
+      "celulares": "Phones"
+    },
+    "orden": {
+      "relevancia": "Relevance",
+      "precio_asc": "Price: low to high",
+      "precio_desc": "Price: high to low",
+      "mas_recientes": "Newest"
+    }
+  }
 }

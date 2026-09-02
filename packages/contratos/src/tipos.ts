@@ -52,6 +52,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/marcas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -122,6 +154,14 @@ export interface components {
             /** Format: int32 */
             existencia?: number;
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
+        };
+        ResultadoPaginadoRespuestaMarcaRespuesta: {
+            items?: components["schemas"]["MarcaRespuesta"][];
+            cursorSiguiente?: string;
+        };
+        ResultadoPaginadoRespuestaCategoriaRespuesta: {
+            items?: components["schemas"]["CategoriaRespuesta"][];
+            cursorSiguiente?: string;
         };
     };
     responses: never;
@@ -200,6 +240,46 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoRespuesta"];
+                };
+            };
+        };
+    };
+    listar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
                 };
             };
         };

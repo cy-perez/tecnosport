@@ -24,11 +24,11 @@ export function aProducto(dto: ProductoDto): Producto {
   };
 }
 
-function aMarca(dto?: MarcaDto): Marca {
+export function aMarca(dto?: MarcaDto): Marca {
   return { id: dto?.id ?? '', nombre: dto?.nombre ?? '' };
 }
 
-function aCategoria(dto?: CategoriaDto): Categoria {
+export function aCategoria(dto?: CategoriaDto): Categoria {
   return { nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
 }
 

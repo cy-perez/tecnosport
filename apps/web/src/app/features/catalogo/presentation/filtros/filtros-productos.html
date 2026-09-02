@@ -1,0 +1,57 @@
+<form class="filtros" [formGroup]="form" (submit)="$event.preventDefault()">
+  <ts-select
+    idCampo="filtro-linea"
+    [label]="'catalogo.filtros.linea_label' | transloco"
+    [placeholder]="'catalogo.filtros.todas' | transloco"
+    [opciones]="opcionesLinea()"
+    formControlName="linea"
+  />
+
+  <ts-select
+    idCampo="filtro-categoria"
+    [label]="'catalogo.filtros.categoria' | transloco"
+    [placeholder]="'catalogo.filtros.todas' | transloco"
+    [opciones]="opcionesCategoria()"
+    formControlName="categoria"
+  />
+
+  <ts-select
+    idCampo="filtro-marca"
+    [label]="'catalogo.filtros.marca' | transloco"
+    [placeholder]="'catalogo.filtros.todas' | transloco"
+    [opciones]="opcionesMarca()"
+    formControlName="marca"
+  />
+
+  <ts-campo
+    idCampo="filtro-precio-min"
+    [label]="'catalogo.filtros.precio_min' | transloco"
+    tipo="number"
+    formControlName="precioMin"
+  />
+
+  <ts-campo
+    idCampo="filtro-precio-max"
+    [label]="'catalogo.filtros.precio_max' | transloco"
+    tipo="number"
+    formControlName="precioMax"
+  />
+
+  <ts-campo
+    idCampo="filtro-texto"
+    [label]="'catalogo.filtros.texto' | transloco"
+    tipo="search"
+    formControlName="texto"
+  />
+
+  <ts-select
+    idCampo="filtro-orden"
+    [label]="'catalogo.filtros.orden_label' | transloco"
+    [opciones]="opcionesOrden()"
+    formControlName="orden"
+  />
+
+  <ts-boton variante="texto" tipo="button" (click)="limpiar()">
+    {{ 'catalogo.filtros.limpiar' | transloco }}
+  </ts-boton>
+</form>

@@ -5,5 +5,27 @@
   "error": "No se pudo cargar el catálogo. Intenta de nuevo.",
   "disponible": "Disponible",
   "agotado": "Agotado",
-  "precio_desde": "Desde"
+  "precio_desde": "Desde",
+  "filtros": {
+    "linea_label": "Línea",
+    "categoria": "Categoría",
+    "marca": "Marca",
+    "precio_min": "Precio mínimo",
+    "precio_max": "Precio máximo",
+    "texto": "Buscar",
+    "orden_label": "Ordenar por",
+    "todas": "Todas",
+    "limpiar": "Limpiar filtros",
+    "linea": {
+      "ropa_y_calzado": "Ropa y calzado",
+      "bolsos": "Bolsos",
+      "celulares": "Celulares"
+    },
+    "orden": {
+      "relevancia": "Relevancia",
+      "precio_asc": "Precio: menor a mayor",
+      "precio_desc": "Precio: mayor a menor",
+      "mas_recientes": "Más recientes"
+    }
+  }
 }

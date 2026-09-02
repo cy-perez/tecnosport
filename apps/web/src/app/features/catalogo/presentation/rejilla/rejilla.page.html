@@ -1,6 +1,8 @@
 <section class="rejilla">
   <h1 class="rejilla__titulo">{{ 'catalogo.titulo' | transloco }}</h1>
 
+  <app-filtros-productos />
+
   @if (consulta.isPending()) {
     <div class="rejilla__grid">
       @for (marcador of marcadoresDeCarga; track marcador) {
