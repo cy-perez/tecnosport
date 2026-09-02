@@ -1,0 +1,38 @@
+<header class="encabezado">
+  <span class="logo-par">
+    <img
+      class="logo-marca logo-pos"
+      src="assets/marca/logo/logo-horizontal.svg"
+      width="160"
+      height="34"
+      alt="Tecno Sport"
+    />
+    <img
+      class="logo-marca logo-neg"
+      src="assets/marca/logo/logo-mono-negativo.svg"
+      width="160"
+      height="34"
+      alt="Tecno Sport"
+    />
+  </span>
+
+  <div class="encabezado__controles">
+    <label class="encabezado__control">
+      <span>{{ 'idioma.etiqueta' | transloco }}</span>
+      <select [value]="idiomaActual()" (change)="cambiarIdioma($any($event.target).value)">
+        @for (idioma of idiomas; track idioma) {
+          <option [value]="idioma">{{ idioma.toUpperCase() }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="encabezado__control">
+      <span>{{ 'tema.etiqueta' | transloco }}</span>
+      <select [value]="temaElegido()" (change)="cambiarTema($any($event.target).value)">
+        <option value="claro">{{ 'tema.claro' | transloco }}</option>
+        <option value="oscuro">{{ 'tema.oscuro' | transloco }}</option>
+        <option value="sistema">{{ 'tema.sistema' | transloco }}</option>
+      </select>
+    </label>
+  </div>
+</header>

@@ -1,0 +1,6 @@
+<span class="ts-precio">
+  @if (desde()) {
+    <span class="ts-precio__prefijo">{{ 'catalogo.precio_desde' | transloco }}</span>
+  }
+  <span class="ts-precio__valor">{{ formateado() }}</span>
+</span>

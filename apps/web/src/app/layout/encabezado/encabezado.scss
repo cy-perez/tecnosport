@@ -1,0 +1,40 @@
+// El kit no trae el intercambio positivo/negativo del logo: la guía de
+// packages/marca/index.html lo resuelve con estas mismas dos reglas, pero
+// dentro de un <style> de la guía, no en tokens.css.
+.logo-neg {
+  display: none;
+}
+
+:host-context([data-tema='oscuro']) .logo-pos {
+  display: none;
+}
+
+:host-context([data-tema='oscuro']) .logo-neg {
+  display: block;
+}
+
+.logo-marca {
+  display: block;
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-16);
+  padding: var(--esp-16) var(--esp-24);
+  border-bottom: 1px solid var(--color-borde);
+  background: var(--color-superficie);
+}
+
+.encabezado__controles {
+  display: flex;
+  gap: var(--esp-16);
+}
+
+.encabezado__control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  font-size: var(--texto-sm);
+}

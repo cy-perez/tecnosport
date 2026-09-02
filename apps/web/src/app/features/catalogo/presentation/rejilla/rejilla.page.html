@@ -1,0 +1,31 @@
+<section class="rejilla">
+  <h1 class="rejilla__titulo">{{ 'catalogo.titulo' | transloco }}</h1>
+
+  @if (consulta.isPending()) {
+    <div class="rejilla__grid">
+      @for (marcador of marcadoresDeCarga; track marcador) {
+        <ts-esqueleto />
+      }
+    </div>
+  } @else if (consulta.isError()) {
+    <p class="rejilla__error" role="alert">{{ 'catalogo.error' | transloco }}</p>
+  } @else {
+    <div class="rejilla__grid">
+      @for (producto of productos(); track producto.slug) {
+        <ts-tarjeta-producto [producto]="producto" />
+      }
+    </div>
+
+    @if (consulta.hasNextPage()) {
+      <div class="rejilla__cargar-mas">
+        <ts-boton
+          (click)="consulta.fetchNextPage()"
+          [cargando]="consulta.isFetchingNextPage()"
+          [etiquetaCargando]="'catalogo.cargando' | transloco"
+        >
+          {{ 'catalogo.cargar_mas' | transloco }}
+        </ts-boton>
+      </div>
+    }
+  }
+</section>

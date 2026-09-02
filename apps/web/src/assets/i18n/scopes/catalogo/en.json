@@ -1,0 +1,9 @@
+{
+  "titulo": "Catalog",
+  "cargando": "Loading…",
+  "cargar_mas": "Load more",
+  "error": "We couldn't load the catalog. Please try again.",
+  "disponible": "In stock",
+  "agotado": "Out of stock",
+  "precio_desde": "From"
+}

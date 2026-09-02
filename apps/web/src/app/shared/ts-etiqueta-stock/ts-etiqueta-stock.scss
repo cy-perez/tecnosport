@@ -1,0 +1,12 @@
+.ts-etiqueta-stock {
+  display: inline-block;
+  padding: var(--esp-4) var(--esp-8);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  color: var(--color-exito);
+  background: var(--color-superficie-alt);
+}
+
+.ts-etiqueta-stock--agotado {
+  color: var(--color-texto-suave);
+}

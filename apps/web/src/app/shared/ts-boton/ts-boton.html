@@ -1,0 +1,12 @@
+<button
+  class="ts-boton chaflan ts-boton--{{ variante() }}"
+  [type]="tipo()"
+  [disabled]="deshabilitado() || cargando()"
+  [attr.aria-busy]="cargando() ? 'true' : null"
+>
+  @if (cargando() && etiquetaCargando()) {
+    {{ etiquetaCargando() }}
+  } @else {
+    <ng-content />
+  }
+</button>

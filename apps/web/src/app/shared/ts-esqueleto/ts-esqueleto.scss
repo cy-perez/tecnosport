@@ -1,0 +1,23 @@
+.ts-esqueleto {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(90deg, var(--color-superficie-alt) 25%, var(--color-borde) 50%, var(--color-superficie-alt) 75%);
+  background-size: 200% 100%;
+  animation: ts-esqueleto-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes ts-esqueleto-brillo {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-esqueleto {
+    animation: none;
+    background: var(--color-superficie-alt);
+  }
+}

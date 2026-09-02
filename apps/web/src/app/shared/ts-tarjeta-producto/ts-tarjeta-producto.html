@@ -1,0 +1,21 @@
+<article class="ts-tarjeta-producto chaflan">
+  @if (producto().imagenPrincipal; as imagen) {
+    <img
+      class="ts-tarjeta-producto__imagen"
+      [ngSrc]="imagen.url"
+      [width]="imagen.ancho"
+      [height]="imagen.alto"
+      [alt]="alt()"
+    />
+  }
+  <div class="ts-tarjeta-producto__cuerpo">
+    <p class="ts-tarjeta-producto__marca">{{ producto().marca.nombre }}</p>
+    <h3 class="ts-tarjeta-producto__nombre">{{ producto().nombre }}</h3>
+    <div class="ts-tarjeta-producto__pie">
+      @if (precio(); as precioValor) {
+        <ts-precio [valor]="precioValor.valor" [moneda]="precioValor.moneda" [desde]="true" />
+      }
+      <ts-etiqueta-stock [disponible]="disponible()" />
+    </div>
+  </div>
+</article>

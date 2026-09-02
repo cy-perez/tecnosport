@@ -1,0 +1,9 @@
+{
+  "titulo": "Catálogo",
+  "cargando": "Cargando…",
+  "cargar_mas": "Cargar más",
+  "error": "No se pudo cargar el catálogo. Intenta de nuevo.",
+  "disponible": "Disponible",
+  "agotado": "Agotado",
+  "precio_desde": "Desde"
+}

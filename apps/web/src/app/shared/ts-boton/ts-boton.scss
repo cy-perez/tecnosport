@@ -1,0 +1,68 @@
+.ts-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-8);
+  min-height: 44px;
+  padding: var(--esp-12) var(--esp-24);
+  border: none;
+  font-family: var(--fuente-texto);
+  font-weight: var(--peso-medio);
+  font-size: var(--texto-base);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    background: var(--color-deshabilitado);
+    color: var(--color-sobre-deshabilitado);
+    border-color: var(--color-deshabilitado);
+    cursor: not-allowed;
+  }
+}
+
+.ts-boton--primario {
+  background: var(--color-primario);
+  color: var(--color-sobre-primario);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primario-hover);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-primario-pressed);
+  }
+}
+
+.ts-boton--secundario {
+  background: transparent;
+  color: var(--color-primario);
+  border: 1px solid var(--color-borde-control);
+
+  &:hover:not(:disabled) {
+    background: var(--color-superficie-alt);
+  }
+}
+
+.ts-boton--texto {
+  background: transparent;
+  color: var(--color-primario);
+  padding: var(--esp-8) var(--esp-12);
+  min-height: auto;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+}
+
+.ts-boton--peligro {
+  background: var(--color-error);
+  color: var(--color-sobre-primario);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+}

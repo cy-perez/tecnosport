@@ -29,7 +29,9 @@
     "@angular/ssr": "^22.1.6",
     "@jsverse/transloco": "^8.4.0",
     "@tanstack/angular-query-experimental": "^5.102.8",
+    "@tecnosport/contratos": "*",
     "express": "^5.1.0",
+    "openapi-fetch": "0.17.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -39,6 +41,8 @@
     "@angular/cli": "^22.1.6",
     "@angular/compiler-cli": "^22.1.0",
     "@eslint/js": "^10.0.1",
+    "@testing-library/angular": "19.4.2",
+    "@testing-library/dom": "^10.0.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "angular-eslint": "22.2.0",

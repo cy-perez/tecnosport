@@ -1,0 +1,3 @@
+<span class="ts-etiqueta-stock" [class.ts-etiqueta-stock--agotado]="!disponible()">
+  {{ (disponible() ? 'catalogo.disponible' : 'catalogo.agotado') | transloco }}
+</span>

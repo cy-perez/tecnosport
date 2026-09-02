@@ -1,0 +1,45 @@
+.ts-tarjeta-producto {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  overflow: hidden;
+}
+
+.ts-tarjeta-producto__imagen {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: var(--color-superficie-alt);
+}
+
+.ts-tarjeta-producto__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  padding: var(--esp-16);
+}
+
+.ts-tarjeta-producto__marca {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--color-texto-suave);
+  text-transform: uppercase;
+}
+
+.ts-tarjeta-producto__nombre {
+  margin: 0;
+  font-family: var(--fuente-texto);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
+  color: var(--color-texto);
+}
+
+.ts-tarjeta-producto__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-8);
+  margin-top: var(--esp-8);
+}
