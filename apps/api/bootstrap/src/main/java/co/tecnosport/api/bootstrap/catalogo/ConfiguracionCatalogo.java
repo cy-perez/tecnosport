@@ -1,6 +1,10 @@
 package co.tecnosport.api.bootstrap.catalogo;
 
 import co.tecnosport.api.application.catalogo.BuscarProductos;
+import co.tecnosport.api.application.catalogo.ListarCategorias;
+import co.tecnosport.api.application.catalogo.ListarMarcas;
+import co.tecnosport.api.application.catalogo.RepositorioCategorias;
+import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import org.springframework.context.annotation.Bean;
@@ -23,5 +27,15 @@ public class ConfiguracionCatalogo {
   @Bean
   public VerFichaDeProducto verFichaDeProducto(RepositorioProductos repositorioProductos) {
     return new VerFichaDeProducto(repositorioProductos);
+  }
+
+  @Bean
+  public ListarCategorias listarCategorias(RepositorioCategorias repositorioCategorias) {
+    return new ListarCategorias(repositorioCategorias);
+  }
+
+  @Bean
+  public ListarMarcas listarMarcas(RepositorioMarcas repositorioMarcas) {
+    return new ListarMarcas(repositorioMarcas);
   }
 }

@@ -53,11 +53,22 @@ public class MapeadorRespuestasCatalogo {
         resultado.items().stream().map(this::aRespuesta).toList(), resultado.cursorSiguiente());
   }
 
-  private MarcaRespuesta aRespuesta(Marca marca) {
+  /** Listas completas, no paginadas: {@code cursorSiguiente} siempre nulo. */
+  public ResultadoPaginadoRespuesta<MarcaRespuesta> aRespuestaDeMarcas(List<Marca> marcas) {
+    return new ResultadoPaginadoRespuesta<>(marcas.stream().map(this::aRespuesta).toList(), null);
+  }
+
+  public ResultadoPaginadoRespuesta<CategoriaRespuesta> aRespuestaDeCategorias(
+      List<Categoria> categorias) {
+    return new ResultadoPaginadoRespuesta<>(
+        categorias.stream().map(this::aRespuesta).toList(), null);
+  }
+
+  public MarcaRespuesta aRespuesta(Marca marca) {
     return new MarcaRespuesta(marca.id(), marca.nombre());
   }
 
-  private CategoriaRespuesta aRespuesta(Categoria categoria) {
+  public CategoriaRespuesta aRespuesta(Categoria categoria) {
     return new CategoriaRespuesta(
         categoria.nombre(), categoria.slug().valor(), categoria.linea().name());
   }

@@ -95,8 +95,8 @@ Un commit por capa. Para después de domain y muéstrame el resultado.
 `gradlew.bat build` pasa completo (Testcontainers incluido) y `bootRun` sirve
 `GET /api/v1/productos` y `GET /api/v1/productos/{slug}` contra PostgreSQL
 real con datos de siembra (`docs/adr/0009`, `docs/adr/0010`). `GET
-/api/v1/categorias` y `GET /api/v1/marcas` quedaron fuera a propósito: no
-tienen caso de uso todavía.
+/api/v1/categorias` y `GET /api/v1/marcas` se agregaron después, como caso de
+uso propio, para poblar los filtros de la vitrina.
 
 Luego la vitrina en Angular: rejilla, filtros, ficha, galería y selector de
 variante, con TanStack Query y los componentes de `shared/`. El visor 360 todavía
