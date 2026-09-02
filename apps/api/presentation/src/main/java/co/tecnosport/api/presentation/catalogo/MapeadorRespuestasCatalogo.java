@@ -96,6 +96,7 @@ public class MapeadorRespuestasCatalogo {
 
   private VarianteRespuesta aRespuesta(Variante variante) {
     return new VarianteRespuesta(
+        variante.id(),
         variante.sku().valor(),
         aRespuesta(variante.precio()),
         variante.existencia(),
