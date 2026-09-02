@@ -36,6 +36,12 @@ El `detail` nunca se muestra tal cual al usuario: es para el registro. Los error
 de validación devuelven 422 con `campos` poblado. Nunca se filtra una traza, un
 nombre de tabla ni un mensaje de PostgreSQL.
 
+## Salud
+
+`GET /api/v1/salud` responde `200` con el texto plano `OK`, sin envolver en
+JSON: es para probes de infraestructura (Cloud Run, balanceador), no para el
+frontend, así que no sigue la convención JSON del resto del contrato.
+
 ## Endpoints públicos
 
 ```

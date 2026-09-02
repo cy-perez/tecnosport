@@ -13,7 +13,7 @@ ejecutar("npm test --workspaces --if-present");
 ejecutar("npm run build --workspaces --if-present");
 
 if (existsSync("apps/api/gradlew.bat")) {
-  ejecutar("gradlew.bat build", { cwd: "apps/api" });
+  ejecutar(".\\gradlew.bat build", { cwd: "apps/api" });
 } else {
   console.log("\napps/api todavía no tiene esqueleto de Gradle: se omite.");
 }

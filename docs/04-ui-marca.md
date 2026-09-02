@@ -81,8 +81,12 @@ en el SCSS.
 ## Modo oscuro
 
 Atributo `data-tema="oscuro"` en `<html>`. Tres opciones para el usuario: claro,
-oscuro y seguir al sistema. Se persiste y se resuelve en el servidor durante el
-SSR para que no haya destello blanco al hidratar.
+oscuro y seguir al sistema. La preferencia se persiste en una cookie. Claro y
+oscuro explícitos se resuelven en el servidor durante el SSR. "Seguir al
+sistema" no se puede resolver en el servidor —no hay forma de saber la
+preferencia de `prefers-color-scheme` del visitante ahí—, así que se resuelve
+en un script inline antes del primer pintado, en el `<head>`, para que no haya
+destello.
 
 Decisión ya tomada en el kit: en oscuro las franjas grandes (hero, menú móvil,
 pie) no se vuelven ámbar, se quedan en grafito elevado. El ámbar manda en botones

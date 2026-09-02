@@ -22,10 +22,12 @@ Sitio: http://localhost:4200
 ```
 npm run dev --workspace=apps/web        servidor de desarrollo
 npm test --workspace=apps/web           Vitest
-npm run test:e2e --workspace=apps/web   Playwright
 npm run build --workspace=apps/web      build de producción con SSR
-npm run lint --workspace=apps/web
+npm run lint --workspace=apps/web       ESLint, incluye límites entre capas
 ```
+
+`test:e2e` (Playwright, ver `docs/06-testing.md`) todavía no está configurado.
+Se añade cuando haya recorridos reales que verificar.
 
 ## Estructura
 
