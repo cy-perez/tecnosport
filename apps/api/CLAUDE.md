@@ -110,3 +110,15 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
 - **`springdoc-openapi-starter-webmvc-ui:2.8.6`** (la última en Maven
   Central; no hay todavía una línea propia para Boot 4.1) sí funciona:
   `/api/docs` y `/api/openapi.json` responden bien contra `bootRun` real.
+- **Un método de repositorio con `@Lock` no envuelve su propia transacción.**
+  A diferencia de un `findBy...` normal, Spring Data no le da una
+  transacción implícita a una consulta con bloqueo pesimista — con razón:
+  un lock que se suelta apenas termina esa única consulta no serviría para
+  nada. Llamarlo fuera de una transacción explícita revienta en seco con
+  `jakarta.persistence.TransactionRequiredException: No active transaction`.
+  Encontrado en Fase 2 en `bootRun` real (no en las pruebas, que ya
+  envolvían todo en `TransactionTemplate`): `SembradorInventario` llamaba
+  `RepositorioInventario.buscarPorVarianteId` (con `@Lock`) a pelo. Quien
+  llame a un puerto con bloqueo pesimista —caso de uso o sembrador— tiene
+  que abrir la transacción él mismo, con `@Transactional` o
+  `TransactionTemplate`.
