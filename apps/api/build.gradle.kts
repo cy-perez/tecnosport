@@ -27,6 +27,11 @@ subprojects {
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.0")
+            // spring-boot-dependencies importa testcontainers-bom de forma anidada (import
+            // dentro de import) y el plugin de dependency-management no sigue esa cadena.
+            // Versión tomada del propio POM de spring-boot-dependencies:4.1.0
+            // (propiedad testcontainers.version), no inventada.
+            mavenBom("org.testcontainers:testcontainers-bom:2.0.5")
         }
     }
 
