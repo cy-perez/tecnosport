@@ -21,6 +21,7 @@ import java.util.List;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("local")
+@Order(1)
 public class SembradorCatalogo implements ApplicationRunner {
 
   private final MarcaJpaRepository marcas;
