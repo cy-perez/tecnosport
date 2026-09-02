@@ -24,6 +24,13 @@ subprojects {
         }
     }
 
+    // Sin esto, Spring MVC no puede resolver @PathVariable/@RequestParam por
+    // nombre de parámetro (javac no lo conserva por defecto) sin anotar cada
+    // uno explícitamente. Recomendación estándar de Spring Boot.
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.add("-parameters")
+    }
+
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
             mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.0")

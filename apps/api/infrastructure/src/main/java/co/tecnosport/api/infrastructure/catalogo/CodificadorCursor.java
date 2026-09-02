@@ -36,7 +36,10 @@ public final class CodificadorCursor {
 
   public record Decodificado(String claveOrden, UUID id) {}
 
-  public static final class CursorInvalidoException extends RuntimeException {
+  // Extiende IllegalArgumentException (no RuntimeException) a propósito:
+  // presentation no puede depender de infrastructure para capturarla por su
+  // nombre, pero sí puede capturar IllegalArgumentException genéricamente.
+  public static final class CursorInvalidoException extends IllegalArgumentException {
     public CursorInvalidoException() {
       super("Cursor de paginación inválido.");
     }

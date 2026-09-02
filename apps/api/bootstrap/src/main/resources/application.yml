@@ -15,3 +15,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+
+springdoc:
+  api-docs:
+    path: /api/openapi.json
+  swagger-ui:
+    path: /api/docs
