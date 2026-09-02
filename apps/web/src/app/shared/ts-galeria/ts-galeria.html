@@ -1,0 +1,34 @@
+@if (activa(); as imagen) {
+  <div class="ts-galeria">
+    <img
+      class="ts-galeria__principal"
+      [ngSrc]="imagen.url"
+      [width]="imagen.ancho"
+      [height]="imagen.alto"
+      [alt]="alt(imagen)"
+      priority
+    />
+
+    @if (imagenes().length > 1) {
+      <div class="ts-galeria__miniaturas">
+        @for (miniatura of imagenes(); track miniatura.url; let indice = $index) {
+          <button
+            type="button"
+            class="ts-galeria__miniatura"
+            [class.ts-galeria__miniatura--activa]="indice === indiceActivo()"
+            [attr.aria-pressed]="indice === indiceActivo() ? 'true' : 'false'"
+            [attr.aria-label]="alt(miniatura)"
+            (click)="elegir(indice)"
+          >
+            <img
+              [ngSrc]="miniatura.url"
+              [width]="miniatura.ancho"
+              [height]="miniatura.alto"
+              alt=""
+            />
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

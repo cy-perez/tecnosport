@@ -13,6 +13,8 @@ export class TsBoton {
   readonly tipo = input<'button' | 'submit'>('button');
   readonly cargando = input(false);
   readonly deshabilitado = input(false);
+  /** Para usarlo como botón de alternancia (p. ej. una opción de un selector de variante). */
+  readonly presionado = input<boolean | null>(null);
   /** Reemplaza el contenido proyectado mientras carga. Traducido por quien llama. */
   readonly etiquetaCargando = input<string | null>(null);
 }

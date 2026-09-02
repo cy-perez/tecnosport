@@ -3,6 +3,7 @@
   [type]="tipo()"
   [disabled]="deshabilitado() || cargando()"
   [attr.aria-busy]="cargando() ? 'true' : null"
+  [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
 >
   @if (cargando() && etiquetaCargando()) {
     {{ etiquetaCargando() }}

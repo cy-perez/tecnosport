@@ -1,0 +1,28 @@
+@for (eje of ejes(); track eje.nombre) {
+  <fieldset class="ts-selector-variante__eje">
+    <legend class="ts-selector-variante__nombre">{{ eje.nombre }}</legend>
+    <div class="ts-selector-variante__opciones">
+      @for (opcion of eje.opciones; track opcion.valor) {
+        @if (esColor(opcion)) {
+          <button
+            type="button"
+            class="ts-selector-variante__swatch"
+            [class.ts-selector-variante__swatch--activa]="estaSeleccionada(eje.nombre, opcion)"
+            [style.background-color]="opcion.colorHex"
+            [attr.aria-pressed]="estaSeleccionada(eje.nombre, opcion) ? 'true' : 'false'"
+            [attr.aria-label]="opcion.valor"
+            (click)="elegir(eje.nombre, opcion)"
+          ></button>
+        } @else {
+          <ts-boton
+            [variante]="estaSeleccionada(eje.nombre, opcion) ? 'primario' : 'secundario'"
+            [presionado]="estaSeleccionada(eje.nombre, opcion)"
+            (click)="elegir(eje.nombre, opcion)"
+          >
+            {{ opcion.valor }}
+          </ts-boton>
+        }
+      }
+    </div>
+  </fieldset>
+}

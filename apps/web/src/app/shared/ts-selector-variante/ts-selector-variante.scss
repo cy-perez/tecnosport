@@ -1,0 +1,35 @@
+.ts-selector-variante__eje {
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--esp-16);
+}
+
+.ts-selector-variante__nombre {
+  padding: 0;
+  font-size: var(--texto-sm);
+  color: var(--color-texto-suave);
+  margin-bottom: var(--esp-8);
+}
+
+.ts-selector-variante__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-8);
+}
+
+.ts-selector-variante__swatch {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-borde-control);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+
+  &--activa {
+    border: 2px solid var(--color-primario);
+  }
+}

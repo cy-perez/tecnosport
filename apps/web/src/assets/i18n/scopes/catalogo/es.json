@@ -31,6 +31,7 @@
   "ficha": {
     "volver": "Volver al catálogo",
     "no_encontrado": "No encontramos este producto.",
-    "error": "No se pudo cargar el producto. Intenta de nuevo."
+    "error": "No se pudo cargar el producto. Intenta de nuevo.",
+    "combinacion_no_disponible": "Esta combinación no está disponible."
   }
 }

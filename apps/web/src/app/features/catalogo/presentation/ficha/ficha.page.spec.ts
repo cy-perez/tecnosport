@@ -1,7 +1,7 @@
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import { of } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
@@ -22,6 +22,33 @@ function productoDePrueba(): Producto {
     galeria: [],
     rotacion: null,
     variantes: [{ sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] }],
+  };
+}
+
+function productoConVariantes(): Producto {
+  return {
+    slug: 'camiseta',
+    nombre: 'Camiseta running Dry-Fit',
+    descripcion: 'Una camiseta transpirable.',
+    marca: { id: '1', nombre: 'TecnoSport' },
+    categoria: { nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
+    imagenPrincipal: null,
+    galeria: [],
+    rotacion: null,
+    variantes: [
+      {
+        sku: 'SKU-AZ',
+        precio: { valor: 89_900, moneda: 'COP' },
+        existencia: 5,
+        atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' }],
+      },
+      {
+        sku: 'SKU-NG',
+        precio: { valor: 99_900, moneda: 'COP' },
+        existencia: 3,
+        atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
+      },
+    ],
   };
 }
 
@@ -83,5 +110,21 @@ describe('FichaPage', () => {
       'textContent',
       'No se pudo cargar el producto. Intenta de nuevo.',
     );
+  });
+
+  it('elegir otra variante cambia el precio y la existencia mostrados', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConVariantes()),
+    };
+
+    await renderFicha(repositorio, 'camiseta');
+
+    expect(await screen.findByText(/89\.900/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Negro' }));
+
+    expect(await screen.findByText(/99\.900/)).toBeTruthy();
+    expect(screen.queryByText(/89\.900/)).toBeFalsy();
   });
 });
