@@ -98,10 +98,17 @@ real con datos de siembra (`docs/adr/0009`, `docs/adr/0010`). `GET
 /api/v1/categorias` y `GET /api/v1/marcas` se agregaron después, como caso de
 uso propio, para poblar los filtros de la vitrina.
 
-Luego la vitrina en Angular: rejilla, filtros, ficha, galería y selector de
-variante, con TanStack Query y los componentes de `shared/`. El visor 360 todavía
-no. **Fase 1 no cierra del todo hasta que exista esto** — el backend de solo
-lectura no es, por sí solo, la fase completa.
+**Vitrina cerrada** (2026-09-02): rejilla con paginación por cursor
+(`32d5a86`), filtros (`667c5cc`, con `GET /api/v1/categorias` y
+`GET /api/v1/marcas` en `b2043bd`), ficha de producto (`695fc14`), y galería
+más selector de variante (`34b7cee`, con la corrección de `fix (api/catalogo):
+excluir variantes inactivas`, `4b86c40`). El visor 360 todavía no — es la
+Fase 5, a propósito.
+
+**Fase 1 completa.** `/es/` y `/en/` navegan de la rejilla a la ficha de
+cada producto sembrado, con filtros, imagen de galería y selector de
+variante funcionando contra el backend real, verificado en SSR en los dos
+idiomas.
 
 ## Fase 2. Carrito e inventario
 
