@@ -59,6 +59,13 @@ src/styles.scss
 No se escribe ningún color ni medida literal: todo sale de las variables CSS.
 Detalle en `docs/04-ui-marca.md`.
 
+## Catálogo (Fase 1 — cerrada)
+
+`/es/productos` y `/en/productos` (rejilla con filtros y paginación por
+cursor) y `/es/productos/:slug` (ficha con galería y selector de variante)
+funcionan contra el backend real. Contenido todavía en un solo idioma —
+`docs/05-i18n.md` documenta el estado actual. Visor 360 pendiente, Fase 5.
+
 ## Cliente de la API
 
 Se genera desde el OpenAPI del backend con `npm run contratos` y queda en

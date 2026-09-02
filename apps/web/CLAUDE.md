@@ -48,10 +48,18 @@ implementación. ESLint con reglas de límites lo verifica.
   solo en la del hero y en el fotograma frontal de la ficha.
 - **SSR:** nada de `window`, `document`, `localStorage`, `navigator` ni sensores
   fuera de un guardia de plataforma. Las consultas de la primera pantalla se
-  prehidratan.
+  precargan en el `resolve` de la ruta, no dentro del componente — ver "Notas
+  de SSR con TanStack Query" más abajo y ADR-0011.
 - **Rutas:** `loadComponent` o `loadChildren` en todo. Nada eager salvo el
   layout. `/admin` y `captura360` en sus propios bundles.
-- **Formularios reactivos y tipados.** Los mensajes de error salen de Transloco.
+- **Estado de listas y filtros: en los query params de la URL, nunca en una
+  señal de componente.** Compartible, sobrevive un refresh, funciona con
+  "atrás" del navegador. Ver ADR-0011.
+- **Formularios reactivos y tipados.** Los mensajes de error salen de
+  Transloco. Un control de formulario propio en `shared/` (`ts-campo`,
+  `ts-select`) implementa `ControlValueAccessor` para que un `FormGroup` real
+  pueda bindearlo con `formControlName` — no un `[(ngModel)]` ni un
+  `@Input()`/`@Output()` de valor suelto.
 - **El modelo del front es del front.** El DTO generado se mapea a un modelo
   propio en `infrastructure`; los componentes no ven la forma de la respuesta HTTP.
 
@@ -66,6 +74,35 @@ se usan solo en `captura360` y siempre detrás de:
 4. **Un camino degradado cuando el permiso se niega o la API no existe.**
 
 Detalle en `docs/10-captura-360.md`.
+
+## Notas de SSR con TanStack Query
+
+Encontrado de forma empírica en Fase 1 (rejilla, filtros, ficha) — que quede
+escrito para no repetirlo. Detalle completo en ADR-0011.
+
+- **`injectQuery`/`injectInfiniteQuery` no son deterministas en SSR por sí
+  solos.** Se integran con `PendingTasks` de Angular (lo que le dice al SSR
+  "espera antes de serializar"), pero ese registro ocurre dentro de un
+  `effect()`, agendado async — no a tiempo del primer render. Sin precarga,
+  la misma página a veces sirve datos y a veces *esqueletos*, según qué tan
+  rápido responda el backend. Nunca fallar en seco: solo notarlo comparando
+  el HTML servido con `curl` en dos corridas.
+- **La corrección es precargar en el `resolve` de la ruta**, con
+  `queryClient.prefetchQuery`/`prefetchInfiniteQuery`, usando la *misma*
+  función de opciones (`queryKey`/`queryFn`/`staleTime`) que usa el
+  componente — nunca repetirla a mano en los dos lados. Ver
+  `application/buscar-productos.consulta.ts` como plantilla
+  (`opcionesBusqueda` compartida entre `usarBusquedaProductos` y
+  `precargarProductos`).
+- **`prefetchQuery`/`prefetchInfiniteQuery` están `@deprecated`** en favor de
+  `query()`/`infiniteQuery()`, pero se usan a propósito: son los únicos que
+  tragan errores (`.then(noop).catch(noop)`), así que un backend caído no
+  rompe la navegación — el componente igual reintenta y muestra su error.
+- **Un nombre de `input()` no puede ser `id`.** Angular no lo renombra en el
+  DOM: el elemento host del componente termina con el mismo `id` que el
+  control interno, dos elementos con el mismo id, y `getByLabelText`
+  (Testing Library) o cualquier `<label for>` apunta al host, no al control
+  real. `ts-campo`/`ts-select` usan `idCampo`.
 
 ## Pruebas
 

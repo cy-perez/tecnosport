@@ -78,6 +78,16 @@ GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
 `cursorSiguiente` es `null` cuando no hay más páginas.
 
+`GET /api/v1/categorias` y `GET /api/v1/marcas` no tienen parámetros —listas
+completas, sin paginar, porque son pocos registros— y devuelven la misma
+envoltura `{ "items": [...], "cursorSiguiente": null }` que el catálogo
+paginado, nunca un arreglo desnudo. Si el catálogo de categorías o marcas
+crece mucho, esto necesitará paginar igual que `/productos`.
+
+Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
+ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
+servidor no expone lo que dio de baja.
+
 El set de rotación viaja dentro de la ficha del producto, ya ordenado y con las
 URL absolutas:
 

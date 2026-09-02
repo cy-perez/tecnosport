@@ -35,13 +35,11 @@ jar empaquetado). Con él, `SembradorCatalogo` inserta un catálogo de ejemplo
 la primera vez que arranca contra una base vacía. El jar de producción nunca
 siembra nada; ver `docs/adr/0010-datos-de-siembra-por-perfil.md`.
 
-## Catálogo (Fase 1)
+## Catálogo (Fase 1 — cerrada)
 
-`GET /api/v1/productos` (filtro, orden, cursor, texto) y
-`GET /api/v1/productos/{slug}` ya funcionan contra PostgreSQL real. Contrato
-completo en `docs/03-api.md`. `GET /api/v1/categorias` y `GET /api/v1/marcas`
-todavía no tienen caso de uso — están en el contrato objetivo pero no en el
-alcance de Fase 1 (`docs/09-plan-de-arranque.md`).
+`GET /api/v1/productos` (filtro, orden, cursor, texto), `GET
+/api/v1/productos/{slug}`, `GET /api/v1/categorias` y `GET /api/v1/marcas`
+funcionan contra PostgreSQL real. Contrato completo en `docs/03-api.md`.
 
 ## Pruebas
 
