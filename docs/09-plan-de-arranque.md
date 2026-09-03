@@ -286,7 +286,25 @@ Sigue sin resolver quién regresa un pedido de `PAGO_FALLIDO` a
 `PAGO_PENDIENTE` para reintentar — `CrearIntentoDePago` todavía solo acepta
 pedidos ya en `PAGO_PENDIENTE`.
 
-Contraentrega y transferencia manual siguen sin construir.
+**Transferencia manual, lado cliente cerrado** (2026-09-03): la reserva de
+24 horas ya existía desde `CrearPedido` (Fase 3, primer commit de esta
+sección). Lo que faltaba era mostrar a dónde transferir: `POST
+/api/v1/pedidos` devuelve `datosTransferencia` (banco, tipo de cuenta,
+número, titular, y la referencia — el número legible del pedido, no una
+referencia aparte que inventar) cuando `metodoPago == TRANSFERENCIA_MANUAL`.
+Los datos de la cuenta salen de variables de entorno
+(`TRANSFERENCIA_BANCO`, etc., docs/07-infra-gcp.md), con placeholders que
+nunca sirven para transferir de verdad — dato de negocio real que no le
+tocaba inventar a la sesión.
+
+**Conciliar el comprobante queda sin construir a propósito.** Necesita el
+rol `ADMIN`, que este documento agrupa explícitamente con el resto de la
+vista de operación mínima (marcar contraentrega verificado, ver recaudo
+pendiente) antes de contraentrega, no antes — no se armó un atajo sin
+autenticación para adelantarlo. Cuando llegue esa vista, la exposición de
+`datosTransferencia` ya está lista, solo falta la acción de conciliar.
+
+Contraentrega sigue sin construir.
 
 **Contraentrega va en esta fase, pero al final y con su propio ciclo de
 revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
