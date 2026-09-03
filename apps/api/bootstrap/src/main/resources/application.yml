@@ -38,6 +38,16 @@ tecnosport:
     tipo-cuenta: ${TRANSFERENCIA_TIPO_CUENTA:ahorros}
     numero-cuenta: ${TRANSFERENCIA_NUMERO_CUENTA:000000000}
     titular: ${TRANSFERENCIA_TITULAR:TecnoSport SAS}
+  jwt:
+    # Placeholder de al menos 32 bytes (HS256 lo exige) — nunca un secreto real
+    # (regla dura #5). Producción lo sobrescribe desde Secret Manager.
+    secreto: ${JWT_SECRETO:placeholder_jwt_secreto_de_desarrollo_no_usar_en_produccion}
+    minutos-acceso: ${JWT_MINUTOS_ACCESO:15}
+    dias-refresco: ${JWT_DIAS_REFRESCO:30}
+  admin-semilla:
+    # Dato de negocio real, no inventado (regla dura #5): cambiar antes de desplegar a producción.
+    correo: ${ADMIN_CORREO:admin@tecnosport.co}
+    clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}
 
 springdoc:
   api-docs:

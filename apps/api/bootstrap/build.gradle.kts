@@ -16,6 +16,9 @@ dependencies {
     // TareaConciliacionWompi abre su propia transacción (TransactionTemplate), mismo motivo que
     // spring-boot-starter-web arriba: necesita el tipo en el classpath propio de bootstrap.
     implementation("org.springframework:spring-tx")
+    // ConfiguracionSeguridad arma el SecurityFilterChain (HttpSecurity), mismo motivo que
+    // spring-boot-starter-web arriba.
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 }
