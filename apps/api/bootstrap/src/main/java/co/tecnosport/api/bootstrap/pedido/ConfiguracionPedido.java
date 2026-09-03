@@ -3,11 +3,14 @@ package co.tecnosport.api.bootstrap.pedido;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.CrearPedido;
+import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -51,5 +54,17 @@ public class ConfiguracionPedido {
   public ConciliarTransferencia conciliarTransferencia(
       RepositorioPedidos repositorioPedidos, Reloj reloj) {
     return new ConciliarTransferencia(repositorioPedidos, reloj);
+  }
+
+  @Bean
+  public VerificarContraentrega verificarContraentrega(
+      RepositorioPedidos repositorioPedidos, Reloj reloj) {
+    return new VerificarContraentrega(repositorioPedidos, reloj);
+  }
+
+  @Bean
+  public DespacharPedido despacharPedido(
+      RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios, Reloj reloj) {
+    return new DespacharPedido(repositorioPedidos, repositorioEnvios, reloj);
   }
 }

@@ -1,17 +1,22 @@
 package co.tecnosport.api.presentation.pedido;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
+import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -28,6 +33,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -46,6 +52,7 @@ class AdminPedidosControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
+  @Autowired private RepositorioEnviosDobleDePrueba envios;
 
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -130,12 +137,72 @@ class AdminPedidosControladorTest {
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }
 
+  @Test
+  void verificarUnPedidoContraentregaLoPasaAEnPreparacion() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/verificar-contraentrega", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"motivo":"Verificado por WhatsApp"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("EN_PREPARACION"));
+  }
+
+  @Test
+  void despacharUnPedidoEnPreparacionCreaElEnvio() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/despacho", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("DESPACHADO"));
+
+    assertEquals(1, envios.guardados().size());
+    assertEquals("Servientrega", envios.guardados().get(0).transportadora());
+  }
+
+  @Test
+  void despacharUnPedidoSinVerificarDevuelve422() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/despacho", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
     @Bean
     RepositorioPedidosDobleDePrueba repositorioPedidos() {
       return new RepositorioPedidosDobleDePrueba();
+    }
+
+    @Bean
+    RepositorioEnviosDobleDePrueba repositorioEnvios() {
+      return new RepositorioEnviosDobleDePrueba();
     }
 
     @Bean
@@ -146,6 +213,17 @@ class AdminPedidosControladorTest {
     @Bean
     ConciliarTransferencia conciliarTransferencia(RepositorioPedidos repositorioPedidos) {
       return new ConciliarTransferencia(repositorioPedidos, Instant::now);
+    }
+
+    @Bean
+    VerificarContraentrega verificarContraentrega(RepositorioPedidos repositorioPedidos) {
+      return new VerificarContraentrega(repositorioPedidos, Instant::now);
+    }
+
+    @Bean
+    DespacharPedido despacharPedido(
+        RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios) {
+      return new DespacharPedido(repositorioPedidos, repositorioEnvios, Instant::now);
     }
 
     @Bean
