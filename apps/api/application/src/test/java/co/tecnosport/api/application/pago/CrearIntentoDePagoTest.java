@@ -48,7 +48,8 @@ class CrearIntentoDePagoTest {
         2,
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
-        "https://cdn.tecnosport.co/img.webp");
+        "https://cdn.tecnosport.co/img.webp",
+        UUID.randomUUID());
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago, int secuencial) {

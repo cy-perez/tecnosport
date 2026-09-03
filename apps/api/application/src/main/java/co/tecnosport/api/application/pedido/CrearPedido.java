@@ -14,6 +14,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -144,7 +145,8 @@ public final class CrearPedido {
         repositorioInventario
             .buscarPorVarianteId(lineaComando.varianteId())
             .orElseThrow(() -> new VarianteNoEncontradaException(lineaComando.varianteId()));
-    inventario.reservar(lineaComando.cantidad(), vigenciaReserva, ahora);
+    MovimientoInventario reserva =
+        inventario.reservar(lineaComando.cantidad(), vigenciaReserva, ahora);
     repositorioInventario.guardar(inventario);
 
     String imagenUrl = producto.imagenPrincipal().map(ImagenProducto::url).orElse(null);
@@ -156,7 +158,8 @@ public final class CrearPedido {
         lineaComando.cantidad(),
         variante.precio(),
         variante.tasaIva(),
-        imagenUrl);
+        imagenUrl,
+        reserva.id());
   }
 
   private Producto buscarProductoVendible(UUID varianteId) {
