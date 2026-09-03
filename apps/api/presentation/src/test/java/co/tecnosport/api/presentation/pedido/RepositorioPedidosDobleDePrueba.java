@@ -1,9 +1,13 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,5 +31,18 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
   public NumeroPedido siguienteNumero(int anio) {
     long secuencial = secuenciasPorAnio.merge(anio, 1L, Long::sum);
     return NumeroPedido.de(anio, secuencial);
+  }
+
+  @Override
+  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina) {
+    List<Pedido> todos = new ArrayList<>(pedidos.values());
+    todos.sort(Comparator.comparing(Pedido::creadoEn).reversed());
+    int desde = pagina * tamanoPagina;
+    List<Pedido> contenido =
+        desde >= todos.size()
+            ? List.of()
+            : todos.subList(desde, Math.min(desde + tamanoPagina, todos.size()));
+    int totalPaginas = (int) Math.ceil(todos.size() / (double) tamanoPagina);
+    return new PedidosPaginados(List.copyOf(contenido), pagina, totalPaginas, todos.size());
   }
 }

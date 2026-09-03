@@ -1,5 +1,6 @@
 package co.tecnosport.api.infrastructure.pedido;
 
+import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -19,6 +20,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -92,6 +97,24 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
     historial.deleteByPedidoId(pedido.id());
     historial.saveAll(
         pedido.historial().stream().map(h -> aEntidadHistorial(pedido.id(), h)).toList());
+  }
+
+  @Override
+  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina) {
+    Pageable pageable =
+        PageRequest.of(pagina, tamanoPagina, Sort.by(Sort.Direction.DESC, "creadoEn"));
+    Page<PedidoJpaEntity> paginaEntidades = pedidos.findAll(pageable);
+    List<Pedido> items =
+        paginaEntidades.getContent().stream()
+            .map(
+                entidad ->
+                    aPedido(
+                        entidad,
+                        lineas.findByPedidoId(entidad.getId()),
+                        historial.findByPedidoIdOrderByFechaAsc(entidad.getId())))
+            .toList();
+    return new PedidosPaginados(
+        items, pagina, paginaEntidades.getTotalPages(), paginaEntidades.getTotalElements());
   }
 
   @Override

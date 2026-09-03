@@ -31,4 +31,10 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   public NumeroPedido siguienteNumero(int anio) {
     throw new UnsupportedOperationException("No usado por CrearIntentoDePago.");
   }
+
+  @Override
+  public co.tecnosport.api.application.pedido.PedidosPaginados buscarTodosPaginado(
+      int pagina, int tamanoPagina) {
+    throw new UnsupportedOperationException("No usado por CrearIntentoDePago.");
+  }
 }
