@@ -223,7 +223,47 @@ real: dos pedidos consecutivos devolvieron `TS-2026-000001` y
 `TS-2026-000002`, y repetir la `Idempotency-Key` del primero no quemó un
 número nuevo.
 
-Contraentrega, transferencia manual y Wompi siguen sin construir.
+**Wompi cerrado, sin la conciliación programada** (2026-09-03): Web Checkout
+hospedado, no tokenización propia — decisión consciente para un solo
+desarrollador: Wompi resuelve por su cuenta PSE, el push de Nequi, el 3-D
+Secure de tarjeta y el crédito de Addi, a costa de que el cliente salga del
+sitio unos segundos durante el pago (esa página no es nuestra, no rompe la
+regla de "nada de píxel suelto"). Si el volumen lo justifica más adelante,
+migrar a tokenización con Wompi.js queda localizado a `WompiClient` y al
+puerto `PasarelaDePagos`.
+
+Agregado `Pago` en el dominio (referencia, método, estado, eventos
+recibidos), idempotente por `referencia` y por el `idEvento` de cada
+`EventoPago`. Caso de uso `CrearIntentoDePago`: valida que el pedido esté en
+`PAGO_PENDIENTE` y que su método de pago vaya por Wompi, numera la
+referencia por intento (`TS-2026-000123-1`, `-2`, ... para el reintento tras
+`PAGO_FALLIDO`), y pide a `PasarelaDePagos` la firma de integridad
+(`SHA256(referencia + montoEnCentavos + moneda + secreto)`, documentada por
+Wompi). `POST /api/v1/pagos/intentos` expone eso; el monto sale siempre de
+`Pedido.total()`, nunca del cliente.
+
+`POST /api/v1/pagos/webhook` (caso de uso `ProcesarEventoDePago`) verifica
+la firma del evento antes de aplicar nada — `WompiClient.verificarFirmaEvento`
+implementa el checksum documentado por Wompi (SHA256 de los valores de
+`signature.properties`, en orden, más el timestamp y el secreto de eventos).
+Wompi no manda un identificador de evento propio, así que el checksum hace
+de `idEvento` para la idempotencia: un reintento exacto del webhook produce
+el mismo checksum. Un evento aplicado transiciona el pedido
+(`PAGO_PENDIENTE → PAGADO`/`PAGO_FALLIDO`); el webhook siempre responde 200,
+incluso cuando el evento se descarta (firma inválida, referencia
+desconocida), para no entrar en el ciclo de reintentos de Wompi por algo que
+un reintento no puede arreglar. `VOIDED` (una transacción aprobada que luego
+se anula) queda fuera a propósito: anulaciones y reembolsos son un caso de
+negocio aparte, no contemplado en el grafo de `EstadoPago` de este alcance.
+
+Verificado con Testcontainers y `@WebMvcTest` en las cuatro capas, no
+todavía a mano contra `bootRun` + Wompi real (falta llaves de sandbox). Sin
+la conciliación programada (`consultarTransaccion`, para pagos que nunca
+recibieron webhook) y sin resolver quién regresa un pedido de
+`PAGO_FALLIDO` a `PAGO_PENDIENTE` para reintentar — `CrearIntentoDePago`
+todavía solo acepta pedidos ya en `PAGO_PENDIENTE`.
+
+Contraentrega y transferencia manual siguen sin construir.
 
 **Contraentrega va en esta fase, pero al final y con su propio ciclo de
 revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
