@@ -316,11 +316,27 @@ no tiene dónde vivir:** marcar un contraentrega como verificado antes de
 despachar, conciliar el comprobante de una transferencia, y ver el recaudo
 pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
 
-- Autenticación con rol `ADMIN` (login y JWT según `docs/08-seguridad-legal.md`,
-  sin registro de cliente ni cuenta opcional — eso es de la Fase 4).
-- Una vista de operación mínima, sin diseño de marca todavía: lista de pedidos
-  con su estado, acción para marcar verificado un contraentrega, acción para
-  conciliar una transferencia, y el recaudo pendiente a la vista.
+- **Autenticación con rol `ADMIN` cerrada** (2026-09-03): login, refresco con
+  rotación y detección de reutilización, cierre de sesión
+  (`docs/08-seguridad-legal.md`), sin registro de cliente ni cuenta opcional —
+  eso sigue siendo de la Fase 4. `Usuario` y `SesionRefresco` en el dominio
+  (agregados separados: cada eslabón de la rotación del refresco es su propia
+  fila, agrupada por `familiaId`). BCrypt costo 12, no Argon2id — evita agregar
+  Bouncy Castle como dependencia nueva, permitido explícitamente por el
+  documento de seguridad. JWT de acceso HS256 con el módulo JOSE de Spring
+  Security (`NimbusJwtEncoder`/`NimbusJwtDecoder`), sin librería de JWT de
+  terceros. `SembradorAdmin` crea el primer `ADMIN` desde `ADMIN_CORREO`/
+  `ADMIN_CLAVE` si no existe ninguno, nunca lo actualiza — rotar la clave de un
+  admin ya creado queda como mecanismo aparte, no construido. `/api/v1/admin/**`
+  ya exige el rol en `SecurityFilterChain`, listo para cuando existan rutas ahí.
+  Verificado a mano contra `bootRun` + PostgreSQL real (no solo con ArchUnit,
+  que no levanta el contexto completo): los cinco recorridos de la lista de
+  arriba, más que la semilla no duplica el admin en un segundo arranque.
+- Falta la vista de operación mínima en sí, sin diseño de marca todavía: lista
+  de pedidos con su estado, acción para marcar verificado un contraentrega,
+  acción para conciliar una transferencia, y el recaudo pendiente a la vista.
+  `datosTransferencia` (transferencia manual, más arriba) ya está listo del
+  lado del pedido — falta la acción de conciliar y la lista misma.
 
 El resto del panel (productos, variantes, existencias, imágenes, cuenta de
 cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el
