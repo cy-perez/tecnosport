@@ -77,4 +77,46 @@ class PagoTest {
   void eventoConIdVacioSeRechaza() {
     assertThrows(ExcepcionDeDominio.class, () -> new EventoPago("", EstadoPago.APROBADO, AHORA));
   }
+
+  @Test
+  void unPagoNuevoNoTieneIdDeTransaccionWompi() {
+    Pago pago = crear();
+
+    assertTrue(pago.idTransaccionWompi().isEmpty());
+  }
+
+  @Test
+  void registrarElIdDeTransaccionWompiQuedaDisponible() {
+    Pago pago = crear();
+
+    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+
+    assertEquals("1234-1610641025-49201", pago.idTransaccionWompi().orElseThrow());
+  }
+
+  @Test
+  void registrarElMismoIdDosVecesEsInofensivo() {
+    Pago pago = crear();
+    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+
+    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+
+    assertEquals("1234-1610641025-49201", pago.idTransaccionWompi().orElseThrow());
+  }
+
+  @Test
+  void registrarUnIdDistintoAlYaRegistradoSeRechaza() {
+    Pago pago = crear();
+    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionWompi("otro-id-distinto"));
+  }
+
+  @Test
+  void registrarUnIdVacioSeRechaza() {
+    Pago pago = crear();
+
+    assertThrows(ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionWompi("  "));
+  }
 }

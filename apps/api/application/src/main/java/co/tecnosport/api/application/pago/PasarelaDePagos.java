@@ -3,6 +3,7 @@ package co.tecnosport.api.application.pago;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Puerto hacia Wompi (docs/01-arquitectura.md). Implementación de producción: cliente HTTP de
@@ -13,8 +14,7 @@ public interface PasarelaDePagos {
   /**
    * Firma de integridad exigida por Wompi al crear una transacción (docs/11-pagos-y-envios.md),
    * calculada sobre la referencia, el monto y la moneda — así nadie altera el precio en el camino
-   * hacia el checkout hospedado. Consultar una transacción se agrega a este puerto cuando se
-   * construya la conciliación programada.
+   * hacia el checkout hospedado.
    */
   String generarFirmaIntegridad(ReferenciaPago referencia, Dinero monto);
 
@@ -25,4 +25,12 @@ public interface PasarelaDePagos {
    * SHA256(concat(valoresPropiedades) + timestamp + secretoEventos)}.
    */
   boolean verificarFirmaEvento(List<String> valoresPropiedades, long timestamp, String checksum);
+
+  /**
+   * Consulta el estado actual de una transacción por su id de Wompi (no por la referencia propia:
+   * la API de Wompi busca por su id — docs/11-pagos-y-envios.md, conciliación programada). {@code
+   * Optional.empty()} cuando la consulta falla (red, id inexistente) — la conciliación simplemente
+   * reintenta en la próxima corrida, no es un error de negocio.
+   */
+  Optional<String> consultarTransaccion(String idTransaccionWompi);
 }
