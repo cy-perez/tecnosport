@@ -118,6 +118,11 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  public boolean tieneRechazoEnEntrega(String correo) {
+    return pedidos.existsByCorreoAndEstado(correo, EstadoPedido.RECHAZADO_EN_ENTREGA.name());
+  }
+
+  @Override
   public NumeroPedido siguienteNumero(int anio) {
     Long secuencial =
         jdbc.queryForObject(

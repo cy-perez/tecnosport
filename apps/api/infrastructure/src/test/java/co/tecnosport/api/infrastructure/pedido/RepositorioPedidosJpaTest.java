@@ -147,6 +147,27 @@ class RepositorioPedidosJpaTest {
   }
 
   @Test
+  void tieneRechazoEnEntregaEsFalsoSinPedidosRechazados() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.tieneRechazoEnEntrega("cliente@tecnosport.co")).isFalse();
+  }
+
+  @Test
+  void tieneRechazoEnEntregaEsVerdaderoTrasUnRechazo() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.CONTRAENTREGA);
+    Instant ahora = Instant.now();
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "sistema", "preparación", ahora);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "sistema", "despacho", ahora);
+    pedido.transicionar(EstadoPedido.RECHAZADO_EN_ENTREGA, "sistema", "cliente no recibió", ahora);
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.tieneRechazoEnEntrega("cliente@tecnosport.co")).isTrue();
+    assertThat(repositorio.tieneRechazoEnEntrega("otro@tecnosport.co")).isFalse();
+  }
+
+  @Test
   void unIdInexistenteNoSeEncuentra() {
     Optional<Pedido> encontrado = repositorio.buscarPorId(UUID.randomUUID());
 
