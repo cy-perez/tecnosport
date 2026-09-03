@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
@@ -85,6 +86,12 @@ public class ManejadorDeErrores {
   public ProblemDetail metodoDePagoNoSoportadoPorWompi(
       MetodoDePagoNoSoportadoPorWompiException excepcion) {
     return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
+  }
+
+  @ExceptionHandler(MetodoDePagoNoEsTransferenciaManualException.class)
+  public ProblemDetail metodoDePagoNoEsTransferenciaManual(
+      MetodoDePagoNoEsTransferenciaManualException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Método de pago no es transferencia manual", excepcion);
   }
 
   @ExceptionHandler(CredencialesInvalidasException.class)
