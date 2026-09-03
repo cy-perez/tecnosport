@@ -14,9 +14,11 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +40,8 @@ import java.util.UUID;
  * de la petición HTTP, no del caso de uso.
  */
 public final class CrearPedido {
+
+  private static final ZoneId ZONA_COLOMBIA = ZoneId.of("America/Bogota");
 
   private final RepositorioProductos repositorioProductos;
   private final RepositorioInventario repositorioInventario;
@@ -85,8 +89,12 @@ public final class CrearPedido {
       lineasCongeladas.add(congelarLinea(lineaComando, vigenciaReserva, ahora));
     }
 
+    int anio = ahora.atZone(ZONA_COLOMBIA).getYear();
+    NumeroPedido numeroPedido = repositorioPedidos.siguienteNumero(anio);
+
     Pedido pedido =
         Pedido.crear(
+            numeroPedido,
             comando.usuarioId(),
             new CorreoElectronico(comando.correo()),
             lineasCongeladas,

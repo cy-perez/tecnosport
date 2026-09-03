@@ -181,6 +181,28 @@ class CrearPedidoTest {
   }
 
   @Test
+  void asignaUnNumeroLegibleParaElAnioEnColombia() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+
+    assertEquals("TS-2026-000001", pedido.numeroPedido().valor());
+  }
+
+  @Test
+  void pedidosConsecutivosRecibenNumerosConsecutivos() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido primero = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+    Pedido segundo = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+
+    assertEquals("TS-2026-000001", primero.numeroPedido().valor());
+    assertEquals("TS-2026-000002", segundo.numeroPedido().valor());
+  }
+
+  @Test
   void guardaElPedidoEnElRepositorio() {
     CrearPedido caso = crear();
     publicarProductoConVarianteYExistencia(5);
