@@ -37,6 +37,9 @@ public class LineaPedidoJpaEntity {
   @Column(name = "imagen_url")
   private String imagenUrl;
 
+  @Column(name = "id_reserva", nullable = false)
+  private UUID idReserva;
+
   protected LineaPedidoJpaEntity() {}
 
   public LineaPedidoJpaEntity(
@@ -48,7 +51,8 @@ public class LineaPedidoJpaEntity {
       int cantidad,
       BigDecimal precioUnitario,
       BigDecimal tasaIva,
-      String imagenUrl) {
+      String imagenUrl,
+      UUID idReserva) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.varianteId = varianteId;
@@ -58,6 +62,7 @@ public class LineaPedidoJpaEntity {
     this.precioUnitario = precioUnitario;
     this.tasaIva = tasaIva;
     this.imagenUrl = imagenUrl;
+    this.idReserva = idReserva;
   }
 
   public UUID getId() {
@@ -94,5 +99,9 @@ public class LineaPedidoJpaEntity {
 
   public String getImagenUrl() {
     return imagenUrl;
+  }
+
+  public UUID getIdReserva() {
+    return idReserva;
   }
 }

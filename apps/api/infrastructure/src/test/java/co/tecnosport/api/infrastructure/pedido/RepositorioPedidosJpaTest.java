@@ -66,7 +66,8 @@ class RepositorioPedidosJpaTest {
         2,
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
-        "https://cdn.tecnosport.co/img.jpg");
+        "https://cdn.tecnosport.co/img.jpg",
+        UUID.randomUUID());
   }
 
   private Pedido pedidoAlDomicilio(MetodoPago metodoPago) {
