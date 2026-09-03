@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -20,6 +21,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -29,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -41,19 +44,34 @@ class CrearPedidoTest {
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
+  private static final CriteriosContraentrega CRITERIOS_CONTRAENTREGA_PERMISIVOS =
+      new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+
   private RepositorioProductosFalso productos;
   private RepositorioInventarioFalso inventarios;
   private RepositorioPedidosFalso pedidos;
+  private RepositorioCoberturaContraentregaFalso cobertura;
   private Variante variante;
 
   private CrearPedido crear() {
+    return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
+  }
+
+  private CrearPedido crear(CriteriosContraentrega criterios, boolean medellinCubierta) {
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
     pedidos = new RepositorioPedidosFalso();
+    cobertura = new RepositorioCoberturaContraentregaFalso();
+    if (medellinCubierta) {
+      cobertura.conCiudadCubierta(DIRECCION_MEDELLIN.codigoDaneCiudad());
+    }
+    MetodosDePagoDisponibles metodosDePagoDisponibles =
+        new MetodosDePagoDisponibles(productos, cobertura, pedidos, criterios);
     return new CrearPedido(
         productos,
         inventarios,
         pedidos,
+        metodosDePagoDisponibles,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
         RESERVA_TRANSFERENCIA);
@@ -168,6 +186,105 @@ class CrearPedidoTest {
 
     assertEquals(EstadoPedido.CONFIRMADO_CONTRAENTREGA, pedido.estado());
     assertNull(ultimaReserva().expiraEn());
+  }
+
+  @Test
+  void contraentregaSeRechazaSiLaCiudadNoEstaCubierta() {
+    CrearPedido caso = crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, false);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 1)));
+  }
+
+  @Test
+  void contraentregaSeRechazaSiEstaDeshabilitadaGlobalmente() {
+    CriteriosContraentrega deshabilitada =
+        new CriteriosContraentrega(false, Dinero.deCop(10_000_000), Set.of());
+    CrearPedido caso = crear(deshabilitada, true);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 1)));
+  }
+
+  @Test
+  void contraentregaSeRechazaSiElTotalSuperaElMontoMaximo() {
+    CriteriosContraentrega montoBajo =
+        new CriteriosContraentrega(true, Dinero.deCop(10_000), Set.of());
+    CrearPedido caso = crear(montoBajo, true);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 1)));
+  }
+
+  @Test
+  void contraentregaSeRechazaSiLaCategoriaEstaExcluida() {
+    CriteriosContraentrega sinRopaYCalzado =
+        new CriteriosContraentrega(
+            true, Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+    CrearPedido caso = crear(sinRopaYCalzado, true);
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 1)));
+  }
+
+  @Test
+  void contraentregaSeRechazaSiElCompradorTieneUnRechazoPrevio() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    Pedido pedidoRechazadoAntes =
+        Pedido.crear(
+            co.tecnosport.api.domain.pedido.NumeroPedido.de(2026, 1),
+            null,
+            new co.tecnosport.api.domain.compartido.CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new co.tecnosport.api.domain.pedido.LineaPedido(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    new Sku("TS-OTRO"),
+                    "Otro producto",
+                    1,
+                    Dinero.deCop(10_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/otro.webp")),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidoRechazadoAntes.transicionar(EstadoPedido.EN_PREPARACION, "sistema", "preparación", AHORA);
+    pedidoRechazadoAntes.transicionar(EstadoPedido.DESPACHADO, "sistema", "despacho", AHORA);
+    pedidoRechazadoAntes.transicionar(
+        EstadoPedido.RECHAZADO_EN_ENTREGA, "sistema", "cliente no recibió", AHORA);
+    pedidos.guardar(pedidoRechazadoAntes);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class,
+        () -> caso.ejecutar(comando(MetodoPago.CONTRAENTREGA, 1)));
+  }
+
+  @Test
+  void contraentregaSeRechazaEnRetiroEnPunto() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando comandoRetiroEnPunto =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.CONTRAENTREGA);
+
+    assertThrows(
+        ContraentregaNoDisponibleException.class, () -> caso.ejecutar(comandoRetiroEnPunto));
   }
 
   @Test

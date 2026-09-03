@@ -22,4 +22,12 @@ public interface RepositorioPedidos {
    * no el catálogo. Más recientes primero.
    */
   PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina);
+
+  /**
+   * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo... ya rechazó
+   * pedidos en la entrega, no se le ofrece más"). Sin teléfono en el dominio todavía, solo por
+   * correo. {@code RECHAZADO_EN_ENTREGA} es terminal (ver {@code EstadoPedido}), así que basta con
+   * el estado actual del pedido, sin recorrer su historial.
+   */
+  boolean tieneRechazoEnEntrega(String correo);
 }

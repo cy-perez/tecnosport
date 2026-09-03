@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -21,12 +23,14 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -271,6 +275,26 @@ class PedidoControladorTest {
     }
 
     @Bean
+    RepositorioCoberturaContraentregaDobleDePrueba repositorioCoberturaContraentrega() {
+      return new RepositorioCoberturaContraentregaDobleDePrueba().conCiudadCubierta("05001");
+    }
+
+    @Bean
+    CriteriosContraentrega criteriosContraentrega() {
+      return new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+    }
+
+    @Bean
+    MetodosDePagoDisponibles metodosDePagoDisponibles(
+        RepositorioProductos repositorioProductos,
+        RepositorioCoberturaContraentrega repositorioCobertura,
+        RepositorioPedidos repositorioPedidos,
+        CriteriosContraentrega criteriosContraentrega) {
+      return new MetodosDePagoDisponibles(
+          repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
+    }
+
+    @Bean
     Reloj reloj() {
       return Instant::now;
     }
@@ -285,11 +309,13 @@ class PedidoControladorTest {
         RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         RepositorioPedidos repositorioPedidos,
+        MetodosDePagoDisponibles metodosDePagoDisponibles,
         Reloj reloj) {
       return new CrearPedido(
           repositorioProductos,
           repositorioInventario,
           repositorioPedidos,
+          metodosDePagoDisponibles,
           reloj,
           Duration.ofMinutes(30),
           Duration.ofHours(24));

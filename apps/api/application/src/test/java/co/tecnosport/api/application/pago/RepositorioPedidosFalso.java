@@ -37,4 +37,9 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
       int pagina, int tamanoPagina) {
     throw new UnsupportedOperationException("No usado por CrearIntentoDePago.");
   }
+
+  @Override
+  public boolean tieneRechazoEnEntrega(String correo) {
+    throw new UnsupportedOperationException("No usado por CrearIntentoDePago.");
+  }
 }

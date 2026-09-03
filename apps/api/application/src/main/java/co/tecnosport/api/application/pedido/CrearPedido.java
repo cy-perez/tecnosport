@@ -2,6 +2,8 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
@@ -46,6 +48,7 @@ public final class CrearPedido {
   private final RepositorioProductos repositorioProductos;
   private final RepositorioInventario repositorioInventario;
   private final RepositorioPedidos repositorioPedidos;
+  private final MetodosDePagoDisponibles metodosDePagoDisponibles;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
   private final Duration duracionReservaTransferencia;
@@ -54,6 +57,7 @@ public final class CrearPedido {
       RepositorioProductos repositorioProductos,
       RepositorioInventario repositorioInventario,
       RepositorioPedidos repositorioPedidos,
+      MetodosDePagoDisponibles metodosDePagoDisponibles,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
       Duration duracionReservaTransferencia) {
@@ -65,6 +69,9 @@ public final class CrearPedido {
             repositorioInventario, "El repositorio de inventario no puede ser nulo.");
     this.repositorioPedidos =
         Objects.requireNonNull(repositorioPedidos, "El repositorio de pedidos no puede ser nulo.");
+    this.metodosDePagoDisponibles =
+        Objects.requireNonNull(
+            metodosDePagoDisponibles, "Los métodos de pago disponibles no pueden ser nulos.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
     this.duracionReservaPagoEnLinea =
         Objects.requireNonNull(
@@ -80,6 +87,9 @@ public final class CrearPedido {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     if (comando.lineas() == null || comando.lineas().isEmpty()) {
       throw new ExcepcionDeDominio("Un pedido no se confirma sin líneas.");
+    }
+    if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
+      exigirContraentregaDisponible(comando);
     }
     Instant ahora = reloj.ahora();
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
@@ -106,6 +116,23 @@ public final class CrearPedido {
 
     repositorioPedidos.guardar(pedido);
     return pedido;
+  }
+
+  private void exigirContraentregaDisponible(CrearPedidoComando comando) {
+    MetodosDePagoDisponiblesComando consulta =
+        new MetodosDePagoDisponiblesComando(
+            comando.lineas().stream()
+                .map(
+                    l ->
+                        new MetodosDePagoDisponiblesComando.LineaComando(
+                            l.varianteId(), l.cantidad()))
+                .toList(),
+            comando.correo(),
+            comando.tipoEntrega(),
+            comando.direccion());
+    if (!metodosDePagoDisponibles.ejecutar(consulta).contains(MetodoPago.CONTRAENTREGA)) {
+      throw new ContraentregaNoDisponibleException();
+    }
   }
 
   private LineaPedido congelarLinea(

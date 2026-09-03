@@ -36,4 +36,9 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
       int pagina, int tamanoPagina) {
     throw new UnsupportedOperationException("No usado por PagoControlador.");
   }
+
+  @Override
+  public boolean tieneRechazoEnEntrega(String correo) {
+    throw new UnsupportedOperationException("No usado por PagoControlador.");
+  }
 }

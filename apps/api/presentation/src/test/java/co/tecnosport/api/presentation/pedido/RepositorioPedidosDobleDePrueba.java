@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.util.ArrayList;
@@ -44,5 +45,14 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
             : todos.subList(desde, Math.min(desde + tamanoPagina, todos.size()));
     int totalPaginas = (int) Math.ceil(todos.size() / (double) tamanoPagina);
     return new PedidosPaginados(List.copyOf(contenido), pagina, totalPaginas, todos.size());
+  }
+
+  @Override
+  public boolean tieneRechazoEnEntrega(String correo) {
+    return pedidos.values().stream()
+        .anyMatch(
+            p ->
+                p.estado() == EstadoPedido.RECHAZADO_EN_ENTREGA
+                    && p.correo().valor().equals(correo));
   }
 }
