@@ -11,6 +11,14 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
 
+    // Autenticación (docs/08-seguridad-legal.md). BCryptPasswordEncoder ya viene en
+    // spring-security-crypto (transitivo de starter-security) — se eligió sobre Argon2id
+    // precisamente para no agregar Bouncy Castle como dependencia aparte.
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    // JwtEncoder/JwtDecoder (Nimbus JOSE) para el JWT de acceso, en vez de una librería de
+    // terceros dedicada a JWT — reutiliza solo módulos de Spring Security.
+    implementation("org.springframework.security:spring-security-oauth2-jose")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     // Testcontainers 2.x renombró los módulos con el prefijo "testcontainers-"
