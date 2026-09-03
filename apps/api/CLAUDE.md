@@ -14,7 +14,7 @@ un `Pedido` no se confirma sin líneas, un `Inventario` no baja de cero.
 
 **application** — Un caso de uso, una clase, un método público:
 `ConfirmarPedido.ejecutar(ConfirmarPedidoComando)`. Aquí se declara el **puerto**
-de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos`, `CotizadorEnvio`,
+de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos`,
 `RecaudoContraentrega`, `EmisorFacturaElectronica`, `AlmacenDeImagenes`,
 `EnviadorDeCorreo`, `Reloj`. La transacción se abre aquí.
 

@@ -169,6 +169,51 @@ con revalidación de precios y existencias. Wompi con firma de integridad,
 webhook firmado, idempotencia y conciliación programada. Transferencia manual.
 Correos transaccionales.
 
+**Creación de pedido e idempotencia en curso** (2026-09-03, todavía sin
+commitear): dominio de `Pedido` (líneas congeladas, `EstadoPedido` con el grafo
+de transiciones completo del diagrama de `02-modelo-datos.md`, `Direccion`,
+`TipoEntrega`, `MetodoPago`, `HistorialPedido`, y el valor de objeto
+`CorreoElectronico` en `domain/compartido`). Caso de uso `CrearPedido`: revalida
+precio, nombre, SKU e imagen contra el catálogo real y reserva cada línea en
+`Inventario` con bloqueo pesimista — la vigencia de la reserva depende del
+método de pago (30 min pago en línea, 24 h transferencia, sin vencer
+contraentrega), inyectada por constructor y configurable por
+`MINUTOS_RESERVA_INVENTARIO`/`TRANSFERENCIA_HORAS_VENCIMIENTO` (ya estaban en
+`docs/07-infra-gcp.md`, nunca se habían conectado). `RepositorioProductos`
+ganó `buscarPorVarianteId`, necesario porque el carrito solo conoce el id de
+variante, nunca el slug del producto.
+
+Infraestructura y presentación cerradas también: `V4__pedido.sql`,
+`RepositorioPedidosJpa` (sin transacción propia, comparte la de
+`CrearPedido` — un pedido guardado sin su reserva de inventario, o viceversa,
+no puede pasar), `POST /api/v1/pedidos` (el controlador abre esa transacción,
+con `TransactionTemplate`), y dos códigos de error nuevos en
+`ManejadorDeErrores` (`VARIANTE_NO_ENCONTRADA` 404, `EXISTENCIA_INSUFICIENTE`
+409, el ejemplo textual de `docs/03-api.md`).
+
+**Idempotencia por `Idempotency-Key`** (docs/03-api.md) resuelta como mecanismo
+genérico, no atada a pedidos: puerto `RepositorioIdempotencia` en
+`application/compartido` (técnico, no de negocio — mismo criterio que
+`Reloj`), `V5__idempotencia.sql`, y `FiltroIdempotencia` (`OncePerRequestFilter`,
+sin `@Component`, registrado a mano en `bootstrap` solo para
+`/api/v1/pedidos`). Reclama la llave en su propia transacción *antes* de
+ejecutar el caso de uso — si solo se cacheara la respuesta al final, un
+proceso que muere después de comprometer el pedido pero antes de guardar la
+respuesta dejaría la puerta abierta a que un reintento lo duplicara. Un 500
+genuino libera la llave en vez de cachearla (desviación consciente del texto
+literal de la doc: cachear un error de infraestructura por 24 horas dejaría a
+un cliente que reintenta de buena fe sin salida). Verificado a mano contra
+`bootRun` + PostgreSQL real, no solo con Testcontainers: dos peticiones con la
+misma llave devuelven el mismo pedido, y un error de negocio (409) también se
+repite en vez de reevaluarse. El mecanismo queda listo para
+`POST /api/v1/pagos/intentos` cuando llegue Wompi — solo hace falta agregar
+esa ruta a `ConfiguracionIdempotencia`.
+
+**Pendiente, explícito:** el número legible del pedido (`TS-2026-000123`,
+`apps/api/CLAUDE.md`) no vive todavía en el dominio — exige una secuencia
+atómica que no se resolvió en este paso. Contraentrega, transferencia manual y
+Wompi siguen sin construir.
+
 **Contraentrega va en esta fase, pero al final y con su propio ciclo de
 revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
 servidor, reserva sin vencimiento, verificación previa al despacho y estados de
