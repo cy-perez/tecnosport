@@ -2,7 +2,7 @@ import { Producto, Variante } from './producto.model';
 import { ejesDeAtributos, seleccionDeVariante, variantePorDefecto, varianteSeleccionada } from './seleccion-variante';
 
 function variante(sku: string, existencia: number, atributos: Variante['atributos']): Variante {
-  return { sku, precio: { valor: 100_000, moneda: 'COP' }, existencia, atributos };
+  return { id: `id-${sku}`, sku, precio: { valor: 100_000, moneda: 'COP' }, existencia, atributos };
 }
 
 function productoDePrueba(variantes: Variante[]): Producto {

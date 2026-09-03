@@ -17,4 +17,11 @@ export class TsBoton {
   readonly presionado = input<boolean | null>(null);
   /** Reemplaza el contenido proyectado mientras carga. Traducido por quien llama. */
   readonly etiquetaCargando = input<string | null>(null);
+  /**
+   * Nombre accesible cuando el contenido proyectado no es texto (p. ej. un
+   * glifo "+"/"−"). Sin esto, un `[attr.aria-label]` puesto directamente en
+   * `<ts-boton>` cae en el host del componente, no en el `<button>` real, y
+   * el nombre accesible del control no cambia.
+   */
+  readonly etiquetaAccesible = input<string | null>(null);
 }

@@ -3,7 +3,7 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { Categoria } from '../domain/producto.model';
 import { RepositorioCategorias } from '../domain/repositorio-categorias.puerto';
 import { aCategoria } from './mapeador-productos';
-import { baseUrl } from './base-url';
+import { baseUrl } from '../../../core/http/base-url';
 
 @Injectable()
 export class CategoriasHttpRepositorio implements RepositorioCategorias {

@@ -1,0 +1,52 @@
+<article class="linea-carrito">
+  @if (snapshot(); as foto) {
+    @if (foto.imagenUrl) {
+      <img
+        class="linea-carrito__imagen"
+        [ngSrc]="foto.imagenUrl"
+        width="96"
+        height="96"
+        [alt]="foto.imagenAlt"
+      />
+    } @else {
+      <div class="linea-carrito__imagen linea-carrito__imagen--vacia" aria-hidden="true"></div>
+    }
+    <div class="linea-carrito__info">
+      <p class="linea-carrito__nombre">{{ foto.nombreProducto }}</p>
+      <p class="linea-carrito__sku">{{ foto.sku }}</p>
+    </div>
+  } @else {
+    <div class="linea-carrito__imagen linea-carrito__imagen--vacia" aria-hidden="true"></div>
+    <div class="linea-carrito__info">
+      <p class="linea-carrito__nombre">{{ 'carrito.producto_sin_foto' | transloco }}</p>
+    </div>
+  }
+
+  <div class="linea-carrito__cantidad">
+    <ts-boton
+      variante="secundario"
+      [deshabilitado]="deshabilitado() || linea().cantidad <= 1"
+      [etiquetaAccesible]="'carrito.disminuir' | transloco"
+      (click)="restar()"
+    >
+      −
+    </ts-boton>
+    <span class="linea-carrito__numero">{{ linea().cantidad }}</span>
+    <ts-boton
+      variante="secundario"
+      [deshabilitado]="deshabilitado()"
+      [etiquetaAccesible]="'carrito.aumentar' | transloco"
+      (click)="sumar()"
+    >
+      +
+    </ts-boton>
+  </div>
+
+  @if (subtotal(); as valor) {
+    <ts-precio class="linea-carrito__subtotal" [valor]="valor" [moneda]="snapshot()?.precioMoneda ?? 'COP'" />
+  }
+
+  <ts-boton variante="texto" [deshabilitado]="deshabilitado()" (click)="eliminar.emit()">
+    {{ 'carrito.eliminar' | transloco }}
+  </ts-boton>
+</article>

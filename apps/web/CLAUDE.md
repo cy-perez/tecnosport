@@ -103,6 +103,20 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   control interno, dos elementos con el mismo id, y `getByLabelText`
   (Testing Library) o cualquier `<label for>` apunta al host, no al control
   real. `ts-campo`/`ts-select` usan `idCampo`.
+- **Una consulta que pasa de deshabilitada (`enabled: false`) a habilitada sin
+  datos ya cacheados para esa llave dispara su propio fetch automático** —
+  sin importar `staleTime`, porque no hay nada que considerar "fresco"
+  todavía. Si justo en ese momento hay una mutación en curso escribiendo esa
+  misma llave con `setQueryData`, las dos compiten y la que gane al final
+  pisa a la otra — encontrado en `CarritoStore` (`agregarAlCarrito`, la
+  transición ocurre exactamente cuando se crea el carrito). La corrección:
+  sembrar la caché con `setQueryData` **antes** de habilitar la consulta
+  (antes de fijar la señal de la que depende `enabled`/`queryKey`), para que
+  nunca haya un instante de "sin datos" que dispare ese fetch. Mismo
+  mecanismo de fondo que el de SSR de arriba (`PendingTasks` registrado en un
+  `effect()` async): en una prueba, `fixture.whenStable()` no alcanza a
+  esperar ese registro — hace falta una espera real (`esperar(ms)`, mismo
+  recurso que ya usa `filtros-productos.spec.ts` para el debounce).
 
 ## Pruebas
 

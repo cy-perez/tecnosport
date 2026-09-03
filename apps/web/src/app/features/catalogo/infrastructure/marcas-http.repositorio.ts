@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { Marca } from '../domain/producto.model';
 import { RepositorioMarcas } from '../domain/repositorio-marcas.puerto';
-import { baseUrl } from './base-url';
+import { baseUrl } from '../../../core/http/base-url';
 import { aMarca } from './mapeador-productos';
 
 @Injectable()

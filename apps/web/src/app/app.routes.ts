@@ -13,6 +13,10 @@ export const routes: Routes = [
         path: '',
         loadChildren: () => import('./features/catalogo/catalogo.routes').then((m) => m.catalogoRoutes),
       },
+      {
+        path: 'carrito',
+        loadChildren: () => import('./features/carrito/presentation/carrito.routes').then((m) => m.carritoRoutes),
+      },
     ],
   },
   { path: '**', redirectTo: 'es' },

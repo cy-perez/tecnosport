@@ -1,0 +1,39 @@
+<section class="carrito">
+  <h1 class="carrito__titulo">{{ 'carrito.titulo' | transloco }}</h1>
+
+  @if (store.carritoId() === null) {
+    <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+    <a [routerLink]="['../productos']">
+      <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
+    </a>
+  } @else if (store.consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (store.consulta.isError()) {
+    <p class="carrito__error" role="alert">{{ 'carrito.error' | transloco }}</p>
+  } @else if (store.consulta.data(); as carrito) {
+    @if (carrito.lineas.length === 0) {
+      <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+      <a [routerLink]="['../productos']">
+        <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
+      </a>
+    } @else {
+      <div class="carrito__lineas">
+        @for (linea of carrito.lineas; track linea.id) {
+          <app-linea-carrito
+            [linea]="linea"
+            [snapshot]="leerSnapshot(linea.varianteId)"
+            (cantidadCambio)="cambiarCantidad(linea.id, $event)"
+            (eliminar)="eliminarLinea(linea.id)"
+          />
+        }
+      </div>
+
+      <div class="carrito__total">
+        <span>{{ 'carrito.total' | transloco }}</span>
+        <ts-precio [valor]="total()" moneda="COP" />
+      </div>
+    }
+  } @else {
+    <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+  }
+</section>

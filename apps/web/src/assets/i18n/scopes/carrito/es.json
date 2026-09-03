@@ -1,0 +1,13 @@
+{
+  "titulo": "Carrito",
+  "vacio": "Tu carrito está vacío.",
+  "ir_al_catalogo": "Ir al catálogo",
+  "error": "No se pudo cargar el carrito. Intenta de nuevo.",
+  "total": "Total",
+  "producto_sin_foto": "Producto",
+  "disminuir": "Disminuir cantidad",
+  "aumentar": "Aumentar cantidad",
+  "eliminar": "Eliminar",
+  "agregar_al_carrito": "Agregar al carrito",
+  "agregando": "Agregando…"
+}

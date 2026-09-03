@@ -32,6 +32,7 @@ export interface ValorAtributo {
 }
 
 export interface Variante {
+  readonly id: string;
   readonly sku: string;
   readonly precio: Dinero;
   readonly existencia: number;

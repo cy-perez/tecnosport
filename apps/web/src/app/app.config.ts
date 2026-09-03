@@ -6,6 +6,8 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { provideTransloco } from '@jsverse/transloco';
 import { routes } from './app.routes';
+import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carrito.puerto';
+import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
 import { TranslocoHttpLoader } from './transloco-loader';
 
 export const appConfig: ApplicationConfig = {
@@ -18,6 +20,10 @@ export const appConfig: ApplicationConfig = {
     // funciona igual, solo repite el fetch una vez al hidratar. Optimización
     // pendiente que no toca componentes cuando se agregue.
     provideTanStackQuery(new QueryClient()),
+    // A diferencia de los puertos de catalogo (provistos por catalogo.routes.ts, solo dentro de
+    // esa ruta): el carrito lo necesita el encabezado, que se renderiza siempre, no solo dentro
+    // de /carrito — ver application/carrito.store.ts.
+    { provide: REPOSITORIO_CARRITO, useClass: CarritoHttpRepositorio },
     provideTransloco({
       config: {
         availableLangs: ['es', 'en'],

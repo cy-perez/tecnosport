@@ -5,11 +5,32 @@ import { fireEvent, render, screen } from '@testing-library/angular';
 import { of } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
+import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
+import { Carrito } from '../../../carrito/domain/carrito.model';
+import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
 import { Producto } from '../../domain/producto.model';
 import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { FichaPage } from './ficha.page';
+
+class RepositorioCarritoFalso implements RepositorioCarrito {
+  crear(): Promise<Carrito> {
+    return Promise.reject(new Error('no usado en esta prueba'));
+  }
+  ver(): Promise<Carrito | null> {
+    return Promise.resolve(null);
+  }
+  agregarLinea(): Promise<Carrito> {
+    return Promise.reject(new Error('no usado en esta prueba'));
+  }
+  actualizarCantidad(): Promise<Carrito> {
+    return Promise.reject(new Error('no usado en esta prueba'));
+  }
+  eliminarLinea(): Promise<Carrito> {
+    return Promise.reject(new Error('no usado en esta prueba'));
+  }
+}
 
 function productoDePrueba(): Producto {
   return {
@@ -21,7 +42,9 @@ function productoDePrueba(): Producto {
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
-    variantes: [{ sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] }],
+    variantes: [
+      { id: 'variante-1', sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] },
+    ],
   };
 }
 
@@ -37,12 +60,14 @@ function productoConVariantes(): Producto {
     rotacion: null,
     variantes: [
       {
+        id: 'variante-az',
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
         existencia: 5,
         atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' }],
       },
       {
+        id: 'variante-ng',
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
         existencia: 3,
@@ -61,7 +86,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
   return render(FichaPage, {
     imports: [
       TranslocoTestingModule.forRoot({
-        langs: { es, en, 'catalogo/es': esCatalogo } as never,
+        langs: { es, en, 'catalogo/es': esCatalogo, 'carrito/es': esCarrito } as never,
         translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
         preloadLangs: true,
       }),
@@ -69,6 +94,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
     providers: [
       provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
+      { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
       { provide: ActivatedRoute, useValue: activatedRouteConSlug(slug) },
     ],
   });

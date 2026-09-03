@@ -58,6 +58,7 @@ function aRotacion(dto: RotacionDto): Rotacion {
 
 function aVariante(dto: VarianteDto): Variante {
   return {
+    id: dto.id ?? '',
     sku: dto.sku ?? '',
     precio: { valor: dto.precio?.valor ?? 0, moneda: dto.precio?.moneda ?? 'COP' },
     existencia: dto.existencia ?? 0,

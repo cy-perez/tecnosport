@@ -16,7 +16,9 @@ function productoDePrueba(): Producto {
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
-    variantes: [{ sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] }],
+    variantes: [
+      { id: 'variante-1', sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] },
+    ],
   };
 }
 

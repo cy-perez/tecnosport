@@ -1,25 +1,38 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../../../../shared/ts-etiqueta-stock/ts-etiqueta-stock';
 import { TsGaleria } from '../../../../shared/ts-galeria/ts-galeria';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-selector-variante';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { Imagen } from '../../domain/producto.model';
 import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, varianteSeleccionada } from '../../domain/seleccion-variante';
 
 @Component({
   selector: 'app-ficha',
-  imports: [TranslocoPipe, TsGaleria, TsSelectorVariante, TsPrecio, TsEtiquetaStock, TsEsqueleto, RouterLink],
+  imports: [
+    TranslocoPipe,
+    TsGaleria,
+    TsSelectorVariante,
+    TsPrecio,
+    TsEtiquetaStock,
+    TsEsqueleto,
+    TsBoton,
+    RouterLink,
+  ],
   templateUrl: './ficha.page.html',
   styleUrl: './ficha.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FichaPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly transloco = inject(TranslocoService);
+  protected readonly carrito = inject(CarritoStore);
 
   private readonly slug = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -64,5 +77,25 @@ export class FichaPage {
 
   protected cambiarSeleccion(seleccion: Seleccion): void {
     this.seleccion.set(seleccion);
+  }
+
+  protected agregarAlCarrito(): void {
+    const producto = this.producto();
+    const variante = this.varianteActiva();
+    if (!producto || !variante) {
+      return;
+    }
+    const idioma = this.transloco.activeLang();
+    const imagen = producto.imagenPrincipal;
+    void this.carrito.agregarAlCarrito(variante.id, 1, {
+      varianteId: variante.id,
+      nombreProducto: producto.nombre,
+      slugProducto: producto.slug,
+      sku: variante.sku,
+      imagenUrl: imagen?.url ?? null,
+      imagenAlt: (imagen ? (idioma === 'en' ? imagen.altEn : imagen.altEs) : '') || producto.nombre,
+      precioValor: variante.precio.valor,
+      precioMoneda: variante.precio.moneda,
+    });
   }
 }

@@ -20,6 +20,7 @@ describe('mapeador-productos', () => {
       galeria: [],
       variantes: [
         {
+          id: 'v1',
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
           existencia: 5,
@@ -35,6 +36,7 @@ describe('mapeador-productos', () => {
     expect(producto.imagenPrincipal?.url).toBe('https://x/0.jpg');
     expect(producto.rotacion).toBeNull();
     expect(producto.variantes).toHaveLength(1);
+    expect(producto.variantes[0].id).toBe('v1');
     expect(producto.variantes[0].precio.valor).toBe(89900);
     expect(producto.variantes[0].atributos[0].colorHex).toBe('#1E3A8A');
   });

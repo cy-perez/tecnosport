@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/v1/carritos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/carritos/{id}/lineas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregarLinea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/carritos/{id}/lineas/{lineaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminarLinea"];
+        options?: never;
+        head?: never;
+        patch: operations["actualizarCantidad"];
+        trace?: never;
+    };
     "/api/v1/salud": {
         parameters: {
             query?: never;
@@ -84,10 +132,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carritos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CarritoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            usuarioId?: string;
+            lineas?: components["schemas"]["LineaCarritoRespuesta"][];
+            /** Format: date-time */
+            creadoEn?: string;
+        };
+        LineaCarritoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: int32 */
+            cantidad?: number;
+        };
+        AgregarLineaRequest: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: int32 */
+            cantidad?: number;
+        };
+        ActualizarCantidadRequest: {
+            /** Format: int32 */
+            cantidad?: number;
+        };
         AtributoValorRespuesta: {
             nombre?: string;
             valor?: string;
@@ -149,6 +240,8 @@ export interface components {
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
         };
         VarianteRespuesta: {
+            /** Format: uuid */
+            id?: string;
             sku?: string;
             precio?: components["schemas"]["DineroRespuesta"];
             /** Format: int32 */
@@ -172,6 +265,102 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    agregarLinea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarLineaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    eliminarLinea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    actualizarCantidad: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActualizarCantidadRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
     salud: {
         parameters: {
             query?: never;
@@ -280,6 +469,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    ver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
                 };
             };
         };

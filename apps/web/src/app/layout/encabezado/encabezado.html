@@ -17,6 +17,17 @@
   </span>
 
   <div class="encabezado__controles">
+    <a
+      class="encabezado__carrito"
+      [routerLink]="['/' + idiomaActual(), 'carrito']"
+      [attr.aria-label]="'encabezado.carrito_cantidad' | transloco: { cantidad: carrito.cantidadTotal() }"
+    >
+      {{ 'encabezado.carrito' | transloco }}
+      @if (carrito.cantidadTotal() > 0) {
+        <span class="encabezado__carrito-cantidad" aria-hidden="true">{{ carrito.cantidadTotal() }}</span>
+      }
+    </a>
+
     <label class="encabezado__control">
       <span>{{ 'idioma.etiqueta' | transloco }}</span>
       <select [value]="idiomaActual()" (change)="cambiarIdioma($any($event.target).value)">

@@ -33,6 +33,18 @@
           }
         </div>
 
+        @if (varianteActiva(); as variante) {
+          <ts-boton
+            variante="primario"
+            [deshabilitado]="variante.existencia === 0 || carrito.agregando()"
+            [cargando]="carrito.agregando()"
+            [etiquetaCargando]="'carrito.agregando' | transloco"
+            (click)="agregarAlCarrito()"
+          >
+            {{ 'carrito.agregar_al_carrito' | transloco }}
+          </ts-boton>
+        }
+
         <p class="ficha__descripcion">{{ p.descripcion }}</p>
       </div>
     </div>

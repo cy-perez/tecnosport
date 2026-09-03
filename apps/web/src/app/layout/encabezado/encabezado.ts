@@ -1,7 +1,8 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { urlEnOtroIdioma } from '../../core/idioma/idioma.servicio';
+import { CarritoStore } from '../../features/carrito/application/carrito.store';
 
 type Tema = 'claro' | 'oscuro' | 'sistema';
 
@@ -14,7 +15,7 @@ function leerCookie(nombre: string): string | undefined {
 
 @Component({
   selector: 'app-encabezado',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   templateUrl: './encabezado.html',
   styleUrl: './encabezado.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +23,7 @@ function leerCookie(nombre: string): string | undefined {
 export class Encabezado {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  protected readonly carrito = inject(CarritoStore);
 
   protected readonly idiomas = ['es', 'en'] as const;
   protected readonly idiomaActual = this.transloco.activeLang;

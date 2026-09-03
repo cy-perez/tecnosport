@@ -10,5 +10,9 @@
   },
   "idioma": {
     "etiqueta": "Idioma"
+  },
+  "encabezado": {
+    "carrito": "Carrito",
+    "carrito_cantidad": "Carrito, {{cantidad}} artículos"
   }
 }

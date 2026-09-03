@@ -46,6 +46,9 @@ export const catalogoRoutes: Routes = [
           },
           {
             path: ':slug',
+            // provideTranslocoScope('carrito') aquí, no arriba con el resto de catalogo: la
+            // ficha es la única página de catalogo que usa el botón "agregar al carrito".
+            providers: [provideTranslocoScope('carrito')],
             resolve: {
               _precarga: (route: ActivatedRouteSnapshot) =>
                 precargarFichaProducto(route.paramMap.get('slug') ?? ''),

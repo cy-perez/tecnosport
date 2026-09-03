@@ -38,3 +38,29 @@
   gap: var(--esp-4);
   font-size: var(--texto-sm);
 }
+
+.encabezado__carrito {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-8);
+  color: var(--color-texto);
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+}
+
+.encabezado__carrito-cantidad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--esp-4);
+  background: var(--color-acento);
+  color: var(--color-sobre-acento);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+}

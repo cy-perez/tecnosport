@@ -4,7 +4,7 @@ import { FiltroProductos } from '../domain/filtro-productos.model';
 import { Producto } from '../domain/producto.model';
 import { RepositorioProductos } from '../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../domain/resultado-paginado.model';
-import { baseUrl } from './base-url';
+import { baseUrl } from '../../../core/http/base-url';
 import { aProducto } from './mapeador-productos';
 
 @Injectable()
