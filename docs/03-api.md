@@ -57,6 +57,7 @@ DELETE /api/v1/carritos/{id}/lineas/{lineaId}
 GET  /api/v1/envios/cobertura               ciudades con contraentrega habilitada
 POST /api/v1/pedidos                        revalida precios y existencias, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
+PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
 POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 ```
@@ -141,7 +142,14 @@ llave devuelve la misma respuesta, no crea un segundo pedido. El frontend genera
 un UUID por intento del usuario, no por reintento HTTP.
 
 El webhook de Wompi es idempotente por identificador de evento: llega repetido y
-tiene que ser inofensivo.
+tiene que ser inofensivo. Wompi no manda un identificador de evento propio, así
+que se usa el `checksum` de la firma — determinista sobre lo firmado, igual en
+cada reintento del mismo evento.
+
+`PATCH /api/v1/pagos/intentos/{referencia}` existe porque la API de Wompi
+consulta transacciones por su propio id, no por la referencia que genera este
+backend: sin ese id, la conciliación programada (`docs/11-pagos-y-envios.md`)
+no tiene cómo revisar un pago que nunca recibió webhook.
 
 ## Reglas que el backend nunca delega al cliente
 
