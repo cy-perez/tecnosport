@@ -256,12 +256,35 @@ un reintento no puede arreglar. `VOIDED` (una transacción aprobada que luego
 se anula) queda fuera a propósito: anulaciones y reembolsos son un caso de
 negocio aparte, no contemplado en el grafo de `EstadoPago` de este alcance.
 
+**Conciliación programada cerrada** (2026-09-03): la API de Wompi consulta
+una transacción por su propio id (`GET /transactions/{id}`), no por la
+referencia que genera este backend — verificado por búsqueda, no supuesto
+(regla dura #9; un intento anterior de traer un vector de ejemplo de la
+documentación resultó fabricado por la herramienta que la resumió, atrapado
+calculando el SHA-256 aparte). Sin ese id no hay cómo consultar un pago que
+nunca recibió webhook, así que `Pago` ganó `idTransaccionWompi`, registrado
+por `PATCH /api/v1/pagos/intentos/{referencia}` cuando el frontend vuelve
+del Web Checkout con el id en la URL de retorno. Un pago que nunca llega a
+tener ese id (el cliente cerró la pestaña antes de volver, y tampoco llegó
+el webhook) queda fuera del mecanismo, para seguimiento manual en el panel
+— la vista de operación mínima de esta fase, todavía no construida.
+
+`ConciliarPagosPendientes` revisa los `PENDIENTE` con id registrado y más
+viejos que un umbral configurable (`WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS`),
+consulta cada uno y aplica el resultado con la misma lógica que el webhook
+(`AplicadorDeResultadoDePago`, compartida entre los dos para no duplicarla).
+`TareaConciliacionWompi` (`@Scheduled`, primer uso de tareas programadas en
+el proyecto — el vencimiento del carrito es candidato para el mismo
+mecanismo más adelante) corre el lote entero en una sola transacción: un
+fallo a mitad de camino se revierte completo en vez de dejar un `Pago`
+actualizado sin su `Pedido`, y se reintenta solo, sin duplicar nada, en la
+siguiente corrida — el mecanismo ya es idempotente por diseño.
+
 Verificado con Testcontainers y `@WebMvcTest` en las cuatro capas, no
-todavía a mano contra `bootRun` + Wompi real (falta llaves de sandbox). Sin
-la conciliación programada (`consultarTransaccion`, para pagos que nunca
-recibieron webhook) y sin resolver quién regresa un pedido de
-`PAGO_FALLIDO` a `PAGO_PENDIENTE` para reintentar — `CrearIntentoDePago`
-todavía solo acepta pedidos ya en `PAGO_PENDIENTE`.
+todavía a mano contra `bootRun` + Wompi real (falta llaves de sandbox).
+Sigue sin resolver quién regresa un pedido de `PAGO_FALLIDO` a
+`PAGO_PENDIENTE` para reintentar — `CrearIntentoDePago` todavía solo acepta
+pedidos ya en `PAGO_PENDIENTE`.
 
 Contraentrega y transferencia manual siguen sin construir.
 
