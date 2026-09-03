@@ -120,8 +120,9 @@ Rol `ADMIN`.
 GET/POST/PATCH /api/v1/admin/productos
 GET/POST /api/v1/admin/variantes/{id}/inventario
 GET/PATCH /api/v1/admin/pedidos
-POST /api/v1/admin/pedidos/{id}/despacho            transportadora y guía
-POST /api/v1/admin/pedidos/{id}/recaudo             concilia contraentrega
+POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
+POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
+POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
 
 POST /api/v1/admin/sets-rotacion                    abre un set en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma

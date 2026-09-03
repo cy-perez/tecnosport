@@ -267,7 +267,7 @@ por `PATCH /api/v1/pagos/intentos/{referencia}` cuando el frontend vuelve
 del Web Checkout con el id en la URL de retorno. Un pago que nunca llega a
 tener ese id (el cliente cerró la pestaña antes de volver, y tampoco llegó
 el webhook) queda fuera del mecanismo, para seguimiento manual en el panel
-— la vista de operación mínima de esta fase, todavía no construida.
+— la lista de pedidos de la vista de operación mínima, más abajo.
 
 `ConciliarPagosPendientes` revisa los `PENDIENTE` con id registrado y más
 viejos que un umbral configurable (`WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS`),
@@ -297,12 +297,8 @@ Los datos de la cuenta salen de variables de entorno
 nunca sirven para transferir de verdad — dato de negocio real que no le
 tocaba inventar a la sesión.
 
-**Conciliar el comprobante queda sin construir a propósito.** Necesita el
-rol `ADMIN`, que este documento agrupa explícitamente con el resto de la
-vista de operación mínima (marcar contraentrega verificado, ver recaudo
-pendiente) antes de contraentrega, no antes — no se armó un atajo sin
-autenticación para adelantarlo. Cuando llegue esa vista, la exposición de
-`datosTransferencia` ya está lista, solo falta la acción de conciliar.
+**Conciliar el comprobante cerrado** (2026-09-03), una vez existió el rol
+`ADMIN` para protegerlo — ver la vista de operación mínima, más abajo.
 
 Contraentrega sigue sin construir.
 
@@ -332,11 +328,19 @@ pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
   Verificado a mano contra `bootRun` + PostgreSQL real (no solo con ArchUnit,
   que no levanta el contexto completo): los cinco recorridos de la lista de
   arriba, más que la semilla no duplica el admin en un segundo arranque.
-- Falta la vista de operación mínima en sí, sin diseño de marca todavía: lista
-  de pedidos con su estado, acción para marcar verificado un contraentrega,
-  acción para conciliar una transferencia, y el recaudo pendiente a la vista.
-  `datosTransferencia` (transferencia manual, más arriba) ya está listo del
-  lado del pedido — falta la acción de conciliar y la lista misma.
+- **Lista de pedidos y conciliar transferencia cerrados** (2026-09-03), sin
+  diseño de marca todavía: `GET /api/v1/admin/pedidos` (paginado por página,
+  no por cursor — distinción de docs/03-api.md) y `POST
+  /api/v1/admin/pedidos/{id}/conciliar-transferencia`. Este último solo acepta
+  pedidos `TRANSFERENCIA_MANUAL`: uno de Wompi nunca se marca pagado por una
+  acción manual del panel, su verdad sigue siendo el webhook firmado o la
+  conciliación programada. La guarda de transición de `Pedido` ya rechaza un
+  segundo intento, así que no hizo falta `Idempotency-Key` aparte. El actor de
+  auditoría (`"admin:" + usuarioId`) sale de `SecurityContextHolder` directo,
+  no de `@AuthenticationPrincipal`: ese resolver solo se registra con
+  `@EnableWebSecurity` activo, que `presentation` no importa.
+- Falta marcar verificado un contraentrega y ver el recaudo pendiente —
+  ninguno de los dos tiene sentido antes de que contraentrega exista.
 
 El resto del panel (productos, variantes, existencias, imágenes, cuenta de
 cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el
