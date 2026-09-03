@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pago;
 
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.pago.CrearIntentoDePago;
 import co.tecnosport.api.application.pago.PasarelaDePagos;
 import co.tecnosport.api.application.pago.ProcesarEventoDePago;
+import co.tecnosport.api.application.pago.RegistrarIdTransaccionWompi;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -25,6 +27,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.pago.dto.CrearIntentoDePagoRequest;
+import co.tecnosport.api.presentation.pago.dto.RegistrarIdTransaccionWompiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -234,6 +237,55 @@ class PagoControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  @Test
+  void registrarIdTransaccionGuardaElIdEnElPago() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/pagos/intentos/{referencia}", pago.referencia().valor())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new RegistrarIdTransaccionWompiRequest("1234-1610641025-49201"))))
+        .andExpect(status().isOk());
+
+    assertEquals(
+        "1234-1610641025-49201",
+        pagos
+            .buscarPorReferencia(pago.referencia())
+            .orElseThrow()
+            .idTransaccionWompi()
+            .orElseThrow());
+  }
+
+  @Test
+  void registrarIdTransaccionConReferenciaInexistenteDevuelve404() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/pagos/intentos/{referencia}", "no-existe")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new RegistrarIdTransaccionWompiRequest("1234-1610641025-49201"))))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("PAGO_NO_ENCONTRADO"));
+  }
+
+  @Test
+  void registrarIdTransaccionVacioDevuelve422() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    Pago pago = pagoPendienteParaElPedido(pedido);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/pagos/intentos/{referencia}", pago.referencia().valor())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -273,6 +325,11 @@ class PagoControladorTest {
         PasarelaDePagos pasarelaDePagos) {
       return new ProcesarEventoDePago(
           repositorioPagos, repositorioPedidos, pasarelaDePagos, Instant::now);
+    }
+
+    @Bean
+    RegistrarIdTransaccionWompi registrarIdTransaccionWompi(RepositorioPagos repositorioPagos) {
+      return new RegistrarIdTransaccionWompi(repositorioPagos);
     }
 
     @Bean

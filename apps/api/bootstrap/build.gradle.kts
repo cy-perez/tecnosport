@@ -13,6 +13,9 @@ dependencies {
     // necesita el tipo en su propio classpath de compilación, no solo en el de presentation
     // ("implementation" no expone dependencias transitivas a quien depende del módulo).
     implementation("org.springframework.boot:spring-boot-starter-web")
+    // TareaConciliacionWompi abre su propia transacción (TransactionTemplate), mismo motivo que
+    // spring-boot-starter-web arriba: necesita el tipo en el classpath propio de bootstrap.
+    implementation("org.springframework:spring-tx")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 }

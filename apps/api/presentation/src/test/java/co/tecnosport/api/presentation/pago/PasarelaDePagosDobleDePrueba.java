@@ -4,6 +4,7 @@ import co.tecnosport.api.application.pago.PasarelaDePagos;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import java.util.List;
+import java.util.Optional;
 
 final class PasarelaDePagosDobleDePrueba implements PasarelaDePagos {
 
@@ -16,5 +17,10 @@ final class PasarelaDePagosDobleDePrueba implements PasarelaDePagos {
   public boolean verificarFirmaEvento(
       List<String> valoresPropiedades, long timestamp, String checksum) {
     return "checksum-valido".equals(checksum);
+  }
+
+  @Override
+  public Optional<String> consultarTransaccion(String idTransaccionWompi) {
+    return Optional.empty();
   }
 }

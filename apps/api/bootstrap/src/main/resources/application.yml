@@ -28,6 +28,9 @@ tecnosport:
     secreto-integridad: ${WOMPI_SECRETO_INTEGRIDAD:test_integrity_placeholder}
     secreto-eventos: ${WOMPI_SECRETO_EVENTOS:test_events_placeholder}
     ambiente: ${WOMPI_AMBIENTE:sandbox}
+    conciliacion:
+      intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
+      antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
 
 springdoc:
   api-docs:

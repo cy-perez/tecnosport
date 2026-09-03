@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation;
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
+import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
@@ -52,6 +53,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PedidoNoEncontradoException.class)
   public ProblemDetail pedidoNoEncontrado(PedidoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Pedido no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(PagoNoEncontradoException.class)
+  public ProblemDetail pagoNoEncontrado(PagoNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Pago no encontrado", excepcion);
   }
 
   // 409, no 422: la solicitud está bien formada, pero el estado del inventario cambió entre que

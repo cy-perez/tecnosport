@@ -1,8 +1,10 @@
 package co.tecnosport.api.presentation.pago;
 
 import co.tecnosport.api.application.pago.RepositorioPagos;
+import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +22,15 @@ final class RepositorioPagosDobleDePrueba implements RepositorioPagos {
   @Override
   public List<Pago> buscarPorPedidoId(UUID pedidoId) {
     return pagos.stream().filter(p -> p.pedidoId().equals(pedidoId)).toList();
+  }
+
+  @Override
+  public List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe) {
+    return pagos.stream()
+        .filter(p -> p.estado() == EstadoPago.PENDIENTE)
+        .filter(p -> p.idTransaccionWompi().isPresent())
+        .filter(p -> p.creadoEn().isBefore(creadosAntesDe))
+        .toList();
   }
 
   @Override
