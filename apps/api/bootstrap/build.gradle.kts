@@ -9,6 +9,10 @@ dependencies {
     implementation(project(":presentation"))
 
     implementation("org.springframework.boot:spring-boot-starter")
+    // ConfiguracionIdempotencia registra un Filter (jakarta.servlet) atado a rutas concretas —
+    // necesita el tipo en su propio classpath de compilación, no solo en el de presentation
+    // ("implementation" no expone dependencias transitivas a quien depende del módulo).
+    implementation("org.springframework.boot:spring-boot-starter-web")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 }
