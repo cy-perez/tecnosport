@@ -18,6 +18,7 @@ class PedidoTest {
 
   private static final Instant AHORA = Instant.parse("2026-09-02T12:00:00Z");
   private static final CorreoElectronico CORREO = new CorreoElectronico("cliente@tecnosport.co");
+  private static final NumeroPedido NUMERO = NumeroPedido.de(2026, 1);
 
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -36,6 +37,7 @@ class PedidoTest {
 
   private Pedido crearAlDomicilio(MetodoPago metodoPago) {
     return Pedido.crear(
+        NUMERO,
         null,
         CORREO,
         List.of(linea(BigDecimal.valueOf(50_000), 2)),
@@ -84,6 +86,7 @@ class PedidoTest {
         ExcepcionDeDominio.class,
         () ->
             Pedido.crear(
+                NUMERO,
                 null,
                 CORREO,
                 List.of(),
@@ -100,6 +103,7 @@ class PedidoTest {
         ExcepcionDeDominio.class,
         () ->
             Pedido.crear(
+                NUMERO,
                 null,
                 CORREO,
                 List.of(linea(BigDecimal.valueOf(50_000), 1)),
@@ -116,6 +120,7 @@ class PedidoTest {
         ExcepcionDeDominio.class,
         () ->
             Pedido.crear(
+                NUMERO,
                 null,
                 CORREO,
                 List.of(linea(BigDecimal.valueOf(50_000), 1)),
@@ -130,6 +135,7 @@ class PedidoTest {
   void retiroEnPuntoSinDireccionEsValido() {
     Pedido pedido =
         Pedido.crear(
+            NUMERO,
             null,
             CORREO,
             List.of(linea(BigDecimal.valueOf(50_000), 1)),
@@ -146,6 +152,7 @@ class PedidoTest {
   void totalSumaElSubtotalDeCadaLinea() {
     Pedido pedido =
         Pedido.crear(
+            NUMERO,
             null,
             CORREO,
             List.of(linea(BigDecimal.valueOf(50_000), 2), linea(BigDecimal.valueOf(30_000), 1)),

@@ -15,13 +15,14 @@ import java.util.UUID;
 /**
  * Raíz transaccional (docs/02-modelo-datos.md). El envío no aparece en el total: es un costo
  * estándar ya incluido en el precio de cada línea (docs/adr/0012), no algo que este agregado sume
- * ni calcule. El número legible ({@code TS-2026-000123}, apps/api/CLAUDE.md) no vive aquí todavía:
- * exige una secuencia atómica que el dominio no puede generar por sí solo, y se resuelve en
- * infrastructure cuando exista el repositorio.
+ * ni calcule. El número legible ({@link NumeroPedido}) no lo genera este agregado: llega ya
+ * reservado por quien llame a {@link #crear}, porque su secuencial exige una atomicidad que solo da
+ * la base de datos.
  */
 public final class Pedido {
 
   private final UUID id;
+  private final NumeroPedido numeroPedido;
   private final UUID usuarioId;
   private final CorreoElectronico correo;
   private final List<LineaPedido> lineas;
@@ -34,6 +35,7 @@ public final class Pedido {
 
   public Pedido(
       UUID id,
+      NumeroPedido numeroPedido,
       UUID usuarioId,
       CorreoElectronico correo,
       List<LineaPedido> lineas,
@@ -44,6 +46,8 @@ public final class Pedido {
       List<HistorialPedido> historial,
       Instant creadoEn) {
     this.id = Objects.requireNonNull(id, "El id del pedido no puede ser nulo.");
+    this.numeroPedido =
+        Objects.requireNonNull(numeroPedido, "El número de pedido no puede ser nulo.");
     this.usuarioId = usuarioId;
     this.correo = Objects.requireNonNull(correo, "El correo del comprador no puede ser nulo.");
     this.lineas = new ArrayList<>(Objects.requireNonNullElse(lineas, List.of()));
@@ -74,6 +78,7 @@ public final class Pedido {
    * misma llamada.
    */
   public static Pedido crear(
+      NumeroPedido numeroPedido,
       UUID usuarioId,
       CorreoElectronico correo,
       List<LineaPedido> lineas,
@@ -89,6 +94,7 @@ public final class Pedido {
             GeneradorIdentificador.nuevo(), estadoInicial, ahora, actor, "pedido creado");
     return new Pedido(
         GeneradorIdentificador.nuevo(),
+        numeroPedido,
         usuarioId,
         correo,
         lineas,
@@ -113,6 +119,10 @@ public final class Pedido {
 
   public UUID id() {
     return id;
+  }
+
+  public NumeroPedido numeroPedido() {
+    return numeroPedido;
   }
 
   public Optional<UUID> usuarioId() {
