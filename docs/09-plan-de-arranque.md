@@ -209,10 +209,21 @@ repite en vez de reevaluarse. El mecanismo queda listo para
 `POST /api/v1/pagos/intentos` cuando llegue Wompi — solo hace falta agregar
 esa ruta a `ConfiguracionIdempotencia`.
 
-**Pendiente, explícito:** el número legible del pedido (`TS-2026-000123`,
-`apps/api/CLAUDE.md`) no vive todavía en el dominio — exige una secuencia
-atómica que no se resolvió en este paso. Contraentrega, transferencia manual y
-Wompi siguen sin construir.
+**Número legible del pedido cerrado** (2026-09-03): `NumeroPedido`
+(`TS-2026-000123`, `apps/api/CLAUDE.md`) en el dominio, recibido por quien
+llame a `Pedido.crear` — el dominio no lo genera, porque el secuencial exige
+una atomicidad que solo da la base de datos. `RepositorioPedidos` ganó
+`siguienteNumero(anio)`; `CrearPedido` lo pide después de reservar todas las
+líneas (para no quemar un número si la reserva falla), con el año calculado
+en `America/Bogota`. `RepositorioPedidosJpa` lo resuelve con un único
+`insert ... on conflict ... returning` (`V6__secuencia_pedido.sql`), sin
+bloqueo pesimista explícito — verificado con una prueba de concurrencia real
+(20 hilos, sin duplicados ni saltos) y a mano contra `bootRun` + PostgreSQL
+real: dos pedidos consecutivos devolvieron `TS-2026-000001` y
+`TS-2026-000002`, y repetir la `Idempotency-Key` del primero no quemó un
+número nuevo.
+
+Contraentrega, transferencia manual y Wompi siguen sin construir.
 
 **Contraentrega va en esta fase, pero al final y con su propio ciclo de
 revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
