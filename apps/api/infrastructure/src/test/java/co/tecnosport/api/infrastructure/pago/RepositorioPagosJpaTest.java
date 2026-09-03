@@ -17,6 +17,7 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.infrastructure.pedido.RepositorioPedidosJpa;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -137,5 +138,73 @@ class RepositorioPagosJpaTest {
     Optional<Pago> encontrado = repositorio.buscarPorReferencia(new ReferenciaPago("no-existe"));
 
     assertThat(encontrado).isEmpty();
+  }
+
+  @Test
+  void registrarIdTransaccionWompiSePersiste() {
+    UUID pedidoId = crearYGuardarPedido();
+    ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
+    Pago pago =
+        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+
+    repositorio.guardar(pago);
+
+    Pago encontrado = repositorio.buscarPorReferencia(referencia).orElseThrow();
+    assertThat(encontrado.idTransaccionWompi()).contains("1234-1610641025-49201");
+  }
+
+  @Test
+  void buscarPendientesParaConciliarSoloDevuelveLosQueCalifican() {
+    UUID pedidoId = crearYGuardarPedido();
+    Instant ahora = Instant.now();
+    Instant viejo = ahora.minus(Duration.ofHours(1));
+    Instant umbral = ahora.minus(Duration.ofMinutes(15));
+
+    Pago califica =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            viejo);
+    califica.registrarIdTransaccionWompi("wompi-tx-califica");
+    repositorio.guardar(califica);
+
+    Pago sinId =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            viejo);
+    repositorio.guardar(sinId);
+
+    Pago muyReciente =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            ahora);
+    muyReciente.registrarIdTransaccionWompi("wompi-tx-reciente");
+    repositorio.guardar(muyReciente);
+
+    Pago yaAprobado =
+        Pago.crear(
+            pedidoId,
+            new ReferenciaPago("TS-" + UUID.randomUUID()),
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            viejo);
+    yaAprobado.registrarIdTransaccionWompi("wompi-tx-aprobado");
+    yaAprobado.aplicarEvento(new EventoPago("evt-aprobado", EstadoPago.APROBADO, viejo));
+    repositorio.guardar(yaAprobado);
+
+    List<Pago> pendientes = repositorio.buscarPendientesParaConciliar(umbral);
+
+    assertThat(pendientes)
+        .extracting(p -> p.referencia().valor())
+        .containsExactly(califica.referencia().valor());
   }
 }

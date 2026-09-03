@@ -8,12 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,6 +35,9 @@ import org.junit.jupiter.api.Test;
  * secreto, y hashear con SHA-256) de forma consistente, aunque no verifica que ese algoritmo sea
  * exactamente el que usa Wompi en producción — eso queda pendiente de confirmar contra su sandbox
  * real.
+ *
+ * <p>{@code consultarTransaccion} sí se prueba de extremo a extremo, contra un servidor HTTP de
+ * prueba ({@link HttpServer}, del JDK, sin dependencia nueva) en vez de la URL real de Wompi.
  */
 class WompiClientTest {
 
@@ -35,7 +45,7 @@ class WompiClientTest {
   private static final Dinero MONTO = Dinero.deCop(100_000);
 
   private WompiClient cliente(String secretoEventos) {
-    return new WompiClient("secreto-integridad-de-prueba", secretoEventos);
+    return new WompiClient("secreto-integridad-de-prueba", secretoEventos, "pub_test", "sandbox");
   }
 
   @Test
@@ -82,14 +92,24 @@ class WompiClientTest {
   @Test
   void secretoDeIntegridadVacioSeRechazaAlConstruir() {
     assertThrows(
-        IllegalArgumentException.class, () -> new WompiClient("  ", "secreto-eventos-de-prueba"));
+        IllegalArgumentException.class,
+        () -> new WompiClient("  ", "secreto-eventos-de-prueba", "pub_test", "sandbox"));
   }
 
   @Test
   void secretoDeEventosVacioSeRechazaAlConstruir() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new WompiClient("secreto-integridad-de-prueba", "  "));
+        () -> new WompiClient("secreto-integridad-de-prueba", "  ", "pub_test", "sandbox"));
+  }
+
+  @Test
+  void llavePublicaVaciaSeRechazaAlConstruir() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new WompiClient(
+                "secreto-integridad-de-prueba", "secreto-eventos-de-prueba", "  ", "sandbox"));
   }
 
   private static final List<String> VALORES = List.of("wompi-tx-1", "APPROVED", "100000");
@@ -159,5 +179,86 @@ class WompiClientTest {
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  // --- consultarTransaccion, contra un servidor HTTP de prueba real.
+
+  private HttpServer servidor;
+
+  @AfterEach
+  void detenerServidor() {
+    if (servidor != null) {
+      servidor.stop(0);
+    }
+  }
+
+  private WompiClient clienteContra(String respuestaJson, int estadoHttp) throws IOException {
+    return clienteContra(respuestaJson, estadoHttp, new AtomicReference<>());
+  }
+
+  private WompiClient clienteContra(
+      String respuestaJson, int estadoHttp, AtomicReference<String> cabeceraAutorizacionCapturada)
+      throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+    servidor.createContext(
+        "/transactions/wompi-tx-1",
+        intercambio -> {
+          cabeceraAutorizacionCapturada.set(
+              intercambio.getRequestHeaders().getFirst("Authorization"));
+          byte[] cuerpo = respuestaJson.getBytes(StandardCharsets.UTF_8);
+          intercambio.sendResponseHeaders(estadoHttp, cuerpo.length);
+          intercambio.getResponseBody().write(cuerpo);
+          intercambio.close();
+        });
+    servidor.start();
+    URI urlBase = URI.create("http://localhost:" + servidor.getAddress().getPort());
+    return new WompiClient(
+        "secreto-integridad-de-prueba", "secreto-eventos-de-prueba", "pub_test", urlBase);
+  }
+
+  @Test
+  void consultarTransaccionDevuelveElEstadoSiLaRespuestaEs200() throws IOException {
+    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200);
+
+    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals(Optional.of("APPROVED"), estado);
+  }
+
+  @Test
+  void consultarTransaccionEnviaLaLlavePublicaComoBearer() throws IOException {
+    AtomicReference<String> cabecera = new AtomicReference<>();
+    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200, cabecera);
+
+    cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals("Bearer pub_test", cabecera.get());
+  }
+
+  @Test
+  void consultarTransaccionDevuelveVacioSiLaRespuestaNoEs200() throws IOException {
+    WompiClient cliente = clienteContra("{\"error\":{\"type\":\"NOT_FOUND_ERROR\"}}", 404);
+
+    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals(Optional.empty(), estado);
+  }
+
+  @Test
+  void consultarTransaccionDevuelveVacioSiElCuerpoNoEsJsonValido() throws IOException {
+    WompiClient cliente = clienteContra("esto no es json", 200);
+
+    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals(Optional.empty(), estado);
+  }
+
+  @Test
+  void consultarTransaccionDevuelveVacioSiElCuerpoNoTraeElStatus() throws IOException {
+    WompiClient cliente = clienteContra("{\"data\":{}}", 200);
+
+    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals(Optional.empty(), estado);
   }
 }

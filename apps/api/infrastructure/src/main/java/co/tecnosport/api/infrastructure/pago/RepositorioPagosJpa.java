@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.infrastructure.pago.entidad.EventoPagoJpaEntity;
 import co.tecnosport.api.infrastructure.pago.entidad.PagoJpaEntity;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,6 +44,16 @@ public class RepositorioPagosJpa implements RepositorioPagos {
   }
 
   @Override
+  public List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe) {
+    return pagos
+        .findByEstadoAndIdTransaccionWompiIsNotNullAndCreadoEnBefore(
+            EstadoPago.PENDIENTE.name(), creadosAntesDe)
+        .stream()
+        .map(this::aPago)
+        .toList();
+  }
+
+  @Override
   public void guardar(Pago pago) {
     pagos.save(aEntidad(pago));
 
@@ -64,7 +75,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         EstadoPago.valueOf(entidad.getEstado()),
         eventosDelPago,
         entidad.getCreadoEn(),
-        entidad.getActualizadoEn());
+        entidad.getActualizadoEn(),
+        entidad.getIdTransaccionWompi());
   }
 
   private EventoPago aEvento(EventoPagoJpaEntity e) {
@@ -80,7 +92,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         pago.monto().valor(),
         pago.estado().name(),
         pago.creadoEn(),
-        pago.actualizadoEn());
+        pago.actualizadoEn(),
+        pago.idTransaccionWompi().orElse(null));
   }
 
   private EventoPagoJpaEntity aEntidadEvento(UUID pagoId, EventoPago e) {

@@ -35,6 +35,9 @@ public class PagoJpaEntity {
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn;
 
+  @Column(name = "id_transaccion_wompi")
+  private String idTransaccionWompi;
+
   protected PagoJpaEntity() {}
 
   public PagoJpaEntity(
@@ -45,7 +48,8 @@ public class PagoJpaEntity {
       BigDecimal monto,
       String estado,
       Instant creadoEn,
-      Instant actualizadoEn) {
+      Instant actualizadoEn,
+      String idTransaccionWompi) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.referencia = referencia;
@@ -54,6 +58,7 @@ public class PagoJpaEntity {
     this.estado = estado;
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
+    this.idTransaccionWompi = idTransaccionWompi;
   }
 
   public UUID getId() {
@@ -86,5 +91,9 @@ public class PagoJpaEntity {
 
   public Instant getActualizadoEn() {
     return actualizadoEn;
+  }
+
+  public String getIdTransaccionWompi() {
+    return idTransaccionWompi;
   }
 }
