@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record PedidoRespuesta(
     UUID id,
+    String numeroPedido,
     UUID usuarioId,
     String correo,
     List<LineaPedidoRespuesta> lineas,

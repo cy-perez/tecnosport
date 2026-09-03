@@ -16,6 +16,7 @@ public class MapeadorRespuestasPedido {
   public PedidoRespuesta aRespuesta(Pedido pedido) {
     return new PedidoRespuesta(
         pedido.id(),
+        pedido.numeroPedido().valor(),
         pedido.usuarioId().orElse(null),
         pedido.correo().valor(),
         pedido.lineas().stream().map(this::aRespuesta).toList(),

@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.pedido;
 
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -117,6 +118,7 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").exists())
+        .andExpect(jsonPath("$.numeroPedido").value(matchesPattern("TS-\\d{4}-\\d{6}")))
         .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"))
         .andExpect(jsonPath("$.metodoPago").value("NEQUI"))
         .andExpect(jsonPath("$.lineas[0].sku").value("TS-CAM-AZ-M"))
