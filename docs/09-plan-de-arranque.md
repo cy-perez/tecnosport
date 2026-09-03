@@ -316,10 +316,25 @@ en `POST /api/v1/pedidos/metodos-de-pago-disponibles` (el checkout consulta
 antes de mostrar las opciones) como dentro de `CrearPedido` — mismo código,
 para que la respuesta de la consulta y la validación real nunca diverjan.
 
-El resto de contraentrega (verificación previa al despacho, despacho con
-transportadora y guía, entrega/rechazo, recaudo pendiente y su conciliación)
-sigue sin construir, va al final de esta fase y con su propio ciclo de
-revisión — es donde está el riesgo operativo. Léete
+**Verificación y despacho cerrados** (2026-09-03): `VerificarContraentrega`
+transiciona `CONFIRMADO_CONTRAENTREGA → EN_PREPARACION` con el motivo del
+contacto (WhatsApp o llamada) que registra el administrador — sin campo
+nuevo en `Pedido`, reutiliza `transicionar` (actor + motivo en el
+historial). Como ese estado solo lo alcanza un pedido contraentrega, no
+hace falta revalidar el método de pago aparte. `DespacharPedido` transiciona
+`EN_PREPARACION → DESPACHADO` y crea el agregado `Envio` (transportadora,
+guía, costo real — tabla propia por `docs/02-modelo-datos.md`, sin columnas
+de recaudo todavía). La transición se aplica antes de crear el `Envio`: un
+despacho que en realidad falla (pedido sin verificar, o ya despachado)
+nunca deja un envío huérfano. `POST
+/api/v1/admin/pedidos/{id}/verificar-contraentrega` y `POST
+/api/v1/admin/pedidos/{id}/despacho`, protegidos por rol `ADMIN`. Sin
+excepción nueva: `TransicionDeEstadoInvalidaException` ya cae en el 422
+genérico.
+
+Lo que falta de contraentrega (entrega/rechazo, recaudo pendiente y su
+conciliación) sigue sin construir, va al final de esta fase y con su propio
+ciclo de revisión — es donde está el riesgo operativo. Léete
 `docs/11-pagos-y-envios.md` completo antes de empezarlo.
 
 **Contraentrega y transferencia manual necesitan una acción humana que todavía

@@ -122,6 +122,7 @@ GET/POST/PATCH /api/v1/admin/productos
 GET/POST /api/v1/admin/variantes/{id}/inventario
 POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET/PATCH /api/v1/admin/pedidos
+POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
 POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
