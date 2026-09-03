@@ -13,6 +13,12 @@ import java.util.UUID;
  * un pedido nunca relee el catálogo actual para reconstruir su total. {@code imagenUrl} puede ser
  * nula: no todo producto tiene imagen principal capturada como URL absoluta en el momento de
  * congelar.
+ *
+ * <p>{@code idReserva} referencia el movimiento {@code RESERVA} que {@code Inventario.reservar}
+ * creó al confirmar el pedido — sin guardar ese id aquí no hay forma segura de saber cuál reserva
+ * liberar cuando el pedido se rechaza en la entrega o el pago falla: dos pedidos distintos pueden
+ * tener reservas pendientes de la misma variante al mismo tiempo, así que no se puede adivinar por
+ * variante y cantidad.
  */
 public record LineaPedido(
     UUID id,
@@ -22,7 +28,8 @@ public record LineaPedido(
     int cantidad,
     Dinero precioUnitario,
     BigDecimal tasaIva,
-    String imagenUrl) {
+    String imagenUrl,
+    UUID idReserva) {
 
   public LineaPedido {
     Objects.requireNonNull(id, "El id de la línea no puede ser nulo.");
@@ -30,6 +37,7 @@ public record LineaPedido(
     Objects.requireNonNull(sku, "El SKU no puede ser nulo.");
     Objects.requireNonNull(precioUnitario, "El precio unitario no puede ser nulo.");
     Objects.requireNonNull(tasaIva, "La tasa de IVA no puede ser nula.");
+    Objects.requireNonNull(idReserva, "El id de la reserva no puede ser nulo.");
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre congelado en la línea no puede estar vacío.");
     }

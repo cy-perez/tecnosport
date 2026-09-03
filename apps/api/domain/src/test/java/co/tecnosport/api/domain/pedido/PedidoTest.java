@@ -32,7 +32,8 @@ class PedidoTest {
         cantidad,
         Dinero.deCop(precioUnitario),
         new BigDecimal("0.19"),
-        "https://cdn.tecnosport.co/img.webp");
+        "https://cdn.tecnosport.co/img.webp",
+        UUID.randomUUID());
   }
 
   private Pedido crearAlDomicilio(MetodoPago metodoPago) {
