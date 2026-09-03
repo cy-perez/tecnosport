@@ -8,6 +8,10 @@ dependencies {
     // No es infraestructura propia del proyecto, es un tipo del framework, igual que
     // spring-boot-starter-web.
     implementation("org.springframework:spring-tx")
+    // FiltroAutenticacionJwt extiende OncePerRequestFilter y usa SecurityContextHolder
+    // (docs/08-seguridad-legal.md). Misma dependencia que infrastructure, aquí porque
+    // presentation es quien intercepta la petición HTTP.
+    implementation("org.springframework.boot:spring-boot-starter-security")
     // Sin versión gestionada por el BOM de Spring Boot (springdoc no es de
     // Spring): la más reciente en Maven Central hoy es la misma línea 2.8.x
     // que ya soportaba Boot 3. Si su autoconfiguración no arranca con Boot

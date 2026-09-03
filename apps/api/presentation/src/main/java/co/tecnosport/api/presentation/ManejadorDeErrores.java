@@ -7,12 +7,17 @@ import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
+import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
+import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +32,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  */
 @RestControllerAdvice
 public class ManejadorDeErrores {
+
+  private static final Logger log = LoggerFactory.getLogger(ManejadorDeErrores.class);
 
   @ExceptionHandler(ProductoNoEncontradoException.class)
   public ProblemDetail productoNoEncontrado(ProductoNoEncontradoException excepcion) {
@@ -78,6 +85,26 @@ public class ManejadorDeErrores {
   public ProblemDetail metodoDePagoNoSoportadoPorWompi(
       MetodoDePagoNoSoportadoPorWompiException excepcion) {
     return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
+  }
+
+  @ExceptionHandler(CredencialesInvalidasException.class)
+  public ProblemDetail credencialesInvalidas(CredencialesInvalidasException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", excepcion);
+  }
+
+  @ExceptionHandler(SesionDeRefrescoInvalidaException.class)
+  public ProblemDetail sesionDeRefrescoInvalida(SesionDeRefrescoInvalidaException excepcion) {
+    return problema(HttpStatus.UNAUTHORIZED, "Sesión inválida", excepcion);
+  }
+
+  // Señal de robo del token (docs/08-seguridad-legal.md): RefrescarToken ya revocó toda la
+  // familia antes de que esta excepción llegue aquí — se registra para poder monitorearlo, no
+  // solo para responderle al cliente.
+  @ExceptionHandler(SesionDeRefrescoComprometidaException.class)
+  public ProblemDetail sesionDeRefrescoComprometida(
+      SesionDeRefrescoComprometidaException excepcion) {
+    log.warn("Sesión de refresco reutilizada: posible robo de token, familia revocada.");
+    return problema(HttpStatus.UNAUTHORIZED, "Sesión comprometida", excepcion);
   }
 
   @ExceptionHandler({
