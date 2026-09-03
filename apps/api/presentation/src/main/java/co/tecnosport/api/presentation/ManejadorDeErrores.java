@@ -2,8 +2,10 @@ package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
+import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +39,18 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LineaCarritoNoEncontradaException.class)
   public ProblemDetail lineaCarritoNoEncontrada(LineaCarritoNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Línea de carrito no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(VarianteNoEncontradaException.class)
+  public ProblemDetail varianteNoEncontrada(VarianteNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Variante no encontrada", excepcion);
+  }
+
+  // 409, no 422: la solicitud está bien formada, pero el estado del inventario cambió entre que
+  // el cliente vio el producto y creó el pedido — ejemplo textual en docs/03-api.md.
+  @ExceptionHandler(ExistenciaInsuficienteException.class)
+  public ProblemDetail existenciaInsuficiente(ExistenciaInsuficienteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Existencia insuficiente", excepcion);
   }
 
   @ExceptionHandler({

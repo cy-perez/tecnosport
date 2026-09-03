@@ -29,14 +29,17 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   private static final double UMBRAL_SIMILITUD = 0.1;
 
   private final ProductoJpaRepository productoJpaRepository;
+  private final VarianteJpaRepository varianteJpaRepository;
   private final MapeadorCatalogo mapeadorCatalogo;
   private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioProductosJpa(
       ProductoJpaRepository productoJpaRepository,
+      VarianteJpaRepository varianteJpaRepository,
       MapeadorCatalogo mapeadorCatalogo,
       NamedParameterJdbcTemplate jdbc) {
     this.productoJpaRepository = productoJpaRepository;
+    this.varianteJpaRepository = varianteJpaRepository;
     this.mapeadorCatalogo = mapeadorCatalogo;
     this.jdbc = jdbc;
   }
@@ -46,6 +49,13 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     return productoJpaRepository
         .findBySlug(slug.valor())
         .flatMap(p -> mapeadorCatalogo.hidratar(List.of(p.getId())).stream().findFirst());
+  }
+
+  @Override
+  public Optional<Producto> buscarPorVarianteId(UUID varianteId) {
+    return varianteJpaRepository
+        .findById(varianteId)
+        .flatMap(v -> mapeadorCatalogo.hidratar(List.of(v.getProductoId())).stream().findFirst());
   }
 
   @Override

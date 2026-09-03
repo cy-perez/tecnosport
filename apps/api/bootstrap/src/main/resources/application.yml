@@ -16,6 +16,11 @@ spring:
     hibernate:
       ddl-auto: validate
 
+tecnosport:
+  pedido:
+    minutos-reserva-inventario: ${MINUTOS_RESERVA_INVENTARIO:30}
+    horas-vencimiento-transferencia: ${TRANSFERENCIA_HORAS_VENCIMIENTO:24}
+
 springdoc:
   api-docs:
     path: /api/openapi.json

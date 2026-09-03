@@ -12,7 +12,6 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.presentation.catalogo.dto.AtributoValorRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
-import co.tecnosport.api.presentation.catalogo.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
@@ -20,6 +19,7 @@ import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteRespuesta;
+import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

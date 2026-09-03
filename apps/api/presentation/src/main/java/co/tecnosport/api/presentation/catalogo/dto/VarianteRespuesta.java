@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
+import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import java.util.List;
 import java.util.UUID;
 

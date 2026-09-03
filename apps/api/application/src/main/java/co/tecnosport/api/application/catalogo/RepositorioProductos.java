@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.Optional;
+import java.util.UUID;
 
 /** Puerto del catálogo. Implementación de producción: JPA con PostgreSQL. */
 public interface RepositorioProductos {
@@ -22,4 +23,11 @@ public interface RepositorioProductos {
    * este puerto.
    */
   Optional<Producto> buscarPorSlug(Slug slug);
+
+  /**
+   * El producto dueño de una variante, para revalidar precio y existencia al crear un pedido
+   * (docs/03-api.md): el cliente solo envía el id de la variante, nunca su precio. Sin filtrar por
+   * estado, igual que {@link #buscarPorSlug}.
+   */
+  Optional<Producto> buscarPorVarianteId(UUID varianteId);
 }
