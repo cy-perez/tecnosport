@@ -41,6 +41,20 @@ siembra nada; ver `docs/adr/0010-datos-de-siembra-por-perfil.md`.
 /api/v1/productos/{slug}`, `GET /api/v1/categorias` y `GET /api/v1/marcas`
 funcionan contra PostgreSQL real. Contrato completo en `docs/03-api.md`.
 
+## Carrito e inventario (Fase 2 — cerrada)
+
+`POST /api/v1/carritos`, `GET /api/v1/carritos/{id}`, `POST
+/api/v1/carritos/{id}/lineas`, `PATCH .../lineas/{lineaId}` y `DELETE
+.../lineas/{lineaId}` funcionan contra PostgreSQL real. Contrato completo en
+`docs/03-api.md`.
+
+Inventario por movimientos (`ENTRADA`, `SALIDA`, `AJUSTE`, `RESERVA`,
+`LIBERACION`) con bloqueo pesimista al reservar, verificado con una prueba de
+concurrencia real (dos hilos por la última unidad). Todavía sin ningún caso
+de uso que lo consuma — nada reserva inventario al agregar una línea al
+carrito, a propósito: la reserva ocurre al iniciar el pago, Fase 3. Detalle
+en `docs/09-plan-de-arranque.md`.
+
 ## Pruebas
 
 ```

@@ -73,3 +73,12 @@ se agregue a una ruta de la vitrina necesita su propio `precargarX()` y su
 entrada en el `resolve` de esa ruta — omitirlo reintroduce el mismo bug de
 *skeletons* intermitentes, silenciosamente, porque en local con el backend
 tibio casi nunca se nota. Detalle operativo en `apps/web/CLAUDE.md`.
+
+**Excepción, encontrada en Fase 2 (carrito):** esta regla asume que el
+servidor puede identificar el recurso a precargar a partir de la URL. El
+carrito no cumple esa condición — vive en `localStorage`, anónimo, sin
+cookie de sesión, así que el servidor no tiene forma de saber cuál es el
+carrito del visitante. No hay nada que precargar: `CarritoStore.carritoId`
+arranca en `null` y se llena en `afterNextRender`, y el SSR de `/carrito`
+sirve siempre el estado "sin carrito", nunca un *esqueleto*. Detalle en
+`apps/web/CLAUDE.md`.

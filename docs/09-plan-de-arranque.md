@@ -116,6 +116,51 @@ Inventario por movimientos, reserva con bloqueo pesimista, vencimiento con
 `Reloj` inyectado, carrito persistente reconciliado en el servidor. Aquí van las
 pruebas de concurrencia: dos compradores por la última unidad.
 
+**Backend cerrado** (2026-09-02): dominio de inventario por movimientos
+(`ffb17eb`), dominio de carrito (`c3e40e5`), casos de uso y puerto de
+inventario (`19532e3`), persistencia JPA de inventario con bloqueo pesimista
+y prueba de concurrencia (`a81da62`, con la corrección de transacción
+explícita en la siembra, `3a47e05`), persistencia JPA de carrito
+(`ac8321b`), endpoints REST de carrito (`79bf114`), y la corrección de
+exponer `id` de la variante en `VarianteRespuesta` (`057d533`) — necesaria
+para que el cliente pueda referenciar una variante al agregarla al carrito.
+`gradlew.bat build` pasa completo, incluida la prueba de concurrencia real
+con dos hilos por la última unidad (`RepositorioInventarioJpaTest`).
+
+**`RepositorioInventario` no tiene todavía ningún caso de uso que lo
+consuma** — el puerto existe (dominio y JPA), pero nada reserva inventario
+al agregar una línea al carrito. Es a propósito: `Carrito.java` documenta
+que la reserva ocurre "al iniciar el pago" (`docs/00-producto.md`), fuera
+de este agregado — queda para la Fase 3, cuando exista el caso de uso de
+creación de pedido que sí necesita bloquear existencias.
+
+**El carrito no vence todavía.** `docs/02-modelo-datos.md` dice que vive 30
+días, pero no hay columna de expiración ni tarea programada que lo borre —
+un carrito anónimo queda en la base indefinidamente. No bloquea la Fase 3;
+queda como `TODO` para cuando haya un mecanismo de tareas programadas en el
+backend (la reconciliación de transferencias de la Fase 3 va a necesitar
+uno igual, buen momento para resolver los dos juntos).
+
+**Vitrina cerrada** (2026-09-03, `b4ece08`): agregar al carrito desde la
+ficha de producto, badge de cantidad en el encabezado, página `/carrito`
+con edición de cantidad y eliminación de líneas. `CarritoStore` es un
+servicio singleton (no una función de fábrica como las de catalogo) para
+compartir una sola señal de `carritoId` entre encabezado, ficha y la
+página del carrito — el único caso de la Fase 2 con ese patrón, documentado
+en `apps/web/CLAUDE.md`. Es también la única vitrina que no sigue la regla
+de "siempre precargar en el resolver" de `ADR-0011`: el carrito vive en
+`localStorage`, anónimo, y el servidor no tiene forma de saber cuál es el
+carrito de un visitante — el SSR de `/carrito` sirve siempre "carrito
+vacío", verificado con `curl` en dos corridas.
+
+**Fase 2 completa.** Un producto se agrega al carrito desde la ficha, el
+badge del encabezado refleja la cantidad, `/es/carrito` permite cambiar
+cantidades y eliminar líneas, y el carrito persiste entre visitas por el id
+guardado en `localStorage` — todo verificado contra el backend real
+(`bootRun` + PostgreSQL). Sin autenticación ni reserva de inventario
+todavía: el carrito de la Fase 2 es una intención del cliente, no un
+compromiso — eso llega con el pedido en la Fase 3.
+
 ## Fase 3. Checkout, envío y pago
 
 Cotizador de envío detrás del puerto, con la tabla de tarifas propia como primera

@@ -36,6 +36,22 @@ implementación. ESLint con reglas de límites lo verifica.
   reconciliado contra el servidor al entrar al checkout. El precio, la existencia
   y el costo de envío **los recalcula el backend** antes de cobrar. Lo que hay en
   el navegador es una intención, no una verdad.
+- **`CarritoStore` es `@Injectable({providedIn: 'root'})`, no una función de
+  fábrica como `usarBusquedaProductos`.** El id del carrito lo necesitan tres
+  componentes independientes (`encabezado`, la ficha de producto, la página del
+  carrito) y tienen que ver el mismo carrito — una fábrica le daría a cada uno
+  su propia señal aislada, y el badge del encabezado nunca se enteraría de que
+  la ficha acaba de crear un carrito. Un servicio singleton es la excepción
+  correcta: úsala solo cuando de verdad hay estado compartido entre
+  componentes que no tienen relación padre-hijo, no como patrón por defecto.
+- **El carrito es la única excepción documentada a "siempre precargar en el
+  resolver" de `ADR-0011`.** El id del carrito vive en `localStorage`, anónimo,
+  sin cookie de sesión — el servidor no tiene forma de saber qué carrito es
+  "el de este visitante", así que no hay nada que precargar del lado del
+  servidor. `CarritoStore.carritoId` arranca en `null` y se llena en
+  `afterNextRender` (mismo patrón que la cookie de tema en `encabezado.ts`):
+  el SSR de `/carrito` sirve siempre "carrito vacío", nunca un *esqueleto*
+  colgado, y el cliente carga el carrito real justo después de hidratar.
 - **Estilos:** SCSS por componente, solo con variables de `tokens.css`. Radio 0
   en todo. El chaflán se aplica con la clase `.chaflan`, nunca con
   `border-radius`.
@@ -44,6 +60,17 @@ implementación. ESLint con reglas de límites lo verifica.
 - **Accesibilidad no es una fase final.** Todo control alcanzable por teclado, el
   anillo de foco no se elimina jamás, diálogos con el CDK y trampa de foco,
   imágenes con `alt` traducido, `label` real en cada campo.
+- **Un `[attr.aria-label]` puesto directamente en la etiqueta de un componente
+  compartido (`<ts-boton aria-label="...">`) cae en el host del componente, no
+  en el elemento real dentro de su plantilla.** Angular solo redirige un
+  binding de atributo al elemento interno si el componente lo declara como
+  `input()`; si no, el atributo se queda en `<ts-boton>` y el nombre accesible
+  del `<button>` real no cambia — encontrado al escribir las pruebas de
+  `linea-carrito` (`getByRole('button', { name: ... })` no encontraba el
+  botón). Por eso `ts-boton` tiene un input `etiquetaAccesible` que sí se
+  liga con `[attr.aria-label]` sobre el `<button>` interno. Cualquier
+  componente compartido que envuelva un control nativo y necesite exponer
+  ARIA más allá del contenido proyectado necesita el mismo input explícito.
 - **Imágenes:** `NgOptimizedImage` con `width` y `height`, en WebP, y `priority`
   solo en la del hero y en el fotograma frontal de la ficha.
 - **SSR:** nada de `window`, `document`, `localStorage`, `navigator` ni sensores

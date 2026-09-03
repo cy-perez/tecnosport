@@ -33,7 +33,7 @@ Se añade cuando haya recorridos reales que verificar.
 
 ```
 src/app/
-  core/        interceptores, guards, configuración, tema, i18n
+  core/        interceptores, guards, configuración, tema, i18n, cliente http
   shared/      componentes del sistema de diseño (prefijo ts-)
   features/    catalogo, carrito, checkout, cuenta, admin, captura360
   layout/      header, footer, menú móvil
@@ -65,6 +65,17 @@ Detalle en `docs/04-ui-marca.md`.
 cursor) y `/es/productos/:slug` (ficha con galería y selector de variante)
 funcionan contra el backend real. Contenido todavía en un solo idioma —
 `docs/05-i18n.md` documenta el estado actual. Visor 360 pendiente, Fase 5.
+
+## Carrito (Fase 2 — cerrada)
+
+Botón "agregar al carrito" en la ficha, badge de cantidad en el encabezado y
+`/es/carrito` (cambiar cantidad, eliminar línea) funcionan contra el backend
+real. `CarritoStore` es un servicio singleton, no una función de fábrica
+como las de `catalogo` — necesario para que encabezado, ficha y la página
+del carrito compartan la misma señal de `carritoId`. Es también la única
+vitrina que no precarga en el resolver de ruta (`ADR-0011`): el carrito es
+anónimo y vive en `localStorage`, así que no hay nada que el servidor pueda
+precargar. Detalle en `apps/web/CLAUDE.md`.
 
 ## Cliente de la API
 
