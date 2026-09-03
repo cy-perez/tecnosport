@@ -127,6 +127,41 @@ class PedidoControladorTest {
   }
 
   @Test
+  void crearPedidoConTransferenciaManualDevuelveLosDatosDeLaCuenta() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "TRANSFERENCIA_MANUAL");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.datosTransferencia.banco").value("Bancolombia"))
+        .andExpect(jsonPath("$.datosTransferencia.tipoCuenta").value("ahorros"))
+        .andExpect(jsonPath("$.datosTransferencia.numeroCuenta").value("123-456789-00"))
+        .andExpect(jsonPath("$.datosTransferencia.titular").value("TecnoSport SAS"))
+        .andExpect(
+            jsonPath("$.datosTransferencia.referencia").value(matchesPattern("TS-\\d{4}-\\d{6}")));
+  }
+
+  @Test
+  void crearPedidoConMetodoDistintoDeTransferenciaNoTraeDatosDeCuenta() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.datosTransferencia").isEmpty());
+  }
+
+  @Test
   void crearPedidoContraentregaQuedaConfirmadoSinPagoPendiente() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
@@ -261,8 +296,15 @@ class PedidoControladorTest {
     }
 
     @Bean
-    MapeadorRespuestasPedido mapeadorRespuestasPedido() {
-      return new MapeadorRespuestasPedido();
+    PropiedadesTransferenciaManual propiedadesTransferenciaManual() {
+      return new PropiedadesTransferenciaManual(
+          "Bancolombia", "ahorros", "123-456789-00", "TecnoSport SAS");
+    }
+
+    @Bean
+    MapeadorRespuestasPedido mapeadorRespuestasPedido(
+        PropiedadesTransferenciaManual propiedadesTransferencia) {
+      return new MapeadorRespuestasPedido(propiedadesTransferencia);
     }
   }
 }

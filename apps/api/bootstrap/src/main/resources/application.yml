@@ -31,6 +31,13 @@ tecnosport:
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
+  transferencia-manual:
+    # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
+    # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.
+    banco: ${TRANSFERENCIA_BANCO:banco_pendiente_de_configurar}
+    tipo-cuenta: ${TRANSFERENCIA_TIPO_CUENTA:ahorros}
+    numero-cuenta: ${TRANSFERENCIA_NUMERO_CUENTA:000000000}
+    titular: ${TRANSFERENCIA_TITULAR:TecnoSport SAS}
 
 springdoc:
   api-docs:

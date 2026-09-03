@@ -5,14 +5,20 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Mismo patrón que {@code ConfiguracionCarrito}/{@code ConfiguracionCatalogo}. */
+/**
+ * Mismo patrón que {@code ConfiguracionCarrito}/{@code ConfiguracionCatalogo}. {@code
+ * PropiedadesTransferenciaManual} se activa aquí, no donde se consume ({@code
+ * MapeadorRespuestasPedido}, un {@code @Component} normal que Spring ya autoconecta): activar sus
+ * propiedades es trabajo de bootstrap, igual que con Wompi.
+ */
 @Configuration
-@EnableConfigurationProperties(PropiedadesPedido.class)
+@EnableConfigurationProperties({PropiedadesPedido.class, PropiedadesTransferenciaManual.class})
 public class ConfiguracionPedido {
 
   @Bean

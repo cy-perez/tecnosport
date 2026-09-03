@@ -16,4 +16,5 @@ public record PedidoRespuesta(
     String metodoPago,
     String estado,
     DineroRespuesta total,
-    Instant creadoEn) {}
+    Instant creadoEn,
+    DatosTransferenciaRespuesta datosTransferencia) {}
