@@ -1,0 +1,49 @@
+package co.tecnosport.api.domain.pedido;
+
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Grafo de transiciones válidas del diagrama de docs/02-modelo-datos.md. Un {@code ENTREGADO} tiene
+ * dos salidas posibles ({@code DEVUELTO} para pago en línea, {@code RECAUDO_PENDIENTE} para
+ * contraentrega) porque el diagrama no separa el estado por método de pago; quien orquesta la
+ * transición es responsable de no mezclar los dos caminos.
+ */
+public enum EstadoPedido {
+  CREADO,
+  PAGO_PENDIENTE,
+  PAGADO,
+  PAGO_FALLIDO,
+  CONFIRMADO_CONTRAENTREGA,
+  EN_PREPARACION,
+  DESPACHADO,
+  ENTREGADO,
+  RECHAZADO_EN_ENTREGA,
+  DEVUELTO,
+  RECAUDO_PENDIENTE,
+  RECAUDO_CONCILIADO;
+
+  private static final Map<EstadoPedido, Set<EstadoPedido>> TRANSICIONES_VALIDAS =
+      new EnumMap<>(EstadoPedido.class);
+
+  static {
+    TRANSICIONES_VALIDAS.put(CREADO, EnumSet.of(PAGO_PENDIENTE, CONFIRMADO_CONTRAENTREGA));
+    TRANSICIONES_VALIDAS.put(PAGO_PENDIENTE, EnumSet.of(PAGADO, PAGO_FALLIDO));
+    TRANSICIONES_VALIDAS.put(PAGO_FALLIDO, EnumSet.of(PAGO_PENDIENTE));
+    TRANSICIONES_VALIDAS.put(PAGADO, EnumSet.of(EN_PREPARACION));
+    TRANSICIONES_VALIDAS.put(CONFIRMADO_CONTRAENTREGA, EnumSet.of(EN_PREPARACION));
+    TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO));
+    TRANSICIONES_VALIDAS.put(DESPACHADO, EnumSet.of(ENTREGADO, RECHAZADO_EN_ENTREGA));
+    TRANSICIONES_VALIDAS.put(ENTREGADO, EnumSet.of(DEVUELTO, RECAUDO_PENDIENTE));
+    TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.noneOf(EstadoPedido.class));
+    TRANSICIONES_VALIDAS.put(DEVUELTO, EnumSet.noneOf(EstadoPedido.class));
+    TRANSICIONES_VALIDAS.put(RECAUDO_PENDIENTE, EnumSet.of(RECAUDO_CONCILIADO));
+    TRANSICIONES_VALIDAS.put(RECAUDO_CONCILIADO, EnumSet.noneOf(EstadoPedido.class));
+  }
+
+  public boolean puedeTransicionarA(EstadoPedido siguiente) {
+    return TRANSICIONES_VALIDAS.get(this).contains(siguiente);
+  }
+}
