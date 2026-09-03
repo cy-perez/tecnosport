@@ -2,6 +2,9 @@ package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
+import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
+import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
@@ -46,11 +49,29 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.NOT_FOUND, "Variante no encontrada", excepcion);
   }
 
+  @ExceptionHandler(PedidoNoEncontradoException.class)
+  public ProblemDetail pedidoNoEncontrado(PedidoNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Pedido no encontrado", excepcion);
+  }
+
   // 409, no 422: la solicitud está bien formada, pero el estado del inventario cambió entre que
   // el cliente vio el producto y creó el pedido — ejemplo textual en docs/03-api.md.
   @ExceptionHandler(ExistenciaInsuficienteException.class)
   public ProblemDetail existenciaInsuficiente(ExistenciaInsuficienteException excepcion) {
     return problema(HttpStatus.CONFLICT, "Existencia insuficiente", excepcion);
+  }
+
+  // Mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, pero el
+  // pedido no admite un intento de pago en su estado o método de pago actual.
+  @ExceptionHandler(PedidoNoEstaEnPagoPendienteException.class)
+  public ProblemDetail pedidoNoEstaEnPagoPendiente(PedidoNoEstaEnPagoPendienteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Pedido no admite un intento de pago", excepcion);
+  }
+
+  @ExceptionHandler(MetodoDePagoNoSoportadoPorWompiException.class)
+  public ProblemDetail metodoDePagoNoSoportadoPorWompi(
+      MetodoDePagoNoSoportadoPorWompiException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Método de pago no soportado por Wompi", excepcion);
   }
 
   @ExceptionHandler({
