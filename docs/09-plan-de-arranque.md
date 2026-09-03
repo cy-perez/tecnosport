@@ -300,12 +300,27 @@ tocaba inventar a la sesión.
 **Conciliar el comprobante cerrado** (2026-09-03), una vez existió el rol
 `ADMIN` para protegerlo — ver la vista de operación mínima, más abajo.
 
-Contraentrega sigue sin construir.
+**Disponibilidad de contraentrega cerrada** (2026-09-03): hasta ahora
+`CrearPedido` aceptaba `CONTRAENTREGA` sin validar nada — hueco real frente a
+la regla dura "el servidor no confía en el cliente para decidir métodos de
+pago disponibles" (docs/03-api.md). `PoliticaContraentrega` (dominio, pura)
+aplica las cuatro reglas de docs/11-pagos-y-envios.md: cobertura de ciudad
+(`cobertura_contraentrega`, tabla propia con el código DANE como clave
+primaria, cargada a mano por el administrador vía `POST`/`DELETE
+/api/v1/admin/cobertura-contraentrega`, sin UI ni integración con la
+transportadora todavía), monto máximo y categorías excluidas
+(`CONTRAENTREGA_HABILITADA`/`MONTO_MAXIMO`/`CATEGORIAS_EXCLUIDAS`, arranca
+deshabilitada por defecto), y rechazo previo del comprador por correo (sin
+teléfono en el dominio todavía). `MetodosDePagoDisponibles` la aplica tanto
+en `POST /api/v1/pedidos/metodos-de-pago-disponibles` (el checkout consulta
+antes de mostrar las opciones) como dentro de `CrearPedido` — mismo código,
+para que la respuesta de la consulta y la validación real nunca diverjan.
 
-**Contraentrega va en esta fase, pero al final y con su propio ciclo de
-revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
-servidor, reserva sin vencimiento, verificación previa al despacho y estados de
-recaudo. Léete `docs/11-pagos-y-envios.md` completo antes de empezarla.
+El resto de contraentrega (verificación previa al despacho, despacho con
+transportadora y guía, entrega/rechazo, recaudo pendiente y su conciliación)
+sigue sin construir, va al final de esta fase y con su propio ciclo de
+revisión — es donde está el riesgo operativo. Léete
+`docs/11-pagos-y-envios.md` completo antes de empezarlo.
 
 **Contraentrega y transferencia manual necesitan una acción humana que todavía
 no tiene dónde vivir:** marcar un contraentrega como verificado antes de
@@ -340,7 +355,9 @@ pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
   no de `@AuthenticationPrincipal`: ese resolver solo se registra con
   `@EnableWebSecurity` activo, que `presentation` no importa.
 - Falta marcar verificado un contraentrega y ver el recaudo pendiente —
-  ninguno de los dos tiene sentido antes de que contraentrega exista.
+  ninguno de los dos tiene sentido antes de que exista el resto del flujo de
+  contraentrega (verificación, despacho, entrega, recaudo), todavía sin
+  construir.
 
 El resto del panel (productos, variantes, existencias, imágenes, cuenta de
 cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el

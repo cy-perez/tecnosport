@@ -55,6 +55,7 @@ POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
 GET  /api/v1/envios/cobertura               ciudades con contraentrega habilitada
+POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos aplican a este carrito y destino
 POST /api/v1/pedidos                        revalida precios y existencias, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
@@ -119,6 +120,7 @@ Rol `ADMIN`.
 ```
 GET/POST/PATCH /api/v1/admin/productos
 GET/POST /api/v1/admin/variantes/{id}/inventario
+POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET/PATCH /api/v1/admin/pedidos
 POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
