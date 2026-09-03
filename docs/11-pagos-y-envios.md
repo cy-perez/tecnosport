@@ -77,30 +77,24 @@ Se muestran los datos de la cuenta y una referencia única. El pedido queda en
 `PAGO_PENDIENTE` con reserva de 24 horas, no de 30 minutos. El administrador
 concilia el comprobante en el panel. Vencido el plazo sin comprobante, se libera.
 
-## Cotización de envío
+## Envío
 
-Puerto `CotizadorEnvio`, con tres estrategias posibles, según `adr/0004`:
+No se cotiza. El precio publicado de cada producto ya incluye un costo de envío
+estándar, igual para todo el país, según `adr/0012`. El checkout no pide ciudad
+ni calcula nada para fijar ese valor: el cliente ve el mismo precio compre desde
+donde compre.
 
-1. **Tabla de tarifas propia** por destino, peso y volumen. Es la de la fase 1:
-   funciona el primer día y no depende de ningún contrato.
-2. **Agregador** con una sola integración que cubre varias transportadoras.
-   Verificar cobertura, costos y condiciones antes de elegir proveedor.
-3. **API directa** por transportadora, cuando el volumen justifique el contrato.
+Lo que sí varía es lo que el negocio paga a la transportadora por cada envío
+real. Ese costo se registra en `Envio` como costo real, separado del recaudo de
+contraentrega, para que el margen del pedido sea verdadero y no una estimación
+optimista — es información interna, nunca algo que el cliente cotiza o ve.
 
-Entrada: destino con códigos DANE de departamento y ciudad, y el contenido del
-carrito con peso y dimensiones. Salida: lista de opciones con transportadora,
-costo, días estimados y si admite recaudo contraentrega.
-
-**El peso volumétrico importa.** Un bolso pesa poco y ocupa mucho; las
-transportadoras cobran por el mayor entre peso real y volumétrico. Cada variante
-guarda peso y dimensiones, y son obligatorios para publicar. Sin ellos la
-cotización miente y el negocio pierde plata en cada envío grande.
-
-El costo que se cobra al cliente lo calcula el servidor en el momento de crear el
-pedido, no cuando el cliente cotizó. Entre una cosa y la otra pudo cambiar el
-carrito.
+**Disponibilidad de contraentrega.** Aunque el envío no se cotiza, la ciudad de
+destino sigue determinando si contraentrega está disponible: `GET
+/api/v1/envios/cobertura` expone las ciudades cubiertas por la transportadora
+con recaudo, según las reglas de la sección anterior.
 
 ## Retiro en punto
 
-Sin costo, sin cotización, sin recaudo. Requiere elegir el punto de Medellín y
-genera un código de retiro. Es el camino más simple y hay que mantenerlo así.
+Sin costo, sin recaudo. Requiere elegir el punto de Medellín y genera un código
+de retiro. Es el camino más simple y hay que mantenerlo así.

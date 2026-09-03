@@ -1,6 +1,6 @@
 # ADR 0004. Cotización de envíos detrás de un puerto
 
-Fecha: 2026-08-30. Estado: propuesta. Proveedor por definir.
+Fecha: 2026-08-30. Estado: **superada por `adr/0012`**.
 
 ## Contexto
 Se pidió integrar Envía, Coordinadora e Interrapidísimo. Ninguna ofrece API

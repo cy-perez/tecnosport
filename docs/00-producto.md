@@ -21,7 +21,6 @@ Sí entra:
   un teléfono, sin estudio fotográfico.
 - Carrito persistente.
 - Checkout con pago en línea por Wompi, transferencia y **contraentrega**.
-- Cotizador de envío antes de pagar.
 - Compra como invitado; cuenta opcional.
 - Panel de administración: productos, variantes, existencias, imágenes, pedidos.
 - Correos transaccionales: confirmación, pago aprobado, despacho, entrega.
@@ -40,7 +39,7 @@ No entra en la fase 1, y no se construye anticipadamente:
 
 | Actor | Qué puede hacer |
 |---|---|
-| Visitante | Ver catálogo y precios, buscar, filtrar, girar el visor 360, armar carrito, cotizar envío, comprar como invitado |
+| Visitante | Ver catálogo y precios, buscar, filtrar, girar el visor 360, armar carrito, comprar como invitado |
 | Cliente registrado | Lo anterior, más historial de pedidos, direcciones guardadas y seguimiento |
 | Administrador | Productos, variantes, precios, existencias, captura y carga de imágenes, pedidos, despacho, confirmación de recaudo |
 
@@ -51,8 +50,8 @@ identifica al comprador, aunque sea solo por correo.
 ## Recorridos que tienen que funcionar
 
 1. **Comprar como invitado.** Llega a una ficha de producto, gira la imagen 360,
-   elige talla, agrega al carrito, cotiza envío con su ciudad, paga con Nequi y
-   recibe el correo. Sin crear cuenta.
+   elige talla, agrega al carrito, paga con Nequi y recibe el correo. Sin crear
+   cuenta.
 2. **Comprar un celular.** Elige capacidad y color, ve que hay dos unidades, paga
    con tarjeta, y el sistema le asigna una unidad concreta con su IMEI.
 3. **Comprar contraentrega.** Elige contraentrega, el sistema valida que su ciudad
@@ -69,8 +68,9 @@ identifica al comprador, aunque sea solo por correo.
 
 - **Los precios se muestran con IVA incluido.** Lo exige el Estatuto del
   Consumidor. La factura desglosa; la vitrina no.
-- **Precio, existencia y costo de envío se recalculan en el servidor antes de
-  cobrar.** Nunca se confía en lo que envía el navegador.
+- **Precio y existencia se recalculan en el servidor antes de cobrar.** Nunca
+  se confía en lo que envía el navegador. El envío no se recalcula: es un
+  costo estándar ya incluido en el precio publicado, igual en todo el país.
 - **No se vende lo que no hay.** El inventario se reserva al iniciar el pago y se
   descuenta al confirmarlo. Una reserva de pago en línea vence a los 30 minutos;
   una de contraentrega dura hasta el despacho.

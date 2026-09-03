@@ -15,7 +15,7 @@ Orden de lectura para quien llega nuevo al proyecto.
 | `08-seguridad-legal.md` | Autenticación, OWASP y la ley colombiana |
 | `09-plan-de-arranque.md` | Orden de construcción y prompts de cada fase |
 | `10-captura-360.md` | Captura asistida de fotos y visor de rotación |
-| `11-pagos-y-envios.md` | Wompi, contraentrega, transferencia y cotización de envío |
+| `11-pagos-y-envios.md` | Wompi, contraentrega, transferencia y envío a costo estándar |
 | `adr/` | Decisiones tomadas, con fecha, alternativas y consecuencias |
 
 Cuando una decisión cambie, se actualiza el documento y se agrega un ADR. Un

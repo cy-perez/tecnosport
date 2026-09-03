@@ -54,7 +54,6 @@ GET  /api/v1/carritos/{id}
 POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
-POST /api/v1/envios/cotizacion              destino y contenido, devuelve opciones
 GET  /api/v1/envios/cobertura               ciudades con contraentrega habilitada
 POST /api/v1/pedidos                        revalida precios y existencias, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
@@ -148,7 +147,6 @@ tiene que ser inofensivo.
 
 1. Recalcular precio, IVA y total.
 2. Verificar existencias.
-3. Calcular el costo de envío que se cobra.
-4. Decidir si un método de pago está disponible para ese destino y ese monto.
-5. Decidir si un pago está aprobado. La verdad es la consulta a la pasarela, no
+3. Decidir si un método de pago está disponible para ese destino y ese monto.
+4. Decidir si un pago está aprobado. La verdad es la consulta a la pasarela, no
    el parámetro que trae el navegador al volver.

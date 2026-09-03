@@ -122,7 +122,7 @@ primero que hay que saber es con qué se capturó.
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
 | `Pedido` | líneas congeladas, dirección, envío, totales, método de pago, estado, historial | Raíz transaccional |
 | `Pago` | referencia, método, estado, eventos recibidos | Idempotente por referencia |
-| `Envio` | transportadora, guía, estado, costo cotizado y real, recaudo | |
+| `Envio` | transportadora, guía, estado, costo real, recaudo | |
 | `Usuario` | correo, credencial, roles, verificación | |
 | `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | |

@@ -58,7 +58,6 @@ Esto lo verifica ArchUnit, no la buena voluntad. La prueba vive en
 |---|---|---|
 | `RepositorioProductos`, `RepositorioPedidos`, y demás | JPA con PostgreSQL | en memoria |
 | `PasarelaDePagos` | Wompi | falsa determinista |
-| `CotizadorEnvio` | tarifas propias o agregador | tabla fija |
 | `RecaudoContraentrega` | transportadora con recaudo | espía |
 | `EmisorFacturaElectronica` | ninguno en fase 1 | espía |
 | `AlmacenDeImagenes` | Cloud Storage con URL firmada | sistema de archivos |

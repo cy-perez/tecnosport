@@ -163,10 +163,11 @@ compromiso — eso llega con el pedido en la Fase 3.
 
 ## Fase 3. Checkout, envío y pago
 
-Cotizador de envío detrás del puerto, con la tabla de tarifas propia como primera
-implementación. Creación de pedido con revalidación de precios y existencias.
-Wompi con firma de integridad, webhook firmado, idempotencia y conciliación
-programada. Transferencia manual. Correos transaccionales.
+El envío no se cotiza: es un costo estándar ya incluido en el precio publicado
+de cada producto, igual en todo el país, según `adr/0012`. Creación de pedido
+con revalidación de precios y existencias. Wompi con firma de integridad,
+webhook firmado, idempotencia y conciliación programada. Transferencia manual.
+Correos transaccionales.
 
 **Contraentrega va en esta fase, pero al final y con su propio ciclo de
 revisión.** Es donde está el riesgo operativo: disponibilidad decidida por el
