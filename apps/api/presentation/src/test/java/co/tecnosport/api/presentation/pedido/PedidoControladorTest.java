@@ -1,6 +1,8 @@
 package co.tecnosport.api.presentation.pedido;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +27,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
+import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -54,6 +57,12 @@ class PedidoControladorTest {
   private static final CrearPedidoRequest.DireccionRequest DIRECCION_MEDELLIN =
       new CrearPedidoRequest.DireccionRequest(
           "05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+
+  // Sin cobertura en el doble de prueba (que solo cubre "05001"): sirve para probar el camino sin
+  // contraentrega disponible.
+  private static final CrearPedidoRequest.DireccionRequest DIRECCION_BOGOTA =
+      new CrearPedidoRequest.DireccionRequest(
+          "11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null);
 
   private Variante publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
@@ -254,6 +263,60 @@ class PedidoControladorTest {
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("EXISTENCIA_INSUFICIENTE"));
+  }
+
+  @Test
+  void crearPedidoContraentregaSinCoberturaDevuelve409() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_BOGOTA, "CONTRAENTREGA");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("CONTRAENTREGA_NO_DISPONIBLE"));
+  }
+
+  @Test
+  void metodosDePagoDisponiblesIncluyeContraentregaCuandoLaCiudadEstaCubierta() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_MEDELLIN);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasItem("CONTRAENTREGA")));
+  }
+
+  @Test
+  void metodosDePagoDisponiblesExcluyeContraentregaSinCobertura() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    MetodosDePagoDisponiblesRequest cuerpo =
+        new MetodosDePagoDisponiblesRequest(
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "cliente@tecnosport.co",
+            "ENVIO_A_DOMICILIO",
+            DIRECCION_BOGOTA);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/metodos-de-pago-disponibles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", not(hasItem("CONTRAENTREGA"))))
+        .andExpect(jsonPath("$", hasItem("TARJETA")));
   }
 
   @TestConfiguration

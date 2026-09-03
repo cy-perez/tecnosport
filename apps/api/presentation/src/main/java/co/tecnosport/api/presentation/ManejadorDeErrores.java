@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
@@ -80,6 +81,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(PedidoNoEstaEnPagoPendienteException.class)
   public ProblemDetail pedidoNoEstaEnPagoPendiente(PedidoNoEstaEnPagoPendienteException excepcion) {
     return problema(HttpStatus.CONFLICT, "Pedido no admite un intento de pago", excepcion);
+  }
+
+  // Mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, pero
+  // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo
+  // previo) — el cliente pudo haber consultado /metodos-de-pago-disponibles hace un rato.
+  @ExceptionHandler(ContraentregaNoDisponibleException.class)
+  public ProblemDetail contraentregaNoDisponible(ContraentregaNoDisponibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Contraentrega no disponible", excepcion);
   }
 
   @ExceptionHandler(MetodoDePagoNoSoportadoPorWompiException.class)

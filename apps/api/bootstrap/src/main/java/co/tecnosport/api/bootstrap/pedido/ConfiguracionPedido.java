@@ -2,6 +2,7 @@ package co.tecnosport.api.bootstrap.pedido;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.CrearPedido;
@@ -28,12 +29,14 @@ public class ConfiguracionPedido {
       RepositorioProductos repositorioProductos,
       RepositorioInventario repositorioInventario,
       RepositorioPedidos repositorioPedidos,
+      MetodosDePagoDisponibles metodosDePagoDisponibles,
       Reloj reloj,
       PropiedadesPedido propiedades) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
         repositorioPedidos,
+        metodosDePagoDisponibles,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
         Duration.ofHours(propiedades.horasVencimientoTransferencia()));

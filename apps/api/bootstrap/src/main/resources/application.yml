@@ -31,6 +31,15 @@ tecnosport:
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
+  contraentrega:
+    # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a propósito.
+    # Se activa explícito cuando el negocio confirme cobertura, monto máximo y categorías
+    # excluidas reales — monto-maximo de abajo es un placeholder de desarrollo, no un límite
+    # decidido. categorias-excluidas sin variable (docs/07-infra-gcp.md,
+    # CONTRAENTREGA_CATEGORIAS_EXCLUIDAS): lista separada por comas de LineaCatalogo
+    # (ROPA_Y_CALZADO, BOLSOS, CELULARES) cuando exista.
+    habilitada: ${CONTRAENTREGA_HABILITADA:false}
+    monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:100000}
   transferencia-manual:
     # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
     # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.

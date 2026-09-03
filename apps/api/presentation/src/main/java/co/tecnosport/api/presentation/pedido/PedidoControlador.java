@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.CrearPedidoComando;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -7,6 +9,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
+import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +32,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class PedidoControlador {
 
   private final CrearPedido crearPedido;
+  private final MetodosDePagoDisponibles metodosDePagoDisponibles;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
 
   public PedidoControlador(
       CrearPedido crearPedido,
+      MetodosDePagoDisponibles metodosDePagoDisponibles,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
     this.crearPedido = Objects.requireNonNull(crearPedido);
+    this.metodosDePagoDisponibles = Objects.requireNonNull(metodosDePagoDisponibles);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -46,6 +52,23 @@ public class PedidoControlador {
     CrearPedidoComando comando = aComando(cuerpo);
     Pedido pedido = transaccion.execute(estado -> crearPedido.ejecutar(comando));
     return mapeador.aRespuesta(pedido);
+  }
+
+  @PostMapping("/metodos-de-pago-disponibles")
+  public List<String> metodosDePagoDisponibles(
+      @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
+    MetodosDePagoDisponiblesComando comando =
+        new MetodosDePagoDisponiblesComando(
+            cuerpo.lineas().stream()
+                .map(
+                    l ->
+                        new MetodosDePagoDisponiblesComando.LineaComando(
+                            l.varianteId(), l.cantidad()))
+                .toList(),
+            cuerpo.correo(),
+            TipoEntrega.valueOf(cuerpo.tipoEntrega()),
+            cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()));
+    return metodosDePagoDisponibles.ejecutar(comando).stream().map(Enum::name).sorted().toList();
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo) {
