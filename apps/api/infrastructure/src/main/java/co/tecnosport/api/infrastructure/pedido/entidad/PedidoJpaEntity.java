@@ -14,6 +14,9 @@ public class PedidoJpaEntity {
 
   @Id private UUID id;
 
+  @Column(name = "numero_pedido", nullable = false, unique = true)
+  private String numeroPedido;
+
   @Column(name = "usuario_id")
   private UUID usuarioId;
 
@@ -50,6 +53,7 @@ public class PedidoJpaEntity {
 
   public PedidoJpaEntity(
       UUID id,
+      String numeroPedido,
       UUID usuarioId,
       String correo,
       String tipoEntrega,
@@ -63,6 +67,7 @@ public class PedidoJpaEntity {
       String estado,
       Instant creadoEn) {
     this.id = id;
+    this.numeroPedido = numeroPedido;
     this.usuarioId = usuarioId;
     this.correo = correo;
     this.tipoEntrega = tipoEntrega;
@@ -79,6 +84,10 @@ public class PedidoJpaEntity {
 
   public UUID getId() {
     return id;
+  }
+
+  public String getNumeroPedido() {
+    return numeroPedido;
   }
 
   public UUID getUsuarioId() {

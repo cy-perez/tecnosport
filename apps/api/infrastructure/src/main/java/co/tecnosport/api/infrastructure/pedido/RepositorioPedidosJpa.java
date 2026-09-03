@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.HistorialPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.infrastructure.pedido.entidad.HistorialPedidoJpaEntity;
@@ -18,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -38,17 +41,33 @@ import org.springframework.stereotype.Component;
 @Component
 public class RepositorioPedidosJpa implements RepositorioPedidos {
 
+  /**
+   * Una sola sentencia atómica: el {@code insert ... on conflict} de Postgres serializa por fila
+   * sin necesidad de bloqueo pesimista explícito, a diferencia de {@code RepositorioInventarioJpa}.
+   * {@code siguiente} queda listo para la próxima llamada; {@code siguiente - 1} es el número que
+   * esta llamada acaba de reclamar.
+   */
+  private static final String SQL_SIGUIENTE_NUMERO =
+      """
+      insert into secuencia_pedido (anio, siguiente) values (:anio, 2)
+      on conflict (anio) do update set siguiente = secuencia_pedido.siguiente + 1
+      returning siguiente - 1
+      """;
+
   private final PedidoJpaRepository pedidos;
   private final LineaPedidoJpaRepository lineas;
   private final HistorialPedidoJpaRepository historial;
+  private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioPedidosJpa(
       PedidoJpaRepository pedidos,
       LineaPedidoJpaRepository lineas,
-      HistorialPedidoJpaRepository historial) {
+      HistorialPedidoJpaRepository historial,
+      NamedParameterJdbcTemplate jdbc) {
     this.pedidos = Objects.requireNonNull(pedidos);
     this.lineas = Objects.requireNonNull(lineas);
     this.historial = Objects.requireNonNull(historial);
+    this.jdbc = Objects.requireNonNull(jdbc);
   }
 
   @Override
@@ -75,6 +94,14 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         pedido.historial().stream().map(h -> aEntidadHistorial(pedido.id(), h)).toList());
   }
 
+  @Override
+  public NumeroPedido siguienteNumero(int anio) {
+    Long secuencial =
+        jdbc.queryForObject(
+            SQL_SIGUIENTE_NUMERO, new MapSqlParameterSource("anio", anio), Long.class);
+    return NumeroPedido.de(anio, secuencial);
+  }
+
   private Pedido aPedido(
       PedidoJpaEntity entidad,
       List<LineaPedidoJpaEntity> lineasJpa,
@@ -91,6 +118,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
                 entidad.getIndicaciones());
     return new Pedido(
         entidad.getId(),
+        new NumeroPedido(entidad.getNumeroPedido()),
         entidad.getUsuarioId(),
         new CorreoElectronico(entidad.getCorreo()),
         lineasJpa.stream().map(this::aLinea).toList(),
@@ -123,6 +151,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
     Direccion direccion = pedido.direccion().orElse(null);
     return new PedidoJpaEntity(
         pedido.id(),
+        pedido.numeroPedido().valor(),
         pedido.usuarioId().orElse(null),
         pedido.correo().valor(),
         pedido.tipoEntrega().name(),
