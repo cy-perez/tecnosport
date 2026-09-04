@@ -9,6 +9,8 @@ import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
+import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
@@ -66,5 +68,18 @@ public class ConfiguracionPedido {
   public DespacharPedido despacharPedido(
       RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios, Reloj reloj) {
     return new DespacharPedido(repositorioPedidos, repositorioEnvios, reloj);
+  }
+
+  @Bean
+  public MarcarEntregado marcarEntregado(RepositorioPedidos repositorioPedidos, Reloj reloj) {
+    return new MarcarEntregado(repositorioPedidos, reloj);
+  }
+
+  @Bean
+  public RechazarEnEntrega rechazarEnEntrega(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new RechazarEnEntrega(repositorioPedidos, repositorioInventario, reloj);
   }
 }

@@ -7,14 +7,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
+import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -53,6 +58,7 @@ class AdminPedidosControladorTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private RepositorioEnviosDobleDePrueba envios;
+  @Autowired private RepositorioInventarioDobleDePrueba inventarios;
 
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -193,6 +199,70 @@ class AdminPedidosControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  @Test
+  void marcarEntregadoUnPedidoContraentregaLoDejaEnRecaudoPendiente() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/entrega", pedido.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("RECAUDO_PENDIENTE"));
+  }
+
+  @Test
+  void rechazarEnEntregaLiberaElInventario() throws Exception {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(5, "siembra de prueba", Instant.now());
+    MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
+    inventarios.conInventario(inventario);
+
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    reserva.id())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            Instant.now());
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/rechazo-entrega", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"motivo":"cliente no recibió"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("RECHAZADO_EN_ENTREGA"));
+
+    assertEquals(
+        5,
+        inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(Instant.now()));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -204,6 +274,11 @@ class AdminPedidosControladorTest {
     @Bean
     RepositorioEnviosDobleDePrueba repositorioEnvios() {
       return new RepositorioEnviosDobleDePrueba();
+    }
+
+    @Bean
+    RepositorioInventarioDobleDePrueba repositorioInventario() {
+      return new RepositorioInventarioDobleDePrueba();
     }
 
     @Bean
@@ -225,6 +300,17 @@ class AdminPedidosControladorTest {
     DespacharPedido despacharPedido(
         RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios) {
       return new DespacharPedido(repositorioPedidos, repositorioEnvios, Instant::now);
+    }
+
+    @Bean
+    MarcarEntregado marcarEntregado(RepositorioPedidos repositorioPedidos) {
+      return new MarcarEntregado(repositorioPedidos, Instant::now);
+    }
+
+    @Bean
+    RechazarEnEntrega rechazarEnEntrega(
+        RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
+      return new RechazarEnEntrega(repositorioPedidos, repositorioInventario, Instant::now);
     }
 
     @Bean

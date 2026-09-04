@@ -6,7 +6,11 @@ import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.ListarPedidosAdminComando;
+import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.MarcarEntregadoComando;
 import co.tecnosport.api.application.pedido.PedidosPaginados;
+import co.tecnosport.api.application.pedido.RechazarEnEntrega;
+import co.tecnosport.api.application.pedido.RechazarEnEntregaComando;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -14,6 +18,7 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.presentation.pedido.dto.DespacharPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
 import co.tecnosport.api.presentation.pedido.dto.VerificarContraentregaRequest;
 import java.util.Objects;
 import java.util.UUID;
@@ -48,6 +53,8 @@ public class AdminPedidosControlador {
   private final ConciliarTransferencia conciliarTransferencia;
   private final VerificarContraentrega verificarContraentrega;
   private final DespacharPedido despacharPedido;
+  private final MarcarEntregado marcarEntregado;
+  private final RechazarEnEntrega rechazarEnEntrega;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
 
@@ -56,12 +63,16 @@ public class AdminPedidosControlador {
       ConciliarTransferencia conciliarTransferencia,
       VerificarContraentrega verificarContraentrega,
       DespacharPedido despacharPedido,
+      MarcarEntregado marcarEntregado,
+      RechazarEnEntrega rechazarEnEntrega,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
     this.listarPedidosAdmin = Objects.requireNonNull(listarPedidosAdmin);
     this.conciliarTransferencia = Objects.requireNonNull(conciliarTransferencia);
     this.verificarContraentrega = Objects.requireNonNull(verificarContraentrega);
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
+    this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
+    this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -115,6 +126,27 @@ public class AdminPedidosControlador {
                         cuerpo.guia(),
                         Dinero.deCop(cuerpo.costoEnvio()),
                         actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  @PostMapping("/{id}/entrega")
+  public PedidoRespuesta marcarEntregado(@PathVariable UUID id) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado -> marcarEntregado.ejecutar(new MarcarEntregadoComando(id, actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  @PostMapping("/{id}/rechazo-entrega")
+  public PedidoRespuesta rechazarEnEntrega(
+      @PathVariable UUID id, @RequestBody RechazarEnEntregaRequest cuerpo) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado ->
+                rechazarEnEntrega.ejecutar(
+                    new RechazarEnEntregaComando(id, cuerpo.motivo(), actor)));
     return mapeador.aRespuesta(pedido);
   }
 
