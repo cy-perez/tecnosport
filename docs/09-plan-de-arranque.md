@@ -348,15 +348,28 @@ pendientes de la misma variante al mismo tiempo, no se puede adivinar por
 variante y cantidad. Ahora `LineaPedido.idReserva` lo guarda (migración
 `linea_pedido.id_reserva`, columna nueva).
 
-**Pendiente real, todavía sin cerrar:** `Inventario.confirmar`/`liberar`
-nunca se llaman para pago en línea — `AplicadorDeResultadoDePago` solo
-transiciona el `Pedido`, no toca el inventario. Un pedido `PAGADO` no
-convierte su reserva en salida real, y uno `PAGO_FALLIDO` no la libera; con
-`ReintentarPago` (más abajo), la reserva original de 30 minutos también
-podría haber vencido para cuando el cliente reintenta, sin que nada la
-renueve. No estaba en el alcance pedido esta sesión — queda anotado para
-la próxima vez que se toque el ciclo de vida del inventario en pago en
-línea.
+**Inventario en pago en línea cerrado** (2026-09-03): `AplicadorDeResultadoDePago`
+(compartido entre el webhook y la conciliación) ahora confirma la reserva
+de cada línea cuando el pago se aprueba (`Inventario.confirmar`, la
+convierte en salida real) y la libera cuando se rechaza o falla
+(`Inventario.liberar`) — antes ninguno de los dos casos tocaba el
+inventario, `PAGADO` nunca confirmaba su reserva ni `PAGO_FALLIDO` la
+liberaba.
+
+Un evento aprobado sobre una reserva que ya venció o se resolvió antes
+(webhook tardío, o la conciliación llegando después de los 30 minutos de la
+reserva) no se confirma a ciegas: la unidad pudo haberse vendido a otro
+comprador ya. El pago y el pedido igual se actualizan —la plata ya
+entró, eso no se revierte— pero el resultado se marca con
+`APLICADO_SIN_CONFIRMAR_INVENTARIO` (log de error, riesgo de sobreventa
+para revisión manual) en vez de arriesgar una sobreventa silenciosa.
+
+`ReintentarPago` (más abajo) pasó a re-reservar inventario de verdad en vez
+de solo cambiar el estado: la reserva original ya no existe una vez
+liberada por el pago fallido. `Pedido.actualizarReservas` reemplaza el
+`idReserva` de cada línea sin tocar precio, nombre ni cantidad. Si el stock
+ya no alcanza, el reintento falla con `ExistenciaInsuficienteException` —
+un caso de negocio real ("se vendió mientras tanto"), no un error.
 
 **Entrega y rechazo cerrados** (2026-09-03): `MarcarEntregado` transiciona
 `DESPACHADO → ENTREGADO` y, si el pedido es `CONTRAENTREGA`, encadena
