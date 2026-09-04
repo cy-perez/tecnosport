@@ -332,10 +332,28 @@ nunca deja un envío huérfano. `POST
 excepción nueva: `TransicionDeEstadoInvalidaException` ya cae en el 422
 genérico.
 
-Lo que falta de contraentrega (entrega/rechazo, recaudo pendiente y su
-conciliación) sigue sin construir, va al final de esta fase y con su propio
-ciclo de revisión — es donde está el riesgo operativo. Léete
-`docs/11-pagos-y-envios.md` completo antes de empezarlo.
+**Hueco encontrado y cerrado al construir el rechazo en la entrega**
+(2026-09-03): `LineaPedido` no guardaba el id de su movimiento `RESERVA` —
+`CrearPedido.congelarLinea` lo descartaba. Sin ese id no hay forma segura de
+liberar la reserva correcta: dos pedidos distintos pueden tener reservas
+pendientes de la misma variante al mismo tiempo, no se puede adivinar por
+variante y cantidad. Ahora `LineaPedido.idReserva` lo guarda (migración
+`linea_pedido.id_reserva`, columna nueva). El mismo hueco explicaba por qué
+"reintento de pago fallido" seguía sin construirse — sigue sin resolver ese
+caso, pero ya no falta la pieza de datos que lo bloqueaba.
+
+**Entrega y rechazo cerrados** (2026-09-03): `MarcarEntregado` transiciona
+`DESPACHADO → ENTREGADO` y, si el pedido es `CONTRAENTREGA`, encadena
+`ENTREGADO → RECAUDO_PENDIENTE` en la misma llamada (su dinero nunca entró
+antes del despacho; un pedido pagado en línea se queda en `ENTREGADO`).
+`RechazarEnEntrega` transiciona a `RECHAZADO_EN_ENTREGA` y libera cada línea
+reservada vía `LineaPedido.idReserva`. `POST /api/v1/admin/pedidos/{id}/entrega`
+y `POST /api/v1/admin/pedidos/{id}/rechazo-entrega`, protegidos por rol
+`ADMIN`.
+
+Solo falta el recaudo pendiente (visibilidad en el panel y su conciliación)
+para cerrar contraentrega del todo — el tramo con más riesgo operativo.
+Léete `docs/11-pagos-y-envios.md` completo antes de empezarlo.
 
 **Contraentrega y transferencia manual necesitan una acción humana que todavía
 no tiene dónde vivir:** marcar un contraentrega como verificado antes de
@@ -369,10 +387,9 @@ pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
   auditoría (`"admin:" + usuarioId`) sale de `SecurityContextHolder` directo,
   no de `@AuthenticationPrincipal`: ese resolver solo se registra con
   `@EnableWebSecurity` activo, que `presentation` no importa.
-- Falta marcar verificado un contraentrega y ver el recaudo pendiente —
-  ninguno de los dos tiene sentido antes de que exista el resto del flujo de
-  contraentrega (verificación, despacho, entrega, recaudo), todavía sin
-  construir.
+- **Verificar, despachar, entregar y rechazar en la entrega cerrados**
+  (2026-09-03) — ver el detalle más arriba. Falta solo ver el recaudo
+  pendiente en el panel y su conciliación.
 
 El resto del panel (productos, variantes, existencias, imágenes, cuenta de
 cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el

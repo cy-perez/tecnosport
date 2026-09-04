@@ -124,6 +124,8 @@ POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga ma
 GET/PATCH /api/v1/admin/pedidos
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
+POST /api/v1/admin/pedidos/{id}/entrega                     marca entregado
+POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, registra motivo
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
 POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
 
