@@ -7,6 +7,15 @@ package co.tecnosport.api.application.pago;
  */
 public enum ResultadoEventoDePago {
   APLICADO,
+
+  /**
+   * El pago y el pedido sí se actualizaron, pero la reserva de inventario de alguna línea ya no era
+   * válida para confirmar o liberar (venció por tiempo, o ya se había resuelto antes) — riesgo de
+   * sobreventa, necesita revisión manual. No pasa por el flujo normal: es la excepción, no la
+   * regla.
+   */
+  APLICADO_SIN_CONFIRMAR_INVENTARIO,
+
   YA_PROCESADO,
   FIRMA_INVALIDA,
   PAGO_NO_ENCONTRADO,

@@ -6,6 +6,8 @@ import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -32,15 +34,38 @@ class ConciliarPagosPendientesTest {
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
+  private RepositorioInventarioFalso inventarios;
   private PasarelaDePagosFalsa pasarela;
   private int secuencial = 0;
 
   private ConciliarPagosPendientes crear() {
     pedidos = new RepositorioPedidosFalso();
     pagos = new RepositorioPagosFalso();
+    inventarios = new RepositorioInventarioFalso();
     pasarela = new PasarelaDePagosFalsa();
     return new ConciliarPagosPendientes(
-        pagos, pedidos, pasarela, new RelojFalso(AHORA), ANTIGUEDAD_MINIMA);
+        pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA), ANTIGUEDAD_MINIMA);
+  }
+
+  private LineaPedido lineaConReservaVigente() {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(10, "siembra de prueba", AHORA);
+    // La reserva se hizo al crear el pedido, antes del umbral de conciliación: vigente por 30
+    // minutos desde entonces, así que sigue viva para cuando la conciliación la revisa.
+    MovimientoInventario reserva =
+        inventario.reservar(1, Duration.ofMinutes(30), AHORA.minus(Duration.ofMinutes(20)));
+    inventarios.conInventario(inventario);
+    return new LineaPedido(
+        UUID.randomUUID(),
+        varianteId,
+        new Sku("TS-CAM-AZ-M"),
+        "Camiseta running Dry-Fit",
+        1,
+        Dinero.deCop(100_000),
+        new BigDecimal("0.19"),
+        "https://cdn.tecnosport.co/img.webp",
+        reserva.id());
   }
 
   private Pedido pedidoNuevo() {
@@ -49,17 +74,7 @@ class ConciliarPagosPendientesTest {
             NumeroPedido.de(2026, ++secuencial),
             null,
             CORREO,
-            List.of(
-                new LineaPedido(
-                    UUID.randomUUID(),
-                    UUID.randomUUID(),
-                    new Sku("TS-CAM-AZ-M"),
-                    "Camiseta running Dry-Fit",
-                    1,
-                    Dinero.deCop(100_000),
-                    new BigDecimal("0.19"),
-                    "https://cdn.tecnosport.co/img.webp",
-                    UUID.randomUUID())),
+            List.of(lineaConReservaVigente()),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
             MetodoPago.NEQUI,
@@ -158,5 +173,47 @@ class ConciliarPagosPendientesTest {
     ResultadoConciliacion resultado = caso.ejecutar();
 
     assertEquals(new ResultadoConciliacion(1, 0, 1), resultado);
+  }
+
+  @Test
+  void unaReservaYaVencidaAlConciliarCuentaComoConciliadaAunqueNoConfirmeInventario() {
+    ConciliarPagosPendientes caso = crear();
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(10, "siembra de prueba", AHORA);
+    // Reservada mucho antes del umbral de conciliación: para cuando se revisa, ya venció.
+    MovimientoInventario reserva =
+        inventario.reservar(1, Duration.ofMinutes(30), AHORA.minus(Duration.ofHours(2)));
+    inventarios.conInventario(inventario);
+    LineaPedido linea =
+        new LineaPedido(
+            UUID.randomUUID(),
+            varianteId,
+            new Sku("TS-CAM-AZ-M"),
+            "Camiseta running Dry-Fit",
+            1,
+            Dinero.deCop(100_000),
+            new BigDecimal("0.19"),
+            "https://cdn.tecnosport.co/img.webp",
+            reserva.id());
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, ++secuencial),
+            null,
+            CORREO,
+            List.of(linea),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidos.conPedido(pedido);
+    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conEstadoDeTransaccion("wompi-tx-1", "APPROVED");
+
+    ResultadoConciliacion resultado = caso.ejecutar();
+
+    assertEquals(new ResultadoConciliacion(1, 1, 0), resultado);
+    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 }

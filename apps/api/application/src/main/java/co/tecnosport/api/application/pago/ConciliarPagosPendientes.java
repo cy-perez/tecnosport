@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
@@ -24,6 +25,7 @@ public final class ConciliarPagosPendientes {
 
   private final RepositorioPagos repositorioPagos;
   private final RepositorioPedidos repositorioPedidos;
+  private final RepositorioInventario repositorioInventario;
   private final PasarelaDePagos pasarelaDePagos;
   private final Reloj reloj;
   private final Duration antiguedadMinima;
@@ -31,11 +33,13 @@ public final class ConciliarPagosPendientes {
   public ConciliarPagosPendientes(
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj,
       Duration antiguedadMinima) {
     this.repositorioPagos = Objects.requireNonNull(repositorioPagos);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
+    this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.pasarelaDePagos = Objects.requireNonNull(pasarelaDePagos);
     this.reloj = Objects.requireNonNull(reloj);
     this.antiguedadMinima = Objects.requireNonNull(antiguedadMinima);
@@ -71,7 +75,13 @@ public final class ConciliarPagosPendientes {
             "conciliacion:" + idTransaccionWompi + ":" + estadoWompi.get(), nuevoEstado, ahora);
     ResultadoEventoDePago resultado =
         AplicadorDeResultadoDePago.aplicar(
-            pago, evento, "conciliacion-wompi", repositorioPagos, repositorioPedidos);
-    return resultado == ResultadoEventoDePago.APLICADO;
+            pago,
+            evento,
+            "conciliacion-wompi",
+            repositorioPagos,
+            repositorioPedidos,
+            repositorioInventario);
+    return resultado == ResultadoEventoDePago.APLICADO
+        || resultado == ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO;
   }
 }

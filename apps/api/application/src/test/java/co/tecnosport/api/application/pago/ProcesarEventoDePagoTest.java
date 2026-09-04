@@ -6,6 +6,8 @@ import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
@@ -17,8 +19,10 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ProcesarEventoDePagoTest {
@@ -34,26 +38,72 @@ class ProcesarEventoDePagoTest {
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
+  private RepositorioInventarioFalso inventarios;
   private PasarelaDePagosFalsa pasarela;
+  private UUID varianteId;
 
   private ProcesarEventoDePago crear() {
     pedidos = new RepositorioPedidosFalso();
     pagos = new RepositorioPagosFalso();
+    inventarios = new RepositorioInventarioFalso();
     pasarela = new PasarelaDePagosFalsa();
-    return new ProcesarEventoDePago(pagos, pedidos, pasarela, new RelojFalso(AHORA));
+    return new ProcesarEventoDePago(pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA));
   }
 
-  private LineaPedido linea() {
+  /** Reserva vigente en {@code AHORA}: confirmar/liberar la encuentran válida. */
+  private LineaPedido lineaConReservaVigente(int cantidad) {
+    varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(10, "siembra de prueba", AHORA);
+    MovimientoInventario reserva = inventario.reservar(cantidad, Duration.ofMinutes(30), AHORA);
+    inventarios.conInventario(inventario);
     return new LineaPedido(
-        java.util.UUID.randomUUID(),
-        java.util.UUID.randomUUID(),
+        UUID.randomUUID(),
+        varianteId,
         new Sku("TS-CAM-AZ-M"),
         "Camiseta running Dry-Fit",
-        2,
+        cantidad,
         Dinero.deCop(50_000),
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.webp",
-        java.util.UUID.randomUUID());
+        reserva.id());
+  }
+
+  /** Reserva que ya venció para cuando llega el evento en {@code AHORA}. */
+  private LineaPedido lineaConReservaVencida(int cantidad) {
+    varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(10, "siembra de prueba", AHORA);
+    Instant haceUnaHora = AHORA.minus(Duration.ofHours(1));
+    MovimientoInventario reserva =
+        inventario.reservar(cantidad, Duration.ofMinutes(30), haceUnaHora);
+    inventarios.conInventario(inventario);
+    return new LineaPedido(
+        UUID.randomUUID(),
+        varianteId,
+        new Sku("TS-CAM-AZ-M"),
+        "Camiseta running Dry-Fit",
+        cantidad,
+        Dinero.deCop(50_000),
+        new BigDecimal("0.19"),
+        "https://cdn.tecnosport.co/img.webp",
+        reserva.id());
+  }
+
+  private Pedido pedidoConLinea(LineaPedido linea) {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            CORREO,
+            List.of(linea),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidos.conPedido(pedido);
+    return pedido;
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
@@ -62,7 +112,7 @@ class ProcesarEventoDePagoTest {
             NumeroPedido.de(2026, 1),
             null,
             CORREO,
-            List.of(linea()),
+            List.of(lineaConReservaVigente(2)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
             metodoPago,
@@ -97,6 +147,19 @@ class ProcesarEventoDePagoTest {
   }
 
   @Test
+  void eventoAprobadoConfirmaLaReservaConvirtiendolaEnSalida() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    pagoPendienteParaElPedido(pedido);
+
+    caso.ejecutar(comando("APPROVED"));
+
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    assertEquals(8, inventario.saldoTotal());
+    assertEquals(8, inventario.saldoDisponible(AHORA));
+  }
+
+  @Test
   void eventoRechazadoDejaElPedidoEnPagoFallido() {
     ProcesarEventoDePago caso = crear();
     Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
@@ -106,6 +169,31 @@ class ProcesarEventoDePagoTest {
 
     assertEquals(
         EstadoPedido.PAGO_FALLIDO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  @Test
+  void eventoRechazadoLiberaLaReserva() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    pagoPendienteParaElPedido(pedido);
+
+    caso.ejecutar(comando("DECLINED"));
+
+    Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
+    assertEquals(10, inventario.saldoTotal());
+    assertEquals(10, inventario.saldoDisponible(AHORA));
+  }
+
+  @Test
+  void eventoAprobadoConReservaYaVencidaQuedaSinConfirmarInventarioPeroElPedidoQuedaPagado() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConLinea(lineaConReservaVencida(2));
+    pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED"));
+
+    assertEquals(ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO, resultado);
+    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test

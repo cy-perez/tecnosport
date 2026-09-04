@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
@@ -22,16 +23,19 @@ public final class ProcesarEventoDePago {
 
   private final RepositorioPagos repositorioPagos;
   private final RepositorioPedidos repositorioPedidos;
+  private final RepositorioInventario repositorioInventario;
   private final PasarelaDePagos pasarelaDePagos;
   private final Reloj reloj;
 
   public ProcesarEventoDePago(
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj) {
     this.repositorioPagos = Objects.requireNonNull(repositorioPagos);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
+    this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.pasarelaDePagos = Objects.requireNonNull(pasarelaDePagos);
     this.reloj = Objects.requireNonNull(reloj);
   }
@@ -60,6 +64,11 @@ public final class ProcesarEventoDePago {
     Instant ahora = reloj.ahora();
     EventoPago evento = new EventoPago(comando.checksum(), nuevoEstado, ahora);
     return AplicadorDeResultadoDePago.aplicar(
-        pagoEncontrado.get(), evento, "webhook-wompi", repositorioPagos, repositorioPedidos);
+        pagoEncontrado.get(),
+        evento,
+        "webhook-wompi",
+        repositorioPagos,
+        repositorioPedidos,
+        repositorioInventario);
   }
 }
