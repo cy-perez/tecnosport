@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.pedido;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -173,6 +174,65 @@ class RepositorioPedidosJpaTest {
     Optional<Pedido> encontrado = repositorio.buscarPorId(UUID.randomUUID());
 
     assertThat(encontrado).isEmpty();
+  }
+
+  private Pedido pedidoConNumero(int secuencial, MetodoPago metodoPago) {
+    return Pedido.crear(
+        NumeroPedido.de(2026, secuencial),
+        null,
+        new CorreoElectronico("cliente@tecnosport.co"),
+        List.of(linea()),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        metodoPago,
+        "cliente@tecnosport.co",
+        Instant.now());
+  }
+
+  @Test
+  void buscarTodosPaginadoSinFiltroOrdenaPorMasRecientePrimero() throws InterruptedException {
+    Pedido primero = pedidoConNumero(101, MetodoPago.NEQUI);
+    repositorio.guardar(primero);
+    Thread.sleep(10);
+    Pedido segundo = pedidoConNumero(102, MetodoPago.NEQUI);
+    repositorio.guardar(segundo);
+
+    PedidosPaginados resultado = repositorio.buscarTodosPaginado(0, 10, null);
+
+    assertThat(resultado.totalPedidos()).isEqualTo(2);
+    assertThat(resultado.items().get(0).id()).isEqualTo(segundo.id());
+    assertThat(resultado.items().get(1).id()).isEqualTo(primero.id());
+  }
+
+  @Test
+  void buscarTodosPaginadoFiltraPorEstadoYOrdenaPorMasAntiguoPrimero() throws InterruptedException {
+    Pedido pendienteViejo = pedidoConNumero(103, MetodoPago.CONTRAENTREGA);
+    pendienteViejo.transicionar(
+        EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pendienteViejo.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pendienteViejo.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", Instant.now());
+    pendienteViejo.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
+    repositorio.guardar(pendienteViejo);
+    Thread.sleep(10);
+    Pedido pendienteReciente = pedidoConNumero(104, MetodoPago.CONTRAENTREGA);
+    pendienteReciente.transicionar(
+        EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pendienteReciente.transicionar(
+        EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pendienteReciente.transicionar(
+        EstadoPedido.ENTREGADO, "admin:test", "entregado", Instant.now());
+    pendienteReciente.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
+    repositorio.guardar(pendienteReciente);
+    repositorio.guardar(pedidoConNumero(105, MetodoPago.NEQUI));
+
+    PedidosPaginados resultado =
+        repositorio.buscarTodosPaginado(0, 10, EstadoPedido.RECAUDO_PENDIENTE);
+
+    assertThat(resultado.totalPedidos()).isEqualTo(2);
+    assertThat(resultado.items().get(0).id()).isEqualTo(pendienteViejo.id());
+    assertThat(resultado.items().get(1).id()).isEqualTo(pendienteReciente.id());
   }
 
   @Test

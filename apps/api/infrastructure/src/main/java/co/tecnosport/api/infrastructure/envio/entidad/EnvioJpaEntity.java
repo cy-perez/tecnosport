@@ -29,6 +29,12 @@ public class EnvioJpaEntity {
   @Column(name = "despachado_en", nullable = false)
   private Instant despachadoEn;
 
+  @Column(name = "comision_recaudo")
+  private BigDecimal comisionRecaudo;
+
+  @Column(name = "recaudo_conciliado_en")
+  private Instant recaudoConciliadoEn;
+
   protected EnvioJpaEntity() {}
 
   public EnvioJpaEntity(
@@ -37,13 +43,17 @@ public class EnvioJpaEntity {
       String transportadora,
       String guia,
       BigDecimal costoEnvio,
-      Instant despachadoEn) {
+      Instant despachadoEn,
+      BigDecimal comisionRecaudo,
+      Instant recaudoConciliadoEn) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.transportadora = transportadora;
     this.guia = guia;
     this.costoEnvio = costoEnvio;
     this.despachadoEn = despachadoEn;
+    this.comisionRecaudo = comisionRecaudo;
+    this.recaudoConciliadoEn = recaudoConciliadoEn;
   }
 
   public UUID getId() {
@@ -68,5 +78,13 @@ public class EnvioJpaEntity {
 
   public Instant getDespachadoEn() {
     return despachadoEn;
+  }
+
+  public BigDecimal getComisionRecaudo() {
+    return comisionRecaudo;
+  }
+
+  public Instant getRecaudoConciliadoEn() {
+    return recaudoConciliadoEn;
   }
 }

@@ -84,4 +84,40 @@ class RepositorioEnviosJpaTest {
     assertThat(encontrado.getGuia()).isEqualTo("SE123456");
     assertThat(encontrado.getCostoEnvio()).isEqualByComparingTo(new BigDecimal("15000.00"));
   }
+
+  @Test
+  void buscarPorPedidoIdEncuentraElEnvioDelDespacho() {
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Envio envio =
+        Envio.crear(pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), Instant.now());
+    repositorio.guardar(envio);
+
+    Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
+
+    assertThat(encontrado.id()).isEqualTo(envio.id());
+    assertThat(encontrado.comisionRecaudo()).isEmpty();
+    assertThat(encontrado.recaudoConciliadoEn()).isEmpty();
+  }
+
+  @Test
+  void unPedidoSinEnvioNoSeEncuentra() {
+    assertThat(repositorio.buscarPorPedidoId(UUID.randomUUID())).isEmpty();
+  }
+
+  @Test
+  void conciliarElRecaudoPersisteLaComisionYLaFecha() {
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Instant despachadoEn = Instant.now();
+    Envio envio =
+        Envio.crear(pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), despachadoEn);
+    repositorio.guardar(envio);
+
+    Instant conciliadoEn = despachadoEn.plusSeconds(3600);
+    envio.conciliarRecaudo(Dinero.deCop(5_000), conciliadoEn);
+    repositorio.guardar(envio);
+
+    Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
+    assertThat(encontrado.comisionRecaudo()).contains(Dinero.deCop(5_000));
+    assertThat(encontrado.recaudoConciliadoEn()).contains(conciliadoEn);
+  }
 }

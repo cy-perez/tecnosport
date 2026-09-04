@@ -100,10 +100,11 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
-  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina) {
-    Pageable pageable =
-        PageRequest.of(pagina, tamanoPagina, Sort.by(Sort.Direction.DESC, "creadoEn"));
-    Page<PedidoJpaEntity> paginaEntidades = pedidos.findAll(pageable);
+  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado) {
+    Sort.Direction direccion = estado == null ? Sort.Direction.DESC : Sort.Direction.ASC;
+    Pageable pageable = PageRequest.of(pagina, tamanoPagina, Sort.by(direccion, "creadoEn"));
+    Page<PedidoJpaEntity> paginaEntidades =
+        estado == null ? pedidos.findAll(pageable) : pedidos.findByEstado(estado.name(), pageable);
     List<Pedido> items =
         paginaEntidades.getContent().stream()
             .map(
