@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
@@ -18,6 +19,7 @@ import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -263,6 +265,53 @@ class AdminPedidosControladorTest {
         inventarios.buscarPorVarianteId(varianteId).orElseThrow().saldoDisponible(Instant.now()));
   }
 
+  @Test
+  void listarFiltradoPorEstadoSoloTraeEsePedido() throws Exception {
+    pedidoConMetodo(MetodoPago.NEQUI);
+    Pedido pendiente = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pendiente.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pendiente.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pendiente.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", Instant.now());
+    pendiente.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
+    pedidos.guardar(pendiente);
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos").param("estado", "RECAUDO_PENDIENTE"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].id").value(pendiente.id().toString()));
+  }
+
+  @Test
+  void conciliarRecaudoRegistraLaComisionEnElEnvio() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", Instant.now());
+    pedido.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
+    pedidos.guardar(pedido);
+    envios.guardar(
+        Envio.crear(pedido.id(), "Servientrega", "SE123456", Dinero.deCop(15_000), Instant.now()));
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/recaudo", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"comisionRecaudo":5000}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("RECAUDO_CONCILIADO"));
+
+    assertEquals(
+        Dinero.deCop(5_000),
+        envios.buscarPorPedidoId(pedido.id()).orElseThrow().comisionRecaudo().orElseThrow());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -311,6 +360,12 @@ class AdminPedidosControladorTest {
     RechazarEnEntrega rechazarEnEntrega(
         RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
       return new RechazarEnEntrega(repositorioPedidos, repositorioInventario, Instant::now);
+    }
+
+    @Bean
+    ConciliarRecaudo conciliarRecaudo(
+        RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios) {
+      return new ConciliarRecaudo(repositorioPedidos, repositorioEnvios, Instant::now);
     }
 
     @Bean

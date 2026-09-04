@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
@@ -81,5 +82,11 @@ public class ConfiguracionPedido {
       RepositorioInventario repositorioInventario,
       Reloj reloj) {
     return new RechazarEnEntrega(repositorioPedidos, repositorioInventario, reloj);
+  }
+
+  @Bean
+  public ConciliarRecaudo conciliarRecaudo(
+      RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios, Reloj reloj) {
+    return new ConciliarRecaudo(repositorioPedidos, repositorioEnvios, reloj);
   }
 }

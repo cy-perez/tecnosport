@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.pedido.ConciliarRecaudo;
+import co.tecnosport.api.application.pedido.ConciliarRecaudoComando;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConciliarTransferenciaComando;
 import co.tecnosport.api.application.pedido.DespacharPedido;
@@ -14,7 +16,9 @@ import co.tecnosport.api.application.pedido.RechazarEnEntregaComando;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.presentation.pedido.dto.ConciliarRecaudoRequest;
 import co.tecnosport.api.presentation.pedido.dto.DespacharPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
@@ -55,6 +59,7 @@ public class AdminPedidosControlador {
   private final DespacharPedido despacharPedido;
   private final MarcarEntregado marcarEntregado;
   private final RechazarEnEntrega rechazarEnEntrega;
+  private final ConciliarRecaudo conciliarRecaudo;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
 
@@ -65,6 +70,7 @@ public class AdminPedidosControlador {
       DespacharPedido despacharPedido,
       MarcarEntregado marcarEntregado,
       RechazarEnEntrega rechazarEnEntrega,
+      ConciliarRecaudo conciliarRecaudo,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
     this.listarPedidosAdmin = Objects.requireNonNull(listarPedidosAdmin);
@@ -73,6 +79,7 @@ public class AdminPedidosControlador {
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
+    this.conciliarRecaudo = Objects.requireNonNull(conciliarRecaudo);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -80,9 +87,11 @@ public class AdminPedidosControlador {
   @GetMapping
   public PedidosPaginadosRespuesta listar(
       @RequestParam(defaultValue = "0") int pagina,
-      @RequestParam(defaultValue = "" + TAMANO_PAGINA_PREDETERMINADO) int tamano) {
+      @RequestParam(defaultValue = "" + TAMANO_PAGINA_PREDETERMINADO) int tamano,
+      @RequestParam(required = false) String estado) {
+    EstadoPedido filtro = estado == null ? null : EstadoPedido.valueOf(estado);
     PedidosPaginados resultado =
-        listarPedidosAdmin.ejecutar(new ListarPedidosAdminComando(pagina, tamano));
+        listarPedidosAdmin.ejecutar(new ListarPedidosAdminComando(pagina, tamano, filtro));
     return new PedidosPaginadosRespuesta(
         resultado.items().stream().map(mapeador::aRespuesta).toList(),
         resultado.pagina(),
@@ -147,6 +156,19 @@ public class AdminPedidosControlador {
             estado ->
                 rechazarEnEntrega.ejecutar(
                     new RechazarEnEntregaComando(id, cuerpo.motivo(), actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  @PostMapping("/{id}/recaudo")
+  public PedidoRespuesta conciliarRecaudo(
+      @PathVariable UUID id, @RequestBody ConciliarRecaudoRequest cuerpo) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado ->
+                conciliarRecaudo.ejecutar(
+                    new ConciliarRecaudoComando(
+                        id, Dinero.deCop(cuerpo.comisionRecaudo()), actor)));
     return mapeador.aRespuesta(pedido);
   }
 
