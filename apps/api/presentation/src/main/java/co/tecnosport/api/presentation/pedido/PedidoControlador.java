@@ -4,6 +4,8 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.CrearPedidoComando;
+import co.tecnosport.api.application.pedido.ReintentarPago;
+import co.tecnosport.api.application.pedido.ReintentarPagoComando;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -13,8 +15,10 @@ import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,16 +37,19 @@ public class PedidoControlador {
 
   private final CrearPedido crearPedido;
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
+  private final ReintentarPago reintentarPago;
   private final MapeadorRespuestasPedido mapeador;
   private final TransactionTemplate transaccion;
 
   public PedidoControlador(
       CrearPedido crearPedido,
       MetodosDePagoDisponibles metodosDePagoDisponibles,
+      ReintentarPago reintentarPago,
       MapeadorRespuestasPedido mapeador,
       PlatformTransactionManager transactionManager) {
     this.crearPedido = Objects.requireNonNull(crearPedido);
     this.metodosDePagoDisponibles = Objects.requireNonNull(metodosDePagoDisponibles);
+    this.reintentarPago = Objects.requireNonNull(reintentarPago);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -69,6 +76,13 @@ public class PedidoControlador {
             TipoEntrega.valueOf(cuerpo.tipoEntrega()),
             cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()));
     return metodosDePagoDisponibles.ejecutar(comando).stream().map(Enum::name).sorted().toList();
+  }
+
+  @PostMapping("/{id}/reintentar-pago")
+  public PedidoRespuesta reintentarPago(@PathVariable UUID id) {
+    Pedido pedido =
+        transaccion.execute(estado -> reintentarPago.ejecutar(new ReintentarPagoComando(id)));
+    return mapeador.aRespuesta(pedido);
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo) {

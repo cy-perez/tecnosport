@@ -13,6 +13,7 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.CrearPedido;
+import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -21,11 +22,19 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
+import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.LineaPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
+import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +60,7 @@ class PedidoControladorTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioProductosDobleDePrueba productos;
   @Autowired private RepositorioInventarioDobleDePrueba inventarios;
+  @Autowired private RepositorioPedidosDobleDePrueba pedidos;
 
   private final ObjectMapper json = new ObjectMapper();
 
@@ -319,6 +329,61 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$", hasItem("TARJETA")));
   }
 
+  @Test
+  void reintentarPagoDeUnPedidoFallidoLoRegresaAPagoPendiente() throws Exception {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    java.util.UUID.randomUUID(),
+                    java.util.UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    java.util.UUID.randomUUID())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            Instant.now());
+    pedido.transicionar(
+        EstadoPedido.PAGO_FALLIDO, "webhook-wompi", "pago rechazado", Instant.now());
+    pedidos.guardar(pedido);
+
+    mockMvc
+        .perform(post("/api/v1/pedidos/{id}/reintentar-pago", pedido.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"));
+  }
+
+  @Test
+  void reintentarPagoDeUnPedidoQueNoEstaEnPagoFallidoDevuelve422() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+    String respuesta =
+        mockMvc
+            .perform(
+                post("/api/v1/pedidos")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(json.writeValueAsString(cuerpo)))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    java.util.UUID pedidoId =
+        java.util.UUID.fromString(json.readTree(respuesta).get("id").asText());
+
+    mockMvc
+        .perform(post("/api/v1/pedidos/{id}/reintentar-pago", pedidoId))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -355,6 +420,11 @@ class PedidoControladorTest {
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
           repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
+    }
+
+    @Bean
+    ReintentarPago reintentarPago(RepositorioPedidos repositorioPedidos, Reloj reloj) {
+      return new ReintentarPago(repositorioPedidos, reloj);
     }
 
     @Bean
