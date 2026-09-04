@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -98,6 +99,37 @@ class ListarPedidosAdminTest {
     PedidosPaginados resultado = caso.ejecutar(new ListarPedidosAdminComando(5, 10));
 
     assertTrue(resultado.items().isEmpty());
+  }
+
+  @Test
+  void filtraPorEstadoYOrdenaPorMasAntiguoPrimero() {
+    ListarPedidosAdmin caso = crear();
+    Instant t0 = Instant.parse("2026-09-01T00:00:00Z");
+    Pedido pendienteViejo = pedido(1, t0);
+    pendienteViejo.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", t0);
+    pendienteViejo.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "preparación", t0);
+    pendienteViejo.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despacho", t0);
+    pendienteViejo.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", t0);
+    pendienteViejo.transicionar(EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo", t0);
+    pedidos.guardar(pendienteViejo);
+
+    Instant t1 = t0.plusSeconds(60);
+    Pedido pendienteReciente = pedido(2, t1);
+    pendienteReciente.transicionar(EstadoPedido.PAGADO, "webhook-wompi", "pago aprobado", t1);
+    pendienteReciente.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "preparación", t1);
+    pendienteReciente.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despacho", t1);
+    pendienteReciente.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", t1);
+    pendienteReciente.transicionar(EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo", t1);
+    pedidos.guardar(pendienteReciente);
+
+    pedido(3, t0.plusSeconds(120));
+
+    PedidosPaginados resultado =
+        caso.ejecutar(new ListarPedidosAdminComando(0, 10, EstadoPedido.RECAUDO_PENDIENTE));
+
+    assertEquals(2, resultado.totalPedidos());
+    assertEquals(pendienteViejo.id(), resultado.items().get(0).id());
+    assertEquals(pendienteReciente.id(), resultado.items().get(1).id());
   }
 
   @Test

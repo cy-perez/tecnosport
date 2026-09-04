@@ -33,7 +33,7 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
 
   @Override
   public co.tecnosport.api.application.pedido.PedidosPaginados buscarTodosPaginado(
-      int pagina, int tamanoPagina) {
+      int pagina, int tamanoPagina, co.tecnosport.api.domain.pedido.EstadoPedido estado) {
     throw new UnsupportedOperationException("No usado por PagoControlador.");
   }
 

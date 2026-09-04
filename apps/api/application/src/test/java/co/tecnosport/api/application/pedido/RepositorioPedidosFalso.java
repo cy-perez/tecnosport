@@ -34,16 +34,22 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   @Override
-  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina) {
-    List<Pedido> todos = new ArrayList<>(pedidos.values());
-    todos.sort(Comparator.comparing(Pedido::creadoEn).reversed());
+  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado) {
+    List<Pedido> filtrados =
+        pedidos.values().stream()
+            .filter(p -> estado == null || p.estado() == estado)
+            .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+    filtrados.sort(
+        estado == null
+            ? Comparator.comparing(Pedido::creadoEn).reversed()
+            : Comparator.comparing(Pedido::creadoEn));
     int desde = pagina * tamanoPagina;
     List<Pedido> contenido =
-        desde >= todos.size()
+        desde >= filtrados.size()
             ? List.of()
-            : todos.subList(desde, Math.min(desde + tamanoPagina, todos.size()));
-    int totalPaginas = (int) Math.ceil(todos.size() / (double) tamanoPagina);
-    return new PedidosPaginados(List.copyOf(contenido), pagina, totalPaginas, todos.size());
+            : filtrados.subList(desde, Math.min(desde + tamanoPagina, filtrados.size()));
+    int totalPaginas = (int) Math.ceil(filtrados.size() / (double) tamanoPagina);
+    return new PedidosPaginados(List.copyOf(contenido), pagina, totalPaginas, filtrados.size());
   }
 
   @Override

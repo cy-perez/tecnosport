@@ -12,6 +12,7 @@ public final class ListarPedidosAdmin {
 
   public PedidosPaginados ejecutar(ListarPedidosAdminComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
-    return repositorioPedidos.buscarTodosPaginado(comando.pagina(), comando.tamanoPagina());
+    return repositorioPedidos.buscarTodosPaginado(
+        comando.pagina(), comando.tamanoPagina(), comando.estado());
   }
 }

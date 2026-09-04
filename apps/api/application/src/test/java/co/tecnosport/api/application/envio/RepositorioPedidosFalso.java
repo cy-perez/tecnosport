@@ -2,6 +2,7 @@ package co.tecnosport.api.application.envio;
 
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.util.HashSet;
@@ -34,7 +35,7 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   @Override
-  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina) {
+  public PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado) {
     throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
   }
 

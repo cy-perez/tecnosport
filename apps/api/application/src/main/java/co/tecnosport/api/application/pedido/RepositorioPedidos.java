@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.util.Optional;
@@ -19,9 +20,10 @@ public interface RepositorioPedidos {
 
   /**
    * Paginación por página, no por cursor (docs/03-api.md) — la vista de operación mínima del panel,
-   * no el catálogo. Más recientes primero.
+   * no el catálogo. {@code estado} nulo lista todos, más recientes primero; filtrado por estado
+   * ordena por más antiguo primero (recaudo pendiente: lo más urgente arriba).
    */
-  PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina);
+  PedidosPaginados buscarTodosPaginado(int pagina, int tamanoPagina, EstadoPedido estado);
 
   /**
    * Historial de rechazos en la entrega (docs/11-pagos-y-envios.md: "si un correo... ya rechazó
