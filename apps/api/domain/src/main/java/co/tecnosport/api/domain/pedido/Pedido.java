@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,7 +26,7 @@ public final class Pedido {
   private final NumeroPedido numeroPedido;
   private final UUID usuarioId;
   private final CorreoElectronico correo;
-  private final List<LineaPedido> lineas;
+  private List<LineaPedido> lineas;
   private final TipoEntrega tipoEntrega;
   private final Direccion direccion;
   private final MetodoPago metodoPago;
@@ -166,6 +167,35 @@ public final class Pedido {
     BigDecimal suma =
         lineas.stream().map(l -> l.subtotal().valor()).reduce(BigDecimal.ZERO, BigDecimal::add);
     return Dinero.deCop(suma);
+  }
+
+  /**
+   * Reemplaza el {@code idReserva} de cada línea tras un reintento de pago
+   * (docs/02-modelo-datos.md: "el pago rechazado... la libera", así que un reintento necesita una
+   * reserva nueva). El resto de cada línea —precio, nombre, sku, cantidad— sigue congelado: solo
+   * cambia qué movimiento de inventario la respalda, nunca lo que el comprador acordó pagar.
+   */
+  public void actualizarReservas(Map<UUID, UUID> idReservaPorLineaId) {
+    Objects.requireNonNull(idReservaPorLineaId, "El mapa de reservas no puede ser nulo.");
+    List<LineaPedido> actualizadas = new ArrayList<>();
+    for (LineaPedido linea : lineas) {
+      UUID nuevaReserva = idReservaPorLineaId.get(linea.id());
+      if (nuevaReserva == null) {
+        throw new ExcepcionDeDominio("Falta la nueva reserva para la línea " + linea.id() + ".");
+      }
+      actualizadas.add(
+          new LineaPedido(
+              linea.id(),
+              linea.varianteId(),
+              linea.sku(),
+              linea.nombre(),
+              linea.cantidad(),
+              linea.precioUnitario(),
+              linea.tasaIva(),
+              linea.imagenUrl(),
+              nuevaReserva));
+    }
+    this.lineas = actualizadas;
   }
 
   /**

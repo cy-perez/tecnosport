@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -189,6 +190,30 @@ class PedidoTest {
     assertThrows(
         TransicionDeEstadoInvalidaException.class,
         () -> pedido.transicionar(EstadoPedido.PAGADO, "admin", "reintento indebido", AHORA));
+  }
+
+  @Test
+  void actualizarReservasReemplazaElIdReservaDeCadaLineaSinTocarElResto() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    LineaPedido lineaOriginal = pedido.lineas().get(0);
+    UUID nuevaReserva = UUID.randomUUID();
+
+    pedido.actualizarReservas(Map.of(lineaOriginal.id(), nuevaReserva));
+
+    LineaPedido lineaActualizada = pedido.lineas().get(0);
+    assertEquals(nuevaReserva, lineaActualizada.idReserva());
+    assertEquals(lineaOriginal.id(), lineaActualizada.id());
+    assertEquals(lineaOriginal.precioUnitario(), lineaActualizada.precioUnitario());
+    assertEquals(lineaOriginal.cantidad(), lineaActualizada.cantidad());
+  }
+
+  @Test
+  void actualizarReservasSinCubrirTodasLasLineasSeRechaza() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> pedido.actualizarReservas(Map.of(UUID.randomUUID(), UUID.randomUUID())));
   }
 
   @Test
