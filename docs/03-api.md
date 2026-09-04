@@ -60,6 +60,7 @@ POST /api/v1/pedidos                        revalida precios y existencias, rese
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
 POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
+POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 ```
 

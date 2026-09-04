@@ -282,9 +282,17 @@ siguiente corrida — el mecanismo ya es idempotente por diseño.
 
 Verificado con Testcontainers y `@WebMvcTest` en las cuatro capas, no
 todavía a mano contra `bootRun` + Wompi real (falta llaves de sandbox).
-Sigue sin resolver quién regresa un pedido de `PAGO_FALLIDO` a
-`PAGO_PENDIENTE` para reintentar — `CrearIntentoDePago` todavía solo acepta
-pedidos ya en `PAGO_PENDIENTE`.
+
+**Reintento de pago fallido cerrado** (2026-09-03): `ReintentarPago`
+regresa un pedido `PAGO_FALLIDO` a `PAGO_PENDIENTE` (`docs/02-modelo-datos.md`
+ya contemplaba la transición) — `POST /api/v1/pedidos/{id}/reintentar-pago`,
+público, mismo modelo de confianza que crear pedido/intento. `CrearIntentoDePago`
+sigue sin aceptar `PAGO_FALLIDO` directo a propósito: el frontend llama
+primero el reintento y después `POST /api/v1/pagos/intentos` de siempre, sin
+duplicar esa lógica. Solo un pedido procesado por Wompi llega a
+`PAGO_FALLIDO` (transferencia manual y contraentrega nunca pasan por
+`AplicadorDeResultadoDePago`), así que no hizo falta revalidar el método de
+pago aparte.
 
 **Transferencia manual, lado cliente cerrado** (2026-09-03): la reserva de
 24 horas ya existía desde `CrearPedido` (Fase 3, primer commit de esta
@@ -338,9 +346,17 @@ genérico.
 liberar la reserva correcta: dos pedidos distintos pueden tener reservas
 pendientes de la misma variante al mismo tiempo, no se puede adivinar por
 variante y cantidad. Ahora `LineaPedido.idReserva` lo guarda (migración
-`linea_pedido.id_reserva`, columna nueva). El mismo hueco explicaba por qué
-"reintento de pago fallido" seguía sin construirse — sigue sin resolver ese
-caso, pero ya no falta la pieza de datos que lo bloqueaba.
+`linea_pedido.id_reserva`, columna nueva).
+
+**Pendiente real, todavía sin cerrar:** `Inventario.confirmar`/`liberar`
+nunca se llaman para pago en línea — `AplicadorDeResultadoDePago` solo
+transiciona el `Pedido`, no toca el inventario. Un pedido `PAGADO` no
+convierte su reserva en salida real, y uno `PAGO_FALLIDO` no la libera; con
+`ReintentarPago` (más abajo), la reserva original de 30 minutos también
+podría haber vencido para cuando el cliente reintenta, sin que nada la
+renueve. No estaba en el alcance pedido esta sesión — queda anotado para
+la próxima vez que se toque el ciclo de vida del inventario en pago en
+línea.
 
 **Entrega y rechazo cerrados** (2026-09-03): `MarcarEntregado` transiciona
 `DESPACHADO → ENTREGADO` y, si el pedido es `CONTRAENTREGA`, encadena
