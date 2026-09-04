@@ -5,12 +5,14 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Transportadora, guía y costo real del despacho (docs/02-modelo-datos.md). Nace en el despacho, no
- * antes: el recaudo de contraentrega (comisión, monto conciliado) llega con su propio caso de uso
- * más adelante, no es parte de este agregado todavía.
+ * antes. El recaudo de contraentrega (comisión de la transportadora, fecha de conciliación) se
+ * registra aparte, con {@link #conciliarRecaudo}: la comisión es un costo real, separado del flete,
+ * para que el margen del pedido sea verdadero (docs/11-pagos-y-envios.md).
  */
 public final class Envio {
 
@@ -20,6 +22,8 @@ public final class Envio {
   private final String guia;
   private final Dinero costoEnvio;
   private final Instant despachadoEn;
+  private Dinero comisionRecaudo;
+  private Instant recaudoConciliadoEn;
 
   public Envio(
       UUID id,
@@ -27,7 +31,9 @@ public final class Envio {
       String transportadora,
       String guia,
       Dinero costoEnvio,
-      Instant despachadoEn) {
+      Instant despachadoEn,
+      Dinero comisionRecaudo,
+      Instant recaudoConciliadoEn) {
     this.id = Objects.requireNonNull(id, "El id del envío no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     if (transportadora == null || transportadora.isBlank()) {
@@ -41,12 +47,32 @@ public final class Envio {
     this.costoEnvio = Objects.requireNonNull(costoEnvio, "El costo de envío no puede ser nulo.");
     this.despachadoEn =
         Objects.requireNonNull(despachadoEn, "La fecha de despacho no puede ser nula.");
+    this.comisionRecaudo = comisionRecaudo;
+    this.recaudoConciliadoEn = recaudoConciliadoEn;
   }
 
   public static Envio crear(
       UUID pedidoId, String transportadora, String guia, Dinero costoEnvio, Instant ahora) {
     return new Envio(
-        GeneradorIdentificador.nuevo(), pedidoId, transportadora, guia, costoEnvio, ahora);
+        GeneradorIdentificador.nuevo(),
+        pedidoId,
+        transportadora,
+        guia,
+        costoEnvio,
+        ahora,
+        null,
+        null);
+  }
+
+  /** Idempotente por diseño: un envío ya conciliado rechaza un segundo intento. */
+  public void conciliarRecaudo(Dinero comisionRecaudo, Instant ahora) {
+    Objects.requireNonNull(comisionRecaudo, "La comisión de recaudo no puede ser nula.");
+    Objects.requireNonNull(ahora, "La fecha de conciliación no puede ser nula.");
+    if (recaudoConciliadoEn != null) {
+      throw new ExcepcionDeDominio("El recaudo de este envío ya fue conciliado.");
+    }
+    this.comisionRecaudo = comisionRecaudo;
+    this.recaudoConciliadoEn = ahora;
   }
 
   public UUID id() {
@@ -71,5 +97,13 @@ public final class Envio {
 
   public Instant despachadoEn() {
     return despachadoEn;
+  }
+
+  public Optional<Dinero> comisionRecaudo() {
+    return Optional.ofNullable(comisionRecaudo);
+  }
+
+  public Optional<Instant> recaudoConciliadoEn() {
+    return Optional.ofNullable(recaudoConciliadoEn);
   }
 }
