@@ -351,14 +351,29 @@ reservada vía `LineaPedido.idReserva`. `POST /api/v1/admin/pedidos/{id}/entrega
 y `POST /api/v1/admin/pedidos/{id}/rechazo-entrega`, protegidos por rol
 `ADMIN`.
 
-Solo falta el recaudo pendiente (visibilidad en el panel y su conciliación)
-para cerrar contraentrega del todo — el tramo con más riesgo operativo.
-Léete `docs/11-pagos-y-envios.md` completo antes de empezarlo.
+**Recaudo pendiente cerrado** (2026-09-03): `ConciliarRecaudo` transiciona
+`RECAUDO_PENDIENTE → RECAUDO_CONCILIADO` y registra la comisión de la
+transportadora en el `Envio` del despacho (`Envio.conciliarRecaudo`, costo
+real separado del flete, docs/11-pagos-y-envios.md). `POST
+/api/v1/admin/pedidos/{id}/recaudo`. La visibilidad ("un pedido entregado
+hace veinte días sin conciliar es plata en la calle, tiene que ser
+visible") es un filtro de estado en el listado ya existente —
+`GET /api/v1/admin/pedidos?estado=RECAUDO_PENDIENTE` — en vez de un
+endpoint aparte: reutiliza `ListarPedidosAdmin`/`PedidosPaginados`, y
+ordena por más antiguo primero cuando hay filtro, en vez de por más
+reciente (lo más urgente arriba).
 
-**Contraentrega y transferencia manual necesitan una acción humana que todavía
-no tiene dónde vivir:** marcar un contraentrega como verificado antes de
-despachar, conciliar el comprobante de una transferencia, y ver el recaudo
-pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
+**Contraentrega queda cerrada de punta a punta** (2026-09-03): disponibilidad,
+verificación, despacho, entrega/rechazo, recaudo pendiente y su
+conciliación. Es el tramo con más riesgo operativo de la fase, y se
+construyó su propio ciclo de revisión, capa por capa, con pruebas contra
+Postgres real en cada una — no solo dobles de prueba.
+
+**Contraentrega y transferencia manual necesitaban una acción humana que
+todavía no tenía dónde vivir:** marcar un contraentrega como verificado
+antes de despachar, conciliar el comprobante de una transferencia, y ver
+el recaudo pendiente. Antes de tocar contraentrega, se añadió lo mínimo
+para eso:
 
 - **Autenticación con rol `ADMIN` cerrada** (2026-09-03): login, refresco con
   rotación y detección de reutilización, cierre de sesión
@@ -387,9 +402,9 @@ pendiente. Antes de tocar contraentrega, añade lo mínimo para eso:
   auditoría (`"admin:" + usuarioId`) sale de `SecurityContextHolder` directo,
   no de `@AuthenticationPrincipal`: ese resolver solo se registra con
   `@EnableWebSecurity` activo, que `presentation` no importa.
-- **Verificar, despachar, entregar y rechazar en la entrega cerrados**
-  (2026-09-03) — ver el detalle más arriba. Falta solo ver el recaudo
-  pendiente en el panel y su conciliación.
+- **Verificar, despachar, entregar, rechazar en la entrega y conciliar el
+  recaudo cerrados** (2026-09-03) — ver el detalle más arriba. Contraentrega
+  queda completa de punta a punta.
 
 El resto del panel (productos, variantes, existencias, imágenes, cuenta de
 cliente) sigue en la Fase 4. Esto es la vista de operación mínima para que el
