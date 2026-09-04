@@ -41,3 +41,18 @@ si el volumen de envíos grandes o lejanos hace insostenible el estándar único
 se reabre esta decisión con un nuevo ADR; el código de `adr/0004` no se
 recupera tal cual porque el modelo de datos y el contrato de API ya no lo
 sostienen.
+
+## Nota de implementación (2026-09-03)
+
+La cobertura se construyó como se anticipaba, con un ajuste de nombre: el
+puerto se llama `RepositorioCoberturaContraentrega`, no `RecaudoContraentrega`
+como decía el borrador — es una tabla de disponibilidad (`cobertura_contraentrega`,
+clave primaria el código DANE de la ciudad), no un puerto de recaudo.
+
+Dos cosas que este ADR no dejaba explícitas y vale la pena registrar: la tabla
+**arranca vacía**, así que contraentrega no aparece en ninguna ciudad hasta que
+un administrador la cargue a mano vía `POST`/`DELETE
+/api/v1/admin/cobertura-contraentrega` (sin UI todavía) — fail-closed, no se
+inventó una cobertura inicial; y no hay ninguna integración automática con la
+transportadora que la mantenga sincronizada. Detalle completo en
+`docs/11-pagos-y-envios.md` y `ADR-0013`.

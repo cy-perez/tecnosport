@@ -122,3 +122,24 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   llame a un puerto con bloqueo pesimista —caso de uso o sembrador— tiene
   que abrir la transacción él mismo, con `@Transactional` o
   `TransactionTemplate`.
+- **Jackson 3 (`tools.jackson.*`) es el stack JSON por defecto de Boot
+  4.1.0, no `com.fasterxml.jackson.*`.** Un import del paquete viejo (por
+  ejemplo `com.fasterxml.jackson.databind.JsonNode` en vez de
+  `tools.jackson.databind.JsonNode`) compila sin avisar nada raro, pero
+  revienta en tiempo de ejecución con `HttpMessageConversionException` al
+  deserializar — encontrado en Fase 3 en el controlador del webhook de
+  Wompi, sin ninguna pista del porqué en el mensaje de error.
+- **`@AuthenticationPrincipal` solo se resuelve cuando `@EnableWebSecurity`
+  está activo en el contexto** (lo registra `WebMvcSecurityConfiguration`,
+  que `@EnableWebSecurity` importa). Como eso vive en `bootstrap`
+  (`ConfiguracionSeguridad`) y `presentation` nunca depende de `bootstrap`
+  —ni en producción ni en sus pruebas `@WebMvcTest`—, un controlador de
+  `presentation` no puede usar esa anotación para el actor autenticado: se
+  lee directo de `SecurityContextHolder.getContext().getAuthentication().getPrincipal()`,
+  el mismo `UUID` que `FiltroAutenticacionJwt` ya deja puesto ahí. Encontrado
+  en Fase 3 al construir los endpoints admin de pedidos.
+- **`UserDetailsServiceAutoConfiguration` vive en
+  `org.springframework.boot.security.autoconfigure`**, no en
+  `org.springframework.boot.autoconfigure.security.servlet` como en
+  versiones anteriores de Boot — `spring-boot-security` quedó como módulo
+  separado de `spring-boot-autoconfigure`.

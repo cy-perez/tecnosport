@@ -122,7 +122,7 @@ primero que hay que saber es con qué se capturó.
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
 | `Pedido` | líneas congeladas, dirección, envío, totales, método de pago, estado, historial | Raíz transaccional |
 | `Pago` | referencia, método, estado, eventos recibidos | Idempotente por referencia |
-| `Envio` | transportadora, guía, estado, costo real, recaudo | |
+| `Envio` | transportadora, guía, costo real, comisión y fecha de conciliación del recaudo | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`) |
 | `Usuario` | correo, credencial, roles, verificación | |
 | `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | |
@@ -136,7 +136,12 @@ Se guarda un saldo materializado por rendimiento, pero se recalcula y se concili
 
 Ciclo con pago en línea: el checkout reserva al crear el intento de pago; la
 reserva vence a los 30 minutos; el pago aprobado convierte reserva en salida; el
-pago rechazado o vencido la libera.
+pago rechazado o vencido la libera. `linea_pedido.id_reserva` guarda qué
+movimiento `RESERVA` respalda cada línea — sin ese id no hay forma segura de
+saber cuál reserva liberar o confirmar, porque dos pedidos distintos pueden
+tener reservas pendientes de la misma variante al mismo tiempo. Reintentar un
+pago fallido no reutiliza la reserva liberada: crea una nueva, revalidada
+contra existencia real (`ADR-0014`), y actualiza ese id.
 
 Ciclo con contraentrega: la reserva se crea al confirmar el pedido y **no vence
 por tiempo**: se mantiene hasta el despacho, porque no hay pago que esperar. Si el

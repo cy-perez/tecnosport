@@ -31,6 +31,31 @@
 - Ambiente de pruebas hasta que los recorridos completos pasen. Las llaves de
   producción entran solo por Secret Manager.
 
+## Inventario y reintento de pago
+
+Al confirmar el pedido se reserva inventario por 30 minutos (más abajo,
+"reserva sin vencimiento" es solo para contraentrega). Un pago aprobado
+convierte esa reserva en salida real; uno rechazado o con error la libera de
+inmediato — no espera a que venza sola, para no bloquear stock que ya se sabe
+que no se va a vender en ese intento.
+
+**Reintentar un pago fallido no reutiliza la reserva liberada: la crea de
+nuevo**, revalidada contra la existencia real en ese momento. Si ya no
+alcanza — se vendió mientras tanto — el reintento se rechaza con
+`ExistenciaInsuficienteException` (409), el mismo caso de negocio que al
+crear el pedido, no un error del sistema. `POST /api/v1/pedidos/{id}/reintentar-pago`
+regresa el pedido a `PAGO_PENDIENTE`; después de eso, el checkout pide un
+intento de pago nuevo con `POST /api/v1/pagos/intentos`, igual que la primera
+vez.
+
+**Caso límite:** un webhook tardío, o la conciliación programada llegando
+después de los 30 minutos de la reserva, puede traer un pago aprobado sobre
+una reserva que ya venció o que ya se había resuelto antes. Confirmarla a
+ciegas arriesgaría una sobreventa (la unidad pudo venderse a otro comprador
+ya), así que en ese caso el pago y el pedido se marcan igual como pagados —el
+dinero ya entró, eso no se revierte— pero el inventario queda sin confirmar,
+señalado en los logs del backend para revisión manual (`ADR-0014`).
+
 ## Contraentrega
 
 Es el método con más riesgo operativo del sistema, y el diseño lo refleja.
@@ -50,6 +75,10 @@ Estas reglas son de negocio y viven en el dominio, en un caso de uso
 `MetodosDePagoDisponibles`. **El frontend no decide nada de esto**: pide la lista
 al servidor y muestra lo que le devuelvan.
 
+**Solo se ofrece con envío a domicilio.** Retiro en punto no tiene una ciudad
+de destino que cubrir — no hay transportadora con recaudo en un mostrador
+propio.
+
 **Flujo.**
 
 1. El cliente elige contraentrega y confirma el pedido. No se cobra nada.
@@ -65,11 +94,18 @@ al servidor y muestra lo que le devuelvan.
 
 **El recaudo pendiente es visible en el panel.** Un pedido entregado hace veinte
 días sin conciliar es plata en la calle, y el sistema tiene que gritarlo, no
-esconderlo en un reporte.
+esconderlo en un reporte. En la práctica, es un filtro sobre el listado de
+pedidos que ya existe: `GET /api/v1/admin/pedidos?estado=RECAUDO_PENDIENTE`
+devuelve solo esos, ordenados por más antiguo primero (lo más urgente
+arriba) — no un endpoint ni una pantalla aparte.
 
-**Costo.** El recaudo tiene una comisión de la transportadora. Se registra en el
-pedido como costo real, separado del flete, para que el margen del pedido sea
-verdadero y no una estimación optimista.
+**Costo.** El recaudo tiene una comisión de la transportadora. Se registra en
+el pedido como costo real, separado del flete, para que el margen del pedido
+sea verdadero y no una estimación optimista — en `Envio` (`ADR-0013`), el
+agregado que nace en el despacho con la transportadora y la guía, y que se
+completa con la comisión al conciliar (`POST /api/v1/admin/pedidos/{id}/recaudo`).
+Ese dato hoy se puede escribir pero ningún endpoint lo devuelve todavía: un
+pendiente explícito para cuando se retome el panel administrativo.
 
 ## Transferencia manual
 

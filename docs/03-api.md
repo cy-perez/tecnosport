@@ -122,7 +122,7 @@ Rol `ADMIN`.
 GET/POST/PATCH /api/v1/admin/productos
 GET/POST /api/v1/admin/variantes/{id}/inventario
 POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
-GET/PATCH /api/v1/admin/pedidos
+GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
 POST /api/v1/admin/pedidos/{id}/entrega                     marca entregado
@@ -157,6 +157,21 @@ cada reintento del mismo evento.
 consulta transacciones por su propio id, no por la referencia que genera este
 backend: sin ese id, la conciliación programada (`docs/11-pagos-y-envios.md`)
 no tiene cómo revisar un pago que nunca recibió webhook.
+
+**Excepción a la cabecera `Idempotency-Key`:** las acciones que transicionan
+un pedido *ya existente* a partir de su estado actual —`conciliar-transferencia`,
+`verificar-contraentrega`, `despacho`, `entrega`, `rechazo-entrega`,
+`recaudo` (las seis, de panel, rol `ADMIN`) y `reintentar-pago` (pública,
+sin sesión, mismo modelo de confianza que crear el pedido)— no la usan,
+aunque muevan dinero o inventario. Su idempotencia sale gratis de la propia
+máquina de estados de `Pedido`: un segundo `POST` sobre un pedido que ya
+transicionó cae en un estado que `EstadoPedido` no admite como destino y la
+petición se rechaza con 422, sin duplicar nada ni necesitar una llave
+aparte. La diferencia con `POST /api/v1/pedidos` y `POST
+/api/v1/pagos/intentos`, que sí exigen la cabecera: esos dos *crean* un
+recurso nuevo cada vez que se llaman — sin un estado previo que la
+transición pueda rechazar, no hay forma de que el propio dominio detecte un
+reintento por su cuenta.
 
 ## Reglas que el backend nunca delega al cliente
 

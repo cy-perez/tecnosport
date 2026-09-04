@@ -442,6 +442,62 @@ dinero no quede colgado, no el panel completo.
 Esta fase va despacio, con pruebas primero en todo lo que toca dinero, y con la
 pasarela en pruebas hasta que los recorridos pasen.
 
+**Cierre formal de la Fase 3** (2026-09-04). `npm run verificar` pasa
+completo: lint, 67 pruebas y build del frontend; `gradlew.bat build` con las
+cinco capas del backend y ArchUnit, sin excepciones.
+
+Quedaron documentadas, al cerrar, cuatro decisiones que se tomaron durante la
+fase sin registrar en su momento: `Envio` como agregado propio, sin `estado`
+propio (`ADR-0013`); el ciclo de vida de la reserva de inventario en pago en
+línea — libera al fallar, se re-reserva al reintentar, y un pago aprobado
+tarde sobre una reserva vencida se confirma como pagado igual pero sin
+confirmar inventario, señalado para revisión manual (`ADR-0014`); la
+excepción de `Idempotency-Key` para las acciones administrativas de un solo
+actor, que la propia máquina de estados de `Pedido` ya hace idempotentes
+(`docs/03-api.md`); y tres gotchas de Spring Boot 4.1 sin anotar en
+`apps/api/CLAUDE.md` (Jackson 3, `@AuthenticationPrincipal` sin
+`@EnableWebSecurity`, la nueva ubicación de
+`UserDetailsServiceAutoConfiguration`).
+
+**Pendientes explícitos para lo que sigue**, ninguno bloquea la Fase 4 pero
+tampoco se puede dar por resuelto:
+
+- **Contraentrega está deshabilitada en la práctica hoy**: `CONTRAENTREGA_HABILITADA`
+  arranca en falso y la tabla de cobertura arranca vacía. Hace falta una
+  decisión y una carga manual de negocio antes de que exista un solo pedido
+  contraentrega real — `CONTRAENTREGA_MONTO_MAXIMO` sigue en placeholder de
+  desarrollo también.
+- **Los datos de `Envio` (transportadora, guía, costo, comisión) se pueden
+  escribir pero ningún endpoint los devuelve todavía.** Un admin no puede
+  verificar qué guía quedó registrada sin consultar la base de datos
+  directo — pendiente para cuando se retome el panel.
+- **`docs/03-api.md` documentaba `GET/PATCH /api/v1/admin/pedidos`**; el
+  `PATCH` genérico nunca se construyó, cada transición tiene su propio
+  endpoint de acción con nombre. Ya corregido en el propio documento.
+- **Límite de intentos por IP/cuenta** en login, registro, recuperación y
+  creación de pedidos, prometido en `docs/08-seguridad-legal.md`: sigue sin
+  construirse.
+- **Rotación de clave de un ADMIN ya creado**: sigue sin construirse (ya
+  estaba anotado).
+- **El historial de rechazos en la entrega compara solo por correo**, sin
+  teléfono en el dominio. Un mismo comprador con otro correo, o un rechazo
+  reportado solo por teléfono, no se detecta — riesgo de negocio real,
+  aceptado implícitamente al no haber campo de teléfono, nunca discutido
+  como una decisión consciente hasta este cierre.
+- **Sin tope al número de reintentos de un pago fallido** — cada uno
+  re-reserva inventario. No se decidió si debería tener un límite.
+- **Sin pruebas contra Wompi sandbox real** (ya estaba anotado, faltan
+  llaves).
+
+**Fase 3 completa.** El checkout cobra por Wompi (tarjeta, PSE, Nequi,
+Bancolombia, Addi), por transferencia manual con conciliación en el panel, o
+contraentrega de punta a punta —disponibilidad decidida por el servidor,
+verificación antes de despachar, despacho, entrega o rechazo con liberación
+de inventario, y recaudo pendiente visible y conciliable—, y un pago fallido
+se puede reintentar sin perder el pedido. Todo verificado con Testcontainers
+y `@WebMvcTest` en cada capa; sin recorrido de punta a punta contra Wompi
+real todavía.
+
 ## Fase 4. Cuentas y panel administrativo
 
 Autenticación completa según `docs/08-seguridad-legal.md`: registro de cliente,
