@@ -1,0 +1,103 @@
+<section class="resumen">
+  <h1 class="resumen__titulo">{{ 'checkout.resumen.titulo' | transloco }}</h1>
+
+  @if (carrito.carritoId() === null) {
+    <p class="resumen__vacio">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
+    <a [routerLink]="['../../productos']">
+      <ts-boton variante="primario">{{ 'checkout.resumen.ir_al_catalogo' | transloco }}</ts-boton>
+    </a>
+  } @else if (carrito.consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (carrito.consulta.isError()) {
+    <p class="resumen__error" role="alert">{{ 'checkout.resumen.error_carrito' | transloco }}</p>
+  } @else if (carrito.consulta.data(); as datosCarrito) {
+    @if (datosCarrito.lineas.length === 0) {
+      <p class="resumen__vacio">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
+      <a [routerLink]="['../../productos']">
+        <ts-boton variante="primario">{{ 'checkout.resumen.ir_al_catalogo' | transloco }}</ts-boton>
+      </a>
+    } @else {
+      <div class="resumen__lineas">
+        @for (linea of datosCarrito.lineas; track linea.id) {
+          @let snapshot = carrito.snapshotDeLinea(linea.varianteId);
+          <article class="resumen__linea">
+            @if (snapshot?.imagenUrl) {
+              <img class="resumen__imagen" [ngSrc]="snapshot!.imagenUrl!" width="64" height="64" [alt]="snapshot!.imagenAlt" />
+            } @else {
+              <div class="resumen__imagen resumen__imagen--vacia" aria-hidden="true"></div>
+            }
+            <div class="resumen__info">
+              <p class="resumen__nombre">{{ snapshot?.nombreProducto ?? ('checkout.resumen.producto_sin_foto' | transloco) }}</p>
+              <p class="resumen__cantidad">{{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}</p>
+            </div>
+            @if (snapshot; as foto) {
+              <ts-precio class="resumen__subtotal" [valor]="foto.precioValor * linea.cantidad" [moneda]="foto.precioMoneda" />
+            }
+          </article>
+        }
+      </div>
+
+      <div class="resumen__total">
+        <span>{{ 'checkout.resumen.subtotal' | transloco }}</span>
+        <ts-precio [valor]="subtotal()" moneda="COP" />
+      </div>
+
+      <form class="resumen__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+        <ts-campo
+          idCampo="resumen-correo"
+          [label]="'checkout.resumen.correo' | transloco"
+          [error]="errorCorreo()"
+          formControlName="correo"
+        />
+
+        <ts-select
+          idCampo="resumen-tipo-entrega"
+          [label]="'checkout.resumen.tipo_entrega' | transloco"
+          [opciones]="opcionesTipoEntrega()"
+          formControlName="tipoEntrega"
+        />
+
+        @if (requiereDireccion()) {
+          <fieldset class="resumen__direccion" formGroupName="direccion">
+            <legend>{{ 'checkout.resumen.direccion_titulo' | transloco }}</legend>
+
+            <ts-select
+              idCampo="resumen-departamento"
+              [label]="'checkout.resumen.departamento' | transloco"
+              [placeholder]="'checkout.resumen.elegir' | transloco"
+              [opciones]="opcionesDepartamento()"
+              [error]="errorDepartamento()"
+              formControlName="codigoDaneDepartamento"
+            />
+
+            <ts-select
+              idCampo="resumen-ciudad"
+              [label]="'checkout.resumen.ciudad' | transloco"
+              [placeholder]="'checkout.resumen.elegir' | transloco"
+              [opciones]="opcionesCiudad()"
+              [error]="errorCiudad()"
+              formControlName="codigoDaneCiudad"
+            />
+
+            <ts-campo
+              idCampo="resumen-direccion"
+              [label]="'checkout.resumen.direccion' | transloco"
+              [error]="errorDireccion()"
+              formControlName="direccion"
+            />
+
+            <ts-campo
+              idCampo="resumen-indicaciones"
+              [label]="'checkout.resumen.indicaciones' | transloco"
+              formControlName="indicaciones"
+            />
+          </fieldset>
+        }
+
+        <ts-boton variante="primario" tipo="submit">
+          {{ 'checkout.resumen.continuar' | transloco }}
+        </ts-boton>
+      </form>
+    }
+  }
+</section>

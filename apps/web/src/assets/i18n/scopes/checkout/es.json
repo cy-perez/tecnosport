@@ -1,0 +1,87 @@
+{
+  "resumen": {
+    "titulo": "Resumen del pedido",
+    "carrito_vacio": "Tu carrito está vacío.",
+    "ir_al_catalogo": "Ir al catálogo",
+    "error_carrito": "No se pudo cargar el carrito. Intenta de nuevo.",
+    "producto_sin_foto": "Producto",
+    "cantidad": "Cantidad: {{cantidad}}",
+    "subtotal": "Subtotal",
+    "correo": "Correo electrónico",
+    "tipo_entrega": "Tipo de entrega",
+    "envio_a_domicilio": "Envío a domicilio",
+    "retiro_en_punto": "Retiro en punto (Medellín, sin costo)",
+    "direccion_titulo": "Dirección de entrega",
+    "departamento": "Departamento",
+    "ciudad": "Ciudad",
+    "elegir": "Elegir…",
+    "direccion": "Dirección",
+    "indicaciones": "Indicaciones adicionales (opcional)",
+    "continuar": "Continuar",
+    "errores": {
+      "correo_requerido": "El correo es obligatorio.",
+      "correo_invalido": "Escribe un correo válido.",
+      "departamento_requerido": "Elige un departamento.",
+      "ciudad_requerida": "Elige una ciudad.",
+      "direccion_requerida": "La dirección es obligatoria."
+    }
+  },
+  "metodoPago": {
+    "titulo": "Método de pago",
+    "volver": "‹ Editar dirección",
+    "error": "No se pudieron consultar los métodos de pago disponibles. Intenta de nuevo.",
+    "sin_opciones": "No hay métodos de pago disponibles para este pedido.",
+    "continuar": "Continuar",
+    "tarjeta": "Tarjeta de crédito o débito",
+    "pse": "PSE",
+    "nequi": "Nequi",
+    "bancolombia": "Botón Bancolombia",
+    "addi": "Addi (crédito)",
+    "transferencia_manual": "Transferencia bancaria",
+    "contraentrega": "Pago contra entrega"
+  },
+  "confirmar": {
+    "titulo": "Confirmar pedido",
+    "volver": "‹ Cambiar método de pago",
+    "confirmar": "Confirmar pedido",
+    "enviando": "Confirmando…",
+    "error": "No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo."
+  },
+  "retornoWompi": {
+    "verificando": "Verificando tu pago…",
+    "sin_datos": "No encontramos los datos de este pago."
+  },
+  "estado": {
+    "titulo": "Pedido {{numero}}",
+    "sin_datos": "No encontramos este pedido.",
+    "reintentar": "Reintentar pago",
+    "reintentando": "Reintentando…",
+    "error_reintento": "No se pudo reintentar el pago. Intenta de nuevo.",
+    "estados": {
+      "pago_pendiente": "Esperando el pago",
+      "pagado": "Pagado",
+      "pago_fallido": "El pago no se pudo procesar",
+      "confirmado_contraentrega": "Confirmado, pago contra entrega",
+      "en_preparacion": "En preparación",
+      "despachado": "Despachado",
+      "entregado": "Entregado",
+      "rechazado_en_entrega": "Rechazado en la entrega",
+      "devuelto": "Devuelto",
+      "recaudo_pendiente": "Entregado, recaudo pendiente",
+      "recaudo_conciliado": "Entregado y conciliado"
+    }
+  },
+  "transferencia": {
+    "titulo": "Transfiere a esta cuenta",
+    "instrucciones": "Tu pedido queda reservado 24 horas. Cuando hagas la transferencia, envíanos el comprobante — lo conciliamos y confirmamos tu pedido.",
+    "banco": "Banco",
+    "tipo_cuenta": "Tipo de cuenta",
+    "numero_cuenta": "Número de cuenta",
+    "titular": "Titular",
+    "referencia": "Referencia (pon este número en la transferencia)",
+    "monto": "Monto a transferir",
+    "plazo": "Si no llega el comprobante en 24 horas, la reserva se libera.",
+    "ver_estado": "Ver estado del pedido",
+    "sin_datos": "No encontramos los datos de esta transferencia."
+  }
+}

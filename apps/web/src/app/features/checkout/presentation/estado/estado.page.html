@@ -1,0 +1,71 @@
+<section class="estado">
+  @if (pedido(); as p) {
+    <h1 class="estado__titulo">{{ 'checkout.estado.titulo' | transloco: { numero: p.numeroPedido } }}</h1>
+    <p class="estado__estado">{{ etiquetaEstado() }}</p>
+
+    <div class="estado__lineas">
+      @for (linea of p.lineas; track linea.id) {
+        <article class="estado__linea">
+          @if (linea.imagenUrl) {
+            <img class="estado__imagen" [ngSrc]="linea.imagenUrl" width="64" height="64" alt="" />
+          } @else {
+            <div class="estado__imagen estado__imagen--vacia" aria-hidden="true"></div>
+          }
+          <div class="estado__info">
+            <p class="estado__nombre">{{ linea.nombre }}</p>
+            <p class="estado__cantidad">{{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}</p>
+          </div>
+          <ts-precio
+            class="estado__subtotal"
+            [valor]="linea.precioUnitario.valor * linea.cantidad"
+            [moneda]="linea.precioUnitario.moneda"
+          />
+        </article>
+      }
+    </div>
+
+    <div class="estado__total">
+      <span>{{ 'checkout.resumen.subtotal' | transloco }}</span>
+      <ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" />
+    </div>
+
+    <dl class="estado__detalle">
+      <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
+      <dd>{{ p.correo }}</dd>
+
+      <dt>{{ 'checkout.resumen.tipo_entrega' | transloco }}</dt>
+      <dd>
+        {{
+          (p.tipoEntrega === 'ENVIO_A_DOMICILIO' ? 'checkout.resumen.envio_a_domicilio' : 'checkout.resumen.retiro_en_punto')
+            | transloco
+        }}
+      </dd>
+
+      @if (p.direccion; as direccion) {
+        <dt>{{ 'checkout.resumen.direccion' | transloco }}</dt>
+        <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>
+      }
+    </dl>
+
+    @if (error()) {
+      <p class="estado__error" role="alert">{{ error() }}</p>
+    }
+
+    @if (puedeReintentar()) {
+      <ts-boton
+        variante="primario"
+        [cargando]="reintentando()"
+        [etiquetaCargando]="'checkout.estado.reintentando' | transloco"
+        (click)="reintentar()"
+      >
+        {{ 'checkout.estado.reintentar' | transloco }}
+      </ts-boton>
+    }
+  } @else if (criteriosSeguimiento() === null) {
+    <p class="estado__error" role="alert">{{ 'checkout.estado.sin_datos' | transloco }}</p>
+  } @else if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else {
+    <p class="estado__error" role="alert">{{ 'checkout.estado.sin_datos' | transloco }}</p>
+  }
+</section>

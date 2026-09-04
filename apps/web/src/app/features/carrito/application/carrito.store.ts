@@ -4,7 +4,7 @@ import { Carrito } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { guardarCarritoIdAlmacenado, leerCarritoIdAlmacenado } from '../infrastructure/carrito-id.almacen';
-import { guardarSnapshot } from '../infrastructure/snapshot-lineas.almacen';
+import { guardarSnapshot, leerSnapshot } from '../infrastructure/snapshot-lineas.almacen';
 
 /**
  * Único en toda la app (`providedIn: 'root'`), no una función de fábrica como
@@ -50,6 +50,13 @@ export class CarritoStore {
   readonly cantidadTotal = computed(
     () => this.consulta.data()?.lineas.reduce((total, linea) => total + linea.cantidad, 0) ?? 0,
   );
+
+  /** Foto guardada al agregar la línea (`docs`: no autoritativa, solo para
+   * pintar nombre/precio/imagen fuera de la propia página del carrito —
+   * el resumen del checkout la usa con el mismo criterio). */
+  snapshotDeLinea(varianteId: string): SnapshotLinea | null {
+    return leerSnapshot(varianteId);
+  }
 
   private readonly mutacionAgregar = injectMutation(() => ({
     mutationFn: (variables: { varianteId: string; cantidad: number }) =>

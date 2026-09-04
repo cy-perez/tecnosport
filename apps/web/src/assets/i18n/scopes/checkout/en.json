@@ -1,0 +1,87 @@
+{
+  "resumen": {
+    "titulo": "Order summary",
+    "carrito_vacio": "Your cart is empty.",
+    "ir_al_catalogo": "Go to catalog",
+    "error_carrito": "We couldn't load your cart. Please try again.",
+    "producto_sin_foto": "Product",
+    "cantidad": "Quantity: {{cantidad}}",
+    "subtotal": "Subtotal",
+    "correo": "Email address",
+    "tipo_entrega": "Delivery type",
+    "envio_a_domicilio": "Home delivery",
+    "retiro_en_punto": "Pickup (Medellín, free)",
+    "direccion_titulo": "Delivery address",
+    "departamento": "Department",
+    "ciudad": "City",
+    "elegir": "Choose…",
+    "direccion": "Address",
+    "indicaciones": "Additional instructions (optional)",
+    "continuar": "Continue",
+    "errores": {
+      "correo_requerido": "Email is required.",
+      "correo_invalido": "Enter a valid email.",
+      "departamento_requerido": "Choose a department.",
+      "ciudad_requerida": "Choose a city.",
+      "direccion_requerida": "Address is required."
+    }
+  },
+  "metodoPago": {
+    "titulo": "Payment method",
+    "volver": "‹ Edit address",
+    "error": "We couldn't check the available payment methods. Please try again.",
+    "sin_opciones": "No payment methods are available for this order.",
+    "continuar": "Continue",
+    "tarjeta": "Credit or debit card",
+    "pse": "PSE",
+    "nequi": "Nequi",
+    "bancolombia": "Bancolombia Button",
+    "addi": "Addi (installments)",
+    "transferencia_manual": "Bank transfer",
+    "contraentrega": "Cash on delivery"
+  },
+  "confirmar": {
+    "titulo": "Confirm order",
+    "volver": "‹ Change payment method",
+    "confirmar": "Confirm order",
+    "enviando": "Confirming…",
+    "error": "We couldn't confirm your order. Check your details and try again."
+  },
+  "retornoWompi": {
+    "verificando": "Checking your payment…",
+    "sin_datos": "We couldn't find this payment's details."
+  },
+  "estado": {
+    "titulo": "Order {{numero}}",
+    "sin_datos": "We couldn't find this order.",
+    "reintentar": "Retry payment",
+    "reintentando": "Retrying…",
+    "error_reintento": "We couldn't retry the payment. Please try again.",
+    "estados": {
+      "pago_pendiente": "Waiting for payment",
+      "pagado": "Paid",
+      "pago_fallido": "Payment couldn't be processed",
+      "confirmado_contraentrega": "Confirmed, cash on delivery",
+      "en_preparacion": "Being prepared",
+      "despachado": "Shipped",
+      "entregado": "Delivered",
+      "rechazado_en_entrega": "Rejected on delivery",
+      "devuelto": "Returned",
+      "recaudo_pendiente": "Delivered, payment collection pending",
+      "recaudo_conciliado": "Delivered and settled"
+    }
+  },
+  "transferencia": {
+    "titulo": "Transfer to this account",
+    "instrucciones": "Your order is on hold for 24 hours. Once you make the transfer, send us the receipt — we'll reconcile it and confirm your order.",
+    "banco": "Bank",
+    "tipo_cuenta": "Account type",
+    "numero_cuenta": "Account number",
+    "titular": "Account holder",
+    "referencia": "Reference (include this number in the transfer)",
+    "monto": "Amount to transfer",
+    "plazo": "If the receipt doesn't arrive within 24 hours, the hold is released.",
+    "ver_estado": "View order status",
+    "sin_datos": "We couldn't find this transfer's details."
+  }
+}

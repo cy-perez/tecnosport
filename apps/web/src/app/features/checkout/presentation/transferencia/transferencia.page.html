@@ -1,0 +1,43 @@
+<section class="transferencia">
+  @if (datosTransferencia(); as datos) {
+    <h1 class="transferencia__titulo">{{ 'checkout.transferencia.titulo' | transloco }}</h1>
+    <p class="transferencia__instrucciones">{{ 'checkout.transferencia.instrucciones' | transloco }}</p>
+
+    <dl class="transferencia__datos">
+      <dt>{{ 'checkout.transferencia.banco' | transloco }}</dt>
+      <dd>{{ datos.banco }}</dd>
+
+      <dt>{{ 'checkout.transferencia.tipo_cuenta' | transloco }}</dt>
+      <dd>{{ datos.tipoCuenta }}</dd>
+
+      <dt>{{ 'checkout.transferencia.numero_cuenta' | transloco }}</dt>
+      <dd>{{ datos.numeroCuenta }}</dd>
+
+      <dt>{{ 'checkout.transferencia.titular' | transloco }}</dt>
+      <dd>{{ datos.titular }}</dd>
+
+      <dt>{{ 'checkout.transferencia.referencia' | transloco }}</dt>
+      <dd>{{ datos.referencia }}</dd>
+
+      @if (pedido(); as p) {
+        <dt>{{ 'checkout.transferencia.monto' | transloco }}</dt>
+        <dd><ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" /></dd>
+      }
+    </dl>
+
+    <p class="transferencia__plazo">{{ 'checkout.transferencia.plazo' | transloco }}</p>
+
+    <a [routerLink]="['../estado']" [queryParams]="{ pedidoId: pedido()?.id, correo: pedido()?.correo }">
+      <ts-boton variante="secundario">{{ 'checkout.transferencia.ver_estado' | transloco }}</ts-boton>
+    </a>
+  } @else if (pedido() !== null) {
+    <!-- Se cargó un pedido, pero no es de transferencia manual: ruta equivocada. -->
+    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+  } @else if (criteriosSeguimiento() === null) {
+    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+  } @else if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else {
+    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+  }
+</section>

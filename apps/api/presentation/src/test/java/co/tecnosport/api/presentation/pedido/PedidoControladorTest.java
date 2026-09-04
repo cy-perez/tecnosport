@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.pedido;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -12,6 +13,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -389,6 +391,67 @@ class PedidoControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  private Pedido pedidoDePruebaContraentrega(String correo) {
+    java.util.UUID varianteId = java.util.UUID.randomUUID();
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico(correo),
+            List.of(
+                new LineaPedido(
+                    java.util.UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    java.util.UUID.randomUUID())),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.CONTRAENTREGA,
+            correo,
+            Instant.now());
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  @Test
+  void seguimientoConElCorreoCorrectoDevuelveElPedido() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(pedido.id().toString()))
+        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
+  }
+
+  @Test
+  void seguimientoConElCorreoEquivocadoDevuelve404() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id()).param("correo", "otro@correo.co"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
+  }
+
+  @Test
+  void seguimientoDeUnPedidoInexistenteDevuelve404() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", java.util.UUID.randomUUID())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -425,6 +488,11 @@ class PedidoControladorTest {
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
           repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
+    }
+
+    @Bean
+    ConsultarSeguimientoPedido consultarSeguimientoPedido(RepositorioPedidos repositorioPedidos) {
+      return new ConsultarSeguimientoPedido(repositorioPedidos);
     }
 
     @Bean

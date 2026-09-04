@@ -5,6 +5,8 @@
     [id]="idCampo()"
     [disabled]="deshabilitado()"
     [value]="valor()"
+    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-describedby]="error() ? idCampo() + '-error' : null"
     (change)="manejarCambio($any($event.target).value)"
   >
     @if (placeholder()) {
@@ -14,4 +16,7 @@
       <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
     }
   </select>
+  @if (error()) {
+    <p class="ts-select__error" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
+  }
 </div>

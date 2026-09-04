@@ -105,6 +105,7 @@ describe('CarritoPage', () => {
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect(screen.getAllByText(/300\.000/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Ir a pagar' })).toBeTruthy();
   });
 
   it('eliminar una línea la quita de la pantalla', async () => {

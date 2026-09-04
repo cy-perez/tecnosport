@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/carritos": {
+    "/api/v1/pedidos": {
         parameters: {
             query?: never;
             header?: never;
@@ -14,6 +14,86 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["crear"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedidos/{id}/reintentar-pago": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reintentarPago"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedidos/metodos-de-pago-disponibles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["metodosDePagoDisponibles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["webhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/intentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/carritos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -34,6 +114,182 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sesion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["iniciarSesion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/refresco": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refrescar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/cierre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cerrarSesion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/verificar-contraentrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verificar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/rechazo-entrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rechazarEnEntrega"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/recaudo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["conciliarRecaudo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/entrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["marcarEntregado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/despacho": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["despachar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/conciliar-transferencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["conciliar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/cobertura-contraentrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/intentos/{referencia}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["registrarIdTransaccion"];
         trace?: never;
     };
     "/api/v1/carritos/{id}/lineas/{lineaId}": {
@@ -100,6 +356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pedidos/{id}/seguimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["seguimiento"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/marcas": {
         parameters: {
             query?: never;
@@ -116,7 +388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/categorias": {
+    "/api/v1/envios/cobertura": {
         parameters: {
             query?: never;
             header?: never;
@@ -124,6 +396,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -148,10 +436,158 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/cobertura-contraentrega/{codigoDaneCiudad}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["quitar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CrearPedidoRequest: {
+            correo?: string;
+            lineas?: components["schemas"]["LineaRequest"][];
+            tipoEntrega?: string;
+            direccion?: components["schemas"]["DireccionRequest"];
+            metodoPago?: string;
+        };
+        DireccionRequest: {
+            codigoDaneDepartamento?: string;
+            departamento?: string;
+            codigoDaneCiudad?: string;
+            ciudad?: string;
+            direccion?: string;
+            indicaciones?: string;
+        };
+        LineaRequest: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: int32 */
+            cantidad?: number;
+        };
+        DatosTransferenciaRespuesta: {
+            banco?: string;
+            tipoCuenta?: string;
+            numeroCuenta?: string;
+            titular?: string;
+            referencia?: string;
+        };
+        DineroRespuesta: {
+            /** Format: int64 */
+            valor?: number;
+            moneda?: string;
+        };
+        DireccionRespuesta: {
+            codigoDaneDepartamento?: string;
+            departamento?: string;
+            codigoDaneCiudad?: string;
+            ciudad?: string;
+            direccion?: string;
+            indicaciones?: string;
+        };
+        LineaPedidoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            varianteId?: string;
+            sku?: string;
+            nombre?: string;
+            /** Format: int32 */
+            cantidad?: number;
+            precioUnitario?: components["schemas"]["DineroRespuesta"];
+            tasaIva?: number;
+            imagenUrl?: string;
+        };
+        PedidoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            numeroPedido?: string;
+            /** Format: uuid */
+            usuarioId?: string;
+            correo?: string;
+            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
+            tipoEntrega?: string;
+            direccion?: components["schemas"]["DireccionRespuesta"];
+            metodoPago?: string;
+            estado?: string;
+            total?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            creadoEn?: string;
+            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+        };
+        MetodosDePagoDisponiblesRequest: {
+            lineas?: components["schemas"]["LineaRequest"][];
+            correo?: string;
+            tipoEntrega?: string;
+            direccion?: components["schemas"]["DireccionRequest"];
+        };
+        JsonNode: {
+            number?: boolean;
+            missingNode?: boolean;
+            /** @enum {string} */
+            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+            bigDecimal?: boolean;
+            bigInteger?: boolean;
+            valueNode?: boolean;
+            integralNumber?: boolean;
+            container?: boolean;
+            object?: boolean;
+            string?: boolean;
+            double?: boolean;
+            long?: boolean;
+            pojo?: boolean;
+            binary?: boolean;
+            int?: boolean;
+            short?: boolean;
+            boolean?: boolean;
+            /** @deprecated */
+            textual?: boolean;
+            floatingPointNumber?: boolean;
+            array?: boolean;
+            empty?: boolean;
+            null?: boolean;
+            float?: boolean;
+            embeddedValue?: boolean;
+        };
+        CrearIntentoDePagoRequest: {
+            /** Format: uuid */
+            pedidoId?: string;
+        };
+        IntentoDePagoRespuesta: {
+            referencia?: string;
+            monto?: components["schemas"]["DineroRespuesta"];
+            firmaIntegridad?: string;
+            llavePublica?: string;
+            ambiente?: string;
+        };
         CarritoRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -175,6 +611,38 @@ export interface components {
             /** Format: int32 */
             cantidad?: number;
         };
+        IniciarSesionRequest: {
+            correo?: string;
+            clave?: string;
+        };
+        SesionRespuesta: {
+            /** Format: uuid */
+            usuarioId?: string;
+            rol?: string;
+            accessToken?: string;
+        };
+        VerificarContraentregaRequest: {
+            motivo?: string;
+        };
+        RechazarEnEntregaRequest: {
+            motivo?: string;
+        };
+        ConciliarRecaudoRequest: {
+            /** Format: int64 */
+            comisionRecaudo?: number;
+        };
+        DespacharPedidoRequest: {
+            transportadora?: string;
+            guia?: string;
+            /** Format: int64 */
+            costoEnvio?: number;
+        };
+        CoberturaContraentregaRequest: {
+            codigoDaneCiudad?: string;
+        };
+        RegistrarIdTransaccionWompiRequest: {
+            idTransaccionWompi?: string;
+        };
         ActualizarCantidadRequest: {
             /** Format: int32 */
             cantidad?: number;
@@ -188,11 +656,6 @@ export interface components {
             nombre?: string;
             slug?: string;
             linea?: string;
-        };
-        DineroRespuesta: {
-            /** Format: int64 */
-            valor?: number;
-            moneda?: string;
         };
         ImagenRespuesta: {
             url?: string;
@@ -256,6 +719,15 @@ export interface components {
             items?: components["schemas"]["CategoriaRespuesta"][];
             cursorSiguiente?: string;
         };
+        PedidosPaginadosRespuesta: {
+            items?: components["schemas"]["PedidoRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
+            /** Format: int64 */
+            totalPedidos?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -266,6 +738,122 @@ export interface components {
 export type $defs = Record<string, never>;
 export interface operations {
     crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    reintentarPago: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    metodosDePagoDisponibles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
+    webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JsonNode"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    crear_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearIntentoDePagoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntentoDePagoRespuesta"];
+                };
+            };
+        };
+    };
+    crear_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -308,6 +896,266 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["CarritoRespuesta"];
                 };
+            };
+        };
+    };
+    iniciarSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarSesionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
+    refrescar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresco?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
+    cerrarSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresco?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificarContraentregaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    rechazarEnEntrega: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RechazarEnEntregaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    conciliarRecaudo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConciliarRecaudoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    marcarEntregado: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    despachar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DespacharPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    conciliar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    agregar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoberturaContraentregaRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    registrarIdTransaccion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referencia: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarIdTransaccionWompiRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -433,6 +1281,30 @@ export interface operations {
             };
         };
     };
+    seguimiento: {
+        parameters: {
+            query: {
+                correo: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
     listar: {
         parameters: {
             query?: never;
@@ -454,6 +1326,26 @@ export interface operations {
         };
     };
     listar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
+    listar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -492,6 +1384,50 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["CarritoRespuesta"];
                 };
+            };
+        };
+    };
+    listar_3: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    quitar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codigoDaneCiudad: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

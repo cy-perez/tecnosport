@@ -8,7 +8,7 @@ Orden de lectura para quien llega nuevo al proyecto.
 | `01-arquitectura.md` | El monorepo, las capas, las flechas y por qué |
 | `02-modelo-datos.md` | Entidades, variantes por categoría, inventario, dinero, imágenes |
 | `03-api.md` | Contrato REST, errores, paginación, idempotencia |
-| `04-ui-marca.md` | Cómo el kit de marca se convierte en componentes de Angular |
+| `04-ui-marca.md` | Los dos kits de marca/UI de origen y cómo se convierten en componentes de Angular |
 | `05-i18n.md` | Transloco, rutas por idioma, SEO multilingüe |
 | `06-testing.md` | Qué se prueba, con qué, y qué no se prueba |
 | `07-infra-gcp.md` | Entornos, Cloud Run, Terraform, CI/CD, DNS, configuración |

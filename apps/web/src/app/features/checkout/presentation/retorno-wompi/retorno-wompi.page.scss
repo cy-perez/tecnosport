@@ -1,0 +1,16 @@
+.retorno-wompi {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: var(--esp-32) var(--esp-16);
+  text-align: center;
+}
+
+.retorno-wompi__mensaje {
+  color: var(--color-texto-suave);
+  margin-top: var(--esp-16);
+}
+
+.retorno-wompi__error {
+  color: var(--color-error);
+  margin-bottom: var(--esp-16);
+}

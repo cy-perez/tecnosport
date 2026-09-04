@@ -1,7 +1,40 @@
 # Interfaz y marca
 
-El sistema visual ya existe y está cerrado. Vive en `packages/marca`. Este
-documento explica cómo se instala en Angular y qué no se puede tocar.
+El sistema visual ya existe y está cerrado. Viene de dos kits entregados
+fuera del monorepo y se vendoriza a mano en `packages/marca`. Este documento
+explica cómo se instala en Angular y qué no se puede tocar.
+
+## De dónde viene
+
+Dos entregas, cada una con su alcance:
+
+- **`tecno-sport-marca`** — el manual de marca completo: logo en todas sus
+  variantes (positivo, negativo, mono, isotipo, vertical, horizontal, sobre
+  grafito), iconografía de app (iOS/Android), plantillas de redes sociales y
+  la versión de imprenta. Es la identidad de la empresa, no depende de que
+  exista un sitio web.
+- **`tecnosport-kit-ui`** — el kit de interfaz web. Extiende
+  `marca/tokens.json` sin reinventar ningún color ni tipografía: agrega lo
+  que una interfaz necesita y una identidad no tiene — estados (hover,
+  pressed, foco, deshabilitado), modo oscuro derivado, breakpoints, medidas
+  de header y las tres tipografías autoalojadas en `.woff2`.
+
+Las dos llegan como carpetas sueltas (por eso `tecnosport-kit-ui/` y
+`tecno-sport-marca/` están en `.gitignore`: son un punto de entrega, no algo
+que se commitea tal cual). Lo que el sitio realmente usa se copia a mano a
+`packages/marca`, y cada entrega queda archivada ahí mismo como `.zip` con la
+fecha, para no perder la procedencia. `packages/marca/dist/app`,
+`dist/imprenta`, `dist/raster` y `dist/social` ya están vendorizados pero
+ningún proyecto los usa todavía — quedan listos para cuando exista la app
+móvil o una pieza de marketing/impresión (`CLAUDE.md`: "la app móvil viene
+después").
+
+**Cómo resincronizar cuando llega una entrega nueva:** copiar a
+`packages/marca` solo lo que cambió, sin tocar `tokens.css`/`fuentes.css`
+salvo que `tokens.json` haya cambiado de verdad (ver "Lo que no se toca" más
+abajo). No hace falta correr `generador/kit_ui.py` si ninguna decisión de
+diseño cambió — la mayoría de entregas son activos nuevos (más variantes de
+logo, más plantillas), no cambios de tokens.
 
 ## Qué se copia y adónde
 

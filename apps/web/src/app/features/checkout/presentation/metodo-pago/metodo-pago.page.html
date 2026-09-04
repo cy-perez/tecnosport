@@ -1,0 +1,31 @@
+<section class="metodo-pago">
+  <h1 class="metodo-pago__titulo">{{ 'checkout.metodoPago.titulo' | transloco }}</h1>
+
+  <a class="metodo-pago__volver" [routerLink]="['../resumen']">
+    {{ 'checkout.metodoPago.volver' | transloco }}
+  </a>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="metodo-pago__error" role="alert">{{ 'checkout.metodoPago.error' | transloco }}</p>
+  } @else if (opciones().length === 0) {
+    <p class="metodo-pago__error" role="alert">{{ 'checkout.metodoPago.sin_opciones' | transloco }}</p>
+  } @else {
+    <ts-selector-metodo-pago
+      [opciones]="opciones()"
+      [seleccionado]="checkout.metodoPago()"
+      [etiquetaGrupo]="'checkout.metodoPago.titulo' | transloco"
+      (seleccionCambio)="elegir($event)"
+    />
+
+    <ts-boton
+      class="metodo-pago__continuar"
+      variante="primario"
+      [deshabilitado]="checkout.metodoPago() === null"
+      (click)="continuar()"
+    >
+      {{ 'checkout.metodoPago.continuar' | transloco }}
+    </ts-boton>
+  }
+</section>

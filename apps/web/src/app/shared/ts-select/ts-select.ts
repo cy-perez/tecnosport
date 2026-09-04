@@ -28,6 +28,7 @@ export class TsSelect implements ControlValueAccessor {
   readonly opciones = input.required<readonly OpcionSelect[]>();
   /** Texto de la opción vacía, para un select que representa "sin filtro". */
   readonly placeholder = input<string | null>(null);
+  readonly error = input<string | null>(null);
 
   protected readonly valor = signal('');
   protected readonly deshabilitado = signal(false);

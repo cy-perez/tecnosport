@@ -1,0 +1,11 @@
+<section class="retorno-wompi">
+  @if (sinDatos()) {
+    <p class="retorno-wompi__error" role="alert">{{ 'checkout.retornoWompi.sin_datos' | transloco }}</p>
+    <a [routerLink]="['../../productos']">
+      {{ 'checkout.resumen.ir_al_catalogo' | transloco }}
+    </a>
+  } @else {
+    <ts-esqueleto />
+    <p class="retorno-wompi__mensaje" role="status">{{ 'checkout.retornoWompi.verificando' | transloco }}</p>
+  }
+</section>

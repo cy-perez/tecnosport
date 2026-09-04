@@ -32,6 +32,10 @@
         <span>{{ 'carrito.total' | transloco }}</span>
         <ts-precio [valor]="total()" moneda="COP" />
       </div>
+
+      <a [routerLink]="['../checkout']">
+        <ts-boton variante="primario">{{ 'carrito.ir_a_pagar' | transloco }}</ts-boton>
+      </a>
     }
   } @else {
     <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>

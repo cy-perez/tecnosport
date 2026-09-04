@@ -1,0 +1,51 @@
+<section class="confirmar">
+  <h1 class="confirmar__titulo">{{ 'checkout.confirmar.titulo' | transloco }}</h1>
+
+  <a class="confirmar__volver" [routerLink]="['../metodo-pago']">
+    {{ 'checkout.confirmar.volver' | transloco }}
+  </a>
+
+  @if (checkout.datosEntrega(); as datos) {
+    <dl class="confirmar__resumen">
+      <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
+      <dd>{{ datos.correo }}</dd>
+
+      <dt>{{ 'checkout.resumen.tipo_entrega' | transloco }}</dt>
+      <dd>
+        {{
+          (datos.tipoEntrega === 'ENVIO_A_DOMICILIO'
+            ? 'checkout.resumen.envio_a_domicilio'
+            : 'checkout.resumen.retiro_en_punto'
+          ) | transloco
+        }}
+      </dd>
+
+      @if (datos.direccion; as direccion) {
+        <dt>{{ 'checkout.resumen.direccion' | transloco }}</dt>
+        <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>
+      }
+
+      <dt>{{ 'checkout.metodoPago.titulo' | transloco }}</dt>
+      <dd>{{ etiquetaMetodoPago() }}</dd>
+
+      <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
+      <dd><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
+    </dl>
+
+    @if (error()) {
+      <p class="confirmar__error" role="alert">{{ error() }}</p>
+    }
+
+    <ts-boton
+      class="confirmar__confirmar"
+      variante="primario"
+      [cargando]="enviando()"
+      [etiquetaCargando]="'checkout.confirmar.enviando' | transloco"
+      (click)="confirmar()"
+    >
+      {{ 'checkout.confirmar.confirmar' | transloco }}
+    </ts-boton>
+  } @else {
+    <ts-esqueleto />
+  }
+</section>

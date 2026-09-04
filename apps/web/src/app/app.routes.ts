@@ -17,6 +17,10 @@ export const routes: Routes = [
         path: 'carrito',
         loadChildren: () => import('./features/carrito/presentation/carrito.routes').then((m) => m.carritoRoutes),
       },
+      {
+        path: 'checkout',
+        loadChildren: () => import('./features/checkout/presentation/checkout.routes').then((m) => m.checkoutRoutes),
+      },
     ],
   },
   { path: '**', redirectTo: 'es' },

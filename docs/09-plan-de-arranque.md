@@ -442,9 +442,16 @@ dinero no quede colgado, no el panel completo.
 Esta fase va despacio, con pruebas primero en todo lo que toca dinero, y con la
 pasarela en pruebas hasta que los recorridos pasen.
 
-**Cierre formal de la Fase 3** (2026-09-04). `npm run verificar` pasa
+**Backend de la Fase 3 cerrado** (2026-09-04). `npm run verificar` pasa
 completo: lint, 67 pruebas y build del frontend; `gradlew.bat build` con las
-cinco capas del backend y ArchUnit, sin excepciones.
+cinco capas del backend y ArchUnit, sin excepciones. **La fase en sí no
+estaba cerrada todavía en este punto**: `npm run verificar` en verde
+verifica que el frontend existente compila y pasa sus pruebas, no que exista
+frontend de checkout — no había ni `features/checkout` ni ningún componente
+de pago o envío en `apps/web`. Bajo la regla agregada en "Cómo conversar con
+Claude Code en este proyecto" (una fase cierra solo con frontend y backend
+integrados), esto se corrige aquí en vez de dejarlo como un cierre formal
+inexacto.
 
 Quedaron documentadas, al cerrar, cuatro decisiones que se tomaron durante la
 fase sin registrar en su momento: `Envio` como agregado propio, sin `estado`
@@ -489,14 +496,60 @@ tampoco se puede dar por resuelto:
 - **Sin pruebas contra Wompi sandbox real** (ya estaba anotado, faltan
   llaves).
 
-**Fase 3 completa.** El checkout cobra por Wompi (tarjeta, PSE, Nequi,
-Bancolombia, Addi), por transferencia manual con conciliación en el panel, o
-contraentrega de punta a punta —disponibilidad decidida por el servidor,
-verificación antes de despachar, despacho, entrega o rechazo con liberación
-de inventario, y recaudo pendiente visible y conciliable—, y un pago fallido
-se puede reintentar sin perder el pedido. Todo verificado con Testcontainers
-y `@WebMvcTest` en cada capa; sin recorrido de punta a punta contra Wompi
-real todavía.
+**Backend de la Fase 3 completo, fase todavía abierta.** El backend cobra
+por Wompi (tarjeta, PSE, Nequi, Bancolombia, Addi), por transferencia manual
+con conciliación en el panel, o contraentrega de punta a punta —
+disponibilidad decidida por el servidor, verificación antes de despachar,
+despacho, entrega o rechazo con liberación de inventario, y recaudo
+pendiente visible y conciliable—, y un pago fallido se puede reintentar sin
+perder el pedido. Todo verificado con Testcontainers y `@WebMvcTest` en cada
+capa; sin recorrido de punta a punta contra Wompi real todavía.
+
+**Frontend de la Fase 3 cerrado** (2026-09-04). `features/checkout` completo,
+por capas, un caso de uso a la vez, mismo patrón que `features/carrito`:
+`ResumenPage` (dirección + resumen, reconcilia `CarritoStore`),
+`MetodoPagoPage` (`ts-selector-metodo-pago`, nuevo en `shared/`),
+`ConfirmarPage` (crea el pedido — reutiliza el ya creado en un reintento en
+vez de duplicarlo — y bifurca por método), `RetornoWompiPage` (registra el
+id de transacción, best-effort), `TransferenciaPage` y `EstadoPage` (con
+reintento de pago fallido, incluida la vuelta a Wompi cuando aplica). Las
+tres últimas comparten un mismo patrón: `CheckoutStore.pedido` si el
+comprador nunca salió del sitio (contraentrega, transferencia), o
+`GET /pedidos/{id}/seguimiento` con `pedidoId`/`correo` de la URL si la SPA
+se recargó entera (retorno de Wompi, o un refresh en cualquiera de las dos).
+
+**Hueco encontrado y cerrado al construir la pantalla de retorno:**
+`GET /pedidos/{id}/seguimiento` estaba documentado en `docs/03-api.md` pero
+nunca se había construido en el backend — sin él, no había forma de
+consultar el estado de un pedido sin sesión. Se agregó
+`ConsultarSeguimientoPedido` (dominio, aplicación, presentación, con
+pruebas en las tres capas): el correo hace de token, comparado contra
+`Pedido.correo` — no hay verificación de correo ni infraestructura de envío
+transaccional todavía (eso sigue en la Fase 4), así que es lo único
+construible hoy. Un correo equivocado da el mismo 404 que un id
+inexistente, para no filtrar si el id existe a quien no conoce el correo
+real.
+
+**Otro hueco cerrado en el camino:** `PedidoHttpRepositorio.crear` (paso de
+infraestructura) no mandaba la cabecera `Idempotency-Key` que
+`docs/03-api.md` exige para `POST /pedidos` y `POST /pagos/intentos` — sin
+ella, un reintento de red habría duplicado el pedido y su reserva de
+inventario. Corregido antes de que el checkout llegara a usarse de verdad.
+
+La URL del Web Checkout de Wompi (`checkout.wompi.co/p/`, parámetros
+`public-key`/`currency`/`amount-in-cents`/`reference`/`signature:integrity`/
+`redirect-url`) se verificó contra la documentación oficial de Wompi, no de
+memoria — ver la nota de la sección de Wompi más arriba sobre el vector
+fabricado que ya causó un problema real en este proyecto. `amount-in-cents`
+multiplica por 100 incluso en COP (ejemplo textual de Wompi: "10000 = $100
+COP").
+
+**Fase 3 completa**, backend y frontend integrados: el checkout cobra por
+Wompi, por transferencia manual o por contraentrega, de punta a punta en el
+navegador, verificado con 137 pruebas de Vitest y `npm run verificar`
+completo (raíz). Sin recorrido de punta a punta contra Wompi sandbox real
+todavía (faltan llaves) ni verificación visual en navegador de esta sesión
+(el sandbox de la herramienta de automatización no llega a `localhost`).
 
 ## Fase 4. Cuentas y panel administrativo
 
@@ -554,6 +607,13 @@ Léelo, corrígelo. Ahí se ahorra el tiempo, no revisando seiscientas líneas y
 escritas.
 
 **Una capa por vez, un commit por capa.** Revertir un commit pequeño no duele.
+
+**Una fase se cierra solo cuando el frontend y el backend correspondientes
+están integrados.** "Backend cerrado" o "vitrina cerrada" documentan un
+avance, no el cierre de la fase — la fase completa exige los dos lados
+funcionando juntos, verificado a mano contra el backend real. Documentar el
+backend de una fase sin su frontend dejó, en su momento, la Fase 3 marcada
+como completa sin checkout en el navegador: no se repite.
 
 **Cuando algo salga mal, no pidas un parche encima.** Vuelve al plan, corrige la
 premisa y regenera. Los parches encadenados sobre un diseño equivocado son la

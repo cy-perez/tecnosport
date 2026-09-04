@@ -28,4 +28,14 @@
     color: var(--color-deshabilitado);
     cursor: not-allowed;
   }
+
+  &[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+}
+
+.ts-select__error {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--color-error);
 }

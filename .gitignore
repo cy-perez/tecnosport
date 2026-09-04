@@ -31,3 +31,7 @@ Thumbs.db
 # Logs
 npm-debug.log*
 *.log
+
+# Folders
+tecnosport-kit-ui/
+tecno-sport-marca/
