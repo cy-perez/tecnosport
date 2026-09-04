@@ -331,6 +331,11 @@ class PedidoControladorTest {
 
   @Test
   void reintentarPagoDeUnPedidoFallidoLoRegresaAPagoPendiente() throws Exception {
+    java.util.UUID varianteId = java.util.UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(5, "siembra de prueba", Instant.now());
+    inventarios.conInventario(inventario);
+
     Pedido pedido =
         Pedido.crear(
             NumeroPedido.de(2026, 1),
@@ -339,7 +344,7 @@ class PedidoControladorTest {
             List.of(
                 new LineaPedido(
                     java.util.UUID.randomUUID(),
-                    java.util.UUID.randomUUID(),
+                    varianteId,
                     new Sku("TS-CAM-AZ-M"),
                     "Camiseta running Dry-Fit",
                     1,
@@ -423,8 +428,12 @@ class PedidoControladorTest {
     }
 
     @Bean
-    ReintentarPago reintentarPago(RepositorioPedidos repositorioPedidos, Reloj reloj) {
-      return new ReintentarPago(repositorioPedidos, reloj);
+    ReintentarPago reintentarPago(
+        RepositorioPedidos repositorioPedidos,
+        RepositorioInventario repositorioInventario,
+        Reloj reloj) {
+      return new ReintentarPago(
+          repositorioPedidos, repositorioInventario, reloj, Duration.ofMinutes(30));
     }
 
     @Bean

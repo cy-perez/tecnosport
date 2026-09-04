@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pago.CrearIntentoDePago;
 import co.tecnosport.api.application.pago.PasarelaDePagos;
 import co.tecnosport.api.application.pago.ProcesarEventoDePago;
@@ -320,12 +321,22 @@ class PagoControladorTest {
     }
 
     @Bean
+    RepositorioInventarioDobleDePrueba repositorioInventario() {
+      return new RepositorioInventarioDobleDePrueba();
+    }
+
+    @Bean
     ProcesarEventoDePago procesarEventoDePago(
         RepositorioPagos repositorioPagos,
         RepositorioPedidos repositorioPedidos,
+        RepositorioInventario repositorioInventario,
         PasarelaDePagos pasarelaDePagos) {
       return new ProcesarEventoDePago(
-          repositorioPagos, repositorioPedidos, pasarelaDePagos, Instant::now);
+          repositorioPagos,
+          repositorioPedidos,
+          repositorioInventario,
+          pasarelaDePagos,
+          Instant::now);
     }
 
     @Bean

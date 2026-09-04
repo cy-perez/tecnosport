@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pago.ConciliarPagosPendientes;
 import co.tecnosport.api.application.pago.CrearIntentoDePago;
 import co.tecnosport.api.application.pago.PasarelaDePagos;
@@ -52,9 +53,11 @@ public class ConfiguracionWompi {
   public ProcesarEventoDePago procesarEventoDePago(
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj) {
-    return new ProcesarEventoDePago(repositorioPagos, repositorioPedidos, pasarelaDePagos, reloj);
+    return new ProcesarEventoDePago(
+        repositorioPagos, repositorioPedidos, repositorioInventario, pasarelaDePagos, reloj);
   }
 
   @Bean
@@ -67,12 +70,14 @@ public class ConfiguracionWompi {
   public ConciliarPagosPendientes conciliarPagosPendientes(
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
       PasarelaDePagos pasarelaDePagos,
       Reloj reloj,
       PropiedadesConciliacionWompi propiedades) {
     return new ConciliarPagosPendientes(
         repositorioPagos,
         repositorioPedidos,
+        repositorioInventario,
         pasarelaDePagos,
         reloj,
         Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()));

@@ -117,6 +117,13 @@ public class PagoControlador {
               "Evento de Wompi aplicado, referencia={}, estado={}",
               comando.referencia(),
               comando.estadoWompi());
+      case APLICADO_SIN_CONFIRMAR_INVENTARIO ->
+          log.error(
+              "Pago aplicado pero no se pudo confirmar/liberar la reserva de inventario (venció o"
+                  + " ya se había resuelto) — riesgo de sobreventa, revisar a mano. referencia={},"
+                  + " estado={}",
+              comando.referencia(),
+              comando.estadoWompi());
     }
   }
 }
