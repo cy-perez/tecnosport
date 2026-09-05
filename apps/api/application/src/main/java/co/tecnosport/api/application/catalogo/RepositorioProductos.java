@@ -36,4 +36,7 @@ public interface RepositorioProductos {
    * {@code PUBLICADO}), paginado por página y ordenado por más reciente primero.
    */
   ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina);
+
+  /** Inserta un producto nuevo. Sin variantes ni imágenes todavía — eso es de un caso de uso propio. */
+  void guardar(Producto producto);
 }

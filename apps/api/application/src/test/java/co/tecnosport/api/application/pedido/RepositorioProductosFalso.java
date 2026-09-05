@@ -42,4 +42,9 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
     return new ProductosPaginados(List.of(), 0, 0, 0);
   }
+
+  @Override
+  public void guardar(Producto producto) {
+    throw new UnsupportedOperationException("No usado por CrearPedido.");
+  }
 }

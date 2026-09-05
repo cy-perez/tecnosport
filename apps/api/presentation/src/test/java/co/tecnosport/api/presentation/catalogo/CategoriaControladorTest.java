@@ -11,6 +11,8 @@ import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -69,6 +71,11 @@ class CategoriaControladorTest {
     @Override
     public List<Categoria> listarTodas() {
       return categorias;
+    }
+
+    @Override
+    public Optional<Categoria> buscarPorId(UUID id) {
+      return categorias.stream().filter(categoria -> categoria.id().equals(id)).findFirst();
     }
   }
 }

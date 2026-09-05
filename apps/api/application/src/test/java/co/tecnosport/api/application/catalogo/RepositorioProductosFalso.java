@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,7 +11,7 @@ import java.util.UUID;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 final class RepositorioProductosFalso implements RepositorioProductos {
 
-  private List<Producto> productos = List.of();
+  private List<Producto> productos = new ArrayList<>();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
 
@@ -20,6 +21,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   int ultimoTamanoPagina;
   int ultimaPaginaAdmin;
   int ultimoTamanoPaginaAdmin;
+  Producto ultimoGuardado;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -60,5 +62,12 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     this.ultimaPaginaAdmin = pagina;
     this.ultimoTamanoPaginaAdmin = tamanoPagina;
     return resultadoAdmin;
+  }
+
+  @Override
+  public void guardar(Producto producto) {
+    this.ultimoGuardado = producto;
+    this.productos = new ArrayList<>(productos);
+    this.productos.add(producto);
   }
 }

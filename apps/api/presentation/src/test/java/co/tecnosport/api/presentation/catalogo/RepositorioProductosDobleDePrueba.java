@@ -17,6 +17,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   private List<Producto> productos = List.of();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
+  Producto ultimoGuardado;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -51,5 +52,10 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
     return resultadoAdmin;
+  }
+
+  @Override
+  public void guardar(Producto producto) {
+    this.ultimoGuardado = producto;
   }
 }
