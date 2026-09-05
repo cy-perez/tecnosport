@@ -40,6 +40,34 @@ class ProductoTest {
   }
 
   @Test
+  void actualizarDatosBasicosCambiaNombreDescripcionMarcaYCategoriaSinTocarElSlug() {
+    Producto producto = productoDePrueba();
+    Slug slugOriginal = producto.slug();
+    Marca nuevaMarca = Marca.crear("Under Trail");
+    Categoria nuevaCategoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+
+    producto.actualizarDatosBasicos(
+        "Camiseta renombrada", "Nueva descripción", nuevaMarca, nuevaCategoria);
+
+    assertEquals("Camiseta renombrada", producto.nombre());
+    assertEquals("Nueva descripción", producto.descripcion());
+    assertEquals(nuevaMarca, producto.marca());
+    assertEquals(nuevaCategoria, producto.categoria());
+    assertEquals(slugOriginal, producto.slug());
+  }
+
+  @Test
+  void actualizarDatosBasicosRechazaNombreVacio() {
+    Producto producto = productoDePrueba();
+
+    assertThrows(
+        co.tecnosport.api.domain.compartido.ExcepcionDeDominio.class,
+        () ->
+            producto.actualizarDatosBasicos(
+                "", "descripción", producto.marca(), producto.categoria()));
+  }
+
+  @Test
   void rechazaImagenPrincipalDeOtroTipo() {
     Producto producto = productoDePrueba();
     ImagenProducto galeria =

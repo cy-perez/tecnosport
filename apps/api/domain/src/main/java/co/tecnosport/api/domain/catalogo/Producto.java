@@ -13,11 +13,11 @@ import java.util.UUID;
 public final class Producto {
 
   private final UUID id;
-  private final String nombre;
+  private String nombre;
   private final Slug slug;
-  private final String descripcion;
-  private final Marca marca;
-  private final Categoria categoria;
+  private String descripcion;
+  private Marca marca;
+  private Categoria categoria;
   private EstadoProducto estado;
   private ImagenProducto imagenPrincipal;
   private final List<ImagenProducto> galeria;
@@ -72,6 +72,21 @@ public final class Producto {
         List.of(),
         null,
         List.of());
+  }
+
+  /**
+   * Edita los datos descriptivos desde el panel admin. El {@code slug} no cambia: es el
+   * identificador de URL estable del producto, no se regenera aunque cambie el nombre.
+   */
+  public void actualizarDatosBasicos(
+      String nombre, String descripcion, Marca marca, Categoria categoria) {
+    if (nombre == null || nombre.isBlank()) {
+      throw new ExcepcionDeDominio("El nombre del producto no puede estar vacío.");
+    }
+    this.nombre = nombre.trim();
+    this.descripcion = descripcion == null ? "" : descripcion.trim();
+    this.marca = Objects.requireNonNull(marca, "El producto necesita una marca.");
+    this.categoria = Objects.requireNonNull(categoria, "El producto necesita una categoría.");
   }
 
   public void agregarVariante(Variante variante) {
