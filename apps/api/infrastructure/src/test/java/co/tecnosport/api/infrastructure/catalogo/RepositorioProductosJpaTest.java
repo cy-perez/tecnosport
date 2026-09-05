@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
+import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -263,6 +264,32 @@ class RepositorioProductosJpaTest {
         .extracting(Producto::slug)
         .extracting(Slug::valor)
         .containsExactly("camiseta-t6");
+  }
+
+  @Test
+  void buscarParaAdminIncluyeBorradorYPublicadoPaginadoPorPagina() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t8", "CELULARES");
+    producto("Celular publicado t8", "celular-publicado-t8", "PUBLICADO", marca, categoria);
+    producto("Celular borrador t8", "celular-borrador-t8", "BORRADOR", marca, categoria);
+
+    ProductosPaginados resultado = repositorio.buscarParaAdmin(0, 1);
+
+    assertThat(resultado.items()).hasSize(1);
+    assertThat(resultado.pagina()).isEqualTo(0);
+    assertThat(resultado.totalPaginas()).isEqualTo(2);
+    assertThat(resultado.totalProductos()).isEqualTo(2);
+
+    ProductosPaginados segundaPagina = repositorio.buscarParaAdmin(1, 1);
+    assertThat(segundaPagina.items()).hasSize(1);
+
+    List<String> slugsVistos =
+        java.util.stream.Stream.concat(resultado.items().stream(), segundaPagina.items().stream())
+            .map(Producto::slug)
+            .map(Slug::valor)
+            .toList();
+    assertThat(slugsVistos)
+        .containsExactlyInAnyOrder("celular-publicado-t8", "celular-borrador-t8");
   }
 
   private MarcaJpaEntity marca(String nombre) {

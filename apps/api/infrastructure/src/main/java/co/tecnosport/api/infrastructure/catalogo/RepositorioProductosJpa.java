@@ -2,10 +2,12 @@ package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
+import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -13,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -64,6 +69,19 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     PaginaDeIds pagina = paginaDeIds(filtro, orden, cursor, tamanoPagina);
     List<Producto> productos = mapeadorCatalogo.hidratar(pagina.ids());
     return new ResultadoPaginado<>(productos, pagina.cursorSiguiente());
+  }
+
+  @Override
+  public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
+    Page<ProductoJpaEntity> paginaEntidades =
+        productoJpaRepository.findAll(
+            PageRequest.of(pagina, tamanoPagina, Sort.by(Sort.Direction.DESC, "creadoEn")));
+    List<UUID> ids = paginaEntidades.getContent().stream().map(ProductoJpaEntity::getId).toList();
+    return new ProductosPaginados(
+        mapeadorCatalogo.hidratar(ids),
+        pagina,
+        paginaEntidades.getTotalPages(),
+        paginaEntidades.getTotalElements());
   }
 
   private record PaginaDeIds(List<UUID> ids, String cursorSiguiente) {}

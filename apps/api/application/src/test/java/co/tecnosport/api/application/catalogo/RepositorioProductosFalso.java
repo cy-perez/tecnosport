@@ -12,11 +12,14 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   private List<Producto> productos = List.of();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
+  private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
 
   FiltroProductos ultimoFiltro;
   OrdenProductos ultimoOrden;
   String ultimoCursor;
   int ultimoTamanoPagina;
+  int ultimaPaginaAdmin;
+  int ultimoTamanoPaginaAdmin;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -24,6 +27,10 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   void devolverEnBusqueda(ResultadoPaginado<Producto> resultado) {
     this.resultadoBusqueda = resultado;
+  }
+
+  void devolverEnBusquedaAdmin(ProductosPaginados resultado) {
+    this.resultadoAdmin = resultado;
   }
 
   @Override
@@ -46,5 +53,12 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     return productos.stream()
         .filter(producto -> producto.variantes().stream().anyMatch(v -> v.id().equals(varianteId)))
         .findFirst();
+  }
+
+  @Override
+  public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
+    this.ultimaPaginaAdmin = pagina;
+    this.ultimoTamanoPaginaAdmin = tamanoPagina;
+    return resultadoAdmin;
   }
 }

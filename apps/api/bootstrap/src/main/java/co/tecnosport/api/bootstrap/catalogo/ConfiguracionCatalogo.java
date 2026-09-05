@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.catalogo;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
+import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
@@ -37,5 +38,10 @@ public class ConfiguracionCatalogo {
   @Bean
   public ListarMarcas listarMarcas(RepositorioMarcas repositorioMarcas) {
     return new ListarMarcas(repositorioMarcas);
+  }
+
+  @Bean
+  public ListarProductosAdmin listarProductosAdmin(RepositorioProductos repositorioProductos) {
+    return new ListarProductosAdmin(repositorioProductos);
   }
 }

@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
+import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -34,5 +35,10 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     return productos.stream()
         .filter(producto -> producto.variantes().stream().anyMatch(v -> v.id().equals(varianteId)))
         .findFirst();
+  }
+
+  @Override
+  public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
+    return new ProductosPaginados(List.of(), 0, 0, 0);
   }
 }

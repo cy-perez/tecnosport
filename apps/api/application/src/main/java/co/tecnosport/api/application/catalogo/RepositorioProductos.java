@@ -30,4 +30,10 @@ public interface RepositorioProductos {
    * estado, igual que {@link #buscarPorSlug}.
    */
   Optional<Producto> buscarPorVarianteId(UUID varianteId);
+
+  /**
+   * Listado del panel admin: todos los estados (a diferencia de {@link #buscar}, que solo trae
+   * {@code PUBLICADO}), paginado por página y ordenado por más reciente primero.
+   */
+  ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina);
 }
