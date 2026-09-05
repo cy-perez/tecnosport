@@ -319,6 +319,78 @@ class RepositorioProductosJpaTest {
     assertThat(p.marca().nombre()).isEqualTo("TecnoSport");
   }
 
+  @Test
+  void buscarPorIdDevuelveUnProductoEnCualquierEstado() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t10", "BOLSOS");
+    ProductoJpaEntity borrador = producto("Morral t10", "morral-t10", "BORRADOR", marca, categoria);
+
+    Optional<Producto> encontrado = repositorio.buscarPorId(borrador.getId());
+
+    assertThat(encontrado).isPresent();
+    assertThat(encontrado.orElseThrow().estado()).isEqualTo(EstadoProducto.BORRADOR);
+  }
+
+  @Test
+  void buscarPorIdDevuelveVacioSiNoExiste() {
+    assertThat(repositorio.buscarPorId(UUID.randomUUID())).isEmpty();
+  }
+
+  @Test
+  void actualizarCambiaLosDatosBasicosYConservaCreadoEnPeroActualizaActualizadoEn() {
+    MarcaJpaEntity marcaOriginal = marca("TecnoSport");
+    CategoriaJpaEntity categoriaOriginal = categoria("Bolsos", "bolsos-t11", "BOLSOS");
+    ProductoJpaEntity entidadOriginal =
+        producto("Morral t11", "morral-t11", "BORRADOR", marcaOriginal, categoriaOriginal);
+    MarcaJpaEntity nuevaMarca = marca("Under Trail");
+    CategoriaJpaEntity nuevaCategoria = categoria("Celulares", "celulares-t11", "CELULARES");
+
+    Producto producto =
+        Producto.crear(
+            "Morral t11 renovado",
+            new Slug("morral-t11"),
+            "Nueva descripción",
+            new Marca(nuevaMarca.getId(), "Under Trail"),
+            new Categoria(
+                nuevaCategoria.getId(),
+                "Celulares",
+                new Slug("celulares-t11"),
+                LineaCatalogo.CELULARES));
+    // Producto.crear() genera un id nuevo, el update tiene que ir contra el id ya existente.
+    Producto productoConIdExistente =
+        new Producto(
+            entidadOriginal.getId(),
+            producto.nombre(),
+            producto.slug(),
+            producto.descripcion(),
+            producto.marca(),
+            producto.categoria(),
+            EstadoProducto.BORRADOR,
+            null,
+            List.of(),
+            null,
+            List.of());
+
+    repositorio.actualizar(productoConIdExistente);
+
+    Optional<Producto> encontrado = repositorio.buscarPorId(entidadOriginal.getId());
+    assertThat(encontrado).isPresent();
+    Producto p = encontrado.orElseThrow();
+    assertThat(p.nombre()).isEqualTo("Morral t11 renovado");
+    assertThat(p.descripcion()).isEqualTo("Nueva descripción");
+    assertThat(p.marca().nombre()).isEqualTo("Under Trail");
+    assertThat(p.categoria().nombre()).isEqualTo("Celulares");
+    assertThat(p.slug().valor()).isEqualTo("morral-t11");
+
+    ProductoJpaEntity entidadActualizada =
+        productos.findById(entidadOriginal.getId()).orElseThrow();
+    assertThat(entidadActualizada.getCreadoEn()).isEqualTo(entidadOriginal.getCreadoEn());
+    assertThat(entidadActualizada.getActualizadoEn())
+        .isAfterOrEqualTo(entidadOriginal.getActualizadoEn());
+    assertThat(entidadActualizada.getActualizadoEn())
+        .isNotEqualTo(entidadActualizada.getCreadoEn());
+  }
+
   private MarcaJpaEntity marca(String nombre) {
     return marcas.save(new MarcaJpaEntity(UUID.randomUUID(), nombre, Instant.now()));
   }

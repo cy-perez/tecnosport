@@ -88,6 +88,37 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   }
 
   @Override
+  public Optional<Producto> buscarPorId(UUID id) {
+    return productoJpaRepository
+        .findById(id)
+        .flatMap(p -> mapeadorCatalogo.hidratar(List.of(p.getId())).stream().findFirst());
+  }
+
+  @Override
+  public void actualizar(Producto producto) {
+    ProductoJpaEntity existente =
+        productoJpaRepository
+            .findById(producto.id())
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No existe el producto '"
+                            + producto.id()
+                            + "' que se intenta actualizar."));
+    productoJpaRepository.save(
+        new ProductoJpaEntity(
+            producto.id(),
+            producto.nombre(),
+            producto.slug().valor(),
+            producto.descripcion(),
+            producto.marca().id(),
+            producto.categoria().id(),
+            producto.estado().name(),
+            existente.getCreadoEn(),
+            Instant.now()));
+  }
+
+  @Override
   public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
     Page<ProductoJpaEntity> paginaEntidades =
         productoJpaRepository.findAll(
