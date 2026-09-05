@@ -1,6 +1,8 @@
 package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
+import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
@@ -48,6 +50,16 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CarritoNoEncontradoException.class)
   public ProblemDetail carritoNoEncontrado(CarritoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Carrito no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(MarcaNoEncontradaException.class)
+  public ProblemDetail marcaNoEncontrada(MarcaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Marca no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(CategoriaNoEncontradaException.class)
+  public ProblemDetail categoriaNoEncontrada(CategoriaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Categoría no encontrada", excepcion);
   }
 
   // Extiende ExcepcionDeDominio (cae a 422 por defecto más abajo), pero "no existe esa línea" es
