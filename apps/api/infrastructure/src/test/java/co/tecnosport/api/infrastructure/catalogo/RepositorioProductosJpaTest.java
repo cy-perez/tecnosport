@@ -6,11 +6,17 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoAtributo;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
@@ -389,6 +395,49 @@ class RepositorioProductosJpaTest {
         .isAfterOrEqualTo(entidadOriginal.getActualizadoEn());
     assertThat(entidadActualizada.getActualizadoEn())
         .isNotEqualTo(entidadActualizada.getCreadoEn());
+  }
+
+  @Test
+  void agregarVarianteLaPersisteConSusAtributosYQuedaLegibleAlHidratarElProducto() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria =
+        categoria("Ropa deportiva", "ropa-deportiva-t12", "ROPA_Y_CALZADO");
+    ProductoJpaEntity productoJpa =
+        producto("Camiseta t12", "camiseta-t12", "BORRADOR", marca, categoria);
+    AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
+    Atributo color = new Atributo(colorJpa.getId(), "Color", TipoAtributo.COLOR, List.of());
+
+    Variante variante =
+        Variante.crear(
+            new Sku("TS-CAM-T12-AZ"),
+            Dinero.deCop(89_900),
+            new BigDecimal("0.19"),
+            5,
+            null,
+            List.of(ValorAtributo.deColor(color, "Azul marino", "#1E3A8A")));
+
+    repositorio.agregarVariante(productoJpa.getId(), variante);
+
+    Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("camiseta-t12"));
+    assertThat(encontrado).isPresent();
+    Producto p = encontrado.orElseThrow();
+    assertThat(p.variantes()).hasSize(1);
+    assertThat(p.variantes().get(0).sku().valor()).isEqualTo("TS-CAM-T12-AZ");
+    assertThat(p.variantes().get(0).existencia()).isEqualTo(5);
+    assertThat(p.variantes().get(0).atributos()).hasSize(1);
+    assertThat(p.variantes().get(0).atributos().get(0).colorHex()).isEqualTo("#1E3A8A");
+  }
+
+  @Test
+  void existeVarianteConSkuDistingueEntreExistenteEInexistente() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t13", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t13", "morral-t13", "BORRADOR", marca, categoria);
+    variante(productoJpa, "TS-MOR-T13", "150000");
+
+    assertThat(repositorio.existeVarianteConSku(new Sku("TS-MOR-T13"))).isTrue();
+    assertThat(repositorio.existeVarianteConSku(new Sku("TS-NO-EXISTE-T13"))).isFalse();
   }
 
   private MarcaJpaEntity marca(String nombre) {

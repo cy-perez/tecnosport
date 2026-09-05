@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface VarianteJpaRepository extends JpaRepository<VarianteJpaEntity, UUID> {
 
   List<VarianteJpaEntity> findByProductoIdIn(Collection<UUID> productoIds);
+
+  boolean existsBySku(String sku);
 }

@@ -6,8 +6,14 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.ValorAtributo;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -35,16 +41,19 @@ public class RepositorioProductosJpa implements RepositorioProductos {
 
   private final ProductoJpaRepository productoJpaRepository;
   private final VarianteJpaRepository varianteJpaRepository;
+  private final VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository;
   private final MapeadorCatalogo mapeadorCatalogo;
   private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioProductosJpa(
       ProductoJpaRepository productoJpaRepository,
       VarianteJpaRepository varianteJpaRepository,
+      VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository,
       MapeadorCatalogo mapeadorCatalogo,
       NamedParameterJdbcTemplate jdbc) {
     this.productoJpaRepository = productoJpaRepository;
     this.varianteJpaRepository = varianteJpaRepository;
+    this.varianteAtributoValorJpaRepository = varianteAtributoValorJpaRepository;
     this.mapeadorCatalogo = mapeadorCatalogo;
     this.jdbc = jdbc;
   }
@@ -116,6 +125,38 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             producto.estado().name(),
             existente.getCreadoEn(),
             Instant.now()));
+  }
+
+  @Override
+  public void agregarVariante(UUID productoId, Variante variante) {
+    varianteJpaRepository.save(
+        new VarianteJpaEntity(
+            variante.id(),
+            productoId,
+            variante.sku().valor(),
+            variante.precio().valor(),
+            variante.tasaIva(),
+            variante.existencia(),
+            variante.codigoBarras().orElse(null),
+            variante.estado().name(),
+            Instant.now()));
+    List<VarianteAtributoValorJpaEntity> atributos =
+        variante.atributos().stream().map(a -> aEntidad(variante.id(), a)).toList();
+    varianteAtributoValorJpaRepository.saveAll(atributos);
+  }
+
+  @Override
+  public boolean existeVarianteConSku(Sku sku) {
+    return varianteJpaRepository.existsBySku(sku.valor());
+  }
+
+  private VarianteAtributoValorJpaEntity aEntidad(UUID varianteId, ValorAtributo valorAtributo) {
+    return new VarianteAtributoValorJpaEntity(
+        GeneradorIdentificador.nuevo(),
+        varianteId,
+        valorAtributo.atributo().id(),
+        valorAtributo.valor(),
+        valorAtributo.colorHex());
   }
 
   @Override
