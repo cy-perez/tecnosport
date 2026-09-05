@@ -41,4 +41,13 @@ public interface RepositorioProductos {
    * Inserta un producto nuevo. Sin variantes ni imágenes todavía — eso es de un caso de uso propio.
    */
   void guardar(Producto producto);
+
+  /**
+   * Búsqueda por id para el panel admin, sin filtrar por estado — igual criterio que {@link
+   * #buscarPorSlug}, ve productos en cualquier estado.
+   */
+  Optional<Producto> buscarPorId(UUID id);
+
+  /** Actualiza un producto existente. A diferencia de {@link #guardar}, no es una inserción. */
+  void actualizar(Producto producto);
 }

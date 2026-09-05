@@ -18,6 +18,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
   Producto ultimoGuardado;
+  Producto ultimoActualizado;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -57,5 +58,15 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public void guardar(Producto producto) {
     this.ultimoGuardado = producto;
+  }
+
+  @Override
+  public Optional<Producto> buscarPorId(UUID id) {
+    return productos.stream().filter(producto -> producto.id().equals(id)).findFirst();
+  }
+
+  @Override
+  public void actualizar(Producto producto) {
+    this.ultimoActualizado = producto;
   }
 }

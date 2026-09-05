@@ -47,4 +47,14 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void guardar(Producto producto) {
     throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
   }
+
+  @Override
+  public Optional<Producto> buscarPorId(UUID id) {
+    throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
+  }
+
+  @Override
+  public void actualizar(Producto producto) {
+    throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
+  }
 }

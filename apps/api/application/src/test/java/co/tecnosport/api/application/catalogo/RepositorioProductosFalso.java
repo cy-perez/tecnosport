@@ -22,6 +22,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   int ultimaPaginaAdmin;
   int ultimoTamanoPaginaAdmin;
   Producto ultimoGuardado;
+  Producto ultimoActualizado;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -69,5 +70,15 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     this.ultimoGuardado = producto;
     this.productos = new ArrayList<>(productos);
     this.productos.add(producto);
+  }
+
+  @Override
+  public Optional<Producto> buscarPorId(UUID id) {
+    return productos.stream().filter(producto -> producto.id().equals(id)).findFirst();
+  }
+
+  @Override
+  public void actualizar(Producto producto) {
+    this.ultimoActualizado = producto;
   }
 }

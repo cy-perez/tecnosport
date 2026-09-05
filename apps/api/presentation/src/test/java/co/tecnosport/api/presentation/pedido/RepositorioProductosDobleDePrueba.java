@@ -46,4 +46,14 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void guardar(Producto producto) {
     throw new UnsupportedOperationException("No usado por PedidoControladorTest.");
   }
+
+  @Override
+  public Optional<Producto> buscarPorId(UUID id) {
+    throw new UnsupportedOperationException("No usado por PedidoControladorTest.");
+  }
+
+  @Override
+  public void actualizar(Producto producto) {
+    throw new UnsupportedOperationException("No usado por PedidoControladorTest.");
+  }
 }
