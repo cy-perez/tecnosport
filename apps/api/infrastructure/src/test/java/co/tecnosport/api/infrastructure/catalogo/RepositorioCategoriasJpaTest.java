@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,5 +45,25 @@ class RepositorioCategoriasJpaTest {
     assertThat(resultado)
         .extracting(Categoria::linea)
         .contains(LineaCatalogo.BOLSOS, LineaCatalogo.CELULARES);
+  }
+
+  @Test
+  void buscarPorIdDevuelveVacioSiNoExiste() {
+    Optional<Categoria> resultado = repositorio.buscarPorId(UUID.randomUUID());
+
+    assertThat(resultado).isEmpty();
+  }
+
+  @Test
+  void buscarPorIdDevuelveLaCategoria() {
+    CategoriaJpaEntity guardada =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Bolsos", "bolsos-tc2", "BOLSOS", Instant.now()));
+
+    Optional<Categoria> resultado = repositorio.buscarPorId(guardada.getId());
+
+    assertThat(resultado).isPresent();
+    assertThat(resultado.orElseThrow().nombre()).isEqualTo("Bolsos");
   }
 }

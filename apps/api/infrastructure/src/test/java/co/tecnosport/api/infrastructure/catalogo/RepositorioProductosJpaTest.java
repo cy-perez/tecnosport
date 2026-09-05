@@ -6,8 +6,10 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
@@ -290,6 +292,30 @@ class RepositorioProductosJpaTest {
             .toList();
     assertThat(slugsVistos)
         .containsExactlyInAnyOrder("celular-publicado-t8", "celular-borrador-t8");
+  }
+
+  @Test
+  void guardarInsertaUnProductoNuevoYQuedaLegibleParaBuscarPorSlug() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t9", "BOLSOS");
+
+    Producto producto =
+        Producto.crear(
+            "Morral urbano t9",
+            new Slug("morral-urbano-t9"),
+            "Descripción",
+            new Marca(marca.getId(), "TecnoSport"),
+            new Categoria(categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS));
+
+    repositorio.guardar(producto);
+
+    Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("morral-urbano-t9"));
+    assertThat(encontrado).isPresent();
+    Producto p = encontrado.orElseThrow();
+    assertThat(p.id()).isEqualTo(producto.id());
+    assertThat(p.nombre()).isEqualTo("Morral urbano t9");
+    assertThat(p.estado()).isEqualTo(EstadoProducto.BORRADOR);
+    assertThat(p.marca().nombre()).isEqualTo("TecnoSport");
   }
 
   private MarcaJpaEntity marca(String nombre) {

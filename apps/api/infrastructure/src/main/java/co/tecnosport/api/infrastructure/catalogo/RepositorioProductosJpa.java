@@ -72,6 +72,22 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   }
 
   @Override
+  public void guardar(Producto producto) {
+    Instant ahora = Instant.now();
+    productoJpaRepository.save(
+        new ProductoJpaEntity(
+            producto.id(),
+            producto.nombre(),
+            producto.slug().valor(),
+            producto.descripcion(),
+            producto.marca().id(),
+            producto.categoria().id(),
+            producto.estado().name(),
+            ahora,
+            ahora));
+  }
+
+  @Override
   public ProductosPaginados buscarParaAdmin(int pagina, int tamanoPagina) {
     Page<ProductoJpaEntity> paginaEntidades =
         productoJpaRepository.findAll(
