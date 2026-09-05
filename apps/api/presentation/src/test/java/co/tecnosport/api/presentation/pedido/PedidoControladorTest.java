@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.pedido;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -455,7 +456,12 @@ class PedidoControladorTest {
                 .param("correo", "cliente@tecnosport.co"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(pedido.id().toString()))
-        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
+        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"))
+        // El seguimiento público no expone actor ni motivo del historial interno — solo
+        // AdminPedidosControlador ve el historial completo (ver AdminPedidosControladorTest).
+        .andExpect(jsonPath("$.historial[0].actor").value(nullValue()))
+        .andExpect(jsonPath("$.historial[0].motivo").value(nullValue()))
+        .andExpect(jsonPath("$.historial[0].estado").value("CONFIRMADO_CONTRAENTREGA"));
   }
 
   @Test

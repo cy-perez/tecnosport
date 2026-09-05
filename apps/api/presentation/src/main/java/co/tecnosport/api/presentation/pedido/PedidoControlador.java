@@ -96,7 +96,7 @@ public class PedidoControlador {
   public PedidoRespuesta seguimiento(@PathVariable UUID id, @RequestParam String correo) {
     Pedido pedido =
         consultarSeguimientoPedido.ejecutar(new ConsultarSeguimientoPedidoComando(id, correo));
-    return mapeador.aRespuesta(pedido);
+    return mapeador.aRespuestaPublica(pedido);
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo) {
