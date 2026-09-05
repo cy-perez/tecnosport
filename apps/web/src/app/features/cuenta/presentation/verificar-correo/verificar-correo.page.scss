@@ -1,5 +1,5 @@
 .verificar-correo {
-  max-width: 24rem;
+  max-width: var(--ancho-formulario);
   margin: var(--esp-32) auto;
   padding: 0 var(--esp-16);
   text-align: center;

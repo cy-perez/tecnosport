@@ -79,6 +79,9 @@
   --header-alto-movil: 60px;
   --header-alto-logo: 34px;
   --header-alto-logo-movil: 30px;
+  --ancho-formulario: 384px;
+  --ancho-formulario-lg: 512px;
+  --ancho-filtro: 320px;
   --ancho-max: 1200px;
 }
 

@@ -305,6 +305,8 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         if isinstance(v, int) and not isinstance(v, bool):
             nombre = k[:-3] if k.endswith("_px") else k
             L.append("  --header-{}: {}px;".format(nombre.replace("_", "-"), v))
+    for k, v in (extra.get("anchos_px") or {}).items():
+        L.append("  --ancho-{}: {}px;".format(k.replace("_", "-"), v))
     L += ["  --ancho-max: {}px;".format(extra.get("ancho_max_px", 1140)), "}", "",
           '[data-tema="oscuro"] {']
     for k, v in [("fondo","o_fondo"),("superficie","o_superficie"),
@@ -617,6 +619,7 @@ def main():
              "breakpoints_px": t.get("breakpoints_px") or {},
              "header": t.get("header") or {},
              "ancho_max_px": t.get("ancho_max_px", 1140),
+             "anchos_px": t.get("anchos_px") or {},
              "mono": bool((t.get("tipografia") or {}).get("mono"))}
     extra["chaflan_px"] = {k: v for k, v in extra["chaflan_px"].items()
                            if not isinstance(v, bool)}

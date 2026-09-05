@@ -74,7 +74,7 @@
   flex-direction: column;
   gap: var(--esp-16);
   margin-top: var(--esp-32);
-  max-width: 32rem;
+  max-width: var(--ancho-formulario-lg);
 }
 
 .resumen__direccion {
