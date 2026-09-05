@@ -31,7 +31,11 @@ public class ConfiguracionLimiteIntentos {
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns(
-        "/api/v1/auth/sesion", "/api/v1/auth/registro", "/api/v1/auth/recuperacion");
+        "/api/v1/auth/sesion",
+        "/api/v1/auth/registro",
+        "/api/v1/auth/verificacion",
+        "/api/v1/auth/recuperacion",
+        "/api/v1/auth/recuperacion/confirmar");
     return registro;
   }
 
