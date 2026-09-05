@@ -38,6 +38,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     this.llamadasListar++;
     return { items: this.items, pagina: 0, totalPaginas: this.totalPaginas, totalProductos: this.items.length };
   }
+
+  async crear(): Promise<ProductoAdmin> {
+    throw new Error('No usado en estas pruebas.');
+  }
 }
 
 async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {

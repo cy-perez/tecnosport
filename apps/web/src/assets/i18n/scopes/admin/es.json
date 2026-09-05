@@ -79,6 +79,7 @@
   "productos": {
     "titulo": "Productos",
     "error_lista": "No se pudo cargar la lista de productos.",
+    "nuevo": "Nuevo producto",
     "columnas": {
       "nombre": "Nombre",
       "marca": "Marca",
@@ -94,6 +95,17 @@
       "anterior": "Anterior",
       "siguiente": "Siguiente",
       "info": "Página {{actual}} de {{total}}"
+    },
+    "crear": {
+      "titulo": "Nuevo producto",
+      "nombre": "Nombre",
+      "descripcion": "Descripción",
+      "marca": "Marca",
+      "categoria": "Categoría",
+      "seleccionar": "Selecciona una opción",
+      "crear": "Crear producto",
+      "enviando": "Creando…",
+      "error": "No se pudo crear el producto. Intenta de nuevo."
     }
   }
 }

@@ -1,0 +1,47 @@
+<section class="crear-producto-admin">
+  <h1 class="crear-producto-admin__titulo">{{ 'admin.productos.crear.titulo' | transloco }}</h1>
+
+  <form class="crear-producto-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+    <ts-campo
+      idCampo="crear-producto-nombre"
+      [label]="'admin.productos.crear.nombre' | transloco"
+      formControlName="nombre"
+    />
+
+    <ts-campo
+      idCampo="crear-producto-descripcion"
+      [label]="'admin.productos.crear.descripcion' | transloco"
+      formControlName="descripcion"
+    />
+
+    <ts-select
+      idCampo="crear-producto-marca"
+      [label]="'admin.productos.crear.marca' | transloco"
+      [opciones]="opcionesMarca()"
+      [placeholder]="'admin.productos.crear.seleccionar' | transloco"
+      formControlName="marcaId"
+    />
+
+    <ts-select
+      idCampo="crear-producto-categoria"
+      [label]="'admin.productos.crear.categoria' | transloco"
+      [opciones]="opcionesCategoria()"
+      [placeholder]="'admin.productos.crear.seleccionar' | transloco"
+      formControlName="categoriaId"
+    />
+
+    @if (error()) {
+      <p class="crear-producto-admin__error" role="alert">{{ error() }}</p>
+    }
+
+    <ts-boton
+      variante="primario"
+      tipo="submit"
+      [deshabilitado]="formularioInvalido()"
+      [cargando]="enviando()"
+      [etiquetaCargando]="'admin.productos.crear.enviando' | transloco"
+    >
+      {{ 'admin.productos.crear.crear' | transloco }}
+    </ts-boton>
+  </form>
+</section>

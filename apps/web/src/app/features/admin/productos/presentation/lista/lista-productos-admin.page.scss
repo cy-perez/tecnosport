@@ -10,6 +10,12 @@
   margin: 0 0 var(--esp-24);
 }
 
+.lista-productos-admin__enlace-nuevo {
+  display: inline-block;
+  margin-bottom: var(--esp-24);
+  color: var(--color-primario);
+}
+
 .lista-productos-admin__error {
   color: var(--color-error);
   margin-bottom: var(--esp-16);

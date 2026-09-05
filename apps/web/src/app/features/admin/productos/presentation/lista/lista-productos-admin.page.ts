@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -19,7 +19,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [TranslocoPipe, TsBoton, TsEsqueleto],
+  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto],
   templateUrl: './lista-productos-admin.page.html',
   styleUrl: './lista-productos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

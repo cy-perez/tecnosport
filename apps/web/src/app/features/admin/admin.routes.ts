@@ -1,5 +1,9 @@
 import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
+import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
+import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias-http.repositorio';
+import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
 import { adminGuard } from './admin.guard';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
@@ -36,10 +40,26 @@ export const adminRoutes: Routes = [
         path: 'productos',
         canActivate: [adminGuard],
         providers: [{ provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio }],
-        loadComponent: () =>
-          import('./productos/presentation/lista/lista-productos-admin.page').then(
-            (m) => m.ListaProductosAdminPage,
-          ),
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./productos/presentation/lista/lista-productos-admin.page').then(
+                (m) => m.ListaProductosAdminPage,
+              ),
+          },
+          {
+            path: 'crear',
+            providers: [
+              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
+              { provide: REPOSITORIO_MARCAS, useClass: MarcasHttpRepositorio },
+            ],
+            loadComponent: () =>
+              import('./productos/presentation/crear/crear-producto-admin.page').then(
+                (m) => m.CrearProductoAdminPage,
+              ),
+          },
+        ],
       },
     ],
   },

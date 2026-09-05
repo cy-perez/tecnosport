@@ -1,6 +1,8 @@
 <section class="lista-productos-admin">
   <h1 class="lista-productos-admin__titulo">{{ 'admin.productos.titulo' | transloco }}</h1>
 
+  <a class="lista-productos-admin__enlace-nuevo" routerLink="crear">{{ 'admin.productos.nuevo' | transloco }}</a>
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {

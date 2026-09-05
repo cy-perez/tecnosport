@@ -79,6 +79,7 @@
   "productos": {
     "titulo": "Products",
     "error_lista": "Couldn't load the product list.",
+    "nuevo": "New product",
     "columnas": {
       "nombre": "Name",
       "marca": "Brand",
@@ -94,6 +95,17 @@
       "anterior": "Previous",
       "siguiente": "Next",
       "info": "Page {{actual}} of {{total}}"
+    },
+    "crear": {
+      "titulo": "New product",
+      "nombre": "Name",
+      "descripcion": "Description",
+      "marca": "Brand",
+      "categoria": "Category",
+      "seleccionar": "Select an option",
+      "crear": "Create product",
+      "enviando": "Creating…",
+      "error": "Couldn't create the product. Try again."
     }
   }
 }
