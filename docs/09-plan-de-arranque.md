@@ -736,9 +736,47 @@ mientras `curl` sí respondía 200 — limitación de la herramienta, no de la
 app. Queda pendiente que alguien confirme el formulario con clics reales
 la próxima vez que se pueda.
 
-Quedan pendientes, cada uno como su propio caso de uso: variantes y
-existencias, e imágenes con URL firmada — antes de esos, falta también
-**editar** un producto ya creado (el `POST` de este paso no cubre `PATCH`).
+**Track B, tercer caso de uso (editar producto) cerrado de punta a punta**
+(2026-09-05). `GET /api/v1/admin/productos/{id}` (detalle) y `PATCH
+/api/v1/admin/productos/{id}` (edita nombre, descripción, marca y
+categoría). El **slug no cambia al editar** — es el identificador de URL
+estable del producto, `Producto.actualizarDatosBasicos` no lo toca.
+Reutilizado `ProductoAdminRespuesta` para lista y detalle (ganó
+`descripcion`) en vez de un DTO de detalle aparte. Puertos que ganaron un
+método: `RepositorioProductos.buscarPorId` (sin filtrar por estado, para
+el admin) y `.actualizar` (UPDATE, distinto de `guardar` que es INSERT).
+Nueva `ProductoNoEncontradoPorIdException`, separada de
+`ProductoNoEncontradoException` porque esta última mezcla "no existe" con
+"está en borrador" a propósito para el visitante público — el admin ve
+todo, así que aquí un 404 sí significa que genuinamente no existe.
+Frontend en `features/admin/productos/presentation/editar/`, mismo
+formulario que crear, prellenado con `usarVerProductoAdmin`.
+
+`RepositorioProductosJpa.actualizar` lee la entidad existente solo para
+conservar su `creado_en` — si hubiera reutilizado `guardar` tal cual, cada
+edición habría reseteado la fecha de creación (el mismo tipo de bug real
+que ya apareció una vez en esta fase, esta vez evitado antes de comitear).
+Confirmado a mano contra Postgres real: `creado_en` igual antes y después
+de editar, `actualizado_en` sí cambia.
+
+De paso, un bug de aislamiento entre pruebas: `RepositorioProductosDobleDePrueba`
+es un bean singleton que Spring reutiliza entre los métodos de
+`AdminProductoControladorTest`, así que un producto sembrado por una
+prueba (`conProductos(...)`) quedaba visible en la siguiente — encontrado
+al agregar las pruebas de detalle/edición (las anteriores no sembraban un
+slug que otra prueba reutilizara). Corregido con `repositorio.limpiar()` +
+`@BeforeEach`.
+
+Verificado a mano contra `bootRun` real y la base de datos real (API
+directa, no clics — misma limitación de la extensión de Chrome con
+`localhost` ya anotada arriba): detalle (200/404), editar (200 con los
+campos reflejados y el slug intacto, 404 por producto/marca/categoría
+inexistente, 422 por nombre vacío), y `select` directo en Postgres
+confirmando `creado_en`/`actualizado_en`.
+
+Queda pendiente, cada uno como su propio caso de uso: variantes y
+existencias, e imágenes con URL firmada — con eso cierra el Track B
+completo y, con él, la Fase 4.
 
 ## Fase 5. Sistema 360
 
