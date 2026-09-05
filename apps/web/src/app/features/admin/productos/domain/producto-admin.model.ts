@@ -34,3 +34,10 @@ export interface FiltroProductosAdmin {
   readonly pagina: number;
   readonly tamano: number;
 }
+
+export interface CrearProductoAdmin {
+  readonly nombre: string;
+  readonly descripcion: string;
+  readonly marcaId: string;
+  readonly categoriaId: string;
+}
