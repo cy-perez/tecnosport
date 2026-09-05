@@ -774,9 +774,70 @@ campos reflejados y el slug intacto, 404 por producto/marca/categoría
 inexistente, 422 por nombre vacío), y `select` directo en Postgres
 confirmando `creado_en`/`actualizado_en`.
 
-Queda pendiente, cada uno como su propio caso de uso: variantes y
-existencias, e imágenes con URL firmada — con eso cierra el Track B
-completo y, con él, la Fase 4.
+**Track B, cuarto caso de uso (agregar variante con atributos e inventario
+inicial) cerrado de punta a punta** (2026-09-05). `GET /api/v1/atributos`
+(público, mismo criterio que `/marcas` y `/categorias`: dato de catálogo
+no sensible que el panel admin reutiliza) y `POST /api/v1/admin/variantes`
+(crea la variante de un producto existente, con sus atributos, y su
+`Inventario` inicial). Este es **el primer caso de uso que consume el
+puerto `RepositorioInventario`** desde el panel admin — existía desde la
+Fase 2 (`docs/09-plan-de-arranque.md`, Fase 2: *"sin caso de uso propio
+todavía"*) pero nada lo llamaba hasta ahora.
+
+Encontrado al investigar antes de planear (no al codificar): el modelo de
+`Atributo` es completamente global, sin ninguna columna que lo asocie a
+categoría en el esquema — el comentario de dominio *"tipado por
+categoría"* es documental, no una restricción real (`SembradorCatalogo`
+solo *sabe*, por convención de negocio hardcodeada en el propio sembrador,
+qué atributo usar en qué categoría). El backend no valida ni filtra
+atributos por categoría; queda como pendiente explícito si algún día hace
+falta.
+
+Decisiones de diseño de esta pasada:
+- **`variante.existencia` (columna) y `Inventario` (histórico de
+  movimientos) quedan en sync, no unificados.** La ficha pública sigue
+  leyendo la columna directo (`MapeadorCatalogo`), así que se escribe con
+  la existencia inicial al crear la variante; en paralelo se crea el
+  `Inventario` con su primer movimiento `ENTRADA` para que las reservas
+  del checkout (que sí usan `Inventario.saldoDisponible`) funcionen desde
+  ya. Unificar el camino de lectura público para que deje de depender de
+  la columna es un cambio aparte, más grande, y queda pendiente.
+- **Sin atributos por categoría, sin lista de variantes existentes de un
+  producto en esta pantalla** — ambos declarados fuera de alcance en el
+  plan para no seguir creciendo el paso.
+- Puertos que ganaron un método (no puertos nuevos):
+  `RepositorioProductos.agregarVariante`, `.existeVarianteConSku` (chequeo
+  global — `Producto.agregarVariante` en dominio solo ve las variantes que
+  el agregado ya tiene cargadas en memoria, no todo el catálogo).
+- `SkuYaEnUsoException` nueva, separada de `SkuDuplicadoException` del
+  dominio por la misma razón que `ProductoNoEncontradoPorIdException` se
+  separó de `ProductoNoEncontradoException`: mensajes correctos para
+  audiencias con visión distinta del catálogo.
+- `AgregarVariante.ejecutar` toca dos agregados (`Producto`/`Variante` e
+  `Inventario`) en una sola llamada — la transacción la abre
+  `AdminVarianteControlador` con `TransactionTemplate`, mismo patrón que
+  `PedidoControlador`/`CrearPedido`.
+
+Verificado a mano contra `bootRun` real y la base de datos real (API
+directa — misma limitación de la extensión de Chrome con `localhost` ya
+anotada arriba): variante creada (201) con su atributo de color,
+`totalVariantes` del producto actualizado, y confirmado en Postgres que
+`variante.existencia` y el movimiento `ENTRADA` del `Inventario` quedan en
+sync. Los tres errores (SKU ya en uso → 409, atributo inexistente → 404,
+producto inexistente → 404) responden como se diseñó.
+
+De paso, un error real de tipos que `npm test` (Vitest/esbuild, sin chequeo
+de tipos completo) no atrapó pero `ng build` sí: el cliente HTTP generado
+tipa los campos opcionales como `string | undefined`, nunca `string |
+null` — pasar `null` directo (como venía del dominio del frontend, que sí
+usa `null` para "sin valor") fallaba la compilación de producción.
+Corregido normalizando `null` a `undefined` al armar el cuerpo de la
+petición, en el único punto donde el dominio del frontend cruza hacia el
+cliente HTTP.
+
+Con esto, Track B tiene listar, crear, editar y agregar variante cerrados.
+Queda pendiente, como su propio caso de uso: imágenes con URL firmada —
+con eso cierra el Track B completo y, con él, la Fase 4.
 
 ## Fase 5. Sistema 360
 

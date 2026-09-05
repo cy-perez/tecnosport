@@ -80,11 +80,14 @@ GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
 `cursorSiguiente` es `null` cuando no hay más páginas.
 
-`GET /api/v1/categorias` y `GET /api/v1/marcas` no tienen parámetros —listas
-completas, sin paginar, porque son pocos registros— y devuelven la misma
-envoltura `{ "items": [...], "cursorSiguiente": null }` que el catálogo
-paginado, nunca un arreglo desnudo. Si el catálogo de categorías o marcas
-crece mucho, esto necesitará paginar igual que `/productos`.
+`GET /api/v1/categorias`, `GET /api/v1/marcas` y `GET /api/v1/atributos` no
+tienen parámetros —listas completas, sin paginar, porque son pocos
+registros— y devuelven la misma envoltura `{ "items": [...], "cursorSiguiente":
+null }` que el catálogo paginado, nunca un arreglo desnudo. Si alguno de
+estos catálogos crece mucho, esto necesitará paginar igual que `/productos`.
+`/atributos` es un catálogo global, sin asociación a categoría en el
+esquema (docs/02-modelo-datos.md) — el panel admin lo usa para armar el
+selector de atributos al agregar una variante.
 
 Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
 ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
@@ -125,8 +128,11 @@ correo (docs/08-seguridad-legal.md, OWASP: no se revela cuál de los dos fue).
 Rol `ADMIN`.
 
 ```
-GET/POST/PATCH /api/v1/admin/productos
-GET/POST /api/v1/admin/variantes/{id}/inventario
+GET /api/v1/admin/productos                                  paginado por página, todos los estados
+POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
+GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría
+POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
+GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
 POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
