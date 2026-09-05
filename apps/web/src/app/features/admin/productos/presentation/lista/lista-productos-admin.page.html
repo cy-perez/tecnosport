@@ -16,6 +16,7 @@
           <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
           <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
           <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
@@ -26,6 +27,9 @@
             <td>{{ producto.categoria.nombre }}</td>
             <td>{{ etiquetaEstado(producto.estado) }}</td>
             <td>{{ producto.totalVariantes }}</td>
+            <td>
+              <a [routerLink]="[producto.id, 'editar']">{{ 'admin.productos.editarEnlace' | transloco }}</a>
+            </td>
           </tr>
         }
       </tbody>

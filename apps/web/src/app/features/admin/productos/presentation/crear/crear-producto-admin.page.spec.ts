@@ -44,13 +44,22 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     return {
       id: 'p1',
       nombre: comando.nombre,
+      descripcion: comando.descripcion,
       slug: 'slug-generado',
       estado: 'BORRADOR',
       marca: MARCA,
-      categoria: { nombre: CATEGORIA.nombre, slug: CATEGORIA.slug, linea: CATEGORIA.linea },
+      categoria: CATEGORIA,
       imagenPrincipalUrl: null,
       totalVariantes: 0,
     };
+  }
+
+  async obtener(): Promise<ProductoAdmin> {
+    throw new Error('No usado en estas pruebas.');
+  }
+
+  async editar(): Promise<ProductoAdmin> {
+    throw new Error('No usado en estas pruebas.');
   }
 }
 

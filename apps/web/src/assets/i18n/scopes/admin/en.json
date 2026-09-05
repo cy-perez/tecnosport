@@ -80,6 +80,7 @@
     "titulo": "Products",
     "error_lista": "Couldn't load the product list.",
     "nuevo": "New product",
+    "editarEnlace": "Edit",
     "columnas": {
       "nombre": "Name",
       "marca": "Brand",
@@ -106,6 +107,18 @@
       "crear": "Create product",
       "enviando": "Creating…",
       "error": "Couldn't create the product. Try again."
+    },
+    "editar": {
+      "titulo": "Edit product",
+      "nombre": "Name",
+      "descripcion": "Description",
+      "marca": "Brand",
+      "categoria": "Category",
+      "seleccionar": "Select an option",
+      "guardar": "Save changes",
+      "guardando": "Saving…",
+      "error": "Couldn't edit the product. Try again.",
+      "error_carga": "Couldn't load the product."
     }
   }
 }

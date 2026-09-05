@@ -16,10 +16,11 @@ function productoDePrueba(overrides: Partial<ProductoAdmin> = {}): ProductoAdmin
   return {
     id: 'p1',
     nombre: 'Morral urbano',
+    descripcion: '',
     slug: 'morral-urbano',
     estado: 'BORRADOR',
     marca: { id: 'm1', nombre: 'TecnoSport' },
-    categoria: { nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
     imagenPrincipalUrl: null,
     totalVariantes: 2,
     ...overrides,
@@ -40,6 +41,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   async crear(): Promise<ProductoAdmin> {
+    throw new Error('No usado en estas pruebas.');
+  }
+
+  async obtener(): Promise<ProductoAdmin> {
+    throw new Error('No usado en estas pruebas.');
+  }
+
+  async editar(): Promise<ProductoAdmin> {
     throw new Error('No usado en estas pruebas.');
   }
 }

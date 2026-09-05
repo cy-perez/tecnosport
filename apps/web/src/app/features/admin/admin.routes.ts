@@ -59,6 +59,17 @@ export const adminRoutes: Routes = [
                 (m) => m.CrearProductoAdminPage,
               ),
           },
+          {
+            path: ':id/editar',
+            providers: [
+              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
+              { provide: REPOSITORIO_MARCAS, useClass: MarcasHttpRepositorio },
+            ],
+            loadComponent: () =>
+              import('./productos/presentation/editar/editar-producto-admin.page').then(
+                (m) => m.EditarProductoAdminPage,
+              ),
+          },
         ],
       },
     ],

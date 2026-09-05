@@ -1,0 +1,53 @@
+<section class="editar-producto-admin">
+  <h1 class="editar-producto-admin__titulo">{{ 'admin.productos.editar.titulo' | transloco }}</h1>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="editar-producto-admin__error" role="alert">{{ 'admin.productos.editar.error_carga' | transloco }}</p>
+  } @else {
+    <form class="editar-producto-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+      <ts-campo
+        idCampo="editar-producto-nombre"
+        [label]="'admin.productos.editar.nombre' | transloco"
+        formControlName="nombre"
+      />
+
+      <ts-campo
+        idCampo="editar-producto-descripcion"
+        [label]="'admin.productos.editar.descripcion' | transloco"
+        formControlName="descripcion"
+      />
+
+      <ts-select
+        idCampo="editar-producto-marca"
+        [label]="'admin.productos.editar.marca' | transloco"
+        [opciones]="opcionesMarca()"
+        [placeholder]="'admin.productos.editar.seleccionar' | transloco"
+        formControlName="marcaId"
+      />
+
+      <ts-select
+        idCampo="editar-producto-categoria"
+        [label]="'admin.productos.editar.categoria' | transloco"
+        [opciones]="opcionesCategoria()"
+        [placeholder]="'admin.productos.editar.seleccionar' | transloco"
+        formControlName="categoriaId"
+      />
+
+      @if (error()) {
+        <p class="editar-producto-admin__error" role="alert">{{ error() }}</p>
+      }
+
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [deshabilitado]="formularioInvalido()"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'admin.productos.editar.guardando' | transloco"
+      >
+        {{ 'admin.productos.editar.guardar' | transloco }}
+      </ts-boton>
+    </form>
+  }
+</section>

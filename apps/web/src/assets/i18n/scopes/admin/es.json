@@ -80,6 +80,7 @@
     "titulo": "Productos",
     "error_lista": "No se pudo cargar la lista de productos.",
     "nuevo": "Nuevo producto",
+    "editarEnlace": "Editar",
     "columnas": {
       "nombre": "Nombre",
       "marca": "Marca",
@@ -106,6 +107,18 @@
       "crear": "Crear producto",
       "enviando": "Creando…",
       "error": "No se pudo crear el producto. Intenta de nuevo."
+    },
+    "editar": {
+      "titulo": "Editar producto",
+      "nombre": "Nombre",
+      "descripcion": "Descripción",
+      "marca": "Marca",
+      "categoria": "Categoría",
+      "seleccionar": "Selecciona una opción",
+      "guardar": "Guardar cambios",
+      "guardando": "Guardando…",
+      "error": "No se pudo editar el producto. Intenta de nuevo.",
+      "error_carga": "No se pudo cargar el producto."
     }
   }
 }
