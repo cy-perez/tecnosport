@@ -689,6 +689,57 @@ contenido (una prueba que solo compara texto no lo habría atrapado: el doble
 de `MockHttpServletResponse` es codifica-y-decodifica consistente consigo
 mismo aunque la codificación real esté mal).
 
+**Track B, primer caso de uso (listar productos) más el segundo (crear
+producto) cerrados de punta a punta** (2026-09-05). `GET /api/v1/admin/productos`
+ya existía; se agregó `POST /api/v1/admin/productos`: alta de un producto
+"pelado" (nombre, descripción, marca, categoría) en `BORRADOR` — sin
+variantes ni imágenes, que quedan como sus propios casos de uso. El slug no
+lo escribe el admin: nuevo `Slug.generarDesde(nombre)` en el dominio
+(minúsculas, sin tildes, símbolos colapsados a un guión) y, si choca con
+uno existente, `CrearProducto` le agrega un sufijo numérico hasta encontrar
+uno libre. Puertos que ganaron un método sin volverse puertos nuevos:
+`RepositorioProductos.guardar`, `RepositorioMarcas.buscarPorId`,
+`RepositorioCategorias.buscarPorId`. Frontend en
+`features/admin/productos/presentation/crear/`, formulario reactivo con
+selects de marca/categoría poblados reutilizando `usarOpcionesFiltro` de
+`catalogo/` (no se duplicó un endpoint admin aparte).
+
+De paso, `CategoriaRespuesta` (pública, `GET /api/v1/categorias`) ganó
+`id` — no lo tenía, a diferencia de `MarcaRespuesta`, y el select de
+categoría del formulario lo necesitaba. El id de una categoría no es
+información sensible; se prefirió este campo nuevo en el endpoint público
+ya existente a levantar un endpoint admin aparte solo para exponerlo.
+
+Verificado a mano contra `bootRun` real, no solo con pruebas — y por eso se
+encontraron dos cosas antes de comitear:
+
+- **Un commit anterior (`4bf469b`) había agregado por error el bytecode
+  compilado de `fuentes.py`** (`packages/marca/generador/__pycache__/`) sin
+  ningún cambio de código real. Ya estaba publicado en `origin/main`, así
+  que no se reescribió el commit (`--force` sobre `main` está prohibido):
+  se agregó `__pycache__/` y `*.pyc` al `.gitignore` y se retiró el archivo
+  del tracking en un commit nuevo.
+- **La navegación tras crear el producto usaba un path absoluto sin el
+  prefijo de idioma** (`/admin/productos`) — las rutas de `admin` viven
+  bajo `/:lang/admin/**` (`app.routes.ts`), no en la raíz, así que esa
+  llamada habría quedado rota en cuanto alguien la disparara. Encontrado
+  al verificar contra `bootRun` real (ninguna prueba de Vitest lo atrapaba
+  porque el `Router` de prueba no valida que la ruta exista). Corregido
+  siguiendo el mismo patrón que ya usa `IniciarSesionAdminPage`:
+  `this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos'])`.
+
+La verificación manual del backend se hizo por API directa (login real,
+crear producto, slug duplicado, marca inexistente, nombre vacío), no
+haciendo clic en el navegador: la extensión de automatización de Chrome no
+lograba conectar a `localhost:4200` en esta máquina (ni la portada),
+mientras `curl` sí respondía 200 — limitación de la herramienta, no de la
+app. Queda pendiente que alguien confirme el formulario con clics reales
+la próxima vez que se pueda.
+
+Quedan pendientes, cada uno como su propio caso de uso: variantes y
+existencias, e imágenes con URL firmada — antes de esos, falta también
+**editar** un producto ya creado (el `POST` de este paso no cubre `PATCH`).
+
 ## Fase 5. Sistema 360
 
 Se hace al final a propósito: necesita el panel, la autenticación, el
