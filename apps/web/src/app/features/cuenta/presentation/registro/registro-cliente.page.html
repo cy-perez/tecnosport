@@ -1,0 +1,48 @@
+@if (registrado()) {
+  <section class="registro-cliente registro-cliente--exito">
+    <h1 class="registro-cliente__titulo">{{ 'cuenta.registro.exito_titulo' | transloco }}</h1>
+    <p>{{ 'cuenta.registro.exito_mensaje' | transloco }}</p>
+  </section>
+} @else {
+  <section class="registro-cliente">
+    <h1 class="registro-cliente__titulo">{{ 'cuenta.registro.titulo' | transloco }}</h1>
+
+    <form class="registro-cliente__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+      <ts-campo
+        idCampo="registro-correo"
+        tipo="email"
+        [label]="'cuenta.registro.correo' | transloco"
+        formControlName="correo"
+      />
+
+      <ts-campo
+        idCampo="registro-clave"
+        tipo="password"
+        [label]="'cuenta.registro.clave' | transloco"
+        formControlName="clave"
+      />
+
+      <ts-campo
+        idCampo="registro-confirmar-clave"
+        tipo="password"
+        [label]="'cuenta.registro.confirmarClave' | transloco"
+        formControlName="confirmarClave"
+        [error]="clavesNoCoinciden() ? ('cuenta.registro.error_confirmar_clave' | transloco) : null"
+      />
+
+      @if (error()) {
+        <p class="registro-cliente__error" role="alert">{{ error() }}</p>
+      }
+
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [deshabilitado]="formularioInvalido()"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'cuenta.registro.enviando' | transloco"
+      >
+        {{ 'cuenta.registro.crear_cuenta' | transloco }}
+      </ts-boton>
+    </form>
+  </section>
+}

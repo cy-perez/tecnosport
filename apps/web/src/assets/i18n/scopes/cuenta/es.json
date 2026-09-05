@@ -1,0 +1,56 @@
+{
+  "iniciarSesion": {
+    "titulo": "Iniciar sesión",
+    "correo": "Correo electrónico",
+    "clave": "Clave",
+    "entrar": "Entrar",
+    "enviando": "Entrando…",
+    "error": "Correo o clave incorrectos.",
+    "error_sin_verificar": "Verifica tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
+    "no_es_cliente": "Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.",
+    "olvidaste_clave": "¿Olvidaste tu clave?"
+  },
+  "registro": {
+    "titulo": "Crear cuenta",
+    "correo": "Correo electrónico",
+    "clave": "Clave",
+    "confirmarClave": "Confirmar clave",
+    "error_confirmar_clave": "Las claves no coinciden.",
+    "crear_cuenta": "Crear cuenta",
+    "enviando": "Creando cuenta…",
+    "exito_titulo": "Revisa tu correo",
+    "exito_mensaje": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión.",
+    "error_correo_registrado": "Ya existe una cuenta con ese correo.",
+    "error_generico": "No se pudo crear la cuenta. Intenta de nuevo."
+  },
+  "verificarCorreo": {
+    "titulo": "Verificando tu correo",
+    "cargando": "Verificando tu correo…",
+    "exito_titulo": "Correo verificado",
+    "exito_mensaje": "Tu cuenta ya está lista. Ya puedes iniciar sesión.",
+    "error_titulo": "Enlace no válido",
+    "error_mensaje": "El enlace no es válido o ya venció. Regístrate de nuevo para recibir uno nuevo."
+  },
+  "recuperarClave": {
+    "titulo": "Recuperar clave",
+    "instrucciones": "Escribe tu correo y te enviamos un enlace para elegir una clave nueva.",
+    "correo": "Correo electrónico",
+    "enviar": "Enviar enlace",
+    "enviando": "Enviando…",
+    "exito_titulo": "Revisa tu correo",
+    "exito_mensaje": "Si existe una cuenta con ese correo, te llegó un enlace para recuperar tu clave.",
+    "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo."
+  },
+  "restablecerClave": {
+    "titulo": "Elige una clave nueva",
+    "claveNueva": "Clave nueva",
+    "confirmarClave": "Confirmar clave",
+    "error_confirmar_clave": "Las claves no coinciden.",
+    "restablecer": "Restablecer clave",
+    "enviando": "Guardando…",
+    "exito_titulo": "Clave restablecida",
+    "exito_mensaje": "Ya puedes iniciar sesión con tu clave nueva.",
+    "error_titulo": "Enlace no válido",
+    "error_token_invalido": "El enlace no es válido o ya venció. Pide uno nuevo."
+  }
+}

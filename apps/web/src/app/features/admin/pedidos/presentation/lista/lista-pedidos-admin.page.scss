@@ -1,0 +1,72 @@
+.lista-pedidos-admin {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: var(--esp-32) var(--esp-16);
+}
+
+.lista-pedidos-admin__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-2xl);
+  margin: 0 0 var(--esp-24);
+}
+
+.lista-pedidos-admin__filtro {
+  max-width: 320px;
+  margin-bottom: var(--esp-24);
+}
+
+.lista-pedidos-admin__error {
+  color: var(--color-error);
+  margin-bottom: var(--esp-16);
+}
+
+.lista-pedidos-admin__oculto-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lista-pedidos-admin__tabla {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: var(--esp-8) var(--esp-16);
+    text-align: left;
+    border-bottom: 1px solid var(--color-borde);
+  }
+}
+
+.lista-pedidos-admin__detalle {
+  background: var(--color-superficie-alt);
+}
+
+.lista-pedidos-admin__subtitulo {
+  font-size: var(--texto-base);
+  font-weight: var(--peso-medio);
+  margin: var(--esp-16) 0 var(--esp-8);
+}
+
+.lista-pedidos-admin__lineas,
+.lista-pedidos-admin__historial {
+  margin: 0;
+  padding-left: var(--esp-16);
+}
+
+.lista-pedidos-admin__sin-accion {
+  color: var(--color-texto-suave);
+}
+
+.lista-pedidos-admin__paginacion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-16);
+  margin-top: var(--esp-24);
+}

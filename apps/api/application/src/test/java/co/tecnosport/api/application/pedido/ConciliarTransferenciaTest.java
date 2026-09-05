@@ -61,15 +61,19 @@ class ConciliarTransferenciaTest {
   }
 
   @Test
-  void conciliaUnPedidoDeTransferenciaManualPendiente() {
+  void conciliaUnPedidoDeTransferenciaManualPendienteYLoDejaListoParaPreparar() {
     ConciliarTransferencia caso = crear();
     Pedido pedido = pedidoConMetodo(MetodoPago.TRANSFERENCIA_MANUAL);
 
     Pedido conciliado = caso.ejecutar(new ConciliarTransferenciaComando(pedido.id(), "admin:test"));
 
-    assertEquals(EstadoPedido.PAGADO, conciliado.estado());
-    assertEquals(2, conciliado.historial().size());
-    assertEquals("admin:test", conciliado.historial().get(1).actor());
+    // Encadena PAGADO -> EN_PREPARACION de una vez: un pago ya conciliado no necesita un segundo
+    // clic en el panel para poder despachar.
+    assertEquals(EstadoPedido.EN_PREPARACION, conciliado.estado());
+    assertEquals(3, conciliado.historial().size());
+    assertEquals(EstadoPedido.PAGADO, conciliado.historial().get(1).estado());
+    assertEquals(EstadoPedido.EN_PREPARACION, conciliado.historial().get(2).estado());
+    assertEquals("admin:test", conciliado.historial().get(2).actor());
   }
 
   @Test

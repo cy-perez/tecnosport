@@ -122,6 +122,23 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   llame a un puerto con bloqueo pesimista —caso de uso o sembrador— tiene
   que abrir la transacción él mismo, con `@Transactional` o
   `TransactionTemplate`.
+- **`@Modifying(clearAutomatically = true)` sin `flushAutomatically = true`
+  puede descartar en silencio, sin ninguna excepción, escrituras de otras
+  entidades hechas antes en la misma transacción.** `clearAutomatically`
+  limpia el contexto de persistencia después de correr el `UPDATE` masivo,
+  pero no vuelca antes los cambios pendientes de otros `guardar()` — si esos
+  cambios seguían solo en memoria (nunca forzados a flush), `clear()` los
+  descarta sin avisar nada: la transacción igual confirma. Encontrado en
+  Fase 4 en `bootRun` real (no en las pruebas de aplicación, que usan dobles
+  de prueba y no reproducen el flush/clear real de Hibernate — sí lo atrapa
+  una prueba de infraestructura contra Postgres real, con los tres
+  repositorios JPA de verdad en la misma transacción):
+  `ConfirmarRecuperacion` guardaba el token consumido y la clave nueva del
+  usuario, y luego llamaba `RepositorioSesiones.revocarTodasDeUsuario`
+  (`@Modifying(clearAutomatically = true)`) — las dos escrituras anteriores
+  se perdían. Cualquier `@Modifying` con `clearAutomatically = true` que se
+  llame después de un `guardar()` en la misma transacción necesita también
+  `flushAutomatically = true`.
 - **Jackson 3 (`tools.jackson.*`) es el stack JSON por defecto de Boot
   4.1.0, no `com.fasterxml.jackson.*`.** Un import del paquete viejo (por
   ejemplo `com.fasterxml.jackson.databind.JsonNode` en vez de

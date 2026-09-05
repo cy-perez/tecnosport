@@ -1,0 +1,56 @@
+{
+  "iniciarSesion": {
+    "titulo": "Sign in",
+    "correo": "Email address",
+    "clave": "Password",
+    "entrar": "Sign in",
+    "enviando": "Signing in…",
+    "error": "Incorrect email or password.",
+    "error_sin_verificar": "Verify your email before signing in. Check your inbox.",
+    "no_es_cliente": "This account belongs to the admin panel, not a customer account.",
+    "olvidaste_clave": "Forgot your password?"
+  },
+  "registro": {
+    "titulo": "Create account",
+    "correo": "Email address",
+    "clave": "Password",
+    "confirmarClave": "Confirm password",
+    "error_confirmar_clave": "Passwords don't match.",
+    "crear_cuenta": "Create account",
+    "enviando": "Creating account…",
+    "exito_titulo": "Check your email",
+    "exito_mensaje": "We sent you a link to verify your account. Open it to be able to sign in.",
+    "error_correo_registrado": "An account with that email already exists.",
+    "error_generico": "We couldn't create the account. Try again."
+  },
+  "verificarCorreo": {
+    "titulo": "Verifying your email",
+    "cargando": "Verifying your email…",
+    "exito_titulo": "Email verified",
+    "exito_mensaje": "Your account is ready. You can now sign in.",
+    "error_titulo": "Invalid link",
+    "error_mensaje": "The link is invalid or expired. Sign up again to get a new one."
+  },
+  "recuperarClave": {
+    "titulo": "Recover password",
+    "instrucciones": "Enter your email and we'll send you a link to choose a new password.",
+    "correo": "Email address",
+    "enviar": "Send link",
+    "enviando": "Sending…",
+    "exito_titulo": "Check your email",
+    "exito_mensaje": "If an account exists with that email, a password recovery link was sent to it.",
+    "error_generico": "We couldn't process the request. Try again."
+  },
+  "restablecerClave": {
+    "titulo": "Choose a new password",
+    "claveNueva": "New password",
+    "confirmarClave": "Confirm password",
+    "error_confirmar_clave": "Passwords don't match.",
+    "restablecer": "Reset password",
+    "enviando": "Saving…",
+    "exito_titulo": "Password reset",
+    "exito_mensaje": "You can now sign in with your new password.",
+    "error_titulo": "Invalid link",
+    "error_token_invalido": "The link is invalid or expired. Request a new one."
+  }
+}

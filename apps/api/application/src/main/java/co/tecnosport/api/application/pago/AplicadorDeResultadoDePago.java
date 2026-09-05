@@ -66,9 +66,21 @@ final class AplicadorDeResultadoDePago {
     }
     pedido.transicionar(
         siguienteEstadoPedido, actor, "evento de pago: " + evento.estado(), evento.recibidoEn());
-    repositorioPedidos.guardar(pedido);
     boolean inventarioOk =
         actualizarInventario(pedido, siguienteEstadoPedido, evento, repositorioInventario);
+    // Un pago aprobado con el inventario confirmado queda listo para preparar de una vez, sin un
+    // clic extra en el panel (docs/02-modelo-datos.md: PAGADO -> EN_PREPARACION es el mismo camino
+    // que ya recorre CONFIRMADO_CONTRAENTREGA vía VerificarContraentrega). Si el inventario no se
+    // pudo confirmar (reserva vencida, revisión manual), el pedido se queda en PAGADO a propósito:
+    // no tiene sentido decirle al almacén que prepare algo con un inventario en duda.
+    if (siguienteEstadoPedido == EstadoPedido.PAGADO && inventarioOk) {
+      pedido.transicionar(
+          EstadoPedido.EN_PREPARACION,
+          actor,
+          "pago aprobado, listo para preparar",
+          evento.recibidoEn());
+    }
+    repositorioPedidos.guardar(pedido);
     return inventarioOk
         ? ResultadoEventoDePago.APLICADO
         : ResultadoEventoDePago.APLICADO_SIN_CONFIRMAR_INVENTARIO;

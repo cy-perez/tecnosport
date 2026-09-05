@@ -143,7 +143,10 @@ class ProcesarEventoDePagoTest {
 
     assertEquals(ResultadoEventoDePago.APLICADO, resultado);
     assertEquals(EstadoPago.APROBADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
-    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    // Encadena PAGADO -> EN_PREPARACION de una vez: con el inventario confirmado no hay nada que
+    // esperar para que el pedido quede listo para preparar.
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test

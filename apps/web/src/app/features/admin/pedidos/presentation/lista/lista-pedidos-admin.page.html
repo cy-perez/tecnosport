@@ -1,0 +1,202 @@
+<section class="lista-pedidos-admin">
+  <h1 class="lista-pedidos-admin__titulo">{{ 'admin.pedidos.titulo' | transloco }}</h1>
+
+  <div class="lista-pedidos-admin__filtro">
+    <ts-select
+      idCampo="filtro-estado"
+      [label]="'admin.pedidos.filtro_estado' | transloco"
+      [opciones]="opcionesEstado()"
+      [placeholder]="'admin.pedidos.todos_los_estados' | transloco"
+      [formControl]="formularioEstado"
+    />
+  </div>
+
+  @if (errorAccion()) {
+    <p class="lista-pedidos-admin__error" role="alert">{{ errorAccion() }}</p>
+  }
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="lista-pedidos-admin__error" role="alert">{{ 'admin.pedidos.error_lista' | transloco }}</p>
+  } @else {
+    <table class="lista-pedidos-admin__tabla">
+      <thead>
+        <tr>
+          <th scope="col">{{ 'admin.pedidos.columnas.numero' | transloco }}</th>
+          <th scope="col">{{ 'admin.pedidos.columnas.correo' | transloco }}</th>
+          <th scope="col">{{ 'admin.pedidos.columnas.estado' | transloco }}</th>
+          <th scope="col">{{ 'admin.pedidos.columnas.total' | transloco }}</th>
+          <th scope="col">{{ 'admin.pedidos.columnas.fecha' | transloco }}</th>
+          <th scope="col"><span class="lista-pedidos-admin__oculto-visual">{{ 'admin.pedidos.columnas.detalle' | transloco }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (pedido of consulta.data()?.items ?? []; track pedido.id) {
+          <tr class="lista-pedidos-admin__fila">
+            <td>{{ pedido.numeroPedido }}</td>
+            <td>{{ pedido.correo }}</td>
+            <td>{{ etiquetaEstado(pedido.estado) }}</td>
+            <td><ts-precio [valor]="pedido.total.valor" [moneda]="pedido.total.moneda" /></td>
+            <td>{{ formatearFecha(pedido.creadoEn) }}</td>
+            <td>
+              <ts-boton
+                variante="texto"
+                [attr.aria-expanded]="pedidoExpandidoId() === pedido.id"
+                [attr.aria-controls]="'detalle-' + pedido.id"
+                (click)="alternarExpandido(pedido.id)"
+              >
+                {{ (pedidoExpandidoId() === pedido.id ? 'admin.pedidos.lista.ocultar' : 'admin.pedidos.lista.ver_detalle') | transloco }}
+              </ts-boton>
+            </td>
+          </tr>
+
+          @if (pedidoExpandidoId() === pedido.id) {
+            <tr [id]="'detalle-' + pedido.id" class="lista-pedidos-admin__detalle">
+              <td colspan="6">
+                <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.lineas' | transloco }}</h2>
+                <ul class="lista-pedidos-admin__lineas">
+                  @for (linea of pedido.lineas; track linea.id) {
+                    <li>
+                      {{ linea.cantidad }} × {{ linea.nombre }} ({{ linea.sku }}) —
+                      <ts-precio [valor]="linea.precioUnitario.valor" [moneda]="linea.precioUnitario.moneda" />
+                    </li>
+                  }
+                </ul>
+
+                @if (pedido.direccion; as direccion) {
+                  <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.direccion' | transloco }}</h2>
+                  <p>
+                    {{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}
+                    @if (direccion.indicaciones) {
+                      — {{ direccion.indicaciones }}
+                    }
+                  </p>
+                }
+
+                @if (pedido.datosTransferencia; as transferencia) {
+                  <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.transferencia' | transloco }}</h2>
+                  <p>
+                    {{ transferencia.banco }} — {{ transferencia.tipoCuenta }} {{ transferencia.numeroCuenta }} —
+                    {{ transferencia.titular }} — {{ 'admin.pedidos.detalle.referencia' | transloco }}: {{ transferencia.referencia }}
+                  </p>
+                }
+
+                @if (pedido.envio; as envio) {
+                  <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.envio' | transloco }}</h2>
+                  <p>
+                    {{ envio.transportadora }} — {{ envio.guia }} —
+                    <ts-precio [valor]="envio.costoEnvio.valor" [moneda]="envio.costoEnvio.moneda" />
+                    @if (envio.comisionRecaudo) {
+                      — {{ 'admin.pedidos.detalle.comision' | transloco }}:
+                      <ts-precio [valor]="envio.comisionRecaudo.valor" [moneda]="envio.comisionRecaudo.moneda" />
+                    }
+                  </p>
+                }
+
+                <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.historial' | transloco }}</h2>
+                <ul class="lista-pedidos-admin__historial">
+                  @for (entrada of pedido.historial; track entrada.fecha + entrada.estado) {
+                    <li>{{ formatearFecha(entrada.fecha) }} — {{ etiquetaEstado(entrada.estado) }} — {{ entrada.motivo }}</li>
+                  }
+                </ul>
+
+                <h2 class="lista-pedidos-admin__subtitulo">{{ 'admin.pedidos.detalle.acciones' | transloco }}</h2>
+                @switch (pedido.estado) {
+                  @case ('PAGO_PENDIENTE') {
+                    @if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
+                      <ts-boton [cargando]="conciliandoTransferencia(pedido.id)" (click)="conciliarTransferencia(pedido.id)">
+                        {{ 'admin.pedidos.acciones.conciliar_transferencia' | transloco }}
+                      </ts-boton>
+                    } @else {
+                      <span class="lista-pedidos-admin__sin-accion">{{ 'admin.pedidos.acciones.sin_accion' | transloco }}</span>
+                    }
+                  }
+                  @case ('CONFIRMADO_CONTRAENTREGA') {
+                    <form [formGroup]="formularioMotivo(pedido.id)" (submit)="$event.preventDefault(); verificarContraentrega(pedido)">
+                      <ts-campo
+                        [idCampo]="'motivo-verificar-' + pedido.id"
+                        [label]="'admin.pedidos.acciones.motivo' | transloco"
+                        formControlName="motivo"
+                      />
+                      <ts-boton tipo="submit" [cargando]="verificandoContraentrega(pedido.id)">
+                        {{ 'admin.pedidos.acciones.verificar_contraentrega' | transloco }}
+                      </ts-boton>
+                    </form>
+                  }
+                  @case ('EN_PREPARACION') {
+                    <form [formGroup]="formularioDespacho(pedido.id)" (submit)="$event.preventDefault(); despachar(pedido)">
+                      <ts-campo
+                        [idCampo]="'transportadora-' + pedido.id"
+                        [label]="'admin.pedidos.acciones.transportadora' | transloco"
+                        formControlName="transportadora"
+                      />
+                      <ts-campo [idCampo]="'guia-' + pedido.id" [label]="'admin.pedidos.acciones.guia' | transloco" formControlName="guia" />
+                      <ts-campo
+                        [idCampo]="'costo-envio-' + pedido.id"
+                        tipo="number"
+                        [label]="'admin.pedidos.acciones.costo_envio' | transloco"
+                        formControlName="costoEnvio"
+                      />
+                      <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
+                        {{ 'admin.pedidos.acciones.despachar' | transloco }}
+                      </ts-boton>
+                    </form>
+                  }
+                  @case ('DESPACHADO') {
+                    <ts-boton [cargando]="marcandoEntregado(pedido.id)" (click)="marcarEntregado(pedido.id)">
+                      {{ 'admin.pedidos.acciones.marcar_entregado' | transloco }}
+                    </ts-boton>
+
+                    <form [formGroup]="formularioMotivo(pedido.id)" (submit)="$event.preventDefault(); rechazarEnEntrega(pedido)">
+                      <ts-campo
+                        [idCampo]="'motivo-rechazo-' + pedido.id"
+                        [label]="'admin.pedidos.acciones.motivo' | transloco"
+                        formControlName="motivo"
+                      />
+                      <ts-boton variante="peligro" tipo="submit" [cargando]="rechazando(pedido.id)">
+                        {{ 'admin.pedidos.acciones.rechazar_en_entrega' | transloco }}
+                      </ts-boton>
+                    </form>
+                  }
+                  @case ('RECAUDO_PENDIENTE') {
+                    <form [formGroup]="formularioRecaudo(pedido.id)" (submit)="$event.preventDefault(); conciliarRecaudo(pedido)">
+                      <ts-campo
+                        [idCampo]="'comision-' + pedido.id"
+                        tipo="number"
+                        [label]="'admin.pedidos.acciones.comision_recaudo' | transloco"
+                        formControlName="comisionRecaudo"
+                      />
+                      <ts-boton tipo="submit" [cargando]="conciliandoRecaudo(pedido.id)">
+                        {{ 'admin.pedidos.acciones.conciliar_recaudo' | transloco }}
+                      </ts-boton>
+                    </form>
+                  }
+                  @default {
+                    <span class="lista-pedidos-admin__sin-accion">{{ 'admin.pedidos.acciones.sin_accion' | transloco }}</span>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+
+    <div class="lista-pedidos-admin__paginacion">
+      <ts-boton variante="secundario" [deshabilitado]="filtro().pagina === 0" (click)="paginaAnterior()">
+        {{ 'admin.pedidos.paginacion.anterior' | transloco }}
+      </ts-boton>
+      <span>
+        {{ 'admin.pedidos.paginacion.info' | transloco: { actual: filtro().pagina + 1, total: consulta.data()?.totalPaginas ?? 1 } }}
+      </span>
+      <ts-boton
+        variante="secundario"
+        [deshabilitado]="filtro().pagina + 1 >= (consulta.data()?.totalPaginas ?? 1)"
+        (click)="paginaSiguiente()"
+      >
+        {{ 'admin.pedidos.paginacion.siguiente' | transloco }}
+      </ts-boton>
+    </div>
+  }
+</section>

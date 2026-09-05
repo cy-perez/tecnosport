@@ -1,0 +1,59 @@
+.pie {
+  background: var(--color-marca);
+  color: var(--color-sobre-marca);
+  margin-top: var(--esp-32);
+}
+
+.pie__contenido {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: var(--esp-32) var(--esp-24);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-24);
+  align-items: flex-start;
+}
+
+.pie__logo {
+  display: block;
+}
+
+.pie__datos {
+  font-style: normal;
+  font-size: var(--texto-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+
+  p {
+    margin: 0;
+  }
+
+  a {
+    color: var(--color-sobre-marca);
+
+    &:focus-visible {
+      outline: 2px solid var(--color-sobre-marca);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.pie__control {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-8);
+  font-size: var(--texto-sm);
+
+  input:focus-visible {
+    outline: 2px solid var(--color-sobre-marca);
+    outline-offset: 2px;
+  }
+}
+
+.pie__copyright {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: 0 var(--esp-24) var(--esp-24);
+  font-size: var(--texto-xs);
+}

@@ -25,14 +25,24 @@ public class UsuarioJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  @Column(name = "correo_verificado_en")
+  private Instant correoVerificadoEn;
+
   protected UsuarioJpaEntity() {}
 
-  public UsuarioJpaEntity(UUID id, String correo, String claveHash, String rol, Instant creadoEn) {
+  public UsuarioJpaEntity(
+      UUID id,
+      String correo,
+      String claveHash,
+      String rol,
+      Instant creadoEn,
+      Instant correoVerificadoEn) {
     this.id = id;
     this.correo = correo;
     this.claveHash = claveHash;
     this.rol = rol;
     this.creadoEn = creadoEn;
+    this.correoVerificadoEn = correoVerificadoEn;
   }
 
   public UUID getId() {
@@ -53,5 +63,9 @@ public class UsuarioJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public Instant getCorreoVerificadoEn() {
+    return correoVerificadoEn;
   }
 }

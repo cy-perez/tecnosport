@@ -17,4 +17,11 @@ public interface RepositorioSesiones {
    * SesionRefresco#revocar}, que solo revoca una.
    */
   void revocarFamilia(UUID familiaId, Instant ahora);
+
+  /**
+   * Revoca todas las sesiones de un usuario, sin importar la familia — a diferencia de {@link
+   * #revocarFamilia}, que solo alcanza una cadena. La usa la recuperación de contraseña: quien
+   * pierde el control de su clave puede tener sesiones abiertas en más de un dispositivo.
+   */
+  void revocarTodasDeUsuario(UUID usuarioId, Instant ahora);
 }

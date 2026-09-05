@@ -1,0 +1,78 @@
+{
+  "iniciarSesion": {
+    "titulo": "Admin panel",
+    "correo": "Email address",
+    "clave": "Password",
+    "entrar": "Sign in",
+    "enviando": "Signing in…",
+    "error": "Incorrect email or password.",
+    "no_es_admin": "This account doesn't have access to the panel."
+  },
+  "panel": {
+    "titulo": "Admin panel",
+    "bienvenida": "Signed in as {{rol}}.",
+    "cerrar_sesion": "Sign out",
+    "ir_a_pedidos": "Orders"
+  },
+  "pedidos": {
+    "titulo": "Orders",
+    "filtro_estado": "Status",
+    "todos_los_estados": "All",
+    "error_lista": "Couldn't load the order list.",
+    "columnas": {
+      "numero": "Order",
+      "correo": "Email",
+      "estado": "Status",
+      "total": "Total",
+      "fecha": "Date",
+      "detalle": "Detail"
+    },
+    "estados": {
+      "pago_pendiente": "Payment pending",
+      "pagado": "Paid",
+      "pago_fallido": "Payment failed",
+      "confirmado_contraentrega": "Cash on delivery confirmed",
+      "en_preparacion": "Preparing",
+      "despachado": "Shipped",
+      "entregado": "Delivered",
+      "rechazado_en_entrega": "Rejected on delivery",
+      "devuelto": "Returned",
+      "recaudo_pendiente": "Collection pending",
+      "recaudo_conciliado": "Collection reconciled"
+    },
+    "lista": {
+      "ver_detalle": "View detail",
+      "ocultar": "Hide"
+    },
+    "detalle": {
+      "lineas": "Items",
+      "direccion": "Shipping address",
+      "transferencia": "Manual transfer",
+      "referencia": "Reference",
+      "envio": "Shipment",
+      "comision": "Collection fee",
+      "historial": "History",
+      "acciones": "Actions"
+    },
+    "acciones": {
+      "sin_accion": "No actions available.",
+      "error": "Couldn't complete the action.",
+      "motivo": "Reason",
+      "conciliar_transferencia": "Reconcile transfer",
+      "verificar_contraentrega": "Verify cash on delivery",
+      "transportadora": "Carrier",
+      "guia": "Tracking number",
+      "costo_envio": "Shipping cost",
+      "despachar": "Ship",
+      "marcar_entregado": "Mark delivered",
+      "rechazar_en_entrega": "Reject on delivery",
+      "comision_recaudo": "Collection fee",
+      "conciliar_recaudo": "Reconcile collection"
+    },
+    "paginacion": {
+      "anterior": "Previous",
+      "siguiente": "Next",
+      "info": "Page {{actual}} of {{total}}"
+    }
+  }
+}

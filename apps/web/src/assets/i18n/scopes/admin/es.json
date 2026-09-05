@@ -1,0 +1,78 @@
+{
+  "iniciarSesion": {
+    "titulo": "Panel administrativo",
+    "correo": "Correo electrónico",
+    "clave": "Clave",
+    "entrar": "Entrar",
+    "enviando": "Entrando…",
+    "error": "Correo o clave incorrectos.",
+    "no_es_admin": "Esta cuenta no tiene acceso al panel."
+  },
+  "panel": {
+    "titulo": "Panel administrativo",
+    "bienvenida": "Sesión activa como {{rol}}.",
+    "cerrar_sesion": "Cerrar sesión",
+    "ir_a_pedidos": "Pedidos"
+  },
+  "pedidos": {
+    "titulo": "Pedidos",
+    "filtro_estado": "Estado",
+    "todos_los_estados": "Todos",
+    "error_lista": "No se pudo cargar la lista de pedidos.",
+    "columnas": {
+      "numero": "Pedido",
+      "correo": "Correo",
+      "estado": "Estado",
+      "total": "Total",
+      "fecha": "Fecha",
+      "detalle": "Detalle"
+    },
+    "estados": {
+      "pago_pendiente": "Pago pendiente",
+      "pagado": "Pagado",
+      "pago_fallido": "Pago fallido",
+      "confirmado_contraentrega": "Confirmado contraentrega",
+      "en_preparacion": "En preparación",
+      "despachado": "Despachado",
+      "entregado": "Entregado",
+      "rechazado_en_entrega": "Rechazado en la entrega",
+      "devuelto": "Devuelto",
+      "recaudo_pendiente": "Recaudo pendiente",
+      "recaudo_conciliado": "Recaudo conciliado"
+    },
+    "lista": {
+      "ver_detalle": "Ver detalle",
+      "ocultar": "Ocultar"
+    },
+    "detalle": {
+      "lineas": "Líneas",
+      "direccion": "Dirección de envío",
+      "transferencia": "Transferencia manual",
+      "referencia": "Referencia",
+      "envio": "Envío",
+      "comision": "Comisión de recaudo",
+      "historial": "Historial",
+      "acciones": "Acciones"
+    },
+    "acciones": {
+      "sin_accion": "Sin acciones disponibles.",
+      "error": "No se pudo completar la acción.",
+      "motivo": "Motivo",
+      "conciliar_transferencia": "Conciliar transferencia",
+      "verificar_contraentrega": "Verificar contraentrega",
+      "transportadora": "Transportadora",
+      "guia": "Guía",
+      "costo_envio": "Costo de envío",
+      "despachar": "Despachar",
+      "marcar_entregado": "Marcar entregado",
+      "rechazar_en_entrega": "Rechazar en la entrega",
+      "comision_recaudo": "Comisión de recaudo",
+      "conciliar_recaudo": "Conciliar recaudo"
+    },
+    "paginacion": {
+      "anterior": "Anterior",
+      "siguiente": "Siguiente",
+      "info": "Página {{actual}} de {{total}}"
+    }
+  }
+}

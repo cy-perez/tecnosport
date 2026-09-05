@@ -109,4 +109,24 @@ class RepositorioSesionesJpaTest {
         repositorio.buscarPorId(sesion.id()).orElseThrow().revocadoEn().orElseThrow();
     assertThat(segundaLectura).isEqualTo(primeraRevocacion);
   }
+
+  @Test
+  void revocarTodasDeUsuarioRevocaSesionesDeVariasFamilias() {
+    UUID usuarioId = crearYGuardarUsuario();
+    UUID otroUsuarioId = crearYGuardarUsuario();
+    Instant ahora = Instant.now();
+    SesionRefresco familiaA = SesionRefresco.crear(usuarioId, UUID.randomUUID(), ahora, VIGENCIA);
+    SesionRefresco familiaB = SesionRefresco.crear(usuarioId, UUID.randomUUID(), ahora, VIGENCIA);
+    SesionRefresco deOtroUsuario =
+        SesionRefresco.crear(otroUsuarioId, UUID.randomUUID(), ahora, VIGENCIA);
+    repositorio.guardar(familiaA);
+    repositorio.guardar(familiaB);
+    repositorio.guardar(deOtroUsuario);
+
+    repositorio.revocarTodasDeUsuario(usuarioId, ahora.plusSeconds(1));
+
+    assertThat(repositorio.buscarPorId(familiaA.id()).orElseThrow().revocadoEn()).isPresent();
+    assertThat(repositorio.buscarPorId(familiaB.id()).orElseThrow().revocadoEn()).isPresent();
+    assertThat(repositorio.buscarPorId(deOtroUsuario.id()).orElseThrow().revocadoEn()).isEmpty();
+  }
 }

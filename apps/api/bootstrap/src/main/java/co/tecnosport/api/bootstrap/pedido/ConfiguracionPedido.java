@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.pedido;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
@@ -16,6 +17,7 @@ import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
+import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -39,7 +41,9 @@ public class ConfiguracionPedido {
       RepositorioPedidos repositorioPedidos,
       MetodosDePagoDisponibles metodosDePagoDisponibles,
       Reloj reloj,
-      PropiedadesPedido propiedades) {
+      PropiedadesPedido propiedades,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimitePedidos propiedadesLimite) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
@@ -47,7 +51,10 @@ public class ConfiguracionPedido {
         metodosDePagoDisponibles,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
-        Duration.ofHours(propiedades.horasVencimientoTransferencia()));
+        Duration.ofHours(propiedades.horasVencimientoTransferencia()),
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
   }
 
   @Bean

@@ -115,14 +115,16 @@ class AdminPedidosControladorTest {
   }
 
   @Test
-  void conciliaUnaTransferenciaManualYLaMarcaPagada() throws Exception {
+  void conciliaUnaTransferenciaManualYLaDejaListaParaPreparar() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.TRANSFERENCIA_MANUAL);
     autenticarComoAdmin();
 
     mockMvc
         .perform(post("/api/v1/admin/pedidos/{id}/conciliar-transferencia", pedido.id()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.estado").value("PAGADO"));
+        // ConciliarTransferencia encadena PAGADO -> EN_PREPARACION de una vez: no hace falta un
+        // clic extra en el panel para pasar de "pago conciliado" a "listo para preparar".
+        .andExpect(jsonPath("$.estado").value("EN_PREPARACION"));
   }
 
   @Test
@@ -179,7 +181,11 @@ class AdminPedidosControladorTest {
                     {"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}
                     """))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.estado").value("DESPACHADO"));
+        .andExpect(jsonPath("$.estado").value("DESPACHADO"))
+        .andExpect(jsonPath("$.envio.transportadora").value("Servientrega"))
+        .andExpect(jsonPath("$.envio.guia").value("SE123456"))
+        .andExpect(jsonPath("$.envio.costoEnvio.valor").value(15000))
+        .andExpect(jsonPath("$.historial[-1].estado").value("DESPACHADO"));
 
     assertEquals(1, envios.guardados().size());
     assertEquals("Servientrega", envios.guardados().get(0).transportadora());
@@ -305,7 +311,8 @@ class AdminPedidosControladorTest {
                     {"comisionRecaudo":5000}
                     """))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.estado").value("RECAUDO_CONCILIADO"));
+        .andExpect(jsonPath("$.estado").value("RECAUDO_CONCILIADO"))
+        .andExpect(jsonPath("$.envio.comisionRecaudo.valor").value(5000));
 
     assertEquals(
         Dinero.deCop(5_000),
@@ -381,8 +388,9 @@ class AdminPedidosControladorTest {
 
     @Bean
     MapeadorRespuestasPedido mapeadorRespuestasPedido(
-        PropiedadesTransferenciaManual propiedadesTransferencia) {
-      return new MapeadorRespuestasPedido(propiedadesTransferencia);
+        PropiedadesTransferenciaManual propiedadesTransferencia,
+        RepositorioEnvios repositorioEnvios) {
+      return new MapeadorRespuestasPedido(propiedadesTransferencia, repositorioEnvios);
     }
   }
 }

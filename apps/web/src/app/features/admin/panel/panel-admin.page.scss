@@ -1,0 +1,17 @@
+.panel-admin {
+  max-width: var(--ancho-max);
+  margin: var(--esp-32) auto;
+  padding: 0 var(--esp-16);
+}
+
+.panel-admin__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-2xl);
+  margin: 0 0 var(--esp-16);
+}
+
+.panel-admin__enlace {
+  display: inline-block;
+  margin-bottom: var(--esp-24);
+  color: var(--color-primario);
+}

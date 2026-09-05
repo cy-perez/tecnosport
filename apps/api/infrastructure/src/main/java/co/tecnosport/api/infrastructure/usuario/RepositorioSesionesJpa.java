@@ -33,6 +33,11 @@ public class RepositorioSesionesJpa implements RepositorioSesiones {
     sesiones.revocarFamilia(familiaId, ahora);
   }
 
+  @Override
+  public void revocarTodasDeUsuario(UUID usuarioId, Instant ahora) {
+    sesiones.revocarTodasDeUsuario(usuarioId, ahora);
+  }
+
   private SesionRefresco aDominio(SesionRefrescoJpaEntity entidad) {
     return new SesionRefresco(
         entidad.getId(),

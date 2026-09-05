@@ -29,3 +29,19 @@ describe('TsCampo', () => {
     expect((screen.getByLabelText('Precio') as HTMLInputElement).value).toBe('89900');
   });
 });
+
+@Component({
+  imports: [ReactiveFormsModule, TsCampo],
+  template: `<ts-campo idCampo="clave" label="Clave" tipo="password" [formControl]="control" />`,
+})
+class AnfitrionContrasenaDePrueba {
+  readonly control = new FormControl('');
+}
+
+describe('TsCampo con tipo password', () => {
+  it('renderiza un input type="password", para que el navegador la enmascare', async () => {
+    await render(AnfitrionContrasenaDePrueba);
+
+    expect((screen.getByLabelText('Clave') as HTMLInputElement).type).toBe('password');
+  });
+});

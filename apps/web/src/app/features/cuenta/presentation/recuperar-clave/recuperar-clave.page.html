@@ -1,0 +1,34 @@
+@if (enviado()) {
+  <section class="recuperar-clave recuperar-clave--exito">
+    <h1 class="recuperar-clave__titulo">{{ 'cuenta.recuperarClave.exito_titulo' | transloco }}</h1>
+    <p>{{ 'cuenta.recuperarClave.exito_mensaje' | transloco }}</p>
+  </section>
+} @else {
+  <section class="recuperar-clave">
+    <h1 class="recuperar-clave__titulo">{{ 'cuenta.recuperarClave.titulo' | transloco }}</h1>
+    <p>{{ 'cuenta.recuperarClave.instrucciones' | transloco }}</p>
+
+    <form class="recuperar-clave__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+      <ts-campo
+        idCampo="recuperar-correo"
+        tipo="email"
+        [label]="'cuenta.recuperarClave.correo' | transloco"
+        formControlName="correo"
+      />
+
+      @if (error()) {
+        <p class="recuperar-clave__error" role="alert">{{ error() }}</p>
+      }
+
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [deshabilitado]="formularioInvalido()"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'cuenta.recuperarClave.enviando' | transloco"
+      >
+        {{ 'cuenta.recuperarClave.enviar' | transloco }}
+      </ts-boton>
+    </form>
+  </section>
+}

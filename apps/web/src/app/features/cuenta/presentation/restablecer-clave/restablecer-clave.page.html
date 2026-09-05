@@ -1,0 +1,46 @@
+@if (restablecida()) {
+  <section class="restablecer-clave restablecer-clave--exito">
+    <h1 class="restablecer-clave__titulo">{{ 'cuenta.restablecerClave.exito_titulo' | transloco }}</h1>
+    <p>{{ 'cuenta.restablecerClave.exito_mensaje' | transloco }}</p>
+  </section>
+} @else if (!token) {
+  <section class="restablecer-clave restablecer-clave--error">
+    <h1 class="restablecer-clave__titulo">{{ 'cuenta.restablecerClave.error_titulo' | transloco }}</h1>
+    <p role="alert">{{ 'cuenta.restablecerClave.error_token_invalido' | transloco }}</p>
+  </section>
+} @else {
+  <section class="restablecer-clave">
+    <h1 class="restablecer-clave__titulo">{{ 'cuenta.restablecerClave.titulo' | transloco }}</h1>
+
+    <form class="restablecer-clave__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+      <ts-campo
+        idCampo="restablecer-clave-nueva"
+        tipo="password"
+        [label]="'cuenta.restablecerClave.claveNueva' | transloco"
+        formControlName="claveNueva"
+      />
+
+      <ts-campo
+        idCampo="restablecer-confirmar-clave"
+        tipo="password"
+        [label]="'cuenta.restablecerClave.confirmarClave' | transloco"
+        formControlName="confirmarClave"
+        [error]="clavesNoCoinciden() ? ('cuenta.restablecerClave.error_confirmar_clave' | transloco) : null"
+      />
+
+      @if (error()) {
+        <p class="restablecer-clave__error" role="alert">{{ error() }}</p>
+      }
+
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [deshabilitado]="formularioInvalido()"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'cuenta.restablecerClave.enviando' | transloco"
+      >
+        {{ 'cuenta.restablecerClave.restablecer' | transloco }}
+      </ts-boton>
+    </form>
+  </section>
+}

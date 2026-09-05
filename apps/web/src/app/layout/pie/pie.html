@@ -1,0 +1,34 @@
+<footer class="pie">
+  <div class="pie__contenido">
+    <img
+      class="pie__logo"
+      src="assets/marca/logo/logo-mono-negativo.svg"
+      width="140"
+      height="30"
+      [alt]="'pie.nombre_comercial' | transloco"
+    />
+
+    <address class="pie__datos">
+      <p>{{ 'pie.nombre_comercial' | transloco }}</p>
+      <p>{{ 'pie.nit' | transloco }}</p>
+      <p>{{ 'pie.direccion' | transloco }}</p>
+      <p>
+        <a href="tel:+573104209655">{{ 'pie.llamar' | transloco }}</a>
+        ·
+        <a href="https://wa.me/573104209655">{{ 'pie.whatsapp' | transloco }}</a>
+      </p>
+      <p><a href="mailto:contact@tecnosport.co">{{ 'pie.correo' | transloco }}</a></p>
+    </address>
+
+    <label class="pie__control">
+      <input
+        type="checkbox"
+        [checked]="movimientoReducido()"
+        (change)="alternarMovimientoReducido()"
+      />
+      {{ 'pie.reducir_movimiento' | transloco }}
+    </label>
+  </div>
+
+  <p class="pie__copyright">{{ 'pie.copyright' | transloco: { anio: anioActual } }}</p>
+</footer>

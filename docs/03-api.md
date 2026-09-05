@@ -109,10 +109,16 @@ El frontend no calcula ni adivina el orden. Si el set está incompleto, el campo
 
 ```
 POST /api/v1/auth/registro | /sesion | /refresco | /cierre
-POST /api/v1/auth/verificacion | /recuperacion
+POST /api/v1/auth/verificacion
+POST /api/v1/auth/recuperacion | /recuperacion/confirmar
 GET  /api/v1/cuenta/pedidos
 GET/POST/PATCH /api/v1/cuenta/direcciones
 ```
+
+`/auth/recuperacion` (pedir el enlace, solo el correo) y
+`/auth/recuperacion/confirmar` (token + clave nueva) son dos pasos, no uno —
+`/auth/recuperacion` responde 204 siempre, exista o no una cuenta con ese
+correo (docs/08-seguridad-legal.md, OWASP: no se revela cuál de los dos fue).
 
 ## Endpoints de administración
 

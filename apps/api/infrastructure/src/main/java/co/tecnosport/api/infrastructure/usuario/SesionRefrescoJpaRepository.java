@@ -24,4 +24,22 @@ public interface SesionRefrescoJpaRepository extends JpaRepository<SesionRefresc
       "update SesionRefrescoJpaEntity s set s.revocadoEn = :ahora "
           + "where s.familiaId = :familiaId and s.revocadoEn is null")
   void revocarFamilia(@Param("familiaId") UUID familiaId, @Param("ahora") Instant ahora);
+
+  /**
+   * Mismo criterio que {@link #revocarFamilia}, pero por usuario — la usa la recuperación de
+   * contraseña para no dejar viva una sesión en un dispositivo ajeno.
+   *
+   * <p>{@code flushAutomatically = true}, a diferencia de {@link #revocarFamilia}: aquí sí importa.
+   * {@code ConfirmarRecuperacion} guarda el token consumido y la clave nueva del usuario *antes* de
+   * llamar este método, en la misma transacción — sin volcar esos cambios primero, el {@code
+   * clearAutomatically} de abajo limpia el contexto de persistencia y los descarta en silencio (sin
+   * ninguna excepción: la transacción igual confirma, solo que sin esas dos escrituras). Encontrado
+   * a mano contra {@code bootRun} real, no lo atrapó ninguna prueba porque los dobles de prueba no
+   * reproducen el comportamiento de flush/clear de Hibernate.
+   */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query(
+      "update SesionRefrescoJpaEntity s set s.revocadoEn = :ahora "
+          + "where s.usuarioId = :usuarioId and s.revocadoEn is null")
+  void revocarTodasDeUsuario(@Param("usuarioId") UUID usuarioId, @Param("ahora") Instant ahora);
 }

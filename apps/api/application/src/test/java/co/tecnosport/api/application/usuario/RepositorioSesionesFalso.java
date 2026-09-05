@@ -28,6 +28,11 @@ final class RepositorioSesionesFalso implements RepositorioSesiones {
     sesiones.stream().filter(s -> s.familiaId().equals(familiaId)).forEach(s -> s.revocar(ahora));
   }
 
+  @Override
+  public void revocarTodasDeUsuario(UUID usuarioId, Instant ahora) {
+    sesiones.stream().filter(s -> s.usuarioId().equals(usuarioId)).forEach(s -> s.revocar(ahora));
+  }
+
   List<SesionRefresco> todas() {
     return List.copyOf(sesiones);
   }

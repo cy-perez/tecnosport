@@ -9,9 +9,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
+import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
@@ -45,6 +47,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -63,6 +66,14 @@ class PedidoControladorTest {
   @Autowired private RepositorioProductosDobleDePrueba productos;
   @Autowired private RepositorioInventarioDobleDePrueba inventarios;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
+  @Autowired private LimitadorDeIntentosDobleDePrueba limitadorDeIntentos;
+
+  @BeforeEach
+  void reiniciarLimitadorDeIntentos() {
+    // Bean compartido por todo el contexto de @WebMvcTest: sin esto, denegarSiempre() de una
+    // prueba contaminaría a las que corran después en la misma clase.
+    limitadorDeIntentos.reiniciar();
+  }
 
   private final ObjectMapper json = new ObjectMapper();
 
@@ -149,6 +160,22 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.lineas[0].sku").value("TS-CAM-AZ-M"))
         .andExpect(jsonPath("$.total.valor").value(100_000))
         .andExpect(jsonPath("$.direccion.ciudad").value("Medellín"));
+  }
+
+  @Test
+  void crearPedidoConLimiteDeIntentosExcedidoDevuelve429() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+    limitadorDeIntentos.denegarSiempre();
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isTooManyRequests())
+        .andExpect(jsonPath("$.codigo").value("LIMITE_DE_INTENTOS_EXCEDIDO"));
   }
 
   @Test
@@ -515,12 +542,18 @@ class PedidoControladorTest {
     }
 
     @Bean
+    LimitadorDeIntentosDobleDePrueba limitadorDeIntentos() {
+      return new LimitadorDeIntentosDobleDePrueba();
+    }
+
+    @Bean
     CrearPedido crearPedido(
         RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         RepositorioPedidos repositorioPedidos,
         MetodosDePagoDisponibles metodosDePagoDisponibles,
-        Reloj reloj) {
+        Reloj reloj,
+        LimitadorDeIntentos limitadorDeIntentos) {
       return new CrearPedido(
           repositorioProductos,
           repositorioInventario,
@@ -528,7 +561,10 @@ class PedidoControladorTest {
           metodosDePagoDisponibles,
           reloj,
           Duration.ofMinutes(30),
-          Duration.ofHours(24));
+          Duration.ofHours(24),
+          limitadorDeIntentos,
+          5,
+          Duration.ofMinutes(60));
     }
 
     @Bean
@@ -538,9 +574,15 @@ class PedidoControladorTest {
     }
 
     @Bean
+    RepositorioEnviosDobleDePrueba repositorioEnvios() {
+      return new RepositorioEnviosDobleDePrueba();
+    }
+
+    @Bean
     MapeadorRespuestasPedido mapeadorRespuestasPedido(
-        PropiedadesTransferenciaManual propiedadesTransferencia) {
-      return new MapeadorRespuestasPedido(propiedadesTransferencia);
+        PropiedadesTransferenciaManual propiedadesTransferencia,
+        RepositorioEnvios repositorioEnvios) {
+      return new MapeadorRespuestasPedido(propiedadesTransferencia, repositorioEnvios);
     }
   }
 }

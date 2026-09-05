@@ -21,6 +21,14 @@ export const routes: Routes = [
         path: 'checkout',
         loadChildren: () => import('./features/checkout/presentation/checkout.routes').then((m) => m.checkoutRoutes),
       },
+      {
+        path: 'admin',
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
+      },
+      {
+        path: 'cuenta',
+        loadChildren: () => import('./features/cuenta/presentation/cuenta.routes').then((m) => m.cuentaRoutes),
+      },
     ],
   },
   { path: '**', redirectTo: 'es' },

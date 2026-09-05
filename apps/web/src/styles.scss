@@ -1,1 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
+
+// Control manual de "reducir movimiento" (docs/04-ui-marca.md, layout/pie/pie.ts):
+// misma regla exacta que tokens.css aplica automático bajo
+// `@media (prefers-reduced-motion: reduce)`, pero disparada por el atributo
+// en vez de por la preferencia del sistema — para quien no cambió su
+// preferencia de sistema operativo pero sí la quiere en este sitio.
+[data-movimiento='reducido'] * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

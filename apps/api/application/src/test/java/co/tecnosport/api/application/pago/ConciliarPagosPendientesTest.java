@@ -109,7 +109,9 @@ class ConciliarPagosPendientesTest {
     ResultadoConciliacion resultado = caso.ejecutar();
 
     assertEquals(new ResultadoConciliacion(1, 1, 0), resultado);
-    assertEquals(EstadoPedido.PAGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    // Encadena PAGADO -> EN_PREPARACION de una vez, mismo criterio que el webhook.
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test

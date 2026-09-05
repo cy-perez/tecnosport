@@ -1,0 +1,13 @@
+<section class="panel-admin">
+  <h1 class="panel-admin__titulo">{{ 'admin.panel.titulo' | transloco }}</h1>
+
+  @if (sesionStore.sesion(); as sesion) {
+    <p>{{ 'admin.panel.bienvenida' | transloco: { rol: sesion.rol } }}</p>
+  }
+
+  <a class="panel-admin__enlace" routerLink="../pedidos">{{ 'admin.panel.ir_a_pedidos' | transloco }}</a>
+
+  <ts-boton variante="secundario" (click)="cerrarSesion()">
+    {{ 'admin.panel.cerrar_sesion' | transloco }}
+  </ts-boton>
+</section>

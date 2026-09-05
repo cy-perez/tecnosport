@@ -481,9 +481,9 @@ tampoco se puede dar por resuelto:
 - **`docs/03-api.md` documentaba `GET/PATCH /api/v1/admin/pedidos`**; el
   `PATCH` genérico nunca se construyó, cada transición tiene su propio
   endpoint de acción con nombre. Ya corregido en el propio documento.
-- **Límite de intentos por IP/cuenta** en login, registro, recuperación y
+- ~~**Límite de intentos por IP/cuenta** en login, registro, recuperación y
   creación de pedidos, prometido en `docs/08-seguridad-legal.md`: sigue sin
-  construirse.
+  construirse.~~ Cerrado en la Fase 4, Track A — ver más abajo.
 - **Rotación de clave de un ADMIN ya creado**: sigue sin construirse (ya
   estaba anotado).
 - **El historial de rechazos en la entrega compara solo por correo**, sin
@@ -561,6 +561,133 @@ aquí se completa con roles y autorización por recurso.
 Panel completo: productos, variantes, existencias, imágenes con URL firmada.
 La vista de operación de pedidos y conciliación de recaudo de la Fase 3 pasa a
 tener aquí el diseño y los componentes definitivos.
+
+**Sesión compartida del frontend, login de `ADMIN`, `EnviadorDeCorreo`, y
+registro de cliente con verificación de correo obligatoria cerrados de punta a
+punta** (2026-09-04). `Usuario.correoVerificadoEn` (nulo = sin verificar) y el
+nuevo agregado `TokenVerificacionCorreo` (un solo uso, sin rotación —
+`V14__verificacion_correo.sql`). `POST /api/v1/auth/registro` crea siempre
+`CLIENTE`, nunca abre sesión, y envía el enlace de verificación por
+`EnviadorDeCorreo`; `POST /api/v1/auth/verificacion` lo consume.
+`IniciarSesion` rechaza con `CorreoSinVerificarException` (403) cualquier
+cuenta sin verificar. `SembradorAdmin` verifica al `ADMIN` que siembra, ya que
+nunca pasa por registro; `V15__verificar_admin_existente.sql` hace lo mismo
+con un `ADMIN` ya sembrado antes de esta migración, para no dejarlo sin
+acceso. Sin política de complejidad de contraseña (no había ninguna definida
+antes tampoco) ni límite de intentos (pendiente ya anotado). Frontend en
+`features/cuenta/` (registro, verificación).
+
+Verificado a mano contra `bootRun` + PostgreSQL + Mailpit reales, no solo con
+pruebas: registrar, ver el correo real en Mailpit, login rechazado antes de
+verificar (403), abrir el enlace, verificarlo (204), reintentar el mismo
+token (422, ya usado), login exitoso después. De paso, dos gotchas reales
+encontrados así (ninguno de los dos lo hubiera atrapado la batería de
+pruebas, que no ejercita `bootRun` real):
+
+- **`spring.mail.properties.mail.smtp.auth: true` a secas rompía en seco**
+  contra Mailpit local (`jakarta.mail.AuthenticationFailedException: failed
+  to connect, no password specified?`) — Mailpit no exige autenticación, y
+  forzar `AUTH` con usuario/clave vacíos falla. Ahora es
+  `${SMTP_AUTH:false}`, con producción activándolo por variable de entorno.
+- **Un `Exception.class` genérico en `ManejadorDeErrores` no dejaba ningún
+  rastro en el log del error real** detrás de un 500 — se agregó
+  `log.error(...)` antes de construir la respuesta genérica; sin eso, el
+  gotcha de arriba habría sido mucho más lento de encontrar.
+
+**Login de cliente cerrado** (2026-09-04). Sin cambios de backend — `POST
+/api/v1/auth/sesion` ya servía cualquier rol. `features/cuenta/presentation/iniciar-sesion/`,
+simétrica a `IniciarSesionAdminPage`: una cuenta `ADMIN` que entra por aquí
+cierra la sesión y muestra el error correspondiente. Nueva
+`CorreoSinVerificarError` en `core/autenticacion/` para que el frontend
+distinga "credenciales incorrectas" (401) de "correo sin verificar" (403) —
+antes `SesionHttpRepositorio` los trataba igual. En éxito navega a la
+portada (`/{lang}`): todavía no existe un panel de cuenta a dónde ir.
+
+**Recuperación de contraseña cerrada de punta a punta** (2026-09-04). Nuevo
+agregado `TokenRecuperacionClave` (`V16__recuperacion_clave.sql`), separado a
+propósito de `TokenVerificacionCorreo` — uno confirma un buzón, el otro
+cambia la clave, dos niveles de sensibilidad distintos. `POST
+/api/v1/auth/recuperacion` (pedir el enlace) responde 204 siempre, exista o
+no una cuenta con ese correo (OWASP, mismo criterio que
+`CredencialesInvalidasException`); `POST /api/v1/auth/recuperacion/confirmar`
+(token + clave nueva) además revoca **todas** las sesiones de refresco del
+usuario, no solo una familia — nuevo `RepositorioSesiones.revocarTodasDeUsuario`,
+necesario porque perder el control de la clave puede significar una sesión
+abierta en un dispositivo ajeno. `docs/03-api.md` corregido: la línea
+abreviada `verificacion | recuperacion` escondía que son dos pasos, no uno,
+mismo patrón que ya había pasado con `registro`.
+
+Verificado a mano contra `bootRun` real, no solo con pruebas — y con razón:
+así se encontró un bug real que ninguna prueba automatizada atrapó.
+`RepositorioSesiones.revocarTodasDeUsuario` usa
+`@Modifying(clearAutomatically = true)`, mismo patrón que
+`revocarFamilia` — pero llamado *después* de guardar el token consumido y la
+clave nueva del usuario en la misma transacción, `clearAutomatically` sin
+`flushAutomatically = true` limpiaba el contexto de persistencia sin volcar
+esas dos escrituras antes, y las descartaba en silencio: la petición
+respondía 204 igual, sin ninguna excepción, pero la clave nunca cambiaba ni
+el token quedaba usado. Los dobles de prueba de la capa de aplicación no
+reproducen el flush/clear real de Hibernate, así que no lo atrapaban; se
+agregó `ConfirmarRecuperacionIntegracionTest` (infraestructura, Postgres
+real, los tres repositorios JPA de verdad en una transacción) que sí lo
+atrapa, y quedó anotado en `apps/api/CLAUDE.md` para no repetirlo. Con el
+fix (`flushAutomatically = true`), el recorrido completo quedó confirmado:
+solicitar con correo existente e inexistente (204 en ambos), confirmar
+(204), reintentar el mismo token (422), login con la clave vieja (401) y con
+la nueva (200), y la sesión de refresco de antes de recuperar ya no sirve
+(401).
+
+**Límite de intentos por IP y por cuenta cerrado** (2026-09-04) — último
+punto del Track A, pendiente desde la Fase 3. Dos mecanismos separados, en
+capas distintas: por IP en un filtro de servlet nuevo, `FiltroLimiteIntentos`
+(mismo patrón que `FiltroIdempotencia`), atado a `/auth/sesion`,
+`/auth/registro`, `/auth/recuperacion` y `/pedidos`; por cuenta (correo)
+dentro de cada caso de uso mismo (`IniciarSesion`, `RegistrarUsuario`,
+`SolicitarRecuperacion`, `CrearPedido`), que ya recibe el correo en su
+comando — sin necesidad de espiar el cuerpo de la petición desde el filtro.
+Puerto nuevo `LimitadorDeIntentos` (`application/compartido/`, sin agregado
+de dominio detrás, mismo criterio que `RepositorioIdempotencia`), tabla
+`limite_intentos` (`V17__limite_intentos.sql`), contador de ventana fija sin
+bloqueo pesimista a propósito. Ocho variables de entorno nuevas (`LIMITE_*`),
+agrupadas en dos perfiles de riesgo — "auth" (sesión/registro/recuperación) y
+"pedidos", más generoso — en vez de una por endpoint. IP real detrás del
+balanceador: el filtro lee `X-Forwarded-For` (docs/07-infra-gcp.md: Cloud
+Load Balancing delante de Cloud Run, con varias instancias), cae a
+`getRemoteAddr()` solo en desarrollo local.
+
+Con esto, **el Track A completo (cuenta de cliente) queda cerrado**; solo
+falta el Track B (panel administrativo) para cerrar la Fase 4 entera.
+
+Verificado a mano contra `bootRun` real — otra vez con razón: apareció un bug
+serio que ninguna prueba automatizada atrapó, porque los dobles de prueba de
+aplicación no reproducen el comportamiento real de transacciones anidadas de
+Spring. `LimitadorDeIntentosJpa.permitir()` estaba anotado `@Transactional`
+a secas: como el límite por cuenta se llama *dentro* de la transacción que ya
+abrió el controlador, el contador compartía esa misma transacción — y cada
+intento que termina en una excepción de negocio (clave incorrecta, correo ya
+registrado, que es el caso típico de un intento de abuso) revertía la
+transacción entera, incluido el incremento del contador. El límite por
+cuenta, en la práctica, no contaba nada: reproducido a mano contra `bootRun`
+(seis registros repetidos con el mismo correo, seis 409, nunca un 429).
+Mismo razonamiento que ya llevó a `RepositorioIdempotenciaJpa` a abrir su
+propia transacción aparte — aquí hacía falta explícito
+`@Transactional(propagation = Propagation.REQUIRES_NEW)`, no solo
+`@Transactional`. Se agregó `LimitadorDeIntentosJpaTest` (infraestructura,
+Postgres real) con un caso que reproduce exactamente esto: llama
+`permitir()` dentro de una transacción que después revierte, y confirma que
+el contador quedó igual comprometido. Confirmado también a mano: seis
+registros repetidos ahora dan 201, 409, 409, 409, 409, 429.
+
+Un segundo bug, más chico, de la misma sesión de verificación manual: el 429
+que escribe `FiltroLimiteIntentos` a mano (fuera del `@RestControllerAdvice`,
+los filtros corren antes del `DispatcherServlet`) salía con tildes
+corruptas — `getWriter()` usa ISO-8859-1 por defecto (spec de servlets) si
+nadie fija el charset, y ningún cliente HTTP moderno asume esa codificación
+por defecto. Corregido con `response.setCharacterEncoding("UTF-8")` antes de
+escribir, con una prueba que verifica el charset de la respuesta, no solo su
+contenido (una prueba que solo compara texto no lo habría atrapado: el doble
+de `MockHttpServletResponse` es codifica-y-decodifica consistente consigo
+mismo aunque la codificación real esté mal).
 
 ## Fase 5. Sistema 360
 

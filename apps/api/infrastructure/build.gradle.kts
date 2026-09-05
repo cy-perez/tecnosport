@@ -19,6 +19,14 @@ dependencies {
     // terceros dedicada a JWT — reutiliza solo módulos de Spring Security.
     implementation("org.springframework.security:spring-security-oauth2-jose")
 
+    // EnviadorDeCorreo (docs/08-seguridad-legal.md: verificación de correo, recuperación de
+    // contraseña) contra Mailpit en local (docker-compose.yml) y SMTP real en producción
+    // (SMTP_HOST/SMTP_USUARIO/SMTP_CLAVE, docs/07-infra-gcp.md). Mismo patrón que flyway: en
+    // Spring Boot 4.1 el starter trae tanto la autoconfiguración (spring-boot-mail) como el
+    // cliente (confirmado en spring-boot-dependencies:4.1.0 — a diferencia de flyway, que sí
+    // necesitó el driver de base de datos aparte).
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     // Testcontainers 2.x renombró los módulos con el prefijo "testcontainers-"

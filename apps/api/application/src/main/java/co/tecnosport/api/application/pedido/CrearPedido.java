@@ -1,6 +1,8 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
+import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
@@ -53,6 +55,9 @@ public final class CrearPedido {
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
   private final Duration duracionReservaTransferencia;
+  private final LimitadorDeIntentos limitadorDeIntentos;
+  private final int maximoIntentosPorCuenta;
+  private final Duration ventanaIntentosPorCuenta;
 
   public CrearPedido(
       RepositorioProductos repositorioProductos,
@@ -61,7 +66,10 @@ public final class CrearPedido {
       MetodosDePagoDisponibles metodosDePagoDisponibles,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
-      Duration duracionReservaTransferencia) {
+      Duration duracionReservaTransferencia,
+      LimitadorDeIntentos limitadorDeIntentos,
+      int maximoIntentosPorCuenta,
+      Duration ventanaIntentosPorCuenta) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -82,6 +90,12 @@ public final class CrearPedido {
         Objects.requireNonNull(
             duracionReservaTransferencia,
             "La duración de reserva de transferencia no puede ser nula.");
+    this.limitadorDeIntentos =
+        Objects.requireNonNull(limitadorDeIntentos, "El limitador de intentos no puede ser nulo.");
+    this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
+    this.ventanaIntentosPorCuenta =
+        Objects.requireNonNull(
+            ventanaIntentosPorCuenta, "La ventana de intentos por cuenta no puede ser nula.");
   }
 
   public Pedido ejecutar(CrearPedidoComando comando) {
@@ -89,10 +103,18 @@ public final class CrearPedido {
     if (comando.lineas() == null || comando.lineas().isEmpty()) {
       throw new ExcepcionDeDominio("Un pedido no se confirma sin líneas.");
     }
+    Instant ahora = reloj.ahora();
+    CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
+    if (!limitadorDeIntentos.permitir(
+        "cuenta:crear-pedido:" + correoComprador.valor(),
+        maximoIntentosPorCuenta,
+        ventanaIntentosPorCuenta,
+        ahora)) {
+      throw new LimiteDeIntentosExcedidoException();
+    }
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
       exigirContraentregaDisponible(comando);
     }
-    Instant ahora = reloj.ahora();
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
 
     List<LineaPedido> lineasCongeladas = new ArrayList<>();
@@ -107,7 +129,7 @@ public final class CrearPedido {
         Pedido.crear(
             numeroPedido,
             comando.usuarioId(),
-            new CorreoElectronico(comando.correo()),
+            correoComprador,
             lineasCongeladas,
             comando.tipoEntrega(),
             comando.direccion(),

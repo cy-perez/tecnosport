@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/verificacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verificacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
@@ -132,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/registro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["registro"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/refresco": {
         parameters: {
             query?: never;
@@ -142,6 +174,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["refrescar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/recuperacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recuperacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/recuperacion/confirmar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarRecuperacion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -513,6 +577,23 @@ export interface components {
             direccion?: string;
             indicaciones?: string;
         };
+        EnvioRespuesta: {
+            transportadora?: string;
+            guia?: string;
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            despachadoEn?: string;
+            comisionRecaudo?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            recaudoConciliadoEn?: string;
+        };
+        HistorialPedidoRespuesta: {
+            estado?: string;
+            /** Format: date-time */
+            fecha?: string;
+            actor?: string;
+            motivo?: string;
+        };
         LineaPedidoRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -542,6 +623,8 @@ export interface components {
             /** Format: date-time */
             creadoEn?: string;
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            envio?: components["schemas"]["EnvioRespuesta"];
+            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
         };
         MetodosDePagoDisponiblesRequest: {
             lineas?: components["schemas"]["LineaRequest"][];
@@ -550,31 +633,31 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
         };
         JsonNode: {
-            number?: boolean;
-            missingNode?: boolean;
-            /** @enum {string} */
-            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            bigDecimal?: boolean;
-            bigInteger?: boolean;
-            valueNode?: boolean;
-            integralNumber?: boolean;
-            container?: boolean;
-            object?: boolean;
-            string?: boolean;
-            double?: boolean;
-            long?: boolean;
-            pojo?: boolean;
-            binary?: boolean;
-            int?: boolean;
-            short?: boolean;
-            boolean?: boolean;
-            /** @deprecated */
-            textual?: boolean;
-            floatingPointNumber?: boolean;
             array?: boolean;
             empty?: boolean;
             null?: boolean;
             float?: boolean;
+            number?: boolean;
+            pojo?: boolean;
+            double?: boolean;
+            binary?: boolean;
+            string?: boolean;
+            object?: boolean;
+            long?: boolean;
+            short?: boolean;
+            boolean?: boolean;
+            int?: boolean;
+            /** @deprecated */
+            textual?: boolean;
+            /** @enum {string} */
+            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+            missingNode?: boolean;
+            container?: boolean;
+            integralNumber?: boolean;
+            valueNode?: boolean;
+            bigDecimal?: boolean;
+            bigInteger?: boolean;
+            floatingPointNumber?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -611,6 +694,9 @@ export interface components {
             /** Format: int32 */
             cantidad?: number;
         };
+        VerificarCorreoRequest: {
+            token?: string;
+        };
         IniciarSesionRequest: {
             correo?: string;
             clave?: string;
@@ -620,6 +706,17 @@ export interface components {
             usuarioId?: string;
             rol?: string;
             accessToken?: string;
+        };
+        RegistrarUsuarioRequest: {
+            correo?: string;
+            clave?: string;
+        };
+        SolicitarRecuperacionRequest: {
+            correo?: string;
+        };
+        ConfirmarRecuperacionRequest: {
+            token?: string;
+            claveNueva?: string;
         };
         VerificarContraentregaRequest: {
             motivo?: string;
@@ -899,6 +996,28 @@ export interface operations {
             };
         };
     };
+    verificacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificarCorreoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     iniciarSesion: {
         parameters: {
             query?: never;
@@ -923,6 +1042,28 @@ export interface operations {
             };
         };
     };
+    registro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarUsuarioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     refrescar: {
         parameters: {
             query?: never;
@@ -942,6 +1083,50 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["SesionRespuesta"];
                 };
+            };
+        };
+    };
+    recuperacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarRecuperacionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirmarRecuperacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmarRecuperacionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

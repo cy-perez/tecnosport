@@ -40,7 +40,8 @@ public class RepositorioUsuariosJpa implements RepositorioUsuarios {
         new CorreoElectronico(entidad.getCorreo()),
         entidad.getClaveHash(),
         Rol.valueOf(entidad.getRol()),
-        entidad.getCreadoEn());
+        entidad.getCreadoEn(),
+        entidad.getCorreoVerificadoEn());
   }
 
   private UsuarioJpaEntity aEntidad(Usuario usuario) {
@@ -49,6 +50,7 @@ public class RepositorioUsuariosJpa implements RepositorioUsuarios {
         usuario.correo().valor(),
         usuario.claveHash(),
         usuario.rol().name(),
-        usuario.creadoEn());
+        usuario.creadoEn(),
+        usuario.correoVerificadoEn().orElse(null));
   }
 }

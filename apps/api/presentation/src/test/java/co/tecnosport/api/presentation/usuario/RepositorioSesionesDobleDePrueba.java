@@ -27,4 +27,9 @@ final class RepositorioSesionesDobleDePrueba implements RepositorioSesiones {
   public void revocarFamilia(UUID familiaId, Instant ahora) {
     sesiones.stream().filter(s -> s.familiaId().equals(familiaId)).forEach(s -> s.revocar(ahora));
   }
+
+  @Override
+  public void revocarTodasDeUsuario(UUID usuarioId, Instant ahora) {
+    sesiones.stream().filter(s -> s.usuarioId().equals(usuarioId)).forEach(s -> s.revocar(ahora));
+  }
 }

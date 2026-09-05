@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
+import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
@@ -15,6 +16,8 @@ import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
+import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
+import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
@@ -108,6 +111,28 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", excepcion);
   }
 
+  // 409, mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, el
+  // conflicto es que ya existe una cuenta con ese correo.
+  @ExceptionHandler(CorreoYaRegistradoException.class)
+  public ProblemDetail correoYaRegistrado(CorreoYaRegistradoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Correo ya registrado", excepcion);
+  }
+
+  // 403, no 401: las credenciales sí son correctas, pero la cuenta no puede iniciar sesión hasta
+  // verificar el correo — a diferencia de CredencialesInvalidasException, este mensaje sí se
+  // puede revelar tal cual (no es información sensible, es accionable).
+  @ExceptionHandler(CorreoSinVerificarException.class)
+  public ProblemDetail correoSinVerificar(CorreoSinVerificarException excepcion) {
+    return problema(HttpStatus.FORBIDDEN, "Correo sin verificar", excepcion);
+  }
+
+  // 429, mismo código que ya escribe a mano FiltroLimiteIntentos para el límite por IP — el
+  // codigoDesde(...) genérico ya produce "LIMITE_DE_INTENTOS_EXCEDIDO" para los dos casos.
+  @ExceptionHandler(LimiteDeIntentosExcedidoException.class)
+  public ProblemDetail limiteDeIntentosExcedido(LimiteDeIntentosExcedidoException excepcion) {
+    return problema(HttpStatus.TOO_MANY_REQUESTS, "Límite de intentos excedido", excepcion);
+  }
+
   @ExceptionHandler(SesionDeRefrescoInvalidaException.class)
   public ProblemDetail sesionDeRefrescoInvalida(SesionDeRefrescoInvalidaException excepcion) {
     return problema(HttpStatus.UNAUTHORIZED, "Sesión inválida", excepcion);
@@ -138,6 +163,7 @@ public class ManejadorDeErrores {
 
   @ExceptionHandler(Exception.class)
   public ProblemDetail errorInterno(Exception excepcion) {
+    log.error("Error inesperado sin manejar", excepcion);
     ProblemDetail problema =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado.");

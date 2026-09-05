@@ -14,5 +14,15 @@
   "encabezado": {
     "carrito": "Carrito",
     "carrito_cantidad": "Carrito, {{cantidad}} artículos"
+  },
+  "pie": {
+    "nombre_comercial": "Tecno Sport",
+    "nit": "NIT 1054994043-1",
+    "direccion": "Cra. 26C #38B-31, Medellín, Antioquia",
+    "llamar": "Llamar",
+    "whatsapp": "WhatsApp",
+    "correo": "contact@tecnosport.co",
+    "reducir_movimiento": "Reducir movimiento",
+    "copyright": "© {{anio}} Tecno Sport"
   }
 }

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
+import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -47,10 +49,14 @@ class CrearPedidoTest {
   private static final CriteriosContraentrega CRITERIOS_CONTRAENTREGA_PERMISIVOS =
       new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
 
+  private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
+  private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(60);
+
   private RepositorioProductosFalso productos;
   private RepositorioInventarioFalso inventarios;
   private RepositorioPedidosFalso pedidos;
   private RepositorioCoberturaContraentregaFalso cobertura;
+  private LimitadorDeIntentosFalso limitadorDeIntentos;
   private Variante variante;
 
   private CrearPedido crear() {
@@ -62,6 +68,7 @@ class CrearPedidoTest {
     inventarios = new RepositorioInventarioFalso();
     pedidos = new RepositorioPedidosFalso();
     cobertura = new RepositorioCoberturaContraentregaFalso();
+    limitadorDeIntentos = new LimitadorDeIntentosFalso();
     if (medellinCubierta) {
       cobertura.conCiudadCubierta(DIRECCION_MEDELLIN.codigoDaneCiudad());
     }
@@ -74,7 +81,10 @@ class CrearPedidoTest {
         metodosDePagoDisponibles,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
-        RESERVA_TRANSFERENCIA);
+        RESERVA_TRANSFERENCIA,
+        limitadorDeIntentos,
+        MAXIMO_INTENTOS_POR_CUENTA,
+        VENTANA_INTENTOS_POR_CUENTA);
   }
 
   private void publicarProductoConVarianteYExistencia(int existencia) {
@@ -389,6 +399,16 @@ class CrearPedidoTest {
     assertThrows(
         VarianteNoEncontradaException.class, () -> caso.ejecutar(comandoConVarianteSinPublicar));
     assertEquals(EstadoVariante.ACTIVA, varianteSinPublicar.estado());
+  }
+
+  @Test
+  void excederElLimiteDeIntentosPorCuentaLanzaLimiteDeIntentosExcedido() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    limitadorDeIntentos.denegarSiempre();
+
+    assertThrows(
+        LimiteDeIntentosExcedidoException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 1)));
   }
 
   private MovimientoInventario ultimaReserva() {

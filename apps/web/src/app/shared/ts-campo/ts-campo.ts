@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-export type TipoCampo = 'text' | 'number' | 'search';
+export type TipoCampo = 'text' | 'number' | 'search' | 'password' | 'email';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- valor por defecto hasta que Forms registre el real
 function sinOperacion(): void {}

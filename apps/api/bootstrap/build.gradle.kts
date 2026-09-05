@@ -19,6 +19,9 @@ dependencies {
     // ConfiguracionSeguridad arma el SecurityFilterChain (HttpSecurity), mismo motivo que
     // spring-boot-starter-web arriba.
     implementation("org.springframework.boot:spring-boot-starter-security")
+    // ConfiguracionCorreo referencia JavaMailSender directo, mismo motivo que
+    // spring-boot-starter-web arriba.
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 }

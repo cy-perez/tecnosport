@@ -135,7 +135,21 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
 - Jerarquía de encabezados sin saltos, un solo `h1` por página.
 - Controles del usuario en el pie: tamaño de texto, contraste alto y reducción de
   movimiento, que además respetan `prefers-reduced-motion` y
-  `prefers-color-scheme`.
+  `prefers-color-scheme`. **Reducción de movimiento cerrada** (`layout/pie/`,
+  2026-09-04): checkbox persistido en `localStorage`, con `styles.scss`
+  repitiendo la misma regla que `tokens.css` ya aplica bajo
+  `prefers-reduced-motion`, disparada por `[data-movimiento="reducido"]`.
+  **Los otros dos, pendientes, cada uno con su propio bloqueo real:**
+  - **Contraste alto** necesita una paleta que `tokens.json` no define —
+    no es una decisión que le toque tomar a quien programa.
+  - **Tamaño de texto**: los tokens `--texto-*` de `tokens.css` están en `px`,
+    no en `rem` (verificado leyendo el archivo generado, no de memoria) —
+    escalar el `font-size` de la raíz no los mueve. La única vía sin editar
+    `tokens.css` a mano (regla dura #3) sería `zoom`/`transform`, que rompe
+    el layout y no es soporte real de accesibilidad. El zoom nativo del
+    navegador ya cumple el punto de arriba ("el texto aguanta 200% de
+    zoom"); un control propio de verdad exige rehacer esos tokens a `rem`
+    en el kit — cambio de diseño, no de programación.
 - Navegación completa por teclado, con enlace de salto al contenido.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 

@@ -1,0 +1,35 @@
+import { Routes } from '@angular/router';
+import { provideTranslocoScope } from '@jsverse/transloco';
+import { adminGuard } from './admin.guard';
+import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
+import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
+
+// Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
+// provee en app.config.ts (SesionStore lo va a necesitar también
+// features/cuenta más adelante) — mismo criterio que REPOSITORIO_CARRITO.
+export const adminRoutes: Routes = [
+  {
+    path: '',
+    providers: [provideTranslocoScope('admin')],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'panel' },
+      {
+        path: 'iniciar-sesion',
+        loadComponent: () =>
+          import('./iniciar-sesion/iniciar-sesion-admin.page').then((m) => m.IniciarSesionAdminPage),
+      },
+      {
+        path: 'panel',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./panel/panel-admin.page').then((m) => m.PanelAdminPage),
+      },
+      {
+        path: 'pedidos',
+        canActivate: [adminGuard],
+        providers: [{ provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio }],
+        loadComponent: () =>
+          import('./pedidos/presentation/lista/lista-pedidos-admin.page').then((m) => m.ListaPedidosAdminPage),
+      },
+    ],
+  },
+];

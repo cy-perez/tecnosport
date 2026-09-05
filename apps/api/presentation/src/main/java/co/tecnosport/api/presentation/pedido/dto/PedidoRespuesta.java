@@ -17,4 +17,6 @@ public record PedidoRespuesta(
     String estado,
     DineroRespuesta total,
     Instant creadoEn,
-    DatosTransferenciaRespuesta datosTransferencia) {}
+    DatosTransferenciaRespuesta datosTransferencia,
+    EnvioRespuesta envio,
+    List<HistorialPedidoRespuesta> historial) {}

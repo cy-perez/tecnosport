@@ -6,6 +6,7 @@ import co.tecnosport.api.application.usuario.RepositorioUsuarios;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
+import java.time.Instant;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +46,12 @@ public class SembradorAdmin implements ApplicationRunner {
     if (repositorioUsuarios.buscarPorCorreo(correo).isPresent()) {
       return;
     }
+    Instant ahora = reloj.ahora();
     Usuario admin =
-        Usuario.crear(
-            correo, codificadorDeClaves.codificar(propiedades.clave()), Rol.ADMIN, reloj.ahora());
+        Usuario.crear(correo, codificadorDeClaves.codificar(propiedades.clave()), Rol.ADMIN, ahora);
+    // El ADMIN sembrado nunca pasa por registro ni por el enlace de verificación — nace
+    // verificado.
+    admin.verificarCorreo(ahora);
     repositorioUsuarios.guardar(admin);
     log.info("Usuario ADMIN inicial creado: {}", correo.valor());
   }

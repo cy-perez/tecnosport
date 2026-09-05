@@ -1,0 +1,15 @@
+<section class="verificar-correo">
+  @switch (estado()) {
+    @case ('cargando') {
+      <p role="status">{{ 'cuenta.verificarCorreo.cargando' | transloco }}</p>
+    }
+    @case ('exito') {
+      <h1 class="verificar-correo__titulo">{{ 'cuenta.verificarCorreo.exito_titulo' | transloco }}</h1>
+      <p>{{ 'cuenta.verificarCorreo.exito_mensaje' | transloco }}</p>
+    }
+    @case ('error') {
+      <h1 class="verificar-correo__titulo">{{ 'cuenta.verificarCorreo.error_titulo' | transloco }}</h1>
+      <p role="alert">{{ 'cuenta.verificarCorreo.error_mensaje' | transloco }}</p>
+    }
+  }
+</section>

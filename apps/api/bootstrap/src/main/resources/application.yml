@@ -15,8 +15,31 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  mail:
+    # Mailpit en local (docker-compose.yml), SMTP real en producción
+    # (docs/07-infra-gcp.md). SMTP_PUERTO no estaba en la lista original de
+    # variables del documento — Mailpit usa 1025, no el 587/465 típico de un
+    # SMTP real, así que hacía falta poder cambiarlo por entorno igual que
+    # DB_PUERTO ya existe junto a DB_HOST. SMTP_AUTH tampoco estaba: Mailpit no
+    # exige autenticación, y `auth: true` a secas con usuario/clave vacíos
+    # rompe en seco (`jakarta.mail.AuthenticationFailedException: failed to
+    # connect, no password specified?`, encontrado en local contra bootRun
+    # real) — producción sí lo activa por variable de entorno.
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PUERTO:1025}
+    username: ${SMTP_USUARIO:}
+    password: ${SMTP_CLAVE:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:false}
+          starttls:
+            enable: true
 
 tecnosport:
+  correo:
+    # Dato de negocio real, no inventado (regla dura #5): dominio real del proyecto.
+    remitente: ${CORREO_REMITENTE:no-responder@tecnosport.co}
   pedido:
     minutos-reserva-inventario: ${MINUTOS_RESERVA_INVENTARIO:30}
     horas-vencimiento-transferencia: ${TRANSFERENCIA_HORAS_VENCIMIENTO:24}
@@ -57,6 +80,28 @@ tecnosport:
     # Dato de negocio real, no inventado (regla dura #5): cambiar antes de desplegar a producción.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
     clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}
+  verificacion-correo:
+    # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
+    # no un dato de negocio.
+    horas-vencimiento: ${VERIFICACION_CORREO_HORAS_VENCIMIENTO:24}
+    url-publica: ${APP_URL_PUBLICA:http://localhost:4200}
+  recuperacion-clave:
+    # docs/08-seguridad-legal.md: "token de un solo uso, válido 30 minutos".
+    minutos-vencimiento: ${RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO:30}
+  limite-intentos:
+    # docs/08-seguridad-legal.md pide el límite, pero no da números — dato de seguridad, no de
+    # negocio, ajustable. "auth" agrupa sesión/registro/recuperación (mismo tipo de abuso);
+    # "pedidos" es más generoso porque reintentar una compra es normal.
+    auth:
+      ip-maximo: ${LIMITE_AUTH_IP_MAXIMO:15}
+      ip-minutos: ${LIMITE_AUTH_IP_MINUTOS:15}
+      cuenta-maximo: ${LIMITE_AUTH_CUENTA_MAXIMO:5}
+      cuenta-minutos: ${LIMITE_AUTH_CUENTA_MINUTOS:15}
+    pedidos:
+      ip-maximo: ${LIMITE_PEDIDOS_IP_MAXIMO:30}
+      ip-minutos: ${LIMITE_PEDIDOS_IP_MINUTOS:60}
+      cuenta-maximo: ${LIMITE_PEDIDOS_CUENTA_MAXIMO:15}
+      cuenta-minutos: ${LIMITE_PEDIDOS_CUENTA_MINUTOS:60}
 
 springdoc:
   api-docs:

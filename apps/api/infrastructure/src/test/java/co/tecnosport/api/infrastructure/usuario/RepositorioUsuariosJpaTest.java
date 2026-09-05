@@ -68,4 +68,25 @@ class RepositorioUsuariosJpaTest {
 
     assertThat(encontrado).isEmpty();
   }
+
+  @Test
+  void correoVerificadoEnSePersisteYSeLee() {
+    Usuario usuario =
+        Usuario.crear(
+            new CorreoElectronico("cliente@tecnosport.co"),
+            "hash-bcrypt",
+            Rol.CLIENTE,
+            Instant.now());
+    repositorio.guardar(usuario);
+
+    Usuario reciénCreado = repositorio.buscarPorId(usuario.id()).orElseThrow();
+    assertThat(reciénCreado.correoVerificado()).isFalse();
+
+    Instant ahora = Instant.now();
+    usuario.verificarCorreo(ahora);
+    repositorio.guardar(usuario);
+
+    Usuario verificado = repositorio.buscarPorId(usuario.id()).orElseThrow();
+    assertThat(verificado.correoVerificado()).isTrue();
+  }
 }

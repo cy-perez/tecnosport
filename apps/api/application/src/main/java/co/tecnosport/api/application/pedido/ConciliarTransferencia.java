@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -16,6 +17,11 @@ import java.util.Objects;
  * <p>Un pedido que ya no está en {@code PAGO_PENDIENTE} (ya conciliado, o en cualquier otro estado)
  * rechaza la transición por su cuenta ({@code Pedido.transicionar}) — no hace falta comprobarlo
  * aparte, y de paso un doble clic en el panel no duplica nada.
+ *
+ * <p>Encadena de una vez a {@code EN_PREPARACION}, mismo criterio que {@code
+ * AplicadorDeResultadoDePago} con un pago de Wompi aprobado: no hay nada que verificar en un pago
+ * ya conciliado, así que no tiene sentido pedir un segundo clic en el panel solo para avanzar el
+ * estado.
  */
 public final class ConciliarTransferencia {
 
@@ -36,11 +42,14 @@ public final class ConciliarTransferencia {
     if (pedido.metodoPago() != MetodoPago.TRANSFERENCIA_MANUAL) {
       throw new MetodoDePagoNoEsTransferenciaManualException(pedido.metodoPago());
     }
+    Instant ahora = reloj.ahora();
     pedido.transicionar(
-        EstadoPedido.PAGADO,
+        EstadoPedido.PAGADO, comando.actor(), "comprobante de transferencia conciliado", ahora);
+    pedido.transicionar(
+        EstadoPedido.EN_PREPARACION,
         comando.actor(),
-        "comprobante de transferencia conciliado",
-        reloj.ahora());
+        "pago conciliado, listo para preparar",
+        ahora);
     repositorioPedidos.guardar(pedido);
     return pedido;
   }
