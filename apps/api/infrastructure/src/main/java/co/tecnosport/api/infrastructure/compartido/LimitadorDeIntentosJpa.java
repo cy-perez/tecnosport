@@ -1,20 +1,22 @@
 package co.tecnosport.api.infrastructure.compartido;
 
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
-import co.tecnosport.api.infrastructure.compartido.entidad.LimiteIntentosJpaEntity;
+import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Lectura simple + {@code save()}, sin bloqueo pesimista a propósito (ver el javadoc de {@link
- * LimitadorDeIntentos#permitir}): a diferencia de {@code RepositorioInventarioJpa}, una carrera
- * aquí en el peor caso deja pasar uno o dos intentos de más bajo concurrencia alta, no vende dos
- * veces la última unidad.
+ * Un solo {@code INSERT ... ON CONFLICT ... DO UPDATE} (Postgres 16, confirmado en los tres
+ * entornos) en vez de leer y luego escribir: esto último tenía dos problemas bajo concurrencia real
+ * sobre la misma llave — un "lost update" (dos peticiones leen el mismo contador, la segunda pisa
+ * el incremento de la primera) y, si ambas caían en la rama "crear fila nueva" a la vez, un choque
+ * de clave primaria que se escapaba como excepción de JPA cruda fuera de esta capa. La sentencia
+ * atómica resuelve los dos a la vez: no hay lectura previa que pisar ni una segunda inserción que
+ * choque.
  *
  * <p>{@code REQUIRES_NEW}, no simplemente {@code @Transactional}: el límite por cuenta lo llaman
  * casos de uso ({@code IniciarSesion}, {@code RegistrarUsuario}...) desde dentro de la transacción
@@ -27,28 +29,35 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class LimitadorDeIntentosJpa implements LimitadorDeIntentos {
 
-  private final LimiteIntentosJpaRepository limites;
+  private static final String UPSERT =
+      """
+      insert into limite_intentos (clave, contador, ventana_expira_en)
+      values (?1, 1, ?3)
+      on conflict (clave) do update set
+        contador = case when limite_intentos.ventana_expira_en > ?2
+                     then limite_intentos.contador + 1 else 1 end,
+        ventana_expira_en = case when limite_intentos.ventana_expira_en > ?2
+                              then limite_intentos.ventana_expira_en else ?3 end
+      returning contador
+      """;
 
-  public LimitadorDeIntentosJpa(LimiteIntentosJpaRepository limites) {
-    this.limites = Objects.requireNonNull(limites);
+  private final EntityManager entityManager;
+
+  public LimitadorDeIntentosJpa(EntityManager entityManager) {
+    this.entityManager = Objects.requireNonNull(entityManager);
   }
 
   @Override
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public boolean permitir(String clave, int maximoIntentos, Duration ventana, Instant ahora) {
-    Optional<LimiteIntentosJpaEntity> existente = limites.findById(clave);
-    if (existente.isEmpty() || !existente.get().getVentanaExpiraEn().isAfter(ahora)) {
-      limites.save(new LimiteIntentosJpaEntity(clave, 1, ahora.plus(ventana)));
-      return true;
-    }
-
-    LimiteIntentosJpaEntity entidad = existente.get();
-    if (entidad.getContador() >= maximoIntentos) {
-      return false;
-    }
-    limites.save(
-        new LimiteIntentosJpaEntity(
-            clave, entidad.getContador() + 1, entidad.getVentanaExpiraEn()));
-    return true;
+    Number contador =
+        (Number)
+            entityManager
+                .createNativeQuery(UPSERT)
+                .setParameter(1, clave)
+                .setParameter(2, ahora)
+                .setParameter(3, ahora.plus(ventana))
+                .getSingleResult();
+    return contador.intValue() <= maximoIntentos;
   }
 }

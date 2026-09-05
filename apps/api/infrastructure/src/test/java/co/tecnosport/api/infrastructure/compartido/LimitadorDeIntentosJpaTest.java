@@ -5,7 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -94,6 +102,44 @@ class LimitadorDeIntentosJpaTest {
     // Con máximo 1, el intento de arriba ya debió consumir el único cupo — si permitir() hubiera
     // revertido con la transacción de negocio, este segundo también sería true.
     assertThat(limitador.permitir(clave, 1, VENTANA, ahora)).isFalse();
+  }
+
+  @Test
+  void bajoConcurrenciaRealSoloDejaPasarExactamenteElMaximo() throws Exception {
+    // Antes de la sentencia atómica, un lost-update aquí podía dejar pasar bastante más que el
+    // máximo bajo concurrencia sostenida (ver LimitadorDeIntentosJpa) — este test no pasaría con
+    // la implementación de lectura-y-escritura separada de antes.
+    String clave = claveNueva();
+    Instant ahora = Instant.now();
+    int maximo = 10;
+    int hilos = 20;
+
+    ExecutorService pool = Executors.newFixedThreadPool(hilos);
+    CountDownLatch salida = new CountDownLatch(1);
+    List<Callable<Boolean>> tareas = new ArrayList<>();
+    for (int i = 0; i < hilos; i++) {
+      tareas.add(
+          () -> {
+            salida.await();
+            return limitador.permitir(clave, maximo, VENTANA, ahora);
+          });
+    }
+
+    List<Future<Boolean>> resultados = new ArrayList<>();
+    for (Callable<Boolean> tarea : tareas) {
+      resultados.add(pool.submit(tarea));
+    }
+    salida.countDown();
+
+    long permitidos = 0;
+    for (Future<Boolean> resultado : resultados) {
+      if (resultado.get(20, TimeUnit.SECONDS)) {
+        permitidos++;
+      }
+    }
+    pool.shutdown();
+
+    assertThat(permitidos).isEqualTo(maximo);
   }
 
   @Test
