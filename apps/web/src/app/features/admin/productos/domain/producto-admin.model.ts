@@ -50,3 +50,19 @@ export interface EditarProductoAdmin {
   readonly marcaId: string;
   readonly categoriaId: string;
 }
+
+export interface ValorAtributoAdmin {
+  readonly atributoId: string;
+  readonly valor: string;
+  readonly colorHex: string | null;
+}
+
+export interface AgregarVarianteAdmin {
+  readonly productoId: string;
+  readonly sku: string;
+  readonly precio: number;
+  readonly tasaIva: number;
+  readonly codigoBarras: string | null;
+  readonly existenciaInicial: number;
+  readonly atributos: readonly ValorAtributoAdmin[];
+}

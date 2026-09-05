@@ -44,6 +44,17 @@ export interface Marca {
   readonly nombre: string;
 }
 
+export type TipoAtributo = 'TEXTO' | 'NUMERO' | 'COLOR';
+
+/** Catálogo global de ejes de variación (talla, color...) — sin asociación a categoría en el
+ * esquema, ver docs/02-modelo-datos.md. Lo usa el panel admin al armar una variante. */
+export interface Atributo {
+  readonly id: string;
+  readonly nombre: string;
+  readonly tipo: TipoAtributo;
+  readonly valoresPermitidos: readonly string[];
+}
+
 export interface Categoria {
   readonly id: string;
   readonly nombre: string;

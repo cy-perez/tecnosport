@@ -1,5 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import {
+  AgregarVarianteAdmin,
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
@@ -15,6 +16,8 @@ export interface RepositorioProductosAdmin {
   obtener(id: string): Promise<ProductoAdmin>;
 
   editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin>;
+
+  agregarVariante(comando: AgregarVarianteAdmin): Promise<void>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(
