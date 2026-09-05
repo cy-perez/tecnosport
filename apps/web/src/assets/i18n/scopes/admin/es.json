@@ -12,7 +12,8 @@
     "titulo": "Panel administrativo",
     "bienvenida": "Sesión activa como {{rol}}.",
     "cerrar_sesion": "Cerrar sesión",
-    "ir_a_pedidos": "Pedidos"
+    "ir_a_pedidos": "Pedidos",
+    "ir_a_productos": "Productos"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -68,6 +69,26 @@
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",
       "conciliar_recaudo": "Conciliar recaudo"
+    },
+    "paginacion": {
+      "anterior": "Anterior",
+      "siguiente": "Siguiente",
+      "info": "Página {{actual}} de {{total}}"
+    }
+  },
+  "productos": {
+    "titulo": "Productos",
+    "error_lista": "No se pudo cargar la lista de productos.",
+    "columnas": {
+      "nombre": "Nombre",
+      "marca": "Marca",
+      "categoria": "Categoría",
+      "estado": "Estado",
+      "variantes": "Variantes"
+    },
+    "estados": {
+      "borrador": "Borrador",
+      "publicado": "Publicado"
     },
     "paginacion": {
       "anterior": "Anterior",

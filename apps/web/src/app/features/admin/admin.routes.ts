@@ -3,6 +3,8 @@ import { provideTranslocoScope } from '@jsverse/transloco';
 import { adminGuard } from './admin.guard';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
+import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
+import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
 
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
@@ -29,6 +31,15 @@ export const adminRoutes: Routes = [
         providers: [{ provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio }],
         loadComponent: () =>
           import('./pedidos/presentation/lista/lista-pedidos-admin.page').then((m) => m.ListaPedidosAdminPage),
+      },
+      {
+        path: 'productos',
+        canActivate: [adminGuard],
+        providers: [{ provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio }],
+        loadComponent: () =>
+          import('./productos/presentation/lista/lista-productos-admin.page').then(
+            (m) => m.ListaProductosAdminPage,
+          ),
       },
     ],
   },

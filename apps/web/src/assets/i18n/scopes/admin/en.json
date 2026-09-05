@@ -12,7 +12,8 @@
     "titulo": "Admin panel",
     "bienvenida": "Signed in as {{rol}}.",
     "cerrar_sesion": "Sign out",
-    "ir_a_pedidos": "Orders"
+    "ir_a_pedidos": "Orders",
+    "ir_a_productos": "Products"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -68,6 +69,26 @@
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
       "conciliar_recaudo": "Reconcile collection"
+    },
+    "paginacion": {
+      "anterior": "Previous",
+      "siguiente": "Next",
+      "info": "Page {{actual}} of {{total}}"
+    }
+  },
+  "productos": {
+    "titulo": "Products",
+    "error_lista": "Couldn't load the product list.",
+    "columnas": {
+      "nombre": "Name",
+      "marca": "Brand",
+      "categoria": "Category",
+      "estado": "Status",
+      "variantes": "Variants"
+    },
+    "estados": {
+      "borrador": "Draft",
+      "publicado": "Published"
     },
     "paginacion": {
       "anterior": "Previous",

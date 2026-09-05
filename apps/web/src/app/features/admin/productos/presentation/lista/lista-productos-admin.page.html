@@ -1,0 +1,51 @@
+<section class="lista-productos-admin">
+  <h1 class="lista-productos-admin__titulo">{{ 'admin.productos.titulo' | transloco }}</h1>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="lista-productos-admin__error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
+  } @else {
+    <table class="lista-productos-admin__tabla">
+      <thead>
+        <tr>
+          <th scope="col">{{ 'admin.productos.columnas.nombre' | transloco }}</th>
+          <th scope="col">{{ 'admin.productos.columnas.marca' | transloco }}</th>
+          <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
+          <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
+          <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (producto of consulta.data()?.items ?? []; track producto.id) {
+          <tr>
+            <td>{{ producto.nombre }}</td>
+            <td>{{ producto.marca.nombre }}</td>
+            <td>{{ producto.categoria.nombre }}</td>
+            <td>{{ etiquetaEstado(producto.estado) }}</td>
+            <td>{{ producto.totalVariantes }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="lista-productos-admin__paginacion">
+      <ts-boton variante="secundario" [deshabilitado]="filtro().pagina === 0" (click)="paginaAnterior()">
+        {{ 'admin.productos.paginacion.anterior' | transloco }}
+      </ts-boton>
+      <span>
+        {{
+          'admin.productos.paginacion.info'
+            | transloco: { actual: filtro().pagina + 1, total: consulta.data()?.totalPaginas ?? 1 }
+        }}
+      </span>
+      <ts-boton
+        variante="secundario"
+        [deshabilitado]="filtro().pagina + 1 >= (consulta.data()?.totalPaginas ?? 1)"
+        (click)="paginaSiguiente()"
+      >
+        {{ 'admin.productos.paginacion.siguiente' | transloco }}
+      </ts-boton>
+    </div>
+  }
+</section>

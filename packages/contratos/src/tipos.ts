@@ -500,7 +500,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pedidos": {
+    "/api/v1/admin/productos": {
         parameters: {
             query?: never;
             header?: never;
@@ -508,6 +508,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -637,27 +653,27 @@ export interface components {
             empty?: boolean;
             null?: boolean;
             float?: boolean;
-            number?: boolean;
-            pojo?: boolean;
-            double?: boolean;
-            binary?: boolean;
-            string?: boolean;
-            object?: boolean;
-            long?: boolean;
-            short?: boolean;
-            boolean?: boolean;
-            int?: boolean;
-            /** @deprecated */
-            textual?: boolean;
+            bigDecimal?: boolean;
+            missingNode?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            missingNode?: boolean;
-            container?: boolean;
             integralNumber?: boolean;
             valueNode?: boolean;
-            bigDecimal?: boolean;
-            bigInteger?: boolean;
+            container?: boolean;
+            object?: boolean;
+            int?: boolean;
+            short?: boolean;
+            boolean?: boolean;
+            binary?: boolean;
+            long?: boolean;
+            double?: boolean;
+            /** @deprecated */
+            textual?: boolean;
+            string?: boolean;
+            pojo?: boolean;
             floatingPointNumber?: boolean;
+            bigInteger?: boolean;
+            number?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -815,6 +831,27 @@ export interface components {
         ResultadoPaginadoRespuestaCategoriaRespuesta: {
             items?: components["schemas"]["CategoriaRespuesta"][];
             cursorSiguiente?: string;
+        };
+        ProductoAdminRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            slug?: string;
+            estado?: string;
+            marca?: components["schemas"]["MarcaRespuesta"];
+            categoria?: components["schemas"]["CategoriaRespuesta"];
+            imagenPrincipalUrl?: string;
+            /** Format: int32 */
+            totalVariantes?: number;
+        };
+        ProductosAdminPaginadosRespuesta: {
+            items?: components["schemas"]["ProductoAdminRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
+            /** Format: int64 */
+            totalProductos?: number;
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -1573,6 +1610,29 @@ export interface operations {
         };
     };
     listar_3: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductosAdminPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    listar_4: {
         parameters: {
             query?: {
                 pagina?: number;
