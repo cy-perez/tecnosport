@@ -4,6 +4,7 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
   CrearProductoAdmin,
+  EditarProductoAdmin,
   FiltroProductosAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -38,6 +39,32 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     });
     if (error) {
       throw new Error('No se pudo crear el producto.');
+    }
+    return aProductoAdmin(data);
+  }
+
+  async obtener(id: string): Promise<ProductoAdmin> {
+    const { data, error } = await this.cliente.GET('/api/v1/admin/productos/{id}', {
+      params: { path: { id } },
+    });
+    if (error) {
+      throw new Error('No se pudo cargar el producto.');
+    }
+    return aProductoAdmin(data);
+  }
+
+  async editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin> {
+    const { data, error } = await this.cliente.PATCH('/api/v1/admin/productos/{id}', {
+      params: { path: { id } },
+      body: {
+        nombre: comando.nombre,
+        descripcion: comando.descripcion,
+        marcaId: comando.marcaId,
+        categoriaId: comando.categoriaId,
+      },
+    });
+    if (error) {
+      throw new Error('No se pudo editar el producto.');
     }
     return aProductoAdmin(data);
   }

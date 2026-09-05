@@ -388,6 +388,22 @@ export interface paths {
         patch: operations["actualizarCantidad"];
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["editar"];
+        trace?: never;
+    };
     "/api/v1/salud": {
         parameters: {
             query?: never;
@@ -507,7 +523,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["ver"];
+        get: operations["ver_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -649,31 +665,31 @@ export interface components {
             direccion?: components["schemas"]["DireccionRequest"];
         };
         JsonNode: {
-            number?: boolean;
             array?: boolean;
             empty?: boolean;
             null?: boolean;
             float?: boolean;
-            double?: boolean;
-            object?: boolean;
+            number?: boolean;
+            floatingPointNumber?: boolean;
             string?: boolean;
-            boolean?: boolean;
+            object?: boolean;
+            pojo?: boolean;
+            short?: boolean;
+            double?: boolean;
             int?: boolean;
+            long?: boolean;
             /** @deprecated */
             textual?: boolean;
-            pojo?: boolean;
+            boolean?: boolean;
             binary?: boolean;
-            short?: boolean;
-            long?: boolean;
-            floatingPointNumber?: boolean;
+            bigDecimal?: boolean;
+            bigInteger?: boolean;
             missingNode?: boolean;
-            valueNode?: boolean;
+            container?: boolean;
+            integralNumber?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            integralNumber?: boolean;
-            bigDecimal?: boolean;
-            container?: boolean;
-            bigInteger?: boolean;
+            valueNode?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -758,6 +774,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             nombre?: string;
+            descripcion?: string;
             slug?: string;
             estado?: string;
             marca?: components["schemas"]["MarcaRespuesta"];
@@ -791,6 +808,14 @@ export interface components {
         ActualizarCantidadRequest: {
             /** Format: int32 */
             cantidad?: number;
+        };
+        EditarProductoPeticion: {
+            nombre?: string;
+            descripcion?: string;
+            /** Format: uuid */
+            marcaId?: string;
+            /** Format: uuid */
+            categoriaId?: string;
         };
         AtributoValorRespuesta: {
             nombre?: string;
@@ -1488,6 +1513,54 @@ export interface operations {
             };
         };
     };
+    ver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarProductoPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
     salud: {
         parameters: {
             query?: never;
@@ -1644,7 +1717,7 @@ export interface operations {
             };
         };
     };
-    ver: {
+    ver_1: {
         parameters: {
             query?: never;
             header?: never;

@@ -22,6 +22,7 @@ export function aProductoAdmin(dto: ProductoDto): ProductoAdmin {
   return {
     id: dto.id ?? '',
     nombre: dto.nombre ?? '',
+    descripcion: dto.descripcion ?? '',
     slug: dto.slug ?? '',
     estado: (dto.estado ?? 'BORRADOR') as EstadoProducto,
     marca: aMarca(dto.marca),
@@ -45,5 +46,5 @@ function aMarca(dto?: MarcaDto): MarcaAdmin {
 }
 
 function aCategoria(dto?: CategoriaDto): CategoriaAdmin {
-  return { nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
+  return { id: dto?.id ?? '', nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
 }
