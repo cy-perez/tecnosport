@@ -2,10 +2,14 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
@@ -23,9 +27,16 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   int ultimoTamanoPaginaAdmin;
   Producto ultimoGuardado;
   Producto ultimoActualizado;
+  UUID ultimoProductoIdConVariante;
+  Variante ultimaVarianteAgregada;
+  private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
+  }
+
+  void conSkusEnUso(String... skus) {
+    this.skusEnUso.addAll(List.of(skus));
   }
 
   void devolverEnBusqueda(ResultadoPaginado<Producto> resultado) {
@@ -80,5 +91,17 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public void actualizar(Producto producto) {
     this.ultimoActualizado = producto;
+  }
+
+  @Override
+  public void agregarVariante(UUID productoId, Variante variante) {
+    this.ultimoProductoIdConVariante = productoId;
+    this.ultimaVarianteAgregada = variante;
+    this.skusEnUso.add(variante.sku().valor());
+  }
+
+  @Override
+  public boolean existeVarianteConSku(Sku sku) {
+    return skusEnUso.contains(sku.valor());
   }
 }

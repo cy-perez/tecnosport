@@ -6,9 +6,13 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
@@ -19,9 +23,16 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
   Producto ultimoGuardado;
   Producto ultimoActualizado;
+  UUID ultimoProductoIdConVariante;
+  Variante ultimaVarianteAgregada;
+  private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
+  }
+
+  void conSkusEnUso(String... skus) {
+    this.skusEnUso.addAll(List.of(skus));
   }
 
   /**
@@ -34,6 +45,9 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
     this.ultimoGuardado = null;
     this.ultimoActualizado = null;
+    this.ultimoProductoIdConVariante = null;
+    this.ultimaVarianteAgregada = null;
+    this.skusEnUso.clear();
   }
 
   void devolverEnBusqueda(ResultadoPaginado<Producto> resultado) {
@@ -80,5 +94,17 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public void actualizar(Producto producto) {
     this.ultimoActualizado = producto;
+  }
+
+  @Override
+  public void agregarVariante(UUID productoId, Variante variante) {
+    this.ultimoProductoIdConVariante = productoId;
+    this.ultimaVarianteAgregada = variante;
+    this.skusEnUso.add(variante.sku().valor());
+  }
+
+  @Override
+  public boolean existeVarianteConSku(Sku sku) {
+    return skusEnUso.contains(sku.valor());
   }
 }

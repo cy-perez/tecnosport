@@ -6,6 +6,8 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +57,16 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   @Override
   public void actualizar(Producto producto) {
+    throw new UnsupportedOperationException("No usado por CrearPedido.");
+  }
+
+  @Override
+  public void agregarVariante(UUID productoId, Variante variante) {
+    throw new UnsupportedOperationException("No usado por CrearPedido.");
+  }
+
+  @Override
+  public boolean existeVarianteConSku(Sku sku) {
     throw new UnsupportedOperationException("No usado por CrearPedido.");
   }
 }

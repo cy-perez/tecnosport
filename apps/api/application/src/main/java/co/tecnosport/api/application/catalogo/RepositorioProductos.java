@@ -2,6 +2,8 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,4 +52,16 @@ public interface RepositorioProductos {
 
   /** Actualiza un producto existente. A diferencia de {@link #guardar}, no es una inserción. */
   void actualizar(Producto producto);
+
+  /**
+   * Persiste una variante nueva (con sus atributos) para un producto ya existente. Quien llama debe
+   * haber validado antes que el producto existe y que el SKU no está en uso.
+   */
+  void agregarVariante(UUID productoId, Variante variante);
+
+  /**
+   * El SKU es único en todo el catálogo, no solo dentro del producto que se está armando en memoria
+   * — {@code Producto.agregarVariante} no puede ver esto por sí solo.
+   */
+  boolean existeVarianteConSku(Sku sku);
 }
