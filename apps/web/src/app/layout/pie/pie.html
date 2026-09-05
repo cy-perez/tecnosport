@@ -13,11 +13,13 @@
       <p>{{ 'pie.nit' | transloco }}</p>
       <p>{{ 'pie.direccion' | transloco }}</p>
       <p>
-        <a href="tel:+573104209655">{{ 'pie.llamar' | transloco }}</a>
+        <a [href]="'tel:' + ('pie.telefono_e164' | transloco)">{{ 'pie.llamar' | transloco }}</a>
         ·
-        <a href="https://wa.me/573104209655">{{ 'pie.whatsapp' | transloco }}</a>
+        <a [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)">{{
+          'pie.whatsapp' | transloco
+        }}</a>
       </p>
-      <p><a href="mailto:contact@tecnosport.co">{{ 'pie.correo' | transloco }}</a></p>
+      <p><a [href]="'mailto:' + ('pie.correo' | transloco)">{{ 'pie.correo' | transloco }}</a></p>
     </address>
 
     <label class="pie__control">
