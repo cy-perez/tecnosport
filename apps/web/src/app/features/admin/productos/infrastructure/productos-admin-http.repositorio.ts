@@ -3,6 +3,7 @@ import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
+  AgregarVarianteAdmin,
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
@@ -67,5 +68,26 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       throw new Error('No se pudo editar el producto.');
     }
     return aProductoAdmin(data);
+  }
+
+  async agregarVariante(comando: AgregarVarianteAdmin): Promise<void> {
+    const { error } = await this.cliente.POST('/api/v1/admin/variantes', {
+      body: {
+        productoId: comando.productoId,
+        sku: comando.sku,
+        precio: comando.precio,
+        tasaIva: comando.tasaIva,
+        codigoBarras: comando.codigoBarras ?? undefined,
+        existenciaInicial: comando.existenciaInicial,
+        atributos: comando.atributos.map((a) => ({
+          atributoId: a.atributoId,
+          valor: a.valor,
+          colorHex: a.colorHex ?? undefined,
+        })),
+      },
+    });
+    if (error) {
+      throw new Error('No se pudo agregar la variante.');
+    }
   }
 }

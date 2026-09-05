@@ -1,5 +1,15 @@
 import type { components } from '@tecnosport/contratos';
-import { Categoria, Imagen, Marca, Producto, Rotacion, ValorAtributo, Variante } from '../domain/producto.model';
+import {
+  Atributo,
+  Categoria,
+  Imagen,
+  Marca,
+  Producto,
+  Rotacion,
+  TipoAtributo,
+  ValorAtributo,
+  Variante,
+} from '../domain/producto.model';
 
 type ProductoDto = components['schemas']['ProductoRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
@@ -8,6 +18,7 @@ type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type VarianteDto = components['schemas']['VarianteRespuesta'];
 type ValorAtributoDto = components['schemas']['AtributoValorRespuesta'];
 type RotacionDto = components['schemas']['RotacionRespuesta'];
+type AtributoDto = components['schemas']['AtributoRespuesta'];
 
 /** DTO generado -> modelo propio del front. Ningún componente ve la forma de la respuesta HTTP. */
 export function aProducto(dto: ProductoDto): Producto {
@@ -68,4 +79,16 @@ function aVariante(dto: VarianteDto): Variante {
 
 function aValorAtributo(dto: ValorAtributoDto): ValorAtributo {
   return { nombre: dto.nombre ?? '', valor: dto.valor ?? '', colorHex: dto.colorHex ?? null };
+}
+
+/** El contrato expone `tipo` como `string` (springdoc no emite el enum de Java como unión literal);
+ * el backend garantiza que el valor es exactamente el nombre del enum, así que se afirma el tipo en
+ * vez de validarlo — mismo criterio que `admin/productos/infrastructure/mapeador-producto-admin.ts`. */
+export function aAtributo(dto: AtributoDto): Atributo {
+  return {
+    id: dto.id ?? '',
+    nombre: dto.nombre ?? '',
+    tipo: (dto.tipo ?? 'TEXTO') as TipoAtributo,
+    valoresPermitidos: dto.valoresPermitidos ?? [],
+  };
 }

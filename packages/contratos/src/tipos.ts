@@ -228,6 +228,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/variantes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos": {
         parameters: {
             query?: never;
@@ -237,7 +253,7 @@ export interface paths {
         };
         get: operations["listar"];
         put?: never;
-        post: operations["crear_3"];
+        post: operations["crear_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -532,7 +548,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pedidos": {
+    "/api/v1/atributos": {
         parameters: {
             query?: never;
             header?: never;
@@ -540,6 +556,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -670,26 +702,26 @@ export interface components {
             null?: boolean;
             float?: boolean;
             number?: boolean;
-            floatingPointNumber?: boolean;
-            string?: boolean;
-            object?: boolean;
-            pojo?: boolean;
-            short?: boolean;
-            double?: boolean;
-            int?: boolean;
-            long?: boolean;
-            /** @deprecated */
-            textual?: boolean;
-            boolean?: boolean;
-            binary?: boolean;
-            bigDecimal?: boolean;
-            bigInteger?: boolean;
-            missingNode?: boolean;
             container?: boolean;
-            integralNumber?: boolean;
+            missingNode?: boolean;
+            bigDecimal?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
             valueNode?: boolean;
+            bigInteger?: boolean;
+            integralNumber?: boolean;
+            floatingPointNumber?: boolean;
+            string?: boolean;
+            binary?: boolean;
+            double?: boolean;
+            pojo?: boolean;
+            object?: boolean;
+            int?: boolean;
+            /** @deprecated */
+            textual?: boolean;
+            boolean?: boolean;
+            long?: boolean;
+            short?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -749,6 +781,38 @@ export interface components {
         ConfirmarRecuperacionRequest: {
             token?: string;
             claveNueva?: string;
+        };
+        AgregarVariantePeticion: {
+            /** Format: uuid */
+            productoId?: string;
+            sku?: string;
+            /** Format: int64 */
+            precio?: number;
+            tasaIva?: number;
+            codigoBarras?: string;
+            /** Format: int32 */
+            existenciaInicial?: number;
+            atributos?: components["schemas"]["ValorAtributoPeticion"][];
+        };
+        ValorAtributoPeticion: {
+            /** Format: uuid */
+            atributoId?: string;
+            valor?: string;
+            colorHex?: string;
+        };
+        AtributoValorRespuesta: {
+            nombre?: string;
+            valor?: string;
+            colorHex?: string;
+        };
+        VarianteRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            sku?: string;
+            precio?: components["schemas"]["DineroRespuesta"];
+            /** Format: int32 */
+            existencia?: number;
+            atributos?: components["schemas"]["AtributoValorRespuesta"][];
         };
         CrearProductoPeticion: {
             nombre?: string;
@@ -817,11 +881,6 @@ export interface components {
             /** Format: uuid */
             categoriaId?: string;
         };
-        AtributoValorRespuesta: {
-            nombre?: string;
-            valor?: string;
-            colorHex?: string;
-        };
         ImagenRespuesta: {
             url?: string;
             urlWebp?: string;
@@ -862,21 +921,23 @@ export interface components {
             fotogramas?: number;
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
         };
-        VarianteRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            sku?: string;
-            precio?: components["schemas"]["DineroRespuesta"];
-            /** Format: int32 */
-            existencia?: number;
-            atributos?: components["schemas"]["AtributoValorRespuesta"][];
-        };
         ResultadoPaginadoRespuestaMarcaRespuesta: {
             items?: components["schemas"]["MarcaRespuesta"][];
             cursorSiguiente?: string;
         };
         ResultadoPaginadoRespuestaCategoriaRespuesta: {
             items?: components["schemas"]["CategoriaRespuesta"][];
+            cursorSiguiente?: string;
+        };
+        AtributoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            tipo?: string;
+            valoresPermitidos?: string[];
+        };
+        ResultadoPaginadoRespuestaAtributoRespuesta: {
+            items?: components["schemas"]["AtributoRespuesta"][];
             cursorSiguiente?: string;
         };
         ProductosAdminPaginadosRespuesta: {
@@ -1222,6 +1283,30 @@ export interface operations {
             };
         };
     };
+    crear_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarVariantePeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VarianteRespuesta"];
+                };
+            };
+        };
+    };
     listar: {
         parameters: {
             query?: {
@@ -1245,7 +1330,7 @@ export interface operations {
             };
         };
     };
-    crear_3: {
+    crear_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1740,6 +1825,26 @@ export interface operations {
         };
     };
     listar_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaAtributoRespuesta"];
+                };
+            };
+        };
+    };
+    listar_5: {
         parameters: {
             query?: {
                 pagina?: number;
