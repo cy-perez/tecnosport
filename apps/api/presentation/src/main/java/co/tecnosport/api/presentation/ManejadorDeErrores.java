@@ -1,10 +1,12 @@
 package co.tecnosport.api.presentation;
 
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
@@ -66,6 +68,18 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CategoriaNoEncontradaException.class)
   public ProblemDetail categoriaNoEncontrada(CategoriaNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Categoría no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(AtributoNoEncontradoException.class)
+  public ProblemDetail atributoNoEncontrado(AtributoNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Atributo no encontrado", excepcion);
+  }
+
+  // 409, mismo criterio que CorreoYaRegistradoException: la solicitud está bien formada, el
+  // conflicto es que el SKU ya está en uso en otro producto.
+  @ExceptionHandler(SkuYaEnUsoException.class)
+  public ProblemDetail skuYaEnUso(SkuYaEnUsoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "SKU ya en uso", excepcion);
   }
 
   // Extiende ExcepcionDeDominio (cae a 422 por defecto más abajo), pero "no existe esa línea" es

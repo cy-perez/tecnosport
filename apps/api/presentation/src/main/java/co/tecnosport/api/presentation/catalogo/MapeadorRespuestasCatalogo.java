@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -10,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.presentation.catalogo.dto.AtributoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.AtributoValorRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.CategoriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
@@ -73,6 +75,27 @@ public class MapeadorRespuestasCatalogo {
         categoria.id(), categoria.nombre(), categoria.slug().valor(), categoria.linea().name());
   }
 
+  public ResultadoPaginadoRespuesta<AtributoRespuesta> aRespuestaDeAtributos(
+      List<Atributo> atributos) {
+    return new ResultadoPaginadoRespuesta<>(
+        atributos.stream().map(this::aRespuesta).toList(), null);
+  }
+
+  public AtributoRespuesta aRespuesta(Atributo atributo) {
+    return new AtributoRespuesta(
+        atributo.id(), atributo.nombre(), atributo.tipo().name(), atributo.valoresPermitidos());
+  }
+
+  /** Reutilizado por el alta de variante del panel admin, no solo por la ficha pública. */
+  public VarianteRespuesta aRespuesta(Variante variante) {
+    return new VarianteRespuesta(
+        variante.id(),
+        variante.sku().valor(),
+        aRespuesta(variante.precio()),
+        variante.existencia(),
+        variante.atributos().stream().map(this::aRespuesta).toList());
+  }
+
   private ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
         imagen.url(),
@@ -92,15 +115,6 @@ public class MapeadorRespuestasCatalogo {
                         f.orden(), f.url(), f.urlWebp(), f.ancho(), f.alto()))
             .toList();
     return new RotacionRespuesta(imagenes.size(), imagenes);
-  }
-
-  private VarianteRespuesta aRespuesta(Variante variante) {
-    return new VarianteRespuesta(
-        variante.id(),
-        variante.sku().valor(),
-        aRespuesta(variante.precio()),
-        variante.existencia(),
-        variante.atributos().stream().map(this::aRespuesta).toList());
   }
 
   private DineroRespuesta aRespuesta(Dinero dinero) {
