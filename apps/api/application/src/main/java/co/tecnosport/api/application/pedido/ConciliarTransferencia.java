@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -18,18 +19,25 @@ import java.util.Objects;
  * rechaza la transición por su cuenta ({@code Pedido.transicionar}) — no hace falta comprobarlo
  * aparte, y de paso un doble clic en el panel no duplica nada.
  *
- * <p>Encadena de una vez a {@code EN_PREPARACION}, mismo criterio que {@code
- * AplicadorDeResultadoDePago} con un pago de Wompi aprobado: no hay nada que verificar en un pago
- * ya conciliado, así que no tiene sentido pedir un segundo clic en el panel solo para avanzar el
- * estado.
+ * <p>Encadena a {@code EN_PREPARACION} solo si {@link ConfirmarReservasDeLineas} confirma la
+ * reserva de cada línea, mismo criterio que {@code AplicadorDeResultadoDePago} con un pago de Wompi
+ * aprobado: la reserva de una transferencia sí vence por tiempo (docs/02-modelo-datos.md), así que
+ * conciliar el comprobante no basta por sí solo — si la reserva ya venció o se liberó, la unidad
+ * pudo haberse vendido a otro comprador y el pedido se queda en {@code PAGADO} para revisión manual
+ * en vez de decirle al almacén que prepare algo con un inventario en duda.
  */
 public final class ConciliarTransferencia {
 
   private final RepositorioPedidos repositorioPedidos;
+  private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
 
-  public ConciliarTransferencia(RepositorioPedidos repositorioPedidos, Reloj reloj) {
+  public ConciliarTransferencia(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
+    this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -45,11 +53,15 @@ public final class ConciliarTransferencia {
     Instant ahora = reloj.ahora();
     pedido.transicionar(
         EstadoPedido.PAGADO, comando.actor(), "comprobante de transferencia conciliado", ahora);
-    pedido.transicionar(
-        EstadoPedido.EN_PREPARACION,
-        comando.actor(),
-        "pago conciliado, listo para preparar",
-        ahora);
+    boolean inventarioOk =
+        ConfirmarReservasDeLineas.confirmar(pedido.lineas(), ahora, repositorioInventario);
+    if (inventarioOk) {
+      pedido.transicionar(
+          EstadoPedido.EN_PREPARACION,
+          comando.actor(),
+          "pago conciliado, listo para preparar",
+          ahora);
+    }
     repositorioPedidos.guardar(pedido);
     return pedido;
   }

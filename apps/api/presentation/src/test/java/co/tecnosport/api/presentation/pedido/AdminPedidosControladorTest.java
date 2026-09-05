@@ -76,6 +76,12 @@ class AdminPedidosControladorTest {
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(1, "stock inicial de prueba", Instant.now());
+    MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
+    inventarios.conInventario(inventario);
+
     Pedido pedido =
         Pedido.crear(
             NumeroPedido.de(2026, 1),
@@ -84,14 +90,14 @@ class AdminPedidosControladorTest {
             List.of(
                 new LineaPedido(
                     UUID.randomUUID(),
-                    UUID.randomUUID(),
+                    varianteId,
                     new Sku("TS-CAM-AZ-M"),
                     "Camiseta running Dry-Fit",
                     1,
                     Dinero.deCop(50_000),
                     new BigDecimal("0.19"),
                     "https://cdn.tecnosport.co/img.webp",
-                    UUID.randomUUID())),
+                    reserva.id())),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
             metodoPago,
@@ -343,8 +349,9 @@ class AdminPedidosControladorTest {
     }
 
     @Bean
-    ConciliarTransferencia conciliarTransferencia(RepositorioPedidos repositorioPedidos) {
-      return new ConciliarTransferencia(repositorioPedidos, Instant::now);
+    ConciliarTransferencia conciliarTransferencia(
+        RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
+      return new ConciliarTransferencia(repositorioPedidos, repositorioInventario, Instant::now);
     }
 
     @Bean

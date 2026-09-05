@@ -64,8 +64,10 @@ public class ConfiguracionPedido {
 
   @Bean
   public ConciliarTransferencia conciliarTransferencia(
-      RepositorioPedidos repositorioPedidos, Reloj reloj) {
-    return new ConciliarTransferencia(repositorioPedidos, reloj);
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new ConciliarTransferencia(repositorioPedidos, repositorioInventario, reloj);
   }
 
   @Bean

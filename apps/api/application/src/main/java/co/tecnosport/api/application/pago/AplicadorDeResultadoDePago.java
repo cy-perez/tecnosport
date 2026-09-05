@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.ConfirmarReservasDeLineas;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.ReservaNoEncontradaException;
@@ -91,6 +92,10 @@ final class AplicadorDeResultadoDePago {
       EstadoPedido siguienteEstadoPedido,
       EventoPago evento,
       RepositorioInventario repositorioInventario) {
+    if (siguienteEstadoPedido == EstadoPedido.PAGADO) {
+      return ConfirmarReservasDeLineas.confirmar(
+          pedido.lineas(), evento.recibidoEn(), repositorioInventario);
+    }
     boolean todoBien = true;
     for (LineaPedido linea : pedido.lineas()) {
       Inventario inventario =
@@ -100,11 +105,7 @@ final class AplicadorDeResultadoDePago {
         continue;
       }
       try {
-        if (siguienteEstadoPedido == EstadoPedido.PAGADO) {
-          inventario.confirmar(linea.idReserva(), evento.recibidoEn());
-        } else {
-          inventario.liberar(linea.idReserva(), "pago " + evento.estado(), evento.recibidoEn());
-        }
+        inventario.liberar(linea.idReserva(), "pago " + evento.estado(), evento.recibidoEn());
         repositorioInventario.guardar(inventario);
       } catch (ReservaYaProcesadaException | ReservaNoEncontradaException excepcion) {
         todoBien = false;
