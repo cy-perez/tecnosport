@@ -21,6 +21,10 @@ infra/**/*.tfstate
 infra/**/*.tfstate.*
 infra/**/.terraform.lock.hcl
 
+# Generador de marca (Python)
+__pycache__/
+*.pyc
+
 # Editores y SO
 .vscode/
 .idea/
