@@ -118,7 +118,26 @@
       "guardar": "Guardar cambios",
       "guardando": "Guardando…",
       "error": "No se pudo editar el producto. Intenta de nuevo.",
-      "error_carga": "No se pudo cargar el producto."
+      "error_carga": "No se pudo cargar el producto.",
+      "agregarVariante": "Agregar variante"
+    },
+    "agregarVariante": {
+      "titulo": "Agregar variante",
+      "sku": "SKU",
+      "precio": "Precio",
+      "tasaIva": "Tasa de IVA",
+      "codigoBarras": "Código de barras",
+      "existenciaInicial": "Existencia inicial",
+      "atributos": "Atributos",
+      "atributo": "Atributo",
+      "valor": "Valor",
+      "colorHex": "Color (hex)",
+      "seleccionar": "Selecciona una opción",
+      "agregarAtributo": "Agregar atributo",
+      "quitarAtributo": "Quitar",
+      "crear": "Crear variante",
+      "enviando": "Creando…",
+      "error": "No se pudo agregar la variante. Intenta de nuevo."
     }
   }
 }

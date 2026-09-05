@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
@@ -13,7 +13,7 @@ import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consu
 
 @Component({
   selector: 'app-editar-producto-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsSelect],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsSelect],
   templateUrl: './editar-producto-admin.page.html',
   styleUrl: './editar-producto-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,7 +26,7 @@ export class EditarProductoAdminPage {
   private readonly mutacion = usarEditarProductoAdmin();
 
   private readonly paramMap = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
-  private readonly id = computed(() => this.paramMap().get('id') ?? '');
+  protected readonly id = computed(() => this.paramMap().get('id') ?? '');
 
   protected readonly consulta = usarVerProductoAdmin(this.id);
 

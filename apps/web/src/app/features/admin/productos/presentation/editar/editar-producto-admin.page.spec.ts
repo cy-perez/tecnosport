@@ -74,6 +74,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     }
     return { ...productoDePrueba(), nombre: comando.nombre, descripcion: comando.descripcion };
   }
+
+  async agregarVariante(): Promise<void> {
+    throw new Error('No usado en estas pruebas.');
+  }
 }
 
 function activatedRouteConId(id: string) {

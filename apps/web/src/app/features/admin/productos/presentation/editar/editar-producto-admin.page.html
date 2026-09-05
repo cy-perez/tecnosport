@@ -1,6 +1,10 @@
 <section class="editar-producto-admin">
   <h1 class="editar-producto-admin__titulo">{{ 'admin.productos.editar.titulo' | transloco }}</h1>
 
+  <a class="editar-producto-admin__enlace-variante" [routerLink]="['..', id(), 'variantes', 'crear']">
+    {{ 'admin.productos.editar.agregarVariante' | transloco }}
+  </a>
+
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {

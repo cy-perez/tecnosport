@@ -118,7 +118,26 @@
       "guardar": "Save changes",
       "guardando": "Saving…",
       "error": "Couldn't edit the product. Try again.",
-      "error_carga": "Couldn't load the product."
+      "error_carga": "Couldn't load the product.",
+      "agregarVariante": "Add variant"
+    },
+    "agregarVariante": {
+      "titulo": "Add variant",
+      "sku": "SKU",
+      "precio": "Price",
+      "tasaIva": "VAT rate",
+      "codigoBarras": "Barcode",
+      "existenciaInicial": "Initial stock",
+      "atributos": "Attributes",
+      "atributo": "Attribute",
+      "valor": "Value",
+      "colorHex": "Color (hex)",
+      "seleccionar": "Select an option",
+      "agregarAtributo": "Add attribute",
+      "quitarAtributo": "Remove",
+      "crear": "Create variant",
+      "enviando": "Creating…",
+      "error": "Couldn't add the variant. Try again."
     }
   }
 }

@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.puerto';
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
+import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
 import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias-http.repositorio';
 import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
 import { adminGuard } from './admin.guard';
@@ -68,6 +70,14 @@ export const adminRoutes: Routes = [
             loadComponent: () =>
               import('./productos/presentation/editar/editar-producto-admin.page').then(
                 (m) => m.EditarProductoAdminPage,
+              ),
+          },
+          {
+            path: ':productoId/variantes/crear',
+            providers: [{ provide: REPOSITORIO_ATRIBUTOS, useClass: AtributosHttpRepositorio }],
+            loadComponent: () =>
+              import('./productos/presentation/variantes/agregar-variante-admin.page').then(
+                (m) => m.AgregarVarianteAdminPage,
               ),
           },
         ],

@@ -1,0 +1,86 @@
+<section class="agregar-variante-admin">
+  <h1 class="agregar-variante-admin__titulo">{{ 'admin.productos.agregarVariante.titulo' | transloco }}</h1>
+
+  <form class="agregar-variante-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+    <ts-campo idCampo="variante-sku" [label]="'admin.productos.agregarVariante.sku' | transloco" formControlName="sku" />
+
+    <ts-campo
+      idCampo="variante-precio"
+      tipo="number"
+      [label]="'admin.productos.agregarVariante.precio' | transloco"
+      formControlName="precio"
+    />
+
+    <ts-campo
+      idCampo="variante-tasa-iva"
+      tipo="number"
+      [label]="'admin.productos.agregarVariante.tasaIva' | transloco"
+      formControlName="tasaIva"
+    />
+
+    <ts-campo
+      idCampo="variante-codigo-barras"
+      [label]="'admin.productos.agregarVariante.codigoBarras' | transloco"
+      formControlName="codigoBarras"
+    />
+
+    <ts-campo
+      idCampo="variante-existencia-inicial"
+      tipo="number"
+      [label]="'admin.productos.agregarVariante.existenciaInicial' | transloco"
+      formControlName="existenciaInicial"
+    />
+
+    <fieldset class="agregar-variante-admin__atributos" formArrayName="atributos">
+      <legend>{{ 'admin.productos.agregarVariante.atributos' | transloco }}</legend>
+
+      @for (fila of form.controls.atributos.controls; track $index) {
+        <div class="agregar-variante-admin__fila-atributo" [formGroupName]="$index">
+          <ts-select
+            [idCampo]="'variante-atributo-' + $index"
+            [label]="'admin.productos.agregarVariante.atributo' | transloco"
+            [opciones]="opcionesAtributo()"
+            [placeholder]="'admin.productos.agregarVariante.seleccionar' | transloco"
+            formControlName="atributoId"
+          />
+
+          <ts-campo
+            [idCampo]="'variante-valor-' + $index"
+            [label]="'admin.productos.agregarVariante.valor' | transloco"
+            formControlName="valor"
+          />
+
+          @if (esAtributoDeColor(fila.controls.atributoId.value)) {
+            <ts-campo
+              [idCampo]="'variante-color-hex-' + $index"
+              [label]="'admin.productos.agregarVariante.colorHex' | transloco"
+              formControlName="colorHex"
+            />
+          }
+
+          <ts-boton variante="secundario" (click)="quitarFilaAtributo($index)">
+            {{ 'admin.productos.agregarVariante.quitarAtributo' | transloco }}
+          </ts-boton>
+        </div>
+      }
+
+      <ts-boton variante="secundario" (click)="agregarFilaAtributo()">
+        {{ 'admin.productos.agregarVariante.agregarAtributo' | transloco }}
+      </ts-boton>
+    </fieldset>
+
+    @if (error()) {
+      <p class="agregar-variante-admin__error" role="alert">{{ error() }}</p>
+    }
+
+    <ts-boton
+      variante="primario"
+      tipo="submit"
+      [deshabilitado]="formularioInvalido()"
+      [cargando]="enviando()"
+      [etiquetaCargando]="'admin.productos.agregarVariante.enviando' | transloco"
+    >
+      {{ 'admin.productos.agregarVariante.crear' | transloco }}
+    </ts-boton>
+  </form>
+</section>

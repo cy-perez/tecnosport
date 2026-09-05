@@ -10,6 +10,12 @@
   margin: 0 0 var(--esp-24);
 }
 
+.editar-producto-admin__enlace-variante {
+  display: inline-block;
+  margin-bottom: var(--esp-24);
+  color: var(--color-primario);
+}
+
 .editar-producto-admin__formulario {
   display: flex;
   flex-direction: column;

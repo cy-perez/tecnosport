@@ -1,0 +1,38 @@
+.agregar-variante-admin {
+  max-width: var(--ancho-formulario-lg);
+  margin: var(--esp-32) auto;
+  padding: 0 var(--esp-16);
+}
+
+.agregar-variante-admin__titulo {
+  font-family: var(--fuente-display);
+  font-size: var(--texto-2xl);
+  margin: 0 0 var(--esp-24);
+}
+
+.agregar-variante-admin__formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-16);
+}
+
+.agregar-variante-admin__atributos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-16);
+  border: 1px solid var(--color-borde);
+  padding: var(--esp-16);
+}
+
+.agregar-variante-admin__fila-atributo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-8);
+  padding-bottom: var(--esp-16);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.agregar-variante-admin__error {
+  color: var(--color-error);
+  margin: 0;
+}

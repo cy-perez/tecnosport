@@ -51,6 +51,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   async editar(): Promise<ProductoAdmin> {
     throw new Error('No usado en estas pruebas.');
   }
+
+  async agregarVariante(): Promise<void> {
+    throw new Error('No usado en estas pruebas.');
+  }
 }
 
 async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {
