@@ -49,7 +49,8 @@ class RepositorioMarcasJpaTest {
 
   @Test
   void buscarPorIdDevuelveLaMarca() {
-    MarcaJpaEntity guardada = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Andes Wear", Instant.now()));
+    MarcaJpaEntity guardada =
+        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Andes Wear", Instant.now()));
 
     Optional<Marca> resultado = repositorio.buscarPorId(guardada.getId());
 

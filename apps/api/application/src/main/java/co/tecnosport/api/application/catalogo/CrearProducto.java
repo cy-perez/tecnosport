@@ -7,10 +7,10 @@ import co.tecnosport.api.domain.compartido.Slug;
 import java.util.Objects;
 
 /**
- * Alta de un producto "pelado" desde el panel admin: sin variantes ni imágenes, en {@code
- * BORRADOR} — {@link Producto#crear} ya fuerza ese estado. El slug no lo escribe el admin: se
- * deriva del nombre ({@link Slug#generarDesde}) y, si choca con uno existente, se le agrega un
- * sufijo numérico hasta encontrar uno libre.
+ * Alta de un producto "pelado" desde el panel admin: sin variantes ni imágenes, en {@code BORRADOR}
+ * — {@link Producto#crear} ya fuerza ese estado. El slug no lo escribe el admin: se deriva del
+ * nombre ({@link Slug#generarDesde}) y, si choca con uno existente, se le agrega un sufijo numérico
+ * hasta encontrar uno libre.
  */
 public final class CrearProducto {
 

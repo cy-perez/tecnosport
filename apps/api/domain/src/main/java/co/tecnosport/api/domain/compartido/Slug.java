@@ -18,8 +18,8 @@ public record Slug(String valor) {
 
   /**
    * Deriva un slug candidato de un texto libre (p. ej. el nombre de un producto): minúsculas, sin
-   * tildes ni diéresis, cualquier corrida de caracteres que no sea letra o dígito colapsa en un solo
-   * guión. No garantiza unicidad contra el catálogo — eso lo resuelve quien llama, probando
+   * tildes ni diéresis, cualquier corrida de caracteres que no sea letra o dígito colapsa en un
+   * solo guión. No garantiza unicidad contra el catálogo — eso lo resuelve quien llama, probando
    * sufijos si el candidato ya existe.
    */
   public static Slug generarDesde(String texto) {
@@ -28,7 +28,10 @@ public record Slug(String valor) {
             .matcher(Normalizer.normalize(texto == null ? "" : texto, Normalizer.Form.NFD))
             .replaceAll("");
     String candidato =
-        NO_ALFANUMERICO.matcher(sinDiacriticos.toLowerCase()).replaceAll("-").replaceAll("^-|-$", "");
+        NO_ALFANUMERICO
+            .matcher(sinDiacriticos.toLowerCase())
+            .replaceAll("-")
+            .replaceAll("^-|-$", "");
     return new Slug(candidato);
   }
 }

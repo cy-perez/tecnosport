@@ -305,7 +305,8 @@ class RepositorioProductosJpaTest {
             new Slug("morral-urbano-t9"),
             "Descripción",
             new Marca(marca.getId(), "TecnoSport"),
-            new Categoria(categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS));
+            new Categoria(
+                categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS));
 
     repositorio.guardar(producto);
 
