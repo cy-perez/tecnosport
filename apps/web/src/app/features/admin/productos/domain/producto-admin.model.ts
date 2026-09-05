@@ -6,6 +6,7 @@ export interface MarcaAdmin {
 }
 
 export interface CategoriaAdmin {
+  readonly id: string;
   readonly nombre: string;
   readonly slug: string;
   readonly linea: string;
@@ -14,6 +15,7 @@ export interface CategoriaAdmin {
 export interface ProductoAdmin {
   readonly id: string;
   readonly nombre: string;
+  readonly descripcion: string;
   readonly slug: string;
   readonly estado: EstadoProducto;
   readonly marca: MarcaAdmin;
@@ -36,6 +38,13 @@ export interface FiltroProductosAdmin {
 }
 
 export interface CrearProductoAdmin {
+  readonly nombre: string;
+  readonly descripcion: string;
+  readonly marcaId: string;
+  readonly categoriaId: string;
+}
+
+export interface EditarProductoAdmin {
   readonly nombre: string;
   readonly descripcion: string;
   readonly marcaId: string;
