@@ -11,7 +11,7 @@ function productoDePrueba(variantes: Variante[]): Producto {
     nombre: 'Camiseta',
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { nombre: 'Ropa', slug: 'ropa', linea: 'ROPA_Y_CALZADO' },
+    categoria: { id: 'c1', nombre: 'Ropa', slug: 'ropa', linea: 'ROPA_Y_CALZADO' },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,

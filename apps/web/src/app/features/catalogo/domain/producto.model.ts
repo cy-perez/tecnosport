@@ -45,6 +45,7 @@ export interface Marca {
 }
 
 export interface Categoria {
+  readonly id: string;
   readonly nombre: string;
   readonly slug: string;
   readonly linea: string;

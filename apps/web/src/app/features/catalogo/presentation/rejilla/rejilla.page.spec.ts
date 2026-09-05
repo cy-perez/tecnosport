@@ -30,7 +30,7 @@ function productoDePrueba(slug: string): Producto {
     nombre: `Producto ${slug}`,
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,

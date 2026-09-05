@@ -13,8 +13,8 @@ import { FiltrosProductos } from './filtros-productos';
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
-      { nombre: 'Celulares', slug: 'celulares', linea: 'CELULARES' },
+      { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'CELULARES' },
     ];
   }
 }

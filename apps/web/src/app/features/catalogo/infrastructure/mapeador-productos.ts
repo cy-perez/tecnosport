@@ -29,7 +29,7 @@ export function aMarca(dto?: MarcaDto): Marca {
 }
 
 export function aCategoria(dto?: CategoriaDto): Categoria {
-  return { nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
+  return { id: dto?.id ?? '', nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
 }
 
 function aImagen(dto: ImagenDto): Imagen {

@@ -12,7 +12,7 @@ function productoDePrueba(): Producto {
     nombre: 'Morral urbano',
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
