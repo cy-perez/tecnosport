@@ -70,7 +70,7 @@ public class MapeadorRespuestasCatalogo {
 
   public CategoriaRespuesta aRespuesta(Categoria categoria) {
     return new CategoriaRespuesta(
-        categoria.nombre(), categoria.slug().valor(), categoria.linea().name());
+        categoria.id(), categoria.nombre(), categoria.slug().valor(), categoria.linea().name());
   }
 
   private ImagenRespuesta aRespuesta(ImagenProducto imagen) {

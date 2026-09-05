@@ -1,3 +1,5 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
-public record CategoriaRespuesta(String nombre, String slug, String linea) {}
+import java.util.UUID;
+
+public record CategoriaRespuesta(UUID id, String nombre, String slug, String linea) {}
