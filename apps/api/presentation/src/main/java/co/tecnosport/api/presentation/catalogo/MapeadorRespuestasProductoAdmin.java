@@ -26,6 +26,7 @@ public class MapeadorRespuestasProductoAdmin {
     return new ProductoAdminRespuesta(
         producto.id(),
         producto.nombre(),
+        producto.descripcion(),
         producto.slug().valor(),
         producto.estado().name(),
         mapeadorCatalogo.aRespuesta(producto.marca()),

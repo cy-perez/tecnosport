@@ -2,16 +2,19 @@ package co.tecnosport.api.presentation.catalogo;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.CrearProducto;
+import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -21,6 +24,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -38,6 +42,14 @@ class AdminProductoControladorTest {
   @Autowired private RepositorioProductosDobleDePrueba repositorio;
   @Autowired private RepositorioMarcasDobleDePrueba repositorioMarcas;
   @Autowired private RepositorioCategoriasDobleDePrueba repositorioCategorias;
+
+  // El bean del doble es un singleton compartido por Spring entre los métodos de esta clase de
+  // prueba: sin esto, un producto sembrado por una prueba (p. ej. con slug "morral-urbano") queda
+  // visible en la siguiente y CrearProducto le agrega un sufijo "-2" al creer que ya existe.
+  @BeforeEach
+  void limpiarRepositorio() {
+    repositorio.limpiar();
+  }
 
   @Test
   void listaProductosEnBorradorYPublicadosConPaginacion() throws Exception {
@@ -121,6 +133,89 @@ class AdminProductoControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  @Test
+  void verDevuelve200ConElProducto() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.nombre").value("Morral urbano"))
+        .andExpect(jsonPath("$.marca.id").value(producto.marca().id().toString()))
+        .andExpect(jsonPath("$.categoria.id").value(producto.categoria().id().toString()));
+  }
+
+  @Test
+  void verConIdInexistenteDevuelve404() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", UUID.randomUUID()))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void editarDevuelve200ConLosDatosActualizadosSinCambiarElSlug() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    Marca nuevaMarca = Marca.crear("Under Trail");
+    Categoria nuevaCategoria =
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.CELULARES);
+    repositorioMarcas.conMarcas(nuevaMarca);
+    repositorioCategorias.conCategorias(nuevaCategoria);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/productos/{id}", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"nombre":"Morral renovado","descripcion":"Nueva","marcaId":"%s","categoriaId":"%s"}
+                    """
+                        .formatted(nuevaMarca.id(), nuevaCategoria.id())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.nombre").value("Morral renovado"))
+        .andExpect(jsonPath("$.slug").value("morral-urbano"))
+        .andExpect(jsonPath("$.marca.nombre").value("Under Trail"));
+  }
+
+  @Test
+  void editarConIdInexistenteDevuelve404() throws Exception {
+    Marca marca = Marca.crear("TecnoSport");
+    Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
+    repositorioMarcas.conMarcas(marca);
+    repositorioCategorias.conCategorias(categoria);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/productos/{id}", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"nombre":"Nombre","descripcion":"","marcaId":"%s","categoriaId":"%s"}
+                    """
+                        .formatted(marca.id(), categoria.id())))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void editarConNombreVacioDevuelve422() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    repositorioMarcas.conMarcas(producto.marca());
+    repositorioCategorias.conCategorias(producto.categoria());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/productos/{id}", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"nombre":"","descripcion":"","marcaId":"%s","categoriaId":"%s"}
+                    """
+                        .formatted(producto.marca().id(), producto.categoria().id())))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   private static Producto productoEnBorrador() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
@@ -159,6 +254,19 @@ class AdminProductoControladorTest {
         RepositorioMarcas repositorioMarcas,
         RepositorioCategorias repositorioCategorias) {
       return new CrearProducto(repositorioProductos, repositorioMarcas, repositorioCategorias);
+    }
+
+    @Bean
+    VerProductoAdmin verProductoAdmin(RepositorioProductos repositorioProductos) {
+      return new VerProductoAdmin(repositorioProductos);
+    }
+
+    @Bean
+    EditarProducto editarProducto(
+        RepositorioProductos repositorioProductos,
+        RepositorioMarcas repositorioMarcas,
+        RepositorioCategorias repositorioCategorias) {
+      return new EditarProducto(repositorioProductos, repositorioMarcas, repositorioCategorias);
     }
 
     @Bean

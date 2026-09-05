@@ -5,6 +5,7 @@ import java.util.UUID;
 public record ProductoAdminRespuesta(
     UUID id,
     String nombre,
+    String descripcion,
     String slug,
     String estado,
     MarcaRespuesta marca,

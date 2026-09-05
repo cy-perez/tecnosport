@@ -4,6 +4,7 @@ import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
@@ -44,6 +45,11 @@ public class ManejadorDeErrores {
 
   @ExceptionHandler(ProductoNoEncontradoException.class)
   public ProblemDetail productoNoEncontrado(ProductoNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Producto no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(ProductoNoEncontradoPorIdException.class)
+  public ProblemDetail productoNoEncontradoPorId(ProductoNoEncontradoPorIdException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Producto no encontrado", excepcion);
   }
 

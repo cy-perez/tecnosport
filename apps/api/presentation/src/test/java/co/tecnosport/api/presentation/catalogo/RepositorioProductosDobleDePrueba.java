@@ -24,6 +24,18 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.productos = List.of(productos);
   }
 
+  /**
+   * Limpia el estado sembrado — el bean es un singleton compartido entre los métodos de la clase de
+   * prueba.
+   */
+  void limpiar() {
+    this.productos = List.of();
+    this.resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
+    this.resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
+    this.ultimoGuardado = null;
+    this.ultimoActualizado = null;
+  }
+
   void devolverEnBusqueda(ResultadoPaginado<Producto> resultado) {
     this.resultadoBusqueda = resultado;
   }
