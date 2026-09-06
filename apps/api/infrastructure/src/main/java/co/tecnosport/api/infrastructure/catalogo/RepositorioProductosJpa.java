@@ -5,12 +5,14 @@ import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
@@ -42,6 +44,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   private final ProductoJpaRepository productoJpaRepository;
   private final VarianteJpaRepository varianteJpaRepository;
   private final VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository;
+  private final ImagenProductoJpaRepository imagenProductoJpaRepository;
   private final MapeadorCatalogo mapeadorCatalogo;
   private final NamedParameterJdbcTemplate jdbc;
 
@@ -49,11 +52,13 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       ProductoJpaRepository productoJpaRepository,
       VarianteJpaRepository varianteJpaRepository,
       VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository,
+      ImagenProductoJpaRepository imagenProductoJpaRepository,
       MapeadorCatalogo mapeadorCatalogo,
       NamedParameterJdbcTemplate jdbc) {
     this.productoJpaRepository = productoJpaRepository;
     this.varianteJpaRepository = varianteJpaRepository;
     this.varianteAtributoValorJpaRepository = varianteAtributoValorJpaRepository;
+    this.imagenProductoJpaRepository = imagenProductoJpaRepository;
     this.mapeadorCatalogo = mapeadorCatalogo;
     this.jdbc = jdbc;
   }
@@ -143,6 +148,38 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     List<VarianteAtributoValorJpaEntity> atributos =
         variante.atributos().stream().map(a -> aEntidad(variante.id(), a)).toList();
     varianteAtributoValorJpaRepository.saveAll(atributos);
+  }
+
+  @Override
+  public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
+    // Hibernate ejecuta los EntityDeleteAction después de los EntityInsertAction dentro de un
+    // mismo flush (orden fijo del ActionQueue), así que sin forzar el flush aquí el borrado de la
+    // fila existente llegaría después del insert de la nueva y violaría el índice único parcial
+    // (producto_id) where tipo = 'PRINCIPAL' and variante_id is null.
+    imagenProductoJpaRepository
+        .findByProductoIdAndTipoAndVarianteIdIsNull(productoId, imagen.tipo().name())
+        .ifPresent(
+            existente -> {
+              imagenProductoJpaRepository.delete(existente);
+              imagenProductoJpaRepository.flush();
+            });
+    imagenProductoJpaRepository.save(
+        new ImagenProductoJpaEntity(
+            imagen.id(),
+            productoId,
+            null,
+            null,
+            imagen.tipo().name(),
+            imagen.orden(),
+            imagen.url(),
+            imagen.urlWebp(),
+            imagen.ancho(),
+            imagen.alto(),
+            imagen.bytes(),
+            imagen.hash(),
+            imagen.altEs(),
+            imagen.altEn(),
+            Instant.now()));
   }
 
   @Override

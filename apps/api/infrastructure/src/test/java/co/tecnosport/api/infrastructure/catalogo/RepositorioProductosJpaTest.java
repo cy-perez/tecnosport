@@ -9,10 +9,12 @@ import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -438,6 +440,51 @@ class RepositorioProductosJpaTest {
 
     assertThat(repositorio.existeVarianteConSku(new Sku("TS-MOR-T13"))).isTrue();
     assertThat(repositorio.existeVarianteConSku(new Sku("TS-NO-EXISTE-T13"))).isFalse();
+  }
+
+  @Test
+  void guardarImagenPrincipalInsertaLaPrimeraYLuegoReemplazaSinDuplicarFila() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t14", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t14", "morral-t14", "BORRADOR", marca, categoria);
+    ImagenProducto primera =
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn/principal-1.webp",
+            "https://cdn/principal-1.webp",
+            1000,
+            800,
+            45_000,
+            "productos/x/principal-1.webp",
+            "alt es 1",
+            "alt en 1");
+
+    repositorio.guardarImagenPrincipal(productoJpa.getId(), primera);
+
+    assertThat(imagenes.findByProductoIdIn(List.of(productoJpa.getId()))).hasSize(1);
+
+    ImagenProducto segunda =
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn/principal-2.webp",
+            "https://cdn/principal-2.webp",
+            1200,
+            900,
+            60_000,
+            "productos/x/principal-2.webp",
+            "alt es 2",
+            "alt en 2");
+
+    repositorio.guardarImagenPrincipal(productoJpa.getId(), segunda);
+
+    List<ImagenProductoJpaEntity> imagenesDelProducto =
+        imagenes.findByProductoIdIn(List.of(productoJpa.getId()));
+    assertThat(imagenesDelProducto).hasSize(1);
+    assertThat(imagenesDelProducto.get(0).getHash()).isEqualTo("productos/x/principal-2.webp");
+    assertThat(imagenesDelProducto.get(0).getAncho()).isEqualTo(1200);
   }
 
   private MarcaJpaEntity marca(String nombre) {

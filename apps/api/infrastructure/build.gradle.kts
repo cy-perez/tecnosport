@@ -27,6 +27,12 @@ dependencies {
     // necesitó el driver de base de datos aparte).
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
+    // AlmacenDeImagenes: URL firmadas de subida directa a Cloud Storage
+    // (docs/07-infra-gcp.md). Credenciales resueltas por el propio SDK vía
+    // GOOGLE_APPLICATION_CREDENTIALS — nunca literales en el código. Versión
+    // confirmada en Maven Central (agosto 2026), no de memoria (regla dura #9).
+    implementation("com.google.cloud:google-cloud-storage:2.71.0")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     // Testcontainers 2.x renombró los módulos con el prefijo "testcontainers-"
