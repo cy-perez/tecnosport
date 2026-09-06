@@ -31,6 +31,14 @@ const CONEXIONES_LENTAS = ['slow-2g', '2g'];
 const MS_PISTA = 4000;
 
 /**
+ * Para asociar las instrucciones al marco enfocable hace falta un `id`, y tiene que ser único
+ * aunque haya dos visores en la misma página. El contador vale también con SSR: el servidor y el
+ * cliente pueden llegar a números distintos, pero `[id]` y `[attr.aria-describedby]` salen del
+ * mismo campo, así que siempre apuntan al mismo sitio.
+ */
+let secuenciaDeInstrucciones = 0;
+
+/**
  * Visor de rotación 360 (`docs/10-captura-360.md`). Recibe un arreglo ordenado de URL y nada más:
  * no sabe de HTTP ni de productos. El orden es el del asistente de captura — antihorario visto
  * desde arriba, empezando por el frontal.
@@ -64,6 +72,19 @@ export class TsVisor360 {
   private readonly solicitados = new Set<number>();
 
   protected readonly total = computed(() => this.imagenes().length);
+
+  /**
+   * Con menos de dos fotogramas no hay rotación que mostrar y el componente no pinta nada: ni
+   * botones que no llevan a ninguna parte ni un contador que diría "Fotograma 1 de 0" — el mismo
+   * defecto que ya se corrigió en `ts-paginador`. La imagen suelta, si la hay, es trabajo de la
+   * galería.
+   *
+   * El backend solo expone sets `PUBLICADO`, que exigen cuatro fotogramas, pero este componente es
+   * compartido: el asistente de captura va a pasarle sets a medio armar.
+   */
+  protected readonly hayRotacion = computed(() => this.total() > 1);
+
+  protected readonly idInstrucciones = `ts-visor-360-instrucciones-${++secuenciaDeInstrucciones}`;
 
   /**
    * Mientras la precarga va en camino, el arrastre no se bloquea: se muestra el fotograma más

@@ -180,6 +180,26 @@ describe('FichaPage', () => {
     expect(screen.getByText('Fotograma 1 de 4')).toBeTruthy();
   });
 
+  // Un set de un solo fotograma no llega hoy del backend (`PUBLICADO` exige cuatro), pero si
+  // llegara, la ficha no puede quedarse con un hueco vacío ni sin candidata a LCP: la galería
+  // vuelve a ser la prioritaria.
+  it('un set de rotación de un solo fotograma no monta el visor', async () => {
+    const producto = productoConRotacion();
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () =>
+        Promise.resolve({
+          ...producto,
+          rotacion: { fotogramas: 1, imagenes: [producto.rotacion!.imagenes[0]] },
+        }),
+    };
+
+    await renderFicha(repositorio);
+
+    expect(await screen.findByRole('heading', { name: 'Morral urbano' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
+  });
+
   it('elegir otra variante cambia el precio y la existencia mostrados', async () => {
     const repositorio: RepositorioProductos = {
       buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),

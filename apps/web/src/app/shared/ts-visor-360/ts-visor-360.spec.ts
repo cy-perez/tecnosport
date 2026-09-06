@@ -273,10 +273,78 @@ describe('TsVisor360', () => {
     ).toBeTruthy();
   });
 
+  // Sin esto, quien usa un lector de pantalla enfoca el visor, oye su nombre y no se entera de que
+  // las flechas giran: el texto está en pantalla pero no asociado al control.
+  it('las instrucciones están asociadas al marco, no solo escritas al lado', async () => {
+    await renderVisor();
+
+    const idDescripcion = marco().getAttribute('aria-describedby');
+    expect(idDescripcion).toBeTruthy();
+
+    const descripcion = document.getElementById(idDescripcion!);
+    expect(descripcion?.textContent?.trim()).toBe(
+      'Arrastra sobre la imagen, o usa las flechas izquierda y derecha, para girar el producto.',
+    );
+  });
+
+  it('dos visores en la misma página no comparten el id de sus instrucciones', async () => {
+    const { fixture } = await render(
+      `<ts-visor-360 [imagenes]="imagenes" /><ts-visor-360 [imagenes]="imagenes" />`,
+      {
+        imports: [
+          TsVisor360,
+          TranslocoTestingModule.forRoot({
+            langs: { es, en },
+            translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+            preloadLangs: true,
+          }),
+        ],
+        componentProperties: { imagenes: OCHO_FOTOGRAMAS },
+      },
+    );
+    await fixture.whenStable();
+
+    const [uno, otro] = screen.getAllByRole('group', { name: 'Vista 360 del producto' });
+    expect(uno.getAttribute('aria-describedby')).not.toBe(otro.getAttribute('aria-describedby'));
+  });
+
   it('los fotogramas son decorativos en conjunto: van sin texto alternativo', async () => {
     await renderVisor();
 
     expect(fotograma().getAttribute('alt')).toBe('');
+  });
+
+  // Mismo defecto que ya se corrigió en ts-paginador ("Página 1 de 0"): unos controles que no
+  // llevan a ninguna parte y un contador que miente. Aquí no hay backend que lo impida — el
+  // asistente de captura va a pasar sets a medio armar.
+  it('sin fotogramas no pinta nada, ni contador ni botones', async () => {
+    const { fixture } = await renderVisor();
+
+    fixture.componentInstance.imagenes.set([]);
+    await fixture.whenStable();
+
+    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
+    expect(screen.queryByText(/Fotograma/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Girar a la derecha' })).toBeNull();
+  });
+
+  it('con un solo fotograma tampoco: una imagen suelta no es una rotación', async () => {
+    const { fixture } = await renderVisor();
+
+    fixture.componentInstance.imagenes.set([OCHO_FOTOGRAMAS[0]]);
+    await fixture.whenStable();
+
+    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
+    expect(screen.queryByText('Fotograma 1 de 1')).toBeNull();
+  });
+
+  it('con dos fotogramas ya hay algo que girar', async () => {
+    const { fixture } = await renderVisor();
+
+    fixture.componentInstance.imagenes.set(OCHO_FOTOGRAMAS.slice(0, 2));
+    await fixture.whenStable();
+
+    expect(screen.getByText('Fotograma 1 de 2')).toBeTruthy();
   });
 
   it('un set nuevo vuelve al frontal', async () => {
