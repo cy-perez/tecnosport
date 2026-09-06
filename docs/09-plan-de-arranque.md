@@ -1749,6 +1749,70 @@ del backend, **no existe nada para sets de rotación**: el `AlmacenDeImagenes` y
 `SolicitarSubidaDeImagenPrincipal` de la Fase 4 solo cubren la imagen principal, así
 que crear un set, pedir N URL firmadas y publicarlo está por construirse entero.
 
+### El backend de los sets de rotación
+
+2026-09-06. La otra mitad de la fase, la que el asistente va a llamar.
+`docs/03-api.md` documentaba cuatro endpoints desde el principio y **no existía
+ninguno**: `SetRotacion` estaba en el dominio desde la Fase 1 pero nadie lo
+escribía — lo leía la ficha y lo sembraba el sembrador, y nada más.
+
+Quedaron los cinco pasos completos, por capas y con un commit cada una: el
+dominio escribible (`abrir` vacío, `agregarFotograma`, `completar` contra lo
+prometido), el puerto `RepositorioSetsRotacion` con su adaptador JPA, los cinco
+casos de uso, y `POST /api/v1/admin/sets-rotacion` con `/subidas`, `/completar`,
+`/publicar` y el `DELETE`. Protegidos por el rol `ADMIN` que ya existía.
+
+**Tres decisiones, todas registradas en `ADR-0018`:**
+
+- **El set es agregado propio, con su propio repositorio**, en vez de cuatro
+  métodos más en `RepositorioProductos`: tiene id, tabla y ciclo de vida propios,
+  y quien lo mueve es el asistente, no la edición del producto. Mismo criterio que
+  `Envio` en `ADR-0013`.
+- **Faltaba el endpoint de publicar**, y sin él nada de esto se ve: la ficha
+  pública solo expone la rotación cuando está `PUBLICADO`, así que los cuatro
+  endpoints documentados terminaban en un set `COMPLETO` invisible. Se agregó
+  `POST /{id}/publicar` como paso aparte a propósito — entre completar y publicar
+  está la revisión del set entero del paso 6 del asistente.
+- **Lo que `completar` verifica de verdad**, escrito en vez de prometido. Contra
+  el almacén real: que cada objeto exista, que no esté vacío y que pertenezca al
+  set, y que llegaran todos los prometidos. Contra lo declarado por el cliente:
+  cuadrado y de 1000 px. Lo que **no** puede verificar —que los bytes sean una
+  imagen de ese tamaño— exigiría descargar y decodificar en el backend, que es
+  justo lo que la subida directa evita; mismo riesgo aceptado que `ADR-0016`.
+  `docs/03-api.md` decía "el tamaño y la proporción esperados" a secas y ahora
+  dice cuál de las dos cosas es real.
+
+**Un set incompleto se queda en BORRADOR entero**, no a medias: medio set
+publicado es un visor roto. Y **un producto no termina con dos sets publicados** —
+publicar sobre uno que ya lo está responde 409 y hay que borrar el anterior
+primero. No hay reemplazo en caliente, así que el producto queda unos segundos sin
+visor; es el precio de no tener que decidir cuál de dos se ve.
+
+**Dos huecos del modelo, cerrados de paso:**
+
+- **`docs/02-modelo-datos.md` listaba una columna `fotogramas` que la tabla nunca
+  tuvo** (migración `V18`). Ahora significa cuántos se prometieron al abrir el set,
+  y es lo que hace que `completar` pueda distinguir un set de 4 de uno de 8 al que
+  se le perdieron cuatro subidas. De ahí sale también cuántas URL firmadas se
+  emiten: el cliente no elige ni cuántas ni dónde escribe.
+- **`MapeadorCatalogo` elegía el set del producto con `findFirst()` sin mirar el
+  estado.** No mordía porque cada producto tenía un solo set; con estos endpoints,
+  recapturar crea un segundo set en `BORRADOR` conviviendo con el publicado, y si
+  `findFirst()` agarraba el borrador, el filtro de presentación lo descartaba y la
+  ficha se quedaba sin visor teniendo uno bueno. Corregido con su prueba contra
+  Postgres real, que siembra los dos sets a la vez.
+
+Verificado con `gradlew.bat build` completo —las cinco capas, ArchUnit,
+Testcontainers con Postgres real y los `@WebMvcTest`—. **Sin recorrido a mano
+contra `bootRun` todavía**: el almacén real es Cloud Storage y este backend no
+tiene llaves de GCS en desarrollo, así que la subida firmada de punta a punta
+solo está probada contra el doble del puerto. Es lo mismo que ya pasaba con la
+imagen principal de la Fase 4.
+
+**Falta el resto del asistente en el frontend**: la cámara y la superposición de
+guía, el dibujo en `<canvas>` que consume las funciones de recorte, y la pantalla
+que encadena estos cinco endpoints.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,

@@ -86,6 +86,7 @@ class RepositorioProductosJpaTest {
                 UUID.randomUUID(),
                 producto.getId(),
                 null,
+                4,
                 "PUBLICADO",
                 "admin",
                 Instant.now(),
@@ -108,6 +109,54 @@ class RepositorioProductosJpaTest {
     assertThat(p.imagenPrincipal()).isPresent();
     assertThat(p.setRotacion()).isPresent();
     assertThat(p.setRotacion().orElseThrow().fotogramas()).hasSize(4);
+  }
+
+  @Test
+  void buscarPorSlugIgnoraUnSetEnBorradorYDevuelveElPublicado() {
+    // Recapturar un producto deja dos sets a la vez: el que ya se ve y el que se está armando.
+    // Antes de este filtro, el borrador podía ganar y la ficha se quedaba sin visor.
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t9", "BOLSOS");
+    ProductoJpaEntity producto =
+        producto("Morral recapturado", "morral-t9", "PUBLICADO", marca, categoria);
+    variante(producto, "SKU-T9", "150000");
+    imagenPrincipal(producto);
+
+    SetRotacionJpaEntity borrador =
+        setsRotacion.save(
+            new SetRotacionJpaEntity(
+                UUID.randomUUID(),
+                producto.getId(),
+                null,
+                8,
+                "BORRADOR",
+                "admin",
+                Instant.now(),
+                "iPhone 14",
+                "v1"));
+    SetRotacionJpaEntity publicado =
+        setsRotacion.save(
+            new SetRotacionJpaEntity(
+                UUID.randomUUID(),
+                producto.getId(),
+                null,
+                4,
+                "PUBLICADO",
+                "admin",
+                Instant.now(),
+                "iPhone 14",
+                "v1"));
+    for (int orden = 0; orden < 4; orden++) {
+      fotogramaRotacion(producto, publicado, orden);
+    }
+    assertThat(borrador.getId()).isNotEqualTo(publicado.getId());
+
+    Optional<Producto> encontrado = repositorio.buscarPorSlug(new Slug("morral-t9"));
+
+    assertThat(encontrado).isPresent();
+    assertThat(encontrado.orElseThrow().setRotacion()).isPresent();
+    assertThat(encontrado.orElseThrow().setRotacion().orElseThrow().id())
+        .isEqualTo(publicado.getId());
   }
 
   @Test

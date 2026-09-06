@@ -19,6 +19,10 @@ public class SetRotacionJpaEntity {
   @Column(name = "variante_id")
   private UUID varianteId;
 
+  /** Cuántos fotogramas se prometieron al abrir el set, no cuántos hay guardados. */
+  @Column(nullable = false)
+  private int fotogramas;
+
   @Column(nullable = false)
   private String estado;
 
@@ -39,6 +43,7 @@ public class SetRotacionJpaEntity {
       UUID id,
       UUID productoId,
       UUID varianteId,
+      int fotogramas,
       String estado,
       String capturadoPor,
       Instant capturadoEn,
@@ -47,6 +52,7 @@ public class SetRotacionJpaEntity {
     this.id = id;
     this.productoId = productoId;
     this.varianteId = varianteId;
+    this.fotogramas = fotogramas;
     this.estado = estado;
     this.capturadoPor = capturadoPor;
     this.capturadoEn = capturadoEn;
@@ -64,6 +70,10 @@ public class SetRotacionJpaEntity {
 
   public UUID getVarianteId() {
     return varianteId;
+  }
+
+  public int getFotogramas() {
+    return fotogramas;
   }
 
   public String getEstado() {

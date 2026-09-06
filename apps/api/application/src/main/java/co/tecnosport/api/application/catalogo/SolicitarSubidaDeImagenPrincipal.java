@@ -1,7 +1,6 @@
 package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -10,12 +9,6 @@ import java.util.Objects;
  * llegó y guardar la {@code ImagenProducto}) es {@link ConfirmarImagenPrincipal}, un paso aparte.
  */
 public final class SolicitarSubidaDeImagenPrincipal {
-
-  private static final Map<String, String> EXTENSIONES_SOPORTADAS =
-      Map.of(
-          "image/jpeg", "jpg",
-          "image/png", "png",
-          "image/webp", "webp");
 
   private final RepositorioProductos repositorioProductos;
   private final AlmacenDeImagenes almacenDeImagenes;
@@ -33,11 +26,7 @@ public final class SolicitarSubidaDeImagenPrincipal {
         .buscarPorId(comando.productoId())
         .orElseThrow(() -> new ProductoNoEncontradoPorIdException(comando.productoId()));
 
-    String extension = EXTENSIONES_SOPORTADAS.get(comando.contentType());
-    if (extension == null) {
-      throw new IllegalArgumentException(
-          "Tipo de contenido no soportado para imagen principal: " + comando.contentType());
-    }
+    String extension = TiposDeImagen.extensionDe(comando.contentType());
 
     String objectKey =
         "productos/"
