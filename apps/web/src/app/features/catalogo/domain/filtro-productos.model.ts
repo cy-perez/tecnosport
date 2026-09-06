@@ -12,6 +12,15 @@ export interface FiltroProductos {
   readonly tamano?: number;
 }
 
+/**
+ * El orden que el backend aplica cuando la URL no trae `orden`
+ * (`ProductoControlador`: `@RequestParam(defaultValue = "RELEVANCIA")`). No es
+ * una preferencia del frontend: es el dato que hace falta para que el control
+ * de "Ordenar por" muestre el orden que de verdad está aplicado, en vez de
+ * quedarse en blanco por no corresponder a ninguna opción.
+ */
+export const ORDEN_POR_DEFECTO: OrdenProductos = 'RELEVANCIA';
+
 /** Las tres líneas de negocio de docs/00-producto.md. */
 export const LINEAS = ['ROPA_Y_CALZADO', 'BOLSOS', 'CELULARES'] as const;
 

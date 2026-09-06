@@ -112,7 +112,14 @@ describe('FiltrosProductos', () => {
 
     await esperar(350);
 
-    expect(navegar).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { linea: 'BOLSOS' } }));
+    // `orden` viaja en la URL desde que el visitante toca cualquier filtro: el
+    // control arranca en el orden por defecto (el mismo que ya aplica el
+    // backend), no en vacío. Efecto lateral aceptado a cambio de que el select
+    // no salga en blanco en la primera pintada.
+    expect(navegar).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { linea: 'BOLSOS', orden: 'RELEVANCIA' } }),
+    );
   });
 
   it('con el scope precargado en la ruta, el primer render ya trae las etiquetas', async () => {
@@ -149,6 +156,34 @@ describe('FiltrosProductos', () => {
     // traducción antes de que su scope perezoso haya cargado.
     const todas = [...etiquetasDe(linea), ...etiquetasDe(orden)];
     expect(todas.filter((etiqueta) => etiqueta.startsWith('catalogo.') || etiqueta === '')).toEqual([]);
+  });
+
+  it('sin `orden` en la URL, "Ordenar por" ya muestra Relevancia', async () => {
+    // El defecto del recorrido en el navegador: el control arrancaba en `''`,
+    // que no corresponde a ninguna `<option>`, y este es el único select de los
+    // filtros sin placeholder que lo cubriera — salía en blanco mientras el
+    // backend sí estaba ordenando por relevancia.
+    await renderFiltros();
+
+    const orden = (await screen.findByLabelText('Ordenar por')) as HTMLSelectElement;
+
+    expect(orden.value).toBe('RELEVANCIA');
+    expect(orden.selectedOptions[0]?.textContent?.trim()).toBe('Relevancia');
+  });
+
+  it('"Limpiar filtros" devuelve "Ordenar por" a Relevancia, no a vacío', async () => {
+    await renderFiltros();
+
+    const orden = (await screen.findByLabelText('Ordenar por')) as HTMLSelectElement;
+    fireEvent.change(orden, { target: { value: 'PRECIO_ASC' } });
+    expect(orden.value).toBe('PRECIO_ASC');
+
+    fireEvent.click(await screen.findByText('Limpiar filtros'));
+
+    // `form.reset()` vuelve al valor inicial del control, y por eso ese valor
+    // inicial es el orden por defecto y no `''`: si no, limpiar reproducía el
+    // mismo blanco que se acaba de corregir.
+    expect(orden.value).toBe('RELEVANCIA');
   });
 
   it('"Limpiar filtros" navega sin query params, sin esperar el debounce', async () => {
