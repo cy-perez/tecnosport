@@ -1,0 +1,87 @@
+:host {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.superposicion {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+/* El fantasma va debajo de las líneas y a baja opacidad: es una referencia, no la imagen. */
+.superposicion__fantasma {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+}
+
+/*
+ * Marco 1:1, que es la proporción de salida. Lo que quede fuera del marco no va a estar en el
+ * fotograma final, así que el marco es la promesa que el recorte tiene que cumplir.
+ */
+.superposicion__marco {
+  position: relative;
+  aspect-ratio: 1;
+  block-size: min(100%, 100vw);
+  max-inline-size: 100%;
+  border: 1px solid var(--color-sobre-primario);
+  /*
+   * Sobre una vista de cámara el contraste no está garantizado (docs/10-captura-360.md): la línea
+   * clara lleva siempre una sombra oscura detrás, para que se vea igual sobre fondo blanco que
+   * sobre fondo negro. El ámbar de marca no se usa como línea fina sobre imagen.
+   */
+  filter: drop-shadow(0 0 1px var(--color-primario));
+}
+
+.superposicion__linea {
+  position: absolute;
+  background-color: var(--color-sobre-primario);
+  opacity: 0.6;
+}
+
+.superposicion__linea--vertical {
+  inline-size: 1px;
+  block-size: 100%;
+}
+
+.superposicion__linea--horizontal {
+  block-size: 1px;
+  inline-size: 100%;
+}
+
+.superposicion__linea--v1 {
+  inset-inline-start: 33.333%;
+}
+
+.superposicion__linea--v2 {
+  inset-inline-start: 66.666%;
+}
+
+.superposicion__linea--h1 {
+  inset-block-start: 33.333%;
+}
+
+.superposicion__linea--h2 {
+  inset-block-start: 66.666%;
+}
+
+/* La marca de centro: el producto va centrado en todas las tomas, no solo dentro del marco. */
+.superposicion__centro {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: var(--esp-24);
+  block-size: var(--esp-24);
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--color-sobre-primario);
+  border-radius: var(--radio-completo);
+  opacity: 0.8;
+}

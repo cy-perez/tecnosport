@@ -1,0 +1,10 @@
+<p
+  class="indicador-nivel"
+  [class]="'indicador-nivel--' + estado().toLowerCase()"
+  aria-live="polite"
+>
+  <span class="indicador-nivel__glifo" aria-hidden="true">{{ glifo() }}</span>
+  <span class="indicador-nivel__texto">
+    {{ claveDeMensaje() | transloco: { grados: correccion().grados } }}
+  </span>
+</p>
