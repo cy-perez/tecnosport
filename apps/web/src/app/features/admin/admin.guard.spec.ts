@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, convertToParamMap, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { render } from '@testing-library/angular';
@@ -69,5 +69,28 @@ describe('adminGuard', () => {
     );
 
     expect(resultado).toBeInstanceOf(UrlTree);
+  });
+
+  // En SSR el guardia no decide: SesionStore resuelve siempre "sin sesión" en
+  // el servidor a propósito (no reenvía la cookie HttpOnly de refresco), así
+  // que decidir con eso redirigía SIEMPRE al login. El navegador seguía ese
+  // 302 e hidrataba ya en la pantalla de login: recargar cualquier página de
+  // /admin sacaba al administrador con la sesión viva. Encontrado en el
+  // navegador; ninguna de las pruebas de arriba lo veía porque todas corren
+  // como si fueran el navegador.
+  it('en el servidor deja pasar, para que decida el cliente tras el refresco', async () => {
+    await render(AnfitrionDePrueba, {
+      providers: [
+        provideRouter([]),
+        { provide: REPOSITORIO_SESION, useValue: new RepositorioSesionFalso(null) },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    });
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      adminGuard(rutaConLang('es'), {} as RouterStateSnapshot),
+    );
+
+    expect(resultado).toBe(true);
   });
 });
