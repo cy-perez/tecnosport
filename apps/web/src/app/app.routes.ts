@@ -7,8 +7,8 @@ export const routes: Routes = [
     path: ':lang',
     canActivate: [idiomaGuard],
     children: [
-      // Sin portada todavía: la raíz de cada idioma cae en el catálogo.
-      { path: '', pathMatch: 'full', redirectTo: 'productos' },
+      // La raíz de cada idioma es la portada, servida por catalogo.routes.ts
+      // (reutiliza sus puertos y su scope de i18n).
       {
         path: '',
         loadChildren: () => import('./features/catalogo/catalogo.routes').then((m) => m.catalogoRoutes),

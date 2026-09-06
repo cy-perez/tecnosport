@@ -111,6 +111,33 @@ Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto
 en el SCSS.
 
+## Iconografía
+
+El kit de `packages/marca` **no trae iconos de interfaz**: solo logos, isotipo y
+los iconos de aplicación de iOS y Android. Hasta la Fase 4 no hizo falta ninguno
+— el primero apareció al reemplazar el texto "Carrito" del encabezado por su
+icono (paso de navegación previo a la Fase 5).
+
+Decisión tomada ahí, para que el segundo icono no se dibuje con otro criterio:
+
+- **SVG propio, en línea en la plantilla del componente. Sin librería de
+  iconos** — cada dependencia es deuda, y hasta ahora hace falta un icono, no
+  un set.
+- **24 x 24 en el `viewBox`**, trazo `1.5`, `stroke-linecap` y
+  `stroke-linejoin` redondeados.
+- **`stroke="currentColor"`, nunca un HEX**: el icono hereda el color del texto
+  que lo rodea y funciona en claro y en oscuro sin una regla aparte.
+- **El tamaño se fija con un token de espacio** (`--esp-24`), no con un píxel
+  suelto.
+- **`aria-hidden="true"` y `focusable="false"`**: el icono nunca es el nombre
+  accesible. El control que lo contiene lleva su `aria-label` traducido — el
+  enlace del carrito lo tenía desde la Fase 2 y por eso reemplazar el texto por
+  el icono no le quitó el nombre.
+
+Si algún día hacen falta más de seis u ocho, vale la pena discutir un
+`ts-icono` con un sprite, o una librería — con permiso explícito, como toda
+dependencia nueva.
+
 ## Modo oscuro
 
 Atributo `data-tema="oscuro"` en `<html>`. Tres opciones para el usuario: claro,

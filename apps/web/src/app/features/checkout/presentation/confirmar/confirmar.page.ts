@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
@@ -46,6 +47,7 @@ export class ConfirmarPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);
 
@@ -64,7 +66,7 @@ export class ConfirmarPage {
 
   protected readonly etiquetaMetodoPago = computed(() => {
     const metodo = this.checkout.metodoPago();
-    return metodo ? this.transloco.translate(CLAVE_ETIQUETA[metodo]) : '';
+    return metodo ? this.traducir()(CLAVE_ETIQUETA[metodo]) : '';
   });
 
   protected readonly enviando = computed(

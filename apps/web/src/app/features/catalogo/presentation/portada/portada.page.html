@@ -1,0 +1,48 @@
+<section class="portada">
+  <!-- TODO(negocio): copia definitiva del hero y su imagen 4:3 de 1200x900
+       (docs/04-ui-marca.md). Los textos de abajo son descriptivos, sacados de
+       docs/00-producto.md, no una propuesta de marca. -->
+  <div class="portada__hero chaflan">
+    <h1 class="portada__titulo">{{ 'portada.titulo' | transloco }}</h1>
+    <p class="portada__lema">{{ 'portada.lema' | transloco }}</p>
+    <a class="portada__cta chaflan" [routerLink]="['/', idioma(), 'productos']">
+      {{ 'portada.ver_catalogo' | transloco }}
+    </a>
+  </div>
+
+  <h2 class="portada__subtitulo">{{ 'portada.lineas' | transloco }}</h2>
+  <nav class="portada__lineas" [attr.aria-label]="'portada.lineas' | transloco">
+    @for (linea of lineas; track linea) {
+      <a
+        class="portada__linea chaflan"
+        [routerLink]="['/', idioma(), 'productos']"
+        [queryParams]="{ linea }"
+      >
+        {{ claveDeLinea(linea) | transloco }}
+      </a>
+    }
+  </nav>
+
+  <h2 class="portada__subtitulo">{{ 'portada.novedades' | transloco }}</h2>
+  @if (consulta.isPending()) {
+    <div class="portada__grid">
+      @for (marcador of marcadoresDeCarga; track marcador) {
+        <ts-esqueleto />
+      }
+    </div>
+  } @else if (consulta.isError()) {
+    <p class="portada__error" role="alert">{{ 'catalogo.error' | transloco }}</p>
+  } @else if (novedades().length === 0) {
+    <p class="portada__vacio">{{ 'portada.sin_novedades' | transloco }}</p>
+  } @else {
+    <div class="portada__grid">
+      @for (producto of novedades(); track producto.slug) {
+        <ts-tarjeta-producto [producto]="producto" />
+      }
+    </div>
+  }
+
+  <a class="portada__ver-todo" [routerLink]="['/', idioma(), 'productos']">
+    {{ 'portada.ver_todo' | transloco }}
+  </a>
+</section>

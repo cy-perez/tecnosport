@@ -11,3 +11,14 @@ export interface FiltroProductos {
   readonly orden?: OrdenProductos;
   readonly tamano?: number;
 }
+
+/** Las tres líneas de negocio de docs/00-producto.md. */
+export const LINEAS = ['ROPA_Y_CALZADO', 'BOLSOS', 'CELULARES'] as const;
+
+export type Linea = (typeof LINEAS)[number];
+
+/**
+ * Lo más nuevo del catálogo, para la franja de la portada. `tamano` chico a
+ * propósito: es una franja, no una rejilla paginada.
+ */
+export const FILTRO_NOVEDADES: FiltroProductos = { orden: 'MAS_RECIENTES', tamano: 4 };

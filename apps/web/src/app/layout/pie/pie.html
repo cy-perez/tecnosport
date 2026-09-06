@@ -8,6 +8,14 @@
       [alt]="'pie.nombre_comercial' | transloco"
     />
 
+    <nav class="pie__nav" [attr.aria-label]="'pie.navegacion' | transloco">
+      <a class="pie__enlace" [routerLink]="['/', idioma()]">{{ 'pie.portada' | transloco }}</a>
+      <a class="pie__enlace" [routerLink]="['/', idioma(), 'productos']">
+        {{ 'encabezado.catalogo' | transloco }}
+      </a>
+      <a class="pie__enlace" [routerLink]="['/', idioma(), 'carrito']">{{ 'pie.carrito' | transloco }}</a>
+    </nav>
+
     <address class="pie__datos">
       <p>{{ 'pie.nombre_comercial' | transloco }}</p>
       <p>{{ 'pie.nit' | transloco }}</p>

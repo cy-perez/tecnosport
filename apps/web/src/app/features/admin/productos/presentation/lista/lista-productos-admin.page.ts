@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
@@ -28,6 +29,7 @@ export class ListaProductosAdminPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
   protected readonly filtro = computed<FiltroProductosAdmin>(() => filtroDesdeQueryParams(this.queryParams()));
@@ -35,7 +37,7 @@ export class ListaProductosAdminPage {
   protected readonly consulta = usarListarProductosAdmin(this.filtro);
 
   protected etiquetaEstado(estado: EstadoProducto): string {
-    return this.transloco.translate(CLAVE_ETIQUETA_ESTADO[estado]);
+    return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }
 
   protected paginaAnterior(): void {

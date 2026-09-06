@@ -1,8 +1,10 @@
 import { ActivatedRouteSnapshot, Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
+import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { precargarFichaProducto } from './application/buscar-ficha-producto.consulta';
 import { precargarProductos } from './application/buscar-productos.consulta';
 import { precargarOpcionesFiltro } from './application/listar-opciones-filtro.consulta';
+import { FILTRO_NOVEDADES } from './domain/filtro-productos.model';
 import { filtroDesdeQueryParams } from './domain/query-params-filtro';
 import { REPOSITORIO_CATEGORIAS } from './domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from './domain/repositorio-marcas.puerto';
@@ -26,6 +28,14 @@ export const catalogoRoutes: Routes = [
     ],
     children: [
       {
+        path: '',
+        pathMatch: 'full',
+        resolve: {
+          _precarga: () => Promise.all([precargarProductos(FILTRO_NOVEDADES), precargarScopeI18n('catalogo')]),
+        },
+        loadComponent: () => import('./presentation/portada/portada.page').then((m) => m.PortadaPage),
+      },
+      {
         path: 'productos',
         children: [
           {
@@ -40,6 +50,11 @@ export const catalogoRoutes: Routes = [
                 Promise.all([
                   precargarProductos(filtroDesdeQueryParams(route.queryParams)),
                   precargarOpcionesFiltro(),
+                  // El scope de i18n va aquí por la misma razón que las
+                  // consultas: si llega después del primer render, toda
+                  // etiqueta que no pase por el pipe sale en blanco o con la
+                  // clave cruda.
+                  precargarScopeI18n('catalogo'),
                 ]),
             },
             loadComponent: () => import('./presentation/rejilla/rejilla.page').then((m) => m.RejillaPage),
@@ -51,7 +66,11 @@ export const catalogoRoutes: Routes = [
             providers: [provideTranslocoScope('carrito')],
             resolve: {
               _precarga: (route: ActivatedRouteSnapshot) =>
-                precargarFichaProducto(route.paramMap.get('slug') ?? ''),
+                Promise.all([
+                  precargarFichaProducto(route.paramMap.get('slug') ?? ''),
+                  precargarScopeI18n('catalogo'),
+                  precargarScopeI18n('carrito'),
+                ]),
             },
             loadComponent: () => import('./presentation/ficha/ficha.page').then((m) => m.FichaPage),
           },

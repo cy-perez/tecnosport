@@ -2,6 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
@@ -46,6 +47,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
 export class EstadoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly checkout = inject(CheckoutStore);
 
   protected readonly error = signal<string | null>(null);
@@ -66,7 +68,7 @@ export class EstadoPage {
 
   protected readonly etiquetaEstado = computed(() => {
     const pedido = this.pedido();
-    return pedido ? this.transloco.translate(CLAVE_ETIQUETA_ESTADO[pedido.estado]) : '';
+    return pedido ? this.traducir()(CLAVE_ETIQUETA_ESTADO[pedido.estado]) : '';
   });
 
   protected readonly puedeReintentar = computed(() => {

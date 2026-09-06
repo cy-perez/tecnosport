@@ -1,21 +1,20 @@
 import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
-import { REPOSITORIO_PAGOS } from '../domain/repositorio-pagos.puerto';
-import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
-import { PagoHttpRepositorio } from '../infrastructure/pago-http.repositorio';
-import { PedidoHttpRepositorio } from '../infrastructure/pedido-http.repositorio';
+import { precargarScopeI18n } from '../../../core/i18n/precargar-scope';
 
-// El binding puerto -> implementación vive aquí, no en presentation/: "el
-// proveedor de la ruta decide la implementación" (apps/web/CLAUDE.md), mismo
-// criterio que catalogo.routes.ts.
+// Sin proveedores de puerto aquí, a diferencia de catalogo.routes.ts:
+// `REPOSITORIO_PEDIDOS` y `REPOSITORIO_PAGOS` viven en `app.config.ts` porque
+// quien los consume es `CheckoutStore`, que es `providedIn: 'root'` y por lo
+// tanto no ve los proveedores de una ruta. Mismo criterio que
+// `REPOSITORIO_CARRITO` y `REPOSITORIO_SESION`.
 export const checkoutRoutes: Routes = [
   {
     path: '',
-    providers: [
-      { provide: REPOSITORIO_PEDIDOS, useClass: PedidoHttpRepositorio },
-      { provide: REPOSITORIO_PAGOS, useClass: PagoHttpRepositorio },
-      provideTranslocoScope('checkout'),
-    ],
+    providers: [provideTranslocoScope('checkout')],
+    // El scope de i18n se precarga como cualquier otro dato de la primera
+    // pantalla (ADR-0011): si llega después del primer render, toda etiqueta
+    // que no pase por el pipe sale en blanco o con la clave cruda.
+    resolve: { _i18n: () => Promise.all([precargarScopeI18n('checkout')]) },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'resumen' },
       {

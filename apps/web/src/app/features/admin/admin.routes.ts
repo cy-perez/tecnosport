@@ -11,6 +11,7 @@ import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
+import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 
 // Sin proveedor de puerto aquí: REPOSITORIO_SESION es compartido y se
 // provee en app.config.ts (SesionStore lo va a necesitar también
@@ -19,6 +20,10 @@ export const adminRoutes: Routes = [
   {
     path: '',
     providers: [provideTranslocoScope('admin')],
+    // El scope de i18n se precarga como cualquier otro dato de la primera
+    // pantalla (ADR-0011): si llega después del primer render, toda etiqueta
+    // que no pase por el pipe sale en blanco o con la clave cruda.
+    resolve: { _i18n: () => Promise.all([precargarScopeI18n('admin')]) },
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'panel' },
       {

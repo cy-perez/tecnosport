@@ -1,6 +1,7 @@
 {
   "app": {
-    "titulo": "Tecno Sport"
+    "titulo": "Tecno Sport",
+    "saltar_al_contenido": "Saltar al contenido"
   },
   "tema": {
     "etiqueta": "Tema",
@@ -12,8 +13,14 @@
     "etiqueta": "Idioma"
   },
   "encabezado": {
-    "carrito": "Carrito",
-    "carrito_cantidad": "Carrito, {{cantidad}} artículos"
+    "carrito_cantidad": "Carrito, {{cantidad}} artículos",
+    "ir_a_portada": "Ir a la portada",
+    "navegacion": "Navegación principal",
+    "catalogo": "Catálogo",
+    "panel": "Panel",
+    "entrar": "Entrar",
+    "crear_cuenta": "Crear cuenta",
+    "cerrar_sesion": "Cerrar sesión"
   },
   "pie": {
     "nombre_comercial": "Tecno Sport",
@@ -25,6 +32,18 @@
     "whatsapp": "WhatsApp",
     "correo": "contact@tecnosport.co",
     "reducir_movimiento": "Reducir movimiento",
-    "copyright": "© {{anio}} Tecno Sport"
+    "copyright": "© {{anio}} Tecno Sport",
+    "navegacion": "Navegación del pie",
+    "portada": "Portada",
+    "carrito": "Carrito"
+  },
+  "portada": {
+    "titulo": "Ropa y calzado deportivo, bolsos y celulares",
+    "lema": "Envío a todo el país desde Medellín.",
+    "ver_catalogo": "Ver el catálogo",
+    "lineas": "Nuestras líneas",
+    "novedades": "Novedades",
+    "ver_todo": "Ver todo el catálogo",
+    "sin_novedades": "Todavía no hay productos publicados."
   }
 }

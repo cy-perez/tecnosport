@@ -19,6 +19,7 @@
 
 .encabezado {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--esp-16);
@@ -27,9 +28,55 @@
   background: var(--color-superficie);
 }
 
-.encabezado__controles {
+.encabezado__logo {
+  display: inline-flex;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+}
+
+.encabezado__nav {
   display: flex;
   gap: var(--esp-16);
+}
+
+.encabezado__controles {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-16);
+}
+
+.encabezado__enlace {
+  color: var(--color-texto);
+  font-size: var(--texto-sm);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+}
+
+// El botón de cerrar sesión se ve como los demás enlaces del encabezado, pero
+// es un <button> porque dispara una acción, no una navegación.
+.encabezado__boton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--fuente-texto);
+  cursor: pointer;
+}
+
+.encabezado__icono {
+  display: block;
+  inline-size: var(--esp-24);
+  block-size: var(--esp-24);
 }
 
 .encabezado__control {

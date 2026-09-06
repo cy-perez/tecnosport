@@ -18,6 +18,16 @@ export class TsTarjetaProducto {
 
   readonly producto = input.required<Producto>();
 
+  // Absoluto, no relativo: la tarjeta se usa en la rejilla (/{lang}/productos)
+  // y en la portada (/{lang}), y un enlace relativo al slug apuntaría a un
+  // lugar distinto en cada una.
+  protected readonly enlace = computed(() => [
+    '/',
+    this.transloco.activeLang(),
+    'productos',
+    this.producto().slug,
+  ]);
+
   protected readonly precio = computed(() => precioDesde(this.producto()));
   protected readonly disponible = computed(() => hayExistencia(this.producto()));
 

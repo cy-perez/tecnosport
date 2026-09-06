@@ -1,7 +1,16 @@
+import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import {
+  provideTransloco,
+  provideTranslocoScope,
+  Translation,
+  TranslocoLoader,
+  TranslocoService,
+  TranslocoTestingModule,
+} from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { firstValueFrom } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
@@ -47,6 +56,51 @@ async function renderFiltros() {
   });
 }
 
+/**
+ * Reproduce el escenario real que `TranslocoTestingModule` con
+ * `preloadLangs: true` no reproduce: el scope `catalogo` es perezoso
+ * (`catalogo.routes.ts`) y su JSON llega por HTTP *después* del primer
+ * render. Con un `transloco.translate()` dentro de un `computed()`, las
+ * etiquetas de "Línea" y "Ordenar por" se quedaban con la clave cruda en
+ * pantalla para siempre — el computed se evaluaba una sola vez, antes de la
+ * carga, y nada reactivo lo volvía a disparar.
+ */
+class LoaderRetardado implements TranslocoLoader {
+  async getTranslation(langOScope: string): Promise<Translation> {
+    await esperar(150);
+    const disponibles: Record<string, Translation> = {
+      es: es as Translation,
+      en: en as Translation,
+      'catalogo/es': esCatalogo as Translation,
+    };
+    return disponibles[langOScope] ?? {};
+  }
+}
+
+function proveedoresConScopePerezoso() {
+  return [
+    provideTransloco({
+      config: { availableLangs: ['es', 'en'], defaultLang: 'es', reRenderOnLangChange: true },
+      loader: LoaderRetardado,
+    }),
+    provideTranslocoScope('catalogo'),
+    provideRouter([]),
+    provideTanStackQuery(new QueryClient()),
+    { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+    { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+  ];
+}
+
+async function renderFiltrosConScopePerezoso() {
+  return render(FiltrosProductos, {
+    providers: proveedoresConScopePerezoso(),
+  });
+}
+
+function etiquetasDe(select: HTMLElement): string[] {
+  return Array.from(select.querySelectorAll('option')).map((opcion) => opcion.textContent?.trim() ?? '');
+}
+
 describe('FiltrosProductos', () => {
   it('elegir una línea navega con ese query param, con debounce', async () => {
     const { fixture } = await renderFiltros();
@@ -59,6 +113,42 @@ describe('FiltrosProductos', () => {
     await esperar(350);
 
     expect(navegar).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { linea: 'BOLSOS' } }));
+  });
+
+  it('con el scope precargado en la ruta, el primer render ya trae las etiquetas', async () => {
+    // Lo que hace `precargarScopeI18n` en el `resolve` de catalogo.routes.ts,
+    // aquí a mano. Sin él el primer render sale con las opciones en blanco;
+    // con él, ya vienen traducidas y no hay parpadeo.
+    TestBed.configureTestingModule({ providers: proveedoresConScopePerezoso() });
+    await firstValueFrom(TestBed.inject(TranslocoService).load('catalogo/es'));
+
+    const fixture = TestBed.createComponent(FiltrosProductos);
+    fixture.detectChanges();
+
+    const orden = fixture.nativeElement.querySelector('#filtro-orden') as HTMLElement;
+    expect(etiquetasDe(orden)).toEqual([
+      'Relevancia',
+      'Precio: menor a mayor',
+      'Precio: mayor a menor',
+      'Más recientes',
+    ]);
+  });
+
+  it('si el scope llega tarde, las etiquetas se corrigen solas', async () => {
+    await renderFiltrosConScopePerezoso();
+
+    await esperar(400);
+
+    const linea = await screen.findByLabelText('Línea');
+    const orden = await screen.findByLabelText('Ordenar por');
+
+    expect(etiquetasDe(linea)).toContain('Ropa y calzado');
+    expect(etiquetasDe(orden)).toContain('Relevancia');
+
+    // Ni la clave cruda ni la etiqueta vacía: los dos síntomas de leer una
+    // traducción antes de que su scope perezoso haya cargado.
+    const todas = [...etiquetasDe(linea), ...etiquetasDe(orden)];
+    expect(todas.filter((etiqueta) => etiqueta.startsWith('catalogo.') || etiqueta === '')).toEqual([]);
   });
 
   it('"Limpiar filtros" navega sin query params, sin esperar el debounce', async () => {

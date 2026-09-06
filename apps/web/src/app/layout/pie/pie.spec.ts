@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../assets/i18n/en.json';
@@ -13,6 +14,7 @@ async function renderPie() {
         preloadLangs: true,
       }),
     ],
+    providers: [provideRouter([])],
   });
 }
 
@@ -73,5 +75,13 @@ describe('Pie', () => {
 
     const anio = new Date().getFullYear();
     expect(screen.getByText(`© ${anio} Tecno Sport`)).toBeTruthy();
+  });
+
+  it('el pie lleva a la portada, al catálogo y al carrito', async () => {
+    await renderPie();
+
+    expect(screen.getByRole('link', { name: 'Portada' }).getAttribute('href')).toBe('/es');
+    expect(screen.getByRole('link', { name: 'Catálogo' }).getAttribute('href')).toBe('/es/productos');
+    expect(screen.getByRole('link', { name: 'Carrito' }).getAttribute('href')).toBe('/es/carrito');
   });
 });

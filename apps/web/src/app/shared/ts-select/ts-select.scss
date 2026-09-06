@@ -1,3 +1,12 @@
+// Un ítem de grid o de flex arranca con `min-width: auto`: no puede encogerse
+// por debajo del ancho mínimo de su contenido. Un `<select>` mide por su opción
+// más larga, así que un texto largo ensanchaba su columna y comprimía las
+// demás — por eso los filtros del catálogo se veían de tamaños distintos.
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
 .ts-select {
   display: flex;
   flex-direction: column;
@@ -10,6 +19,12 @@
 }
 
 .ts-select__control {
+  // Sin esto, un `<input>` toma su ancho del atributo `size` y un `<select>`
+  // del texto de su opción más larga: dos columnas de la misma rejilla
+  // terminaban de tamaños distintos. `border-box` porque el proyecto no
+  // tiene un reset global y el relleno sumaría por fuera del 100%.
+  box-sizing: border-box;
+  inline-size: 100%;
   min-height: 44px;
   padding: var(--esp-12);
   border: 1px solid var(--color-borde-control);

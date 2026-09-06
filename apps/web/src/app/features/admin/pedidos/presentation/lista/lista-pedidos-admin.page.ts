@@ -3,6 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -72,6 +73,7 @@ export class ListaPedidosAdminPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   protected readonly acciones = usarAccionesPedidoAdmin();
 
@@ -83,7 +85,7 @@ export class ListaPedidosAdminPage {
   protected readonly formularioEstado = new FormControl('', { nonNullable: true });
 
   protected readonly opcionesEstado = computed<OpcionSelect[]>(() =>
-    ESTADOS.map((estado) => ({ valor: estado, etiqueta: this.transloco.translate(CLAVE_ETIQUETA_ESTADO[estado]) })),
+    ESTADOS.map((estado) => ({ valor: estado, etiqueta: this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]) })),
   );
 
   protected readonly pedidoExpandidoId = signal<string | null>(null);
@@ -104,7 +106,7 @@ export class ListaPedidosAdminPage {
   }
 
   protected etiquetaEstado(estado: EstadoPedido): string {
-    return this.transloco.translate(CLAVE_ETIQUETA_ESTADO[estado]);
+    return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }
 
   protected alternarExpandido(pedidoId: string): void {

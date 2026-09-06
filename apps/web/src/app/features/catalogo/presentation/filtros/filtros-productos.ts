@@ -2,13 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { Translation, TranslocoPipe, translateObjectSignal } from '@jsverse/transloco';
 import { debounceTime } from 'rxjs';
 import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
 import { OpcionSelect, TsSelect } from '../../../../shared/ts-select/ts-select';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
-import { FiltroProductos, OrdenProductos } from '../../domain/filtro-productos.model';
+import { FiltroProductos, LINEAS, OrdenProductos } from '../../domain/filtro-productos.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 
 interface ValoresFormularioFiltros {
@@ -21,8 +21,14 @@ interface ValoresFormularioFiltros {
   orden: string;
 }
 
-const LINEAS = ['ROPA_Y_CALZADO', 'BOLSOS', 'CELULARES'] as const;
 const ORDENES: readonly OrdenProductos[] = ['RELEVANCIA', 'PRECIO_ASC', 'PRECIO_DESC', 'MAS_RECIENTES'];
+
+// `Translation` indexa a `any`: se estrecha a string en vez de confiar. El
+// diccionario llega vacío mientras el scope perezoso no ha cargado.
+function etiquetaDe(diccionario: Translation, clave: string): string {
+  const valor = diccionario[clave];
+  return typeof valor === 'string' ? valor : '';
+}
 
 function datosFormularioDesdeFiltro(filtro: FiltroProductos): ValoresFormularioFiltros {
   return {
@@ -65,7 +71,6 @@ function filtroDesdeFormulario(valores: ValoresFormularioFiltros): FiltroProduct
 export class FiltrosProductos {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly transloco = inject(TranslocoService);
 
   protected readonly opciones = usarOpcionesFiltro();
 
@@ -83,12 +88,28 @@ export class FiltrosProductos {
     initialValue: this.form.controls.linea.value,
   });
 
-  protected readonly opcionesLinea = computed<OpcionSelect[]>(() =>
-    LINEAS.map((linea) => ({
+  // Diccionarios del scope perezoso `catalogo`, no `transloco.translate()`
+  // dentro del computed: ese se evalúa una sola vez, antes de que el JSON del
+  // scope llegue por HTTP, deja la clave cruda en pantalla y nunca se
+  // recalcula — nada reactivo cambia cuando el scope termina de cargar.
+  // `translateObjectSignal` sí se resuscribe a esa carga y al cambio de idioma.
+  // La clave va relativa al scope: Transloco le antepone `catalogo.` por
+  // `scopes.autoPrefixKeys`, que viene en `true` por defecto.
+  private readonly etiquetasLinea = translateObjectSignal('filtros.linea', undefined, {
+    scope: 'catalogo',
+  });
+
+  private readonly etiquetasOrden = translateObjectSignal('filtros.orden', undefined, {
+    scope: 'catalogo',
+  });
+
+  protected readonly opcionesLinea = computed<OpcionSelect[]>(() => {
+    const etiquetas = this.etiquetasLinea();
+    return LINEAS.map((linea) => ({
       valor: linea,
-      etiqueta: this.transloco.translate(`catalogo.filtros.linea.${linea.toLowerCase()}`),
-    })),
-  );
+      etiqueta: etiquetaDe(etiquetas, linea.toLowerCase()),
+    }));
+  });
 
   protected readonly opcionesCategoria = computed<OpcionSelect[]>(() => {
     const todas = this.opciones.categorias.data() ?? [];
@@ -101,12 +122,13 @@ export class FiltrosProductos {
     (this.opciones.marcas.data() ?? []).map((marca) => ({ valor: marca.id, etiqueta: marca.nombre })),
   );
 
-  protected readonly opcionesOrden = computed<OpcionSelect[]>(() =>
-    ORDENES.map((orden) => ({
+  protected readonly opcionesOrden = computed<OpcionSelect[]>(() => {
+    const etiquetas = this.etiquetasOrden();
+    return ORDENES.map((orden) => ({
       valor: orden,
-      etiqueta: this.transloco.translate(`catalogo.filtros.orden.${orden.toLowerCase()}`),
-    })),
-  );
+      etiqueta: etiquetaDe(etiquetas, orden.toLowerCase()),
+    }));
+  });
 
   constructor() {
     const queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });

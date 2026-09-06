@@ -37,6 +37,6 @@ describe('TsTarjetaProducto', () => {
     });
 
     const enlace = screen.getByRole('link', { name: /morral urbano/i });
-    expect(enlace.getAttribute('href')).toBe('/morral-urbano');
+    expect(enlace.getAttribute('href')).toBe('/es/productos/morral-urbano');
   });
 });

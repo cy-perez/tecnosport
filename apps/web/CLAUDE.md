@@ -145,6 +145,44 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   esperar ese registro — hace falta una espera real (`esperar(ms)`, mismo
   recurso que ya usa `filtros-productos.spec.ts` para el debounce).
 
+## i18n con scopes perezosos
+
+Encontrado en la vitrina del catálogo (paso de navegación previo a la Fase 5),
+con los filtros mostrando `catalogo.filtros.orden.relevancia` en pantalla en vez
+de "Relevancia". Que quede escrito, porque la trampa es sutil y silenciosa.
+
+- **Nunca llames `transloco.translate()` dentro de un `computed()` ni en un
+  inicializador de campo.** No lee ninguna señal, así que el `computed` se
+  evalúa una sola vez y no se recalcula jamás. Si en ese instante el scope
+  perezoso (`provideTranslocoScope`) todavía no ha llegado por HTTP, la clave
+  cruda se queda en pantalla para siempre. Tampoco reacciona a un cambio de
+  idioma: el selector navega a la misma ruta con otro prefijo y Angular reutiliza
+  el componente, así que la etiqueta se queda en el idioma anterior.
+- **Para una lista de etiquetas estáticas**, `translateObjectSignal('filtros.orden',
+  undefined, { scope: 'catalogo' })`. Ojo: con `scope`, la clave va **relativa**
+  al scope — Transloco le antepone `catalogo.` por `scopes.autoPrefixKeys`, que
+  viene en `true` por defecto. Distinto de la plantilla, donde el pipe recibe la
+  clave completa.
+- **Para leer claves sueltas o un mapa de claves** (`CLAVE_ETIQUETA[estado]`),
+  `usarTraductor()` de `core/i18n/traductor.ts`: devuelve una señal con la
+  función de traducir, colgada de `events$`, que emite tanto al cargar un scope
+  como al cambiar de idioma. Se usa `this.traducir()(clave)`.
+- **Además, precarga el scope en el `resolve` de la ruta** con
+  `precargarScopeI18n(scope)` (`core/i18n/precargar-scope.ts`), junto a las
+  consultas de TanStack Query. Mismo criterio de ADR-0011 y por el mismo motivo:
+  lo que la primera pantalla necesita se pide antes de crear el componente. Sin
+  esa precarga, las dos herramientas de arriba igual se corrigen solas, pero el
+  primer render sale con las etiquetas en blanco.
+- `transloco.translate()` **sí** sirve dentro de un manejador de evento (el
+  `error.set(...)` de un `onError`): para entonces el scope ya cargó. Aun así no
+  reacciona a un cambio de idioma, así que el mensaje se queda como estaba.
+- **Las pruebas de Vitest no reproducen este bug.** `TranslocoTestingModule` con
+  `preloadLangs: true` entrega las traducciones sincrónicas, y aun con un loader
+  retardado el entorno de Testing Library repinta lo suficiente como para que el
+  `computed` viejo se recalcule — cosa que en el navegador hidratado no pasa.
+  Verificado a mano contra `ng serve` real: los warnings *Missing translation* en
+  el log del servidor son la señal fiable de que alguien volvió al patrón viejo.
+
 ## Pruebas
 
 - Vitest para lo unitario. Funciones puras, mapeadores y stores de signals

@@ -945,6 +945,114 @@ tampoco se puede dar por resuelto:
 - **Rotación de clave de un `ADMIN` ya creado**: sigue sin construirse (ya
   estaba anotado desde la Fase 3).
 
+## Paso previo a la Fase 5. Navegación, portada y vitrina
+
+No estaba en el plan. Salió de una observación del dueño del proyecto: *"el
+frontend no muestra mayor diferencia desde la Fase 2 y ya vamos para la Fase
+5"*. Al validarla resultó cierta en lo que se ve, y falsa en lo que se
+construyó: desde el cierre de la vitrina de la Fase 2 (`b4ece08`) el frontend
+ganó **dieciocho pantallas** —seis de checkout, cinco de cuenta y siete de
+panel administrativo— pero **ninguna estaba enlazada**. El encabezado no
+había cambiado desde la Fase 2, `/{lang}` era un `redirect` al catálogo, y no
+existía un solo enlace hacia `/cuenta` ni hacia `/admin` en toda la
+aplicación: se llegaba tecleando la ruta. De ahí salió el tercer punto de la
+regla de cierre de fase, al final de este documento.
+
+**Traducciones con scope perezoso.** Los filtros del catálogo mostraban
+`catalogo.filtros.orden.relevancia` en la lista de "Ordenar por", con siete
+*Missing translation* en la consola. Las claves existían y estaban completas en
+los dos idiomas — la causa era `transloco.translate()` llamado dentro de un
+`computed()`: se evalúa antes de que llegue el JSON del scope y no se recalcula
+nunca. Corregido con `translateObjectSignal` y con `usarTraductor()`
+(`core/i18n/traductor.ts`) en los otros seis componentes con el mismo patrón
+(checkout y panel administrativo, que nadie había visto porque no eran
+alcanzables), más `precargarScopeI18n` en el `resolve` de las cuatro rutas con
+scope propio — misma regla de ADR-0011, ahora también para i18n. Detalle y
+trampas en `apps/web/CLAUDE.md`.
+
+Verificado contra `ng serve` real, no solo con Vitest — y con razón: **el
+entorno de pruebas no reproduce este bug**. Con `TranslocoTestingModule` las
+traducciones llegan sincrónicas, y aun forzando un loader retardado, Testing
+Library repinta lo suficiente para que el `computed` viejo se recalcule, cosa
+que en el navegador hidratado no ocurre. La señal fiable son los *Missing
+translation* del log del servidor: siete antes del cambio, cero después, en
+español y en inglés.
+
+**Lo demás de esa misma pasada**, todo reportado mirando la pantalla real:
+
+- **El pie flotaba a media página.** `app.scss` tenía `display: block` con
+  `min-height: 100vh`: el contenedor medía la pantalla completa, pero sus hijos
+  solo su altura natural, así que el sobrante quedaba *debajo* del pie. Ahora es
+  una rejilla de tres filas (`auto 1fr auto`). De paso apareció que la
+  aplicación **no tenía un solo `<main>`** ni el enlace de salto al contenido que
+  `docs/04-ui-marca.md` exige desde el principio; los dos existen ahora.
+- **Los recuadros de los filtros medían distinto.** Un ítem de grid arranca con
+  `min-width: auto` y un `<select>` mide por su opción más larga: las claves
+  crudas del bug de arriba ensanchaban su columna y comprimían las demás.
+  Corregido en la raíz (las traducciones) y blindado en `ts-select`/`ts-campo`
+  con `min-inline-size: 0`, `inline-size: 100%` y `box-sizing: border-box` — el
+  proyecto no tiene reset global, así que el relleno sumaba por fuera del 100%.
+- **El logo no era un enlace.** Ahora lleva a la portada del idioma activo.
+- **El carrito pasó de texto a icono**, con su `aria-label` intacto. Primer
+  icono de interfaz del proyecto: el kit solo trae logos, así que la decisión
+  (SVG propio en línea, 24x24, `currentColor`, sin librería) quedó escrita en
+  `docs/04-ui-marca.md`.
+
+**Navegación y portada.** El encabezado ganó el catálogo, el acceso a cuenta
+según sesión (entrar/crear cuenta, o cerrar sesión) y la entrada a `/admin`
+solo cuando el rol es `ADMIN`; el pie ganó su propia navegación. `/{lang}` dejó
+de ser un `redirect` y sirve una portada real — hero, accesos a las tres líneas
+que llevan al catálogo ya filtrado, y una franja de novedades
+(`FILTRO_NOVEDADES`, orden `MAS_RECIENTES`). Vive en `features/catalogo`, no en
+una funcionalidad nueva: reutiliza sus puertos, su scope de i18n y su patrón de
+precarga. `ts-tarjeta-producto` pasó a armar un enlace absoluto
+(`/{lang}/productos/{slug}`) porque el relativo apuntaba a otro sitio según
+quién la renderizara.
+
+**Hueco grave encontrado al recorrer las rutas, no al programar: el checkout
+entero estaba muerto.** `CheckoutStore` es `providedIn: 'root'` — lo comparten
+resumen, retorno de Wompi, transferencia y estado, sin relación padre-hijo—,
+pero `REPOSITORIO_PEDIDOS` y `REPOSITORIO_PAGOS` se declaraban solo en el
+`providers` de `checkout.routes.ts`. **Un servicio de raíz no ve los
+proveedores de una ruta**: cada pantalla del checkout moría con `NG0201: No
+provider found for InjectionToken RepositorioPedidos` antes de pintar nada. El
+SSR respondía `404` en `/{lang}/checkout/**`.
+
+Es de la Fase 3 y estuvo ahí desde entonces. Ninguna prueba lo atrapaba porque
+cada spec de checkout provee sus propios dobles, y `npm run verificar` en verde
+solo dice que compila y que las pruebas pasan. La fase se cerró anotando que no
+hubo verificación en navegador — esto es exactamente lo que esa verificación
+habría encontrado, y la razón de fondo por la que la regla de cierre ahora
+exige recorrer el sitio, no solo abrir cada pantalla por su URL.
+
+Corregido moviendo los dos puertos a `app.config.ts`, mismo criterio que
+`REPOSITORIO_CARRITO` y `REPOSITORIO_SESION`, con `app.config.spec.ts`
+verificando la invariante: todo puerto que consuma un store de raíz se declara
+en la raíz. `/{lang}/checkout/resumen` y `/{lang}/checkout/estado` responden
+200 en SSR desde el arreglo.
+
+**Pendientes explícitos de este paso:**
+
+- **La copia del hero y su imagen 4:3 de 1200x900 son `TODO` de negocio.** Los
+  textos actuales son descriptivos, sacados de `docs/00-producto.md`; nadie los
+  aprobó como mensaje de marca.
+- **Los legales del pie (términos, política de datos) siguen sin construirse** y
+  por eso no se enlazaron: un enlace roto o un texto de relleno es peor que
+  ninguno. Queda en la Fase 6, donde ya estaba.
+- **No hay panel de cuenta de cliente**, así que un `CLIENTE` con sesión solo ve
+  "cerrar sesión" en el encabezado — no hay a dónde llevarlo todavía.
+- **`ts-selector-idioma`, `ts-selector-tema`, `ts-migas` y `ts-paginador` siguen
+  sin existir** aunque estén en el inventario de `docs/04-ui-marca.md`: el
+  encabezado usa `<select>` crudos. Deuda del sistema visual, anotada aquí por
+  primera vez.
+- **La rejilla del catálogo no tiene estado vacío** (la portada sí, se agregó al
+  encontrarlo): con cero productos publicados muestra una rejilla en blanco sin
+  decir por qué.
+- **Verificación con clics reales sigue pendiente** — misma limitación de la
+  extensión de Chrome con `localhost` ya anotada en la Fase 4. Lo verificado
+  aquí es el HTML de SSR con `curl` en los dos idiomas, el log del servidor y
+  226 pruebas de Vitest.
+
 ## Fase 5. Sistema 360
 
 Se hace al final a propósito: necesita el panel, la autenticación, el
@@ -992,11 +1100,29 @@ escritas.
 **Una capa por vez, un commit por capa.** Revertir un commit pequeño no duele.
 
 **Una fase se cierra solo cuando el frontend y el backend correspondientes
-están integrados.** "Backend cerrado" o "vitrina cerrada" documentan un
-avance, no el cierre de la fase — la fase completa exige los dos lados
-funcionando juntos, verificado a mano contra el backend real. Documentar el
-backend de una fase sin su frontend dejó, en su momento, la Fase 3 marcada
-como completa sin checkout en el navegador: no se repite.
+están integrados y las pantallas nuevas están en la navegación del sitio.**
+"Backend cerrado" o "vitrina cerrada" documentan un avance, no el cierre de la
+fase. Cerrar exige las tres cosas, no dos:
+
+1. **Los dos lados funcionando juntos**, verificado a mano contra el backend
+   real.
+2. **Cada pantalla nueva alcanzable con clics desde la portada**, sin teclear
+   una URL: enlazada desde el encabezado, el pie, la portada o la pantalla que
+   la precede en el recorrido. Si la pantalla exige un rol o un estado (panel
+   de `ADMIN`, cuenta iniciada), el enlace aparece cuando ese rol o ese estado
+   existe, no siempre. Una pantalla que solo se abre escribiendo su ruta no
+   está entregada: está escondida.
+3. **El recorrido completo hecho de verdad en el navegador**, de punta a
+   punta, no pantalla por pantalla y cada una por su URL.
+
+Las dos primeras se aprendieron a la mala. Documentar el backend de una fase
+sin su frontend dejó, en su momento, la Fase 3 marcada como completa sin
+checkout en el navegador. Y documentar el frontend sin su navegación dejó las
+fases 3 y 4 cerradas con dieciocho pantallas —todo el checkout, toda la cuenta
+de cliente y todo el panel administrativo— que solo se alcanzaban tecleando la
+ruta: el encabezado no cambió desde la Fase 2, y no había un solo enlace hacia
+`/cuenta` ni hacia `/admin` en toda la aplicación. Ninguna de las dos se
+repite.
 
 **Cuando algo salga mal, no pidas un parche encima.** Vuelve al plan, corrige la
 premisa y regenera. Los parches encadenados sobre un diseño equivocado son la

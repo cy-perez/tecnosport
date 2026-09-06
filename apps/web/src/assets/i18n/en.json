@@ -1,6 +1,7 @@
 {
   "app": {
-    "titulo": "Tecno Sport"
+    "titulo": "Tecno Sport",
+    "saltar_al_contenido": "Skip to content"
   },
   "tema": {
     "etiqueta": "Theme",
@@ -12,8 +13,14 @@
     "etiqueta": "Language"
   },
   "encabezado": {
-    "carrito": "Cart",
-    "carrito_cantidad": "Cart, {{cantidad}} items"
+    "carrito_cantidad": "Cart, {{cantidad}} items",
+    "ir_a_portada": "Go to home",
+    "navegacion": "Main navigation",
+    "catalogo": "Catalog",
+    "panel": "Admin panel",
+    "entrar": "Sign in",
+    "crear_cuenta": "Create account",
+    "cerrar_sesion": "Sign out"
   },
   "pie": {
     "nombre_comercial": "Tecno Sport",
@@ -25,6 +32,18 @@
     "whatsapp": "WhatsApp",
     "correo": "contact@tecnosport.co",
     "reducir_movimiento": "Reduce motion",
-    "copyright": "© {{anio}} Tecno Sport"
+    "copyright": "© {{anio}} Tecno Sport",
+    "navegacion": "Footer navigation",
+    "portada": "Home",
+    "carrito": "Cart"
+  },
+  "portada": {
+    "titulo": "Sportswear, footwear, bags and phones",
+    "lema": "Nationwide shipping from Medellín, Colombia.",
+    "ver_catalogo": "Browse the catalog",
+    "lineas": "Our lines",
+    "novedades": "New arrivals",
+    "ver_todo": "See the full catalog",
+    "sin_novedades": "No published products yet."
   }
 }

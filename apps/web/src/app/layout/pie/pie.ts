@@ -1,5 +1,6 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 
 const CLAVE_ALMACEN = 'ts-movimiento-reducido';
 
@@ -33,12 +34,13 @@ const CLAVE_ALMACEN = 'ts-movimiento-reducido';
  */
 @Component({
   selector: 'app-pie',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   templateUrl: './pie.html',
   styleUrl: './pie.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Pie {
+  protected readonly idioma = inject(TranslocoService).activeLang;
   protected readonly anioActual = new Date().getFullYear();
   protected readonly movimientoReducido = signal(false);
 

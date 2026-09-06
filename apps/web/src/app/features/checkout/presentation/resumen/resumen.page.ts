@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -51,6 +52,7 @@ export class ResumenPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   private readonly checkout = inject(CheckoutStore);
 
@@ -86,8 +88,8 @@ export class ResumenPage {
   protected readonly requiereDireccion = computed(() => tipoEntregaRequiereDireccion(this.tipoEntregaElegido()));
 
   protected readonly opcionesTipoEntrega = computed<OpcionSelect[]>(() => [
-    { valor: 'ENVIO_A_DOMICILIO', etiqueta: this.transloco.translate('checkout.resumen.envio_a_domicilio') },
-    { valor: 'RETIRO_EN_PUNTO', etiqueta: this.transloco.translate('checkout.resumen.retiro_en_punto') },
+    { valor: 'ENVIO_A_DOMICILIO', etiqueta: this.traducir()('checkout.resumen.envio_a_domicilio') },
+    { valor: 'RETIRO_EN_PUNTO', etiqueta: this.traducir()('checkout.resumen.retiro_en_punto') },
   ]);
 
   protected readonly opcionesDepartamento = computed<OpcionSelect[]>(() =>
