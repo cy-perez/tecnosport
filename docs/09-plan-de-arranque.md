@@ -839,6 +839,63 @@ Con esto, Track B tiene listar, crear, editar y agregar variante cerrados.
 Queda pendiente, como su propio caso de uso: imágenes con URL firmada —
 con eso cierra el Track B completo y, con él, la Fase 4.
 
+**Track B, quinto y último caso de uso (imagen principal con URL firmada)
+cerrado de punta a punta** (2026-09-05). Alcance recortado a propósito, en
+conversación previa a codificar: solo la **imagen principal** de un
+producto, no la galería ni el sistema de captura/rotación 360° — eso es
+Fase 5 completa. `POST
+/api/v1/admin/productos/{id}/imagen-principal/url-subida` (pide una URL
+firmada V4 de subida a Cloud Storage) y `POST
+/api/v1/admin/productos/{id}/imagen-principal` (confirma: verifica contra
+el almacén real que el objeto llegó, arma la `ImagenProducto` y reemplaza
+la principal existente). El navegador sube los bytes con un `PUT` directo
+a Cloud Storage — el backend nunca los toca.
+
+Primera integración real del proyecto con un servicio de GCP más allá de
+Postgres/Mailpit locales: bucket `tecnosport-dev-imagenes` en el tier
+gratuito (`docs/07-infra-gcp.md`), cuenta de servicio con
+`roles/storage.objectAdmin`, CORS para `localhost:4200`, credenciales
+resueltas por el propio SDK vía `GOOGLE_APPLICATION_CREDENTIALS` (nunca
+leído a mano en código propio). Dependencia nueva agregada con permiso
+explícito: `com.google.cloud:google-cloud-storage:2.71.0`.
+
+Decisiones de diseño de esta pasada, todas explícitas en el plan antes de
+codificar:
+- **Sin conversión dual WebP/JPEG.** `urlWebp` apunta al mismo objeto que
+  `url` — la conversión real de formato es del asistente de captura de
+  Fase 5.
+- **Ancho y alto se confían al cliente** (metadato presentacional, no
+  dinero ni inventario); lo único que se verifica contra el almacén real
+  es que el objeto existe y su tamaño en bytes, antes de confirmar.
+- **Sin borrado del objeto anterior en Cloud Storage al reemplazar la
+  principal** — el bucket tiene versionado, así que no hace falta.
+- **Sin límite de tamaño de subida propio**, solo una lista blanca de
+  content-type (`image/jpeg`, `image/png`, `image/webp`); un máximo real
+  de peso queda pendiente si el negocio lo pide.
+
+Encontrado al escribir la prueba de infraestructura contra Postgres real
+(no en las pruebas de aplicación, que usan dobles de prueba y no
+reproducen el orden real de flush de Hibernate): `RepositorioProductosJpa
+.guardarImagenPrincipal` borra la fila `PRINCIPAL` existente e inserta la
+nueva, pero Hibernate ejecuta los `EntityInsertAction` del `ActionQueue`
+antes que los `EntityDeleteAction` dentro de un mismo flush — sin forzar
+el flush del borrado por separado, el insert llegaba primero y violaba el
+índice único parcial (`producto_id) where tipo = 'PRINCIPAL'`). Corregido
+forzando `imagenProductoJpaRepository.flush()` justo después del borrado.
+
+Verificado con Testcontainers (Postgres real, orden de flush incluido),
+`@WebMvcTest` de los dos endpoints nuevos, y Vitest del flujo completo del
+frontend (selección de archivo, lectura de dimensiones, subida, error de
+tipo no soportado, error del servidor). El wiring de `bootRun` real se
+confirmó hasta el arranque del servidor web (todos los beans nuevos se
+construyen sin error); la subida real de bytes contra el bucket de GCP
+queda para verificación manual con las credenciales del entorno local,
+fuera del alcance de lo que este entorno de trabajo puede probar por sí
+mismo.
+
+Con esto, Track B (listar, crear, editar, agregar variante, imagen
+principal) y la Fase 4 completa quedan cerrados.
+
 ## Fase 5. Sistema 360
 
 Se hace al final a propósito: necesita el panel, la autenticación, el
