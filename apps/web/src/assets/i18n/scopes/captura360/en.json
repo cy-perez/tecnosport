@@ -40,5 +40,29 @@
   "ocultar_fantasma": "Hide the previous shot",
   "obturador_bloqueado": "The shutter unlocks when the phone returns to the tilt of the first shot.",
   "set_completo": "All {{total}} shots are done. Processing and upload come in the next step of the assistant.",
-  "error_captura": "The photo could not be taken. Try again."
+  "error_captura": "The photo could not be taken. Try again.",
+  "recuperacion": {
+    "hay_una": "There is an unfinished capture for this product, of {{total}} frames. The shots are saved on this device.",
+    "continuar": "Pick up where you left off",
+    "empezar_de_nuevo": "Start over"
+  },
+  "sin_respaldo_local": "The shots could not be saved on this device. Capture continues, but closing the tab will lose them.",
+  "procesar_y_subir": "Process and upload the set",
+  "procesando": "Processing the set: {{hechos}} of {{total}}.",
+  "subiendo": "Uploading: {{hechos}} of {{total}} frames.",
+  "revision": {
+    "titulo": "Review the full rotation",
+    "ayuda": "Drag to spin. This is where a crooked frame shows up: if something looks off, capture the set again before publishing it.",
+    "publicar": "Publish the set"
+  },
+  "publicado": "Set published. The product page now shows the 360 viewer.",
+  "error_subida": "The set could not be uploaded. The shots are still saved on this device: try again.",
+  "error_publicar": "The set could not be published. The product may already have one published: delete that one first.",
+  "error_proceso": {
+    "IMAGEN_INVALIDA": "One of the shots could not be read. Capture the set again.",
+    "FONDO_NO_UNIFORME": "The background is uneven in one of the shots: there are shadows or something behind the product. Capture again with a light, even background.",
+    "SIN_PRODUCTO": "In one of the shots the product cannot be told apart from the background. Try a background of a different tone.",
+    "PRODUCTO_CORTADO": "In one of the shots the product touches the edge of the frame. Step back a little and capture the set again.",
+    "SIN_ENCUADRE": "The common framing of the set could not be computed. Capture again."
+  }
 }

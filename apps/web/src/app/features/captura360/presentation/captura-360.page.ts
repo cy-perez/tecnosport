@@ -8,9 +8,12 @@ import {
   viewChild,
   ElementRef,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsBoton } from '../../../shared/ts-boton/ts-boton';
 import { TsMigas } from '../../../shared/ts-migas/ts-migas';
+import { TsVisor360 } from '../../../shared/ts-visor-360/ts-visor-360';
 import { usarMigasAdmin } from '../../admin/migas-admin';
 import { TsIndicadorNivel } from './indicador-nivel/ts-indicador-nivel';
 import { TsSuperposicionGuia } from './superposicion-guia/ts-superposicion-guia';
@@ -28,7 +31,7 @@ import { claveDeToma, FOTOGRAMAS_POSIBLES, gradosDeToma } from '../domain/sesion
  */
 @Component({
   selector: 'app-captura-360',
-  imports: [TranslocoPipe, TsBoton, TsIndicadorNivel, TsMigas, TsSuperposicionGuia],
+  imports: [TranslocoPipe, TsBoton, TsIndicadorNivel, TsMigas, TsSuperposicionGuia, TsVisor360],
   templateUrl: './captura-360.page.html',
   styleUrl: './captura-360.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +46,10 @@ export class Captura360Page {
   protected readonly opciones = FOTOGRAMAS_POSIBLES;
 
   private readonly video = viewChild<ElementRef<HTMLVideoElement>>('video');
+  private readonly route = inject(ActivatedRoute);
+  private readonly paramMap = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
 
   protected readonly errorCaptura = signal<string | null>(null);
   protected readonly mostrarFantasma = signal(true);
@@ -56,6 +63,14 @@ export class Captura360Page {
   );
 
   constructor() {
+    // Qué producto se captura, y si quedó una captura suya a medias en disco. No toca la red.
+    effect(() => {
+      const productoId = this.paramMap().get('productoId') ?? '';
+      if (productoId !== '' && this.store.productoId() !== productoId) {
+        void this.store.configurar(productoId);
+      }
+    });
+
     // El elemento de video no existe hasta que hay permiso, así que la asignación del stream se
     // cuelga de la señal del viewChild en vez de hacerse dentro de `pedirCamara`.
     effect(() => {

@@ -57,7 +57,7 @@ export class CamaraNavegador implements Camara {
       throw new Error('El navegador no pudo convertir el fotograma.');
     }
 
-    return { url: URL.createObjectURL(blob), ancho, alto };
+    return { url: URL.createObjectURL(blob), blob, ancho, alto };
   }
 
   liberar(fotograma: FotogramaCrudo): void {

@@ -104,8 +104,15 @@ Sobre `<canvas>`, antes de subir:
    alto que el ancho del más ancho —el mismo tenis de perfil frente al tenis de
    frente— se saldría del cuadro y quedaría cortado. En el caso típico las dos
    lecturas coinciden; esta además no corta nunca.
-4. **Salida.** 1000 x 1000 px, WebP con calidad 82, y JPEG de respaldo. Por debajo
-   de 200 KB por fotograma.
+4. **Salida.** 1000 x 1000 px, WebP con calidad 82. Por debajo de 200 KB por
+   fotograma.
+
+   **Sin respaldo JPEG**, aunque este documento lo pidiera antes de que existiera
+   el backend: `POST /api/v1/admin/sets-rotacion/{id}/subidas` emite **una key por
+   fotograma**, así que el respaldo exigiría 2N objetos y una columna más en el
+   modelo. El visor ya sirve `urlWebp` con `url` de reserva y las dos apuntan al
+   mismo objeto. Si algún día hace falta el respaldo de verdad, se cambia primero
+   el contrato de subida.
 5. **Verificación.** Si la detección de fondo falla, el asistente lo dice y ofrece
    recorte manual. Nunca sube un recorte que sabe que salió mal.
 
@@ -118,10 +125,16 @@ condiciones de captura y por eso existe el recorte manual.
 - Trabajar sobre imágenes grandes en canvas consume memoria; se procesa un
   fotograma a la vez y se liberan los objetos intermedios.
 - El procesamiento pesado va a un Web Worker para no congelar la interfaz.
+  **Todavía no está**: se procesa en el hilo principal, un fotograma a la vez y
+  cediendo el turno entre uno y otro para que la barra de progreso se repinte.
+  Pasarlo a un worker exige `OffscreenCanvas`, que Safari solo trae desde 16.4, y
+  vale la pena medirlo en un teléfono real antes de pagar esa complejidad.
 - Wake Lock mientras dura la sesión de captura, para que la pantalla no se apague
   entre tomas.
 - El set en curso se guarda localmente: cerrar el navegador por accidente no debe
-  costar quince fotos.
+  costar quince fotos. Es **IndexedDB**, no `localStorage` —ocho fotos de dos megas
+  no caben ahí, y `localStorage` solo guarda texto—, y se borra recién cuando el
+  set está a salvo en el servidor.
 
 ## Visor de rotación
 

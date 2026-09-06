@@ -1,4 +1,5 @@
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen, waitFor } from '@testing-library/angular';
 import esAdmin from '../../../../assets/i18n/scopes/admin/es.json';
@@ -6,7 +7,26 @@ import esCaptura from '../../../../assets/i18n/scopes/captura360/es.json';
 import en from '../../../../assets/i18n/en.json';
 import es from '../../../../assets/i18n/es.json';
 import { CapturaStore } from '../application/captura.store';
+import {
+  ALMACEN_LOCAL_DE_CAPTURAS,
+  AlmacenLocalDeCapturas,
+  FotogramaGuardado,
+  SesionGuardada,
+} from '../domain/almacen-local-capturas.puerto';
 import { CAMARA, Camara, FotogramaCrudo } from '../domain/camara.puerto';
+import {
+  PROCESADOR_DE_FOTOGRAMAS,
+  ProcesadorDeFotogramas,
+} from '../domain/procesador-fotogramas.puerto';
+import { ColorRgb, DeteccionDeRecorte } from '../domain/recorte-360';
+import {
+  AbrirSetRotacion,
+  FotogramaSubido,
+  REPOSITORIO_SETS_ROTACION,
+  RepositorioSetsRotacion,
+  SetRotacionAdmin,
+  SubidaDeFotograma,
+} from '../domain/repositorio-sets-rotacion.puerto';
 import { LecturaDeOrientacion } from '../domain/nivel-360';
 import { PANTALLA_DESPIERTA, PantallaDespierta } from '../domain/pantalla-despierta.puerto';
 import { SENSOR_ORIENTACION, SensorOrientacion } from '../domain/sensor-orientacion.puerto';
@@ -36,7 +56,12 @@ class CamaraFalsa implements Camara {
 
   async capturar(): Promise<FotogramaCrudo> {
     this.tomas++;
-    return { url: `blob:toma-${this.tomas}`, ancho: 1920, alto: 1920 };
+    return {
+      url: `blob:toma-${this.tomas}`,
+      blob: new Blob([`toma-${this.tomas}`], { type: 'image/webp' }),
+      ancho: 1920,
+      alto: 1920,
+    };
   }
 
   liberar(fotograma: FotogramaCrudo): void {
@@ -69,6 +94,123 @@ class SensorFalso implements SensorOrientacion {
   }
 }
 
+/** Disco del navegador, en memoria: lo que importa es que se guarde y se pueda recuperar. */
+class AlmacenLocalFalso implements AlmacenLocalDeCapturas {
+  hayDisco = true;
+  sesiones: SesionGuardada[] = [];
+  guardados: FotogramaGuardado[] = [];
+  olvidados: string[] = [];
+
+  disponible(): boolean {
+    return this.hayDisco;
+  }
+
+  async guardarSesion(sesion: SesionGuardada): Promise<void> {
+    this.sesiones = [...this.sesiones.filter((s) => s.sesionId !== sesion.sesionId), sesion];
+  }
+
+  async sesionDe(productoId: string): Promise<SesionGuardada | null> {
+    return this.sesiones.find((sesion) => sesion.productoId === productoId) ?? null;
+  }
+
+  async guardarFotograma(fotograma: FotogramaGuardado): Promise<void> {
+    this.guardados = [
+      ...this.guardados.filter(
+        (g) => !(g.sesionId === fotograma.sesionId && g.orden === fotograma.orden),
+      ),
+      fotograma,
+    ];
+  }
+
+  async fotogramasDe(sesionId: string): Promise<FotogramaGuardado[]> {
+    return this.guardados.filter((g) => g.sesionId === sesionId).sort((a, b) => a.orden - b.orden);
+  }
+
+  async olvidar(sesionId: string): Promise<void> {
+    this.olvidados.push(sesionId);
+    this.sesiones = this.sesiones.filter((s) => s.sesionId !== sesionId);
+    this.guardados = this.guardados.filter((g) => g.sesionId !== sesionId);
+  }
+}
+
+const FONDO: ColorRgb = { r: 240, g: 240, b: 240 };
+
+class ProcesadorFalso implements ProcesadorDeFotogramas {
+  deteccion: DeteccionDeRecorte = {
+    ok: true,
+    rectangulo: { x: 400, y: 400, ancho: 800, alto: 900 },
+    fondo: FONDO,
+  };
+  renderizados = 0;
+
+  async medir(): Promise<DeteccionDeRecorte> {
+    return this.deteccion;
+  }
+
+  async renderizar(): Promise<Blob> {
+    this.renderizados++;
+    return new Blob([`procesado-${this.renderizados}`], { type: 'image/webp' });
+  }
+}
+
+class RepositorioSetsFalso implements RepositorioSetsRotacion {
+  abiertos: AbrirSetRotacion[] = [];
+  subidas: string[] = [];
+  completadoCon: readonly FotogramaSubido[] = [];
+  publicados: string[] = [];
+  fallaLaSubida = false;
+
+  private set(estado: SetRotacionAdmin['estado'], fotogramas: number): SetRotacionAdmin {
+    return {
+      id: 'set-1',
+      productoId: 'p1',
+      fotogramasPrometidos: fotogramas,
+      estado,
+      imagenes: Array.from({ length: fotogramas }, (_, orden) => ({
+        orden,
+        urlWebp: `https://cdn.test/set-1/${orden}.webp`,
+      })),
+    };
+  }
+
+  async abrir(comando: AbrirSetRotacion): Promise<SetRotacionAdmin> {
+    this.abiertos.push(comando);
+    return this.set('BORRADOR', comando.fotogramas);
+  }
+
+  async urlsDeSubida(setId: string): Promise<SubidaDeFotograma[]> {
+    return Array.from({ length: 4 }, (_, orden) => ({
+      orden,
+      url: `https://firmada.test/${setId}/${orden}`,
+      objectKey: `productos/p1/rotacion/${setId}/${orden}.webp`,
+    }));
+  }
+
+  async subirFotograma(url: string): Promise<void> {
+    if (this.fallaLaSubida) {
+      throw new Error('sin red');
+    }
+    this.subidas.push(url);
+  }
+
+  async completar(
+    _setId: string,
+    fotogramas: readonly FotogramaSubido[],
+  ): Promise<SetRotacionAdmin> {
+    this.completadoCon = fotogramas;
+    return this.set('COMPLETO', 4);
+  }
+
+  async publicar(setId: string): Promise<SetRotacionAdmin> {
+    this.publicados.push(setId);
+    return this.set('PUBLICADO', 4);
+  }
+
+  async eliminar(): Promise<void> {
+    // Borrar un set falso no tiene nada que hacer.
+  }
+}
+
 class PantallaFalsa implements PantallaDespierta {
   async mantener(): Promise<() => void> {
     return () => undefined;
@@ -85,9 +227,28 @@ function esperar(ms = 0): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function renderCaptura() {
+const PRODUCTO = 'p1';
+
+/**
+ * `URL.createObjectURL` no existe en jsdom y el store la usa al recuperar de disco. Se apaña con
+ * un doble: lo que la prueba comprueba es qué fotogramas vuelven, no cómo se pintan.
+ */
+function apanarUrlDeObjeto(): void {
+  const url = URL as unknown as Record<string, unknown>;
+  if (typeof url['createObjectURL'] !== 'function') {
+    url['createObjectURL'] = () => 'blob:recuperada';
+    url['revokeObjectURL'] = () => undefined;
+  }
+}
+
+async function renderCaptura(sembrarDisco?: (almacen: AlmacenLocalFalso) => void) {
+  apanarUrlDeObjeto();
   const camara = new CamaraFalsa();
   const sensor = new SensorFalso();
+  const almacenLocal = new AlmacenLocalFalso();
+  sembrarDisco?.(almacenLocal);
+  const procesador = new ProcesadorFalso();
+  const repositorio = new RepositorioSetsFalso();
 
   const resultado = await render(Captura360Page, {
     imports: [
@@ -99,14 +260,48 @@ async function renderCaptura() {
     ],
     providers: [
       provideRouter([]),
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          paramMap: of(convertToParamMap({ productoId: PRODUCTO })),
+          snapshot: { paramMap: convertToParamMap({ productoId: PRODUCTO }) },
+        },
+      },
       { provide: CAMARA, useValue: camara },
       { provide: SENSOR_ORIENTACION, useValue: sensor },
       { provide: PANTALLA_DESPIERTA, useClass: PantallaFalsa },
+      { provide: ALMACEN_LOCAL_DE_CAPTURAS, useValue: almacenLocal },
+      { provide: PROCESADOR_DE_FOTOGRAMAS, useValue: procesador },
+      { provide: REPOSITORIO_SETS_ROTACION, useValue: repositorio },
       CapturaStore,
     ],
   });
 
-  return { ...resultado, camara, sensor };
+  return { ...resultado, camara, sensor, almacenLocal, procesador, repositorio };
+}
+
+/**
+ * Procesar el set cede el turno del bucle de eventos entre fotograma y fotograma —para que la
+ * barra de progreso se repinte—, así que hacen falta varios turnos, no uno.
+ */
+async function asentarVarias(fixture: Parameters<typeof asentar>[0], veces = 14) {
+  for (let i = 0; i < veces; i++) {
+    await asentar(fixture);
+  }
+}
+
+/** Captura el set entero de cuatro tomas, aceptando cada una. */
+async function capturarCuatro(fixture: Parameters<typeof asentar>[0]) {
+  fireEvent.click(screen.getByRole('button', { name: '4 fotogramas' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Permitir la cámara' }));
+  await asentar(fixture);
+
+  for (let toma = 0; toma < 4; toma++) {
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar la foto' }));
+    await asentar(fixture);
+    fireEvent.click(await screen.findByRole('button', { name: 'Aceptar y seguir' }));
+    await asentar(fixture);
+  }
 }
 
 async function asentar(fixture: { detectChanges: () => void; whenStable: () => Promise<unknown> }) {
@@ -266,5 +461,146 @@ describe('Captura360Page', () => {
 
     expect(screen.getByText(/Listas las 4 tomas/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Tomar la foto' })).toBeNull();
+  });
+
+  it('cada toma aceptada se guarda en disco: cerrar la pestana no cuesta las fotos', async () => {
+    const { fixture, almacenLocal } = await conCamaraAbierta();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar la foto' }));
+    await asentar(fixture);
+    fireEvent.click(await screen.findByRole('button', { name: 'Aceptar y seguir' }));
+    await asentar(fixture);
+
+    expect(almacenLocal.guardados).toHaveLength(1);
+    expect(almacenLocal.guardados[0].orden).toBe(0);
+    expect(almacenLocal.sesiones).toHaveLength(1);
+  });
+
+  it('si el disco rechaza la toma la captura sigue, avisando que no hay respaldo', async () => {
+    const { fixture, almacenLocal } = await renderCaptura();
+    almacenLocal.guardarFotograma = async () => {
+      throw new Error('sin espacio');
+    };
+
+    fireEvent.click(screen.getByRole('button', { name: 'Permitir la cámara' }));
+    await asentar(fixture);
+    fireEvent.click(screen.getByRole('button', { name: 'Tomar la foto' }));
+    await asentar(fixture);
+    fireEvent.click(await screen.findByRole('button', { name: 'Aceptar y seguir' }));
+    await asentar(fixture);
+
+    expect(screen.getByText(/No se pudieron guardar las tomas en este dispositivo/)).toBeTruthy();
+    expect(screen.getByText(/Toma 2 de 8/)).toBeTruthy();
+  });
+
+  it('procesa, sube y completa el set, y lo deja en revision antes de publicar', async () => {
+    const { fixture, procesador, repositorio } = await renderCaptura();
+    await capturarCuatro(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
+    await asentarVarias(fixture);
+
+    expect(procesador.renderizados).toBe(4);
+    expect(repositorio.subidas).toHaveLength(4);
+    expect(repositorio.completadoCon).toHaveLength(4);
+    // El backend recibe el tamano de salida, no el de la camara.
+    expect(repositorio.completadoCon[0].ancho).toBe(1000);
+    expect(await screen.findByText('Revisa la rotación completa')).toBeTruthy();
+    // Publicar es un paso aparte: el set todavia no esta publicado.
+    expect(repositorio.publicados).toEqual([]);
+  });
+
+  it('el set se abre en el backend despues de procesar, no antes', async () => {
+    const { fixture, procesador, repositorio } = await renderCaptura();
+    procesador.deteccion = { ok: false, motivo: 'PRODUCTO_CORTADO' };
+    await capturarCuatro(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
+    await asentarVarias(fixture);
+
+    // Un recorte que falla no deja un BORRADOR huerfano en la base de datos.
+    expect(repositorio.abiertos).toEqual([]);
+    expect(screen.getByRole('alert').textContent).toContain('el producto toca el borde del marco');
+  });
+
+  it('publicar deja el set publicado y lo dice', async () => {
+    const { fixture, repositorio, almacenLocal } = await renderCaptura();
+    await capturarCuatro(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
+    await asentarVarias(fixture);
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar el set' }));
+    await asentar(fixture);
+
+    expect(repositorio.publicados).toEqual(['set-1']);
+    expect(screen.getByText(/La ficha del producto ya muestra el visor 360/)).toBeTruthy();
+    // Ya esta a salvo en el servidor: lo de disco deja de hacer falta.
+    expect(almacenLocal.olvidados).toHaveLength(1);
+  });
+
+  it('si la subida falla, las tomas siguen guardadas y se puede reintentar', async () => {
+    const { fixture, repositorio, almacenLocal } = await renderCaptura();
+    repositorio.fallaLaSubida = true;
+    await capturarCuatro(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
+    await asentarVarias(fixture);
+
+    expect(screen.getByRole('alert').textContent).toContain('Las tomas siguen guardadas');
+    expect(almacenLocal.olvidados).toEqual([]);
+    expect(screen.getByRole('button', { name: 'Procesar y subir el set' })).toBeTruthy();
+  });
+
+  it('una captura a medias del mismo producto se ofrece para continuar, y continua', async () => {
+    // Dos de las cuatro tomas quedaron en disco de una sesión anterior.
+    const { fixture } = await renderCaptura((almacen) => {
+      almacen.sesiones.push({
+        sesionId: 's1',
+        productoId: PRODUCTO,
+        fotogramasPrometidos: 4,
+        objetivo: { beta: 90, gamma: 0 },
+        actualizadaEn: 1,
+      });
+      for (let orden = 0; orden < 2; orden++) {
+        almacen.guardados.push({
+          sesionId: 's1',
+          orden,
+          blob: new Blob([`vieja-${orden}`], { type: 'image/webp' }),
+          ancho: 1920,
+          alto: 1920,
+          inclinacion: { beta: 90, gamma: 0 },
+        });
+      }
+    });
+    await asentarVarias(fixture, 4);
+
+    expect(await screen.findByText(/Quedó una captura a medias de este producto/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar donde iba' }));
+    await asentarVarias(fixture, 4);
+    fireEvent.click(screen.getByRole('button', { name: 'Permitir la cámara' }));
+    await asentarVarias(fixture, 4);
+
+    // Sigue en la tercera de cuatro, no empieza de cero.
+    expect(screen.getByText(/Toma 3 de 4/)).toBeTruthy();
+  });
+
+  it('descartar la captura a medias la borra del disco y empieza de cero', async () => {
+    const { fixture, almacenLocal } = await renderCaptura((almacen) => {
+      almacen.sesiones.push({
+        sesionId: 's1',
+        productoId: PRODUCTO,
+        fotogramasPrometidos: 4,
+        objetivo: null,
+        actualizadaEn: 1,
+      });
+    });
+    await asentarVarias(fixture, 4);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar de nuevo' }));
+    await asentarVarias(fixture, 4);
+
+    expect(almacenLocal.olvidados).toEqual(['s1']);
+    expect(screen.getByText('Antes de empezar')).toBeTruthy();
   });
 });

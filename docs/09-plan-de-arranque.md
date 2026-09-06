@@ -1883,6 +1883,64 @@ que recorrerlo con un teléfono de verdad antes de darlo por bueno**: el gesto
 táctil, el permiso de iOS y el comportamiento del nivel con un pulso real no los
 puede confirmar ninguna prueba de Vitest.
 
+### El procesamiento y la subida: el asistente completo
+
+2026-09-06. El último tramo: procesar el set con `recorte-360`, subirlo por las URL
+firmadas, revisarlo con el visor de siempre y publicarlo. Con esto el recorrido del
+asistente existe de punta a punta.
+
+**Un choque que apareció al planearlo, y que corrigió una decisión anterior.** Al
+construir la cámara se decidió no persistir las tomas, con el argumento de que "no
+perder el trabajo" se resolvería subiendo cada fotograma apenas se acepta. **Eso no
+se puede hacer**: el factor de escala es común a todo el set y sale del rectángulo
+más grande de *todos* los fotogramas, así que hasta que no está la última toma no se
+puede procesar ninguna. Procesar sobre la marcha exigiría fijar la escala con la
+primera toma, que es exactamente el defecto que `encuadreDelSet` existe para evitar.
+
+Así que las tomas ahora **se guardan en IndexedDB** en cuanto se aceptan, y al volver
+a la pantalla del mismo producto se ofrece continuar o empezar de nuevo. Lo guardado
+se borra recién cuando el set está a salvo en el servidor: si la subida falla, las
+tomas siguen ahí. IndexedDB a pelo, sin librería envolvente — son cinco operaciones y
+una tabla de índices. Y que el disco rechace una toma no interrumpe nada: la captura
+sigue en memoria y la pantalla avisa de que se quedó sin red de seguridad.
+
+**El set se abre en el backend después de procesar, no antes.** Si el recorte falla
+—fondo desparejo, producto tocando el borde—, no queda un `BORRADOR` huérfano en la
+base de datos. Tiene su prueba.
+
+**Dos desviaciones del documento, las dos ya corregidas en `docs/10-captura-360.md`:**
+
+- **Sin respaldo JPEG.** El documento pedía WebP más JPEG, pero `/subidas` emite una
+  key por fotograma: el respaldo exigiría 2N objetos y una columna más. Si algún día
+  hace falta de verdad, se cambia primero el contrato de subida.
+- **Sin Web Worker todavía.** Se procesa en el hilo principal, un fotograma a la vez
+  y cediendo el turno entre uno y otro para que la barra de progreso se repinte.
+  Pasarlo a un worker exige `OffscreenCanvas` —Safari solo desde 16.4— y vale la pena
+  medirlo en un teléfono real antes de pagar esa complejidad.
+
+Los motivos por los que el recorte puede fallar se traducen a **instrucciones**, no a
+códigos: "en alguna toma el producto toca el borde del marco, aléjate un poco y repite
+el set" en vez de `PRODUCTO_CORTADO`.
+
+**Verificado** con `npm run verificar` completo: lint, **429 pruebas** de Vitest,
+`ng build` y `gradlew.bat build`. El contrato tipado se regeneró contra el OpenAPI del
+backend real corriendo (`bootRun` + PostgreSQL), no a mano. Las pruebas nuevas se
+comprobaron **mutando la implementación**: el encuadre por fotograma en vez del común
+del set, abrir el set antes de procesar, y la toma que no se guarda en disco — cada
+mutación la atrapó la prueba que le tocaba.
+
+**La Fase 5 no está cerrada**, y conviene ser exacto sobre por qué. Falta lo que la
+regla de cierre exige y ninguna prueba puede dar:
+
+1. **El recorrido completo en el navegador**, con un teléfono de verdad: cámara,
+   permiso de sensor en iOS, gesto táctil y el nivel con un pulso real.
+2. **La subida firmada de punta a punta contra Cloud Storage.** En desarrollo no hay
+   llaves de GCS, así que `/subidas` y el `PUT` solo están probados contra dobles.
+3. **El recorrido a mano de los endpoints del set contra `bootRun`**, que tampoco se
+   hizo al construirlos.
+
+Hasta que eso ocurra, lo construido está probado pero no visto funcionando.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
