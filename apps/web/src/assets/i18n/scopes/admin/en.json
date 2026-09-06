@@ -20,6 +20,8 @@
     "filtro_estado": "Status",
     "todos_los_estados": "All",
     "error_lista": "Couldn't load the order list.",
+    "sin_pedidos": "There are no orders yet.",
+    "sin_pedidos_en_estado": "No orders in that status. Try \"All\".",
     "columnas": {
       "numero": "Order",
       "correo": "Email",
@@ -74,6 +76,7 @@
   "productos": {
     "titulo": "Products",
     "error_lista": "Couldn't load the product list.",
+    "sin_productos": "There are no products yet. Create the first one with \"New product\".",
     "nuevo": "New product",
     "editarEnlace": "Edit",
     "columnas": {

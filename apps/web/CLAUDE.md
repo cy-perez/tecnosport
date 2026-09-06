@@ -71,8 +71,22 @@ implementación. ESLint con reglas de límites lo verifica.
   liga con `[attr.aria-label]` sobre el `<button>` interno. Cualquier
   componente compartido que envuelva un control nativo y necesite exponer
   ARIA más allá del contenido proyectado necesita el mismo input explícito.
-- **Imágenes:** `NgOptimizedImage` con `width` y `height`, en WebP, y `priority`
-  solo en la del hero y en el fotograma frontal de la ficha.
+- **Imágenes:** `NgOptimizedImage` siempre, en WebP.
+  - **Con `width` y `height`** cuando la imagen se pinta con la relación de
+    aspecto del archivo. **En modo `fill`, dentro de un marco con
+    `position: relative` y `aspect-ratio`, cuando el recorte lo decide el CSS**
+    (`object-fit: cover`) — es el caso de `ts-tarjeta-producto` y de
+    `ts-galeria`. Declarar el ancho y el alto reales del archivo mientras la
+    hoja de estilos recorta a otra relación son dos verdades que no coinciden, y
+    Angular avisa (`NG02952`) con razón: no se silencia el aviso, se elige el
+    modo correcto.
+  - **`priority` solo en la candidata a LCP de cada pantalla**, nunca en más de
+    una: priorizar todo es no priorizar nada. Es el fotograma frontal de la
+    ficha, y la **primera tarjeta** de la portada y de la rejilla — la portada no
+    tiene `<img>` de hero, su hero es un bloque de CSS, así que el LCP le toca a
+    esa tarjeta (`NG02955`). Por eso `ts-tarjeta-producto` recibe
+    `prioritaria` como `input()` en vez de decidirlo por su cuenta: quién es la
+    primera lo sabe la pantalla, no el componente.
 - **SSR:** nada de `window`, `document`, `localStorage`, `navigator` ni sensores
   fuera de un guardia de plataforma. Las consultas de la primera pantalla se
   precargan en el `resolve` de la ruta, no dentro del componente — ver "Notas

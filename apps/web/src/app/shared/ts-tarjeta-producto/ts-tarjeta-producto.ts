@@ -18,6 +18,15 @@ export class TsTarjetaProducto {
 
   readonly producto = input.required<Producto>();
 
+  /**
+   * Solo la primera tarjeta de una pantalla, y solo si es la candidata a LCP.
+   * En la portada lo es: el hero es un bloque de CSS, no un <img>, así que la
+   * imagen más grande del primer viewport es esta, y sin `priority` Angular
+   * avisaba (NG02955). Marcarlas todas sería peor que ninguna: priorizar todo
+   * es no priorizar nada.
+   */
+  readonly prioritaria = input(false);
+
   // Absoluto, no relativo: la tarjeta se usa en la rejilla (/{lang}/productos)
   // y en la portada (/{lang}), y un enlace relativo al slug apuntaría a un
   // lugar distinto en cada una.

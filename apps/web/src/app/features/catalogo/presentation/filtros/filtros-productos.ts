@@ -8,7 +8,12 @@ import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
 import { OpcionSelect, TsSelect } from '../../../../shared/ts-select/ts-select';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
-import { FiltroProductos, LINEAS, OrdenProductos } from '../../domain/filtro-productos.model';
+import {
+  FiltroProductos,
+  LINEAS,
+  ORDEN_POR_DEFECTO,
+  OrdenProductos,
+} from '../../domain/filtro-productos.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 
 interface ValoresFormularioFiltros {
@@ -38,7 +43,11 @@ function datosFormularioDesdeFiltro(filtro: FiltroProductos): ValoresFormularioF
     precioMin: filtro.precioMin ?? null,
     precioMax: filtro.precioMax ?? null,
     texto: filtro.texto ?? '',
-    orden: filtro.orden ?? '',
+    // Sin `orden` en la URL el backend ordena por relevancia igual, así que el
+    // control lo muestra en vez de quedarse en el vacío: `''` no corresponde a
+    // ninguna `<option>`, y este es el único select de los filtros sin
+    // placeholder que lo cubra.
+    orden: filtro.orden ?? ORDEN_POR_DEFECTO,
   };
 }
 
@@ -81,7 +90,10 @@ export class FiltrosProductos {
     precioMin: new FormControl<number | null>(null),
     precioMax: new FormControl<number | null>(null),
     texto: new FormControl('', { nonNullable: true }),
-    orden: new FormControl('', { nonNullable: true }),
+    // Arranca en el orden por defecto, no en vacío: así también `limpiar()`
+    // (`form.reset()`, que vuelve al valor inicial del control) deja el select
+    // mostrando "Relevancia" en vez de reproducir el blanco.
+    orden: new FormControl<string>(ORDEN_POR_DEFECTO, { nonNullable: true }),
   });
 
   private readonly lineaSeleccionada = toSignal(this.form.controls.linea.valueChanges, {

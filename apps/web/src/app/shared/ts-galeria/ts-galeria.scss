@@ -4,12 +4,14 @@
   gap: var(--esp-8);
 }
 
-.ts-galeria__principal {
-  width: 100%;
-  height: auto;
+.ts-galeria__marco {
+  position: relative;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
   background: var(--color-superficie-alt);
+}
+
+.ts-galeria__principal {
+  object-fit: cover;
 }
 
 .ts-galeria__miniaturas {
@@ -18,6 +20,9 @@
 }
 
 .ts-galeria__miniatura {
+  // El propio botón hace de marco: ya mide 64x64 fijos, y el <img> en `fill`
+  // se ancla al ancestro posicionado más cercano.
+  position: relative;
   width: 64px;
   height: 64px;
   padding: 0;
@@ -27,8 +32,6 @@
   overflow: hidden;
 
   img {
-    width: 100%;
-    height: 100%;
     object-fit: cover;
   }
 

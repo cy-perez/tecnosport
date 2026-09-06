@@ -20,6 +20,12 @@
   margin-bottom: var(--esp-16);
 }
 
+// Mismo tratamiento que el estado vacío de la rejilla del catálogo: es
+// información, no un error.
+.lista-pedidos-admin__vacio {
+  color: var(--color-texto-suave);
+}
+
 .lista-pedidos-admin__oculto-visual {
   position: absolute;
   width: 1px;

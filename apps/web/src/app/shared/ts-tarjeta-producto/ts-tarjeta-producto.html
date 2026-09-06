@@ -1,12 +1,15 @@
 <a class="ts-tarjeta-producto chaflan" [routerLink]="enlace()">
   @if (producto().imagenPrincipal; as imagen) {
-    <img
-      class="ts-tarjeta-producto__imagen"
-      [ngSrc]="imagen.url"
-      [width]="imagen.ancho"
-      [height]="imagen.alto"
-      [alt]="alt()"
-    />
+    <!-- `fill`, no `width`/`height`: la tarjeta recorta a un cuadrado con
+         `object-fit: cover`, así que la relación de aspecto pintada nunca
+         coincide con la del archivo y NgOptimizedImage avisaba (NG02952) con
+         razón. `fill` es el modo que Angular documenta para una imagen cuyo
+         tamaño lo decide el CSS: el marco reserva el espacio —sin salto de
+         diseño al cargar— y el recorte pasa a ser lo declarado, en vez de una
+         contradicción entre el atributo y la hoja de estilos. -->
+    <div class="ts-tarjeta-producto__marco">
+      <img class="ts-tarjeta-producto__imagen" [ngSrc]="imagen.url" [alt]="alt()" [priority]="prioritaria()" fill />
+    </div>
   }
   <div class="ts-tarjeta-producto__cuerpo">
     <p class="ts-tarjeta-producto__marca">{{ producto().marca.nombre }}</p>

@@ -1192,19 +1192,104 @@ propiedad que no se reasigna, un color heredado del navegador. La regla de
 cierre que exige recorrer el sitio de verdad no es burocracia: es el único
 mecanismo que los encuentra.
 
-**Pendientes que salieron del recorrido y no se cerraron:**
+**Pendientes que salieron del recorrido**, los tres cerrados después — ver la
+sección siguiente:
 
-- **"Ordenar por" sale en blanco en la primera pintada** cuando la URL no trae
+- ~~**"Ordenar por" sale en blanco en la primera pintada** cuando la URL no trae
   `orden`. Los otros cinco filtros muestran su placeholder ("Todas"); ese no
   tiene, y su `FormControl` arranca en `''`, que no corresponde a ninguna
   opción. Tras hidratar, o al navegar dentro de la SPA, sí muestra
   "Relevancia". Tiene tres arreglos con semánticas distintas y ninguno es
-  obviamente el correcto: no se eligió en silencio.
-- **La tabla de pedidos vacía no dice que está vacía** — mismo hueco que se
-  cerró en la rejilla del catálogo, pero en el panel.
-- **Avisos de `NgOptimizedImage` en la consola**: `NG02952` (la relación de
+  obviamente el correcto: no se eligió en silencio.~~
+- ~~**La tabla de pedidos vacía no dice que está vacía** — mismo hueco que se
+  cerró en la rejilla del catálogo, pero en el panel.~~
+- ~~**Avisos de `NgOptimizedImage` en la consola**: `NG02952` (la relación de
   aspecto pintada no coincide con la intrínseca) en las tarjetas de producto, y
-  `NG02955` (la imagen del LCP sin `priority`) en la portada.
+  `NG02955` (la imagen del LCP sin `priority`) en la portada.~~
+
+### Los tres pendientes del recorrido, cerrados
+
+2026-09-06, un commit por pendiente más dos correcciones que salieron de volver
+al navegador. Otra vez el patrón: **las dos correcciones las encontró la
+pantalla, no la batería de pruebas**, y las dos eran supuestos míos escritos con
+confianza.
+
+**1. "Ordenar por" en blanco** (`f276bdd`). El `FormControl` arrancaba en `''` y
+ese select es el único de los seis sin `placeholder` que cubriera el vacío,
+mientras el backend sí ordenaba: `ProductoControlador` declara
+`@RequestParam(defaultValue = "RELEVANCIA")`. De las tres salidas posibles se
+eligió, en conversación previa, que el control arranque en `ORDEN_POR_DEFECTO`
+—constante nueva del dominio, con el comentario que apunta al controlador— en
+vez de inventar un placeholder o normalizar la URL con una navegación extra por
+visita. El valor inicial va en el propio `FormControl` y no solo en el
+`patchValue`: `limpiar()` hace `form.reset()`, que vuelve al valor inicial, y
+reproducía el mismo blanco. **Efecto lateral aceptado:** en cuanto se toca
+cualquier filtro, `orden=RELEVANCIA` viaja en la URL.
+
+**2. Las tablas vacías del panel** (`b25f07c`, corregido en `06a942b`). Pedidos
+distingue las dos situaciones igual que la rejilla del catálogo: con filtro de
+estado, quien mira lo puede resolver; sin filtro, no hay nada que hacer todavía.
+En la rama vacía no se pinta ni la tabla ni el paginador. **Productos tenía el
+mismo defecto y el recorrido no lo había reportado**: la siembra trae cuatro
+productos y cero pedidos, así que solo uno de los dos se veía.
+
+Al mirarlo en pantalla apareció que la primera versión mentía: con cuatro
+productos, `?pagina=5` decía "Todavía no hay productos", porque una página
+fuera de rango tampoco trae filas. `Page.getTotalPages()` distingue los dos
+casos (0 si no hay ninguna fila, 1 si las hay pero la página se pasó del final),
+así que la rama vacía exige también `totalPaginas === 0`.
+
+**3. Los avisos de `NgOptimizedImage`** (`1bdb99e`, corregido en `982de0c`).
+`NG02952` era real: `ts-tarjeta-producto` y `ts-galeria` declaraban el ancho y
+el alto del archivo mientras el SCSS recortaba a un cuadrado con
+`object-fit: cover`. Ahora van en modo `fill` dentro de un marco con
+`position: relative` y `aspect-ratio`, que es el mecanismo que Angular documenta
+para una imagen cuyo tamaño decide el CSS. **`ts-galeria` tenía el mismo defecto
+sin que nadie lo hubiera reportado**: las imágenes de la siembra que llegan a la
+ficha son cuadradas, así que ahí no se disparaba.
+
+`NG02955` costó dos intentos. El primero marcó `priority` en la primera tarjeta,
+dando por hecho que el LCP era esa. Medido en el navegador, no lo es: las cuatro
+imágenes se pintan de 225x225 al mismo `top`, el ganador lo decide el orden de
+decodificado, y resultó ser **la segunda en la portada y la cuarta en la
+rejilla**. Va prioritaria toda la franja de novedades y la primera fila de la
+rejilla. El corte de la fila es un compromiso: un monitor muy ancho puede meter
+una quinta tarjeta sobre el pliegue y volver a disparar el aviso.
+
+**Verificado** con `npm run verificar` completo (lint, 274 pruebas de Vitest,
+`ng build` y `gradlew.bat build`) y con clics reales contra `ng serve` +
+`bootRun` + PostgreSQL: "Ordenar por" mostrando "Relevancia" en español y
+"Relevance" en inglés, con el desplegable abierto confirmando que la opción está
+seleccionada de verdad y no es solo la primera pintada; ordenar por precio
+descendente ordenando de verdad y dejando `?orden=PRECIO_DESC`; "Limpiar
+filtros" devolviendo a "Relevancia" y no al blanco; las dos ramas del estado
+vacío de pedidos —con y sin filtro de estado— en pantalla; y la consola sin
+`NG02952` ni `NG02955` en portada, rejilla y ficha.
+
+**Pendientes nuevos, todos vistos en esta pasada y ninguno cerrado:**
+
+- **`NG02956`: no hay `preconnect` al host de las imágenes.** Lo destapó tener
+  por fin imágenes con `priority`. No se arregló porque el arreglo es un
+  `<link rel="preconnect" href="...">` con una URL literal en el `<head>`, y la
+  regla dura #5 prohíbe URL literales en el código; además el host que aparece
+  hoy (`picsum.photos`) es el de los datos de siembra, no el de producción.
+  Cuando exista el host real de imágenes hay que resolverlo por configuración.
+- **`[selected]` no se serializa en el HTML de SSR.** El comentario de
+  `ts-select` dice que marcar cada `<option>` con `[selected]` "de paso arregla
+  el SSR"; comprobado con `curl`, **no lo hace**: ningún `<option>` sale con el
+  atributo, ni con `?orden=PRECIO_DESC` ni con `?linea=BOLSOS`. Antes de hidratar
+  el navegador muestra siempre la primera opción. Hoy no se nota —en los cinco
+  filtros con placeholder la primera es el placeholder, y en "Ordenar por" es
+  justamente "Relevancia"—, pero con un filtro puesto en la URL la primera
+  pintada miente hasta que hidrata.
+- **El pie de `ts-tarjeta-producto` se desborda.** Medido en la portada: las
+  cuatro tarjetas desbordan su caja entre 10 y 39 px, la peor la del producto más
+  caro ("Desde $ 1.299.900" más la etiqueta "Disponible" en 193 px). Es un flex
+  con `space-between` sin `min-inline-size: 0` ni envoltura — la misma familia del
+  problema que ya se corrigió en `ts-select`/`ts-campo`. Es anterior a esta
+  pasada.
+- **El paginador dice "Página 5 de 1"** en una página fuera de rango. Anterior a
+  esta pasada; el "Anterior" funciona, así que hay salida.
 
 ### `.env.local` no llegaba al backend
 

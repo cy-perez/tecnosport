@@ -36,8 +36,14 @@
     <p class="portada__vacio">{{ 'portada.sin_novedades' | transloco }}</p>
   } @else {
     <div class="portada__grid">
+      <!-- Toda la franja va prioritaria, no solo la primera: la portada no
+           tiene <img> de hero (el suyo es un bloque de CSS), así que el LCP es
+           una de estas cuatro, y las cuatro se pintan del mismo tamaño y a la
+           misma altura. Cuál gana lo decide el orden de decodificado, no la
+           posición: medido en el navegador, gana la segunda. Son cuatro
+           imágenes fijas y todas sobre el pliegue. -->
       @for (producto of novedades(); track producto.slug) {
-        <ts-tarjeta-producto [producto]="producto" />
+        <ts-tarjeta-producto [producto]="producto" [prioritaria]="true" />
       }
     </div>
   }

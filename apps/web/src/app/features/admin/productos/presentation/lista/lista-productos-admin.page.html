@@ -9,6 +9,11 @@
     <ts-esqueleto />
   } @else if (consulta.isError()) {
     <p class="lista-productos-admin__error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
+  } @else if (sinProductos()) {
+    <!-- Esta lista no tiene filtros, así que hay una sola situación posible.
+         El enlace de crear el primero ya está arriba: el mensaje lo nombra, no
+         lo repite. -->
+    <p class="lista-productos-admin__vacio">{{ 'admin.productos.sin_productos' | transloco }}</p>
   } @else {
     <table class="lista-productos-admin__tabla">
       <thead>
@@ -22,7 +27,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (producto of consulta.data()?.items ?? []; track producto.id) {
+        @for (producto of productos(); track producto.id) {
           <tr>
             <td>{{ producto.nombre }}</td>
             <td>{{ producto.marca.nombre }}</td>

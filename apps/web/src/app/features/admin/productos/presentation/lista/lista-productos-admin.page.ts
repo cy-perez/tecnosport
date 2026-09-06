@@ -9,7 +9,7 @@ import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
-import { EstadoProducto, FiltroProductosAdmin } from '../../domain/producto-admin.model';
+import { EstadoProducto, FiltroProductosAdmin, ProductoAdmin } from '../../domain/producto-admin.model';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   BORRADOR: 'admin.productos.estados.borrador',
@@ -39,6 +39,18 @@ export class ListaProductosAdminPage {
   protected readonly filtro = computed<FiltroProductosAdmin>(() => filtroDesdeQueryParams(this.queryParams()));
 
   protected readonly consulta = usarListarProductosAdmin(this.filtro);
+
+  protected readonly productos = computed<readonly ProductoAdmin[]>(() => this.consulta.data()?.items ?? []);
+
+  /**
+   * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
+   * solo cuando no hay ningún producto, y 1 cuando sí los hay pero la página
+   * pedida se pasó del final. Sin la distinción, `?pagina=5` con cuatro
+   * productos afirmaba que no había ninguno — visto en el navegador.
+   */
+  protected readonly sinProductos = computed(
+    () => this.productos().length === 0 && (this.consulta.data()?.totalPaginas ?? 0) === 0,
+  );
 
   protected etiquetaEstado(estado: EstadoProducto): string {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
