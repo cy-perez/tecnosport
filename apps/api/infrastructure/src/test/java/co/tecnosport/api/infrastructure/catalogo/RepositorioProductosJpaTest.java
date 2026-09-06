@@ -86,6 +86,7 @@ class RepositorioProductosJpaTest {
                 UUID.randomUUID(),
                 producto.getId(),
                 null,
+                4,
                 "PUBLICADO",
                 "admin",
                 Instant.now(),

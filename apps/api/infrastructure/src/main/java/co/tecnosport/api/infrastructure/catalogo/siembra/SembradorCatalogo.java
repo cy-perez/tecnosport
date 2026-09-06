@@ -340,6 +340,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             setId,
             producto.getId(),
             null,
+            fotogramas,
             // PUBLICADO porque la ficha pública solo expone la rotación en ese estado
             // (MapeadorRespuestasCatalogo, docs/03-api.md).
             "PUBLICADO",
