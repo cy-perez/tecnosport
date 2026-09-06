@@ -14,4 +14,8 @@ public interface ImagenProductoJpaRepository extends JpaRepository<ImagenProduct
   /** A lo sumo una fila por producto (constraint única en BD, {@code variante_id is null}). */
   Optional<ImagenProductoJpaEntity> findByProductoIdAndTipoAndVarianteIdIsNull(
       UUID productoId, String tipo);
+
+  List<ImagenProductoJpaEntity> findBySetRotacionId(UUID setRotacionId);
+
+  void deleteBySetRotacionId(UUID setRotacionId);
 }

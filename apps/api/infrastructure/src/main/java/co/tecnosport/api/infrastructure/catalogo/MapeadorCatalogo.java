@@ -235,7 +235,11 @@ public class MapeadorCatalogo {
         setRotacionPropio);
   }
 
-  private SetRotacion aSetRotacion(
+  /**
+   * Público porque el adaptador del set de rotación reconstruye el agregado por su cuenta, sin
+   * pasar por el producto: recibe el set y las filas de imagen que le pertenecen.
+   */
+  public SetRotacion aSetRotacion(
       SetRotacionJpaEntity s, List<ImagenProductoJpaEntity> imagenesDelProducto) {
     List<ImagenProducto> fotogramas =
         imagenesDelProducto.stream()
