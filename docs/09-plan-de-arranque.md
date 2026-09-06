@@ -1654,7 +1654,59 @@ morral → atrás → tenis):
 Sin `NG02952`, `NG02954` ni `NG02955` en todo el recorrido, con dos fichas con
 visor y una sin él.
 
-**Falta el asistente de captura**, que es el resto de la fase.
+### El asistente de captura: recorte y escala, las funciones puras
+
+2026-09-06, primer paso del asistente y el que el propio documento manda hacer
+primero: *"el recorte y la escala común a todo el set son la parte que decide si el
+resultado se ve bien o se ve casero"*. `features/captura360/domain/recorte-360.ts`,
+sin DOM, sin `canvas` y sin señales — recibe los píxeles ya leídos y devuelve
+números. El tipo `DatosImagen` es propio aunque el `ImageData` del navegador encaje
+tal cual: así se prueba sin DOM.
+
+`colorDeFondo` estima el fondo con las cuatro esquinas y devuelve `null` cuando no
+se parecen entre sí. `detectarRectanguloDelProducto` binariza por umbral de
+luminancia contra ese fondo y devuelve la envolvente, o **por qué no pudo**
+(`IMAGEN_INVALIDA`, `FONDO_NO_UNIFORME`, `SIN_PRODUCTO`, `PRODUCTO_CORTADO`): es lo
+que le va a permitir al asistente ofrecer recorte manual en vez de subir un recorte
+que sabe que salió mal. Un producto que toca el marco se rechaza — puede estar
+cortado, y sobre todo no queda dónde poner el margen que el resto del set sí va a
+tener. `encuadreDelSet` da un solo lado de recorte y una sola escala para los N
+fotogramas, y `recorteDeFotograma` devuelve el origen y el destino que necesita
+`drawImage`, con el caso del producto cerca de un borde resuelto: el origen se
+recorta a lo que existe y el destino se corre en la misma proporción, en vez de
+estirar lo que sí existe para llenar el cuadro — estirarlo cambiaría la escala de
+ese fotograma, que es justo lo que este módulo evita.
+
+**Dos decisiones de las que `docs/10-captura-360.md` no tenía todavía**, las dos ya
+corregidas en ese documento:
+
+- **La referencia de la escala no es "el fotograma más ancho"**, que es lo que decía
+  la letra. Un fotograma más alto que el ancho del más ancho —el mismo tenis de
+  perfil frente al tenis de frente— se saldría del cuadro 1:1 y quedaría cortado.
+  Ahora es el **lado mayor de todos los rectángulos, en las dos dimensiones**: en el
+  caso típico coincide, y nunca corta. Tiene su prueba con nombre propio.
+- **El margen del set es el 8% del lado mayor**, a cada lado
+  (`MARGEN_RELATIVO_DEL_SET`). El documento pedía "el mismo margen relativo" sin
+  decir cuál; el número lo decidió el negocio, no la sesión.
+
+**Las pruebas se comprobaron mutando la implementación**, no viéndolas pasar: siete
+mutaciones —escalar por el más ancho, la envolvente con un off-by-one, el guardia
+del polvo bajado a un píxel, la tolerancia entre esquinas anulada, el rechazo del
+producto cortado desactivado, el destino sin correr en el borde y el margen por
+omisión cambiado— cada una atrapada por exactamente los casos que le tocaban.
+También hay una prueba del **límite honesto** que el documento ya declaraba: un
+producto de la misma luminancia que el fondo (un ámbar claro sobre gris claro) no se
+detecta, y eso pide recorte manual.
+
+29 pruebas nuevas; `ng test` completo en verde (369) y `ng lint` limpio. Sin nada que
+ver en el navegador todavía: no hay pantalla, a propósito.
+
+**Falta el resto del asistente**: el nivelador con sus lecturas simuladas, la cámara
+y la superposición, el dibujo en `<canvas>` que consume estas funciones, y la carga
+con URL firmadas. Del lado del backend, **no existe nada para sets de rotación**: el
+`AlmacenDeImagenes` y `SolicitarSubidaDeImagenPrincipal` de la Fase 4 solo cubren la
+imagen principal, así que crear un set, pedir N URL firmadas y publicarlo está por
+construirse entero.
 
 ## Fase 6. Cierre para publicar
 

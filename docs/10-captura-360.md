@@ -92,11 +92,18 @@ Sobre `<canvas>`, antes de subir:
    binariza por umbral de luminancia y se calcula el rectángulo que contiene al
    producto.
 2. **Recorte con margen.** Se aplica el mismo margen relativo en todos los
-   fotogramas.
+   fotogramas: **8% del lado mayor del producto**, a cada lado.
 3. **Encuadre uniforme.** El rectángulo se lleva a 1:1 centrado. **El factor de
-   escala se calcula una sola vez para todo el set**, tomando el fotograma más
-   ancho como referencia. Si cada fotograma se escala por separado, el producto
-   crece y encoge al girar, que es el defecto más visible de un 360 casero.
+   escala se calcula una sola vez para todo el set**, tomando como referencia el
+   **lado mayor de todos los rectángulos, en las dos dimensiones**. Si cada
+   fotograma se escala por separado, el producto crece y encoge al girar, que es
+   el defecto más visible de un 360 casero.
+
+   La referencia no es "el fotograma más ancho", que es lo que decía este
+   documento hasta que se construyeron las funciones puras: un fotograma más
+   alto que el ancho del más ancho —el mismo tenis de perfil frente al tenis de
+   frente— se saldría del cuadro y quedaría cortado. En el caso típico las dos
+   lecturas coinciden; esta además no corta nunca.
 4. **Salida.** 1000 x 1000 px, WebP con calidad 82, y JPEG de respaldo. Por debajo
    de 200 KB por fotograma.
 5. **Verificación.** Si la detección de fondo falla, el asistente lo dice y ofrece
