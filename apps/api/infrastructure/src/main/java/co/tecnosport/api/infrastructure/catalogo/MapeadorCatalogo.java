@@ -246,6 +246,8 @@ public class MapeadorCatalogo {
 
     return new SetRotacion(
         s.getId(),
+        s.getProductoId(),
+        s.getFotogramas(),
         fotogramas,
         EstadoSetRotacion.valueOf(s.getEstado()),
         s.getCapturadoPor(),
