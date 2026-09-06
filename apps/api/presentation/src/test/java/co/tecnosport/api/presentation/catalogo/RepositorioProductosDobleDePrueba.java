@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -25,6 +26,8 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   Producto ultimoActualizado;
   UUID ultimoProductoIdConVariante;
   Variante ultimaVarianteAgregada;
+  UUID ultimoProductoIdConImagen;
+  ImagenProducto ultimaImagenPrincipal;
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -47,6 +50,8 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimoActualizado = null;
     this.ultimoProductoIdConVariante = null;
     this.ultimaVarianteAgregada = null;
+    this.ultimoProductoIdConImagen = null;
+    this.ultimaImagenPrincipal = null;
     this.skusEnUso.clear();
   }
 
@@ -106,5 +111,11 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public boolean existeVarianteConSku(Sku sku) {
     return skusEnUso.contains(sku.valor());
+  }
+
+  @Override
+  public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
+    this.ultimoProductoIdConImagen = productoId;
+    this.ultimaImagenPrincipal = imagen;
   }
 }

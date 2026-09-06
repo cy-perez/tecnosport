@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -64,4 +65,10 @@ public interface RepositorioProductos {
    * — {@code Producto.agregarVariante} no puede ver esto por sí solo.
    */
   boolean existeVarianteConSku(Sku sku);
+
+  /**
+   * Reemplaza la imagen principal del producto (a lo sumo una por producto, constraint única en BD)
+   * — si había una anterior, esta la sustituye.
+   */
+  void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen);
 }

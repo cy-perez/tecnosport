@@ -25,6 +25,14 @@ cámara y los sensores no funcionan sobre HTTP fuera de `localhost`. Se resuelve
 con un túnel o con un certificado local. Está documentado en el README de
 `apps/web`.
 
+**Imágenes en dev: bucket real de Cloud Storage, no un emulador.** Proyecto
+GCP separado (`tecnosport-dev`, nunca `tecnosport-prod`) con un bucket en la
+capa gratuita (5 GB-mes, clase Standard, regiones `us-central1`/`us-east1`/
+`us-west1`) y una cuenta de servicio propia con `roles/storage.objectAdmin`
+para firmar URLs — decisión del proyecto: dev usa solo servicios de GCP sin
+costo, los servicios pagos se activan al pasar a producción. CORS configurado
+para el origen de `apps/web` en local (`http://localhost:4200`).
+
 ## Producción en GCP
 
 | Servicio | Para qué |
@@ -112,6 +120,8 @@ LIMITE_PEDIDOS_CUENTA_MAXIMO, LIMITE_PEDIDOS_CUENTA_MINUTOS
 ADMIN_CORREO, ADMIN_CLAVE
 
 GCS_BUCKET_IMAGENES, GCS_URL_PUBLICA, GCS_MINUTOS_URL_FIRMADA
+GOOGLE_APPLICATION_CREDENTIALS  (solo local: ruta a la llave de la cuenta de servicio;
+                                 en Cloud Run no se define, se usa la cuenta de servicio adjunta)
 
 SMTP_HOST, SMTP_PUERTO, SMTP_AUTH, SMTP_USUARIO, SMTP_CLAVE, CORREO_REMITENTE
 

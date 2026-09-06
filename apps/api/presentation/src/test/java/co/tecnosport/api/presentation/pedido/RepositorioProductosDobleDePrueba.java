@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -66,6 +67,11 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
   @Override
   public boolean existeVarianteConSku(Sku sku) {
+    throw new UnsupportedOperationException("No usado por PedidoControladorTest.");
+  }
+
+  @Override
+  public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     throw new UnsupportedOperationException("No usado por PedidoControladorTest.");
   }
 }

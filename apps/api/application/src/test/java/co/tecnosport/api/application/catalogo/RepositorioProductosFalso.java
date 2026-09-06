@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -29,6 +30,8 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   Producto ultimoActualizado;
   UUID ultimoProductoIdConVariante;
   Variante ultimaVarianteAgregada;
+  UUID ultimoProductoIdConImagen;
+  ImagenProducto ultimaImagenPrincipal;
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -103,5 +106,11 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public boolean existeVarianteConSku(Sku sku) {
     return skusEnUso.contains(sku.valor());
+  }
+
+  @Override
+  public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
+    this.ultimoProductoIdConImagen = productoId;
+    this.ultimaImagenPrincipal = imagen;
   }
 }
