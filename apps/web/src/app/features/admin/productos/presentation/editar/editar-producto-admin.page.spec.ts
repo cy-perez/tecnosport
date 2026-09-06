@@ -151,6 +151,31 @@ describe('EditarProductoAdminPage', () => {
     expect(screen.getByDisplayValue('Descripción original')).toBeTruthy();
   });
 
+  // La marca y la categoría vienen de una consulta distinta a la del producto.
+  // Si el producto llega primero, el <select> todavía no tiene la <option> que
+  // le corresponde y el valor no engancha: la pantalla mostraba "Selecciona una
+  // opción" con el producto ya cargado, y como los dos campos son obligatorios,
+  // editar solo el nombre obligaba a volver a elegirlos. Encontrado en el
+  // navegador; la prueba de arriba no lo veía porque solo miraba los textos.
+  it('prellena también la marca y la categoría, que vienen de otra consulta', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+    await screen.findByDisplayValue('Morral urbano');
+
+    expect((screen.getByLabelText('Marca') as HTMLSelectElement).value).toBe(MARCA.id);
+    expect((screen.getByLabelText('Categoría') as HTMLSelectElement).value).toBe(CATEGORIA.id);
+  });
+
+  // El enlace relativo generaba `productos/{id}/{id}/variantes/crear` — la ruta
+  // de esta pantalla es `:id/editar`, dos segmentos, así que `..` sube uno solo.
+  // No existía, y al hacer clic la aplicación caía en la portada.
+  it('el enlace de agregar variante apunta a la ruta real, con el id una sola vez', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+
+    const enlace = await screen.findByRole('link', { name: 'Agregar variante' });
+
+    expect(enlace.getAttribute('href')).toBe('/es/admin/productos/p1/variantes/crear');
+  });
+
   it('con un id inexistente, muestra el error de carga', async () => {
     await renderPagina(new RepositorioProductosAdminFalso(null));
 

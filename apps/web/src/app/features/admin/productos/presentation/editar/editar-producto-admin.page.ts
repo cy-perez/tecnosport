@@ -49,6 +49,24 @@ export class EditarProductoAdminPage {
   private readonly paramMap = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
   protected readonly id = computed(() => this.paramMap().get('id') ?? '');
 
+  /**
+   * Absoluto, no relativo. La ruta de esta pantalla es `:id/editar`, dos
+   * segmentos, así que un `..` sube uno solo y deja `productos/:id`: el enlace
+   * relativo generaba `productos/{id}/{id}/variantes/crear`, que no existe, y
+   * al hacer clic la aplicación caía en la portada. Mismo criterio que
+   * `usarMigasAdmin` y `ts-tarjeta-producto`, y misma familia de error que ya
+   * apareció en el paso 2 de Track B con un path sin prefijo de idioma.
+   */
+  protected readonly enlaceAgregarVariante = computed(() => [
+    '/',
+    this.transloco.activeLang(),
+    'admin',
+    'productos',
+    this.id(),
+    'variantes',
+    'crear',
+  ]);
+
   protected readonly consulta = usarVerProductoAdmin(this.id);
 
   protected readonly error = signal<string | null>(null);
