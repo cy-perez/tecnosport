@@ -7,7 +7,23 @@
     <ts-migas [ruta]="migas()" />
 
     <div class="ficha__contenido">
-      <ts-galeria [imagenes]="imagenesGaleria()" />
+      <!-- Las dos ramas repiten <ts-galeria> a propósito, en vez de ligar `prioritaria` a una
+           expresión: `priority` es una entrada que NgOptimizedImage congela tras inicializar, y
+           navegar de una ficha con rotación a otra sin ella la cambiaría en caliente. En ramas
+           distintas, cada instancia nace con su valor y nunca lo cambia. Las dos lo declaran
+           aunque una coincida con el valor por omisión: quién es la candidata a LCP de esta
+           pantalla se lee aquí, no en el componente.
+
+           Dos fotogramas es el mínimo con el que `ts-visor-360` pinta algo. La condición se repite
+           aquí para no dejar un hueco de rejilla con un visor vacío dentro. -->
+      @if (fotogramas360().length > 1) {
+        <div class="ficha__visual">
+          <ts-visor-360 [imagenes]="fotogramas360()" />
+          <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="false" />
+        </div>
+      } @else {
+        <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="true" />
+      }
 
       <div class="ficha__info">
         <p class="ficha__marca">{{ p.marca.nombre }}</p>

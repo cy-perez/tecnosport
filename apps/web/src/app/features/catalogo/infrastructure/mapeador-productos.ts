@@ -54,16 +54,23 @@ function aImagen(dto: ImagenDto): Imagen {
   };
 }
 
+/**
+ * El orden de los fotogramas es la rotación: uno fuera de sitio se ve como un salto al girar. Se
+ * garantiza aquí, en la frontera donde el DTO se vuelve modelo, y no en cada pantalla que lo
+ * consuma — el visor recibe el arreglo ya ordenado y no tiene que volver a saberlo.
+ */
 function aRotacion(dto: RotacionDto): Rotacion {
   return {
     fotogramas: dto.fotogramas ?? 0,
-    imagenes: (dto.imagenes ?? []).map((fotograma) => ({
-      orden: fotograma.orden ?? 0,
-      url: fotograma.url ?? '',
-      urlWebp: fotograma.urlWebp ?? '',
-      ancho: fotograma.ancho ?? 0,
-      alto: fotograma.alto ?? 0,
-    })),
+    imagenes: (dto.imagenes ?? [])
+      .map((fotograma) => ({
+        orden: fotograma.orden ?? 0,
+        url: fotograma.url ?? '',
+        urlWebp: fotograma.urlWebp ?? '',
+        ancho: fotograma.ancho ?? 0,
+        alto: fotograma.alto ?? 0,
+      }))
+      .sort((uno, otro) => uno.orden - otro.orden),
   };
 }
 

@@ -6,6 +6,7 @@ import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
+import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
@@ -13,11 +14,13 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -38,6 +41,12 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class SembradorCatalogo implements ApplicationRunner {
 
+  /** El objetivo de docs/10-captura-360.md: donde el arrastre empieza a sentirse continuo. */
+  private static final int FOTOGRAMAS_OBJETIVO = 8;
+
+  /** El mínimo publicable de la misma tabla: cada arrastre salta 90 grados. */
+  private static final int FOTOGRAMAS_MINIMOS = 4;
+
   private final MarcaJpaRepository marcas;
   private final CategoriaJpaRepository categorias;
   private final AtributoJpaRepository atributos;
@@ -45,6 +54,7 @@ public class SembradorCatalogo implements ApplicationRunner {
   private final VarianteJpaRepository variantes;
   private final VarianteAtributoValorJpaRepository valoresAtributo;
   private final ImagenProductoJpaRepository imagenes;
+  private final SetRotacionJpaRepository setsRotacion;
 
   public SembradorCatalogo(
       MarcaJpaRepository marcas,
@@ -53,7 +63,8 @@ public class SembradorCatalogo implements ApplicationRunner {
       ProductoJpaRepository productos,
       VarianteJpaRepository variantes,
       VarianteAtributoValorJpaRepository valoresAtributo,
-      ImagenProductoJpaRepository imagenes) {
+      ImagenProductoJpaRepository imagenes,
+      SetRotacionJpaRepository setsRotacion) {
     this.marcas = marcas;
     this.categorias = categorias;
     this.atributos = atributos;
@@ -61,6 +72,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     this.variantes = variantes;
     this.valoresAtributo = valoresAtributo;
     this.imagenes = imagenes;
+    this.setsRotacion = setsRotacion;
   }
 
   @Override
@@ -210,6 +222,13 @@ public class SembradorCatalogo implements ApplicationRunner {
     guardarGaleria(tenis, ahora);
     guardarGaleria(morral, ahora);
     guardarGaleria(celular, ahora);
+
+    // Dos productos con set de rotación, de distinto tamaño, y los otros dos sin ninguno. Los tres
+    // casos hacen falta en desarrollo: la ficha con visor, la ficha sin visor, y sobre todo pasar
+    // de un set a otro dentro de la misma sesión, que es el camino donde vivían la carrera de la
+    // precarga y el reinicio del fotograma (docs/09-plan-de-arranque.md, Fase 5).
+    guardarSetRotacion(tenis, FOTOGRAMAS_OBJETIVO, ahora);
+    guardarSetRotacion(morral, FOTOGRAMAS_MINIMOS, ahora);
   }
 
   private MarcaJpaEntity guardarMarca(String nombre, Instant ahora) {
@@ -305,6 +324,51 @@ public class SembradorCatalogo implements ApplicationRunner {
             producto.getNombre(),
             producto.getNombre(),
             ahora));
+  }
+
+  /**
+   * Set de rotación publicado, con el número de fotogramas que pida quien llama — la tabla de
+   * docs/10-captura-360.md contempla 4, 8 y 16. Las imágenes son de picsum.photos y no son un giro
+   * real: cada fotograma es una foto distinta, así que sirven para ejercitar el visor —el índice
+   * circular, la precarga, el arrastre— y no para juzgar cómo se ve una rotación de verdad. Eso
+   * llega con el asistente de captura.
+   */
+  private void guardarSetRotacion(ProductoJpaEntity producto, int fotogramas, Instant ahora) {
+    UUID setId = GeneradorIdentificador.nuevo();
+    setsRotacion.save(
+        new SetRotacionJpaEntity(
+            setId,
+            producto.getId(),
+            null,
+            // PUBLICADO porque la ficha pública solo expone la rotación en ese estado
+            // (MapeadorRespuestasCatalogo, docs/03-api.md).
+            "PUBLICADO",
+            "siembra",
+            ahora,
+            "siembra",
+            "siembra"));
+
+    for (int orden = 0; orden < fotogramas; orden++) {
+      String url =
+          "https://picsum.photos/seed/" + producto.getSlug() + "-360-" + orden + "/1000/1000";
+      imagenes.save(
+          new ImagenProductoJpaEntity(
+              GeneradorIdentificador.nuevo(),
+              producto.getId(),
+              null,
+              setId,
+              "ROTACION",
+              orden,
+              url,
+              url,
+              1000,
+              1000,
+              180_000,
+              "seed-" + producto.getSlug() + "-360-" + orden,
+              producto.getNombre(),
+              producto.getNombre(),
+              ahora));
+    }
   }
 
   private void guardarGaleria(ProductoJpaEntity producto, Instant ahora) {

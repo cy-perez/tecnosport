@@ -1,0 +1,53 @@
+@if (hayRotacion()) {
+  <div class="ts-visor-360">
+    <!-- El marco es el que recibe el foco y los gestos: es lo que se ve girar. `role="group"` con
+         su nombre accesible, porque no es una imagen suelta sino un control con varias piezas, y
+         `aria-describedby` apuntando a las instrucciones: sin eso, quien usa un lector de pantalla
+         enfoca el visor y no se entera de que las flechas giran. -->
+    <div
+      #marco
+      class="ts-visor-360__marco"
+      tabindex="0"
+      role="group"
+      [class.ts-visor-360__marco--arrastrando]="arrastrando()"
+      [attr.aria-label]="'visor360.etiqueta' | transloco"
+      [attr.aria-describedby]="idInstrucciones"
+      (keydown)="alTeclado($event)"
+      (pointerdown)="iniciarArrastre($event)"
+      (pointermove)="mover($event)"
+      (pointerup)="terminarArrastre($event)"
+      (pointercancel)="terminarArrastre($event)"
+    >
+      <!-- Un solo <img> que cambia de `ngSrc`: es la vía que NgOptimizedImage soporta en caliente
+           (las demás entradas sí están congeladas tras la inicialización). El fotograma 0 es el que
+           sirve el SSR y la candidata a LCP de la ficha, de ahí `priority`. Modo `fill` porque el
+           recorte cuadrado lo decide el CSS. `alt=""`: los fotogramas son decorativos en conjunto,
+           la descripción del producto vive en el texto de la ficha. -->
+      @if (urlVisible()) {
+        <img class="ts-visor-360__fotograma" [ngSrc]="urlVisible()" alt="" fill priority />
+      }
+
+      @if (pistaVisible()) {
+        <p class="ts-visor-360__pista" aria-hidden="true">{{ 'visor360.pista' | transloco }}</p>
+      }
+    </div>
+
+    <div class="ts-visor-360__controles">
+      <ts-boton variante="secundario" [etiquetaAccesible]="'visor360.girar_izquierda' | transloco" (click)="girar(-1)">
+        ‹
+      </ts-boton>
+
+      <!-- `aria-live` por el mismo motivo que en ts-paginador: al girar con el teclado el foco se
+           queda donde estaba y nada más anunciaría el cambio. -->
+      <span class="ts-visor-360__posicion" aria-live="polite">
+        {{ 'visor360.posicion' | transloco: { actual: indiceActual() + 1, total: total() } }}
+      </span>
+
+      <ts-boton variante="secundario" [etiquetaAccesible]="'visor360.girar_derecha' | transloco" (click)="girar(1)">
+        ›
+      </ts-boton>
+    </div>
+
+    <p class="ts-visor-360__instrucciones" [id]="idInstrucciones">{{ 'visor360.instrucciones' | transloco }}</p>
+  </div>
+}

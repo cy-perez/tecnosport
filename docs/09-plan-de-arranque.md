@@ -1350,6 +1350,312 @@ cámara y la superposición, y al final la carga con URL firmadas.
 El recorte y la escala común a todo el set son la parte que decide si el
 resultado se ve bien o se ve casero. Van primero y van probadas.
 
+**Visor cerrado de punta a punta** (2026-09-06), en los tres pasos del prompt y
+un commit por paso.
+
+Las **funciones puras primero** (`shared/ts-visor-360/rotacion-360.ts`,
+`ac1b38d`): `indiceCircular` (el `%` de JavaScript conserva el signo del
+dividendo, así que un desplazamiento negativo necesita la segunda vuelta),
+`indiceDesdeDesplazamiento`, `indiceOpuesto` y `ordenDePrecarga`. Un giro
+completo es aproximadamente un ancho de arrastre, así que la sensibilidad es
+relativa al contenedor y se siente igual en teléfono y en escritorio.
+**`Math.round` no sirve tal cual**: rompe los empates hacia +∞ (`-0,5` da `-0`
+pero `0,5` da `1`), y el visor giraría antes hacia un lado que hacia el otro; el
+redondeo va sobre el valor absoluto. 26 pruebas, con los casos de borde que el
+componente no puede cubrir cómodo: ancho sin medir todavía, un solo fotograma y
+cero fotogramas.
+
+**El componente** (`3a95f01`) recibe un arreglo ordenado de URL y nada más.
+`PointerEvent` único para ratón, dedo y lápiz; solo el eje horizontal gira y el
+vertical se lo queda el navegador por `touch-action: pan-y`. Teclado con flechas,
+Inicio al frontal y Fin al opuesto, consumiendo solo la tecla que el visor usa.
+Botones visibles con `etiquetaAccesible` y contador de posición con `aria-live`,
+mismo motivo que `ts-paginador`. La pista "arrastra para girar" se va con la
+primera interacción y, si nadie toca nada, sola a los cuatro segundos: un texto
+permanente encima de la imagen es justo lo que `docs/10-captura-360.md` no
+quiere.
+
+Dos decisiones que hubo que verificar en vez de suponer (regla dura #9):
+- **`ngSrc` sí se puede cambiar en caliente**; el resto de entradas de
+  `NgOptimizedImage` (`priority`, `fill`, `width`, `height`...) están congeladas
+  tras inicializar. Comprobado en la fuente de `@angular/common`
+  (`assertNoPostInitInputChange`), no de memoria. Por eso el visor es un solo
+  `<img>` que cambia de `ngSrc` y no ocho apilados.
+- **Esa misma congelación decide la forma de la plantilla de la ficha.**
+  `ts-galeria` ganó la entrada `prioritaria` (mismo patrón que
+  `ts-tarjeta-producto`: quién es la candidata a LCP lo sabe la pantalla), y la
+  ficha repite `<ts-galeria>` en las dos ramas del `@if` a propósito, con un
+  literal en cada una — ligar `prioritaria` a una expresión reventaría al
+  navegar de una ficha con rotación a otra sin ella.
+
+**Carga**: el fotograma 0 lo sirve el SSR y es el único con `priority`; el resto
+se precarga en cadena después del evento de carga, en orden de cercanía, y no se
+precarga nada con ahorro de datos o conexión lenta. Mientras tanto el arrastre no
+se bloquea: se pinta el fotograma disponible más cercano al deseado y el que
+falte se pide bajo demanda.
+
+**La siembra no tenía ningún set de rotación** (`0f544d5`), y sin eso el visor no
+se podía ver en el navegador: el esquema soporta `set_rotacion` desde `V1` y la
+ficha ya lo exponía desde la Fase 1, pero ninguno de los cuatro productos de
+desarrollo tenía uno. Ahora el tenis trae ocho fotogramas de 1000x1000 en un set
+`PUBLICADO` —el único estado que la ficha pública expone—, con imágenes de
+`picsum.photos`, una distinta por fotograma: sirven para ejercitar el visor, no
+para juzgar cómo se ve una rotación de verdad.
+
+**Verificado** con `npm run verificar` completo (lint, 320 pruebas de Vitest,
+`ng build` y `gradlew.bat build`) y con clics reales contra `ng serve` +
+`bootRun` + PostgreSQL, llegando a la ficha desde la portada: los botones
+girando en los dos sentidos, el arrastre de 160 px avanzando exactamente tres
+fotogramas —la aritmética que dicen las pruebas—, Inicio volviendo al frontal y
+Fin al opuesto **sin desplazar la página**, la pista yéndose sola a los cuatro
+segundos, el chip legible sobre la foto en tema claro y oscuro, y la consola sin
+`NG02952`, sin `NG02954` (ni siquiera navegando de la ficha con rotación a una
+sin ella, que es el caso que la plantilla de dos ramas evita) y sin `NG02955`.
+El HTML del SSR trae **solo el fotograma 0**, con `fetchpriority="high"`,
+mientras la imagen de la galería queda en `loading="lazy"` — la prioridad se
+movió de verdad. Cero *Missing translation* en el log del servidor, en los dos
+idiomas.
+
+**Lo que no se verificó, y por qué:**
+
+- **El gesto táctil real.** `touch-action: pan-y` está puesto y el arrastre
+  vertical no gira, comprobado con ratón, pero que el desplazamiento de la
+  página siga funcionando con el dedo encima del visor solo lo dice un teléfono
+  de verdad.
+- **La rama de conexión lenta / ahorro de datos.** `navigator.connection` no se
+  puede simular desde la automatización; está cubierta por Vitest, no por el
+  navegador.
+
+**Pendiente nuevo:** `NG02956` (sin `preconnect` al host de las imágenes) ahora
+también lo dispara el fotograma 0 del visor. Es el mismo pendiente ya anotado en
+la Fase 4 y sigue sin resolverse por el mismo motivo: el arreglo es una URL
+literal en el `<head>`, que la regla dura #5 prohíbe, y el host de hoy es el de
+la siembra. Cuando exista el host real de imágenes hay que resolverlo por
+configuración.
+
+**Aviso de presupuesto de bundle, que no es de esta fase:** `ng build` avisa que
+el bundle inicial se pasa del presupuesto de 600 kB. **No lo causó el visor** —
+comprobado construyendo `main` antes de esta rama: 603,52 kB allí contra 603,54
+kB aquí, dos centésimas de diferencia. Todo el código del visor va en el trozo
+perezoso de la ficha. Queda anotado porque nadie lo había anotado.
+
+### La revisión adversarial del visor
+
+Trece hallazgos; se cerraron los tres primeros (2026-09-06). Los cinco puntos más
+graves del guion —flechas de dependencia, lógica en la capa equivocada, `double`
+para dinero, confianza en el cliente, idempotencia— salieron limpios, pero por un
+motivo que conviene decir: **este cambio es un visor de solo lectura**, no toca
+dinero ni inventario ni escribe nada. No probó nada sobre esas reglas.
+
+**1. Cuatro archivos quedaron comiteados en CRLF** (`62e8599`) mientras el resto
+del repositorio es LF. Lo grave no es el carácter: el diff deja de mostrar el
+cambio. La edición real de `ficha.page.ts` son diecisiete líneas y aparecían
+doscientas cincuenta y una; la de este documento, noventa y una contra dos mil
+novecientas tres. Un PR así no se revisa, se aprueba a ciegas. Los escribió un
+script en modo texto sobre Windows, que traduce al escribir. Con
+`core.autocrlf=false` y sin `.gitattributes` gana la herramienta que escribió
+último, así que no bastaba con convertir los cuatro: el repositorio ahora fija LF
+para todo, con CRLF solo en `.bat`/`.cmd` (que es `gradlew.bat`) y los binarios
+marcados.
+
+**2. "Fotograma 1 de 0"** (`838ecb0`). Con cero o un fotograma el visor pintaba
+igual los dos botones y un contador que mentía — **el mismo defecto que ya se
+había corregido en `ts-paginador`** (`038e8a4`, Fase 4), reintroducido en un
+componente nuevo. No se veía porque el backend solo expone sets `PUBLICADO`, que
+exigen cuatro fotogramas; se iba a ver en cuanto el asistente de captura, que usa
+este mismo visor en su paso 6, le pasara un set a medio armar.
+
+**3. Las instrucciones de teclado no estaban asociadas al foco** (`838ecb0`).
+Estaban en un `<p>` hermano: visibles para quien ve y para nadie más. Quien usa un
+lector de pantalla enfocaba el visor, oía "Vista 360 del producto, grupo" y no se
+enteraba de que las flechas giran. Ahora van con `aria-describedby`, con el id de
+un contador de módulo. Se había omitido a propósito, para no inventar ids únicos
+con SSR de por medio; ese razonamiento se quedó en la conversación y no en el
+código, y el que pagaba era el usuario del lector.
+
+Las cuatro pruebas de los arreglos 2 y 3 **se comprobaron mutando la
+implementación**: fallan si se deshace el arreglo. Y se volvió al navegador,
+porque el `@if` nuevo envuelve el elemento del `viewChild`: el arrastre sigue
+girando y la hidratación no se queja del id.
+
+**4. Ordenar y elegir formato vivían en la página**, no en el mapeador. Cerrado
+después, junto con el 8 — ver la sección siguiente.
+
+**Los seis hallazgos restantes quedan abiertos**, por orden de lo que costaría
+que muerdan:
+- ~~**Un refetch en segundo plano devuelve el visor al frontal.**~~ Cerrado — ver
+  la sección siguiente. Arrastraba también a la selección de variante, que tenía
+  el defecto desde la Fase 1.
+- ~~**`cargados` se lleva por índice y nada cancela la precarga en vuelo.**~~
+  Cerrado — ver la sección siguiente.
+- **Un fotograma roto se salta en silencio**: ni log ni señal, el contador sigue
+  diciendo ocho y uno nunca aparece.
+- **La pista sale en cada visita**, no "la primera vez" como pide
+  `docs/10-captura-360.md`: nada recuerda que ya se vio.
+- **Sin captura de puntero el arrastre se queda pegado**: si se suelta fuera del
+  marco no llega `pointerup` y `arrastrando` se queda en verdadero. El comentario
+  del código afirma que el camino degradado funciona; funciona a medias.
+- **Dos pruebas del visor pasarían con la implementación borrada** (las dos
+  negativas: que el arrastre vertical no gire y que mover sin arrastrar no gire).
+  Valen porque las positivas están al lado; solas serían decorativas.
+- **`guardarSetRotacion` del sembrador no tiene ninguna prueba**: lo único que lo
+  ejercita es haber arrancado `bootRun` a mano.
+- **Tercera copia del host literal de imágenes** en el sembrador, contra la regla
+  dura #5. Perfil `local` y con precedente dos métodos más abajo, pero ya son tres.
+
+### Dos hallazgos más, cerrados: el mapeador y la prioridad por omisión
+
+2026-09-06, un commit.
+
+**El orden de los fotogramas se garantiza en el mapeador** (`aRotacion`), que es
+la frontera donde el DTO se vuelve modelo. La ficha ya no ordena: recibe el
+arreglo ordenado y no tiene que saber que el orden importa. Antes, cualquier
+pantalla nueva que consumiera `rotacion` tenía que acordarse.
+
+**Y la elección de formato es una sola regla**, `urlPreferida` en el dominio del
+catálogo: WebP con el original de respaldo, la regla de imágenes de
+`apps/web/CLAUDE.md`. Antes el visor servía la WebP y la galería el original, sin
+que nadie lo hubiera decidido: eran dos expresiones sueltas en dos plantillas.
+`ts-tarjeta-producto` tenía la tercera y también pasa por la función — dejarla
+fuera habría recreado la incoherencia el mismo día de arreglarla.
+
+**`ts-galeria.prioritaria` pasa a `false` por omisión.** El valor por defecto
+tiene que ser el que no hace daño: una pantalla nueva que se olvide de decidir se
+lleva una imagen sin priorizar, no una segunda candidata a LCP compitiendo con la
+de verdad. La ficha ahora lo declara explícito en sus dos ramas, aunque una
+coincida con el defecto: quién es la candidata de esa pantalla se lee en la
+pantalla.
+
+**Una prueba nueva no servía y lo dijo el mutante.** La que cubre el valor por
+omisión de `prioritaria` pasaba igual con el defecto cambiado a `true`, porque el
+ayudante `renderGaleria` mandaba siempre el input y el valor por defecto no lo
+ejercitaba nadie. Se arregló el ayudante para que solo lo pase cuando la prueba lo
+pide, y entonces sí falla. **Los dos arreglos se comprobaron mutando la
+implementación**, no viendo pasar las pruebas.
+
+Verificado también en el navegador, porque el cambio de WebP toca la portada y la
+rejilla y no solo la ficha: las cuatro tarjetas cargan, la ficha con visor da
+`fetchpriority=high` en el fotograma frontal y `auto`/`lazy` en la galería, la
+ficha sin visor devuelve el `high` a la galería, y en las tres pantallas la
+consola solo trae el `NG02956` ya conocido — uno por pantalla, que es la señal de
+que hay exactamente una imagen prioritaria en cada una.
+
+### El reinicio por revalidación, cerrado — y la prueba que no probaba nada
+
+2026-09-06, un commit. Es el hallazgo que más costó **confirmar**, no arreglar.
+
+**La primera prueba pasaba con el defecto puesto.** Se escribió una que giraba el
+visor, forzaba `refetchQueries()` y comprobaba que el fotograma seguía en su
+sitio: pasaba en verde sin tocar el código. No porque no hubiera defecto, sino
+porque la revalidación no estaba llegando al componente y la prueba no lo
+comprobaba. Al añadirle que el **precio nuevo tiene que verse en pantalla** —la
+señal de que el refetch sí llegó— la prueba falló, que era lo correcto. Sin esa
+comprobación habría quedado un hallazgo "verificado como inexistente" y un
+defecto vivo.
+
+Con la prueba sirviendo, quedaron claras dos situaciones distintas:
+
+- **Si los datos vuelven idénticos, no pasa nada.** TanStack hace *structural
+  sharing* por omisión y conserva la referencia anterior, así que ningún efecto
+  se dispara. Esa rama tiene su propia prueba, para que se sepa que es la
+  librería quien lo evita y no el código de aquí.
+- **Si cambia cualquier cosa del producto** —el precio, la existencia—, el objeto
+  es nuevo, el `computed` de la ficha devuelve un arreglo nuevo, y ahí sí se
+  reiniciaba el visor al frontal.
+
+El arreglo, en los dos sitios, es dejar de usar la identidad como señal de "esto
+cambió":
+
+- **`ts-visor-360` depende de `claveDelSet`**, el contenido del arreglo unido en
+  una cadena. Un `computed` que devuelve una cadena igual no propaga, así que el
+  efecto de reinicio solo corre cuando el set de verdad es otro.
+- **La ficha depende de `slugCargado`**, no de `producto()`, y lee el producto con
+  `untracked`. La selección de variante se reinicia al cargar otro producto y no
+  porque el mismo haya vuelto del servidor. **Ese defecto era de la Fase 1**, no
+  del visor: elegir "Negro" y perderlo al volver a la pestaña es peor que perder
+  un fotograma.
+
+Con una prueba para cada lado de la moneda, porque "no reiniciar en un refetch"
+no puede volverse "no reiniciar nunca": navegar a otro producto sí suelta la
+variante elegida. Los dos arreglos se comprobaron mutándolos.
+
+**Verificado también en el navegador, con TanStack de verdad**: pestaña abierta
+en la ficha, visor girado al fotograma 4, cambio real de pestaña (comprobado que
+`document.visibilityState` pasa a `hidden`), vuelta pasados los sesenta segundos
+del `staleTime`, y en el panel de red **aparece la petición de revalidación** —
+el visor siguió en el fotograma 4. La revalidación de esa corrida trajo los
+mismos datos; el caso de datos distintos es el que cubre la prueba, con el
+`QueryClient` real y no un doble.
+
+### La precarga en vuelo, cerrada
+
+2026-09-06, un commit. Es el hallazgo que más le importa al asistente de captura,
+que va a cambiar de set continuamente mientras se capturan fotogramas.
+
+**Lo cargado se lleva por URL, no por índice.** Con índices, el `onload` tardío
+del fotograma 3 del set anterior marcaba disponible el 3 del set nuevo, que nadie
+había pedido: el visor saltaba a una imagen sin cargar y parpadeaba, en vez de
+quedarse en el fotograma disponible más cercano. Con URL, cada respuesta habla
+solo de sí misma. De paso, ya no hace falta vaciar nada al cambiar de set: una URL
+que cargó sigue en la caché del navegador, se esté mirando el set que se esté
+mirando, así que volver al producto anterior lo encuentra listo.
+
+**La cadena de precarga se corta por generación.** Cada vez que arranca una
+cadena toma un número; en cada eslabón comprueba que sigue siendo la vigente, y si
+no, se abandona. Antes, la cadena del set viejo seguía caminando mientras el
+visitante ya miraba otro.
+
+**Y ahora el set nuevo también se precarga.** Antes la cadena era de un solo
+disparo, atada al evento de carga de la página: al cambiar de set no se lanzaba
+ninguna, así que el segundo producto de una sesión se quedaba sin precarga y sin
+que nadie lo notara. Ahora el mismo efecto que devuelve el visor al frontal lanza
+la cadena del set nuevo, si la página ya terminó de cargar.
+
+Dos pruebas nuevas, con un doble de `Image` que la prueba completa a mano — es la
+única forma de reproducir "una imagen del set anterior que llega *después* del
+cambio". Las dos se comprobaron mutando la implementación.
+
+**Verificado en el navegador**: en el panel de rendimiento, los ocho fotogramas se
+piden en el orden `0, 1, 7, 2, 6, 3, 5, 4` —el frontal primero y después los
+vecinos alternando, en cadena y no en paralelo— y girar cinco veces con el teclado
+pinta el fotograma 6 de verdad.
+
+**El cambio de set se recorrió después**, cuando la siembra dejó de tener un solo
+producto con rotación — ver la sección siguiente.
+
+### Un segundo set en la siembra, y el recorrido que faltaba
+
+2026-09-06. La siembra tenía un solo producto con rotación, y por eso el camino
+donde vivían **los dos defectos más serios del visor** —la carrera de la precarga
+y el reinicio del fotograma— era justo el que no se podía recorrer en el
+navegador. Ahora el morral trae un set de **4 fotogramas**, el mínimo publicable
+de la tabla de `docs/10-captura-360.md`, frente a los 8 del tenis: dos tamaños
+distintos, y los otros dos productos siguen sin rotación. Los tres casos que hacen
+falta en desarrollo.
+
+**El recorrido, con clics reales y navegación de la SPA** (tenis → catálogo →
+morral → atrás → tenis):
+
+- El visor del tenis precarga sus ocho y queda en el fotograma 6.
+- Al llegar al morral, el contador dice **"Fotograma 1 de 4"** y lo que se pinta
+  es su frontal: el set nuevo reinicia, que es lo correcto, mientras que una
+  revalidación del mismo producto no lo hace.
+- **El set nuevo se precarga solo**, en su propio orden (`0, 1, 3, 2`), y las
+  peticiones del tenis se quedaron en ocho: la cadena vieja no siguió caminando.
+  Es la prueba en pantalla de los dos arreglos de la sección anterior.
+- La tecla Fin en un set de 4 lleva al fotograma 3, que es el opuesto del frontal
+  con número par de fotogramas.
+- Al volver al tenis, el visor arranca otra vez en su frontal y vuelve a pedir sus
+  fotogramas: salir de la ficha destruye el componente, así que su memoria de lo
+  cargado se va con él. Las imágenes salen de la caché del navegador, no de la
+  red; no es un defecto, pero conviene saberlo antes de leer el panel de
+  rendimiento y asustarse.
+
+Sin `NG02952`, `NG02954` ni `NG02955` en todo el recorrido, con dos fichas con
+visor y una sin él.
+
+**Falta el asistente de captura**, que es el resto de la fase.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,

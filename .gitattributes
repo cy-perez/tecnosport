@@ -1,0 +1,24 @@
+# Los finales de línea los decide el repositorio, no la máquina de quien clona.
+#
+# Sin esto (`core.autocrlf=false` en Windows), cualquier herramienta que escriba
+# un archivo en modo texto lo convierte entero a CRLF, y el diff pasa a mostrar
+# el archivo completo en vez del cambio real: una edición de quince líneas se ve
+# como doscientas. Pasó de verdad, en la Fase 5, con `ficha.page.ts` y con
+# `docs/09-plan-de-arranque.md`.
+* text=auto eol=lf
+
+# Los archivos por lotes de Windows sí necesitan CRLF en disco (`gradlew.bat`).
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# `text=auto` ya detecta binarios solo; estos van explícitos porque son los que
+# más duele ver "renormalizados" por error.
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.jar binary
+*.zip binary
+*.pdf binary

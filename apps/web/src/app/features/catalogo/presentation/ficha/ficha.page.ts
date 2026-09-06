@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -10,9 +10,10 @@ import { TsGaleria } from '../../../../shared/ts-galeria/ts-galeria';
 import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-selector-variante';
+import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { Imagen } from '../../domain/producto.model';
+import { Imagen, urlPreferida } from '../../domain/producto.model';
 import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, varianteSeleccionada } from '../../domain/seleccion-variante';
 
 @Component({
@@ -26,6 +27,7 @@ import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, va
     TsEsqueleto,
     TsBoton,
     TsMigas,
+    TsVisor360,
   ],
   templateUrl: './ficha.page.html',
   styleUrl: './ficha.page.scss',
@@ -66,6 +68,11 @@ export class FichaPage {
     return [producto.imagenPrincipal, ...producto.galeria].filter((imagen): imagen is Imagen => imagen !== null);
   });
 
+  /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
+  protected readonly fotogramas360 = computed<string[]>(() =>
+    (this.producto()?.rotacion?.imagenes ?? []).map(urlPreferida),
+  );
+
   protected readonly ejes = computed(() => {
     const producto = this.producto();
     return producto ? ejesDeAtributos(producto) : [];
@@ -78,11 +85,24 @@ export class FichaPage {
     return producto ? varianteSeleccionada(producto, this.seleccion()) : null;
   });
 
+  /**
+   * Un producto **distinto**, por su slug. No sirve depender de `producto()`: TanStack revalida en
+   * segundo plano al volver a la pestaña, y cualquier cambio real —un precio, una existencia—
+   * devuelve un objeto nuevo. Con eso, la variante que eligió el visitante se reiniciaba sola a la
+   * de por defecto. La misma trampa que el visor 360 tiene con la identidad de su arreglo.
+   */
+  private readonly slugCargado = computed(() => this.producto()?.slug ?? null);
+
   constructor() {
-    // Reinicia la selección a la variante por defecto cada vez que carga un producto distinto
-    // (primer render, o al navegar de una ficha a otra).
+    // Reinicia la selección a la variante por defecto solo al cargar otro producto (primer render,
+    // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor.
     effect(() => {
-      const producto = this.producto();
+      if (!this.slugCargado()) {
+        return;
+      }
+      // `untracked`: leer el producto aquí volvería a atar el efecto a su identidad, que es
+      // justamente lo que se quiere evitar.
+      const producto = untracked(() => this.producto());
       if (!producto) {
         return;
       }
