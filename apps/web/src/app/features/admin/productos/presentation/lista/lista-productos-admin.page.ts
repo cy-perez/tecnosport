@@ -4,7 +4,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
+import { usarMigasAdmin } from '../../../migas-admin';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import { EstadoProducto, FiltroProductosAdmin } from '../../domain/producto-admin.model';
@@ -20,12 +22,14 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [RouterLink, TranslocoPipe, TsEsqueleto, TsPaginador],
+  imports: [RouterLink, TranslocoPipe, TsEsqueleto, TsMigas, TsPaginador],
   templateUrl: './lista-productos-admin.page.html',
   styleUrl: './lista-productos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListaProductosAdminPage {
+  protected readonly migas = usarMigasAdmin([{ clave: 'admin.productos.titulo' }]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);

@@ -1,4 +1,6 @@
 <section class="agregar-variante-admin">
+  <ts-migas [ruta]="migas()" />
+
   <h1 class="agregar-variante-admin__titulo">{{ 'admin.productos.agregarVariante.titulo' | transloco }}</h1>
 
   <form class="agregar-variante-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">

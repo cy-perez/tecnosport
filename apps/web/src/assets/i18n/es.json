@@ -53,6 +53,9 @@
     "info": "Página {{actual}} de {{total}}"
   },
   "migas": {
-    "navegacion": "Ruta de navegación"
+    "navegacion": "Ruta de navegación",
+    "portada": "Portada",
+    "catalogo": "Catálogo",
+    "panel": "Panel"
   }
 }

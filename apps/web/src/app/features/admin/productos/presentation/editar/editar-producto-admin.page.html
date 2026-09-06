@@ -1,4 +1,6 @@
 <section class="editar-producto-admin">
+  <ts-migas [ruta]="migas()" />
+
   <h1 class="editar-producto-admin__titulo">{{ 'admin.productos.editar.titulo' | transloco }}</h1>
 
   <a class="editar-producto-admin__enlace-variante" [routerLink]="['..', id(), 'variantes', 'crear']">

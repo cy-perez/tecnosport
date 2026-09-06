@@ -1,4 +1,6 @@
 <section class="crear-producto-admin">
+  <ts-migas [ruta]="migas()" />
+
   <h1 class="crear-producto-admin__titulo">{{ 'admin.productos.crear.titulo' | transloco }}</h1>
 
   <form class="crear-producto-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">

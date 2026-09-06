@@ -7,9 +7,11 @@ import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
 import { EstadoPedido, FiltroPedidosAdmin, PedidoAdmin } from '../../domain/pedido-admin.model';
@@ -65,12 +67,14 @@ interface FormularioRecaudo {
  */
 @Component({
   selector: 'app-lista-pedidos-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsPaginador, TsPrecio, TsSelect],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsMigas, TsPaginador, TsPrecio, TsSelect],
   templateUrl: './lista-pedidos-admin.page.html',
   styleUrl: './lista-pedidos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListaPedidosAdminPage {
+  protected readonly migas = usarMigasAdmin([{ clave: 'admin.pedidos.titulo' }]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);

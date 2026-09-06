@@ -16,7 +16,9 @@ import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opci
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { usarMigasAdmin } from '../../../migas-admin';
 import { usarEditarProductoAdmin } from '../../application/editar-producto-admin.mutacion';
 import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-principal-admin.mutacion';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
@@ -25,12 +27,17 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 @Component({
   selector: 'app-editar-producto-admin',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsSelect],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsMigas, TsSelect],
   templateUrl: './editar-producto-admin.page.html',
   styleUrl: './editar-producto-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditarProductoAdminPage {
+  protected readonly migas = usarMigasAdmin([
+    { clave: 'admin.productos.titulo', ruta: ['productos'] },
+    { clave: 'admin.productos.editar.titulo' },
+  ]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);

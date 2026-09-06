@@ -6,17 +6,24 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { usarMigasAdmin } from '../../../migas-admin';
 import { usarCrearProductoAdmin } from '../../application/crear-producto-admin.mutacion';
 
 @Component({
   selector: 'app-crear-producto-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
   templateUrl: './crear-producto-admin.page.html',
   styleUrl: './crear-producto-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CrearProductoAdminPage {
+  protected readonly migas = usarMigasAdmin([
+    { clave: 'admin.productos.titulo', ruta: ['productos'] },
+    { clave: 'admin.productos.crear.titulo' },
+  ]);
+
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly opciones = usarOpcionesFiltro();

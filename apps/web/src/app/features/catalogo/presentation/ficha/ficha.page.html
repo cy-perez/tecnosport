@@ -4,7 +4,7 @@
   } @else if (consulta.isError()) {
     <p class="ficha__error" role="alert">{{ 'catalogo.ficha.error' | transloco }}</p>
   } @else if (producto(); as p) {
-    <a class="ficha__volver" [routerLink]="['..']">{{ 'catalogo.ficha.volver' | transloco }}</a>
+    <ts-migas [ruta]="migas()" />
 
     <div class="ficha__contenido">
       <ts-galeria [imagenes]="imagenesGaleria()" />

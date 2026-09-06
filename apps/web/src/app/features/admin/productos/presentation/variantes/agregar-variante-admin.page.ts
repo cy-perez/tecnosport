@@ -7,7 +7,9 @@ import { usarAtributos } from '../../../../catalogo/application/listar-atributos
 import { Atributo } from '../../../../catalogo/domain/producto.model';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAgregarVarianteAdmin } from '../../application/agregar-variante-admin.mutacion';
 
 type GrupoAtributo = FormGroup<{
@@ -26,12 +28,17 @@ function grupoAtributo(): GrupoAtributo {
 
 @Component({
   selector: 'app-agregar-variante-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
   templateUrl: './agregar-variante-admin.page.html',
   styleUrl: './agregar-variante-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgregarVarianteAdminPage {
+  protected readonly migas = usarMigasAdmin([
+    { clave: 'admin.productos.titulo', ruta: ['productos'] },
+    { clave: 'admin.productos.agregarVariante.titulo' },
+  ]);
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);

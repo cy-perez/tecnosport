@@ -53,6 +53,9 @@
     "info": "Page {{actual}} of {{total}}"
   },
   "migas": {
-    "navegacion": "Breadcrumb"
+    "navegacion": "Breadcrumb",
+    "portada": "Home",
+    "catalogo": "Catalog",
+    "panel": "Dashboard"
   }
 }

@@ -29,7 +29,6 @@
     }
   },
   "ficha": {
-    "volver": "Back to catalog",
     "no_encontrado": "We couldn't find this product.",
     "error": "We couldn't load this product. Please try again.",
     "combinacion_no_disponible": "This combination is not available."

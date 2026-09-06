@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../../../../shared/ts-etiqueta-stock/ts-etiqueta-stock';
 import { TsGaleria } from '../../../../shared/ts-galeria/ts-galeria';
+import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-selector-variante';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
@@ -23,7 +25,7 @@ import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, va
     TsEtiquetaStock,
     TsEsqueleto,
     TsBoton,
-    RouterLink,
+    TsMigas,
   ],
   templateUrl: './ficha.page.html',
   styleUrl: './ficha.page.scss',
@@ -32,6 +34,7 @@ import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, va
 export class FichaPage {
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
 
   private readonly slug = toSignal(this.route.paramMap, {
@@ -41,6 +44,19 @@ export class FichaPage {
   protected readonly consulta = usarFichaProducto(() => this.slug().get('slug') ?? '');
 
   protected readonly producto = computed(() => this.consulta.data());
+
+  // `usarTraductor`, no `transloco.translate()` directo: dentro de un
+  // `computed` ese no es reactivo y las etiquetas se quedarían en el idioma
+  // con el que se creó el componente (apps/web/CLAUDE.md).
+  protected readonly migas = computed<Miga[]>(() => {
+    const traducir = this.traducir();
+    const idioma = this.transloco.activeLang();
+    return [
+      { etiqueta: traducir('migas.portada'), enlace: ['/', idioma] },
+      { etiqueta: traducir('migas.catalogo'), enlace: ['/', idioma, 'productos'] },
+      { etiqueta: this.producto()?.nombre ?? '' },
+    ];
+  });
 
   protected readonly imagenesGaleria = computed<Imagen[]>(() => {
     const producto = this.producto();
