@@ -1813,6 +1813,76 @@ imagen principal de la Fase 4.
 guía, el dibujo en `<canvas>` que consume las funciones de recorte, y la pantalla
 que encadena estos cinco endpoints.
 
+### La cámara y la superposición de guía
+
+2026-09-06. Los pasos 1 a 4 del flujo del asistente —preparación, permisos, captura
+secuencial y revisión por toma— en `features/captura360/`. El procesamiento en
+`<canvas>` y la subida son lo que queda.
+
+**Todo lo que toca el dispositivo entra por un puerto**: `CAMARA`,
+`SENSOR_ORIENTACION` y `PANTALLA_DESPIERTA` en `domain/`, con sus adaptadores en
+`infrastructure/`. No es ceremonia — es lo que permite probar la pantalla entera
+sin cámara, y sobre todo lo que obliga a que el camino degradado exista de verdad
+y no solo de palabra, porque una prueba lo puede simular. Las once pruebas de la
+pantalla corren sin `getUserMedia` en ninguna parte.
+
+Dos diferencias de plataforma quedaron encerradas en sus adaptadores, donde no
+hacen ruido: en Safari de iOS `DeviceOrientationEvent` expone `requestPermission()`
+y hay que llamarlo desde un gesto, mientras que en el resto de navegadores esa
+función no existe; y la cámara se pide con `facingMode: { ideal: 'environment' }`
+y no `exact`, porque en un portátil sin cámara trasera `exact` falla en seco en
+vez de dar la que hay.
+
+**Las tres decisiones que se tomaron antes de escribir:**
+
+- **La referencia del nivel la fija la primera toma.** El fotograma 0 decide la
+  inclinación y los demás tienen que igualarla dentro de los 3°. Es la pregunta
+  que había quedado abierta al construir el nivelador: la alternativa era una
+  calibración explícita en la preparación, que es pedirle al operador que adivine.
+  Mientras no hay referencia, cualquier inclinación está bien y la pantalla lo
+  dice.
+- **Cuadrícula, no silueta.** El documento decía "silueta o cuadrícula"; dibujar
+  un tenis, un morral y un celular es trabajo de diseño que no le tocaba inventar
+  a esta sesión. Van marco 1:1, tercios, marca de centro y el **fantasma del
+  fotograma anterior**, que el propio documento llama la ayuda más útil de las
+  tres.
+- **Lo capturado vive en memoria.** Ocho fotos de dos megas no caben en
+  `localStorage` y meter IndexedDB por esto es desproporcionado. La protección
+  real contra perder el trabajo es subir cada fotograma apenas se acepta —eso
+  llega con el paso de subida— y además protege de que se muera el teléfono, no
+  solo de que se cierre la pestaña. **Hasta entonces, salir de la pantalla pierde
+  las tomas**, y conviene saberlo.
+
+**El nombre de cada toma sale del documento, no de la geometría.** Los cuatro
+puntos cardinales llevan los nombres que fija `docs/10-captura-360.md` —frontal,
+lateral derecho, posterior, lateral izquierdo— y entre ellos va el ángulo.
+Deducir "derecho" o "izquierdo" del sentido de giro es de esas cosas que se
+equivocan calladas y confunden a quien está capturando con el teléfono en la
+mano.
+
+El indicador de nivel **no distingue los tres estados por color**: cada uno lleva
+su texto y su glifo, y el mensaje dice qué hacer —hacia dónde inclinar y cuántos
+grados— en vez de limitarse a decir que algo está mal. Sobre una vista de cámara
+el color no es fiable ni siquiera para quien lo ve.
+
+La pantalla se alcanza con clics desde la lista de productos del panel, con su
+scope de i18n propio (es/en) precargado en el `resolve` como cualquier otro dato
+de la primera pantalla.
+
+**Verificado** con `npm run verificar` completo: lint, 416 pruebas de Vitest,
+`ng build` y `gradlew.bat build`. Las pruebas nuevas **se comprobaron mutando la
+implementación**: el bloqueo del obturador, el fantasma de la toma anterior, la
+referencia que fija la primera toma y la liberación de la imagen al repetir —cada
+mutación la atrapó exactamente la prueba que le tocaba.
+
+**Lo que no se verificó, y por qué:** nada de esto se probó en un navegador real
+todavía. La cámara exige un dispositivo con cámara y contexto seguro, el sensor
+de orientación exige un teléfono, y la extensión de automatización de Chrome de
+esta máquina no llega a `localhost` (ya anotado en la Fase 4). **El asistente hay
+que recorrerlo con un teléfono de verdad antes de darlo por bueno**: el gesto
+táctil, el permiso de iOS y el comportamiento del nivel con un pulso real no los
+puede confirmar ninguna prueba de Vitest.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
