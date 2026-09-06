@@ -1481,15 +1481,13 @@ girando y la hidratación no se queja del id.
 **4. Ordenar y elegir formato vivían en la página**, no en el mapeador. Cerrado
 después, junto con el 8 — ver la sección siguiente.
 
-**Los siete hallazgos restantes quedan abiertos**, por orden de lo que costaría
+**Los seis hallazgos restantes quedan abiertos**, por orden de lo que costaría
 que muerdan:
 - ~~**Un refetch en segundo plano devuelve el visor al frontal.**~~ Cerrado — ver
   la sección siguiente. Arrastraba también a la selección de variante, que tenía
   el defecto desde la Fase 1.
-- **`cargados` se lleva por índice y nada cancela la precarga en vuelo.** Al
-  cambiar de set, una imagen ya pedida marca su índice como disponible para el set
-  nuevo: un parpadeo en vez del "fotograma disponible más cercano" que promete el
-  componente. Se cura solo en la siguiente petición.
+- ~~**`cargados` se lleva por índice y nada cancela la precarga en vuelo.**~~
+  Cerrado — ver la sección siguiente.
 - **Un fotograma roto se salta en silencio**: ni log ni señal, el contador sigue
   diciendo ocho y uno nunca aparece.
 - **La pista sale en cada visita**, no "la primera vez" como pide
@@ -1588,6 +1586,41 @@ del `staleTime`, y en el panel de red **aparece la petición de revalidación** 
 el visor siguió en el fotograma 4. La revalidación de esa corrida trajo los
 mismos datos; el caso de datos distintos es el que cubre la prueba, con el
 `QueryClient` real y no un doble.
+
+### La precarga en vuelo, cerrada
+
+2026-09-06, un commit. Es el hallazgo que más le importa al asistente de captura,
+que va a cambiar de set continuamente mientras se capturan fotogramas.
+
+**Lo cargado se lleva por URL, no por índice.** Con índices, el `onload` tardío
+del fotograma 3 del set anterior marcaba disponible el 3 del set nuevo, que nadie
+había pedido: el visor saltaba a una imagen sin cargar y parpadeaba, en vez de
+quedarse en el fotograma disponible más cercano. Con URL, cada respuesta habla
+solo de sí misma. De paso, ya no hace falta vaciar nada al cambiar de set: una URL
+que cargó sigue en la caché del navegador, se esté mirando el set que se esté
+mirando, así que volver al producto anterior lo encuentra listo.
+
+**La cadena de precarga se corta por generación.** Cada vez que arranca una
+cadena toma un número; en cada eslabón comprueba que sigue siendo la vigente, y si
+no, se abandona. Antes, la cadena del set viejo seguía caminando mientras el
+visitante ya miraba otro.
+
+**Y ahora el set nuevo también se precarga.** Antes la cadena era de un solo
+disparo, atada al evento de carga de la página: al cambiar de set no se lanzaba
+ninguna, así que el segundo producto de una sesión se quedaba sin precarga y sin
+que nadie lo notara. Ahora el mismo efecto que devuelve el visor al frontal lanza
+la cadena del set nuevo, si la página ya terminó de cargar.
+
+Dos pruebas nuevas, con un doble de `Image` que la prueba completa a mano — es la
+única forma de reproducir "una imagen del set anterior que llega *después* del
+cambio". Las dos se comprobaron mutando la implementación.
+
+**Verificado en el navegador**: en el panel de rendimiento, los ocho fotogramas se
+piden en el orden `0, 1, 7, 2, 6, 3, 5, 4` —el frontal primero y después los
+vecinos alternando, en cadena y no en paralelo— y girar cinco veces con el teclado
+pinta el fotograma 6 de verdad. **El cambio de set no se pudo recorrer**: la
+siembra tiene un solo producto con rotación, así que esa parte la cubren las
+pruebas.
 
 **Falta el asistente de captura**, que es el resto de la fase.
 

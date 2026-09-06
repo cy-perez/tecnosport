@@ -11,6 +11,7 @@ import {
   input,
   PLATFORM_ID,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -65,11 +66,20 @@ export class TsVisor360 {
   protected readonly pistaVisible = signal(true);
 
   /**
-   * Fotogramas que ya están en la caché del navegador. El 0 se da por disponible: es el que sirve
-   * el SSR y el único con `priority`, así que se pide siempre.
+   * Lo que ya está en la caché del navegador, **por URL y no por índice**. La diferencia importa
+   * cuando el set cambia con una imagen todavía en vuelo: con índices, el `onload` tardío del
+   * fotograma 3 del set anterior marcaba disponible el 3 del set nuevo, que nadie había pedido, y
+   * el visor saltaba a una imagen sin cargar. Con URL, cada respuesta solo habla de sí misma.
+   *
+   * Por lo mismo no hace falta vaciarlas al cambiar de set: una URL que cargó sigue en la caché
+   * del navegador, se esté mirando el set que se esté mirando.
    */
-  private readonly cargados = signal<ReadonlySet<number>>(new Set([0]));
-  private readonly solicitados = new Set<number>();
+  private readonly cargadas = signal<ReadonlySet<string>>(new Set());
+  private readonly solicitadas = new Set<string>();
+
+  /** Corta la cadena de precarga del set anterior en cuanto empieza la del nuevo. */
+  private generacionDePrecarga = 0;
+  private paginaCargada = false;
 
   protected readonly total = computed(() => this.imagenes().length);
 
@@ -102,11 +112,16 @@ export class TsVisor360 {
    */
   protected readonly indiceVisible = computed(() => {
     const deseado = this.indiceActual();
-    const disponibles = this.cargados();
-    if (disponibles.has(deseado)) {
+    const imagenes = this.imagenes();
+    const disponibles = this.cargadas();
+    // El fotograma 0 cuenta siempre como disponible: es el que pinta el SSR, el único con
+    // `priority`, y el que el navegador ya está trayendo cuando el visor aparece.
+    const disponible = (indice: number) => indice === 0 || disponibles.has(imagenes[indice] ?? '');
+
+    if (disponible(deseado)) {
       return deseado;
     }
-    return ordenDePrecarga(deseado, this.total()).find((indice) => disponibles.has(indice)) ?? 0;
+    return ordenDePrecarga(deseado, this.total()).find(disponible) ?? 0;
   });
 
   protected readonly urlVisible = computed(() => this.imagenes()[this.indiceVisible()] ?? '');
@@ -116,31 +131,32 @@ export class TsVisor360 {
   private anchoAlIniciar = 0;
 
   constructor() {
-    // Un set nuevo (otro producto, otra variante) empieza de cero: los índices cargados del
-    // anterior no significan nada para este. Se depende de `claveDelSet`, no de `imagenes`: ver
-    // arriba por qué la identidad del arreglo no sirve como señal de "esto cambió".
+    // Un set nuevo (otro producto, otra variante) empieza por su frontal, y se precarga entero si
+    // la página ya terminó de cargar. Se depende de `claveDelSet`, no de `imagenes`: ver arriba por
+    // qué la identidad del arreglo no sirve como señal de "esto cambió".
     effect(() => {
       this.claveDelSet();
-      this.solicitados.clear();
-      this.cargados.set(new Set([0]));
       this.indiceActual.set(0);
+      if (this.esNavegador && this.paginaCargada) {
+        untracked(() => this.precargar());
+      }
     });
 
     // El fotograma al que llega el arrastre se pide aunque la precarga no haya corrido todavía
     // —o no vaya a correr nunca, con ahorro de datos activo.
     effect(() => {
-      const indice = this.indiceActual();
-      if (this.esNavegador) {
-        this.pedirFotograma(indice);
+      const url = this.imagenes()[this.indiceActual()];
+      if (this.esNavegador && url) {
+        this.pedirImagen(url);
       }
     });
 
     afterNextRender(() => {
       // "Después del evento de carga": el set completo no compite con el contenido principal.
       if (document.readyState === 'complete') {
-        this.precargar();
+        this.alTerminarDeCargarLaPagina();
       } else {
-        const alCargar = () => this.precargar();
+        const alCargar = () => this.alTerminarDeCargarLaPagina();
         window.addEventListener('load', alCargar, { once: true });
         // Una ficha que se abandona antes de que la página termine de cargar no tiene por qué
         // ponerse a pedir fotogramas de un visor que ya no existe.
@@ -225,17 +241,28 @@ export class TsVisor360 {
     this.pistaVisible.set(false);
   }
 
+  private alTerminarDeCargarLaPagina(): void {
+    this.paginaCargada = true;
+    this.precargar();
+  }
+
   private precargar(): void {
     if (!this.precargaPermitida()) {
       return;
     }
-    const orden = ordenDePrecarga(this.indiceActual(), this.total());
-    // En cadena y no todos a la vez: ocho peticiones en paralelo compiten con lo que el visitante
+    // El set de esta cadena, tomado una vez: si cambia a mitad de camino, esta cadena ya no es la
+    // que manda y se abandona en el siguiente paso.
+    const generacion = ++this.generacionDePrecarga;
+    const imagenes = this.imagenes();
+    const orden = ordenDePrecarga(this.indiceActual(), imagenes.length);
+
+    // En cadena y no todas a la vez: ocho peticiones en paralelo compiten con lo que el visitante
     // está mirando.
     const siguiente = (posicion: number): void => {
-      if (posicion < orden.length) {
-        this.pedirFotograma(orden[posicion], () => siguiente(posicion + 1));
+      if (this.generacionDePrecarga !== generacion || posicion >= orden.length) {
+        return;
       }
+      this.pedirImagen(imagenes[orden[posicion]] ?? '', () => siguiente(posicion + 1));
     };
     siguiente(0);
   }
@@ -249,21 +276,20 @@ export class TsVisor360 {
     return !conexion.saveData && !CONEXIONES_LENTAS.includes(conexion.effectiveType ?? '');
   }
 
-  private pedirFotograma(indice: number, alTerminar?: () => void): void {
-    const url = this.imagenes()[indice];
-    if (!url || this.solicitados.has(indice)) {
+  private pedirImagen(url: string, alTerminar?: () => void): void {
+    if (!url || this.solicitadas.has(url)) {
       alTerminar?.();
       return;
     }
-    this.solicitados.add(indice);
+    this.solicitadas.add(url);
 
     const imagen = new Image();
     imagen.onload = () => {
-      this.cargados.update((cargados) => new Set(cargados).add(indice));
+      this.cargadas.update((cargadas) => new Set(cargadas).add(url));
       alTerminar?.();
     };
-    // Un fotograma que no llega no puede detener la cadena ni dejar el visor colgado: se sigue con
-    // el resto y ese índice simplemente nunca se muestra.
+    // Una imagen que no llega no puede detener la cadena ni dejar el visor colgado: se sigue con el
+    // resto y ese fotograma simplemente nunca se muestra.
     imagen.onerror = () => alTerminar?.();
     imagen.src = url;
   }

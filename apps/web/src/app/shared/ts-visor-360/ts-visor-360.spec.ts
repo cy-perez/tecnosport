@@ -7,6 +7,9 @@ import { TsVisor360 } from './ts-visor-360';
 
 const OCHO_FOTOGRAMAS = Array.from({ length: 8 }, (_, orden) => `https://imagenes.test/f${orden}.webp`);
 
+/** Un set distinto, para las pruebas de qué pasa cuando el visor cambia de producto. */
+const OTROS_OCHO = Array.from({ length: 8 }, (_, orden) => `https://imagenes.test/otro-f${orden}.webp`);
+
 const ANCHO_MARCO = 400;
 /** Un octavo del ancho con ocho fotogramas: exactamente un paso. */
 const UN_PASO = ANCHO_MARCO / 8;
@@ -36,6 +39,41 @@ class ImagenQueSiCarga {
 
   get src(): string {
     return this._src;
+  }
+}
+
+/**
+ * Doble de `Image` que no carga sola: la prueba decide cuándo llega cada una. Es la única forma de
+ * reproducir el caso que importa — una imagen del set anterior que llega *después* de que el visor
+ * ya cambió de set.
+ */
+class ImagenManual {
+  static solicitadas: string[] = [];
+  static pendientes = new Map<string, ImagenManual>();
+
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  private _src = '';
+
+  set src(valor: string) {
+    this._src = valor;
+    ImagenManual.solicitadas.push(valor);
+    ImagenManual.pendientes.set(valor, this);
+  }
+
+  get src(): string {
+    return this._src;
+  }
+
+  static reiniciar(): void {
+    ImagenManual.solicitadas = [];
+    ImagenManual.pendientes = new Map();
+  }
+
+  static completar(url: string): void {
+    const imagen = ImagenManual.pendientes.get(url);
+    ImagenManual.pendientes.delete(url);
+    imagen?.onload?.();
   }
 }
 
@@ -345,6 +383,55 @@ describe('TsVisor360', () => {
     await fixture.whenStable();
 
     expect(screen.getByText('Fotograma 1 de 2')).toBeTruthy();
+  });
+
+  // La carrera real: se cambia de producto con una imagen del anterior todavía en vuelo. Cuando
+  // llega, no puede hablar por el fotograma del mismo índice del set nuevo, que nadie pidió.
+  it('una imagen del set anterior que llega tarde no se da por disponible en el nuevo', async () => {
+    ImagenManual.reiniciar();
+    vi.stubGlobal('Image', ImagenManual);
+
+    const { fixture } = await renderVisor();
+    const vecinoDelViejo = OCHO_FOTOGRAMAS[1];
+    // La cadena de precarga pidió el vecino del frontal y todavía no ha llegado.
+    expect(ImagenManual.solicitadas).toContain(vecinoDelViejo);
+
+    fixture.componentInstance.imagenes.set(OTROS_OCHO);
+    await fixture.whenStable();
+
+    ImagenManual.completar(vecinoDelViejo);
+    await fixture.whenStable();
+
+    fireEvent.keyDown(marco(), { key: 'ArrowRight' });
+    await fixture.whenStable();
+
+    // El contador va en el 2, pero el fotograma 1 del set nuevo no ha cargado: lo que se pinta es
+    // el más cercano disponible, que es su frontal. Con los índices como llave, aquí se pintaba el
+    // fotograma 1 del set nuevo, sin cargar.
+    expect(screen.getByText('Fotograma 2 de 8')).toBeTruthy();
+    expect(fotograma().getAttribute('src')).toContain('otro-f0');
+  });
+
+  it('la cadena de precarga del set anterior se abandona al cambiar de set', async () => {
+    ImagenManual.reiniciar();
+    vi.stubGlobal('Image', ImagenManual);
+
+    const esDelViejo = (url: string) => OCHO_FOTOGRAMAS.includes(url);
+    const { fixture } = await renderVisor();
+    const vecinoDelViejo = OCHO_FOTOGRAMAS[1];
+    expect(ImagenManual.solicitadas).toContain(vecinoDelViejo);
+
+    fixture.componentInstance.imagenes.set(OTROS_OCHO);
+    await fixture.whenStable();
+    const pedidasDelViejo = ImagenManual.solicitadas.filter(esDelViejo).length;
+
+    // Llega el eslabón que estaba en vuelo. Si la cadena vieja siguiera viva, encadenaría el
+    // siguiente fotograma del set que ya nadie está mirando.
+    ImagenManual.completar(vecinoDelViejo);
+    await fixture.whenStable();
+
+    expect(ImagenManual.solicitadas.filter(esDelViejo)).toHaveLength(pedidasDelViejo);
+    expect(ImagenManual.solicitadas.filter((url) => OTROS_OCHO.includes(url)).length).toBeGreaterThan(0);
   });
 
   it('un set nuevo vuelve al frontal', async () => {
