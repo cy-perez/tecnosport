@@ -1941,6 +1941,40 @@ regla de cierre exige y ninguna prueba puede dar:
 
 Hasta que eso ocurra, lo construido está probado pero no visto funcionando.
 
+### El recorrido a mano, hasta donde llega sin bucket
+
+2026-09-06. Se hizo el pendiente 3 contra `bootRun` + PostgreSQL real, y se
+encontró que **no era independiente del pendiente 2**: tres de los cinco
+endpoints del set quedan verificados a mano, y los otros dos no pueden quedar
+hasta que exista el bucket.
+
+Verificado de punta a punta: `POST /api/v1/auth/sesion` (200, rol `ADMIN`),
+`GET /api/v1/admin/productos` sobre los datos de siembra, `POST
+/api/v1/admin/sets-rotacion` (201, `BORRADOR`) y `DELETE
+/api/v1/admin/sets-rotacion/{id}` (204, y el segundo intento 404 con el problem
+detail correcto, no un 500).
+
+`POST /{id}/subidas` responde **500**: `IllegalStateException: Signing key was
+not provided and could not be derived`. La credencial de GCS del `.env.local`
+apuntaba a un archivo que no existe. De paso quedó comprobado algo que nadie
+había mirado: **la aplicación arranca igual sin credenciales de GCS** —el bean
+`Storage` de `ConfiguracionCatalogo` se construye sin problema— y el fallo
+aparece recién al firmar. Es el comportamiento deseable, pero era una
+suposición.
+
+Sin bucket tampoco se puede pasar de ahí: `CompletarSetRotacion` verifica contra
+el almacén real que cada objeto exista y pese más de cero, a propósito. Así que
+el orden de los tres pendientes no es el que estaba escrito — **el bucket es el
+camino crítico de los tres**, incluido el recorrido en el teléfono, que termina
+subiendo el set.
+
+Por eso se agregó `infra/dev/bucket-imagenes.mjs`: bucket, lectura pública,
+CORS, cuenta de servicio y llave, idempotente. Es la única cosa de GCP que se
+crea fuera de Terraform, y `infra/dev/README.md` explica por qué: montar con
+Terraform un proyecto de dev exigiría primero un bucket de estado remoto para el
+propio Terraform, y ese arranque en frío no se paga solo por un bucket y una
+cuenta de servicio. La regla de producción no cambia.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
