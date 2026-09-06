@@ -76,13 +76,6 @@
 
     <ts-selector-idioma />
 
-    <label class="encabezado__control">
-      <span>{{ 'tema.etiqueta' | transloco }}</span>
-      <select [value]="temaElegido()" (change)="cambiarTema($any($event.target).value)">
-        <option value="claro">{{ 'tema.claro' | transloco }}</option>
-        <option value="oscuro">{{ 'tema.oscuro' | transloco }}</option>
-        <option value="sistema">{{ 'tema.sistema' | transloco }}</option>
-      </select>
-    </label>
+    <ts-selector-tema />
   </div>
 </header>

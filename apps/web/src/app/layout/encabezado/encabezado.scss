@@ -79,13 +79,6 @@
   block-size: var(--esp-24);
 }
 
-.encabezado__control {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp-4);
-  font-size: var(--texto-sm);
-}
-
 .encabezado__carrito {
   display: inline-flex;
   align-items: center;
