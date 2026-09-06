@@ -101,11 +101,23 @@ solas. Todas SIL OFL, autoalojadas, sin Google Fonts.
 Cada uno con sus estados (normal, hover, activo, foco, deshabilitado, cargando),
 en claro y en oscuro, y operable con teclado:
 
-`ts-boton` (primario, secundario, texto, peligro) · `ts-campo` · `ts-select` ·
-`ts-checkbox` · `ts-radio` · `ts-tarjeta-producto` · `ts-precio` ·
-`ts-etiqueta-stock` · `ts-galeria` · `ts-visor-360` · `ts-selector-variante` ·
-`ts-paginador` · `ts-migas` · `ts-dialogo` (CDK) · `ts-notificacion` ·
-`ts-esqueleto` · `ts-selector-idioma` · `ts-selector-tema` · `ts-selector-metodo-pago`.
+**Construidos:** `ts-boton` (primario, secundario, texto, peligro) · `ts-campo` ·
+`ts-select` · `ts-tarjeta-producto` · `ts-precio` · `ts-etiqueta-stock` ·
+`ts-galeria` · `ts-selector-variante` · `ts-selector-metodo-pago` · `ts-esqueleto` ·
+`ts-paginador` · `ts-migas` · `ts-selector-idioma` · `ts-selector-tema`.
+
+**Pendientes:** `ts-visor-360` (Fase 5) · `ts-checkbox` · `ts-radio` ·
+`ts-dialogo` (CDK) · `ts-notificacion`. Los cuatro últimos siguen sin
+construirse porque nada los necesita todavía: el único checkbox del sitio es el
+de "reducir movimiento" del pie, y no hay ningún diálogo ni ninguna
+notificación en pantalla. Se construyen cuando aparezca el primer consumidor
+real, no antes.
+
+`ts-selector-idioma` y `ts-selector-tema` no dibujan su propio `<select>`: se
+apoyan en `ts-select`, que ya resuelve el `<label>` real, el anillo de foco, el
+objetivo táctil de 44 px y el `min-inline-size: 0` que evita que la opción más
+larga ensanche su columna. Un componente compartido que envuelve un control
+nativo se construye una vez.
 
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto

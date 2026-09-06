@@ -1041,17 +1041,103 @@ en la raíz. `/{lang}/checkout/resumen` y `/{lang}/checkout/estado` responden
   ninguno. Queda en la Fase 6, donde ya estaba.
 - **No hay panel de cuenta de cliente**, así que un `CLIENTE` con sesión solo ve
   "cerrar sesión" en el encabezado — no hay a dónde llevarlo todavía.
-- **`ts-selector-idioma`, `ts-selector-tema`, `ts-migas` y `ts-paginador` siguen
-  sin existir** aunque estén en el inventario de `docs/04-ui-marca.md`: el
-  encabezado usa `<select>` crudos. Deuda del sistema visual, anotada aquí por
-  primera vez.
-- **La rejilla del catálogo no tiene estado vacío** (la portada sí, se agregó al
-  encontrarlo): con cero productos publicados muestra una rejilla en blanco sin
-  decir por qué.
+- ~~**`ts-selector-idioma`, `ts-selector-tema`, `ts-migas` y `ts-paginador` siguen
+  sin existir**~~ — cerrados, ver más abajo.
+- ~~**La rejilla del catálogo no tiene estado vacío**~~ — cerrado, ver más abajo.
 - **Verificación con clics reales sigue pendiente** — misma limitación de la
   extensión de Chrome con `localhost` ya anotada en la Fase 4. Lo verificado
   aquí es el HTML de SSR con `curl` en los dos idiomas, el log del servidor y
   226 pruebas de Vitest.
+
+### Deuda del sistema visual y estado vacío del catálogo
+
+Los dos pendientes de arriba, saldados antes de arrancar la Fase 5
+(2026-09-06). Un commit por componente.
+
+**`ts-selector-idioma` y `ts-selector-tema`** (`243aec0`, `c102389`). El
+encabezado usaba dos `<select>` crudos con la navegación por idioma, la cookie
+de tema, el `matchMedia` y el `data-tema` metidos dentro de `Encabezado`, que
+ahora queda reducido a navegación, sesión y carrito. Los dos se apoyan en
+`ts-select` en vez de dibujar su propio `<select>`: ahí ya estaban resueltos el
+`<label>` real, el anillo de foco, el `box-sizing` y el `min-inline-size: 0`
+que costaron encontrar en el paso anterior. **Cambio visible:** los controles
+del encabezado pasan a medir los 44 px de alto del objetivo táctil mínimo de
+`docs/04-ui-marca.md`, que antes no cumplían.
+
+El selector de idioma **sigue** al idioma activo con un `effect`, no solo lo
+empuja: un enlace con otro prefijo o el botón de atrás también lo mueven, y el
+control tiene que seguir a la URL. Ese `setValue` va con `emitEvent: false`,
+porque si no, seguir a la URL dispararía otra navegación en ciclo.
+
+Comportamiento del tema idéntico al anterior, guardia de SSR incluido; el
+script en línea de `index.html` y la resolución por cookie de `server.ts` no se
+tocaron. De paso quedó anotado en la prueba que **el entorno de Vitest no trae
+`window.matchMedia`**: no se puede espiar con `vi.spyOn`, hay que definirla con
+`Object.defineProperty`.
+
+**`ts-paginador`** (`b223591`). El bloque de paginación estaba copiado y
+pegado, idéntico, en la lista de productos y en la de pedidos del panel: mismo
+markup, mismo SCSS y dos juegos de claves de i18n con el mismo texto. Los
+textos pasan a claves raíz (`paginador.*`) en vez de duplicarse por
+funcionalidad, y se borraron `admin.productos.paginacion` y
+`admin.pedidos.paginacion`. El componente encapsula la conversión 0-based
+(filtro y API) a 1-based (lo que se muestra), que antes hacía cada plantilla a
+mano; en los dos `.ts`, `paginaAnterior`/`paginaSiguiente` colapsan en un
+`irAPagina`. El texto de posición ganó `aria-live`: al cambiar de página el
+foco se queda en el botón, que no cambia de texto, así que sin eso el cambio no
+se anuncia.
+
+**`ts-migas`** (`2cdacaf`). No había migas en ninguna parte, y **las tres
+subpáginas de productos del panel (crear, editar, agregar variante) no tenían
+ninguna forma de volver** salvo el botón del navegador: se llegaba a ellas y no
+se salía. Es una `<ol>` de verdad, no una fila de enlaces sueltos —el orden es
+la información—, la página actual no es enlace y lleva `aria-current="page"`, y
+el separador va en la plantilla y no en un `content:` de CSS, que sería texto
+visible fuera de Transloco. Los enlaces se reciben absolutos, con el prefijo de
+idioma, por el mismo motivo que ya llevó a `ts-tarjeta-producto` a armarlos
+así: se usan a profundidades distintas del árbol de rutas.
+
+En la ficha reemplazan el enlace suelto "Volver al catálogo" (clave
+`catalogo.ficha.volver` borrada): el eslabón "Catálogo" cumple lo mismo y de
+paso deja la ruta lista para los datos estructurados de la Fase 6. Las cinco
+pantallas del panel comparten `usarMigasAdmin` (`features/admin/migas-admin.ts`),
+porque todas cuelgan de "Panel".
+
+**Estado vacío de la rejilla** (`8358952`). Son dos situaciones distintas y
+solo una la puede resolver quien mira: "no encontramos productos con estos
+filtros" es accionable (quitar uno), "todavía no hay productos publicados" no.
+Las distingue `hayFiltrosActivos`, función pura en `domain` con sus pruebas,
+que **ignora `orden` y `tamano` a propósito**: ordenar no es filtrar y el
+tamaño es paginación, ninguno de los dos cambia el conjunto de resultados. Sin
+botón propio de limpiar: `app-filtros-productos` ya muestra el suyo justo
+encima.
+
+**Verificado:** `npm run verificar` completo en verde (lint, 254 pruebas de
+Vitest, `ng build` y `gradlew.bat build`), y contra `ng serve` + `bootRun` +
+PostgreSQL reales: `/es/productos` y `/en/productos` sirven la rejilla con
+productos; con un filtro imposible sirven el mensaje de "sin resultados" en el
+idioma correcto; la ficha sirve las migas con `aria-current` en los dos
+idiomas y ya no tiene el enlace de volver; y el log del servidor SSR muestra
+**cero *Missing translation* y cero errores** en todo el recorrido.
+
+**Lo que no se verificó, y por qué:**
+
+- **El recorrido con clics reales sigue pendiente**, tercera vez consecutiva:
+  la extensión de automatización de Chrome no conecta en esta máquina
+  (*"Browser extension is not connected"*), no es que la aplicación falle.
+  Todo lo de arriba se comprobó con `curl` sobre el HTML de SSR y con Vitest.
+- **Las migas y el paginador del panel no se vieron servidos de verdad**: sin
+  sesión, `/es/admin/**` responde 302 al login, que es lo correcto. Quedan
+  cubiertos por sus pruebas de Vitest y por `ng build`, no por una pantalla
+  real.
+- **La rama "todavía no hay productos publicados"** solo se puede ver a mano
+  despublicando la siembra; está cubierta por Vitest, no por el navegador.
+
+**Pendientes que este paso no toca:** `ts-checkbox`, `ts-radio`, `ts-dialogo`
+y `ts-notificacion` siguen sin construirse, a propósito — nada los necesita
+todavía, y se construyen cuando aparezca el primer consumidor real. Los
+legales del pie siguen en la Fase 6, y sigue sin haber panel de cuenta de
+cliente.
 
 ## Fase 5. Sistema 360
 
