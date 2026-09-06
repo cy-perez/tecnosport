@@ -1701,12 +1701,53 @@ detecta, y eso pide recorte manual.
 29 pruebas nuevas; `ng test` completo en verde (369) y `ng lint` limpio. Sin nada que
 ver en el navegador todavía: no hay pantalla, a propósito.
 
-**Falta el resto del asistente**: el nivelador con sus lecturas simuladas, la cámara
-y la superposición, el dibujo en `<canvas>` que consume estas funciones, y la carga
-con URL firmadas. Del lado del backend, **no existe nada para sets de rotación**: el
-`AlmacenDeImagenes` y `SolicitarSubidaDeImagenPrincipal` de la Fase 4 solo cubren la
-imagen principal, así que crear un set, pedir N URL firmadas y publicarlo está por
-construirse entero.
+### El nivelador, sobre lecturas simuladas
+
+2026-09-06, segundo paso del asistente y el segundo que se puede construir sin cámara
+ni backend. `features/captura360/domain/nivel-360.ts`: recibe una lectura de
+orientación y devuelve qué mostrar y si el obturador se habilita. No sabe que existe
+un sensor — sabe que a veces hay lectura y a veces no.
+
+`normalizarAngulo` y `diferenciaAngular` resuelven el arco corto; sin eso, pasar de
+179 a -179 se leería como un giro de 358 grados y el nivel diría "fuera de rango" con
+el teléfono quieto. `suavizar` es una media exponencial sobre ese arco corto, con la
+primera lectura pasando tal cual para que el indicador no arranque arrastrándose desde
+un valor inventado. `evaluarNivel` da los tres estados del documento —fuera de rango,
+cerca, en rango— más `SIN_SENSOR`, que no es un estado del nivel sino su ausencia, con
+la desviación **con signo** de cada eje y cuál de los dos manda, que es lo que le
+permite a la interfaz decir en texto hacia dónde corregir en vez de solo pintar un
+color.
+
+Tres decisiones que valen la pena:
+
+- **Sin lectura, `puedeDisparar` es `true`.** Es el modo degradado que exige el
+  documento: un flujo que se bloquea sin sensor no se puede usar en medio teléfono del
+  mercado. Tiene su prueba.
+- **Una lectura sin datos devuelve `null` y no arrastra la anterior.** Si el sensor se
+  cae a mitad de sesión eso tiene que verse; quedarse con el último valor bueno
+  dejaría el obturador habilitado con el teléfono torcido, que es peor que no tener
+  nivel.
+- **El objetivo se recibe, no se supone que sea cero en los dos ejes.** Un teléfono
+  apuntando a un producto sobre una mesa no está plano, y con el cero fijo el nivel
+  nunca se pondría verde en el montaje real. **Queda por decidir quién fija ese
+  objetivo**: una calibración explícita en el paso de preparación, o la inclinación de
+  la primera toma aceptada. Es del flujo, no de estas funciones, y no bloquea nada de
+  lo que sigue.
+
+25 pruebas, entre ellas la de los **datos ruidosos** que pide el documento: con una
+secuencia de temblor de pulso normal alrededor del objetivo, el dato crudo hace saltar
+el indicador de estado y el suavizado se queda quieto en rango. **Las pruebas se
+comprobaron mutando la implementación**: seis mutaciones —el suavizado anulado, la
+lectura vacía arrastrando la anterior, el obturador bloqueado sin sensor, el arco
+corto quitado, el límite de la tolerancia vuelto estricto y el eje dominante
+invertido— cada una atrapada por los casos que le tocaban. `ng test` completo en verde
+(394) y `ng lint` limpio.
+
+**Falta el resto del asistente**: la cámara y la superposición de guía, el dibujo en
+`<canvas>` que consume las funciones de recorte, y la carga con URL firmadas. Del lado
+del backend, **no existe nada para sets de rotación**: el `AlmacenDeImagenes` y
+`SolicitarSubidaDeImagenPrincipal` de la Fase 4 solo cubren la imagen principal, así
+que crear un set, pedir N URL firmadas y publicarlo está por construirse entero.
 
 ## Fase 6. Cierre para publicar
 
