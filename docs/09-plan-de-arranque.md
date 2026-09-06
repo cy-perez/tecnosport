@@ -1122,16 +1122,117 @@ idiomas y ya no tiene el enlace de volver; y el log del servidor SSR muestra
 
 **Lo que no se verificó, y por qué:**
 
-- **El recorrido con clics reales sigue pendiente**, tercera vez consecutiva:
-  la extensión de automatización de Chrome no conecta en esta máquina
-  (*"Browser extension is not connected"*), no es que la aplicación falle.
-  Todo lo de arriba se comprobó con `curl` sobre el HTML de SSR y con Vitest.
-- **Las migas y el paginador del panel no se vieron servidos de verdad**: sin
-  sesión, `/es/admin/**` responde 302 al login, que es lo correcto. Quedan
-  cubiertos por sus pruebas de Vitest y por `ng build`, no por una pantalla
-  real.
 - **La rama "todavía no hay productos publicados"** solo se puede ver a mano
   despublicando la siembra; está cubierta por Vitest, no por el navegador.
+- **El paginador con más de una página**: la siembra tiene cuatro productos y
+  cero pedidos, o sea una sola página. Se verificó en pantalla el extremo
+  "primera = última" (los dos botones deshabilitados); las transiciones entre
+  páginas siguen cubiertas solo por Vitest.
+
+### El recorrido en el navegador, por fin
+
+El recorrido con clics reales estaba pendiente desde la Fase 4, tres cierres
+seguidos, porque la extensión de automatización de Chrome no conectaba en esta
+máquina. Se hizo (2026-09-06) y **encontró siete defectos que ni Vitest ni
+`ng build` podían atrapar**. Vale la pena la lista completa, porque el patrón se
+repite: ninguno produce un error, todos son cosas que *no pasan*.
+
+**Encontrados en la vitrina:**
+
+1. **El tema elegido no se aplicaba en inglés** (`7421768`). `server.ts`
+   inyectaba `data-tema` reemplazando la cadena literal `<html lang="es">`; bajo
+   el prefijo inglés Angular sirve `lang="en"`, no coincidía, y el atributo
+   nunca se escribía. Recargar cualquier página en inglés volvía a claro con el
+   selector diciendo "Dark". `server.ts` no tenía ninguna prueba; sus dos
+   funciones puras se extrajeron a `tema-ssr.ts` con una que verifica inglés
+   explícitamente.
+2. **El correo de contacto del pie era `contact@`, no `contacto@`**
+   (`7e38749`) — el `mailto:` apuntaba a un buzón que no existe. La prueba pasó
+   a leer la dirección del JSON en vez de repetirla.
+
+**Encontrados en el panel administrativo:**
+
+3. **Recargar cualquier página de `/admin` expulsaba al administrador**
+   (`9b227d7`), el más grave. `SesionStore` resuelve siempre "sin sesión" en
+   SSR, a propósito y ya documentado. `adminGuard` decidía con esa información,
+   así que durante el SSR redirigía *siempre* al login; el navegador seguía ese
+   302 e hidrataba ya en la pantalla de login, con la sesión viva —el encabezado
+   mostraba "Cerrar sesión"— pero la navegación perdida. El guardia deja de
+   decidir en el servidor: se abstiene, y el cliente lo reevalúa al hidratar. No
+   abre nada: lo que se sirve sin sesión es el armazón sin datos, verificado con
+   `curl` sin cookies.
+4. **El enlace "Agregar variante" estaba roto** (`642c683`). La ruta de la
+   pantalla es `:id/editar`, dos segmentos, así que el `..` del `routerLink`
+   relativo subía uno solo: generaba `productos/{id}/{id}/variantes/crear`, que
+   no existe, y al hacer clic la aplicación caía en la portada. Agregar una
+   variante solo era alcanzable tecleando la URL. Misma familia que el error del
+   paso 2 de Track B: **las rutas de este proyecto no toleran el atajo
+   relativo**, van absolutas con el prefijo de idioma.
+5. **`ts-select` perdía el valor si las opciones llegaban después**
+   (`679db0e`). Marcaba la opción activa con `[value]` en el `<select>`, y
+   Angular fija esa propiedad una sola vez. Cuando el valor y las opciones
+   vienen de consultas distintas y el valor llega primero, ninguna `<option>`
+   engancha y el control se queda en el placeholder para siempre. Se veía en
+   editar producto: Marca y Categoría en "Selecciona una opción" con el producto
+   ya cargado y, como son obligatorias, editar solo el nombre obligaba a
+   reelegirlas. Ahora cada `<option>` lleva su `[selected]`, que de paso arregla
+   el SSR (`[value]` no serializa a HTML).
+6. **`ts-paginador` decía "Página 1 de 0"** con la lista vacía (`038e8a4`) — el
+   backend devuelve `totalPaginas: 0` sin resultados, y el `?? 1` de los
+   consumidores solo cubre "aún no respondió", no "respondió cero".
+7. **Enlace ilegible en tema oscuro y enlaces del panel pegados** (`8d607a2`).
+   El "Editar" de la tabla era el único `<a>` del panel sin clase: caía en el
+   azul del agente de usuario sobre fondo casi negro. Y los dos enlaces del
+   panel salían como "PedidosProductos". Los dos ganaron también su anillo de
+   foco.
+
+**La lección, para la Fase 5:** de siete defectos, cinco eran invisibles para la
+batería de pruebas porque no producen un error — un `href` que no coincide, una
+propiedad que no se reasigna, un color heredado del navegador. La regla de
+cierre que exige recorrer el sitio de verdad no es burocracia: es el único
+mecanismo que los encuentra.
+
+**Pendientes que salieron del recorrido y no se cerraron:**
+
+- **"Ordenar por" sale en blanco en la primera pintada** cuando la URL no trae
+  `orden`. Los otros cinco filtros muestran su placeholder ("Todas"); ese no
+  tiene, y su `FormControl` arranca en `''`, que no corresponde a ninguna
+  opción. Tras hidratar, o al navegar dentro de la SPA, sí muestra
+  "Relevancia". Tiene tres arreglos con semánticas distintas y ninguno es
+  obviamente el correcto: no se eligió en silencio.
+- **La tabla de pedidos vacía no dice que está vacía** — mismo hueco que se
+  cerró en la rejilla del catálogo, pero en el panel.
+- **Avisos de `NgOptimizedImage` en la consola**: `NG02952` (la relación de
+  aspecto pintada no coincide con la intrínseca) en las tarjetas de producto, y
+  `NG02955` (la imagen del LCP sin `priority`) en la portada.
+
+### `.env.local` no llegaba al backend
+
+Encontrado al preparar el recorrido (2026-09-06, `c0ccd64`). `README.md` y
+`apps/api/README.md` dicen desde el principio que las variables de desarrollo
+viven en `.env.local`, pero **nada leía ese archivo**: Spring Boot lee variables
+de entorno del proceso, no archivos `.env`, y `bootRun` solo fijaba
+`spring.profiles.active`. Toda la configuración local salía en realidad de los
+valores por defecto de `application.yml` — la documentación describía un
+mecanismo que no existía, y no se notaba porque cada valor por defecto tapaba el
+hueco.
+
+`bootRun` ahora lee el archivo y lo pasa como entorno del proceso, sin
+dependencia nueva. Dos decisiones, las dos encontradas arrancando de verdad: una
+variable ya exportada en la terminal gana sobre el archivo (contrato habitual de
+dotenv), y **una clave con valor vacío se omite** en vez de pasarse como cadena
+vacía — `.env.example` trae varias así a propósito
+(`CONTRAENTREGA_MONTO_MAXIMO=`, `SMTP_USUARIO=`) queriendo decir "usa el valor
+por defecto", y al pasarlas vacías la aplicación dejaba de arrancar:
+`monto-maximo` es un `long` primitivo y recibía null. De paso, `.env.example`
+ganó `ADMIN_CORREO` y `ADMIN_CLAVE`, que estaban en `application.yml` pero
+faltaban en la plantilla.
+
+Con eso se sembró el `ADMIN` real del proyecto (`contacto@tecnosport.co`, el
+mismo buzón del pie), borrando antes el `admin@tecnosport.co` que había creado
+el valor por defecto. **Rotar la clave de un `ADMIN` ya creado sigue sin
+construirse**, y ahora se siente más: la única salida es borrar la fila y volver
+a arrancar. Queda anotado en el propio `.env.example`.
 
 **Pendientes que este paso no toca:** `ts-checkbox`, `ts-radio`, `ts-dialogo`
 y `ts-notificacion` siguen sin construirse, a propósito — nada los necesita
