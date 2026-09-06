@@ -8,7 +8,7 @@
          diseño al cargar— y el recorte pasa a ser lo declarado, en vez de una
          contradicción entre el atributo y la hoja de estilos. -->
     <div class="ts-tarjeta-producto__marco">
-      <img class="ts-tarjeta-producto__imagen" [ngSrc]="imagen.url" [alt]="alt()" [priority]="prioritaria()" fill />
+      <img class="ts-tarjeta-producto__imagen" [ngSrc]="url(imagen)" [alt]="alt()" [priority]="prioritaria()" fill />
     </div>
   }
   <div class="ts-tarjeta-producto__cuerpo">

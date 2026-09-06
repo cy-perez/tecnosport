@@ -5,7 +5,7 @@
          reserva el espacio. Es la del LCP de la ficha salvo cuando hay visor
          360, que se queda con esa prioridad. -->
     <div class="ts-galeria__marco">
-      <img class="ts-galeria__principal" [ngSrc]="imagen.url" [alt]="alt(imagen)" fill [priority]="prioritaria()" />
+      <img class="ts-galeria__principal" [ngSrc]="url(imagen)" [alt]="alt(imagen)" fill [priority]="prioritaria()" />
     </div>
 
     @if (imagenes().length > 1) {
@@ -19,7 +19,7 @@
             [attr.aria-label]="alt(miniatura)"
             (click)="elegir(indice)"
           >
-            <img [ngSrc]="miniatura.url" alt="" fill />
+            <img [ngSrc]="url(miniatura)" alt="" fill />
           </button>
         }
       </div>

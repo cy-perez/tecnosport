@@ -13,7 +13,7 @@ import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-s
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { Imagen } from '../../domain/producto.model';
+import { Imagen, urlPreferida } from '../../domain/producto.model';
 import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, varianteSeleccionada } from '../../domain/seleccion-variante';
 
 @Component({
@@ -68,20 +68,10 @@ export class FichaPage {
     return [producto.imagenPrincipal, ...producto.galeria].filter((imagen): imagen is Imagen => imagen !== null);
   });
 
-  /**
-   * El visor recibe URL y nada más. Se ordena por `orden` aquí y no se confía en el orden en que
-   * llegue el arreglo: el giro depende de esa secuencia, y un fotograma fuera de sitio se ve como
-   * un salto (`docs/10-captura-360.md`).
-   *
-   * WebP con el original de respaldo, por la regla de imágenes de `apps/web/CLAUDE.md`.
-   */
-  protected readonly fotogramas360 = computed<string[]>(() => {
-    const rotacion = this.producto()?.rotacion;
-    if (!rotacion) {
-      return [];
-    }
-    return [...rotacion.imagenes].sort((uno, otro) => uno.orden - otro.orden).map((imagen) => imagen.urlWebp || imagen.url);
-  });
+  /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
+  protected readonly fotogramas360 = computed<string[]>(() =>
+    (this.producto()?.rotacion?.imagenes ?? []).map(urlPreferida),
+  );
 
   protected readonly ejes = computed(() => {
     const producto = this.producto();

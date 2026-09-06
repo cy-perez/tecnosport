@@ -1,7 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
-import { Imagen } from '../../features/catalogo/domain/producto.model';
+import { Imagen, urlPreferida } from '../../features/catalogo/domain/producto.model';
 
 @Component({
   selector: 'ts-galeria',
@@ -20,10 +20,14 @@ export class TsGaleria {
    * `ts-tarjeta-producto`. En una ficha con visor 360 la prioritaria es el fotograma frontal del
    * visor, y esta deja de serlo: priorizar las dos es no priorizar ninguna.
    *
+   * **Por omisión, `false`.** El valor por defecto tiene que ser el que no hace daño: una pantalla
+   * nueva que se olvide de decidir se lleva una imagen sin priorizar, no una segunda candidata a
+   * LCP compitiendo con la de verdad (`NG02955`, que este proyecto ya pagó dos veces).
+   *
    * `priority` es una de las entradas que NgOptimizedImage congela tras inicializar, así que quien
    * la use tiene que pasar un valor fijo por instancia, no una expresión que cambie.
    */
-  readonly prioritaria = input(true);
+  readonly prioritaria = input(false);
 
   protected readonly indiceActivo = signal(0);
 
@@ -32,6 +36,9 @@ export class TsGaleria {
   protected elegir(indice: number): void {
     this.indiceActivo.set(indice);
   }
+
+  /** La misma regla que el visor 360: WebP con el original de respaldo. */
+  protected readonly url = urlPreferida;
 
   protected alt(imagen: Imagen): string {
     const idioma = this.transloco.activeLang();

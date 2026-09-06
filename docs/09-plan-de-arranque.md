@@ -1478,14 +1478,11 @@ implementación**: fallan si se deshace el arreglo. Y se volvió al navegador,
 porque el `@if` nuevo envuelve el elemento del `viewChild`: el arrastre sigue
 girando y la hidratación no se queja del id.
 
-**Los diez hallazgos restantes quedan abiertos**, por orden de lo que costaría
-que muerdan:
+**4. Ordenar y elegir formato vivían en la página**, no en el mapeador. Cerrado
+después, junto con el 8 — ver la sección siguiente.
 
-- **Ordenar por `orden` y elegir WebP vive en la página** (`ficha.page.ts`), no en
-  el mapeador, que es donde el DTO se vuelve modelo. El próximo consumidor de
-  `rotacion` tiene que acordarse de ordenar, y hoy `ts-galeria` elige `url` donde
-  el visor elige `urlWebp`: dos componentes de la misma ficha decidiendo distinto
-  sobre el mismo dato.
+**Los ocho hallazgos restantes quedan abiertos**, por orden de lo que costaría
+que muerdan:
 - **Un refetch en segundo plano devuelve el visor al frontal.** `staleTime` de 60 s
   con `refetchOnWindowFocus` por defecto, y el arreglo nuevo cambia de identidad,
   así que el efecto de reinicio se dispara. La selección de variante ya tenía el
@@ -1496,9 +1493,6 @@ que muerdan:
   componente. Se cura solo en la siguiente petición.
 - **Un fotograma roto se salta en silencio**: ni log ni señal, el contador sigue
   diciendo ocho y uno nunca aparece.
-- **`ts-galeria.prioritaria` viene en `true` por defecto.** El valor seguro es
-  `false` con adhesión explícita: así, el próximo que la use se lleva una segunda
-  imagen con `priority` sin enterarse, que es el `NG02955` ya pagado dos veces.
 - **La pista sale en cada visita**, no "la primera vez" como pide
   `docs/10-captura-360.md`: nada recuerda que ya se vio.
 - **Sin captura de puntero el arrastre se queda pegado**: si se suelta fuera del
@@ -1511,6 +1505,43 @@ que muerdan:
   ejercita es haber arrancado `bootRun` a mano.
 - **Tercera copia del host literal de imágenes** en el sembrador, contra la regla
   dura #5. Perfil `local` y con precedente dos métodos más abajo, pero ya son tres.
+
+### Dos hallazgos más, cerrados: el mapeador y la prioridad por omisión
+
+2026-09-06, un commit.
+
+**El orden de los fotogramas se garantiza en el mapeador** (`aRotacion`), que es
+la frontera donde el DTO se vuelve modelo. La ficha ya no ordena: recibe el
+arreglo ordenado y no tiene que saber que el orden importa. Antes, cualquier
+pantalla nueva que consumiera `rotacion` tenía que acordarse.
+
+**Y la elección de formato es una sola regla**, `urlPreferida` en el dominio del
+catálogo: WebP con el original de respaldo, la regla de imágenes de
+`apps/web/CLAUDE.md`. Antes el visor servía la WebP y la galería el original, sin
+que nadie lo hubiera decidido: eran dos expresiones sueltas en dos plantillas.
+`ts-tarjeta-producto` tenía la tercera y también pasa por la función — dejarla
+fuera habría recreado la incoherencia el mismo día de arreglarla.
+
+**`ts-galeria.prioritaria` pasa a `false` por omisión.** El valor por defecto
+tiene que ser el que no hace daño: una pantalla nueva que se olvide de decidir se
+lleva una imagen sin priorizar, no una segunda candidata a LCP compitiendo con la
+de verdad. La ficha ahora lo declara explícito en sus dos ramas, aunque una
+coincida con el defecto: quién es la candidata de esa pantalla se lee en la
+pantalla.
+
+**Una prueba nueva no servía y lo dijo el mutante.** La que cubre el valor por
+omisión de `prioritaria` pasaba igual con el defecto cambiado a `true`, porque el
+ayudante `renderGaleria` mandaba siempre el input y el valor por defecto no lo
+ejercitaba nadie. Se arregló el ayudante para que solo lo pase cuando la prueba lo
+pide, y entonces sí falla. **Los dos arreglos se comprobaron mutando la
+implementación**, no viendo pasar las pruebas.
+
+Verificado también en el navegador, porque el cambio de WebP toca la portada y la
+rejilla y no solo la ficha: las cuatro tarjetas cargan, la ficha con visor da
+`fetchpriority=high` en el fotograma frontal y `auto`/`lazy` en la galería, la
+ficha sin visor devuelve el `high` a la galería, y en las tres pantallas la
+consola solo trae el `NG02956` ya conocido — uno por pantalla, que es la señal de
+que hay exactamente una imagen prioritaria en cada una.
 
 **Falta el asistente de captura**, que es el resto de la fase.
 

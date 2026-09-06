@@ -74,6 +74,15 @@ export interface Producto {
   readonly variantes: readonly Variante[];
 }
 
+/**
+ * WebP con el original de respaldo, que es la regla de imágenes de `apps/web/CLAUDE.md`. Vive aquí
+ * y no en cada plantilla para que la galería y el visor 360 no elijan distinto sobre el mismo dato:
+ * durante un tiempo la galería sirvió el original y el visor la WebP, sin que nadie lo decidiera.
+ */
+export function urlPreferida(imagen: { readonly url: string; readonly urlWebp: string }): string {
+  return imagen.urlWebp || imagen.url;
+}
+
 /** El precio vive en la variante, no en el producto: "desde" es el menor entre sus variantes. */
 export function precioDesde(producto: Producto): Dinero | null {
   if (producto.variantes.length === 0) {

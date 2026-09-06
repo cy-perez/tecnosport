@@ -50,4 +50,29 @@ describe('mapeador-productos', () => {
     expect(producto.galeria).toEqual([]);
     expect(producto.variantes).toEqual([]);
   });
+
+  // El orden de los fotogramas es la rotación: uno fuera de sitio se ve como un salto al girar.
+  // Se garantiza aquí, en la frontera, para que ninguna pantalla tenga que volver a saberlo.
+  it('ordena los fotogramas de la rotación por `orden`, llegue como llegue el arreglo', () => {
+    const producto = aProducto({
+      slug: 'tenis',
+      rotacion: {
+        fotogramas: 4,
+        imagenes: [
+          { orden: 2, url: 'f2.jpg', urlWebp: 'f2.webp', ancho: 1000, alto: 1000 },
+          { orden: 0, url: 'f0.jpg', urlWebp: 'f0.webp', ancho: 1000, alto: 1000 },
+          { orden: 3, url: 'f3.jpg', urlWebp: 'f3.webp', ancho: 1000, alto: 1000 },
+          { orden: 1, url: 'f1.jpg', urlWebp: 'f1.webp', ancho: 1000, alto: 1000 },
+        ],
+      },
+    });
+
+    expect(producto.rotacion?.imagenes.map((imagen) => imagen.orden)).toEqual([0, 1, 2, 3]);
+    expect(producto.rotacion?.imagenes.map((imagen) => imagen.url)).toEqual([
+      'f0.jpg',
+      'f1.jpg',
+      'f2.jpg',
+      'f3.jpg',
+    ]);
+  });
 });

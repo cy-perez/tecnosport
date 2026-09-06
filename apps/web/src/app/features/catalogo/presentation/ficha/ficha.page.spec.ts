@@ -77,18 +77,28 @@ function productoConVariantes(): Producto {
   };
 }
 
-/** Los fotogramas llegan desordenados a propósito: el orden del giro lo decide `orden`, no el arreglo. */
 function productoConRotacion(): Producto {
   return {
     ...productoDePrueba(),
+    imagenPrincipal: {
+      url: 'https://imagenes.test/principal.jpg',
+      urlWebp: 'https://imagenes.test/principal.webp',
+      ancho: 800,
+      alto: 600,
+      altEs: 'Morral de frente',
+      altEn: 'Backpack, front',
+    },
+    // Ordenados, como los entrega el mapeador: que el orden se garantice en la frontera es
+    // asunto de `mapeador-productos.spec.ts`, no de esta pantalla.
     rotacion: {
       fotogramas: 4,
-      imagenes: [
-        { orden: 2, url: 'https://imagenes.test/r2.jpg', urlWebp: 'https://imagenes.test/r2.webp', ancho: 1000, alto: 1000 },
-        { orden: 0, url: 'https://imagenes.test/r0.jpg', urlWebp: 'https://imagenes.test/r0.webp', ancho: 1000, alto: 1000 },
-        { orden: 3, url: 'https://imagenes.test/r3.jpg', urlWebp: 'https://imagenes.test/r3.webp', ancho: 1000, alto: 1000 },
-        { orden: 1, url: 'https://imagenes.test/r1.jpg', urlWebp: 'https://imagenes.test/r1.webp', ancho: 1000, alto: 1000 },
-      ],
+      imagenes: [0, 1, 2, 3].map((orden) => ({
+        orden,
+        url: `https://imagenes.test/r${orden}.jpg`,
+        urlWebp: `https://imagenes.test/r${orden}.webp`,
+        ancho: 1000,
+        alto: 1000,
+      })),
     },
   };
 }
@@ -175,9 +185,35 @@ describe('FichaPage', () => {
     await renderFicha(repositorio);
 
     const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-    // El frontal es el de `orden: 0`, aunque llegue en segundo lugar en el arreglo.
     expect(visor.querySelector('img')?.getAttribute('src')).toContain('r0.webp');
     expect(screen.getByText('Fotograma 1 de 4')).toBeTruthy();
+  });
+
+  // Priorizar las dos imágenes es no priorizar ninguna: con visor, la candidata a LCP es el
+  // fotograma frontal y la galería deja de serlo. Con las dos ramas del @if, es lo único que
+  // atrapa que alguien cambie una y se olvide de la otra.
+  it('con visor, la prioridad de LCP es del fotograma frontal y no de la galería', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConRotacion()),
+    };
+
+    await renderFicha(repositorio);
+
+    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
+    expect(visor.querySelector('img')?.getAttribute('fetchpriority')).toBe('high');
+    expect(screen.getByRole('img', { name: 'Morral de frente' }).getAttribute('fetchpriority')).toBe('auto');
+  });
+
+  it('sin visor, la prioridad vuelve a la galería: la pantalla nunca se queda sin candidata', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve({ ...productoConRotacion(), rotacion: null }),
+    };
+
+    await renderFicha(repositorio);
+
+    expect((await screen.findByRole('img', { name: 'Morral de frente' })).getAttribute('fetchpriority')).toBe('high');
   });
 
   // Un set de un solo fotograma no llega hoy del backend (`PUBLICADO` exige cuatro), pero si

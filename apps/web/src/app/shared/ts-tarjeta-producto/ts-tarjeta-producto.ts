@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
-import { hayExistencia, precioDesde, Producto } from '../../features/catalogo/domain/producto.model';
+import { hayExistencia, precioDesde, Producto, urlPreferida } from '../../features/catalogo/domain/producto.model';
 import { TsEtiquetaStock } from '../ts-etiqueta-stock/ts-etiqueta-stock';
 import { TsPrecio } from '../ts-precio/ts-precio';
 
@@ -36,6 +36,9 @@ export class TsTarjetaProducto {
     'productos',
     this.producto().slug,
   ]);
+
+  /** La misma regla que la galería y el visor 360: WebP con el original de respaldo. */
+  protected readonly url = urlPreferida;
 
   protected readonly precio = computed(() => precioDesde(this.producto()));
   protected readonly disponible = computed(() => hayExistencia(this.producto()));
