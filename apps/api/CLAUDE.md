@@ -160,3 +160,12 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   `org.springframework.boot.autoconfigure.security.servlet` como en
   versiones anteriores de Boot — `spring-boot-security` quedó como módulo
   separado de `spring-boot-autoconfigure`.
+- **`HttpServletResponse.getWriter()` escribe en ISO-8859-1 por defecto**
+  (spec de servlets, no algo específico de Boot 4.1) si nadie fija el
+  charset antes de escribir — un filtro que arma su propio cuerpo a mano
+  (fuera del `@RestControllerAdvice`, porque corre antes del
+  `DispatcherServlet`) corrompe cualquier tilde de la regla dura #4 en
+  silencio, sin ninguna excepción. Encontrado en Fase 4 en
+  `FiltroLimiteIntentos`. Llamar siempre
+  `response.setCharacterEncoding("UTF-8")` antes de `getWriter()` en
+  cualquier filtro que escriba JSON a mano.

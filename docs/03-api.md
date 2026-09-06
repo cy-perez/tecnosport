@@ -133,6 +133,8 @@ POST /api/v1/admin/productos                                 crea en BORRADOR, s
 GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
+POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
+POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida y reemplaza la imagen principal
 POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
@@ -152,6 +154,13 @@ Las imágenes se suben **directo a Cloud Storage con URL firmada**. No pasan por
 backend. El servidor emite las URL, y al completar el set verifica que los N
 objetos existan, que tengan el tamaño y la proporción esperados, y que ninguno
 esté vacío. Un set que no pasa esa validación se queda en `BORRADOR`.
+
+La imagen principal (ya construida, Fase 4) verifica menos que esto: solo que
+el objeto exista y su tamaño en bytes, sin proporción esperada ni verificación
+de que el contenido real coincida con el tipo declarado — riesgo aceptado
+mientras esta subida la haga solo el administrador (`ADR-0016`). El set de
+rotación de la Fase 5, arriba, es el que sí queda pendiente de construir con
+la validación completa.
 
 ## Idempotencia
 

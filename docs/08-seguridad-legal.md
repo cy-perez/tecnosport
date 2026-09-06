@@ -19,7 +19,11 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
 - Roles: `CLIENTE` y `ADMIN`. Autorización por método en la capa de aplicación,
   no solo por ruta.
 - Verificación de correo obligatoria al registrarse. Recuperación con token de un
-  solo uso, válido 30 minutos.
+  solo uso, válido 30 minutos, separado del token de verificación de correo por
+  nivel de sensibilidad (`ADR-0015`). Confirmar la recuperación revoca **todas**
+  las sesiones de refresco del usuario, no solo la familia de la sesión que la
+  originó — perder el control de la clave es más grave que un refresco
+  reutilizado.
 - Límite de intentos por IP y por cuenta en inicio de sesión, registro,
   recuperación y creación de pedidos.
 - El asistente de captura exige rol `ADMIN` y una sesión activa; las URL firmadas
@@ -56,7 +60,13 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   cámara y sensores, y solo en la ruta del asistente de captura.
 - Subida de imágenes: tipo verificado por contenido y no por extensión, tamaño
   máximo, nombre regenerado, servidas desde el dominio de estáticos. El backend
-  valida los objetos subidos antes de publicar un set.
+  valida los objetos subidos antes de publicar un set. **Todavía no se cumple
+  del todo**: la imagen principal (Fase 4, ya construida) regenera el nombre y
+  sirve desde el dominio de estáticos, pero acepta el tipo por una lista blanca
+  que declara el propio cliente (no verificada contra los bytes reales) y no
+  tiene tamaño máximo propio — riesgo aceptado mientras solo el `ADMIN` suba
+  ahí (`ADR-0016`). El set de rotación de la Fase 5 es el que debe cumplir la
+  frase completa.
 - Autorización verificada por recurso: que un usuario autenticado no pueda leer el
   pedido de otro cambiando el identificador.
 - Registros sin datos personales ni tokens. Nunca se registra el cuerpo completo

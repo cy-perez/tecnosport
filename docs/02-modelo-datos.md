@@ -64,11 +64,20 @@ conteo de unidades disponibles, no un número que se edita a mano.
   unidad y lo asocia al pedido en el despacho.
 - Garantía en meses, obligatoria y visible en la ficha.
 
-Estos ejes se modelan como **atributos tipados por categoría**, no como columnas
-fijas: una tabla `atributo` con su tipo y sus valores permitidos, y la variante
-guarda pares atributo-valor. Así se agrega "material" sin migrar el esquema. Lo
-que sí es columna fija en la variante: `sku`, `precio`, `tasa_iva`, `existencia`,
+Estos ejes se modelan como **atributos**, no como columnas fijas: una tabla
+`atributo` con su tipo y sus valores permitidos, y la variante guarda pares
+atributo-valor. Así se agrega "material" sin migrar el esquema. Lo que sí es
+columna fija en la variante: `sku`, `precio`, `tasa_iva`, `existencia`,
 `estado`, `codigo_barras`.
+
+**El catálogo de atributos es global, no tipado por categoría en el esquema**
+(confirmado al construir Track B, Fase 4): no existe ninguna columna ni tabla
+que asocie un atributo a una categoría. Qué atributo corresponde a qué
+categoría es hoy una convención de negocio que solo conoce `SembradorCatalogo`
+(los datos de siembra) — el backend no valida ni filtra atributos por
+categoría al agregar una variante (`GET /api/v1/atributos`,
+`docs/03-api.md`). Nada impide hoy asignarle "almacenamiento" a una camiseta
+por error del panel. Queda pendiente si el negocio lo pide.
 
 ## Imágenes y set de rotación
 
@@ -98,6 +107,18 @@ Reglas:
 - `alt_es` y `alt_en` obligatorios en la principal, opcionales en los fotogramas
   de rotación, que son decorativos y llevan `alt=""` con la descripción en el
   contenedor.
+- **Imagen principal con URL firmada (Fase 4):** el navegador sube el archivo
+  directo a Cloud Storage con un `PUT`, el backend nunca ve los bytes; solo
+  verifica que el objeto exista y su tamaño antes de confirmar. `url_webp`
+  todavía apunta al mismo objeto que `url` — la conversión real de formato a
+  WebP es del asistente de captura de la Fase 5, no existe todavía. `ancho` y
+  `alto` los declara el cliente y se confían tal cual (metadato
+  presentacional, no una medida verificada contra el archivo real). No se
+  borra el objeto anterior al reemplazar la principal — el bucket tiene
+  versionado (`docs/07-infra-gcp.md`). El tipo de contenido se acepta por una
+  lista blanca declarada por el cliente, no verificado contra los bytes
+  reales, y no hay tamaño máximo de subida propio — riesgo aceptado mientras
+  el panel solo lo use el administrador del negocio (`ADR-0016`).
 
 ```
 set_rotacion
@@ -124,6 +145,9 @@ primero que hay que saber es con qué se capturó.
 | `Pago` | referencia, método, estado, eventos recibidos | Idempotente por referencia |
 | `Envio` | transportadora, guía, costo real, comisión y fecha de conciliación del recaudo | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`) |
 | `Usuario` | correo, credencial, roles, verificación | |
+| `SesionRefresco` | familia, rotación, revocación | Un eslabón de la rotación por fila (Fase 4) |
+| `TokenVerificacionCorreo` | token, vencimiento, un solo uso | Separado de `TokenRecuperacionClave` por sensibilidad (`ADR-0015`) |
+| `TokenRecuperacionClave` | token, vencimiento, un solo uso | Consumirlo revoca todas las sesiones del usuario (`ADR-0015`) |
 | `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | |
 | `SetRotacion`, `ImagenProducto` | material visual | |
@@ -150,6 +174,14 @@ de `LIBERACION` que registra el motivo.
 
 La reserva se toma con bloqueo pesimista sobre la variante para que dos
 compradores simultáneos no vendan la misma última unidad.
+
+**`variante.existencia` y `Inventario` conviven, todavía no están unificados**
+(confirmado al construir "agregar variante", Fase 4): la ficha pública y la
+rejilla siguen leyendo la columna directo, el checkout sigue calculando el
+saldo desde `Inventario`. Al crear una variante se escriben las dos a la vez
+en la misma transacción, pero ningún mecanismo detecta si algo las
+desincroniza más adelante. Migrar la lectura pública a
+`Inventario.saldoDisponible` es el objetivo de fondo, pendiente (`ADR-0017`).
 
 ## Estados del pedido
 

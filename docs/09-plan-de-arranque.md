@@ -896,6 +896,55 @@ mismo.
 Con esto, Track B (listar, crear, editar, agregar variante, imagen
 principal) y la Fase 4 completa quedan cerrados.
 
+Quedaron documentadas, al cerrar, tres decisiones de la fase sin registrar en
+su momento: la separación de `TokenVerificacionCorreo` y
+`TokenRecuperacionClave` por nivel de sensibilidad, con revocación total de
+sesiones al recuperar clave (`ADR-0015`); el riesgo aceptado de la subida de
+imagen principal sin verificar el contenido real ni el tamaño (`ADR-0016`);
+y la convivencia sin unificar de `variante.existencia` con `Inventario`
+(`ADR-0017`). De paso, se corrigió `docs/02-modelo-datos.md`, que decía
+"atributos tipados por categoría" cuando el esquema real es un catálogo
+global sin esa asociación, y `docs/08-seguridad-legal.md`, que prometía
+verificación de imágenes por contenido y tamaño máximo antes de que existiera
+el primer caso de uso de subida real.
+
+**Pendientes explícitos para lo que sigue**, ninguno bloquea la Fase 5 pero
+tampoco se puede dar por resuelto:
+
+- **Atributos sin filtrar ni validar por categoría** — el backend acepta
+  cualquier atributo en cualquier categoría; la asociación es solo una
+  convención de negocio en los datos de siembra (`ADR` no abierto, anotado en
+  `docs/02-modelo-datos.md`).
+- **`variante.existencia` e `Inventario` sin unificar** — la ficha pública
+  sigue sin leer `Inventario.saldoDisponible`; ambos se mantienen en sync a
+  mano solo en el punto donde se crea una variante (`ADR-0017`).
+- **`GET/POST /api/v1/admin/variantes/{id}/inventario`** (reabastecimiento o
+  ajuste sobre una variante ya creada) sigue sin construirse — anotado ya en
+  `docs/03-api.md` como pendiente.
+- **La pantalla de agregar variante no muestra las variantes existentes de un
+  producto** — declarado fuera de alcance en el plan para no crecer el paso,
+  sigue sin construirse.
+- **Imagen principal:** sin conversión dual WebP/JPEG (llega con el asistente
+  de la Fase 5), ancho/alto confiados al cliente sin verificar contra el
+  archivo real, sin borrado del objeto anterior en Cloud Storage al
+  reemplazar (mitigado por el versionado del bucket), sin verificación de
+  contenido real ni tamaño máximo propio (`ADR-0016`).
+- **La subida real de bytes contra el bucket de GCP no se verificó en esta
+  sesión** — el wiring de `bootRun` se confirmó hasta el arranque del
+  servidor, pero probar la subida real queda para verificación manual con las
+  credenciales del entorno local, ya anotado al cerrar el paso 5.
+- **Confirmar el formulario de crear/editar producto con clics reales en el
+  navegador sigue pendiente** — limitación de la extensión de automatización
+  de Chrome para llegar a `localhost` en esta máquina, no de la aplicación
+  (ya anotado en los pasos 2 y 3).
+- **Los umbrales de `LIMITE_*` y los vencimientos de verificación/recuperación
+  de correo son criterio técnico razonable, no un dato de negocio
+  confirmado** — nadie del negocio los pidió con esos números exactos
+  (5 intentos por cuenta en 15 minutos, 24 horas para verificar correo, etc.);
+  revisar si en producción resultan demasiado laxos o demasiado estrictos.
+- **Rotación de clave de un `ADMIN` ya creado**: sigue sin construirse (ya
+  estaba anotado desde la Fase 3).
+
 ## Fase 5. Sistema 360
 
 Se hace al final a propósito: necesita el panel, la autenticación, el
