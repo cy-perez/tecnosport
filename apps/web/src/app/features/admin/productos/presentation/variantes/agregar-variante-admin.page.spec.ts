@@ -48,6 +48,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       throw new Error('falló');
     }
   }
+
+  async subirImagenPrincipal(): Promise<never> {
+    throw new Error('No usado en estas pruebas.');
+  }
 }
 
 function activatedRouteConProductoId(productoId: string) {

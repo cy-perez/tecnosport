@@ -66,3 +66,21 @@ export interface AgregarVarianteAdmin {
   readonly existenciaInicial: number;
   readonly atributos: readonly ValorAtributoAdmin[];
 }
+
+export interface ImagenAdmin {
+  readonly url: string;
+  readonly urlWebp: string;
+  readonly ancho: number;
+  readonly alto: number;
+  readonly altEs: string;
+  readonly altEn: string;
+}
+
+export interface SubirImagenPrincipalAdmin {
+  readonly productoId: string;
+  readonly archivo: File;
+  readonly ancho: number;
+  readonly alto: number;
+  readonly altEs: string;
+  readonly altEn: string;
+}

@@ -4,8 +4,10 @@ import {
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
+  ImagenAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
+  SubirImagenPrincipalAdmin,
 } from './producto-admin.model';
 
 export interface RepositorioProductosAdmin {
@@ -18,6 +20,10 @@ export interface RepositorioProductosAdmin {
   editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin>;
 
   agregarVariante(comando: AgregarVarianteAdmin): Promise<void>;
+
+  /** Encadena los tres pasos (URL firmada, PUT directo a Cloud Storage, confirmación) — ver
+   * docs/07-infra-gcp.md. El PUT no pasa por el backend propio, pero sigue siendo infraestructura. */
+  subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(
