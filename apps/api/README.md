@@ -79,6 +79,21 @@ plantilla. Se leen con clases `@ConfigurationProperties` tipadas. Si falta una
 variable obligatoria, la aplicación no arranca. Lista completa en
 `docs/07-infra-gcp.md`.
 
+`gradlew.bat bootRun` carga ese archivo y lo pasa como entorno del proceso
+(`bootstrap/build.gradle.kts`): Spring Boot lee variables de entorno, no
+archivos `.env`, así que sin ese paso `.env.local` no tendría ningún efecto.
+Dos detalles del cargador:
+
+- **Una variable ya exportada en la terminal gana sobre el archivo**, para poder
+  cambiar un valor por una sola corrida sin editarlo.
+- **Una clave con valor vacío se omite** (`CONTRAENTREGA_MONTO_MAXIMO=`) y
+  significa "usa el valor por defecto de `application.yml`". Pasarla vacía haría
+  fallar el arranque: para Spring la variable existiría, el valor por defecto ya
+  no aplicaría, y una propiedad primitiva recibiría null.
+
+En producción no interviene: Cloud Run inyecta el entorno real y este cargador
+solo existe en la tarea `bootRun` de desarrollo.
+
 ## Reglas de código
 
 En el `CLAUDE.md` de esta carpeta.
