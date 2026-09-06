@@ -1,7 +1,9 @@
 package co.tecnosport.api.bootstrap.catalogo;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
+import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
@@ -12,10 +14,15 @@ import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.infrastructure.catalogo.AlmacenDeImagenesGcs;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,7 +33,34 @@ import org.springframework.context.annotation.Configuration;
  * lo decide bootstrap".
  */
 @Configuration
+@EnableConfigurationProperties(PropiedadesGcs.class)
 public class ConfiguracionCatalogo {
+
+  @Bean
+  public Storage storage() {
+    return StorageOptions.getDefaultInstance().getService();
+  }
+
+  @Bean
+  public AlmacenDeImagenes almacenDeImagenes(Storage storage, PropiedadesGcs propiedades) {
+    return new AlmacenDeImagenesGcs(
+        storage,
+        propiedades.bucketImagenes(),
+        propiedades.urlPublica(),
+        propiedades.minutosUrlFirmada());
+  }
+
+  @Bean
+  public SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal(
+      RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+    return new SolicitarSubidaDeImagenPrincipal(repositorioProductos, almacenDeImagenes);
+  }
+
+  @Bean
+  public ConfirmarImagenPrincipal confirmarImagenPrincipal(
+      RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+    return new ConfirmarImagenPrincipal(repositorioProductos, almacenDeImagenes);
+  }
 
   @Bean
   public BuscarProductos buscarProductos(RepositorioProductos repositorioProductos) {

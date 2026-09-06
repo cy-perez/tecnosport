@@ -22,6 +22,9 @@ dependencies {
     // ConfiguracionCorreo referencia JavaMailSender directo, mismo motivo que
     // spring-boot-starter-web arriba.
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    // ConfiguracionCatalogo arma el bean Storage (StorageOptions.getDefaultInstance()), mismo
+    // motivo que spring-boot-starter-web arriba. Misma versión que infrastructure.
+    implementation("com.google.cloud:google-cloud-storage:2.71.0")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
 }

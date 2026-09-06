@@ -43,6 +43,14 @@ tecnosport:
   pedido:
     minutos-reserva-inventario: ${MINUTOS_RESERVA_INVENTARIO:30}
     horas-vencimiento-transferencia: ${TRANSFERENCIA_HORAS_VENCIMIENTO:24}
+  gcs:
+    # bucket-imagenes y url-publica no son secretos (docs/07-infra-gcp.md los documenta), por eso
+    # sí llevan default real de dev — a diferencia de los placeholders de Wompi de abajo, que son
+    # secretos y nunca deben tener un valor real por defecto (regla dura #5). Las credenciales para
+    # firmar las resuelve el SDK vía GOOGLE_APPLICATION_CREDENTIALS, fuera de este bloque.
+    bucket-imagenes: ${GCS_BUCKET_IMAGENES:tecnosport-dev-imagenes}
+    url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/tecnosport-dev-imagenes}
+    minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
   wompi:
     # Sin valor por defecto que sea una llave real (regla dura #5): los de abajo son placeholders
     # de sandbox para desarrollo local, nunca válidos contra Wompi. Producción los sobrescribe
