@@ -4,6 +4,7 @@ import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
+import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
@@ -73,6 +74,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(AtributoNoEncontradoException.class)
   public ProblemDetail atributoNoEncontrado(AtributoNoEncontradoException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Atributo no encontrado", excepcion);
+  }
+
+  // El navegador nunca terminó el PUT a Cloud Storage, o lo hizo contra un objectKey distinto al
+  // que se firmó — ConfirmarImagenPrincipal lo verifica contra el almacén real, no confía en el
+  // cliente.
+  @ExceptionHandler(ObjetoDeImagenNoEncontradoException.class)
+  public ProblemDetail objetoDeImagenNoEncontrado(ObjetoDeImagenNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Imagen no encontrada", excepcion);
   }
 
   // 409, mismo criterio que CorreoYaRegistradoException: la solicitud está bien formada, el

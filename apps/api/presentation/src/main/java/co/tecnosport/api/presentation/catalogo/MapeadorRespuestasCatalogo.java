@@ -96,7 +96,8 @@ public class MapeadorRespuestasCatalogo {
         variante.atributos().stream().map(this::aRespuesta).toList());
   }
 
-  private ImagenRespuesta aRespuesta(ImagenProducto imagen) {
+  /** Público: {@code MapeadorRespuestasProductoAdmin} lo reutiliza para la respuesta admin. */
+  public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
         imagen.url(),
         imagen.urlWebp(),

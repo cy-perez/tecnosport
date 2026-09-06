@@ -1,12 +1,16 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
+import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
@@ -14,6 +18,7 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
@@ -42,6 +47,7 @@ class AdminProductoControladorTest {
   @Autowired private RepositorioProductosDobleDePrueba repositorio;
   @Autowired private RepositorioMarcasDobleDePrueba repositorioMarcas;
   @Autowired private RepositorioCategoriasDobleDePrueba repositorioCategorias;
+  @Autowired private AlmacenDeImagenesDobleDePrueba almacenDeImagenes;
 
   // El bean del doble es un singleton compartido por Spring entre los métodos de esta clase de
   // prueba: sin esto, un producto sembrado por una prueba (p. ej. con slug "morral-urbano") queda
@@ -49,6 +55,7 @@ class AdminProductoControladorTest {
   @BeforeEach
   void limpiarRepositorio() {
     repositorio.limpiar();
+    almacenDeImagenes.limpiar();
   }
 
   @Test
@@ -216,6 +223,76 @@ class AdminProductoControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  @Test
+  void solicitarUrlDeSubidaDevuelve201ConUrlYObjectKeyDelProducto() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal/url-subida", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"contentType":"image/webp"}
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.objectKey", startsWith("productos/" + producto.id() + "/")))
+        .andExpect(jsonPath("$.url", containsString("storage.googleapis.com")));
+  }
+
+  @Test
+  void solicitarUrlDeSubidaConProductoInexistenteDevuelve404() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal/url-subida", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"contentType":"image/webp"}
+                    """))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void confirmarImagenPrincipalDevuelve200ConLaImagenConfirmada() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    String objectKey = "productos/" + producto.id() + "/principal-abc.webp";
+    almacenDeImagenes.conObjeto(objectKey, 45_000);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"objectKey":"%s","ancho":1000,"alto":800,"altEs":"alt es","altEn":"alt en"}
+                    """
+                        .formatted(objectKey)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ancho").value(1000))
+        .andExpect(jsonPath("$.alto").value(800));
+  }
+
+  @Test
+  void confirmarImagenPrincipalConObjetoInexistenteEnElAlmacenDevuelve404() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    String objectKey = "productos/" + producto.id() + "/principal-nunca-subido.webp";
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/imagen-principal", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"objectKey":"%s","ancho":1000,"alto":800,"altEs":"alt es","altEn":"alt en"}
+                    """
+                        .formatted(objectKey)))
+        .andExpect(status().isNotFound());
+  }
+
   private static Producto productoEnBorrador() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
@@ -267,6 +344,23 @@ class AdminProductoControladorTest {
         RepositorioMarcas repositorioMarcas,
         RepositorioCategorias repositorioCategorias) {
       return new EditarProducto(repositorioProductos, repositorioMarcas, repositorioCategorias);
+    }
+
+    @Bean
+    AlmacenDeImagenesDobleDePrueba almacenDeImagenes() {
+      return new AlmacenDeImagenesDobleDePrueba();
+    }
+
+    @Bean
+    SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal(
+        RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+      return new SolicitarSubidaDeImagenPrincipal(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    ConfirmarImagenPrincipal confirmarImagenPrincipal(
+        RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+      return new ConfirmarImagenPrincipal(repositorioProductos, almacenDeImagenes);
     }
 
     @Bean

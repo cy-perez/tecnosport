@@ -1,7 +1,9 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
 import org.springframework.stereotype.Component;
@@ -33,6 +35,10 @@ public class MapeadorRespuestasProductoAdmin {
         mapeadorCatalogo.aRespuesta(producto.categoria()),
         producto.imagenPrincipal().map(imagen -> imagen.url()).orElse(null),
         producto.variantes().size());
+  }
+
+  public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
+    return mapeadorCatalogo.aRespuesta(imagen);
   }
 
   public ProductosAdminPaginadosRespuesta aRespuesta(ProductosPaginados productos) {

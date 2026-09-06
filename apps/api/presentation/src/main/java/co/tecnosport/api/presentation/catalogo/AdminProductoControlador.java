@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
+import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.CrearProductoComando;
 import co.tecnosport.api.application.catalogo.EditarProducto;
@@ -7,12 +9,20 @@ import co.tecnosport.api.application.catalogo.EditarProductoComando;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
+import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -41,6 +51,8 @@ public class AdminProductoControlador {
   private final CrearProducto crearProducto;
   private final VerProductoAdmin verProductoAdmin;
   private final EditarProducto editarProducto;
+  private final SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal;
+  private final ConfirmarImagenPrincipal confirmarImagenPrincipal;
   private final MapeadorRespuestasProductoAdmin mapeador;
 
   public AdminProductoControlador(
@@ -48,11 +60,16 @@ public class AdminProductoControlador {
       CrearProducto crearProducto,
       VerProductoAdmin verProductoAdmin,
       EditarProducto editarProducto,
+      SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal,
+      ConfirmarImagenPrincipal confirmarImagenPrincipal,
       MapeadorRespuestasProductoAdmin mapeador) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
     this.verProductoAdmin = Objects.requireNonNull(verProductoAdmin);
     this.editarProducto = Objects.requireNonNull(editarProducto);
+    this.solicitarSubidaDeImagenPrincipal =
+        Objects.requireNonNull(solicitarSubidaDeImagenPrincipal);
+    this.confirmarImagenPrincipal = Objects.requireNonNull(confirmarImagenPrincipal);
     this.mapeador = Objects.requireNonNull(mapeador);
   }
 
@@ -88,5 +105,30 @@ public class AdminProductoControlador {
             new EditarProductoComando(
                 id, cuerpo.nombre(), cuerpo.descripcion(), cuerpo.marcaId(), cuerpo.categoriaId()));
     return mapeador.aRespuesta(producto);
+  }
+
+  @PostMapping("/{id}/imagen-principal/url-subida")
+  @ResponseStatus(HttpStatus.CREATED)
+  public UrlSubidaRespuesta solicitarUrlDeSubida(
+      @PathVariable("id") UUID id, @RequestBody SolicitarSubidaDeImagenPrincipalPeticion cuerpo) {
+    SolicitudDeSubida solicitud =
+        solicitarSubidaDeImagenPrincipal.ejecutar(
+            new SolicitarSubidaDeImagenPrincipalComando(id, cuerpo.contentType()));
+    return new UrlSubidaRespuesta(solicitud.url(), solicitud.objectKey());
+  }
+
+  @PostMapping("/{id}/imagen-principal")
+  public ImagenRespuesta confirmarImagenPrincipal(
+      @PathVariable("id") UUID id, @RequestBody ConfirmarImagenPrincipalPeticion cuerpo) {
+    ImagenProducto imagen =
+        confirmarImagenPrincipal.ejecutar(
+            new ConfirmarImagenPrincipalComando(
+                id,
+                cuerpo.objectKey(),
+                cuerpo.ancho(),
+                cuerpo.alto(),
+                cuerpo.altEs(),
+                cuerpo.altEn()));
+    return mapeador.aRespuesta(imagen);
   }
 }
