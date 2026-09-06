@@ -183,20 +183,10 @@
       </tbody>
     </table>
 
-    <div class="lista-pedidos-admin__paginacion">
-      <ts-boton variante="secundario" [deshabilitado]="filtro().pagina === 0" (click)="paginaAnterior()">
-        {{ 'admin.pedidos.paginacion.anterior' | transloco }}
-      </ts-boton>
-      <span>
-        {{ 'admin.pedidos.paginacion.info' | transloco: { actual: filtro().pagina + 1, total: consulta.data()?.totalPaginas ?? 1 } }}
-      </span>
-      <ts-boton
-        variante="secundario"
-        [deshabilitado]="filtro().pagina + 1 >= (consulta.data()?.totalPaginas ?? 1)"
-        (click)="paginaSiguiente()"
-      >
-        {{ 'admin.pedidos.paginacion.siguiente' | transloco }}
-      </ts-boton>
-    </div>
+    <ts-paginador
+      [pagina]="filtro().pagina"
+      [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+      (paginaCambiada)="irAPagina($event)"
+    />
   }
 </section>

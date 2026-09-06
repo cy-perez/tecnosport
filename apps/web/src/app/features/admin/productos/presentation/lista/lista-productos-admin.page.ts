@@ -3,8 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import { EstadoProducto, FiltroProductosAdmin } from '../../domain/producto-admin.model';
@@ -20,7 +20,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto],
+  imports: [RouterLink, TranslocoPipe, TsEsqueleto, TsPaginador],
   templateUrl: './lista-productos-admin.page.html',
   styleUrl: './lista-productos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,12 +40,8 @@ export class ListaProductosAdminPage {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }
 
-  protected paginaAnterior(): void {
-    this.navegarA({ ...this.filtro(), pagina: this.filtro().pagina - 1 });
-  }
-
-  protected paginaSiguiente(): void {
-    this.navegarA({ ...this.filtro(), pagina: this.filtro().pagina + 1 });
+  protected irAPagina(pagina: number): void {
+    this.navegarA({ ...this.filtro(), pagina });
   }
 
   private navegarA(filtro: FiltroProductosAdmin): void {

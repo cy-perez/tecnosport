@@ -7,6 +7,7 @@ import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
@@ -64,7 +65,7 @@ interface FormularioRecaudo {
  */
 @Component({
   selector: 'app-lista-pedidos-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsPrecio, TsSelect],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsPaginador, TsPrecio, TsSelect],
   templateUrl: './lista-pedidos-admin.page.html',
   styleUrl: './lista-pedidos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -113,12 +114,8 @@ export class ListaPedidosAdminPage {
     this.pedidoExpandidoId.set(this.pedidoExpandidoId() === pedidoId ? null : pedidoId);
   }
 
-  protected paginaAnterior(): void {
-    this.navegarA({ ...this.filtro(), pagina: this.filtro().pagina - 1 });
-  }
-
-  protected paginaSiguiente(): void {
-    this.navegarA({ ...this.filtro(), pagina: this.filtro().pagina + 1 });
+  protected irAPagina(pagina: number): void {
+    this.navegarA({ ...this.filtro(), pagina });
   }
 
   private navegarA(filtro: FiltroPedidosAdmin): void {

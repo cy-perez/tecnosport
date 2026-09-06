@@ -69,11 +69,6 @@
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
       "conciliar_recaudo": "Reconcile collection"
-    },
-    "paginacion": {
-      "anterior": "Previous",
-      "siguiente": "Next",
-      "info": "Page {{actual}} of {{total}}"
     }
   },
   "productos": {
@@ -91,11 +86,6 @@
     "estados": {
       "borrador": "Draft",
       "publicado": "Published"
-    },
-    "paginacion": {
-      "anterior": "Previous",
-      "siguiente": "Next",
-      "info": "Page {{actual}} of {{total}}"
     },
     "crear": {
       "titulo": "New product",

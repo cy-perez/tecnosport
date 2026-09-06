@@ -35,23 +35,10 @@
       </tbody>
     </table>
 
-    <div class="lista-productos-admin__paginacion">
-      <ts-boton variante="secundario" [deshabilitado]="filtro().pagina === 0" (click)="paginaAnterior()">
-        {{ 'admin.productos.paginacion.anterior' | transloco }}
-      </ts-boton>
-      <span>
-        {{
-          'admin.productos.paginacion.info'
-            | transloco: { actual: filtro().pagina + 1, total: consulta.data()?.totalPaginas ?? 1 }
-        }}
-      </span>
-      <ts-boton
-        variante="secundario"
-        [deshabilitado]="filtro().pagina + 1 >= (consulta.data()?.totalPaginas ?? 1)"
-        (click)="paginaSiguiente()"
-      >
-        {{ 'admin.productos.paginacion.siguiente' | transloco }}
-      </ts-boton>
-    </div>
+    <ts-paginador
+      [pagina]="filtro().pagina"
+      [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+      (paginaCambiada)="irAPagina($event)"
+    />
   }
 </section>

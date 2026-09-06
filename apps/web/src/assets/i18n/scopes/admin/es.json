@@ -69,11 +69,6 @@
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",
       "conciliar_recaudo": "Conciliar recaudo"
-    },
-    "paginacion": {
-      "anterior": "Anterior",
-      "siguiente": "Siguiente",
-      "info": "Página {{actual}} de {{total}}"
     }
   },
   "productos": {
@@ -91,11 +86,6 @@
     "estados": {
       "borrador": "Borrador",
       "publicado": "Publicado"
-    },
-    "paginacion": {
-      "anterior": "Anterior",
-      "siguiente": "Siguiente",
-      "info": "Página {{actual}} de {{total}}"
     },
     "crear": {
       "titulo": "Nuevo producto",

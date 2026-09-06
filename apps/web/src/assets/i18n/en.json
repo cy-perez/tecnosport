@@ -45,5 +45,14 @@
     "novedades": "New arrivals",
     "ver_todo": "See the full catalog",
     "sin_novedades": "No published products yet."
+  },
+  "paginador": {
+    "navegacion": "Pagination",
+    "anterior": "Previous",
+    "siguiente": "Next",
+    "info": "Page {{actual}} of {{total}}"
+  },
+  "migas": {
+    "navegacion": "Breadcrumb"
   }
 }

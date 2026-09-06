@@ -45,5 +45,14 @@
     "novedades": "Novedades",
     "ver_todo": "Ver todo el catálogo",
     "sin_novedades": "Todavía no hay productos publicados."
+  },
+  "paginador": {
+    "navegacion": "Paginación",
+    "anterior": "Anterior",
+    "siguiente": "Siguiente",
+    "info": "Página {{actual}} de {{total}}"
+  },
+  "migas": {
+    "navegacion": "Ruta de navegación"
   }
 }
