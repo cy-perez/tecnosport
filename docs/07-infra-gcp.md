@@ -33,6 +33,13 @@ para firmar URLs — decisión del proyecto: dev usa solo servicios de GCP sin
 costo, los servicios pagos se activan al pasar a producción. CORS configurado
 para el origen de `apps/web` en local (`http://localhost:4200`).
 
+Todo eso lo crea `node infra/dev/bucket-imagenes.mjs`, idempotente, con la llave
+de la cuenta de servicio en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`. Sin esa
+llave el backend arranca igual —el bean `Storage` se construye sin credenciales—
+pero firmar falla: `POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500
+con `Signing key was not provided and could not be derived`, y con él se cae todo
+lo que sigue del asistente de captura.
+
 ## Producción en GCP
 
 | Servicio | Para qué |
