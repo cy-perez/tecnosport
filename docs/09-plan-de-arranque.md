@@ -1439,6 +1439,79 @@ comprobado construyendo `main` antes de esta rama: 603,52 kB allí contra 603,54
 kB aquí, dos centésimas de diferencia. Todo el código del visor va en el trozo
 perezoso de la ficha. Queda anotado porque nadie lo había anotado.
 
+### La revisión adversarial del visor
+
+Trece hallazgos; se cerraron los tres primeros (2026-09-06). Los cinco puntos más
+graves del guion —flechas de dependencia, lógica en la capa equivocada, `double`
+para dinero, confianza en el cliente, idempotencia— salieron limpios, pero por un
+motivo que conviene decir: **este cambio es un visor de solo lectura**, no toca
+dinero ni inventario ni escribe nada. No probó nada sobre esas reglas.
+
+**1. Cuatro archivos quedaron comiteados en CRLF** (`62e8599`) mientras el resto
+del repositorio es LF. Lo grave no es el carácter: el diff deja de mostrar el
+cambio. La edición real de `ficha.page.ts` son diecisiete líneas y aparecían
+doscientas cincuenta y una; la de este documento, noventa y una contra dos mil
+novecientas tres. Un PR así no se revisa, se aprueba a ciegas. Los escribió un
+script en modo texto sobre Windows, que traduce al escribir. Con
+`core.autocrlf=false` y sin `.gitattributes` gana la herramienta que escribió
+último, así que no bastaba con convertir los cuatro: el repositorio ahora fija LF
+para todo, con CRLF solo en `.bat`/`.cmd` (que es `gradlew.bat`) y los binarios
+marcados.
+
+**2. "Fotograma 1 de 0"** (`838ecb0`). Con cero o un fotograma el visor pintaba
+igual los dos botones y un contador que mentía — **el mismo defecto que ya se
+había corregido en `ts-paginador`** (`038e8a4`, Fase 4), reintroducido en un
+componente nuevo. No se veía porque el backend solo expone sets `PUBLICADO`, que
+exigen cuatro fotogramas; se iba a ver en cuanto el asistente de captura, que usa
+este mismo visor en su paso 6, le pasara un set a medio armar.
+
+**3. Las instrucciones de teclado no estaban asociadas al foco** (`838ecb0`).
+Estaban en un `<p>` hermano: visibles para quien ve y para nadie más. Quien usa un
+lector de pantalla enfocaba el visor, oía "Vista 360 del producto, grupo" y no se
+enteraba de que las flechas giran. Ahora van con `aria-describedby`, con el id de
+un contador de módulo. Se había omitido a propósito, para no inventar ids únicos
+con SSR de por medio; ese razonamiento se quedó en la conversación y no en el
+código, y el que pagaba era el usuario del lector.
+
+Las cuatro pruebas de los arreglos 2 y 3 **se comprobaron mutando la
+implementación**: fallan si se deshace el arreglo. Y se volvió al navegador,
+porque el `@if` nuevo envuelve el elemento del `viewChild`: el arrastre sigue
+girando y la hidratación no se queja del id.
+
+**Los diez hallazgos restantes quedan abiertos**, por orden de lo que costaría
+que muerdan:
+
+- **Ordenar por `orden` y elegir WebP vive en la página** (`ficha.page.ts`), no en
+  el mapeador, que es donde el DTO se vuelve modelo. El próximo consumidor de
+  `rotacion` tiene que acordarse de ordenar, y hoy `ts-galeria` elige `url` donde
+  el visor elige `urlWebp`: dos componentes de la misma ficha decidiendo distinto
+  sobre el mismo dato.
+- **Un refetch en segundo plano devuelve el visor al frontal.** `staleTime` de 60 s
+  con `refetchOnWindowFocus` por defecto, y el arreglo nuevo cambia de identidad,
+  así que el efecto de reinicio se dispara. La selección de variante ya tenía el
+  mismo defecto desde la Fase 1; el visor solo lo hace visible.
+- **`cargados` se lleva por índice y nada cancela la precarga en vuelo.** Al
+  cambiar de set, una imagen ya pedida marca su índice como disponible para el set
+  nuevo: un parpadeo en vez del "fotograma disponible más cercano" que promete el
+  componente. Se cura solo en la siguiente petición.
+- **Un fotograma roto se salta en silencio**: ni log ni señal, el contador sigue
+  diciendo ocho y uno nunca aparece.
+- **`ts-galeria.prioritaria` viene en `true` por defecto.** El valor seguro es
+  `false` con adhesión explícita: así, el próximo que la use se lleva una segunda
+  imagen con `priority` sin enterarse, que es el `NG02955` ya pagado dos veces.
+- **La pista sale en cada visita**, no "la primera vez" como pide
+  `docs/10-captura-360.md`: nada recuerda que ya se vio.
+- **Sin captura de puntero el arrastre se queda pegado**: si se suelta fuera del
+  marco no llega `pointerup` y `arrastrando` se queda en verdadero. El comentario
+  del código afirma que el camino degradado funciona; funciona a medias.
+- **Dos pruebas del visor pasarían con la implementación borrada** (las dos
+  negativas: que el arrastre vertical no gire y que mover sin arrastrar no gire).
+  Valen porque las positivas están al lado; solas serían decorativas.
+- **`guardarSetRotacion` del sembrador no tiene ninguna prueba**: lo único que lo
+  ejercita es haber arrancado `bootRun` a mano.
+- **Tercera copia del host literal de imágenes** en el sembrador, contra la regla
+  dura #5. Perfil `local` y con precedente dos métodos más abajo, pero ya son tres.
+
 **Falta el asistente de captura**, que es el resto de la fase.
 
 ## Fase 6. Cierre para publicar
