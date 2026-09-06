@@ -1350,6 +1350,97 @@ cámara y la superposición, y al final la carga con URL firmadas.
 El recorte y la escala común a todo el set son la parte que decide si el
 resultado se ve bien o se ve casero. Van primero y van probadas.
 
+**Visor cerrado de punta a punta** (2026-09-06), en los tres pasos del prompt y
+un commit por paso.
+
+Las **funciones puras primero** (`shared/ts-visor-360/rotacion-360.ts`,
+`ac1b38d`): `indiceCircular` (el `%` de JavaScript conserva el signo del
+dividendo, así que un desplazamiento negativo necesita la segunda vuelta),
+`indiceDesdeDesplazamiento`, `indiceOpuesto` y `ordenDePrecarga`. Un giro
+completo es aproximadamente un ancho de arrastre, así que la sensibilidad es
+relativa al contenedor y se siente igual en teléfono y en escritorio.
+**`Math.round` no sirve tal cual**: rompe los empates hacia +∞ (`-0,5` da `-0`
+pero `0,5` da `1`), y el visor giraría antes hacia un lado que hacia el otro; el
+redondeo va sobre el valor absoluto. 26 pruebas, con los casos de borde que el
+componente no puede cubrir cómodo: ancho sin medir todavía, un solo fotograma y
+cero fotogramas.
+
+**El componente** (`3a95f01`) recibe un arreglo ordenado de URL y nada más.
+`PointerEvent` único para ratón, dedo y lápiz; solo el eje horizontal gira y el
+vertical se lo queda el navegador por `touch-action: pan-y`. Teclado con flechas,
+Inicio al frontal y Fin al opuesto, consumiendo solo la tecla que el visor usa.
+Botones visibles con `etiquetaAccesible` y contador de posición con `aria-live`,
+mismo motivo que `ts-paginador`. La pista "arrastra para girar" se va con la
+primera interacción y, si nadie toca nada, sola a los cuatro segundos: un texto
+permanente encima de la imagen es justo lo que `docs/10-captura-360.md` no
+quiere.
+
+Dos decisiones que hubo que verificar en vez de suponer (regla dura #9):
+- **`ngSrc` sí se puede cambiar en caliente**; el resto de entradas de
+  `NgOptimizedImage` (`priority`, `fill`, `width`, `height`...) están congeladas
+  tras inicializar. Comprobado en la fuente de `@angular/common`
+  (`assertNoPostInitInputChange`), no de memoria. Por eso el visor es un solo
+  `<img>` que cambia de `ngSrc` y no ocho apilados.
+- **Esa misma congelación decide la forma de la plantilla de la ficha.**
+  `ts-galeria` ganó la entrada `prioritaria` (mismo patrón que
+  `ts-tarjeta-producto`: quién es la candidata a LCP lo sabe la pantalla), y la
+  ficha repite `<ts-galeria>` en las dos ramas del `@if` a propósito, con un
+  literal en cada una — ligar `prioritaria` a una expresión reventaría al
+  navegar de una ficha con rotación a otra sin ella.
+
+**Carga**: el fotograma 0 lo sirve el SSR y es el único con `priority`; el resto
+se precarga en cadena después del evento de carga, en orden de cercanía, y no se
+precarga nada con ahorro de datos o conexión lenta. Mientras tanto el arrastre no
+se bloquea: se pinta el fotograma disponible más cercano al deseado y el que
+falte se pide bajo demanda.
+
+**La siembra no tenía ningún set de rotación** (`0f544d5`), y sin eso el visor no
+se podía ver en el navegador: el esquema soporta `set_rotacion` desde `V1` y la
+ficha ya lo exponía desde la Fase 1, pero ninguno de los cuatro productos de
+desarrollo tenía uno. Ahora el tenis trae ocho fotogramas de 1000x1000 en un set
+`PUBLICADO` —el único estado que la ficha pública expone—, con imágenes de
+`picsum.photos`, una distinta por fotograma: sirven para ejercitar el visor, no
+para juzgar cómo se ve una rotación de verdad.
+
+**Verificado** con `npm run verificar` completo (lint, 320 pruebas de Vitest,
+`ng build` y `gradlew.bat build`) y con clics reales contra `ng serve` +
+`bootRun` + PostgreSQL, llegando a la ficha desde la portada: los botones
+girando en los dos sentidos, el arrastre de 160 px avanzando exactamente tres
+fotogramas —la aritmética que dicen las pruebas—, Inicio volviendo al frontal y
+Fin al opuesto **sin desplazar la página**, la pista yéndose sola a los cuatro
+segundos, el chip legible sobre la foto en tema claro y oscuro, y la consola sin
+`NG02952`, sin `NG02954` (ni siquiera navegando de la ficha con rotación a una
+sin ella, que es el caso que la plantilla de dos ramas evita) y sin `NG02955`.
+El HTML del SSR trae **solo el fotograma 0**, con `fetchpriority="high"`,
+mientras la imagen de la galería queda en `loading="lazy"` — la prioridad se
+movió de verdad. Cero *Missing translation* en el log del servidor, en los dos
+idiomas.
+
+**Lo que no se verificó, y por qué:**
+
+- **El gesto táctil real.** `touch-action: pan-y` está puesto y el arrastre
+  vertical no gira, comprobado con ratón, pero que el desplazamiento de la
+  página siga funcionando con el dedo encima del visor solo lo dice un teléfono
+  de verdad.
+- **La rama de conexión lenta / ahorro de datos.** `navigator.connection` no se
+  puede simular desde la automatización; está cubierta por Vitest, no por el
+  navegador.
+
+**Pendiente nuevo:** `NG02956` (sin `preconnect` al host de las imágenes) ahora
+también lo dispara el fotograma 0 del visor. Es el mismo pendiente ya anotado en
+la Fase 4 y sigue sin resolverse por el mismo motivo: el arreglo es una URL
+literal en el `<head>`, que la regla dura #5 prohíbe, y el host de hoy es el de
+la siembra. Cuando exista el host real de imágenes hay que resolverlo por
+configuración.
+
+**Aviso de presupuesto de bundle, que no es de esta fase:** `ng build` avisa que
+el bundle inicial se pasa del presupuesto de 600 kB. **No lo causó el visor** —
+comprobado construyendo `main` antes de esta rama: 603,52 kB allí contra 603,54
+kB aquí, dos centésimas de diferencia. Todo el código del visor va en el trozo
+perezoso de la ficha. Queda anotado porque nadie lo había anotado.
+
+**Falta el asistente de captura**, que es el resto de la fase.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,

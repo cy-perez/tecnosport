@@ -109,7 +109,11 @@ export class TsVisor360 {
       if (document.readyState === 'complete') {
         this.precargar();
       } else {
-        window.addEventListener('load', () => this.precargar(), { once: true });
+        const alCargar = () => this.precargar();
+        window.addEventListener('load', alCargar, { once: true });
+        // Una ficha que se abandona antes de que la página termine de cargar no tiene por qué
+        // ponerse a pedir fotogramas de un visor que ya no existe.
+        this.destruccion.onDestroy(() => window.removeEventListener('load', alCargar));
       }
 
       // La pista se va sola aunque nadie interactúe: un texto permanente encima de la imagen es
