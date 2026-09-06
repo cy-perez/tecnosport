@@ -244,6 +244,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sets-rotacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["abrir"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sets-rotacion/{id}/subidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["subidas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sets-rotacion/{id}/publicar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sets-rotacion/{id}/completar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos": {
         parameters: {
             query?: never;
@@ -612,6 +676,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/sets-rotacion/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["eliminar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/cobertura-contraentrega/{codigoDaneCiudad}": {
         parameters: {
             query?: never;
@@ -734,26 +814,26 @@ export interface components {
             null?: boolean;
             float?: boolean;
             number?: boolean;
-            /** @enum {string} */
-            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            integralNumber?: boolean;
             floatingPointNumber?: boolean;
-            missingNode?: boolean;
-            bigInteger?: boolean;
-            container?: boolean;
-            bigDecimal?: boolean;
-            valueNode?: boolean;
-            short?: boolean;
-            string?: boolean;
-            binary?: boolean;
-            boolean?: boolean;
             double?: boolean;
-            pojo?: boolean;
             /** @deprecated */
             textual?: boolean;
             object?: boolean;
+            pojo?: boolean;
+            short?: boolean;
             int?: boolean;
             long?: boolean;
+            string?: boolean;
+            boolean?: boolean;
+            binary?: boolean;
+            /** @enum {string} */
+            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+            integralNumber?: boolean;
+            bigDecimal?: boolean;
+            missingNode?: boolean;
+            bigInteger?: boolean;
+            container?: boolean;
+            valueNode?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -845,6 +925,60 @@ export interface components {
             /** Format: int32 */
             existencia?: number;
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
+        };
+        AbrirSetRotacionPeticion: {
+            /** Format: uuid */
+            productoId?: string;
+            /** Format: int32 */
+            fotogramas?: number;
+            dispositivo?: string;
+            versionAsistente?: string;
+        };
+        ImagenRotacionRespuesta: {
+            /** Format: int32 */
+            orden?: number;
+            url?: string;
+            urlWebp?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+        };
+        SetRotacionRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            productoId?: string;
+            /** Format: int32 */
+            fotogramasPrometidos?: number;
+            estado?: string;
+            capturadoPor?: string;
+            /** Format: date-time */
+            capturadoEn?: string;
+            dispositivo?: string;
+            versionAsistente?: string;
+            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
+        };
+        SolicitarSubidasDeRotacionPeticion: {
+            contentType?: string;
+        };
+        SubidaDeFotogramaRespuesta: {
+            /** Format: int32 */
+            orden?: number;
+            url?: string;
+            objectKey?: string;
+        };
+        CompletarSetRotacionPeticion: {
+            fotogramas?: components["schemas"]["FotogramaPeticion"][];
+        };
+        FotogramaPeticion: {
+            /** Format: int32 */
+            orden?: number;
+            objectKey?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
         };
         CrearProductoPeticion: {
             nombre?: string;
@@ -938,16 +1072,6 @@ export interface components {
             marcaId?: string;
             /** Format: uuid */
             categoriaId?: string;
-        };
-        ImagenRotacionRespuesta: {
-            /** Format: int32 */
-            orden?: number;
-            url?: string;
-            urlWebp?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
         };
         ProductoRespuesta: {
             slug?: string;
@@ -1351,6 +1475,104 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VarianteRespuesta"];
+                };
+            };
+        };
+    };
+    abrir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbrirSetRotacionPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
+                };
+            };
+        };
+    };
+    subidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidasDeRotacionPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SubidaDeFotogramaRespuesta"][];
+                };
+            };
+        };
+    };
+    publicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
+                };
+            };
+        };
+    };
+    completar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompletarSetRotacionPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
                 };
             };
         };
@@ -1965,6 +2187,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
                 };
+            };
+        };
+    };
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
