@@ -119,7 +119,19 @@
       "guardando": "Saving…",
       "error": "Couldn't edit the product. Try again.",
       "error_carga": "Couldn't load the product.",
-      "agregarVariante": "Add variant"
+      "agregarVariante": "Add variant",
+      "imagenPrincipal": {
+        "titulo": "Main image",
+        "actual": "Current main image",
+        "previsualizacion": "Preview of the new image",
+        "archivo": "Choose an image (JPEG, PNG or WebP)",
+        "altEs": "Alt text (Spanish)",
+        "altEn": "Alt text (English)",
+        "subir": "Upload image",
+        "subiendo": "Uploading…",
+        "tipoNoSoportado": "That file type isn't supported. Use JPEG, PNG or WebP.",
+        "error": "Couldn't upload the image. Try again."
+      }
     },
     "agregarVariante": {
       "titulo": "Add variant",

@@ -53,5 +53,72 @@
         {{ 'admin.productos.editar.guardar' | transloco }}
       </ts-boton>
     </form>
+
+    <section
+      class="editar-producto-admin__imagen-principal"
+      [formGroup]="formularioImagen"
+      aria-labelledby="editar-producto-imagen-titulo"
+    >
+      <h2 id="editar-producto-imagen-titulo">
+        {{ 'admin.productos.editar.imagenPrincipal.titulo' | transloco }}
+      </h2>
+
+      @if (consulta.data()?.imagenPrincipalUrl; as urlActual) {
+        <img
+          class="editar-producto-admin__imagen-actual"
+          [src]="urlActual"
+          [alt]="'admin.productos.editar.imagenPrincipal.actual' | transloco"
+          width="200"
+          height="200"
+        />
+      }
+
+      @if (previsualizacionUrl(); as previsualizacion) {
+        <img
+          class="editar-producto-admin__imagen-previa"
+          [src]="previsualizacion"
+          [alt]="'admin.productos.editar.imagenPrincipal.previsualizacion' | transloco"
+          width="200"
+          height="200"
+        />
+      }
+
+      <label for="editar-producto-imagen-archivo">
+        {{ 'admin.productos.editar.imagenPrincipal.archivo' | transloco }}
+      </label>
+      <input
+        id="editar-producto-imagen-archivo"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        (change)="onArchivoSeleccionado($event)"
+      />
+
+      <ts-campo
+        idCampo="editar-producto-imagen-alt-es"
+        [label]="'admin.productos.editar.imagenPrincipal.altEs' | transloco"
+        formControlName="altEs"
+      />
+
+      <ts-campo
+        idCampo="editar-producto-imagen-alt-en"
+        [label]="'admin.productos.editar.imagenPrincipal.altEn' | transloco"
+        formControlName="altEn"
+      />
+
+      @if (errorImagen()) {
+        <p class="editar-producto-admin__error" role="alert">{{ errorImagen() }}</p>
+      }
+
+      <ts-boton
+        variante="secundario"
+        tipo="button"
+        [deshabilitado]="!imagenListaParaSubir()"
+        [cargando]="subiendoImagen()"
+        [etiquetaCargando]="'admin.productos.editar.imagenPrincipal.subiendo' | transloco"
+        (click)="subirImagenPrincipal()"
+      >
+        {{ 'admin.productos.editar.imagenPrincipal.subir' | transloco }}
+      </ts-boton>
+    </section>
   }
 </section>

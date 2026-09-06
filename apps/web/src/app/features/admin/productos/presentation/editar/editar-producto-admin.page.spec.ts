@@ -9,7 +9,13 @@ import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { Categoria, Marca } from '../../../../catalogo/domain/producto.model';
 import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../../../../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../../../catalogo/domain/repositorio-marcas.puerto';
-import { EditarProductoAdmin, ProductoAdmin, ProductosPaginadosAdmin } from '../../domain/producto-admin.model';
+import {
+  EditarProductoAdmin,
+  ImagenAdmin,
+  ProductoAdmin,
+  ProductosPaginadosAdmin,
+  SubirImagenPrincipalAdmin,
+} from '../../domain/producto-admin.model';
 import { REPOSITORIO_PRODUCTOS_ADMIN, RepositorioProductosAdmin } from '../../domain/repositorio-productos-admin.puerto';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
@@ -46,10 +52,12 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 
 class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasEditar: { id: string; comando: EditarProductoAdmin }[] = [];
+  llamadasSubirImagen: SubirImagenPrincipalAdmin[] = [];
 
   constructor(
     private producto: ProductoAdmin | null = productoDePrueba(),
     private errorAlEditar = false,
+    private errorAlSubirImagen = false,
   ) {}
 
   async listar(): Promise<ProductosPaginadosAdmin> {
@@ -77,6 +85,32 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async agregarVariante(): Promise<void> {
     throw new Error('No usado en estas pruebas.');
+  }
+
+  async subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin> {
+    this.llamadasSubirImagen.push(comando);
+    if (this.errorAlSubirImagen) {
+      throw new Error('falló');
+    }
+    return {
+      url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/objeto.webp',
+      urlWebp: 'https://storage.googleapis.com/tecnosport-dev-imagenes/objeto.webp',
+      ancho: comando.ancho,
+      alto: comando.alto,
+      altEs: comando.altEs,
+      altEn: comando.altEn,
+    };
+  }
+}
+
+class ImagenDePrueba {
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  naturalWidth = 800;
+  naturalHeight = 600;
+
+  set src(_valor: string) {
+    queueMicrotask(() => this.onload?.());
   }
 }
 
@@ -151,5 +185,90 @@ describe('EditarProductoAdminPage', () => {
     await esperar(50);
 
     expect(screen.getByText('No se pudo editar el producto. Intenta de nuevo.')).toBeTruthy();
+  });
+
+  describe('imagen principal', () => {
+    beforeEach(() => {
+      vi.stubGlobal('Image', ImagenDePrueba);
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    function archivoValido(): File {
+      return new File(['contenido'], 'imagen.webp', { type: 'image/webp' });
+    }
+
+    it('con una imagen válida y los textos alternativos completos, la sube con las dimensiones leídas', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
+        target: { files: [archivoValido()] },
+      });
+      await esperar(0);
+      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), { target: { value: 'alt es' } });
+      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), { target: { value: 'alt en' } });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
+      await esperar(50);
+
+      expect(repositorio.llamadasSubirImagen).toEqual([
+        { productoId: 'p1', archivo: expect.any(File), ancho: 800, alto: 600, altEs: 'alt es', altEn: 'alt en' },
+      ]);
+    });
+
+    it('sin completar los textos alternativos, el botón de subir queda deshabilitado', async () => {
+      await renderPagina(new RepositorioProductosAdminFalso());
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
+        target: { files: [archivoValido()] },
+      });
+      await esperar(0);
+
+      expect(
+        (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+    });
+
+    it('con un tipo de archivo no soportado, muestra un error y no ofrece subirlo', async () => {
+      await renderPagina(new RepositorioProductosAdminFalso());
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
+        target: { files: [new File(['x'], 'documento.pdf', { type: 'application/pdf' })] },
+      });
+      await esperar(0);
+
+      expect(
+        screen.getByText("Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP."),
+      ).toBeTruthy();
+      expect(
+        (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+    });
+
+    it('con un error del servidor al subir, muestra el mensaje genérico', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(productoDePrueba(), false, true);
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
+        target: { files: [archivoValido()] },
+      });
+      await esperar(0);
+      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), { target: { value: 'alt es' } });
+      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), { target: { value: 'alt en' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
+      await esperar(50);
+
+      expect(screen.getByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeTruthy();
+    });
   });
 });

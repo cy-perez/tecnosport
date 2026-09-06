@@ -119,7 +119,19 @@
       "guardando": "Guardando…",
       "error": "No se pudo editar el producto. Intenta de nuevo.",
       "error_carga": "No se pudo cargar el producto.",
-      "agregarVariante": "Agregar variante"
+      "agregarVariante": "Agregar variante",
+      "imagenPrincipal": {
+        "titulo": "Imagen principal",
+        "actual": "Imagen principal actual",
+        "previsualizacion": "Vista previa de la nueva imagen",
+        "archivo": "Selecciona una imagen (JPEG, PNG o WebP)",
+        "altEs": "Texto alternativo (español)",
+        "altEn": "Texto alternativo (inglés)",
+        "subir": "Subir imagen",
+        "subiendo": "Subiendo…",
+        "tipoNoSoportado": "Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.",
+        "error": "No se pudo subir la imagen. Intenta de nuevo."
+      }
     },
     "agregarVariante": {
       "titulo": "Agregar variante",

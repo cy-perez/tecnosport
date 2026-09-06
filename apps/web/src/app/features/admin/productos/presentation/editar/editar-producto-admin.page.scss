@@ -26,3 +26,19 @@
   color: var(--color-error);
   margin: 0;
 }
+
+.editar-producto-admin__imagen-principal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-16);
+  margin-top: var(--esp-32);
+  padding-top: var(--esp-24);
+  border-top: 1px solid var(--color-borde);
+}
+
+.editar-producto-admin__imagen-actual,
+.editar-producto-admin__imagen-previa {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+}
