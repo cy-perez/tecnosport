@@ -21,7 +21,7 @@
     <ts-esqueleto />
   } @else if (consulta.isError()) {
     <p class="lista-pedidos-admin__error" role="alert">{{ 'admin.pedidos.error_lista' | transloco }}</p>
-  } @else if (pedidos().length === 0) {
+  } @else if (sinPedidos()) {
     <!-- Dos situaciones distintas, mismo criterio que la rejilla del catálogo:
          con un filtro de estado puesto, quien mira lo puede resolver (el select
          está justo encima); sin filtro, no hay nada que hacer todavía. Ni la

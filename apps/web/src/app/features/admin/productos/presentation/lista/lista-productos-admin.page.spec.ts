@@ -91,7 +91,7 @@ describe('ListaProductosAdminPage', () => {
   });
 
   it('sin productos lo dice en vez de dejar una tabla vacía', async () => {
-    await renderLista([]);
+    await renderLista([], 0);
 
     expect(await screen.findByText('Todavía no hay productos. Crea el primero con «Nuevo producto».')).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();

@@ -45,11 +45,14 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   llamadasListar = 0;
   llamadasConciliarTransferencia: string[] = [];
 
-  constructor(private items: PedidoAdmin[]) {}
+  constructor(
+    private items: PedidoAdmin[],
+    private totalPaginas = 1,
+  ) {}
 
   async listar(): Promise<PedidosPaginadosAdmin> {
     this.llamadasListar++;
-    return { items: this.items, pagina: 0, totalPaginas: 1, totalPedidos: this.items.length };
+    return { items: this.items, pagina: 0, totalPaginas: this.totalPaginas, totalPedidos: this.items.length };
   }
 
   async conciliarTransferencia(pedidoId: string): Promise<PedidoAdmin> {
@@ -81,8 +84,8 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
 // El filtro de estado vive en la URL (ADR-0011): para distinguir "no hay
 // pedidos en ese estado" de "todavía no hay pedidos" hay que poder fijarlo,
 // mismo recurso que ya usa rejilla.page.spec.ts.
-async function renderLista(items: PedidoAdmin[], queryParams: Record<string, string> = {}) {
-  const repositorio = new RepositorioPedidosAdminFalso(items);
+async function renderLista(items: PedidoAdmin[], queryParams: Record<string, string> = {}, totalPaginas = 1) {
+  const repositorio = new RepositorioPedidosAdminFalso(items, totalPaginas);
   const resultado = await render(ListaPedidosAdminPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -115,7 +118,7 @@ describe('ListaPedidosAdminPage', () => {
   });
 
   it('sin pedidos y sin filtro, lo dice en vez de dejar una tabla vacía', async () => {
-    await renderLista([]);
+    await renderLista([], {}, 0);
 
     expect(await screen.findByText('Todavía no hay pedidos.')).toBeTruthy();
     // Ni encabezados de tabla ni paginador: una tabla vacía es ruido para un
@@ -125,7 +128,7 @@ describe('ListaPedidosAdminPage', () => {
   });
 
   it('sin pedidos pero con filtro de estado, ofrece quitarlo', async () => {
-    await renderLista([], { estado: 'PAGADO' });
+    await renderLista([], { estado: 'PAGADO' }, 0);
 
     expect(await screen.findByText('No hay pedidos en ese estado. Prueba con «Todos».')).toBeTruthy();
   });

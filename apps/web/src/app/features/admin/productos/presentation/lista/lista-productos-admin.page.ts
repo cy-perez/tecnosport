@@ -42,6 +42,16 @@ export class ListaProductosAdminPage {
 
   protected readonly productos = computed<readonly ProductoAdmin[]>(() => this.consulta.data()?.items ?? []);
 
+  /**
+   * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
+   * solo cuando no hay ningún producto, y 1 cuando sí los hay pero la página
+   * pedida se pasó del final. Sin la distinción, `?pagina=5` con cuatro
+   * productos afirmaba que no había ninguno — visto en el navegador.
+   */
+  protected readonly sinProductos = computed(
+    () => this.productos().length === 0 && (this.consulta.data()?.totalPaginas ?? 0) === 0,
+  );
+
   protected etiquetaEstado(estado: EstadoProducto): string {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }

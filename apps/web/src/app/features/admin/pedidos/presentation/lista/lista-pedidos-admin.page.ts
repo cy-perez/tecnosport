@@ -89,6 +89,17 @@ export class ListaPedidosAdminPage {
 
   protected readonly pedidos = computed<readonly PedidoAdmin[]>(() => this.consulta.data()?.items ?? []);
 
+  /**
+   * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
+   * solo cuando no hay ningún pedido, y 1 cuando sí los hay pero la página
+   * pedida se pasó del final. Sin la distinción, `?pagina=5` afirmaba que no
+   * había pedidos habiéndolos — visto en el navegador, en la lista hermana de
+   * productos.
+   */
+  protected readonly sinPedidos = computed(
+    () => this.pedidos().length === 0 && (this.consulta.data()?.totalPaginas ?? 0) === 0,
+  );
+
   protected readonly formularioEstado = new FormControl('', { nonNullable: true });
 
   protected readonly opcionesEstado = computed<OpcionSelect[]>(() =>

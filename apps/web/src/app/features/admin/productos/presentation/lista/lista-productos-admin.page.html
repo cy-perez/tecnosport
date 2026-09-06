@@ -9,7 +9,7 @@
     <ts-esqueleto />
   } @else if (consulta.isError()) {
     <p class="lista-productos-admin__error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
-  } @else if (productos().length === 0) {
+  } @else if (sinProductos()) {
     <!-- Esta lista no tiene filtros, así que hay una sola situación posible.
          El enlace de crear el primero ya está arriba: el mensaje lo nombra, no
          lo repite. -->
