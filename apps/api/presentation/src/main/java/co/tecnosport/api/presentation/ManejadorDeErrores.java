@@ -7,6 +7,8 @@ import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
+import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
@@ -86,6 +88,17 @@ public class ManejadorDeErrores {
 
   // 409, mismo criterio que CorreoYaRegistradoException: la solicitud está bien formada, el
   // conflicto es que el SKU ya está en uso en otro producto.
+  @ExceptionHandler(SetRotacionNoEncontradoException.class)
+  public ProblemDetail setRotacionNoEncontrado(SetRotacionNoEncontradoException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Set de rotación no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(SetRotacionPublicadoExistenteException.class)
+  public ProblemDetail setRotacionPublicadoExistente(
+      SetRotacionPublicadoExistenteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto ya tiene un set publicado", excepcion);
+  }
+
   @ExceptionHandler(SkuYaEnUsoException.class)
   public ProblemDetail skuYaEnUso(SkuYaEnUsoException excepcion) {
     return problema(HttpStatus.CONFLICT, "SKU ya en uso", excepcion);

@@ -1,20 +1,26 @@
 package co.tecnosport.api.bootstrap.catalogo;
 
+import co.tecnosport.api.application.catalogo.AbrirSetRotacion;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
+import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
+import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
+import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
+import co.tecnosport.api.application.catalogo.SolicitarSubidasDeRotacion;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
@@ -121,5 +127,35 @@ public class ConfiguracionCatalogo {
       Reloj reloj) {
     return new AgregarVariante(
         repositorioProductos, repositorioAtributos, repositorioInventario, reloj);
+  }
+
+  @Bean
+  public AbrirSetRotacion abrirSetRotacion(
+      RepositorioProductos repositorioProductos,
+      RepositorioSetsRotacion repositorioSetsRotacion,
+      Reloj reloj) {
+    return new AbrirSetRotacion(repositorioProductos, repositorioSetsRotacion, reloj);
+  }
+
+  @Bean
+  public SolicitarSubidasDeRotacion solicitarSubidasDeRotacion(
+      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
+    return new SolicitarSubidasDeRotacion(repositorioSetsRotacion, almacenDeImagenes);
+  }
+
+  @Bean
+  public CompletarSetRotacion completarSetRotacion(
+      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
+    return new CompletarSetRotacion(repositorioSetsRotacion, almacenDeImagenes);
+  }
+
+  @Bean
+  public PublicarSetRotacion publicarSetRotacion(RepositorioSetsRotacion repositorioSetsRotacion) {
+    return new PublicarSetRotacion(repositorioSetsRotacion);
+  }
+
+  @Bean
+  public EliminarSetRotacion eliminarSetRotacion(RepositorioSetsRotacion repositorioSetsRotacion) {
+    return new EliminarSetRotacion(repositorioSetsRotacion);
   }
 }
