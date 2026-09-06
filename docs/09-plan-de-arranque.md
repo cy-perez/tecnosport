@@ -1481,12 +1481,11 @@ girando y la hidratación no se queja del id.
 **4. Ordenar y elegir formato vivían en la página**, no en el mapeador. Cerrado
 después, junto con el 8 — ver la sección siguiente.
 
-**Los ocho hallazgos restantes quedan abiertos**, por orden de lo que costaría
+**Los siete hallazgos restantes quedan abiertos**, por orden de lo que costaría
 que muerdan:
-- **Un refetch en segundo plano devuelve el visor al frontal.** `staleTime` de 60 s
-  con `refetchOnWindowFocus` por defecto, y el arreglo nuevo cambia de identidad,
-  así que el efecto de reinicio se dispara. La selección de variante ya tenía el
-  mismo defecto desde la Fase 1; el visor solo lo hace visible.
+- ~~**Un refetch en segundo plano devuelve el visor al frontal.**~~ Cerrado — ver
+  la sección siguiente. Arrastraba también a la selección de variante, que tenía
+  el defecto desde la Fase 1.
 - **`cargados` se lleva por índice y nada cancela la precarga en vuelo.** Al
   cambiar de set, una imagen ya pedida marca su índice como disponible para el set
   nuevo: un parpadeo en vez del "fotograma disponible más cercano" que promete el
@@ -1542,6 +1541,53 @@ rejilla y no solo la ficha: las cuatro tarjetas cargan, la ficha con visor da
 ficha sin visor devuelve el `high` a la galería, y en las tres pantallas la
 consola solo trae el `NG02956` ya conocido — uno por pantalla, que es la señal de
 que hay exactamente una imagen prioritaria en cada una.
+
+### El reinicio por revalidación, cerrado — y la prueba que no probaba nada
+
+2026-09-06, un commit. Es el hallazgo que más costó **confirmar**, no arreglar.
+
+**La primera prueba pasaba con el defecto puesto.** Se escribió una que giraba el
+visor, forzaba `refetchQueries()` y comprobaba que el fotograma seguía en su
+sitio: pasaba en verde sin tocar el código. No porque no hubiera defecto, sino
+porque la revalidación no estaba llegando al componente y la prueba no lo
+comprobaba. Al añadirle que el **precio nuevo tiene que verse en pantalla** —la
+señal de que el refetch sí llegó— la prueba falló, que era lo correcto. Sin esa
+comprobación habría quedado un hallazgo "verificado como inexistente" y un
+defecto vivo.
+
+Con la prueba sirviendo, quedaron claras dos situaciones distintas:
+
+- **Si los datos vuelven idénticos, no pasa nada.** TanStack hace *structural
+  sharing* por omisión y conserva la referencia anterior, así que ningún efecto
+  se dispara. Esa rama tiene su propia prueba, para que se sepa que es la
+  librería quien lo evita y no el código de aquí.
+- **Si cambia cualquier cosa del producto** —el precio, la existencia—, el objeto
+  es nuevo, el `computed` de la ficha devuelve un arreglo nuevo, y ahí sí se
+  reiniciaba el visor al frontal.
+
+El arreglo, en los dos sitios, es dejar de usar la identidad como señal de "esto
+cambió":
+
+- **`ts-visor-360` depende de `claveDelSet`**, el contenido del arreglo unido en
+  una cadena. Un `computed` que devuelve una cadena igual no propaga, así que el
+  efecto de reinicio solo corre cuando el set de verdad es otro.
+- **La ficha depende de `slugCargado`**, no de `producto()`, y lee el producto con
+  `untracked`. La selección de variante se reinicia al cargar otro producto y no
+  porque el mismo haya vuelto del servidor. **Ese defecto era de la Fase 1**, no
+  del visor: elegir "Negro" y perderlo al volver a la pestaña es peor que perder
+  un fotograma.
+
+Con una prueba para cada lado de la moneda, porque "no reiniciar en un refetch"
+no puede volverse "no reiniciar nunca": navegar a otro producto sí suelta la
+variante elegida. Los dos arreglos se comprobaron mutándolos.
+
+**Verificado también en el navegador, con TanStack de verdad**: pestaña abierta
+en la ficha, visor girado al fotograma 4, cambio real de pestaña (comprobado que
+`document.visibilityState` pasa a `hidden`), vuelta pasados los sesenta segundos
+del `staleTime`, y en el panel de red **aparece la petición de revalidación** —
+el visor siguió en el fotograma 4. La revalidación de esa corrida trajo los
+mismos datos; el caso de datos distintos es el que cubre la prueba, con el
+`QueryClient` real y no un doble.
 
 **Falta el asistente de captura**, que es el resto de la fase.
 

@@ -87,6 +87,15 @@ export class TsVisor360 {
   protected readonly idInstrucciones = `ts-visor-360-instrucciones-${++secuenciaDeInstrucciones}`;
 
   /**
+   * El set, por su contenido y no por la identidad del arreglo. Quien nos pasa las imágenes suele
+   * calcularlas con un `computed`, que devuelve un arreglo nuevo cada vez que cambia cualquier cosa
+   * del producto — y una revalidación en segundo plano de TanStack cambia el precio o la existencia
+   * cada minuto. Con la identidad, eso reiniciaba el visor al frontal mientras alguien lo estaba
+   * girando; con el contenido, solo se reinicia cuando el set de verdad es otro.
+   */
+  private readonly claveDelSet = computed(() => this.imagenes().join('\n'));
+
+  /**
    * Mientras la precarga va en camino, el arrastre no se bloquea: se muestra el fotograma más
    * cercano al deseado que ya esté disponible (`docs/10-captura-360.md`). `ordenDePrecarga` ya
    * devuelve los índices ordenados por cercanía, así que el primero disponible es el más cercano.
@@ -108,9 +117,10 @@ export class TsVisor360 {
 
   constructor() {
     // Un set nuevo (otro producto, otra variante) empieza de cero: los índices cargados del
-    // anterior no significan nada para este.
+    // anterior no significan nada para este. Se depende de `claveDelSet`, no de `imagenes`: ver
+    // arriba por qué la identidad del arreglo no sirve como señal de "esto cambió".
     effect(() => {
-      this.imagenes();
+      this.claveDelSet();
       this.solicitados.clear();
       this.cargados.set(new Set([0]));
       this.indiceActual.set(0);

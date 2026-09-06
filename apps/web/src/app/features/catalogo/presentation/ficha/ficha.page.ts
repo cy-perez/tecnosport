@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -85,11 +85,24 @@ export class FichaPage {
     return producto ? varianteSeleccionada(producto, this.seleccion()) : null;
   });
 
+  /**
+   * Un producto **distinto**, por su slug. No sirve depender de `producto()`: TanStack revalida en
+   * segundo plano al volver a la pestaña, y cualquier cambio real —un precio, una existencia—
+   * devuelve un objeto nuevo. Con eso, la variante que eligió el visitante se reiniciaba sola a la
+   * de por defecto. La misma trampa que el visor 360 tiene con la identidad de su arreglo.
+   */
+  private readonly slugCargado = computed(() => this.producto()?.slug ?? null);
+
   constructor() {
-    // Reinicia la selección a la variante por defecto cada vez que carga un producto distinto
-    // (primer render, o al navegar de una ficha a otra).
+    // Reinicia la selección a la variante por defecto solo al cargar otro producto (primer render,
+    // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor.
     effect(() => {
-      const producto = this.producto();
+      if (!this.slugCargado()) {
+        return;
+      }
+      // `untracked`: leer el producto aquí volvería a atar el efecto a su identidad, que es
+      // justamente lo que se quiere evitar.
+      const producto = untracked(() => this.producto());
       if (!producto) {
         return;
       }
