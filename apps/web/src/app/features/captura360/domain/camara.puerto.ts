@@ -2,8 +2,13 @@ import { InjectionToken } from '@angular/core';
 
 /** Un fotograma recién tomado, sin procesar: los píxeles tal como salieron de la cámara. */
 export interface FotogramaCrudo {
-  /** URL de objeto: hay que liberarla con `Camara.liberar` cuando deje de usarse. */
+  /** URL de objeto para pintarlo: hay que liberarla con `Camara.liberar` al dejar de usarla. */
   readonly url: string;
+  /**
+   * Los bytes. Van aparte de la URL porque son lo que se guarda en disco y lo que después se
+   * procesa: reconstruirlos desde la URL de objeto sería pedirle al navegador algo que ya tiene.
+   */
+  readonly blob: Blob;
   readonly ancho: number;
   readonly alto: number;
 }
