@@ -6,23 +6,12 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { conTemaAplicado, leerTema } from './tema-ssr';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
-
-const TEMAS_VALIDOS = new Set(['claro', 'oscuro']);
-
-// El cliente persiste el tema elegido en esta cookie (no en localStorage: el
-// servidor no puede leer localStorage, y el punto es resolver el tema aquí
-// para no parpadear al hidratar). "sistema" no se resuelve en el servidor
-// -no hay forma confiable de saber la preferencia del sistema operativo del
-// visitante- y se deja para el script inline de index.html.
-function leerTema(cabeceraCookie: string | undefined): string | undefined {
-  const valor = /(?:^|;\s*)ts-tema=([^;]+)/.exec(cabeceraCookie ?? '')?.[1];
-  return valor && TEMAS_VALIDOS.has(valor) ? valor : undefined;
-}
 
 /**
  * Serve static files from /browser
@@ -50,7 +39,7 @@ app.use((req, res, next) => {
       }
 
       const html = await response.text();
-      const conTema = html.replace('<html lang="es">', `<html lang="es" data-tema="${tema}">`);
+      const conTema = conTemaAplicado(html, tema);
       const cabeceras = new Headers(response.headers);
       cabeceras.delete('content-length');
       return writeResponseToNodeResponse(
