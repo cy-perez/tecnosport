@@ -7,6 +7,13 @@ import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-h
 import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias-http.repositorio';
 import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
 import { adminGuard } from './admin.guard';
+import { CapturaStore } from '../captura360/application/captura.store';
+import { CAMARA } from '../captura360/domain/camara.puerto';
+import { PANTALLA_DESPIERTA } from '../captura360/domain/pantalla-despierta.puerto';
+import { SENSOR_ORIENTACION } from '../captura360/domain/sensor-orientacion.puerto';
+import { CamaraNavegador } from '../captura360/infrastructure/camara-navegador';
+import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantalla-despierta-navegador';
+import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
@@ -29,7 +36,9 @@ export const adminRoutes: Routes = [
       {
         path: 'iniciar-sesion',
         loadComponent: () =>
-          import('./iniciar-sesion/iniciar-sesion-admin.page').then((m) => m.IniciarSesionAdminPage),
+          import('./iniciar-sesion/iniciar-sesion-admin.page').then(
+            (m) => m.IniciarSesionAdminPage,
+          ),
       },
       {
         path: 'panel',
@@ -41,12 +50,16 @@ export const adminRoutes: Routes = [
         canActivate: [adminGuard],
         providers: [{ provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio }],
         loadComponent: () =>
-          import('./pedidos/presentation/lista/lista-pedidos-admin.page').then((m) => m.ListaPedidosAdminPage),
+          import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
+            (m) => m.ListaPedidosAdminPage,
+          ),
       },
       {
         path: 'productos',
         canActivate: [adminGuard],
-        providers: [{ provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio }],
+        providers: [
+          { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+        ],
         children: [
           {
             path: '',
@@ -76,6 +89,21 @@ export const adminRoutes: Routes = [
               import('./productos/presentation/editar/editar-producto-admin.page').then(
                 (m) => m.EditarProductoAdminPage,
               ),
+          },
+          {
+            path: ':productoId/captura-360',
+            // Scope propio y no una sección más de `admin`: el asistente es su propio bundle y
+            // sus textos no le hacen falta a nadie más del panel.
+            providers: [
+              provideTranslocoScope('captura360'),
+              { provide: CAMARA, useClass: CamaraNavegador },
+              { provide: SENSOR_ORIENTACION, useClass: SensorOrientacionNavegador },
+              { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
+              CapturaStore,
+            ],
+            resolve: { _i18nCaptura: () => Promise.all([precargarScopeI18n('captura360')]) },
+            loadComponent: () =>
+              import('../captura360/presentation/captura-360.page').then((m) => m.Captura360Page),
           },
           {
             path: ':productoId/variantes/crear',

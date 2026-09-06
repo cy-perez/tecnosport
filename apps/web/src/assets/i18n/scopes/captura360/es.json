@@ -1,0 +1,44 @@
+{
+  "titulo": "Captura 360",
+  "preparacion": {
+    "titulo": "Antes de empezar",
+    "fondo": "Fondo claro y uniforme, sin objetos detrás.",
+    "luz": "Luz pareja, sin sombras duras a un lado.",
+    "centrado": "El producto centrado y completo dentro del marco.",
+    "distancia": "El teléfono a la misma distancia en todas las tomas.",
+    "cuantos": "¿Cuántos fotogramas?",
+    "n_fotogramas": "{{n}} fotogramas"
+  },
+  "permisos": {
+    "pedir_camara": "Permitir la cámara",
+    "pedir_sensor": "Activar el nivel",
+    "camara_negada": "Sin permiso de cámara no se puede capturar. Concédelo en los ajustes del navegador y vuelve a entrar.",
+    "camara_no_disponible": "Este navegador no da acceso a la cámara. El asistente necesita un teléfono y una conexión segura (HTTPS).",
+    "sin_nivel": "Sin nivel: este dispositivo no da la inclinación, o no diste permiso. Puedes capturar igual, guiándote por la cuadrícula."
+  },
+  "nivel": {
+    "en_rango": "Nivelado.",
+    "fijando_referencia": "Esta toma fija la inclinación de referencia del set.",
+    "sin_sensor": "Sin nivel disponible.",
+    "inclina_adelante": "Inclina el teléfono {{grados}}° hacia adelante.",
+    "inclina_atras": "Inclina el teléfono {{grados}}° hacia atrás.",
+    "gira_izquierda": "Gira el teléfono {{grados}}° hacia la izquierda.",
+    "gira_derecha": "Gira el teléfono {{grados}}° hacia la derecha."
+  },
+  "toma": {
+    "frontal": "Frontal",
+    "lateral_derecho": "Lateral derecho",
+    "posterior": "Posterior",
+    "lateral_izquierdo": "Lateral izquierdo",
+    "angulo": "{{grados}}°"
+  },
+  "progreso": "Toma {{actual}} de {{total}}",
+  "disparar": "Tomar la foto",
+  "aceptar": "Aceptar y seguir",
+  "repetir": "Repetir esta toma",
+  "mostrar_fantasma": "Mostrar la toma anterior",
+  "ocultar_fantasma": "Ocultar la toma anterior",
+  "obturador_bloqueado": "El obturador se habilita cuando el teléfono vuelve a la inclinación de la primera toma.",
+  "set_completo": "Listas las {{total}} tomas. El procesamiento y la subida llegan en el paso siguiente del asistente.",
+  "error_captura": "No se pudo tomar la foto. Intenta de nuevo."
+}

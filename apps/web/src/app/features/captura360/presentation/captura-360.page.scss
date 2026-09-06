@@ -1,0 +1,97 @@
+.captura {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-16);
+  max-inline-size: var(--ancho-formulario-lg);
+  margin-inline: auto;
+  padding: var(--esp-16);
+}
+
+.captura__titulo {
+  margin: 0;
+  font-family: var(--fuente-display);
+  font-weight: var(--peso-fuerte);
+}
+
+.captura__subtitulo {
+  margin: 0;
+  font-family: var(--fuente-display);
+  font-weight: var(--peso-medio);
+}
+
+.captura__preparacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-12);
+}
+
+.captura__condiciones {
+  margin: 0;
+  padding-inline-start: var(--esp-24);
+  color: var(--color-texto-suave);
+  line-height: var(--interlineado-texto);
+}
+
+.captura__fotogramas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-8);
+  margin: 0;
+  padding: var(--esp-12);
+  border: 1px solid var(--color-borde);
+}
+
+/* El marco del video es cuadrado: es la proporción final, y verla desde el principio evita
+   descubrir al final que el producto no cabía. */
+.captura__visor {
+  position: relative;
+  aspect-ratio: 1;
+  inline-size: 100%;
+  overflow: hidden;
+  background-color: var(--color-primario);
+}
+
+.captura__video,
+.captura__revision {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.captura__estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-8);
+}
+
+.captura__progreso {
+  margin: 0;
+  font-family: var(--fuente-texto);
+  font-weight: var(--peso-medio);
+}
+
+.captura__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-8);
+}
+
+.captura__aviso {
+  margin: 0;
+  padding: var(--esp-8) var(--esp-12);
+  background-color: var(--color-superficie-alt);
+  color: var(--color-texto);
+  line-height: var(--interlineado-texto);
+}
+
+.captura__aviso--bloqueante {
+  background-color: var(--color-error);
+  color: var(--color-sobre-primario);
+}
+
+.captura__aviso--exito {
+  background-color: var(--color-exito);
+  color: var(--color-sobre-primario);
+}
