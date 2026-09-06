@@ -144,23 +144,41 @@ POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, r
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
 POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
 
-POST /api/v1/admin/sets-rotacion                    abre un set en BORRADOR
+POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
-POST /api/v1/admin/sets-rotacion/{id}/completar     valida y pasa a COMPLETO
+POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
+POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
 DELETE /api/v1/admin/sets-rotacion/{id}
 ```
 
-Las imágenes se suben **directo a Cloud Storage con URL firmada**. No pasan por el
-backend. El servidor emite las URL, y al completar el set verifica que los N
-objetos existan, que tengan el tamaño y la proporción esperados, y que ninguno
-esté vacío. Un set que no pasa esa validación se queda en `BORRADOR`.
+El set se abre **prometiendo cuántos fotogramas va a tener** (entre 4 y 16), y esa
+promesa manda en todo lo demás: `/subidas` emite exactamente esas N URL —el
+cliente no elige cuántas ni dónde escribe, la key la arma el servidor— y
+`/completar` exige que hayan llegado todas. Sin la promesa, un set de 8 que
+termina con 4 fotogramas contiguos pasaría por un set de 4 perfectamente válido.
 
-La imagen principal (ya construida, Fase 4) verifica menos que esto: solo que
-el objeto exista y su tamaño en bytes, sin proporción esperada ni verificación
-de que el contenido real coincida con el tipo declarado — riesgo aceptado
-mientras esta subida la haga solo el administrador (`ADR-0016`). El set de
-rotación de la Fase 5, arriba, es el que sí queda pendiente de construir con
-la validación completa.
+Las imágenes se suben **directo a Cloud Storage con URL firmada**. No pasan por el
+backend. Al completar, el servidor verifica contra el almacén real que cada objeto
+existe, que no está vacío y que pertenece al set, que llegaron todos los
+prometidos, y que las dimensiones **declaradas** son las de un fotograma de
+rotación (cuadrado, 1000 px). Un set que no pasa esa verificación se queda en
+`BORRADOR` entero, no a medias: medio set publicado es un visor roto.
+
+Lo que el servidor **no** verifica, y conviene tenerlo escrito: que los bytes
+sean de verdad una imagen, y que sus dimensiones reales sean las declaradas.
+Comprobarlo exigiría descargar y decodificar el archivo en el backend, que es lo
+que la subida directa evita — mismo riesgo aceptado que en la imagen principal
+(`ADR-0016`), y por el mismo motivo: el panel lo usa solo el administrador.
+Detalle en `ADR-0018`.
+
+**Publicar es un paso aparte de completar** a propósito: entre los dos está la
+revisión del set entero en el asistente (`docs/10-captura-360.md`, paso 6), que es
+donde se caza el fotograma torcido. Un producto tiene a lo sumo un set publicado;
+publicar sobre uno que ya lo está responde 409 y hay que borrar el anterior
+primero.
+
+La imagen principal (Fase 4) verifica menos que esto: solo que el objeto exista y
+su tamaño en bytes, sin proporción esperada.
 
 ## Idempotencia
 

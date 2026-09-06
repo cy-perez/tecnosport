@@ -129,8 +129,18 @@ estado: BORRADOR | COMPLETO | PUBLICADO
 fotogramas: 4 mínimo, 8 recomendado, 16 máximo
 ```
 
+`fotogramas` es **cuántos se prometieron al abrir el set**, no cuántas filas de
+imagen tiene ya: es lo que permite distinguir un set de 4 de uno de 8 al que se le
+perdieron cuatro subidas. Se fija al abrir y no cambia (migración `V18`).
+
 Se guarda `dispositivo` y `version_asistente` porque cuando un set se ve mal, lo
 primero que hay que saber es con qué se capturó.
+
+**Un producto tiene a lo sumo un set publicado**, y es el único que la ficha
+carga: mientras se captura uno nuevo, el que ya está publicado se sigue viendo.
+Reemplazarlo son dos pasos —borrar el viejo, publicar el nuevo— y en el medio el
+producto se queda sin visor. El set en `BORRADOR` y el `COMPLETO` solo los ve el
+panel. Ver `ADR-0018`.
 
 ## Entidades principales
 
