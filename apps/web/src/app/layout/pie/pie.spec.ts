@@ -62,12 +62,15 @@ describe('Pie', () => {
     expect(screen.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe('https://wa.me/573104209655');
   });
 
+  // La dirección sale del JSON, no repetida aquí: es un dato de negocio que ya
+  // cambió una vez (contact@ -> contacto@) y lo que hay que verificar es el
+  // cableado del mailto:, no el valor.
   it('enlaza el correo con mailto:', async () => {
     await renderPie();
 
-    expect(screen.getByRole('link', { name: 'contact@tecnosport.co' }).getAttribute('href')).toBe(
-      'mailto:contact@tecnosport.co',
-    );
+    const correo = es.pie.correo;
+
+    expect(screen.getByRole('link', { name: correo }).getAttribute('href')).toBe(`mailto:${correo}`);
   });
 
   it('muestra el año actual en el copyright', async () => {
