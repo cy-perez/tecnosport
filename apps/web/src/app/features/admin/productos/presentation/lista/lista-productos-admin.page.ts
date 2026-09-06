@@ -9,7 +9,7 @@ import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
-import { EstadoProducto, FiltroProductosAdmin } from '../../domain/producto-admin.model';
+import { EstadoProducto, FiltroProductosAdmin, ProductoAdmin } from '../../domain/producto-admin.model';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   BORRADOR: 'admin.productos.estados.borrador',
@@ -39,6 +39,8 @@ export class ListaProductosAdminPage {
   protected readonly filtro = computed<FiltroProductosAdmin>(() => filtroDesdeQueryParams(this.queryParams()));
 
   protected readonly consulta = usarListarProductosAdmin(this.filtro);
+
+  protected readonly productos = computed<readonly ProductoAdmin[]>(() => this.consulta.data()?.items ?? []);
 
   protected etiquetaEstado(estado: EstadoProducto): string {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);

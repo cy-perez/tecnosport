@@ -1,7 +1,8 @@
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { of } from 'rxjs';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
@@ -77,7 +78,10 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   }
 }
 
-async function renderLista(items: PedidoAdmin[]) {
+// El filtro de estado vive en la URL (ADR-0011): para distinguir "no hay
+// pedidos en ese estado" de "todavía no hay pedidos" hay que poder fijarlo,
+// mismo recurso que ya usa rejilla.page.spec.ts.
+async function renderLista(items: PedidoAdmin[], queryParams: Record<string, string> = {}) {
   const repositorio = new RepositorioPedidosAdminFalso(items);
   const resultado = await render(ListaPedidosAdminPage, {
     imports: [
@@ -90,6 +94,7 @@ async function renderLista(items: PedidoAdmin[]) {
     providers: [
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
+      { provide: ActivatedRoute, useValue: { queryParams: of(queryParams), snapshot: { queryParams } } },
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
     ],
   });
@@ -107,6 +112,22 @@ describe('ListaPedidosAdminPage', () => {
     expect(await screen.findByText('TS-2026-000123')).toBeTruthy();
     expect(screen.getByText('cliente@example.com')).toBeTruthy();
     expect(screen.getByRole('cell', { name: 'Pago pendiente' })).toBeTruthy();
+  });
+
+  it('sin pedidos y sin filtro, lo dice en vez de dejar una tabla vacía', async () => {
+    await renderLista([]);
+
+    expect(await screen.findByText('Todavía no hay pedidos.')).toBeTruthy();
+    // Ni encabezados de tabla ni paginador: una tabla vacía es ruido para un
+    // lector de pantalla, y no hay páginas que recorrer.
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull();
+  });
+
+  it('sin pedidos pero con filtro de estado, ofrece quitarlo', async () => {
+    await renderLista([], { estado: 'PAGADO' });
+
+    expect(await screen.findByText('No hay pedidos en ese estado. Prueba con «Todos».')).toBeTruthy();
   });
 
   it('cambiar el filtro de estado navega con ese query param', async () => {

@@ -87,6 +87,8 @@ export class ListaPedidosAdminPage {
 
   protected readonly consulta = usarListarPedidosAdmin(this.filtro);
 
+  protected readonly pedidos = computed<readonly PedidoAdmin[]>(() => this.consulta.data()?.items ?? []);
+
   protected readonly formularioEstado = new FormControl('', { nonNullable: true });
 
   protected readonly opcionesEstado = computed<OpcionSelect[]>(() =>

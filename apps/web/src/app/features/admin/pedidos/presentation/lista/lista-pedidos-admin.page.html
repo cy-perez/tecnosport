@@ -21,6 +21,15 @@
     <ts-esqueleto />
   } @else if (consulta.isError()) {
     <p class="lista-pedidos-admin__error" role="alert">{{ 'admin.pedidos.error_lista' | transloco }}</p>
+  } @else if (pedidos().length === 0) {
+    <!-- Dos situaciones distintas, mismo criterio que la rejilla del catálogo:
+         con un filtro de estado puesto, quien mira lo puede resolver (el select
+         está justo encima); sin filtro, no hay nada que hacer todavía. Ni la
+         tabla ni el paginador se pintan aquí: los encabezados de una tabla
+         vacía son ruido para un lector de pantalla. -->
+    <p class="lista-pedidos-admin__vacio">
+      {{ (filtro().estado ? 'admin.pedidos.sin_pedidos_en_estado' : 'admin.pedidos.sin_pedidos') | transloco }}
+    </p>
   } @else {
     <table class="lista-pedidos-admin__tabla">
       <thead>
@@ -34,7 +43,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (pedido of consulta.data()?.items ?? []; track pedido.id) {
+        @for (pedido of pedidos(); track pedido.id) {
           <tr class="lista-pedidos-admin__fila">
             <td>{{ pedido.numeroPedido }}</td>
             <td>{{ pedido.correo }}</td>

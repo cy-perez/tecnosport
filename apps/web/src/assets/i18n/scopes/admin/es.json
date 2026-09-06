@@ -20,6 +20,8 @@
     "filtro_estado": "Estado",
     "todos_los_estados": "Todos",
     "error_lista": "No se pudo cargar la lista de pedidos.",
+    "sin_pedidos": "Todavía no hay pedidos.",
+    "sin_pedidos_en_estado": "No hay pedidos en ese estado. Prueba con «Todos».",
     "columnas": {
       "numero": "Pedido",
       "correo": "Correo",
@@ -74,6 +76,7 @@
   "productos": {
     "titulo": "Productos",
     "error_lista": "No se pudo cargar la lista de productos.",
+    "sin_productos": "Todavía no hay productos. Crea el primero con «Nuevo producto».",
     "nuevo": "Nuevo producto",
     "editarEnlace": "Editar",
     "columnas": {

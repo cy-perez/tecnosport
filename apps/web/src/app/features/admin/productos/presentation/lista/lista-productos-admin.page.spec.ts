@@ -90,6 +90,16 @@ describe('ListaProductosAdminPage', () => {
     expect(screen.getByRole('cell', { name: 'Borrador' })).toBeTruthy();
   });
 
+  it('sin productos lo dice en vez de dejar una tabla vacía', async () => {
+    await renderLista([]);
+
+    expect(await screen.findByText('Todavía no hay productos. Crea el primero con «Nuevo producto».')).toBeTruthy();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull();
+    // El enlace de crear sigue arriba, fuera de la rama vacía: es la salida.
+    expect(screen.getByRole('link', { name: 'Nuevo producto' })).toBeTruthy();
+  });
+
   it('la paginación deshabilita "Anterior" y "Siguiente" en una sola página', async () => {
     await renderLista([productoDePrueba()]);
     await screen.findByText('Morral urbano');

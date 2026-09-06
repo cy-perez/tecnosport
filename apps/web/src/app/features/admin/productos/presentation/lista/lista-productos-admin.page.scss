@@ -34,6 +34,10 @@
   margin-bottom: var(--esp-16);
 }
 
+.lista-productos-admin__vacio {
+  color: var(--color-texto-suave);
+}
+
 .lista-productos-admin__tabla {
   width: 100%;
   border-collapse: collapse;
