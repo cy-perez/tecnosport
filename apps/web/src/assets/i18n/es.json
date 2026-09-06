@@ -57,5 +57,13 @@
     "portada": "Portada",
     "catalogo": "Catálogo",
     "panel": "Panel"
+  },
+  "visor360": {
+    "etiqueta": "Vista 360 del producto",
+    "instrucciones": "Arrastra sobre la imagen, o usa las flechas izquierda y derecha, para girar el producto.",
+    "pista": "Arrastra para girar",
+    "girar_izquierda": "Girar a la izquierda",
+    "girar_derecha": "Girar a la derecha",
+    "posicion": "Fotograma {{actual}} de {{total}}"
   }
 }

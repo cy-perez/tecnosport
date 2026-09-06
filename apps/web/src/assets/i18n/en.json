@@ -57,5 +57,13 @@
     "portada": "Home",
     "catalogo": "Catalog",
     "panel": "Dashboard"
+  },
+  "visor360": {
+    "etiqueta": "360 view of the product",
+    "instrucciones": "Drag over the image, or use the left and right arrow keys, to turn the product.",
+    "pista": "Drag to turn",
+    "girar_izquierda": "Turn left",
+    "girar_derecha": "Turn right",
+    "posicion": "Frame {{actual}} of {{total}}"
   }
 }
