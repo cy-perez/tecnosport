@@ -1,13 +1,12 @@
 @if (activa(); as imagen) {
   <div class="ts-galeria">
-    <img
-      class="ts-galeria__principal"
-      [ngSrc]="imagen.url"
-      [width]="imagen.ancho"
-      [height]="imagen.alto"
-      [alt]="alt(imagen)"
-      priority
-    />
+    <!-- Mismo criterio que ts-tarjeta-producto: el recorte cuadrado lo decide
+         el CSS, así que la imagen va en modo `fill` dentro de un marco que
+         reserva el espacio. Sigue siendo la del LCP de la ficha, de ahí
+         `priority`. -->
+    <div class="ts-galeria__marco">
+      <img class="ts-galeria__principal" [ngSrc]="imagen.url" [alt]="alt(imagen)" fill priority />
+    </div>
 
     @if (imagenes().length > 1) {
       <div class="ts-galeria__miniaturas">
@@ -20,12 +19,7 @@
             [attr.aria-label]="alt(miniatura)"
             (click)="elegir(indice)"
           >
-            <img
-              [ngSrc]="miniatura.url"
-              [width]="miniatura.ancho"
-              [height]="miniatura.alto"
-              alt=""
-            />
+            <img [ngSrc]="miniatura.url" alt="" fill />
           </button>
         }
       </div>

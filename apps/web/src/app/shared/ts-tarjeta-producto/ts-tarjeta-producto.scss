@@ -13,12 +13,16 @@
   }
 }
 
-.ts-tarjeta-producto__imagen {
-  width: 100%;
-  height: auto;
+// El marco reserva el cuadrado y ancla el `fill` del <img>, que Angular
+// posiciona en absoluto: sin un ancestro posicionado se saldría de la tarjeta.
+.ts-tarjeta-producto__marco {
+  position: relative;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
   background: var(--color-superficie-alt);
+}
+
+.ts-tarjeta-producto__imagen {
+  object-fit: cover;
 }
 
 .ts-tarjeta-producto__cuerpo {

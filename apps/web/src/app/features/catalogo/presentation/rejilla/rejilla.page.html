@@ -20,8 +20,8 @@
     </p>
   } @else {
     <div class="rejilla__grid">
-      @for (producto of productos(); track producto.slug) {
-        <ts-tarjeta-producto [producto]="producto" />
+      @for (producto of productos(); track producto.slug; let primera = $first) {
+        <ts-tarjeta-producto [producto]="producto" [prioritaria]="primera" />
       }
     </div>
 

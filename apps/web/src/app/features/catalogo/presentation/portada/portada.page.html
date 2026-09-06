@@ -36,8 +36,10 @@
     <p class="portada__vacio">{{ 'portada.sin_novedades' | transloco }}</p>
   } @else {
     <div class="portada__grid">
-      @for (producto of novedades(); track producto.slug) {
-        <ts-tarjeta-producto [producto]="producto" />
+      <!-- La portada no tiene un <img> de hero (el hero es un bloque de CSS),
+           así que la candidata a LCP es la primera tarjeta de esta franja. -->
+      @for (producto of novedades(); track producto.slug; let primera = $first) {
+        <ts-tarjeta-producto [producto]="producto" [prioritaria]="primera" />
       }
     </div>
   }
