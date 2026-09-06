@@ -30,7 +30,9 @@
             <td>{{ etiquetaEstado(producto.estado) }}</td>
             <td>{{ producto.totalVariantes }}</td>
             <td>
-              <a [routerLink]="[producto.id, 'editar']">{{ 'admin.productos.editarEnlace' | transloco }}</a>
+              <a class="lista-productos-admin__enlace" [routerLink]="[producto.id, 'editar']">{{
+                'admin.productos.editarEnlace' | transloco
+              }}</a>
             </td>
           </tr>
         }

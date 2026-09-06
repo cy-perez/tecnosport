@@ -16,6 +16,19 @@
   color: var(--color-primario);
 }
 
+// Sin esto, el enlace caia en el azul de enlace por defecto del navegador: el
+// proyecto no tiene estilos globales de `<a>` a proposito, asi que un enlace sin
+// clase queda con el color del agente de usuario — ilegible sobre el fondo casi
+// negro del tema oscuro (docs/04-ui-marca.md exige contraste en claro y oscuro).
+.lista-productos-admin__enlace {
+  color: var(--color-primario);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+}
+
 .lista-productos-admin__error {
   color: var(--color-error);
   margin-bottom: var(--esp-16);

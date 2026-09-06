@@ -10,8 +10,19 @@
   margin: 0 0 var(--esp-16);
 }
 
+// Los enlaces del panel son hermanos en el flujo: sin separacion salian
+// pegados ("PedidosProductos"), ilegibles como dos destinos distintos.
 .panel-admin__enlace {
   display: inline-block;
   margin-bottom: var(--esp-24);
   color: var(--color-primario);
+
+  & + & {
+    margin-left: var(--esp-16);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
 }
