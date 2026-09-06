@@ -42,6 +42,15 @@ describe('TsPaginador', () => {
     expect(screen.getByText('Página 3 de 5')).toBeTruthy();
   });
 
+  // El backend devuelve totalPaginas: 0 cuando no hay resultados (la lista de
+  // pedidos del panel, sin pedidos todavía). Encontrado en el navegador.
+  it('sin resultados no dice "de 0": sigue habiendo una página', async () => {
+    await renderPaginador(0, 0);
+
+    expect(screen.getByText('Página 1 de 1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
+  });
+
   it('con una sola página los dos botones quedan deshabilitados', async () => {
     await renderPaginador(0, 1);
 

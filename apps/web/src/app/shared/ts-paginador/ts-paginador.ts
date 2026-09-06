@@ -23,8 +23,15 @@ export class TsPaginador {
   /** Emite la página destino, 0-based. */
   readonly paginaCambiada = output<number>();
 
+  /**
+   * Una lista vacía viene con `totalPaginas: 0` del backend, y "Página 1 de 0"
+   * no se le dice a nadie: sin resultados sigue habiendo una página, la que se
+   * está viendo.
+   */
+  protected readonly total = computed(() => Math.max(1, this.totalPaginas()));
+
   protected readonly hayAnterior = computed(() => this.pagina() > 0);
-  protected readonly haySiguiente = computed(() => this.pagina() + 1 < this.totalPaginas());
+  protected readonly haySiguiente = computed(() => this.pagina() + 1 < this.total());
 
   protected irA(pagina: number): void {
     this.paginaCambiada.emit(pagina);

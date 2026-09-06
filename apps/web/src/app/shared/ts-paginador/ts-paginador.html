@@ -6,7 +6,7 @@
   <!-- `aria-live` para que un lector de pantalla anuncie la página nueva: al
        cambiar de página el foco se queda en el botón, que no cambia de texto. -->
   <span class="ts-paginador__info" aria-live="polite">
-    {{ 'paginador.info' | transloco: { actual: pagina() + 1, total: totalPaginas() } }}
+    {{ 'paginador.info' | transloco: { actual: pagina() + 1, total: total() } }}
   </span>
 
   <ts-boton variante="secundario" [deshabilitado]="!haySiguiente()" (click)="irA(pagina() + 1)">
