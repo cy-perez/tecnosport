@@ -2,6 +2,7 @@ import type { components } from '@tecnosport/contratos';
 import {
   CategoriaAdmin,
   EstadoProducto,
+  ImagenAdmin,
   MarcaAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -11,6 +12,7 @@ type ProductoDto = components['schemas']['ProductoAdminRespuesta'];
 type ProductosPaginadosDto = components['schemas']['ProductosAdminPaginadosRespuesta'];
 type MarcaDto = components['schemas']['MarcaRespuesta'];
 type CategoriaDto = components['schemas']['CategoriaRespuesta'];
+type ImagenDto = components['schemas']['ImagenRespuesta'];
 
 /**
  * DTO generado -> modelo propio del panel. `estado` llega como `string` en el contrato (springdoc
@@ -47,4 +49,15 @@ function aMarca(dto?: MarcaDto): MarcaAdmin {
 
 function aCategoria(dto?: CategoriaDto): CategoriaAdmin {
   return { id: dto?.id ?? '', nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
+}
+
+export function aImagenAdmin(dto: ImagenDto): ImagenAdmin {
+  return {
+    url: dto.url ?? '',
+    urlWebp: dto.urlWebp ?? '',
+    ancho: dto.ancho ?? 0,
+    alto: dto.alto ?? 0,
+    altEs: dto.altEs ?? '',
+    altEn: dto.altEn ?? '',
+  };
 }

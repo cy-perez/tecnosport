@@ -260,6 +260,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/imagen-principal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarImagenPrincipal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/imagen-principal/url-subida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["solicitarUrlDeSubida"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{id}/verificar-contraentrega": {
         parameters: {
             query?: never;
@@ -702,26 +734,26 @@ export interface components {
             null?: boolean;
             float?: boolean;
             number?: boolean;
-            container?: boolean;
-            missingNode?: boolean;
-            bigDecimal?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            valueNode?: boolean;
-            bigInteger?: boolean;
             integralNumber?: boolean;
             floatingPointNumber?: boolean;
+            missingNode?: boolean;
+            bigInteger?: boolean;
+            container?: boolean;
+            bigDecimal?: boolean;
+            valueNode?: boolean;
+            short?: boolean;
             string?: boolean;
             binary?: boolean;
+            boolean?: boolean;
             double?: boolean;
             pojo?: boolean;
-            object?: boolean;
-            int?: boolean;
             /** @deprecated */
             textual?: boolean;
-            boolean?: boolean;
+            object?: boolean;
+            int?: boolean;
             long?: boolean;
-            short?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -847,6 +879,32 @@ export interface components {
             /** Format: int32 */
             totalVariantes?: number;
         };
+        ConfirmarImagenPrincipalPeticion: {
+            objectKey?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+            altEs?: string;
+            altEn?: string;
+        };
+        ImagenRespuesta: {
+            url?: string;
+            urlWebp?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+            altEs?: string;
+            altEn?: string;
+        };
+        SolicitarSubidaDeImagenPrincipalPeticion: {
+            contentType?: string;
+        };
+        UrlSubidaRespuesta: {
+            url?: string;
+            objectKey?: string;
+        };
         VerificarContraentregaRequest: {
             motivo?: string;
         };
@@ -880,16 +938,6 @@ export interface components {
             marcaId?: string;
             /** Format: uuid */
             categoriaId?: string;
-        };
-        ImagenRespuesta: {
-            url?: string;
-            urlWebp?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            altEs?: string;
-            altEn?: string;
         };
         ImagenRotacionRespuesta: {
             /** Format: int32 */
@@ -1350,6 +1398,58 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    confirmarImagenPrincipal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmarImagenPrincipalPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImagenRespuesta"];
+                };
+            };
+        };
+    };
+    solicitarUrlDeSubida: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidaDeImagenPrincipalPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UrlSubidaRespuesta"];
                 };
             };
         };

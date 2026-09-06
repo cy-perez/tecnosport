@@ -7,11 +7,13 @@ import {
   CrearProductoAdmin,
   EditarProductoAdmin,
   FiltroProductosAdmin,
+  ImagenAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
+  SubirImagenPrincipalAdmin,
 } from '../domain/producto-admin.model';
 import { RepositorioProductosAdmin } from '../domain/repositorio-productos-admin.puerto';
-import { aProductoAdmin, aProductosPaginadosAdmin } from './mapeador-producto-admin';
+import { aImagenAdmin, aProductoAdmin, aProductosPaginadosAdmin } from './mapeador-producto-admin';
 
 /** Todo bajo `/api/v1/admin/**` exige `Authorization: Bearer` — mismo criterio que
  * `admin/pedidos/infrastructure/pedidos-admin-http.repositorio.ts`. */
@@ -89,5 +91,42 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     if (error) {
       throw new Error('No se pudo agregar la variante.');
     }
+  }
+
+  async subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin> {
+    const { data: solicitud, error: errorSolicitud } = await this.cliente.POST(
+      '/api/v1/admin/productos/{id}/imagen-principal/url-subida',
+      {
+        params: { path: { id: comando.productoId } },
+        body: { contentType: comando.archivo.type },
+      },
+    );
+    if (errorSolicitud || !solicitud?.url || !solicitud.objectKey) {
+      throw new Error('No se pudo solicitar la URL de subida.');
+    }
+
+    const respuestaSubida = await fetch(solicitud.url, {
+      method: 'PUT',
+      headers: { 'Content-Type': comando.archivo.type },
+      body: comando.archivo,
+    });
+    if (!respuestaSubida.ok) {
+      throw new Error('No se pudo subir la imagen a Cloud Storage.');
+    }
+
+    const { data, error } = await this.cliente.POST('/api/v1/admin/productos/{id}/imagen-principal', {
+      params: { path: { id: comando.productoId } },
+      body: {
+        objectKey: solicitud.objectKey,
+        ancho: comando.ancho,
+        alto: comando.alto,
+        altEs: comando.altEs,
+        altEn: comando.altEn,
+      },
+    });
+    if (error) {
+      throw new Error('No se pudo confirmar la imagen principal.');
+    }
+    return aImagenAdmin(data);
   }
 }
