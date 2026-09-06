@@ -165,9 +165,13 @@ public class MapeadorCatalogo {
             .map(this::aImagen)
             .toList();
 
+    // Solo el set PUBLICADO: un producto puede tener varios (el que se está capturando ahora, en
+    // BORRADOR, conviviendo con el que ya se ve en la ficha). Sin este filtro, `findFirst` podía
+    // devolver el borrador y la ficha se quedaba sin visor aunque hubiera uno publicado.
     SetRotacion setRotacionProducto =
         setsDelProducto.stream()
             .filter(s -> s.getVarianteId() == null)
+            .filter(MapeadorCatalogo::estaPublicado)
             .findFirst()
             .map(s -> aSetRotacion(s, imagenesDelProducto))
             .orElse(null);
@@ -185,6 +189,7 @@ public class MapeadorCatalogo {
                         atributosPorId,
                         setsDelProducto.stream()
                             .filter(s -> v.getId().equals(s.getVarianteId()))
+                            .filter(MapeadorCatalogo::estaPublicado)
                             .findFirst(),
                         imagenesDelProducto))
             .toList();
@@ -233,6 +238,10 @@ public class MapeadorCatalogo {
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
         setRotacionPropio);
+  }
+
+  private static boolean estaPublicado(SetRotacionJpaEntity set) {
+    return EstadoSetRotacion.PUBLICADO.name().equals(set.getEstado());
   }
 
   /**
