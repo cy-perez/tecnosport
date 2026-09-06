@@ -77,6 +77,22 @@ function productoConVariantes(): Producto {
   };
 }
 
+/** Los fotogramas llegan desordenados a propósito: el orden del giro lo decide `orden`, no el arreglo. */
+function productoConRotacion(): Producto {
+  return {
+    ...productoDePrueba(),
+    rotacion: {
+      fotogramas: 4,
+      imagenes: [
+        { orden: 2, url: 'https://imagenes.test/r2.jpg', urlWebp: 'https://imagenes.test/r2.webp', ancho: 1000, alto: 1000 },
+        { orden: 0, url: 'https://imagenes.test/r0.jpg', urlWebp: 'https://imagenes.test/r0.webp', ancho: 1000, alto: 1000 },
+        { orden: 3, url: 'https://imagenes.test/r3.jpg', urlWebp: 'https://imagenes.test/r3.webp', ancho: 1000, alto: 1000 },
+        { orden: 1, url: 'https://imagenes.test/r1.jpg', urlWebp: 'https://imagenes.test/r1.webp', ancho: 1000, alto: 1000 },
+      ],
+    },
+  };
+}
+
 function activatedRouteConSlug(slug: string) {
   const paramMap = convertToParamMap({ slug });
   return { paramMap: of(paramMap), snapshot: { paramMap } };
@@ -136,6 +152,32 @@ describe('FichaPage', () => {
       'textContent',
       'No se pudo cargar el producto. Intenta de nuevo.',
     );
+  });
+
+  it('un producto sin set de rotación no muestra el visor 360', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+
+    await renderFicha(repositorio);
+
+    expect(await screen.findByRole('heading', { name: 'Morral urbano' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Vista 360 del producto' })).toBeNull();
+  });
+
+  it('un producto con set de rotación muestra el visor, empezando por el fotograma frontal', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoConRotacion()),
+    };
+
+    await renderFicha(repositorio);
+
+    const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
+    // El frontal es el de `orden: 0`, aunque llegue en segundo lugar en el arreglo.
+    expect(visor.querySelector('img')?.getAttribute('src')).toContain('r0.webp');
+    expect(screen.getByText('Fotograma 1 de 4')).toBeTruthy();
   });
 
   it('elegir otra variante cambia el precio y la existencia mostrados', async () => {

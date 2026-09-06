@@ -10,6 +10,7 @@ import { TsGaleria } from '../../../../shared/ts-galeria/ts-galeria';
 import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-selector-variante';
+import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { Imagen } from '../../domain/producto.model';
@@ -26,6 +27,7 @@ import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, va
     TsEsqueleto,
     TsBoton,
     TsMigas,
+    TsVisor360,
   ],
   templateUrl: './ficha.page.html',
   styleUrl: './ficha.page.scss',
@@ -64,6 +66,21 @@ export class FichaPage {
       return [];
     }
     return [producto.imagenPrincipal, ...producto.galeria].filter((imagen): imagen is Imagen => imagen !== null);
+  });
+
+  /**
+   * El visor recibe URL y nada más. Se ordena por `orden` aquí y no se confía en el orden en que
+   * llegue el arreglo: el giro depende de esa secuencia, y un fotograma fuera de sitio se ve como
+   * un salto (`docs/10-captura-360.md`).
+   *
+   * WebP con el original de respaldo, por la regla de imágenes de `apps/web/CLAUDE.md`.
+   */
+  protected readonly fotogramas360 = computed<string[]>(() => {
+    const rotacion = this.producto()?.rotacion;
+    if (!rotacion) {
+      return [];
+    }
+    return [...rotacion.imagenes].sort((uno, otro) => uno.orden - otro.orden).map((imagen) => imagen.urlWebp || imagen.url);
   });
 
   protected readonly ejes = computed(() => {

@@ -14,6 +14,14 @@
   }
 }
 
+// Con rotación, el visor y la galería comparten la columna izquierda: el visor arriba, que es lo
+// que se mira primero, y la galería debajo — nunca la única forma de ver el producto.
+.ficha__visual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-24);
+}
+
 .ficha__info {
   display: flex;
   flex-direction: column;
