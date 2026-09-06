@@ -1618,9 +1618,41 @@ cambio". Las dos se comprobaron mutando la implementación.
 **Verificado en el navegador**: en el panel de rendimiento, los ocho fotogramas se
 piden en el orden `0, 1, 7, 2, 6, 3, 5, 4` —el frontal primero y después los
 vecinos alternando, en cadena y no en paralelo— y girar cinco veces con el teclado
-pinta el fotograma 6 de verdad. **El cambio de set no se pudo recorrer**: la
-siembra tiene un solo producto con rotación, así que esa parte la cubren las
-pruebas.
+pinta el fotograma 6 de verdad.
+
+**El cambio de set se recorrió después**, cuando la siembra dejó de tener un solo
+producto con rotación — ver la sección siguiente.
+
+### Un segundo set en la siembra, y el recorrido que faltaba
+
+2026-09-06. La siembra tenía un solo producto con rotación, y por eso el camino
+donde vivían **los dos defectos más serios del visor** —la carrera de la precarga
+y el reinicio del fotograma— era justo el que no se podía recorrer en el
+navegador. Ahora el morral trae un set de **4 fotogramas**, el mínimo publicable
+de la tabla de `docs/10-captura-360.md`, frente a los 8 del tenis: dos tamaños
+distintos, y los otros dos productos siguen sin rotación. Los tres casos que hacen
+falta en desarrollo.
+
+**El recorrido, con clics reales y navegación de la SPA** (tenis → catálogo →
+morral → atrás → tenis):
+
+- El visor del tenis precarga sus ocho y queda en el fotograma 6.
+- Al llegar al morral, el contador dice **"Fotograma 1 de 4"** y lo que se pinta
+  es su frontal: el set nuevo reinicia, que es lo correcto, mientras que una
+  revalidación del mismo producto no lo hace.
+- **El set nuevo se precarga solo**, en su propio orden (`0, 1, 3, 2`), y las
+  peticiones del tenis se quedaron en ocho: la cadena vieja no siguió caminando.
+  Es la prueba en pantalla de los dos arreglos de la sección anterior.
+- La tecla Fin en un set de 4 lleva al fotograma 3, que es el opuesto del frontal
+  con número par de fotogramas.
+- Al volver al tenis, el visor arranca otra vez en su frontal y vuelve a pedir sus
+  fotogramas: salir de la ficha destruye el componente, así que su memoria de lo
+  cargado se va con él. Las imágenes salen de la caché del navegador, no de la
+  red; no es un defecto, pero conviene saberlo antes de leer el panel de
+  rendimiento y asustarse.
+
+Sin `NG02952`, `NG02954` ni `NG02955` en todo el recorrido, con dos fichas con
+visor y una sin él.
 
 **Falta el asistente de captura**, que es el resto de la fase.
 

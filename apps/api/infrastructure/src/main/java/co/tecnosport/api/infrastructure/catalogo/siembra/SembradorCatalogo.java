@@ -42,7 +42,10 @@ import org.springframework.stereotype.Component;
 public class SembradorCatalogo implements ApplicationRunner {
 
   /** El objetivo de docs/10-captura-360.md: donde el arrastre empieza a sentirse continuo. */
-  private static final int FOTOGRAMAS_SIEMBRA = 8;
+  private static final int FOTOGRAMAS_OBJETIVO = 8;
+
+  /** El mínimo publicable de la misma tabla: cada arrastre salta 90 grados. */
+  private static final int FOTOGRAMAS_MINIMOS = 4;
 
   private final MarcaJpaRepository marcas;
   private final CategoriaJpaRepository categorias;
@@ -220,9 +223,12 @@ public class SembradorCatalogo implements ApplicationRunner {
     guardarGaleria(morral, ahora);
     guardarGaleria(celular, ahora);
 
-    // Un solo producto con set de rotación, y a propósito: el visor 360 tiene que poder verse en
-    // desarrollo, y la ficha sin rotación —la de los otros tres— también.
-    guardarSetRotacion(tenis, ahora);
+    // Dos productos con set de rotación, de distinto tamaño, y los otros dos sin ninguno. Los tres
+    // casos hacen falta en desarrollo: la ficha con visor, la ficha sin visor, y sobre todo pasar
+    // de un set a otro dentro de la misma sesión, que es el camino donde vivían la carrera de la
+    // precarga y el reinicio del fotograma (docs/09-plan-de-arranque.md, Fase 5).
+    guardarSetRotacion(tenis, FOTOGRAMAS_OBJETIVO, ahora);
+    guardarSetRotacion(morral, FOTOGRAMAS_MINIMOS, ahora);
   }
 
   private MarcaJpaEntity guardarMarca(String nombre, Instant ahora) {
@@ -321,12 +327,13 @@ public class SembradorCatalogo implements ApplicationRunner {
   }
 
   /**
-   * Set de rotación publicado, de 8 fotogramas, el objetivo de docs/10-captura-360.md. Las imágenes
-   * son de picsum.photos y no son un giro real: cada fotograma es una foto distinta, así que sirven
-   * para ejercitar el visor —el índice circular, la precarga, el arrastre— y no para juzgar cómo se
-   * ve una rotación de verdad. Eso llega con el asistente de captura.
+   * Set de rotación publicado, con el número de fotogramas que pida quien llama — la tabla de
+   * docs/10-captura-360.md contempla 4, 8 y 16. Las imágenes son de picsum.photos y no son un giro
+   * real: cada fotograma es una foto distinta, así que sirven para ejercitar el visor —el índice
+   * circular, la precarga, el arrastre— y no para juzgar cómo se ve una rotación de verdad. Eso
+   * llega con el asistente de captura.
    */
-  private void guardarSetRotacion(ProductoJpaEntity producto, Instant ahora) {
+  private void guardarSetRotacion(ProductoJpaEntity producto, int fotogramas, Instant ahora) {
     UUID setId = GeneradorIdentificador.nuevo();
     setsRotacion.save(
         new SetRotacionJpaEntity(
@@ -341,7 +348,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             "siembra",
             "siembra"));
 
-    for (int orden = 0; orden < FOTOGRAMAS_SIEMBRA; orden++) {
+    for (int orden = 0; orden < fotogramas; orden++) {
       String url =
           "https://picsum.photos/seed/" + producto.getSlug() + "-360-" + orden + "/1000/1000";
       imagenes.save(
