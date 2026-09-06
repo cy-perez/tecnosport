@@ -95,3 +95,29 @@
   background-color: var(--color-exito);
   color: var(--color-sobre-primario);
 }
+
+.captura__recuperacion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-8);
+  padding: var(--esp-12);
+  border: 1px solid var(--color-borde-control);
+  background-color: var(--color-superficie);
+}
+
+.captura__recuperacion p {
+  margin: 0;
+  line-height: var(--interlineado-texto);
+}
+
+.captura__revision-set {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-12);
+}
+
+.captura__revision-set p {
+  margin: 0;
+  color: var(--color-texto-suave);
+  line-height: var(--interlineado-texto);
+}

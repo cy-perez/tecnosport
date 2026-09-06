@@ -40,5 +40,29 @@
   "ocultar_fantasma": "Ocultar la toma anterior",
   "obturador_bloqueado": "El obturador se habilita cuando el teléfono vuelve a la inclinación de la primera toma.",
   "set_completo": "Listas las {{total}} tomas. El procesamiento y la subida llegan en el paso siguiente del asistente.",
-  "error_captura": "No se pudo tomar la foto. Intenta de nuevo."
+  "error_captura": "No se pudo tomar la foto. Intenta de nuevo.",
+  "recuperacion": {
+    "hay_una": "Quedó una captura a medias de este producto, de {{total}} fotogramas. Las tomas están guardadas en este dispositivo.",
+    "continuar": "Continuar donde iba",
+    "empezar_de_nuevo": "Empezar de nuevo"
+  },
+  "sin_respaldo_local": "No se pudieron guardar las tomas en este dispositivo. La captura sigue, pero si cierras la pestaña se pierde.",
+  "procesar_y_subir": "Procesar y subir el set",
+  "procesando": "Procesando el set: {{hechos}} de {{total}}.",
+  "subiendo": "Subiendo: {{hechos}} de {{total}} fotogramas.",
+  "revision": {
+    "titulo": "Revisa la rotación completa",
+    "ayuda": "Arrastra para girar. Aquí es donde se ve el fotograma torcido: si algo no está bien, vuelve a capturar el set antes de publicarlo.",
+    "publicar": "Publicar el set"
+  },
+  "publicado": "Set publicado. La ficha del producto ya muestra el visor 360.",
+  "error_subida": "No se pudo subir el set. Las tomas siguen guardadas en este dispositivo: intenta de nuevo.",
+  "error_publicar": "No se pudo publicar el set. Puede que el producto ya tenga uno publicado: bórralo primero.",
+  "error_proceso": {
+    "IMAGEN_INVALIDA": "Una de las tomas no se pudo leer. Repite el set.",
+    "FONDO_NO_UNIFORME": "El fondo no es parejo en alguna toma: se ven sombras o algo detrás del producto. Vuelve a capturar con un fondo claro y uniforme.",
+    "SIN_PRODUCTO": "En alguna toma no se distingue el producto del fondo. Prueba con un fondo de otro tono al del producto.",
+    "PRODUCTO_CORTADO": "En alguna toma el producto toca el borde del marco. Aléjate un poco y repite el set.",
+    "SIN_ENCUADRE": "No se pudo calcular el encuadre común del set. Repite la captura."
+  }
 }

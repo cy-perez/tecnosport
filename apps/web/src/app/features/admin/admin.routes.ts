@@ -8,6 +8,12 @@ import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias
 import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
 import { adminGuard } from './admin.guard';
 import { CapturaStore } from '../captura360/application/captura.store';
+import { ALMACEN_LOCAL_DE_CAPTURAS } from '../captura360/domain/almacen-local-capturas.puerto';
+import { PROCESADOR_DE_FOTOGRAMAS } from '../captura360/domain/procesador-fotogramas.puerto';
+import { REPOSITORIO_SETS_ROTACION } from '../captura360/domain/repositorio-sets-rotacion.puerto';
+import { AlmacenLocalIndexedDb } from '../captura360/infrastructure/almacen-local-indexeddb';
+import { ProcesadorCanvas } from '../captura360/infrastructure/procesador-canvas';
+import { SetsRotacionHttpRepositorio } from '../captura360/infrastructure/sets-rotacion-http.repositorio';
 import { CAMARA } from '../captura360/domain/camara.puerto';
 import { PANTALLA_DESPIERTA } from '../captura360/domain/pantalla-despierta.puerto';
 import { SENSOR_ORIENTACION } from '../captura360/domain/sensor-orientacion.puerto';
@@ -96,7 +102,10 @@ export const adminRoutes: Routes = [
             // sus textos no le hacen falta a nadie más del panel.
             providers: [
               provideTranslocoScope('captura360'),
+              { provide: ALMACEN_LOCAL_DE_CAPTURAS, useClass: AlmacenLocalIndexedDb },
               { provide: CAMARA, useClass: CamaraNavegador },
+              { provide: PROCESADOR_DE_FOTOGRAMAS, useClass: ProcesadorCanvas },
+              { provide: REPOSITORIO_SETS_ROTACION, useClass: SetsRotacionHttpRepositorio },
               { provide: SENSOR_ORIENTACION, useClass: SensorOrientacionNavegador },
               { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
               CapturaStore,
