@@ -18,6 +18,9 @@ import { FiltrosProductos } from '../filtros/filtros-productos';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RejillaPage {
+  /** Una fila en escritorio: las candidatas reales a LCP. Ver la plantilla. */
+  protected readonly TARJETAS_PRIORITARIAS = 4;
+
   private readonly route = inject(ActivatedRoute);
 
   private readonly queryParams = toSignal(this.route.queryParams, {

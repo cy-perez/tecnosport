@@ -20,8 +20,13 @@
     </p>
   } @else {
     <div class="rejilla__grid">
-      @for (producto of productos(); track producto.slug; let primera = $first) {
-        <ts-tarjeta-producto [producto]="producto" [prioritaria]="primera" />
+      <!-- La primera fila, por el mismo motivo que la franja de la portada:
+           entre tarjetas del mismo tamaño el LCP es cualquiera de ellas (medido
+           en el navegador, gana la cuarta). Un monitor muy ancho puede meter una
+           quinta sobre el pliegue y volver a disparar el aviso; el corte es un
+           compromiso, no una garantía. -->
+      @for (producto of productos(); track producto.slug; let indice = $index) {
+        <ts-tarjeta-producto [producto]="producto" [prioritaria]="indice < TARJETAS_PRIORITARIAS" />
       }
     </div>
 
