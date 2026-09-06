@@ -74,14 +74,7 @@
       }
     </a>
 
-    <label class="encabezado__control">
-      <span>{{ 'idioma.etiqueta' | transloco }}</span>
-      <select [value]="idiomaActual()" (change)="cambiarIdioma($any($event.target).value)">
-        @for (idioma of idiomas; track idioma) {
-          <option [value]="idioma">{{ idioma.toUpperCase() }}</option>
-        }
-      </select>
-    </label>
+    <ts-selector-idioma />
 
     <label class="encabezado__control">
       <span>{{ 'tema.etiqueta' | transloco }}</span>
