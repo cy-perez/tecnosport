@@ -3,6 +3,8 @@
   "cargando": "Loading…",
   "cargar_mas": "Load more",
   "error": "We couldn't load the catalog. Please try again.",
+  "sin_resultados": "No products match these filters. Try removing one.",
+  "sin_productos": "There are no published products yet.",
   "disponible": "In stock",
   "agotado": "Out of stock",
   "precio_desde": "From",

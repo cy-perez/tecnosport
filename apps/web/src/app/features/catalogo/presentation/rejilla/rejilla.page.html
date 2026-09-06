@@ -11,6 +11,13 @@
     </div>
   } @else if (consulta.isError()) {
     <p class="rejilla__error" role="alert">{{ 'catalogo.error' | transloco }}</p>
+  } @else if (productos().length === 0) {
+    <!-- Dos situaciones distintas: una la puede resolver quien mira (quitar un
+         filtro), la otra no. El boton de limpiar ya esta arriba, en los
+         filtros: no se duplica aqui. -->
+    <p class="rejilla__vacio">
+      {{ (hayFiltros() ? 'catalogo.sin_resultados' : 'catalogo.sin_productos') | transloco }}
+    </p>
   } @else {
     <div class="rejilla__grid">
       @for (producto of productos(); track producto.slug) {

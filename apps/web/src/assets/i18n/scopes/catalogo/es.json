@@ -3,6 +3,8 @@
   "cargando": "Cargando…",
   "cargar_mas": "Cargar más",
   "error": "No se pudo cargar el catálogo. Intenta de nuevo.",
+  "sin_resultados": "No encontramos productos con estos filtros. Prueba quitando alguno.",
+  "sin_productos": "Todavía no hay productos publicados.",
   "disponible": "Disponible",
   "agotado": "Agotado",
   "precio_desde": "Desde",

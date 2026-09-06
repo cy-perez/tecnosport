@@ -1,7 +1,8 @@
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, Params, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { of } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
@@ -40,6 +41,16 @@ function productoDePrueba(slug: string): Producto {
   };
 }
 
+class RepositorioVacioFalso implements RepositorioProductos {
+  async buscar(): Promise<ResultadoPaginado<Producto>> {
+    return { items: [], cursorSiguiente: null };
+  }
+
+  async buscarPorSlug(): Promise<Producto | null> {
+    return null;
+  }
+}
+
 class RepositorioProductosFalso implements RepositorioProductos {
   llamadas = 0;
 
@@ -56,26 +67,33 @@ class RepositorioProductosFalso implements RepositorioProductos {
   }
 }
 
+function renderRejilla(repositorio: RepositorioProductos, queryParams: Params = {}) {
+  return render(RejillaPage, {
+    imports: [
+      TranslocoTestingModule.forRoot({
+        langs: { es, en, 'catalogo/es': esCatalogo } as never,
+        translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+        preloadLangs: true,
+      }),
+    ],
+    providers: [
+      provideRouter([]),
+      provideTanStackQuery(new QueryClient()),
+      // Los filtros viven en la URL (ADR-0011): para probar el estado vacío
+      // con y sin filtros hace falta poder fijarlos, no solo el repositorio.
+      { provide: ActivatedRoute, useValue: { queryParams: of(queryParams), snapshot: { queryParams } } },
+      { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
+      { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+      { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+    ],
+  });
+}
+
 describe('RejillaPage', () => {
   it('muestra la primera página y carga la siguiente con "cargar más"', async () => {
     const repositorio = new RepositorioProductosFalso();
 
-    await render(RejillaPage, {
-      imports: [
-        TranslocoTestingModule.forRoot({
-          langs: { es, en, 'catalogo/es': esCatalogo } as never,
-          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
-          preloadLangs: true,
-        }),
-      ],
-      providers: [
-        provideRouter([]),
-        provideTanStackQuery(new QueryClient()),
-        { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
-        { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
-        { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
-      ],
-    });
+    await renderRejilla(repositorio);
 
     expect(await screen.findByText('Producto a')).toBeTruthy();
     expect(screen.getByText('Producto b')).toBeTruthy();
@@ -86,5 +104,19 @@ describe('RejillaPage', () => {
 
     expect(await screen.findByText('Producto c')).toBeTruthy();
     expect(repositorio.llamadas).toBe(2);
+  });
+
+  it('sin resultados y con filtros activos, lo dice y sugiere quitar alguno', async () => {
+    await renderRejilla(new RepositorioVacioFalso(), { texto: 'zapatilla-que-no-existe' });
+
+    expect(await screen.findByText(/no encontramos productos con estos filtros/i)).toBeTruthy();
+    expect(screen.queryByText(/todavía no hay productos publicados/i)).toBeNull();
+  });
+
+  it('sin resultados y sin filtros, el catalogo esta vacio: es otro mensaje', async () => {
+    await renderRejilla(new RepositorioVacioFalso(), {});
+
+    expect(await screen.findByText(/todavía no hay productos publicados/i)).toBeTruthy();
+    expect(screen.queryByText(/no encontramos productos con estos filtros/i)).toBeNull();
   });
 });
