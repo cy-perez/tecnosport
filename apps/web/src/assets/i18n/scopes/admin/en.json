@@ -143,6 +143,7 @@
       "crear": "Create variant",
       "enviando": "Creating…",
       "error": "Couldn't add the variant. Try again."
-    }
+    },
+    "capturar360": "Capture 360"
   }
 }

@@ -1,0 +1,131 @@
+<section class="captura">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="captura__titulo">{{ 'captura360.titulo' | transloco }}</h1>
+
+  @switch (store.permisoCamara()) {
+    @case ('DESCONOCIDO') {
+      <div class="captura__preparacion">
+        <h2 class="captura__subtitulo">{{ 'captura360.preparacion.titulo' | transloco }}</h2>
+
+        <ul class="captura__condiciones">
+          <li>{{ 'captura360.preparacion.fondo' | transloco }}</li>
+          <li>{{ 'captura360.preparacion.luz' | transloco }}</li>
+          <li>{{ 'captura360.preparacion.centrado' | transloco }}</li>
+          <li>{{ 'captura360.preparacion.distancia' | transloco }}</li>
+        </ul>
+
+        <fieldset class="captura__fotogramas">
+          <legend>{{ 'captura360.preparacion.cuantos' | transloco }}</legend>
+          @for (cantidad of opciones; track cantidad) {
+            <ts-boton
+              variante="secundario"
+              [presionado]="store.fotogramasPrometidos() === cantidad"
+              (click)="elegirFotogramas(cantidad)"
+            >
+              {{ 'captura360.preparacion.n_fotogramas' | transloco: { n: cantidad } }}
+            </ts-boton>
+          }
+        </fieldset>
+
+        <ts-boton [cargando]="store.abriendoCamara()" (click)="store.pedirCamara()">
+          {{ 'captura360.permisos.pedir_camara' | transloco }}
+        </ts-boton>
+      </div>
+    }
+
+    @case ('NEGADO') {
+      <p class="captura__aviso captura__aviso--bloqueante" role="alert">
+        {{ 'captura360.permisos.camara_negada' | transloco }}
+      </p>
+    }
+
+    @case ('NO_DISPONIBLE') {
+      <p class="captura__aviso captura__aviso--bloqueante" role="alert">
+        {{ 'captura360.permisos.camara_no_disponible' | transloco }}
+      </p>
+    }
+
+    @case ('CONCEDIDO') {
+      <div class="captura__visor">
+        <video class="captura__video" #video autoplay playsinline muted></video>
+
+        @if (store.pendiente(); as pendiente) {
+          <img class="captura__revision" [src]="pendiente.url" alt="" />
+        } @else {
+          <ts-superposicion-guia
+            [fantasma]="store.fantasma()"
+            [mostrarFantasma]="mostrarFantasma()"
+          />
+        }
+      </div>
+
+      <div class="captura__estado">
+        <p class="captura__progreso" aria-live="polite">
+          {{
+            'captura360.progreso'
+              | transloco
+                : { actual: store.siguienteOrden() + 1, total: store.fotogramasPrometidos() }
+          }}
+          ·
+          {{ claveDeTomaActual() | transloco: { grados: gradosDeTomaActual() } }}
+        </p>
+
+        <ts-indicador-nivel
+          [nivel]="store.nivel()"
+          [fijandoReferencia]="store.fijandoReferencia()"
+        />
+      </div>
+
+      @if (store.permisoSensor() === 'DESCONOCIDO') {
+        <ts-boton variante="secundario" (click)="store.pedirSensor()">
+          {{ 'captura360.permisos.pedir_sensor' | transloco }}
+        </ts-boton>
+      }
+
+      @if (store.permisoSensor() === 'NEGADO' || store.permisoSensor() === 'NO_DISPONIBLE') {
+        <p class="captura__aviso" role="status">
+          {{ 'captura360.permisos.sin_nivel' | transloco }}
+        </p>
+      }
+
+      @if (errorCaptura(); as clave) {
+        <p class="captura__aviso" role="alert">{{ clave | transloco }}</p>
+      }
+
+      @if (store.termino()) {
+        <p class="captura__aviso captura__aviso--exito" role="status">
+          {{ 'captura360.set_completo' | transloco: { total: store.fotogramasPrometidos() } }}
+        </p>
+      } @else if (store.pendiente() !== null) {
+        <div class="captura__acciones">
+          <ts-boton (click)="store.aceptar()">{{ 'captura360.aceptar' | transloco }}</ts-boton>
+          <ts-boton variante="secundario" (click)="store.repetir()">
+            {{ 'captura360.repetir' | transloco }}
+          </ts-boton>
+        </div>
+      } @else {
+        <div class="captura__acciones">
+          <ts-boton [deshabilitado]="!store.nivel().puedeDisparar" (click)="capturar()">
+            {{ 'captura360.disparar' | transloco }}
+          </ts-boton>
+
+          @if (store.fantasma() !== null) {
+            <ts-boton variante="texto" (click)="mostrarFantasma.set(!mostrarFantasma())">
+              {{
+                (mostrarFantasma() ? 'captura360.ocultar_fantasma' : 'captura360.mostrar_fantasma')
+                  | transloco
+              }}
+            </ts-boton>
+          }
+        </div>
+
+        @if (!store.nivel().puedeDisparar) {
+          <p class="captura__aviso" role="status">
+            {{ 'captura360.obturador_bloqueado' | transloco }}
+          </p>
+        }
+      }
+    }
+  }
+</section>

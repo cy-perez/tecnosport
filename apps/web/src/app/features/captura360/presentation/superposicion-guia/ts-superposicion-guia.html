@@ -1,0 +1,21 @@
+<div class="superposicion">
+  @if (fantasma() !== null && mostrarFantasma()) {
+    <img class="superposicion__fantasma" [src]="fantasma()" alt="" />
+  }
+
+  <div class="superposicion__marco">
+    <span
+      class="superposicion__linea superposicion__linea--vertical superposicion__linea--v1"
+    ></span>
+    <span
+      class="superposicion__linea superposicion__linea--vertical superposicion__linea--v2"
+    ></span>
+    <span
+      class="superposicion__linea superposicion__linea--horizontal superposicion__linea--h1"
+    ></span>
+    <span
+      class="superposicion__linea superposicion__linea--horizontal superposicion__linea--h2"
+    ></span>
+    <span class="superposicion__centro"></span>
+  </div>
+</div>

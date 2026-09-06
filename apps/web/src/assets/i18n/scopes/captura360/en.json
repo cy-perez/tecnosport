@@ -1,0 +1,44 @@
+{
+  "titulo": "360 capture",
+  "preparacion": {
+    "titulo": "Before you start",
+    "fondo": "Light, even background with nothing behind the product.",
+    "luz": "Even lighting, no hard shadows on one side.",
+    "centrado": "The product centred and fully inside the frame.",
+    "distancia": "The phone at the same distance for every shot.",
+    "cuantos": "How many frames?",
+    "n_fotogramas": "{{n}} frames"
+  },
+  "permisos": {
+    "pedir_camara": "Allow the camera",
+    "pedir_sensor": "Turn on the level",
+    "camara_negada": "Without camera permission there is nothing to capture. Grant it in your browser settings and come back.",
+    "camara_no_disponible": "This browser gives no camera access. The assistant needs a phone and a secure connection (HTTPS).",
+    "sin_nivel": "No level: this device does not report tilt, or permission was denied. You can still capture, using the grid as your guide."
+  },
+  "nivel": {
+    "en_rango": "Level.",
+    "fijando_referencia": "This shot sets the reference tilt for the whole set.",
+    "sin_sensor": "No level available.",
+    "inclina_adelante": "Tilt the phone {{grados}}° forward.",
+    "inclina_atras": "Tilt the phone {{grados}}° back.",
+    "gira_izquierda": "Turn the phone {{grados}}° to the left.",
+    "gira_derecha": "Turn the phone {{grados}}° to the right."
+  },
+  "toma": {
+    "frontal": "Front",
+    "lateral_derecho": "Right side",
+    "posterior": "Back",
+    "lateral_izquierdo": "Left side",
+    "angulo": "{{grados}}°"
+  },
+  "progreso": "Shot {{actual}} of {{total}}",
+  "disparar": "Take the photo",
+  "aceptar": "Accept and continue",
+  "repetir": "Retake this shot",
+  "mostrar_fantasma": "Show the previous shot",
+  "ocultar_fantasma": "Hide the previous shot",
+  "obturador_bloqueado": "The shutter unlocks when the phone returns to the tilt of the first shot.",
+  "set_completo": "All {{total}} shots are done. Processing and upload come in the next step of the assistant.",
+  "error_captura": "The photo could not be taken. Try again."
+}
