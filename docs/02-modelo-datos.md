@@ -103,7 +103,14 @@ Reglas:
   publica: el visor no se muestra y la ficha cae a la galería normal.
 - `orden` va de 0 a N-1 y define la secuencia de giro. El fotograma 0 es la vista
   frontal y es el que se muestra antes de que el usuario interactúe.
-- `hash` del contenido para detectar recargas duplicadas del mismo archivo.
+- `hash` del contenido para detectar recargas duplicadas del mismo archivo: el
+  SHA-256 en hexadecimal, 64 caracteres en minúscula, con un `check` en el
+  esquema que lo exige (`V19`). Lo calcula el navegador, que es el único que
+  tiene los bytes —en una subida directa el archivo nunca pasa por el backend—,
+  así que el servidor no puede confirmar que corresponda al archivo sin
+  descargarlo: `ADR-0019`. Lo que **no** va aquí es la key del objeto en Cloud
+  Storage; guardarla ahí, como se hizo hasta la Fase 5, ni cabía en la columna ni
+  permitía detectar duplicado alguno, porque cada key es única por construcción.
 - `alt_es` y `alt_en` obligatorios en la principal, opcionales en los fotogramas
   de rotación, que son decorativos y llevan `alt=""` con la descripción en el
   contenedor.

@@ -1975,6 +1975,47 @@ Terraform un proyecto de dev exigiría primero un bucket de estado remoto para e
 propio Terraform, y ese arranque en frío no se paga solo por un bucket y una
 cuenta de servicio. La regla de producción no cambia.
 
+### El hash que nunca cupo, y los pendientes 2 y 3 cerrados
+
+2026-09-06, más tarde. Con el bucket de dev montado, el recorrido llegó hasta
+`/completar` y reventó con un 500: `value too long for type character
+varying(80)`. `imagen_producto.hash` guardaba la **key del objeto** (~99
+caracteres) en una columna dimensionada para un SHA-256. **Nunca funcionó contra
+Cloud Storage**, ni en el set de rotación ni en la imagen principal del panel
+(`ConfirmarImagenPrincipal` hacía lo mismo desde la Fase 4). Las pruebas no lo
+veían: el doble del almacén acepta cualquier key y usaban keys cortas.
+
+Ensanchar la columna habría enterrado el problema. `docs/02-modelo-datos.md` dice
+que `hash` es del contenido, para detectar recargas duplicadas, y con la key ahí
+esa detección no podía funcionar nunca, porque cada key es única por
+construcción. Así que el hash volvió a ser lo que el modelo dice: lo calcula el
+navegador con `crypto.subtle` sobre los bytes que sube, `HashContenido` (objeto
+de valor, `domain/compartido`) exige 64 hexadecimales, y `V19` lo repite como
+`check` del esquema. El detalle y lo que se descartó, en `ADR-0019`.
+
+De rebote apareció otra cosa: `TokensJwtTest` fallaba una de cada dieciséis
+corridas desde siempre. Cambiaba el último carácter del token, que en una firma
+HS256 solo aporta cuatro bits significativos — el token "manipulado" a veces era
+byte por byte el mismo. Esa prueba no probaba nada; ahora cambia el cuerpo por el
+de otro usuario conservando la firma.
+
+**Pendientes 2 y 3, cerrados** (`npm run verificar` completo: lint, 433 pruebas,
+`ng build` y `gradlew.bat build`). El recorrido entero contra el bucket real,
+paso por paso: sesión `ADMIN`, abrir el set (201, `BORRADOR`), ocho URL firmadas
+V4 (201), ocho `PUT` directos a `storage.googleapis.com`, `/completar` (200,
+`COMPLETO`), `/publicar` (200, `PUBLICADO`), y `GET /api/v1/productos/{slug}`
+sirviendo `rotacion` con los ocho fotogramas apuntando al bucket — comprobado
+además que el objeto se lee público (200, `image/webp`). Al terminar se borró el
+set de prueba y sus objetos: el catálogo de dev quedó como estaba.
+
+**Queda solo el pendiente 1**, el recorrido en un teléfono real, que necesita el
+túnel HTTPS y su origen agregado al CORS del bucket (`infra/dev/README.md`).
+
+Un defecto conocido y no arreglado, anotado aquí para no perderlo: **`DELETE
+/api/v1/admin/sets-rotacion/{id}` borra la fila pero deja los objetos en el
+bucket**. En dev es basura; en producción es almacenamiento que se paga y nunca
+se reclama.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
