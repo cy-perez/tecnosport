@@ -9,7 +9,6 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
-import { guardarCarritoIdAlmacenado } from '../../../carrito/infrastructure/carrito-id.almacen';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
@@ -18,6 +17,8 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { ConfirmarPage } from './confirmar.page';
+import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
+import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -102,6 +103,16 @@ class RepositorioPedidosQueFalla implements RepositorioPedidos {
   }
 }
 
+class RepositorioPagosQueFalla implements RepositorioPagos {
+  async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('el proveedor de pagos no respondió');
+  }
+
+  async registrarIdTransaccion(): Promise<void> {
+    throw new Error('no usado en esta prueba');
+  }
+}
+
 class RepositorioPagosFalso implements RepositorioPagos {
   llamadasCrearIntento = 0;
 
@@ -168,6 +179,7 @@ async function renderConDatos(
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'metodo-pago', component: RutaMuda },
         { path: 'transferencia', component: RutaMuda },
@@ -212,7 +224,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
 
@@ -222,7 +234,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con un método de Wompi, crea el pedido, pide el intento y redirige al Web Checkout', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso();
     const pagos = new RepositorioPagosFalso();
 
@@ -248,7 +260,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con transferencia manual, navega a la pantalla de transferencia sin pedir intento de pago', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TRANSFERENCIA_MANUAL' }));
     const pagos = new RepositorioPagosFalso();
 
@@ -279,7 +291,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con contraentrega, navega a la pantalla de estado', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
@@ -298,7 +310,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('si crear el pedido falla, muestra un error y no navega', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatos(
       'TARJETA',
@@ -324,7 +336,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('un reintento no vuelve a crear el pedido si ya existe uno de este intento', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
@@ -344,5 +356,47 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
     await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
+  });
+
+  // Las dos caras de la misma decisión: el carrito se limpia cuando ya no hay vuelta atrás, no
+  // cuando se crea el pedido. Ver el comentario en `confirmar()`.
+  it('al terminar el pedido, el carrito queda limpio', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => {
+      expect(carrito.carritoId()).toBeNull();
+      expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
+    });
+  });
+
+  it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TARJETA' }));
+
+    const { fixture } = await renderConDatos(
+      'TARJETA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosQueFalla(),
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText('No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.'),
+    ).toBeTruthy();
+    expect(carrito.carritoId()).toBe('carrito-1');
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
   });
 });

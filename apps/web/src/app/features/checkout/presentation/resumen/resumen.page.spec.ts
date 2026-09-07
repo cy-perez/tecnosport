@@ -11,14 +11,13 @@ import { CheckoutStore } from '../../application/checkout.store';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { SnapshotLinea } from '../../../carrito/domain/snapshot-linea.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
-import { guardarCarritoIdAlmacenado } from '../../../carrito/infrastructure/carrito-id.almacen';
-import { guardarSnapshot } from '../../../carrito/infrastructure/snapshot-lineas.almacen';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { ResumenPage } from './resumen.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
+import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../../testing/carrito';
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -103,6 +102,7 @@ async function renderResumen(carrito: RepositorioCarrito) {
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([{ path: 'metodo-pago', component: MetodoPagoMudo }]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
@@ -130,8 +130,8 @@ describe('ResumenPage', () => {
   });
 
   it('con líneas, muestra el producto, el subtotal y el formulario', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
 
@@ -142,8 +142,8 @@ describe('ResumenPage', () => {
   });
 
   it('elegir retiro en punto oculta los campos de dirección', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
@@ -154,8 +154,8 @@ describe('ResumenPage', () => {
   });
 
   it('enviar el formulario vacío muestra los errores y no guarda nada', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
@@ -171,8 +171,8 @@ describe('ResumenPage', () => {
   });
 
   it('con datos válidos, guarda el borrador con la dirección resuelta', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
@@ -203,8 +203,8 @@ describe('ResumenPage', () => {
   // `docs/06-testing.md`: axe automatizado en las pantallas clave. Esta es la
   // que más formulario tiene: correo, tipo de entrega y dirección.
   it('no tiene violaciones de WCAG 2.2 AA', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
     const { container } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByLabelText('Correo electrónico');

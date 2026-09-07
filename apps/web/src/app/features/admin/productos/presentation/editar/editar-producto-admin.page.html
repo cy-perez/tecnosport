@@ -71,7 +71,7 @@
 
       @if (consulta.data()?.imagenPrincipalUrl; as urlActual) {
         <img
-          class="size-[var(--ancho-vista-previa)] object-cover"
+          class="size-[var(--ancho-min-vista-previa)] object-cover"
           [src]="urlActual"
           [alt]="'admin.productos.editar.imagenPrincipal.actual' | transloco"
           width="200"
@@ -81,7 +81,7 @@
 
       @if (previsualizacionUrl(); as previsualizacion) {
         <img
-          class="size-[var(--ancho-vista-previa)] object-cover"
+          class="size-[var(--ancho-min-vista-previa)] object-cover"
           [src]="previsualizacion"
           [alt]="'admin.productos.editar.imagenPrincipal.previsualizacion' | transloco"
           width="200"

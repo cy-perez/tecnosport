@@ -18,12 +18,12 @@
       </a>
     } @else {
       <div class="flex flex-col">
-        @for (linea of carrito.lineas; track linea.id) {
+        @for (item of lineas(); track item.linea.id) {
           <app-linea-carrito
-            [linea]="linea"
-            [snapshot]="leerSnapshot(linea.varianteId)"
-            (cantidadCambio)="cambiarCantidad(linea.id, $event)"
-            (eliminar)="eliminarLinea(linea.id)"
+            [linea]="item.linea"
+            [snapshot]="item.snapshot"
+            (cantidadCambio)="cambiarCantidad(item.linea.id, $event)"
+            (eliminar)="eliminarLinea(item.linea.id)"
           />
         }
       </div>

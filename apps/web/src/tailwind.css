@@ -152,18 +152,11 @@
   --spacing-64: var(--esp-64);
   --spacing-96: var(--esp-96);
 
-  /* HUECOS CONOCIDOS DEL KIT. Los dos valores que el sistema usa y
-     `tokens.json` no define. Viven aquí, con nombre y en un solo sitio, en vez
-     de repetidos como píxeles sueltos en cada componente — que es como estaban
-     en el SCSS.
-
-     `tactil`: los 44x44 px de objetivo táctil mínimo que la tabla de medidas de
-     `docs/04-ui-marca.md` exige y no tokeniza.
-     `insignia`: el contador del carrito en el encabezado, 20x20.
-
-     TODO: pedir `--tactil-min` y `--insignia` en el tokens.json del kit. */
-  --spacing-tactil: 44px;
-  --spacing-insignia: 20px;
+  /* Objetivo táctil (WCAG 2.2 AA, 2.5.8) e insignia del contador del carrito.
+     Fueron huecos del kit hasta que se pidieron: ahora salen de `tokens.json`
+     como cualquier otra medida, y aquí solo se les cuelga una utilidad. */
+  --spacing-tactil: var(--control-tactil);
+  --spacing-insignia: var(--control-insignia);
 
   /* SOMBRA */
   --shadow-sm: var(--sombra-sm);
@@ -245,10 +238,9 @@
 
 /* El brillo de carga. Va aquí y no en un `.scss` de componente porque es una
    primitiva del sistema —la usan trece pantallas— y porque unos `@keyframes`
-   duplicados trece veces son trece sitios donde desincronizarse. Los colores
-   salen de tokens; la duración y la curva **no**, porque `tokens.json` no
-   define valores de movimiento. Es el mismo hueco que impide animar el menú
-   móvil. TODO: pedir tokens de movimiento al kit. */
+   duplicados trece veces son trece sitios donde desincronizarse. Todo sale de
+   tokens, también la duración y la curva: `lenta` es la escala pensada para lo
+   ambiental que se repite, no para una transición. */
 @utility esqueleto {
   background-image: linear-gradient(
     90deg,
@@ -257,7 +249,7 @@
     var(--color-superficie-alt) 75%
   );
   background-size: 200% 100%;
-  animation: esqueleto-brillo 1.4s ease-in-out infinite;
+  animation: esqueleto-brillo var(--mov-lenta) var(--curva-suave) infinite;
 }
 
 @keyframes esqueleto-brillo {
@@ -297,39 +289,25 @@
   -webkit-user-drag: none;
 }
 
-/* Mínimos de columna de las rejillas que se reparten solas
-   (`repeat(auto-fill, minmax(X, 1fr))`). El kit no define ninguno: son tres
-   valores elegidos a ojo en tres pantallas distintas, y por eso están aquí
-   juntos en vez de repartidos por las plantillas — así se ve que son tres y
-   que probablemente deberían ser uno.
+/* Los mínimos de columna de las rejillas que se reparten solas
+   (`repeat(auto-fill, minmax(X, 1fr))`) ya no viven aquí: se le preguntó al kit
+   si eran un solo valor de sistema y la respuesta fue que no. Son cuatro
+   —`--ancho-min-filtro`, `-eje`, `-tarjeta`, `-vista-previa`— y salen de
+   `tokens.css`. Que `eje` y `vista-previa` coincidan hoy en 200px es una
+   coincidencia, no un valor compartido: se encogen por motivos distintos.
 
-   No van en `@theme` porque no generan utilidades: se usan dentro de un valor
-   arbitrario, que es la escapatoria que la regla dura #2 permite cuando apunta
-   a una variable.
+   No generan utilidad a propósito: se usan dentro de un valor arbitrario, que es
+   la escapatoria que la regla dura #2 permite cuando apunta a una variable. */
 
-   TODO: preguntar al kit si esto es un solo valor de sistema. */
-:root {
-  --ancho-min-filtro: 160px;
-  --ancho-min-eje: 200px;
-  --ancho-min-tarjeta: 220px;
-  /* La vista previa de la imagen principal en el panel de productos. */
-  --ancho-vista-previa: 200px;
-}
+/* MOVIMIENTO. Duración y curva salen del kit desde que se pidió la escala; la
+   *distancia* siempre salió de un token (`--esp-8`), porque desplazar ocho
+   píxeles es una decisión de espacio.
 
-/* MOVIMIENTO. Otro hueco del kit: `tokens.json` no define ninguna duración ni
-   curva, y una animación necesita las dos. Los valores están aquí, con nombre,
-   en vez de sueltos en una plantilla.
-
-   La *distancia* sí sale de un token (`--esp-8`): desplazar ocho píxeles es una
-   decisión de espacio, y esa el kit sí la tiene.
-
-   Entrar dura un poco más que salir a propósito: cerrar tiene que sentirse
-   inmediato, abrir puede acompañar.
-
-   TODO: pedir una escala de movimiento al kit. */
+   Entrar dura más que salir a propósito, y eso lo decide el kit, no esta hoja:
+   cerrar tiene que sentirse inmediato, abrir puede acompañar. */
 @theme {
-  --animate-desplegar: desplegar 160ms ease-out;
-  --animate-plegar: plegar 120ms ease-in;
+  --animate-desplegar: desplegar var(--mov-media) var(--curva-entrada);
+  --animate-plegar: plegar var(--mov-rapida) var(--curva-salida);
 }
 
 @keyframes desplegar {

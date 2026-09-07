@@ -8,6 +8,7 @@ import es from '../../../assets/i18n/es.json';
 import { REPOSITORIO_SESION } from '../../core/autenticacion/repositorio-sesion.puerto';
 import { REPOSITORIO_CARRITO } from '../../features/carrito/domain/repositorio-carrito.puerto';
 import { Encabezado } from './encabezado';
+import { proveerAlmacenesCarrito } from '../../../testing/carrito';
 
 // Una ruta comodín, porque las pruebas hacen clic en `routerLink` de verdad:
 // con `provideRouter([])` la navegación revienta con NG04002 antes de que
@@ -43,6 +44,7 @@ async function renderEncabezado() {
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([{ path: '**', component: PantallaVacia }]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },

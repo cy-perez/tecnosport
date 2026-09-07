@@ -4,7 +4,9 @@ import { render } from '@testing-library/angular';
 import { Carrito } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
+import { CarritoIdLocalStorageAlmacen } from '../infrastructure/carrito-id.almacen';
 import { CarritoStore } from './carrito.store';
+import { proveerAlmacenesCarrito } from '../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   llamadasCrear = 0;
@@ -65,8 +67,8 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
 /**
  * El adaptador de Angular de TanStack Query registra sus tareas pendientes dentro de un `effect()`
  * agendado async (mismo hallazgo de ADR-0011, acá en el momento en que la consulta del carrito pasa
- * de deshabilitada a habilitada). `fixture.whenStable()` no alcanza a esperar ese registro — una
- * pequeña espera real, mismo recurso que ya usa `filtros-productos.spec.ts` para el debounce.
+ * de deshabilitada a habilitada). `fixture.whenStable()` no alcanza a esperar ese registro, así que
+ * se espera por el resultado con `vi.waitFor`, nunca por un tiempo fijo.
  */
 
 @Component({ selector: 'app-anfitrion-de-prueba', template: '' })
@@ -77,6 +79,7 @@ class AnfitrionDePrueba {
 async function renderConRepositorio(repositorio: RepositorioCarrito) {
   const { fixture } = await render(AnfitrionDePrueba, {
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useValue: repositorio },
     ],
@@ -130,5 +133,18 @@ describe('CarritoStore', () => {
 
     await store.eliminarLinea(lineaId);
     await vi.waitFor(() => expect(store.cantidadTotal()).toBe(0));
+  });
+
+  it('limpiar deja el carrito sin id, sin líneas y sin nada guardado', async () => {
+    const repositorio = new RepositorioCarritoFalso();
+    const { store } = await renderConRepositorio(repositorio);
+    await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
+    await vi.waitFor(() => expect(store.cantidadTotal()).toBe(2));
+
+    store.limpiar();
+
+    expect(store.carritoId()).toBeNull();
+    expect(store.cantidadTotal()).toBe(0);
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
   });
 });

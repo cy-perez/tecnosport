@@ -3,8 +3,8 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { Carrito } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
-import { guardarCarritoIdAlmacenado, leerCarritoIdAlmacenado } from '../infrastructure/carrito-id.almacen';
-import { guardarSnapshot, leerSnapshot } from '../infrastructure/snapshot-lineas.almacen';
+import { ALMACEN_CARRITO_ID } from '../domain/almacen-carrito-id.puerto';
+import { ALMACEN_SNAPSHOT_LINEAS } from '../domain/almacen-snapshot-lineas.puerto';
 
 /**
  * Único en toda la app (`providedIn: 'root'`), no una función de fábrica como
@@ -21,13 +21,15 @@ import { guardarSnapshot, leerSnapshot } from '../infrastructure/snapshot-lineas
 @Injectable({ providedIn: 'root' })
 export class CarritoStore {
   private readonly repositorio = inject(REPOSITORIO_CARRITO);
+  private readonly almacenCarritoId = inject(ALMACEN_CARRITO_ID);
+  private readonly almacenSnapshots = inject(ALMACEN_SNAPSHOT_LINEAS);
   private readonly queryClient = inject(QueryClient);
 
   readonly carritoId = signal<string | null>(null);
 
   constructor() {
     afterNextRender(() => {
-      const id = leerCarritoIdAlmacenado();
+      const id = this.almacenCarritoId.leer();
       if (id) {
         this.carritoId.set(id);
       }
@@ -55,7 +57,7 @@ export class CarritoStore {
    * pintar nombre/precio/imagen fuera de la propia página del carrito —
    * el resumen del checkout la usa con el mismo criterio). */
   snapshotDeLinea(varianteId: string): SnapshotLinea | null {
-    return leerSnapshot(varianteId);
+    return this.almacenSnapshots.leer(varianteId);
   }
 
   private readonly mutacionAgregar = injectMutation(() => ({
@@ -75,8 +77,25 @@ export class CarritoStore {
   readonly agregando = computed(() => this.mutacionAgregar.isPending());
 
   async agregarAlCarrito(varianteId: string, cantidad: number, snapshot: SnapshotLinea): Promise<void> {
-    guardarSnapshot(snapshot);
+    this.almacenSnapshots.guardar(snapshot);
     await this.mutacionAgregar.mutateAsync({ varianteId, cantidad });
+  }
+
+  /**
+   * El carrito dejó de existir porque sus líneas ya son de un pedido. No se llama al confirmar
+   * —ahí el pedido todavía puede fallar y el reintento necesita el carrito intacto— sino cuando el
+   * camino de pago ya salió bien y no hay vuelta atrás. Ver `checkout/presentation/confirmar`.
+   *
+   * Las fotos de línea se quedan: no estorban, se pisan solas al volver a agregar, y borrarlas
+   * dejaría sin nombre ni precio a cualquier pantalla que todavía las esté pintando.
+   */
+  limpiar(): void {
+    const id = this.carritoId();
+    this.almacenCarritoId.borrar();
+    this.carritoId.set(null);
+    if (id) {
+      this.queryClient.removeQueries({ queryKey: ['carrito', id] });
+    }
   }
 
   async actualizarCantidad(lineaId: string, cantidad: number): Promise<void> {
@@ -99,7 +118,7 @@ export class CarritoStore {
       // consulta no tiene motivo para refetchear (staleTime).
       this.actualizarCache(nuevo);
       this.carritoId.set(id);
-      guardarCarritoIdAlmacenado(id);
+      this.almacenCarritoId.guardar(id);
     }
     const actualizado = await this.repositorio.agregarLinea(id, varianteId, cantidad);
     this.actualizarCache(actualizado);

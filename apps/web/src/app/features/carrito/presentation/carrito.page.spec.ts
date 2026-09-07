@@ -8,10 +8,10 @@ import esCarrito from '../../../../assets/i18n/scopes/carrito/es.json';
 import { Carrito } from '../domain/carrito.model';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
-import { guardarCarritoIdAlmacenado } from '../infrastructure/carrito-id.almacen';
-import { guardarSnapshot } from '../infrastructure/snapshot-lineas.almacen';
+import { CarritoStore } from '../application/carrito.store';
 import { CarritoPage } from './carrito.page';
 import { esperarSinViolaciones } from '../../../../testing/axe';
+import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -69,6 +69,7 @@ async function renderCarrito(repositorio: RepositorioCarrito) {
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useValue: repositorio },
@@ -88,8 +89,8 @@ describe('CarritoPage', () => {
   });
 
   it('con líneas, muestra cada producto y el total', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
     const carrito: Carrito = {
       id: 'carrito-1',
       usuarioId: null,
@@ -105,8 +106,8 @@ describe('CarritoPage', () => {
   });
 
   it('eliminar una línea la quita de la pantalla', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
     const carrito: Carrito = {
       id: 'carrito-1',
       usuarioId: null,
@@ -125,7 +126,7 @@ describe('CarritoPage', () => {
   });
 
   it('con un carrito vacío en el servidor, muestra el mensaje de vacío', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const carrito: Carrito = {
       id: 'carrito-1',
       usuarioId: null,
@@ -140,8 +141,8 @@ describe('CarritoPage', () => {
 
   // `docs/06-testing.md`: axe automatizado en las pantallas clave.
   it('no tiene violaciones de WCAG 2.2 AA', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
-    guardarSnapshot(snapshotDePrueba('variante-1'));
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
     const { container } = await renderCarrito(
       new RepositorioCarritoFalso({
         id: 'carrito-1',
@@ -153,5 +154,28 @@ describe('CarritoPage', () => {
     await screen.findByText('Morral urbano');
 
     await esperarSinViolaciones(container);
+  });
+
+  it('no vuelve a leer la foto de cada línea en cada ciclo de detección', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderCarrito(
+      new RepositorioCarritoFalso({
+        id: 'carrito-1',
+        usuarioId: null,
+        creadoEn: '2026-01-01T00:00:00Z',
+        lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      }),
+    );
+    await screen.findByText('Morral urbano');
+
+    // Con la llamada en la plantilla esto crecía con cada ciclo: era una lectura de
+    // `localStorage` por línea, siempre. Desde el `computed` no se recalcula si el carrito no
+    // cambió, así que el espía no vuelve a verse llamado.
+    const espia = vi.spyOn(fixture.debugElement.injector.get(CarritoStore), 'snapshotDeLinea');
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(espia).not.toHaveBeenCalled();
   });
 });

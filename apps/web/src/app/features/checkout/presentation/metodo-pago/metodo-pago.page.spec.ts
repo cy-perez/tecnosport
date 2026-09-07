@@ -8,7 +8,6 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
-import { guardarCarritoIdAlmacenado } from '../../../carrito/infrastructure/carrito-id.almacen';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { DatosEntrega } from '../../domain/pedido.comandos';
@@ -16,6 +15,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { MetodoPagoPage } from './metodo-pago.page';
+import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -112,6 +112,7 @@ async function renderConDatosEntrega(carrito: RepositorioCarrito, pedidos: Repos
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'resumen', component: RutaMuda },
         { path: 'confirmar', component: RutaMuda },
@@ -145,6 +146,7 @@ describe('MetodoPagoPage', () => {
         }),
       ],
       providers: [
+      ...proveerAlmacenesCarrito(),
         provideRouter([{ path: 'resumen', component: RutaMuda }]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CARRITO, useValue: new RepositorioCarritoFalso(null) },
@@ -157,7 +159,7 @@ describe('MetodoPagoPage', () => {
   });
 
   it('con datos de entrega y carrito, muestra los métodos disponibles', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
@@ -169,7 +171,7 @@ describe('MetodoPagoPage', () => {
   });
 
   it('el botón continuar arranca deshabilitado hasta elegir un método', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatosEntrega(
       new RepositorioCarritoFalso(CARRITO_CON_LINEAS),

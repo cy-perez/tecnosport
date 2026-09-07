@@ -25,13 +25,18 @@
   <div class="flex flex-col gap-4 p-16">
     <p class="m-0 text-xs uppercase text-ts-texto-suave">{{ producto().marca.nombre }}</p>
     <h3 class="m-0 font-texto text-base font-medio text-ts-texto">{{ producto().nombre }}</h3>
-    <!-- `flex-wrap` porque el pie **no cabe en ninguna tarjeta**: medido en el
-           navegador con datos reales, a las cuatro les faltan entre 10 y 38 px.
-           Sin `wrap` los ítems se comprimen y el `overflow-hidden` de arriba
-           recorta la etiqueta ("Disponibl"). Ensanchar la columna sería apostar
-           a que ningún precio crezca; envolver es lo único que no trunca con
-           ningún precio. Venía roto desde antes de pasar a Tailwind. -->
-    <div class="mt-8 flex flex-wrap items-center justify-between gap-8">
+    <!-- Apilado, no en fila. El pie **no cabía en ninguna tarjeta**: medido en el
+           navegador con datos reales, a las cuatro les faltaban entre 10 y 38 px,
+           y sin envolver el `overflow-hidden` de arriba recortaba la etiqueta
+           ("Disponibl"). `flex-wrap` lo tapó, pero deja el resultado a merced de
+           lo largo que sea el precio: la misma rejilla mezcla tarjetas en una
+           línea y en dos, y los precios de una fila dejan de alinearse.
+
+           En columna cada elemento tiene el ancho completo, así que no trunca con
+           ningún precio —ni con "Desde $1.250.000"— y todas las tarjetas quedan
+           iguales. Apilar es lo que el `wrap` terminaba haciendo casi siempre;
+           esto solo lo hace predecible. -->
+    <div class="mt-8 flex flex-col items-start gap-4">
       @if (precio(); as precioValor) {
         <!-- El prefijo se traduce aquí y no dentro de `ts-precio`: esa clave
              vive en el scope perezoso del catálogo, y `ts-precio` lo comparten

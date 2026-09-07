@@ -32,10 +32,12 @@ para y dime por qué antes de escribir el código.
    `*.routes.ts` sí puede importar `infrastructure` —es el proveedor de la ruta
    el que elige la implementación— y los `*.spec.ts` se informan aparte sin
    fallar, porque montar un escenario no es desplegar código.
-   **Hay tres violaciones conocidas y sin resolver**, todas en el carrito: el
-   store y la página leen `localStorage` a través de adaptadores de
-   `infrastructure` en vez de por un puerto de `domain`. Arreglarlo es tocar
-   lógica de negocio, así que está a la espera de una decisión.
+   **No queda ninguna violación en producción**, y por eso `npm run capas` ya
+   corre dentro de `npm run verificar` — es el primer paso, antes del lint. Las
+   tres que hubo estaban en el carrito, leyendo `localStorage` desde
+   `application` y `presentation`; se resolvieron con dos puertos
+   (`AlmacenCarritoId`, `AlmacenSnapshotLineas`) provistos en `app.config.ts`.
+   Un guardián que no está enganchado al build es un guardián opcional.
 2. **Ningún HEX, ningún píxel suelto, ninguna fuente literal en el frontend.**
    Todo sale de `packages/marca/tokens.css`. Si falta un valor, el sistema está
    incompleto: se añade al `tokens.json` del kit y se regenera.
@@ -45,10 +47,10 @@ para y dime por qué antes de escribir el código.
    Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
    todo" lo sostiene la regla, no el compilador.
    La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
-   Quedan dos literales, los dos justificados y documentados en
-   `apps/web/src/tailwind.css`: los puntos de quiebre, porque una media query no
-   puede leer una propiedad personalizada de CSS, y los 44 px de objetivo táctil,
-   que `tokens.json` no define.
+   Queda **un** literal, y es una limitación de CSS, no una decisión: los puntos
+   de quiebre, porque una media query no puede leer una propiedad personalizada.
+   Todo lo demás —objetivo táctil, insignia, mínimos de rejilla, duraciones y
+   curvas de movimiento— se pidió al kit y sale de `tokens.json`.
 3. **No se edita `tokens.css` ni `fuentes.css` a mano.** Son generados. Tailwind
    los *consume*; no los reemplaza ni los reescribe.
 4. **Ningún texto visible escrito directo en una plantilla.** Todo pasa por
