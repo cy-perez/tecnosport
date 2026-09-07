@@ -82,6 +82,18 @@ Las APIs del navegador (cámara, sensores, canvas) se tratan como infraestructur
 detrás de un puerto, con implementación falsa para pruebas. Detalle en
 `10-captura-360.md`.
 
+**Qué se renderiza en el servidor.** Todo, menos `/admin`. El catálogo es
+contenido vivo y va con SSR por solicitud, nunca prerenderizado en el build. El
+panel administrativo se sirve **solo en el cliente** (`RenderMode.Client` en
+`app.routes.server.ts`): el SSR no reenvía la cookie `HttpOnly` de refresco, así
+que su guardia no tiene con qué decidir en el servidor y se abstiene — el
+servidor pintaba la pantalla protegida y un instante después el cliente
+redirigía al ingreso. No cuesta nada cerrarlo así, porque `/admin` no necesita
+SEO ni primer pintado rápido y sus datos ya venían del cliente, autenticados.
+Que quede claro qué es esto y qué no: es sobre **lo que se alcanza a ver**, no
+sobre a qué se alcanza a acceder. La protección real es del backend, que exige
+el rol en cada endpoint (regla dura #7).
+
 ## Qué no es esta arquitectura
 
 - **No son microservicios.** Es un monolito modular desplegado como un servicio.

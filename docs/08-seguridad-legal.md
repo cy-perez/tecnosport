@@ -69,6 +69,14 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   frase completa.
 - Autorización verificada por recurso: que un usuario autenticado no pueda leer el
   pedido de otro cambiando el identificador.
+- **Ningún redirect abierto.** `adminGuard` anota en `?destino=` a dónde iba
+  quien llegó sin sesión, y el formulario de `ADMIN` vuelve ahí al entrar. Ese
+  valor viene de la URL, o sea del usuario: se acepta **solo** si es una ruta
+  relativa de este sitio (empieza por `/`, no por `//`) y cae dentro de
+  `/admin/`; cualquier otra cosa cae al panel. Sin ese filtro, un enlace
+  preparado con `?destino=https://otro-sitio` convertiría el formulario de
+  ingreso en un salto a otro sitio con la credencial recién escrita, que es la
+  forma más barata de robar una sesión de `ADMIN`.
 - Registros sin datos personales ni tokens. Nunca se registra el cuerpo completo
   de una petición de checkout.
 - Dependencias revisadas automáticamente y actualizadas.

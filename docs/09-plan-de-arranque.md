@@ -2100,6 +2100,103 @@ la nueva. Las pruebas se comprobaron con dos mutaciones —no conservar la key
 nueva, y recortar el prefijo a solo el id del producto—; cada una la atrapó la
 prueba que le tocaba.
 
+### El cierre formal de la fase, y el enlace que faltaba
+
+2026-09-07. Al recorrer la regla de cierre punto por punto apareció que **la
+Fase 5 no cumplía el punto 2**, aunque la pantalla nueva de la fase sí estaba
+enlazada: el enlace roto estaba una casilla más arriba.
+
+`/admin/productos/{id}/captura-360` se alcanza desde la lista de productos del
+panel, correcto desde el día que se construyó. Pero **al panel no se llegaba con
+clics**. El único enlace a `/admin` en toda la aplicación vive en el encabezado
+detrás de `@if (sesion.esAdmin())`, o sea que aparece cuando ya hay sesión de
+`ADMIN` — que es justo lo que no se puede conseguir sin entrar. Y la otra puerta
+no servía: `IniciarSesionClientePage` **rechaza a propósito** cualquier sesión
+que no sea `CLIENTE`, así que entrar con el correo del admin por
+`/cuenta/iniciar-sesion` cierra la sesión y muestra un error. La única forma de
+llegar era teclear `/admin`.
+
+Es la misma deuda que las fases 3 y 4 ya habían pagado una vez, con una vuelta
+de tuerca: esta vez la pantalla nueva **sí** estaba enlazada, y el recorrido
+fallaba igual. Verificar el enlace de la pantalla nueva no basta; hay que
+recorrer la cadena entera desde la portada, que es literalmente lo que la regla
+dice y lo que no se estaba haciendo.
+
+**El arreglo**: "Panel administrativo" en el pie, visible siempre y en los dos
+idiomas, apuntando a `/admin` y no al formulario — con sesión cae en el panel, y
+sin ella `adminGuard` redirige al ingreso anotando el destino, que ejercita de
+paso el arreglo del `?destino=`. Va siempre visible porque un enlace que solo
+aparece con sesión de `ADMIN` no sirve para llegar a iniciarla. No es un secreto
+que se filtre: la protección real es del backend, que exige el rol en cada
+endpoint. Su prueba se comprobó mutando el destino del enlace.
+
+**El recorrido completo, con clics reales** contra `ng serve` + `bootRun` +
+PostgreSQL: portada → tenis (visor 360 girando: un arrastre de 160 px avanza
+tres fotogramas, "Fotograma 4 de 8", la pista se va con la primera interacción)
+→ pie → Panel administrativo → Productos → Capturar 360, con el paso 1 del
+asistente pintando su lista de preparación y el selector de 4/8/16 fotogramas.
+Sin sesión, `/admin/productos` redirige a
+`/admin/iniciar-sesion?destino=%2Fes%2Fadmin%2Fproductos` **sin que parpadee la
+pantalla protegida** — el `RenderMode.Client` haciendo lo suyo. En consola, solo
+el `NG02956` ya conocido.
+
+**Y una corrección sobre la herramienta, que venía arrastrándose desde la Fase
+4:** la extensión de automatización de Chrome **sí llega a `localhost`** en esta
+máquina. Las notas de las fases 4 y 5 que dicen lo contrario quedan como estaban
+—describen lo que se creía entonces—, pero la limitación no existe y no hay que
+seguir asumiéndola. Lo que sigue necesitando un teléfono de verdad es lo que
+siempre necesitó uno: cámara, sensor de orientación y gesto táctil.
+
+**Documentos corregidos en este cierre**, decisiones que se habían tomado
+durante la fase y vivían solo aquí o en un comentario del código:
+
+- `apps/web/README.md` **decía una mentira que rompía el procedimiento**:
+  afirmaba que `angular.json` ya traía `.trycloudflare.com` en
+  `security.allowedHosts`. No lo trae —dice `localhost`— y este mismo documento
+  explicaba por qué no debía traerlo. Ahora el procedimiento lleva la bandera
+  `ng serve --allowed-hosts`, que es booleana y acepta cualquier host.
+- `docs/01-arquitectura.md`: qué se renderiza en el servidor y por qué `/admin`
+  no.
+- `docs/06-testing.md`: **cómo se comprueba que una prueba prueba algo**
+  (mutar la implementación), con los tres casos de la fase en que una prueba
+  verde no probaba nada; y los puertos de dispositivo como estrategia, con la
+  lista de lo que solo da un teléfono.
+- `docs/08-seguridad-legal.md`: el filtro de redirect abierto del `?destino=`.
+- `apps/web/CLAUDE.md`: `urlPreferida` como regla única de formato, el valor por
+  omisión de `ts-galeria.prioritaria`, la congelación de las entradas de
+  `NgOptimizedImage`, y **no usar la identidad de un objeto como señal de
+  cambio** frente a una revalidación en segundo plano.
+
+**Fase 5 cerrada** (`npm run verificar`: lint limpio, 439 pruebas de Vitest,
+`ng build` y `gradlew.bat build`), ahora sí con las tres condiciones de la regla
+de cierre cumplidas y verificadas.
+
+**Lo que queda abierto**, anotado para que nadie lo descubra otra vez:
+
+- **De la revisión adversarial del visor**, cuatro hallazgos vivos: un fotograma
+  roto se salta en silencio (ni log ni señal); la pista sale en cada visita en
+  vez de "la primera vez" como pide `docs/10-captura-360.md`; sin captura de
+  puntero, soltar fuera del marco deja `arrastrando` en verdadero; y
+  `guardarSetRotacion` del sembrador no tiene prueba.
+- **Tercera copia del host literal de imágenes** en `SembradorCatalogo`, contra
+  la regla dura #5. Perfil `local`, pero ya son tres.
+- **`NG02956`**: sin `preconnect` al host de imágenes. Sigue esperando el host
+  real, porque el arreglo es una URL literal en el `<head>` que la regla dura #5
+  prohíbe.
+- **El presupuesto de bundle** se pasa por 3,54 kB de los 600 kB. No lo causó
+  esta fase (comprobado contra `main` en su momento): el código del visor y del
+  asistente va en trozos perezosos.
+- **`TODO(negocio)` `DIAS_RETENCION_VERSIONES_IMAGEN`**: los 30 días de
+  expiración de versiones no vigentes del bucket son un valor de arranque, no una
+  decisión tomada.
+- **`TODO(negocio)`** de la copia del hero y su imagen 4:3 de 1200x900, heredado
+  de la Fase 4.
+- **Cosmético, en la lista de productos del panel**: "Editar" y "Capturar 360"
+  se pintan pegados ("EditarCapturar 360"), sin separación.
+- **El carrito sigue sin vencer** (Fase 2) y `Playwright` sigue sin existir,
+  aunque `docs/06-testing.md` lo nombra como la herramienta de los recorridos
+  completos. Los dos son de la Fase 6.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,

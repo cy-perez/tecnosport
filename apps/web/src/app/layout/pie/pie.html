@@ -14,6 +14,16 @@
         {{ 'encabezado.catalogo' | transloco }}
       </a>
       <a class="pie__enlace" [routerLink]="['/', idioma(), 'carrito']">{{ 'pie.carrito' | transloco }}</a>
+      <!--
+        La única entrada al panel desde la vitrina. Apunta a `/admin` y no al
+        formulario: con sesión de ADMIN cae en el panel, y sin ella `adminGuard`
+        redirige al ingreso anotando el destino. Sin este enlace, el panel solo
+        se alcanzaba tecleando la ruta, que es justo lo que la regla de cierre
+        de fase de `docs/09-plan-de-arranque.md` prohíbe. Va siempre visible a
+        propósito: el enlace que solo aparece cuando ya hay sesión de ADMIN —el
+        del encabezado— no sirve para llegar a iniciarla.
+      -->
+      <a class="pie__enlace" [routerLink]="['/', idioma(), 'admin']">{{ 'pie.panel_admin' | transloco }}</a>
     </nav>
 
     <address class="pie__datos">

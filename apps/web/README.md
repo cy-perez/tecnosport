@@ -30,16 +30,20 @@ configurar.
 ```
 docker compose up -d                     # desde la raíz
 gradlew.bat bootRun                      # en apps/api
-npm run dev --workspace=apps/web         # desde la raíz
+npm run dev --workspace=apps/web -- --allowed-hosts   # desde la raíz
 cloudflared tunnel --url http://localhost:4200
 ```
 
 El túnel imprime una URL `https://algo-aleatorio.trycloudflare.com`. Dos cosas
 tienen que conocerla:
 
-- **El dev server.** `angular.json` ya trae `.trycloudflare.com` en
-  `security.allowedHosts` de la configuración de desarrollo; sin eso, el servidor
-  rechaza el host y la página no carga.
+- **El dev server**, por eso la bandera `--allowed-hosts` de arriba; sin ella el
+  servidor rechaza el host del túnel y la página no carga. `angular.json` **no**
+  lo resuelve: su `security.allowedHosts` de desarrollo dice `localhost` y solo
+  acepta hosts exactos —el comodín `.trycloudflare.com` no le sirve—, y un host
+  efímero no tiene por qué quedar versionado. La bandera de `ng serve` es
+  booleana: sin valor, acepta cualquier host, que es justo lo que hace falta
+  para un host que cambia en cada corrida.
 - **El bucket de imágenes**, o el `PUT` firmado muere en el preflight de CORS:
 
   ```

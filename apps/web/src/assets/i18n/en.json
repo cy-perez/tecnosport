@@ -35,7 +35,8 @@
     "copyright": "© {{anio}} Tecno Sport",
     "navegacion": "Footer navigation",
     "portada": "Home",
-    "carrito": "Cart"
+    "carrito": "Cart",
+    "panel_admin": "Admin panel"
   },
   "portada": {
     "titulo": "Sportswear, footwear, bags and phones",

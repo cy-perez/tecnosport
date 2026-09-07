@@ -35,7 +35,8 @@
     "copyright": "© {{anio}} Tecno Sport",
     "navegacion": "Navegación del pie",
     "portada": "Portada",
-    "carrito": "Carrito"
+    "carrito": "Carrito",
+    "panel_admin": "Panel administrativo"
   },
   "portada": {
     "titulo": "Ropa y calzado deportivo, bolsos y celulares",

@@ -71,7 +71,11 @@ implementación. ESLint con reglas de límites lo verifica.
   liga con `[attr.aria-label]` sobre el `<button>` interno. Cualquier
   componente compartido que envuelva un control nativo y necesite exponer
   ARIA más allá del contenido proyectado necesita el mismo input explícito.
-- **Imágenes:** `NgOptimizedImage` siempre, en WebP.
+- **Imágenes:** `NgOptimizedImage` siempre, en WebP **con el original de
+  respaldo**. Esa elección es **una sola regla**, `urlPreferida` en el dominio
+  del catálogo, y toda plantilla pasa por ella. No se escribe la expresión
+  suelta en cada plantilla: así fue como el visor terminó sirviendo la WebP y la
+  galería el original sin que nadie lo hubiera decidido.
   - **Con `width` y `height`** cuando la imagen se pinta con la relación de
     aspecto del archivo. **En modo `fill`, dentro de un marco con
     `position: relative` y `aspect-ratio`, cuando el recorte lo decide el CSS**
@@ -86,7 +90,20 @@ implementación. ESLint con reglas de límites lo verifica.
     tiene `<img>` de hero, su hero es un bloque de CSS, así que el LCP le toca a
     esa tarjeta (`NG02955`). Por eso `ts-tarjeta-producto` recibe
     `prioritaria` como `input()` en vez de decidirlo por su cuenta: quién es la
-    primera lo sabe la pantalla, no el componente.
+    primera lo sabe la pantalla, no el componente. `ts-galeria` tiene el mismo
+    input y **por omisión vale `false`**: el valor por defecto tiene que ser el
+    que no hace daño, así que una pantalla nueva que se olvide de decidir se
+    lleva una imagen sin priorizar y no una segunda candidata a LCP compitiendo
+    con la de verdad. La pantalla lo declara explícito aunque coincida con el
+    defecto.
+  - **Las entradas de `NgOptimizedImage` distintas de `ngSrc` están congeladas
+    tras inicializar** (`assertNoPostInitInputChange`, comprobado en la fuente de
+    `@angular/common`). `ngSrc` sí se puede cambiar en caliente — por eso el
+    visor 360 es un solo `<img>` que cambia de `ngSrc` y no N apilados. Y por eso
+    una plantilla que muestre la misma imagen con `prioritaria` distinta según la
+    rama repite el elemento en cada rama con un literal, en vez de ligar el input
+    a una expresión: ligarlo revienta al navegar entre dos pantallas que no
+    coinciden.
 - **SSR:** nada de `window`, `document`, `localStorage`, `navigator` ni sensores
   fuera de un guardia de plataforma. Las consultas de la primera pantalla se
   precargan en el `resolve` de la ruta, no dentro del componente — ver "Notas
@@ -158,6 +175,20 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   `effect()` async): en una prueba, `fixture.whenStable()` no alcanza a
   esperar ese registro — hace falta una espera real (`esperar(ms)`, mismo
   recurso que ya usa `filtros-productos.spec.ts` para el debounce).
+- **La identidad de un objeto no es señal de "esto cambió".** Una revalidación
+  en segundo plano (cambio de pestaña pasado el `staleTime`) devuelve un objeto
+  nuevo si cambió *cualquier* cosa del producto —el precio, la existencia—, y
+  todo `effect()` que dependa de esa referencia se dispara sin que haya pasado
+  nada que le importe. Así el visor 360 volvía al fotograma frontal y la ficha
+  perdía la variante elegida, encontrado en Fase 5 (el de la variante venía
+  desde la Fase 1). **Depende del dato que de verdad define el cambio, no de la
+  referencia**: `ts-visor-360` depende de una clave derivada del contenido del
+  set, y la ficha del `slug` cargado, leyendo el producto con `untracked`. Si
+  los datos vuelven idénticos no hace falta nada: TanStack hace *structural
+  sharing* por omisión y conserva la referencia anterior.
+  Con una prueba para **cada lado**: "no reiniciar en un refetch" no puede
+  volverse "no reiniciar nunca" — navegar a otro producto sí tiene que soltar la
+  variante y el fotograma.
 
 ## i18n con scopes perezosos
 
