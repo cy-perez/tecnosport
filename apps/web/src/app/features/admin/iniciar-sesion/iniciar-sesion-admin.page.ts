@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../shared/ts-boton/ts-boton';
 import { TsCampo } from '../../../shared/ts-campo/ts-campo';
@@ -22,6 +22,7 @@ import { SesionStore } from '../../../core/autenticacion/sesion.store';
 })
 export class IniciarSesionAdminPage {
   private readonly router = inject(Router);
+  private readonly ruta = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
   protected readonly sesionStore = inject(SesionStore);
 
@@ -35,6 +36,26 @@ export class IniciarSesionAdminPage {
 
   private readonly estadoFormulario = toSignal(this.form.statusChanges, { initialValue: this.form.status });
   protected readonly formularioInvalido = computed(() => this.estadoFormulario() === 'INVALID');
+
+  /**
+   * A dónde ir después de iniciar sesión: lo que puso `adminGuard` al mandar
+   * aquí, o el panel si se llegó por la puerta principal.
+   *
+   * Solo se acepta una ruta **relativa de este sitio**, dentro de `/admin`. Un
+   * `destino` es un parámetro de la URL, o sea entrada del usuario: sin este
+   * filtro, un enlace preparado con `?destino=https://otro-sitio` convertiría
+   * este formulario en un salto a un sitio ajeno, con la credencial recién
+   * escrita y la confianza de venir del dominio correcto.
+   */
+  private destinoTrasIniciar(idioma: string): string {
+    const panel = `/${idioma}/admin/panel`;
+    const destino = this.ruta.snapshot.queryParamMap.get('destino');
+    if (destino === null) {
+      return panel;
+    }
+    const esRutaDeEsteSitio = destino.startsWith('/') && !destino.startsWith('//');
+    return esRutaDeEsteSitio && destino.includes('/admin/') ? destino : panel;
+  }
 
   protected async enviar(): Promise<void> {
     if (this.form.invalid) {
@@ -52,7 +73,7 @@ export class IniciarSesionAdminPage {
         return;
       }
       const idioma = this.transloco.activeLang();
-      void this.router.navigate(['/' + idioma, 'admin', 'panel']);
+      void this.router.navigateByUrl(this.destinoTrasIniciar(idioma));
     } catch {
       this.error.set(this.transloco.translate('admin.iniciarSesion.error'));
     } finally {

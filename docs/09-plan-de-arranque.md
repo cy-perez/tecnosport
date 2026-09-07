@@ -2011,6 +2011,43 @@ set de prueba y sus objetos: el catálogo de dev quedó como estaba.
 **Queda solo el pendiente 1**, el recorrido en un teléfono real, que necesita el
 túnel HTTPS y su origen agregado al CORS del bucket (`infra/dev/README.md`).
 
+### La Fase 5, cerrada: el recorrido en el teléfono
+
+2026-09-07. El pendiente 1, hecho en un iPhone y en un Android sobre un túnel de
+Cloudflare (`cloudflared tunnel --url http://localhost:4200`; `proxy.conf.json`
+manda `/api` al backend, así que un solo túnel sirve app y API sin contenido
+mixto). La cuadrícula de guía y el nivelador se comportaron bien en los dos, y el
+permiso del sensor de orientación de iOS —el caso estricto, que exige gesto del
+usuario y certificado confiable— se concedió sin pelear. El procedimiento quedó
+en `apps/web/README.md`, que es donde `docs/07-infra-gcp.md` decía desde hace
+fases que estaba, y no estaba.
+
+El dev server corre con `ng serve --allowed-hosts` para aceptar el host del
+túnel. `angular.json` no se tocó: `security.allowedHosts` exige el host exacto
+—el comodín `.trycloudflare.com` no le sirve— y un host efímero no tiene por qué
+quedar versionado.
+
+**Dos defectos que solo aparecen al llegar por un enlace**, encontrados así y
+corregidos:
+
+1. **Se veía parpadear la pantalla protegida.** `adminGuard` se abstiene en el
+   servidor —con razón: el SSR no reenvía la cookie de refresco, así que no tiene
+   con qué decidir—, de modo que el servidor pintaba la pantalla de captura y un
+   instante después el cliente redirigía al login. Ahora `/admin` se renderiza
+   solo en el cliente (`RenderMode.Client`), que además no cuesta nada: no
+   necesita SEO y sus datos ya venían del cliente. La protección real nunca
+   estuvo ahí — el backend exige el rol en cada endpoint.
+2. **El enlace se perdía.** Tras iniciar sesión se caía siempre en el panel y
+   había que volver a buscar el enlace. `adminGuard` ahora anota a dónde ibas
+   (`?destino=`) y el login vuelve ahí. Solo acepta rutas relativas de este sitio
+   dentro de `/admin`: un `destino` viene de la URL, o sea del usuario, y sin ese
+   filtro un enlace preparado convertiría el formulario en un salto a otro sitio
+   con la credencial recién escrita.
+
+**Fase 5 completa.** El asistente de captura funciona de punta a punta en un
+teléfono real contra Cloud Storage real: cámara, guía, nivel, procesado, subida
+firmada, revisión y publicación.
+
 ### Borrar un set borra sus objetos
 
 2026-09-06, cerrando el día. `DELETE /api/v1/admin/sets-rotacion/{id}` borraba la

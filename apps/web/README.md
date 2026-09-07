@@ -17,6 +17,48 @@ no está escrita en el código.
 
 Sitio: http://localhost:4200
 
+## Probar el asistente de captura 360 desde un teléfono
+
+La cámara, el sensor de orientación y `crypto.subtle` solo existen en un
+**contexto seguro**: HTTPS, o `localhost`. Desde un teléfono, `localhost` es el
+propio teléfono, así que el asistente de captura no se puede probar sin HTTPS.
+
+`proxy.conf.json` manda `/api` al backend, así que **un solo túnel al 4200 sirve
+la aplicación y la API**: no hay contenido mixto ni una segunda URL que
+configurar.
+
+```
+docker compose up -d                     # desde la raíz
+gradlew.bat bootRun                      # en apps/api
+npm run dev --workspace=apps/web         # desde la raíz
+cloudflared tunnel --url http://localhost:4200
+```
+
+El túnel imprime una URL `https://algo-aleatorio.trycloudflare.com`. Dos cosas
+tienen que conocerla:
+
+- **El dev server.** `angular.json` ya trae `.trycloudflare.com` en
+  `security.allowedHosts` de la configuración de desarrollo; sin eso, el servidor
+  rechaza el host y la página no carga.
+- **El bucket de imágenes**, o el `PUT` firmado muere en el preflight de CORS:
+
+  ```
+  GCS_ORIGENES_CORS=http://localhost:4200,https://algo-aleatorio.trycloudflare.com \
+    node infra/dev/bucket-imagenes.mjs
+  ```
+
+  Esa corrida solo reemplaza la configuración de CORS; el bucket, la cuenta de
+  servicio y la llave quedan como están.
+
+**Mientras el túnel esté arriba, la aplicación de desarrollo es accesible desde
+internet**, panel de `ADMIN` incluido, con el usuario que crea `ADMIN_CORREO`. La
+URL es aleatoria y efímera, pero es exposición real: bájalo al terminar
+(`Ctrl+C`).
+
+En iOS el permiso del sensor de orientación se pide con un gesto del usuario y
+solo sobre HTTPS con certificado confiable — por eso un certificado autofirmado
+en la LAN no basta ahí, y sí el túnel.
+
 ## Comandos
 
 ```

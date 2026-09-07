@@ -25,7 +25,7 @@ import { SesionStore } from '../../core/autenticacion/sesion.store';
  * backend exige el rol en cada endpoint (regla dura #7), así que la
  * protección real nunca estuvo aquí. `/admin` tampoco necesita SEO.
  */
-export const adminGuard: CanActivateFn = async (route) => {
+export const adminGuard: CanActivateFn = async (route, estado) => {
   const sesionStore = inject(SesionStore);
   const router = inject(Router);
 
@@ -40,5 +40,13 @@ export const adminGuard: CanActivateFn = async (route) => {
   }
 
   const idioma = route.paramMap.get('lang') ?? route.parent?.paramMap.get('lang') ?? 'es';
-  return router.parseUrl(`/${idioma}/admin/iniciar-sesion`);
+  const destino = router.parseUrl(`/${idioma}/admin/iniciar-sesion`);
+  // A dónde iba, para volver ahí después de iniciar sesión. Sin esto, abrir un
+  // enlace directo a una pantalla de /admin sin sesión terminaba en el panel y
+  // había que volver a buscar el enlace — encontrado probando el asistente de
+  // captura desde un teléfono, que es justo el caso donde uno llega por enlace.
+  if (estado?.url) {
+    destino.queryParams = { destino: estado.url };
+  }
+  return destino;
 };
