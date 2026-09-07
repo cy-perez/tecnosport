@@ -20,6 +20,7 @@ import {
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { FichaPage } from './ficha.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
+import { proveerAlmacenesCarrito } from '../../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   crear(): Promise<Carrito> {
@@ -139,6 +140,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
@@ -164,6 +166,7 @@ async function renderFichaNavegable(repositorio: RepositorioProductos, slugInici
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },

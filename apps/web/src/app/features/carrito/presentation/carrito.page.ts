@@ -5,7 +5,6 @@ import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../application/carrito.store';
-import { leerSnapshot } from '../infrastructure/snapshot-lineas.almacen';
 import { LineaCarritoComponent } from './linea-carrito/linea-carrito';
 
 @Component({
@@ -17,15 +16,13 @@ import { LineaCarritoComponent } from './linea-carrito/linea-carrito';
 export class CarritoPage {
   protected readonly store = inject(CarritoStore);
 
-  protected readonly leerSnapshot = leerSnapshot;
-
   protected readonly total = computed(() => {
     const carrito = this.store.consulta.data();
     if (!carrito) {
       return 0;
     }
     return carrito.lineas.reduce((suma, linea) => {
-      const snapshot = leerSnapshot(linea.varianteId);
+      const snapshot = this.store.snapshotDeLinea(linea.varianteId);
       return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
     }, 0);
   });

@@ -5,6 +5,7 @@ import { Carrito } from '../domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { CarritoStore } from './carrito.store';
+import { proveerAlmacenesCarrito } from '../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   llamadasCrear = 0;
@@ -77,6 +78,7 @@ class AnfitrionDePrueba {
 async function renderConRepositorio(repositorio: RepositorioCarrito) {
   const { fixture } = await render(AnfitrionDePrueba, {
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useValue: repositorio },
     ],

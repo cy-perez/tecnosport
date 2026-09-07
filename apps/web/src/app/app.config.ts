@@ -8,7 +8,11 @@ import { provideTransloco } from '@jsverse/transloco';
 import { routes } from './app.routes';
 import { REPOSITORIO_SESION } from './core/autenticacion/repositorio-sesion.puerto';
 import { SesionHttpRepositorio } from './core/autenticacion/sesion-http.repositorio';
+import { ALMACEN_CARRITO_ID } from './features/carrito/domain/almacen-carrito-id.puerto';
+import { ALMACEN_SNAPSHOT_LINEAS } from './features/carrito/domain/almacen-snapshot-lineas.puerto';
 import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carrito.puerto';
+import { CarritoIdLocalStorageAlmacen } from './features/carrito/infrastructure/carrito-id.almacen';
+import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastructure/snapshot-lineas.almacen';
 import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
 import { REPOSITORIO_PAGOS } from './features/checkout/domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from './features/checkout/domain/repositorio-pedidos.puerto';
@@ -30,6 +34,12 @@ export const appConfig: ApplicationConfig = {
     // esa ruta): el carrito lo necesita el encabezado, que se renderiza siempre, no solo dentro
     // de /carrito — ver application/carrito.store.ts.
     { provide: REPOSITORIO_CARRITO, useClass: CarritoHttpRepositorio },
+    // Los dos almacenes van aquí y no en carrito.routes.ts por el mismo motivo: los usa
+    // CarritoStore, que es `providedIn: 'root'`, y el encabezado lo consulta en todas las
+    // pantallas. Darle al InjectionToken una `factory` por defecto sería más corto y volvería
+    // a invertir la dependencia, ahora escondida dentro de `domain`.
+    { provide: ALMACEN_CARRITO_ID, useClass: CarritoIdLocalStorageAlmacen },
+    { provide: ALMACEN_SNAPSHOT_LINEAS, useClass: SnapshotLineasLocalStorageAlmacen },
     // Mismo criterio que REPOSITORIO_CARRITO: SesionStore es compartido
     // (`core/autenticacion/`, no atado a ninguna funcionalidad), lo va a
     // necesitar tanto el guardia de rutas de admin como, más adelante,

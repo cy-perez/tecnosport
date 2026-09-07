@@ -1,29 +1,28 @@
-import {
-  borrarCarritoIdAlmacenado,
-  guardarCarritoIdAlmacenado,
-  leerCarritoIdAlmacenado,
-} from './carrito-id.almacen';
+import { CarritoIdLocalStorageAlmacen } from './carrito-id.almacen';
 
-describe('carrito-id.almacen', () => {
+describe('CarritoIdLocalStorageAlmacen', () => {
+  let almacen: CarritoIdLocalStorageAlmacen;
+
   beforeEach(() => {
     window.localStorage.clear();
+    almacen = new CarritoIdLocalStorageAlmacen();
   });
 
   it('devuelve null si no hay nada guardado', () => {
-    expect(leerCarritoIdAlmacenado()).toBeNull();
+    expect(almacen.leer()).toBeNull();
   });
 
   it('guarda y vuelve a leer el mismo id', () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    almacen.guardar('carrito-1');
 
-    expect(leerCarritoIdAlmacenado()).toBe('carrito-1');
+    expect(almacen.leer()).toBe('carrito-1');
   });
 
   it('borrar deja de encontrar el id', () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    almacen.guardar('carrito-1');
 
-    borrarCarritoIdAlmacenado();
+    almacen.borrar();
 
-    expect(leerCarritoIdAlmacenado()).toBeNull();
+    expect(almacen.leer()).toBeNull();
   });
 });

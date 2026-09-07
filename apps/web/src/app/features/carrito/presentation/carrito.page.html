@@ -21,7 +21,7 @@
         @for (linea of carrito.lineas; track linea.id) {
           <app-linea-carrito
             [linea]="linea"
-            [snapshot]="leerSnapshot(linea.varianteId)"
+            [snapshot]="store.snapshotDeLinea(linea.varianteId)"
             (cantidadCambio)="cambiarCantidad(linea.id, $event)"
             (eliminar)="eliminarLinea(linea.id)"
           />

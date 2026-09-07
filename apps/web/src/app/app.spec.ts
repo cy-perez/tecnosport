@@ -10,6 +10,7 @@ import { REPOSITORIO_SESION, RepositorioSesion } from './core/autenticacion/repo
 import { Sesion } from './core/autenticacion/sesion.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from './features/carrito/domain/repositorio-carrito.puerto';
 import { esperarSinViolaciones } from '../testing/axe';
+import { proveerAlmacenesCarrito } from '../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   crear(): Promise<Carrito> {
@@ -55,6 +56,7 @@ describe('App', () => {
         }),
       ],
       providers: [
+      ...proveerAlmacenesCarrito(),
         provideRouter([]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },

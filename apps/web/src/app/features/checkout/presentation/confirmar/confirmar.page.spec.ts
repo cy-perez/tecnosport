@@ -9,7 +9,6 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
-import { guardarCarritoIdAlmacenado } from '../../../carrito/infrastructure/carrito-id.almacen';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
@@ -18,6 +17,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { ConfirmarPage } from './confirmar.page';
+import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -168,6 +168,7 @@ async function renderConDatos(
       }),
     ],
     providers: [
+      ...proveerAlmacenesCarrito(),
       provideRouter([
         { path: 'metodo-pago', component: RutaMuda },
         { path: 'transferencia', component: RutaMuda },
@@ -212,7 +213,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
 
@@ -222,7 +223,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con un método de Wompi, crea el pedido, pide el intento y redirige al Web Checkout', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso();
     const pagos = new RepositorioPagosFalso();
 
@@ -248,7 +249,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con transferencia manual, navega a la pantalla de transferencia sin pedir intento de pago', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TRANSFERENCIA_MANUAL' }));
     const pagos = new RepositorioPagosFalso();
 
@@ -279,7 +280,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('con contraentrega, navega a la pantalla de estado', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
@@ -298,7 +299,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('si crear el pedido falla, muestra un error y no navega', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
 
     const { fixture } = await renderConDatos(
       'TARJETA',
@@ -324,7 +325,7 @@ describe('ConfirmarPage', () => {
   });
 
   it('un reintento no vuelve a crear el pedido si ya existe uno de este intento', async () => {
-    guardarCarritoIdAlmacenado('carrito-1');
+    sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
