@@ -44,6 +44,7 @@
             "styles": [
               "src/assets/marca/fuentes.css",
               "src/assets/marca/tokens.css",
+              "src/tailwind.css",
               "src/styles.scss"
             ],
             "server": "src/main.server.ts",
@@ -57,7 +58,7 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "600kB",
+                  "maximumWarning": "700kB",
                   "maximumError": "1MB"
                 },
                 {
