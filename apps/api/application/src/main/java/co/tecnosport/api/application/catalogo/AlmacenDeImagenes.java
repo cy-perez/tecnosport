@@ -15,4 +15,15 @@ public interface AlmacenDeImagenes {
   Optional<Long> tamanoBytes(String objectKey);
 
   String urlPublica(String objectKey);
+
+  /**
+   * Borra todos los objetos cuya key empiece por el prefijo dado, y devuelve cuántos borró.
+   *
+   * <p>Por prefijo y no objeto por objeto a propósito: un set que murió a medio subir dejó objetos
+   * en el bucket que nunca llegaron a ser una fila en la base de datos. Recorrer los fotogramas
+   * conocidos dejaría esos justamente afuera, que son los que más falta hace reclamar.
+   *
+   * <p>Es idempotente: borrar un prefijo que ya no tiene nada devuelve cero, no falla.
+   */
+  int eliminarPorPrefijo(String prefijo);
 }

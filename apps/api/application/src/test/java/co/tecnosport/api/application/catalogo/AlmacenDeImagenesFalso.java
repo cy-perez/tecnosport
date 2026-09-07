@@ -1,6 +1,8 @@
 package co.tecnosport.api.application.catalogo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -8,8 +10,13 @@ import java.util.Optional;
 final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
 
   private final Map<String, Long> objetos = new HashMap<>();
+  final List<String> prefijosEliminados = new ArrayList<>();
   String ultimoObjectKeyFirmado;
   String ultimoContentTypeFirmado;
+
+  boolean existe(String objectKey) {
+    return objetos.containsKey(objectKey);
+  }
 
   void conObjeto(String objectKey, long bytes) {
     objetos.put(objectKey, bytes);
@@ -30,5 +37,14 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   @Override
   public String urlPublica(String objectKey) {
     return "https://storage.googleapis.com/bucket-falso/" + objectKey;
+  }
+
+  @Override
+  public int eliminarPorPrefijo(String prefijo) {
+    prefijosEliminados.add(prefijo);
+    List<String> aBorrar =
+        objetos.keySet().stream().filter(key -> key.startsWith(prefijo)).toList();
+    aBorrar.forEach(objetos::remove);
+    return aBorrar.size();
   }
 }

@@ -148,7 +148,7 @@ POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRAD
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
 POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
 POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
-DELETE /api/v1/admin/sets-rotacion/{id}
+DELETE /api/v1/admin/sets-rotacion/{id}             borra el set y sus objetos del bucket
 ```
 
 El set se abre **prometiendo cuántos fotogramas va a tener** (entre 4 y 16), y esa

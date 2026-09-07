@@ -2011,10 +2011,31 @@ set de prueba y sus objetos: el catálogo de dev quedó como estaba.
 **Queda solo el pendiente 1**, el recorrido en un teléfono real, que necesita el
 túnel HTTPS y su origen agregado al CORS del bucket (`infra/dev/README.md`).
 
-Un defecto conocido y no arreglado, anotado aquí para no perderlo: **`DELETE
-/api/v1/admin/sets-rotacion/{id}` borra la fila pero deja los objetos en el
-bucket**. En dev es basura; en producción es almacenamiento que se paga y nunca
-se reclama.
+### Borrar un set borra sus objetos
+
+2026-09-06, cerrando el día. `DELETE /api/v1/admin/sets-rotacion/{id}` borraba la
+fila y dejaba los objetos en el bucket. No era un olvido: el javadoc lo
+justificaba con que "el bucket tiene versionado y borrar bytes es irreversible".
+Solo que **el bucket de dev no tenía versionado**, así que la red en la que se
+apoyaba esa decisión no existía, y mientras tanto el espacio no se reclamaba
+nunca.
+
+Ahora se borra, y la red se montó de verdad: versionado de objetos en el bucket
+más una regla de ciclo de vida que expira las versiones no vigentes a los 30 días
+(`TODO(negocio)`: ese plazo es un valor de arranque, no una decisión tomada). Sin
+la regla, las versiones no vigentes se acumulan y no se habría reclamado nada.
+
+Se borra **por prefijo**, no recorriendo los fotogramas conocidos: un set que
+murió a medio subir dejó objetos que nunca fueron una fila, y son justamente los
+que más falta hace reclamar. Y los objetos se borran **antes** que la fila: al
+revés, un fallo a mitad deja los objetos huérfanos para siempre, porque
+reintentar responde 404 y ya nadie sabe qué prefijo limpiar.
+
+Un detalle que solo apareció probando contra el bucket real: la primera versión
+usaba `blob.delete()` sobre los objetos que devuelve el listado, y **eso borra la
+generación concreta, saltándose el versionado** — la prueba mostró cero versiones
+recuperables. Borrando por nombre, sin generación, quedan las cuatro. Está en
+`docs/07-infra-gcp.md` para que no se repita.
 
 ## Fase 6. Cierre para publicar
 

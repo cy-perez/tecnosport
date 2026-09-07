@@ -157,4 +157,14 @@ punto en el tiempo activada. Una restauración de prueba antes de abrir al
 público: un respaldo que nunca se restauró no es un respaldo.
 
 El bucket de imágenes con versionado de objetos: un borrado accidental de un set
-de rotación son quince fotos que hay que volver a tomar.
+de rotación son quince fotos que hay que volver a tomar. Esto no es solo para
+accidentes: `DELETE /api/v1/admin/sets-rotacion/{id}` borra de verdad los objetos
+del set —si no, el espacio no se reclama nunca— y el versionado es lo único que
+hace ese borrado reversible. Y con una regla de ciclo de vida que expire las
+versiones no vigentes: sin ella se acumulan, y el espacio no se reclama igual.
+
+Un detalle que cuesta caro y no se ve: hay que borrar **por nombre, sin
+generación**. El SDK de Java, si se le pasa un objeto que vino de un listado,
+borra esa generación concreta —un borrado definitivo que se salta el versionado y
+no deja nada que restaurar. Comprobado contra el bucket real, en los dos
+sentidos.

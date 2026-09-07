@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.catalogo;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.UrlFirmada;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,5 +33,13 @@ class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
   @Override
   public String urlPublica(String objectKey) {
     return "https://storage.googleapis.com/tecnosport-dev-imagenes/" + objectKey;
+  }
+
+  @Override
+  public int eliminarPorPrefijo(String prefijo) {
+    List<String> aBorrar =
+        objetosExistentes.keySet().stream().filter(key -> key.startsWith(prefijo)).toList();
+    aBorrar.forEach(objetosExistentes::remove);
+    return aBorrar.size();
   }
 }

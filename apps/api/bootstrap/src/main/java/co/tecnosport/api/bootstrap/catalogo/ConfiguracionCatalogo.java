@@ -155,7 +155,8 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
-  public EliminarSetRotacion eliminarSetRotacion(RepositorioSetsRotacion repositorioSetsRotacion) {
-    return new EliminarSetRotacion(repositorioSetsRotacion);
+  public EliminarSetRotacion eliminarSetRotacion(
+      RepositorioSetsRotacion repositorioSetsRotacion, AlmacenDeImagenes almacenDeImagenes) {
+    return new EliminarSetRotacion(repositorioSetsRotacion, almacenDeImagenes);
   }
 }

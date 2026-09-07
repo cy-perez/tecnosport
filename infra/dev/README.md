@@ -24,6 +24,12 @@ Crea, sin duplicar nada si ya existe:
 - el bucket `tecnosport-dev-imagenes`, Standard con acceso uniforme, en una
   región de la capa gratuita — la región solo aplica al crearlo: un bucket que ya
   existe no se puede mover;
+- versionado de objetos, con una regla de ciclo de vida que borra las versiones
+  no vigentes a los 30 días — es la red de la que depende el borrado de un set:
+  `EliminarSetRotacion` borra los objetos del bucket, y sin versionado eso sería
+  irreversible. Sin la regla de ciclo de vida, el espacio no se reclamaría nunca,
+  que era justo el problema. Los 30 días son un valor de arranque, marcado como
+  `TODO(negocio)` en el script;
 - lectura pública (`allUsers` como `objectViewer`), porque la ficha de producto
   sirve las imágenes por URL directa — la escritura sigue siendo solo con URL
   firmada;

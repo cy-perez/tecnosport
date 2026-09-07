@@ -353,8 +353,9 @@ class AdminSetRotacionControladorTest {
     }
 
     @Bean
-    EliminarSetRotacion eliminarSetRotacion(RepositorioSetsRotacion repositorioSets) {
-      return new EliminarSetRotacion(repositorioSets);
+    EliminarSetRotacion eliminarSetRotacion(
+        RepositorioSetsRotacion repositorioSets, AlmacenDeImagenes almacenDeImagenes) {
+      return new EliminarSetRotacion(repositorioSets, almacenDeImagenes);
     }
 
     @Bean

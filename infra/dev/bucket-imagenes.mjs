@@ -91,7 +91,35 @@ if (existe(['storage', 'buckets', 'describe', `gs://${BUCKET}`, '--format=value(
   ]);
 }
 
-// 2. Lectura pública: la ficha de producto sirve las imágenes por URL directa
+// 2. Versionado de objetos: la red de docs/07-infra-gcp.md — "un borrado
+//    accidental de un set de rotación son quince fotos que hay que volver a
+//    tomar". Borrar un set borra sus objetos del bucket, y es esto lo que hace
+//    que eso no sea irreversible: la versión anterior queda como no vigente.
+gcloud(['storage', 'buckets', 'update', `gs://${BUCKET}`, '--versioning']);
+
+// Sin una regla de ciclo de vida, esas versiones no vigentes se acumulan y el
+// espacio nunca se reclama — que era justo el problema a resolver.
+// TODO(negocio): DIAS_RETENCION_VERSIONES_IMAGEN. 30 días es un valor de
+// arranque, no una decisión tomada: es el plazo para darse cuenta de que se
+// borró un set por error y poder recuperarlo. Confirmar antes de producción.
+const DIAS_RETENCION = Number(config('GCS_DIAS_RETENCION_VERSIONES') ?? 30);
+const cicloDeVida = JSON.stringify({
+  rule: [
+    {
+      action: { type: 'Delete' },
+      condition: { daysSinceNoncurrentTime: DIAS_RETENCION },
+    },
+  ],
+});
+const archivoCicloDeVida = `${process.env.TEMP ?? '/tmp'}/ciclo-vida-${BUCKET}.json`;
+writeFileSync(archivoCicloDeVida, cicloDeVida);
+console.log(`\nVersiones no vigentes: se borran a los ${DIAS_RETENCION} días.`);
+gcloud([
+  'storage', 'buckets', 'update', `gs://${BUCKET}`,
+  `--lifecycle-file=${archivoCicloDeVida}`,
+]);
+
+// 3. Lectura pública: la ficha de producto sirve las imágenes por URL directa
 //    (GCS_URL_PUBLICA). La escritura sigue siendo solo con URL firmada.
 gcloud([
   'storage', 'buckets', 'add-iam-policy-binding', `gs://${BUCKET}`,
@@ -99,7 +127,7 @@ gcloud([
   '--role=roles/storage.objectViewer',
 ]);
 
-// 3. CORS: sin esto el PUT firmado desde el navegador muere en el preflight.
+// 4. CORS: sin esto el PUT firmado desde el navegador muere en el preflight.
 const cors = JSON.stringify([
   {
     origin: ORIGENES,
@@ -113,7 +141,7 @@ writeFileSync(archivoCors, cors);
 console.log(`\nCORS para: ${ORIGENES.join(', ')}`);
 gcloud(['storage', 'buckets', 'update', `gs://${BUCKET}`, `--cors-file=${archivoCors}`]);
 
-// 4. La cuenta de servicio que firma. objectAdmin solo sobre este bucket, no
+// 5. La cuenta de servicio que firma. objectAdmin solo sobre este bucket, no
 //    sobre el proyecto entero.
 if (existe(['iam', 'service-accounts', 'describe', correo, '--format=value(email)'])) {
   console.log('\nLa cuenta de servicio ya existe, no se recrea.');
@@ -130,7 +158,7 @@ gcloud([
   '--role=roles/storage.objectAdmin',
 ]);
 
-// 5. La llave privada, que es lo que `signUrl` necesita de verdad. Se crea una
+// 6. La llave privada, que es lo que `signUrl` necesita de verdad. Se crea una
 //    sola vez: una llave nueva en cada corrida dejaría llaves vivas regadas.
 if (existsSync(LLAVE)) {
   console.log(`\nYa hay una llave en ${LLAVE}; no se crea otra.`);
