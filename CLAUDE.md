@@ -47,10 +47,10 @@ para y dime por qué antes de escribir el código.
    Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
    todo" lo sostiene la regla, no el compilador.
    La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
-   Quedan dos literales, los dos justificados y documentados en
-   `apps/web/src/tailwind.css`: los puntos de quiebre, porque una media query no
-   puede leer una propiedad personalizada de CSS, y los 44 px de objetivo táctil,
-   que `tokens.json` no define.
+   Queda **un** literal, y es una limitación de CSS, no una decisión: los puntos
+   de quiebre, porque una media query no puede leer una propiedad personalizada.
+   Todo lo demás —objetivo táctil, insignia, mínimos de rejilla, duraciones y
+   curvas de movimiento— se pidió al kit y sale de `tokens.json`.
 3. **No se edita `tokens.css` ni `fuentes.css` a mano.** Son generados. Tailwind
    los *consume*; no los reemplaza ni los reescribe.
 4. **Ningún texto visible escrito directo en una plantilla.** Todo pasa por

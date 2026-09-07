@@ -101,14 +101,13 @@ un detalle.
 | Puntos de quiebre | 640 / 1024 / 1280 | `--bp-*` |
 | Header escritorio y móvil | 72 y 60 px, fijo | `--header-alto-*` |
 | Logo en el header | 34 y 30 px | `--header-alto-logo*` |
-| Objetivo táctil mínimo | 44 x 44 px | **ninguno — ver abajo** |
+| Objetivo táctil mínimo | 44 x 44 px | `--control-tactil` |
+| Insignia del contador | 20 x 20 px | `--control-insignia` |
 
-El objetivo táctil es **el único valor de esta tabla que `tokens.json` no
-define**, y la tabla lo exige igual. El SCSS lo escribía como `min-height: 44px`
-literal en cada control; hoy vive con nombre y en un solo sitio, como
-`--spacing-tactil` en `src/tailwind.css`, y se usa con `min-h-tactil`.
-**TODO: pedir `--tactil-min` en el `tokens.json` del kit** — es el único literal
-del sistema que no es una limitación de CSS.
+El objetivo táctil fue durante un tiempo el único valor de esta tabla sin token:
+el SCSS lo escribía como `min-height: 44px` literal en cada control. Se pidió al
+kit y hoy sale de `tokens.json` como cualquier otra medida; en la interfaz se usa
+con `min-h-tactil`.
 
 Tipografía: Archivo en titulares, IBM Plex Sans en texto e interfaz, IBM Plex
 Mono en precios y referencias, con cifras tabulares para que las columnas alineen
@@ -163,31 +162,36 @@ CSS compilado — ver `docs/06-testing.md`.
 
 ### Lo que el kit no define y el sitio necesita
 
-Salieron a la luz al migrar los estilos, y están todos juntos en
-`apps/web/src/tailwind.css` para que se vean como grupo en vez de repartidos por
-las plantillas. Ninguno es una decisión que le toque tomar a quien programa:
+Salieron a la luz al migrar los estilos, y **ya no son huecos**: se pidieron al
+kit y hoy los emite `tokens.json`. Quedan aquí como registro de qué era cada uno
+y de dónde venía:
 
-| Valor | Para qué | Dónde estaba antes |
+| Token | Para qué | Dónde estaba antes |
 |---|---|---|
-| `--spacing-tactil: 44px` | objetivo táctil mínimo | `min-height: 44px` en cada control |
-| `--spacing-insignia: 20px` | contador del carrito | literal en el encabezado |
-| `--ancho-min-filtro: 160px` | mínimo de columna de los filtros | `minmax(160px, 1fr)` |
-| `--ancho-min-eje: 200px` | mínimo de columna de los ejes de categoría | `minmax(200px, 1fr)` |
-| `--ancho-min-tarjeta: 220px` | mínimo de columna de las tarjetas | `minmax(220px, 1fr)` |
-| `--ancho-vista-previa: 200px` | vista previa de imagen en el panel | `width/height: 200px` |
+| `--control-tactil` | objetivo táctil mínimo | `min-height: 44px` en cada control |
+| `--control-insignia` | contador del carrito | literal en el encabezado |
+| `--ancho-min-filtro` | mínimo de columna de los filtros | `minmax(160px, 1fr)` |
+| `--ancho-min-eje` | mínimo de columna de los ejes de categoría | `minmax(200px, 1fr)` |
+| `--ancho-min-tarjeta` | mínimo de columna de las tarjetas | `minmax(220px, 1fr)` |
+| `--ancho-min-vista-previa` | vista previa de imagen en el panel | `width/height: 200px` |
+| `--mov-*` y `--curva-*` | duraciones y curvas | literales en `tailwind.css` |
 
-| `--animate-desplegar` / `--animate-plegar` | entrada y salida del menú móvil | no existían |
+Sobre los `--ancho-min-*` se preguntó explícitamente si eran **un solo valor de
+sistema**, porque tres valores elegidos a ojo en tres pantallas suelen serlo. La
+respuesta fue que no: que `eje` y `vista-previa` coincidan hoy en 200 px es
+casualidad, porque se encogen por motivos distintos y van a divergir. Son cuatro
+tokens a propósito.
 
-Los tres `--ancho-min-*` son tres valores elegidos a ojo en tres pantallas y
-**probablemente deberían ser uno**. Las duraciones y curvas de movimiento
-tampoco están en el kit: entrar dura 160 ms y salir 120 —cerrar debe sentirse
-inmediato—, y la *distancia* sí sale de un token (`--esp-8`).
+Las curvas se declaran como `cubic-bezier` explícito y no como `ease-out`: el
+`ease-out` de CSS no coincide con el de ninguna guía de movimiento, y usar el
+nombre esconde esa diferencia.
 
-**Animación: solo de entrada.** El menú móvil usa `animate.enter`, nativo de
-Angular 22. `animate.leave` se probó y **deja el panel en el DOM y visible**
-después de cerrarlo, con y sin "reducir movimiento" — un menú que no se cierra
-es peor que uno que desaparece de golpe, así que la salida se quedó sin animar
-hasta entender por qué.
+**Animación: entrada y salida.** El menú móvil usa las animaciones nativas de
+Angular 22. La entrada va con la forma de clase (`animate.enter`). La salida
+necesita la **forma de evento**: con `animate.leave="..."` la clase se aplica y
+la animación corre, pero el elemento se queda en el DOM y visible; con el evento
+llega `animationComplete()` y el borrado depende de llamarlo. Con "reducir
+movimiento" el camino se salta entero.
 
 Los puntos de quiebre y las tres medidas en `ch` (`min-w-[2ch]`,
 `min-w-[12ch]`) no cuentan como huecos: los primeros porque una media query no

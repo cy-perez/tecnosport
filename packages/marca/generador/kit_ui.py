@@ -310,6 +310,15 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
             L.append("  --header-{}: {}px;".format(nombre.replace("_", "-"), v))
     for k, v in (extra.get("anchos_px") or {}).items():
         L.append("  --ancho-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("anchos_min_px") or {}).items():
+        L.append("  --ancho-min-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("controles_px") or {}).items():
+        L.append("  --control-{}: {}px;".format(k.replace("_", "-"), v))
+    mov = extra.get("movimiento") or {}
+    for k, v in (mov.get("duracion_ms") or {}).items():
+        L.append("  --mov-{}: {}ms;".format(k.replace("_", "-"), v))
+    for k, v in (mov.get("curva") or {}).items():
+        L.append("  --curva-{}: {};".format(k.replace("_", "-"), v))
     L += ["  --ancho-max: {}px;".format(extra.get("ancho_max_px", 1140)), "}", "",
           '[data-tema="oscuro"] {']
     for k, v in [("fondo","o_fondo"),("superficie","o_superficie"),
@@ -624,6 +633,9 @@ def main():
              "header": t.get("header") or {},
              "ancho_max_px": t.get("ancho_max_px", 1140),
              "anchos_px": t.get("anchos_px") or {},
+             "anchos_min_px": t.get("anchos_min_px") or {},
+             "controles_px": t.get("controles_px") or {},
+             "movimiento": t.get("movimiento") or {},
              "mono": bool((t.get("tipografia") or {}).get("mono"))}
     extra["chaflan_px"] = {k: v for k, v in extra["chaflan_px"].items()
                            if not isinstance(v, bool)}

@@ -82,6 +82,18 @@
   --ancho-formulario: 384px;
   --ancho-formulario-lg: 512px;
   --ancho-filtro: 320px;
+  --ancho-min-filtro: 160px;
+  --ancho-min-eje: 200px;
+  --ancho-min-tarjeta: 220px;
+  --ancho-min-vista-previa: 200px;
+  --control-tactil: 44px;
+  --control-insignia: 20px;
+  --mov-rapida: 120ms;
+  --mov-media: 160ms;
+  --mov-lenta: 1400ms;
+  --curva-entrada: cubic-bezier(0, 0, 0.2, 1);
+  --curva-salida: cubic-bezier(0.4, 0, 1, 1);
+  --curva-suave: cubic-bezier(0.4, 0, 0.2, 1);
   --ancho-max: 1200px;
 }
 
