@@ -1,7 +1,9 @@
-<section class="iniciar-sesion-cliente">
-  <h1 class="iniciar-sesion-cliente__titulo">{{ 'cuenta.iniciarSesion.titulo' | transloco }}</h1>
-
-  <form class="iniciar-sesion-cliente__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+<ts-pagina-formulario [titulo]="'cuenta.iniciarSesion.titulo' | transloco">
+  <form
+    class="flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
     <ts-campo
       idCampo="cuenta-correo"
       tipo="email"
@@ -17,10 +19,13 @@
     />
 
     @if (error()) {
-      <p class="iniciar-sesion-cliente__error" role="alert">{{ error() }}</p>
+      <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
     }
 
-    <a class="iniciar-sesion-cliente__olvidaste" [routerLink]="['../recuperar-clave']">
+    <a
+      class="self-start text-ts-primario no-underline hover:underline"
+      [routerLink]="['../recuperar-clave']"
+    >
       {{ 'cuenta.iniciarSesion.olvidaste_clave' | transloco }}
     </a>
 
@@ -34,4 +39,4 @@
       {{ 'cuenta.iniciarSesion.entrar' | transloco }}
     </ts-boton>
   </form>
-</section>
+</ts-pagina-formulario>

@@ -7,11 +7,18 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
 import { Categoria, Marca, Producto } from '../../domain/producto.model';
-import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../../domain/repositorio-categorias.puerto';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
-import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../../domain/repositorio-productos.puerto';
+import {
+  REPOSITORIO_PRODUCTOS,
+  RepositorioProductos,
+} from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { RejillaPage } from './rejilla.page';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
@@ -36,7 +43,13 @@ function productoDePrueba(slug: string): Producto {
     galeria: [],
     rotacion: null,
     variantes: [
-      { id: `id-${slug}`, sku: `SKU-${slug}`, precio: { valor: 10_000, moneda: 'COP' }, existencia: 5, atributos: [] },
+      {
+        id: `id-${slug}`,
+        sku: `SKU-${slug}`,
+        precio: { valor: 10_000, moneda: 'COP' },
+        existencia: 5,
+        atributos: [],
+      },
     ],
   };
 }
@@ -81,7 +94,10 @@ function renderRejilla(repositorio: RepositorioProductos, queryParams: Params = 
       provideTanStackQuery(new QueryClient()),
       // Los filtros viven en la URL (ADR-0011): para probar el estado vacío
       // con y sin filtros hace falta poder fijarlos, no solo el repositorio.
-      { provide: ActivatedRoute, useValue: { queryParams: of(queryParams), snapshot: { queryParams } } },
+      {
+        provide: ActivatedRoute,
+        useValue: { queryParams: of(queryParams), snapshot: { queryParams } },
+      },
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
       { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
       { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
@@ -118,5 +134,13 @@ describe('RejillaPage', () => {
 
     expect(await screen.findByText(/todavía no hay productos publicados/i)).toBeTruthy();
     expect(screen.queryByText(/no encontramos productos con estos filtros/i)).toBeNull();
+  });
+
+  // `docs/06-testing.md`: axe automatizado en las pantallas clave.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    const { container } = await renderRejilla(new RepositorioProductosFalso());
+    await screen.findByText('Producto a');
+
+    await esperarSinViolaciones(container);
   });
 });

@@ -5,7 +5,10 @@ import en from '../../../../assets/i18n/en.json';
 import es from '../../../../assets/i18n/es.json';
 import enAdmin from '../../../../assets/i18n/scopes/admin/en.json';
 import esAdmin from '../../../../assets/i18n/scopes/admin/es.json';
-import { REPOSITORIO_SESION, RepositorioSesion } from '../../../core/autenticacion/repositorio-sesion.puerto';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { IniciarSesionAdminPage } from './iniciar-sesion-admin.page';
 
@@ -13,7 +16,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
   llamadasCerrar = 0;
 
   constructor(
-    private sesionAlIniciar: Sesion | { error: true } = { usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' },
+    private sesionAlIniciar: Sesion | { error: true } = {
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt',
+    },
   ) {}
 
   async iniciarSesion(): Promise<Sesion> {
@@ -32,9 +39,6 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
   return render(IniciarSesionAdminPage, {
@@ -61,10 +65,11 @@ async function renderPagina(repositorio: RepositorioSesion, destino?: string) {
 }
 
 async function llenarYEnviar() {
-  fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'admin@tecnosport.co' } });
+  fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+    target: { value: 'admin@tecnosport.co' },
+  });
   fireEvent.input(screen.getByLabelText('Clave'), { target: { value: 'clave-segura' } });
   fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
-  await esperar(50);
 }
 
 describe('IniciarSesionAdminPage', () => {
@@ -83,7 +88,7 @@ describe('IniciarSesionAdminPage', () => {
 
     await llenarYEnviar();
 
-    expect(navegar).toHaveBeenCalledWith('/es/admin/panel');
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/es/admin/panel'));
   });
 
   it('vuelve al destino que puso el guardia, en vez de al panel', async () => {
@@ -96,7 +101,7 @@ describe('IniciarSesionAdminPage', () => {
 
     await llenarYEnviar();
 
-    expect(navegar).toHaveBeenCalledWith('/es/admin/productos/abc-123/captura-360');
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/es/admin/productos/abc-123/captura-360'));
   });
 
   it.each([
@@ -113,19 +118,23 @@ describe('IniciarSesionAdminPage', () => {
 
     await llenarYEnviar();
 
-    expect(navegar).toHaveBeenCalledWith('/es/admin/panel');
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith('/es/admin/panel'));
   });
 
   it('con una cuenta que no es ADMIN, cierra la sesión y muestra el error', async () => {
-    const repositorio = new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' });
+    const repositorio = new RepositorioSesionFalso({
+      usuarioId: 'u1',
+      rol: 'CLIENTE',
+      accessToken: 'jwt',
+    });
     const { fixture } = await renderPagina(repositorio);
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigateByUrl');
 
     await llenarYEnviar();
 
-    expect(repositorio.llamadasCerrar).toBe(1);
-    expect(screen.getByText('Esta cuenta no tiene acceso al panel.')).toBeTruthy();
+    await vi.waitFor(() => expect(repositorio.llamadasCerrar).toBe(1));
+    expect(await screen.findByText('Esta cuenta no tiene acceso al panel.')).toBeTruthy();
     expect(navegar).not.toHaveBeenCalled();
   });
 
@@ -134,6 +143,6 @@ describe('IniciarSesionAdminPage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('Correo o clave incorrectos.')).toBeTruthy();
+    expect(await screen.findByText('Correo o clave incorrectos.')).toBeTruthy();
   });
 });

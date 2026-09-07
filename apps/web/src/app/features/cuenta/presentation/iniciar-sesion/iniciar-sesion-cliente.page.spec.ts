@@ -6,7 +6,10 @@ import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
 import { CorreoSinVerificarError } from '../../../../core/autenticacion/sesion.errores';
-import { REPOSITORIO_SESION, RepositorioSesion } from '../../../../core/autenticacion/repositorio-sesion.puerto';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from '../../../../core/autenticacion/repositorio-sesion.puerto';
 import { Sesion } from '../../../../core/autenticacion/sesion.model';
 import { IniciarSesionClientePage } from './iniciar-sesion-cliente.page';
 
@@ -40,9 +43,6 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderPagina(repositorio: RepositorioSesion) {
   return render(IniciarSesionClientePage, {
@@ -58,10 +58,11 @@ async function renderPagina(repositorio: RepositorioSesion) {
 }
 
 async function llenarYEnviar() {
-  fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'cliente@tecnosport.co' } });
+  fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+    target: { value: 'cliente@tecnosport.co' },
+  });
   fireEvent.input(screen.getByLabelText('Clave'), { target: { value: 'clave-segura' } });
   fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
-  await esperar(50);
 }
 
 describe('IniciarSesionClientePage', () => {
@@ -80,19 +81,27 @@ describe('IniciarSesionClientePage', () => {
 
     await llenarYEnviar();
 
-    expect(navegar).toHaveBeenCalledWith(['/es']);
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['/es']));
   });
 
   it('con una cuenta que es ADMIN, cierra la sesión y muestra el error', async () => {
-    const repositorio = new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+    const repositorio = new RepositorioSesionFalso({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt',
+    });
     const { fixture } = await renderPagina(repositorio);
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
 
     await llenarYEnviar();
 
-    expect(repositorio.llamadasCerrar).toBe(1);
-    expect(screen.getByText('Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.')).toBeTruthy();
+    await vi.waitFor(() => expect(repositorio.llamadasCerrar).toBe(1));
+    expect(
+      screen.getByText(
+        'Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.',
+      ),
+    ).toBeTruthy();
     expect(navegar).not.toHaveBeenCalled();
   });
 
@@ -101,7 +110,7 @@ describe('IniciarSesionClientePage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('Correo o clave incorrectos.')).toBeTruthy();
+    expect(await screen.findByText('Correo o clave incorrectos.')).toBeTruthy();
   });
 
   it('con un correo sin verificar, muestra ese error específico', async () => {
@@ -109,7 +118,11 @@ describe('IniciarSesionClientePage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('Verifica tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.')).toBeTruthy();
+    expect(
+      await screen.findByText(
+        'Verifica tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.',
+      ),
+    ).toBeTruthy();
   });
 
   it('muestra un enlace a recuperar clave', async () => {

@@ -36,7 +36,6 @@ const CLAVE_ALMACEN = 'ts-movimiento-reducido';
   selector: 'app-pie',
   imports: [TranslocoPipe, RouterLink],
   templateUrl: './pie.html',
-  styleUrl: './pie.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Pie {

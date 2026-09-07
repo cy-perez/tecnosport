@@ -7,8 +7,14 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { Categoria, Marca } from '../../../../catalogo/domain/producto.model';
-import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../../../../catalogo/domain/repositorio-categorias.puerto';
-import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../../../catalogo/domain/repositorio-marcas.puerto';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../../../catalogo/domain/repositorio-categorias.puerto';
+import {
+  REPOSITORIO_MARCAS,
+  RepositorioMarcas,
+} from '../../../../catalogo/domain/repositorio-marcas.puerto';
 import {
   EditarProductoAdmin,
   ImagenAdmin,
@@ -16,13 +22,21 @@ import {
   ProductosPaginadosAdmin,
   SubirImagenPrincipalAdmin,
 } from '../../domain/producto-admin.model';
-import { REPOSITORIO_PRODUCTOS_ADMIN, RepositorioProductosAdmin } from '../../domain/repositorio-productos-admin.puerto';
+import {
+  REPOSITORIO_PRODUCTOS_ADMIN,
+  RepositorioProductosAdmin,
+} from '../../domain/repositorio-productos-admin.puerto';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
 const OTRA_MARCA: Marca = { id: 'm2', nombre: 'Under Trail' };
 const CATEGORIA: Categoria = { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' };
-const OTRA_CATEGORIA: Categoria = { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'CELULARES' };
+const OTRA_CATEGORIA: Categoria = {
+  id: 'c2',
+  nombre: 'Celulares',
+  slug: 'celulares',
+  linea: 'CELULARES',
+};
 
 function productoDePrueba(): ProductoAdmin {
   return {
@@ -139,9 +153,6 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, id 
   });
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 describe('EditarProductoAdminPage', () => {
   it('prellena el formulario con los datos del producto', async () => {
@@ -191,12 +202,17 @@ describe('EditarProductoAdminPage', () => {
 
     fireEvent.input(screen.getByLabelText('Nombre'), { target: { value: 'Morral renovado' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-    await esperar(50);
+    await vi.waitFor(() => expect(repositorio.llamadasEditar).toHaveLength(1));
 
     expect(repositorio.llamadasEditar).toEqual([
       {
         id: 'p1',
-        comando: { nombre: 'Morral renovado', descripcion: 'Descripción original', marcaId: 'm1', categoriaId: 'c1' },
+        comando: {
+          nombre: 'Morral renovado',
+          descripcion: 'Descripción original',
+          marcaId: 'm1',
+          categoriaId: 'c1',
+        },
       },
     ]);
     expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos']);
@@ -207,9 +223,7 @@ describe('EditarProductoAdminPage', () => {
     await screen.findByDisplayValue('Morral urbano');
 
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-    await esperar(50);
-
-    expect(screen.getByText('No se pudo editar el producto. Intenta de nuevo.')).toBeTruthy();
+    expect(await screen.findByText('No se pudo editar el producto. Intenta de nuevo.')).toBeTruthy();
   });
 
   describe('imagen principal', () => {
@@ -236,15 +250,26 @@ describe('EditarProductoAdminPage', () => {
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
         target: { files: [archivoValido()] },
       });
-      await esperar(0);
-      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), { target: { value: 'alt es' } });
-      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), { target: { value: 'alt en' } });
+      await screen.findByLabelText('Texto alternativo (español)');
+      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), {
+        target: { value: 'alt es' },
+      });
+      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), {
+        target: { value: 'alt en' },
+      });
 
       fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
-      await esperar(50);
+      await vi.waitFor(() => expect(repositorio.llamadasSubirImagen).toHaveLength(1));
 
       expect(repositorio.llamadasSubirImagen).toEqual([
-        { productoId: 'p1', archivo: expect.any(File), ancho: 800, alto: 600, altEs: 'alt es', altEn: 'alt en' },
+        {
+          productoId: 'p1',
+          archivo: expect.any(File),
+          ancho: 800,
+          alto: 600,
+          altEs: 'alt es',
+          altEn: 'alt en',
+        },
       ]);
     });
 
@@ -255,11 +280,11 @@ describe('EditarProductoAdminPage', () => {
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
         target: { files: [archivoValido()] },
       });
-      await esperar(0);
-
-      expect(
-        (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
-      ).toBe(true);
+      await vi.waitFor(() =>
+        expect(
+          (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
+        ).toBe(true),
+      );
     });
 
     it('con un tipo de archivo no soportado, muestra un error y no ofrece subirlo', async () => {
@@ -269,10 +294,10 @@ describe('EditarProductoAdminPage', () => {
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
         target: { files: [new File(['x'], 'documento.pdf', { type: 'application/pdf' })] },
       });
-      await esperar(0);
+      await screen.findByText('Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.');
 
       expect(
-        screen.getByText("Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP."),
+        screen.getByText('Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.'),
       ).toBeTruthy();
       expect(
         (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
@@ -287,13 +312,15 @@ describe('EditarProductoAdminPage', () => {
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
         target: { files: [archivoValido()] },
       });
-      await esperar(0);
-      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), { target: { value: 'alt es' } });
-      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), { target: { value: 'alt en' } });
+      await screen.findByLabelText('Texto alternativo (español)');
+      fireEvent.input(screen.getByLabelText('Texto alternativo (español)'), {
+        target: { value: 'alt es' },
+      });
+      fireEvent.input(screen.getByLabelText('Texto alternativo (inglés)'), {
+        target: { value: 'alt en' },
+      });
       fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
-      await esperar(50);
-
-      expect(screen.getByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeTruthy();
+      expect(await screen.findByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeTruthy();
     });
   });
 });

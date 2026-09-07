@@ -1,7 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { LineaCarrito } from '../../domain/carrito.model';
 import { SnapshotLinea } from '../../domain/snapshot-linea.model';
@@ -10,7 +10,6 @@ import { SnapshotLinea } from '../../domain/snapshot-linea.model';
   selector: 'app-linea-carrito',
   imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsPrecio],
   templateUrl: './linea-carrito.html',
-  styleUrl: './linea-carrito.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LineaCarritoComponent {

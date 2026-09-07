@@ -1,7 +1,9 @@
-<section class="iniciar-sesion-admin">
-  <h1 class="iniciar-sesion-admin__titulo">{{ 'admin.iniciarSesion.titulo' | transloco }}</h1>
-
-  <form class="iniciar-sesion-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+<ts-pagina-formulario [titulo]="'admin.iniciarSesion.titulo' | transloco">
+  <form
+    class="flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
     <ts-campo
       idCampo="admin-correo"
       tipo="email"
@@ -17,7 +19,7 @@
     />
 
     @if (error()) {
-      <p class="iniciar-sesion-admin__error" role="alert">{{ error() }}</p>
+      <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
     }
 
     <ts-boton
@@ -30,4 +32,4 @@
       {{ 'admin.iniciarSesion.entrar' | transloco }}
     </ts-boton>
   </form>
-</section>
+</ts-pagina-formulario>

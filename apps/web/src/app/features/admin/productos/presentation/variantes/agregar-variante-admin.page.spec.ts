@@ -7,13 +7,28 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { Atributo } from '../../../../catalogo/domain/producto.model';
-import { REPOSITORIO_ATRIBUTOS, RepositorioAtributos } from '../../../../catalogo/domain/repositorio-atributos.puerto';
-import { AgregarVarianteAdmin, ProductoAdmin, ProductosPaginadosAdmin } from '../../domain/producto-admin.model';
-import { REPOSITORIO_PRODUCTOS_ADMIN, RepositorioProductosAdmin } from '../../domain/repositorio-productos-admin.puerto';
+import {
+  REPOSITORIO_ATRIBUTOS,
+  RepositorioAtributos,
+} from '../../../../catalogo/domain/repositorio-atributos.puerto';
+import {
+  AgregarVarianteAdmin,
+  ProductoAdmin,
+  ProductosPaginadosAdmin,
+} from '../../domain/producto-admin.model';
+import {
+  REPOSITORIO_PRODUCTOS_ADMIN,
+  RepositorioProductosAdmin,
+} from '../../domain/repositorio-productos-admin.puerto';
 import { AgregarVarianteAdminPage } from './agregar-variante-admin.page';
 
 const COLOR: Atributo = { id: 'a1', nombre: 'Color', tipo: 'COLOR', valoresPermitidos: [] };
-const TALLA: Atributo = { id: 'a2', nombre: 'Talla', tipo: 'TEXTO', valoresPermitidos: ['S', 'M', 'L'] };
+const TALLA: Atributo = {
+  id: 'a2',
+  nombre: 'Talla',
+  tipo: 'TEXTO',
+  valoresPermitidos: ['S', 'M', 'L'],
+};
 
 class RepositorioAtributosFalso implements RepositorioAtributos {
   async listarTodas(): Promise<Atributo[]> {
@@ -78,15 +93,14 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, pro
   });
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 describe('AgregarVarianteAdminPage', () => {
   it('el botón crear arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioProductosAdminFalso());
 
-    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('al elegir un atributo de tipo color, muestra el campo de color', async () => {
@@ -108,7 +122,7 @@ describe('AgregarVarianteAdminPage', () => {
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-CAM-AZ-M' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '89900' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
-    await esperar(50);
+    await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
 
     expect(repositorio.llamadasAgregarVariante).toEqual([
       {
@@ -130,8 +144,12 @@ describe('AgregarVarianteAdminPage', () => {
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
-    await esperar(50);
 
-    expect(screen.getByText('No se pudo agregar la variante. Intenta de nuevo.')).toBeTruthy();
+    // `findByText`, no `await esperar(50)`: la espera fija pasaba en aislamiento
+    // y fallaba en la suite completa, porque 50 ms no alcanzan cuando la
+    // máquina está cargada. `findByText` sondea hasta que el mensaje aparece.
+    expect(
+      await screen.findByText('No se pudo agregar la variante. Intenta de nuevo.'),
+    ).toBeTruthy();
   });
 });

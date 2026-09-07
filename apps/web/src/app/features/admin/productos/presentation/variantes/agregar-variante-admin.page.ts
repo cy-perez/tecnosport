@@ -5,10 +5,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarAtributos } from '../../../../catalogo/application/listar-atributos.consulta';
 import { Atributo } from '../../../../catalogo/domain/producto.model';
-import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
-import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAgregarVarianteAdmin } from '../../application/agregar-variante-admin.mutacion';
 
@@ -28,9 +29,8 @@ function grupoAtributo(): GrupoAtributo {
 
 @Component({
   selector: 'app-agregar-variante-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
   templateUrl: './agregar-variante-admin.page.html',
-  styleUrl: './agregar-variante-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AgregarVarianteAdminPage {
@@ -45,21 +45,30 @@ export class AgregarVarianteAdminPage {
   private readonly atributos = usarAtributos();
   private readonly mutacion = usarAgregarVarianteAdmin();
 
-  private readonly paramMap = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
+  private readonly paramMap = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
   protected readonly productoId = computed(() => this.paramMap().get('productoId') ?? '');
 
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = new FormGroup({
     sku: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    precio: new FormControl<number | null>(null, { validators: [Validators.required, Validators.min(0)] }),
-    tasaIva: new FormControl(0.19, { nonNullable: true, validators: [Validators.required, Validators.min(0)] }),
+    precio: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(0)],
+    }),
+    tasaIva: new FormControl(0.19, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0)],
+    }),
     codigoBarras: new FormControl('', { nonNullable: true }),
     existenciaInicial: new FormControl(0, { nonNullable: true, validators: [Validators.min(0)] }),
     atributos: new FormArray<GrupoAtributo>([]),
   });
 
-  private readonly valorFormulario = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valorFormulario = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly formularioInvalido = computed(() => {
     this.valorFormulario();
     return this.form.invalid;
@@ -68,7 +77,10 @@ export class AgregarVarianteAdminPage {
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesAtributo = computed<OpcionSelect[]>(() =>
-    (this.atributos.data() ?? []).map((atributo) => ({ valor: atributo.id, etiqueta: atributo.nombre })),
+    (this.atributos.data() ?? []).map((atributo) => ({
+      valor: atributo.id,
+      etiqueta: atributo.nombre,
+    })),
   );
 
   protected esAtributoDeColor(atributoId: string): boolean {
@@ -115,7 +127,8 @@ export class AgregarVarianteAdminPage {
             this.productoId(),
             'editar',
           ]),
-        onError: () => this.error.set(this.transloco.translate('admin.productos.agregarVariante.error')),
+        onError: () =>
+          this.error.set(this.transloco.translate('admin.productos.agregarVariante.error')),
       },
     );
   }

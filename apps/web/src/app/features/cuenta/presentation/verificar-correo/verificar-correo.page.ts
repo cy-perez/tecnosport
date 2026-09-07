@@ -1,5 +1,12 @@
 import { isPlatformBrowser } from '@angular/common';
-import { afterNextRender, ChangeDetectionStrategy, Component, inject, PLATFORM_ID, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
@@ -18,7 +25,6 @@ type EstadoVerificacion = 'cargando' | 'exito' | 'error';
   selector: 'app-verificar-correo',
   imports: [TranslocoPipe],
   templateUrl: './verificar-correo.page.html',
-  styleUrl: './verificar-correo.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VerificarCorreoPage {

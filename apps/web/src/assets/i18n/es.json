@@ -20,7 +20,10 @@
     "panel": "Panel",
     "entrar": "Entrar",
     "crear_cuenta": "Crear cuenta",
-    "cerrar_sesion": "Cerrar sesión"
+    "cerrar_sesion": "Cerrar sesión",
+    "abrir_menu": "Abrir el menú",
+    "cerrar_menu": "Cerrar el menú",
+    "menu": "Menú"
   },
   "pie": {
     "nombre_comercial": "Tecno Sport",

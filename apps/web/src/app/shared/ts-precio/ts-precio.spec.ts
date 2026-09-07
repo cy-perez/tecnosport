@@ -37,3 +37,37 @@ describe('TsPrecio', () => {
     expect(screen.getByText(/89,900/)).toBeTruthy();
   });
 });
+
+describe('TsPrecio con prefijo', () => {
+  it('sin prefijo solo muestra el valor', async () => {
+    const { container } = await render(TsPrecio, {
+      inputs: { valor: 189900 },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en },
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+    });
+
+    expect(container.querySelectorAll('span')).toHaveLength(1);
+  });
+
+  // El prefijo llega traducido desde fuera: el componente no resuelve ninguna
+  // clave de i18n, y por eso no puede depender de un scope perezoso.
+  it('el prefijo se pinta tal cual lo pasan, sin traducirlo', async () => {
+    await render(TsPrecio, {
+      inputs: { valor: 189900, prefijo: 'Desde' },
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en },
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+    });
+
+    expect(screen.getByText('Desde')).toBeTruthy();
+  });
+});

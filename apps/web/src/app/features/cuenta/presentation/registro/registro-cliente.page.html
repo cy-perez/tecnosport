@@ -1,13 +1,14 @@
 @if (registrado()) {
-  <section class="registro-cliente registro-cliente--exito">
-    <h1 class="registro-cliente__titulo">{{ 'cuenta.registro.exito_titulo' | transloco }}</h1>
+  <ts-pagina-formulario [titulo]="'cuenta.registro.exito_titulo' | transloco">
     <p>{{ 'cuenta.registro.exito_mensaje' | transloco }}</p>
-  </section>
+  </ts-pagina-formulario>
 } @else {
-  <section class="registro-cliente">
-    <h1 class="registro-cliente__titulo">{{ 'cuenta.registro.titulo' | transloco }}</h1>
-
-    <form class="registro-cliente__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+  <ts-pagina-formulario [titulo]="'cuenta.registro.titulo' | transloco">
+    <form
+      class="flex flex-col gap-16"
+      [formGroup]="form"
+      (submit)="$event.preventDefault(); enviar()"
+    >
       <ts-campo
         idCampo="registro-correo"
         tipo="email"
@@ -31,7 +32,7 @@
       />
 
       @if (error()) {
-        <p class="registro-cliente__error" role="alert">{{ error() }}</p>
+        <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
       }
 
       <ts-boton
@@ -44,5 +45,5 @@
         {{ 'cuenta.registro.crear_cuenta' | transloco }}
       </ts-boton>
     </form>
-  </section>
+  </ts-pagina-formulario>
 }

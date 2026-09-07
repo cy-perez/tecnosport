@@ -11,7 +11,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsMigas } from '../../../shared/ts-migas/ts-migas';
 import { TsVisor360 } from '../../../shared/ts-visor-360/ts-visor-360';
 import { usarMigasAdmin } from '../../admin/migas-admin';
@@ -33,7 +33,6 @@ import { claveDeToma, FOTOGRAMAS_POSIBLES, gradosDeToma } from '../domain/sesion
   selector: 'app-captura-360',
   imports: [TranslocoPipe, TsBoton, TsIndicadorNivel, TsMigas, TsSuperposicionGuia, TsVisor360],
   templateUrl: './captura-360.page.html',
-  styleUrl: './captura-360.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Captura360Page {

@@ -70,17 +70,22 @@ describe('TsIndicadorNivel', () => {
     expect(screen.getByText('Esta toma fija la inclinación de referencia del set.')).toBeTruthy();
   });
 
+  // Por el texto y no por `.indicador-nivel__glifo`: esa clase existía solo
+  // para el SCSS y desapareció al pasar el componente a Tailwind. El glifo *es*
+  // el texto, así que consultarlo directamente prueba lo mismo sin depender de
+  // cómo esté estilado.
   it('cada estado lleva su glifo, para no distinguirlos solo por el color', async () => {
-    const { container } = await renderIndicador(nivel({ estado: 'EN_RANGO' }));
+    await renderIndicador(nivel({ estado: 'EN_RANGO' }));
 
-    expect(container.querySelector('.indicador-nivel__glifo')?.textContent?.trim()).toBe('●');
+    expect(screen.getByText('●')).toBeTruthy();
   });
 
   it('y el glifo de fuera de rango no es el mismo que el de en rango', async () => {
-    const { container } = await renderIndicador(
+    await renderIndicador(
       nivel({ estado: 'FUERA_DE_RANGO', desviacionBeta: -20, puedeDisparar: false }),
     );
 
-    expect(container.querySelector('.indicador-nivel__glifo')?.textContent?.trim()).toBe('○');
+    expect(screen.getByText('○')).toBeTruthy();
+    expect(screen.queryByText('●')).toBeNull();
   });
 });

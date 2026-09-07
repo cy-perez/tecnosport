@@ -1,0 +1,355 @@
+/* Puente entre Tailwind v4 y el sistema de marca. NO define un tema nuevo:
+   cada utilidad se resuelve a una variable de `tokens.css`, que es generado
+   desde `packages/marca/tokens.json` (docs/04-ui-marca.md, regla dura #3).
+   Aquí no se escribe ningún HEX. El único valor literal son los puntos de
+   quiebre, y hay un motivo de CSS para eso — ver más abajo.
+
+   Se carga DESPUÉS de tokens.css en angular.json: las utilidades referencian
+   variables que ya tienen que estar declaradas cuando llegan.
+
+   Tailwind 4.3.3 no tiene `tailwind.config.ts`: la configuración es CSS. */
+
+/* Composición manual en vez de `@import "tailwindcss"`, que arrastraría
+   Preflight. Preflight resetea el margen, el relleno y la tipografía de todo
+   el documento, y cambiaría de golpe el aspecto de las 45 plantillas que hoy
+   dependen de los valores por omisión del navegador. La refactorización es
+   incremental (Fase 3): el reset entra cuando entre, no antes. */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@source './app/**/*.{html,ts}';
+
+/* Lo único de Preflight que sí hace falta ya. En Tailwind v4 la utilidad
+   `border` fija el ancho pero no el estilo, y el estilo por omisión de CSS es
+   `none`: sin esta línea, `border` no dibuja nada. Es la misma regla de
+   `tailwindcss/preflight.css:15`, aislada. Segura aquí porque los tres
+   controles nativos del proyecto —`ts-campo`, `ts-select` y `ts-boton`—
+   declaran su borde completo y explícito. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border: 0 solid;
+  }
+}
+
+/* El tema oscuro NO se conmuta con `.dark`. Ya existe `data-tema` en <html>,
+   resuelto en el servidor durante el SSR y persistido en cookie
+   (`core/tema/`, `tema-ssr.ts`, el script en línea de `index.html`). Montar
+   un segundo mecanismo en paralelo sería un destello garantizado al hidratar.
+
+   En la práctica el variant casi no se necesita: como los tokens de color se
+   redefinen bajo `[data-tema="oscuro"]` y `@theme inline` deja la `var()` en
+   la utilidad, `bg-ts-superficie` ya cambia de color solo. El variant queda
+   para lo que de verdad difiere entre temas, como la sombra. */
+@custom-variant oscuro (&:where([data-tema='oscuro'], [data-tema='oscuro'] *));
+
+/* Se borran las escalas por omisión de Tailwind. Sin esto seguirían
+   existiendo `bg-red-500`, `p-7`, `rounded-lg` y `text-8xl`: valores que el
+   kit de marca no aprobó. Borrarlas es lo que mantiene verificable el
+   espíritu de la regla dura #2 — una utilidad que no existe no se puede usar,
+   y `rounded-*` deja de existir por completo, que es "radio 0 en todo"
+   impuesto por el compilador y no por disciplina. */
+@theme {
+  --color-*: initial;
+  --spacing: initial;
+  --spacing-*: initial;
+  --radius-*: initial;
+  --font-*: initial;
+  --font-weight-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --shadow-*: initial;
+  --breakpoint-*: initial;
+  --container-*: initial;
+}
+
+/* `inline` es la pieza clave de todo el archivo: hace que la utilidad lleve
+   la `var(--color-…)` en vez de una copia del valor resuelto. Por eso el modo
+   oscuro sigue funcionando sin un solo `oscuro:` en las plantillas: cuando
+   `[data-tema="oscuro"]` redefine `--color-superficie`, la utilidad ya está
+   apuntando a esa variable. */
+@theme inline {
+  /* COLOR — prefijo `ts-` para no colisionar con los nombres de los tokens:
+     `--color-primario` es el token; `--color-ts-primario` es lo que Tailwind
+     lee para generar `bg-ts-primario`. */
+  --color-ts-primario: var(--color-primario);
+  --color-ts-primario-hover: var(--color-primario-hover);
+  --color-ts-primario-pressed: var(--color-primario-pressed);
+  --color-ts-primario-suave: var(--color-primario-suave);
+  --color-ts-sobre-primario: var(--color-sobre-primario);
+
+  --color-ts-acento: var(--color-acento);
+  --color-ts-acento-hover: var(--color-acento-hover);
+  --color-ts-acento-pressed: var(--color-acento-pressed);
+  --color-ts-sobre-acento: var(--color-sobre-acento);
+
+  --color-ts-marca: var(--color-marca);
+  --color-ts-marca-alt: var(--color-marca-alt);
+  --color-ts-marca-fuerte: var(--color-marca-fuerte);
+  --color-ts-sobre-marca: var(--color-sobre-marca);
+
+  --color-ts-fondo: var(--color-fondo);
+  --color-ts-superficie: var(--color-superficie);
+  --color-ts-superficie-alt: var(--color-superficie-alt);
+
+  --color-ts-texto: var(--color-texto);
+  --color-ts-texto-suave: var(--color-texto-suave);
+
+  --color-ts-borde: var(--color-borde);
+  --color-ts-borde-control: var(--color-borde-control);
+  --color-ts-foco: var(--color-foco);
+
+  --color-ts-exito: var(--color-exito);
+  --color-ts-aviso: var(--color-aviso);
+  --color-ts-error: var(--color-error);
+  --color-ts-deshabilitado: var(--color-deshabilitado);
+  --color-ts-sobre-deshabilitado: var(--color-sobre-deshabilitado);
+
+  /* TIPOGRAFIA */
+  --font-texto: var(--fuente-texto);
+  --font-display: var(--fuente-display);
+  --font-mono: var(--fuente-mono);
+
+  --font-weight-regular: var(--peso-regular);
+  --font-weight-medio: var(--peso-medio);
+  --font-weight-fuerte: var(--peso-fuerte);
+
+  --leading-titulares: var(--interlineado-titulares);
+  --leading-texto: var(--interlineado-texto);
+
+  --text-xs: var(--texto-xs);
+  --text-sm: var(--texto-sm);
+  --text-base: var(--texto-base);
+  --text-lg: var(--texto-lg);
+  --text-xl: var(--texto-xl);
+  --text-2xl: var(--texto-2xl);
+  --text-3xl: var(--texto-3xl);
+  --text-4xl: var(--texto-4xl);
+
+  /* ESPACIO — OJO: el número es el píxel, no el múltiplo de 4 de Tailwind
+     por omisión. En este proyecto `p-16` son 16px (`var(--esp-16)`), no
+     64px. Se eligió así para que el nombre de la utilidad sea rastreable
+     al nombre del token de un vistazo; la escala por omisión se borró
+     arriba justo para que no haya ambigüedad. */
+  /* El cero no está en `tokens.json` y no hace falta que esté: no es una
+     decisión de diseño, es la ausencia de una. Sin él no existen `p-0`,
+     `m-0`, `min-w-0` ni `gap-0`, y un `min-inline-size: 0` —el que evita que
+     un select ensanche su columna, ver `ui/campo`— no se podría expresar.
+     Encontrado al traducir `ts-boton`, donde `min-h-0` no hacía nada. */
+  --spacing-0: 0px;
+  --spacing-4: var(--esp-4);
+  --spacing-8: var(--esp-8);
+  --spacing-12: var(--esp-12);
+  --spacing-16: var(--esp-16);
+  --spacing-24: var(--esp-24);
+  --spacing-32: var(--esp-32);
+  --spacing-48: var(--esp-48);
+  --spacing-64: var(--esp-64);
+  --spacing-96: var(--esp-96);
+
+  /* HUECOS CONOCIDOS DEL KIT. Los dos valores que el sistema usa y
+     `tokens.json` no define. Viven aquí, con nombre y en un solo sitio, en vez
+     de repetidos como píxeles sueltos en cada componente — que es como estaban
+     en el SCSS.
+
+     `tactil`: los 44x44 px de objetivo táctil mínimo que la tabla de medidas de
+     `docs/04-ui-marca.md` exige y no tokeniza.
+     `insignia`: el contador del carrito en el encabezado, 20x20.
+
+     TODO: pedir `--tactil-min` y `--insignia` en el tokens.json del kit. */
+  --spacing-tactil: 44px;
+  --spacing-insignia: 20px;
+
+  /* SOMBRA */
+  --shadow-sm: var(--sombra-sm);
+  --shadow-md: var(--sombra-md);
+  --shadow-lg: var(--sombra-lg);
+
+  /* ANCHOS DE CONTENEDOR */
+  /* `max` colisionaba con el `max-w-max` nativo (max-content) y emitía
+     `max-width` dos veces en la misma regla. */
+  --container-contenido: var(--ancho-max);
+  --container-formulario: var(--ancho-formulario);
+  --container-formulario-lg: var(--ancho-formulario-lg);
+  --container-filtro: var(--ancho-filtro);
+}
+
+/* PUNTOS DE QUIEBRE — los únicos valores literales del archivo, y no por
+   descuido: una media query no puede leer una propiedad personalizada de CSS
+   (`@media (min-width: var(--bp-movil))` no es válido en ninguna versión de
+   la especificación). El SCSS del proyecto ya escribía `640px` y `1024px`
+   literales por el mismo motivo; centralizarlos aquí es una mejora, porque
+   ahora están en un solo sitio. Si `tokens.json` cambia un breakpoint, este
+   bloque es el que hay que sincronizar. Van fuera de `inline` a propósito:
+   `inline` no aporta nada donde no hay `var()`. */
+@theme {
+  /* `desde-` en el nombre y no `movil:` a secas, que es la trampa obvia: en
+     Tailwind un variant de punto de quiebre es `min-width`, así que
+     `movil:hidden` significaría "oculto DESDE 640 px hacia arriba" — lo
+     contrario de lo que cualquiera lee. Con `desde-movil:` no hay forma de
+     leerlo mal. Mobile-first: lo que va sin variant es el móvil. */
+  --breakpoint-desde-movil: 640px;
+  --breakpoint-desde-tableta: 1024px;
+  --breakpoint-desde-escritorio: 1280px;
+}
+
+/* El anillo de foco como una sola clase. `docs/04-ui-marca.md` lo exige en el
+   cien por ciento de los elementos enfocables y nunca se elimina sin
+   reemplazo; repetir tres utilidades en cada control es la forma más fácil de
+   que a alguien se le olvide una. Mismo resultado que
+   `focus-visible:outline-2 focus-visible:outline-ts-foco focus-visible:outline-offset-2`.
+
+   El chaflán se desactiva solo al enfocar, resuelto en `tokens.css`, porque
+   `clip-path` recortaría este anillo. */
+@utility anillo-foco {
+  &:focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+}
+
+/* El mismo anillo, para lo que va sobre una franja de marca.
+   No es un capricho de nombres: en tema claro `--color-foco` es `#1B1F26` y
+   `--color-marca` es `#1B1F26` — el mismo color. Un anillo de `--color-foco`
+   sobre el pie es literalmente invisible, y así estaba el SCSS de
+   `layout/pie` para los enlaces de su navegación (los de la dirección sí
+   usaban el color correcto). Sobre marca, el anillo va en
+   `--color-sobre-marca`. */
+@utility anillo-foco-sobre-marca {
+  &:focus-visible {
+    outline: 2px solid var(--color-sobre-marca);
+    outline-offset: 2px;
+  }
+}
+
+/* Y el mismo anillo para lo que va sobre ámbar. Tercer caso del mismo
+   problema: en tema **oscuro** `--color-foco` y `--color-acento` son los dos
+   `#F5B301`, así que el anillo del enlace de salto al contenido —que es
+   ámbar— era invisible justo en ese tema. `--color-sobre-acento` es grafito
+   en los dos temas, así que contrasta siempre.
+
+   La regla general, por si aparece un cuarto caso: el color del anillo tiene
+   que contrastar con la superficie sobre la que se pinta, y el sistema ya
+   tiene un token para eso en cada pareja `--color-sobre-*`. */
+@utility anillo-foco-sobre-acento {
+  &:focus-visible {
+    outline: 2px solid var(--color-sobre-acento);
+    outline-offset: 2px;
+  }
+}
+
+/* El brillo de carga. Va aquí y no en un `.scss` de componente porque es una
+   primitiva del sistema —la usan trece pantallas— y porque unos `@keyframes`
+   duplicados trece veces son trece sitios donde desincronizarse. Los colores
+   salen de tokens; la duración y la curva **no**, porque `tokens.json` no
+   define valores de movimiento. Es el mismo hueco que impide animar el menú
+   móvil. TODO: pedir tokens de movimiento al kit. */
+@utility esqueleto {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-superficie-alt) 25%,
+    var(--color-borde) 50%,
+    var(--color-superficie-alt) 75%
+  );
+  background-size: 200% 100%;
+  animation: esqueleto-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes esqueleto-brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Sin capa, para ganarle a la utilidad. Dos disparadores y no uno: la
+   preferencia del sistema y el control del pie. `styles.scss` ya reduce la
+   *duración* de toda animación bajo `[data-movimiento]`, pero eso deja el
+   degradado parpadeando a 0,01 ms en vez de quieto — hay que apagarlo, no
+   acelerarlo. Antes solo lo hacía la media query; ahora los dos coinciden. */
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto {
+    background-image: none;
+    animation: none;
+  }
+}
+
+[data-movimiento='reducido'] .esqueleto {
+  background-image: none;
+  animation: none;
+}
+
+/* Las tres propiedades que hacen de un elemento una superficie de arrastre.
+   Van juntas porque se explican juntas, y porque una de ellas —`-webkit-user-drag`—
+   no tiene utilidad en Tailwind: sin ella el puntero arrastra el fotograma como
+   si fuera un enlace. `pan-y` deja el desplazamiento vertical al navegador; sin
+   eso, girar el visor en un teléfono secuestraría el scroll de la página. */
+@utility superficie-arrastre {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Mínimos de columna de las rejillas que se reparten solas
+   (`repeat(auto-fill, minmax(X, 1fr))`). El kit no define ninguno: son tres
+   valores elegidos a ojo en tres pantallas distintas, y por eso están aquí
+   juntos en vez de repartidos por las plantillas — así se ve que son tres y
+   que probablemente deberían ser uno.
+
+   No van en `@theme` porque no generan utilidades: se usan dentro de un valor
+   arbitrario, que es la escapatoria que la regla dura #2 permite cuando apunta
+   a una variable.
+
+   TODO: preguntar al kit si esto es un solo valor de sistema. */
+:root {
+  --ancho-min-filtro: 160px;
+  --ancho-min-eje: 200px;
+  --ancho-min-tarjeta: 220px;
+  /* La vista previa de la imagen principal en el panel de productos. */
+  --ancho-vista-previa: 200px;
+}
+
+/* MOVIMIENTO. Otro hueco del kit: `tokens.json` no define ninguna duración ni
+   curva, y una animación necesita las dos. Los valores están aquí, con nombre,
+   en vez de sueltos en una plantilla.
+
+   La *distancia* sí sale de un token (`--esp-8`): desplazar ocho píxeles es una
+   decisión de espacio, y esa el kit sí la tiene.
+
+   Entrar dura un poco más que salir a propósito: cerrar tiene que sentirse
+   inmediato, abrir puede acompañar.
+
+   TODO: pedir una escala de movimiento al kit. */
+@theme {
+  --animate-desplegar: desplegar 160ms ease-out;
+  --animate-plegar: plegar 120ms ease-in;
+}
+
+@keyframes desplegar {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--esp-8) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes plegar {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--esp-8) * -1));
+  }
+}

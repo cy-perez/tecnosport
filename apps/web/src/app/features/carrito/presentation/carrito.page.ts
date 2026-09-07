@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../application/carrito.store';
@@ -12,7 +12,6 @@ import { LineaCarritoComponent } from './linea-carrito/linea-carrito';
   selector: 'app-carrito',
   imports: [TranslocoPipe, RouterLink, TsBoton, TsEsqueleto, TsPrecio, LineaCarritoComponent],
   templateUrl: './carrito.page.html',
-  styleUrl: './carrito.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarritoPage {

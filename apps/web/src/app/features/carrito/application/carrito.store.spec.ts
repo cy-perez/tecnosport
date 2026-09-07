@@ -68,9 +68,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
  * de deshabilitada a habilitada). `fixture.whenStable()` no alcanza a esperar ese registro — una
  * pequeña espera real, mismo recurso que ya usa `filtros-productos.spec.ts` para el debounce.
  */
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 @Component({ selector: 'app-anfitrion-de-prueba', template: '' })
 class AnfitrionDePrueba {
@@ -97,9 +94,7 @@ describe('CarritoStore', () => {
     const { store } = await renderConRepositorio(repositorio);
 
     await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
-    await esperar(100);
-
-    expect(repositorio.llamadasCrear).toBe(1);
+    await vi.waitFor(() => expect(repositorio.llamadasCrear).toBe(1));
     expect(store.carritoId()).toBe('carrito-1');
   });
 
@@ -108,11 +103,11 @@ describe('CarritoStore', () => {
     const { store } = await renderConRepositorio(repositorio);
 
     await store.agregarAlCarrito('variante-1', 1, snapshotDePrueba('variante-1'));
-    await esperar(100);
+    // Se espera a que el carrito exista, no a que pasen 100 ms: la segunda
+    // llamada solo tiene sentido cuando la primera ya lo creó.
+    await vi.waitFor(() => expect(store.carritoId()).not.toBeNull());
     await store.agregarAlCarrito('variante-2', 1, snapshotDePrueba('variante-2'));
-    await esperar(100);
-
-    expect(repositorio.llamadasCrear).toBe(1);
+    await vi.waitFor(() => expect(repositorio.llamadasCrear).toBe(1));
   });
 
   it('cantidadTotal suma la cantidad de todas las líneas', async () => {
@@ -120,23 +115,20 @@ describe('CarritoStore', () => {
     const { store } = await renderConRepositorio(repositorio);
 
     await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
-    await esperar(100);
+    await vi.waitFor(() => expect(store.carritoId()).not.toBeNull());
     await store.agregarAlCarrito('variante-2', 3, snapshotDePrueba('variante-2'));
-    await esperar(100);
-
-    expect(store.cantidadTotal()).toBe(5);
+    await vi.waitFor(() => expect(store.cantidadTotal()).toBe(5));
   });
 
   it('eliminarLinea la quita y cantidadTotal baja', async () => {
     const repositorio = new RepositorioCarritoFalso();
     const { store } = await renderConRepositorio(repositorio);
     await store.agregarAlCarrito('variante-1', 2, snapshotDePrueba('variante-1'));
-    await esperar(100);
+    // Se espera a que la línea exista: es lo que la siguiente instrucción lee.
+    await vi.waitFor(() => expect(store.consulta.data()?.lineas.length).toBeGreaterThan(0));
     const lineaId = store.consulta.data()?.lineas[0].id as string;
 
     await store.eliminarLinea(lineaId);
-    await esperar(100);
-
-    expect(store.cantidadTotal()).toBe(0);
+    await vi.waitFor(() => expect(store.cantidadTotal()).toBe(0));
   });
 });

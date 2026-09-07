@@ -7,7 +7,10 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { PedidoAdmin, PedidosPaginadosAdmin } from '../../domain/pedido-admin.model';
-import { REPOSITORIO_PEDIDOS_ADMIN, RepositorioPedidosAdmin } from '../../domain/repositorio-pedidos-admin.puerto';
+import {
+  REPOSITORIO_PEDIDOS_ADMIN,
+  RepositorioPedidosAdmin,
+} from '../../domain/repositorio-pedidos-admin.puerto';
 import { ListaPedidosAdminPage } from './lista-pedidos-admin.page';
 
 function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
@@ -52,7 +55,12 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
 
   async listar(): Promise<PedidosPaginadosAdmin> {
     this.llamadasListar++;
-    return { items: this.items, pagina: 0, totalPaginas: this.totalPaginas, totalPedidos: this.items.length };
+    return {
+      items: this.items,
+      pagina: 0,
+      totalPaginas: this.totalPaginas,
+      totalPedidos: this.items.length,
+    };
   }
 
   async conciliarTransferencia(pedidoId: string): Promise<PedidoAdmin> {
@@ -84,7 +92,11 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
 // El filtro de estado vive en la URL (ADR-0011): para distinguir "no hay
 // pedidos en ese estado" de "todavía no hay pedidos" hay que poder fijarlo,
 // mismo recurso que ya usa rejilla.page.spec.ts.
-async function renderLista(items: PedidoAdmin[], queryParams: Record<string, string> = {}, totalPaginas = 1) {
+async function renderLista(
+  items: PedidoAdmin[],
+  queryParams: Record<string, string> = {},
+  totalPaginas = 1,
+) {
   const repositorio = new RepositorioPedidosAdminFalso(items, totalPaginas);
   const resultado = await render(ListaPedidosAdminPage, {
     imports: [
@@ -97,16 +109,16 @@ async function renderLista(items: PedidoAdmin[], queryParams: Record<string, str
     providers: [
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
-      { provide: ActivatedRoute, useValue: { queryParams: of(queryParams), snapshot: { queryParams } } },
+      {
+        provide: ActivatedRoute,
+        useValue: { queryParams: of(queryParams), snapshot: { queryParams } },
+      },
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
     ],
   });
   return { ...resultado, repositorio };
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 describe('ListaPedidosAdminPage', () => {
   it('lista los pedidos con sus columnas principales', async () => {
@@ -130,7 +142,9 @@ describe('ListaPedidosAdminPage', () => {
   it('sin pedidos pero con filtro de estado, ofrece quitarlo', async () => {
     await renderLista([], { estado: 'PAGADO' }, 0);
 
-    expect(await screen.findByText('No hay pedidos en ese estado. Prueba con «Todos».')).toBeTruthy();
+    expect(
+      await screen.findByText('No hay pedidos en ese estado. Prueba con «Todos».'),
+    ).toBeTruthy();
   });
 
   it('cambiar el filtro de estado navega con ese query param', async () => {
@@ -141,7 +155,10 @@ describe('ListaPedidosAdminPage', () => {
 
     fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'PAGADO' } });
 
-    expect(navegar).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { estado: 'PAGADO' } }));
+    expect(navegar).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { estado: 'PAGADO' } }),
+    );
   });
 
   it('la paginación deshabilita "Anterior" en la primera página de una sola', async () => {
@@ -167,9 +184,7 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Conciliar transferencia' }));
-    await esperar(20);
-
-    expect(repositorio.llamadasConciliarTransferencia).toEqual(['p1']);
+    await vi.waitFor(() => expect(repositorio.llamadasConciliarTransferencia).toEqual(['p1']));
     expect(repositorio.llamadasListar).toBeGreaterThan(1);
   });
 });

@@ -1,14 +1,18 @@
-<section class="verificar-correo">
+<section class="mx-auto my-32 max-w-formulario px-16 text-center">
   @switch (estado()) {
     @case ('cargando') {
       <p role="status">{{ 'cuenta.verificarCorreo.cargando' | transloco }}</p>
     }
     @case ('exito') {
-      <h1 class="verificar-correo__titulo">{{ 'cuenta.verificarCorreo.exito_titulo' | transloco }}</h1>
+      <h1 class="m-0 mb-24 font-display text-2xl">
+        {{ 'cuenta.verificarCorreo.exito_titulo' | transloco }}
+      </h1>
       <p>{{ 'cuenta.verificarCorreo.exito_mensaje' | transloco }}</p>
     }
     @case ('error') {
-      <h1 class="verificar-correo__titulo">{{ 'cuenta.verificarCorreo.error_titulo' | transloco }}</h1>
+      <h1 class="m-0 mb-24 font-display text-2xl">
+        {{ 'cuenta.verificarCorreo.error_titulo' | transloco }}
+      </h1>
       <p role="alert">{{ 'cuenta.verificarCorreo.error_mensaje' | transloco }}</p>
     }
   }

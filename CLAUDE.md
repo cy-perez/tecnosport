@@ -21,11 +21,36 @@ para y dime por qué antes de escribir el código.
 1. **La dirección de las dependencias no se invierte nunca.**
    `presentation → application → domain` e `infrastructure → application → domain`.
    `domain` no importa nada de Spring, de JPA ni de Jackson. ArchUnit lo verifica
-   y el build falla si se rompe. En el frontend, lo mismo, verificado con ESLint.
+   y el build falla si se rompe. En el frontend lo verifica
+   **`npm run capas`**, y hay una historia detrás que conviene conocer:
+   `eslint-plugin-boundaries` estaba configurado con la sintaxis legada y el
+   plugin v7 **la acepta sin aplicarla** — se comprobó metiendo violaciones a
+   propósito y el lint pasaba. Un guardián que nunca dispara da confianza falsa.
+   `tools/verificar-capas.mjs` aplica las mismas cuatro reglas sobre los imports
+   relativos, en 90 líneas y sin dependencias.
+   Dos excepciones, las dos porque el enunciado de la regla las pide:
+   `*.routes.ts` sí puede importar `infrastructure` —es el proveedor de la ruta
+   el que elige la implementación— y los `*.spec.ts` se informan aparte sin
+   fallar, porque montar un escenario no es desplegar código.
+   **Hay tres violaciones conocidas y sin resolver**, todas en el carrito: el
+   store y la página leen `localStorage` a través de adaptadores de
+   `infrastructure` en vez de por un puerto de `domain`. Arreglarlo es tocar
+   lógica de negocio, así que está a la espera de una decisión.
 2. **Ningún HEX, ningún píxel suelto, ninguna fuente literal en el frontend.**
    Todo sale de `packages/marca/tokens.css`. Si falta un valor, el sistema está
    incompleto: se añade al `tokens.json` del kit y se regenera.
-3. **No se edita `tokens.css` ni `fuentes.css` a mano.** Son generados.
+   Desde `ADR-0020` la vía es una utilidad de Tailwind mapeada a un token
+   (`bg-ts-primario`, `p-16`), no SCSS a mano. Las escalas por omisión de
+   Tailwind están borradas, así que `bg-red-500` y `rounded-lg` **no existen**.
+   Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
+   todo" lo sostiene la regla, no el compilador.
+   La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
+   Quedan dos literales, los dos justificados y documentados en
+   `apps/web/src/tailwind.css`: los puntos de quiebre, porque una media query no
+   puede leer una propiedad personalizada de CSS, y los 44 px de objetivo táctil,
+   que `tokens.json` no define.
+3. **No se edita `tokens.css` ni `fuentes.css` a mano.** Son generados. Tailwind
+   los *consume*; no los reemplaza ni los reescribe.
 4. **Ningún texto visible escrito directo en una plantilla.** Todo pasa por
    Transloco, en español e inglés, incluidos los mensajes de error y los
    `aria-label`.
@@ -35,6 +60,10 @@ para y dime por qué antes de escribir el código.
 7. **El servidor no confía en el cliente** para precio, existencia, costo de
    envío ni estado de pago. Nunca.
 8. **Nada se da por terminado sin pruebas** que fallen si la lógica se rompe.
+   En el frontend hay dos cosas que las pruebas **no** atrapan y hay que
+   verificar en el navegador: que una clase de Tailwind exista de verdad (una
+   inventada no falla, no hace nada) y el foco — `:focus-visible` y la trampa de
+   foco del CDK no se reproducen en jsdom. Ver `docs/06-testing.md`.
 9. **No inventes la API de una versión.** Java 21, Spring Boot 4.1.0 y Angular
    22.5 son recientes. Si no estás seguro de una firma, una anotación o un
    builder, dilo y consúltalo. Una alucinación de API cuesta más que una pregunta.
@@ -55,6 +84,9 @@ npm run verificar                        lint + pruebas + build de todo
 npm run dev --workspace=apps/web         frontend en :4200
 npm test --workspace=apps/web            Vitest
 npm run contratos                        regenera el cliente desde el OpenAPI
+npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verdad?
+npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
+npm run capas                            ¿alguna dependencia invertida en el frontend?
 docker compose up -d                     PostgreSQL, Mailpit, Adminer
 
 cd apps/api

@@ -1,8 +1,17 @@
 import { Component, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, convertToParamMap, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  convertToParamMap,
+  provideRouter,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
 import { render } from '@testing-library/angular';
-import { REPOSITORIO_SESION, RepositorioSesion } from '../../core/autenticacion/repositorio-sesion.puerto';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from '../../core/autenticacion/repositorio-sesion.puerto';
 import { Sesion } from '../../core/autenticacion/sesion.model';
 import { adminGuard } from './admin.guard';
 
@@ -23,7 +32,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 function rutaConLang(lang: string): ActivatedRouteSnapshot {
-  return { paramMap: convertToParamMap({ lang }), parent: null } as unknown as ActivatedRouteSnapshot;
+  return {
+    paramMap: convertToParamMap({ lang }),
+    parent: null,
+  } as unknown as ActivatedRouteSnapshot;
 }
 
 @Component({ selector: 'app-anfitrion-de-prueba', template: '' })
@@ -41,7 +53,9 @@ async function configurar(repositorio: RepositorioSesion) {
 
 describe('adminGuard', () => {
   it('con sesión de ADMIN, permite el acceso', async () => {
-    await configurar(new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }));
+    await configurar(
+      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' }),
+    );
 
     const resultado = await TestBed.runInInjectionContext(() =>
       adminGuard(rutaConLang('es'), {} as RouterStateSnapshot),
@@ -78,7 +92,9 @@ describe('adminGuard', () => {
   });
 
   it('con sesión de CLIENTE, no permite el acceso', async () => {
-    await configurar(new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }));
+    await configurar(
+      new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }),
+    );
 
     const resultado = await TestBed.runInInjectionContext(() =>
       adminGuard(rutaConLang('es'), {} as RouterStateSnapshot),

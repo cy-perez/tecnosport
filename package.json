@@ -12,7 +12,10 @@
   ],
   "scripts": {
     "verificar": "node tools/verificar.mjs",
-    "contratos": "node tools/generar-contratos.mjs"
+    "contratos": "node tools/generar-contratos.mjs",
+    "clases": "node tools/verificar-clases-tailwind.mjs",
+    "contrastes": "node tools/verificar-contrastes.mjs",
+    "capas": "node tools/verificar-capas.mjs"
   },
   "allowScripts": {
     "esbuild": true,

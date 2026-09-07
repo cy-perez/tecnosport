@@ -9,8 +9,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 
@@ -22,9 +23,8 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
 
 @Component({
   selector: 'app-registro-cliente',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './registro-cliente.page.html',
-  styleUrl: './registro-cliente.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistroClientePage {
@@ -37,7 +37,10 @@ export class RegistroClientePage {
 
   protected readonly form = new FormGroup(
     {
-      correo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+      correo: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.email],
+      }),
       clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       confirmarClave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     },
@@ -48,7 +51,9 @@ export class RegistroClientePage {
   // clave/confirmarClave dejan de coincidir y vuelven a coincidir — status nunca transiciona, así
   // que statusChanges no emitiría de nuevo y el error de confirmación quedaría pegado al valor
   // inicial. valueChanges sí emite en cada tecla, y los validadores ya corrieron para cuando emite.
-  private readonly valorFormulario = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valorFormulario = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly formularioInvalido = computed(() => {
     this.valorFormulario();
     return this.form.invalid;
@@ -67,7 +72,10 @@ export class RegistroClientePage {
     this.enviando.set(true);
 
     try {
-      await this.repositorio.registrar(this.form.controls.correo.value, this.form.controls.clave.value);
+      await this.repositorio.registrar(
+        this.form.controls.correo.value,
+        this.form.controls.clave.value,
+      );
       this.registrado.set(true);
     } catch (error) {
       if (error instanceof CorreoYaRegistradoError) {

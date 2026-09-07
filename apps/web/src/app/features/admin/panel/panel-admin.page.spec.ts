@@ -5,7 +5,10 @@ import en from '../../../../assets/i18n/en.json';
 import es from '../../../../assets/i18n/es.json';
 import enAdmin from '../../../../assets/i18n/scopes/admin/en.json';
 import esAdmin from '../../../../assets/i18n/scopes/admin/es.json';
-import { REPOSITORIO_SESION, RepositorioSesion } from '../../../core/autenticacion/repositorio-sesion.puerto';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { PanelAdminPage } from './panel-admin.page';
@@ -26,9 +29,6 @@ class RepositorioSesionFalso implements RepositorioSesion {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 describe('PanelAdminPage', () => {
   it('muestra el rol de la sesión activa y cierra sesión al hacer clic', async () => {
@@ -52,9 +52,9 @@ describe('PanelAdminPage', () => {
     expect(screen.getByText('Sesión activa como ADMIN.')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
-    await esperar(20);
-
-    expect(repositorio.llamadasCerrar).toBe(1);
-    expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion']);
+    await vi.waitFor(() => {
+      expect(repositorio.llamadasCerrar).toBe(1);
+      expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'iniciar-sesion']);
+    });
   });
 });

@@ -101,9 +101,6 @@ class AnfitrionDePrueba {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderConDatosEntrega(carrito: RepositorioCarrito, pedidos: RepositorioPedidos) {
   return render(AnfitrionDePrueba, {
@@ -155,9 +152,7 @@ describe('MetodoPagoPage', () => {
         { provide: REPOSITORIO_PAGOS, useValue: new RepositorioPagosFalso() },
       ],
     });
-    await esperar(20);
-
-    expect(navegar).toHaveBeenCalledWith(['../resumen'], expect.anything());
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['../resumen'], expect.anything()));
     navegar.mockRestore();
   });
 

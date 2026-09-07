@@ -1,25 +1,25 @@
-<section class="rejilla">
-  <h1 class="rejilla__titulo">{{ 'catalogo.titulo' | transloco }}</h1>
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <h1 class="m-0 mb-24 font-display text-2xl">{{ 'catalogo.titulo' | transloco }}</h1>
 
   <app-filtros-productos />
 
   @if (consulta.isPending()) {
-    <div class="rejilla__grid">
+    <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       @for (marcador of marcadoresDeCarga; track marcador) {
         <ts-esqueleto />
       }
     </div>
   } @else if (consulta.isError()) {
-    <p class="rejilla__error" role="alert">{{ 'catalogo.error' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'catalogo.error' | transloco }}</p>
   } @else if (productos().length === 0) {
     <!-- Dos situaciones distintas: una la puede resolver quien mira (quitar un
          filtro), la otra no. El boton de limpiar ya esta arriba, en los
          filtros: no se duplica aqui. -->
-    <p class="rejilla__vacio">
+    <p class="text-ts-texto-suave">
       {{ (hayFiltros() ? 'catalogo.sin_resultados' : 'catalogo.sin_productos') | transloco }}
     </p>
   } @else {
-    <div class="rejilla__grid">
+    <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       <!-- La primera fila, por el mismo motivo que la franja de la portada:
            entre tarjetas del mismo tamaño el LCP es cualquiera de ellas (medido
            en el navegador, gana la cuarta). Un monitor muy ancho puede meter una
@@ -31,7 +31,7 @@
     </div>
 
     @if (consulta.hasNextPage()) {
-      <div class="rejilla__cargar-mas">
+      <div class="mt-32 flex justify-center">
         <ts-boton
           (click)="consulta.fetchNextPage()"
           [cargando]="consulta.isFetchingNextPage()"

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { TsBoton } from '../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 
 /**
@@ -14,7 +14,6 @@ import { SesionStore } from '../../../core/autenticacion/sesion.store';
   selector: 'app-panel-admin',
   imports: [TranslocoPipe, TsBoton, RouterLink],
   templateUrl: './panel-admin.page.html',
-  styleUrl: './panel-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PanelAdminPage {

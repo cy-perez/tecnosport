@@ -18,6 +18,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { ResumenPage } from './resumen.page';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -86,9 +87,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
 
 /** Mismo hallazgo que `carrito.page.spec.ts`: el registro de `PendingTasks` de TanStack Query
  * ocurre dentro de un `effect()` async, `fixture.whenStable()` no alcanza a esperarlo. */
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 // Una ruta muda basta para que `enviar()` navegue sin que el router
 // necesite la página real de `metodo-pago`, fuera del alcance de esta prueba.
@@ -128,9 +126,7 @@ describe('ResumenPage', () => {
 
   it('sin carrito guardado, muestra el mensaje de vacío', async () => {
     await renderResumen(new RepositorioCarritoFalso(null));
-    await esperar(50);
-
-    expect(screen.getByText('Tu carrito está vacío.')).toBeTruthy();
+    expect(await screen.findByText('Tu carrito está vacío.')).toBeTruthy();
   });
 
   it('con líneas, muestra el producto, el subtotal y el formulario', async () => {
@@ -188,7 +184,7 @@ describe('ResumenPage', () => {
     fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    await esperar(10);
+    await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
 
     expect(checkout.datosEntrega()).toEqual({
       correo: 'compra@ejemplo.co',
@@ -202,5 +198,17 @@ describe('ResumenPage', () => {
         indicaciones: null,
       },
     });
+  });
+
+  // `docs/06-testing.md`: axe automatizado en las pantallas clave. Esta es la
+  // que más formulario tiene: correo, tipo de entrega y dirección.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    guardarCarritoIdAlmacenado('carrito-1');
+    guardarSnapshot(snapshotDePrueba('variante-1'));
+
+    const { container } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByLabelText('Correo electrónico');
+
+    await esperarSinViolaciones(container);
   });
 });

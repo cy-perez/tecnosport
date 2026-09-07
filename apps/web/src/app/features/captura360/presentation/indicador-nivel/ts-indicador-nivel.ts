@@ -2,6 +2,23 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EstadoDeNivel, Nivel } from '../../domain/nivel-360';
 
+// Sobre la vista de cámara hace falta un fondo propio: el contraste del vídeo
+// no se controla (docs/10-captura-360.md).
+const BASE = 'm-0 flex items-center gap-8 px-12 py-8 font-texto font-medio';
+const CON_SENSOR = `${BASE} bg-ts-primario text-ts-sobre-primario`;
+const SIN_SENSOR = `${BASE} bg-ts-superficie-alt text-ts-texto`;
+
+// `text-base` y no la escala de espacio: el SCSS usaba `var(--esp-16)` para un
+// tamaño de fuente. Son los mismos 16 px, pero ahora sale del token
+// tipográfico, que es el que corresponde.
+const GLIFO = 'text-base leading-none';
+
+const COLOR_POR_ESTADO: Partial<Record<EstadoDeNivel, string>> = {
+  EN_RANGO: 'text-ts-exito',
+  CERCA: 'text-ts-acento',
+  FUERA_DE_RANGO: 'text-ts-error',
+};
+
 /**
  * El estado del nivel, en tres niveles más su ausencia (`docs/10-captura-360.md`).
  *
@@ -13,7 +30,6 @@ import { EstadoDeNivel, Nivel } from '../../domain/nivel-360';
   selector: 'ts-indicador-nivel',
   imports: [TranslocoPipe],
   templateUrl: './ts-indicador-nivel.html',
-  styleUrl: './ts-indicador-nivel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TsIndicadorNivel {
@@ -23,6 +39,19 @@ export class TsIndicadorNivel {
   readonly fijandoReferencia = input(false);
 
   protected readonly estado = computed<EstadoDeNivel>(() => this.nivel().estado);
+
+  protected readonly clases = computed(() =>
+    this.estado() === 'SIN_SENSOR' ? SIN_SENSOR : CON_SENSOR,
+  );
+
+  /**
+   * El color acompaña al texto y al glifo, nunca los reemplaza: los tres
+   * estados se distinguen sin ver un solo color.
+   */
+  protected readonly clasesGlifo = computed(() => {
+    const color = COLOR_POR_ESTADO[this.estado()];
+    return color ? `${GLIFO} ${color}` : GLIFO;
+  });
 
   protected readonly glifo = computed(() => {
     switch (this.estado()) {

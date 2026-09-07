@@ -1,0 +1,17 @@
+<div class="flex flex-col gap-4">
+  <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+  <input
+    [class]="clasesControl"
+    [id]="idCampo()"
+    [type]="tipo()"
+    [value]="valorMostrado()"
+    [disabled]="deshabilitado()"
+    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-describedby]="error() ? idCampo() + '-error' : null"
+    (input)="manejarEntrada($any($event.target).value)"
+    (blur)="manejarSalida()"
+  />
+  @if (error()) {
+    <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
+  }
+</div>

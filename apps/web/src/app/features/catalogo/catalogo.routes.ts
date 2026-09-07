@@ -31,9 +31,11 @@ export const catalogoRoutes: Routes = [
         path: '',
         pathMatch: 'full',
         resolve: {
-          _precarga: () => Promise.all([precargarProductos(FILTRO_NOVEDADES), precargarScopeI18n('catalogo')]),
+          _precarga: () =>
+            Promise.all([precargarProductos(FILTRO_NOVEDADES), precargarScopeI18n('catalogo')]),
         },
-        loadComponent: () => import('./presentation/portada/portada.page').then((m) => m.PortadaPage),
+        loadComponent: () =>
+          import('./presentation/portada/portada.page').then((m) => m.PortadaPage),
       },
       {
         path: 'productos',
@@ -57,7 +59,8 @@ export const catalogoRoutes: Routes = [
                   precargarScopeI18n('catalogo'),
                 ]),
             },
-            loadComponent: () => import('./presentation/rejilla/rejilla.page').then((m) => m.RejillaPage),
+            loadComponent: () =>
+              import('./presentation/rejilla/rejilla.page').then((m) => m.RejillaPage),
           },
           {
             path: ':slug',

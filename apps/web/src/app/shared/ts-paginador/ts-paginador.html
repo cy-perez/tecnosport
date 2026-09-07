@@ -1,11 +1,11 @@
-<nav class="ts-paginador" [attr.aria-label]="'paginador.navegacion' | transloco">
+<nav class="mt-24 flex items-center gap-16" [attr.aria-label]="'paginador.navegacion' | transloco">
   <ts-boton variante="secundario" [deshabilitado]="!hayAnterior()" (click)="irA(pagina() - 1)">
     {{ 'paginador.anterior' | transloco }}
   </ts-boton>
 
   <!-- `aria-live` para que un lector de pantalla anuncie la página nueva: al
        cambiar de página el foco se queda en el botón, que no cambia de texto. -->
-  <span class="ts-paginador__info" aria-live="polite">
+  <span class="text-sm text-ts-texto-suave" aria-live="polite">
     {{ 'paginador.info' | transloco: { actual: pagina() + 1, total: total() } }}
   </span>
 

@@ -1,0 +1,33 @@
+@if (activa(); as imagen) {
+  <div class="flex flex-col gap-8">
+    <!-- Mismo criterio que ts-tarjeta-producto: el recorte cuadrado lo decide
+         el CSS, así que la imagen va en modo `fill` dentro de un marco que
+         reserva el espacio. Es la del LCP de la ficha salvo cuando hay visor
+         360, que se queda con esa prioridad. -->
+    <div class="relative aspect-square bg-ts-superficie-alt">
+      <img
+        class="object-cover"
+        [ngSrc]="url(imagen)"
+        [alt]="alt(imagen)"
+        fill
+        [priority]="prioritaria()"
+      />
+    </div>
+
+    @if (imagenes().length > 1) {
+      <div class="flex gap-8">
+        @for (miniatura of imagenes(); track miniatura.url; let indice = $index) {
+          <button
+            type="button"
+            [class]="claseMiniatura(indice === indiceActivo())"
+            [attr.aria-pressed]="indice === indiceActivo() ? 'true' : 'false'"
+            [attr.aria-label]="alt(miniatura)"
+            (click)="elegir(indice)"
+          >
+            <img class="object-cover" [ngSrc]="url(miniatura)" alt="" fill />
+          </button>
+        }
+      </div>
+    }
+  </div>
+}

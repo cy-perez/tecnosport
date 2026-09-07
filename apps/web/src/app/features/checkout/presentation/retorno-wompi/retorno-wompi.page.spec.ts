@@ -49,9 +49,6 @@ class RepositorioPagosFalso implements RepositorioPagos {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderConQuery(query: Record<string, string>, pagos: RepositorioPagos) {
   return render(RetornoWompiPage, {
@@ -80,9 +77,7 @@ describe('RetornoWompiPage', () => {
     const pagos = new RepositorioPagosFalso();
 
     await renderConQuery({}, pagos);
-    await esperar(20);
-
-    expect(screen.getByText("No encontramos los datos de este pago.")).toBeTruthy();
+    expect(await screen.findByText("No encontramos los datos de este pago.")).toBeTruthy();
     expect(pagos.llamadas).toEqual([]);
   });
 
@@ -98,13 +93,17 @@ describe('RetornoWompiPage', () => {
       { id: '01-1531231271-19365', referencia: 'TS-2026-000001-1', pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
       pagos,
     );
-    await esperar(20);
-
-    expect(pagos.llamadas).toEqual([{ referencia: 'TS-2026-000001-1', idTransaccionWompi: '01-1531231271-19365' }]);
-    expect(navegar).toHaveBeenCalledWith(
-      ['../estado'],
-      expect.objectContaining({ queryParams: { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' } }),
-    );
+    await vi.waitFor(() => {
+      expect(pagos.llamadas).toEqual([
+        { referencia: 'TS-2026-000001-1', idTransaccionWompi: '01-1531231271-19365' },
+      ]);
+      expect(navegar).toHaveBeenCalledWith(
+        ['../estado'],
+        expect.objectContaining({
+          queryParams: { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+        }),
+      );
+    });
     navegar.mockRestore();
   });
 
@@ -117,7 +116,7 @@ describe('RetornoWompiPage', () => {
       { id: '01-1531231271-19365', referencia: 'TS-2026-000001-1', pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
       pagos,
     );
-    await esperar(20);
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalled());
 
     expect(navegar).toHaveBeenCalledWith(
       ['../estado'],

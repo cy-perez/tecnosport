@@ -3,8 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 
 /**
  * Un solo campo (correo). El mensaje de éxito es siempre el mismo, exista o no una cuenta con ese
@@ -14,9 +15,8 @@ import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
  */
 @Component({
   selector: 'app-recuperar-clave',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './recuperar-clave.page.html',
-  styleUrl: './recuperar-clave.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecuperarClavePage {
@@ -28,10 +28,15 @@ export class RecuperarClavePage {
   protected readonly enviado = signal(false);
 
   protected readonly form = new FormGroup({
-    correo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    correo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
   });
 
-  private readonly estadoFormulario = toSignal(this.form.statusChanges, { initialValue: this.form.status });
+  private readonly estadoFormulario = toSignal(this.form.statusChanges, {
+    initialValue: this.form.status,
+  });
   protected readonly formularioInvalido = computed(() => this.estadoFormulario() === 'INVALID');
 
   protected async enviar(): Promise<void> {

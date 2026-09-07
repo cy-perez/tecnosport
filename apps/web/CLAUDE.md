@@ -1,7 +1,8 @@
 # apps/web — reglas
 
-Angular 22.5 · SSR con hidratación · standalone · zoneless con signals · SCSS ·
-Transloco (es/en) · TanStack Query · Angular CDK · Vitest · npm · PWA.
+Angular 22.5 · SSR con hidratación · standalone · zoneless con signals ·
+Tailwind CSS v4 sobre los tokens de marca · Transloco (es/en) · TanStack Query ·
+Angular CDK · Vitest · npm · PWA.
 
 Lee `docs/04-ui-marca.md` antes de escribir un solo estilo. El sistema visual ya
 existe y está cerrado.
@@ -23,7 +24,8 @@ Funcionalidades: `catalogo`, `carrito`, `checkout`, `cuenta`, `admin`,
 
 Un componente **nunca** inyecta `HttpClient` ni una clase de `infrastructure`:
 inyecta el puerto declarado en `domain`, y el proveedor de la ruta decide la
-implementación. ESLint con reglas de límites lo verifica.
+implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dura
+#1 de `CLAUDE.md` para saber por qué.
 
 ## Reglas concretas
 
@@ -52,9 +54,26 @@ implementación. ESLint con reglas de límites lo verifica.
   `afterNextRender` (mismo patrón que la cookie de tema en `encabezado.ts`):
   el SSR de `/carrito` sirve siempre "carrito vacío", nunca un *esqueleto*
   colgado, y el cliente carga el carrito real justo después de hidratar.
-- **Estilos:** SCSS por componente, solo con variables de `tokens.css`. Radio 0
-  en todo. El chaflán se aplica con la clase `.chaflan`, nunca con
-  `border-radius`.
+- **Estilos: Tailwind, no SCSS** (`ADR-0020`). Las escalas por omisión están
+  borradas: solo existen utilidades mapeadas a `tokens.css` — `bg-ts-primario`,
+  `text-ts-texto-suave`, `p-16` (que son **16 px**, no 64), `max-w-formulario`.
+  `rounded-*` no existe, y ese es el "radio 0 en todo". El chaflán sigue siendo
+  la clase `.chaflan` de `tokens.css`. Un `.scss` nuevo por componente es un
+  olor: si hace falta, dilo antes de escribirlo.
+  - **Una clase que no existe no falla, no hace nada.** No hay linter que avise.
+    Pasó con `min-h-0` y `min-h-auto`, que no existen porque la escala de
+    espacio está borrada. Al usar una utilidad de la que no estés seguro,
+    **compila y lee el CSS**.
+  - **Las clases se componen con `cn()`** (`shared/ui/cn.ts`), que resuelve
+    conflictos para que la clase de quien llama gane sobre la base del
+    componente. `cn` conoce el vocabulario de tokens del proyecto porque se lo
+    enseñamos ahí: **al añadir un token con nombre no numérico hay que
+    registrarlo**, o dos utilidades del mismo grupo dejan de competir en
+    silencio.
+- **`shared/ui/` es la capa tonta.** `input()` y `output()`, y **nada de
+  Transloco, TanStack Query ni dominio**: los textos llegan traducidos por quien
+  la usa. `shared/` a secas guarda lo que todavía traduce o conoce un modelo.
+  Un componente nuevo de sistema de diseño va en `shared/ui/`.
 - **Modo oscuro:** atributo `data-tema` en `<html>`, tres opciones (claro, oscuro,
   sistema), persistido y resuelto en el servidor para no parpadear al hidratar.
 - **Accesibilidad no es una fase final.** Todo control alcanzable por teclado, el
@@ -172,9 +191,10 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   (antes de fijar la señal de la que depende `enabled`/`queryKey`), para que
   nunca haya un instante de "sin datos" que dispare ese fetch. Mismo
   mecanismo de fondo que el de SSR de arriba (`PendingTasks` registrado en un
-  `effect()` async): en una prueba, `fixture.whenStable()` no alcanza a
-  esperar ese registro — hace falta una espera real (`esperar(ms)`, mismo
-  recurso que ya usa `filtros-productos.spec.ts` para el debounce).
+  `effect()` async): en una prueba, `fixture.whenStable()` no alcanza a esperar
+  ese registro. La salida **no** es un `esperar(ms)` fijo — se espera por el
+  resultado (`findBy*` si se ve en pantalla, `vi.waitFor` si no), con todas las
+  aserciones dentro del mismo `waitFor`. Ver `docs/06-testing.md`.
 - **La identidad de un objeto no es señal de "esto cambió".** Una revalidación
   en segundo plano (cambio de pestaña pasado el `staleTime`) devuelve un objeto
   nuevo si cambió *cualquier* cosa del producto —el precio, la existencia—, y

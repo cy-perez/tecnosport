@@ -1,0 +1,57 @@
+<svg
+  [class]="clases()"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  @for (trazo of icono(); track $index) {
+    @switch (trazo[0]) {
+      @case ('path') {
+        <svg:path [attr.d]="trazo[1]['d'] ?? null" [attr.fill]="trazo[1]['fill'] ?? null" />
+      }
+      @case ('circle') {
+        <svg:circle
+          [attr.cx]="trazo[1]['cx'] ?? null"
+          [attr.cy]="trazo[1]['cy'] ?? null"
+          [attr.r]="trazo[1]['r'] ?? null"
+          [attr.fill]="trazo[1]['fill'] ?? null"
+        />
+      }
+      @case ('rect') {
+        <svg:rect
+          [attr.x]="trazo[1]['x'] ?? null"
+          [attr.y]="trazo[1]['y'] ?? null"
+          [attr.width]="trazo[1]['width'] ?? null"
+          [attr.height]="trazo[1]['height'] ?? null"
+          [attr.rx]="trazo[1]['rx'] ?? null"
+          [attr.ry]="trazo[1]['ry'] ?? null"
+          [attr.fill]="trazo[1]['fill'] ?? null"
+        />
+      }
+      @case ('line') {
+        <svg:line
+          [attr.x1]="trazo[1]['x1'] ?? null"
+          [attr.y1]="trazo[1]['y1'] ?? null"
+          [attr.x2]="trazo[1]['x2'] ?? null"
+          [attr.y2]="trazo[1]['y2'] ?? null"
+        />
+      }
+      @case ('ellipse') {
+        <svg:ellipse
+          [attr.cx]="trazo[1]['cx'] ?? null"
+          [attr.cy]="trazo[1]['cy'] ?? null"
+          [attr.rx]="trazo[1]['rx'] ?? null"
+          [attr.ry]="trazo[1]['ry'] ?? null"
+        />
+      }
+      @case ('polyline') {
+        <svg:polyline [attr.points]="trazo[1]['points'] ?? null" />
+      }
+    }
+  }
+</svg>

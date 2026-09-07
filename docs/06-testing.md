@@ -66,7 +66,7 @@ documentación de la versión antes de configurar, no de memoria.
 | Funciones puras y mapeadores | Vitest, sin Angular |
 | Stores de signals | Vitest, sin TestBed |
 | Componentes | Testing Library, por rol y texto accesible |
-| Accesibilidad | `axe` en las pantallas clave |
+| Accesibilidad | `axe-core` en las pantallas clave, más `npm run contrastes` |
 | Recorridos completos | Playwright, solo los cinco de `00-producto.md` |
 
 Específico del 360, porque es lo que más se rompe en silencio:
@@ -94,9 +94,101 @@ usuario y certificado confiable—, el nivel con un pulso humano, y la rama de
 conexión lenta / ahorro de datos, que no se puede simular desde la
 automatización del navegador.
 
+### Accesibilidad automatizada
+
+`axe-core` directo, sin envoltorio: `vitest-axe` va por la 0.1.0 y `jest-axe` es
+de otro runner, mientras que el motor no tiene peers y hace justo lo que hace
+falta. El ayudante está en `src/testing/axe.ts` y se usa así:
+
+```ts
+const { container } = await renderCarrito(repositorio);
+await screen.findByText('Morral urbano');
+await esperarSinViolaciones(container);
+```
+
+Corre solo las reglas de WCAG 2.2 A y AA, y falla con la regla, el enlace a su
+explicación y el HTML del nodo culpable.
+
+**Cubierto hoy:** el cascarón de la aplicación —que está en todas las
+pantallas— más rejilla, ficha, carrito y resumen del checkout. Se audita
+**después de esperar a que la pantalla tenga datos**: auditar un esqueleto de
+carga no prueba nada.
+
+**Dos reglas van desactivadas a propósito, y no es esconder nada:** en jsdom no
+hay maquetación, así que `color-contrast` y `target-size` no pueden evaluarse
+—nada tiene tamaño ni posición—. Las dos están cubiertas mejor por otra vía: el
+contraste con **`npm run contrastes`**, que calcula los pares reales de
+`tokens.css` en los dos temas; y el objetivo táctil con `min-h-tactil`, que es
+una clase verificable con `npm run clases`.
+
+### Lo que Vitest no atrapa en la capa visual
+
+Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`). Las tres cosas
+pasaron de verdad y ninguna prueba las vio.
+
+- **Una clase de Tailwind que no existe no falla: no hace nada.** Las escalas por
+  omisión están borradas, así que `min-h-0` y `min-h-auto` no existen — y una
+  prueba que compruebe `className` las encuentra igual, porque la clase *está* en
+  el atributo. **La única comprobación válida es leer el CSS compilado** y buscar
+  el selector, escapando la barra invertida (`.focus-visible\:outline-2`). Un
+  escapado de menos da falsos negativos: pasó dos veces.
+- **`cn()` puede borrar una clase correcta.** `tailwind-merge` no conoce nuestro
+  vocabulario: creyó que `font-medio` era una familia tipográfica, la fusionó con
+  `font-texto` y **el botón se pintaba en Arial**. La clase estaba en el
+  componente y desaparecía al fusionar, así que ninguna prueba de componente
+  podía verlo — se encontró recorriendo el sitio en el navegador. Los grupos
+  están declarados en `cn.ts` con pruebas de regresión, y ahí hay que registrar
+  cada token nuevo con nombre no numérico.
+- **El foco no se prueba en jsdom.** Las utilidades `focus-visible:` solo aplican
+  cuando el navegador considera el foco "visible", y eso depende de la modalidad:
+  con Tab sí, con clic en un `<input>` no siempre. Y la trampa de foco del CDK
+  (`[cdkTrapFocus]`) usa `InteractivityChecker`, que mide layout — en jsdom todo
+  mide cero. **Ambas se verifican a mano en `ng serve`.**
+
+### Esperas en las pruebas de componente
+
+`await esperar(ms)` con un número fijo es frágil: pasa en aislamiento y falla en
+la suite completa, cuando la máquina está cargada. Le ocurrió a
+`agregar-variante-admin.page.spec.ts`, que se cayó al cerrar la fase por 50 ms
+insuficientes.
+
+**Para esperar que algo aparezca, `findByText`/`findByRole` de Testing Library**,
+que sondean hasta que el elemento existe. `esperar(ms)` se reserva para lo que de
+verdad es una espera de tiempo —el *debounce* de los filtros, o el registro
+asíncrono de `PendingTasks` que describe `apps/web/CLAUDE.md`—, no para "que
+termine de pintar".
+
+**Para esperar a un espía o a un contador, `vi.waitFor`**, con **todas** las
+aserciones del grupo dentro. Esperar solo por la primera no basta: la llamada al
+repositorio ocurre antes de que el DOM se actualice, así que la segunda
+aserción corría demasiado pronto — pasó en tres pruebas al hacer justamente eso.
+
+Se barrieron todas. **Quedan tres, y las tres son correctas**: el loader de
+Transloco retardado a propósito y las dos del *debounce* de los filtros, donde lo
+que se prueba **es** el paso del tiempo. Ahí `vi.waitFor` pasaría al instante y
+no probaría nada.
+
+Tres lecciones que costaron un fallo cada una:
+
+- **`waitFor` tiene que cubrir lo último que ocurre, no lo primero.** Esperar a
+  que el repositorio reciba la llamada y luego comprobar el DOM deja la segunda
+  aserción corriendo antes de tiempo: la llamada resuelve antes de que la
+  pantalla se repinte. Lo mismo con una navegación que sucede después de crear.
+- **Si el resultado se ve en la pantalla, `findBy*`**; si no se ve —un espía, un
+  contador, una señal del store—, `vi.waitFor`.
+- **Cuando no hay ninguna señal en el DOM**, se espera por la fuente. En
+  `confirmar.page.spec.ts` el subtotal es 0 aunque el carrito ya haya cargado,
+  porque ese escenario no tiene snapshot: la señal real es
+  `carritoStore.consulta.data()`, y se obtiene del inyector del fixture.
+
+Al quitar las esperas, varios helpers `esperar(ms)` quedaron sin uso. Se
+borraron: un ayudante muerto es una invitación a volver al patrón viejo.
+
 Nada de instantáneas de HTML: se rompen con cualquier cambio de estilo y no dicen
 nada. Nada de pruebas que solo verifican que el componente se construye. Nada de
-consultas por clase CSS.
+consultas por clase CSS **para comprobar comportamiento**; comprobar que una
+variante aplica su color de fondo sí es legítimo, porque las clases *son* el
+estilo y no hay nada más que lo atrape.
 
 ## En integración continua
 

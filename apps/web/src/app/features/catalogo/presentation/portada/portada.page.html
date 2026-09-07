@@ -1,20 +1,26 @@
-<section class="portada">
+<section class="mx-auto max-w-contenido px-16 pt-24 pb-48">
   <!-- TODO(negocio): copia definitiva del hero y su imagen 4:3 de 1200x900
        (docs/04-ui-marca.md). Los textos de abajo son descriptivos, sacados de
        docs/00-producto.md, no una propuesta de marca. -->
-  <div class="portada__hero chaflan">
-    <h1 class="portada__titulo">{{ 'portada.titulo' | transloco }}</h1>
-    <p class="portada__lema">{{ 'portada.lema' | transloco }}</p>
-    <a class="portada__cta chaflan" [routerLink]="['/', idioma(), 'productos']">
+  <div class="chaflan flex flex-col items-start gap-16 bg-ts-superficie-alt px-32 py-48">
+    <h1 class="m-0 font-display text-2xl">{{ 'portada.titulo' | transloco }}</h1>
+    <p class="m-0 text-ts-texto-suave">{{ 'portada.lema' | transloco }}</p>
+    <a
+      class="anillo-foco-sobre-acento chaflan bg-ts-acento px-24 py-12 text-ts-sobre-acento no-underline"
+      [routerLink]="['/', idioma(), 'productos']"
+    >
       {{ 'portada.ver_catalogo' | transloco }}
     </a>
   </div>
 
-  <h2 class="portada__subtitulo">{{ 'portada.lineas' | transloco }}</h2>
-  <nav class="portada__lineas" [attr.aria-label]="'portada.lineas' | transloco">
+  <h2 class="mt-48 mb-16 font-display text-lg">{{ 'portada.lineas' | transloco }}</h2>
+  <nav
+    class="grid grid-cols-[repeat(auto-fit,minmax(var(--ancho-min-eje),1fr))] gap-16"
+    [attr.aria-label]="'portada.lineas' | transloco"
+  >
     @for (linea of lineas; track linea) {
       <a
-        class="portada__linea chaflan"
+        class="anillo-foco chaflan border border-ts-borde bg-ts-superficie p-24 text-ts-texto no-underline hover:border-ts-acento"
         [routerLink]="['/', idioma(), 'productos']"
         [queryParams]="{ linea }"
       >
@@ -23,19 +29,19 @@
     }
   </nav>
 
-  <h2 class="portada__subtitulo">{{ 'portada.novedades' | transloco }}</h2>
+  <h2 class="mt-48 mb-16 font-display text-lg">{{ 'portada.novedades' | transloco }}</h2>
   @if (consulta.isPending()) {
-    <div class="portada__grid">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-tarjeta),1fr))] gap-16">
       @for (marcador of marcadoresDeCarga; track marcador) {
         <ts-esqueleto />
       }
     </div>
   } @else if (consulta.isError()) {
-    <p class="portada__error" role="alert">{{ 'catalogo.error' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'catalogo.error' | transloco }}</p>
   } @else if (novedades().length === 0) {
-    <p class="portada__vacio">{{ 'portada.sin_novedades' | transloco }}</p>
+    <p class="text-ts-texto-suave">{{ 'portada.sin_novedades' | transloco }}</p>
   } @else {
-    <div class="portada__grid">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-tarjeta),1fr))] gap-16">
       <!-- Toda la franja va prioritaria, no solo la primera: la portada no
            tiene <img> de hero (el suyo es un bloque de CSS), así que el LCP es
            una de estas cuatro, y las cuatro se pintan del mismo tamaño y a la
@@ -48,7 +54,7 @@
     </div>
   }
 
-  <a class="portada__ver-todo" [routerLink]="['/', idioma(), 'productos']">
+  <a class="mt-24 inline-block text-ts-texto" [routerLink]="['/', idioma(), 'productos']">
     {{ 'portada.ver_todo' | transloco }}
   </a>
 </section>

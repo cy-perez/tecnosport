@@ -15,7 +15,10 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
 import { Categoria, Marca } from '../../domain/producto.model';
-import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../../domain/repositorio-categorias.puerto';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
 import { FiltrosProductos } from './filtros-productos';
 
@@ -98,7 +101,9 @@ async function renderFiltrosConScopePerezoso() {
 }
 
 function etiquetasDe(select: HTMLElement): string[] {
-  return Array.from(select.querySelectorAll('option')).map((opcion) => opcion.textContent?.trim() ?? '');
+  return Array.from(select.querySelectorAll('option')).map(
+    (opcion) => opcion.textContent?.trim() ?? '',
+  );
 }
 
 describe('FiltrosProductos', () => {
@@ -155,7 +160,9 @@ describe('FiltrosProductos', () => {
     // Ni la clave cruda ni la etiqueta vacía: los dos síntomas de leer una
     // traducción antes de que su scope perezoso haya cargado.
     const todas = [...etiquetasDe(linea), ...etiquetasDe(orden)];
-    expect(todas.filter((etiqueta) => etiqueta.startsWith('catalogo.') || etiqueta === '')).toEqual([]);
+    expect(todas.filter((etiqueta) => etiqueta.startsWith('catalogo.') || etiqueta === '')).toEqual(
+      [],
+    );
   });
 
   it('sin `orden` en la URL, "Ordenar por" ya muestra Relevancia', async () => {

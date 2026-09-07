@@ -1,12 +1,14 @@
-<section class="confirmar">
-  <h1 class="confirmar__titulo">{{ 'checkout.confirmar.titulo' | transloco }}</h1>
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'checkout.confirmar.titulo' | transloco }}</h1>
 
-  <a class="confirmar__volver" [routerLink]="['../metodo-pago']">
+  <a class="mb-24 inline-block text-ts-texto-suave" [routerLink]="['../metodo-pago']">
     {{ 'checkout.confirmar.volver' | transloco }}
   </a>
 
   @if (checkout.datosEntrega(); as datos) {
-    <dl class="confirmar__resumen">
+    <dl
+      class="m-0 mb-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
+    >
       <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
       <dd>{{ datos.correo }}</dd>
 
@@ -33,11 +35,11 @@
     </dl>
 
     @if (error()) {
-      <p class="confirmar__error" role="alert">{{ error() }}</p>
+      <p class="mb-16 text-ts-error" role="alert">{{ error() }}</p>
     }
 
     <ts-boton
-      class="confirmar__confirmar"
+      class="block"
       variante="primario"
       [cargando]="enviando()"
       [etiquetaCargando]="'checkout.confirmar.enviando' | transloco"

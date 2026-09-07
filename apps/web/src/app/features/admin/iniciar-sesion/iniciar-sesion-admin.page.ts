@@ -3,8 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { TsBoton } from '../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../shared/ui/campo/ts-campo';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 
 /**
@@ -15,9 +16,8 @@ import { SesionStore } from '../../../core/autenticacion/sesion.store';
  */
 @Component({
   selector: 'app-iniciar-sesion-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './iniciar-sesion-admin.page.html',
-  styleUrl: './iniciar-sesion-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IniciarSesionAdminPage {
@@ -30,11 +30,16 @@ export class IniciarSesionAdminPage {
   protected readonly enviando = signal(false);
 
   protected readonly form = new FormGroup({
-    correo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    correo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
     clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  private readonly estadoFormulario = toSignal(this.form.statusChanges, { initialValue: this.form.status });
+  private readonly estadoFormulario = toSignal(this.form.statusChanges, {
+    initialValue: this.form.status,
+  });
   protected readonly formularioInvalido = computed(() => this.estadoFormulario() === 'INVALID');
 
   /**
@@ -66,7 +71,10 @@ export class IniciarSesionAdminPage {
     this.enviando.set(true);
 
     try {
-      const sesion = await this.sesionStore.iniciarSesion(this.form.controls.correo.value, this.form.controls.clave.value);
+      const sesion = await this.sesionStore.iniciarSesion(
+        this.form.controls.correo.value,
+        this.form.controls.clave.value,
+      );
       if (sesion.rol !== 'ADMIN') {
         await this.sesionStore.cerrarSesion();
         this.error.set(this.transloco.translate('admin.iniciarSesion.no_es_admin'));

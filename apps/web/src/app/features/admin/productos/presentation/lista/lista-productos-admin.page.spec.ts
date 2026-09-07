@@ -37,7 +37,12 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async listar(): Promise<ProductosPaginadosAdmin> {
     this.llamadasListar++;
-    return { items: this.items, pagina: 0, totalPaginas: this.totalPaginas, totalProductos: this.items.length };
+    return {
+      items: this.items,
+      pagina: 0,
+      totalPaginas: this.totalPaginas,
+      totalProductos: this.items.length,
+    };
   }
 
   async crear(): Promise<ProductoAdmin> {
@@ -93,7 +98,9 @@ describe('ListaProductosAdminPage', () => {
   it('sin productos lo dice en vez de dejar una tabla vacía', async () => {
     await renderLista([], 0);
 
-    expect(await screen.findByText('Todavía no hay productos. Crea el primero con «Nuevo producto».')).toBeTruthy();
+    expect(
+      await screen.findByText('Todavía no hay productos. Crea el primero con «Nuevo producto».'),
+    ).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull();
     // El enlace de crear sigue arriba, fuera de la rama vacía: es la salida.
@@ -116,6 +123,9 @@ describe('ListaProductosAdminPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
 
-    expect(navegar).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: { pagina: 2 } }));
+    expect(navegar).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: { pagina: 2 } }),
+    );
   });
 });

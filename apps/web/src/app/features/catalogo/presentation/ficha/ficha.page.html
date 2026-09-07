@@ -1,12 +1,12 @@
-<section class="ficha">
+<section class="mx-auto max-w-contenido px-16 py-32">
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
-    <p class="ficha__error" role="alert">{{ 'catalogo.ficha.error' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'catalogo.ficha.error' | transloco }}</p>
   } @else if (producto(); as p) {
     <ts-migas [ruta]="migas()" />
 
-    <div class="ficha__contenido">
+    <div class="grid grid-cols-1 gap-32 desde-tableta:grid-cols-2">
       <!-- Las dos ramas repiten <ts-galeria> a propósito, en vez de ligar `prioritaria` a una
            expresión: `priority` es una entrada que NgOptimizedImage congela tras inicializar, y
            navegar de una ficha con rotación a otra sin ella la cambiaría en caliente. En ramas
@@ -17,7 +17,7 @@
            Dos fotogramas es el mínimo con el que `ts-visor-360` pinta algo. La condición se repite
            aquí para no dejar un hueco de rejilla con un visor vacío dentro. -->
       @if (fotogramas360().length > 1) {
-        <div class="ficha__visual">
+        <div class="flex flex-col gap-24">
           <ts-visor-360 [imagenes]="fotogramas360()" />
           <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="false" />
         </div>
@@ -25,10 +25,10 @@
         <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="true" />
       }
 
-      <div class="ficha__info">
-        <p class="ficha__marca">{{ p.marca.nombre }}</p>
-        <h1 class="ficha__nombre">{{ p.nombre }}</h1>
-        <p class="ficha__categoria">{{ p.categoria.nombre }}</p>
+      <div class="flex flex-col gap-8">
+        <p class="text-sm text-ts-texto-suave">{{ p.marca.nombre }}</p>
+        <h1 class="m-0 font-display text-2xl">{{ p.nombre }}</h1>
+        <p class="text-sm text-ts-texto-suave">{{ p.categoria.nombre }}</p>
 
         @if (ejes().length > 0) {
           <ts-selector-variante
@@ -38,12 +38,12 @@
           />
         }
 
-        <div class="ficha__compra">
+        <div class="my-16 flex items-center gap-16">
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
             <ts-etiqueta-stock [disponible]="variante.existencia > 0" />
           } @else {
-            <p class="ficha__error" role="alert">
+            <p class="text-ts-error" role="alert">
               {{ 'catalogo.ficha.combinacion_no_disponible' | transloco }}
             </p>
           }
@@ -61,10 +61,10 @@
           </ts-boton>
         }
 
-        <p class="ficha__descripcion">{{ p.descripcion }}</p>
+        <p class="text-ts-texto">{{ p.descripcion }}</p>
       </div>
     </div>
   } @else {
-    <p class="ficha__error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
   }
 </section>

@@ -5,11 +5,11 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
-import { OpcionSelect, TsSelect } from '../../../../shared/ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
@@ -45,7 +45,6 @@ interface ValoresDireccion {
     TsSelect,
   ],
   templateUrl: './resumen.page.html',
-  styleUrl: './resumen.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResumenPage {

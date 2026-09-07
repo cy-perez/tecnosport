@@ -1,6 +1,0 @@
-// En el encabezado el control no debe estirarse: `ts-select` da a su `<select>`
-// un `inline-size: 100%`, que aquí se resuelve contra el ancho del contenido.
-:host {
-  display: block;
-  inline-size: fit-content;
-}

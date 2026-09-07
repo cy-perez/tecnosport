@@ -10,7 +10,10 @@ import { precargarScopeI18n } from '../../../core/i18n/precargar-scope';
 export const cuentaRoutes: Routes = [
   {
     path: '',
-    providers: [{ provide: REPOSITORIO_CUENTA, useClass: CuentaHttpRepositorio }, provideTranslocoScope('cuenta')],
+    providers: [
+      { provide: REPOSITORIO_CUENTA, useClass: CuentaHttpRepositorio },
+      provideTranslocoScope('cuenta'),
+    ],
     // El scope de i18n se precarga como cualquier otro dato de la primera
     // pantalla (ADR-0011): si llega después del primer render, toda etiqueta
     // que no pase por el pipe sale en blanco o con la clave cruda.
@@ -19,11 +22,14 @@ export const cuentaRoutes: Routes = [
       {
         path: 'iniciar-sesion',
         loadComponent: () =>
-          import('./iniciar-sesion/iniciar-sesion-cliente.page').then((m) => m.IniciarSesionClientePage),
+          import('./iniciar-sesion/iniciar-sesion-cliente.page').then(
+            (m) => m.IniciarSesionClientePage,
+          ),
       },
       {
         path: 'registro',
-        loadComponent: () => import('./registro/registro-cliente.page').then((m) => m.RegistroClientePage),
+        loadComponent: () =>
+          import('./registro/registro-cliente.page').then((m) => m.RegistroClientePage),
       },
       {
         path: 'verificar-correo',

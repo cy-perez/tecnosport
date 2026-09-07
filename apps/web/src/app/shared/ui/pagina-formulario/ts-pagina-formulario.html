@@ -1,0 +1,8 @@
+<section [class]="clases()">
+  <!-- Las migas van encima del titular, que es su sitio en el documento. Se
+       seleccionan por elemento, así que quien use la página solo tiene que
+       ponerlas dentro: no hace falta marcarlas con ningún atributo. -->
+  <ng-content select="ts-migas" />
+  <h1 class="m-0 mb-24 font-display text-2xl">{{ titulo() }}</h1>
+  <ng-content />
+</section>

@@ -67,9 +67,6 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function anfitrionConPedidoEnMemoria(pedido: Pedido) {
   @Component({ selector: 'app-anfitrion-de-prueba', imports: [TransferenciaPage], template: `<app-transferencia />` })
@@ -128,9 +125,7 @@ describe('TransferenciaPage', () => {
 
   it('sin pedido en memoria ni datos en la URL, muestra el mensaje de no encontrado', async () => {
     await renderConProviders(new RepositorioPedidosFalso());
-    await esperar(20);
-
-    expect(screen.getByText('No encontramos los datos de esta transferencia.')).toBeTruthy();
+    expect(await screen.findByText('No encontramos los datos de esta transferencia.')).toBeTruthy();
   });
 
   it('un pedido que no es de transferencia manual muestra el mensaje de no encontrado', async () => {
@@ -139,8 +134,6 @@ describe('TransferenciaPage', () => {
       {},
       anfitrionConPedidoEnMemoria(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA', datosTransferencia: null })),
     );
-    await esperar(20);
-
-    expect(screen.getByText('No encontramos los datos de esta transferencia.')).toBeTruthy();
+    expect(await screen.findByText('No encontramos los datos de esta transferencia.')).toBeTruthy();
   });
 });

@@ -1,20 +1,34 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
-import { TsEtiquetaStock } from '../../../../shared/ts-etiqueta-stock/ts-etiqueta-stock';
-import { TsGaleria } from '../../../../shared/ts-galeria/ts-galeria';
+import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
+import { TsGaleria } from '../galeria/ts-galeria';
 import { Miga, TsMigas } from '../../../../shared/ts-migas/ts-migas';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
-import { TsSelectorVariante } from '../../../../shared/ts-selector-variante/ts-selector-variante';
+import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { Imagen, urlPreferida } from '../../domain/producto.model';
-import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, varianteSeleccionada } from '../../domain/seleccion-variante';
+import {
+  ejesDeAtributos,
+  Seleccion,
+  seleccionDeVariante,
+  variantePorDefecto,
+  varianteSeleccionada,
+} from '../../domain/seleccion-variante';
 
 @Component({
   selector: 'app-ficha',
@@ -30,7 +44,6 @@ import { ejesDeAtributos, Seleccion, seleccionDeVariante, variantePorDefecto, va
     TsVisor360,
   ],
   templateUrl: './ficha.page.html',
-  styleUrl: './ficha.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FichaPage {
@@ -65,7 +78,9 @@ export class FichaPage {
     if (!producto) {
       return [];
     }
-    return [producto.imagenPrincipal, ...producto.galeria].filter((imagen): imagen is Imagen => imagen !== null);
+    return [producto.imagenPrincipal, ...producto.galeria].filter(
+      (imagen): imagen is Imagen => imagen !== null,
+    );
   });
 
   /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
