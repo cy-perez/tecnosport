@@ -108,7 +108,7 @@ public class RepositorioSetsRotacionJpa implements RepositorioSetsRotacion {
         fotograma.ancho(),
         fotograma.alto(),
         fotograma.bytes(),
-        fotograma.hash(),
+        fotograma.hash().valor(),
         fotograma.altEs(),
         fotograma.altEn(),
         Instant.now());

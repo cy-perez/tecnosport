@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
@@ -107,7 +108,7 @@ class CrearPedidoTest {
             800,
             600,
             1000,
-            "hash",
+            new HashContenido("%064x".formatted(1)),
             "alt es",
             "alt en"));
     variante =

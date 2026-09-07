@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.catalogo;
 
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public final class ImagenProducto {
   private final int ancho;
   private final int alto;
   private final long bytes;
-  private final String hash;
+  private final HashContenido hash;
   private final String altEs;
   private final String altEn;
 
@@ -31,7 +32,7 @@ public final class ImagenProducto {
       int ancho,
       int alto,
       long bytes,
-      String hash,
+      HashContenido hash,
       String altEs,
       String altEn) {
     this.id = Objects.requireNonNull(id, "El id de la imagen no puede ser nulo.");
@@ -53,7 +54,7 @@ public final class ImagenProducto {
           "El tamaño en bytes de la imagen debe ser positivo.");
     }
     this.bytes = bytes;
-    this.hash = requerido(hash, "El hash de la imagen no puede estar vacío.");
+    this.hash = Objects.requireNonNull(hash, "El hash de la imagen no puede ser nulo.");
 
     if (tipo == TipoImagen.PRINCIPAL || tipo == TipoImagen.GALERIA) {
       this.altEs =
@@ -74,7 +75,7 @@ public final class ImagenProducto {
       int ancho,
       int alto,
       long bytes,
-      String hash,
+      HashContenido hash,
       String altEs,
       String altEn) {
     return new ImagenProducto(
@@ -130,7 +131,7 @@ public final class ImagenProducto {
     return bytes;
   }
 
-  public String hash() {
+  public HashContenido hash() {
     return hash;
   }
 

@@ -176,7 +176,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.ancho(),
             imagen.alto(),
             imagen.bytes(),
-            imagen.hash(),
+            imagen.hash().valor(),
             imagen.altEs(),
             imagen.altEn(),
             Instant.now()));

@@ -14,6 +14,10 @@ import org.junit.jupiter.api.Test;
 
 class ConfirmarImagenPrincipalTest {
 
+  /** El SHA-256 que el panel calcula en el navegador sobre los bytes que subió. */
+  private static final String HASH =
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
   private final RepositorioProductosFalso repositorioProductos = new RepositorioProductosFalso();
   private final AlmacenDeImagenesFalso almacenDeImagenes = new AlmacenDeImagenesFalso();
   private final ConfirmarImagenPrincipal confirmarImagenPrincipal =
@@ -35,13 +39,13 @@ class ConfirmarImagenPrincipalTest {
     var imagen =
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
-                producto.id(), objectKey, 1000, 800, "alt es", "alt en"));
+                producto.id(), objectKey, 1000, 800, HASH, "alt es", "alt en"));
 
     assertEquals(TipoImagen.PRINCIPAL, imagen.tipo());
     assertEquals(1000, imagen.ancho());
     assertEquals(800, imagen.alto());
     assertEquals(45_000, imagen.bytes());
-    assertEquals(objectKey, imagen.hash());
+    assertEquals(HASH, imagen.hash().valor());
     assertEquals(producto.id(), repositorioProductos.ultimoProductoIdConImagen);
     assertEquals(imagen, repositorioProductos.ultimaImagenPrincipal);
   }
@@ -56,7 +60,8 @@ class ConfirmarImagenPrincipalTest {
         ProductoNoEncontradoPorIdException.class,
         () ->
             confirmarImagenPrincipal.ejecutar(
-                new ConfirmarImagenPrincipalComando(productoId, objectKey, 100, 100, "a", "b")));
+                new ConfirmarImagenPrincipalComando(
+                    productoId, objectKey, 100, 100, HASH, "a", "b")));
   }
 
   @Test
@@ -71,7 +76,7 @@ class ConfirmarImagenPrincipalTest {
         () ->
             confirmarImagenPrincipal.ejecutar(
                 new ConfirmarImagenPrincipalComando(
-                    producto.id(), objectKeyDeOtroProducto, 100, 100, "a", "b")));
+                    producto.id(), objectKeyDeOtroProducto, 100, 100, HASH, "a", "b")));
   }
 
   @Test
@@ -84,6 +89,7 @@ class ConfirmarImagenPrincipalTest {
         ObjetoDeImagenNoEncontradoException.class,
         () ->
             confirmarImagenPrincipal.ejecutar(
-                new ConfirmarImagenPrincipalComando(producto.id(), objectKey, 100, 100, "a", "b")));
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(), objectKey, 100, 100, HASH, "a", "b")));
   }
 }

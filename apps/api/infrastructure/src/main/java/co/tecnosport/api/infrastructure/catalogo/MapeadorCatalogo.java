@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
@@ -279,7 +280,7 @@ public class MapeadorCatalogo {
         i.getAncho(),
         i.getAlto(),
         i.getBytes(),
-        i.getHash(),
+        new HashContenido(i.getHash()),
         i.getAltEs(),
         i.getAltEn());
   }

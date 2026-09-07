@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.Objects;
 
 /**
@@ -55,7 +56,7 @@ public final class ConfirmarImagenPrincipal {
             comando.ancho(),
             comando.alto(),
             bytes,
-            comando.objectKey(),
+            new HashContenido(comando.hash()),
             comando.altEs(),
             comando.altEn());
 

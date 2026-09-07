@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.catalogo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.tecnosport.api.domain.compartido.HashContenido;
 import org.junit.jupiter.api.Test;
 
 class ImagenProductoTest {
@@ -42,13 +43,22 @@ class ImagenProductoTest {
                 0,
                 600,
                 1000,
-                "hash",
+                new HashContenido("%064x".formatted(1)),
                 "",
                 ""));
   }
 
   private static ImagenProducto imagen(TipoImagen tipo, String altEs, String altEn) {
     return ImagenProducto.crear(
-        tipo, 0, "https://x/1.jpg", "https://x/1.webp", 800, 600, 120_000, "hash-1", altEs, altEn);
+        tipo,
+        0,
+        "https://x/1.jpg",
+        "https://x/1.webp",
+        800,
+        600,
+        120_000,
+        new HashContenido("%064x".formatted(1)),
+        altEs,
+        altEn);
   }
 }

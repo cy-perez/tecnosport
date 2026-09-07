@@ -18,6 +18,9 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -320,7 +323,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             800,
             600,
             120_000,
-            "seed-" + producto.getSlug(),
+            hashDeSiembra("seed-" + producto.getSlug()),
             producto.getNombre(),
             producto.getNombre(),
             ahora));
@@ -365,7 +368,7 @@ public class SembradorCatalogo implements ApplicationRunner {
               1000,
               1000,
               180_000,
-              "seed-" + producto.getSlug() + "-360-" + orden,
+              hashDeSiembra("seed-" + producto.getSlug() + "-360-" + orden),
               producto.getNombre(),
               producto.getNombre(),
               ahora));
@@ -389,10 +392,30 @@ public class SembradorCatalogo implements ApplicationRunner {
               800,
               600,
               120_000,
-              "seed-" + producto.getSlug() + "-galeria-" + orden,
+              hashDeSiembra("seed-" + producto.getSlug() + "-galeria-" + orden),
               producto.getNombre(),
               producto.getNombre(),
               ahora));
+    }
+  }
+
+  /**
+   * El hash de una imagen sembrada. {@code HashContenido} exige un SHA-256 bien formado, y de estas
+   * imágenes no hay bytes que hashear: la URL apunta a un archivo que no existe. Así que se hashea
+   * el identificador de siembra, que es estable y distinto para cada imagen — suficiente para que
+   * los datos de ejemplo cumplan la invariante sin inventar un valor al azar.
+   */
+  private static String hashDeSiembra(String semilla) {
+    try {
+      byte[] resumen =
+          MessageDigest.getInstance("SHA-256").digest(semilla.getBytes(StandardCharsets.UTF_8));
+      StringBuilder hex = new StringBuilder(resumen.length * 2);
+      for (byte b : resumen) {
+        hex.append(String.format("%02x", b));
+      }
+      return hex.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 siempre está disponible en la JVM.", e);
     }
   }
 }

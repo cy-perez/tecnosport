@@ -19,6 +19,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.time.Instant;
 import java.util.UUID;
@@ -262,7 +263,7 @@ class AdminSetRotacionControladorTest {
               1000,
               1000,
               900,
-              "h" + orden,
+              new HashContenido("%064x".formatted(orden)),
               null,
               null));
     }
@@ -285,7 +286,9 @@ class AdminSetRotacionControladorTest {
           .append(orden)
           .append(",\"objectKey\":\"")
           .append(clave(set, orden))
-          .append("\",\"ancho\":1000,\"alto\":1000}");
+          .append("\",\"ancho\":1000,\"alto\":1000,\"hash\":\"")
+          .append("%064x".formatted(orden + 1))
+          .append("\"}");
     }
     return "{\"fotogramas\":[" + fotogramas + "]}";
   }

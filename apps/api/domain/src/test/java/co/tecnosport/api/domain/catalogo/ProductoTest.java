@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.math.BigDecimal;
@@ -79,7 +80,7 @@ class ProductoTest {
             800,
             600,
             1000,
-            "h1",
+            new HashContenido("%064x".formatted(1)),
             "alt",
             "alt");
 
@@ -108,7 +109,7 @@ class ProductoTest {
         800,
         600,
         1000,
-        "h0",
+        new HashContenido("%064x".formatted(0)),
         "alt es",
         "alt en");
   }

@@ -125,7 +125,7 @@ public class AdminSetRotacionControlador {
 
   private static FotogramaComando aComando(FotogramaPeticion peticion) {
     return new FotogramaComando(
-        peticion.orden(), peticion.objectKey(), peticion.ancho(), peticion.alto());
+        peticion.orden(), peticion.objectKey(), peticion.ancho(), peticion.alto(), peticion.hash());
   }
 
   private UUID actorId() {
