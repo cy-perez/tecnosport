@@ -32,10 +32,12 @@ para y dime por qué antes de escribir el código.
    `*.routes.ts` sí puede importar `infrastructure` —es el proveedor de la ruta
    el que elige la implementación— y los `*.spec.ts` se informan aparte sin
    fallar, porque montar un escenario no es desplegar código.
-   **Hay tres violaciones conocidas y sin resolver**, todas en el carrito: el
-   store y la página leen `localStorage` a través de adaptadores de
-   `infrastructure` en vez de por un puerto de `domain`. Arreglarlo es tocar
-   lógica de negocio, así que está a la espera de una decisión.
+   **No queda ninguna violación en producción**, y por eso `npm run capas` ya
+   corre dentro de `npm run verificar` — es el primer paso, antes del lint. Las
+   tres que hubo estaban en el carrito, leyendo `localStorage` desde
+   `application` y `presentation`; se resolvieron con dos puertos
+   (`AlmacenCarritoId`, `AlmacenSnapshotLineas`) provistos en `app.config.ts`.
+   Un guardián que no está enganchado al build es un guardián opcional.
 2. **Ningún HEX, ningún píxel suelto, ninguna fuente literal en el frontend.**
    Todo sale de `packages/marca/tokens.css`. Si falta un valor, el sistema está
    incompleto: se añade al `tokens.json` del kit y se regenera.

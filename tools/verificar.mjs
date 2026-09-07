@@ -8,6 +8,10 @@ function ejecutar(comando, opciones = {}) {
   execSync(comando, { stdio: "inherit", shell: true, ...opciones });
 }
 
+// Primero las capas: es lo más barato y lo más estructural. Si una dependencia se invirtió,
+// da igual que el lint y las pruebas pasen: el diseño ya se rompió, y enterarse en 2 segundos
+// es mejor que enterarse después del build.
+ejecutar("node tools/verificar-capas.mjs");
 ejecutar("npm run lint --workspaces --if-present");
 ejecutar("npm test --workspaces --if-present");
 ejecutar("npm run build --workspaces --if-present");
