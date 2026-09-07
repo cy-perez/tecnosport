@@ -1,0 +1,14 @@
+<button
+  [class]="clases()"
+  [type]="tipo()"
+  [disabled]="deshabilitado() || cargando()"
+  [attr.aria-busy]="cargando() ? 'true' : null"
+  [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
+  [attr.aria-label]="etiquetaAccesible()"
+>
+  @if (cargando() && etiquetaCargando()) {
+    {{ etiquetaCargando() }}
+  } @else {
+    <ng-content />
+  }
+</button>

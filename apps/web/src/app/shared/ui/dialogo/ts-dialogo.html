@@ -1,0 +1,39 @@
+<brn-dialog
+  [state]="abierto() ? 'open' : 'closed'"
+  (stateChanged)="alCambiarEstado($event)"
+>
+  <!-- El fondo: opaco de marca, no un negro inventado. Cerrar al pulsarlo lo
+       resuelve Spartan, así que aquí no hay ningún manejador que tuviera que
+       ser enfocable — el problema que la versión anterior tenía que silenciar
+       con dos reglas de ESLint. -->
+  <brn-dialog-overlay class="fixed inset-0 z-40 bg-ts-marca-fuerte/60" />
+
+  <ng-template brnDialogContent class="fixed inset-0 z-50 flex items-center justify-center p-16">
+    <div class="chaflan w-full max-w-formulario bg-ts-superficie p-24 shadow-lg">
+      <div class="mb-16 flex items-start justify-between gap-16">
+        <!-- `brnDialogTitle` liga el `aria-labelledby` del diálogo con este
+             encabezado: sin él, un lector de pantalla anuncia "diálogo" y nada
+             más. -->
+        <h2 brnDialogTitle class="m-0 font-display text-xl leading-titulares text-ts-texto">
+          {{ titulo() }}
+        </h2>
+        <ts-boton
+          variante="texto"
+          [etiquetaAccesible]="etiquetaCerrar()"
+          clase="shrink-0 px-8 py-8"
+          (click)="cerrar.emit()"
+        >
+          <ts-icono [icono]="iconoCerrar" clase="size-24" />
+        </ts-boton>
+      </div>
+
+      <div class="text-ts-texto">
+        <ng-content />
+      </div>
+
+      <div class="mt-24 flex flex-wrap justify-end gap-12">
+        <ng-content select="[acciones]" />
+      </div>
+    </div>
+  </ng-template>
+</brn-dialog>

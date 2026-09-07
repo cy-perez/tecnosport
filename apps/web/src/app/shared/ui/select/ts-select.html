@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-4">
+  <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+  <!-- La opción activa se marca con `[selected]` en cada `<option>`, no con un
+       `[value]` en el `<select>`. Con `[value]`, Angular fija la propiedad del
+       select una sola vez y no vuelve a intentarlo: si las opciones llegan
+       después del valor (dos consultas distintas, como marca y categoría en
+       editar producto), no hay ninguna `<option>` que enganche y el control se
+       queda en el placeholder para siempre. Además `[value]` no serializa a
+       HTML, así que el SSR salía siempre con la primera opción marcada. -->
+  <select
+    [class]="clasesControl"
+    [id]="idCampo()"
+    [disabled]="deshabilitado()"
+    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-describedby]="error() ? idCampo() + '-error' : null"
+    (change)="manejarCambio($any($event.target).value)"
+  >
+    @if (placeholder()) {
+      <option value="" [selected]="valor() === ''">{{ placeholder() }}</option>
+    }
+    @for (opcion of opciones(); track opcion.valor) {
+      <option [value]="opcion.valor" [selected]="opcion.valor === valor()">{{ opcion.etiqueta }}</option>
+    }
+  </select>
+  @if (error()) {
+    <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
+  }
+</div>
