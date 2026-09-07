@@ -8,6 +8,7 @@ import esCarrito from '../../../../assets/i18n/scopes/carrito/es.json';
 import { Carrito } from '../domain/carrito.model';
 import { SnapshotLinea } from '../domain/snapshot-linea.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-carrito.puerto';
+import { CarritoStore } from '../application/carrito.store';
 import { CarritoPage } from './carrito.page';
 import { esperarSinViolaciones } from '../../../../testing/axe';
 import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../testing/carrito';
@@ -153,5 +154,28 @@ describe('CarritoPage', () => {
     await screen.findByText('Morral urbano');
 
     await esperarSinViolaciones(container);
+  });
+
+  it('no vuelve a leer la foto de cada línea en cada ciclo de detección', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderCarrito(
+      new RepositorioCarritoFalso({
+        id: 'carrito-1',
+        usuarioId: null,
+        creadoEn: '2026-01-01T00:00:00Z',
+        lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      }),
+    );
+    await screen.findByText('Morral urbano');
+
+    // Con la llamada en la plantilla esto crecía con cada ciclo: era una lectura de
+    // `localStorage` por línea, siempre. Desde el `computed` no se recalcula si el carrito no
+    // cambió, así que el espía no vuelve a verse llamado.
+    const espia = vi.spyOn(fixture.debugElement.injector.get(CarritoStore), 'snapshotDeLinea');
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(espia).not.toHaveBeenCalled();
   });
 });

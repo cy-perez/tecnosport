@@ -81,6 +81,23 @@ export class CarritoStore {
     await this.mutacionAgregar.mutateAsync({ varianteId, cantidad });
   }
 
+  /**
+   * El carrito dejó de existir porque sus líneas ya son de un pedido. No se llama al confirmar
+   * —ahí el pedido todavía puede fallar y el reintento necesita el carrito intacto— sino cuando el
+   * camino de pago ya salió bien y no hay vuelta atrás. Ver `checkout/presentation/confirmar`.
+   *
+   * Las fotos de línea se quedan: no estorban, se pisan solas al volver a agregar, y borrarlas
+   * dejaría sin nombre ni precio a cualquier pantalla que todavía las esté pintando.
+   */
+  limpiar(): void {
+    const id = this.carritoId();
+    this.almacenCarritoId.borrar();
+    this.carritoId.set(null);
+    if (id) {
+      this.queryClient.removeQueries({ queryKey: ['carrito', id] });
+    }
+  }
+
   async actualizarCantidad(lineaId: string, cantidad: number): Promise<void> {
     await this.mutacionActualizar.mutateAsync({ lineaId, cantidad });
   }

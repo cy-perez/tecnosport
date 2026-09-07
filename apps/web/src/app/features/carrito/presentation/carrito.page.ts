@@ -16,16 +16,28 @@ import { LineaCarritoComponent } from './linea-carrito/linea-carrito';
 export class CarritoPage {
   protected readonly store = inject(CarritoStore);
 
-  protected readonly total = computed(() => {
+  /**
+   * La foto se resuelve aquí y no en la plantilla. Llamar a `snapshotDeLinea` desde el `@for`
+   * parecía inocente y era una lectura de `localStorage` por línea **en cada ciclo de detección**;
+   * un `computed` solo se recalcula cuando el carrito cambia de verdad.
+   */
+  protected readonly lineas = computed(() => {
     const carrito = this.store.consulta.data();
     if (!carrito) {
-      return 0;
+      return [];
     }
-    return carrito.lineas.reduce((suma, linea) => {
-      const snapshot = this.store.snapshotDeLinea(linea.varianteId);
-      return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
-    }, 0);
+    return carrito.lineas.map((linea) => ({
+      linea,
+      snapshot: this.store.snapshotDeLinea(linea.varianteId),
+    }));
   });
+
+  protected readonly total = computed(() =>
+    this.lineas().reduce(
+      (suma, { linea, snapshot }) => suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0),
+      0,
+    ),
+  );
 
   protected cambiarCantidad(lineaId: string, cantidad: number): void {
     void this.store.actualizarCantidad(lineaId, cantidad);

@@ -17,6 +17,7 @@ import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { ConfirmarPage } from './confirmar.page';
+import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
 import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
@@ -98,6 +99,16 @@ class RepositorioPedidosQueFalla implements RepositorioPedidos {
   }
 
   async consultarSeguimiento(): Promise<Pedido | null> {
+    throw new Error('no usado en esta prueba');
+  }
+}
+
+class RepositorioPagosQueFalla implements RepositorioPagos {
+  async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('el proveedor de pagos no respondió');
+  }
+
+  async registrarIdTransaccion(): Promise<void> {
     throw new Error('no usado en esta prueba');
   }
 }
@@ -345,5 +356,47 @@ describe('ConfirmarPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
     await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
+  });
+
+  // Las dos caras de la misma decisión: el carrito se limpia cuando ya no hay vuelta atrás, no
+  // cuando se crea el pedido. Ver el comentario en `confirmar()`.
+  it('al terminar el pedido, el carrito queda limpio', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
+
+    const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => {
+      expect(carrito.carritoId()).toBeNull();
+      expect(new CarritoIdLocalStorageAlmacen().leer()).toBeNull();
+    });
+  });
+
+  it('si el intento de pago falla, el carrito queda intacto para reintentar', async () => {
+    sembrarCarritoId('carrito-1');
+    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TARJETA' }));
+
+    const { fixture } = await renderConDatos(
+      'TARJETA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosQueFalla(),
+    );
+    await screen.findByText('compra@ejemplo.co');
+    await esperarCarritoCargado(fixture);
+    const carrito = fixture.debugElement.injector.get(CarritoStore);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText('No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.'),
+    ).toBeTruthy();
+    expect(carrito.carritoId()).toBe('carrito-1');
+    expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
   });
 });

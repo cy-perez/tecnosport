@@ -112,6 +112,12 @@ export class ConfirmarPage {
       // volvería inválido, así que si sigue ahí es el mismo intento.
       const pedido = this.checkout.pedido() ?? (await this.checkout.crearPedido(comando));
       await this.continuarSegunMetodoPago(pedido);
+      // Aquí y no antes. Las líneas ya son del pedido, así que dejar el carrito lleno invita a
+      // comprarlas dos veces; pero limpiarlo apenas se crea el pedido rompería el reintento de
+      // arriba, porque la guarda del principio de este método exige un carrito con líneas. Si
+      // `continuarSegunMetodoPago` falla —el intento de pago de Wompi, por ejemplo— no se llega
+      // hasta acá y el carrito queda intacto para volver a intentarlo.
+      this.carrito.limpiar();
     } catch {
       this.error.set(this.transloco.translate('checkout.confirmar.error'));
     }
