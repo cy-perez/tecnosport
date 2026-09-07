@@ -21,14 +21,20 @@ gratuitos).
 
 Crea, sin duplicar nada si ya existe:
 
-- el bucket `tecnosport-dev-imagenes`, Standard en `us-central1`, con acceso
-  uniforme;
+- el bucket `tecnosport-dev-imagenes`, Standard con acceso uniforme, en una
+  región de la capa gratuita — la región solo aplica al crearlo: un bucket que ya
+  existe no se puede mover;
 - lectura pública (`allUsers` como `objectViewer`), porque la ficha de producto
   sirve las imágenes por URL directa — la escritura sigue siendo solo con URL
   firmada;
 - CORS para `http://localhost:4200`;
-- la cuenta de servicio `imagenes-dev`, con `objectAdmin` **solo sobre este
-  bucket**, y su llave JSON en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`.
+- la cuenta de servicio `tecnosport-dev-imagenes` —el mismo nombre del bucket, a
+  propósito— con `objectAdmin` **solo sobre este bucket**, y su llave JSON en la
+  ruta de `GOOGLE_APPLICATION_CREDENTIALS`.
+
+Si esa ruta apunta fuera del perfil de Windows actual, el script para en vez de
+crear el directorio. La primera versión no lo hacía y terminó escribiendo una
+llave dentro del perfil de otro usuario de la máquina.
 
 La llave privada es lo que de verdad hace falta: sin ella el SDK arranca igual,
 pero `signUrl` falla con `Signing key was not provided and could not be derived`
