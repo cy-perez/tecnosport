@@ -267,9 +267,9 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"altEs":"alt es","altEn":"alt en"}
+                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
-                        .formatted(objectKey)))
+                        .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.ancho").value(1000))
         .andExpect(jsonPath("$.alto").value(800));
@@ -287,9 +287,9 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"altEs":"alt es","altEn":"alt en"}
+                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
-                        .formatted(objectKey)))
+                        .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isNotFound());
   }
 

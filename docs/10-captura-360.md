@@ -115,6 +115,11 @@ Sobre `<canvas>`, antes de subir:
    el contrato de subida.
 5. **Verificación.** Si la detección de fondo falla, el asistente lo dice y ofrece
    recorte manual. Nunca sube un recorte que sabe que salió mal.
+6. **Hash.** De cada fotograma subido, el asistente calcula el SHA-256 con
+   `crypto.subtle` y lo manda en el cuerpo de `/completar`. Es el `hash` del
+   modelo de datos; el backend exige la forma y no puede verificar el contenido
+   (`ADR-0019`). Una razón más para el contexto seguro que la cámara ya exigía:
+   `crypto.subtle` tampoco existe sobre HTTP.
 
 Límite honesto: el recorte automático funciona con fondo claro y uniforme. Con
 fondo desordenado va a fallar, y por eso el paso 1 del flujo insiste en las

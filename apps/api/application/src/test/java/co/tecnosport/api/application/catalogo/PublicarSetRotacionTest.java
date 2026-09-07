@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacionIncompletoException;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -93,7 +94,7 @@ class PublicarSetRotacionTest {
         1000,
         1000,
         900,
-        "h" + orden,
+        new HashContenido("%064x".formatted(orden)),
         null,
         null);
   }

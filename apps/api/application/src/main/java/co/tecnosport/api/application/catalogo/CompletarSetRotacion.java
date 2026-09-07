@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacionIncompletoException;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
 import java.util.Objects;
 
@@ -91,10 +92,10 @@ public final class CompletarSetRotacion {
         fotograma.ancho(),
         fotograma.alto(),
         bytes,
-        // El hash es la key del objeto, igual que en la imagen principal: un hash del contenido
-        // real lo puede calcular el asistente en el navegador, pero el backend no podría
-        // verificarlo sin descargar los bytes.
-        fotograma.objectKey(),
+        // El SHA-256 lo calcula el asistente sobre los bytes que subió, igual que en la imagen
+        // principal. El backend no puede verificarlo sin descargar el archivo (ADR-0016), pero sí
+        // exige que sea un hash bien formado: HashContenido rechaza cualquier otra cosa.
+        new HashContenido(fotograma.hash()),
         null,
         null);
   }

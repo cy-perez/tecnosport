@@ -505,6 +505,11 @@ describe('Captura360Page', () => {
     expect(repositorio.completadoCon).toHaveLength(4);
     // El backend recibe el tamano de salida, no el de la camara.
     expect(repositorio.completadoCon[0].ancho).toBe(1000);
+    // Y el SHA-256 de cada fotograma, calculado sobre el blob que se subio: el backend lo guarda
+    // como hash de la imagen y rechaza cualquier cosa que no tenga esa forma.
+    for (const fotograma of repositorio.completadoCon) {
+      expect(fotograma.hash).toMatch(/^[0-9a-f]{64}$/);
+    }
     expect(await screen.findByText('Revisa la rotación completa')).toBeTruthy();
     // Publicar es un paso aparte: el set todavia no esta publicado.
     expect(repositorio.publicados).toEqual([]);

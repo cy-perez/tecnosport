@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -95,7 +96,7 @@ class ProductoControladorTest {
             800,
             600,
             1000,
-            "h0",
+            new HashContenido("%064x".formatted(0)),
             "alt es",
             "alt en"));
     producto.publicar();

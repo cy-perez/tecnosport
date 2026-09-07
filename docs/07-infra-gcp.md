@@ -33,6 +33,13 @@ para firmar URLs — decisión del proyecto: dev usa solo servicios de GCP sin
 costo, los servicios pagos se activan al pasar a producción. CORS configurado
 para el origen de `apps/web` en local (`http://localhost:4200`).
 
+Todo eso lo crea `node infra/dev/bucket-imagenes.mjs`, idempotente, con la llave
+de la cuenta de servicio en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`. Sin esa
+llave el backend arranca igual —el bean `Storage` se construye sin credenciales—
+pero firmar falla: `POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500
+con `Signing key was not provided and could not be derived`, y con él se cae todo
+lo que sigue del asistente de captura.
+
 ## Producción en GCP
 
 | Servicio | Para qué |
@@ -150,4 +157,14 @@ punto en el tiempo activada. Una restauración de prueba antes de abrir al
 público: un respaldo que nunca se restauró no es un respaldo.
 
 El bucket de imágenes con versionado de objetos: un borrado accidental de un set
-de rotación son quince fotos que hay que volver a tomar.
+de rotación son quince fotos que hay que volver a tomar. Esto no es solo para
+accidentes: `DELETE /api/v1/admin/sets-rotacion/{id}` borra de verdad los objetos
+del set —si no, el espacio no se reclama nunca— y el versionado es lo único que
+hace ese borrado reversible. Y con una regla de ciclo de vida que expire las
+versiones no vigentes: sin ella se acumulan, y el espacio no se reclama igual.
+
+Un detalle que cuesta caro y no se ve: hay que borrar **por nombre, sin
+generación**. El SDK de Java, si se le pasa un objeto que vino de un listado,
+borra esa generación concreta —un borrado definitivo que se salta el versionado y
+no deja nada que restaurar. Comprobado contra el bucket real, en los dos
+sentidos.

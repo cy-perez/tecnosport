@@ -20,6 +20,8 @@ import co.tecnosport.api.presentation.catalogo.dto.SubidaDeFotogramaRespuesta;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -46,6 +48,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/sets-rotacion")
 public class AdminSetRotacionControlador {
+
+  private static final Logger log = LoggerFactory.getLogger(AdminSetRotacionControlador.class);
 
   private final AbrirSetRotacion abrirSetRotacion;
   private final SolicitarSubidasDeRotacion solicitarSubidasDeRotacion;
@@ -120,12 +124,13 @@ public class AdminSetRotacionControlador {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void eliminar(@PathVariable("id") UUID id) {
-    eliminarSetRotacion.ejecutar(id);
+    int objetosBorrados = eliminarSetRotacion.ejecutar(id);
+    log.info("Set de rotación {} eliminado; {} objetos borrados del bucket.", id, objetosBorrados);
   }
 
   private static FotogramaComando aComando(FotogramaPeticion peticion) {
     return new FotogramaComando(
-        peticion.orden(), peticion.objectKey(), peticion.ancho(), peticion.alto());
+        peticion.orden(), peticion.objectKey(), peticion.ancho(), peticion.alto(), peticion.hash());
   }
 
   private UUID actorId() {

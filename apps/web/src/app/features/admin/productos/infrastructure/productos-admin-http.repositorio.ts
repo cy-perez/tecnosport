@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { sha256Hex } from '../../../../core/hash/sha256';
 import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
@@ -120,6 +121,7 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         objectKey: solicitud.objectKey,
         ancho: comando.ancho,
         alto: comando.alto,
+        hash: await sha256Hex(comando.archivo),
         altEs: comando.altEs,
         altEn: comando.altEn,
       },

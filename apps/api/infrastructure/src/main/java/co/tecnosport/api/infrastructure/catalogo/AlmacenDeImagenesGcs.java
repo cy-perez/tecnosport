@@ -59,4 +59,19 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   public String urlPublica(String objectKey) {
     return urlPublicaBase + "/" + objectKey;
   }
+
+  @Override
+  public int eliminarPorPrefijo(String prefijo) {
+    int borrados = 0;
+    for (Blob blob : storage.list(bucket, Storage.BlobListOption.prefix(prefijo)).iterateAll()) {
+      // Por nombre y NO con `blob.delete()`. Un Blob que viene de `list` trae su generación, y
+      // borrar una generación concreta borra esa versión de verdad, saltándose el versionado del
+      // bucket: no queda versión no vigente que restaurar. Sin generación, GCS mueve la versión
+      // vigente a no vigente, que es la red en la que se apoya EliminarSetRotacion. Comprobado
+      // contra el bucket real: con `blob.delete()` no quedaba nada que recuperar.
+      storage.delete(BlobId.of(bucket, blob.getName()));
+      borrados++;
+    }
+    return borrados;
+  }
 }

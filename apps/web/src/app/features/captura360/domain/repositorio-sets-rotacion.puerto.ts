@@ -26,6 +26,8 @@ export interface FotogramaSubido {
   readonly objectKey: string;
   readonly ancho: number;
   readonly alto: number;
+  /** El SHA-256 del fotograma que se subió, en hexadecimal (docs/02-modelo-datos.md). */
+  readonly hash: string;
 }
 
 /** Los cinco pasos del set en el backend (docs/03-api.md, ADR-0018). */

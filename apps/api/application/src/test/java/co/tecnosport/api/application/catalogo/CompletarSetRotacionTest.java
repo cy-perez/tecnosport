@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacionIncompletoException;
+import co.tecnosport.api.domain.compartido.HashContenidoInvalidoException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -77,7 +78,7 @@ class CompletarSetRotacionTest {
   void rechazaUnFotogramaQueNoEsCuadradoDeMilPixeles() {
     SetRotacion set = abiertoConObjetos(4, 40_000);
     List<FotogramaComando> fotogramas = new ArrayList<>(fotogramas(set, 4));
-    fotogramas.set(2, new FotogramaComando(2, clave(set, 2), 1000, 750));
+    fotogramas.set(2, new FotogramaComando(2, clave(set, 2), 1000, 750, hash(2)));
 
     assertThrows(
         SetRotacionIncompletoException.class,
@@ -88,7 +89,8 @@ class CompletarSetRotacionTest {
   void rechazaUnObjetoQueNoPerteneceAlSet() {
     SetRotacion set = abiertoConObjetos(4, 40_000);
     List<FotogramaComando> fotogramas = new ArrayList<>(fotogramas(set, 4));
-    fotogramas.set(0, new FotogramaComando(0, "productos/otro/rotacion/otro/0.webp", 1000, 1000));
+    fotogramas.set(
+        0, new FotogramaComando(0, "productos/otro/rotacion/otro/0.webp", 1000, 1000, hash(0)));
 
     assertThrows(
         SetRotacionIncompletoException.class,
@@ -124,12 +126,43 @@ class CompletarSetRotacionTest {
     }
   }
 
+  @Test
+  void guardaElHashQueReportoElAsistente() {
+    SetRotacion set = abiertoConObjetos(4, 40_000);
+
+    SetRotacion completado =
+        completarSetRotacion.ejecutar(
+            new CompletarSetRotacionComando(set.id(), fotogramas(set, 4)));
+
+    // Lo que se persiste es el SHA-256 del contenido, no la key del objeto: guardar la key ahí
+    // reventaba contra la columna real (varchar(80)) y hacía inútil la detección de duplicados.
+    assertEquals(hash(0), completado.fotogramas().get(0).hash().valor());
+    assertEquals(hash(3), completado.fotogramas().get(3).hash().valor());
+  }
+
+  @Test
+  void rechazaUnHashQueNoEsUnSha256() {
+    SetRotacion set = abiertoConObjetos(4, 40_000);
+    List<FotogramaComando> fotogramas = new ArrayList<>(fotogramas(set, 4));
+    fotogramas.set(1, new FotogramaComando(1, clave(set, 1), 1000, 1000, clave(set, 1)));
+
+    assertThrows(
+        HashContenidoInvalidoException.class,
+        () -> completarSetRotacion.ejecutar(new CompletarSetRotacionComando(set.id(), fotogramas)));
+    assertEquals(EstadoSetRotacion.BORRADOR, set.estado());
+  }
+
   private static List<FotogramaComando> fotogramas(SetRotacion set, int cuantos) {
     List<FotogramaComando> fotogramas = new ArrayList<>();
     for (int orden = 0; orden < cuantos; orden++) {
-      fotogramas.add(new FotogramaComando(orden, clave(set, orden), 1000, 1000));
+      fotogramas.add(new FotogramaComando(orden, clave(set, orden), 1000, 1000, hash(orden)));
     }
     return fotogramas;
+  }
+
+  /** Un SHA-256 con la forma correcta, distinto por fotograma. */
+  private static String hash(int orden) {
+    return "%064x".formatted(orden + 1);
   }
 
   private static String clave(SetRotacion set, int orden) {

@@ -1941,6 +1941,139 @@ regla de cierre exige y ninguna prueba puede dar:
 
 Hasta que eso ocurra, lo construido está probado pero no visto funcionando.
 
+### El recorrido a mano, hasta donde llega sin bucket
+
+2026-09-06. Se hizo el pendiente 3 contra `bootRun` + PostgreSQL real, y se
+encontró que **no era independiente del pendiente 2**: tres de los cinco
+endpoints del set quedan verificados a mano, y los otros dos no pueden quedar
+hasta que exista el bucket.
+
+Verificado de punta a punta: `POST /api/v1/auth/sesion` (200, rol `ADMIN`),
+`GET /api/v1/admin/productos` sobre los datos de siembra, `POST
+/api/v1/admin/sets-rotacion` (201, `BORRADOR`) y `DELETE
+/api/v1/admin/sets-rotacion/{id}` (204, y el segundo intento 404 con el problem
+detail correcto, no un 500).
+
+`POST /{id}/subidas` responde **500**: `IllegalStateException: Signing key was
+not provided and could not be derived`. La credencial de GCS del `.env.local`
+apuntaba a un archivo que no existe. De paso quedó comprobado algo que nadie
+había mirado: **la aplicación arranca igual sin credenciales de GCS** —el bean
+`Storage` de `ConfiguracionCatalogo` se construye sin problema— y el fallo
+aparece recién al firmar. Es el comportamiento deseable, pero era una
+suposición.
+
+Sin bucket tampoco se puede pasar de ahí: `CompletarSetRotacion` verifica contra
+el almacén real que cada objeto exista y pese más de cero, a propósito. Así que
+el orden de los tres pendientes no es el que estaba escrito — **el bucket es el
+camino crítico de los tres**, incluido el recorrido en el teléfono, que termina
+subiendo el set.
+
+Por eso se agregó `infra/dev/bucket-imagenes.mjs`: bucket, lectura pública,
+CORS, cuenta de servicio y llave, idempotente. Es la única cosa de GCP que se
+crea fuera de Terraform, y `infra/dev/README.md` explica por qué: montar con
+Terraform un proyecto de dev exigiría primero un bucket de estado remoto para el
+propio Terraform, y ese arranque en frío no se paga solo por un bucket y una
+cuenta de servicio. La regla de producción no cambia.
+
+### El hash que nunca cupo, y los pendientes 2 y 3 cerrados
+
+2026-09-06, más tarde. Con el bucket de dev montado, el recorrido llegó hasta
+`/completar` y reventó con un 500: `value too long for type character
+varying(80)`. `imagen_producto.hash` guardaba la **key del objeto** (~99
+caracteres) en una columna dimensionada para un SHA-256. **Nunca funcionó contra
+Cloud Storage**, ni en el set de rotación ni en la imagen principal del panel
+(`ConfirmarImagenPrincipal` hacía lo mismo desde la Fase 4). Las pruebas no lo
+veían: el doble del almacén acepta cualquier key y usaban keys cortas.
+
+Ensanchar la columna habría enterrado el problema. `docs/02-modelo-datos.md` dice
+que `hash` es del contenido, para detectar recargas duplicadas, y con la key ahí
+esa detección no podía funcionar nunca, porque cada key es única por
+construcción. Así que el hash volvió a ser lo que el modelo dice: lo calcula el
+navegador con `crypto.subtle` sobre los bytes que sube, `HashContenido` (objeto
+de valor, `domain/compartido`) exige 64 hexadecimales, y `V19` lo repite como
+`check` del esquema. El detalle y lo que se descartó, en `ADR-0019`.
+
+De rebote apareció otra cosa: `TokensJwtTest` fallaba una de cada dieciséis
+corridas desde siempre. Cambiaba el último carácter del token, que en una firma
+HS256 solo aporta cuatro bits significativos — el token "manipulado" a veces era
+byte por byte el mismo. Esa prueba no probaba nada; ahora cambia el cuerpo por el
+de otro usuario conservando la firma.
+
+**Pendientes 2 y 3, cerrados** (`npm run verificar` completo: lint, 433 pruebas,
+`ng build` y `gradlew.bat build`). El recorrido entero contra el bucket real,
+paso por paso: sesión `ADMIN`, abrir el set (201, `BORRADOR`), ocho URL firmadas
+V4 (201), ocho `PUT` directos a `storage.googleapis.com`, `/completar` (200,
+`COMPLETO`), `/publicar` (200, `PUBLICADO`), y `GET /api/v1/productos/{slug}`
+sirviendo `rotacion` con los ocho fotogramas apuntando al bucket — comprobado
+además que el objeto se lee público (200, `image/webp`). Al terminar se borró el
+set de prueba y sus objetos: el catálogo de dev quedó como estaba.
+
+**Queda solo el pendiente 1**, el recorrido en un teléfono real, que necesita el
+túnel HTTPS y su origen agregado al CORS del bucket (`infra/dev/README.md`).
+
+### La Fase 5, cerrada: el recorrido en el teléfono
+
+2026-09-07. El pendiente 1, hecho en un iPhone y en un Android sobre un túnel de
+Cloudflare (`cloudflared tunnel --url http://localhost:4200`; `proxy.conf.json`
+manda `/api` al backend, así que un solo túnel sirve app y API sin contenido
+mixto). La cuadrícula de guía y el nivelador se comportaron bien en los dos, y el
+permiso del sensor de orientación de iOS —el caso estricto, que exige gesto del
+usuario y certificado confiable— se concedió sin pelear. El procedimiento quedó
+en `apps/web/README.md`, que es donde `docs/07-infra-gcp.md` decía desde hace
+fases que estaba, y no estaba.
+
+El dev server corre con `ng serve --allowed-hosts` para aceptar el host del
+túnel. `angular.json` no se tocó: `security.allowedHosts` exige el host exacto
+—el comodín `.trycloudflare.com` no le sirve— y un host efímero no tiene por qué
+quedar versionado.
+
+**Dos defectos que solo aparecen al llegar por un enlace**, encontrados así y
+corregidos:
+
+1. **Se veía parpadear la pantalla protegida.** `adminGuard` se abstiene en el
+   servidor —con razón: el SSR no reenvía la cookie de refresco, así que no tiene
+   con qué decidir—, de modo que el servidor pintaba la pantalla de captura y un
+   instante después el cliente redirigía al login. Ahora `/admin` se renderiza
+   solo en el cliente (`RenderMode.Client`), que además no cuesta nada: no
+   necesita SEO y sus datos ya venían del cliente. La protección real nunca
+   estuvo ahí — el backend exige el rol en cada endpoint.
+2. **El enlace se perdía.** Tras iniciar sesión se caía siempre en el panel y
+   había que volver a buscar el enlace. `adminGuard` ahora anota a dónde ibas
+   (`?destino=`) y el login vuelve ahí. Solo acepta rutas relativas de este sitio
+   dentro de `/admin`: un `destino` viene de la URL, o sea del usuario, y sin ese
+   filtro un enlace preparado convertiría el formulario en un salto a otro sitio
+   con la credencial recién escrita.
+
+**Fase 5 completa.** El asistente de captura funciona de punta a punta en un
+teléfono real contra Cloud Storage real: cámara, guía, nivel, procesado, subida
+firmada, revisión y publicación.
+
+### Borrar un set borra sus objetos
+
+2026-09-06, cerrando el día. `DELETE /api/v1/admin/sets-rotacion/{id}` borraba la
+fila y dejaba los objetos en el bucket. No era un olvido: el javadoc lo
+justificaba con que "el bucket tiene versionado y borrar bytes es irreversible".
+Solo que **el bucket de dev no tenía versionado**, así que la red en la que se
+apoyaba esa decisión no existía, y mientras tanto el espacio no se reclamaba
+nunca.
+
+Ahora se borra, y la red se montó de verdad: versionado de objetos en el bucket
+más una regla de ciclo de vida que expira las versiones no vigentes a los 30 días
+(`TODO(negocio)`: ese plazo es un valor de arranque, no una decisión tomada). Sin
+la regla, las versiones no vigentes se acumulan y no se habría reclamado nada.
+
+Se borra **por prefijo**, no recorriendo los fotogramas conocidos: un set que
+murió a medio subir dejó objetos que nunca fueron una fila, y son justamente los
+que más falta hace reclamar. Y los objetos se borran **antes** que la fila: al
+revés, un fallo a mitad deja los objetos huérfanos para siempre, porque
+reintentar responde 404 y ya nadie sabe qué prefijo limpiar.
+
+Un detalle que solo apareció probando contra el bucket real: la primera versión
+usaba `blob.delete()` sobre los objetos que devuelve el listado, y **eso borra la
+generación concreta, saltándose el versionado** — la prueba mostró cero versiones
+recuperables. Borrando por nombre, sin generación, quedan las cuatro. Está en
+`docs/07-infra-gcp.md` para que no se repita.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,

@@ -127,6 +127,7 @@ public class AdminProductoControlador {
                 cuerpo.objectKey(),
                 cuerpo.ancho(),
                 cuerpo.alto(),
+                cuerpo.hash(),
                 cuerpo.altEs(),
                 cuerpo.altEn()));
     return mapeador.aRespuesta(imagen);

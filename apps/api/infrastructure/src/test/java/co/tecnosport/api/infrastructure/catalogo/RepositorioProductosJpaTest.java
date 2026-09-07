@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
@@ -506,7 +507,7 @@ class RepositorioProductosJpaTest {
             1000,
             800,
             45_000,
-            "productos/x/principal-1.webp",
+            new HashContenido("%064x".formatted(1)),
             "alt es 1",
             "alt en 1");
 
@@ -523,7 +524,7 @@ class RepositorioProductosJpaTest {
             1200,
             900,
             60_000,
-            "productos/x/principal-2.webp",
+            new HashContenido("%064x".formatted(2)),
             "alt es 2",
             "alt en 2");
 
@@ -532,7 +533,7 @@ class RepositorioProductosJpaTest {
     List<ImagenProductoJpaEntity> imagenesDelProducto =
         imagenes.findByProductoIdIn(List.of(productoJpa.getId()));
     assertThat(imagenesDelProducto).hasSize(1);
-    assertThat(imagenesDelProducto.get(0).getHash()).isEqualTo("productos/x/principal-2.webp");
+    assertThat(imagenesDelProducto.get(0).getHash()).isEqualTo("%064x".formatted(2));
     assertThat(imagenesDelProducto.get(0).getAncho()).isEqualTo(1200);
   }
 
@@ -599,7 +600,7 @@ class RepositorioProductosJpaTest {
             800,
             600,
             1000,
-            "hash-" + producto.getSlug(),
+            hashDePrueba(producto.getSlug()),
             "alt es",
             "alt en",
             Instant.now()));
@@ -620,9 +621,17 @@ class RepositorioProductosJpaTest {
             800,
             600,
             1000,
-            "hash-" + producto.getSlug() + "-" + orden,
+            hashDePrueba(producto.getSlug() + "-" + orden),
             "",
             "",
             Instant.now()));
+  }
+
+  /**
+   * Un hash con la forma que exige {@code HashContenido} —64 hexadecimales— derivado de la semilla,
+   * para que cada imagen de prueba tenga el suyo y siga siendo estable entre corridas.
+   */
+  private static String hashDePrueba(String semilla) {
+    return "%064x".formatted(Integer.toUnsignedLong(semilla.hashCode()));
   }
 }

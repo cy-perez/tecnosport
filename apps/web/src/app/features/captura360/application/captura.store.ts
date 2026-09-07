@@ -1,4 +1,5 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { sha256Hex } from '../../../core/hash/sha256';
 import { ALMACEN_LOCAL_DE_CAPTURAS } from '../domain/almacen-local-capturas.puerto';
 import { CAMARA, FotogramaCrudo } from '../domain/camara.puerto';
 import { PROCESADOR_DE_FOTOGRAMAS } from '../domain/procesador-fotogramas.puerto';
@@ -320,6 +321,9 @@ export class CapturaStore {
           objectKey: destino.objectKey,
           ancho: LADO_SALIDA_PX,
           alto: LADO_SALIDA_PX,
+          // Sobre el blob que se acaba de subir, no sobre el de la captura: es este el que quedó
+          // en el bucket.
+          hash: await sha256Hex(fotograma.blob),
         });
         this.avance.set({ hechos: subidos.length, total: resultado.fotogramas.length });
       }

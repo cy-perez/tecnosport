@@ -148,7 +148,7 @@ POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRAD
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
 POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
 POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
-DELETE /api/v1/admin/sets-rotacion/{id}
+DELETE /api/v1/admin/sets-rotacion/{id}             borra el set y sus objetos del bucket
 ```
 
 El set se abre **prometiendo cuántos fotogramas va a tener** (entre 4 y 16), y esa
@@ -164,8 +164,16 @@ prometidos, y que las dimensiones **declaradas** son las de un fotograma de
 rotación (cuadrado, 1000 px). Un set que no pasa esa verificación se queda en
 `BORRADOR` entero, no a medias: medio set publicado es un visor roto.
 
+De cada fotograma, el cuerpo de `/completar` lleva `orden`, `objectKey`, `ancho`,
+`alto` y **`hash`**: el SHA-256 del archivo en hexadecimal, que el navegador
+calcula sobre los bytes que acaba de subir. El mismo campo va en el cuerpo de
+`POST /api/v1/admin/productos/{id}/imagen-principal`. El servidor exige que sea
+un hash bien formado, pero no puede confirmar que corresponda al archivo sin
+descargarlo: `ADR-0019`.
+
 Lo que el servidor **no** verifica, y conviene tenerlo escrito: que los bytes
-sean de verdad una imagen, y que sus dimensiones reales sean las declaradas.
+sean de verdad una imagen, que sus dimensiones reales sean las declaradas, y que
+el hash sea el de ese archivo.
 Comprobarlo exigiría descargar y decodificar el archivo en el backend, que es lo
 que la subida directa evita — mismo riesgo aceptado que en la imagen principal
 (`ADR-0016`), y por el mismo motivo: el panel lo usa solo el administrador.

@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.catalogo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -61,7 +62,7 @@ class SetRotacionTest {
             800,
             600,
             1000,
-            "h0",
+            new HashContenido("%064x".formatted(0)),
             "alt",
             "alt");
 
@@ -150,7 +151,7 @@ class SetRotacionTest {
         1000,
         1000,
         1000,
-        "hash-" + orden,
+        new HashContenido("%064x".formatted(orden)),
         null,
         null);
   }

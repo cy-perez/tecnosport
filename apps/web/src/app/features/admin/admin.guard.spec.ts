@@ -61,6 +61,22 @@ describe('adminGuard', () => {
     expect((resultado as UrlTree).toString()).toBe('/en/admin/iniciar-sesion');
   });
 
+  it('al redirigir, recuerda a dónde iba', async () => {
+    await configurar(new RepositorioSesionFalso(null));
+
+    const resultado = await TestBed.runInInjectionContext(() =>
+      adminGuard(rutaConLang('es'), {
+        url: '/es/admin/productos/abc-123/captura-360',
+      } as RouterStateSnapshot),
+    );
+
+    // Sin esto, abrir un enlace directo sin sesión terminaba en el panel y había
+    // que volver a buscar el enlace.
+    expect((resultado as UrlTree).toString()).toBe(
+      '/es/admin/iniciar-sesion?destino=%2Fes%2Fadmin%2Fproductos%2Fabc-123%2Fcaptura-360',
+    );
+  });
+
   it('con sesión de CLIENTE, no permite el acceso', async () => {
     await configurar(new RepositorioSesionFalso({ usuarioId: 'u1', rol: 'CLIENTE', accessToken: 'jwt' }));
 
