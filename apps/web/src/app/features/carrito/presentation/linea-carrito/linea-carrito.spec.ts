@@ -79,7 +79,10 @@ describe('LineaCarritoComponent', () => {
   it('restar en uno no emite (usa eliminar en vez de bajar a cero)', async () => {
     let emitido: number | undefined;
     await renderLinea(
-      { linea: { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 }, snapshot: snapshotDePrueba() },
+      {
+        linea: { id: 'linea-1', varianteId: 'variante-1', cantidad: 1 },
+        snapshot: snapshotDePrueba(),
+      },
       { cantidadCambio: (valor: number) => (emitido = valor) },
     );
 

@@ -1,4 +1,8 @@
-<form class="filtros" [formGroup]="form" (submit)="$event.preventDefault()">
+<form
+  class="mx-auto grid max-w-contenido grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-filtro),1fr))] items-end gap-16 px-16 pb-24"
+  [formGroup]="form"
+  (submit)="$event.preventDefault()"
+>
   <ts-select
     idCampo="filtro-linea"
     [label]="'catalogo.filtros.linea_label' | transloco"

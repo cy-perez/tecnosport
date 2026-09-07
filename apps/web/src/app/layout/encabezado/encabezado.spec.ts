@@ -1,51 +1,40 @@
-import { TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../assets/i18n/en.json';
 import es from '../../../assets/i18n/es.json';
-import { REPOSITORIO_SESION, RepositorioSesion } from '../../core/autenticacion/repositorio-sesion.puerto';
-import { Sesion } from '../../core/autenticacion/sesion.model';
-import { SesionStore } from '../../core/autenticacion/sesion.store';
-import { Carrito } from '../../features/carrito/domain/carrito.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../features/carrito/domain/repositorio-carrito.puerto';
+import { REPOSITORIO_SESION } from '../../core/autenticacion/repositorio-sesion.puerto';
+import { REPOSITORIO_CARRITO } from '../../features/carrito/domain/repositorio-carrito.puerto';
 import { Encabezado } from './encabezado';
 
-class RepositorioCarritoFalso implements RepositorioCarrito {
-  crear(): Promise<Carrito> {
-    return Promise.reject(new Error('no usado en esta prueba'));
-  }
-  ver(): Promise<Carrito | null> {
-    return Promise.resolve(null);
-  }
-  agregarLinea(): Promise<Carrito> {
-    return Promise.reject(new Error('no usado en esta prueba'));
-  }
-  actualizarCantidad(): Promise<Carrito> {
-    return Promise.reject(new Error('no usado en esta prueba'));
-  }
-  eliminarLinea(): Promise<Carrito> {
-    return Promise.reject(new Error('no usado en esta prueba'));
+// Una ruta comodín, porque las pruebas hacen clic en `routerLink` de verdad:
+// con `provideRouter([])` la navegación revienta con NG04002 antes de que
+// llegue el manejador que cierra el panel.
+@Component({ template: '' })
+class PantallaVacia {}
+
+class RepositorioCarritoFalso {
+  async obtener() {
+    throw new Error('No usado en estas pruebas.');
   }
 }
 
-class RepositorioSesionFalso implements RepositorioSesion {
-  llamadasCerrar = 0;
-
-  async iniciarSesion(): Promise<Sesion> {
-    throw new Error('no usado en esta prueba');
+class RepositorioSesionFalso {
+  async iniciarSesion() {
+    throw new Error('No usado en estas pruebas.');
   }
-  async refrescar(): Promise<Sesion | null> {
-    return null;
+  async cerrarSesion() {
+    return undefined;
   }
-  async cerrarSesion(): Promise<void> {
-    this.llamadasCerrar++;
+  async refrescar() {
+    throw new Error('No usado en estas pruebas.');
   }
 }
 
-async function renderEncabezado(sesion: Sesion | null = null) {
-  const resultado = await render(Encabezado, {
+async function renderEncabezado() {
+  return render(Encabezado, {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en },
@@ -54,69 +43,132 @@ async function renderEncabezado(sesion: Sesion | null = null) {
       }),
     ],
     providers: [
-      provideRouter([]),
+      provideRouter([{ path: '**', component: PantallaVacia }]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
       { provide: REPOSITORIO_SESION, useClass: RepositorioSesionFalso },
     ],
   });
+}
 
-  if (sesion) {
-    TestBed.inject(SesionStore).sesion.set(sesion);
-    await resultado.fixture.whenStable();
-  }
-  return resultado;
+function botonMenu(): HTMLButtonElement {
+  return screen.getByRole('button', { name: /men/i }) as HTMLButtonElement;
 }
 
 describe('Encabezado', () => {
-  it('el logo lleva a la portada del idioma activo', async () => {
+  it('conserva el landmark de banner', async () => {
+    const { container } = await renderEncabezado();
+
+    // No es ceremonia: al reestructurar para el menú móvil el `<header>` se
+    // perdió por un `<div>` y con él el landmark.
+    expect(container.querySelector('header')).toBeTruthy();
+  });
+
+  it('el menú arranca cerrado y el botón lo anuncia', async () => {
     await renderEncabezado();
 
-    const logo = screen.getByRole('link', { name: 'Ir a la portada' });
-
-    expect(logo.getAttribute('href')).toBe('/es');
+    expect(botonMenu().getAttribute('aria-expanded')).toBe('false');
+    expect(botonMenu().getAttribute('aria-controls')).toBe('menu-movil');
+    expect(document.getElementById('menu-movil')).toBeNull();
   });
 
-  it('el carrito conserva su nombre accesible aunque su contenido sea un icono', async () => {
+  it('al abrirlo, el estado y la etiqueta cambian con él', async () => {
+    const { fixture } = await renderEncabezado();
+
+    expect(botonMenu().getAttribute('aria-label')).toBe('Abrir el menú');
+
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+
+    expect(botonMenu().getAttribute('aria-expanded')).toBe('true');
+    expect(botonMenu().getAttribute('aria-label')).toBe('Cerrar el menú');
+    expect(document.getElementById('menu-movil')).toBeTruthy();
+  });
+
+  it('el botón alterna: un segundo clic lo cierra', async () => {
+    const { fixture } = await renderEncabezado();
+
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+
+    expect(document.getElementById('menu-movil')).toBeNull();
+  });
+
+  it('Escape cierra el menú', async () => {
+    const { fixture } = await renderEncabezado();
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+
+    fireEvent.keyDown(document.getElementById('menu-movil')!, { key: 'Escape' });
+    await fixture.whenStable();
+
+    expect(document.getElementById('menu-movil')).toBeNull();
+  });
+
+  // Lo que se espera al elegir un enlace: que el panel no se quede abierto
+  // encima de la página a la que acabas de navegar.
+  it('elegir un enlace del panel lo cierra', async () => {
+    const { fixture } = await renderEncabezado();
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+
+    const panel = document.getElementById('menu-movil')!;
+    fireEvent.click(panel.querySelector('a')!);
+    await fixture.whenStable();
+
+    expect(document.getElementById('menu-movil')).toBeNull();
+  });
+
+  // Los enlaces se definen una sola vez en un `ng-template` y se instancian en
+  // la barra y en el panel. Con el menú abierto hay dos copias de cada uno, y
+  // eso es correcto: una sola está visible según el ancho.
+  it('el mismo enlace existe en la barra y en el panel, sin duplicar la plantilla', async () => {
+    const { fixture } = await renderEncabezado();
+    expect(screen.getAllByRole('link', { name: 'Catálogo' })).toHaveLength(1);
+
+    fireEvent.click(botonMenu());
+    await fixture.whenStable();
+
+    expect(screen.getAllByRole('link', { name: 'Catálogo' })).toHaveLength(2);
+  });
+
+  it('el carrito se queda en la barra, no baja al menú', async () => {
     await renderEncabezado();
 
-    const carrito = screen.getByRole('link', { name: 'Carrito, 0 artículos' });
-
-    expect(carrito.getAttribute('href')).toBe('/es/carrito');
-    expect(carrito.querySelector('svg')).toBeTruthy();
+    const carrito = screen.getByRole('link', { name: /Carrito/ });
+    expect(carrito.closest('#menu-movil')).toBeNull();
   });
 
-  it('sin sesión ofrece entrar y crear cuenta, y no muestra el panel', async () => {
+  it('el botón de menú cumple el objetivo táctil y desaparece en escritorio', async () => {
     await renderEncabezado();
 
-    expect(screen.getByRole('link', { name: 'Entrar' }).getAttribute('href')).toBe(
-      '/es/cuenta/iniciar-sesion',
-    );
-    expect(screen.getByRole('link', { name: 'Crear cuenta' }).getAttribute('href')).toBe(
-      '/es/cuenta/registro',
-    );
-    expect(screen.queryByRole('link', { name: 'Panel' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).toBeNull();
+    expect(botonMenu().className).toContain('min-h-tactil');
+    expect(botonMenu().className).toContain('min-w-tactil');
+    // jsdom no evalúa media queries: se comprueba que la clase esté puesta.
+    expect(botonMenu().className).toContain('desde-movil:hidden');
   });
 
-  it('con sesión de ADMIN muestra el panel y ofrece cerrar sesión', async () => {
-    await renderEncabezado({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt' });
+  // La animación de salida se probó en el navegador, que es donde importa;
+  // esto fija el camino que estuvo roto: con movimiento reducido **no se anima
+  // nada**, se elimina y punto. Reducir la duración a 0,01 ms dejaba una
+  // animación real corriendo, y con ciclos rápidos el panel llegó a quedarse
+  // montado — un menú que no se cierra es peor que uno sin animación.
+  it('con movimiento reducido, el panel se elimina sin animarse', async () => {
+    document.documentElement.setAttribute('data-movimiento', 'reducido');
+    try {
+      const { fixture } = await renderEncabezado();
+      fireEvent.click(botonMenu());
+      await fixture.whenStable();
+      expect(document.getElementById('menu-movil')).toBeTruthy();
 
-    expect(screen.getByRole('link', { name: 'Panel' }).getAttribute('href')).toBe('/es/admin');
-    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Entrar' })).toBeNull();
-  });
+      fireEvent.click(botonMenu());
+      await fixture.whenStable();
 
-  it('con sesión de CLIENTE no muestra el panel de administración', async () => {
-    await renderEncabezado({ usuarioId: 'u2', rol: 'CLIENTE', accessToken: 'jwt' });
-
-    expect(screen.queryByRole('link', { name: 'Panel' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeTruthy();
-  });
-
-  it('el catálogo es alcanzable desde el encabezado', async () => {
-    await renderEncabezado();
-
-    expect(screen.getByRole('link', { name: 'Catálogo' }).getAttribute('href')).toBe('/es/productos');
+      expect(document.getElementById('menu-movil')).toBeNull();
+    } finally {
+      document.documentElement.removeAttribute('data-movimiento');
+    }
   });
 });

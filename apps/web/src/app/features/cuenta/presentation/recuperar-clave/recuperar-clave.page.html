@@ -1,14 +1,16 @@
 @if (enviado()) {
-  <section class="recuperar-clave recuperar-clave--exito">
-    <h1 class="recuperar-clave__titulo">{{ 'cuenta.recuperarClave.exito_titulo' | transloco }}</h1>
+  <ts-pagina-formulario [titulo]="'cuenta.recuperarClave.exito_titulo' | transloco">
     <p>{{ 'cuenta.recuperarClave.exito_mensaje' | transloco }}</p>
-  </section>
+  </ts-pagina-formulario>
 } @else {
-  <section class="recuperar-clave">
-    <h1 class="recuperar-clave__titulo">{{ 'cuenta.recuperarClave.titulo' | transloco }}</h1>
+  <ts-pagina-formulario [titulo]="'cuenta.recuperarClave.titulo' | transloco">
     <p>{{ 'cuenta.recuperarClave.instrucciones' | transloco }}</p>
 
-    <form class="recuperar-clave__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+    <form
+      class="flex flex-col gap-16 mt-16"
+      [formGroup]="form"
+      (submit)="$event.preventDefault(); enviar()"
+    >
       <ts-campo
         idCampo="recuperar-correo"
         tipo="email"
@@ -17,7 +19,7 @@
       />
 
       @if (error()) {
-        <p class="recuperar-clave__error" role="alert">{{ error() }}</p>
+        <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
       }
 
       <ts-boton
@@ -30,5 +32,5 @@
         {{ 'cuenta.recuperarClave.enviar' | transloco }}
       </ts-boton>
     </form>
-  </section>
+  </ts-pagina-formulario>
 }

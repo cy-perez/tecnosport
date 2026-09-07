@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'ts-esqueleto',
   templateUrl: './ts-esqueleto.html',
-  styleUrl: './ts-esqueleto.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TsEsqueleto {}

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
@@ -40,7 +40,6 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   selector: 'app-confirmar',
   imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
   templateUrl: './confirmar.page.html',
-  styleUrl: './confirmar.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmarPage {

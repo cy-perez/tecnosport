@@ -7,7 +7,10 @@ import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
 import { FiltroProductos } from '../../domain/filtro-productos.model';
 import { Producto } from '../../domain/producto.model';
-import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../../domain/repositorio-productos.puerto';
+import {
+  REPOSITORIO_PRODUCTOS,
+  RepositorioProductos,
+} from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { PortadaPage } from './portada.page';
 
@@ -22,7 +25,13 @@ function productoDePrueba(slug: string): Producto {
     galeria: [],
     rotacion: null,
     variantes: [
-      { id: `id-${slug}`, sku: `SKU-${slug}`, precio: { valor: 10_000, moneda: 'COP' }, existencia: 5, atributos: [] },
+      {
+        id: `id-${slug}`,
+        sku: `SKU-${slug}`,
+        precio: { valor: 10_000, moneda: 'COP' },
+        existencia: 5,
+        atributos: [],
+      },
     ],
   };
 }
@@ -65,7 +74,9 @@ describe('PortadaPage', () => {
 
     const titulos = screen.getAllByRole('heading', { level: 1 });
     expect(titulos).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Ver el catálogo' }).getAttribute('href')).toBe('/es/productos');
+    expect(screen.getByRole('link', { name: 'Ver el catálogo' }).getAttribute('href')).toBe(
+      '/es/productos',
+    );
   });
 
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {

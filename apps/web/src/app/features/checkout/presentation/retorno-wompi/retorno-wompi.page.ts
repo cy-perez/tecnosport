@@ -23,7 +23,6 @@ import { CheckoutStore } from '../../application/checkout.store';
   selector: 'app-retorno-wompi',
   imports: [RouterLink, TranslocoPipe, TsEsqueleto],
   templateUrl: './retorno-wompi.page.html',
-  styleUrl: './retorno-wompi.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RetornoWompiPage {

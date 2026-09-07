@@ -9,7 +9,11 @@ import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
-import { EstadoProducto, FiltroProductosAdmin, ProductoAdmin } from '../../domain/producto-admin.model';
+import {
+  EstadoProducto,
+  FiltroProductosAdmin,
+  ProductoAdmin,
+} from '../../domain/producto-admin.model';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   BORRADOR: 'admin.productos.estados.borrador',
@@ -24,7 +28,6 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
   selector: 'app-lista-productos-admin',
   imports: [RouterLink, TranslocoPipe, TsEsqueleto, TsMigas, TsPaginador],
   templateUrl: './lista-productos-admin.page.html',
-  styleUrl: './lista-productos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListaProductosAdminPage {
@@ -35,12 +38,18 @@ export class ListaProductosAdminPage {
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
 
-  private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
-  protected readonly filtro = computed<FiltroProductosAdmin>(() => filtroDesdeQueryParams(this.queryParams()));
+  private readonly queryParams = toSignal(this.route.queryParams, {
+    initialValue: this.route.snapshot.queryParams,
+  });
+  protected readonly filtro = computed<FiltroProductosAdmin>(() =>
+    filtroDesdeQueryParams(this.queryParams()),
+  );
 
   protected readonly consulta = usarListarProductosAdmin(this.filtro);
 
-  protected readonly productos = computed<readonly ProductoAdmin[]>(() => this.consulta.data()?.items ?? []);
+  protected readonly productos = computed<readonly ProductoAdmin[]>(
+    () => this.consulta.data()?.items ?? [],
+  );
 
   /**
    * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
@@ -61,6 +70,9 @@ export class ListaProductosAdminPage {
   }
 
   private navegarA(filtro: FiltroProductosAdmin): void {
-    void this.router.navigate([], { relativeTo: this.route, queryParams: queryParamsDesdeFiltro(filtro) });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryParamsDesdeFiltro(filtro),
+    });
   }
 }

@@ -1,48 +1,66 @@
-<section class="resumen">
-  <h1 class="resumen__titulo">{{ 'checkout.resumen.titulo' | transloco }}</h1>
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <h1 class="m-0 mb-24 font-display text-2xl">{{ 'checkout.resumen.titulo' | transloco }}</h1>
 
   @if (carrito.carritoId() === null) {
-    <p class="resumen__vacio">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
+    <p class="mb-16 text-ts-texto-suave">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
     <a [routerLink]="['../../productos']">
       <ts-boton variante="primario">{{ 'checkout.resumen.ir_al_catalogo' | transloco }}</ts-boton>
     </a>
   } @else if (carrito.consulta.isPending()) {
     <ts-esqueleto />
   } @else if (carrito.consulta.isError()) {
-    <p class="resumen__error" role="alert">{{ 'checkout.resumen.error_carrito' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'checkout.resumen.error_carrito' | transloco }}</p>
   } @else if (carrito.consulta.data(); as datosCarrito) {
     @if (datosCarrito.lineas.length === 0) {
-      <p class="resumen__vacio">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
+      <p class="mb-16 text-ts-texto-suave">{{ 'checkout.resumen.carrito_vacio' | transloco }}</p>
       <a [routerLink]="['../../productos']">
         <ts-boton variante="primario">{{ 'checkout.resumen.ir_al_catalogo' | transloco }}</ts-boton>
       </a>
     } @else {
-      <div class="resumen__lineas">
+      <div class="flex flex-col">
         @for (linea of datosCarrito.lineas; track linea.id) {
           @let snapshot = carrito.snapshotDeLinea(linea.varianteId);
-          <article class="resumen__linea">
+          <article
+            class="grid grid-cols-[var(--esp-64)_1fr_auto] items-center gap-16 border-b border-ts-borde py-16"
+          >
             @if (snapshot?.imagenUrl) {
-              <img class="resumen__imagen" [ngSrc]="snapshot!.imagenUrl!" width="64" height="64" [alt]="snapshot!.imagenAlt" />
+              <img
+                class="size-64 bg-ts-superficie-alt object-cover"
+                [ngSrc]="snapshot!.imagenUrl!"
+                width="64"
+                height="64"
+                [alt]="snapshot!.imagenAlt"
+              />
             } @else {
-              <div class="resumen__imagen resumen__imagen--vacia" aria-hidden="true"></div>
+              <div class="size-64 bg-ts-superficie-alt object-cover" aria-hidden="true"></div>
             }
-            <div class="resumen__info">
-              <p class="resumen__nombre">{{ snapshot?.nombreProducto ?? ('checkout.resumen.producto_sin_foto' | transloco) }}</p>
-              <p class="resumen__cantidad">{{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}</p>
+            <div class="flex min-w-0 flex-col gap-4">
+              <p class="m-0 font-medio">
+                {{ snapshot?.nombreProducto ?? ('checkout.resumen.producto_sin_foto' | transloco) }}
+              </p>
+              <p class="m-0 text-sm text-ts-texto-suave">
+                {{ 'checkout.resumen.cantidad' | transloco: { cantidad: linea.cantidad } }}
+              </p>
             </div>
             @if (snapshot; as foto) {
-              <ts-precio class="resumen__subtotal" [valor]="foto.precioValor * linea.cantidad" [moneda]="foto.precioMoneda" />
+              <ts-precio [valor]="foto.precioValor * linea.cantidad" [moneda]="foto.precioMoneda" />
             }
           </article>
         }
       </div>
 
-      <div class="resumen__total">
+      <div
+        class="mt-24 flex items-baseline justify-between border-t-2 border-ts-borde pt-16 text-lg font-medio"
+      >
         <span>{{ 'checkout.resumen.subtotal' | transloco }}</span>
         <ts-precio [valor]="subtotal()" moneda="COP" />
       </div>
 
-      <form class="resumen__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+      <form
+        class="mt-32 flex max-w-formulario-lg flex-col gap-16"
+        [formGroup]="form"
+        (submit)="$event.preventDefault(); enviar()"
+      >
         <ts-campo
           idCampo="resumen-correo"
           [label]="'checkout.resumen.correo' | transloco"
@@ -58,7 +76,10 @@
         />
 
         @if (requiereDireccion()) {
-          <fieldset class="resumen__direccion" formGroupName="direccion">
+          <fieldset
+            class="m-0 flex flex-col gap-16 border border-ts-borde p-16 [&>legend]:px-4 [&>legend]:font-medio"
+            formGroupName="direccion"
+          >
             <legend>{{ 'checkout.resumen.direccion_titulo' | transloco }}</legend>
 
             <ts-select

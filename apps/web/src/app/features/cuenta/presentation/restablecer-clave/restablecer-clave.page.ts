@@ -11,8 +11,9 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 
 function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | null {
   const clave = control.get('claveNueva')?.value;
@@ -27,9 +28,8 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
  */
 @Component({
   selector: 'app-restablecer-clave',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './restablecer-clave.page.html',
-  styleUrl: './restablecer-clave.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestablecerClavePage {
@@ -52,7 +52,9 @@ export class RestablecerClavePage {
   );
 
   // valueChanges, no statusChanges: mismo motivo que RegistroClientePage.
-  private readonly valorFormulario = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valorFormulario = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly formularioInvalido = computed(() => {
     this.valorFormulario();
     return this.form.invalid;

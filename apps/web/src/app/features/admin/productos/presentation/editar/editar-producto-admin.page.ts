@@ -13,11 +13,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
-import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
-import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarEditarProductoAdmin } from '../../application/editar-producto-admin.mutacion';
 import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-principal-admin.mutacion';
@@ -27,9 +28,17 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 @Component({
   selector: 'app-editar-producto-admin',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsMigas, TsSelect],
+  imports: [TsPaginaFormulario, 
+    ReactiveFormsModule,
+    RouterLink,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsEsqueleto,
+    TsMigas,
+    TsSelect,
+  ],
   templateUrl: './editar-producto-admin.page.html',
-  styleUrl: './editar-producto-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditarProductoAdminPage {
@@ -46,7 +55,9 @@ export class EditarProductoAdminPage {
   private readonly mutacionImagen = usarSubirImagenPrincipalAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private readonly paramMap = toSignal(this.route.paramMap, { initialValue: this.route.snapshot.paramMap });
+  private readonly paramMap = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
   protected readonly id = computed(() => this.paramMap().get('id') ?? '');
 
   /**
@@ -79,7 +90,9 @@ export class EditarProductoAdminPage {
     categoriaId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  private readonly valorFormulario = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valorFormulario = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly formularioInvalido = computed(() => {
     this.valorFormulario();
     return this.form.invalid;
@@ -88,7 +101,10 @@ export class EditarProductoAdminPage {
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
-    (this.opciones.marcas.data() ?? []).map((marca) => ({ valor: marca.id, etiqueta: marca.nombre })),
+    (this.opciones.marcas.data() ?? []).map((marca) => ({
+      valor: marca.id,
+      etiqueta: marca.nombre,
+    })),
   );
 
   protected readonly opcionesCategoria = computed<OpcionSelect[]>(() =>
@@ -153,7 +169,8 @@ export class EditarProductoAdminPage {
         },
       },
       {
-        onSuccess: () => void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
+        onSuccess: () =>
+          void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
         onError: () => this.error.set(this.transloco.translate('admin.productos.editar.error')),
       },
     );
@@ -172,7 +189,9 @@ export class EditarProductoAdminPage {
       return;
     }
     if (!TIPOS_DE_IMAGEN_SOPORTADOS.includes(archivo.type)) {
-      this.errorImagen.set(this.transloco.translate('admin.productos.editar.imagenPrincipal.tipoNoSoportado'));
+      this.errorImagen.set(
+        this.transloco.translate('admin.productos.editar.imagenPrincipal.tipoNoSoportado'),
+      );
       input.value = '';
       return;
     }
@@ -184,7 +203,9 @@ export class EditarProductoAdminPage {
       this.archivoSeleccionado.set(archivo);
     } catch {
       URL.revokeObjectURL(url);
-      this.errorImagen.set(this.transloco.translate('admin.productos.editar.imagenPrincipal.error'));
+      this.errorImagen.set(
+        this.transloco.translate('admin.productos.editar.imagenPrincipal.error'),
+      );
     }
   }
 
@@ -230,7 +251,10 @@ export class EditarProductoAdminPage {
           this.dimensionesArchivo = null;
           this.formularioImagen.reset();
         },
-        onError: () => this.errorImagen.set(this.transloco.translate('admin.productos.editar.imagenPrincipal.error')),
+        onError: () =>
+          this.errorImagen.set(
+            this.transloco.translate('admin.productos.editar.imagenPrincipal.error'),
+          ),
       },
     );
   }

@@ -8,11 +8,18 @@ import es from '../../../../../assets/i18n/es.json';
 import esCarrito from '../../../../../assets/i18n/scopes/carrito/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
 import { Producto } from '../../domain/producto.model';
-import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../../domain/repositorio-productos.puerto';
+import {
+  REPOSITORIO_PRODUCTOS,
+  RepositorioProductos,
+} from '../../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../../domain/resultado-paginado.model';
 import { FichaPage } from './ficha.page';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   crear(): Promise<Carrito> {
@@ -43,7 +50,13 @@ function productoDePrueba(): Producto {
     galeria: [],
     rotacion: null,
     variantes: [
-      { id: 'variante-1', sku: 'SKU-1', precio: { valor: 150_000, moneda: 'COP' }, existencia: 3, atributos: [] },
+      {
+        id: 'variante-1',
+        sku: 'SKU-1',
+        precio: { valor: 150_000, moneda: 'COP' },
+        existencia: 3,
+        atributos: [],
+      },
     ],
   };
 }
@@ -54,7 +67,12 @@ function productoConVariantes(): Producto {
     nombre: 'Camiseta running Dry-Fit',
     descripcion: 'Una camiseta transpirable.',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c2', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
+    categoria: {
+      id: 'c2',
+      nombre: 'Ropa deportiva',
+      slug: 'ropa-deportiva',
+      linea: 'ROPA_Y_CALZADO',
+    },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
@@ -104,9 +122,6 @@ function productoConRotacion(): Producto {
 }
 
 /** Espera real: el observador de TanStack propaga a la senal fuera del ciclo de `whenStable`. */
-function esperar(ms: number): Promise<void> {
-  return new Promise((listo) => setTimeout(listo, ms));
-}
 
 function activatedRouteConSlug(slug: string) {
   const paramMap = convertToParamMap({ slug });
@@ -167,7 +182,8 @@ async function renderFichaNavegable(repositorio: RepositorioProductos, slugInici
 describe('FichaPage', () => {
   it('muestra el producto encontrado', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoDePrueba()),
     };
 
@@ -179,18 +195,23 @@ describe('FichaPage', () => {
 
   it('muestra "no encontrado" cuando el repositorio devuelve null', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(null),
     };
 
     await renderFicha(repositorio, 'no-existe');
 
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'No encontramos este producto.');
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'No encontramos este producto.',
+    );
   });
 
   it('muestra un mensaje de error si la consulta falla', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.reject(new Error('falla de red')),
     };
 
@@ -204,7 +225,8 @@ describe('FichaPage', () => {
 
   it('un producto sin set de rotación no muestra el visor 360', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoDePrueba()),
     };
 
@@ -216,7 +238,8 @@ describe('FichaPage', () => {
 
   it('un producto con set de rotación muestra el visor, empezando por el fotograma frontal', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoConRotacion()),
     };
 
@@ -232,7 +255,8 @@ describe('FichaPage', () => {
   // atrapa que alguien cambie una y se olvide de la otra.
   it('con visor, la prioridad de LCP es del fotograma frontal y no de la galería', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoConRotacion()),
     };
 
@@ -240,18 +264,23 @@ describe('FichaPage', () => {
 
     const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
     expect(visor.querySelector('img')?.getAttribute('fetchpriority')).toBe('high');
-    expect(screen.getByRole('img', { name: 'Morral de frente' }).getAttribute('fetchpriority')).toBe('auto');
+    expect(
+      screen.getByRole('img', { name: 'Morral de frente' }).getAttribute('fetchpriority'),
+    ).toBe('auto');
   });
 
   it('sin visor, la prioridad vuelve a la galería: la pantalla nunca se queda sin candidata', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve({ ...productoConRotacion(), rotacion: null }),
     };
 
     await renderFicha(repositorio);
 
-    expect((await screen.findByRole('img', { name: 'Morral de frente' })).getAttribute('fetchpriority')).toBe('high');
+    expect(
+      (await screen.findByRole('img', { name: 'Morral de frente' })).getAttribute('fetchpriority'),
+    ).toBe('high');
   });
 
   // Un set de un solo fotograma no llega hoy del backend (`PUBLICADO` exige cuatro), pero si
@@ -260,7 +289,8 @@ describe('FichaPage', () => {
   it('un set de rotación de un solo fotograma no monta el visor', async () => {
     const producto = productoConRotacion();
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () =>
         Promise.resolve({
           ...producto,
@@ -279,7 +309,8 @@ describe('FichaPage', () => {
   // mientras alguien lo está girando es perder su sitio sin motivo.
   it('un refetch que trae los mismos datos no mueve el visor', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoConRotacion()),
     };
 
@@ -304,7 +335,8 @@ describe('FichaPage', () => {
   it('un refetch que sí trae datos nuevos actualiza el precio pero no mueve el visor', async () => {
     let precio = 150_000;
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => {
         const producto = productoConRotacion();
         return Promise.resolve({
@@ -328,10 +360,8 @@ describe('FichaPage', () => {
 
     precio = 175_000;
     await queryClient.refetchQueries();
-    await esperar(20);
-    await fixture.whenStable();
 
-    expect(screen.getByText(/175\.000/)).toBeTruthy();
+    expect(await screen.findByText(/175\.000/)).toBeTruthy();
     expect(screen.getByText('Fotograma 3 de 4')).toBeTruthy();
   });
 
@@ -340,7 +370,8 @@ describe('FichaPage', () => {
   it('un refetch no devuelve la variante elegida a la de por defecto', async () => {
     let recargo = 0;
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => {
         const producto = productoConVariantes();
         return Promise.resolve({
@@ -353,26 +384,25 @@ describe('FichaPage', () => {
       },
     };
 
-    const { fixture, queryClient } = await renderFicha(repositorio, 'camiseta');
+    const { queryClient } = await renderFicha(repositorio, 'camiseta');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Negro' }));
     expect(await screen.findByText(/99\.900/)).toBeTruthy();
 
     recargo = 1_000;
     await queryClient.refetchQueries();
-    await esperar(20);
-    await fixture.whenStable();
 
     // 100.900 es el Negro con el recargo. Si la selección se hubiera reiniciado, aquí saldría
     // 90.900: el azul, que es la variante por defecto.
-    expect(screen.getByText(/100\.900/)).toBeTruthy();
+    expect(await screen.findByText(/100\.900/)).toBeTruthy();
   });
 
   // El otro lado de la misma moneda: no reiniciar en un refetch no puede volverse "no reiniciar
   // nunca". Navegar a otro producto sí tiene que soltar la variante elegida en el anterior.
   it('navegar a otro producto sí reinicia la variante elegida', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: (slug: string) =>
         Promise.resolve(slug === 'camiseta' ? productoConVariantes() : productoDePrueba()),
     };
@@ -383,7 +413,6 @@ describe('FichaPage', () => {
     expect(await screen.findByText(/99\.900/)).toBeTruthy();
 
     navegarA('morral-urbano');
-    await esperar(20);
     await fixture.whenStable();
 
     // El morral tiene una sola variante, sin atributos: si la selección de "Negro" hubiera
@@ -394,7 +423,8 @@ describe('FichaPage', () => {
 
   it('elegir otra variante cambia el precio y la existencia mostrados', async () => {
     const repositorio: RepositorioProductos = {
-      buscar: () => Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
       buscarPorSlug: () => Promise.resolve(productoConVariantes()),
     };
 
@@ -406,5 +436,20 @@ describe('FichaPage', () => {
 
     expect(await screen.findByText(/99\.900/)).toBeTruthy();
     expect(screen.queryByText(/89\.900/)).toBeFalsy();
+  });
+
+  // `docs/06-testing.md`: axe automatizado en las pantallas clave. La ficha es
+  // la más rica: galería, selector de variantes y precio.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    const repositorio: RepositorioProductos = {
+      buscar: () =>
+        Promise.resolve<ResultadoPaginado<Producto>>({ items: [], cursorSiguiente: null }),
+      buscarPorSlug: () => Promise.resolve(productoDePrueba()),
+    };
+
+    const { container } = await renderFicha(repositorio);
+    await screen.findByRole('heading', { name: 'Morral urbano' });
+
+    await esperarSinViolaciones(container);
   });
 });

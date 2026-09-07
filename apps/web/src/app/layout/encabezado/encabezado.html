@@ -1,81 +1,205 @@
-<header class="encabezado">
-  <a
-    class="encabezado__logo"
-    [routerLink]="['/', idiomaActual()]"
-    [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
+<!-- `<header>` de verdad y no un `<div>`: es el landmark `banner`, y al
+     reestructurar para el menú móvil lo perdí — lo atrapó la prueba de
+     `app.spec.ts`. `relative` va aquí porque es el ancla del panel. -->
+<header class="relative">
+  <!-- Altura fija: 60 px en móvil y 72 desde el primer punto de quiebre
+     (docs/04-ui-marca.md, tabla de medidas). Son tokens, así que van como
+     valor arbitrario apuntando a la variable — la escapatoria permitida por la
+       regla dura #2, a diferencia de `h-[60px]`. -->
+  <div
+    class="flex h-[var(--header-alto-movil)] items-center justify-between gap-16 border-b border-ts-borde bg-ts-superficie px-24 desde-movil:h-[var(--header-alto-escritorio)]"
   >
-    <span class="logo-par">
-      <img
-        class="logo-marca logo-pos"
-        src="assets/marca/logo/logo-horizontal.svg"
-        width="160"
-        height="34"
-        alt=""
-      />
-      <img
-        class="logo-marca logo-neg"
-        src="assets/marca/logo/logo-mono-negativo.svg"
-        width="160"
-        height="34"
-        alt=""
-      />
-    </span>
-  </a>
-
-  <nav class="encabezado__nav" [attr.aria-label]="'encabezado.navegacion' | transloco">
-    <a class="encabezado__enlace" [routerLink]="['/', idiomaActual(), 'productos']">
-      {{ 'encabezado.catalogo' | transloco }}
-    </a>
-    @if (sesion.esAdmin()) {
-      <a class="encabezado__enlace" [routerLink]="['/', idiomaActual(), 'admin']">
-        {{ 'encabezado.panel' | transloco }}
-      </a>
-    }
-  </nav>
-
-  <div class="encabezado__controles">
-    @if (sesion.sesion()) {
-      <button class="encabezado__enlace encabezado__boton" type="button" (click)="cerrarSesion()">
-        {{ 'encabezado.cerrar_sesion' | transloco }}
-      </button>
-    } @else {
-      <a class="encabezado__enlace" [routerLink]="['/', idiomaActual(), 'cuenta', 'iniciar-sesion']">
-        {{ 'encabezado.entrar' | transloco }}
-      </a>
-      <a class="encabezado__enlace" [routerLink]="['/', idiomaActual(), 'cuenta', 'registro']">
-        {{ 'encabezado.crear_cuenta' | transloco }}
-      </a>
-    }
-
     <a
-      class="encabezado__carrito"
-      [routerLink]="['/', idiomaActual(), 'carrito']"
-      [attr.aria-label]="'encabezado.carrito_cantidad' | transloco: { cantidad: carrito.cantidadTotal() }"
+      class="anillo-foco inline-flex shrink-0"
+      [routerLink]="['/', idiomaActual()]"
+      [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
     >
-      <!-- Iconografía propia: el kit de marca solo trae logos (docs/04-ui-marca.md).
-           24x24, trazo 1.5, currentColor — sin librería de iconos. -->
-      <svg
-        class="encabezado__icono"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M2.5 3.5h2.2l2.4 10.6a1.8 1.8 0 0 0 1.8 1.4h7.6a1.8 1.8 0 0 0 1.8-1.4L21.5 7H5.6" />
-        <circle cx="10" cy="20" r="1.4" />
-        <circle cx="17" cy="20" r="1.4" />
-      </svg>
-      @if (carrito.cantidadTotal() > 0) {
-        <span class="encabezado__carrito-cantidad" aria-hidden="true">{{ carrito.cantidadTotal() }}</span>
-      }
+      <!-- Cuatro archivos y no uno, por dos ejes independientes.
+         Eje 1, el tamaño: en móvil va el isotipo y desde el primer punto de
+         quiebre el logo horizontal, porque por debajo de 160 px de ancho el
+         horizontal no se usa (docs/04-ui-marca.md, "tamaño mínimo").
+         Eje 2, el tema: el logo es monocromo y tiene versión positiva y
+         negativa. Antes eran dos reglas con `:host-context([data-tema])` en el
+         SCSS; ahora es el variant `oscuro:`, que se cuelga del mismo atributo.
+         Cada elemento resuelve un solo eje: así se lee. -->
+      <span class="block desde-movil:hidden">
+        <img
+          class="block oscuro:hidden"
+          src="assets/marca/logo/isotipo.svg"
+          width="30"
+          height="30"
+          alt=""
+        />
+        <img
+          class="hidden oscuro:block"
+          src="assets/marca/logo/isotipo-negativo.svg"
+          width="30"
+          height="30"
+          alt=""
+        />
+      </span>
+      <span class="hidden desde-movil:block">
+        <img
+          class="block oscuro:hidden"
+          src="assets/marca/logo/logo-horizontal.svg"
+          width="160"
+          height="34"
+          alt=""
+        />
+        <img
+          class="hidden oscuro:block"
+          src="assets/marca/logo/logo-mono-negativo.svg"
+          width="160"
+          height="34"
+          alt=""
+        />
+      </span>
     </a>
 
-    <ts-selector-idioma />
+    <!-- Navegación de escritorio. En móvil no desaparece: baja al panel. -->
+    <nav
+      class="hidden gap-16 desde-movil:flex"
+      [attr.aria-label]="'encabezado.navegacion' | transloco"
+    >
+      <ng-container [ngTemplateOutlet]="enlacesNav" />
+    </nav>
 
-    <ts-selector-tema />
+    <div class="flex items-center gap-16">
+      <div class="hidden items-center gap-16 desde-movil:flex">
+        <ng-container [ngTemplateOutlet]="controlesSesion" />
+        <ts-selector-idioma />
+        <ts-selector-tema />
+      </div>
+
+      <!-- El carrito se queda en la barra también en móvil: es la acción
+         principal de una tienda y su contador es la única señal de que hay
+         algo dentro. -->
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center gap-8 text-ts-texto no-underline"
+        [routerLink]="['/', idiomaActual(), 'carrito']"
+        [attr.aria-label]="
+          'encabezado.carrito_cantidad' | transloco: { cantidad: carrito.cantidadTotal() }
+        "
+      >
+        <ts-icono [icono]="iconoCarrito" />
+        @if (carrito.cantidadTotal() > 0) {
+          <!-- `aria-hidden` porque la cantidad ya va en el `aria-label` del
+             enlace: anunciarla dos veces es peor que no anunciarla. -->
+          <span
+            class="inline-flex h-insignia min-w-insignia items-center justify-center bg-ts-acento px-4 text-xs font-medio text-ts-sobre-acento"
+            aria-hidden="true"
+            >{{ carrito.cantidadTotal() }}</span
+          >
+        }
+      </a>
+
+      <!-- `aria-expanded` y `aria-controls` son lo que convierte esto en un
+         *disclosure* anunciable; sin ellos es un botón que un lector de
+         pantalla no puede explicar. La etiqueta cambia con el estado. -->
+      <button
+        class="anillo-foco inline-flex min-h-tactil min-w-tactil cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-ts-texto desde-movil:hidden"
+        type="button"
+        aria-controls="menu-movil"
+        [attr.aria-expanded]="menuAbierto()"
+        [attr.aria-label]="
+          (menuAbierto() ? 'encabezado.cerrar_menu' : 'encabezado.abrir_menu') | transloco
+        "
+        (click)="alternarMenu()"
+      >
+        <ts-icono [icono]="menuAbierto() ? iconoCerrar : iconoMenu" />
+      </button>
+    </div>
   </div>
+
+  @if (menuAbierto()) {
+    <!-- El panel se cierra desde los propios enlaces, no por delegación en este
+       contenedor: un `div` con `(click)` tendría que ser enfocable. Los
+       selectores de idioma y tema **no** lo cierran a propósito — puedes querer
+       cambiar los dos seguidos. -->
+    <!-- Animación nativa de Angular 22, no `@angular/animations`: ese paquete
+         está deprecado justo en favor de esto (ADR-0020).
+
+         La entrada usa la **forma de clase** y no necesita nada más. La salida
+         usa la **forma de evento**, que es la parte que cuesta: con
+         `animate.leave="animate-plegar"` la clase se aplica y la animación
+         corre, pero el elemento **se queda en el DOM y visible**. Con el evento
+         llega `{ target, animationComplete }` y el borrado depende de que uno
+         llame a `animationComplete()`; por eso `alSalirElMenu` espera a que
+         terminen las animaciones reales del elemento y remata con un temporizador
+         de seguridad — si nunca se llama, el menú no se cierra, que es peor que
+         no animarlo.
+
+         Con "reducir movimiento" el camino se salta entero y se cierra de una:
+         medir animaciones que duran ~0 ms fallaba de forma intermitente. -->
+    <div
+      id="menu-movil"
+      class="absolute inset-x-0 top-full z-20 flex flex-col gap-16 border-b border-ts-borde bg-ts-superficie px-24 py-16 shadow-lg desde-movil:hidden"
+      animate.enter="animate-desplegar"
+      (animate.leave)="alSalirElMenu($event)"
+    >
+      <nav class="flex flex-col gap-8" [attr.aria-label]="'encabezado.navegacion' | transloco">
+        <ng-container [ngTemplateOutlet]="enlacesNav" />
+      </nav>
+
+      <div class="flex flex-col gap-8">
+        <ng-container [ngTemplateOutlet]="controlesSesion" />
+      </div>
+
+      <div class="flex flex-wrap items-center gap-16">
+        <ts-selector-idioma />
+        <ts-selector-tema />
+      </div>
+    </div>
+  }
 </header>
+
+<!-- Una sola definición para las dos formas del encabezado. `min-h-tactil` en
+     los enlaces cumple el objetivo táctil de 44 px que la tabla de medidas
+     exige y que los enlaces de texto de antes no alcanzaban. -->
+<ng-template #enlacesNav>
+  <a
+    class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-texto no-underline hover:underline"
+    [routerLink]="['/', idiomaActual(), 'productos']"
+    (click)="cerrarMenu()"
+  >
+    {{ 'encabezado.catalogo' | transloco }}
+  </a>
+  @if (sesion.esAdmin()) {
+    <a
+      class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-texto no-underline hover:underline"
+      [routerLink]="['/', idiomaActual(), 'admin']"
+      (click)="cerrarMenu()"
+    >
+      {{ 'encabezado.panel' | transloco }}
+    </a>
+  }
+</ng-template>
+
+<ng-template #controlesSesion>
+  @if (sesion.sesion()) {
+    <!-- Se ve como los enlaces de al lado, pero es un <button> porque dispara
+         una acción, no una navegación. -->
+    <button
+      class="anillo-foco inline-flex min-h-tactil cursor-pointer items-center self-start border-0 bg-transparent p-0 font-texto text-sm text-ts-texto hover:underline"
+      type="button"
+      (click)="cerrarSesion()"
+    >
+      {{ 'encabezado.cerrar_sesion' | transloco }}
+    </button>
+  } @else {
+    <a
+      class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-texto no-underline hover:underline"
+      [routerLink]="['/', idiomaActual(), 'cuenta', 'iniciar-sesion']"
+      (click)="cerrarMenu()"
+    >
+      {{ 'encabezado.entrar' | transloco }}
+    </a>
+    <a
+      class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-texto no-underline hover:underline"
+      [routerLink]="['/', idiomaActual(), 'cuenta', 'registro']"
+      (click)="cerrarMenu()"
+    >
+      {{ 'encabezado.crear_cuenta' | transloco }}
+    </a>
+  }
+</ng-template>

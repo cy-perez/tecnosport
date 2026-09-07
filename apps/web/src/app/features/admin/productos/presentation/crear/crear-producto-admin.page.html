@@ -1,9 +1,11 @@
-<section class="crear-producto-admin">
+<ts-pagina-formulario [titulo]="'admin.productos.crear.titulo' | transloco">
   <ts-migas [ruta]="migas()" />
 
-  <h1 class="crear-producto-admin__titulo">{{ 'admin.productos.crear.titulo' | transloco }}</h1>
-
-  <form class="crear-producto-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+  <form
+    class="flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
     <ts-campo
       idCampo="crear-producto-nombre"
       [label]="'admin.productos.crear.nombre' | transloco"
@@ -33,7 +35,7 @@
     />
 
     @if (error()) {
-      <p class="crear-producto-admin__error" role="alert">{{ error() }}</p>
+      <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
     }
 
     <ts-boton
@@ -46,4 +48,4 @@
       {{ 'admin.productos.crear.crear' | transloco }}
     </ts-boton>
   </form>
-</section>
+</ts-pagina-formulario>

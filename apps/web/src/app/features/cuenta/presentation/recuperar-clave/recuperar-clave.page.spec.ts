@@ -29,9 +29,6 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async restablecerClave(): Promise<void> {}
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderPagina(repositorio: RepositorioCuenta) {
   return render(RecuperarClavePage, {
@@ -47,16 +44,19 @@ async function renderPagina(repositorio: RepositorioCuenta) {
 }
 
 async function llenarYEnviar() {
-  fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'cliente@tecnosport.co' } });
+  fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+    target: { value: 'cliente@tecnosport.co' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace' }));
-  await esperar(50);
 }
 
 describe('RecuperarClavePage', () => {
   it('el botón arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioCuentaFalso());
 
-    expect(screen.getByRole('button', { name: 'Enviar enlace' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Enviar enlace' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('al enviar, muestra siempre el mismo mensaje de éxito', async () => {
@@ -65,8 +65,8 @@ describe('RecuperarClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(repositorio.llamadasSolicitar).toEqual(['cliente@tecnosport.co']);
-    expect(screen.getByText('Revisa tu correo')).toBeTruthy();
+    await vi.waitFor(() => expect(repositorio.llamadasSolicitar).toEqual(['cliente@tecnosport.co']));
+    expect(await screen.findByText('Revisa tu correo')).toBeTruthy();
   });
 
   it('con un error del servidor, muestra el mensaje genérico', async () => {
@@ -74,6 +74,6 @@ describe('RecuperarClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('No se pudo procesar la solicitud. Intenta de nuevo.')).toBeTruthy();
+    expect(await screen.findByText('No se pudo procesar la solicitud. Intenta de nuevo.')).toBeTruthy();
   });
 });

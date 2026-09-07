@@ -1,0 +1,48 @@
+<a
+  class="anillo-foco chaflan flex flex-col overflow-hidden border border-ts-borde bg-ts-superficie text-inherit no-underline"
+  [routerLink]="enlace()"
+>
+  @if (producto().imagenPrincipal; as imagen) {
+    <!-- `fill`, no `width`/`height`: la tarjeta recorta a un cuadrado con
+         `object-cover`, así que la relación de aspecto pintada nunca coincide
+         con la del archivo y NgOptimizedImage avisaba (NG02952) con razón.
+         `fill` es el modo que Angular documenta para una imagen cuyo tamaño lo
+         decide el CSS: el marco reserva el espacio —sin salto de diseño al
+         cargar— y el recorte pasa a ser lo declarado.
+
+         `relative` en el marco no es decoración: Angular posiciona el <img> en
+         absoluto, y sin un ancestro posicionado se saldría de la tarjeta. -->
+    <div class="relative aspect-square bg-ts-superficie-alt">
+      <img
+        class="object-cover"
+        [ngSrc]="url(imagen)"
+        [alt]="alt()"
+        [priority]="prioritaria()"
+        fill
+      />
+    </div>
+  }
+  <div class="flex flex-col gap-4 p-16">
+    <p class="m-0 text-xs uppercase text-ts-texto-suave">{{ producto().marca.nombre }}</p>
+    <h3 class="m-0 font-texto text-base font-medio text-ts-texto">{{ producto().nombre }}</h3>
+    <!-- `flex-wrap` porque el pie **no cabe en ninguna tarjeta**: medido en el
+           navegador con datos reales, a las cuatro les faltan entre 10 y 38 px.
+           Sin `wrap` los ítems se comprimen y el `overflow-hidden` de arriba
+           recorta la etiqueta ("Disponibl"). Ensanchar la columna sería apostar
+           a que ningún precio crezca; envolver es lo único que no trunca con
+           ningún precio. Venía roto desde antes de pasar a Tailwind. -->
+    <div class="mt-8 flex flex-wrap items-center justify-between gap-8">
+      @if (precio(); as precioValor) {
+        <!-- El prefijo se traduce aquí y no dentro de `ts-precio`: esa clave
+             vive en el scope perezoso del catálogo, y `ts-precio` lo comparten
+             checkout y admin, donde ese scope no está cargado. -->
+        <ts-precio
+          [valor]="precioValor.valor"
+          [moneda]="precioValor.moneda"
+          [prefijo]="'catalogo.precio_desde' | transloco"
+        />
+      }
+      <ts-etiqueta-stock [disponible]="disponible()" />
+    </div>
+  </div>
+</a>

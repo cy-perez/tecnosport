@@ -1,21 +1,34 @@
-<div class="superposicion">
+<div class="relative grid size-full place-items-center">
   @if (fantasma() !== null && mostrarFantasma()) {
-    <img class="superposicion__fantasma" [src]="fantasma()" alt="" />
+    <!-- Debajo de las líneas y a baja opacidad: es una referencia, no la imagen. -->
+    <img class="absolute inset-0 size-full object-cover opacity-35" [src]="fantasma()" alt="" />
   }
 
-  <div class="superposicion__marco">
+  <!--
+    Marco 1:1, que es la proporción de salida. Lo que quede fuera no va a estar
+    en el fotograma final, así que el marco es la promesa que el recorte tiene
+    que cumplir.
+
+    Sobre una vista de cámara el contraste no está garantizado
+    (docs/10-captura-360.md): la línea clara lleva siempre una sombra oscura
+    detrás, para que se vea igual sobre fondo blanco que sobre fondo negro. El
+    ámbar de marca no se usa como línea fina sobre imagen.
+  -->
+  <div
+    class="relative aspect-square h-[min(100%,100vw)] max-w-full border border-ts-sobre-primario drop-shadow-[0_0_1px_var(--color-primario)]"
+  >
+    <span class="absolute bg-ts-sobre-primario opacity-60 w-px h-full left-1/3"></span>
+    <span class="absolute bg-ts-sobre-primario opacity-60 w-px h-full left-2/3"></span>
+    <span class="absolute bg-ts-sobre-primario opacity-60 h-px w-full top-1/3"></span>
+    <span class="absolute bg-ts-sobre-primario opacity-60 h-px w-full top-2/3"></span>
+
+    <!-- La marca de centro: el producto va centrado en todas las tomas, no solo
+         dentro del marco. El SCSS le ponía `border-radius: var(--radio-completo)`
+         esperando un círculo, pero ese token vale 0 en el kit ("radio 0 en
+         todo"), así que siempre fue un cuadrado. Se deja como está: el valor
+         que manda es el del sistema. -->
     <span
-      class="superposicion__linea superposicion__linea--vertical superposicion__linea--v1"
+      class="absolute top-1/2 left-1/2 size-24 -translate-x-1/2 -translate-y-1/2 border border-ts-sobre-primario opacity-80"
     ></span>
-    <span
-      class="superposicion__linea superposicion__linea--vertical superposicion__linea--v2"
-    ></span>
-    <span
-      class="superposicion__linea superposicion__linea--horizontal superposicion__linea--h1"
-    ></span>
-    <span
-      class="superposicion__linea superposicion__linea--horizontal superposicion__linea--h2"
-    ></span>
-    <span class="superposicion__centro"></span>
   </div>
 </div>

@@ -30,12 +30,10 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async restablecerClave(): Promise<void> {}
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function rutaActivadaFalsa(token: string | null) {
-  return { snapshot: { queryParamMap: { get: (clave: string) => (clave === 'token' ? token : null) } } };
+  return {
+    snapshot: { queryParamMap: { get: (clave: string) => (clave === 'token' ? token : null) } },
+  };
 }
 
 async function renderPagina(repositorio: RepositorioCuenta, token: string | null) {
@@ -59,27 +57,26 @@ describe('VerificarCorreoPage', () => {
     const repositorio = new RepositorioCuentaFalso();
     await renderPagina(repositorio, 'token-valido');
 
-    await esperar(50);
-
-    expect(repositorio.llamadasVerificar).toEqual(['token-valido']);
-    expect(screen.getByText('Correo verificado')).toBeTruthy();
+    // El grupo entero dentro de `waitFor`: la llamada al repositorio ocurre
+    // antes de que el DOM se actualice, así que esperar solo por ella dejaba la
+    // segunda aserción corriendo demasiado pronto.
+    await vi.waitFor(() => {
+      expect(repositorio.llamadasVerificar).toEqual(['token-valido']);
+      expect(screen.getByText('Correo verificado')).toBeTruthy();
+    });
   });
 
   it('con un token que el servidor rechaza, muestra el mensaje de error', async () => {
     await renderPagina(new RepositorioCuentaFalso(true), 'token-vencido');
 
-    await esperar(50);
-
-    expect(screen.getByText('Enlace no válido')).toBeTruthy();
+    expect(await screen.findByText('Enlace no válido')).toBeTruthy();
   });
 
   it('sin token en la URL, muestra el mensaje de error sin llamar al repositorio', async () => {
     const repositorio = new RepositorioCuentaFalso();
     await renderPagina(repositorio, null);
 
-    await esperar(50);
-
-    expect(repositorio.llamadasVerificar).toEqual([]);
+    await vi.waitFor(() => expect(repositorio.llamadasVerificar).toEqual([]));
     expect(screen.getByText('Enlace no válido')).toBeTruthy();
   });
 });

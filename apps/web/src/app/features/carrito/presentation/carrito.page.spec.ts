@@ -11,6 +11,7 @@ import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-c
 import { guardarCarritoIdAlmacenado } from '../infrastructure/carrito-id.almacen';
 import { guardarSnapshot } from '../infrastructure/snapshot-lineas.almacen';
 import { CarritoPage } from './carrito.page';
+import { esperarSinViolaciones } from '../../../../testing/axe';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -57,9 +58,6 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
  * Mismo hallazgo que en carrito.store.spec.ts: el registro de `PendingTasks` de TanStack Query
  * ocurre dentro de un `effect()` async, así que `fixture.whenStable()` no alcanza a esperarlo.
  */
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderCarrito(repositorio: RepositorioCarrito) {
   return render(CarritoPage, {
@@ -85,9 +83,7 @@ describe('CarritoPage', () => {
 
   it('sin carrito guardado, muestra el mensaje de vacío y un enlace al catálogo', async () => {
     await renderCarrito(new RepositorioCarritoFalso(null));
-    await esperar(50);
-
-    expect(screen.getByText('Tu carrito está vacío.')).toBeTruthy();
+    expect(await screen.findByText('Tu carrito está vacío.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ir al catálogo' })).toBeTruthy();
   });
 
@@ -122,7 +118,7 @@ describe('CarritoPage', () => {
     await screen.findByText('Morral urbano');
 
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-    await esperar(100);
+    await vi.waitFor(() => expect(screen.queryByText('Morral urbano')).toBeNull());
 
     expect(screen.queryByText('Morral urbano')).toBeFalsy();
     expect(await screen.findByText('Tu carrito está vacío.')).toBeTruthy();
@@ -130,10 +126,32 @@ describe('CarritoPage', () => {
 
   it('con un carrito vacío en el servidor, muestra el mensaje de vacío', async () => {
     guardarCarritoIdAlmacenado('carrito-1');
-    const carrito: Carrito = { id: 'carrito-1', usuarioId: null, creadoEn: '2026-01-01T00:00:00Z', lineas: [] };
+    const carrito: Carrito = {
+      id: 'carrito-1',
+      usuarioId: null,
+      creadoEn: '2026-01-01T00:00:00Z',
+      lineas: [],
+    };
 
     await renderCarrito(new RepositorioCarritoFalso(carrito));
 
     expect(await screen.findByText('Tu carrito está vacío.')).toBeTruthy();
+  });
+
+  // `docs/06-testing.md`: axe automatizado en las pantallas clave.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    guardarCarritoIdAlmacenado('carrito-1');
+    guardarSnapshot(snapshotDePrueba('variante-1'));
+    const { container } = await renderCarrito(
+      new RepositorioCarritoFalso({
+        id: 'carrito-1',
+        usuarioId: null,
+        creadoEn: '2026-01-01T00:00:00Z',
+        lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 2 }],
+      }),
+    );
+    await screen.findByText('Morral urbano');
+
+    await esperarSinViolaciones(container);
   });
 });

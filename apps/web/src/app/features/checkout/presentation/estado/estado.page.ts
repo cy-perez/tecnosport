@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
@@ -41,7 +41,6 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   selector: 'app-estado',
   imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
   templateUrl: './estado.page.html',
-  styleUrl: './estado.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EstadoPage {

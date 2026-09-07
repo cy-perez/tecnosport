@@ -1,23 +1,23 @@
-<section class="carrito">
-  <h1 class="carrito__titulo">{{ 'carrito.titulo' | transloco }}</h1>
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <h1 class="m-0 mb-24 font-display text-2xl">{{ 'carrito.titulo' | transloco }}</h1>
 
   @if (store.carritoId() === null) {
-    <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+    <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
     <a [routerLink]="['../productos']">
       <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
     </a>
   } @else if (store.consulta.isPending()) {
     <ts-esqueleto />
   } @else if (store.consulta.isError()) {
-    <p class="carrito__error" role="alert">{{ 'carrito.error' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'carrito.error' | transloco }}</p>
   } @else if (store.consulta.data(); as carrito) {
     @if (carrito.lineas.length === 0) {
-      <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+      <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
       <a [routerLink]="['../productos']">
         <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
       </a>
     } @else {
-      <div class="carrito__lineas">
+      <div class="flex flex-col">
         @for (linea of carrito.lineas; track linea.id) {
           <app-linea-carrito
             [linea]="linea"
@@ -28,7 +28,9 @@
         }
       </div>
 
-      <div class="carrito__total">
+      <div
+        class="mt-24 flex items-baseline justify-between border-t-2 border-ts-borde pt-16 text-lg font-medio"
+      >
         <span>{{ 'carrito.total' | transloco }}</span>
         <ts-precio [valor]="total()" moneda="COP" />
       </div>
@@ -38,6 +40,6 @@
       </a>
     }
   } @else {
-    <p class="carrito__vacio">{{ 'carrito.vacio' | transloco }}</p>
+    <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
   }
 </section>

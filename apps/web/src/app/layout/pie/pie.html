@@ -1,19 +1,28 @@
-<footer class="pie">
-  <div class="pie__contenido">
+<footer class="mt-32 bg-ts-marca text-ts-sobre-marca">
+  <div class="mx-auto flex max-w-contenido flex-wrap items-start gap-24 px-24 py-32">
     <img
-      class="pie__logo"
+      class="block"
       src="assets/marca/logo/logo-mono-negativo.svg"
       width="140"
       height="30"
       [alt]="'pie.nombre_comercial' | transloco"
     />
 
-    <nav class="pie__nav" [attr.aria-label]="'pie.navegacion' | transloco">
-      <a class="pie__enlace" [routerLink]="['/', idioma()]">{{ 'pie.portada' | transloco }}</a>
-      <a class="pie__enlace" [routerLink]="['/', idioma(), 'productos']">
+    <nav class="flex flex-wrap gap-16" [attr.aria-label]="'pie.navegacion' | transloco">
+      <!-- `anillo-foco-sobre-marca` y no `anillo-foco`: en tema claro
+           `--color-foco` y `--color-marca` son el mismo grafito, así que el
+           anillo de estos enlaces era invisible sobre el pie. Venía así del
+           SCSS, que aquí usaba `--color-foco` mientras la dirección de abajo
+           sí usaba `--color-sobre-marca`. -->
+      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma()]">
+        {{ 'pie.portada' | transloco }}
+      </a>
+      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'productos']">
         {{ 'encabezado.catalogo' | transloco }}
       </a>
-      <a class="pie__enlace" [routerLink]="['/', idioma(), 'carrito']">{{ 'pie.carrito' | transloco }}</a>
+      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'carrito']">
+        {{ 'pie.carrito' | transloco }}
+      </a>
       <!--
         La única entrada al panel desde la vitrina. Apunta a `/admin` y no al
         formulario: con sesión de ADMIN cae en el panel, y sin ella `adminGuard`
@@ -23,25 +32,42 @@
         propósito: el enlace que solo aparece cuando ya hay sesión de ADMIN —el
         del encabezado— no sirve para llegar a iniciarla.
       -->
-      <a class="pie__enlace" [routerLink]="['/', idioma(), 'admin']">{{ 'pie.panel_admin' | transloco }}</a>
+      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'admin']">
+        {{ 'pie.panel_admin' | transloco }}
+      </a>
     </nav>
 
-    <address class="pie__datos">
-      <p>{{ 'pie.nombre_comercial' | transloco }}</p>
-      <p>{{ 'pie.nit' | transloco }}</p>
-      <p>{{ 'pie.direccion' | transloco }}</p>
-      <p>
-        <a [href]="'tel:' + ('pie.telefono_e164' | transloco)">{{ 'pie.llamar' | transloco }}</a>
+    <!-- `not-italic` porque un <address> lo es por omisión del navegador, y
+         aquí no hay Preflight que lo resetee (src/tailwind.css). -->
+    <address class="flex flex-col gap-4 text-sm not-italic">
+      <p class="m-0">{{ 'pie.nombre_comercial' | transloco }}</p>
+      <p class="m-0">{{ 'pie.nit' | transloco }}</p>
+      <p class="m-0">{{ 'pie.direccion' | transloco }}</p>
+      <p class="m-0">
+        <a
+          class="anillo-foco-sobre-marca text-ts-sobre-marca"
+          [href]="'tel:' + ('pie.telefono_e164' | transloco)"
+          >{{ 'pie.llamar' | transloco }}</a
+        >
         ·
-        <a [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)">{{
-          'pie.whatsapp' | transloco
-        }}</a>
+        <a
+          class="anillo-foco-sobre-marca text-ts-sobre-marca"
+          [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
+          >{{ 'pie.whatsapp' | transloco }}</a
+        >
       </p>
-      <p><a [href]="'mailto:' + ('pie.correo' | transloco)">{{ 'pie.correo' | transloco }}</a></p>
+      <p class="m-0">
+        <a
+          class="anillo-foco-sobre-marca text-ts-sobre-marca"
+          [href]="'mailto:' + ('pie.correo' | transloco)"
+          >{{ 'pie.correo' | transloco }}</a
+        >
+      </p>
     </address>
 
-    <label class="pie__control">
+    <label class="flex items-center gap-8 text-sm">
       <input
+        class="anillo-foco-sobre-marca"
         type="checkbox"
         [checked]="movimientoReducido()"
         (change)="alternarMovimientoReducido()"
@@ -50,5 +76,7 @@
     </label>
   </div>
 
-  <p class="pie__copyright">{{ 'pie.copyright' | transloco: { anio: anioActual } }}</p>
+  <p class="mx-auto my-0 max-w-contenido px-24 pb-24 text-xs">
+    {{ 'pie.copyright' | transloco: { anio: anioActual } }}
+  </p>
 </footer>

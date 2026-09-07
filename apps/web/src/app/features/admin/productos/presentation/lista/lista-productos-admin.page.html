@@ -1,21 +1,25 @@
-<section class="lista-productos-admin">
+<section class="mx-auto max-w-contenido px-16 py-32">
   <ts-migas [ruta]="migas()" />
 
-  <h1 class="lista-productos-admin__titulo">{{ 'admin.productos.titulo' | transloco }}</h1>
+  <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.productos.titulo' | transloco }}</h1>
 
-  <a class="lista-productos-admin__enlace-nuevo" routerLink="crear">{{ 'admin.productos.nuevo' | transloco }}</a>
+  <a class="mb-24 inline-block text-ts-primario" routerLink="crear">{{
+    'admin.productos.nuevo' | transloco
+  }}</a>
 
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
-    <p class="lista-productos-admin__error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
+    <p class="mb-16 text-ts-error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
   } @else if (sinProductos()) {
     <!-- Esta lista no tiene filtros, así que hay una sola situación posible.
          El enlace de crear el primero ya está arriba: el mensaje lo nombra, no
          lo repite. -->
-    <p class="lista-productos-admin__vacio">{{ 'admin.productos.sin_productos' | transloco }}</p>
+    <p class="text-ts-texto-suave">{{ 'admin.productos.sin_productos' | transloco }}</p>
   } @else {
-    <table class="lista-productos-admin__tabla">
+    <table
+      class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+    >
       <thead>
         <tr>
           <th scope="col">{{ 'admin.productos.columnas.nombre' | transloco }}</th>
@@ -35,10 +39,10 @@
             <td>{{ etiquetaEstado(producto.estado) }}</td>
             <td>{{ producto.totalVariantes }}</td>
             <td>
-              <a class="lista-productos-admin__enlace" [routerLink]="[producto.id, 'editar']">{{
+              <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
                 'admin.productos.editarEnlace' | transloco
               }}</a>
-              <a class="lista-productos-admin__enlace" [routerLink]="[producto.id, 'captura-360']">{{
+              <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'captura-360']">{{
                 'admin.productos.capturar360' | transloco
               }}</a>
             </td>

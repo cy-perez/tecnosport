@@ -1,12 +1,16 @@
-<section class="panel-admin">
-  <h1 class="panel-admin__titulo">{{ 'admin.panel.titulo' | transloco }}</h1>
+<section class="mx-auto my-32 max-w-contenido px-16">
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.panel.titulo' | transloco }}</h1>
 
   @if (sesionStore.sesion(); as sesion) {
     <p>{{ 'admin.panel.bienvenida' | transloco: { rol: sesion.rol } }}</p>
   }
 
-  <a class="panel-admin__enlace" routerLink="../pedidos">{{ 'admin.panel.ir_a_pedidos' | transloco }}</a>
-  <a class="panel-admin__enlace" routerLink="../productos">{{ 'admin.panel.ir_a_productos' | transloco }}</a>
+  <a class="anillo-foco mb-24 inline-block text-ts-primario" routerLink="../pedidos">{{
+    'admin.panel.ir_a_pedidos' | transloco
+  }}</a>
+  <a class="anillo-foco mb-24 inline-block text-ts-primario ml-16" routerLink="../productos">{{
+    'admin.panel.ir_a_productos' | transloco
+  }}</a>
 
   <ts-boton variante="secundario" (click)="cerrarSesion()">
     {{ 'admin.panel.cerrar_sesion' | transloco }}

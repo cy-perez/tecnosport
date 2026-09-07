@@ -1,9 +1,15 @@
-<section class="transferencia">
+<section class="mx-auto max-w-contenido px-16 py-32">
   @if (datosTransferencia(); as datos) {
-    <h1 class="transferencia__titulo">{{ 'checkout.transferencia.titulo' | transloco }}</h1>
-    <p class="transferencia__instrucciones">{{ 'checkout.transferencia.instrucciones' | transloco }}</p>
+    <h1 class="m-0 mb-16 font-display text-2xl">
+      {{ 'checkout.transferencia.titulo' | transloco }}
+    </h1>
+    <p class="mb-24 text-ts-texto-suave">
+      {{ 'checkout.transferencia.instrucciones' | transloco }}
+    </p>
 
-    <dl class="transferencia__datos">
+    <dl
+      class="m-0 mb-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0 border border-ts-borde p-16 [&_dd]:font-mono"
+    >
       <dt>{{ 'checkout.transferencia.banco' | transloco }}</dt>
       <dd>{{ datos.banco }}</dd>
 
@@ -25,19 +31,24 @@
       }
     </dl>
 
-    <p class="transferencia__plazo">{{ 'checkout.transferencia.plazo' | transloco }}</p>
+    <p class="mb-24 text-ts-aviso">{{ 'checkout.transferencia.plazo' | transloco }}</p>
 
-    <a [routerLink]="['../estado']" [queryParams]="{ pedidoId: pedido()?.id, correo: pedido()?.correo }">
-      <ts-boton variante="secundario">{{ 'checkout.transferencia.ver_estado' | transloco }}</ts-boton>
+    <a
+      [routerLink]="['../estado']"
+      [queryParams]="{ pedidoId: pedido()?.id, correo: pedido()?.correo }"
+    >
+      <ts-boton variante="secundario">{{
+        'checkout.transferencia.ver_estado' | transloco
+      }}</ts-boton>
     </a>
   } @else if (pedido() !== null) {
     <!-- Se cargó un pedido, pero no es de transferencia manual: ruta equivocada. -->
-    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
   } @else if (criteriosSeguimiento() === null) {
-    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
   } @else if (consulta.isPending()) {
     <ts-esqueleto />
   } @else {
-    <p class="transferencia__error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
+    <p class="text-ts-error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>
   }
 </section>

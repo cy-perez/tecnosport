@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -9,6 +10,7 @@ import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
 import { guardarCarritoIdAlmacenado } from '../../../carrito/infrastructure/carrito-id.almacen';
+import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
@@ -151,10 +153,6 @@ function anfitrionConDatos(metodoPago: MetodoPago) {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function renderConDatos(
   metodoPago: MetodoPago,
   carrito: RepositorioCarrito,
@@ -181,6 +179,15 @@ async function renderConDatos(
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
     ],
   });
+}
+
+/**
+ * Espera a que la consulta del carrito resuelva. Reemplaza a `esperar(50)`, que
+ * pasaba o no según lo cargada que estuviera la máquina.
+ */
+async function esperarCarritoCargado(fixture: ComponentFixture<unknown>): Promise<void> {
+  const carrito = fixture.debugElement.injector.get(CarritoStore);
+  await vi.waitFor(() => expect(carrito.consulta.data()).toBeTruthy());
 }
 
 describe('ConfirmarPage', () => {
@@ -219,17 +226,22 @@ describe('ConfirmarPage', () => {
     const pedidos = new RepositorioPedidosFalso();
     const pagos = new RepositorioPagosFalso();
 
-    await renderConDatos('TARJETA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos, pagos);
+    const { fixture } = await renderConDatos(
+      'TARJETA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      pagos,
+    );
     await screen.findByText('compra@ejemplo.co');
-    // El carrito llega por TanStack Query: sin esta espera, el click puede
-    // llegar antes de que `carrito.consulta.data()` resuelva y `confirmar()`
-    // sale temprano sin hacer nada (mismo hallazgo de ADR-0011).
-    await esperar(50);
+    // El carrito llega por TanStack Query: sin esperar, el click puede llegar
+    // antes de que `carrito.consulta.data()` resuelva y `confirmar()` sale
+    // temprano sin hacer nada (mismo hallazgo de ADR-0011). Se espera por la
+    // consulta y no por un tiempo fijo: en este escenario no hay snapshot, así
+    // que el subtotal es 0 igualmente y **el DOM no tiene ninguna señal**.
+    await esperarCarritoCargado(fixture);
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
-    await esperar(50);
-
-    expect(pedidos.llamadasCrear).toBe(1);
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
     expect(pagos.llamadasCrearIntento).toBe(1);
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
     expect(window.location.href).toContain('reference=TS-2026-000001-1');
@@ -247,15 +259,17 @@ describe('ConfirmarPage', () => {
       pagos,
     );
     await screen.findByText('compra@ejemplo.co');
-    // El carrito llega por TanStack Query: sin esta espera, el click puede
-    // llegar antes de que `carrito.consulta.data()` resuelva y `confirmar()`
-    // sale temprano sin hacer nada (mismo hallazgo de ADR-0011).
-    await esperar(50);
+    // El carrito llega por TanStack Query: sin esperar, el click puede llegar
+    // antes de que `carrito.consulta.data()` resuelva y `confirmar()` sale
+    // temprano sin hacer nada (mismo hallazgo de ADR-0011). Se espera por la
+    // consulta y no por un tiempo fijo: en este escenario no hay snapshot, así
+    // que el subtotal es 0 igualmente y **el DOM no tiene ninguna señal**.
+    await esperarCarritoCargado(fixture);
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
-    await esperar(50);
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalled());
 
     expect(navegar).toHaveBeenCalledWith(
       ['../transferencia'],
@@ -270,17 +284,17 @@ describe('ConfirmarPage', () => {
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
     await screen.findByText('compra@ejemplo.co');
-    // El carrito llega por TanStack Query: sin esta espera, el click puede
-    // llegar antes de que `carrito.consulta.data()` resuelva y `confirmar()`
-    // sale temprano sin hacer nada (mismo hallazgo de ADR-0011).
-    await esperar(50);
+    // El carrito llega por TanStack Query: sin esperar, el click puede llegar
+    // antes de que `carrito.consulta.data()` resuelva y `confirmar()` sale
+    // temprano sin hacer nada (mismo hallazgo de ADR-0011). Se espera por la
+    // consulta y no por un tiempo fijo: en este escenario no hay snapshot, así
+    // que el subtotal es 0 igualmente y **el DOM no tiene ninguna señal**.
+    await esperarCarritoCargado(fixture);
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
-    await esperar(50);
-
-    expect(navegar).toHaveBeenCalledWith(['../estado'], expect.anything());
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalledWith(['../estado'], expect.anything()));
   });
 
   it('si crear el pedido falla, muestra un error y no navega', async () => {
@@ -292,10 +306,12 @@ describe('ConfirmarPage', () => {
       new RepositorioPedidosQueFalla(),
     );
     await screen.findByText('compra@ejemplo.co');
-    // El carrito llega por TanStack Query: sin esta espera, el click puede
-    // llegar antes de que `carrito.consulta.data()` resuelva y `confirmar()`
-    // sale temprano sin hacer nada (mismo hallazgo de ADR-0011).
-    await esperar(50);
+    // El carrito llega por TanStack Query: sin esperar, el click puede llegar
+    // antes de que `carrito.consulta.data()` resuelva y `confirmar()` sale
+    // temprano sin hacer nada (mismo hallazgo de ADR-0011). Se espera por la
+    // consulta y no por un tiempo fijo: en este escenario no hay snapshot, así
+    // que el subtotal es 0 igualmente y **el DOM no tiene ninguna señal**.
+    await esperarCarritoCargado(fixture);
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
 
@@ -313,7 +329,7 @@ describe('ConfirmarPage', () => {
 
     const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
     await screen.findByText('compra@ejemplo.co');
-    await esperar(50);
+    await esperarCarritoCargado(fixture);
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
     // Simula que ya se creó en un intento anterior (p. ej. la app volvió del
     // Web Checkout y el usuario retrocedió).
@@ -327,8 +343,6 @@ describe('ConfirmarPage', () => {
     expect(pedidos.llamadasCrear).toBe(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
-    await esperar(50);
-
-    expect(pedidos.llamadasCrear).toBe(1);
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(1));
   });
 });

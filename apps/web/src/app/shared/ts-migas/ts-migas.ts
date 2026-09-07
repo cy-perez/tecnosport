@@ -22,7 +22,6 @@ export interface Miga {
   selector: 'ts-migas',
   imports: [RouterLink, TranslocoPipe],
   templateUrl: './ts-migas.html',
-  styleUrl: './ts-migas.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TsMigas {

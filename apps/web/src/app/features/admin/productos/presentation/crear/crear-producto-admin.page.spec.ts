@@ -6,10 +6,23 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { Categoria, Marca } from '../../../../catalogo/domain/producto.model';
-import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../../../../catalogo/domain/repositorio-categorias.puerto';
-import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../../../catalogo/domain/repositorio-marcas.puerto';
-import { CrearProductoAdmin, ProductoAdmin, ProductosPaginadosAdmin } from '../../domain/producto-admin.model';
-import { REPOSITORIO_PRODUCTOS_ADMIN, RepositorioProductosAdmin } from '../../domain/repositorio-productos-admin.puerto';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../../../catalogo/domain/repositorio-categorias.puerto';
+import {
+  REPOSITORIO_MARCAS,
+  RepositorioMarcas,
+} from '../../../../catalogo/domain/repositorio-marcas.puerto';
+import {
+  CrearProductoAdmin,
+  ProductoAdmin,
+  ProductosPaginadosAdmin,
+} from '../../domain/producto-admin.model';
+import {
+  REPOSITORIO_PRODUCTOS_ADMIN,
+  RepositorioProductosAdmin,
+} from '../../domain/repositorio-productos-admin.puerto';
 import { CrearProductoAdminPage } from './crear-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
@@ -71,9 +84,6 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function renderPagina(repositorioProductos: RepositorioProductosAdmin) {
   return render(CrearProductoAdminPage, {
@@ -100,14 +110,15 @@ async function llenarYEnviar() {
   fireEvent.change(screen.getByLabelText('Marca'), { target: { value: 'm1' } });
   fireEvent.change(screen.getByLabelText('Categoría'), { target: { value: 'c1' } });
   fireEvent.click(screen.getByRole('button', { name: 'Crear producto' }));
-  await esperar(50);
 }
 
 describe('CrearProductoAdminPage', () => {
   it('el botón crear arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioProductosAdminFalso());
 
-    expect(screen.getByRole('button', { name: 'Crear producto' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Crear producto' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('carga las opciones de marca y categoría en los selects', async () => {
@@ -125,6 +136,11 @@ describe('CrearProductoAdminPage', () => {
 
     await llenarYEnviar();
 
+    // La navegación es lo último que ocurre, así que es por lo que hay que
+    // esperar: con `llamadasCrear` bastaba para la primera aserción y dejaba la
+    // segunda corriendo antes de tiempo.
+    await vi.waitFor(() => expect(navegar).toHaveBeenCalled());
+
     expect(repositorio.llamadasCrear).toEqual([
       { nombre: 'Morral urbano', descripcion: '', marcaId: 'm1', categoriaId: 'c1' },
     ]);
@@ -136,6 +152,6 @@ describe('CrearProductoAdminPage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('No se pudo crear el producto. Intenta de nuevo.')).toBeTruthy();
+    expect(await screen.findByText('No se pudo crear el producto. Intenta de nuevo.')).toBeTruthy();
   });
 });

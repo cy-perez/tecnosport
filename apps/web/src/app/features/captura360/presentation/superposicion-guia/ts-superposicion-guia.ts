@@ -18,9 +18,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 @Component({
   selector: 'ts-superposicion-guia',
   templateUrl: './ts-superposicion-guia.html',
-  styleUrl: './ts-superposicion-guia.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { 'aria-hidden': 'true' },
+  // `class` reemplaza el `:host` del SCSS: la superposición se estira sobre la
+  // vista de cámara y no debe interceptar ningún toque.
+  host: { 'aria-hidden': 'true', class: 'pointer-events-none absolute inset-0 block' },
 })
 export class TsSuperposicionGuia {
   /** El fotograma anterior del set. Nulo en la primera toma, que no tiene contra qué alinearse. */

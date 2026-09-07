@@ -1,6 +1,0 @@
-// Mismo criterio que ts-selector-idioma: en el encabezado el control no debe
-// estirarse al ancho disponible.
-:host {
-  display: block;
-  inline-size: fit-content;
-}

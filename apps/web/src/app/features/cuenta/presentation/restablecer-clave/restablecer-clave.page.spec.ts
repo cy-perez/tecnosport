@@ -30,12 +30,11 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 function rutaActivadaFalsa(token: string | null) {
-  return { snapshot: { queryParamMap: { get: (clave: string) => (clave === 'token' ? token : null) } } };
+  return {
+    snapshot: { queryParamMap: { get: (clave: string) => (clave === 'token' ? token : null) } },
+  };
 }
 
 async function renderPagina(repositorio: RepositorioCuenta, token: string | null) {
@@ -58,21 +57,22 @@ async function llenarYEnviar(clave = 'clave-segura', confirmarClave = 'clave-seg
   fireEvent.input(screen.getByLabelText('Clave nueva'), { target: { value: clave } });
   fireEvent.input(screen.getByLabelText('Confirmar clave'), { target: { value: confirmarClave } });
   fireEvent.click(screen.getByRole('button', { name: 'Restablecer clave' }));
-  await esperar(50);
 }
 
 describe('RestablecerClavePage', () => {
   it('sin token en la URL, muestra el error sin mostrar el formulario', async () => {
     await renderPagina(new RepositorioCuentaFalso(), null);
 
-    expect(screen.getByText('Enlace no válido')).toBeTruthy();
+    expect(await screen.findByText('Enlace no válido')).toBeTruthy();
     expect(screen.queryByLabelText('Clave nueva')).toBeNull();
   });
 
   it('el botón arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioCuentaFalso(), 'token-valido');
 
-    expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('con un token válido, restablece y muestra el mensaje de éxito', async () => {
@@ -81,8 +81,12 @@ describe('RestablecerClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(repositorio.llamadasRestablecer).toEqual([{ token: 'token-valido', claveNueva: 'clave-segura' }]);
-    expect(screen.getByText('Clave restablecida')).toBeTruthy();
+    await vi.waitFor(() => expect(repositorio.llamadasRestablecer).toHaveLength(1));
+
+    expect(repositorio.llamadasRestablecer).toEqual([
+      { token: 'token-valido', claveNueva: 'clave-segura' },
+    ]);
+    expect(await screen.findByText('Clave restablecida')).toBeTruthy();
   });
 
   it('con un token que el servidor rechaza, muestra el error correspondiente', async () => {
@@ -90,7 +94,7 @@ describe('RestablecerClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(screen.getByText('El enlace no es válido o ya venció. Pide uno nuevo.')).toBeTruthy();
+    expect(await screen.findByText('El enlace no es válido o ya venció. Pide uno nuevo.')).toBeTruthy();
   });
 
   it('con claves que no coinciden, muestra el error de confirmación', async () => {
@@ -98,9 +102,9 @@ describe('RestablecerClavePage', () => {
 
     fireEvent.input(screen.getByLabelText('Clave nueva'), { target: { value: 'clave-segura' } });
     fireEvent.input(screen.getByLabelText('Confirmar clave'), { target: { value: 'otra-clave' } });
-    await esperar(10);
-
-    expect(screen.getByText('Las claves no coinciden.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(true);
+    expect(await screen.findByText('Las claves no coinciden.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 });

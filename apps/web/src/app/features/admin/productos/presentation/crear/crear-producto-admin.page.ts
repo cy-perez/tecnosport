@@ -4,18 +4,18 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
-import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
-import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarCrearProductoAdmin } from '../../application/crear-producto-admin.mutacion';
 
 @Component({
   selector: 'app-crear-producto-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
   templateUrl: './crear-producto-admin.page.html',
-  styleUrl: './crear-producto-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CrearProductoAdminPage {
@@ -41,7 +41,9 @@ export class CrearProductoAdminPage {
   // valueChanges, no statusChanges: mismo motivo que registro-cliente.page.ts — el estado del
   // formulario puede quedarse INVALID de punta a punta mientras cambia, así que statusChanges no
   // emitiría de nuevo tras la carga inicial de las opciones.
-  private readonly valorFormulario = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly valorFormulario = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly formularioInvalido = computed(() => {
     this.valorFormulario();
     return this.form.invalid;
@@ -50,7 +52,10 @@ export class CrearProductoAdminPage {
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
-    (this.opciones.marcas.data() ?? []).map((marca) => ({ valor: marca.id, etiqueta: marca.nombre })),
+    (this.opciones.marcas.data() ?? []).map((marca) => ({
+      valor: marca.id,
+      etiqueta: marca.nombre,
+    })),
   );
 
   protected readonly opcionesCategoria = computed<OpcionSelect[]>(() =>
@@ -76,7 +81,8 @@ export class CrearProductoAdminPage {
         categoriaId: valores.categoriaId,
       },
       {
-        onSuccess: () => void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
+        onSuccess: () =>
+          void this.router.navigate(['/' + this.transloco.activeLang(), 'admin', 'productos']),
         onError: () => this.error.set(this.transloco.translate('admin.productos.crear.error')),
       },
     );

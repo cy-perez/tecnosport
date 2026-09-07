@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
-import { TsTarjetaProducto } from '../../../../shared/ts-tarjeta-producto/ts-tarjeta-producto';
+import { TsTarjetaProducto } from '../tarjeta-producto/ts-tarjeta-producto';
 import { usarBusquedaProductos } from '../../application/buscar-productos.consulta';
 import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
 
@@ -10,7 +10,6 @@ import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
   selector: 'app-portada',
   imports: [TranslocoPipe, RouterLink, TsTarjetaProducto, TsEsqueleto],
   templateUrl: './portada.page.html',
-  styleUrl: './portada.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PortadaPage {

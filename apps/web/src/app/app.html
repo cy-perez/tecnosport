@@ -1,6 +1,19 @@
-<a class="salto-contenido chaflan" href="#contenido">{{ 'app.saltar_al_contenido' | transloco }}</a>
+<!-- `-translate-y-[200%]` lo saca de la vista sin quitarlo del orden de
+     tabulación, que es el punto: el primer Tab de la página lo trae de vuelta
+     con `focus-visible:translate-y-0`. `anillo-foco-sobre-acento` y no
+     `anillo-foco`: el enlace es ámbar, y en tema oscuro `--color-foco` también
+     es ámbar (src/tailwind.css). -->
+<a
+  class="anillo-foco-sobre-acento chaflan absolute top-8 left-8 z-10 -translate-y-[200%] bg-ts-acento px-16 py-8 text-sm text-ts-sobre-acento no-underline focus-visible:translate-y-0"
+  href="#contenido"
+  >{{ 'app.saltar_al_contenido' | transloco }}</a
+>
 <app-encabezado />
-<main id="contenido" tabindex="-1">
+<!-- `outline-none` es aquí la excepción documentada a "el anillo de foco no se
+     elimina jamás": este landmark recibe foco **por programa** desde el enlace
+     de salto, no entra en el orden de tabulación (`tabindex="-1"`), y dibujarle
+     un anillo sería anunciar un foco que nadie pidió. -->
+<main id="contenido" class="focus:outline-none" tabindex="-1">
   <router-outlet />
 </main>
 <app-pie />

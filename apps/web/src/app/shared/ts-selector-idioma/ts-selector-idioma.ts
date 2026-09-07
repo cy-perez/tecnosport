@@ -4,7 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { urlEnOtroIdioma } from '../../core/idioma/idioma.servicio';
-import { OpcionSelect, TsSelect } from '../ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../ui/select/ts-select';
 
 const IDIOMAS = ['es', 'en'] as const;
 
@@ -22,8 +22,11 @@ const IDIOMAS = ['es', 'en'] as const;
   selector: 'ts-selector-idioma',
   imports: [ReactiveFormsModule, TranslocoPipe, TsSelect],
   templateUrl: './ts-selector-idioma.html',
-  styleUrl: './ts-selector-idioma.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // `w-fit` y no el ancho disponible: `ts-select` le da a su `<select>`
+  // un `inline-size: 100%`, que aquí se resuelve contra el contenido. En
+  // el encabezado el control no debe estirarse.
+  host: { class: 'block w-fit' },
 })
 export class TsSelectorIdioma {
   private readonly router = inject(Router);

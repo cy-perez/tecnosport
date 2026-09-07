@@ -5,8 +5,9 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { CorreoSinVerificarError } from '../../../../core/autenticacion/sesion.errores';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 
 /**
  * Solo para `CLIENTE` — el login de `ADMIN` es `features/admin/`. Un correo/clave válidos pero de
@@ -15,9 +16,8 @@ import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
  */
 @Component({
   selector: 'app-iniciar-sesion-cliente',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, RouterLink, TranslocoPipe, TsBoton, TsCampo],
   templateUrl: './iniciar-sesion-cliente.page.html',
-  styleUrl: './iniciar-sesion-cliente.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IniciarSesionClientePage {
@@ -29,11 +29,16 @@ export class IniciarSesionClientePage {
   protected readonly enviando = signal(false);
 
   protected readonly form = new FormGroup({
-    correo: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    correo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
     clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
-  private readonly estadoFormulario = toSignal(this.form.statusChanges, { initialValue: this.form.status });
+  private readonly estadoFormulario = toSignal(this.form.statusChanges, {
+    initialValue: this.form.status,
+  });
   protected readonly formularioInvalido = computed(() => this.estadoFormulario() === 'INVALID');
 
   protected async enviar(): Promise<void> {
@@ -45,7 +50,10 @@ export class IniciarSesionClientePage {
     this.enviando.set(true);
 
     try {
-      const sesion = await this.sesionStore.iniciarSesion(this.form.controls.correo.value, this.form.controls.clave.value);
+      const sesion = await this.sesionStore.iniciarSesion(
+        this.form.controls.correo.value,
+        this.form.controls.clave.value,
+      );
       if (sesion.rol !== 'CLIENTE') {
         await this.sesionStore.cerrarSesion();
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.no_es_cliente'));

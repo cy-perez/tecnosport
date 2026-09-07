@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
@@ -22,7 +22,6 @@ import { datosTransferenciaDelPedido } from '../../domain/reglas-pedido';
   selector: 'app-transferencia',
   imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
   templateUrl: './transferencia.page.html',
-  styleUrl: './transferencia.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TransferenciaPage {

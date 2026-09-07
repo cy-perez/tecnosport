@@ -1,15 +1,16 @@
 @if (hayRotacion()) {
-  <div class="ts-visor-360">
+  <div class="flex flex-col gap-8">
     <!-- El marco es el que recibe el foco y los gestos: es lo que se ve girar. `role="group"` con
          su nombre accesible, porque no es una imagen suelta sino un control con varias piezas, y
          `aria-describedby` apuntando a las instrucciones: sin eso, quien usa un lector de pantalla
          enfoca el visor y no se entera de que las flechas giran. -->
     <div
       #marco
-      class="ts-visor-360__marco"
+      class="anillo-foco superficie-arrastre relative aspect-square bg-ts-superficie-alt"
+      [class.cursor-grabbing]="arrastrando()"
+      [class.cursor-grab]="!arrastrando()"
       tabindex="0"
       role="group"
-      [class.ts-visor-360__marco--arrastrando]="arrastrando()"
       [attr.aria-label]="'visor360.etiqueta' | transloco"
       [attr.aria-describedby]="idInstrucciones"
       (keydown)="alTeclado($event)"
@@ -24,22 +25,22 @@
            recorte cuadrado lo decide el CSS. `alt=""`: los fotogramas son decorativos en conjunto,
            la descripción del producto vive en el texto de la ficha. -->
       @if (urlVisible()) {
-        <img class="ts-visor-360__fotograma" [ngSrc]="urlVisible()" alt="" fill priority />
+        <img class="pointer-events-none object-cover" [ngSrc]="urlVisible()" alt="" fill priority />
       }
 
       @if (pistaVisible()) {
-        <p class="ts-visor-360__pista" aria-hidden="true">{{ 'visor360.pista' | transloco }}</p>
+        <p class="absolute bottom-12 left-1/2 m-0 -translate-x-1/2 whitespace-nowrap bg-ts-marca px-12 py-4 text-sm text-ts-sobre-marca" aria-hidden="true">{{ 'visor360.pista' | transloco }}</p>
       }
     </div>
 
-    <div class="ts-visor-360__controles">
+    <div class="flex items-center justify-center gap-16">
       <ts-boton variante="secundario" [etiquetaAccesible]="'visor360.girar_izquierda' | transloco" (click)="girar(-1)">
         ‹
       </ts-boton>
 
       <!-- `aria-live` por el mismo motivo que en ts-paginador: al girar con el teclado el foco se
            queda donde estaba y nada más anunciaría el cambio. -->
-      <span class="ts-visor-360__posicion" aria-live="polite">
+      <span class="min-w-[12ch] text-center text-sm text-ts-texto-suave" aria-live="polite">
         {{ 'visor360.posicion' | transloco: { actual: indiceActual() + 1, total: total() } }}
       </span>
 
@@ -48,6 +49,6 @@
       </ts-boton>
     </div>
 
-    <p class="ts-visor-360__instrucciones" [id]="idInstrucciones">{{ 'visor360.instrucciones' | transloco }}</p>
+    <p class="m-0 text-center text-sm text-ts-texto-suave" [id]="idInstrucciones">{{ 'visor360.instrucciones' | transloco }}</p>
   </div>
 }

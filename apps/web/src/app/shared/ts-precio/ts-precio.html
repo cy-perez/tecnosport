@@ -1,6 +1,4 @@
-<span class="ts-precio">
-  @if (desde()) {
-    <span class="ts-precio__prefijo">{{ 'catalogo.precio_desde' | transloco }}</span>
-  }
-  <span class="ts-precio__valor">{{ formateado() }}</span>
-</span>
+@if (prefijo(); as textoPrefijo) {
+  <span class="font-texto text-sm text-ts-texto-suave">{{ textoPrefijo }}</span>
+}
+<span class="font-medio text-ts-texto">{{ formateado() }}</span>

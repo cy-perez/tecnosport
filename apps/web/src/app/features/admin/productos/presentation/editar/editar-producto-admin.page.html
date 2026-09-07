@@ -1,18 +1,22 @@
-<section class="editar-producto-admin">
+<ts-pagina-formulario [titulo]="'admin.productos.editar.titulo' | transloco">
   <ts-migas [ruta]="migas()" />
 
-  <h1 class="editar-producto-admin__titulo">{{ 'admin.productos.editar.titulo' | transloco }}</h1>
-
-  <a class="editar-producto-admin__enlace-variante" [routerLink]="enlaceAgregarVariante()">
+  <a class="anillo-foco mb-24 inline-block text-ts-primario" [routerLink]="enlaceAgregarVariante()">
     {{ 'admin.productos.editar.agregarVariante' | transloco }}
   </a>
 
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
-    <p class="editar-producto-admin__error" role="alert">{{ 'admin.productos.editar.error_carga' | transloco }}</p>
+    <p class="m-0 text-ts-error" role="alert">
+      {{ 'admin.productos.editar.error_carga' | transloco }}
+    </p>
   } @else {
-    <form class="editar-producto-admin__formulario" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+    <form
+      class="flex flex-col gap-16"
+      [formGroup]="form"
+      (submit)="$event.preventDefault(); enviar()"
+    >
       <ts-campo
         idCampo="editar-producto-nombre"
         [label]="'admin.productos.editar.nombre' | transloco"
@@ -42,7 +46,7 @@
       />
 
       @if (error()) {
-        <p class="editar-producto-admin__error" role="alert">{{ error() }}</p>
+        <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
       }
 
       <ts-boton
@@ -57,7 +61,7 @@
     </form>
 
     <section
-      class="editar-producto-admin__imagen-principal"
+      class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
       [formGroup]="formularioImagen"
       aria-labelledby="editar-producto-imagen-titulo"
     >
@@ -67,7 +71,7 @@
 
       @if (consulta.data()?.imagenPrincipalUrl; as urlActual) {
         <img
-          class="editar-producto-admin__imagen-actual"
+          class="size-[var(--ancho-vista-previa)] object-cover"
           [src]="urlActual"
           [alt]="'admin.productos.editar.imagenPrincipal.actual' | transloco"
           width="200"
@@ -77,7 +81,7 @@
 
       @if (previsualizacionUrl(); as previsualizacion) {
         <img
-          class="editar-producto-admin__imagen-previa"
+          class="size-[var(--ancho-vista-previa)] object-cover"
           [src]="previsualizacion"
           [alt]="'admin.productos.editar.imagenPrincipal.previsualizacion' | transloco"
           width="200"
@@ -108,7 +112,7 @@
       />
 
       @if (errorImagen()) {
-        <p class="editar-producto-admin__error" role="alert">{{ errorImagen() }}</p>
+        <p class="m-0 text-ts-error" role="alert">{{ errorImagen() }}</p>
       }
 
       <ts-boton
@@ -123,4 +127,4 @@
       </ts-boton>
     </section>
   }
-</section>
+</ts-pagina-formulario>

@@ -4,9 +4,9 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Translation, TranslocoPipe, translateObjectSignal } from '@jsverse/transloco';
 import { debounceTime } from 'rxjs';
-import { TsBoton } from '../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../shared/ts-campo/ts-campo';
-import { OpcionSelect, TsSelect } from '../../../../shared/ts-select/ts-select';
+import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
 import {
   FiltroProductos,
@@ -26,7 +26,12 @@ interface ValoresFormularioFiltros {
   orden: string;
 }
 
-const ORDENES: readonly OrdenProductos[] = ['RELEVANCIA', 'PRECIO_ASC', 'PRECIO_DESC', 'MAS_RECIENTES'];
+const ORDENES: readonly OrdenProductos[] = [
+  'RELEVANCIA',
+  'PRECIO_ASC',
+  'PRECIO_DESC',
+  'MAS_RECIENTES',
+];
 
 // `Translation` indexa a `any`: se estrecha a string en vez de confiar. El
 // diccionario llega vacío mientras el scope perezoso no ha cargado.
@@ -74,7 +79,6 @@ function filtroDesdeFormulario(valores: ValoresFormularioFiltros): FiltroProduct
   selector: 'app-filtros-productos',
   imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect],
   templateUrl: './filtros-productos.html',
-  styleUrl: './filtros-productos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FiltrosProductos {
@@ -131,7 +135,10 @@ export class FiltrosProductos {
   });
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
-    (this.opciones.marcas.data() ?? []).map((marca) => ({ valor: marca.id, etiqueta: marca.nombre })),
+    (this.opciones.marcas.data() ?? []).map((marca) => ({
+      valor: marca.id,
+      etiqueta: marca.nombre,
+    })),
   );
 
   protected readonly opcionesOrden = computed<OpcionSelect[]>(() => {
@@ -143,7 +150,9 @@ export class FiltrosProductos {
   });
 
   constructor() {
-    const queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
+    const queryParams = toSignal(this.route.queryParams, {
+      initialValue: this.route.snapshot.queryParams,
+    });
 
     effect(() => {
       const filtro = filtroDesdeQueryParams(queryParams());
@@ -152,7 +161,10 @@ export class FiltrosProductos {
 
     this.form.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe((valores) => {
       const filtro = filtroDesdeFormulario(valores as ValoresFormularioFiltros);
-      this.router.navigate([], { relativeTo: this.route, queryParams: queryParamsDesdeFiltro(filtro) });
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: queryParamsDesdeFiltro(filtro),
+      });
     });
   }
 

@@ -1,18 +1,18 @@
-<nav class="ts-migas" [attr.aria-label]="'migas.navegacion' | transloco">
-  <ol class="ts-migas__lista">
+<nav [attr.aria-label]="'migas.navegacion' | transloco">
+  <ol class="m-0 flex list-none flex-wrap items-center gap-8 p-0 text-sm">
     @for (miga of ruta(); track miga.etiqueta; let ultimo = $last) {
-      <li class="ts-migas__item">
+      <li class="inline-flex items-center gap-8">
         @if (miga.enlace) {
-          <a class="ts-migas__enlace" [routerLink]="miga.enlace">{{ miga.etiqueta }}</a>
+          <a class="anillo-foco text-ts-texto-suave no-underline hover:underline" [routerLink]="miga.enlace">{{ miga.etiqueta }}</a>
         } @else {
-          <span class="ts-migas__actual" aria-current="page">{{ miga.etiqueta }}</span>
+          <span class="font-medio text-ts-texto" aria-current="page">{{ miga.etiqueta }}</span>
         }
 
         <!-- El separador va en la plantilla, no en un `content:` de CSS: sería
              texto visible fuera de Transloco. `aria-hidden` porque no aporta
              nada leído en voz alta, la lista ya da la estructura. -->
         @if (!ultimo) {
-          <span class="ts-migas__separador" aria-hidden="true">/</span>
+          <span class="text-ts-texto-suave" aria-hidden="true">/</span>
         }
       </li>
     }

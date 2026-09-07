@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../ts-boton/ts-boton';
+import { TsBoton } from '../ui/boton/ts-boton';
 
 /**
  * Paginación por página, la de las listas del panel administrativo
@@ -13,7 +13,6 @@ import { TsBoton } from '../ts-boton/ts-boton';
   selector: 'ts-paginador',
   imports: [TranslocoPipe, TsBoton],
   templateUrl: './ts-paginador.html',
-  styleUrl: './ts-paginador.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TsPaginador {

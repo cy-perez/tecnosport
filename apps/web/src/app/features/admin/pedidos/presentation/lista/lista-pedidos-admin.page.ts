@@ -1,16 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
-import { TsBoton } from '../../../../../shared/ts-boton/ts-boton';
-import { TsCampo } from '../../../../../shared/ts-campo/ts-campo';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
-import { OpcionSelect, TsSelect } from '../../../../../shared/ts-select/ts-select';
+import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
@@ -67,9 +74,18 @@ interface FormularioRecaudo {
  */
 @Component({
   selector: 'app-lista-pedidos-admin',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsEsqueleto, TsMigas, TsPaginador, TsPrecio, TsSelect],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsEsqueleto,
+    TsMigas,
+    TsPaginador,
+    TsPrecio,
+    TsSelect,
+  ],
   templateUrl: './lista-pedidos-admin.page.html',
-  styleUrl: './lista-pedidos-admin.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListaPedidosAdminPage {
@@ -82,12 +98,18 @@ export class ListaPedidosAdminPage {
 
   protected readonly acciones = usarAccionesPedidoAdmin();
 
-  private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
-  protected readonly filtro = computed<FiltroPedidosAdmin>(() => filtroDesdeQueryParams(this.queryParams()));
+  private readonly queryParams = toSignal(this.route.queryParams, {
+    initialValue: this.route.snapshot.queryParams,
+  });
+  protected readonly filtro = computed<FiltroPedidosAdmin>(() =>
+    filtroDesdeQueryParams(this.queryParams()),
+  );
 
   protected readonly consulta = usarListarPedidosAdmin(this.filtro);
 
-  protected readonly pedidos = computed<readonly PedidoAdmin[]>(() => this.consulta.data()?.items ?? []);
+  protected readonly pedidos = computed<readonly PedidoAdmin[]>(
+    () => this.consulta.data()?.items ?? [],
+  );
 
   /**
    * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
@@ -103,7 +125,10 @@ export class ListaPedidosAdminPage {
   protected readonly formularioEstado = new FormControl('', { nonNullable: true });
 
   protected readonly opcionesEstado = computed<OpcionSelect[]>(() =>
-    ESTADOS.map((estado) => ({ valor: estado, etiqueta: this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]) })),
+    ESTADOS.map((estado) => ({
+      valor: estado,
+      etiqueta: this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]),
+    })),
   );
 
   protected readonly pedidoExpandidoId = signal<string | null>(null);
@@ -119,7 +144,11 @@ export class ListaPedidosAdminPage {
     });
 
     this.formularioEstado.valueChanges.pipe(takeUntilDestroyed()).subscribe((estado) => {
-      this.navegarA({ ...this.filtro(), pagina: 0, estado: (estado || null) as EstadoPedido | null });
+      this.navegarA({
+        ...this.filtro(),
+        pagina: 0,
+        estado: (estado || null) as EstadoPedido | null,
+      });
     });
   }
 
@@ -136,13 +165,18 @@ export class ListaPedidosAdminPage {
   }
 
   private navegarA(filtro: FiltroPedidosAdmin): void {
-    void this.router.navigate([], { relativeTo: this.route, queryParams: queryParamsDesdeFiltro(filtro) });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryParamsDesdeFiltro(filtro),
+    });
   }
 
   protected formularioMotivo(pedidoId: string): FormGroup<FormularioMotivo> {
     let form = this.formulariosMotivo.get(pedidoId);
     if (!form) {
-      form = new FormGroup({ motivo: new FormControl('', { nonNullable: true, validators: [Validators.required] }) });
+      form = new FormGroup({
+        motivo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      });
       this.formulariosMotivo.set(pedidoId, form);
     }
     return form;
@@ -152,7 +186,10 @@ export class ListaPedidosAdminPage {
     let form = this.formulariosDespacho.get(pedidoId);
     if (!form) {
       form = new FormGroup({
-        transportadora: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+        transportadora: new FormControl('', {
+          nonNullable: true,
+          validators: [Validators.required],
+        }),
         guia: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
         costoEnvio: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
       });
@@ -165,7 +202,10 @@ export class ListaPedidosAdminPage {
     let form = this.formulariosRecaudo.get(pedidoId);
     if (!form) {
       form = new FormGroup({
-        comisionRecaudo: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+        comisionRecaudo: new FormControl<number | null>(null, [
+          Validators.required,
+          Validators.min(0),
+        ]),
       });
       this.formulariosRecaudo.set(pedidoId, form);
     }
@@ -183,7 +223,10 @@ export class ListaPedidosAdminPage {
       return;
     }
     await this.ejecutar(() =>
-      this.acciones.verificarContraentrega.mutateAsync({ pedidoId: pedido.id, motivo: form.controls.motivo.value }),
+      this.acciones.verificarContraentrega.mutateAsync({
+        pedidoId: pedido.id,
+        motivo: form.controls.motivo.value,
+      }),
     );
     form.reset({ motivo: '' });
   }
@@ -216,7 +259,10 @@ export class ListaPedidosAdminPage {
       return;
     }
     await this.ejecutar(() =>
-      this.acciones.rechazarEnEntrega.mutateAsync({ pedidoId: pedido.id, motivo: form.controls.motivo.value }),
+      this.acciones.rechazarEnEntrega.mutateAsync({
+        pedidoId: pedido.id,
+        motivo: form.controls.motivo.value,
+      }),
     );
     form.reset({ motivo: '' });
   }
@@ -229,7 +275,10 @@ export class ListaPedidosAdminPage {
     }
     const valores = form.getRawValue();
     await this.ejecutar(() =>
-      this.acciones.conciliarRecaudo.mutateAsync({ pedidoId: pedido.id, comisionRecaudo: valores.comisionRecaudo ?? 0 }),
+      this.acciones.conciliarRecaudo.mutateAsync({
+        pedidoId: pedido.id,
+        comisionRecaudo: valores.comisionRecaudo ?? 0,
+      }),
     );
   }
 
@@ -243,7 +292,10 @@ export class ListaPedidosAdminPage {
   }
 
   protected conciliandoTransferencia(pedidoId: string): boolean {
-    return this.acciones.conciliarTransferencia.isPending() && this.acciones.conciliarTransferencia.variables() === pedidoId;
+    return (
+      this.acciones.conciliarTransferencia.isPending() &&
+      this.acciones.conciliarTransferencia.variables() === pedidoId
+    );
   }
 
   protected verificandoContraentrega(pedidoId: string): boolean {
@@ -254,19 +306,31 @@ export class ListaPedidosAdminPage {
   }
 
   protected despachando(pedidoId: string): boolean {
-    return this.acciones.despachar.isPending() && this.acciones.despachar.variables()?.pedidoId === pedidoId;
+    return (
+      this.acciones.despachar.isPending() &&
+      this.acciones.despachar.variables()?.pedidoId === pedidoId
+    );
   }
 
   protected marcandoEntregado(pedidoId: string): boolean {
-    return this.acciones.marcarEntregado.isPending() && this.acciones.marcarEntregado.variables() === pedidoId;
+    return (
+      this.acciones.marcarEntregado.isPending() &&
+      this.acciones.marcarEntregado.variables() === pedidoId
+    );
   }
 
   protected rechazando(pedidoId: string): boolean {
-    return this.acciones.rechazarEnEntrega.isPending() && this.acciones.rechazarEnEntrega.variables()?.pedidoId === pedidoId;
+    return (
+      this.acciones.rechazarEnEntrega.isPending() &&
+      this.acciones.rechazarEnEntrega.variables()?.pedidoId === pedidoId
+    );
   }
 
   protected conciliandoRecaudo(pedidoId: string): boolean {
-    return this.acciones.conciliarRecaudo.isPending() && this.acciones.conciliarRecaudo.variables()?.pedidoId === pedidoId;
+    return (
+      this.acciones.conciliarRecaudo.isPending() &&
+      this.acciones.conciliarRecaudo.variables()?.pedidoId === pedidoId
+    );
   }
 
   protected formatearFecha(iso: string): string {

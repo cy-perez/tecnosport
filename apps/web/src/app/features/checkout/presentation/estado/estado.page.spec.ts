@@ -87,9 +87,6 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
-function esperar(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /** Siembra `CheckoutStore.pedido` antes de que `EstadoPage` se construya —
  * su `criteriosSeguimiento` computed lo lee de inmediato, mismo motivo que
@@ -170,9 +167,7 @@ describe('EstadoPage', () => {
 
   it('sin pedido en memoria ni datos en la URL, muestra el mensaje de no encontrado', async () => {
     await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso());
-    await esperar(20);
-
-    expect(screen.getByText('No encontramos este pedido.')).toBeTruthy();
+    expect(await screen.findByText('No encontramos este pedido.')).toBeTruthy();
   });
 
   it('un pedido PAGO_FALLIDO muestra el botón de reintentar; uno confirmado no', async () => {
@@ -214,9 +209,7 @@ describe('EstadoPage', () => {
     await screen.findByRole('button', { name: 'Reintentar pago' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
-    await esperar(50);
-
-    expect(pedidos.llamadasReintentar).toBe(1);
+    await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
     expect(pagos.llamadasCrearIntento).toBe(1);
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
 

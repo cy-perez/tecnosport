@@ -1,0 +1,14 @@
+<fieldset class="m-0 border-0 p-0">
+  <legend class="mb-8 p-0 text-sm text-ts-texto-suave">{{ etiquetaGrupo() }}</legend>
+  <div class="flex flex-wrap gap-8">
+    @for (opcion of opciones(); track opcion.valor) {
+      <ts-boton
+        [variante]="estaSeleccionado(opcion) ? 'primario' : 'secundario'"
+        [presionado]="estaSeleccionado(opcion)"
+        (click)="elegir(opcion)"
+      >
+        {{ opcion.etiqueta }}
+      </ts-boton>
+    }
+  </div>
+</fieldset>

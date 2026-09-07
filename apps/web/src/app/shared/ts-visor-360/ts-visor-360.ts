@@ -15,7 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { TsBoton } from '../ts-boton/ts-boton';
+import { TsBoton } from '../ui/boton/ts-boton';
 import { indiceCircular, indiceDesdeDesplazamiento, indiceOpuesto, ordenDePrecarga } from './rotacion-360';
 
 /** `navigator.connection` no está en la librería DOM de TypeScript; solo lo que se lee de él. */
@@ -50,7 +50,6 @@ let secuenciaDeInstrucciones = 0;
   selector: 'ts-visor-360',
   imports: [NgOptimizedImage, TranslocoPipe, TsBoton],
   templateUrl: './ts-visor-360.html',
-  styleUrl: './ts-visor-360.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TsVisor360 {

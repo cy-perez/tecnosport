@@ -1,16 +1,19 @@
-<section class="captura">
+<section class="mx-auto flex max-w-formulario-lg flex-col gap-16 p-16">
   <ts-migas [ruta]="migas()" />
 
-  <h1 class="captura__titulo">{{ 'captura360.titulo' | transloco }}</h1>
+  <h1 class="m-0 font-display font-fuerte">{{ 'captura360.titulo' | transloco }}</h1>
 
   @if (store.sesionRecuperable(); as pendiente) {
-    <div class="captura__recuperacion" role="status">
+    <div
+      class="flex flex-col gap-8 border border-ts-borde-control bg-ts-superficie p-12 [&_p]:m-0 [&_p]:leading-texto"
+      role="status"
+    >
       <p>
         {{
           'captura360.recuperacion.hay_una' | transloco: { total: pendiente.fotogramasPrometidos }
         }}
       </p>
-      <div class="captura__acciones">
+      <div class="flex flex-wrap gap-8">
         <ts-boton (click)="store.recuperar()">
           {{ 'captura360.recuperacion.continuar' | transloco }}
         </ts-boton>
@@ -22,16 +25,24 @@
   }
 
   @if (store.guardadoLocalFallo()) {
-    <p class="captura__aviso" role="status">{{ 'captura360.sin_respaldo_local' | transloco }}</p>
+    <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="status">
+      {{ 'captura360.sin_respaldo_local' | transloco }}
+    </p>
   }
 
   @if (store.errorDelCierre(); as clave) {
-    <p class="captura__aviso captura__aviso--bloqueante" role="alert">{{ clave | transloco }}</p>
+    <p class="m-0 px-12 py-8 leading-texto bg-ts-error text-ts-sobre-primario" role="alert">
+      {{ clave | transloco }}
+    </p>
   }
 
   @switch (store.fase()) {
     @case ('PROCESANDO') {
-      <p class="captura__aviso" role="status" aria-live="polite">
+      <p
+        class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
+        role="status"
+        aria-live="polite"
+      >
         {{
           'captura360.procesando'
             | transloco: { hechos: store.avance().hechos, total: store.avance().total }
@@ -40,7 +51,11 @@
     }
 
     @case ('SUBIENDO') {
-      <p class="captura__aviso" role="status" aria-live="polite">
+      <p
+        class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
+        role="status"
+        aria-live="polite"
+      >
         {{
           'captura360.subiendo'
             | transloco: { hechos: store.avance().hechos, total: store.avance().total }
@@ -49,11 +64,11 @@
     }
 
     @case ('REVISANDO') {
-      <div class="captura__revision-set">
-        <h2 class="captura__subtitulo">{{ 'captura360.revision.titulo' | transloco }}</h2>
+      <div class="flex flex-col gap-12 [&_p]:m-0 [&_p]:leading-texto [&_p]:text-ts-texto-suave">
+        <h2 class="m-0 font-display font-medio">{{ 'captura360.revision.titulo' | transloco }}</h2>
         <p>{{ 'captura360.revision.ayuda' | transloco }}</p>
         <ts-visor-360 [imagenes]="store.rotacionParaRevisar()" />
-        <div class="captura__acciones">
+        <div class="flex flex-wrap gap-8">
           <ts-boton (click)="store.publicar()">{{
             'captura360.revision.publicar' | transloco
           }}</ts-boton>
@@ -62,7 +77,7 @@
     }
 
     @case ('PUBLICADO') {
-      <p class="captura__aviso captura__aviso--exito" role="status">
+      <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario" role="status">
         {{ 'captura360.publicado' | transloco }}
       </p>
     }
@@ -71,17 +86,19 @@
   @if (store.fase() === 'CAPTURANDO' && store.sesionRecuperable() === null) {
     @switch (store.permisoCamara()) {
       @case ('DESCONOCIDO') {
-        <div class="captura__preparacion">
-          <h2 class="captura__subtitulo">{{ 'captura360.preparacion.titulo' | transloco }}</h2>
+        <div class="flex flex-col gap-12">
+          <h2 class="m-0 font-display font-medio">
+            {{ 'captura360.preparacion.titulo' | transloco }}
+          </h2>
 
-          <ul class="captura__condiciones">
+          <ul class="m-0 ps-24 leading-texto text-ts-texto-suave">
             <li>{{ 'captura360.preparacion.fondo' | transloco }}</li>
             <li>{{ 'captura360.preparacion.luz' | transloco }}</li>
             <li>{{ 'captura360.preparacion.centrado' | transloco }}</li>
             <li>{{ 'captura360.preparacion.distancia' | transloco }}</li>
           </ul>
 
-          <fieldset class="captura__fotogramas">
+          <fieldset class="m-0 flex flex-wrap gap-8 border border-ts-borde p-12">
             <legend>{{ 'captura360.preparacion.cuantos' | transloco }}</legend>
             @for (cantidad of opciones; track cantidad) {
               <ts-boton
@@ -101,23 +118,23 @@
       }
 
       @case ('NEGADO') {
-        <p class="captura__aviso captura__aviso--bloqueante" role="alert">
+        <p class="m-0 px-12 py-8 leading-texto bg-ts-error text-ts-sobre-primario" role="alert">
           {{ 'captura360.permisos.camara_negada' | transloco }}
         </p>
       }
 
       @case ('NO_DISPONIBLE') {
-        <p class="captura__aviso captura__aviso--bloqueante" role="alert">
+        <p class="m-0 px-12 py-8 leading-texto bg-ts-error text-ts-sobre-primario" role="alert">
           {{ 'captura360.permisos.camara_no_disponible' | transloco }}
         </p>
       }
 
       @case ('CONCEDIDO') {
-        <div class="captura__visor">
-          <video class="captura__video" #video autoplay playsinline muted></video>
+        <div class="relative aspect-square w-full overflow-hidden bg-ts-primario">
+          <video class="size-full object-cover" #video autoplay playsinline muted></video>
 
           @if (store.pendiente(); as pendiente) {
-            <img class="captura__revision" [src]="pendiente.url" alt="" />
+            <img class="size-full object-cover" [src]="pendiente.url" alt="" />
           } @else {
             <ts-superposicion-guia
               [fantasma]="store.fantasma()"
@@ -126,8 +143,8 @@
           }
         </div>
 
-        <div class="captura__estado">
-          <p class="captura__progreso" aria-live="polite">
+        <div class="flex flex-wrap items-center justify-between gap-8">
+          <p class="m-0 font-texto font-medio" aria-live="polite">
             {{
               'captura360.progreso'
                 | transloco
@@ -150,33 +167,35 @@
         }
 
         @if (store.permisoSensor() === 'NEGADO' || store.permisoSensor() === 'NO_DISPONIBLE') {
-          <p class="captura__aviso" role="status">
+          <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="status">
             {{ 'captura360.permisos.sin_nivel' | transloco }}
           </p>
         }
 
         @if (errorCaptura(); as clave) {
-          <p class="captura__aviso" role="alert">{{ clave | transloco }}</p>
+          <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="alert">
+            {{ clave | transloco }}
+          </p>
         }
 
         @if (store.termino()) {
-          <p class="captura__aviso captura__aviso--exito" role="status">
+          <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario" role="status">
             {{ 'captura360.set_completo' | transloco: { total: store.fotogramasPrometidos() } }}
           </p>
-          <div class="captura__acciones">
+          <div class="flex flex-wrap gap-8">
             <ts-boton (click)="store.procesarYSubir()">
               {{ 'captura360.procesar_y_subir' | transloco }}
             </ts-boton>
           </div>
         } @else if (store.pendiente() !== null) {
-          <div class="captura__acciones">
+          <div class="flex flex-wrap gap-8">
             <ts-boton (click)="store.aceptar()">{{ 'captura360.aceptar' | transloco }}</ts-boton>
             <ts-boton variante="secundario" (click)="store.repetir()">
               {{ 'captura360.repetir' | transloco }}
             </ts-boton>
           </div>
         } @else {
-          <div class="captura__acciones">
+          <div class="flex flex-wrap gap-8">
             <ts-boton [deshabilitado]="!store.nivel().puedeDisparar" (click)="capturar()">
               {{ 'captura360.disparar' | transloco }}
             </ts-boton>
@@ -194,7 +213,10 @@
           </div>
 
           @if (!store.nivel().puedeDisparar) {
-            <p class="captura__aviso" role="status">
+            <p
+              class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
+              role="status"
+            >
               {{ 'captura360.obturador_bloqueado' | transloco }}
             </p>
           }
