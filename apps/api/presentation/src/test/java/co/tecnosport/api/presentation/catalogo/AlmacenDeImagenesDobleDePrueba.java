@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
@@ -36,9 +37,11 @@ class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
   }
 
   @Override
-  public int eliminarPorPrefijo(String prefijo) {
+  public int eliminarPorPrefijo(String prefijo, Set<String> conservar) {
     List<String> aBorrar =
-        objetosExistentes.keySet().stream().filter(key -> key.startsWith(prefijo)).toList();
+        objetosExistentes.keySet().stream()
+            .filter(key -> key.startsWith(prefijo) && !conservar.contains(key))
+            .toList();
     aBorrar.forEach(objetosExistentes::remove);
     return aBorrar.size();
   }

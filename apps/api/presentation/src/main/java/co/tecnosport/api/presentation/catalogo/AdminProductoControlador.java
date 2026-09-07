@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.CrearProducto;
@@ -13,7 +14,6 @@ import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
-import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
@@ -25,6 +25,8 @@ import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrinci
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -44,6 +46,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/productos")
 public class AdminProductoControlador {
+
+  private static final Logger log = LoggerFactory.getLogger(AdminProductoControlador.class);
 
   private static final int TAMANO_PAGINA_PREDETERMINADO = 20;
 
@@ -120,7 +124,7 @@ public class AdminProductoControlador {
   @PostMapping("/{id}/imagen-principal")
   public ImagenRespuesta confirmarImagenPrincipal(
       @PathVariable("id") UUID id, @RequestBody ConfirmarImagenPrincipalPeticion cuerpo) {
-    ImagenProducto imagen =
+    ConfirmacionDeImagenPrincipal confirmacion =
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
                 id,
@@ -130,6 +134,18 @@ public class AdminProductoControlador {
                 cuerpo.hash(),
                 cuerpo.altEs(),
                 cuerpo.altEn()));
-    return mapeador.aRespuesta(imagen);
+    if (confirmacion.limpiezaFallida()) {
+      log.error(
+          "Producto {}: la imagen principal se guardó, pero no se pudieron borrar las anteriores"
+              + " del bucket. Quedan objetos sin reclamar bajo 'productos/{}/principal-'.",
+          id,
+          id);
+    } else {
+      log.info(
+          "Producto {}: imagen principal reemplazada; {} objetos anteriores borrados del bucket.",
+          id,
+          confirmacion.objetosAnterioresBorrados());
+    }
+    return mapeador.aRespuesta(confirmacion.imagen());
   }
 }

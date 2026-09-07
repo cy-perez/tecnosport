@@ -2,6 +2,7 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -41,7 +42,7 @@ public final class EliminarSetRotacion {
             .buscarPorId(setId)
             .orElseThrow(() -> new SetRotacionNoEncontradoException(setId));
 
-    int borrados = almacenDeImagenes.eliminarPorPrefijo(ClavesDeRotacion.prefijoDe(set));
+    int borrados = almacenDeImagenes.eliminarPorPrefijo(ClavesDeRotacion.prefijoDe(set), Set.of());
     repositorioSetsRotacion.eliminar(setId);
     return borrados;
   }

@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,9 +62,12 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   }
 
   @Override
-  public int eliminarPorPrefijo(String prefijo) {
+  public int eliminarPorPrefijo(String prefijo, Set<String> conservar) {
     int borrados = 0;
     for (Blob blob : storage.list(bucket, Storage.BlobListOption.prefix(prefijo)).iterateAll()) {
+      if (conservar.contains(blob.getName())) {
+        continue;
+      }
       // Por nombre y NO con `blob.delete()`. Un Blob que viene de `list` trae su generación, y
       // borrar una generación concreta borra esa versión de verdad, saltándose el versionado del
       // bucket: no queda versión no vigente que restaurar. Sin generación, GCS mueve la versión

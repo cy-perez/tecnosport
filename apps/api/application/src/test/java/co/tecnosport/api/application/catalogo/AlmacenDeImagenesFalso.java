@@ -5,12 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
 
   private final Map<String, Long> objetos = new HashMap<>();
   final List<String> prefijosEliminados = new ArrayList<>();
+  boolean fallarAlEliminar;
   String ultimoObjectKeyFirmado;
   String ultimoContentTypeFirmado;
 
@@ -40,10 +42,15 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   }
 
   @Override
-  public int eliminarPorPrefijo(String prefijo) {
+  public int eliminarPorPrefijo(String prefijo, Set<String> conservar) {
+    if (fallarAlEliminar) {
+      throw new IllegalStateException("El almacén falló al borrar.");
+    }
     prefijosEliminados.add(prefijo);
     List<String> aBorrar =
-        objetos.keySet().stream().filter(key -> key.startsWith(prefijo)).toList();
+        objetos.keySet().stream()
+            .filter(key -> key.startsWith(prefijo) && !conservar.contains(key))
+            .toList();
     aBorrar.forEach(objetos::remove);
     return aBorrar.size();
   }
