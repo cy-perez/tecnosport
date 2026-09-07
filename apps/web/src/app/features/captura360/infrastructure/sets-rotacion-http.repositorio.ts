@@ -75,6 +75,7 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
           objectKey: fotograma.objectKey,
           ancho: fotograma.ancho,
           alto: fotograma.alto,
+          hash: fotograma.hash,
         })),
       },
     });

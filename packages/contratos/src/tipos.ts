@@ -814,26 +814,26 @@ export interface components {
             null?: boolean;
             float?: boolean;
             number?: boolean;
-            floatingPointNumber?: boolean;
-            double?: boolean;
-            /** @deprecated */
-            textual?: boolean;
-            object?: boolean;
-            pojo?: boolean;
-            short?: boolean;
-            int?: boolean;
-            long?: boolean;
-            string?: boolean;
-            boolean?: boolean;
-            binary?: boolean;
+            missingNode?: boolean;
+            integralNumber?: boolean;
+            container?: boolean;
+            bigInteger?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            integralNumber?: boolean;
-            bigDecimal?: boolean;
-            missingNode?: boolean;
-            bigInteger?: boolean;
-            container?: boolean;
             valueNode?: boolean;
+            bigDecimal?: boolean;
+            floatingPointNumber?: boolean;
+            boolean?: boolean;
+            double?: boolean;
+            short?: boolean;
+            binary?: boolean;
+            int?: boolean;
+            string?: boolean;
+            long?: boolean;
+            object?: boolean;
+            pojo?: boolean;
+            /** @deprecated */
+            textual?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -979,6 +979,7 @@ export interface components {
             ancho?: number;
             /** Format: int32 */
             alto?: number;
+            hash?: string;
         };
         CrearProductoPeticion: {
             nombre?: string;
@@ -1019,6 +1020,7 @@ export interface components {
             ancho?: number;
             /** Format: int32 */
             alto?: number;
+            hash?: string;
             altEs?: string;
             altEn?: string;
         };
