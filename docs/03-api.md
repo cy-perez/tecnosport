@@ -134,7 +134,7 @@ GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición 
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
-POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida y reemplaza la imagen principal
+POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
 POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada

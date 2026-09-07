@@ -2074,6 +2074,32 @@ generación concreta, saltándose el versionado** — la prueba mostró cero ver
 recuperables. Borrando por nombre, sin generación, quedan las cuatro. Está en
 `docs/07-infra-gcp.md` para que no se repita.
 
+### Reemplazar la imagen principal también reclama su objeto
+
+2026-09-07. El mismo defecto que en los sets, en el otro caso de uso: cada
+reemplazo de la imagen principal dejaba pagando el objeto anterior. Se borra por
+prefijo —`productos/{id}/principal-`— **salvo la key recién subida**, así que se
+lleva también lo que quedó de subidas que nunca se confirmaron. El prefijo llega
+hasta `principal-` a propósito: con solo el id del producto, reemplazar la imagen
+se llevaría por delante los fotogramas del visor 360 (tiene su prueba).
+
+**El orden es el contrario al del set, y no por descuido.** Un set se va entero,
+así que allá los objetos se borran antes que la fila. Aquí la fila se
+*reemplaza*: borrar antes y que falle el guardado dejaría al producto apuntando a
+un objeto inexistente, una imagen rota en una ficha viva. Se guarda primero y se
+limpia después. El precio es que una limpieza fallida deja objetos sin reclamar,
+así que no se traga en silencio —`ConfirmacionDeImagenPrincipal` lo reporta y el
+controlador lo registra como error— y tampoco tumba una confirmación que ya se
+guardó. Se cura sola: el siguiente reemplazo borra todo lo que haya quedado bajo
+el prefijo.
+
+Verificado contra el bucket real subiendo dos veces la principal del mismo
+producto: la primera vuelta borra 0 objetos, la segunda borra 1, en el bucket
+queda solo la vigente con la anterior como versión recuperable, y la ficha sirve
+la nueva. Las pruebas se comprobaron con dos mutaciones —no conservar la key
+nueva, y recortar el prefijo a solo el id del producto—; cada una la atrapó la
+prueba que le tocaba.
+
 ## Fase 6. Cierre para publicar
 
 Textos definitivos en los dos idiomas, políticas legales revisadas por abogado,
