@@ -156,6 +156,9 @@ def derivar(t):
     d["o_sobre_acento"]    = texto_sobre(d["o_acento"], d["o_texto"], c["texto"])
     d["o_borde_control"]   = borde_de_control(d["o_borde"], d["o_superficie"])
     d["o_deshabilitado"]   = mezclar(d["o_texto_suave"], d["o_fondo"], 0.55)
+    # El modo oscuro redefinia el fondo deshabilitado y se dejaba el texto
+    # con el valor del tema claro: grafito sobre gris oscuro, 2.31:1.
+    d["o_sobre_deshabilitado"] = texto_sobre(d["o_deshabilitado"], d["o_texto"], c["texto"])
     d["o_foco"] = (d["o_acento"] if contraste(d["o_acento"], d["o_fondo"]) >= 3
                    else d["o_texto"])
     # Despues de aplicar los valores declarados: si se calculara antes, saldria
@@ -318,7 +321,8 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
                  ("marca","o_marca"),("marca-alt","o_marca_alt"),
                  ("marca-fuerte","o_marca_fuerte"),("sobre-marca","o_sobre_marca"),
                  ("sobre-acento","o_sobre_acento"),("exito","o_exito"),("aviso","o_aviso"),
-                 ("error","o_error"),("deshabilitado","o_deshabilitado"),("foco","o_foco")]:
+                 ("error","o_error"),("deshabilitado","o_deshabilitado"),
+                 ("sobre-deshabilitado","o_sobre_deshabilitado"),("foco","o_foco")]:
         L.append("  --color-{}: {};".format(k, d[v]))
     L += ["}", ""]
     if extra.get("chaflan_px"):

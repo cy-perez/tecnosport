@@ -29,7 +29,7 @@
   --color-texto: #14171C;
   --color-texto-suave: #5B6472;
   --color-borde: #DFE3E9;
-  --color-exito: #14804A;
+  --color-exito: #116B3E;
   --color-aviso: #A15C00;
   --color-error: #B3261E;
   --color-deshabilitado: #B0B4BC;
@@ -108,6 +108,7 @@
   --color-aviso: #E5912F;
   --color-error: #F27168;
   --color-deshabilitado: #4C535D;
+  --color-sobre-deshabilitado: #EDF0F4;
   --color-foco: #F5B301;
 }
 
