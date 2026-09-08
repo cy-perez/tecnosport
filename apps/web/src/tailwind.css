@@ -51,9 +51,18 @@
 /* Se borran las escalas por omisión de Tailwind. Sin esto seguirían
    existiendo `bg-red-500`, `p-7`, `rounded-lg` y `text-8xl`: valores que el
    kit de marca no aprobó. Borrarlas es lo que mantiene verificable el
-   espíritu de la regla dura #2 — una utilidad que no existe no se puede usar,
-   y `rounded-*` deja de existir por completo, que es "radio 0 en todo"
-   impuesto por el compilador y no por disciplina. */
+   espíritu de la regla dura #2 — una utilidad que no existe no se puede usar.
+
+   Con un límite, y aquí estaba escrito de más. Comprobado con
+   `npm run clases`, no de memoria: borrar `--radius-*` sí mata toda la escala
+   nombrada (`rounded-sm/md/lg/xl`) y las esquinas a secas (`rounded-t`,
+   `rounded-s`), porque dependen de ella. Pero sobreviven `rounded`,
+   `rounded-none`, `rounded-full`, los valores arbitrarios (`rounded-[8px]`) y
+   cualquier esquina combinada con esos tres (`rounded-t-full`,
+   `rounded-tl-none`, `rounded-t-[8px]`): no salen de la escala sino de valores
+   estáticos de Tailwind. Así que "radio 0 en todo" lo impone el compilador en
+   el camino normal y la regla en el resto.
+   Para auditarlo: `grep -rn "rounded-" apps/web/src`. Ver ADR-0020. */
 @theme {
   --color-*: initial;
   --spacing: initial;

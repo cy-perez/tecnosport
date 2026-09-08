@@ -37,13 +37,17 @@ paralelo**. Cinco piezas, todas en `apps/web/src/tailwind.css`:
    `rounded-sm/md/lg/xl` no compilan.
 
    **Con un límite que hay que conocer, porque se documentó mal al principio:**
-   borrar la escala **no** elimina todas las utilidades de radio.
-   `rounded`, `rounded-none`, `rounded-full`, sus variantes por esquina y
-   cualquier valor arbitrario (`rounded-[8px]`) siguen existiendo, porque no
-   salen de `--radius-*` sino de valores estáticos de Tailwind. Así que "radio 0
+   borrar la escala **no** elimina todas las utilidades de radio. Lo que muere
+   es la escala nombrada (`rounded-sm/md/lg/xl`) y las esquinas a secas
+   (`rounded-t`, `rounded-s`), que dependen de ella. Siguen existiendo
+   `rounded`, `rounded-none`, `rounded-full`, cualquier valor arbitrario
+   (`rounded-[8px]`) y las esquinas combinadas con esos tres
+   (`rounded-t-full`, `rounded-tl-none`, `rounded-t-[8px]`), porque no salen de
+   `--radius-*` sino de valores estáticos de Tailwind. Así que "radio 0
    en todo" queda impuesto por el compilador **en el camino normal** y por la
    regla en el resto. Para auditarlo: `grep -rn "rounded-" apps/web/src`.
-   Comprobado con `npm run clases`.
+   Comprobado con `npm run clases`, clase por clase — la redacción anterior daba
+   por buenas las variantes por esquina sin medirlas.
 2. **El tema se redefine con `@theme inline` apuntando a los tokens.**
    `--color-ts-primario: var(--color-primario)` hace que `bg-ts-primario`
    compile a `background-color: var(--color-primario)`. El modificador `inline`

@@ -244,9 +244,13 @@ conserva la regla global de reducción de movimiento disparada por
 había —componentes de `shared/` importando `features/*/domain`— resultaron ser
 exactamente los componentes que usaba una sola funcionalidad. Moverlos, en vez
 de partirlos en tonto más envoltorio, deja la flecha `presentation → domain`
-que sí es correcta y que ESLint verifica. Sigue pendiente extender
-`boundaries/include` a `src/app/shared/**` para que el build lo impida en vez
-de depender de que alguien lo note.
+que sí es correcta. **Y el build ya lo impide**: `tools/verificar-capas.mjs`
+clasifica `shared/` como una capa propia y le prohíbe importar el `domain`, el
+`application`, el `infrastructure` y el `presentation` de cualquier
+funcionalidad. No lo verifica ESLint —`eslint-plugin-boundaries` no aplica
+nada, ver la regla dura #1 de `CLAUDE.md`— y su `boundaries/include` sigue
+apuntando solo a `features/**`, pero eso ya da igual: el guardián que cuenta
+corre en `npm run verificar`, y es su primer paso, antes del lint.
 
 **Pendientes de construir:** `ts-checkbox` · `ts-radio` · `ts-notificacion`. El
 único checkbox del sitio sigue siendo el de "reducir movimiento" del pie. Se
@@ -400,9 +404,12 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   (teclado sí, ratón en un `<input>` no siempre): jsdom no lo reproduce.
   Comprobado a mano en la Fase 2 — con Tab real, `outline-color` resuelve a
   `--color-foco`, que en oscuro es ámbar.
-- **El CDK ya está en uso** (`shared/ui/dialogo`): `[cdkTrapFocus]` con
-  `cdkTrapFocusAutoCapture` mete el foco en el diálogo al abrir y lo devuelve al
-  elemento anterior al cerrar. **Ese movimiento tampoco lo prueba Vitest**: el
+- **El CDK ya está en uso** (`shared/ui/dialogo`), aunque desde que el diálogo
+  se construyó sobre `@spartan-ng/brain` no se toca directo: `brn-dialog` monta
+  el portal y la trampa de foco del CDK por dentro. La versión anterior cableaba
+  `[cdkTrapFocus]` con `cdkTrapFocusAutoCapture` a mano, y el efecto visible es
+  el mismo — el foco entra al diálogo al abrir y vuelve al elemento anterior al
+  cerrar. **Ese movimiento tampoco lo prueba Vitest**: el
   `InteractivityChecker` del CDK mide layout y en jsdom todo mide cero.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 

@@ -3,6 +3,13 @@ const eslint = require('@eslint/js');
 const { defineConfig } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
+// OJO: este plugin NO está verificando nada. La configuración de más abajo usa
+// la sintaxis legada, que la v7 acepta sin aplicar, y su clasificación de
+// elementos tampoco funciona sin `mode: 'full'`. Se comprobó metiendo
+// violaciones a propósito: el lint pasaba. Se deja declarado porque documenta
+// la intención, pero el guardián real de las capas del frontend es
+// `tools/verificar-capas.mjs` (`npm run capas`), que corre dentro de
+// `npm run verificar` antes del lint. Ver la regla dura #1 de CLAUDE.md.
 const boundaries = require('eslint-plugin-boundaries');
 
 // Capas por funcionalidad, igual que en apps/api. Ver docs/01-arquitectura.md
