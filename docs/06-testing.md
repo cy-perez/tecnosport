@@ -22,6 +22,14 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
 - `TokensJwtTest` fallaba una de cada dieciséis corridas desde siempre: cambiaba
   el último carácter del token, que en una firma HS256 aporta cuatro bits, así
   que el token "manipulado" a veces era byte por byte el mismo.
+- **`vi.spyOn(window.localStorage, ...)` no sustituye nada en jsdom**: su
+  `localStorage` es un Proxy y el espía no llega a aplicarse. Una prueba del
+  camino degradado del visor 360 —qué pasa cuando el almacén lanza— pasaba
+  idéntica con y sin el `try/catch` que decía cubrir, y solo se vio al mutar.
+  Para sustituir el almacén completo va `vi.stubGlobal('localStorage', ...)`.
+  Cuidado con el patrón general: **un doble que en realidad no se instala hace
+  pasar la prueba por el camino normal**, que también pasa — es el peor tipo de
+  prueba verde, porque parece cubrir justo lo que no cubre.
 
 Una prueba que no falla ante ninguna mutación razonable se borra o se arregla;
 dejarla es peor que no tenerla, porque cubre el hueco en el informe de cobertura
