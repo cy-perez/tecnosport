@@ -1,6 +1,6 @@
 # ADR 0012. Envío a costo estándar incluido en el precio, sin cotización
 
-Fecha: 2026-09-02. Estado: aceptada. Supera a `adr/0004`.
+Fecha: 2026-09-02. Estado: **superada por `adr/0021`**. Superó a `adr/0004`.
 
 ## Contexto
 
@@ -56,3 +56,20 @@ un administrador la cargue a mano vía `POST`/`DELETE
 inventó una cobertura inicial; y no hay ninguna integración automática con la
 transportadora que la mantenga sincronizada. Detalle completo en
 `docs/11-pagos-y-envios.md` y `ADR-0013`.
+
+## Superada (2026-09-08)
+
+Pasó lo que este ADR había anticipado como motivo para reabrirlo: el negocio
+decidió cotizar por destino, con Skydropx como agregador. El precio publicado
+vuelve a ser precio base y el flete se cobra aparte, informado por separado
+antes de pagar. Ver `adr/0021`, y `adr/0022` y `adr/0023` para el seguimiento y
+el recaudo.
+
+Lo que este documento decía y **sigue siendo cierto**: el costo real del flete se
+registra en `Envio` y es información interna. La diferencia es que ahora hay un
+valor cobrado contra el que compararlo.
+
+Lo que decía y **ya no vale**: que no hacen falta códigos DANE del destino ni
+peso y dimensiones por variante. Los tres vuelven a ser obligatorios, y la tabla
+`cobertura_contraentrega` que nació con la nota de implementación de aquí se
+retira (`adr/0023`).

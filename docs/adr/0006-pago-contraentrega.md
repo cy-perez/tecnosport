@@ -1,6 +1,6 @@
 # ADR 0006. Pago contraentrega habilitado con reglas de servidor
 
-Fecha: 2026-08-30. Estado: aceptada.
+Fecha: 2026-08-30. Estado: aceptada, **modificada por `adr/0023`**.
 
 ## Contexto
 Inicialmente se descartó el contraentrega. Se decide habilitarlo, porque en
@@ -33,3 +33,15 @@ El ciclo del pedido se vuelve más largo y con más estados. Aparece una tarea
 operativa nueva, la conciliación del recaudo, que el panel tiene que hacer
 visible. La comisión de recaudo se registra como costo real para que el margen
 por pedido no sea una estimación optimista.
+
+## Modificación (2026-09-08)
+
+`adr/0023` cambia **una** de las cuatro condiciones: la cobertura por ciudad ya
+no sale de una tabla propia cargada a mano, sino de la cotización de Skydropx —un
+destino admite contraentrega si alguna tarifa cotizada admite recaudo. Las otras
+tres (monto máximo, categorías excluidas, historial de rechazos), la verificación
+por contacto antes de despachar, los estados de recaudo y la reserva sin
+vencimiento se quedan como están.
+
+El valor a recaudar pasa a ser el total del pedido **con el flete incluido**,
+porque desde `adr/0021` el envío se cobra aparte.

@@ -224,6 +224,140 @@ sitios con dos redondeos.
 
 ---
 
+## Costo de envío, cargos adicionales y recogida sin costo
+
+**Promete, o debe prometer:** que antes de terminar la compra el comprador vea el
+precio de cada producto, el subtotal, **el costo del envío como una cifra aparte**
+y el total que va a pagar. En Colombia esto no depende de haberlo escrito: es una
+obligación del régimen de comercio electrónico, que además pide que los costos
+adicionales al precio se informen con su razón y su valor. **Verifica el artículo
+en `marco-normativo.md` antes de citarlo.**
+
+Es la ficha que hay que abrir siempre que el negocio cobre el flete aparte del
+precio, cambie de un modelo a otro, o anuncie envío gratis.
+
+**Rastro mínimo:**
+
+1. **Una cifra, no una advertencia.** "Más gastos de envío" o "el envío se cobra
+   aparte" no informan nada. Si en la pantalla donde se paga no hay un número,
+   hay hueco.
+2. **Una línea de envío y una de total, distintas del subtotal.** El caso que se
+   escapa: una pantalla que muestra solo "Subtotal" y nada más. Cuando el envío
+   va incluido en el precio, subtotal y total coinciden y nadie lo nota; el día
+   que se cobre flete, esa misma pantalla incumple sin que nadie la haya tocado.
+3. **El cálculo en el servidor.** El costo de envío es tan manipulable como el
+   precio, y llega en el mismo cuerpo. La prueba es mandar un flete alterado y
+   comprobar que el servidor lo ignora.
+4. **La cotización mostrada, congelada en el pedido.** Con transportadora, valor,
+   plazo y vencimiento. Sin ese registro, "me cobraron un flete distinto del que
+   vi" es palabra contra palabra.
+5. **Ningún cargo que aparezca después de aceptar el total.** Un flete
+   recalculado al despachar, una comisión de recaudo trasladada al comprador o un
+   ajuste por peso real son cobros no autorizados si no estaban en el resumen.
+6. **Si hay una opción sin costo —recoger en el punto, retiro en tienda— el total
+   de ese pedido es el subtotal exacto**, y el ahorro se muestra. Es publicidad y
+   obliga.
+
+**Dónde suele romperse:** el eslabón 2, y de la forma más silenciosa posible. Y
+el 6 al revés de lo esperado: un "sin costo" que era falso mientras el flete
+estaba embebido en el precio —recoger no ahorraba nada— y que nadie revisó al
+cambiar el modelo.
+
+**Prueba que lo sostiene:** un pedido con flete cuyo total es subtotal más envío;
+el mismo pedido con retiro en punto y flete en cero; y un `costoEnvio` manipulado
+en la petición que no cambia el total.
+
+---
+
+## Plazo de entrega estimado frente a plazo prometido
+
+**Promete:** dos cosas que el comprador lee como una sola. El documento legal
+promete un plazo; la pantalla muestra el estimado que devuelve la transportadora
+al cotizar.
+
+**Rastro mínimo:**
+
+1. Que la pantalla diga **estimado** y el documento diga **pactado**, con
+   palabras distintas y visibles, o que sean el mismo número.
+2. Que el plazo del documento no sea el término supletivo legal mientras la
+   pantalla anuncia tres días: el comprador leerá tres, y la ley lo respalda.
+3. Que exista el camino del incumplimiento —terminar el contrato y devolver el
+   dinero, **incluido el flete pagado**—, no solo la promesa.
+
+**Dónde suele romperse:** nadie decide el plazo real, el documento se queda con
+el supletivo legal, y la interfaz empieza a mostrar el estimado del proveedor
+porque es útil. Quedan dos plazos compitiendo y ninguno de los dos es el que
+alguien decidió.
+
+---
+
+## Fecha de entrega, seguimiento y los plazos que cuelgan de ella
+
+**Promete:** poder consultar dónde va el pedido, y —sin decirlo— que los plazos
+que la ley cuenta desde la entrega se cuenten de verdad.
+
+Esta ficha existe porque la fecha de entrega **no es un dato operativo**: es el
+disparador del retracto y de la garantía. Un sistema donde esa fecha depende de
+que alguien pulse un botón tiene dos plazos legales colgando de la memoria de una
+persona.
+
+**Rastro mínimo:**
+
+1. La fecha de entrega **registrada**, con su origen: la marcó un humano, la
+   reportó la transportadora, la deduce una tarea programada.
+2. **Dos fechas por evento del proveedor: cuándo ocurrió y cuándo se recibió.**
+   Los plazos corren desde la primera; la segunda es la única que explica por qué
+   nadie se enteró.
+3. **Idempotencia y firma verificada** en el webhook que trae esos eventos. Un
+   evento falsificado que marque un pedido como entregado adelanta plazos, y si
+   hay recaudo, mueve dinero.
+4. **Una red de seguridad que no dependa del webhook.** Los webhooks se pierden;
+   un `entregado` perdido corre el retracto sin que el sistema lo cuente. Una
+   consulta programada del estado real es lo que lo cierra.
+5. **Qué ve el comprador y qué no.** El seguimiento suele ser el endpoint más
+   laxo del sistema —público, con el correo o un token del correo— y muchas veces
+   devuelve el agregado de envío completo. Ahí viajan el costo real del flete y
+   la comisión de la transportadora, que son el margen del negocio, no datos del
+   comprador. **Ábrelo y mira el DTO, no confíes en que alguien lo filtró.**
+
+**Dónde suele romperse:** el 4 y el 5. El 5 es especialmente traicionero cuando
+alguien ya tuvo el cuidado de anular unos campos sensibles del historial en la
+misma función y copió el resto tal cual.
+
+**Prueba que lo sostiene:** que un evento repetido no transicione dos veces; que
+solo los estados que deben mover el pedido lo muevan; y que la respuesta pública
+de seguimiento no contenga los campos de costo interno.
+
+---
+
+## Logística tercerizada
+
+**Promete:** normalmente nada, y ahí está el problema. Una plataforma logística
+que cotiza, rotula, entrega, recauda y notifica es varios terceros a la vez.
+
+**Rastro mínimo:**
+
+1. **Declarada como encargado**, con qué datos recibe: nombre, teléfono,
+   dirección, ciudad, y el valor a recaudar si hay contraentrega.
+2. **Las transportadoras que ejecutan la entrega también reciben esos datos.** Si
+   el documento solo nombra al agregador, nombra a la mitad de la cadena.
+3. **Régimen de transferencia internacional** si la plataforma no es del país. La
+   región del despliegue y el país de la entidad con la que se firma son hechos
+   verificables, no suposiciones. **Punto para revisión de abogado.**
+4. **Las notificaciones del proveedor son un tratamiento aparte.** Si la
+   plataforma le escribe al comprador por WhatsApp o por correo, alguien
+   autorizó ese canal, o nadie lo hizo. Si se apaga, se apaga a propósito y queda
+   escrito.
+5. **El recaudo contra entrega tiene condiciones que son información al
+   consumidor:** solo efectivo, montos mínimos y máximos, valor exacto a pagar.
+   Van en el checkout, antes de elegir el método — no en el correo de
+   confirmación, cuando ya no se puede cambiar de opinión.
+
+**Dónde suele romperse:** el 2 y el 4. Y el 5, que se descubre el día que un
+comprador no tiene efectivo en la puerta.
+
+---
+
 ## Cookies y rastreo
 
 **Promete:** qué cookies usa el sitio y para qué.

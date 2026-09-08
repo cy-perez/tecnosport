@@ -44,7 +44,7 @@ y no en el código.
 | `infrastructure` | Testcontainers con PostgreSQL 16 | Consultas, migraciones, mapeadores, bloqueos |
 | `presentation` | `@WebMvcTest` | Códigos HTTP, validación, formato de error |
 | Arquitectura | ArchUnit | Las flechas de dependencia. Falla el build |
-| Extremo a extremo | Spring Boot Test con Wompi falso | Los cinco recorridos de `00-producto.md` |
+| Extremo a extremo | Spring Boot Test con Wompi y Skydropx falsos | Los recorridos de `00-producto.md` |
 
 Nunca H2. Si la prueba no corre contra el mismo motor que producción, no prueba
 la consulta que importa.
@@ -55,9 +55,22 @@ Lo que tiene prueba sin excepción:
 - Reserva de inventario con dos compradores simultáneos por la última unidad.
 - Vencimiento de reserva a los 30 minutos con `Reloj` falso.
 - Reserva de contraentrega que **no** vence por tiempo.
-- Disponibilidad de contraentrega: fuera de cobertura, sobre el monto máximo, y
-  comprador con rechazo previo. Los tres deben excluir el método.
+- Disponibilidad de contraentrega: ninguna tarifa cotizada admite recaudo, sobre
+  el monto máximo, y comprador con rechazo previo. Los tres deben excluir el
+  método. La primera premisa cambió con `ADR-0023`: ya no es "no está en la tabla
+  de cobertura".
+- **Total del pedido con envío**: subtotal más flete, con el flete en cero cuando
+  la entrega es recogida en el punto, y sin repartir el flete entre las líneas.
+- **Cotización fallida o destino sin cobertura**: el pedido a domicilio no se
+  crea, y la recogida en el punto sí. Nunca un flete de respaldo inventado.
+- **El costo de envío que llega del cliente se ignora.** La prueba manda un
+  `costoEnvio` manipulado en el cuerpo y comprueba que el total sale del servidor.
+- **Tarifa vencida al despachar**: se cotiza de nuevo para la guía y el total del
+  pedido **no** cambia.
 - Webhook de Wompi repetido: no cobra ni descuenta dos veces.
+- **Webhook de seguimiento repetido**: no escribe dos eventos ni transiciona dos
+  veces; y solo `picked_up`, `delivered` e `in_return` mueven el pedido — los
+  otros nueve estados se guardan sin tocar `Pedido.estado`.
 - Webhook con firma inválida: se rechaza.
 - Transición de estado inválida: se rechaza.
 - Un pedido histórico no cambia de total cuando cambia el precio del catálogo.

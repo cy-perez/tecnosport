@@ -49,10 +49,10 @@ lo que sigue del asistente de captura.
 | Cloud SQL PostgreSQL 16 | Base de datos, sin IP pública, por conector |
 | Artifact Registry | Imágenes de contenedor |
 | Cloud Storage y CDN | Imágenes de producto, sets de rotación y estáticos |
-| Secret Manager | Llaves de Wompi, secreto JWT, credenciales SMTP |
+| Secret Manager | Llaves de Wompi, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
 | Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
 | Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
-| Cloud Scheduler | Liberar reservas vencidas, conciliar pagos, generar sitemap |
+| Cloud Scheduler | Liberar reservas vencidas, conciliar pagos, conciliar seguimiento de envíos, generar sitemap |
 
 Cloud Run con mínimo de instancias en 1 para la API: el arranque en frío de una
 JVM se siente. CRaC o imagen nativa solo si el costo aprieta, no de entrada.
@@ -132,6 +132,13 @@ GOOGLE_APPLICATION_CREDENTIALS  (solo local: ruta a la llave de la cuenta de ser
 
 SMTP_HOST, SMTP_PUERTO, SMTP_AUTH, SMTP_USUARIO, SMTP_CLAVE, CORREO_REMITENTE
 
+SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID, SKYDROPX_CLIENT_SECRET
+SKYDROPX_SECRETO_WEBHOOK
+SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS, SKYDROPX_COTIZACION_INTENTOS
+SKYDROPX_SEGUIMIENTO_INTERVALO_MINUTOS, SKYDROPX_SEGUIMIENTO_ANTIGUEDAD_MINIMA_HORAS
+ORIGEN_NOMBRE, ORIGEN_TELEFONO, ORIGEN_DIRECCION,
+ORIGEN_CIUDAD_DANE, ORIGEN_CODIGO_POSTAL
+
 CONTRAENTREGA_HABILITADA
 CONTRAENTREGA_MONTO_MAXIMO
 CONTRAENTREGA_CATEGORIAS_EXCLUIDAS
@@ -142,6 +149,18 @@ IVA_TASA_PREDETERMINADA
 ROTACION_FOTOGRAMAS_PREDETERMINADO
 ROTACION_TOLERANCIA_GRADOS
 ```
+
+Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
+(`docs/11-pagos-y-envios.md`). Dos notas que ahorran una tarde:
+
+- **`SKYDROPX_URL_BASE` es variable a propósito y todavía no está confirmada.**
+  La documentación pública muestra `pro.skydropx.com` (producción) y
+  `sb-pro.skydropx.com` (pruebas), y según la fuente aparecen también
+  `api-pro.skydropx.com` y `app.skydropx.com.co`. `TODO: confirmar el host de la
+  cuenta colombiana en el panel, Conexiones > API.`
+- **`ORIGEN_*` es la dirección de despacho del negocio**, la que va como origen de
+  cada cotización y de cada recolección. Es la misma del punto de recogida, y por
+  eso no se duplica en el código: si el negocio se muda, se cambia una vez.
 
 En Spring, `@ConfigurationProperties` tipadas y validadas al arrancar. Si falta
 una variable obligatoria, la aplicación no arranca; no arranca a medias para

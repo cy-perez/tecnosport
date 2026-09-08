@@ -1,6 +1,6 @@
 # ADR 0013. `Envio` como agregado propio, con el recaudo aparte
 
-Fecha: 2026-09-03. Estado: aceptada.
+Fecha: 2026-09-03. Estado: aceptada, **ampliada por `adr/0022`**.
 
 ## Contexto
 
@@ -51,3 +51,15 @@ La respuesta de la API de pedido (`PedidoRespuesta`) **todavía no expone**
 los datos de `Envio` — se pueden escribir (`/despacho`, `/recaudo`) pero no
 leer por ningún endpoint todavía. Queda como pendiente explícito para cuando
 se retome el panel administrativo (`docs/09-plan-de-arranque.md`).
+
+## Ampliación (2026-09-08)
+
+`adr/0021` y `adr/0022` le agregan a este agregado la tarifa cotizada (con su
+identificador de Skydropx, transportadora, servicio, valor cobrado, plazo
+estimado y vencimiento) y la colección de `EventoSeguimiento`.
+
+La decisión de fondo no cambia y se confirma: `Envio` sigue **sin `estado`
+propio**. Los estados de la transportadora viven en sus eventos, y el estado del
+pedido lo sigue llevando `Pedido.estado`. Si se hubieran puesto los doce estados
+de Skydropx como un campo de `Envio`, habría dos máquinas de estados que
+sincronizar y un vocabulario de proveedor incrustado en el modelo.
