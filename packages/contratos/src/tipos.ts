@@ -831,26 +831,26 @@ export interface components {
             null?: boolean;
             float?: boolean;
             number?: boolean;
-            missingNode?: boolean;
-            integralNumber?: boolean;
-            /** @enum {string} */
-            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            container?: boolean;
-            bigDecimal?: boolean;
-            bigInteger?: boolean;
-            valueNode?: boolean;
             floatingPointNumber?: boolean;
-            double?: boolean;
-            int?: boolean;
-            pojo?: boolean;
-            binary?: boolean;
             long?: boolean;
+            pojo?: boolean;
+            short?: boolean;
+            double?: boolean;
+            string?: boolean;
+            object?: boolean;
+            int?: boolean;
+            boolean?: boolean;
+            binary?: boolean;
             /** @deprecated */
             textual?: boolean;
-            boolean?: boolean;
-            short?: boolean;
-            object?: boolean;
-            string?: boolean;
+            /** @enum {string} */
+            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+            integralNumber?: boolean;
+            bigInteger?: boolean;
+            missingNode?: boolean;
+            valueNode?: boolean;
+            container?: boolean;
+            bigDecimal?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -1408,7 +1408,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
+            /** @description Sesión refrescada */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -1416,6 +1416,13 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["SesionRespuesta"];
                 };
+            };
+            /** @description No hay cookie de refresco: no hay sesión que refrescar */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

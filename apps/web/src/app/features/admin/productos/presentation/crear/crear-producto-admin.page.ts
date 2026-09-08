@@ -9,12 +9,13 @@ import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/t
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarCrearProductoAdmin } from '../../application/crear-producto-admin.mutacion';
 
 @Component({
   selector: 'app-crear-producto-admin',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect, TsSelectControl],
   templateUrl: './crear-producto-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

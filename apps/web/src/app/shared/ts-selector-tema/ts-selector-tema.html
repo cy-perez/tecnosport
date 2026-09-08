@@ -2,5 +2,6 @@
   idCampo="selector-tema"
   [label]="'tema.etiqueta' | transloco"
   [opciones]="opciones()"
-  [formControl]="control"
+  [valor]="elegido()"
+  (cambio)="elegir($event)"
 />

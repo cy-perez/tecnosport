@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.usuario;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -131,9 +132,34 @@ class AutenticacionControladorTest {
         .andExpect(cookie().exists("refresco"));
   }
 
+  // Sin cookie no hay sesión que refrescar, y eso no es un fallo de autenticación: el frontend
+  // pregunta en cada arranque porque la cookie es HttpOnly y no puede saberlo de otro modo. Con
+  // 401, la consola de todo visitante anónimo se llenaba de un error en cada visita.
   @Test
-  void refrescarSinCookieDevuelve401() throws Exception {
-    mockMvc.perform(post("/api/v1/auth/refresco")).andExpect(status().isUnauthorized());
+  void refrescarSinCookieDevuelve204() throws Exception {
+    mockMvc
+        .perform(post("/api/v1/auth/refresco"))
+        .andExpect(status().isNoContent())
+        .andExpect(content().string(""));
+  }
+
+  @Test
+  void refrescarConCookieVaciaDevuelve204() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/refresco").cookie(new jakarta.servlet.http.Cookie("refresco", "")))
+        .andExpect(status().isNoContent());
+  }
+
+  // Una cookie que sí llega pero no sirve es otra cosa: alguien mandó un valor que no es de este
+  // sistema, y ahí 401 es la respuesta correcta.
+  @Test
+  void refrescarConCookieQueNoEsUnUuidDevuelve401() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/refresco")
+                .cookie(new jakarta.servlet.http.Cookie("refresco", "no-soy-un-uuid")))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test

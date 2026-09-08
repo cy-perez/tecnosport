@@ -10,6 +10,7 @@ import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/t
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAgregarVarianteAdmin } from '../../application/agregar-variante-admin.mutacion';
 
@@ -29,7 +30,7 @@ function grupoAtributo(): GrupoAtributo {
 
 @Component({
   selector: 'app-agregar-variante-admin',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect, TsSelectControl],
   templateUrl: './agregar-variante-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -2,5 +2,6 @@
   idCampo="selector-idioma"
   [label]="'idioma.etiqueta' | transloco"
   [opciones]="opciones"
-  [formControl]="control"
+  [valor]="idiomaActivo()"
+  (cambio)="navegarA($event)"
 />

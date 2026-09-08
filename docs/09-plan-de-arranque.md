@@ -2430,6 +2430,69 @@ Dos hallazgos que sí son reales e independientes de la siembra:
   usar— pero deja ruido en la consola de todos los visitantes y Lighthouse lo
   cuenta.
 
+### Las dos deudas de esa medición, cerradas (2026-09-08)
+
+**El 401 en toda visita anónima.** `POST /api/v1/auth/refresco` responde ahora
+**204** cuando no llega la cookie, y sigue en 401 cuando llega una que no sirve
+—basura, vencida, ya usada—. La distinción es la que importa: el frontend
+pregunta en cada arranque **porque la cookie es `HttpOnly` y no puede saberlo de
+otro modo**, así que quien nunca inició sesión no está fallando la
+autenticación. Con 401, el navegador de cada visitante registraba un error en su
+consola en cada visita. Es la primera anotación de springdoc del proyecto
+(`@ApiResponse`): el 204 no se infiere del `ResponseEntity<SesionRespuesta>` y
+sin declararlo no llegaba al OpenAPI ni, por tanto, a `tipos.ts`.
+
+**Un defecto de paso, encontrado al escribir la prueba del 500.** El adaptador
+decidía si la respuesta había fallado mirando `error`, que openapi-fetch solo
+rellena cuando el fallo trae cuerpo JSON. Un 500 vacío o en HTML —lo que
+devuelve un balanceador— se colaba hasta `aSesion(undefined)` y el llamador
+recibía un `TypeError` en vez del mensaje de error. Ahora mira `response.ok`.
+El mismo patrón está en `iniciarSesion`, dos líneas más arriba, y **sigue ahí**:
+arreglarlo exige decidir qué se le dice al comprador cuando el servidor falla,
+que no es "correo o clave incorrectos".
+
+**Los 186 KB de JavaScript sin usar no eran nuestros, y conviene corregir el
+apunte anterior.** Construyendo con `--source-map` y atribuyendo los bytes de
+cada chunk a su paquete de origen (decodificando los `mappings`, sin instalar
+nada), el chunk de 352 KB que Lighthouse señala en la ficha resulta ser
+**`@angular/core` al 87,9 %**, con rxjs y Transloco detrás. Lo "sin usar" es
+código del framework que no se ejecuta en la carga inicial —hidratación,
+`@defer`, i18n en tiempo de ejecución— y no sale de ahí sin renunciar a
+decisiones de arquitectura. **Esa deuda, como estaba escrita, no era
+accionable.**
+
+Lo que sí lo era estaba en el paquete **inicial** (`main`, 156 KB), o sea en
+todas las pantallas, y Lighthouse no lo reporta porque cada pieza queda bajo su
+umbral:
+
+| | en `main` | qué se hizo |
+|---|---|---|
+| `@angular/forms` | 38,6 kB | **fuera**, ver abajo |
+| `@tanstack/query-core` | 36,1 kB | se queda: lo usa toda pantalla con datos |
+| `tailwind-merge` | 29,2 kB | se queda, y con motivo: el comentario de `cn.ts` documenta dos bugs reales que resuelve, uno de ellos silencioso |
+
+**`@angular/forms` entraba por el encabezado.** `TsSelect` implementaba
+`ControlValueAccessor`, y quien lo importa siempre son los selectores de idioma
+y de tema — dos `<select>` de dos y tres opciones que arrastraban el motor de
+formularios a la portada, a la rejilla y a la ficha, que no tienen ni un
+formulario. El puente pasó a una directiva aparte, `TsSelectControl`, que es lo
+que hace el propio framework con sus accesores; el componente quedó con `valor`
+(modelo escribible) y `cambio`. **`cambio` se emite solo en la elección del
+usuario y no en `writeValue`**, o un formulario quedaría sucio sin que nadie lo
+toque — verificado en el navegador: el select que se tocó queda `dirty` y
+`touched`, el de al lado sigue intacto.
+
+Grafo inicial de JavaScript: **630,9 kB -> 590,7 kB**. Lo demás se verificó
+donde jsdom no llega: el tema cambia con teclado y sobrevive a recargar, el
+idioma navega y el selector sigue al botón de atrás, y los filtros del catálogo
+conservan su valor al recargar con la URL filtrada — que es el caso de
+"opciones que llegan después del valor" en producción.
+
+**Sigue pendiente repetir Lighthouse** cuando las imágenes salgan de GCS: el
+rendimiento medido no significa nada mientras 16 de las 51 peticiones de la
+ficha vayan a `picsum.photos`.
+
+
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
 Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código

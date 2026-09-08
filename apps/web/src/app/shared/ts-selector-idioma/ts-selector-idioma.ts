@@ -1,6 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { urlEnOtroIdioma } from '../../core/idioma/idioma.servicio';
@@ -17,10 +15,16 @@ const IDIOMAS = ['es', 'en'] as const;
  * el `<label>` real, el anillo de foco, el objetivo táctil de 44 px y el
  * `min-inline-size: 0` que evita que el texto de la opción más larga ensanche
  * la columna.
+ *
+ * Sin `FormControl`: este componente vive en el encabezado, o sea en todas las
+ * pantallas, y usar un formulario para un `<select>` de dos opciones metía
+ * `@angular/forms` (38,6 kB) en el paquete inicial de todo el sitio. El valor
+ * se ata a la señal del idioma activo y la elección se atiende con `cambio`,
+ * que es lo que el formulario hacía por debajo.
  */
 @Component({
   selector: 'ts-selector-idioma',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsSelect],
+  imports: [TranslocoPipe, TsSelect],
   templateUrl: './ts-selector-idioma.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // `w-fit` y no el ancho disponible: `ts-select` le da a su `<select>`
@@ -38,21 +42,12 @@ export class TsSelectorIdioma {
     etiqueta: idioma.toUpperCase(),
   }));
 
-  protected readonly control = new FormControl(this.transloco.getActiveLang(), { nonNullable: true });
+  // El idioma activo no siempre cambia desde aquí: un enlace con otro prefijo
+  // o el botón de atrás del navegador también lo mueven. El select sigue a la
+  // URL, no al revés — de ahí que el valor se lea de la señal y no se guarde.
+  protected readonly idiomaActivo = computed(() => this.transloco.activeLang());
 
-  constructor() {
-    // El idioma activo no siempre cambia desde aquí: un enlace con otro prefijo
-    // o el botón de atrás del navegador también lo mueven. El select sigue a la
-    // URL, no al revés.
-    effect(() => {
-      const activo = this.transloco.activeLang();
-      if (this.control.value !== activo) {
-        this.control.setValue(activo, { emitEvent: false });
-      }
-    });
-
-    this.control.valueChanges.pipe(takeUntilDestroyed()).subscribe((idioma) => {
-      void this.router.navigateByUrl(urlEnOtroIdioma(this.router.url, idioma));
-    });
+  protected navegarA(idioma: string): void {
+    void this.router.navigateByUrl(urlEnOtroIdioma(this.router.url, idioma));
   }
 }

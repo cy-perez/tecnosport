@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { TsSelectControl } from './ts-select-control';
 import { OpcionSelect, TsSelect } from './ts-select';
 
 @Component({
-  imports: [ReactiveFormsModule, TsSelect],
+  imports: [ReactiveFormsModule, TsSelect, TsSelectControl],
   template: `
     <ts-select
       idCampo="linea"
@@ -24,7 +25,7 @@ class AnfitrionDePrueba {
 }
 
 @Component({
-  imports: [ReactiveFormsModule, TsSelect],
+  imports: [ReactiveFormsModule, TsSelect, TsSelectControl],
   template: `
     <ts-select idCampo="marca" label="Marca" placeholder="Selecciona" [opciones]="opciones()" [formControl]="control" />
   `,
@@ -34,6 +35,9 @@ class AnfitrionConOpcionesTardias {
   readonly opciones = signal<OpcionSelect[]>([]);
 }
 
+// El puente con los formularios vive en `TsSelectControl` y hay que importarlo aparte; sin él,
+// Angular falla en tiempo de ejecución con NG01203 y no en compilación. De ahí que estos
+// anfitriones lo declaren, igual que las pantallas reales.
 describe('TsSelect', () => {
   it('elegir una opción actualiza el FormControl', async () => {
     const { fixture } = await render(AnfitrionDePrueba);
@@ -67,5 +71,39 @@ describe('TsSelect', () => {
     await fixture.whenStable();
 
     expect((screen.getByLabelText('Marca') as HTMLSelectElement).value).toBe('m1');
+  });
+});
+
+// Sin formularios: es como lo usa el encabezado, y es la razón de que `TsSelect` ya no
+// implemente `ControlValueAccessor` — ahí `@angular/forms` no debe ni cargarse.
+describe('TsSelect sin formularios', () => {
+  it('emite la elección del usuario y refleja el valor que le pasan', async () => {
+    const elegido: string[] = [];
+    await render(
+      `<ts-select
+         idCampo="tema"
+         label="Tema"
+         [opciones]="opciones"
+         [valor]="valor"
+         (cambio)="alCambiar($event)"
+       />`,
+      {
+        imports: [TsSelect],
+        componentProperties: {
+          valor: 'oscuro',
+          opciones: [
+            { valor: 'claro', etiqueta: 'Claro' },
+            { valor: 'oscuro', etiqueta: 'Oscuro' },
+          ] as OpcionSelect[],
+          alCambiar: (valor: string) => elegido.push(valor),
+        },
+      },
+    );
+
+    expect((screen.getByLabelText('Tema') as HTMLSelectElement).value).toBe('oscuro');
+
+    fireEvent.change(screen.getByLabelText('Tema'), { target: { value: 'claro' } });
+
+    expect(elegido).toEqual(['claro']);
   });
 });

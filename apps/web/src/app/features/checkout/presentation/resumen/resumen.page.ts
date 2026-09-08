@@ -12,6 +12,7 @@ import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
@@ -45,6 +46,7 @@ interface ValoresDireccion {
     TsEsqueleto,
     TsPrecio,
     TsSelect,
+    TsSelectControl,
     RouterLink,
   ],
   templateUrl: './resumen.page.html',
