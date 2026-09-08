@@ -82,6 +82,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  autorizaDatos: true,
 };
 
 /** Ya con `CheckoutStore.datosEntrega` poblado antes de que `MetodoPagoPage`

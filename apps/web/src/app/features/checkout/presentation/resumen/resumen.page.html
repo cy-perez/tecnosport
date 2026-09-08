@@ -115,6 +115,26 @@
           </fieldset>
         }
 
+        <!--
+          El checkout recoge nombre, dirección, teléfono y correo, así que aquí también hace falta
+          autorización expresa y no solo en el registro (Ley 1581 de 2012). Casilla propia, nunca
+          premarcada, y el enlace a la política al lado y no dentro del <label>, que se pelearía con
+          el objetivo de clic de la casilla.
+        -->
+        <div class="flex flex-col gap-4">
+          <ts-checkbox
+            idCasilla="resumen-autoriza-datos"
+            [etiqueta]="'checkout.resumen.autoriza_datos' | transloco"
+            [marcado]="form.controls.autorizaDatos.value"
+            (marcadoCambio)="form.controls.autorizaDatos.setValue($event)"
+          />
+          <a
+            class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-primario"
+            [routerLink]="['/', idioma(), 'legales', 'privacidad']"
+            >{{ 'checkout.resumen.ver_politica' | transloco }}</a
+          >
+        </div>
+
         <ts-boton variante="primario" tipo="submit">
           {{ 'checkout.resumen.continuar' | transloco }}
         </ts-boton>

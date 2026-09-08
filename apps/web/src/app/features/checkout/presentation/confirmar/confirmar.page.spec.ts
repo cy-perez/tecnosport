@@ -143,6 +143,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  autorizaDatos: true,
 };
 
 /** Mismo motivo que en `metodo-pago.page.spec.ts`: el guardia corre en el
@@ -351,6 +352,7 @@ describe('ConfirmarPage', () => {
       tipoEntrega: 'RETIRO_EN_PUNTO',
       direccion: null,
       metodoPago: 'CONTRAENTREGA',
+      autorizaDatos: true,
     });
     expect(pedidos.llamadasCrear).toBe(1);
 

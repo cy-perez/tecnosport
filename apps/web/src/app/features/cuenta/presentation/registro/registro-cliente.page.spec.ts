@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
@@ -9,12 +11,18 @@ import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-
 import { RegistroClientePage } from './registro-cliente.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
-  llamadasRegistrar: { correo: string; clave: string }[] = [];
+  llamadasRegistrar: { correo: string; clave: string; autorizaDatos: boolean }[] = [];
 
   constructor(private errorAlRegistrar: 'correo-registrado' | 'generico' | null = null) {}
 
-  async registrar(correo: string, clave: string): Promise<void> {
-    this.llamadasRegistrar.push({ correo, clave });
+  /** Lo que de verdad importa comprobar: que la autorización viaja, y no que el servidor la
+   * suponga. Un `true` por omisión en el cliente sería una autorización inventada. */
+  get autorizacionRecibida(): boolean {
+    return this.llamadasRegistrar.at(-1)?.autorizaDatos ?? false;
+  }
+
+  async registrar(correo: string, clave: string, autorizaDatos: boolean): Promise<void> {
+    this.llamadasRegistrar.push({ correo, clave, autorizaDatos });
     if (this.errorAlRegistrar === 'correo-registrado') {
       throw new CorreoYaRegistradoError();
     }
@@ -43,16 +51,24 @@ async function renderPagina(repositorio: RepositorioCuenta) {
         preloadLangs: true,
       }),
     ],
-    providers: [{ provide: REPOSITORIO_CUENTA, useValue: repositorio }],
+    providers: [provideRouter([]), { provide: REPOSITORIO_CUENTA, useValue: repositorio }],
   });
 }
 
-async function llenarYEnviar(clave = 'clave-segura', confirmarClave = 'clave-segura') {
+const ETIQUETA_AUTORIZACION =
+  'Autorizo el tratamiento de mis datos personales para crear mi cuenta.';
+
+function llenarCampos(clave = 'clave-segura', confirmarClave = 'clave-segura') {
   fireEvent.input(screen.getByLabelText('Correo electrónico'), {
     target: { value: 'cliente@tecnosport.co' },
   });
   fireEvent.input(screen.getByLabelText('Clave'), { target: { value: clave } });
   fireEvent.input(screen.getByLabelText('Confirmar clave'), { target: { value: confirmarClave } });
+}
+
+async function llenarYEnviar(clave = 'clave-segura', confirmarClave = 'clave-segura') {
+  llenarCampos(clave, confirmarClave);
+  fireEvent.click(screen.getByLabelText(ETIQUETA_AUTORIZACION));
   fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 }
 
@@ -74,7 +90,7 @@ describe('RegistroClientePage', () => {
     await vi.waitFor(() => expect(repositorio.llamadasRegistrar).toHaveLength(1));
 
     expect(repositorio.llamadasRegistrar).toEqual([
-      { correo: 'cliente@tecnosport.co', clave: 'clave-segura' },
+      { correo: 'cliente@tecnosport.co', clave: 'clave-segura', autorizaDatos: true },
     ]);
     expect(await screen.findByText('Revisa tu correo')).toBeTruthy();
   });
@@ -107,5 +123,39 @@ describe('RegistroClientePage', () => {
     expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(
       true,
     );
+  });
+
+  // La autorización es un consentimiento aparte y sin él no hay cuenta (Ley 1581 de 2012). El
+  // servidor lo exige igual; esto es para que el comprador no llegue hasta el 422.
+  it('sin marcar la autorización de datos, el botón sigue deshabilitado', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
+    llenarCampos();
+
+    expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('la casilla de autorización nunca arranca marcada', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
+
+    const casilla = screen.getByLabelText(ETIQUETA_AUTORIZACION) as HTMLInputElement;
+
+    expect(casilla.checked).toBe(false);
+  });
+
+  it('enlaza la política de tratamiento de datos junto a la casilla', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
+
+    const enlace = screen.getByRole('link', { name: 'Leer la política de tratamiento de datos' });
+
+    expect(enlace.getAttribute('href')).toBe('/es/legales/privacidad');
+  });
+
+  it('manda la autorización al servidor, no la da por supuesta', async () => {
+    const repositorio = new RepositorioCuentaFalso();
+    await renderPagina(repositorio);
+
+    await llenarYEnviar();
+
+    await vi.waitFor(() => expect(repositorio.autorizacionRecibida).toBe(true));
   });
 });

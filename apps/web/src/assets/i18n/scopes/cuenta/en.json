@@ -21,7 +21,9 @@
     "exito_titulo": "Check your email",
     "exito_mensaje": "We sent you a link to verify your account. Open it to be able to sign in.",
     "error_correo_registrado": "An account with that email already exists.",
-    "error_generico": "We couldn't create the account. Try again."
+    "error_generico": "We couldn't create the account. Try again.",
+    "autoriza_datos": "I authorise the processing of my personal data to create my account.",
+    "ver_politica": "Read the personal data policy"
   },
   "verificarCorreo": {
     "titulo": "Verifying your email",
