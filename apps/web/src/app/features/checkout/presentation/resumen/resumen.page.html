@@ -133,6 +133,9 @@
             [routerLink]="['/', idioma(), 'legales', 'privacidad']"
             >{{ 'checkout.resumen.ver_politica' | transloco }}</a
           >
+          @if (errorAutorizacion()) {
+            <p class="m-0 text-sm text-ts-error" role="alert">{{ errorAutorizacion() }}</p>
+          }
         </div>
 
         <ts-boton variante="primario" tipo="submit">

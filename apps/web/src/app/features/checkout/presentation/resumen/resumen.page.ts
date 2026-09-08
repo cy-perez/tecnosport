@@ -131,6 +131,24 @@ export class ResumenPage {
       : this.transloco.translate('checkout.resumen.errores.correo_invalido');
   });
 
+  /**
+   * Sin esto, quien no marca la casilla pulsa «Continuar» y no pasa absolutamente nada: el
+   * formulario es inválido, `enviar()` marca todo como tocado y vuelve, pero la casilla no tenía
+   * dónde mostrar su error. Lo encontró el recorrido de Playwright, no las pruebas unitarias —esas
+   * comprobaban que no se guardara el borrador, que es cierto, pero no que se le dijera al
+   * comprador por qué.
+   */
+  private readonly tickAutorizacion = toSignal(this.form.controls.autorizaDatos.events, {
+    initialValue: null,
+  });
+  protected readonly errorAutorizacion = computed(() => {
+    this.tickAutorizacion();
+    const control = this.form.controls.autorizaDatos;
+    return control.touched && control.invalid
+      ? this.transloco.translate('checkout.resumen.errores.autorizacion_requerida')
+      : null;
+  });
+
   private readonly tickDepartamento = toSignal(
     this.form.controls.direccion.controls.codigoDaneDepartamento.events,
     { initialValue: null },
