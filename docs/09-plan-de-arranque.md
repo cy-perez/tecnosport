@@ -164,7 +164,10 @@ compromiso — eso llega con el pedido en la Fase 3.
 ## Fase 3. Checkout, envío y pago
 
 El envío no se cotiza: es un costo estándar ya incluido en el precio publicado
-de cada producto, igual en todo el país, según `adr/0012`. Creación de pedido
+de cada producto, igual en todo el país, según `adr/0012`. **Esto se construyó
+así y dejó de ser cierto el 8 de septiembre de 2026** — `adr/0021` volvió a la
+cotización por destino; ver la Fase 7. El párrafo se conserva porque describe lo
+que esta fase hizo, no lo que el sistema hace hoy. Creación de pedido
 con revalidación de precios y existencias. Wompi con firma de integridad,
 webhook firmado, idempotencia y conciliación programada. Transferencia manual.
 Correos transaccionales.
@@ -2426,6 +2429,73 @@ Dos hallazgos que sí son reales e independientes de la siembra:
   registra como error. Funcionalmente es correcto —no hay cookie de refresco que
   usar— pero deja ruido en la consola de todos los visitantes y Lighthouse lo
   cuenta.
+
+## Fase 7. Envío cotizado con Skydropx y seguimiento
+
+Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código
+todavía**. Cambia una premisa que llevaba desde la Fase 3: el precio publicado
+deja de incluir el envío. Lo que la sostiene: `ADR-0021` (cotización),
+`ADR-0022` (seguimiento), `ADR-0023` (recaudo por Skydropx),
+`docs/11-pagos-y-envios.md` y `docs/12-legales-de-envio.md`.
+
+**Lo verificado antes de decidir, no supuesto** (regla dura #9, y en este
+proyecto ya costó una sesión creer un vector de firma inventado): la API de
+Skydropx usa OAuth 2.0 con client credentials, token de 2 horas y límite de 2
+peticiones por segundo; la **cotización es asíncrona** (`POST /quotations`, luego
+`GET /quotations/{id}` hasta `is_completed`, tarifas válidas 24 horas); el envío
+se crea con `quotation_id` más `rate_id`; y los estados de seguimiento son los
+doce que lista `ADR-0022`. Lo que **no** se pudo confirmar en fuente oficial y
+queda como `TODO`: el host base de la cuenta colombiana, el nombre exacto de la
+cabecera de firma del webhook, y los límites y comisiones del recaudo.
+
+Orden de construcción, un caso de uso a la vez:
+
+1. **Paquete por variante.** `peso_gramos`, `largo_cm`, `ancho_cm`, `alto_cm`
+   como columnas obligatorias, invariante de dominio, y el panel pidiéndolos al
+   crear una variante. Migración con relleno del catálogo sembrado — **el peso
+   real no se inventa** (`docs/02-modelo-datos.md`).
+2. **Puerto `CotizadorEnvio` y `SkydropxClient`.** Con el token cacheado, el
+   sondeo acotado por tiempo e intentos, y una prueba que ejercite la cotización
+   que **nunca** completa. Aquí entran también las variables `SKYDROPX_*` y
+   `ORIGEN_*` en `.env.example` y en las propiedades tipadas: hoy están
+   documentadas en `docs/07-infra-gcp.md` y no existen en ningún archivo.
+3. **`POST /api/v1/envios/cotizacion`**, con `409 ENVIO_SIN_COBERTURA` como caso
+   de negocio y no como error de sistema.
+4. **Totales del pedido.** `Pedido` gana el costo de envío y la tarifa congelada;
+   `Pedido.total()` pasa a ser líneas más envío, y su Javadoc actual —"el envío no
+   se agrega: ya está en cada precio unitario"— muere con el cambio.
+5. **Checkout.** Cotización en el paso de dirección, línea de envío y total en el
+   resumen, ahorro visible en la recogida, y el aviso de efectivo en
+   contraentrega. Las claves de i18n están redactadas en
+   `docs/12-legales-de-envio.md`, sección 3.
+6. **Contraentrega desde la cotización** (`ADR-0023`): retirar
+   `cobertura_contraentrega` y sus endpoints, y que `MetodosDePagoDisponibles`
+   dependa de la tarifa con recaudo.
+7. **Guía en el despacho** y **seguimiento**: webhook firmado, eventos
+   `append-only`, `TareaConciliacionEnvios`, y el DTO público de seguimiento
+   **reducido** — hoy expone el costo real del flete y la comisión de recaudo, que
+   es el hallazgo 3 de `docs/12-legales-de-envio.md` y es un bug de hoy, no del
+   cambio.
+8. **Textos legales**, en el mismo commit que enciende la cotización, con la
+   fecha de versión nueva.
+
+**Los tres hallazgos que la auditoría legal dejó por escrito** y que no se pueden
+perder de vista al construir:
+
+- El resumen del checkout muestra hoy solo "Subtotal", sin total ni envío: con
+  flete aparte, eso incumple el **artículo 50 de la Ley 1480 de 2011**, que exige
+  el resumen con los costos de envío separados y la suma total antes de finalizar
+  la transacción.
+- `GET /api/v1/pedidos/{id}/seguimiento` devuelve el `Envio` completo, con el
+  costo real y la comisión de recaudo, a quien tenga el id y el correo.
+- "Retiro en punto (Medellín, sin costo)" hoy engaña, porque el flete va embebido
+  en el precio y recoger no ahorra nada. Con la cotización se vuelve cierto.
+
+**Datos de negocio pendientes que bloquean partes de la fase**, todos en la
+sección 4 de `docs/12-legales-de-envio.md`: el IVA del flete, los límites y la
+comisión del recaudo, la entidad con la que se firma con Skydropx, el plazo de
+entrega real, el peso y las dimensiones del catálogo sembrado, y la dirección y
+el horario del punto de recogida.
 
 ## Cómo conversar con Claude Code en este proyecto
 
