@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
@@ -157,5 +158,12 @@ describe('RegistroClientePage', () => {
     await llenarYEnviar();
 
     await vi.waitFor(() => expect(repositorio.autorizacionRecibida).toBe(true));
+  });
+
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    const { container } = await renderPagina(new RepositorioCuentaFalso());
+    await screen.findByLabelText('Correo electrónico');
+
+    await esperarSinViolaciones(container);
   });
 });

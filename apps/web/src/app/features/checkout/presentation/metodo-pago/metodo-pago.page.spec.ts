@@ -3,6 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
@@ -187,5 +188,19 @@ describe('MetodoPagoPage', () => {
 
     expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false);
     expect(checkout.metodoPago()).toBe('CONTRAENTREGA');
+  });
+
+  // Los métodos de pago son botones que se seleccionan: el estado elegido tiene que llegarle a un
+  // lector de pantalla, no solo verse.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { container } = await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+    );
+    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+
+    await esperarSinViolaciones(container);
   });
 });

@@ -1,6 +1,7 @@
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { render, screen } from '@testing-library/angular';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 import { of } from 'rxjs';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
@@ -84,4 +85,15 @@ describe('DocumentoLegalPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Cookie policy' })).toBeTruthy();
   });
+
+  // Son las páginas que más texto largo tienen del sitio, y las que alguien va a leer con lector
+  // de pantalla justo cuando tiene un problema con una compra.
+  it.each([['privacidad' as Documento], ['terminos' as Documento], ['cookies' as Documento]])(
+    'la página de %s no tiene violaciones de WCAG 2.2 AA',
+    async (documento) => {
+      const { container } = await renderDocumento(documento);
+
+      await esperarSinViolaciones(container);
+    },
+  );
 });
