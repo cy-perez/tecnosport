@@ -23,6 +23,8 @@ import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
 import co.tecnosport.api.presentation.usuario.dto.SesionRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.SolicitarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.VerificarCorreoRequest;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Objects;
@@ -130,9 +132,24 @@ public class AutenticacionControlador {
     return respuestaConCookie(tokens);
   }
 
+  // 204 y no 401 cuando NO llega la cookie: quien nunca inició sesión no está fallando la
+  // autenticación, es que no hay ninguna sesión que refrescar, y el frontend pregunta en cada
+  // arranque justo porque no puede saberlo (la cookie es HttpOnly). Con 401, el navegador de
+  // todo visitante anónimo registraba un error en la consola en cada visita — Lighthouse lo
+  // contaba en «buenas prácticas» y ensuciaba la consola de cualquiera que abriera DevTools.
+  // Una cookie que SÍ llega pero no sirve —basura, vencida, ya usada— sigue siendo 401: ahí
+  // pasó algo.
   @PostMapping("/refresco")
+  @ApiResponse(responseCode = "200", description = "Sesión refrescada")
+  @ApiResponse(
+      responseCode = "204",
+      description = "No hay cookie de refresco: no hay sesión que refrescar",
+      content = @Content)
   public ResponseEntity<SesionRespuesta> refrescar(
       @CookieValue(name = COOKIE_REFRESCO, required = false) String cookieRefresco) {
+    if (cookieRefresco == null || cookieRefresco.isBlank()) {
+      return ResponseEntity.noContent().build();
+    }
     UUID refreshTokenId = idObligatorioDesdeCookie(cookieRefresco);
     TokensDeSesion tokens =
         transaccion.execute(

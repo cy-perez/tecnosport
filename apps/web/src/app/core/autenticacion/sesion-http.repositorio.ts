@@ -33,12 +33,21 @@ export class SesionHttpRepositorio implements RepositorioSesion {
     return aSesion(data);
   }
 
+  /**
+   * `204` es la respuesta normal de una visita anónima: no llegó cookie de refresco, así que no
+   * hay sesión que refrescar. El servidor la distingue a propósito del `401` —cookie que llega
+   * pero no sirve— porque el navegador registra en la consola todo 4xx de una petición, y esta
+   * sale en cada primera carga de cualquier visitante.
+   */
   async refrescar(): Promise<Sesion | null> {
     const { data, error, response } = await this.cliente.POST('/api/v1/auth/refresco');
-    if (response.status === 401) {
+    if (response.status === 204 || response.status === 401) {
       return null;
     }
-    if (error) {
+    // `!response.ok` y no `error`: `error` solo llega cuando el fallo trae cuerpo JSON, y un 500
+    // del balanceador puede venir vacío o en HTML. Fiándose de `error`, ese caso se colaba hasta
+    // `aSesion(undefined)` y el llamador recibía un TypeError en vez de este mensaje.
+    if (!response.ok || error || !data) {
       throw new Error('No se pudo refrescar la sesión.');
     }
     return aSesion(data);
