@@ -11,6 +11,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
+import { MetadatosPagina } from '../../../../core/seo/metadatos.model';
+import { resumirDescripcion } from '../../../../core/seo/resumen-descripcion';
+import { usarMetadatos } from '../../../../core/seo/usar-metadatos';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
@@ -108,7 +111,44 @@ export class FichaPage {
    */
   private readonly slugCargado = computed(() => this.producto()?.slug ?? null);
 
+  /**
+   * La única pantalla del sitio cuyo título y descripción salen de datos y no de
+   * la ruta. Devuelve `null` mientras no hay producto —cargando, o slug que no
+   * existe— y en ese rato manda el título genérico que declara `catalogo.routes.ts`.
+   */
+  private readonly metadatos = computed<MetadatosPagina | null>(() => {
+    const producto = this.producto();
+    if (!producto) {
+      return null;
+    }
+    const traducir = this.traducir();
+    return {
+      titulo: traducir('catalogo.seo.ficha.titulo_con_nombre', { nombre: producto.nombre }),
+      // `descripcion` es `not null default ''` en la base: un producto sin
+      // descripción no es un error, es lo que hay hasta que alguien la escriba —
+      // toda la siembra está así. Sin respaldo, esas fichas salen sin
+      // `meta description` y el buscador se inventa el fragmento recortando la
+      // página, que casi siempre queda peor. El respaldo no inventa nada: es una
+      // plantilla traducida rellenada con el nombre y la marca reales.
+      descripcion:
+        resumirDescripcion(producto.descripcion) ||
+        traducir('catalogo.seo.ficha.descripcion_respaldo', {
+          nombre: producto.nombre,
+          marca: producto.marca.nombre,
+        }),
+      indexable: true,
+      // `imagen.url` y no `urlPreferida(imagen)`: la regla de servir WebP con el
+      // original de respaldo (apps/web/CLAUDE.md) vale para el `<img>` del
+      // navegador, que negocia el formato. Aquí quien lee la URL es el
+      // previsualizador de WhatsApp o de Facebook, que no negocia nada y con
+      // WebP muchas veces no muestra imagen. El original es el que siempre se ve.
+      imagen: producto.imagenPrincipal?.url,
+    };
+  });
+
   constructor() {
+    usarMetadatos(() => this.metadatos());
+
     // Reinicia la selección a la variante por defecto solo al cargar otro producto (primer render,
     // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor.
     effect(() => {

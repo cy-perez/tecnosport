@@ -330,5 +330,19 @@
         ]
       }
     ]
+  },
+  "seo": {
+    "terminos": {
+      "titulo": "Términos y condiciones · Tecno Sport",
+      "descripcion": "Condiciones de compra en tecnosport.co: precios, pago, envío, entrega, derecho de retracto, garantía legal y devoluciones."
+    },
+    "privacidad": {
+      "titulo": "Política de tratamiento de datos personales · Tecno Sport",
+      "descripcion": "Qué datos personales recogemos, para qué los usamos, con quién los compartimos y cómo ejercer tus derechos, conforme a la Ley 1581 de 2012."
+    },
+    "cookies": {
+      "titulo": "Política de cookies · Tecno Sport",
+      "descripcion": "Qué cookies usa tecnosport.co, para qué sirven y cómo controlarlas desde tu navegador."
+    }
   }
 }

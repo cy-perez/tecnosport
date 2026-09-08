@@ -8,6 +8,8 @@ import enCatalogo from '../../../assets/i18n/scopes/catalogo/en.json';
 import esCatalogo from '../../../assets/i18n/scopes/catalogo/es.json';
 import enCheckout from '../../../assets/i18n/scopes/checkout/en.json';
 import esCheckout from '../../../assets/i18n/scopes/checkout/es.json';
+import enCaptura360 from '../../../assets/i18n/scopes/captura360/en.json';
+import esCaptura360 from '../../../assets/i18n/scopes/captura360/es.json';
 import enCuenta from '../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../assets/i18n/scopes/cuenta/es.json';
 
@@ -47,5 +49,19 @@ describe('claves de i18n', () => {
 
   it('el scope cuenta tiene las mismas claves en los dos idiomas', () => {
     expect(clavesOrdenadas(esCuenta)).toEqual(clavesOrdenadas(enCuenta));
+  });
+
+  // `legales` y `captura360` faltaban desde que se crearon: la regla dice
+  // "es.json y en.json tienen exactamente las mismas claves", y un scope que
+  // nadie compara es un scope donde una clave se puede quedar sin traducir sin
+  // que nada avise. Se notó al agregarles los metadatos de SEO.
+  //
+  // `legales` todavía no está aquí, y no por olvido: al agregarlo falla, porque
+  // `comun.traduccion_cortesia` —"la versión en español es la que rige"— existe
+  // solo en inglés y además ninguna plantilla la muestra. Taparlo escribiendo a
+  // mano la frase en español sería redactar texto legal a mano; se arregla en su
+  // propio commit, y esa prueba entra con él.
+  it('el scope captura360 tiene las mismas claves en los dos idiomas', () => {
+    expect(clavesOrdenadas(esCaptura360)).toEqual(clavesOrdenadas(enCaptura360));
   });
 });

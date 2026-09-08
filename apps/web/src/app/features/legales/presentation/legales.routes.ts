@@ -19,17 +19,26 @@ export const legalesRoutes: Routes = [
     children: [
       {
         path: 'privacidad',
-        data: { documento: 'privacidad' },
+        data: {
+          documento: 'privacidad',
+          seo: { clave: 'legales.seo.privacidad', indexable: true },
+        },
         loadComponent: () => import('./documento/documento-legal.page').then((m) => m.DocumentoLegalPage),
       },
       {
         path: 'terminos',
-        data: { documento: 'terminos' },
+        data: {
+          documento: 'terminos',
+          seo: { clave: 'legales.seo.terminos', indexable: true },
+        },
         loadComponent: () => import('./documento/documento-legal.page').then((m) => m.DocumentoLegalPage),
       },
       {
         path: 'cookies',
-        data: { documento: 'cookies' },
+        data: {
+          documento: 'cookies',
+          seo: { clave: 'legales.seo.cookies', indexable: true },
+        },
         loadComponent: () => import('./documento/documento-legal.page').then((m) => m.DocumentoLegalPage),
       },
       { path: '', pathMatch: 'full', redirectTo: 'terminos' },

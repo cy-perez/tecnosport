@@ -21,6 +21,7 @@ export const cuentaRoutes: Routes = [
     children: [
       {
         path: 'iniciar-sesion',
+        data: { seo: { clave: 'seo.cuenta.iniciar_sesion' } },
         loadComponent: () =>
           import('./iniciar-sesion/iniciar-sesion-cliente.page').then(
             (m) => m.IniciarSesionClientePage,
@@ -28,21 +29,25 @@ export const cuentaRoutes: Routes = [
       },
       {
         path: 'registro',
+        data: { seo: { clave: 'seo.cuenta.registro' } },
         loadComponent: () =>
           import('./registro/registro-cliente.page').then((m) => m.RegistroClientePage),
       },
       {
         path: 'verificar-correo',
+        data: { seo: { clave: 'seo.cuenta.verificar_correo' } },
         loadComponent: () =>
           import('./verificar-correo/verificar-correo.page').then((m) => m.VerificarCorreoPage),
       },
       {
         path: 'recuperar-clave',
+        data: { seo: { clave: 'seo.cuenta.recuperar_clave' } },
         loadComponent: () =>
           import('./recuperar-clave/recuperar-clave.page').then((m) => m.RecuperarClavePage),
       },
       {
         path: 'restablecer-clave',
+        data: { seo: { clave: 'seo.cuenta.restablecer_clave' } },
         loadComponent: () =>
           import('./restablecer-clave/restablecer-clave.page').then((m) => m.RestablecerClavePage),
       },

@@ -34,5 +34,16 @@
     "no_encontrado": "We couldn't find this product.",
     "error": "We couldn't load this product. Please try again.",
     "combinacion_no_disponible": "This combination is not available."
+  },
+  "seo": {
+    "rejilla": {
+      "titulo": "Catalog · Tecno Sport",
+      "descripcion": "Sportswear, footwear, bags and phones. Filter by line, category, brand and price, and buy with shipping across Colombia."
+    },
+    "ficha": {
+      "titulo": "Product · Tecno Sport",
+      "titulo_con_nombre": "{{nombre}} · Tecno Sport",
+      "descripcion_respaldo": "{{nombre}} by {{marca}}. Buy it online at Tecno Sport, with shipping across Colombia and online payment or cash on delivery."
+    }
   }
 }

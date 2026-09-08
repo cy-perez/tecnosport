@@ -4,8 +4,7 @@
     "version": "2026-09-07",
     "vigencia": "In force since 7 September 2026.",
     "otros_documentos": "Other legal documents",
-    "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
-    "traduccion_cortesia": "This is a courtesy translation. These documents are governed by Colombian law and the Spanish version is the one that governs; in case of any discrepancy, the Spanish text prevails."
+    "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia."
   },
   "nav": {
     "privacidad": "Personal data policy",
@@ -331,5 +330,19 @@
         ]
       }
     ]
+  },
+  "seo": {
+    "terminos": {
+      "titulo": "Terms and conditions · Tecno Sport",
+      "descripcion": "Purchase conditions at tecnosport.co: prices, payment, shipping, delivery, right of withdrawal, legal warranty and returns."
+    },
+    "privacidad": {
+      "titulo": "Personal data processing policy · Tecno Sport",
+      "descripcion": "What personal data we collect, what we use it for, who we share it with and how to exercise your rights, under Colombian Law 1581 of 2012."
+    },
+    "cookies": {
+      "titulo": "Cookie policy · Tecno Sport",
+      "descripcion": "Which cookies tecnosport.co uses, what they are for and how to control them from your browser."
+    }
   }
 }

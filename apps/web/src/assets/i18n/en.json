@@ -73,5 +73,57 @@
     "girar_izquierda": "Turn left",
     "girar_derecha": "Turn right",
     "posicion": "Frame {{actual}} of {{total}}"
+  },
+  "seo": {
+    "portada": {
+      "titulo": "Tecno Sport · Sportswear, footwear, bags and phones",
+      "descripcion": "Online store for sportswear, footwear, bags and phones. Nationwide shipping across Colombia from Medellín, with online payment or cash on delivery."
+    },
+    "carrito": {
+      "titulo": "Cart · Tecno Sport"
+    },
+    "checkout": {
+      "resumen": {
+        "titulo": "Order summary · Tecno Sport"
+      },
+      "metodo_pago": {
+        "titulo": "Payment method · Tecno Sport"
+      },
+      "confirmar": {
+        "titulo": "Confirm order · Tecno Sport"
+      },
+      "retorno_wompi": {
+        "titulo": "Processing your payment · Tecno Sport"
+      },
+      "estado": {
+        "titulo": "Order status · Tecno Sport"
+      },
+      "transferencia": {
+        "titulo": "Bank transfer payment · Tecno Sport"
+      }
+    },
+    "cuenta": {
+      "iniciar_sesion": {
+        "titulo": "Sign in · Tecno Sport"
+      },
+      "registro": {
+        "titulo": "Create account · Tecno Sport"
+      },
+      "verificar_correo": {
+        "titulo": "Verifying your email · Tecno Sport"
+      },
+      "recuperar_clave": {
+        "titulo": "Recover password · Tecno Sport"
+      },
+      "restablecer_clave": {
+        "titulo": "Choose a new password · Tecno Sport"
+      }
+    },
+    "admin": {
+      "titulo": "Admin panel · Tecno Sport"
+    },
+    "captura360": {
+      "titulo": "360 capture · Tecno Sport"
+    }
   }
 }

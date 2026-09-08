@@ -19,26 +19,32 @@ export const checkoutRoutes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'resumen' },
       {
         path: 'resumen',
+        data: { seo: { clave: 'seo.checkout.resumen' } },
         loadComponent: () => import('./resumen/resumen.page').then((m) => m.ResumenPage),
       },
       {
         path: 'metodo-pago',
+        data: { seo: { clave: 'seo.checkout.metodo_pago' } },
         loadComponent: () => import('./metodo-pago/metodo-pago.page').then((m) => m.MetodoPagoPage),
       },
       {
         path: 'confirmar',
+        data: { seo: { clave: 'seo.checkout.confirmar' } },
         loadComponent: () => import('./confirmar/confirmar.page').then((m) => m.ConfirmarPage),
       },
       {
         path: 'retorno-wompi',
+        data: { seo: { clave: 'seo.checkout.retorno_wompi' } },
         loadComponent: () => import('./retorno-wompi/retorno-wompi.page').then((m) => m.RetornoWompiPage),
       },
       {
         path: 'estado',
+        data: { seo: { clave: 'seo.checkout.estado' } },
         loadComponent: () => import('./estado/estado.page').then((m) => m.EstadoPage),
       },
       {
         path: 'transferencia',
+        data: { seo: { clave: 'seo.checkout.transferencia' } },
         loadComponent: () => import('./transferencia/transferencia.page').then((m) => m.TransferenciaPage),
       },
     ],
