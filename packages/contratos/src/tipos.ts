@@ -825,34 +825,6 @@ export interface components {
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRequest"];
         };
-        JsonNode: {
-            array?: boolean;
-            empty?: boolean;
-            null?: boolean;
-            float?: boolean;
-            number?: boolean;
-            floatingPointNumber?: boolean;
-            long?: boolean;
-            pojo?: boolean;
-            short?: boolean;
-            double?: boolean;
-            string?: boolean;
-            object?: boolean;
-            int?: boolean;
-            boolean?: boolean;
-            binary?: boolean;
-            /** @deprecated */
-            textual?: boolean;
-            /** @enum {string} */
-            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            integralNumber?: boolean;
-            bigInteger?: boolean;
-            missingNode?: boolean;
-            valueNode?: boolean;
-            container?: boolean;
-            bigDecimal?: boolean;
-            embeddedValue?: boolean;
-        };
         CrearIntentoDePagoRequest: {
             /** Format: uuid */
             pedidoId?: string;
@@ -1244,9 +1216,12 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        /** @description Evento de Wompi, tal como lo envía la pasarela. Se valida por firma. */
         requestBody: {
             content: {
-                "application/json": components["schemas"]["JsonNode"];
+                "application/json": {
+                    [key: string]: unknown;
+                };
             };
         };
         responses: {

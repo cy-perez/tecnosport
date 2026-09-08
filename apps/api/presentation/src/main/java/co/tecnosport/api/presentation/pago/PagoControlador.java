@@ -11,6 +11,8 @@ import co.tecnosport.api.application.pago.ResultadoEventoDePago;
 import co.tecnosport.api.presentation.pago.dto.CrearIntentoDePagoRequest;
 import co.tecnosport.api.presentation.pago.dto.IntentoDePagoRespuesta;
 import co.tecnosport.api.presentation.pago.dto.RegistrarIdTransaccionWompiRequest;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +81,23 @@ public class PagoControlador {
     transaccion.executeWithoutResult(estado -> registrarIdTransaccionWompi.ejecutar(comando));
   }
 
+  // El cuerpo se recibe como JsonNode porque la firma se calcula sobre el evento tal como llega
+  // y su forma la decide Wompi, no nosotros. Pero springdoc, al ver el tipo, publicaba la clase
+  // de Jackson entera en el contrato: treinta y pico de propiedades booleanas (`isArray`,
+  // `isBigDecimal`, `nodeType`...) que no describen nada del evento **y que salen en orden
+  // distinto en cada arranque**, porque vienen de reflexión sobre los métodos de la clase. Eso
+  // convertía cada regeneración de `packages/contratos/src/tipos.ts` en un diff falso, y con un
+  // guardián de deriva de contratos en integración continua habría sido un rojo permanente.
+  // Declarado como objeto libre: es lo que de verdad es.
   @PostMapping("/webhook")
+  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+      description = "Evento de Wompi, tal como lo envía la pasarela. Se valida por firma.",
+      content =
+          @Content(
+              schema =
+                  @Schema(
+                      type = "object",
+                      additionalProperties = Schema.AdditionalPropertiesValue.TRUE)))
   public ResponseEntity<Void> webhook(@RequestBody JsonNode cuerpo) {
     if (!LectorEventoWompi.esActualizacionDeTransaccion(cuerpo)) {
       return ResponseEntity.ok().build();
