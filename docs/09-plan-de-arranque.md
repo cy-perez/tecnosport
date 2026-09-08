@@ -2545,15 +2545,42 @@ y en cada merge a `main`. Medido en la primera corrida real: **web 82 s, api
 `npm run contrastes` pasó a correr dentro de `verificar`: 1,1 s, y hasta ahora
 solo se ejecutaba si alguien se acordaba.
 
-#### Etapa 2: los dos guardianes que faltan
+#### Etapa 2, cerrada: los dos guardianes que faltaban
 
-- **Deriva del contrato**: levantar PostgreSQL y `bootRun` en el ejecutor,
-  regenerar `packages/contratos/src/tipos.ts` y fallar si el diff no está vacío.
-  Atrapa lo que hoy depende de la memoria: cambiar el backend y olvidar
-  regenerar el contrato.
-- **Playwright**: necesita los tres servicios arriba y hay que resolver el
-  `channel: 'chrome'` del config en el ejecutor. No en cada pull request — solo
-  en `main` o a demanda.
+**Deriva del contrato.** Trabajo nuevo en cada pull request: levanta PostgreSQL
+y `bootRun`, regenera `packages/contratos/src/tipos.ts` y falla si el diff no
+queda vacío. **60 s.** Atrapa lo que hasta ahora dependía de acordarse —cambiar
+un DTO del backend y no regenerar el cliente—, que no se nota hasta que el
+frontend usa un campo que ya no existe. Comprobado que dispara: cambiando una
+descripción del OpenAPI sin regenerar, el trabajo falla, dice qué comando corregir
+y **imprime la línea del diff**; los otros dos siguen verdes.
+
+**Para que fuera posible hubo que arreglar un defecto del contrato público.** El
+webhook de Wompi recibe `JsonNode` —la firma se calcula sobre el evento tal como
+llega y su forma la decide la pasarela—, y springdoc, al ver el tipo, publicaba
+la clase de Jackson entera en el OpenAPI: treinta y pico de propiedades booleanas
+(`isArray`, `isBigDecimal`, `nodeType`) que no describen nada del evento y que se
+llevaba cualquier cliente nuestro, incluida la app móvil que viene. Y salían **en
+orden distinto en cada arranque**, porque vienen de reflexión sobre los métodos de
+la clase: cada `npm run contratos` producía un diff falso, así que el guardián
+habría nacido en rojo permanente. Declarado como objeto libre, que es lo que es;
+verificado que dos generaciones seguidas dan un archivo idéntico byte a byte.
+
+**Recorridos.** Flujo aparte (`recorridos`), con los tres servicios levantados por
+él mismo y el mismo canal de Chrome que pide el config —para que CI y la máquina
+de desarrollo prueben contra el mismo navegador—, guardando trazas y registros
+cuando algo falla. Corre al mezclar a `main` y a demanda desde Actions. Se probó
+antes de mezclarlo, activándolo temporalmente en el pull request: **128 s**, en
+verde, los dos recorridos.
+
+Esos 128 s dejan la decisión de "no en cada pull request" apoyada en un solo
+argumento, y conviene que quede escrito cuál: **ya no es el costo** —corre en
+paralelo con un trabajo de 207 s, o sea que no añade reloj—, es que una prueba de
+navegador que falle por azar bloquearía todos los merges. Si se estabiliza, pasar
+a `pull_request` es una línea.
+
+Tiempos de la etapa, medidos: `web` 84 s, `contrato` 60 s, `api` 207 s,
+`recorridos` 128 s.
 
 #### Etapa 3: un ambiente `dev` en línea, y gratis
 
