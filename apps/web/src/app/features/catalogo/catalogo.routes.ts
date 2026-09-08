@@ -30,6 +30,11 @@ export const catalogoRoutes: Routes = [
       {
         path: '',
         pathMatch: 'full',
+        // La portada es la única pantalla cuyos metadatos viven en el paquete
+        // raíz de i18n y no en el scope `catalogo`: es la que sirve `/es` y
+        // `/en`, la primera que ve un rastreador, y su título no puede depender
+        // de que un scope perezoso haya llegado a tiempo.
+        data: { seo: { clave: 'seo.portada', indexable: true } },
         resolve: {
           _precarga: () =>
             Promise.all([precargarProductos(FILTRO_NOVEDADES), precargarScopeI18n('catalogo')]),
@@ -42,6 +47,7 @@ export const catalogoRoutes: Routes = [
         children: [
           {
             path: '',
+            data: { seo: { clave: 'catalogo.seo.rejilla', indexable: true } },
             // resolve, no solo loadComponent: calienta la caché de TanStack
             // Query antes de crear el componente, para que el SSR sea
             // determinista — con los mismos query params que va a leer la
@@ -67,6 +73,21 @@ export const catalogoRoutes: Routes = [
             // provideTranslocoScope('carrito') aquí, no arriba con el resto de catalogo: la
             // ficha es la única página de catalogo que usa el botón "agregar al carrito".
             providers: [provideTranslocoScope('carrito')],
+            // Título genérico, no el que lleva `{{nombre}}`: este es el respaldo
+            // para cuando no hay producto con qué rellenarlo —el slug no existe,
+            // o la consulta falló— y una pestaña que dijera "{{nombre}} · Tecno
+            // Sport" sería peor que una que dice "Producto". El título de verdad
+            // lo pone la ficha con `usarMetadatos()` en cuanto llega el producto.
+            //
+            // Y **sin indexar**, aunque la ficha con producto sí se indexe. Un
+            // slug inventado no da 404: el router lo acepta, la consulta falla y
+            // la página responde 200 diciendo "No encontramos este producto".
+            // Eso es un *soft 404*, y marcarlo indexable aquí invitaría a Google
+            // a guardar una URL basura por cada enlace roto que alguien publique.
+            // La ficha que sí cargó su producto declara `indexable: true` por su
+            // cuenta y pisa este valor, que es exactamente el orden correcto:
+            // se indexa lo que existe, no lo que la ruta admite.
+            data: { seo: { clave: 'catalogo.seo.ficha' } },
             resolve: {
               _precarga: (route: ActivatedRouteSnapshot) =>
                 Promise.all([

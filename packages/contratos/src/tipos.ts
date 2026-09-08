@@ -596,6 +596,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/mapa-del-sitio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/envios/cobertura": {
         parameters: {
             query?: never;
@@ -635,7 +651,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["ver_1"];
+        get: operations["ver_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -718,6 +734,7 @@ export interface components {
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRequest"];
             metodoPago?: string;
+            autorizaDatos?: boolean;
         };
         DireccionRequest: {
             codigoDaneDepartamento?: string;
@@ -816,24 +833,24 @@ export interface components {
             number?: boolean;
             missingNode?: boolean;
             integralNumber?: boolean;
-            container?: boolean;
-            bigInteger?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            valueNode?: boolean;
+            container?: boolean;
             bigDecimal?: boolean;
+            bigInteger?: boolean;
+            valueNode?: boolean;
             floatingPointNumber?: boolean;
-            boolean?: boolean;
             double?: boolean;
-            short?: boolean;
-            binary?: boolean;
             int?: boolean;
-            string?: boolean;
-            long?: boolean;
-            object?: boolean;
             pojo?: boolean;
+            binary?: boolean;
+            long?: boolean;
             /** @deprecated */
             textual?: boolean;
+            boolean?: boolean;
+            short?: boolean;
+            object?: boolean;
+            string?: boolean;
             embeddedValue?: boolean;
         };
         CrearIntentoDePagoRequest: {
@@ -886,6 +903,7 @@ export interface components {
         RegistrarUsuarioRequest: {
             correo?: string;
             clave?: string;
+            autorizaDatos?: boolean;
         };
         SolicitarRecuperacionRequest: {
             correo?: string;
@@ -1098,6 +1116,14 @@ export interface components {
         ResultadoPaginadoRespuestaMarcaRespuesta: {
             items?: components["schemas"]["MarcaRespuesta"][];
             cursorSiguiente?: string;
+        };
+        MapaDelSitioRespuesta: {
+            productos?: components["schemas"]["Producto"][];
+        };
+        Producto: {
+            slug?: string;
+            /** Format: date-time */
+            actualizadoEn?: string;
         };
         ResultadoPaginadoRespuestaCategoriaRespuesta: {
             items?: components["schemas"]["CategoriaRespuesta"][];
@@ -2086,6 +2112,26 @@ export interface operations {
             };
         };
     };
+    ver_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MapaDelSitioRespuesta"];
+                };
+            };
+        };
+    };
     listar_2: {
         parameters: {
             query?: never;
@@ -2126,7 +2172,7 @@ export interface operations {
             };
         };
     };
-    ver_1: {
+    ver_2: {
         parameters: {
             query?: never;
             header?: never;

@@ -1,5 +1,11 @@
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import { ApplicationConfig, isDevMode, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  isDevMode,
+  provideBrowserGlobalErrorListeners,
+  provideEnvironmentInitializer,
+} from '@angular/core';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -18,12 +24,18 @@ import { REPOSITORIO_PAGOS } from './features/checkout/domain/repositorio-pagos.
 import { REPOSITORIO_PEDIDOS } from './features/checkout/domain/repositorio-pedidos.puerto';
 import { PagoHttpRepositorio } from './features/checkout/infrastructure/pago-http.repositorio';
 import { PedidoHttpRepositorio } from './features/checkout/infrastructure/pedido-http.repositorio';
+import { MetadatosSeo } from './core/seo/metadatos.servicio';
 import { TranslocoHttpLoader } from './transloco-loader';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
+    // Un inicializador de entorno y no el constructor de `App`: corre antes de
+    // la primera navegación, y suscribirse después de ella dejaría sin
+    // metadatos justo a la pantalla que sirve el SSR — la única que ve un
+    // rastreador que no ejecuta JavaScript.
+    provideEnvironmentInitializer(() => inject(MetadatosSeo).escuchar()),
     provideClientHydration(),
     provideHttpClient(withFetch()),
     // Sin hidratación SSR del estado de la consulta todavía: la rejilla

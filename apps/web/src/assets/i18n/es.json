@@ -73,5 +73,57 @@
     "girar_izquierda": "Girar a la izquierda",
     "girar_derecha": "Girar a la derecha",
     "posicion": "Fotograma {{actual}} de {{total}}"
+  },
+  "seo": {
+    "portada": {
+      "titulo": "Tecno Sport · Ropa y calzado deportivo, bolsos y celulares",
+      "descripcion": "Tienda en línea de ropa y calzado deportivo, bolsos y celulares. Envío a todo Colombia desde Medellín, con pago en línea o contraentrega."
+    },
+    "carrito": {
+      "titulo": "Carrito · Tecno Sport"
+    },
+    "checkout": {
+      "resumen": {
+        "titulo": "Resumen del pedido · Tecno Sport"
+      },
+      "metodo_pago": {
+        "titulo": "Método de pago · Tecno Sport"
+      },
+      "confirmar": {
+        "titulo": "Confirmar pedido · Tecno Sport"
+      },
+      "retorno_wompi": {
+        "titulo": "Procesando el pago · Tecno Sport"
+      },
+      "estado": {
+        "titulo": "Estado del pedido · Tecno Sport"
+      },
+      "transferencia": {
+        "titulo": "Pago por transferencia · Tecno Sport"
+      }
+    },
+    "cuenta": {
+      "iniciar_sesion": {
+        "titulo": "Iniciar sesión · Tecno Sport"
+      },
+      "registro": {
+        "titulo": "Crear cuenta · Tecno Sport"
+      },
+      "verificar_correo": {
+        "titulo": "Verificando tu correo · Tecno Sport"
+      },
+      "recuperar_clave": {
+        "titulo": "Recuperar clave · Tecno Sport"
+      },
+      "restablecer_clave": {
+        "titulo": "Elige una clave nueva · Tecno Sport"
+      }
+    },
+    "admin": {
+      "titulo": "Panel administrativo · Tecno Sport"
+    },
+    "captura360": {
+      "titulo": "Captura 360 · Tecno Sport"
+    }
   }
 }

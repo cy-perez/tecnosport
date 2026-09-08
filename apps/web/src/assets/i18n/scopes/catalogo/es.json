@@ -34,5 +34,16 @@
     "no_encontrado": "No encontramos este producto.",
     "error": "No se pudo cargar el producto. Intenta de nuevo.",
     "combinacion_no_disponible": "Esta combinación no está disponible."
+  },
+  "seo": {
+    "rejilla": {
+      "titulo": "Catálogo · Tecno Sport",
+      "descripcion": "Ropa y calzado deportivo, bolsos y celulares. Filtra por línea, categoría, marca y precio, y compra con envío a todo Colombia."
+    },
+    "ficha": {
+      "titulo": "Producto · Tecno Sport",
+      "titulo_con_nombre": "{{nombre}} · Tecno Sport",
+      "descripcion_respaldo": "{{nombre}} de {{marca}}. Cómpralo en línea en Tecno Sport, con envío a todo Colombia y pago en línea o contraentrega."
+    }
   }
 }

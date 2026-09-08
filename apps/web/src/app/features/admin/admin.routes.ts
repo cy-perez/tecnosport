@@ -33,6 +33,12 @@ export const adminRoutes: Routes = [
   {
     path: '',
     providers: [provideTranslocoScope('admin')],
+    // Declarado una sola vez arriba y heredado por las siete pantallas del
+    // panel: ninguna se indexa, y ninguna necesita un título propio porque solo
+    // las ve quien ya entró. `MetadatosSeo` se queda con la declaración más
+    // profunda de la rama, así que una pantalla puede afinarlo —la captura 360
+    // lo hace— sin que las demás repitan nada.
+    data: { seo: { clave: 'seo.admin' } },
     // El scope de i18n se precarga como cualquier otro dato de la primera
     // pantalla (ADR-0011): si llega después del primer render, toda etiqueta
     // que no pase por el pipe sale en blanco o con la clave cruda.
@@ -110,6 +116,7 @@ export const adminRoutes: Routes = [
               { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
               CapturaStore,
             ],
+            data: { seo: { clave: 'seo.captura360' } },
             resolve: { _i18nCaptura: () => Promise.all([precargarScopeI18n('captura360')]) },
             loadComponent: () =>
               import('../captura360/presentation/captura-360.page').then((m) => m.Captura360Page),

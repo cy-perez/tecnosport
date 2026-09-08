@@ -9,6 +9,7 @@ export const carritoRoutes: Routes = [
   {
     path: '',
     providers: [provideTranslocoScope('carrito')],
+    data: { seo: { clave: 'seo.carrito' } },
     loadComponent: () => import('./carrito.page').then((m) => m.CarritoPage),
   },
 ];

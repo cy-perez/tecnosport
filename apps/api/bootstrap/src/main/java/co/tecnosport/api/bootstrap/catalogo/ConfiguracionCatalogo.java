@@ -11,11 +11,13 @@ import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
+import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
+import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
@@ -76,6 +78,11 @@ public class ConfiguracionCatalogo {
   @Bean
   public VerFichaDeProducto verFichaDeProducto(RepositorioProductos repositorioProductos) {
     return new VerFichaDeProducto(repositorioProductos);
+  }
+
+  @Bean
+  public ListarMapaDelSitio listarMapaDelSitio(RepositorioMapaDelSitio repositorioMapaDelSitio) {
+    return new ListarMapaDelSitio(repositorioMapaDelSitio);
   }
 
   @Bean
