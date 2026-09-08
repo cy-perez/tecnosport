@@ -2493,6 +2493,120 @@ rendimiento medido no significa nada mientras 16 de las 51 peticiones de la
 ficha vayan a `picsum.photos`.
 
 
+### El bloque de infraestructura, que no tenía fase (2026-09-08)
+
+La Fase 6 enumeraba cuatro frentes —textos, legales, SEO, accesibilidad— y
+ninguno era el despliegue. El pipeline y Terraform estaban descritos en
+`docs/07-infra-gcp.md` sin fase asignada, así que en la práctica quedaron fuera
+del plan: **no había `.github/`, ni un solo archivo `.tf`, y los diecisiete
+pull requests que se habían mezclado entraron sin una sola comprobación
+automática**. `infra/README.md` describía cinco módulos de Terraform que no
+existen. Se le da fase: es el bloque que le falta a la Fase 6, en cuatro etapas.
+
+#### Etapa 1, cerrada: integración continua
+
+`.github/workflows/verificar.yml`, dos trabajos en paralelo en cada pull request
+y en cada merge a `main`. Medido en la primera corrida real: **web 82 s, api
+4 m 11 s**.
+
+- **Los dos ejecutan `tools/verificar.mjs`**, el mismo archivo que corre en
+  local, con `--solo-web` o `--solo-api`. Podrían haber sido dos listas de
+  comandos escritas en el YAML, y ese es justo el error: el día que se agregue
+  un paso al script, esa lista no se enteraría y CI dejaría de significar lo
+  mismo que la verificación de quien programa.
+- **Sin filtros por ruta, y eso se aparta de `docs/07-infra-gcp.md`**, que los
+  pide. Con `paths:`, el trabajo que no aplica no se salta: se queda *pendiente
+  para siempre*, y una comprobación obligatoria pendiente bloquea el merge sin
+  decir por qué. El repositorio es público —los minutos no se cobran— y los dos
+  trabajos corren en paralelo. Si algún día molesta la espera, se resuelve con
+  un trabajo que decida por ruta y reporte éxito cuando no aplica.
+- **Se comprobó que dispara**, que es la única forma de creerle a un guardián:
+  un commit temporal con una dependencia invertida en `carrito.store.ts` y una
+  aserción falsa en `AutenticacionControladorTest`. El trabajo `web` murió en un
+  segundo por `capas`; el `api`, por su prueba. Cada uno por su motivo.
+
+**Tres cosas que hacían falta antes, y las tres eran defectos:**
+
+1. **`verificar` no podía correr fuera de Windows**: llevaba clavado
+   `.\gradlew.bat`. Ahora elige por plataforma y resuelve por ruta absoluta
+   desde la ubicación del script — el prefijo relativo tampoco sirve, porque Git
+   Bash define `NoDefaultCurrentDirectoryInExePath` y con eso `cmd` deja de
+   buscar en el directorio actual.
+2. **`apps/api/gradlew` estaba en git como `100644`.** En Linux, `./gradlew`
+   muere con *permission denied* antes de compilar nada.
+3. **La suite estaba a un pelo de volverse intermitente.** El tiempo por omisión
+   de Vitest son 5 s y `construirSitemap > no pasa del tope de URL que admite el
+   formato` tarda **4,7 s** —construye las 50.000 URL del límite, no puede hacer
+   menos—, con las de `axe` entre 2 y 3,3 s. Con la máquina ocupada, seis
+   pruebas se cayeron por tiempo sin que nada estuviera roto; un ejecutor de CI
+   tiene la mitad de núcleos. Subido a 30 s con `runnerConfig`, **y comprobado
+   que la configuración se aplica** bajándola a 1 ms y viendo caer 436 pruebas.
+
+`npm run contrastes` pasó a correr dentro de `verificar`: 1,1 s, y hasta ahora
+solo se ejecutaba si alguien se acordaba.
+
+#### Etapa 2: los dos guardianes que faltan
+
+- **Deriva del contrato**: levantar PostgreSQL y `bootRun` en el ejecutor,
+  regenerar `packages/contratos/src/tipos.ts` y fallar si el diff no está vacío.
+  Atrapa lo que hoy depende de la memoria: cambiar el backend y olvidar
+  regenerar el contrato.
+- **Playwright**: necesita los tres servicios arriba y hay que resolver el
+  `channel: 'chrome'` del config en el ejecutor. No en cada pull request — solo
+  en `main` o a demanda.
+
+#### Etapa 3: un ambiente `dev` en línea, y gratis
+
+Decidido el 8 de septiembre de 2026 después de verificar los límites contra la
+documentación de Google, no de memoria. **Se puede tener el sitio en línea sin
+pagar, con una sola excepción: PostgreSQL.**
+
+| Pieza | Capa gratuita | ¿Alcanza? |
+|---|---|---|
+| Cloud Run (API y web) | 2 M peticiones, 180.000 vCPU-s, 360.000 GiB-s, 1 GB de salida desde NA, al mes | Sí, escalando a cero |
+| Cloud Storage | 5 GB-mes, solo `us-central1`/`us-east1`/`us-west1` | Sí, ya se usa así |
+| Artifact Registry | 0,5 GB | Justo: hace falta podar versiones |
+| Secret Manager | 6 versiones activas | Justo: el proyecto tiene más secretos |
+| Cloud SQL | **ninguna** (solo 30 días de prueba) | **No** |
+| Balanceador y CDN | ninguna | No hacen falta en dev |
+
+Tres decisiones que salen de ahí:
+
+- **La base de datos de dev es Neon** (0,5 GB y 100 CU-hora al mes, se suspende
+  a los 5 minutos de inactividad). Una VM `e2-micro` con Postgres propio parece
+  gratis y no lo es: la IPv4 externa se cobra, y además es un servidor que
+  parchar. Al pasar a producción cambia una variable de entorno, no el código.
+- **Sin balanceador, el servidor SSR hace de proxy de `/api`.** No es un atajo:
+  la cookie de refresco es `HttpOnly`, `SameSite=Lax` y acotada a
+  `/api/v1/auth`, y `baseUrl()` es relativa a propósito. Con la web y la API en
+  dos dominios `*.run.app` distintos, la autenticación se cae y habría que
+  tocar código para vivir con CORS. Es además el proxy que le faltó a la
+  medición de Lighthouse.
+- **`min-instances = 0` en dev.** Una instancia siempre encendida son ~2,59
+  millones de vCPU-s al mes contra los 180.000 gratis: alcanza para unas 50
+  horas. En dev se paga con arranque en frío de la JVM; en producción, con
+  dinero.
+
+Queda por decidir el **correo**: sin SMTP no se puede probar el registro,
+porque la verificación es obligatoria. Es el `[[PROVEEDOR DE CORREO
+TRANSACCIONAL]]` que arrastra la Fase 6.
+
+Y obliga a revisar una decisión escrita: `infra/dev/README.md` dice que dev se
+crea **fuera** de Terraform porque no se paga el arranque en frío del bucket de
+estado "solo por un bucket y una cuenta de servicio". Era correcto para lo que
+dev era; deja de serlo cuando dev tiene dos servicios de Cloud Run, un registro
+de imágenes, IAM y federación de identidad. El bucket de estado lo crea el mismo
+script que ya crea el de imágenes, y Terraform monta lo demás encima.
+
+#### Etapa 4: producción
+
+Los mismos módulos con balanceador, Cloud SQL, `min-instances=1`, Secret
+Manager, Cloud Scheduler y el DNS con el cuidado de no tocar los MX. **Después
+de la Fase 7**: esa fase mete siete variables `SKYDROPX_*`/`ORIGEN_*` y cambia
+el modelo de cobro, y montar los secretos de producción antes significa
+volver a tocarlos.
+
+
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
 Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código

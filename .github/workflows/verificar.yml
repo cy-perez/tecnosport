@@ -1,0 +1,62 @@
+# La misma verificación que se corre en local, corrida por GitHub en cada pull request.
+#
+# Los dos trabajos ejecutan `tools/verificar.mjs`, **el mismo archivo** que `npm run verificar`,
+# con una bandera que elige la mitad. Podrían haber sido dos listas de comandos escritas aquí, y
+# ese es justo el error: el día que se agregue un paso al script, esa lista no se enteraría y CI
+# dejaría de significar lo que significa en la máquina de quien programa.
+name: verificar
+
+on:
+  pull_request:
+  # También al mezclar: dos pull requests verdes por separado pueden romper juntas.
+  push:
+    branches: [main]
+
+# Una corrida por rama. Si llegan dos empujones seguidos, la vieja se cancela en vez de gastar
+# ejecutores compitiendo por un resultado que ya no le importa a nadie.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Sin filtros por ruta a propósito, aunque `docs/07-infra-gcp.md` los pida. Con `paths:`, el
+# trabajo que no aplica no se salta: se queda *pendiente para siempre*, y una comprobación
+# obligatoria pendiente bloquea el merge sin decir por qué. Los dos corren en paralelo, el
+# repositorio es público —o sea que los minutos no se cobran— y con la caché puesta el que sobra
+# cuesta unos minutos de reloj, no de dinero. Si algún día molesta la espera, se resuelve con un
+# trabajo que decida por ruta y reporte "éxito" cuando no aplica, no con `paths:`.
+jobs:
+  web:
+    name: web · capas, contrastes, lint, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node tools/verificar.mjs --solo-web
+
+  api:
+    name: api · compilación, pruebas, ArchUnit y Spotless
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      # Node no es para el backend: `verificar.mjs` es un script de Node y es quien invoca a
+      # Gradle. No hace falta `npm ci` — el script no importa ninguna dependencia.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+      # Las pruebas de `infrastructure` levantan PostgreSQL con Testcontainers, así que este
+      # trabajo necesita Docker: los ejecutores `ubuntu-latest` ya lo traen, no hay que montarlo.
+      - run: node tools/verificar.mjs --solo-api
