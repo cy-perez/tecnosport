@@ -121,6 +121,24 @@ class SembradorCatalogoTest {
   }
 
   /**
+   * Los fotogramas de un set tienen que ser imágenes distintas, y sus columnas {@code ancho}/{@code
+   * alto} coincidir con lo que pide la URL: ocho fotogramas apuntando a la misma foto se ven como
+   * un visor que no gira, y una fila que dice 1000x1000 sobre una imagen de otro tamaño hace que
+   * `NgOptimizedImage` avise con razón (NG02952) en la ficha.
+   */
+  @Test
+  void cada_fotograma_apunta_a_su_propia_imagen_del_tamano_que_declara() {
+    List<ImagenProductoJpaEntity> fotogramas = fotogramasDe(setDe("tenis-trail-runner").getId());
+
+    assertThat(fotogramas.stream().map(ImagenProductoJpaEntity::getUrl).distinct())
+        .hasSize(FOTOGRAMAS_DEL_TENIS);
+    assertThat(fotogramas)
+        .allMatch(
+            imagen -> imagen.getUrl().endsWith("/" + imagen.getAncho() + "/" + imagen.getAlto()),
+            "la URL termina en el ancho y el alto que declara la fila");
+  }
+
+  /**
    * El sembrador corre en cada {@code bootRun}, así que su guardia de "ya hay productos" es lo que
    * separa un catálogo de desarrollo de ocho fotogramas de uno con dieciséis repetidos.
    */
