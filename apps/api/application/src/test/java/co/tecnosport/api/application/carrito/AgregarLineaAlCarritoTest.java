@@ -3,6 +3,7 @@ package co.tecnosport.api.application.carrito;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.carrito.Carrito;
 import java.time.Instant;
 import java.util.UUID;
@@ -20,7 +21,7 @@ class AgregarLineaAlCarritoTest {
     UUID varianteId = UUID.randomUUID();
 
     Carrito actualizado =
-        new AgregarLineaAlCarrito(repositorio)
+        new AgregarLineaAlCarrito(repositorio, new RelojFalso(AHORA))
             .ejecutar(new AgregarLineaAlCarritoComando(carrito.id(), varianteId, 2));
 
     assertEquals(1, actualizado.lineas().size());
@@ -33,7 +34,7 @@ class AgregarLineaAlCarritoTest {
     Carrito carrito = Carrito.crear(null, AHORA);
     repositorio.guardar(carrito);
     UUID varianteId = UUID.randomUUID();
-    AgregarLineaAlCarrito caso = new AgregarLineaAlCarrito(repositorio);
+    AgregarLineaAlCarrito caso = new AgregarLineaAlCarrito(repositorio, new RelojFalso(AHORA));
 
     caso.ejecutar(new AgregarLineaAlCarritoComando(carrito.id(), varianteId, 2));
     Carrito actualizado =
@@ -50,7 +51,7 @@ class AgregarLineaAlCarritoTest {
     assertThrows(
         CarritoNoEncontradoException.class,
         () ->
-            new AgregarLineaAlCarrito(repositorio)
+            new AgregarLineaAlCarrito(repositorio, new RelojFalso(AHORA))
                 .ejecutar(
                     new AgregarLineaAlCarritoComando(UUID.randomUUID(), UUID.randomUUID(), 1)));
   }

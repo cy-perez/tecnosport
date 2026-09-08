@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.carrito;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.carrito.Carrito;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +24,8 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @Transactional
 class RepositorioCarritoJpaTest {
+
+  private static final Instant AHORA = Instant.parse("2026-09-07T12:00:00Z");
 
   @Container @ServiceConnection
   static PostgreSQLContainer postgres =
@@ -57,7 +60,7 @@ class RepositorioCarritoJpaTest {
   void agregarUnaLineaYGuardarLaPersiste() {
     Carrito carrito = Carrito.crear(null, Instant.now());
     UUID varianteId = UUID.randomUUID();
-    carrito.agregarLinea(varianteId, 2);
+    carrito.agregarLinea(varianteId, 2, AHORA);
 
     repositorio.guardar(carrito);
 
@@ -70,11 +73,11 @@ class RepositorioCarritoJpaTest {
   @Test
   void actualizarCantidadYGuardarReemplazaLoPersistido() {
     Carrito carrito = Carrito.crear(null, Instant.now());
-    carrito.agregarLinea(UUID.randomUUID(), 1);
+    carrito.agregarLinea(UUID.randomUUID(), 1, AHORA);
     repositorio.guardar(carrito);
     UUID lineaId = carrito.lineas().get(0).id();
 
-    carrito.actualizarCantidad(lineaId, 9);
+    carrito.actualizarCantidad(lineaId, 9, AHORA);
     repositorio.guardar(carrito);
 
     Carrito encontrado = repositorio.buscarPorId(carrito.id()).orElseThrow();
@@ -85,11 +88,11 @@ class RepositorioCarritoJpaTest {
   @Test
   void eliminarLineaYGuardarLaQuitaDeLoPersistido() {
     Carrito carrito = Carrito.crear(null, Instant.now());
-    carrito.agregarLinea(UUID.randomUUID(), 1);
+    carrito.agregarLinea(UUID.randomUUID(), 1, AHORA);
     repositorio.guardar(carrito);
     UUID lineaId = carrito.lineas().get(0).id();
 
-    carrito.eliminarLinea(lineaId);
+    carrito.eliminarLinea(lineaId, AHORA);
     repositorio.guardar(carrito);
 
     Carrito encontrado = repositorio.buscarPorId(carrito.id()).orElseThrow();
@@ -99,12 +102,12 @@ class RepositorioCarritoJpaTest {
   @Test
   void dosCarritosNoSePisanLasLineasEntreSi() {
     Carrito carritoA = Carrito.crear(null, Instant.now());
-    carritoA.agregarLinea(UUID.randomUUID(), 1);
+    carritoA.agregarLinea(UUID.randomUUID(), 1, AHORA);
     repositorio.guardar(carritoA);
 
     Carrito carritoB = Carrito.crear(null, Instant.now());
-    carritoB.agregarLinea(UUID.randomUUID(), 5);
-    carritoB.agregarLinea(UUID.randomUUID(), 3);
+    carritoB.agregarLinea(UUID.randomUUID(), 5, AHORA);
+    carritoB.agregarLinea(UUID.randomUUID(), 3, AHORA);
     repositorio.guardar(carritoB);
 
     assertThat(repositorio.buscarPorId(carritoA.id()).orElseThrow().lineas()).hasSize(1);
@@ -114,5 +117,22 @@ class RepositorioCarritoJpaTest {
   @Test
   void unIdInexistenteNoSeEncuentra() {
     assertThat(repositorio.buscarPorId(UUID.randomUUID())).isEmpty();
+  }
+
+  /**
+   * La fecha de actividad tiene que sobrevivir el viaje a Postgres: es la única que mira la purga,
+   * y si el mapeo la perdiera se borrarían carritos vivos.
+   */
+  @Test
+  void laFechaDeActividadVuelveDeLaBase() {
+    Carrito carrito = Carrito.crear(null, AHORA);
+    Instant despues = AHORA.plus(Duration.ofDays(20));
+    carrito.agregarLinea(UUID.randomUUID(), 1, despues);
+
+    repositorio.guardar(carrito);
+
+    Carrito recuperado = repositorio.buscarPorId(carrito.id()).orElseThrow();
+    assertThat(recuperado.actualizadoEn()).isEqualTo(despues);
+    assertThat(recuperado.creadoEn()).isEqualTo(AHORA);
   }
 }

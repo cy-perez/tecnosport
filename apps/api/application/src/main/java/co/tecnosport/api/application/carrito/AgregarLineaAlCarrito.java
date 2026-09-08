@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.carrito;
 
+import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.carrito.Carrito;
 import java.util.Objects;
 
@@ -11,10 +12,12 @@ import java.util.Objects;
 public final class AgregarLineaAlCarrito {
 
   private final RepositorioCarrito repositorioCarrito;
+  private final Reloj reloj;
 
-  public AgregarLineaAlCarrito(RepositorioCarrito repositorioCarrito) {
+  public AgregarLineaAlCarrito(RepositorioCarrito repositorioCarrito, Reloj reloj) {
     this.repositorioCarrito =
         Objects.requireNonNull(repositorioCarrito, "El repositorio de carritos no puede ser nulo.");
+    this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
   }
 
   public Carrito ejecutar(AgregarLineaAlCarritoComando comando) {
@@ -23,7 +26,7 @@ public final class AgregarLineaAlCarrito {
         repositorioCarrito
             .buscarPorId(comando.carritoId())
             .orElseThrow(() -> new CarritoNoEncontradoException(comando.carritoId()));
-    carrito.agregarLinea(comando.varianteId(), comando.cantidad());
+    carrito.agregarLinea(comando.varianteId(), comando.cantidad(), reloj.ahora());
     repositorioCarrito.guardar(carrito);
     return carrito;
   }

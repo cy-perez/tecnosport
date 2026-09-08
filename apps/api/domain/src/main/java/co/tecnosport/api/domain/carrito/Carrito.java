@@ -12,6 +12,11 @@ import java.util.UUID;
 /**
  * Vive 30 días (docs/02-modelo-datos.md), anónimo o de un usuario. No reserva inventario: eso
  * ocurre al iniciar el pago (docs/00-producto.md), fuera de este agregado.
+ *
+ * <p>Esos 30 días se cuentan desde la última actividad, no desde la creación: un carrito que
+ * alguien sigue usando cada semana lleva meses creado y no es basura. Por eso cada mutación recibe
+ * {@code ahora} y actualiza {@link #actualizadoEn()} — no es un parámetro de conveniencia, es lo
+ * que hace imposible cambiar el carrito sin dejar constancia de que sigue vivo.
  */
 public final class Carrito {
 
@@ -19,17 +24,21 @@ public final class Carrito {
   private final UUID usuarioId;
   private final List<LineaCarrito> lineas;
   private final Instant creadoEn;
+  private Instant actualizadoEn;
 
-  public Carrito(UUID id, UUID usuarioId, List<LineaCarrito> lineas, Instant creadoEn) {
+  public Carrito(
+      UUID id, UUID usuarioId, List<LineaCarrito> lineas, Instant creadoEn, Instant actualizadoEn) {
     this.id = Objects.requireNonNull(id, "El id del carrito no puede ser nulo.");
     this.usuarioId = usuarioId;
     this.lineas = new ArrayList<>(Objects.requireNonNullElse(lineas, List.of()));
     this.creadoEn = Objects.requireNonNull(creadoEn, "La fecha de creación no puede ser nula.");
+    this.actualizadoEn =
+        Objects.requireNonNull(actualizadoEn, "La fecha de actividad no puede ser nula.");
   }
 
   /** {@code usuarioId} nulo: carrito anónimo. */
   public static Carrito crear(UUID usuarioId, Instant ahora) {
-    return new Carrito(GeneradorIdentificador.nuevo(), usuarioId, List.of(), ahora);
+    return new Carrito(GeneradorIdentificador.nuevo(), usuarioId, List.of(), ahora, ahora);
   }
 
   public UUID id() {
@@ -48,8 +57,12 @@ public final class Carrito {
     return creadoEn;
   }
 
+  public Instant actualizadoEn() {
+    return actualizadoEn;
+  }
+
   /** Si ya hay una línea con esa variante, suma la cantidad en vez de duplicar la línea. */
-  public void agregarLinea(UUID varianteId, int cantidad) {
+  public void agregarLinea(UUID varianteId, int cantidad, Instant ahora) {
     Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");
     if (cantidad <= 0) {
       throw new ExcepcionDeDominio("La cantidad a agregar debe ser mayor que cero.");
@@ -58,25 +71,40 @@ public final class Carrito {
       LineaCarrito existente = lineas.get(i);
       if (existente.varianteId().equals(varianteId)) {
         lineas.set(i, existente.conCantidad(existente.cantidad() + cantidad));
+        marcarActividad(ahora);
         return;
       }
     }
     lineas.add(new LineaCarrito(GeneradorIdentificador.nuevo(), varianteId, cantidad));
+    marcarActividad(ahora);
   }
 
   /** Vaciar una línea es {@link #eliminarLinea}, no poner la cantidad en cero aquí. */
-  public void actualizarCantidad(UUID idLinea, int cantidad) {
+  public void actualizarCantidad(UUID idLinea, int cantidad, Instant ahora) {
     if (cantidad <= 0) {
       throw new ExcepcionDeDominio(
           "La cantidad debe ser mayor que cero; usa eliminarLinea para quitarla.");
     }
     int indice = indiceDeLinea(idLinea);
     lineas.set(indice, lineas.get(indice).conCantidad(cantidad));
+    marcarActividad(ahora);
   }
 
-  public void eliminarLinea(UUID idLinea) {
+  public void eliminarLinea(UUID idLinea, Instant ahora) {
     if (!lineas.removeIf(linea -> linea.id().equals(idLinea))) {
       throw new LineaCarritoNoEncontradaException(idLinea);
+    }
+    marcarActividad(ahora);
+  }
+
+  /**
+   * Solo avanza. Un reloj que se corra hacia atrás —o dos instancias con relojes desalineados— no
+   * puede hacer que un carrito vivo parezca más viejo de lo que es y termine purgado.
+   */
+  private void marcarActividad(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha de actividad no puede ser nula.");
+    if (ahora.isAfter(actualizadoEn)) {
+      actualizadoEn = ahora;
     }
   }
 

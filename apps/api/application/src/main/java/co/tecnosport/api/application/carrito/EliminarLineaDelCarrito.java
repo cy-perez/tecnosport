@@ -1,15 +1,18 @@
 package co.tecnosport.api.application.carrito;
 
+import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.carrito.Carrito;
 import java.util.Objects;
 
 public final class EliminarLineaDelCarrito {
 
   private final RepositorioCarrito repositorioCarrito;
+  private final Reloj reloj;
 
-  public EliminarLineaDelCarrito(RepositorioCarrito repositorioCarrito) {
+  public EliminarLineaDelCarrito(RepositorioCarrito repositorioCarrito, Reloj reloj) {
     this.repositorioCarrito =
         Objects.requireNonNull(repositorioCarrito, "El repositorio de carritos no puede ser nulo.");
+    this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
   }
 
   public Carrito ejecutar(EliminarLineaDelCarritoComando comando) {
@@ -18,7 +21,7 @@ public final class EliminarLineaDelCarrito {
         repositorioCarrito
             .buscarPorId(comando.carritoId())
             .orElseThrow(() -> new CarritoNoEncontradoException(comando.carritoId()));
-    carrito.eliminarLinea(comando.lineaId());
+    carrito.eliminarLinea(comando.lineaId(), reloj.ahora());
     repositorioCarrito.guardar(carrito);
     return carrito;
   }

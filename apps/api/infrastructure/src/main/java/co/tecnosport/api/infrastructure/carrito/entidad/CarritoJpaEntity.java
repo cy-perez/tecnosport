@@ -19,12 +19,16 @@ public class CarritoJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  @Column(name = "actualizado_en", nullable = false)
+  private Instant actualizadoEn;
+
   protected CarritoJpaEntity() {}
 
-  public CarritoJpaEntity(UUID id, UUID usuarioId, Instant creadoEn) {
+  public CarritoJpaEntity(UUID id, UUID usuarioId, Instant creadoEn, Instant actualizadoEn) {
     this.id = id;
     this.usuarioId = usuarioId;
     this.creadoEn = creadoEn;
+    this.actualizadoEn = actualizadoEn;
   }
 
   public UUID getId() {
@@ -37,5 +41,9 @@ public class CarritoJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public Instant getActualizadoEn() {
+    return actualizadoEn;
   }
 }

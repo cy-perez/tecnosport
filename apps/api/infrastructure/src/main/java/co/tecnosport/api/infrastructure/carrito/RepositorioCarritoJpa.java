@@ -41,7 +41,11 @@ public class RepositorioCarritoJpa implements RepositorioCarrito {
   public void guardar(Carrito carrito) {
     if (carritos.findById(carrito.id()).isEmpty()) {
       carritos.save(
-          new CarritoJpaEntity(carrito.id(), carrito.usuarioId().orElse(null), carrito.creadoEn()));
+          new CarritoJpaEntity(
+              carrito.id(),
+              carrito.usuarioId().orElse(null),
+              carrito.creadoEn(),
+              carrito.actualizadoEn()));
     }
     lineas.deleteByCarritoId(carrito.id());
     List<LineaCarritoJpaEntity> entidades =
@@ -51,7 +55,12 @@ public class RepositorioCarritoJpa implements RepositorioCarrito {
 
   private Carrito aCarrito(CarritoJpaEntity entidad, List<LineaCarritoJpaEntity> lineasJpa) {
     List<LineaCarrito> dominio = lineasJpa.stream().map(this::aLinea).toList();
-    return new Carrito(entidad.getId(), entidad.getUsuarioId(), dominio, entidad.getCreadoEn());
+    return new Carrito(
+        entidad.getId(),
+        entidad.getUsuarioId(),
+        dominio,
+        entidad.getCreadoEn(),
+        entidad.getActualizadoEn());
   }
 
   private LineaCarrito aLinea(LineaCarritoJpaEntity l) {

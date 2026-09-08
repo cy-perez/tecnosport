@@ -25,18 +25,20 @@ public class ConfiguracionCarrito {
   }
 
   @Bean
-  public AgregarLineaAlCarrito agregarLineaAlCarrito(RepositorioCarrito repositorioCarrito) {
-    return new AgregarLineaAlCarrito(repositorioCarrito);
+  public AgregarLineaAlCarrito agregarLineaAlCarrito(
+      RepositorioCarrito repositorioCarrito, Reloj reloj) {
+    return new AgregarLineaAlCarrito(repositorioCarrito, reloj);
   }
 
   @Bean
   public ActualizarCantidadDeLinea actualizarCantidadDeLinea(
-      RepositorioCarrito repositorioCarrito) {
-    return new ActualizarCantidadDeLinea(repositorioCarrito);
+      RepositorioCarrito repositorioCarrito, Reloj reloj) {
+    return new ActualizarCantidadDeLinea(repositorioCarrito, reloj);
   }
 
   @Bean
-  public EliminarLineaDelCarrito eliminarLineaDelCarrito(RepositorioCarrito repositorioCarrito) {
-    return new EliminarLineaDelCarrito(repositorioCarrito);
+  public EliminarLineaDelCarrito eliminarLineaDelCarrito(
+      RepositorioCarrito repositorioCarrito, Reloj reloj) {
+    return new EliminarLineaDelCarrito(repositorioCarrito, reloj);
   }
 }
