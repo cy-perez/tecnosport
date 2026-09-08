@@ -4,14 +4,18 @@ import co.tecnosport.api.application.carrito.ActualizarCantidadDeLinea;
 import co.tecnosport.api.application.carrito.AgregarLineaAlCarrito;
 import co.tecnosport.api.application.carrito.CrearCarrito;
 import co.tecnosport.api.application.carrito.EliminarLineaDelCarrito;
+import co.tecnosport.api.application.carrito.PurgarCarritosVencidos;
 import co.tecnosport.api.application.carrito.RepositorioCarrito;
 import co.tecnosport.api.application.carrito.VerCarrito;
 import co.tecnosport.api.application.compartido.Reloj;
+import java.time.Duration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** Mismo patrón que {@code ConfiguracionCatalogo}: application es framework-free a propósito. */
 @Configuration
+@EnableConfigurationProperties(PropiedadesPurgaCarritos.class)
 public class ConfiguracionCarrito {
 
   @Bean
@@ -40,5 +44,12 @@ public class ConfiguracionCarrito {
   public EliminarLineaDelCarrito eliminarLineaDelCarrito(
       RepositorioCarrito repositorioCarrito, Reloj reloj) {
     return new EliminarLineaDelCarrito(repositorioCarrito, reloj);
+  }
+
+  @Bean
+  public PurgarCarritosVencidos purgarCarritosVencidos(
+      RepositorioCarrito repositorioCarrito, Reloj reloj, PropiedadesPurgaCarritos propiedades) {
+    return new PurgarCarritosVencidos(
+        repositorioCarrito, reloj, Duration.ofDays(propiedades.diasRetencion()));
   }
 }

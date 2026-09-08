@@ -135,4 +135,51 @@ class RepositorioCarritoJpaTest {
     assertThat(recuperado.actualizadoEn()).isEqualTo(despues);
     assertThat(recuperado.creadoEn()).isEqualTo(AHORA);
   }
+
+  @Test
+  void purgarBorraSoloLosCarritosSinActividadReciente() {
+    Carrito vencido = Carrito.crear(null, AHORA.minus(Duration.ofDays(40)));
+    Carrito vivo = Carrito.crear(null, AHORA.minus(Duration.ofDays(2)));
+    repositorio.guardar(vencido);
+    repositorio.guardar(vivo);
+
+    int borrados = repositorio.eliminarInactivosDesde(AHORA.minus(Duration.ofDays(30)));
+
+    assertThat(borrados).isEqualTo(1);
+    assertThat(repositorio.buscarPorId(vencido.id())).isEmpty();
+    assertThat(repositorio.buscarPorId(vivo.id())).isPresent();
+  }
+
+  /**
+   * La cascada la declara el esquema (linea_carrito ... on delete cascade), no JPA: un delete de
+   * JPQL no dispara la cascada del ORM. Si la del esquema no estuviera, este borrado fallaría con
+   * violación de clave foránea en vez de llevarse las líneas.
+   */
+  @Test
+  void purgarSeLlevaTambienLasLineasDelCarrito() {
+    Carrito vencido = Carrito.crear(null, AHORA.minus(Duration.ofDays(40)));
+    vencido.agregarLinea(UUID.randomUUID(), 2, AHORA.minus(Duration.ofDays(40)));
+    repositorio.guardar(vencido);
+
+    int borrados = repositorio.eliminarInactivosDesde(AHORA.minus(Duration.ofDays(30)));
+
+    assertThat(borrados).isEqualTo(1);
+    assertThat(repositorio.buscarPorId(vencido.id())).isEmpty();
+  }
+
+  /**
+   * El caso que justifica la columna de actividad, contra Postgres real: creado hace 200 días pero
+   * usado ayer, no se borra.
+   */
+  @Test
+  void purgarNoSeLlevaUnCarritoViejoQueSeSigueUsando() {
+    Carrito viejoPeroVivo = Carrito.crear(null, AHORA.minus(Duration.ofDays(200)));
+    viejoPeroVivo.agregarLinea(UUID.randomUUID(), 1, AHORA.minus(Duration.ofDays(1)));
+    repositorio.guardar(viejoPeroVivo);
+
+    int borrados = repositorio.eliminarInactivosDesde(AHORA.minus(Duration.ofDays(30)));
+
+    assertThat(borrados).isZero();
+    assertThat(repositorio.buscarPorId(viejoPeroVivo.id())).isPresent();
+  }
 }

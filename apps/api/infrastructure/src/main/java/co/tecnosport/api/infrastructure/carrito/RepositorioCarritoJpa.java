@@ -5,6 +5,7 @@ import co.tecnosport.api.domain.carrito.Carrito;
 import co.tecnosport.api.domain.carrito.LineaCarrito;
 import co.tecnosport.api.infrastructure.carrito.entidad.CarritoJpaEntity;
 import co.tecnosport.api.infrastructure.carrito.entidad.LineaCarritoJpaEntity;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -69,5 +70,11 @@ public class RepositorioCarritoJpa implements RepositorioCarrito {
 
   private LineaCarritoJpaEntity aEntidad(UUID carritoId, LineaCarrito linea) {
     return new LineaCarritoJpaEntity(linea.id(), carritoId, linea.varianteId(), linea.cantidad());
+  }
+
+  @Override
+  @Transactional
+  public int eliminarInactivosDesde(Instant limite) {
+    return carritos.eliminarInactivosDesde(limite);
   }
 }
