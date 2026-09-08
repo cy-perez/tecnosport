@@ -77,6 +77,32 @@ class ImagenManual {
   }
 }
 
+/**
+ * Doble de `Image` que nunca carga: reproduce un objeto roto en el bucket —un set `PUBLICADO` cuyo
+ * fotograma devuelve 404— que es el caso que el visor tapaba sin dejar rastro.
+ */
+class ImagenQueFalla {
+  static solicitadas: string[] = [];
+
+  onload: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  private _src = '';
+
+  set src(valor: string) {
+    this._src = valor;
+    ImagenQueFalla.solicitadas.push(valor);
+    queueMicrotask(() => this.onerror?.());
+  }
+
+  get src(): string {
+    return this._src;
+  }
+
+  static reiniciar(): void {
+    ImagenQueFalla.solicitadas = [];
+  }
+}
+
 async function renderVisor() {
   const resultado = await render(AnfitrionDePrueba, {
     imports: [
@@ -118,6 +144,7 @@ function arrastrar(desde: { x: number; y: number }, hasta: { x: number; y: numbe
 
 describe('TsVisor360', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.stubGlobal('Image', ImagenQueSiCarga);
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       width: ANCHO_MARCO,
@@ -272,6 +299,70 @@ describe('TsVisor360', () => {
     // El contador ya va en el 2, pero lo que se ve sigue siendo el único cargado: el frontal.
     expect(screen.getByText('Fotograma 2 de 8')).toBeTruthy();
     expect(fotograma().getAttribute('src')).toContain('f0.webp');
+  });
+
+  // El visor sustituye un fotograma que falta por el más cercano disponible, así que un objeto roto
+  // en el bucket no se ve: el visitante gira y no nota que le falta una foto. Ese es el
+  // comportamiento correcto de cara al visitante y el problema de cara a quien mantiene el catálogo.
+  it('un fotograma que no carga deja rastro en la consola en vez de desaparecer en silencio', async () => {
+    ImagenQueFalla.reiniciar();
+    vi.stubGlobal('Image', ImagenQueFalla);
+    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await renderVisor();
+
+    await vi.waitFor(() => {
+      const mensajes = aviso.mock.calls.map(([mensaje]) => String(mensaje));
+      expect(mensajes.some((mensaje) => mensaje.includes('https://imagenes.test/f1.webp'))).toBe(true);
+      expect(mensajes.some((mensaje) => mensaje.includes('no cargó'))).toBe(true);
+    });
+  });
+
+  // Dejar rastro no puede costar la tolerancia que ya existía: el fotograma roto se registra y la
+  // cadena sigue con el siguiente. Si el aviso se colara antes de continuar la cadena, la precarga
+  // se detendría en la primera imagen que falla y el visor se quedaría con un solo fotograma.
+  it('la cadena de precarga no se detiene en el fotograma roto', async () => {
+    ImagenQueFalla.reiniciar();
+    vi.stubGlobal('Image', ImagenQueFalla);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await renderVisor();
+
+    await vi.waitFor(() => {
+      expect(new Set(ImagenQueFalla.solicitadas).size).toBe(OCHO_FOTOGRAMAS.length);
+    });
+  });
+
+  // `docs/10-captura-360.md`: "un indicador breve la primera vez". Antes salía en cada visita.
+  it('la pista sale la primera vez y queda marcado que este navegador ya la vio', async () => {
+    await renderVisor();
+
+    expect(await screen.findByText('Arrastra para girar')).toBeTruthy();
+    expect(window.localStorage.getItem('ts-visor-360-pista-vista')).toBe('true');
+  });
+
+  it('en la siguiente visita la pista ya no sale', async () => {
+    window.localStorage.setItem('ts-visor-360-pista-vista', 'true');
+
+    const { fixture } = await renderVisor();
+    await fixture.whenStable();
+
+    expect(screen.queryByText('Arrastra para girar')).toBeNull();
+  });
+
+  // El visor vive en la ficha de cada producto, la pantalla más visitada: un `localStorage` que
+  // lanza —deshabilitado por política, o sin cuota— no puede dejar un error en consola ahí.
+  it('sin almacén disponible la pista sale igual, sin reventar', async () => {
+    // `vi.spyOn(window.localStorage, ...)` no sirve aquí: el `localStorage` de jsdom es un Proxy y
+    // el espía no llega a aplicarse — la prueba pasaba igual sin el try/catch, comprobado mutando.
+    const bloqueado = () => {
+      throw new Error('almacén bloqueado');
+    };
+    vi.stubGlobal('localStorage', { getItem: bloqueado, setItem: bloqueado, clear: bloqueado });
+
+    await renderVisor();
+
+    expect(await screen.findByText('Arrastra para girar')).toBeTruthy();
   });
 
   it('la pista de arrastre desaparece con la primera interacción', async () => {

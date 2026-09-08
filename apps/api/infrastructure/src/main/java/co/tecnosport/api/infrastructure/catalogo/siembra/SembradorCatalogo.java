@@ -44,6 +44,18 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class SembradorCatalogo implements ApplicationRunner {
 
+  /**
+   * El host de las imágenes de ejemplo, en un solo sitio. Estaba copiado en los tres métodos que
+   * construyen una URL de siembra, y la regla dura #5 de CLAUDE.md no quiere literales de URL
+   * repartidos por el código.
+   *
+   * <p>Sigue siendo un literal y no una variable de entorno a propósito: la forma de la ruta
+   * ({@code /seed/{semilla}/{ancho}/{alto}}) es la API de picsum.photos, así que hacer configurable
+   * solo el host no dejaría apuntar la siembra a ningún otro sitio — sería cumplir la regla en el
+   * papel. Si algún día hace falta otro proveedor de imágenes de ejemplo, se cambia el método.
+   */
+  private static final String HOST_IMAGENES_DE_SIEMBRA = "https://picsum.photos";
+
   /** El objetivo de docs/10-captura-360.md: donde el arrastre empieza a sentirse continuo. */
   private static final int FOTOGRAMAS_OBJETIVO = 8;
 
@@ -309,7 +321,10 @@ public class SembradorCatalogo implements ApplicationRunner {
   }
 
   private void guardarImagenPrincipal(ProductoJpaEntity producto, Instant ahora) {
-    String url = "https://picsum.photos/seed/" + producto.getSlug() + "/800/600";
+    int ancho = 800;
+    int alto = 600;
+    String semilla = producto.getSlug();
+    String url = urlDeSiembra(semilla, ancho, alto);
     imagenes.save(
         new ImagenProductoJpaEntity(
             GeneradorIdentificador.nuevo(),
@@ -320,10 +335,10 @@ public class SembradorCatalogo implements ApplicationRunner {
             0,
             url,
             url,
-            800,
-            600,
+            ancho,
+            alto,
             120_000,
-            hashDeSiembra("seed-" + producto.getSlug()),
+            hashDeSiembra("seed-" + semilla),
             producto.getNombre(),
             producto.getNombre(),
             ahora));
@@ -352,9 +367,11 @@ public class SembradorCatalogo implements ApplicationRunner {
             "siembra",
             "siembra"));
 
+    int ancho = 1000;
+    int alto = 1000;
     for (int orden = 0; orden < fotogramas; orden++) {
-      String url =
-          "https://picsum.photos/seed/" + producto.getSlug() + "-360-" + orden + "/1000/1000";
+      String semilla = producto.getSlug() + "-360-" + orden;
+      String url = urlDeSiembra(semilla, ancho, alto);
       imagenes.save(
           new ImagenProductoJpaEntity(
               GeneradorIdentificador.nuevo(),
@@ -365,10 +382,10 @@ public class SembradorCatalogo implements ApplicationRunner {
               orden,
               url,
               url,
-              1000,
-              1000,
+              ancho,
+              alto,
               180_000,
-              hashDeSiembra("seed-" + producto.getSlug() + "-360-" + orden),
+              hashDeSiembra("seed-" + semilla),
               producto.getNombre(),
               producto.getNombre(),
               ahora));
@@ -376,9 +393,11 @@ public class SembradorCatalogo implements ApplicationRunner {
   }
 
   private void guardarGaleria(ProductoJpaEntity producto, Instant ahora) {
+    int ancho = 800;
+    int alto = 600;
     for (int orden = 0; orden < 2; orden++) {
-      String url =
-          "https://picsum.photos/seed/" + producto.getSlug() + "-galeria-" + orden + "/800/600";
+      String semilla = producto.getSlug() + "-galeria-" + orden;
+      String url = urlDeSiembra(semilla, ancho, alto);
       imagenes.save(
           new ImagenProductoJpaEntity(
               GeneradorIdentificador.nuevo(),
@@ -389,14 +408,23 @@ public class SembradorCatalogo implements ApplicationRunner {
               orden,
               url,
               url,
-              800,
-              600,
+              ancho,
+              alto,
               120_000,
-              hashDeSiembra("seed-" + producto.getSlug() + "-galeria-" + orden),
+              hashDeSiembra("seed-" + semilla),
               producto.getNombre(),
               producto.getNombre(),
               ahora));
     }
+  }
+
+  /**
+   * La URL de una imagen de ejemplo. El ancho y el alto van por parámetro y no incrustados en la
+   * cadena para que la URL y las columnas {@code ancho}/{@code alto} de la fila salgan del mismo
+   * número: antes eran dos literales por imagen que nadie garantizaba iguales.
+   */
+  private static String urlDeSiembra(String semilla, int ancho, int alto) {
+    return HOST_IMAGENES_DE_SIEMBRA + "/seed/" + semilla + "/" + ancho + "/" + alto;
   }
 
   /**
