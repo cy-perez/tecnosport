@@ -115,6 +115,28 @@ describe('ListaProductosAdminPage', () => {
     expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
   });
 
+  // Los dos enlaces de acción se pintaban pegados ("EditarCapturar 360"): entre
+  // dos elementos en línea sin espacio en el HTML no hay nada que separe. Estaba
+  // anotado como pendiente cosmético desde la Fase 5 y sobrevivió entero a la
+  // migración a Tailwind, porque ninguna prueba miraba separaciones.
+  //
+  // Se afirma sobre el padre común y no sobre el texto renderizado: en jsdom
+  // `innerText` no existe y `textContent` concatena igual estén separados o no,
+  // así que la única forma de que esta prueba falle si alguien quita el `flex`
+  // es mirar las clases que producen la separación.
+  it('los enlaces de acción de una fila van separados, no pegados', async () => {
+    await renderLista([productoDePrueba()]);
+    await screen.findByText('Morral urbano');
+
+    const editar = screen.getByRole('link', { name: 'Editar' });
+    const capturar = screen.getByRole('link', { name: 'Capturar 360' });
+    const contenedor = editar.parentElement!;
+
+    expect(capturar.parentElement).toBe(contenedor);
+    expect(contenedor.className).toContain('flex');
+    expect(contenedor.className).toContain('gap-16');
+  });
+
   it('"Siguiente" queda habilitado cuando hay más páginas y navega con el query param', async () => {
     const { fixture } = await renderLista([productoDePrueba()], 2);
     await screen.findByText('Morral urbano');

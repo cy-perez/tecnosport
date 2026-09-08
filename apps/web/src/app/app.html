@@ -13,7 +13,17 @@
      elimina jamás": este landmark recibe foco **por programa** desde el enlace
      de salto, no entra en el orden de tabulación (`tabindex="-1"`), y dibujarle
      un anillo sería anunciar un foco que nadie pidió. -->
-<main id="contenido" class="focus:outline-none" tabindex="-1">
+<!-- `min-w-0` no es decorativo: `<main>` es un item del grid de `app-root`, y
+     el `min-width: auto` que trae por omisión un item de grid le impide encogerse
+     por debajo de su ancho de min-content. En el catálogo a 380 px eso reventaba
+     la página entera: la rejilla de filtros —`repeat(auto-fill, minmax(160px,
+     1fr))`— resolvía **seis** columnas de 160 px en vez de envolver a una, y el
+     documento se iba a 1104 px con desplazamiento horizontal en todo el sitio,
+     encabezado y pie incluidos, porque todo se estira al ancho del documento.
+     Medido: `<main>` 1104 px con `app-root` en 363. Con `min-w-0`, 363 y una
+     sola columna. Ninguna prueba lo veía —jsdom no hace layout— y en escritorio
+     no se nota, porque ahí sí caben las seis columnas. -->
+<main id="contenido" class="min-w-0 focus:outline-none" tabindex="-1">
   <router-outlet />
 </main>
 <app-pie />

@@ -1,5 +1,14 @@
+<!-- Mobile-first, y no era así: las cinco columnas iban sin variante, o sea
+     también en el teléfono, donde no caben. Medido a 380 px: el documento se
+     iba a 521 px y el sitio entero se desplazaba en horizontal.
+
+     En móvil van dos columnas —la foto y el resto— y los tres controles
+     (cantidad, precio, eliminar) bajan a la columna 2 con `col-start-2`. Sin
+     eso caen en la columna de la foto, que mide 96 px fijos: el selector de
+     cantidad son dos botones de 60 px más el número, así que se desbordaba de
+     su propia celda. Con la columna 2 tiene 219 px. -->
 <article
-  class="grid grid-cols-[var(--esp-96)_1fr_auto_auto_auto] items-center gap-16 border-b border-ts-borde py-16"
+  class="grid grid-cols-[var(--esp-96)_1fr] items-center gap-16 border-b border-ts-borde py-16 desde-movil:grid-cols-[var(--esp-96)_1fr_auto_auto_auto]"
 >
   @if (snapshot(); as foto) {
     @if (foto.imagenUrl) {
@@ -24,7 +33,7 @@
     </div>
   }
 
-  <div class="flex items-center gap-8">
+  <div class="col-start-2 flex items-center gap-8 desde-movil:col-start-auto">
     <ts-boton
       variante="secundario"
       [deshabilitado]="deshabilitado() || linea().cantidad <= 1"
@@ -45,10 +54,19 @@
   </div>
 
   @if (subtotal(); as valor) {
-    <ts-precio [valor]="valor" [moneda]="snapshot()?.precioMoneda ?? 'COP'" />
+    <ts-precio
+      class="col-start-2 desde-movil:col-start-auto"
+      [valor]="valor"
+      [moneda]="snapshot()?.precioMoneda ?? 'COP'"
+    />
   }
 
-  <ts-boton variante="texto" [deshabilitado]="deshabilitado()" (click)="eliminar.emit()">
+  <ts-boton
+    class="col-start-2 desde-movil:col-start-auto"
+    variante="texto"
+    [deshabilitado]="deshabilitado()"
+    (click)="eliminar.emit()"
+  >
     {{ 'carrito.eliminar' | transloco }}
   </ts-boton>
 </article>

@@ -17,39 +17,56 @@
          lo repite. -->
     <p class="text-ts-texto-suave">{{ 'admin.productos.sin_productos' | transloco }}</p>
   } @else {
-    <table
-      class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
-    >
-      <thead>
-        <tr>
-          <th scope="col">{{ 'admin.productos.columnas.nombre' | transloco }}</th>
-          <th scope="col">{{ 'admin.productos.columnas.marca' | transloco }}</th>
-          <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
-          <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
-          <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (producto of productos(); track producto.id) {
+    <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
+         página. Siete columnas no caben en 380 px —medido: el documento se iba
+         a 650 px— y encoger una tabla de datos hasta que quepa la vuelve
+         ilegible. El desplazamiento horizontal es aceptable **dentro** de un
+         contenedor; en el `<body>` no lo es. -->
+    <div class="overflow-x-auto">
+      <table
+        class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+      >
+        <thead>
           <tr>
-            <td>{{ producto.nombre }}</td>
-            <td>{{ producto.marca.nombre }}</td>
-            <td>{{ producto.categoria.nombre }}</td>
-            <td>{{ etiquetaEstado(producto.estado) }}</td>
-            <td>{{ producto.totalVariantes }}</td>
-            <td>
-              <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
-                'admin.productos.editarEnlace' | transloco
-              }}</a>
-              <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'captura-360']">{{
-                'admin.productos.capturar360' | transloco
-              }}</a>
-            </td>
+            <th scope="col">{{ 'admin.productos.columnas.nombre' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.columnas.marca' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
+            <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
+            <th scope="col"></th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (producto of productos(); track producto.id) {
+            <tr>
+              <td>{{ producto.nombre }}</td>
+              <td>{{ producto.marca.nombre }}</td>
+              <td>{{ producto.categoria.nombre }}</td>
+              <td>{{ etiquetaEstado(producto.estado) }}</td>
+              <td>{{ producto.totalVariantes }}</td>
+              <td>
+                <!-- `flex` y no un separador de texto: los dos enlaces se pintaban
+                   pegados ("EditarCapturar 360") porque entre dos elementos en
+                   línea sin espacio en el HTML no hay nada que separe. Estaba
+                   anotado como pendiente cosmético desde la Fase 5 y sobrevivió
+                   entero a la migración a Tailwind: ninguna prueba mira
+                   separaciones, y el CSS anterior tampoco las ponía. -->
+                <div class="flex flex-wrap gap-16">
+                  <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
+                    'admin.productos.editarEnlace' | transloco
+                  }}</a>
+                  <a
+                    class="anillo-foco text-ts-primario"
+                    [routerLink]="[producto.id, 'captura-360']"
+                    >{{ 'admin.productos.capturar360' | transloco }}</a
+                  >
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     <ts-paginador
       [pagina]="filtro().pagina"

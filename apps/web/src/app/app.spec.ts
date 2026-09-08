@@ -107,6 +107,26 @@ describe('App', () => {
     expect(principal?.id).toBe('contenido');
   });
 
+  // Guardia contra una "limpieza" bienintencionada. `min-w-0` en <main> parece
+  // una clase sobrante y no lo es: <main> es item del grid de `app-root`, y el
+  // `min-width: auto` de un item de grid le impide encogerse por debajo de su
+  // min-content. Sin esta clase, el catálogo a 380 px llevaba el documento a
+  // 1104 px y **todo el sitio** se desplazaba en horizontal — encabezado y pie
+  // incluidos, porque se estiran al ancho del documento.
+  //
+  // Esta prueba afirma sobre la clase y no sobre el ancho a propósito: jsdom no
+  // hace layout, así que medir aquí daría cero siempre. El desbordamiento se
+  // verifica en el navegador (docs/06-testing.md); esto solo impide que la
+  // clase desaparezca sin que nadie se entere.
+  it('el landmark principal conserva el min-w-0 que evita el desbordamiento', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+
+    const principal = (fixture.nativeElement as HTMLElement).querySelector('main');
+
+    expect(principal?.className).toContain('min-w-0');
+  });
+
   // El cascarón está en todas las pantallas, así que una violación aquí las
   // afecta a todas: encabezado, enlace de salto, landmark principal y pie.
   it('el cascarón no tiene violaciones de WCAG 2.2 AA', async () => {
