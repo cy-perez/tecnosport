@@ -3,7 +3,8 @@
 ## Qué es
 
 Tienda en línea propia de TecnoSport. Vende al detal, con pago en línea, pago
-contraentrega y envío a todo Colombia, además de retiro en el punto de Medellín.
+contraentrega y envío a todo Colombia —cotizado por destino, cobrado aparte del
+precio del producto—, además de recogida sin costo en el punto de Medellín.
 
 TecnoSport es un negocio real con diez años de oficio: distribuidor de tecnología
 y ropa y calzado deportivo en Medellín. Persona natural, NIT 1054994043-9,
@@ -21,6 +22,8 @@ Sí entra:
   un teléfono, sin estudio fotográfico.
 - Carrito persistente.
 - Checkout con pago en línea por Wompi, transferencia y **contraentrega**.
+- **Cotización de envío por destino con Skydropx**, o recogida sin costo en el
+  punto, y **seguimiento del envío** visible para el comprador.
 - Compra como invitado; cuenta opcional.
 - Panel de administración: productos, variantes, existencias, imágenes, pedidos.
 - Correos transaccionales: confirmación, pago aprobado, despacho, entrega.
@@ -54,23 +57,40 @@ identifica al comprador, aunque sea solo por correo.
    cuenta.
 2. **Comprar un celular.** Elige capacidad y color, ve que hay dos unidades, paga
    con tarjeta, y el sistema le asigna una unidad concreta con su IMEI.
-3. **Comprar contraentrega.** Elige contraentrega, el sistema valida que su ciudad
-   tiene cobertura y que el monto está dentro del límite, confirma el pedido sin
-   cobrar, y el cobro ocurre en la entrega.
-4. **Publicar un producto con 360.** El administrador entra desde su teléfono al
+3. **Comprar contraentrega.** Elige contraentrega, el sistema valida —con la
+   cotización del destino— que hay transportadora con recaudo y que el monto está
+   dentro del límite, confirma el pedido sin cobrar, y el cobro ocurre en la
+   entrega, en efectivo y por el total con flete incluido.
+4. **Comprar con envío cotizado.** Escribe la dirección, el servidor cotiza y le
+   muestra el costo del envío y el plazo estimado por separado del subtotal,
+   paga el total, y después sigue el paquete desde el enlace del correo hasta que
+   dice entregado.
+5. **Comprar y recoger en el punto.** Elige recogida, el costo de envío queda en
+   cero, y recibe un código de retiro en vez de una guía.
+6. **Publicar un producto con 360.** El administrador entra desde su teléfono al
    asistente de captura, toma los fotogramas guiados por la silueta y el nivel,
    el cliente los recorta y los sube, y el producto queda publicado con el visor
    funcionando.
-5. **Pago rechazado.** Falla el pago, el inventario reservado se libera, el pedido
+7. **Pago rechazado.** Falla el pago, el inventario reservado se libera, el pedido
    queda en pago fallido y se puede reintentar desde el enlace del correo.
 
 ## Reglas de negocio que el código debe respetar
 
 - **Los precios se muestran con IVA incluido.** Lo exige el Estatuto del
   Consumidor. La factura desglosa; la vitrina no.
-- **Precio y existencia se recalculan en el servidor antes de cobrar.** Nunca
-  se confía en lo que envía el navegador. El envío no se recalcula: es un
-  costo estándar ya incluido en el precio publicado, igual en todo el país.
+- **Precio, existencia y costo de envío se recalculan en el servidor antes de
+  cobrar.** Nunca se confía en lo que envía el navegador.
+- **El precio publicado es un precio base, sin flete.** El costo de envío se
+  cotiza contra el destino real con Skydropx y se cobra aparte, informado por
+  separado en el resumen del pedido antes de pagar (`adr/0021`). Lo exige el
+  artículo 50 de la Ley 1480 de 2011, además de ser lo que el negocio decidió.
+- **La recogida en el punto no paga envío**, y el checkout lo dice: es la única
+  forma de comprar sin flete, así que el ahorro se muestra junto a la opción.
+- **Sin tarifa cotizada no hay envío a domicilio.** Si el destino no tiene
+  cobertura o el proveedor no responde, se ofrece solo la recogida. No se inventa
+  un flete ni se aplica una tarifa de respaldo.
+- **Una variante sin peso ni dimensiones no se publica.** Sin paquete no hay
+  cotización.
 - **No se vende lo que no hay.** El inventario se reserva al iniciar el pago y se
   descuenta al confirmarlo. Una reserva de pago en línea vence a los 30 minutos;
   una de contraentrega dura hasta el despacho.

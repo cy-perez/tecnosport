@@ -54,15 +54,66 @@ GET  /api/v1/carritos/{id}
 POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
-GET  /api/v1/envios/cobertura               ciudades con contraentrega habilitada
+POST /api/v1/envios/cotizacion              costo de envío y plazo para este carrito y destino
 POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos aplican a este carrito y destino
-POST /api/v1/pedidos                        revalida precios y existencias, reserva
+POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
 POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
+POST /api/v1/envios/webhook                 eventos de seguimiento de Skydropx, firma verificada
 POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 ```
+
+`GET /api/v1/envios/cobertura` **se retira**: la cobertura de contraentrega ya no
+sale de una tabla propia sino de la cotización (`ADR-0023`), así que la respuesta
+de `/metodos-de-pago-disponibles` es el único lugar donde el cliente se entera de
+si hay contraentrega para ese destino.
+
+### Cotización de envío
+
+`POST /api/v1/envios/cotizacion` recibe el id del carrito y el destino (código
+DANE de departamento y ciudad), y devuelve **una** opción, la más económica que
+cubre el destino:
+
+```json
+{
+  "costoEnvio": { "valor": 14900, "moneda": "COP" },
+  "transportadora": "SERVIENTREGA",
+  "diasEstimados": 3,
+  "venceEn": "2026-09-09T14:05:00Z",
+  "admiteContraentrega": true
+}
+```
+
+- **`POST` y no `GET`** aunque no cree nada persistente para el cliente: el cuerpo
+  lleva el carrito y la dirección, y una dirección de entrega no va en una URL que
+  se registra en los logs del balanceador.
+- **No devuelve la lista de tarifas ni el `rate_id`.** El servidor elige la más
+  económica (`ADR-0021`) y el identificador del proveedor es interno: si viajara
+  al navegador, alguien podría devolverlo alterado al crear el pedido.
+- **Cuando no hay tarifa, no es un error del sistema.** Responde `409` con
+  `codigo: "ENVIO_SIN_COBERTURA"` y el checkout ofrece solo la recogida en el
+  punto. Un `502` sería mentir sobre de quién es el problema; el destino
+  simplemente no se puede despachar hoy.
+- **La cotización se repite en el servidor al crear el pedido.** Lo que el cliente
+  recibió es informativo; el costo que se cobra lo fija `POST /api/v1/pedidos`
+  (regla dura #7). Si entre las dos llamadas la tarifa cambió, manda la del
+  pedido, y por eso el resumen se vuelve a pintar con lo que devuelve el pedido.
+- **`RETIRO_EN_PUNTO` no cotiza.** El checkout no llama este endpoint cuando el
+  comprador elige recogida: no hay destino, y el costo es cero por definición.
+
+### Webhook de seguimiento
+
+`POST /api/v1/envios/webhook` recibe los eventos de Skydropx, **verifica la firma
+antes de aplicar nada** y responde siempre `200`, incluso cuando descarta el
+evento (firma inválida, guía desconocida) — reintentar no arregla ninguna de las
+dos cosas. Es idempotente por identificador de evento, o por el hash de la firma
+si el proveedor no manda uno propio, exactamente como el de Wompi.
+
+`GET /api/v1/pedidos/{id}/seguimiento` gana transportadora, guía, plazo estimado
+y la lista de eventos. No expone el identificador de tarifa, el costo real del
+flete ni la comisión de recaudo: eso es margen (`docs/11-pagos-y-envios.md`).
 
 ### Filtros, orden y paginación de `GET /api/v1/productos`
 
@@ -135,10 +186,9 @@ POST /api/v1/admin/variantes                                 crea una variante (
 GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
-POST/DELETE /api/v1/admin/cobertura-contraentrega[/{codigoDaneCiudad}]  carga manual, sin UI
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
-POST /api/v1/admin/pedidos/{id}/despacho                    transportadora y guía
+POST /api/v1/admin/pedidos/{id}/despacho                    emite la guía con Skydropx
 POST /api/v1/admin/pedidos/{id}/entrega                     marca entregado
 POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, registra motivo
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
@@ -224,6 +274,13 @@ reintento por su cuenta.
 
 1. Recalcular precio, IVA y total.
 2. Verificar existencias.
-3. Decidir si un método de pago está disponible para ese destino y ese monto.
-4. Decidir si un pago está aprobado. La verdad es la consulta a la pasarela, no
+3. **Cotizar el envío y elegir la tarifa.** El costo de envío no se acepta del
+   cliente en ninguna petición, y el identificador de tarifa del proveedor nunca
+   sale del servidor.
+4. Decidir si un método de pago está disponible para ese destino y ese monto —
+   incluida la contraentrega, que desde `ADR-0023` depende de que la cotización
+   traiga una tarifa con recaudo.
+5. Decidir si un pago está aprobado. La verdad es la consulta a la pasarela, no
    el parámetro que trae el navegador al volver.
+6. **Decidir si un envío se entregó.** La verdad es el webhook firmado del
+   proveedor más la consulta de seguimiento, no lo que diga una pantalla.
