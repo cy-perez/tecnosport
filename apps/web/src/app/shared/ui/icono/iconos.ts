@@ -14,3 +14,5 @@
 export { ShoppingCart as iconoCarrito } from 'lucide';
 export { X as iconoCerrar } from 'lucide';
 export { Menu as iconoMenu } from 'lucide';
+// Lo pidió `ts-checkbox`: el visto de una casilla marcada.
+export { Check as iconoVisto } from 'lucide';

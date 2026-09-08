@@ -65,15 +65,17 @@
       </p>
     </address>
 
-    <label class="flex items-center gap-8 text-sm">
-      <input
-        class="anillo-foco-sobre-marca"
-        type="checkbox"
-        [checked]="movimientoReducido()"
-        (change)="alternarMovimientoReducido()"
-      />
-      {{ 'pie.reducir_movimiento' | transloco }}
-    </label>
+    <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco
+         normal es invisible en tema claro. Y el estado se manda, no se
+         alterna a ciegas: la casilla informa el suyo y el pie lo guarda, así
+         no hay dos verdades que puedan separarse. -->
+    <ts-checkbox
+      idCasilla="ts-reducir-movimiento"
+      [etiqueta]="'pie.reducir_movimiento' | transloco"
+      [marcado]="movimientoReducido()"
+      [sobreMarca]="true"
+      (marcadoCambio)="fijarMovimientoReducido($event)"
+    />
   </div>
 
   <p class="mx-auto my-0 max-w-contenido px-24 pb-24 text-xs">
