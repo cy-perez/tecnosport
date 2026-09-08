@@ -1,6 +1,7 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TsCheckbox } from '../../shared/ui/checkbox/ts-checkbox';
 
 const CLAVE_ALMACEN = 'ts-movimiento-reducido';
 
@@ -34,7 +35,7 @@ const CLAVE_ALMACEN = 'ts-movimiento-reducido';
  */
 @Component({
   selector: 'app-pie',
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, RouterLink, TsCheckbox],
   templateUrl: './pie.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -53,10 +54,16 @@ export class Pie {
     });
   }
 
-  protected alternarMovimientoReducido(): void {
-    const nuevo = !this.movimientoReducido();
-    this.movimientoReducido.set(nuevo);
-    window.localStorage.setItem(CLAVE_ALMACEN, String(nuevo));
-    document.documentElement.setAttribute('data-movimiento', nuevo ? 'reducido' : 'normal');
+  /**
+   * Recibe el estado en vez de alternarlo. Antes era `alternar()` y leía su
+   * propia señal para decidir: con el estado viviendo también en la casilla,
+   * eso son dos verdades que pueden separarse — un doble clic rápido, o un
+   * futuro control que ponga el valor en vez de invertirlo. La casilla dice
+   * cómo quedó; el pie lo persiste.
+   */
+  protected fijarMovimientoReducido(reducido: boolean): void {
+    this.movimientoReducido.set(reducido);
+    window.localStorage.setItem(CLAVE_ALMACEN, String(reducido));
+    document.documentElement.setAttribute('data-movimiento', reducido ? 'reducido' : 'normal');
   }
 }

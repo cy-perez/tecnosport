@@ -1,0 +1,30 @@
+<!-- El `<label>` es el objetivo táctil: `min-h-tactil` va aquí, no en la caja.
+     Envuelve al control y además lo referencia con `for`, redundante a
+     propósito — el `for` es lo que hace que `getByLabelText` encuentre el
+     `<input>` y no el host del componente. -->
+<label [class]="clasesEtiqueta()" [for]="idCasilla()">
+  <!-- Una sola celda de rejilla con la caja y el visto encima. `place-items-center`
+       centra el visto sin posicionamiento absoluto, así que no hace falta que
+       la caja sea `relative` ni que nadie calcule desplazamientos. -->
+  <span class="grid size-24 shrink-0 place-items-center">
+    <input
+      [class]="clasesCaja()"
+      [id]="idCasilla()"
+      type="checkbox"
+      [checked]="marcado()"
+      [disabled]="deshabilitado()"
+      (change)="marcadoCambio.emit($any($event.target).checked)"
+    />
+    @if (marcado()) {
+      <!-- `pointer-events-none`: el visto se dibuja sobre el control, y sin
+           esto se comería el clic justo cuando la casilla está marcada — o
+           sea, no se podría desmarcar. -->
+      <ts-icono
+        class="pointer-events-none col-start-1 row-start-1 place-self-center"
+        [icono]="iconoVisto"
+        [clase]="claseVisto()"
+      />
+    }
+  </span>
+  {{ etiqueta() }}
+</label>

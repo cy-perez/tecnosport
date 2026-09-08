@@ -54,7 +54,10 @@
     </div>
   }
 
-  <a class="mt-24 inline-block text-ts-texto" [routerLink]="['/', idioma(), 'productos']">
+  <a
+    class="anillo-foco mt-24 inline-flex min-h-tactil items-center text-ts-texto"
+    [routerLink]="['/', idioma(), 'productos']"
+  >
     {{ 'portada.ver_todo' | transloco }}
   </a>
 </section>

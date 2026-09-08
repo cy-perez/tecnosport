@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -20,7 +20,7 @@ import { datosTransferenciaDelPedido } from '../../domain/reglas-pedido';
  */
 @Component({
   selector: 'app-transferencia',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
+  imports: [TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
   templateUrl: './transferencia.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

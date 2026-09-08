@@ -9,8 +9,12 @@
   <div
     class="flex h-[var(--header-alto-movil)] items-center justify-between gap-16 border-b border-ts-borde bg-ts-superficie px-24 desde-movil:h-[var(--header-alto-escritorio)]"
   >
+    <!-- `min-h-tactil min-w-tactil` con centrado: el ancla medía 30 x 30, el
+         tamaño del isotipo. Crece la caja pulsable, no el dibujo — el ancla no
+         pinta fondo ni borde, así que no se ve ningún cambio. Cabe de sobra en
+         los 60 px de alto del encabezado móvil. -->
     <a
-      class="anillo-foco inline-flex shrink-0"
+      class="anillo-foco inline-flex min-h-tactil min-w-tactil shrink-0 items-center justify-center"
       [routerLink]="['/', idiomaActual()]"
       [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
     >

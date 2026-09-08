@@ -35,6 +35,38 @@
   ::file-selector-button {
     border: 0 solid;
   }
+
+  /* La segunda pieza de Preflight que sí hacía falta, y que faltó. Encontrada
+     mirando el sitio en el navegador, no en una prueba: `app-root` empezaba en
+     (8, 8) porque `body` conservaba el margen del navegador, y ni `html` ni
+     `body` declaraban fondo. Se comprobó pintando `body` de magenta — aparecía
+     un marco alrededor de toda la aplicación.
+
+     Tres cosas se arreglan aquí, y ninguna la puede ver jsdom:
+
+     1. `margin`. Los 8 px eran una franja que pintaba el lienzo del navegador
+        —blanco— y no `--color-fondo`: un borde claro alrededor de una app
+        oscura. Además `app-root` es `min-h-screen`, así que 100vh + 16 px de
+        márgenes daban `scrollHeight` 974 contra un viewport de 958: **toda**
+        página cuyo contenido cabía scrolleaba 16 px igual.
+     2. `background-color`. Redundante con el `bg-ts-fondo` de `app-root` para
+        el marco, pero no para el lienzo: sin fondo en `html` ni en `body`, el
+        rebote del scroll y cualquier zona más allá de `min-h-screen` se pintan
+        blancas. El fondo de `body` se propaga al lienzo, que es lo que se
+        quiere.
+     3. `color`. Era `rgb(0, 0, 0)` heredado del navegador. Hoy no se nota
+        porque cada texto fija el suyo; el día que uno se olvide, sale negro
+        sobre `#0E1217`. Un valor por omisión correcto vale más que la
+        disciplina de no olvidarse.
+
+     No se toca `color-scheme`: cambiaría cómo el navegador dibuja los
+     controles nativos y la barra de desplazamiento, y eso es una decisión
+     visual aparte de este arreglo. */
+  body {
+    margin: 0;
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+  }
 }
 
 /* El tema oscuro NO se conmuta con `.dark`. Ya existe `data-tema` en <html>,
