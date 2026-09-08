@@ -4,7 +4,9 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.legal.AutorizacionDatos;
 import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
@@ -30,6 +32,8 @@ public final class RegistrarUsuario {
   private final LimitadorDeIntentos limitadorDeIntentos;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
+  private final RepositorioAutorizaciones repositorioAutorizaciones;
+  private final String versionPolitica;
 
   public RegistrarUsuario(
       RepositorioUsuarios repositorioUsuarios,
@@ -41,7 +45,9 @@ public final class RegistrarUsuario {
       String urlBaseVerificacion,
       LimitadorDeIntentos limitadorDeIntentos,
       int maximoIntentosPorCuenta,
-      Duration ventanaIntentosPorCuenta) {
+      Duration ventanaIntentosPorCuenta,
+      RepositorioAutorizaciones repositorioAutorizaciones,
+      String versionPolitica) {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
     this.repositorioTokens = Objects.requireNonNull(repositorioTokens);
     this.codificadorDeClaves = Objects.requireNonNull(codificadorDeClaves);
@@ -52,6 +58,8 @@ public final class RegistrarUsuario {
     this.limitadorDeIntentos = Objects.requireNonNull(limitadorDeIntentos);
     this.maximoIntentosPorCuenta = maximoIntentosPorCuenta;
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
+    this.repositorioAutorizaciones = Objects.requireNonNull(repositorioAutorizaciones);
+    this.versionPolitica = Objects.requireNonNull(versionPolitica);
   }
 
   public void ejecutar(RegistrarUsuarioComando comando) {
@@ -67,6 +75,10 @@ public final class RegistrarUsuario {
       throw new LimiteDeIntentosExcedidoException();
     }
 
+    // Antes que el correo duplicado: responder 409 a quien no autorizó le confirmaría que ese
+    // correo tiene cuenta sin haber consentido nada.
+    AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
+
     if (repositorioUsuarios.buscarPorCorreo(correo).isPresent()) {
       throw new CorreoYaRegistradoException();
     }
@@ -74,7 +86,21 @@ public final class RegistrarUsuario {
     Usuario usuario =
         Usuario.crear(
             correo, codificadorDeClaves.codificar(comando.claveTextoPlano()), Rol.CLIENTE, ahora);
+
+    // Antes de guardar nada: sin autorización no hay cuenta, y la constancia se construye con el
+    // id del usuario que está a punto de existir. Si falta el sí, esto revienta aquí y no queda
+    // ni el usuario a medias ni una cuenta sin su constancia.
+    AutorizacionDatos autorizacion =
+        AutorizacionDatos.enRegistro(
+            comando.autorizaDatos(),
+            correo,
+            usuario.id(),
+            versionPolitica,
+            comando.direccionIp(),
+            ahora);
+
     repositorioUsuarios.guardar(usuario);
+    repositorioAutorizaciones.guardar(autorizacion);
 
     TokenVerificacionCorreo token =
         TokenVerificacionCorreo.crear(usuario.id(), ahora, vigenciaToken);

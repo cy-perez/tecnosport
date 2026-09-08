@@ -16,12 +16,14 @@ import co.tecnosport.api.application.usuario.SolicitarRecuperacionComando;
 import co.tecnosport.api.application.usuario.TokensDeSesion;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.application.usuario.VerificarCorreoComando;
+import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
 import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
 import co.tecnosport.api.presentation.usuario.dto.SesionRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.SolicitarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.VerificarCorreoRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
@@ -81,11 +83,14 @@ public class AutenticacionControlador {
   }
 
   @PostMapping("/registro")
-  public ResponseEntity<Void> registro(@RequestBody RegistrarUsuarioRequest cuerpo) {
+  public ResponseEntity<Void> registro(
+      @RequestBody RegistrarUsuarioRequest cuerpo, HttpServletRequest peticion) {
+    String ip = IpDelCliente.de(peticion);
     transaccion.executeWithoutResult(
         estado ->
             registrarUsuario.ejecutar(
-                new RegistrarUsuarioComando(cuerpo.correo(), cuerpo.clave())));
+                new RegistrarUsuarioComando(
+                    cuerpo.correo(), cuerpo.clave(), cuerpo.autorizaDatos(), ip)));
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 

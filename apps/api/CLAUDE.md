@@ -146,6 +146,15 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   revienta en tiempo de ejecución con `HttpMessageConversionException` al
   deserializar — encontrado en Fase 3 en el controlador del webhook de
   Wompi, sin ninguna pista del porqué en el mensaje de error.
+- **Jackson 3 no rellena los componentes que falten de un `record`.** Un cuerpo
+  JSON al que le falta un campo declarado en el record no cae en el valor por
+  omisión del tipo (`false` para un `boolean`, `0` para un `int`): revienta la
+  deserialización entera y la petición muere en 422 con
+  `HTTP_MESSAGE_NOT_READABLE`. Encontrado en Fase 6 al añadir `autorizaDatos` a
+  `RegistrarUsuarioRequest` dando por hecho lo contrario. No es un problema
+  —el resultado es el seguro— pero **no se puede razonar sobre "el primitivo
+  protege por omisión"**: si un campo tiene que ser opcional, hay que declararlo
+  como envoltorio (`Boolean`) y decidir el valor a mano.
 - **`@AuthenticationPrincipal` solo se resuelve cuando `@EnableWebSecurity`
   está activo en el contexto** (lo registra `WebMvcSecurityConfiguration`,
   que `@EnableWebSecurity` importa). Como eso vive en `bootstrap`

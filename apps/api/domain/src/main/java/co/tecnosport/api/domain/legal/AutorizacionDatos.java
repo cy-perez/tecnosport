@@ -109,11 +109,16 @@ public final class AutorizacionDatos {
   }
 
   /**
-   * Único punto donde se decide si hay autorización. Está dentro de las fábricas para que sea
-   * imposible construir una constancia que no represente un sí real: un {@code AutorizacionDatos}
-   * que existe es, por construcción, una autorización otorgada.
+   * Único punto donde se decide si hay autorización. Lo llaman las dos fábricas —para que sea
+   * imposible construir una constancia que no represente un sí real— y también, antes que nada, el
+   * caso de uso que va a recoger la autorización.
+   *
+   * <p>Esa llamada temprana no es redundante: sin ella, un registro sin autorizar caía primero en
+   * "ese correo ya está registrado" y respondía 409, o sea que le confirmaba a alguien que nunca
+   * consintió que ese correo tiene cuenta. "No autorizaste" es la razón más fundamental para
+   * rechazar y tiene que ganarle a todas las demás.
    */
-  private static void exigirAutorizacion(boolean autoriza) {
+  public static void exigirAutorizacion(boolean autoriza) {
     if (!autoriza) {
       throw new AutorizacionRequeridaException();
     }

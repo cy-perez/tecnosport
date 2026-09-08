@@ -88,6 +88,12 @@ tecnosport:
     # Dato de negocio real, no inventado (regla dura #5): cambiar antes de desplegar a producción.
     correo: ${ADMIN_CORREO:admin@tecnosport.co}
     clave: ${ADMIN_CLAVE:admin_clave_de_desarrollo_cambiar}
+  legal:
+    # Fecha de vigencia del texto publicado en /legales/privacidad. Va acoplada al texto, que vive
+    # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
+    # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
+    # fijarla en cada entorno.
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-09-07}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.

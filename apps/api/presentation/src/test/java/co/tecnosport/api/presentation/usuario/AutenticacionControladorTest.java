@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
@@ -61,6 +62,7 @@ class AutenticacionControladorTest {
   private static final Duration VIGENCIA = Duration.ofDays(30);
   private static final Duration VIGENCIA_TOKEN_VERIFICACION = Duration.ofHours(24);
   private static final Duration VIGENCIA_TOKEN_RECUPERACION = Duration.ofMinutes(30);
+  private static final String VERSION_POLITICA = "2026-09-07";
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(15);
 
@@ -160,8 +162,43 @@ class AutenticacionControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     json.writeValueAsString(
-                        new RegistrarUsuarioRequest("cliente@tecnosport.co", "clave-segura"))))
+                        new RegistrarUsuarioRequest(
+                            "cliente@tecnosport.co", "clave-segura", true))))
         .andExpect(status().isCreated());
+  }
+
+  /**
+   * La casilla del navegador es una comodidad; la regla es del servidor. Un cliente que mande el
+   * JSON a mano sin autorizar no crea la cuenta (Ley 1581 de 2012).
+   */
+  @Test
+  void registrarSinAutorizarElTratamientoDeDatosDevuelve422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/registro")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new RegistrarUsuarioRequest(
+                            "cliente@tecnosport.co", "clave-segura", false))))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.codigo").value("AUTORIZACION_REQUERIDA"));
+  }
+
+  /**
+   * Un cuerpo que omite el campo no cae en false: Jackson 3 rechaza el JSON entero. El resultado
+   * sigue siendo el seguro —no se crea la cuenta— pero por una razón distinta de la que sugiere el
+   * primitivo, y conviene que quede fijada por una prueba y no por una suposición.
+   */
+  @Test
+  void registrarSinElCampoDeAutorizacionTampocoCrearLaCuenta() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/registro")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"cliente@tecnosport.co\",\"clave\":\"clave-segura\"}"))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
   }
 
   @Test
@@ -174,7 +211,8 @@ class AutenticacionControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     json.writeValueAsString(
-                        new RegistrarUsuarioRequest("cliente@tecnosport.co", "clave-segura"))))
+                        new RegistrarUsuarioRequest(
+                            "cliente@tecnosport.co", "clave-segura", true))))
         .andExpect(status().isTooManyRequests())
         .andExpect(jsonPath("$.codigo").value("LIMITE_DE_INTENTOS_EXCEDIDO"));
   }
@@ -189,7 +227,7 @@ class AutenticacionControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     json.writeValueAsString(
-                        new RegistrarUsuarioRequest("admin@tecnosport.co", "clave-segura"))))
+                        new RegistrarUsuarioRequest("admin@tecnosport.co", "clave-segura", true))))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("CORREO_YA_REGISTRADO"));
   }
@@ -390,7 +428,8 @@ class AutenticacionControladorTest {
         RepositorioTokensVerificacion repositorioTokensVerificacion,
         CodificadorDeClaves codificadorDeClaves,
         EnviadorDeCorreo enviadorDeCorreo,
-        LimitadorDeIntentos limitadorDeIntentos) {
+        LimitadorDeIntentos limitadorDeIntentos,
+        RepositorioAutorizaciones repositorioAutorizaciones) {
       return new RegistrarUsuario(
           repositorioUsuarios,
           repositorioTokensVerificacion,
@@ -401,7 +440,14 @@ class AutenticacionControladorTest {
           "http://localhost:4200/es/cuenta/verificar-correo",
           limitadorDeIntentos,
           MAXIMO_INTENTOS_POR_CUENTA,
-          VENTANA_INTENTOS_POR_CUENTA);
+          VENTANA_INTENTOS_POR_CUENTA,
+          repositorioAutorizaciones,
+          VERSION_POLITICA);
+    }
+
+    @Bean
+    RepositorioAutorizaciones repositorioAutorizaciones() {
+      return new RepositorioAutorizacionesDobleDePrueba();
     }
 
     @Bean
