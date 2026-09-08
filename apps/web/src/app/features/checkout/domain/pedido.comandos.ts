@@ -14,6 +14,9 @@ export interface CrearPedidoComando {
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;
   readonly metodoPago: MetodoPago;
+  /** Autorización del tratamiento de datos (Ley 1581 de 2012). La recoge la página de resumen,
+   * que es donde se piden los datos personales, y viaja hasta aquí por `DatosEntrega`. */
+  readonly autorizaDatos: boolean;
 }
 
 /** Mismos criterios que `CrearPedidoComando` menos el método de pago: es
@@ -35,4 +38,8 @@ export interface DatosEntrega {
   readonly correo: string;
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;
+  /** Ver `CrearPedidoComando.autorizaDatos`. Va con los datos de entrega y no en la página de
+   * confirmación porque el consentimiento se pide donde se recogen los datos, no dos pasos
+   * después de haberlos escrito. */
+  readonly autorizaDatos: boolean;
 }

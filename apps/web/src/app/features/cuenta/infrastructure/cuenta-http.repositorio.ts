@@ -8,9 +8,9 @@ import { RepositorioCuenta } from '../domain/repositorio-cuenta.puerto';
 export class CuentaHttpRepositorio implements RepositorioCuenta {
   private readonly cliente = crearClienteContratos(baseUrl());
 
-  async registrar(correo: string, clave: string): Promise<void> {
+  async registrar(correo: string, clave: string, autorizaDatos: boolean): Promise<void> {
     const { response } = await this.cliente.POST('/api/v1/auth/registro', {
-      body: { correo, clave },
+      body: { correo, clave, autorizaDatos },
     });
     if (response.status === 409) {
       throw new CorreoYaRegistradoError();

@@ -2,10 +2,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
@@ -39,9 +41,11 @@ interface ValoresDireccion {
     TranslocoPipe,
     TsBoton,
     TsCampo,
+    TsCheckbox,
     TsEsqueleto,
     TsPrecio,
     TsSelect,
+    RouterLink,
   ],
   templateUrl: './resumen.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,6 +54,9 @@ export class ResumenPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
+
+  /** Mismo patrón que el pie: las rutas viven bajo /:lang. */
+  protected readonly idioma = this.transloco.activeLang;
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   private readonly checkout = inject(CheckoutStore);
@@ -76,6 +83,12 @@ export class ResumenPage {
       codigoDaneCiudad: new FormControl('', { nonNullable: true }),
       direccion: new FormControl('', { nonNullable: true }),
       indicaciones: new FormControl('', { nonNullable: true }),
+    }),
+    // requiredTrue, y arranca en false: la casilla nunca puede venir premarcada — sin acción del
+    // titular no hay autorización válida (Ley 1581 de 2012).
+    autorizaDatos: new FormControl(false, {
+      nonNullable: true,
+      validators: [Validators.requiredTrue],
     }),
   });
 
@@ -116,6 +129,24 @@ export class ResumenPage {
     return control.hasError('required')
       ? this.transloco.translate('checkout.resumen.errores.correo_requerido')
       : this.transloco.translate('checkout.resumen.errores.correo_invalido');
+  });
+
+  /**
+   * Sin esto, quien no marca la casilla pulsa «Continuar» y no pasa absolutamente nada: el
+   * formulario es inválido, `enviar()` marca todo como tocado y vuelve, pero la casilla no tenía
+   * dónde mostrar su error. Lo encontró el recorrido de Playwright, no las pruebas unitarias —esas
+   * comprobaban que no se guardara el borrador, que es cierto, pero no que se le dijera al
+   * comprador por qué.
+   */
+  private readonly tickAutorizacion = toSignal(this.form.controls.autorizaDatos.events, {
+    initialValue: null,
+  });
+  protected readonly errorAutorizacion = computed(() => {
+    this.tickAutorizacion();
+    const control = this.form.controls.autorizaDatos;
+    return control.touched && control.invalid
+      ? this.transloco.translate('checkout.resumen.errores.autorizacion_requerida')
+      : null;
   });
 
   private readonly tickDepartamento = toSignal(
@@ -184,6 +215,7 @@ export class ResumenPage {
       correo: valores.correo,
       tipoEntrega: valores.tipoEntrega,
       direccion,
+      autorizaDatos: valores.autorizaDatos,
     });
 
     // Método de pago es el paso 4b, todavía sin construir.

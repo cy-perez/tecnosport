@@ -39,3 +39,6 @@ npm-debug.log*
 # Folders
 tecnosport-kit-ui/
 tecno-sport-marca/
+# Playwright: resultados y trazas de los recorridos completos.
+apps/web/test-results/
+apps/web/playwright-report/

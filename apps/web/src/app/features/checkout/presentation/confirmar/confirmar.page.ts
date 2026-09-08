@@ -102,6 +102,7 @@ export class ConfirmarPage {
       tipoEntrega: datos.tipoEntrega,
       direccion: datos.direccion,
       metodoPago,
+      autorizaDatos: datos.autorizaDatos,
     };
 
     try {

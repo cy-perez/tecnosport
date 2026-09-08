@@ -6,6 +6,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
@@ -18,6 +19,7 @@ import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
+import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -31,7 +33,11 @@ import org.springframework.context.annotation.Configuration;
  * propiedades es trabajo de bootstrap, igual que con Wompi.
  */
 @Configuration
-@EnableConfigurationProperties({PropiedadesPedido.class, PropiedadesTransferenciaManual.class})
+@EnableConfigurationProperties({
+  PropiedadesPedido.class,
+  PropiedadesTransferenciaManual.class,
+  PropiedadesLegal.class
+})
 public class ConfiguracionPedido {
 
   @Bean
@@ -43,7 +49,9 @@ public class ConfiguracionPedido {
       Reloj reloj,
       PropiedadesPedido propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
-      PropiedadesLimitePedidos propiedadesLimite) {
+      PropiedadesLimitePedidos propiedadesLimite,
+      RepositorioAutorizaciones repositorioAutorizaciones,
+      PropiedadesLegal propiedadesLegal) {
     return new CrearPedido(
         repositorioProductos,
         repositorioInventario,
@@ -54,7 +62,9 @@ public class ConfiguracionPedido {
         Duration.ofHours(propiedades.horasVencimientoTransferencia()),
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
-        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        repositorioAutorizaciones,
+        propiedadesLegal.politicaDatosVersion());
   }
 
   @Bean

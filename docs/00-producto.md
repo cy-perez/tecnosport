@@ -6,7 +6,7 @@ Tienda en línea propia de TecnoSport. Vende al detal, con pago en línea, pago
 contraentrega y envío a todo Colombia, además de retiro en el punto de Medellín.
 
 TecnoSport es un negocio real con diez años de oficio: distribuidor de tecnología
-y ropa y calzado deportivo en Medellín. Persona natural, NIT 1054994043-1,
+y ropa y calzado deportivo en Medellín. Persona natural, NIT 1054994043-9,
 Cra. 26C #38B-31, Medellín. Teléfono y WhatsApp 310 420 9655. Correo
 contact@tecnosport.co. Dominio tecnosport.co.
 

@@ -206,3 +206,31 @@ verificación de que `es.json` y `en.json` tienen las mismas claves, y
 
 Cobertura: se mide, no se persigue. Un noventa por ciento con pruebas triviales es
 peor que un sesenta donde lo cubierto es dinero, inventario y pagos.
+
+## Recorridos completos con Playwright
+
+Existen desde la Fase 6 (`npm run e2e`, `apps/web/e2e/`). Dos: la compra completa
+—portada, ficha, carrito, checkout con la casilla de autorización, transferencia,
+pedido creado— y la navegación legal desde el pie.
+
+**Fuera de `npm run verificar` a propósito.** Necesitan `docker compose up -d`,
+`gradlew.bat bootRun` y `npm run dev` levantados; `verificar` tiene que seguir
+corriendo en seco.
+
+**Usan el Chrome instalado (`channel: 'chrome'`)**, no el Chromium que Playwright
+descarga: esa descarga falla en esta máquina, y probar contra el navegador que de
+verdad usan los compradores es más fiel.
+
+### Qué atrapan que Vitest no
+
+En la primera corrida encontraron un defecto real que las pruebas unitarias no
+veían: en el resumen del checkout, quien no marcaba la casilla de autorización
+pulsaba «Continuar» y **no pasaba nada**. La prueba de Vitest comprobaba que no se
+guardara el borrador —cierto— pero no que se le dijera al comprador por qué. Esa
+es exactamente la diferencia entre probar el estado y probar el recorrido.
+
+### Lo que sigue sin herramienta
+
+**Lighthouse no está automatizado.** Se corre a mano desde DevTools sobre un
+`ng build` servido en producción, no sobre `ng serve`, que no comprime y ensucia
+los números.

@@ -23,8 +23,11 @@
       "correo_invalido": "Enter a valid email.",
       "departamento_requerido": "Choose a department.",
       "ciudad_requerida": "Choose a city.",
-      "direccion_requerida": "Address is required."
-    }
+      "direccion_requerida": "Address is required.",
+      "autorizacion_requerida": "You must authorise the processing of your data to continue."
+    },
+    "autoriza_datos": "I authorise the processing of my personal data to process and deliver this order.",
+    "ver_politica": "Read the personal data policy"
   },
   "metodoPago": {
     "titulo": "Payment method",

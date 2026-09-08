@@ -182,6 +182,11 @@ describe('ResumenPage', () => {
     fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
     fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
+    fireEvent.click(
+      screen.getByLabelText(
+        'Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.',
+      ),
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
@@ -197,6 +202,7 @@ describe('ResumenPage', () => {
         direccion: 'Cra. 26C #38B-31',
         indicaciones: null,
       },
+      autorizaDatos: true,
     });
   });
 
@@ -210,5 +216,68 @@ describe('ResumenPage', () => {
     await screen.findByLabelText('Correo electrónico');
 
     await esperarSinViolaciones(container);
+  });
+
+  // Sin autorización no hay pedido, y el servidor lo exige igual (Ley 1581 de 2012). Esto es para
+  // que el comprador no llegue hasta el 422 después de escribir toda la dirección.
+  // Encontrado por el recorrido de Playwright: no guardar el borrador es correcto, pero sin
+  // mensaje el comprador pulsa «Continuar» y no pasa nada, sin saber por qué.
+  it('sin marcar la autorización, dice por qué no continúa', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'compra@ejemplo.co' } });
+    fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
+    fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(
+      await screen.findByText('Tienes que autorizar el tratamiento de datos para continuar.'),
+    ).toBeTruthy();
+  });
+
+  it('sin marcar la autorización de datos, no guarda el borrador', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'compra@ejemplo.co' } });
+    fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
+    fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  it('la casilla de autorización nunca arranca marcada', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    const casilla = screen.getByLabelText(
+      'Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.',
+    ) as HTMLInputElement;
+
+    expect(casilla.checked).toBe(false);
+  });
+
+  it('enlaza la política de tratamiento de datos junto a la casilla', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    await screen.findByText('Morral urbano');
+
+    const enlace = screen.getByRole('link', { name: 'Leer la política de tratamiento de datos' });
+
+    expect(enlace.getAttribute('href')).toBe('/es/legales/privacidad');
   });
 });

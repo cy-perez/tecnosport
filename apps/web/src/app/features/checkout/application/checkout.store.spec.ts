@@ -78,6 +78,7 @@ function comandoDePrueba(): CrearPedidoComando {
     tipoEntrega: 'RETIRO_EN_PUNTO',
     direccion: null,
     metodoPago: 'TARJETA',
+    autorizaDatos: true,
   };
 }
 
@@ -140,7 +141,12 @@ describe('CheckoutStore', () => {
     store.elegirMetodoPago('CONTRAENTREGA');
     await store.crearPedido(comandoDePrueba());
 
-    store.guardarDatosEntrega({ correo: 'compra@ejemplo.co', tipoEntrega: 'RETIRO_EN_PUNTO', direccion: null });
+    store.guardarDatosEntrega({
+      correo: 'compra@ejemplo.co',
+      tipoEntrega: 'RETIRO_EN_PUNTO',
+      direccion: null,
+      autorizaDatos: true,
+    });
 
     expect(store.metodoPago()).toBeNull();
     expect(store.pedido()).toBeNull();

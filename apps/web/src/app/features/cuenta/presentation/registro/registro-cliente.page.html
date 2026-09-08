@@ -31,6 +31,26 @@
         [error]="clavesNoCoinciden() ? ('cuenta.registro.error_confirmar_clave' | transloco) : null"
       />
 
+      <!--
+        La autorización de datos va en su propia casilla y separada de todo lo demás: es un
+        consentimiento distinto del de los términos, y meterlos juntos lo invalida. El enlace a la
+        política va al lado y no dentro del <label>, porque un enlace dentro de la etiqueta se pelea
+        con el objetivo de clic de la casilla.
+      -->
+      <div class="flex flex-col gap-4">
+        <ts-checkbox
+          idCasilla="registro-autoriza-datos"
+          [etiqueta]="'cuenta.registro.autoriza_datos' | transloco"
+          [marcado]="form.controls.autorizaDatos.value"
+          (marcadoCambio)="form.controls.autorizaDatos.setValue($event)"
+        />
+        <a
+          class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-primario"
+          [routerLink]="['/', idioma(), 'legales', 'privacidad']"
+          >{{ 'cuenta.registro.ver_politica' | transloco }}</a
+        >
+      </div>
+
       @if (error()) {
         <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
       }

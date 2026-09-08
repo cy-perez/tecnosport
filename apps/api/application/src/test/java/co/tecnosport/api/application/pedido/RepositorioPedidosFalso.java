@@ -27,6 +27,11 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     pedidos.put(pedido.id(), pedido);
   }
 
+  /** Para afirmar que un caso de uso que falló no dejó ningún pedido guardado. */
+  List<Pedido> todos() {
+    return List.copyOf(pedidos.values());
+  }
+
   @Override
   public NumeroPedido siguienteNumero(int anio) {
     long secuencial = secuenciasPorAnio.merge(anio, 1L, Long::sum);

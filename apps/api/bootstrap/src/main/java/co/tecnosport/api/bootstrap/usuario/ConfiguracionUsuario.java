@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.usuario;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
@@ -18,6 +19,7 @@ import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
+import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.infrastructure.usuario.CodificadorDeClavesBCrypt;
 import co.tecnosport.api.infrastructure.usuario.GeneradorDeTokensJwt;
 import co.tecnosport.api.infrastructure.usuario.VerificadorDeTokensJwt;
@@ -31,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
   PropiedadesJwt.class,
+  PropiedadesLegal.class,
   PropiedadesAdminSemilla.class,
   PropiedadesVerificacionCorreo.class,
   PropiedadesRecuperacionClave.class
@@ -109,7 +112,9 @@ public class ConfiguracionUsuario {
       Reloj reloj,
       PropiedadesVerificacionCorreo propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
-      PropiedadesLimiteAuth propiedadesLimite) {
+      PropiedadesLimiteAuth propiedadesLimite,
+      RepositorioAutorizaciones repositorioAutorizaciones,
+      PropiedadesLegal propiedadesLegal) {
     return new RegistrarUsuario(
         repositorioUsuarios,
         repositorioTokensVerificacion,
@@ -120,7 +125,9 @@ public class ConfiguracionUsuario {
         propiedades.urlPublica() + "/es/cuenta/verificar-correo",
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
-        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
+        repositorioAutorizaciones,
+        propiedadesLegal.politicaDatosVersion());
   }
 
   @Bean

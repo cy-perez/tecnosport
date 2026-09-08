@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
+import { esperarSinViolaciones } from '../../../../../testing/axe';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
@@ -214,5 +215,18 @@ describe('EstadoPage', () => {
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
 
     Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
+  });
+
+  // Es la última pantalla del recorrido y la que alguien vuelve a abrir días después para ver
+  // en qué va su pedido.
+  it('no tiene violaciones de WCAG 2.2 AA', async () => {
+    const { container } = await renderConPedidoEnMemoria(
+      pedidoDePrueba(),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+    );
+    await screen.findByText('Pedido TS-2026-000001');
+
+    await esperarSinViolaciones(container);
   });
 });

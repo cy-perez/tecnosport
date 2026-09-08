@@ -111,7 +111,7 @@ class CarritoControladorTest {
   @Test
   void actualizarCantidadACeroDevuelve422() throws Exception {
     Carrito carrito = Carrito.crear(null, Instant.now());
-    carrito.agregarLinea(UUID.randomUUID(), 1);
+    carrito.agregarLinea(UUID.randomUUID(), 1, Instant.now());
     repositorio.guardar(carrito);
     UUID lineaId = carrito.lineas().get(0).id();
 
@@ -140,7 +140,7 @@ class CarritoControladorTest {
   @Test
   void eliminarLineaLaQuitaDelCarritoDevuelto() throws Exception {
     Carrito carrito = Carrito.crear(null, Instant.now());
-    carrito.agregarLinea(UUID.randomUUID(), 1);
+    carrito.agregarLinea(UUID.randomUUID(), 1, Instant.now());
     repositorio.guardar(carrito);
     UUID lineaId = carrito.lineas().get(0).id();
 
@@ -175,17 +175,17 @@ class CarritoControladorTest {
 
     @Bean
     AgregarLineaAlCarrito agregarLineaAlCarrito(RepositorioCarrito repositorio) {
-      return new AgregarLineaAlCarrito(repositorio);
+      return new AgregarLineaAlCarrito(repositorio, Instant::now);
     }
 
     @Bean
     ActualizarCantidadDeLinea actualizarCantidadDeLinea(RepositorioCarrito repositorio) {
-      return new ActualizarCantidadDeLinea(repositorio);
+      return new ActualizarCantidadDeLinea(repositorio, Instant::now);
     }
 
     @Bean
     EliminarLineaDelCarrito eliminarLineaDelCarrito(RepositorioCarrito repositorio) {
-      return new EliminarLineaDelCarrito(repositorio);
+      return new EliminarLineaDelCarrito(repositorio, Instant::now);
     }
 
     @Bean

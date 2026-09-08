@@ -38,3 +38,28 @@ export function usarTraductor(): Signal<(clave: string, parametros?: Parametros)
     return (clave: string, parametros?: Parametros) => transloco.translate(clave, parametros);
   });
 }
+
+/**
+ * Lo mismo que {@link usarTraductor}, pero para leer una **estructura** y no una cadena: el texto
+ * de las páginas legales vive en el scope como una lista de secciones, y lo que hace falta traer no
+ * es un título sino el documento entero.
+ *
+ * Existe aparte de `translateObjectSignal` porque aquel resuelve una clave fija, y aquí la clave
+ * depende de qué documento se esté viendo. Cuelga del mismo `events$` por el mismo motivo, así que
+ * la trampa del `computed` que no se recalcula está cubierta igual.
+ */
+export function usarTraductorDeObjetos(): Signal<<T>(clave: string) => T | undefined> {
+  const transloco = inject(TranslocoService);
+
+  const revision = toSignal(
+    transloco.events$.pipe(
+      filter((evento) => evento.type === 'translationLoadSuccess' || evento.type === 'langChanged'),
+    ),
+    { initialValue: null },
+  );
+
+  return computed(() => {
+    revision();
+    return <T,>(clave: string): T | undefined => transloco.translateObject<T>(clave);
+  });
+}

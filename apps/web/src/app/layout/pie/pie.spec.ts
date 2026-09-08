@@ -52,7 +52,7 @@ describe('Pie', () => {
     await renderPie();
 
     expect(screen.getByText('Tecno Sport')).toBeTruthy();
-    expect(screen.getByText('NIT 1054994043-1')).toBeTruthy();
+    expect(screen.getByText('NIT 1054994043-9')).toBeTruthy();
   });
 
   it('enlaza el teléfono a tel: y a wa.me', async () => {
@@ -96,5 +96,20 @@ describe('Pie', () => {
     await renderPie();
 
     expect(screen.getByRole('link', { name: 'Panel administrativo' }).getAttribute('href')).toBe('/es/admin');
+  });
+
+  // La ley pide la política de datos publicada y enlazada en el pie
+  // (docs/08-seguridad-legal.md). Una página legal a la que solo se llega tecleando la ruta no
+  // está publicada, está escondida — la misma regla de cierre de fase que ya costó una corrección.
+  it.each([
+    ['Términos y condiciones', '/es/legales/terminos'],
+    ['Política de datos', '/es/legales/privacidad'],
+    ['Cookies', '/es/legales/cookies'],
+  ])('enlaza %s en el pie', async (etiqueta, destino) => {
+    await renderPie();
+
+    const enlace = screen.getByRole('link', { name: etiqueta });
+
+    expect(enlace.getAttribute('href')).toBe(destino);
   });
 });

@@ -21,14 +21,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <p>La llave incluye la ruta para que cada endpoint tenga su propio presupuesto — un aluvión
  * contra {@code /auth/registro} no consume el de {@code /auth/sesion} desde la misma IP.
  *
- * <p>IP real detrás del balanceador (docs/07-infra-gcp.md: Cloud Load Balancing delante de Cloud
- * Run, con varias instancias): {@code request.getRemoteAddr()} devolvería la IP del balanceador, no
- * la del cliente. Se lee {@code X-Forwarded-For} (el primer valor de la lista) y se cae a {@code
- * getRemoteAddr()} solo si no viene esa cabecera — desarrollo local, sin balanceador delante.
+ * <p>La IP real del cliente la resuelve {@link IpDelCliente}, compartida con la constancia de
+ * autorización de datos.
  */
 public class FiltroLimiteIntentos extends OncePerRequestFilter {
-
-  private static final String CABECERA_ADELANTE = "X-Forwarded-For";
 
   private final LimitadorDeIntentos limitador;
   private final Reloj reloj;
@@ -47,21 +43,13 @@ public class FiltroLimiteIntentos extends OncePerRequestFilter {
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
-    String clave = "ip:" + request.getRequestURI() + ":" + ipCliente(request);
+    String clave = "ip:" + request.getRequestURI() + ":" + IpDelCliente.de(request);
     boolean permitido = limitador.permitir(clave, maximoIntentos, ventana, reloj.ahora());
     if (!permitido) {
       responderLimiteExcedido(request, response);
       return;
     }
     filterChain.doFilter(request, response);
-  }
-
-  private String ipCliente(HttpServletRequest request) {
-    String adelante = request.getHeader(CABECERA_ADELANTE);
-    if (adelante != null && !adelante.isBlank()) {
-      return adelante.split(",")[0].trim();
-    }
-    return request.getRemoteAddr();
   }
 
   private void responderLimiteExcedido(HttpServletRequest request, HttpServletResponse response)

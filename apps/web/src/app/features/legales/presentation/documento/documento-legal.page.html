@@ -1,0 +1,49 @@
+<ng-container *transloco="let t; scope: 'legales'">
+  <article class="mx-auto flex max-w-formulario flex-col gap-24 px-24 py-32">
+    <header class="flex flex-col gap-8">
+      <h1 class="m-0 font-display text-2xl text-ts-texto">{{ titulo() }}</h1>
+      <p class="m-0 text-base text-ts-texto-suave">{{ entradilla() }}</p>
+      <p class="m-0 text-xs text-ts-texto-suave">
+        {{ t('legales.comun.version_etiqueta') }} {{ t('legales.comun.version') }} ·
+        {{ t('legales.comun.vigencia') }}
+      </p>
+      <p class="m-0 text-xs text-ts-texto-suave">{{ t('legales.comun.titular_aviso') }}</p>
+    </header>
+
+    @for (seccion of secciones(); track seccion.titulo) {
+      <section class="flex flex-col gap-8">
+        <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">{{ seccion.titulo }}</h2>
+        @for (parrafo of seccion.parrafos; track parrafo) {
+          <p class="m-0 text-base text-ts-texto">{{ parrafo }}</p>
+        }
+        @if (seccion.lista) {
+          <ul class="m-0 flex list-disc flex-col gap-4 pl-24 text-base text-ts-texto">
+            @for (punto of seccion.lista; track punto) {
+              <li>{{ punto }}</li>
+            }
+          </ul>
+        }
+        @for (parrafo of seccion.cierre; track parrafo) {
+          <p class="m-0 text-base text-ts-texto">{{ parrafo }}</p>
+        }
+      </section>
+    }
+
+    <nav class="flex flex-col gap-8 border-t border-ts-borde pt-24" [attr.aria-label]="t('legales.comun.otros_documentos')">
+      <h2 class="m-0 font-texto text-base font-medio text-ts-texto">
+        {{ t('legales.comun.otros_documentos') }}
+      </h2>
+      <ul class="m-0 flex list-none flex-col gap-4 p-0">
+        @for (otro of otros(); track otro.clave) {
+          <li>
+            <a
+              class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+              [routerLink]="['/', idioma(), 'legales', otro.clave]"
+              >{{ otro.etiqueta }}</a
+            >
+          </li>
+        }
+      </ul>
+    </nav>
+  </article>
+</ng-container>

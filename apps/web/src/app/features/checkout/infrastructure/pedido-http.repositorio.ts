@@ -40,6 +40,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),
         metodoPago: comando.metodoPago,
+        autorizaDatos: comando.autorizaDatos,
       },
     });
     if (error) {

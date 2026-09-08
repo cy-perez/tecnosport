@@ -12,6 +12,8 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
+import { RouterLink } from '@angular/router';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 
@@ -23,13 +25,16 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
 
 @Component({
   selector: 'app-registro-cliente',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo],
+  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsCheckbox, RouterLink],
   templateUrl: './registro-cliente.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistroClientePage {
   private readonly repositorio = inject(REPOSITORIO_CUENTA);
   private readonly transloco = inject(TranslocoService);
+
+  /** Mismo patrón que el pie: las rutas viven bajo /:lang. */
+  protected readonly idioma = this.transloco.activeLang;
 
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);
@@ -43,6 +48,12 @@ export class RegistroClientePage {
       }),
       clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       confirmarClave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      // requiredTrue, y arranca en false: la casilla nunca puede venir premarcada — sin acción del
+      // titular no hay autorización válida.
+      autorizaDatos: new FormControl(false, {
+        nonNullable: true,
+        validators: [Validators.requiredTrue],
+      }),
     },
     { validators: clavesCoincidenValidador },
   );
@@ -75,6 +86,7 @@ export class RegistroClientePage {
       await this.repositorio.registrar(
         this.form.controls.correo.value,
         this.form.controls.clave.value,
+        this.form.controls.autorizaDatos.value,
       );
       this.registrado.set(true);
     } catch (error) {

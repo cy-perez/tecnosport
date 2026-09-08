@@ -21,7 +21,9 @@
     "exito_titulo": "Revisa tu correo",
     "exito_mensaje": "Te enviamos un enlace para verificar tu cuenta. Ábrelo para poder iniciar sesión.",
     "error_correo_registrado": "Ya existe una cuenta con ese correo.",
-    "error_generico": "No se pudo crear la cuenta. Intenta de nuevo."
+    "error_generico": "No se pudo crear la cuenta. Intenta de nuevo.",
+    "autoriza_datos": "Autorizo el tratamiento de mis datos personales para crear mi cuenta.",
+    "ver_politica": "Leer la política de tratamiento de datos"
   },
   "verificarCorreo": {
     "titulo": "Verificando tu correo",

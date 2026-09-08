@@ -2220,6 +2220,89 @@ SEO con sitemap, hreflang y datos estructurados de producto, auditoría de
 accesibilidad, Lighthouse con el visor 360 activo, respaldo restaurado de prueba,
 y el DNS movido con el cuidado de `docs/07-infra-gcp.md`.
 
+### Bloque legal, deudas arrastradas y accesibilidad (2026-09-08)
+
+Tres de los cuatro frentes de la fase, en doce commits. Queda el SEO técnico
+(sitemap, hreflang, datos estructurados), que no se tocó.
+
+**Autorización de datos, de punta a punta.** Agregado `AutorizacionDatos` en
+`domain/legal`, tabla propia `autorizacion_datos` (`V20`), y exigida en el
+registro y en la creación del pedido. Decisiones que quedaron en el código:
+
+- **La versión del texto la fija el servidor** (`POLITICA_DATOS_VERSION`), nunca
+  el cliente: si el navegador declarara qué versión aceptó, bastaría manipular la
+  petición para dejar constancia de una aceptación que nunca ocurrió (regla dura
+  #7). Va acoplada al texto, que vive en los JSON de Transloco: cambiar el texto
+  y cambiar la fecha son el mismo commit.
+- **Tabla propia y sin FK a usuario**, por la misma razón que `linea_carrito` no
+  la tiene a variante: quien compra sin cuenta también autoriza, y una FK
+  convertiría un dato de auditoría en un error de Postgres capaz de tumbar la
+  compra que intenta dejar constancia.
+- **`direccion_ip` es `text`**, aunque un IPv6 quepa en 45: viene de una cabecera
+  de proxy, y una columna estrecha con un valor de fuera ya reventó una vez
+  (`ADR-0019`).
+- **La guarda va primero.** En el registro, comprobar el correo duplicado antes
+  que la autorización respondía 409 a quien no consintió nada — le confirmaba que
+  ese correo tiene cuenta. En el pedido, comprobarla al final habría dejado
+  existencias reservadas y un consecutivo quemado.
+
+**Tres documentos legales**, en español e inglés, enlazados en el pie. Redactados
+verificando la norma vigente y no de memoria: retracto de cinco días hábiles y
+reintegro en quince días calendario (el plazo que introdujo la **Ley 2439 de
+2024**, que redujo el anterior), entrega supletiva de treinta días calendario, y
+**Ley 1581 de 2012 sin reforma** — el proyecto radicado en 2025 sigue en trámite.
+Sin banner de cookies **a propósito**: no hay analítica ni píxeles que bloquear.
+
+**El carrito ya vence** (deuda desde la Fase 2). Se expira por **última
+actividad** y no por creación: un carrito usado cada semana lleva meses creado y
+no es basura. `TareaPurgaCarritos` es la segunda tarea programada del proyecto,
+con el patrón de `TareaConciliacionWompi`.
+
+**Playwright existe** (`npm run e2e`), con dos recorridos contra servicios
+reales. Usa el Chrome instalado porque la descarga de Chromium falla en esta
+máquina.
+
+**Tres defectos reales encontrados, ninguno previsto en el plan:**
+
+1. **El NIT del pie tenía mal el dígito de verificación** desde que se escribió
+   (`-1` en vez de `-9`). Calculado con el algoritmo de la DIAN, no elegido entre
+   dos opciones. Es información obligatoria del proveedor (Ley 1480).
+2. **Jackson 3 no rellena los componentes que falten de un `record`**: un cuerpo
+   sin `autorizaDatos` no cae en `false`, revienta la deserialización entera. El
+   resultado es igual de seguro pero por otra razón, y razonar sobre "el
+   primitivo protege por omisión" habría sido un error la próxima vez. Anotado en
+   `apps/api/CLAUDE.md`.
+3. **Sin marcar la casilla, «Continuar» no hacía nada y no decía por qué.** Lo
+   encontró el recorrido de Playwright; las pruebas de Vitest comprobaban que no
+   se guardara el borrador, que es cierto, pero no que se informara al comprador.
+
+**Accesibilidad.** `axe` pasó de cinco archivos a doce (las tres legales,
+registro, inicio de sesión, método de pago y estado del pedido). Las siete nuevas
+pasaron a la primera, así que se comprobó que comprueban algo: una imagen sin
+`alt` metida a propósito las hace fallar. `npm run contrastes` en verde, 0 pares
+por debajo del mínimo. Foco verificado en el navegador real —`:focus-visible`
+coincide con teclado y pinta el anillo de 3 px—, que es lo que jsdom no da.
+
+**Hallazgos de coherencia entre el texto legal y el sistema**, la parte que la
+skill de textos legales llama Fase 4 y que casi nadie hace. **Ninguno es un bug:
+son promesas del documento que la operación todavía no puede cumplir**, y hay que
+resolverlas antes de abrir:
+
+- **No existe ningún flujo de retracto, reembolso ni reversión del pago.** El
+  grafo de `EstadoPedido` no los contempla y no hay caso de uso que devuelva
+  dinero. Hoy se atenderían a mano. Es la deuda más grande que deja este bloque.
+- **La garantía tampoco tiene flujo**: se atiende por correo.
+- **El plazo de entrega real no está decidido**, así que el texto lleva el
+  supletivo legal de 30 días calendario marcado como dato pendiente.
+- **Seis datos de negocio marcados con `[[ ]]`** en los textos: transportadora,
+  proveedor de correo transaccional, plazo de entrega real, quién paga el flete
+  de la devolución, garantía de celulares y horario de atención.
+- **Los borradores los revisa un abogado antes de publicar.**
+
+**Lo que este bloque no hizo:** SEO técnico (sitemap, hreflang, datos
+estructurados) y **Lighthouse**, que sigue sin correrse — necesita DevTools sobre
+un `ng build` servido en producción.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

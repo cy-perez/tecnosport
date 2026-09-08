@@ -23,8 +23,11 @@
       "correo_invalido": "Escribe un correo válido.",
       "departamento_requerido": "Elige un departamento.",
       "ciudad_requerida": "Elige una ciudad.",
-      "direccion_requerida": "La dirección es obligatoria."
-    }
+      "direccion_requerida": "La dirección es obligatoria.",
+      "autorizacion_requerida": "Tienes que autorizar el tratamiento de datos para continuar."
+    },
+    "autoriza_datos": "Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.",
+    "ver_politica": "Leer la política de tratamiento de datos"
   },
   "metodoPago": {
     "titulo": "Método de pago",
