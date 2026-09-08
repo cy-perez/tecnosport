@@ -86,6 +86,27 @@ describe('DocumentoLegalPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Cookie policy' })).toBeTruthy();
   });
 
+  // La nota de idioma existía en el JSON en inglés desde que se escribieron los documentos y
+  // **ninguna plantilla la mostraba**: una clave traducida no es una clave visible, y nada lo
+  // avisaba. No es un detalle de forma. La Ley 1480 de 2011 exige castellano en la información al
+  // consumidor (art. 23) y en el contrato (art. 37.1, con las condiciones que no cumplan
+  // declaradas ineficaces), así que la versión que rige es siempre la española; sin esta nota,
+  // quien compra navegando en inglés —el checkout y el registro enlazan la versión de su propio
+  // idioma— acepta un documento cuyo original nunca vio. Por eso se comprueba en los dos idiomas
+  // y en los tres documentos, no solo que la clave exista.
+  it.each([
+    ['privacidad' as Documento, 'es' as const, /prevalece el texto en castellano/],
+    ['terminos' as Documento, 'es' as const, /prevalece el texto en castellano/],
+    ['cookies' as Documento, 'es' as const, /prevalece el texto en castellano/],
+    ['privacidad' as Documento, 'en' as const, /the Spanish text prevails/],
+    ['terminos' as Documento, 'en' as const, /the Spanish text prevails/],
+    ['cookies' as Documento, 'en' as const, /the Spanish text prevails/],
+  ])('muestra la nota de idioma en %s (%s)', async (documento, lang, texto) => {
+    await renderDocumento(documento, lang);
+
+    expect(screen.getByText(texto)).toBeTruthy();
+  });
+
   // Son las páginas que más texto largo tienen del sitio, y las que alguien va a leer con lector
   // de pantalla justo cuando tiene un problema con una compra.
   it.each([['privacidad' as Documento], ['terminos' as Documento], ['cookies' as Documento]])(

@@ -8,6 +8,15 @@
         {{ t('legales.comun.vigencia') }}
       </p>
       <p class="m-0 text-xs text-ts-texto-suave">{{ t('legales.comun.titular_aviso') }}</p>
+      <!-- Va en los dos idiomas, no solo en el inglés. La Ley 1480 de 2011 exige
+           castellano en la información al consumidor (art. 23) y en el contrato
+           mismo (art. 37.1, so pena de ineficacia), así que la versión que rige es
+           siempre la española. En inglés la nota avisa que lo que se está leyendo
+           es una traducción sin efectos; en español avisa que la traducción existe
+           y no los tiene. Sin ella, quien compra navegando en inglés acepta un
+           documento cuyo original nunca vio — y `autorizacion_datos` no guarda el
+           idioma de lectura, así que tampoco quedaría rastro. -->
+      <p class="m-0 text-xs text-ts-texto-suave">{{ t('legales.comun.traduccion_cortesia') }}</p>
     </header>
 
     @for (seccion of secciones(); track seccion.titulo) {
