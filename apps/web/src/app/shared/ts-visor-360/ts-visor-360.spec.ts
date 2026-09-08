@@ -144,6 +144,7 @@ function arrastrar(desde: { x: number; y: number }, hasta: { x: number; y: numbe
 
 describe('TsVisor360', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.stubGlobal('Image', ImagenQueSiCarga);
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
       width: ANCHO_MARCO,
@@ -330,6 +331,38 @@ describe('TsVisor360', () => {
     await vi.waitFor(() => {
       expect(new Set(ImagenQueFalla.solicitadas).size).toBe(OCHO_FOTOGRAMAS.length);
     });
+  });
+
+  // `docs/10-captura-360.md`: "un indicador breve la primera vez". Antes salía en cada visita.
+  it('la pista sale la primera vez y queda marcado que este navegador ya la vio', async () => {
+    await renderVisor();
+
+    expect(await screen.findByText('Arrastra para girar')).toBeTruthy();
+    expect(window.localStorage.getItem('ts-visor-360-pista-vista')).toBe('true');
+  });
+
+  it('en la siguiente visita la pista ya no sale', async () => {
+    window.localStorage.setItem('ts-visor-360-pista-vista', 'true');
+
+    const { fixture } = await renderVisor();
+    await fixture.whenStable();
+
+    expect(screen.queryByText('Arrastra para girar')).toBeNull();
+  });
+
+  // El visor vive en la ficha de cada producto, la pantalla más visitada: un `localStorage` que
+  // lanza —deshabilitado por política, o sin cuota— no puede dejar un error en consola ahí.
+  it('sin almacén disponible la pista sale igual, sin reventar', async () => {
+    // `vi.spyOn(window.localStorage, ...)` no sirve aquí: el `localStorage` de jsdom es un Proxy y
+    // el espía no llega a aplicarse — la prueba pasaba igual sin el try/catch, comprobado mutando.
+    const bloqueado = () => {
+      throw new Error('almacén bloqueado');
+    };
+    vi.stubGlobal('localStorage', { getItem: bloqueado, setItem: bloqueado, clear: bloqueado });
+
+    await renderVisor();
+
+    expect(await screen.findByText('Arrastra para girar')).toBeTruthy();
   });
 
   it('la pista de arrastre desaparece con la primera interacción', async () => {

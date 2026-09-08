@@ -32,6 +32,12 @@ const CONEXIONES_LENTAS = ['slow-2g', '2g'];
 const MS_PISTA = 4000;
 
 /**
+ * Que este navegador ya vio la pista alguna vez. La afordancia se aprende una vez y sirve para
+ * todos los productos, así que la marca es una sola y no una por set.
+ */
+const CLAVE_PISTA_VISTA = 'ts-visor-360-pista-vista';
+
+/**
  * Para asociar las instrucciones al marco enfocable hace falta un `id`, y tiene que ser único
  * aunque haya dos visores en la misma página. El contador vale también con SSR: el servidor y el
  * cliente pueden llegar a números distintos, pero `[id]` y `[attr.aria-describedby]` salen del
@@ -62,7 +68,12 @@ export class TsVisor360 {
 
   protected readonly indiceActual = signal(0);
   protected readonly arrastrando = signal(false);
-  protected readonly pistaVisible = signal(true);
+  /**
+   * Arranca oculta y la enciende `afterNextRender` si es la primera vez (ver el constructor). Antes
+   * arrancaba visible, y eso significaba también que la pintaba el servidor: la pista salía en el
+   * HTML de cada ficha y se iba al hidratar.
+   */
+  protected readonly pistaVisible = signal(false);
 
   /**
    * Lo que ya está en la caché del navegador, **por URL y no por índice**. La diferencia importa
@@ -162,8 +173,17 @@ export class TsVisor360 {
         this.destruccion.onDestroy(() => window.removeEventListener('load', alCargar));
       }
 
-      // La pista se va sola aunque nadie interactúe: un texto permanente encima de la imagen es
-      // justo lo que `docs/10-captura-360.md` no quiere.
+      // "Un indicador breve la primera vez" (`docs/10-captura-360.md`): antes salía en cada visita.
+      // La marca se escribe al mostrarla y no al ocultarla, porque quien la vio ya aprendió que el
+      // visor se arrastra, se haya ido sola o la haya cortado el primer arrastre.
+      if (this.pistaYaVista()) {
+        return;
+      }
+      this.marcarPistaVista();
+      this.pistaVisible.set(true);
+
+      // Y se va sola aunque nadie interactúe: un texto permanente encima de la imagen es justo lo
+      // que el mismo documento no quiere.
       const temporizador = setTimeout(() => this.ocultarPista(), MS_PISTA);
       this.destruccion.onDestroy(() => clearTimeout(temporizador));
     });
@@ -238,6 +258,28 @@ export class TsVisor360 {
 
   private ocultarPista(): void {
     this.pistaVisible.set(false);
+  }
+
+  /**
+   * `localStorage` puede lanzar —deshabilitado por política, o sin cuota—, y a diferencia del
+   * control de movimiento del pie esto corre en la ficha de cada producto: una excepción aquí sería
+   * un error en consola en la pantalla más visitada del sitio. Si no hay almacén, la pista se
+   * comporta como antes y sale siempre, que es el peor caso aceptable.
+   */
+  private pistaYaVista(): boolean {
+    try {
+      return window.localStorage.getItem(CLAVE_PISTA_VISTA) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private marcarPistaVista(): void {
+    try {
+      window.localStorage.setItem(CLAVE_PISTA_VISTA, 'true');
+    } catch {
+      // Sin almacén no hay nada que recordar; la pista volverá a salir y no se rompe nada.
+    }
   }
 
   private alTerminarDeCargarLaPagina(): void {
