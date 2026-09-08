@@ -21,3 +21,11 @@ El checkout no se bloquea esperando un contrato comercial. Cambiar de estrategia
 es escribir un adaptador, sin tocar el dominio ni el frontend. El peso y las
 dimensiones de cada variante son obligatorios desde el día uno, porque las tres
 estrategias los necesitan.
+
+## Nota (2026-09-08)
+
+`adr/0012` la superó al eliminar la cotización; `adr/0021` **retoma la idea de
+este documento** —el puerto `CotizadorEnvio` con una implementación intercambiable—
+y elige su estrategia 2: un agregador con una sola integración, Skydropx. Lo que
+no vuelve es el código: el puerto se escribe de nuevo contra la API real, y las
+tres estrategias de aquí siguen siendo el mapa de por dónde crecer.
