@@ -9,6 +9,7 @@ import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -17,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -24,6 +26,9 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.legal.AutorizacionDatos;
+import co.tecnosport.api.domain.legal.AutorizacionRequeridaException;
+import co.tecnosport.api.domain.legal.OrigenAutorizacion;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -58,6 +63,10 @@ class CrearPedidoTest {
   private RepositorioPedidosFalso pedidos;
   private RepositorioCoberturaContraentregaFalso cobertura;
   private LimitadorDeIntentosFalso limitadorDeIntentos;
+  private RepositorioAutorizacionesFalso autorizaciones;
+  private static final String VERSION_POLITICA = "2026-09-07";
+  private static final String IP = "190.24.10.5";
+
   private Variante variante;
 
   private CrearPedido crear() {
@@ -70,6 +79,7 @@ class CrearPedidoTest {
     pedidos = new RepositorioPedidosFalso();
     cobertura = new RepositorioCoberturaContraentregaFalso();
     limitadorDeIntentos = new LimitadorDeIntentosFalso();
+    autorizaciones = new RepositorioAutorizacionesFalso();
     if (medellinCubierta) {
       cobertura.conCiudadCubierta(DIRECCION_MEDELLIN.codigoDaneCiudad());
     }
@@ -85,7 +95,9 @@ class CrearPedidoTest {
         RESERVA_TRANSFERENCIA,
         limitadorDeIntentos,
         MAXIMO_INTENTOS_POR_CUENTA,
-        VENTANA_INTENTOS_POR_CUENTA);
+        VENTANA_INTENTOS_POR_CUENTA,
+        autorizaciones,
+        VERSION_POLITICA);
   }
 
   private void publicarProductoConVarianteYExistencia(int existencia) {
@@ -135,7 +147,9 @@ class CrearPedidoTest {
         List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
         TipoEntrega.ENVIO_A_DOMICILIO,
         DIRECCION_MEDELLIN,
-        metodoPago);
+        metodoPago,
+        true,
+        IP);
   }
 
   @Test
@@ -293,7 +307,9 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
-            MetodoPago.CONTRAENTREGA);
+            MetodoPago.CONTRAENTREGA,
+            true,
+            IP);
 
     assertThrows(
         ContraentregaNoDisponibleException.class, () -> caso.ejecutar(comandoRetiroEnPunto));
@@ -361,7 +377,9 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(UUID.randomUUID(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI);
+            MetodoPago.NEQUI,
+            true,
+            IP);
 
     assertThrows(VarianteNoEncontradaException.class, () -> caso.ejecutar(comandoConVarianteAjena));
   }
@@ -395,7 +413,9 @@ class CrearPedidoTest {
             List.of(new CrearPedidoComando.LineaComando(varianteSinPublicar.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
-            MetodoPago.NEQUI);
+            MetodoPago.NEQUI,
+            true,
+            IP);
 
     assertThrows(
         VarianteNoEncontradaException.class, () -> caso.ejecutar(comandoConVarianteSinPublicar));
@@ -416,5 +436,77 @@ class CrearPedidoTest {
     List<MovimientoInventario> movimientos =
         inventarios.buscarPorVarianteId(variante.id()).orElseThrow().movimientos();
     return movimientos.get(movimientos.size() - 1);
+  }
+
+  @Test
+  void crearElPedidoDejaLaConstanciaDeAutorizacion() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+
+    AutorizacionDatos constancia = autorizaciones.todas().getFirst();
+    assertEquals(OrigenAutorizacion.CHECKOUT, constancia.origen());
+    assertEquals(new CorreoElectronico("cliente@tecnosport.co"), constancia.correo());
+    assertEquals(VERSION_POLITICA, constancia.versionPolitica());
+    assertEquals(IP, constancia.direccionIp());
+    assertEquals(AHORA, constancia.otorgadaEn());
+  }
+
+  /** Se compra sin cuenta: la constancia vale igual, sin usuario detrás. */
+  @Test
+  void laConstanciaDelCheckoutAnonimoNoTieneUsuario() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+
+    assertTrue(autorizaciones.todas().getFirst().usuarioId().isEmpty());
+  }
+
+  @Test
+  void sinAutorizarNoHayPedido() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando sinAutorizar =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            false,
+            IP);
+
+    assertThrows(AutorizacionRequeridaException.class, () -> caso.ejecutar(sinAutorizar));
+  }
+
+  /**
+   * Lo que de verdad importa del caso anterior: la autorización se exige antes de reservar
+   * inventario y antes de quemar un número de pedido. Si se comprobara al final, un checkout sin
+   * autorizar habría dejado existencias comprometidas y un consecutivo gastado por nada.
+   */
+  @Test
+  void sinAutorizarNoSeReservaInventarioNiSeQuemaUnNumero() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando sinAutorizar =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            false,
+            IP);
+
+    assertThrows(AutorizacionRequeridaException.class, () -> caso.ejecutar(sinAutorizar));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+    assertTrue(autorizaciones.todas().isEmpty());
   }
 }

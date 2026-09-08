@@ -7,6 +7,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -17,6 +18,7 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.legal.AutorizacionDatos;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
@@ -58,6 +60,8 @@ public final class CrearPedido {
   private final LimitadorDeIntentos limitadorDeIntentos;
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
+  private final RepositorioAutorizaciones repositorioAutorizaciones;
+  private final String versionPolitica;
 
   public CrearPedido(
       RepositorioProductos repositorioProductos,
@@ -69,7 +73,9 @@ public final class CrearPedido {
       Duration duracionReservaTransferencia,
       LimitadorDeIntentos limitadorDeIntentos,
       int maximoIntentosPorCuenta,
-      Duration ventanaIntentosPorCuenta) {
+      Duration ventanaIntentosPorCuenta,
+      RepositorioAutorizaciones repositorioAutorizaciones,
+      String versionPolitica) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -96,6 +102,11 @@ public final class CrearPedido {
     this.ventanaIntentosPorCuenta =
         Objects.requireNonNull(
             ventanaIntentosPorCuenta, "La ventana de intentos por cuenta no puede ser nula.");
+    this.repositorioAutorizaciones =
+        Objects.requireNonNull(
+            repositorioAutorizaciones, "El repositorio de autorizaciones no puede ser nulo.");
+    this.versionPolitica =
+        Objects.requireNonNull(versionPolitica, "La versión de la política no puede ser nula.");
   }
 
   public Pedido ejecutar(CrearPedidoComando comando) {
@@ -112,6 +123,10 @@ public final class CrearPedido {
         ahora)) {
       throw new LimiteDeIntentosExcedidoException();
     }
+    // Antes de reservar inventario y antes de quemar un número de pedido: sin autorización no hay
+    // compra, y fallar después habría dejado existencias comprometidas por nada.
+    AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
+
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
       exigirContraentregaDisponible(comando);
     }
@@ -138,6 +153,14 @@ public final class CrearPedido {
             ahora);
 
     repositorioPedidos.guardar(pedido);
+    repositorioAutorizaciones.guardar(
+        AutorizacionDatos.enCheckout(
+            comando.autorizaDatos(),
+            correoComprador,
+            comando.usuarioId(),
+            versionPolitica,
+            comando.direccionIp(),
+            ahora));
     return pedido;
   }
 

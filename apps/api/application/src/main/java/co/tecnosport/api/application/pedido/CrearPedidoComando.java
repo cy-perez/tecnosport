@@ -9,6 +9,11 @@ import java.util.UUID;
 /**
  * {@code lineas} solo trae {@code varianteId} y {@code cantidad}: precio, SKU, nombre e imagen los
  * decide el servidor con el catálogo real, nunca lo que traiga el cliente (docs/00-producto.md).
+ *
+ * <p>{@code autorizaDatos} y {@code direccionIp} son para la constancia de tratamiento de datos
+ * (Ley 1581 de 2012): el checkout recoge nombre, dirección, teléfono y correo, así que aquí también
+ * hace falta autorización expresa, no solo en el registro. La versión del texto la fija el
+ * servidor.
  */
 public record CrearPedidoComando(
     UUID usuarioId,
@@ -16,7 +21,9 @@ public record CrearPedidoComando(
     List<LineaComando> lineas,
     TipoEntrega tipoEntrega,
     Direccion direccion,
-    MetodoPago metodoPago) {
+    MetodoPago metodoPago,
+    boolean autorizaDatos,
+    String direccionIp) {
 
   public record LineaComando(UUID varianteId, int cantidad) {}
 }

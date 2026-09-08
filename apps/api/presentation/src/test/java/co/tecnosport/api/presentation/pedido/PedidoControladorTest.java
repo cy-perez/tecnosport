@@ -16,6 +16,7 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
@@ -140,7 +141,8 @@ class PedidoControladorTest {
         List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
         tipoEntrega,
         direccion,
-        metodoPago);
+        metodoPago,
+        true);
   }
 
   @Test
@@ -273,6 +275,32 @@ class PedidoControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /**
+   * La casilla del navegador es una comodidad; la regla es del servidor. El checkout recoge nombre,
+   * dirección, teléfono y correo, así que aquí también hace falta autorización expresa (Ley 1581 de
+   * 2012), no solo en el registro.
+   */
+  @Test
+  void crearPedidoSinAutorizarElTratamientoDeDatosDevuelve422() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo =
+        new CrearPedidoRequest(
+            "cliente@tecnosport.co",
+            List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
+            "RETIRO_EN_PUNTO",
+            null,
+            "TARJETA",
+            false);
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.codigo").value("AUTORIZACION_REQUERIDA"));
+  }
+
   @Test
   void crearPedidoConVarianteInexistenteDevuelve404() throws Exception {
     CrearPedidoRequest cuerpo =
@@ -281,7 +309,8 @@ class PedidoControladorTest {
             List.of(new CrearPedidoRequest.LineaRequest(java.util.UUID.randomUUID(), 1)),
             "RETIRO_EN_PUNTO",
             null,
-            "TARJETA");
+            "TARJETA",
+            true);
 
     mockMvc
         .perform(
@@ -560,7 +589,8 @@ class PedidoControladorTest {
         RepositorioPedidos repositorioPedidos,
         MetodosDePagoDisponibles metodosDePagoDisponibles,
         Reloj reloj,
-        LimitadorDeIntentos limitadorDeIntentos) {
+        LimitadorDeIntentos limitadorDeIntentos,
+        RepositorioAutorizaciones repositorioAutorizaciones) {
       return new CrearPedido(
           repositorioProductos,
           repositorioInventario,
@@ -571,7 +601,14 @@ class PedidoControladorTest {
           Duration.ofHours(24),
           limitadorDeIntentos,
           5,
-          Duration.ofMinutes(60));
+          Duration.ofMinutes(60),
+          repositorioAutorizaciones,
+          "2026-09-07");
+    }
+
+    @Bean
+    RepositorioAutorizaciones repositorioAutorizaciones() {
+      return new RepositorioAutorizacionesDobleDePrueba();
     }
 
     @Bean

@@ -12,9 +12,11 @@ import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -62,8 +64,9 @@ public class PedidoControlador {
   }
 
   @PostMapping
-  public PedidoRespuesta crear(@RequestBody CrearPedidoRequest cuerpo) {
-    CrearPedidoComando comando = aComando(cuerpo);
+  public PedidoRespuesta crear(
+      @RequestBody CrearPedidoRequest cuerpo, HttpServletRequest peticion) {
+    CrearPedidoComando comando = aComando(cuerpo, IpDelCliente.de(peticion));
     Pedido pedido = transaccion.execute(estado -> crearPedido.ejecutar(comando));
     return mapeador.aRespuesta(pedido);
   }
@@ -99,7 +102,7 @@ public class PedidoControlador {
     return mapeador.aRespuestaPublica(pedido);
   }
 
-  private CrearPedidoComando aComando(CrearPedidoRequest cuerpo) {
+  private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {
     List<CrearPedidoComando.LineaComando> lineas =
         cuerpo.lineas().stream()
             .map(l -> new CrearPedidoComando.LineaComando(l.varianteId(), l.cantidad()))
@@ -111,7 +114,9 @@ public class PedidoControlador {
         lineas,
         TipoEntrega.valueOf(cuerpo.tipoEntrega()),
         direccion,
-        MetodoPago.valueOf(cuerpo.metodoPago()));
+        MetodoPago.valueOf(cuerpo.metodoPago()),
+        cuerpo.autorizaDatos(),
+        direccionIp);
   }
 
   private Direccion aDireccion(CrearPedidoRequest.DireccionRequest d) {
