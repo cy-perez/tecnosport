@@ -118,11 +118,18 @@ SMTP_CLAVE=<la API key>    # la clave es la API key, no una contraseña de cuent
 CORREO_REMITENTE=no-responder@dev.tecnosport.co
 ```
 
-**El remitente de dev va en un subdominio, y no es un detalle.** Autenticar el
-proveedor sobre la raíz obligaría a meter mano en el SPF de `tecnosport.co`, que
-es único y termina en `-all` (ver la sección de DNS), y un error ahí lo paga el
-correo del negocio. Resend además **recomienda subdominio por su cuenta**, para
-aislar la reputación de cada tipo de correo.
+**El remitente de dev va en un subdominio.** Conviene ser exacto sobre por qué,
+porque la razón obvia no es la correcta: los registros de envío de Resend cuelgan
+de `send.<dominio verificado>`, así que verificar la raíz **no** obligaría a
+tocar el SPF del ápice ni los MX del correo corporativo. Funcionaría.
+
+El motivo es el radio de daño. Con la raíz verificada, el ambiente de dev
+mandaría como `@tecnosport.co` y cada rebote, cada queja de spam y cada prueba
+mal dirigida se acumularían sobre la reputación del dominio con el que el negocio
+escribe a sus clientes y a sus proveedores. Dev es donde se rompen cosas a
+propósito. Por eso va aparte —Resend **recomienda subdominio por su cuenta**, por
+esta misma razón— y por eso el día que se decida el proveedor de producción se
+podrá elegir sin arrastrar el historial de las pruebas.
 
 Los registros que pide Resend cuelgan todos del dominio verificado, y por eso el
 subdominio importa el doble: **uno de ellos es un MX**. Sobre
