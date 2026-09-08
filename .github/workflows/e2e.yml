@@ -1,0 +1,92 @@
+# Los recorridos completos con Playwright: la compra de punta a punta y la navegación legal.
+#
+# **Fuera de los pull requests a propósito.** Necesitan PostgreSQL, la API y el servidor de
+# desarrollo levantados de verdad, y eso son varios minutos por corrida para dos recorridos.
+# Corren al mezclar a `main` —donde importa saber que el sitio entero sigue caminando— y a
+# demanda desde la pestaña de Actions cuando se toque el checkout.
+name: recorridos
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  recorridos:
+    name: recorridos · compra completa y navegación legal
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Levantar PostgreSQL
+        run: docker compose up -d postgres
+
+      - name: Levantar la API y esperarla
+        working-directory: apps/api
+        run: |
+          ./gradlew bootRun > /tmp/api.log 2>&1 &
+          for intento in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/salud > /dev/null; then
+              echo "API arriba al intento $intento"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::La API no respondió en 5 minutos"
+          cat /tmp/api.log
+          exit 1
+
+      # `ng serve` y no el build de producción: es el procedimiento documentado en el README de
+      # apps/web, y es quien enruta `/api` al backend con proxy.conf.json. Servir el build sin ese
+      # proxy es justo lo que invalidó la primera medición de Lighthouse.
+      - name: Levantar el frontend y esperarlo
+        run: |
+          npm run dev --workspace=apps/web > /tmp/web.log 2>&1 &
+          for intento in $(seq 1 60); do
+            if curl -sf http://localhost:4200/es > /dev/null; then
+              echo "Frontend arriba al intento $intento"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::El frontend no respondió en 5 minutos"
+          cat /tmp/web.log
+          exit 1
+
+      # El config pide `channel: 'chrome'` —Chrome de verdad, no el Chromium que Playwright
+      # descarga— porque esa descarga falla en la máquina de desarrollo. Aquí se instala el mismo
+      # canal, así que las dos corridas prueban contra el mismo navegador.
+      - name: Instalar Chrome
+        run: npx playwright install --with-deps chrome
+        working-directory: apps/web
+
+      - run: npm run e2e --workspace=apps/web
+
+      - name: Guardar las trazas si algo falló
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-trazas
+          path: |
+            apps/web/test-results/
+            /tmp/api.log
+            /tmp/web.log
+          retention-days: 7
