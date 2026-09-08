@@ -1,6 +1,6 @@
 ---
 name: vacios-legales-del-sitio
-description: Audita el sitio construido contra lo que sus propios documentos legales prometen y contra lo que la ley colombiana exige aunque el documento calle, y cierra los huecos en el código. Úsala cuando alguien pregunte "¿qué nos falta legalmente para abrir?", "¿el sitio cumple lo que dicen los términos?", "¿podemos publicar ya?", "revisa los vacíos legales", "qué promete el texto que el sistema no hace", "auditoría legal del sitio", "coherencia entre los legales y el código"; cuando haya que implementar retracto, reembolso, reversión del pago, garantía, PQR, ejercicio de derechos del titular o eliminación de cuenta; cuando se vaya a lanzar o mover el DNS a producción; o cuando un texto legal cambie y haya que ver qué código arrastra. Complementa a `textos-legales-comerciales`, que redacta los documentos: esta hace que el software los cumpla. Covers Colombian e-commerce compliance gap analysis, mapping legal promises to code, retracto, reversión del pago, garantía legal, habeas data rights implementation.
+description: Audita el sitio construido contra lo que sus propios documentos legales prometen y contra lo que la ley colombiana exige aunque el documento calle, y cierra los huecos en el código. Úsala cuando alguien pregunte "¿qué nos falta legalmente para abrir?", "¿el sitio cumple lo que dicen los términos?", "¿podemos publicar ya?", "revisa los vacíos legales", "qué promete el texto que el sistema no hace", "auditoría legal del sitio", "coherencia entre los legales y el código"; cuando haya que implementar retracto, reembolso, reversión del pago, garantía, PQR, ejercicio de derechos del titular o eliminación de cuenta; cuando se vaya a lanzar o mover el DNS a producción; cuando cambie el modelo de cobro o de entrega —cotizar el envío, cobrar el flete aparte del precio, ofrecer recogida sin costo, cambiar de transportadora o de plataforma logística, activar el recaudo contra entrega— y haya que revisar qué promesas de costo y de plazo quedan falsas; o cuando un texto legal cambie y haya que ver qué código arrastra. Complementa a `textos-legales-comerciales`, que redacta los documentos: esta hace que el software los cumpla. Covers Colombian e-commerce compliance gap analysis, mapping legal promises to code, retracto, reversión del pago, garantía legal, habeas data rights implementation.
 ---
 
 # Vacíos legales del sitio — de la promesa al código
@@ -103,9 +103,17 @@ Lo que hay que sacar:
 | Plazos | retracto, reintegro del dinero, entrega, respuesta a consultas y reclamos, conservación de datos |
 | Derechos ejercitables | conocer, actualizar, rectificar, suprimir, revocar la autorización, retracto, reversión |
 | Canales | correo de PQR, teléfono, WhatsApp, formulario, horario de atención |
-| Terceros | pasarela, transportadora, correo transaccional, nube, analítica |
+| Terceros | pasarela, transportadora o plataforma logística, correo transaccional, nube, analítica |
+| **Costos y cargos** | qué incluye el precio, costo de envío, "sin costo", "envío gratis", quién paga el flete de la devolución, cargos que aparecen después |
+| **Entrega y seguimiento** | plazo prometido frente a plazo estimado, cobertura, cómo se consulta el envío, qué se le muestra al comprador |
 | Condiciones y exclusiones | qué productos no admiten retracto, qué anula la garantía |
 | Identificación | razón social, NIT, dirección, datos del vendedor visibles |
+
+**Una frase sobre qué incluye el precio es una promesa de las caras.** "El precio
+incluye el envío", "no hay cobros adicionales al final del proceso" y "sin costo"
+se rastrean hasta el cálculo del total, no hasta otra pantalla que las repita. Y
+cuando el negocio cambia de modelo de cobro, esas frases son lo primero que hay
+que releer: se vuelven falsas sin que nadie las edite.
 
 **Una promesa que el texto hace en un idioma y no en el otro es un hallazgo**, no
 una errata de traducción: son dos documentos y los dos se leen.
@@ -155,6 +163,16 @@ queda escrita.
 - Grafo de estados del pedido: `domain/pedido` — si un estado no está en el enum,
   el flujo no existe.
 - Dinero y pagos: `domain/pago`, `infrastructure/pago`, y las tareas programadas.
+- **Totales y cargos: `domain/pedido/Pedido.total()`.** Es el punto exacto donde
+  se comprueba qué se cobra de verdad, y su comentario suele documentar la
+  premisa vieja.
+- **Lo que ve el comprador antes de pagar:
+  `features/checkout/presentation/resumen/`** y las claves del scope `checkout`.
+  Si ahí no hay una línea de envío y una de total, el resumen del pedido no
+  cumple, por más completos que sean los documentos legales.
+- **Envío, cotización y seguimiento: `domain/envio`, el cotizador en
+  `infrastructure`, y el DTO público de seguimiento.** Ese DTO es donde se filtra
+  el margen: ábrelo, no supongas que alguien lo recortó.
 - Plazos configurables: `.env.example` y `application.yml`; un plazo legal
   incrustado en el código y no en configuración es un hallazgo por sí mismo.
 - Migraciones: `infrastructure/src/main/resources/db/migration` — la columna que
@@ -243,6 +261,16 @@ y escribe lo que hay.
 - **Confundir "no hay pantalla" con "no se cumple".** Atender por correo es una
   forma válida de cumplir muchas obligaciones; lo que no es válido es no saber
   que se está haciendo así.
+- **Dar por bueno un texto de costos porque hoy coincide.** "El precio incluye el
+  envío" coincide con un sistema que suma solo las líneas — hasta el día que el
+  negocio decide cobrar flete aparte, y entonces la frase queda falsa sin que
+  nadie la edite. Cuando cambia el modelo de cobro, de entrega o de proveedor
+  logístico, **el inventario se rehace**: no es una auditoría nueva, es la misma
+  con una premisa distinta.
+- **Auditar solo la pantalla que ya existe.** Una pantalla que hoy cumple porque
+  dos cifras coinciden —subtotal y total— deja de cumplir cuando dejan de
+  coincidir. Pregunta qué cifras van a existir después del cambio, no solo qué
+  cifras hay.
 - **Reportar el volumen en vez del riesgo.** Cuarenta hallazgos triviales entierran
   los tres que importan.
 - **Un hallazgo sin ruta y línea.** Es una sospecha, y las sospechas no se

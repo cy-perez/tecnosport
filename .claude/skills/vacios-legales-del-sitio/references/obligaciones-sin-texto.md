@@ -23,6 +23,33 @@ del NIT.
 
 ---
 
+## 1.1. Resumen del pedido antes de finalizar la transacción
+
+En comercio electrónico hay que mostrarle al comprador, **antes** de que termine
+la compra, un resumen con la descripción de lo que va a adquirir, el precio
+individual, el precio total, **los costos adicionales de envío informados de
+forma adecuada y separada**, y la suma total a pagar. No depende de que ningún
+documento lo prometa. Verifica el artículo vigente en `marco-normativo.md` antes
+de citarlo.
+
+Es la obligación que más se incumple sin querer, porque la pantalla que la
+incumple suele estar bien hecha: muestra un "Subtotal" y un botón. Mientras el
+envío va incluido en el precio, subtotal y total coinciden y nadie nota que falta
+el total ni la línea de envío. El día que el negocio decide cobrar flete aparte,
+esa misma pantalla pasa a incumplir sin que nadie la haya tocado.
+
+Qué comprobar en el sistema:
+
+- Que exista una línea de **envío** con una cifra, y una de **total a pagar**,
+  distintas del subtotal, en la pantalla donde se paga.
+- Que ningún cargo aparezca **después** de aceptar el total: ni un flete
+  recalculado al despachar, ni una comisión trasladada, ni un ajuste por peso
+  real.
+- Que las cifras las calcule el servidor. Ver la ficha de costo de envío en
+  `promesas-y-su-rastro.md`.
+
+---
+
 ## 2. Reversión del pago
 
 Existe aunque los términos no la nombren. Ver la ficha en
@@ -55,6 +82,26 @@ y quien tiene la carga de probar que cumplió es el responsable.
 
 ---
 
+## 4.1. La entrega dispara plazos, y hay que saber cuándo ocurrió
+
+El retracto y la garantía se cuentan **desde la entrega**. Eso convierte la fecha
+de entrega en un dato legal, no operativo, y obliga a preguntar algo que nadie
+pregunta: *¿quién la escribe, y qué pasa si nadie la escribe?*
+
+Qué comprobar:
+
+- Que la fecha exista, con su origen (humano, transportadora, tarea programada).
+- Que un evento perdido del proveedor no deje el pedido sin fecha de entrega
+  indefinidamente. Si el único camino es un webhook, falta la red de seguridad.
+- Que los costos de la devolución y del reintegro estén repartidos como la ley
+  los reparte, y no como convenga: en Colombia el transporte de la devolución lo
+  cubre el consumidor, pero los gastos de devolver el dinero no. **Verifica los
+  dos antes de afirmarlos.**
+
+Detalle del rastro en `promesas-y-su-rastro.md`.
+
+---
+
 ## 5. La publicidad obliga
 
 Lo anunciado se vuelve exigible. Eso convierte en auditables lugares que nadie
@@ -65,6 +112,9 @@ considera legales:
 - Los correos transaccionales y promocionales.
 - Cualquier cifra en una insignia: "envío gratis", "entrega en 24 horas",
   "garantía de por vida".
+- **Las etiquetas de las opciones de entrega y de pago**: "sin costo", "gratis",
+  "recoge y ahorra". Un "sin costo" es exigible, y también es **falso** si el
+  costo está embebido en el precio y no se evita al elegir esa opción.
 
 Qué comprobar: que ninguna cifra prometida en la interfaz contradiga el documento
 legal ni la operación. Una insignia de "entrega en 24 h" junto a un documento que
