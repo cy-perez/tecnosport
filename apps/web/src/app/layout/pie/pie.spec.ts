@@ -52,7 +52,7 @@ describe('Pie', () => {
     await renderPie();
 
     expect(screen.getByText('Tecno Sport')).toBeTruthy();
-    expect(screen.getByText('NIT 1054994043-1')).toBeTruthy();
+    expect(screen.getByText('NIT 1054994043-9')).toBeTruthy();
   });
 
   it('enlaza el teléfono a tel: y a wa.me', async () => {
