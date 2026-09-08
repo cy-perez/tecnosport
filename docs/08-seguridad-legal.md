@@ -45,8 +45,16 @@ el panel administrativo, el asistente de captura y la cuenta opcional del client
   comodidad.
 - Un trabajo programado concilia pagos pendientes que nunca recibieron webhook.
 - **Contraentrega:** la disponibilidad la decide el servidor, nunca el cliente.
-  Cobertura, monto máximo, categorías excluidas e historial de rechazos son reglas
-  de negocio en el dominio. Detalle en `11-pagos-y-envios.md`.
+  Cobertura (desde la cotización, `ADR-0023`), monto máximo, categorías excluidas
+  e historial de rechazos son reglas de negocio en el dominio. Detalle en
+  `11-pagos-y-envios.md`.
+- **Envío:** el costo lo cotiza y lo elige el servidor. El cliente no manda el
+  flete ni el identificador de tarifa del proveedor, por la misma razón por la
+  que no manda el precio.
+- **Seguimiento:** el webhook de Skydropx se verifica con su firma antes de
+  aplicar nada, es idempotente por evento y responde 200 incluso al descartar.
+  Un evento falsificado podría marcar un pedido como entregado, y de ahí cuelgan
+  el recaudo y dos plazos legales.
 
 ## OWASP, lo que aplica aquí
 
@@ -100,6 +108,11 @@ No es opcional y hay que resolverlo antes de abrir.
 **Comercio electrónico, Ley 1480 de 2011**
 
 - **Precios con IVA incluido**, visibles antes de pagar.
+- **Resumen del pedido antes de finalizar la transacción**, con el precio
+  individual de cada producto, el precio total, **los costos de envío informados
+  de forma adecuada y separada**, y la suma total a pagar. Es el **artículo 50**,
+  y es la obligación que sostiene el modelo de precio base más flete de
+  `adr/0021`: el envío se informa aparte porque la norma pide informarlo aparte.
 - Información del proveedor antes de la compra: nombre, NIT, dirección, teléfono
   y correo.
 - **Derecho de retracto: 5 días hábiles** desde la entrega en compras a distancia.
@@ -112,6 +125,34 @@ No es opcional y hay que resolverlo antes de abrir.
 **Contraentrega.** El derecho de retracto y la garantía aplican igual que en el
 pago en línea. El rechazo en la entrega no es un retracto: es una compra que no
 se perfeccionó. Conviene distinguirlo en los términos y condiciones.
+
+**Envío cotizado, recogida en el punto y seguimiento.** Cobrar el flete aparte
+del precio agrega obligaciones que el precio-todo-incluido no tenía. Detalle
+completo, con las cláusulas redactadas y la auditoría del sistema, en
+`docs/12-legales-de-envio.md`. Lo esencial:
+
+- **El costo de envío se informa antes de pagar, separado y con su valor
+  exacto** (art. 50). Un "más gastos de envío" sin cifra no informa nada, y un
+  flete que aparece recalculado después de aceptar el total es un cobro no
+  autorizado.
+- **La recogida sin costo es publicidad y obliga.** Si el sitio dice que recoger
+  en el punto no paga envío, el total de ese pedido tiene que ser el subtotal
+  exacto, sin un cargo con otro nombre.
+- **El plazo de entrega ya no es un número inventado**: la cotización devuelve un
+  plazo estimado por tarifa. Estimado del transportador y plazo prometido al
+  comprador no son lo mismo, y el documento tiene que decir cuál rige.
+- **El retracto y la garantía se cuentan desde la entrega**, así que la fecha de
+  entrega deja de ser un dato operativo y pasa a ser el disparador de dos plazos
+  legales. Por eso el seguimiento tiene conciliación programada y no solo webhook
+  (`ADR-0022`).
+- **Los costos de transporte de la devolución los cubre el consumidor** (art. 47),
+  pero eso no alcanza al flete de ida que ya pagó ni a los costos financieros del
+  reintegro. Es un punto para abogado y está marcado como tal.
+- **Skydropx es un encargado nuevo** que recibe nombre, teléfono y dirección de
+  entrega de cada comprador. Hay que declararlo en la política de datos, y
+  analizar la transferencia internacional: es una plataforma mexicana, y México
+  está en la lista de países con nivel adecuado de protección de la SIC — lo que
+  no exime de verificar con qué entidad se contrata y dónde se procesan los datos.
 
 **Fotografías de producto.** Las imágenes son del negocio, tomadas por el negocio.
 No se usan fotos de proveedores, de fabricantes ni de otras tiendas sin
@@ -157,3 +198,11 @@ compromete a pedirlo antes de añadir analítica.
 hallazgos de coherencia al cierre de la Fase 6 en `docs/09-plan-de-arranque.md`.
 Lo principal: el texto promete retracto, garantía y reversión del pago, y no
 existe ningún flujo que los ejecute; hoy se atienden a mano por correo.
+
+**Y algo que quedó desactualizado el 8 de septiembre de 2026, a propósito:** los
+tres documentos publicados dicen que el precio incluye el envío y que no hay
+cobros adicionales al final del proceso. Con `adr/0021` eso deja de ser cierto.
+Los textos nuevos están redactados y esperan en `docs/12-legales-de-envio.md`:
+**se publican en el mismo commit que encienda la cotización**, con su fecha de
+versión nueva, no antes — mientras el sitio siga cobrando con el envío incluido,
+publicarlos los volvería falsos en la otra dirección.
