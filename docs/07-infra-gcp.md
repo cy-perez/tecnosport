@@ -5,7 +5,7 @@
 | Entorno | Dónde | Base de datos | Correo |
 |---|---|---|---|
 | Local | Docker Compose en Windows | PostgreSQL 16 en contenedor | Mailpit: no sale nada |
-| Dev en línea | GCP, proyecto `tecnosport-dev`, capa gratuita | Neon, plan gratuito | Sender, entrega real |
+| Dev en línea | GCP, proyecto `tecnosport-dev`, capa gratuita | Neon, plan gratuito | Resend, entrega real |
 | Producción | GCP, proyecto `tecnosport-prod` | Cloud SQL PostgreSQL 16 | por decidir |
 
 Staging cuando haya tráfico que justifique el costo. Terraform lo deja como un
@@ -104,31 +104,55 @@ dato de negocio pendiente. **Sigue pendiente para producción**, y se decidió
 solo el de dev, que es otra pregunta: en dev basta con que los correos salgan
 para poder recorrer el registro y la recuperación de clave.
 
-**Dev usa Sender** (plan gratuito, 15.000 correos al mes, transaccional por SMTP
-en todos los planes). No hay nada que programar: `spring.mail` ya sale de
-variables y `starttls.enable` ya está en `true`, así que es cambiar
-`SMTP_HOST`, `SMTP_PUERTO`, `SMTP_AUTH`, `SMTP_USUARIO`, `SMTP_CLAVE` y
-`CORREO_REMITENTE`.
+**Dev usa Resend** (`resend.com`, plan gratuito: 3.000 correos al mes con tope de
+100 al día, 3 dominios y 30 días de registros). No hay nada que programar:
+`spring.mail` ya sale de variables y `starttls.enable` ya está en `true`, así que
+es cambiar la configuración.
 
-**El remitente de dev es `no-responder@dev.tecnosport.co`, y el subdominio no es
-un detalle**: autenticar el proveedor sobre la raíz obligaría a meter mano en el
-SPF de `tecnosport.co`, que es único y termina en `-all` (ver la sección de DNS).
-Un error ahí lo paga el correo del negocio. El subdominio lleva su propio SPF y
-su propio DKIM, los MX de la raíz no se tocan, y de paso la reputación de dev
-queda separada de la que tendrá producción.
+```
+SMTP_HOST=smtp.resend.com
+SMTP_PUERTO=587            # STARTTLS, que es lo que el application.yml ya activa
+SMTP_AUTH=true
+SMTP_USUARIO=resend        # literal: el usuario siempre es "resend"
+SMTP_CLAVE=<la API key>    # la clave es la API key, no una contraseña de cuenta
+CORREO_REMITENTE=no-responder@dev.tecnosport.co
+```
+
+**El remitente de dev va en un subdominio, y no es un detalle.** Autenticar el
+proveedor sobre la raíz obligaría a meter mano en el SPF de `tecnosport.co`, que
+es único y termina en `-all` (ver la sección de DNS), y un error ahí lo paga el
+correo del negocio. Resend además **recomienda subdominio por su cuenta**, para
+aislar la reputación de cada tipo de correo.
+
+Los registros que pide Resend cuelgan todos del dominio verificado, y por eso el
+subdominio importa el doble: **uno de ellos es un MX**. Sobre
+`dev.tecnosport.co`, la forma es esta —los valores exactos los da su panel y
+dependen de la región—:
+
+```
+MX   send.dev.tecnosport.co              feedback-smtp.<región>.amazonses.com  (prioridad 10)
+TXT  send.dev.tecnosport.co              v=spf1 include:amazonses.com ~all
+TXT  resend._domainkey.dev.tecnosport.co p=<la llave DKIM que muestre el panel>
+```
+
+Nada de eso toca la raíz: los dos MX de `secureserver.net` que reciben el correo
+del negocio siguen intactos, y el MX de Resend vive tres niveles más abajo. Ese
+MX es para rebotes y quejas, no para recibir correo del negocio.
 
 Dos cosas que hay que tener presentes al usarlo:
 
-- **Sender entrega de verdad.** Mailpit existe en local justo para que nada
+- **Resend entrega de verdad.** Mailpit existe en local justo para que nada
   salga; en dev sí sale. Se prueba solo con direcciones propias: un correo de
   verificación a la dirección equivocada es un correo real a una persona real.
-- **El plan gratuito retiene los registros un día.** Para depurar una entrega de
-  anteayer no habrá nada que mirar.
+- **El tope diario son 100 correos.** Suficiente para probar registro y
+  recuperación de clave; no para una prueba de carga que mande correos.
 
-Para producción, la decisión queda abierta a propósito: Sender es una plataforma
-de marketing —su plan gratuito cuenta "suscriptores"— y mezclar el correo
-comercial con el transaccional bajo la misma reputación es algo que conviene
-separar deliberadamente, no por inercia de lo que se eligió para dev.
+Para producción la decisión sigue abierta a propósito. No porque Resend no
+sirva —es transaccional de primera intención, que es exactamente lo que hace
+falta—, sino porque elegir el proveedor de producción es una decisión de negocio
+con otras variables: volumen real, precio al crecer, soporte y qué pasa el día
+que un correo de confirmación de pedido no llega. Heredarla de lo que se eligió
+para dev sería tomarla por inercia.
 
 ## Infraestructura como código
 
