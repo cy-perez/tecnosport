@@ -288,8 +288,19 @@ export class TsVisor360 {
       alTerminar?.();
     };
     // Una imagen que no llega no puede detener la cadena ni dejar el visor colgado: se sigue con el
-    // resto y ese fotograma simplemente nunca se muestra.
-    imagen.onerror = () => alTerminar?.();
+    // resto y ese fotograma simplemente nunca se muestra — `indiceVisible` sustituye por el más
+    // cercano disponible y el visitante ve el visor girar, con un fotograma menos, sin enterarse.
+    //
+    // Justamente por eso queda registrado. Un set `PUBLICADO` con un objeto roto en el bucket es un
+    // defecto de datos que nadie va a notar mirando la ficha, y este es el único sitio del recorrido
+    // donde se sabe que ocurrió: sin el aviso, el fotograma desaparece sin dejar rastro. No se
+    // muestra nada en pantalla a propósito — qué decirle a quien está mirando un producto cuando
+    // falta una foto es una decisión de producto, no una deuda de este componente.
+    imagen.onerror = () => {
+      const indice = this.imagenes().indexOf(url);
+      console.warn(`[ts-visor-360] El fotograma ${indice + 1} de ${this.total()} no cargó y se omite: ${url}`);
+      alTerminar?.();
+    };
     imagen.src = url;
   }
 }
