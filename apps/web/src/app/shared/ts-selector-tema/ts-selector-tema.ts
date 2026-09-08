@@ -1,6 +1,11 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Translation, TranslocoPipe, translateObjectSignal } from '@jsverse/transloco';
 import { ServicioTema, Tema } from '../../core/tema/tema.servicio';
 import { OpcionSelect, TsSelect } from '../ui/select/ts-select';
@@ -18,10 +23,14 @@ function etiquetaDe(diccionario: Translation, clave: string): string {
  *
  * El control arranca en "sistema" y solo se corrige después de renderizar,
  * porque la cookie vive en `document`, que en el servidor no existe.
+ *
+ * Sin `FormControl`: el selector vive en el encabezado, o sea en todas las
+ * pantallas, y usar un formulario para un `<select>` de tres opciones metía
+ * `@angular/forms` (38,6 kB) en el paquete inicial de todo el sitio.
  */
 @Component({
   selector: 'ts-selector-tema',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsSelect],
+  imports: [TranslocoPipe, TsSelect],
   templateUrl: './ts-selector-tema.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // `w-fit` y no el ancho disponible: `ts-select` le da a su `<select>`
@@ -45,16 +54,22 @@ export class TsSelectorTema {
     }));
   });
 
-  protected readonly control = new FormControl<Tema>('sistema', { nonNullable: true });
+  protected readonly elegido = signal<Tema>('sistema');
 
   constructor() {
     afterNextRender(() => {
       // Solo refleja lo que el servidor ya aplicó.
-      this.control.setValue(this.tema.sincronizarConCookie(), { emitEvent: false });
+      this.elegido.set(this.tema.sincronizarConCookie());
     });
+  }
 
-    this.control.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe((tema) => this.tema.elegir(tema));
+  // El valor llega como `string` porque eso es lo que emite un `<select>`; se estrecha contra la
+  // lista real de temas en vez de castear, que es lo que hacía `FormControl<Tema>` por debajo.
+  protected elegir(valor: string): void {
+    const tema = this.tema.opciones.find((opcion) => opcion === valor);
+    if (tema) {
+      this.elegido.set(tema);
+      this.tema.elegir(tema);
+    }
   }
 }

@@ -18,6 +18,7 @@ import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
@@ -84,6 +85,7 @@ interface FormularioRecaudo {
     TsPaginador,
     TsPrecio,
     TsSelect,
+    TsSelectControl,
   ],
   templateUrl: './lista-pedidos-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

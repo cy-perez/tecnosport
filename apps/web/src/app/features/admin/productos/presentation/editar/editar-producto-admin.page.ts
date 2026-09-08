@@ -19,6 +19,7 @@ import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarEditarProductoAdmin } from '../../application/editar-producto-admin.mutacion';
 import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-principal-admin.mutacion';
@@ -37,6 +38,7 @@ const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
     TsEsqueleto,
     TsMigas,
     TsSelect,
+    TsSelectControl,
   ],
   templateUrl: './editar-producto-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,6 +7,7 @@ import { debounceTime } from 'rxjs';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
 import {
   FiltroProductos,
@@ -77,7 +78,7 @@ function filtroDesdeFormulario(valores: ValoresFormularioFiltros): FiltroProduct
  */
 @Component({
   selector: 'app-filtros-productos',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect, TsSelectControl],
   templateUrl: './filtros-productos.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
