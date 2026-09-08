@@ -5,7 +5,13 @@ import { Meta, MetaDefinition, Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { filter } from 'rxjs';
-import { enlacesAlternativos, rutaCanonica, urlAbsoluta } from './enlaces-alternativos';
+import { serializarJsonLd } from './datos-estructurados';
+import {
+  enlacesAlternativos,
+  rutaCanonica,
+  urlAbsoluta,
+  urlDeRecursoAbsoluta,
+} from './enlaces-alternativos';
 import { MetadatosPagina, SeoDeRuta } from './metadatos.model';
 import { origenPublico } from './origen-publico';
 
@@ -62,6 +68,10 @@ export class MetadatosSeo {
         this.url = evento.urlAfterRedirects;
         this.anulacion = null;
         this.deRuta = this.seoDeLaRutaActiva();
+        // Los datos estructurados los declara cada pantalla, así que al cambiar de página se van:
+        // dejar el `Product` de la ficha anterior colgado en el `<head>` de la portada le estaría
+        // describiendo a Google un producto que esa página no muestra.
+        this.aplicarDatosEstructurados([]);
         this.escribir(this.resolver(this.deRuta));
       });
 
@@ -89,6 +99,29 @@ export class MetadatosSeo {
   aplicar(metadatos: MetadatosPagina): void {
     this.anulacion = metadatos;
     this.escribir(metadatos);
+  }
+
+  /**
+   * Reemplaza los bloques de JSON-LD del documento por los que declara la pantalla actual.
+   *
+   * Va aparte de {@link aplicar} y no como un campo más de `MetadatosPagina` porque son dos cosas
+   * con dueños distintos: el título y la descripción de casi todas las pantallas los declara su
+   * ruta, mientras que los datos estructurados siempre salen de datos y siempre los pone el
+   * componente. Mezclarlos obligaría a la portada a repetir en su componente el título que su ruta
+   * ya declara, solo para poder añadir un `Organization`.
+   */
+  aplicarDatosEstructurados(objetos: readonly object[]): void {
+    const cabeza = this.documento.head;
+    for (const previo of Array.from(cabeza.querySelectorAll('script[data-seo]'))) {
+      previo.remove();
+    }
+    for (const objeto of objetos) {
+      const script = this.documento.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('data-seo', '');
+      script.textContent = serializarJsonLd(objeto);
+      cabeza.appendChild(script);
+    }
   }
 
   /**
@@ -153,26 +186,13 @@ export class MetadatosSeo {
     this.fijar({ property: 'og:description' }, metadatos.descripcion);
     this.meta.updateTag({ property: 'og:url', content: canonica });
     this.meta.updateTag({ property: 'og:locale', content: LOCALES[idioma] ?? idioma });
-    this.fijar({ property: 'og:image' }, this.absoluta(metadatos.imagen));
+    this.fijar({ property: 'og:image' }, urlDeRecursoAbsoluta(this.origen, metadatos.imagen));
     this.meta.updateTag({
       name: 'twitter:card',
       content: metadatos.imagen ? 'summary_large_image' : 'summary',
     });
 
     this.escribirEnlaces(canonica, ruta, metadatos.indexable);
-  }
-
-  /**
-   * `og:image` tiene que ser absoluta: quien la lee es un servidor ajeno —WhatsApp, Facebook,
-   * Slack— que no tiene contra qué resolver una ruta. Las imágenes de producto ya llegan absolutas
-   * desde el bucket, pero la pantalla que las pasa no tiene por qué saberlo, y aquí el origen ya
-   * está.
-   */
-  private absoluta(url: string | undefined): string {
-    if (!url) {
-      return '';
-    }
-    return /^https?:\/\//i.test(url) ? url : urlAbsoluta(this.origen, url);
   }
 
   /** Una etiqueta vacía no informa nada y ensucia el `<head>`: si no hay texto, se quita. */

@@ -49,6 +49,22 @@ export function urlAbsoluta(origen: string, ruta: string): string {
 }
 
 /**
+ * Deja absoluta una URL de recurso que puede venir ya absoluta.
+ *
+ * Las imágenes de producto llegan absolutas desde el bucket, pero quien las pasa no tiene por qué
+ * saberlo, y hay dos consumidores que **tienen que coincidir**: `og:image`, que lee un servidor
+ * ajeno —WhatsApp, Facebook— sin nada contra qué resolver una ruta, y el `image` del JSON-LD, que
+ * lee el rastreador. Que uno absolutice y el otro no es la clase de diferencia que nadie mira hasta
+ * que la vista previa sale sin imagen en un sitio y con imagen en el otro.
+ */
+export function urlDeRecursoAbsoluta(origen: string, url: string | undefined): string {
+  if (!url) {
+    return '';
+  }
+  return /^https?:\/\//i.test(url) ? url : urlAbsoluta(origen, url);
+}
+
+/**
  * Las alternativas de idioma de una página: una por idioma más `x-default`.
  *
  * `urlEnOtroIdioma` es la misma función que usa el selector de idioma del

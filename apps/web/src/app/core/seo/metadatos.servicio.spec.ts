@@ -51,7 +51,7 @@ describe('MetadatosSeo', () => {
     // El origen sale de APP_URL_PUBLICA (regla dura #5). Fijarlo aquí hace que
     // la prueba no dependa del host que jsdom le invente al documento.
     process.env['APP_URL_PUBLICA'] = 'https://tecnosport.co';
-    for (const previo of Array.from(cabeza().querySelectorAll('link[data-seo]'))) {
+    for (const previo of Array.from(cabeza().querySelectorAll('[data-seo]'))) {
       previo.remove();
     }
 
@@ -174,6 +174,35 @@ describe('MetadatosSeo', () => {
     });
 
     expect(contenidoMeta("property='og:image'")).toBe('https://tecnosport.co/assets/marca/og.png');
+  });
+
+  it('escribe los bloques de JSON-LD que declara la pantalla', async () => {
+    await navegarA('/es');
+
+    TestBed.inject(MetadatosSeo).aplicarDatosEstructurados([
+      { '@type': 'Organization', name: 'Tecno Sport' },
+      { '@type': 'WebSite' },
+    ]);
+
+    const bloques = Array.from(cabeza().querySelectorAll('script[type="application/ld+json"]'));
+    expect(bloques).toHaveLength(2);
+    expect(JSON.parse(bloques[0].textContent ?? '')).toEqual({
+      '@type': 'Organization',
+      name: 'Tecno Sport',
+    });
+  });
+
+  // Dejar el `Product` de la ficha anterior colgado en el `<head>` de la portada le describiría a
+  // Google un producto que esa página no muestra.
+  it('descarta los bloques de la pantalla anterior al navegar', async () => {
+    TestBed.inject(MetadatosSeo).escuchar();
+    const banco = await RouterTestingHarness.create();
+    await banco.navigateByUrl('/es');
+    TestBed.inject(MetadatosSeo).aplicarDatosEstructurados([{ '@type': 'Product' }]);
+
+    await banco.navigateByUrl('/es/carrito');
+
+    expect(cabeza().querySelectorAll('script[type="application/ld+json"]')).toHaveLength(0);
   });
 
   // Cambiar de idioma no navega: sin escuchar a Transloco, la pestaña se

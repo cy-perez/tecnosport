@@ -11,9 +11,20 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
+import {
+  migasJsonLd,
+  productoJsonLd,
+  EslabonDeRuta,
+} from '../../../../core/seo/datos-estructurados';
+import {
+  rutaCanonica,
+  urlAbsoluta,
+  urlDeRecursoAbsoluta,
+} from '../../../../core/seo/enlaces-alternativos';
 import { MetadatosPagina } from '../../../../core/seo/metadatos.model';
+import { origenPublico } from '../../../../core/seo/origen-publico';
 import { resumirDescripcion } from '../../../../core/seo/resumen-descripcion';
-import { usarMetadatos } from '../../../../core/seo/usar-metadatos';
+import { usarDatosEstructurados, usarMetadatos } from '../../../../core/seo/usar-metadatos';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
@@ -24,7 +35,7 @@ import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { Imagen, urlPreferida } from '../../domain/producto.model';
+import { hayExistencia, Imagen, urlPreferida } from '../../domain/producto.model';
 import {
   ejesDeAtributos,
   Seleccion,
@@ -146,8 +157,51 @@ export class FichaPage {
     };
   });
 
+  /**
+   * `Product` con `AggregateOffer`, más la ruta de migas.
+   *
+   * Los precios salen de `precioDesde` y del mayor de las variantes, que es exactamente lo que la
+   * página muestra: si el JSON-LD dijera un precio que el visitante no ve al llegar, Google lo
+   * marca como incoherente y con razón. La URL es la canónica, la misma que declara el `<head>`.
+   */
+  private readonly datosEstructurados = computed<object[]>(() => {
+    const producto = this.producto();
+    const metadatos = this.metadatos();
+    if (!producto || !metadatos) {
+      return [];
+    }
+
+    const origen = origenPublico();
+    const url = urlAbsoluta(origen, rutaCanonica(`/${this.transloco.activeLang()}/productos/${producto.slug}`));
+    const precios = producto.variantes.map((variante) => variante.precio.valor);
+
+    const eslabones: EslabonDeRuta[] = this.migas().map((miga) => ({
+      etiqueta: miga.etiqueta,
+      url: miga.enlace ? urlAbsoluta(origen, miga.enlace.join('/').replace(/^\/+/, '/')) : undefined,
+    }));
+
+    return [
+      productoJsonLd({
+        nombre: producto.nombre,
+        descripcion: metadatos.descripcion,
+        url,
+        // Por la misma función que `og:image`: los dos los lee una máquina de fuera y no pueden
+        // discrepar.
+        imagen: urlDeRecursoAbsoluta(origen, metadatos.imagen) || undefined,
+        marca: producto.marca.nombre,
+        precioMinimo: precios.length > 0 ? Math.min(...precios) : null,
+        precioMaximo: precios.length > 0 ? Math.max(...precios) : null,
+        moneda: producto.variantes[0]?.precio.moneda ?? 'COP',
+        variantes: producto.variantes.length,
+        hayExistencia: hayExistencia(producto),
+      }),
+      migasJsonLd(eslabones),
+    ].filter((objeto): objeto is object => objeto !== null);
+  });
+
   constructor() {
     usarMetadatos(() => this.metadatos());
+    usarDatosEstructurados(() => this.datosEstructurados());
 
     // Reinicia la selección a la variante por defecto solo al cargar otro producto (primer render,
     // o al navegar de una ficha a otra), nunca porque el mismo producto haya vuelto del servidor.

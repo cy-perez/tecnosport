@@ -1,4 +1,9 @@
-import { enlacesAlternativos, rutaCanonica, urlAbsoluta } from './enlaces-alternativos';
+import {
+  enlacesAlternativos,
+  rutaCanonica,
+  urlAbsoluta,
+  urlDeRecursoAbsoluta,
+} from './enlaces-alternativos';
 
 describe('rutaCanonica', () => {
   it('deja intacta una ruta que ya es canónica', () => {
@@ -37,6 +42,24 @@ describe('urlAbsoluta', () => {
 
   it('no deja barra doble cuando el origen ya termina en barra', () => {
     expect(urlAbsoluta('https://tecnosport.co/', '/es')).toBe('https://tecnosport.co/es');
+  });
+});
+
+describe('urlDeRecursoAbsoluta', () => {
+  it('deja intacta una URL que ya es absoluta, como las del bucket', () => {
+    expect(
+      urlDeRecursoAbsoluta('https://tecnosport.co', 'https://imagenes.tecnosport.co/x.jpg'),
+    ).toBe('https://imagenes.tecnosport.co/x.jpg');
+  });
+
+  it('completa una ruta relativa con el origen', () => {
+    expect(urlDeRecursoAbsoluta('https://tecnosport.co', '/icon-512.png')).toBe(
+      'https://tecnosport.co/icon-512.png',
+    );
+  });
+
+  it('devuelve cadena vacía cuando no hay URL, para que quien llama pueda omitir la etiqueta', () => {
+    expect(urlDeRecursoAbsoluta('https://tecnosport.co', undefined)).toBe('');
   });
 });
 

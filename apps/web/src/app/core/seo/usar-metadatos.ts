@@ -27,3 +27,19 @@ export function usarMetadatos(fuente: () => MetadatosPagina | null): void {
   });
 }
 
+/**
+ * Los bloques de JSON-LD de una pantalla.
+ *
+ * Hook propio y no un campo de `MetadatosPagina` porque los dueños son distintos: el título casi
+ * siempre lo declara la ruta, los datos estructurados siempre los calcula el componente. Así la
+ * portada puede añadir su `Organization` sin repetir el título que su ruta ya declara.
+ *
+ * Devolver lista vacía es válido y significa "esta pantalla no aporta ninguno" — el servicio ya
+ * limpia los de la pantalla anterior en cada navegación.
+ */
+export function usarDatosEstructurados(fuente: () => readonly object[]): void {
+  const metadatos = inject(MetadatosSeo);
+  effect(() => {
+    metadatos.aplicarDatosEstructurados(fuente());
+  });
+}
