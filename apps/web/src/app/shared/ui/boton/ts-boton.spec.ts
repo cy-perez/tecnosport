@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { render, screen } from '@testing-library/angular';
 import { TsBoton, VarianteBoton } from './ts-boton';
 
@@ -37,6 +38,14 @@ class Anfitrion {
 function boton(): HTMLButtonElement {
   return screen.getByRole('button') as HTMLButtonElement;
 }
+
+@Component({
+  imports: [TsBoton],
+  template: `
+    <ts-boton variante="primario" [enlace]="['/checkout']">Ir a pagar</ts-boton>
+  `,
+})
+class AnfitrionEnlace {}
 
 describe('TsBoton', () => {
   it('proyecta su contenido como nombre accesible', async () => {
@@ -155,6 +164,47 @@ describe('TsBoton', () => {
 
     expect(boton().className).toContain('border-ts-borde-control');
     expect(boton().className).not.toContain('border-0');
+  });
+
+  // MODO ENLACE. Existe porque seis pantallas envolvian <ts-boton> en un <a>
+  // para navegar: HTML invalido —<a> no admite contenido interactivo
+  // descendiente— y dos paradas de tabulacion por accion. Se encontro
+  // recorriendo el carrito en el navegador, no con una prueba.
+  it('con destino renderiza un enlace y ningun boton', async () => {
+    await render(AnfitrionEnlace, { providers: [provideRouter([])] });
+
+    const enlace = screen.getByRole('link', { name: 'Ir a pagar' });
+    expect(enlace.tagName).toBe('A');
+    expect(enlace.getAttribute('href')).toBe('/checkout');
+    // Lo que de verdad se estaba arreglando: una sola parada de tabulacion.
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('el enlace conserva las clases de su variante, anillo de foco incluido', async () => {
+    await render(AnfitrionEnlace, { providers: [provideRouter([])] });
+
+    const clases = screen.getByRole('link', { name: 'Ir a pagar' }).className;
+    expect(clases).toContain('bg-ts-primario');
+    expect(clases).toContain('chaflan');
+    expect(clases).toContain('focus-visible:outline-ts-foco');
+  });
+
+  // El contenido proyectado vive en un <ng-template> compartido por las dos
+  // ramas. Si esa indireccion no proyectara, el enlace saldria vacio y esta
+  // prueba —que lo busca por su nombre accesible— no encontraria nada.
+  it('el contenido proyectado llega a la rama de enlace', async () => {
+    await render(AnfitrionEnlace, { providers: [provideRouter([])] });
+
+    expect(screen.getByRole('link', { name: 'Ir a pagar' }).textContent?.trim()).toBe(
+      'Ir a pagar',
+    );
+  });
+
+  it('sin destino sigue siendo un boton', async () => {
+    await render(Anfitrion);
+
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Agregar al carrito' })).toBeTruthy();
   });
 
   it('la clase de quien llama gana sobre la base', async () => {

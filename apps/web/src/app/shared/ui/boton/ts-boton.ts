@@ -1,4 +1,6 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { cn } from '../cn';
 
 export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro';
@@ -39,13 +41,20 @@ const VARIANTES: Record<VarianteBoton, string> = {
  */
 const BASE =
   'inline-flex items-center justify-center gap-8 py-12 px-24 border-0 ' +
-  'font-texto font-medio text-base cursor-pointer chaflan ' +
+  // `no-underline` es por la rama de enlace y no sobra: sin Preflight
+  // (`src/tailwind.css`) un `<a>` conserva el subrayado del navegador, y
+  // "Ir a pagar" salió subrayado dentro de su fondo ámbar la primera vez que
+  // se miró en el navegador. En un `<button>` no hace nada, que es el precio
+  // correcto por tenerlo en un solo sitio. La variante `texto` subraya al
+  // pasar el ratón y sigue funcionando: `hover:` gana por orden de capa.
+  'font-texto font-medio text-base cursor-pointer chaflan no-underline ' +
   'focus-visible:outline-2 focus-visible:outline-ts-foco focus-visible:outline-offset-2 ' +
   'disabled:bg-ts-deshabilitado disabled:text-ts-sobre-deshabilitado ' +
   'disabled:border-ts-deshabilitado disabled:cursor-not-allowed';
 
 @Component({
   selector: 'ts-boton',
+  imports: [NgTemplateOutlet, RouterLink],
   templateUrl: './ts-boton.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -67,6 +76,23 @@ export class TsBoton {
   readonly etiquetaAccesible = input<string | null>(null);
   /** Ajustes puntuales de quien llama, p. ej. `w-full`. Gana sobre la base. */
   readonly clase = input('');
+  /**
+   * Con destino, el componente renderiza un `<a routerLink>` en vez de un
+   * `<button>`. Existe porque seis pantallas —el carrito, el resumen del
+   * checkout y la transferencia— envolvían `<ts-boton>` en un `<a>` para
+   * navegar, y eso es HTML inválido: `<a>` no admite contenido interactivo
+   * descendiente. El resultado en el navegador eran dos paradas de tabulación
+   * por acción, el ancla con el anillo del navegador y el botón con el de la
+   * marca.
+   *
+   * `RouterLink` es lo único de `@angular/router` que entra en `shared/ui`, y
+   * entra porque navegar es del framework, no del negocio: el componente sigue
+   * sin saber qué se vende ni de dónde vienen los datos. La regla que importa
+   * —nada de Transloco ni de TanStack Query aquí— sigue intacta.
+   */
+  readonly enlace = input<unknown[] | string | null>(null);
+  /** Los `queryParams` del enlace. Solo se usa junto con `enlace`. */
+  readonly parametrosEnlace = input<Record<string, unknown> | null>(null);
 
   protected readonly clases = computed(() =>
     cn(BASE, VARIANTES[this.variante()], this.clase()),

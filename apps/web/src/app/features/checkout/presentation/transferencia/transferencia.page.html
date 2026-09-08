@@ -33,14 +33,12 @@
 
     <p class="mb-24 text-ts-aviso">{{ 'checkout.transferencia.plazo' | transloco }}</p>
 
-    <a
-      [routerLink]="['../estado']"
-      [queryParams]="{ pedidoId: pedido()?.id, correo: pedido()?.correo }"
+    <ts-boton
+      variante="secundario"
+      [enlace]="['../estado']"
+      [parametrosEnlace]="{ pedidoId: pedido()?.id, correo: pedido()?.correo }"
+      >{{ 'checkout.transferencia.ver_estado' | transloco }}</ts-boton
     >
-      <ts-boton variante="secundario">{{
-        'checkout.transferencia.ver_estado' | transloco
-      }}</ts-boton>
-    </a>
   } @else if (pedido() !== null) {
     <!-- Se cargó un pedido, pero no es de transferencia manual: ruta equivocada. -->
     <p class="text-ts-error" role="alert">{{ 'checkout.transferencia.sin_datos' | transloco }}</p>

@@ -3,9 +3,9 @@
 
   @if (store.carritoId() === null) {
     <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
-    <a [routerLink]="['../productos']">
-      <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
-    </a>
+    <ts-boton variante="primario" [enlace]="['../productos']">{{
+      'carrito.ir_al_catalogo' | transloco
+    }}</ts-boton>
   } @else if (store.consulta.isPending()) {
     <ts-esqueleto />
   } @else if (store.consulta.isError()) {
@@ -13,9 +13,9 @@
   } @else if (store.consulta.data(); as carrito) {
     @if (carrito.lineas.length === 0) {
       <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>
-      <a [routerLink]="['../productos']">
-        <ts-boton variante="primario">{{ 'carrito.ir_al_catalogo' | transloco }}</ts-boton>
-      </a>
+      <ts-boton variante="primario" [enlace]="['../productos']">{{
+        'carrito.ir_al_catalogo' | transloco
+      }}</ts-boton>
     } @else {
       <div class="flex flex-col">
         @for (item of lineas(); track item.linea.id) {
@@ -35,9 +35,9 @@
         <ts-precio [valor]="total()" moneda="COP" />
       </div>
 
-      <a [routerLink]="['../checkout']">
-        <ts-boton variante="primario">{{ 'carrito.ir_a_pagar' | transloco }}</ts-boton>
-      </a>
+      <ts-boton variante="primario" [enlace]="['../checkout']">{{
+        'carrito.ir_a_pagar' | transloco
+      }}</ts-boton>
     }
   } @else {
     <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>

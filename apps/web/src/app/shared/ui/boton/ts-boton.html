@@ -1,14 +1,42 @@
-<button
-  [class]="clases()"
-  [type]="tipo()"
-  [disabled]="deshabilitado() || cargando()"
-  [attr.aria-busy]="cargando() ? 'true' : null"
-  [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
-  [attr.aria-label]="etiquetaAccesible()"
->
+<!-- El contenido vive en un `ng-template` y no repetido en las dos ramas.
+     Dos `<ng-content>` con el mismo selector es justo el caso donde a cuál
+     proyecta Angular no es evidente, y aquí no hace falta averiguarlo:
+     `ngTemplateOutlet` instancia el mismo bloque en la rama que toque. -->
+<ng-template #contenido>
   @if (cargando() && etiquetaCargando()) {
     {{ etiquetaCargando() }}
   } @else {
     <ng-content />
   }
-</button>
+</ng-template>
+
+@if (enlace(); as destino) {
+  <!-- Un enlace de verdad, con `href`: se abre en pestaña nueva, se copia y
+       lo anuncia el lector de pantalla como lo que es. Antes esto se resolvía
+       envolviendo `<ts-boton>` en un `<a>`, que es HTML inválido —`<a>` no
+       admite contenido interactivo descendiente— y dejaba **dos paradas de
+       tabulación para una sola acción**. Encontrado recorriendo el carrito en
+       el navegador.
+
+       `deshabilitado` y `cargando` no aplican aquí: un enlace no se
+       deshabilita. Si hace falta bloquear la acción, no es un enlace. -->
+  <a
+    [class]="clases()"
+    [routerLink]="destino"
+    [queryParams]="parametrosEnlace()"
+    [attr.aria-label]="etiquetaAccesible()"
+  >
+    <ng-container [ngTemplateOutlet]="contenido" />
+  </a>
+} @else {
+  <button
+    [class]="clases()"
+    [type]="tipo()"
+    [disabled]="deshabilitado() || cargando()"
+    [attr.aria-busy]="cargando() ? 'true' : null"
+    [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
+    [attr.aria-label]="etiquetaAccesible()"
+  >
+    <ng-container [ngTemplateOutlet]="contenido" />
+  </button>
+}
