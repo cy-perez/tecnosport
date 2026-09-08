@@ -2,10 +2,11 @@
 
 ## Entornos
 
-| Entorno | Dónde | Base de datos |
-|---|---|---|
-| Local | Docker Compose en Windows | PostgreSQL 16 en contenedor |
-| Producción | GCP, proyecto `tecnosport-prod` | Cloud SQL PostgreSQL 16 |
+| Entorno | Dónde | Base de datos | Correo |
+|---|---|---|---|
+| Local | Docker Compose en Windows | PostgreSQL 16 en contenedor | Mailpit: no sale nada |
+| Dev en línea | GCP, proyecto `tecnosport-dev`, capa gratuita | Neon, plan gratuito | Sender, entrega real |
+| Producción | GCP, proyecto `tecnosport-prod` | Cloud SQL PostgreSQL 16 | por decidir |
 
 Staging cuando haya tráfico que justifique el costo. Terraform lo deja como un
 módulo parametrizado, así que agregarlo será cambiar una variable.
@@ -63,16 +64,71 @@ público de lectura a través del CDN, y de escritura solo con URL firmada.
 
 ## DNS: cuidado con lo que ya existe
 
-`tecnosport.co` está en GoDaddy con cPanel. Lo más probable es que el correo
-corporativo dependa de ese mismo cPanel.
+`tecnosport.co` está en GoDaddy, y **ya no hay que suponer** de qué depende el
+correo: esto es lo que la zona sirve hoy (consultado el 8 de septiembre de 2026
+contra `8.8.8.8`).
+
+```
+MX     0   smtp.secureserver.net
+MX    10   mailstore1.secureserver.net
+TXT        v=spf1 include:secureserver.net -all
+_dmarc TXT v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;
+```
+
+Tres lecturas que cambian cómo se toca esto:
+
+- **El correo del negocio depende de esos dos MX.** Borrarlos o reemplazarlos al
+  apuntar el dominio a GCP deja al negocio sin correo, y nadie se entera hasta
+  que un cliente reclama.
+- **El SPF es único y termina en `-all`**, que es rechazo duro. Un dominio no
+  puede tener dos registros SPF: si se añade el de otro proveedor al lado, los
+  dos quedan inválidos y el correo legítimo empieza a fallar. Cualquier
+  proveedor nuevo se autentica en **un subdominio propio**, con su TXT aparte, o
+  se *edita* este registro para incluirlo — nunca se agrega un segundo.
+- **El DMARC no lleva `sp=`**, así que los subdominios heredan `p=quarantine`.
+  Un `dev.tecnosport.co` que mande sin SPF ni DKIM propios no se pierde en el
+  aire: se va a la carpeta de no deseado, que es peor porque parece que
+  funciona. La alineación es relajada (`adkim=r`, `aspf=r`), así que un
+  subdominio bien autenticado alinea sin tocar nada de la raíz.
 
 Al apuntar el dominio a GCP **no se tocan los registros MX ni los TXT de SPF,
-DKIM y DMARC**. Se cambian solo A, AAAA de la raíz y el CNAME de www. Si se
-borran los MX, el correo del negocio deja de llegar y nadie se entera hasta que
-un cliente reclama.
+DKIM y DMARC**. Se cambian solo A, AAAA de la raíz y el CNAME de www.
 
 Plan: crear el balanceador, verificar con un subdominio de prueba, y solo
 entonces mover la raíz. Bajar el TTL a 300 segundos un día antes.
+
+## Correo saliente
+
+`docs/12-legales-de-envio.md` marca `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` como
+dato de negocio pendiente. **Sigue pendiente para producción**, y se decidió
+solo el de dev, que es otra pregunta: en dev basta con que los correos salgan
+para poder recorrer el registro y la recuperación de clave.
+
+**Dev usa Sender** (plan gratuito, 15.000 correos al mes, transaccional por SMTP
+en todos los planes). No hay nada que programar: `spring.mail` ya sale de
+variables y `starttls.enable` ya está en `true`, así que es cambiar
+`SMTP_HOST`, `SMTP_PUERTO`, `SMTP_AUTH`, `SMTP_USUARIO`, `SMTP_CLAVE` y
+`CORREO_REMITENTE`.
+
+**El remitente de dev es `no-responder@dev.tecnosport.co`, y el subdominio no es
+un detalle**: autenticar el proveedor sobre la raíz obligaría a meter mano en el
+SPF de `tecnosport.co`, que es único y termina en `-all` (ver la sección de DNS).
+Un error ahí lo paga el correo del negocio. El subdominio lleva su propio SPF y
+su propio DKIM, los MX de la raíz no se tocan, y de paso la reputación de dev
+queda separada de la que tendrá producción.
+
+Dos cosas que hay que tener presentes al usarlo:
+
+- **Sender entrega de verdad.** Mailpit existe en local justo para que nada
+  salga; en dev sí sale. Se prueba solo con direcciones propias: un correo de
+  verificación a la dirección equivocada es un correo real a una persona real.
+- **El plan gratuito retiene los registros un día.** Para depurar una entrega de
+  anteayer no habrá nada que mirar.
+
+Para producción, la decisión queda abierta a propósito: Sender es una plataforma
+de marketing —su plan gratuito cuenta "suscriptores"— y mezclar el correo
+comercial con el transaccional bajo la misma reputación es algo que conviene
+separar deliberadamente, no por inercia de lo que se eligió para dev.
 
 ## Infraestructura como código
 

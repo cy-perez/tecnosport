@@ -2587,9 +2587,23 @@ Tres decisiones que salen de ahí:
   horas. En dev se paga con arranque en frío de la JVM; en producción, con
   dinero.
 
-Queda por decidir el **correo**: sin SMTP no se puede probar el registro,
-porque la verificación es obligatoria. Es el `[[PROVEEDOR DE CORREO
-TRANSACCIONAL]]` que arrastra la Fase 6.
+**El correo de dev es Sender** (decidido el 8 de septiembre de 2026): plan
+gratuito de 15.000 correos al mes, transaccional por SMTP, y del lado del código
+no hay nada que hacer porque `spring.mail` ya sale de variables y
+`starttls.enable` ya está en `true`. Hacía falta decidirlo porque sin SMTP no se
+puede probar el registro: la verificación de correo es obligatoria.
+
+El remitente es `no-responder@dev.tecnosport.co` y el subdominio **es la parte
+importante**. Consultada la zona real, `tecnosport.co` tiene un SPF único que
+termina en `-all` y un DMARC sin `sp=`, o sea que los subdominios heredan
+`p=quarantine`; autenticar el proveedor sobre la raíz obligaría a editar ese SPF
+y un error ahí lo paga el correo del negocio, que hoy vive en los MX de
+`secureserver.net`. El detalle está en `docs/07-infra-gcp.md`.
+
+**Para producción sigue abierto**, y a propósito: `[[PROVEEDOR DE CORREO
+TRANSACCIONAL]]` no se cierra heredando lo que se eligió para dev. Sender es una
+plataforma de marketing, y separar el correo comercial del transaccional es una
+decisión que se toma, no que se arrastra.
 
 Y obliga a revisar una decisión escrita: `infra/dev/README.md` dice que dev se
 crea **fuera** de Terraform porque no se paga el arranque en frío del bucket de
