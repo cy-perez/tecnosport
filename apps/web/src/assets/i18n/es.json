@@ -39,7 +39,11 @@
     "navegacion": "Navegación del pie",
     "portada": "Portada",
     "carrito": "Carrito",
-    "panel_admin": "Panel administrativo"
+    "panel_admin": "Panel administrativo",
+    "legales_titulo": "Legal",
+    "terminos": "Términos y condiciones",
+    "privacidad": "Política de datos",
+    "cookies": "Cookies"
   },
   "portada": {
     "titulo": "Ropa y calzado deportivo, bolsos y celulares",

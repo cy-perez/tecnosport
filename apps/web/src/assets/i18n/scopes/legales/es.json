@@ -1,0 +1,334 @@
+{
+  "comun": {
+    "version_etiqueta": "Versión",
+    "version": "2026-09-07",
+    "vigencia": "Vigente desde el 7 de septiembre de 2026.",
+    "otros_documentos": "Otros documentos legales",
+    "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia."
+  },
+  "nav": {
+    "privacidad": "Política de tratamiento de datos",
+    "terminos": "Términos y condiciones",
+    "cookies": "Política de cookies"
+  },
+  "privacidad": {
+    "titulo": "Política de tratamiento de datos personales",
+    "entradilla": "Esta política explica qué datos personales recogemos en tecnosport.co, para qué los usamos, con quién los compartimos y cómo puedes ejercer tus derechos. Está redactada conforme a la Ley Estatutaria 1581 de 2012 y sus decretos reglamentarios.",
+    "secciones": [
+      {
+        "titulo": "1. Responsable del tratamiento",
+        "parrafos": [
+          "Responsable: Cristhian Yurday Pérez Hoyos, persona natural comerciante, que opera bajo el nombre comercial Tecno Sport.",
+          "NIT: 1054994043-9.",
+          "Domicilio: Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
+          "Correo para el ejercicio de derechos: contacto@tecnosport.co.",
+          "Teléfono y WhatsApp: +57 310 420 9655."
+        ]
+      },
+      {
+        "titulo": "2. Alcance",
+        "parrafos": [
+          "Esta política aplica a los datos personales de quienes visitan tecnosport.co, crean una cuenta, hacen un pedido o se comunican con nosotros por cualquiera de nuestros canales de atención."
+        ]
+      },
+      {
+        "titulo": "3. Definiciones",
+        "lista": [
+          "Titular: la persona natural cuyos datos personales se tratan.",
+          "Responsable: quien decide sobre la base de datos y su tratamiento; en este caso, Tecno Sport.",
+          "Encargado: quien trata datos por cuenta del responsable, como la pasarela de pago o la transportadora.",
+          "Tratamiento: cualquier operación sobre datos personales, como recolectar, almacenar, usar, circular o suprimir.",
+          "Dato sensible: el que afecta la intimidad del titular o cuyo uso indebido puede generar discriminación."
+        ]
+      },
+      {
+        "titulo": "4. Principios",
+        "parrafos": [
+          "El tratamiento se rige por los principios de legalidad, finalidad, libertad, veracidad, transparencia, acceso y circulación restringida, seguridad y confidencialidad. En concreto: solo pedimos los datos que necesitamos para venderte y entregarte un producto, no los usamos para fines distintos de los declarados aquí, y no los ponemos a disposición de quien no los necesite para esas mismas finalidades."
+        ]
+      },
+      {
+        "titulo": "5. Datos que recolectamos",
+        "lista": [
+          "De identificación y contacto: nombre, correo electrónico, teléfono y dirección de entrega.",
+          "Transaccionales: productos comprados, valores, método de pago elegido, estado del pedido e historial de compras.",
+          "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro.",
+          "Técnicos: dirección IP y fecha y hora de las acciones relevantes, como el otorgamiento de esta autorización o los intentos de inicio de sesión.",
+          "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies."
+        ]
+      },
+      {
+        "titulo": "6. Datos de pago",
+        "parrafos": [
+          "No almacenamos números de tarjeta ni datos financieros. El pago con tarjeta, PSE, Nequi, Bancolombia o crédito se procesa íntegramente en la plataforma de la pasarela de pagos Wompi, y esos datos nunca pasan por nuestros servidores. Cuando pagas por transferencia manual, conservamos únicamente la referencia del pedido y la confirmación de que el pago llegó."
+        ]
+      },
+      {
+        "titulo": "7. Finalidades",
+        "parrafos": [
+          "Tratamos tus datos para:"
+        ],
+        "lista": [
+          "Procesar, confirmar y despachar tu pedido, y mantenerte informado de su estado.",
+          "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
+          "Atender peticiones, quejas, reclamos, garantías y solicitudes de retracto.",
+          "Cumplir obligaciones legales, contables y tributarias.",
+          "Prevenir el fraude y proteger la seguridad de las cuentas.",
+          "Gestionar tu cuenta, si decides crearla."
+        ],
+        "cierre": [
+          "No enviamos comunicaciones comerciales ni publicidad con estos datos. Si en el futuro decidiéramos hacerlo, te lo pediríamos con una autorización aparte y específica, que podrías negar sin que eso afecte tu compra."
+        ]
+      },
+      {
+        "titulo": "8. Encargados y terceros",
+        "parrafos": [
+          "Para poder vender y entregar, compartimos los datos estrictamente necesarios con:"
+        ],
+        "lista": [
+          "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
+          "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
+          "[[TRANSPORTADORA]], como empresa de transporte, para entregar el pedido; recibe nombre, teléfono y dirección de entrega.",
+          "[[PROVEEDOR DE CORREO TRANSACCIONAL]], para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
+        ],
+        "cierre": [
+          "No vendemos, arrendamos ni cedemos datos personales a terceros para fines propios de esos terceros."
+        ]
+      },
+      {
+        "titulo": "9. Transferencia y transmisión internacional",
+        "parrafos": [
+          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia. Esas transmisiones se hacen bajo contrato con el proveedor y con el único fin de prestar el servicio descrito en esta política."
+        ]
+      },
+      {
+        "titulo": "10. Datos sensibles y de menores",
+        "parrafos": [
+          "No solicitamos ni tratamos datos sensibles. Nuestros productos no están dirigidos a menores de edad y no recolectamos datos de menores de forma consciente; si detectamos que una cuenta pertenece a un menor, la suprimiremos."
+        ]
+      },
+      {
+        "titulo": "11. Tus derechos",
+        "parrafos": [
+          "Como titular tienes derecho a:"
+        ],
+        "lista": [
+          "Conocer, actualizar y rectificar tus datos.",
+          "Solicitar prueba de la autorización que otorgaste.",
+          "Ser informado sobre el uso que se les ha dado.",
+          "Presentar quejas ante la Superintendencia de Industria y Comercio por infracciones a la ley.",
+          "Revocar la autorización o solicitar la supresión de tus datos, cuando no exista un deber legal o contractual que lo impida.",
+          "Acceder gratuitamente a tus datos."
+        ]
+      },
+      {
+        "titulo": "12. Cómo ejercer tus derechos",
+        "parrafos": [
+          "Escríbenos a contacto@tecnosport.co desde el correo con el que compraste, indicando tu nombre, el pedido al que te refieres y qué solicitas.",
+          "Respondemos las consultas en un máximo de diez (10) días hábiles, prorrogables por cinco (5) días hábiles más cuando no sea posible atenderlas en ese plazo. Los reclamos se atienden en un máximo de quince (15) días hábiles, prorrogables por ocho (8) días hábiles más. En ambos casos te informaremos la prórroga y sus motivos antes de que venza el plazo inicial."
+        ]
+      },
+      {
+        "titulo": "13. Conservación",
+        "parrafos": [
+          "Conservamos los datos de tu pedido y su facturación durante el tiempo que exigen las obligaciones contables y tributarias colombianas, y los datos necesarios para atender garantías mientras esté vigente el término de garantía del producto. Los carritos de compra abandonados se borran automáticamente a los treinta (30) días sin actividad. Cumplidos esos plazos, los datos se suprimen o se anonimizan."
+        ]
+      },
+      {
+        "titulo": "14. Seguridad",
+        "parrafos": [
+          "Aplicamos medidas técnicas y administrativas razonables: el sitio se sirve sobre conexión cifrada, las contraseñas se almacenan con un algoritmo de hash de un solo sentido, el acceso administrativo exige autenticación con roles, y hay límites de intentos para dificultar los ataques automatizados. Ninguna medida elimina el riesgo por completo, y no prometemos una seguridad absoluta."
+        ]
+      },
+      {
+        "titulo": "15. Revocatoria y supresión",
+        "parrafos": [
+          "Puedes revocar la autorización en cualquier momento. La supresión no procede cuando exista un deber legal o contractual de conservar el dato: por ejemplo, la información de una compra ya facturada debe conservarse por el término que impone la ley tributaria, aunque revoques la autorización para otras finalidades."
+        ]
+      },
+      {
+        "titulo": "16. Vigencia",
+        "parrafos": [
+          "Esta política rige desde el 7 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
+        ]
+      }
+    ]
+  },
+  "terminos": {
+    "titulo": "Términos y condiciones",
+    "entradilla": "Estos términos regulan la compra de productos en tecnosport.co. Al confirmar un pedido aceptas lo que dice este documento en la versión vigente ese día.",
+    "secciones": [
+      {
+        "titulo": "1. Quién vende",
+        "parrafos": [
+          "Vendedor: Cristhian Yurday Pérez Hoyos, persona natural comerciante, nombre comercial Tecno Sport.",
+          "NIT: 1054994043-9. Domicilio: Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
+          "Contacto: contacto@tecnosport.co y +57 310 420 9655 (teléfono y WhatsApp)."
+        ]
+      },
+      {
+        "titulo": "2. Objeto y aceptación",
+        "parrafos": [
+          "Este documento regula la venta al detal de ropa deportiva, calzado, bolsos y teléfonos celulares a través de tecnosport.co, con envío dentro de Colombia. El contrato nace cuando confirmamos tu pedido, no cuando haces clic en comprar: hasta ese momento verificamos el precio y la existencia real de cada producto."
+        ]
+      },
+      {
+        "titulo": "3. No hace falta cuenta para comprar",
+        "parrafos": [
+          "Puedes comprar sin registrarte, indicando únicamente tu correo y los datos de entrega. Si creas una cuenta, eres responsable de la veracidad de tus datos y de mantener tu contraseña en reserva. Podemos suspender una cuenta cuando detectemos uso fraudulento."
+        ]
+      },
+      {
+        "titulo": "4. Productos, imágenes y precios",
+        "parrafos": [
+          "Las fotografías de los productos son propias y corresponden a la unidad que vendemos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
+          "Todos los precios se muestran en pesos colombianos (COP) e incluyen el IVA aplicable. El precio publicado incluye además el costo del envío a cualquier parte del país: no hay cobros adicionales al final del proceso.",
+          "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
+          "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y ropa deportiva, el uso distinto del previsto puede afectar la garantía."
+        ]
+      },
+      {
+        "titulo": "5. Disponibilidad",
+        "parrafos": [
+          "La existencia se verifica en el momento de crear el pedido. Si un producto deja de estar disponible después de tu compra, te lo comunicaremos de inmediato para que decidas si esperas una nueva fecha o prefieres la devolución de tu dinero, que se hará dentro de los quince (15) días calendario siguientes."
+        ]
+      },
+      {
+        "titulo": "6. Medios de pago",
+        "parrafos": [
+          "Aceptamos tarjeta de crédito y débito, PSE, Nequi, Bancolombia y crédito Addi, procesados por la pasarela de pagos Wompi; transferencia bancaria manual; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido. No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela."
+        ]
+      },
+      {
+        "titulo": "7. Pago contraentrega",
+        "parrafos": [
+          "La disponibilidad del pago contraentrega la decide el sistema según la ciudad de entrega, el valor del pedido y el tipo de producto, y se te informa antes de elegir el método de pago. Rechazar la entrega no es lo mismo que retractarse: es una compra que no llegó a perfeccionarse, y en ese caso no hay dinero que devolver porque no se recibió. El rechazo reiterado de entregas puede llevarnos a no habilitar este método en compras posteriores."
+        ]
+      },
+      {
+        "titulo": "8. Envío y entrega",
+        "parrafos": [
+          "Despachamos a todo el territorio nacional. El plazo de entrega es de [[PLAZO DE ENTREGA REAL]] días calendario contados desde la confirmación del pago; a falta de un plazo pactado expresamente contigo antes de comprar, aplica el término legal de treinta (30) días calendario.",
+          "Si no entregamos dentro del plazo pactado, puedes terminar el contrato y recuperar tu dinero."
+        ]
+      },
+      {
+        "titulo": "9. Derecho de retracto",
+        "parrafos": [
+          "Como esta es una venta a distancia, puedes retractarte dentro de los cinco (5) días hábiles siguientes a la entrega del producto, sin tener que explicar por qué.",
+          "Para ejercerlo, escríbenos a contacto@tecnosport.co dentro de ese plazo, devuelve el producto en el mismo estado en que lo recibiste y suminístranos los datos que necesitemos para el reintegro.",
+          "Te devolvemos el dinero dentro de los quince (15) días calendario siguientes a que ejerzas el derecho, por el mismo medio de pago que usaste o por el que acordemos contigo. Ese plazo cobija a todos los intervinientes, incluida la entidad financiera.",
+          "El costo del transporte de la devolución lo asume [[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]].",
+          "El retracto no aplica a los productos confeccionados o personalizados según tus especificaciones, ni a los demás casos que excluye el artículo 47 de la Ley 1480 de 2011."
+        ]
+      },
+      {
+        "titulo": "10. Garantía legal",
+        "parrafos": [
+          "Todos nuestros productos tienen garantía legal: si el producto falla, no sirve para lo que se ofreció o no corresponde a lo que compraste, tienes derecho a que lo reparemos, lo repongamos o te devolvamos el dinero, según el caso.",
+          "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor. Para teléfonos celulares aplica la garantía del fabricante, de [[GARANTÍA DE CELULARES]].",
+          "La garantía no cubre el daño causado por uso indebido, modificación no autorizada, desgaste normal ni fuerza mayor.",
+          "Para hacerla efectiva, escríbenos a contacto@tecnosport.co con tu número de pedido y una descripción del problema."
+        ]
+      },
+      {
+        "titulo": "11. Reversión del pago",
+        "parrafos": [
+          "La reversión del pago es distinta del retracto. Procede cuando fuiste víctima de fraude, cuando el producto no fue entregado, cuando no corresponde a lo que pediste o cuando resulta defectuoso. Debes solicitarla ante nosotros y ante el emisor del medio de pago dentro de los cinco (5) días hábiles siguientes a que tengas noticia del hecho, y nosotros facilitamos el trámite."
+        ]
+      },
+      {
+        "titulo": "12. Atención al cliente",
+        "parrafos": [
+          "Canales de orientación, asistencia y radicación de peticiones, quejas y reclamos: contacto@tecnosport.co y WhatsApp +57 310 420 9655.",
+          "Horario de atención: [[HORARIO DE ATENCIÓN]]. Respondemos toda petición en un plazo máximo de quince (15) días hábiles."
+        ]
+      },
+      {
+        "titulo": "13. Propiedad intelectual",
+        "parrafos": [
+          "El contenido de tecnosport.co —incluidas las fotografías de producto, que son propias— está protegido por las normas de propiedad intelectual. Puedes usarlo para informarte y comprar, pero no reproducirlo con fines comerciales sin autorización escrita."
+        ]
+      },
+      {
+        "titulo": "14. Conducta del usuario",
+        "parrafos": [
+          "No está permitido usar el sitio para actividades fraudulentas, intentar acceder a cuentas ajenas, alterar el funcionamiento de la plataforma ni extraer masivamente su contenido."
+        ]
+      },
+      {
+        "titulo": "15. Responsabilidad",
+        "parrafos": [
+          "Respondemos por el cumplimiento del contrato y por la garantía legal en los términos que impone la ley colombiana, que son normas de orden público y no se pueden renunciar. No respondemos por fallas atribuibles a fuerza mayor, ni por el uso que hagas del producto en condiciones distintas de las previstas."
+        ]
+      },
+      {
+        "titulo": "16. Datos personales",
+        "parrafos": [
+          "El tratamiento de tus datos se rige por nuestra política de tratamiento de datos personales, que puedes consultar en la sección correspondiente de este sitio."
+        ]
+      },
+      {
+        "titulo": "17. Modificaciones",
+        "parrafos": [
+          "Podemos modificar estos términos. Los cambios se publican en esta página con una fecha de versión nueva, y a tu compra se le aplica la versión que estaba vigente el día en que la hiciste."
+        ]
+      },
+      {
+        "titulo": "18. Ley aplicable y controversias",
+        "parrafos": [
+          "Estos términos se rigen por la ley colombiana. Puedes presentar tus reclamaciones ante nosotros por los canales indicados y, si no quedas conforme, acudir a la Superintendencia de Industria y Comercio, que tiene facultades jurisdiccionales en materia de protección al consumidor. Nada en este documento limita las acciones que la ley te concede."
+        ]
+      },
+      {
+        "titulo": "19. Vigencia",
+        "parrafos": [
+          "Versión vigente desde el 7 de septiembre de 2026."
+        ]
+      }
+    ]
+  },
+  "cookies": {
+    "titulo": "Política de cookies",
+    "entradilla": "Esta página explica qué cookies usa tecnosport.co y para qué. En Colombia no existe una ley específica de cookies: lo que aplica es el régimen de protección de datos personales cuando la cookie trata datos personales, y el deber general de informarte con claridad.",
+    "secciones": [
+      {
+        "titulo": "1. Qué es una cookie",
+        "parrafos": [
+          "Una cookie es un archivo pequeño que un sitio guarda en tu navegador para recordar algo entre una página y otra. También usamos el almacenamiento local del navegador, que funciona de forma parecida."
+        ]
+      },
+      {
+        "titulo": "2. Qué usamos hoy",
+        "parrafos": [
+          "Hoy tecnosport.co usa únicamente lo estrictamente necesario para funcionar:"
+        ],
+        "lista": [
+          "Cookie de sesión de refresco: se crea solo si inicias sesión, permite mantenerla abierta sin volver a escribir la contraseña, y dura treinta (30) días. Es de acceso exclusivo del servidor.",
+          "Preferencia de tema: recuerda si elegiste el modo claro, el oscuro o el del sistema.",
+          "Preferencia de movimiento reducido: recuerda si pediste reducir las animaciones.",
+          "Identificador del carrito: se guarda en el almacenamiento local del navegador para que tu carrito siga ahí si cierras la pestaña. No identifica a una persona por sí solo.",
+          "Idioma: se toma de la dirección de la página, no de una cookie."
+        ]
+      },
+      {
+        "titulo": "3. Qué no usamos",
+        "parrafos": [
+          "No usamos cookies de analítica, de publicidad, de perfilamiento ni de remarketing, y no hay cookies de terceros con esas finalidades. Por eso este sitio no muestra un banner de consentimiento de cookies: no hay nada que consentir más allá de lo necesario para que funcione. Si algún día incorporamos analítica o publicidad, pediremos tu consentimiento previo con una opción de rechazar tan fácil como la de aceptar, y actualizaremos esta página antes de hacerlo."
+        ]
+      },
+      {
+        "titulo": "4. Cómo gestionarlas",
+        "parrafos": [
+          "Puedes borrar o bloquear las cookies desde la configuración de tu navegador. Ten en cuenta que si bloqueas las necesarias, no podrás mantener la sesión iniciada y el carrito podría vaciarse al cerrar la pestaña."
+        ]
+      },
+      {
+        "titulo": "5. Vigencia",
+        "parrafos": [
+          "Versión vigente desde el 7 de septiembre de 2026."
+        ]
+      }
+    ]
+  }
+}

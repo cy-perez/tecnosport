@@ -26,6 +26,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
       },
       {
+        path: 'legales',
+        loadChildren: () => import('./features/legales/presentation/legales.routes').then((m) => m.legalesRoutes),
+      },
+      {
         path: 'cuenta',
         loadChildren: () => import('./features/cuenta/presentation/cuenta.routes').then((m) => m.cuentaRoutes),
       },

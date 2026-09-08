@@ -1,0 +1,335 @@
+{
+  "comun": {
+    "version_etiqueta": "Version",
+    "version": "2026-09-07",
+    "vigencia": "In force since 7 September 2026.",
+    "otros_documentos": "Other legal documents",
+    "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
+    "traduccion_cortesia": "This is a courtesy translation. These documents are governed by Colombian law and the Spanish version is the one that governs; in case of any discrepancy, the Spanish text prevails."
+  },
+  "nav": {
+    "privacidad": "Personal data policy",
+    "terminos": "Terms and conditions",
+    "cookies": "Cookie policy"
+  },
+  "privacidad": {
+    "titulo": "Personal data processing policy",
+    "entradilla": "This policy explains what personal data we collect on tecnosport.co, what we use it for, who we share it with, and how you can exercise your rights. It is written in accordance with Colombian Statutory Law 1581 of 2012 and its implementing decrees.",
+    "secciones": [
+      {
+        "titulo": "1. Data controller",
+        "parrafos": [
+          "Controller: Cristhian Yurday Pérez Hoyos, sole trader, operating under the trade name Tecno Sport.",
+          "Tax ID (NIT): 1054994043-9.",
+          "Address: Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
+          "Email for exercising your rights: contacto@tecnosport.co.",
+          "Phone and WhatsApp: +57 310 420 9655."
+        ]
+      },
+      {
+        "titulo": "2. Scope",
+        "parrafos": [
+          "This policy applies to the personal data of anyone who visits tecnosport.co, creates an account, places an order, or contacts us through any of our support channels."
+        ]
+      },
+      {
+        "titulo": "3. Definitions",
+        "lista": [
+          "Data subject: the natural person whose personal data is processed.",
+          "Controller: whoever decides on the database and its processing; here, Tecno Sport.",
+          "Processor: whoever processes data on the controller's behalf, such as the payment gateway or the courier.",
+          "Processing: any operation on personal data, such as collecting, storing, using, circulating, or deleting it.",
+          "Sensitive data: data affecting the data subject's privacy or whose misuse could lead to discrimination."
+        ]
+      },
+      {
+        "titulo": "4. Principles",
+        "parrafos": [
+          "Processing is governed by the principles of legality, purpose, freedom, accuracy, transparency, restricted access and circulation, security, and confidentiality. In practice: we only ask for the data we need to sell and deliver a product to you, we do not use it for purposes other than those stated here, and we do not make it available to anyone who does not need it for those same purposes."
+        ]
+      },
+      {
+        "titulo": "5. Data we collect",
+        "lista": [
+          "Identification and contact: name, email address, phone number, and delivery address.",
+          "Transactional: products purchased, amounts, chosen payment method, order status, and purchase history.",
+          "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text.",
+          "Technical: IP address and the date and time of relevant actions, such as granting this authorisation or sign-in attempts.",
+          "Browsing: only what is strictly necessary for the site to work. See the cookie policy."
+        ]
+      },
+      {
+        "titulo": "6. Payment data",
+        "parrafos": [
+          "We do not store card numbers or financial data. Payments by card, PSE, Nequi, Bancolombia, or credit are processed entirely on the Wompi payment gateway platform, and that data never passes through our servers. When you pay by manual bank transfer, we keep only the order reference and the confirmation that the payment arrived."
+        ]
+      },
+      {
+        "titulo": "7. Purposes",
+        "parrafos": [
+          "We process your data in order to:"
+        ],
+        "lista": [
+          "Process, confirm, and ship your order, and keep you informed of its status.",
+          "Check whether cash on delivery is available in your city and coordinate the delivery.",
+          "Handle requests, complaints, claims, warranties, and withdrawal requests.",
+          "Comply with legal, accounting, and tax obligations.",
+          "Prevent fraud and protect account security.",
+          "Manage your account, if you choose to create one."
+        ],
+        "cierre": [
+          "We do not send marketing communications or advertising using this data. If we ever decide to, we would ask for a separate, specific authorisation, which you could refuse without it affecting your purchase."
+        ]
+      },
+      {
+        "titulo": "8. Processors and third parties",
+        "parrafos": [
+          "In order to sell and deliver, we share strictly necessary data with:"
+        ],
+        "lista": [
+          "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
+          "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
+          "[[COURIER]], as the shipping company, to deliver your order; it receives your name, phone number, and delivery address.",
+          "[[TRANSACTIONAL EMAIL PROVIDER]], to send you account verification, password recovery, and order status emails."
+        ],
+        "cierre": [
+          "We do not sell, rent, or transfer personal data to third parties for those third parties' own purposes."
+        ]
+      },
+      {
+        "titulo": "9. International transfer and transmission",
+        "parrafos": [
+          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia. Those transmissions take place under contract with the provider and solely to deliver the service described in this policy."
+        ]
+      },
+      {
+        "titulo": "10. Sensitive data and minors",
+        "parrafos": [
+          "We neither request nor process sensitive data. Our products are not aimed at minors and we do not knowingly collect minors' data; if we find that an account belongs to a minor, we will delete it."
+        ]
+      },
+      {
+        "titulo": "11. Your rights",
+        "parrafos": [
+          "As a data subject you have the right to:"
+        ],
+        "lista": [
+          "Access, update, and correct your data.",
+          "Request proof of the authorisation you granted.",
+          "Be informed about how your data has been used.",
+          "File complaints with the Superintendence of Industry and Commerce for breaches of the law.",
+          "Withdraw your authorisation or request deletion of your data, where no legal or contractual duty prevents it.",
+          "Access your data free of charge."
+        ]
+      },
+      {
+        "titulo": "12. How to exercise your rights",
+        "parrafos": [
+          "Write to contacto@tecnosport.co from the email address you used to buy, stating your name, the order concerned, and what you are asking for.",
+          "We answer enquiries within a maximum of ten (10) business days, extendable by five (5) more business days where we cannot answer within that time. Claims are handled within a maximum of fifteen (15) business days, extendable by eight (8) more. In both cases we will tell you about the extension and its reasons before the initial deadline expires."
+        ]
+      },
+      {
+        "titulo": "13. Retention",
+        "parrafos": [
+          "We keep your order and invoicing data for as long as Colombian accounting and tax obligations require, and the data needed to handle warranties for as long as the product's warranty term runs. Abandoned shopping carts are deleted automatically after thirty (30) days without activity. Once those periods end, data is deleted or anonymised."
+        ]
+      },
+      {
+        "titulo": "14. Security",
+        "parrafos": [
+          "We apply reasonable technical and administrative measures: the site is served over an encrypted connection, passwords are stored using a one-way hash, administrative access requires role-based authentication, and there are attempt limits to hinder automated attacks. No measure removes risk entirely, and we do not promise absolute security."
+        ]
+      },
+      {
+        "titulo": "15. Withdrawal and deletion",
+        "parrafos": [
+          "You may withdraw your authorisation at any time. Deletion does not apply where there is a legal or contractual duty to keep the data: for example, information about an already invoiced purchase must be kept for the period imposed by tax law, even if you withdraw your authorisation for other purposes."
+        ]
+      },
+      {
+        "titulo": "16. Term",
+        "parrafos": [
+          "This policy is in force from 7 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
+        ]
+      }
+    ]
+  },
+  "terminos": {
+    "titulo": "Terms and conditions",
+    "entradilla": "These terms govern the purchase of products on tecnosport.co. By confirming an order you accept this document as it stands on that day.",
+    "secciones": [
+      {
+        "titulo": "1. Who sells",
+        "parrafos": [
+          "Seller: Cristhian Yurday Pérez Hoyos, sole trader, trading as Tecno Sport.",
+          "Tax ID (NIT): 1054994043-9. Address: Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
+          "Contact: contacto@tecnosport.co and +57 310 420 9655 (phone and WhatsApp)."
+        ]
+      },
+      {
+        "titulo": "2. Purpose and acceptance",
+        "parrafos": [
+          "This document governs the retail sale of sportswear, footwear, bags, and mobile phones through tecnosport.co, with shipping within Colombia. The contract is formed when we confirm your order, not when you click buy: until then we verify the price and the actual stock of each product."
+        ]
+      },
+      {
+        "titulo": "3. No account required",
+        "parrafos": [
+          "You can buy without registering, providing only your email and delivery details. If you create an account, you are responsible for the accuracy of your data and for keeping your password confidential. We may suspend an account where we detect fraudulent use."
+        ]
+      },
+      {
+        "titulo": "4. Products, images, and prices",
+        "parrafos": [
+          "Product photographs are our own and correspond to the unit we sell. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
+          "All prices are shown in Colombian pesos (COP) and include applicable VAT. The published price also includes shipping anywhere in the country: there are no additional charges at the end of the process.",
+          "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
+          "Check the use and care restrictions on each product page; for footwear and sportswear, use other than intended may affect the warranty."
+        ]
+      },
+      {
+        "titulo": "5. Availability",
+        "parrafos": [
+          "Stock is verified at the moment the order is created. If a product becomes unavailable after your purchase, we will tell you immediately so you can decide whether to wait for a new date or prefer a refund, which will be made within fifteen (15) calendar days."
+        ]
+      },
+      {
+        "titulo": "6. Payment methods",
+        "parrafos": [
+          "We accept credit and debit cards, PSE, Nequi, Bancolombia, and Addi credit, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. We do not store card data: that information is handled entirely on the gateway's platform."
+        ]
+      },
+      {
+        "titulo": "7. Cash on delivery",
+        "parrafos": [
+          "Whether cash on delivery is available is decided by the system based on the delivery city, the order value, and the product type, and you are told before choosing a payment method. Refusing delivery is not the same as withdrawing: it is a purchase that was never completed, and in that case there is no money to refund because none was received. Repeatedly refusing deliveries may lead us not to enable this method on later purchases."
+        ]
+      },
+      {
+        "titulo": "8. Shipping and delivery",
+        "parrafos": [
+          "We ship nationwide. The delivery time is [[ACTUAL DELIVERY TIME]] calendar days from payment confirmation; absent a term expressly agreed with you before purchase, the statutory term of thirty (30) calendar days applies.",
+          "If we do not deliver within the agreed term, you may terminate the contract and recover your money."
+        ]
+      },
+      {
+        "titulo": "9. Right of withdrawal",
+        "parrafos": [
+          "As this is a distance sale, you may withdraw within five (5) business days following delivery of the product, without having to explain why.",
+          "To exercise it, write to contacto@tecnosport.co within that period, return the product in the same condition in which you received it, and give us the details we need for the refund.",
+          "We refund your money within fifteen (15) calendar days from when you exercise the right, using the same payment method you used or another we agree with you. That period covers everyone involved, including the financial institution.",
+          "The cost of return shipping is borne by [[WHO PAYS RETURN SHIPPING]].",
+          "Withdrawal does not apply to products made or personalised to your specifications, nor to the other cases excluded by article 47 of Law 1480 of 2011."
+        ]
+      },
+      {
+        "titulo": "10. Statutory warranty",
+        "parrafos": [
+          "All our products carry the statutory warranty: if the product fails, does not work for what it was offered for, or does not match what you bought, you are entitled to have it repaired, replaced, or refunded, as applicable.",
+          "The statutory warranty term is one (1) year from delivery, unless the producer announces a longer one. For mobile phones, the manufacturer's warranty applies, of [[MOBILE PHONE WARRANTY]].",
+          "The warranty does not cover damage caused by improper use, unauthorised modification, normal wear, or force majeure.",
+          "To claim it, write to contacto@tecnosport.co with your order number and a description of the problem."
+        ]
+      },
+      {
+        "titulo": "11. Payment reversal",
+        "parrafos": [
+          "Payment reversal is different from withdrawal. It applies where you were a victim of fraud, where the product was not delivered, where it does not match what you ordered, or where it is defective. You must request it both from us and from the issuer of your payment method within five (5) business days of learning of the event, and we will facilitate the process."
+        ]
+      },
+      {
+        "titulo": "12. Customer support",
+        "parrafos": [
+          "Channels for guidance, assistance, and filing requests, complaints, and claims: contacto@tecnosport.co and WhatsApp +57 310 420 9655.",
+          "Opening hours: [[OPENING HOURS]]. We answer every request within a maximum of fifteen (15) business days."
+        ]
+      },
+      {
+        "titulo": "13. Intellectual property",
+        "parrafos": [
+          "The content of tecnosport.co — including the product photographs, which are our own — is protected by intellectual property law. You may use it to inform yourself and to buy, but not reproduce it for commercial purposes without written authorisation."
+        ]
+      },
+      {
+        "titulo": "14. User conduct",
+        "parrafos": [
+          "You may not use the site for fraudulent activity, attempt to access other people's accounts, interfere with the platform's operation, or extract its content in bulk."
+        ]
+      },
+      {
+        "titulo": "15. Liability",
+        "parrafos": [
+          "We are liable for performance of the contract and for the statutory warranty on the terms imposed by Colombian law, which are matters of public policy and cannot be waived. We are not liable for failures attributable to force majeure, nor for your use of the product in conditions other than those intended."
+        ]
+      },
+      {
+        "titulo": "16. Personal data",
+        "parrafos": [
+          "Processing of your data is governed by our personal data processing policy, available in the corresponding section of this site."
+        ]
+      },
+      {
+        "titulo": "17. Changes",
+        "parrafos": [
+          "We may amend these terms. Changes are published on this page with a new version date, and your purchase is governed by the version in force on the day you made it."
+        ]
+      },
+      {
+        "titulo": "18. Governing law and disputes",
+        "parrafos": [
+          "These terms are governed by Colombian law. You may bring your claims to us through the channels indicated and, if you are not satisfied, to the Superintendence of Industry and Commerce, which holds judicial powers in consumer protection matters. Nothing in this document limits the actions the law grants you."
+        ]
+      },
+      {
+        "titulo": "19. Term",
+        "parrafos": [
+          "Version in force since 7 September 2026."
+        ]
+      }
+    ]
+  },
+  "cookies": {
+    "titulo": "Cookie policy",
+    "entradilla": "This page explains which cookies tecnosport.co uses and what for. Colombia has no cookie-specific statute: what applies is the personal data protection regime where a cookie processes personal data, together with the general duty to inform you clearly.",
+    "secciones": [
+      {
+        "titulo": "1. What a cookie is",
+        "parrafos": [
+          "A cookie is a small file a site stores in your browser to remember something between one page and the next. We also use the browser's local storage, which works in a similar way."
+        ]
+      },
+      {
+        "titulo": "2. What we use today",
+        "parrafos": [
+          "Today tecnosport.co uses only what is strictly necessary to work:"
+        ],
+        "lista": [
+          "Refresh session cookie: created only if you sign in, it keeps your session open without retyping your password, and lasts thirty (30) days. It is accessible only to the server.",
+          "Theme preference: remembers whether you chose light mode, dark mode, or the system setting.",
+          "Reduced motion preference: remembers whether you asked to reduce animations.",
+          "Cart identifier: stored in the browser's local storage so your cart is still there if you close the tab. It does not identify a person on its own.",
+          "Language: taken from the page address, not from a cookie."
+        ]
+      },
+      {
+        "titulo": "3. What we do not use",
+        "parrafos": [
+          "We use no analytics, advertising, profiling, or remarketing cookies, and there are no third-party cookies for those purposes. That is why this site shows no cookie consent banner: there is nothing to consent to beyond what is needed to make it work. If we ever add analytics or advertising, we will ask for your prior consent with a refuse option as easy as the accept one, and we will update this page before doing so."
+        ]
+      },
+      {
+        "titulo": "4. How to manage them",
+        "parrafos": [
+          "You can delete or block cookies from your browser settings. Bear in mind that if you block the necessary ones, you will not be able to stay signed in and your cart may empty when you close the tab."
+        ]
+      },
+      {
+        "titulo": "5. Term",
+        "parrafos": [
+          "Version in force since 7 September 2026."
+        ]
+      }
+    ]
+  }
+}

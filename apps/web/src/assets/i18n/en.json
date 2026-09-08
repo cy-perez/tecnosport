@@ -39,7 +39,11 @@
     "navegacion": "Footer navigation",
     "portada": "Home",
     "carrito": "Cart",
-    "panel_admin": "Admin panel"
+    "panel_admin": "Admin panel",
+    "legales_titulo": "Legal",
+    "terminos": "Terms and conditions",
+    "privacidad": "Data policy",
+    "cookies": "Cookies"
   },
   "portada": {
     "titulo": "Sportswear, footwear, bags and phones",

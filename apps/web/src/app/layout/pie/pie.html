@@ -44,6 +44,24 @@
       </a>
     </nav>
 
+    <!--
+      Los legales van en su propia lista y no mezclados con la navegación de compra: la ley pide
+      que la política de datos esté publicada y enlazada en el pie (docs/08-seguridad-legal.md), y
+      quien la busca la busca como bloque, no entre "Carrito" y "Portada".
+    -->
+    <nav class="flex flex-col gap-8" [attr.aria-label]="'pie.legales_titulo' | transloco">
+      <p class="m-0 text-xs uppercase">{{ 'pie.legales_titulo' | transloco }}</p>
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'terminos']">
+        {{ 'pie.terminos' | transloco }}
+      </a>
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'privacidad']">
+        {{ 'pie.privacidad' | transloco }}
+      </a>
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'cookies']">
+        {{ 'pie.cookies' | transloco }}
+      </a>
+    </nav>
+
     <!-- `not-italic` porque un <address> lo es por omisión del navegador, y
          aquí no hay Preflight que lo resetee (src/tailwind.css). -->
     <address class="flex flex-col gap-4 text-sm not-italic">
