@@ -2173,13 +2173,28 @@ de cierre cumplidas y verificadas.
 
 **Lo que queda abierto**, anotado para que nadie lo descubra otra vez:
 
-- **De la revisión adversarial del visor**, cuatro hallazgos vivos: un fotograma
-  roto se salta en silencio (ni log ni señal); la pista sale en cada visita en
-  vez de "la primera vez" como pide `docs/10-captura-360.md`; sin captura de
-  puntero, soltar fuera del marco deja `arrastrando` en verdadero; y
-  `guardarSetRotacion` del sembrador no tiene prueba.
-- **Tercera copia del host literal de imágenes** en `SembradorCatalogo`, contra
-  la regla dura #5. Perfil `local`, pero ya son tres.
+- ~~**De la revisión adversarial del visor**, cuatro hallazgos vivos: un
+  fotograma roto se salta en silencio (ni log ni señal); la pista sale en cada
+  visita en vez de "la primera vez" como pide `docs/10-captura-360.md`; sin
+  captura de puntero, soltar fuera del marco deja `arrastrando` en verdadero; y
+  `guardarSetRotacion` del sembrador no tiene prueba.~~ **Cerrados**
+  (2026-09-07): el fotograma roto queda registrado en consola con su índice y su
+  URL —en pantalla no se muestra nada, y eso es una decisión: qué decirle a quien
+  está mirando un producto cuando falta una foto es de producto, no de este
+  componente—; la pista sale una sola vez por navegador, con la marca en
+  `localStorage` y los dos accesos al almacén tolerando que no haya almacén, y
+  de paso deja de pintarla el servidor; y el set sembrado tiene cinco pruebas
+  contra Postgres real. El cuarto hallazgo **estaba mal anotado**:
+  `setPointerCapture` vive en el componente desde su primer commit (`3a95f01`,
+  comprobado con `git log -S`), así que soltar fuera del marco nunca dejó
+  `arrastrando` en verdadero.
+- ~~**Tercera copia del host literal de imágenes** en `SembradorCatalogo`, contra
+  la regla dura #5. Perfil `local`, pero ya son tres.~~ **Cerrada** (2026-09-07):
+  el host es una constante y la URL la arma `urlDeSiembra(semilla, ancho, alto)`.
+  Sigue siendo un literal y no una variable de entorno **a propósito**: la forma
+  de la ruta es la API de picsum.photos, así que hacer configurable solo el host
+  no dejaría apuntar la siembra a otro sitio — cumplir la regla en el papel. El
+  razonamiento quedó en el código, no solo aquí.
 - **`NG02956`**: sin `preconnect` al host de imágenes. Sigue esperando el host
   real, porque el arreglo es una URL literal en el `<head>` que la regla dura #5
   prohíbe.
@@ -2191,8 +2206,9 @@ de cierre cumplidas y verificadas.
   decisión tomada.
 - **`TODO(negocio)`** de la copia del hero y su imagen 4:3 de 1200x900, heredado
   de la Fase 4.
-- **Cosmético, en la lista de productos del panel**: "Editar" y "Capturar 360"
-  se pintan pegados ("EditarCapturar 360"), sin separación.
+- ~~**Cosmético, en la lista de productos del panel**: "Editar" y "Capturar 360"
+  se pintan pegados ("EditarCapturar 360"), sin separación.~~ Cerrado en
+  `3d3b915`, durante el tramo de interfaz posterior a la fase.
 - **El carrito sigue sin vencer** (Fase 2) y `Playwright` sigue sin existir,
   aunque `docs/06-testing.md` lo nombra como la herramienta de los recorridos
   completos. Los dos son de la Fase 6.
