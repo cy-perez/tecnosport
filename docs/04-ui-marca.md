@@ -212,7 +212,7 @@ todavía no se han partido.
 **En `shared/ui/` — las primitivas tontas:** `cn` (fusión de clases) ·
 `clases-control` (el aspecto compartido de un control de formulario) ·
 `ts-icono` · `ts-boton` (primario, secundario, texto, peligro) · `ts-campo` ·
-`ts-select` · `ts-dialogo` · `ts-pagina-formulario`.
+`ts-select` · `ts-checkbox` · `ts-dialogo` · `ts-pagina-formulario`.
 
 `ts-pagina-formulario` es el cascarón de una pantalla de formulario: ancho de
 columna, aire vertical y titular. Estaba repetido **doce veces** —ocho en
@@ -252,9 +252,35 @@ nada, ver la regla dura #1 de `CLAUDE.md`— y su `boundaries/include` sigue
 apuntando solo a `features/**`, pero eso ya da igual: el guardián que cuenta
 corre en `npm run verificar`, y es su primer paso, antes del lint.
 
-**Pendientes de construir:** `ts-checkbox` · `ts-radio` · `ts-notificacion`. El
-único checkbox del sitio sigue siendo el de "reducir movimiento" del pie. Se
-construyen cuando aparezca el primer consumidor real, no antes.
+**Pendientes de construir:** `ts-radio` · `ts-notificacion`. Se construyen
+cuando aparezca el primer consumidor real, no antes.
+
+**`ts-checkbox` ya salió de esa lista, y cómo salió importa.** El consumidor
+—la casilla de "reducir movimiento" del pie— existía desde la Fase 4, pero
+nadie había mirado cuánto medía: era un `<input type="checkbox">` nativo sin
+estilar de **13 × 13 px**, con su `<label>` en 19 px de alto. Eso incumple
+WCAG 2.2 AA (2.5.8 exige 24 × 24) y está lejos de los 44 px que pide este
+documento — o sea, el control de accesibilidad del sitio era el que fallaba
+accesibilidad. No lo vio ninguna prueba, porque jsdom no hace layout, ni el
+escritorio, porque el ratón perdona un objetivo pequeño. Salió midiendo el
+sitio a 380 px en un navegador.
+
+El componente resuelve tres cosas que la casilla nativa no daba: el objetivo
+táctil es **la etiqueta entera** (`min-h-tactil` va en el `<label>`, medido en
+158 × 44), la caja se dibuja a 24 px con `appearance-none` y un visto de
+Lucide, y `sobreMarca` conmuta al par `sobre-marca` / `marca` —validado en
+14,64:1— porque en la franja del pie el anillo de foco normal es invisible en
+tema claro. No implementa `ControlValueAccessor`, a diferencia de `ts-campo` y
+`ts-select`: su único consumidor no usa Angular Forms, y cablear un CVA que
+nadie registra sería el código especulativo que la regla de arriba evita.
+
+**`ts-dialogo` es la excepción a esa regla, y conviene decirlo:** está
+construido y probado, pero **ninguna pantalla lo usa todavía**. Se revisó
+buscándole uno: no hay un `confirm()` nativo que reemplazar en todo el
+frontend, y la única acción destructiva de la interfaz —eliminar una línea del
+carrito— confirmarla o no es una decisión de producto, no una deuda técnica que
+se pueda saldar programando. Queda a la espera del primer modal real. Mientras
+tanto es la única primitiva del sistema que se adelantó a su consumidor.
 
 **`ts-dialogo` está construido sobre `@spartan-ng/brain`**, y es lo único que
 usa esa dependencia. La primera versión era un `@if` en línea con
@@ -404,13 +430,19 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   (teclado sí, ratón en un `<input>` no siempre): jsdom no lo reproduce.
   Comprobado a mano en la Fase 2 — con Tab real, `outline-color` resuelve a
   `--color-foco`, que en oscuro es ámbar.
-- **El CDK ya está en uso** (`shared/ui/dialogo`), aunque desde que el diálogo
-  se construyó sobre `@spartan-ng/brain` no se toca directo: `brn-dialog` monta
-  el portal y la trampa de foco del CDK por dentro. La versión anterior cableaba
-  `[cdkTrapFocus]` con `cdkTrapFocusAutoCapture` a mano, y el efecto visible es
-  el mismo — el foco entra al diálogo al abrir y vuelve al elemento anterior al
-  cerrar. **Ese movimiento tampoco lo prueba Vitest**: el
-  `InteractivityChecker` del CDK mide layout y en jsdom todo mide cero.
+- **El CDK está en uso solo dentro de `shared/ui/dialogo`**, y desde que el
+  diálogo se construyó sobre `@spartan-ng/brain` no se toca directo:
+  `brn-dialog` monta el portal y la trampa de foco del CDK por dentro. La
+  versión anterior cableaba `[cdkTrapFocus]` con `cdkTrapFocusAutoCapture` a
+  mano, y el efecto visible es el mismo — el foco entra al diálogo al abrir y
+  vuelve al elemento anterior al cerrar.
+  **Con dos límites que hay que leer juntos, porque esta viñeta llegó a
+  afirmar más de lo que se había comprobado:** ese movimiento no lo prueba
+  Vitest —el `InteractivityChecker` del CDK mide layout y en jsdom todo mide
+  cero— y **tampoco se ha visto en el navegador, porque no hay pantalla que
+  abra un diálogo**. O sea: la trampa de foco de este proyecto está sin
+  verificar de las dos formas que valen. Se verifica el día que `ts-dialogo`
+  tenga su primer consumidor.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 
 ## Imágenes del catálogo
