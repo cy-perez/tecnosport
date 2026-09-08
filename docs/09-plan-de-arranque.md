@@ -2303,6 +2303,130 @@ resolverlas antes de abrir:
 estructurados) y **Lighthouse**, que sigue sin correrse — necesita DevTools sobre
 un `ng build` servido en producción.
 
+### SEO técnico y la nota de idioma (2026-09-08)
+
+El frente que el bloque anterior no tocó, en tres partes, más un hallazgo legal
+que salió en medio.
+
+**Metadatos por página.** No había **ninguna** llamada a `Title` ni a `Meta` en
+todo `apps/web`: las quince pantallas compartían el `<title>Tecno Sport</title>`
+estático de `index.html`, sin `description`, sin canónico y sin Open Graph. Eso
+pesaba más para el posicionamiento que el sitemap que se iba a construir.
+
+`core/seo/` lo resuelve con un servicio central alimentado por `data.seo` de cada
+ruta, y un hook (`usarMetadatos`) para la única pantalla cuyo título sale de datos
+—la ficha—. Decisiones que quedaron en el código:
+
+- **`indexable` por omisión es `false`**, con prueba. Una pantalla nueva que se
+  olvide de declararlo se queda fuera del índice, que se arregla con un commit;
+  al revés, el descuido publica el carrito o el panel y eso se arregla pidiéndole
+  a Google que desindexe.
+- **El canónico poda los parámetros de consulta.** La única pantalla que los usa
+  es la rejilla, y ahí `?categoria=`, `?orden=` y `?cursor=` no son páginas
+  distintas sino recortes de la misma; declararlas todas canónicas sería pedir
+  que se indexe una combinación por cada filtro.
+- **`hreflang` sale de la misma función que el selector de idioma del
+  encabezado** (`urlEnOtroIdioma`). Lo que se le promete al rastreador tiene que
+  ser exactamente adonde va el visitante que pulsa el selector.
+- **El inicializador de entorno, no el constructor de `App`**: corre antes de la
+  primera navegación, que es la única que ve un rastreador sin JavaScript.
+
+**Tres defectos encontrados, dos de ellos propios:**
+
+1. **La ruta de la ficha se marcó `indexable: true` y estaba mal.** Un slug
+   inventado no da 404: el router lo acepta, la consulta falla y la página
+   responde 200 con "No encontramos este producto". Eso es un *soft 404*, y así
+   habría entrado al índice una URL basura por cada enlace roto. Ahora la ruta es
+   `noindex` y solo la ficha que **sí** cargó su producto se declara indexable.
+2. **La siembra tiene `descripcion` vacía** —la columna es `not null default ''`,
+   así que es un estado legítimo— y esas fichas salían sin `meta description`. Se
+   añadió un respaldo que no inventa nada: plantilla traducida con el nombre y la
+   marca reales.
+3. **`comun.traduccion_cortesia` existía solo en inglés y ninguna plantilla la
+   mostraba.** Lo destapó la prueba de paridad de claves del scope `legales`, que
+   faltaba desde que el scope se creó. No era un detalle de traducción: es la nota
+   de que **la versión en castellano es la que rige**, y sin ella quien compra
+   navegando en inglés aceptaba un documento cuyo original nunca vio. Verificado
+   contra la fuente oficial: **Ley 1480 de 2011, art. 23** ("la información mínima
+   debe estar en castellano") y **art. 37.1** ("en los contratos se utilizará el
+   idioma castellano"), con las condiciones que no cumplan declaradas ineficaces.
+   Ahora se muestra en los dos idiomas, diciendo lo que corresponde en cada uno.
+   `autorizacion_datos` no guarda el idioma de lectura y **no hace falta**: si la
+   versión española rige siempre, el idioma en que se leyó es irrelevante.
+
+**Sitemap y robots.** `GET /api/v1/mapa-del-sitio` en el backend —puerto propio y
+estrecho, no un método más en `RepositorioProductos`— y `/sitemap.xml` +
+`/robots.txt` en el servidor Express, antes del manejador de Angular. El endpoint
+devuelve **slugs, no URL**: el backend no sabe, ni tiene por qué, que la ficha
+vive en `/{idioma}/productos/{slug}`, y el día de la app móvil esa ruta no
+significará nada.
+
+- **`robots.txt` solo prohíbe `/admin`**, y la estrechez es deliberada. El
+  carrito, el checkout y la cuenta ya salen con `noindex`; añadirles `Disallow`
+  impediría que el rastreador **lea** ese `noindex` y podrían acabar indexadas
+  igual, sin descripción y sin forma de sacarlas. Para no aparecer hay que dejar
+  entrar. `/admin` es la excepción porque se renderiza en cliente y su HTML no
+  lleva el `noindex`.
+- **`lastmod` solo donde es verdad**: las tres legales, desde
+  `legales.comun.version`. La portada y la rejilla no lo llevan, porque poner la
+  fecha del despliegue le enseña a Google que nuestro `lastmod` no significa nada.
+- **Un solo sitemap, no uno por idioma.** `docs/05-i18n.md` decía lo contrario y
+  se corrigió: el formato pide una entrada por versión con sus alternativas.
+
+**Datos estructurados.** `Product` con `AggregateOffer` y `BreadcrumbList` en la
+ficha; `Organization` y `WebSite` en la portada. Los datos del negocio salen de
+las claves del pie —las que la ley ya obliga a publicar— y no de una segunda
+copia. `openingHours` **no se emite**: el horario de atención sigue sin decidirse,
+y Google lo muestra como si fuera cierto. El escapado de `<` al serializar no es
+cosmético: la descripción de un producto la escribe el panel, y un `</script>` ahí
+cerraría la etiqueta en el HTML del SSR.
+
+**Lo verificado en el navegador y no solo en jsdom**, que es lo que las pruebas no
+alcanzan: que el `<head>` completo —título, canónico, las tres alternativas y los
+bloques de JSON-LD— salga **ya escrito en el HTML del SSR**, incluida la ficha,
+cuyos metadatos los pone un `effect` con datos del resolver; que el sitemap
+responda con 18 URL y XML bien formado, validado con un parser de verdad; y que
+**con la API caída siga respondiendo 200** con las páginas fijas, apagando la API
+para comprobarlo en vez de confiar en el `catch`.
+
+**Lighthouse, por fin** (`lighthouse` como devDependency de `apps/web`), sobre el
+build de producción servido, en móvil y con estrangulamiento. Tres pantallas:
+
+| | rendimiento | accesibilidad | buenas prácticas | SEO |
+|---|---|---|---|---|
+| portada | 67 | 100 | 96 | 100 |
+| ficha | 58 | 100 | 96 | 100 |
+| legales | 66 | 100 | 96 | 100 |
+
+**La primera corrida fue inválida y conviene saber por qué**, porque le va a pasar
+a cualquiera que sirva el build en local. La ficha dio SEO 61 y salió
+`noindex,nofollow`: el respaldo de su ruta, o sea que el producto no había
+cargado. En el navegador `baseUrl()` es relativa a propósito —en producción el
+balanceador enruta `/api` al backend en el mismo dominio— pero **el servidor SSR
+construido no hace ese proxy; solo lo hace `ng serve` con `proxy.conf.json`**. Así
+que tras hidratar, la consulta del producto moría y la pantalla se quedaba con los
+metadatos del caso "producto no encontrado". No es un fallo de producción, pero
+invalida la medición: hay que poner un proxy delante que mande `/api` al backend
+y el resto al servidor SSR. Las cifras de arriba son las de esa segunda corrida.
+
+**Lo que las cifras dicen y lo que no.** El SEO y la accesibilidad son sólidos y
+se pueden dar por buenos. **El rendimiento todavía no se puede juzgar**: en la
+ficha, 16 de las 51 peticiones van a `picsum.photos` —el host de imágenes de la
+siembra—, incluidos los ocho fotogramas de rotación a 1000×1000, y eso es lo que
+lleva su LCP a 10,2 s. Con el bucket real esa cifra no significa lo mismo. **Hay
+que repetir la medición cuando las imágenes salgan de GCS.**
+
+Dos hallazgos que sí son reales e independientes de la siembra:
+
+- **JavaScript sin usar**: 186 KB de un chunk de 352 KB en la ficha, ~2 s de
+  ahorro estimado. Es la única oportunidad que Lighthouse reporta por encima de
+  100 ms en las dos pantallas.
+- **Buenas prácticas 96 por un error de consola en toda visita anónima**:
+  `/api/v1/auth/refresco` responde 401 cuando no hay sesión, y el navegador lo
+  registra como error. Funcionalmente es correcto —no hay cookie de refresco que
+  usar— pero deja ruido en la consola de todos los visitantes y Lighthouse lo
+  cuenta.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
