@@ -19,14 +19,22 @@ const VARIANTES: Record<VarianteBoton, string> = {
     'min-h-tactil bg-ts-primario text-ts-sobre-primario not-disabled:hover:bg-ts-primario-hover not-disabled:active:bg-ts-primario-pressed',
   secundario:
     'min-h-tactil bg-transparent text-ts-primario border border-ts-borde-control not-disabled:hover:bg-ts-superficie-alt',
-  texto: 'bg-transparent text-ts-primario px-12 py-8 not-disabled:hover:underline',
+  // `min-h-tactil` también aquí, y esto **revierte** lo que hacía el SCSS.
+  // El SCSS ponía el mínimo en la base y lo anulaba con `min-height: auto` en
+  // esta variante; al traducirlo se conservó la exención. Medido en el
+  // navegador a 380 px, el resultado era "Limpiar filtros" en 126 x 37 y
+  // "Eliminar" del carrito en 85 x 37 — por debajo de los 44 px que
+  // `docs/04-ui-marca.md` exige **sin distinguir variantes**. Un botón de texto
+  // se pulsa igual que uno con fondo; que no pinte relleno no lo hace más
+  // fácil de acertar con el pulgar. Las cuatro variantes lo llevan ahora.
+  texto: 'min-h-tactil bg-transparent text-ts-primario px-12 py-8 not-disabled:hover:underline',
   peligro:
     'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:hover:brightness-110',
 };
 
 /**
- * El mínimo táctil de 44 px vive en cada variante y no en la base, aunque tres
- * de las cuatro lo repitan. El SCSS lo ponía en la base y lo anulaba con
+ * El mínimo táctil de 44 px vive en cada variante y no en la base, aunque las
+ * cuatro lo repitan. El SCSS lo ponía en la base y lo anulaba con
  * `min-height: auto` en la variante `texto`, pero ese truco no se puede
  * traducir: al borrar la escala de espacio por omisión (`src/tailwind.css`),
  * ni `min-h-0` ni `min-h-auto` existen, y una clase que no existe no falla —

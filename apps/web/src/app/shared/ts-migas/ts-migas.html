@@ -3,7 +3,15 @@
     @for (miga of ruta(); track miga.etiqueta; let ultimo = $last) {
       <li class="inline-flex items-center gap-8">
         @if (miga.enlace) {
-          <a class="anillo-foco text-ts-texto-suave no-underline hover:underline" [routerLink]="miga.enlace">{{ miga.etiqueta }}</a>
+          <!-- Objetivo táctil: las migas son navegación (nav > ol > li), no una
+               frase, así que no les aplica la excepción "inline" de WCAG 2.5.8
+               —esa es para el enlace cuyo tamaño lo fija el interlineado del
+               texto que lo rodea, como los de la dirección del pie. -->
+          <a
+            class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-texto-suave no-underline hover:underline"
+            [routerLink]="miga.enlace"
+            >{{ miga.etiqueta }}</a
+          >
         } @else {
           <span class="font-medio text-ts-texto" aria-current="page">{{ miga.etiqueta }}</span>
         }

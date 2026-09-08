@@ -3,7 +3,7 @@
 
   <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.productos.titulo' | transloco }}</h1>
 
-  <a class="mb-24 inline-block text-ts-primario" routerLink="crear">{{
+  <a class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario" routerLink="crear">{{
     'admin.productos.nuevo' | transloco
   }}</a>
 
@@ -52,11 +52,11 @@
                    entero a la migración a Tailwind: ninguna prueba mira
                    separaciones, y el CSS anterior tampoco las ponía. -->
                 <div class="flex flex-wrap gap-16">
-                  <a class="anillo-foco text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
+                  <a class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
                     'admin.productos.editarEnlace' | transloco
                   }}</a>
                   <a
-                    class="anillo-foco text-ts-primario"
+                    class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario"
                     [routerLink]="[producto.id, 'captura-360']"
                     >{{ 'admin.productos.capturar360' | transloco }}</a
                   >

@@ -8,19 +8,26 @@
       [alt]="'pie.nombre_comercial' | transloco"
     />
 
+    <!-- Los enlaces llevan el objetivo táctil porque son navegación suelta,
+         no prosa. Los de la dirección (`Llamar`, `WhatsApp`, el correo) NO lo
+         llevan a propósito: van dentro de una frase, y WCAG 2.2 exime
+         explícitamente el objetivo en línea cuyo tamaño lo fija el
+         interlineado del texto que lo rodea (2.5.8, excepción "inline").
+         Estirarlos a 44 px rompería el bloque de la dirección sin ganar
+         accesibilidad. -->
     <nav class="flex flex-wrap gap-16" [attr.aria-label]="'pie.navegacion' | transloco">
       <!-- `anillo-foco-sobre-marca` y no `anillo-foco`: en tema claro
            `--color-foco` y `--color-marca` son el mismo grafito, así que el
            anillo de estos enlaces era invisible sobre el pie. Venía así del
            SCSS, que aquí usaba `--color-foco` mientras la dirección de abajo
            sí usaba `--color-sobre-marca`. -->
-      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma()]">
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma()]">
         {{ 'pie.portada' | transloco }}
       </a>
-      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'productos']">
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'productos']">
         {{ 'encabezado.catalogo' | transloco }}
       </a>
-      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'carrito']">
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'carrito']">
         {{ 'pie.carrito' | transloco }}
       </a>
       <!--
@@ -32,7 +39,7 @@
         propósito: el enlace que solo aparece cuando ya hay sesión de ADMIN —el
         del encabezado— no sirve para llegar a iniciarla.
       -->
-      <a class="anillo-foco-sobre-marca text-inherit" [routerLink]="['/', idioma(), 'admin']">
+      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'admin']">
         {{ 'pie.panel_admin' | transloco }}
       </a>
     </nav>

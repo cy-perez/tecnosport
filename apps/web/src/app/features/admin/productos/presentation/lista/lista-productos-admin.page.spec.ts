@@ -137,6 +137,20 @@ describe('ListaProductosAdminPage', () => {
     expect(contenedor.className).toContain('gap-16');
   });
 
+  // El anillo de foco de la marca, no el del navegador. Encontrado recorriendo
+  // el sitio: este enlace y otros cinco no lo llevaban y caían al `outline: auto`
+  // por omisión — visible en Chrome, pero no es el del sistema y cada navegador
+  // dibuja el suyo. Que `anillo-foco` exista como clase lo garantiza
+  // `npm run clases`; que esté puesta, esta prueba.
+  it('"Nuevo producto" lleva el anillo de foco de la marca', async () => {
+    await renderLista([productoDePrueba()]);
+    await screen.findByText('Morral urbano');
+
+    expect(screen.getByRole('link', { name: 'Nuevo producto' }).className).toContain(
+      'anillo-foco',
+    );
+  });
+
   it('"Siguiente" queda habilitado cuando hay más páginas y navega con el query param', async () => {
     const { fixture } = await renderLista([productoDePrueba()], 2);
     await screen.findByText('Morral urbano');

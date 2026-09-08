@@ -148,13 +148,21 @@ describe('TsBoton', () => {
   // `min-h-0` no existe en este proyecto (la escala de espacio por omisión
   // está borrada), así que el mínimo táctil se pone por variante en vez de
   // anularse en la base. Esta prueba es la que fija esa decisión.
-  it('cumple el objetivo táctil mínimo, salvo la variante de texto', async () => {
+  // Esta prueba afirmaba lo contrario —"salvo la variante de texto"— y hacía
+  // bien su trabajo: falló en cuanto se le dio el mínimo a `texto`, que es el
+  // cambio que se quería. La exención venía del SCSS y se tradujo sin
+  // revisarla; medida en el navegador a 380 px producía "Limpiar filtros" en
+  // 126 x 37 y "Eliminar" del carrito en 85 x 37.
+  // `docs/04-ui-marca.md` pide 44 px sin distinguir variantes.
+  it('las cuatro variantes cumplen el objetivo táctil mínimo', async () => {
     const { fixture } = await render(Anfitrion);
-    expect(boton().className).toContain('min-h-tactil');
 
-    fixture.componentInstance.variante.set('texto');
-    await fixture.whenStable();
-    expect(boton().className).not.toContain('min-h-tactil');
+    for (const variante of ['primario', 'secundario', 'texto', 'peligro'] as const) {
+      fixture.componentInstance.variante.set(variante);
+      await fixture.whenStable();
+
+      expect(boton().className, `variante ${variante}`).toContain('min-h-tactil');
+    }
   });
 
   it('la variante secundaria recupera el borde que la base quita', async () => {

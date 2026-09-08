@@ -4,14 +4,23 @@
     <div class="flex flex-wrap gap-8">
       @for (opcion of eje.opciones; track opcion.valor) {
         @if (esColor(opcion)) {
+          <!-- El color va en un <span> interno y no en el <button>. El botón
+               medía 32 x 32, que es el tamaño que el swatch debe *verse*; ahora
+               el botón es el objetivo táctil de 44 y el span conserva los 32 con
+               su borde. Separar las dos cosas es lo que permite cumplir el
+               objetivo sin agrandar la muestra de color. -->
           <button
             type="button"
-            [class]="claseSwatch(estaSeleccionada(eje.nombre, opcion))"
-            [style.background-color]="opcion.colorHex"
+            [class]="claseSwatch()"
             [attr.aria-pressed]="estaSeleccionada(eje.nombre, opcion) ? 'true' : 'false'"
             [attr.aria-label]="opcion.valor"
             (click)="elegir(eje.nombre, opcion)"
-          ></button>
+          >
+            <span
+              [class]="claseMuestra(estaSeleccionada(eje.nombre, opcion))"
+              [style.background-color]="opcion.colorHex"
+            ></span>
+          </button>
         } @else {
           <ts-boton
             [variante]="estaSeleccionada(eje.nombre, opcion) ? 'primario' : 'secundario'"
