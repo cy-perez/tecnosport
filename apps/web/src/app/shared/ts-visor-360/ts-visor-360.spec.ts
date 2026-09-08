@@ -307,7 +307,7 @@ describe('TsVisor360', () => {
   it('un fotograma que no carga deja rastro en la consola en vez de desaparecer en silencio', async () => {
     ImagenQueFalla.reiniciar();
     vi.stubGlobal('Image', ImagenQueFalla);
-    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await renderVisor();
 
@@ -324,7 +324,7 @@ describe('TsVisor360', () => {
   it('la cadena de precarga no se detiene en el fotograma roto', async () => {
     ImagenQueFalla.reiniciar();
     vi.stubGlobal('Image', ImagenQueFalla);
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     await renderVisor();
 
