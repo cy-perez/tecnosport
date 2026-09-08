@@ -132,3 +132,28 @@ responsable. Dato pendiente: `TODO: nombre completo del titular`.
 **Advertencia.** Los borradores de política de datos, términos y condiciones y
 aviso de cookies que produzca este proyecto son borradores. Los revisa un abogado
 antes de publicarlos. El costo de equivocarse aquí es una sanción de la SIC.
+
+## Estado de lo legal (Fase 6)
+
+**Construido y verificado:**
+
+- Política de tratamiento de datos, términos y condiciones (con retracto,
+  garantías y reversión) y política de cookies, en español e inglés, publicadas
+  en `/:lang/legales/*` y enlazadas en el pie. El inglés es traducción de
+  cortesía y lo dice: rige el español.
+- Autorización expresa en registro y checkout, con casilla propia que nunca
+  arranca marcada, enlace a la política, y **constancia guardada** en
+  `autorizacion_datos`: correo, versión del texto, IP, origen y fecha. La versión
+  la fija el servidor (`POLITICA_DATOS_VERSION`), nunca el cliente.
+- Identificación del vendedor en el pie, con el NIT corregido — el dígito de
+  verificación estaba mal desde que se escribió (`1054994043-1` en vez de `-9`).
+
+**Decidido, no olvidado:** no hay banner de cookies. El sitio no carga analítica
+ni píxeles, así que solo hay cookies necesarias y de preferencia; un banner que
+pide consentimiento para nada es teatro de cumplimiento. La política se
+compromete a pedirlo antes de añadir analítica.
+
+**Lo que la ley pide y el sistema todavía no puede hacer** — ver la lista de
+hallazgos de coherencia al cierre de la Fase 6 en `docs/09-plan-de-arranque.md`.
+Lo principal: el texto promete retracto, garantía y reversión del pago, y no
+existe ningún flujo que los ejecute; hoy se atienden a mano por correo.
