@@ -1,5 +1,7 @@
 server:
-  port: 8080
+  # PORT y no un número fijo: Cloud Run inyecta el puerto en esa variable y espera que el proceso
+  # escuche exactamente ahí. En local no está definida y cae a 8080, que es lo de siempre.
+  port: ${PORT:8080}
 
 spring:
   application:

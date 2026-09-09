@@ -161,6 +161,55 @@ con otras variables: volumen real, precio al crecer, soporte y qué pasa el día
 que un correo de confirmación de pedido no llega. Heredarla de lo que se eligió
 para dev sería tomarla por inercia.
 
+## Imágenes de contenedor
+
+Un `Dockerfile` por aplicación, los dos **construidos desde la raíz del repositorio**:
+
+```
+docker build -f apps/api/Dockerfile -t tecnosport-api .
+docker build -f apps/web/Dockerfile -t tecnosport-web .
+```
+
+El contexto tiene que ser la raíz en el caso de la web —es un monorepo con workspaces de npm y la
+aplicación depende de `packages/contratos`— y se hace igual con la API por coherencia: un solo
+contexto para las dos.
+
+Las dos son de dos etapas y ninguna lleva herramientas de construcción en la imagen final. La API
+compila con JDK 21 y corre sobre JRE, con usuario propio y `-XX:MaxRAMPercentage=75` en vez de un
+`-Xmx` fijo: el límite de memoria lo pone Cloud Run por despliegue y una JVM que no lo lee o se
+queda corta o la matan por exceso. La web **no lleva `node_modules`**: el constructor de Angular
+empaqueta las dependencias del servidor dentro del bundle — comprobado, los únicos imports que
+quedan fuera son módulos nativos de Node.
+
+### Lo que el despliegue tiene que definir, o el sitio no funciona
+
+Esto salió de correr las imágenes de verdad, no de leerlas. Cada una costó un síntoma distinto y
+ninguno dice en voz alta cuál es la causa:
+
+| Variable | Sin ella | Por qué |
+|---|---|---|
+| `NG_ALLOWED_HOSTS` | **400 a cada petición** | `security.allowedHosts` de `angular.json` viaja dentro del bundle del servidor y hoy solo admite `tecnosport.co` y `www`. En un dominio `*.run.app`, `@angular/ssr` rechaza todo. Acepta comodín (`*.run.app`). No se pone un valor permisivo por omisión en la imagen porque la comprobación existe por una razón real (SSRF) |
+| `API_URL_PUBLICA` | **la petición se cuelga y nunca responde** | Sin ella, el SSR resuelve `baseUrl()` a `localhost:8080`, que dentro del contenedor **es el propio servidor web**: cada render se pide a sí mismo, y ese render vuelve a pedirse. Recursión, sin ningún error en el registro |
+| `APP_URL_PUBLICA` | canónicos y `hreflang` apuntando al puerto local | Ya estaba documentada; aquí se confirma que el contenedor la necesita |
+| `NG_TRUST_PROXY_HEADERS` | aviso en consola en cada petición | Detrás de Cloud Run todo llega con `x-forwarded-*`; sin declararlas, `@angular/ssr` las descarta y avisa |
+
+### Un hallazgo que todavía no está arreglado: el SSR se pide sus propias traducciones
+
+`TranslocoHttpLoader` pide los JSON de i18n por HTTP con una ruta **relativa**, y en el servidor
+eso se resuelve contra la cabecera `Host` de la petición que se está renderizando. O sea: **cada
+render sale a la red para pedirse a sí mismo los textos**.
+
+Se ve al correr la imagen con el puerto de fuera distinto del de dentro: el contenedor intenta
+alcanzarse en un puerto donde no escucha, la carga falla y la página sale **con las claves de
+Transloco crudas en vez de los textos** (`catalogo.seo.ficha.titulo_con_nombre` en el `<title>`).
+Con el puerto igual dentro y fuera, funciona.
+
+En Cloud Run funcionaría —el dominio público sí resuelve desde dentro— pero al precio de una ida y
+vuelta por la red pública en cada render, y con un modo de fallo silencioso: si el servicio queda
+detrás de autenticación o el dominio no resuelve desde el contenedor, el sitio se sirve sin
+traducir y nadie recibe un error. **Lo que corresponde es un cargador propio del servidor que lea
+los JSON del disco**, que ya están en la imagen. Pendiente.
+
 ## Infraestructura como código
 
 Terraform desde el inicio, con estado remoto en un bucket de GCS con versionado y
@@ -191,6 +240,9 @@ Todo parametrizable, nada literal en el código.
 ```
 APP_URL_PUBLICA
 API_URL_PUBLICA
+
+NG_ALLOWED_HOSTS        (solo el servicio web; ver "Imágenes de contenedor")
+NG_TRUST_PROXY_HEADERS  (solo el servicio web)
 
 DB_HOST, DB_PUERTO, DB_NOMBRE, DB_USUARIO, DB_CLAVE
 
