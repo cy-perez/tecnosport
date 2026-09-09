@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { baseUrl } from '../../../../core/http/base-url';
+import { desempaquetar } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { FiltroPedidosAdmin, PedidoAdmin, PedidosPaginadosAdmin } from '../domain/pedido-admin.model';
 import { RepositorioPedidosAdmin } from '../domain/repositorio-pedidos-admin.puerto';
@@ -13,76 +14,55 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
   private readonly cliente = crearClienteAutenticado(baseUrl(), inject(SesionStore));
 
   async listar(filtro: FiltroPedidosAdmin): Promise<PedidosPaginadosAdmin> {
-    const { data, error } = await this.cliente.GET('/api/v1/admin/pedidos', {
+    const respuesta = await this.cliente.GET('/api/v1/admin/pedidos', {
       params: { query: { pagina: filtro.pagina, tamano: filtro.tamano, estado: filtro.estado ?? undefined } },
     });
-    if (error) {
-      throw new Error('No se pudo listar los pedidos.');
-    }
-    return aPedidosPaginadosAdmin(data);
+    return aPedidosPaginadosAdmin(desempaquetar(respuesta, 'no se pudo listar los pedidos'));
   }
 
   async conciliarTransferencia(pedidoId: string): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/conciliar-transferencia', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/conciliar-transferencia', {
       params: { path: { id: pedidoId } },
     });
-    if (error) {
-      throw new Error('No se pudo conciliar la transferencia.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar la transferencia'));
   }
 
   async verificarContraentrega(pedidoId: string, motivo: string): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/verificar-contraentrega', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/verificar-contraentrega', {
       params: { path: { id: pedidoId } },
       body: { motivo },
     });
-    if (error) {
-      throw new Error('No se pudo verificar la contraentrega.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo verificar la contraentrega'));
   }
 
   async despachar(pedidoId: string, transportadora: string, guia: string, costoEnvio: number): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/despacho', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/despacho', {
       params: { path: { id: pedidoId } },
       body: { transportadora, guia, costoEnvio },
     });
-    if (error) {
-      throw new Error('No se pudo despachar el pedido.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo despachar el pedido'));
   }
 
   async marcarEntregado(pedidoId: string): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/entrega', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/entrega', {
       params: { path: { id: pedidoId } },
     });
-    if (error) {
-      throw new Error('No se pudo marcar el pedido como entregado.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo marcar el pedido como entregado'));
   }
 
   async rechazarEnEntrega(pedidoId: string, motivo: string): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/rechazo-entrega', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/rechazo-entrega', {
       params: { path: { id: pedidoId } },
       body: { motivo },
     });
-    if (error) {
-      throw new Error('No se pudo registrar el rechazo en la entrega.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo registrar el rechazo en la entrega'));
   }
 
   async conciliarRecaudo(pedidoId: string, comisionRecaudo: number): Promise<PedidoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/pedidos/{id}/recaudo', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/recaudo', {
       params: { path: { id: pedidoId } },
       body: { comisionRecaudo },
     });
-    if (error) {
-      throw new Error('No se pudo conciliar el recaudo.');
-    }
-    return aPedidoAdmin(data);
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar el recaudo'));
   }
 }

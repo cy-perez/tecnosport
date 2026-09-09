@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../http/base-url';
+import { desempaquetar } from '../http/respuesta-http';
 import { aSesion } from './mapeador-sesion';
 import { RepositorioSesion } from './repositorio-sesion.puerto';
 import { CorreoSinVerificarError } from './sesion.errores';
@@ -21,16 +22,13 @@ export class SesionHttpRepositorio implements RepositorioSesion {
   private readonly cliente = crearClienteContratos(baseUrl());
 
   async iniciarSesion(correo: string, clave: string): Promise<Sesion> {
-    const { data, error, response } = await this.cliente.POST('/api/v1/auth/sesion', {
+    const respuesta = await this.cliente.POST('/api/v1/auth/sesion', {
       body: { correo, clave },
     });
-    if (response.status === 403) {
+    if (respuesta.response.status === 403) {
       throw new CorreoSinVerificarError();
     }
-    if (error) {
-      throw new Error('Correo o clave incorrectos.');
-    }
-    return aSesion(data);
+    return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión'));
   }
 
   /**
@@ -40,17 +38,11 @@ export class SesionHttpRepositorio implements RepositorioSesion {
    * sale en cada primera carga de cualquier visitante.
    */
   async refrescar(): Promise<Sesion | null> {
-    const { data, error, response } = await this.cliente.POST('/api/v1/auth/refresco');
-    if (response.status === 204 || response.status === 401) {
+    const respuesta = await this.cliente.POST('/api/v1/auth/refresco');
+    if (respuesta.response.status === 204 || respuesta.response.status === 401) {
       return null;
     }
-    // `!response.ok` y no `error`: `error` solo llega cuando el fallo trae cuerpo JSON, y un 500
-    // del balanceador puede venir vacío o en HTML. Fiándose de `error`, ese caso se colaba hasta
-    // `aSesion(undefined)` y el llamador recibía un TypeError en vez de este mensaje.
-    if (!response.ok || error || !data) {
-      throw new Error('No se pudo refrescar la sesión.');
-    }
-    return aSesion(data);
+    return aSesion(desempaquetar(respuesta, 'no se pudo refrescar la sesión'));
   }
 
   async cerrarSesion(): Promise<void> {

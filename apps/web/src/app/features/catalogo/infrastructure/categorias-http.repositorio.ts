@@ -4,18 +4,16 @@ import { Categoria } from '../domain/producto.model';
 import { RepositorioCategorias } from '../domain/repositorio-categorias.puerto';
 import { aCategoria } from './mapeador-productos';
 import { baseUrl } from '../../../core/http/base-url';
+import { desempaquetar } from '../../../core/http/respuesta-http';
 
 @Injectable()
 export class CategoriasHttpRepositorio implements RepositorioCategorias {
   private readonly cliente = crearClienteContratos(baseUrl());
 
   async listarTodas(): Promise<Categoria[]> {
-    const { data, error } = await this.cliente.GET('/api/v1/categorias');
+    const respuesta = await this.cliente.GET('/api/v1/categorias');
+    const datos = desempaquetar(respuesta, 'no se pudieron cargar las categorías');
 
-    if (error) {
-      throw new Error('No se pudieron cargar las categorías.');
-    }
-
-    return (data.items ?? []).map(aCategoria);
+    return (datos.items ?? []).map(aCategoria);
   }
 }

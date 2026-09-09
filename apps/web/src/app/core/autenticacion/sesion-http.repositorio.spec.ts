@@ -1,3 +1,4 @@
+import { ErrorHttp } from '../http/respuesta-http';
 import { SesionHttpRepositorio } from './sesion-http.repositorio';
 
 /**
@@ -54,9 +55,13 @@ describe('SesionHttpRepositorio.refrescar', () => {
     await expect(repositorio.refrescar()).resolves.toBeNull();
   });
 
-  it('lanza cuando el servidor falla de verdad', async () => {
+  it('lanza ErrorHttp con el código cuando el servidor falla de verdad', async () => {
     const repositorio = conRespuesta(new Response(null, { status: 500 }));
 
-    await expect(repositorio.refrescar()).rejects.toThrow('No se pudo refrescar la sesión.');
+    // Se afirma el tipo y el código, no el texto: el mensaje es un diagnóstico para quien
+    // programa y la pantalla traduce su propia clave (`core/http/respuesta-http.ts`).
+    const error = await repositorio.refrescar().catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ErrorHttp);
+    expect((error as ErrorHttp).estado).toBe(500);
   });
 });

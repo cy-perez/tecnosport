@@ -5,6 +5,7 @@ import { Producto } from '../domain/producto.model';
 import { RepositorioProductos } from '../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../domain/resultado-paginado.model';
 import { baseUrl } from '../../../core/http/base-url';
+import { desempaquetar } from '../../../core/http/respuesta-http';
 import { aProducto } from './mapeador-productos';
 
 @Injectable()
@@ -12,7 +13,7 @@ export class ProductosHttpRepositorio implements RepositorioProductos {
   private readonly cliente = crearClienteContratos(baseUrl());
 
   async buscar(filtro: FiltroProductos, cursor: string | null): Promise<ResultadoPaginado<Producto>> {
-    const { data, error } = await this.cliente.GET('/api/v1/productos', {
+    const respuesta = await this.cliente.GET('/api/v1/productos', {
       params: {
         query: {
           categoria: filtro.categoria,
@@ -28,28 +29,23 @@ export class ProductosHttpRepositorio implements RepositorioProductos {
       },
     });
 
-    if (error) {
-      throw new Error('No se pudo cargar el catálogo.');
-    }
+    const datos = desempaquetar(respuesta, 'no se pudo cargar el catálogo');
 
     return {
-      items: (data.items ?? []).map(aProducto),
-      cursorSiguiente: data.cursorSiguiente ?? null,
+      items: (datos.items ?? []).map(aProducto),
+      cursorSiguiente: datos.cursorSiguiente ?? null,
     };
   }
 
   async buscarPorSlug(slug: string): Promise<Producto | null> {
-    const { data, error, response } = await this.cliente.GET('/api/v1/productos/{slug}', {
+    const respuesta = await this.cliente.GET('/api/v1/productos/{slug}', {
       params: { path: { slug } },
     });
 
-    if (response.status === 404) {
+    if (respuesta.response.status === 404) {
       return null;
     }
-    if (error) {
-      throw new Error('No se pudo cargar el producto.');
-    }
 
-    return aProducto(data);
+    return aProducto(desempaquetar(respuesta, 'no se pudo cargar el producto'));
   }
 }
