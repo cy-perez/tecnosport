@@ -165,4 +165,62 @@ class InventarioTest {
         co.tecnosport.api.domain.compartido.ExcepcionDeDominio.class,
         () -> inventario.registrarAjuste(-5, "pérdida", AHORA));
   }
+
+  @Test
+  void devolverUnaVentaConfirmadaSumaUnaEntrada() {
+    Inventario inventario = conExistencia(5);
+    MovimientoInventario reserva = inventario.reservar(2, Duration.ofMinutes(30), AHORA);
+    inventario.confirmar(reserva.id(), AHORA.plusSeconds(60));
+
+    inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(120));
+
+    assertEquals(5, inventario.saldoTotal());
+    assertEquals(5, inventario.saldoDisponible(AHORA.plusSeconds(120)));
+  }
+
+  @Test
+  void devolverUnaReservaAbiertaLaLiberaEnVezDeContarLaUnidadDosVeces() {
+    // El caso del contraentrega: la reserva no vence ni se confirma nunca, así que la unidad
+    // jamás salió del saldo total. Una entrada aquí dejaría seis donde hay cinco.
+    Inventario inventario = conExistencia(5);
+    MovimientoInventario reserva = inventario.reservar(2, null, AHORA);
+
+    inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(120));
+
+    assertEquals(5, inventario.saldoTotal());
+    assertEquals(5, inventario.saldoDisponible(AHORA.plusSeconds(120)));
+  }
+
+  @Test
+  void noSeDevuelveDosVecesLaMismaReservaAbierta() {
+    Inventario inventario = conExistencia(5);
+    MovimientoInventario reserva = inventario.reservar(2, null, AHORA);
+    inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(120));
+
+    assertThrows(
+        ReservaYaProcesadaException.class,
+        () -> inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(180)));
+  }
+
+  @Test
+  void noSeDevuelveDosVecesLaMismaVentaConfirmada() {
+    Inventario inventario = conExistencia(5);
+    MovimientoInventario reserva = inventario.reservar(2, Duration.ofMinutes(30), AHORA);
+    inventario.confirmar(reserva.id(), AHORA.plusSeconds(60));
+    inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(120));
+
+    assertThrows(
+        ReservaYaProcesadaException.class,
+        () -> inventario.devolver(reserva.id(), "retracto", AHORA.plusSeconds(180)));
+    assertEquals(5, inventario.saldoTotal());
+  }
+
+  @Test
+  void devolverUnaReservaQueNoExisteFalla() {
+    Inventario inventario = conExistencia(5);
+
+    assertThrows(
+        ReservaNoEncontradaException.class,
+        () -> inventario.devolver(UUID.randomUUID(), "retracto", AHORA));
+  }
 }

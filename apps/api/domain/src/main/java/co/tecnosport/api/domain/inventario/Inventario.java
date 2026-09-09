@@ -135,6 +135,47 @@ public final class Inventario {
             motivo));
   }
 
+  /**
+   * La mercancía de una reserva vuelve al almacén: una devolución por retracto, una garantía
+   * aceptada.
+   *
+   * <p>Hace dos cosas distintas según cómo quedó la reserva, y por eso vive aquí y no en quien
+   * orquesta: solo este agregado sabe en qué acabó cada movimiento.
+   *
+   * <ul>
+   *   <li>Si la reserva se confirmó —hay una {@code SALIDA} que la referencia—, la unidad ya salió
+   *       del saldo total y volver significa una {@code ENTRADA}.
+   *   <li>Si sigue abierta, la unidad nunca salió del saldo total: lo que corresponde es {@code
+   *       LIBERACION}, y una {@code ENTRADA} ahí contaría la misma unidad dos veces.
+   * </ul>
+   *
+   * <p>El segundo caso no es teórico: hoy una compra contraentrega nunca confirma su reserva —solo
+   * lo hacen el pago por Wompi y la transferencia conciliada—, así que llega a la devolución con la
+   * reserva todavía abierta.
+   *
+   * <p>Una devolución dañada no pasa por aquí: eso es un {@link #registrarAjuste} negativo, porque
+   * la unidad vuelve pero no vuelve a ser vendible.
+   */
+  public void devolver(UUID idReserva, String motivo, Instant ahora) {
+    MovimientoInventario reserva = encontrarReserva(idReserva);
+    if (yaDevuelta(idReserva)) {
+      throw new ReservaYaProcesadaException(idReserva);
+    }
+    if (tieneSalida(idReserva)) {
+      movimientos.add(
+          new MovimientoInventario(
+              GeneradorIdentificador.nuevo(),
+              TipoMovimientoInventario.ENTRADA,
+              reserva.cantidad(),
+              ahora,
+              null,
+              idReserva,
+              motivo));
+      return;
+    }
+    liberar(idReserva, motivo, ahora);
+  }
+
   public void registrarEntrada(int cantidad, String motivo, Instant ahora) {
     if (cantidad <= 0) {
       throw new ExcepcionDeDominio("La cantidad de una entrada debe ser mayor que cero.");
@@ -175,6 +216,25 @@ public final class Inventario {
   private boolean reservaVigente(MovimientoInventario reserva, Instant ahora) {
     boolean vencida = reserva.expiraEn() != null && !reserva.expiraEn().isAfter(ahora);
     return !vencida && !estaResuelta(reserva.id());
+  }
+
+  /**
+   * La entrada de una devolución lleva la reserva en {@code referenciaId} —a diferencia de una
+   * entrada de reposición, que no referencia nada— y es lo que permite distinguir "esta reserva ya
+   * se devolvió" de "esta reserva se vendió". Sin esa marca, devolver dos veces sumaba dos entradas
+   * y el saldo crecía solo.
+   */
+  private boolean yaDevuelta(UUID idReserva) {
+    return movimientos.stream()
+        .anyMatch(
+            m ->
+                m.tipo() == TipoMovimientoInventario.ENTRADA && idReserva.equals(m.referenciaId()));
+  }
+
+  private boolean tieneSalida(UUID idReserva) {
+    return movimientos.stream()
+        .anyMatch(
+            m -> m.tipo() == TipoMovimientoInventario.SALIDA && idReserva.equals(m.referenciaId()));
   }
 
   private boolean estaResuelta(UUID idReserva) {
