@@ -25,10 +25,12 @@ type Buscar = typeof fetch;
 const SIN_CUERPO = new Set(['GET', 'HEAD']);
 
 /**
- * Un `POST` sin cuerpo —el refresco silencioso de cada visita anónima lo es— **no** puede
- * reenviarse como un flujo vacío: la petición sale sin longitud declarada y el frontend de Cloud
- * Run la rechaza con `411 Length Required`. Se comprobó contra el ambiente desplegado, donde
- * `/api/v1/auth/refresco` devolvía 411 mientras la API respondía 204 si se la pedía directo.
+ * Un `POST` sin cuerpo —el refresco silencioso de cada visita anónima lo es— se reenvía **sin**
+ * cuerpo, no como un flujo vacío: así la petición conserva la longitud que declaró el cliente
+ * (`Content-Length: 0`, que es lo que manda `fetch`) en vez de salir troceada. El frontend de
+ * Cloud Run rechaza con `411 Length Required` cualquier POST que le llegue sin longitud
+ * declarada — comprobado contra el ambiente desplegado, aunque ahí el culpable resultó ser
+ * `curl -X POST`, que tampoco la manda. Ningún navegador cae en eso.
  */
 function tieneCuerpo(req: Request): boolean {
   if (SIN_CUERPO.has(req.method)) return false;
@@ -124,7 +126,7 @@ async function reenviar(
   // El cuerpo se junta en memoria en vez de reenviarse en flujo, y es a propósito: por aquí solo
   // pasa JSON de tamaño modesto —las imágenes van directo a Cloud Storage con URL firmada, nunca
   // por el backend— y a cambio la petición sale con `Content-Length` en vez de troceada, que es
-  // lo que todo intermediario acepta sin discutir. El flujo no compraba nada y costaba un 411.
+  // lo que todo intermediario acepta sin discutir. El flujo no compraba nada.
   const cuerpo = tieneCuerpo(req) ? Buffer.concat(await recolectar(req)) : undefined;
 
   const respuesta = await buscar(origen + req.originalUrl, {
