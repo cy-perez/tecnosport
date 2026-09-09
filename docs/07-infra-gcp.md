@@ -211,6 +211,34 @@ la imagen (`docs/05-i18n.md`). Verificado en el mismo escenario que lo destapó:
 distintos, la ficha vuelve a servirse traducida en los dos idiomas y no se registra ni un respaldo
 por HTTP.
 
+### Despliegue del ambiente de desarrollo
+
+`.github/workflows/desplegar-dev.yml`. Construye las dos imágenes, las sube a Artifact Registry y
+mueve las revisiones de Cloud Run. Decisiones que quedaron dentro:
+
+- **Sin llaves JSON**: federación de identidad. GitHub presenta un token firmado de esa ejecución
+  y GCP lo cambia por credenciales de minutos, acotadas al repositorio por la condición del
+  proveedor. Los cuatro valores públicos que necesita (proyecto, proveedor, cuenta y registro)
+  están como *variables* del repositorio, no como secretos: no lo son.
+- **La etiqueta de la imagen es el SHA del commit**, no `latest`. Así una revisión de Cloud Run
+  dice de qué código salió, y revertir es apuntar a una imagen concreta en vez de adivinar.
+- **La API se despliega antes que la web**, que la consulta al renderizar.
+- **Comprobación de salud y reversión.** Que Cloud Run acepte la revisión no significa que el
+  sitio sirva: el contenedor puede levantar y la aplicación responder 500 a todo. Si `/api/v1/salud`
+  o `/es` no dan 200 —con reintentos, porque la primera petición paga el arranque en frío de la
+  JVM—, el tráfico vuelve a la revisión anterior.
+- **Un despliegue a la vez y sin cancelar el que va**: matar un `gcloud run deploy` a mitad deja el
+  servicio en un estado que nadie pidió. Los otros flujos sí se cancelan entre sí; este espera.
+
+**Todavía se dispara solo a demanda**, y es deliberado: sin base de datos la API no arranca, así
+que engancharlo a `main` hoy produciría un despliegue rojo en cada merge. Pasa a `push` cuando
+exista el proyecto de Neon y los secretos tengan valor.
+
+**Lo que este flujo no hace todavía: las migraciones como paso propio.** Hoy Flyway corre al
+arrancar la aplicación, como en local. Para dev es tolerable —Flyway toma un bloqueo, así que tres
+instancias arrancando a la vez no se pisan— pero **para producción no**, y está escrito arriba por
+qué. El paso separado se agrega junto con Neon, que es cuando se puede probar de verdad.
+
 ## Infraestructura como código
 
 Terraform desde el inicio, con estado remoto en un bucket de GCS con versionado y

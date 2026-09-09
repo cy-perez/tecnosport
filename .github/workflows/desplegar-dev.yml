@@ -1,0 +1,132 @@
+# Despliegue del ambiente de desarrollo: construye las dos imágenes, las sube al registro y mueve
+# las revisiones de Cloud Run.
+#
+# Cuando se enganche a `main` será al mezclar y no después de que `verificar` termine, porque
+# `main` está protegida: nada llega ahí sin los tres trabajos de integración continua en verde, así
+# que lo que se despliegue ya pasó por ellos. Lo que este flujo agrega es comprobar la salud del
+# servicio después de mover el tráfico y **revertir a la revisión anterior si no responde** — que
+# es la protección que importa cuando algo pasa las pruebas y se cae igual.
+#
+# **Sin llaves JSON.** Se autentica con federación de identidad: GitHub presenta un token firmado
+# de esta ejecución y GCP lo cambia por credenciales de minutos, solo para este repositorio (la
+# condición está en `infra/envs/dev/main.tf`).
+name: desplegar dev
+
+# Solo a demanda **todavía**, y es deliberado: sin base de datos la API no arranca, así que
+# engancharlo a `main` hoy solo produciría un despliegue rojo en cada merge. En cuanto exista el
+# proyecto de Neon y los secretos tengan valor, esto pasa a `push: branches: [main]` — y ese
+# cambio es el que hay que probar disparándolo a mano primero.
+on:
+  workflow_dispatch:
+
+# Un despliegue a la vez, y **sin cancelar el que va**: matar un `gcloud run deploy` a mitad deja
+# el servicio en un estado que nadie pidió. Los demás flujos sí se cancelan; este espera.
+concurrency:
+  group: desplegar-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # lo exige la federación de identidad
+
+env:
+  REGION: us-east1
+  SERVICIO_API: tecnosport-api
+  SERVICIO_WEB: tecnosport-web
+
+jobs:
+  desplegar:
+    name: construir, subir y desplegar
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROYECTO_DEV }}
+          workload_identity_provider: ${{ vars.GCP_PROVEEDOR_IDENTIDAD }}
+          service_account: ${{ vars.GCP_CUENTA_DESPLIEGUE }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Autorizar Docker contra Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # La etiqueta es el SHA del commit y no `latest`: así una revisión de Cloud Run dice de qué
+      # código salió, y revertir es apuntar a una imagen concreta en vez de adivinar cuál era.
+      - name: Construir y subir las dos imágenes
+        run: |
+          for app in api web; do
+            imagen="${{ vars.GCP_REGISTRO_IMAGENES }}/tecnosport-$app:${{ github.sha }}"
+            echo "::group::$app"
+            docker build -f "apps/$app/Dockerfile" -t "$imagen" .
+            docker push "$imagen"
+            echo "::endgroup::"
+          done
+
+      # La API primero: la web la consulta al renderizar, y desplegarlas al revés deja una ventana
+      # en la que el SSR pide contratos que el backend todavía no sirve.
+      - name: Desplegar la API
+        run: |
+          gcloud run deploy "${{ env.SERVICIO_API }}" \
+            --image "${{ vars.GCP_REGISTRO_IMAGENES }}/tecnosport-api:${{ github.sha }}" \
+            --region "${{ env.REGION }}" \
+            --quiet
+
+      - name: Desplegar la web
+        run: |
+          gcloud run deploy "${{ env.SERVICIO_WEB }}" \
+            --image "${{ vars.GCP_REGISTRO_IMAGENES }}/tecnosport-web:${{ github.sha }}" \
+            --region "${{ env.REGION }}" \
+            --quiet
+
+      # Que Cloud Run acepte la revisión no significa que el sitio funcione: el contenedor puede
+      # levantar y la aplicación responder 500 a todo. Esto es lo que separa "desplegado" de
+      # "sirviendo".
+      - name: Comprobar que responden
+        id: salud
+        run: |
+          api=$(gcloud run services describe "${{ env.SERVICIO_API }}" --region "${{ env.REGION }}" --format='value(status.url)')
+          web=$(gcloud run services describe "${{ env.SERVICIO_WEB }}" --region "${{ env.REGION }}" --format='value(status.url)')
+          echo "API en $api"
+          echo "web en $web"
+
+          # Con reintentos y con paciencia: la primera petición paga el arranque en frío de la JVM,
+          # que en este ambiente no tiene instancias en reposo a propósito.
+          for intento in 1 2 3 4 5 6; do
+            estado=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$api/api/v1/salud" || echo 000)
+            [ "$estado" = "200" ] && break
+            echo "salud de la API: $estado (intento $intento)"
+            sleep 10
+          done
+          [ "$estado" = "200" ] || { echo "::error::La API no responde 200 en /api/v1/salud"; exit 1; }
+
+          for intento in 1 2 3 4 5 6; do
+            estado=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$web/es" || echo 000)
+            [ "$estado" = "200" ] && break
+            echo "salud de la web: $estado (intento $intento)"
+            sleep 10
+          done
+          [ "$estado" = "200" ] || { echo "::error::La web no responde 200 en /es"; exit 1; }
+
+          echo "Las dos responden."
+
+      # Solo si la comprobación falló. Devuelve el tráfico a la revisión anterior, que es la que
+      # estaba sirviendo hace un minuto y de la que sabemos que funcionaba.
+      - name: Revertir si la salud falló
+        if: failure() && steps.salud.outcome == 'failure'
+        run: |
+          for servicio in "${{ env.SERVICIO_API }}" "${{ env.SERVICIO_WEB }}"; do
+            anterior=$(gcloud run revisions list \
+              --service "$servicio" --region "${{ env.REGION }}" \
+              --sort-by '~metadata.creationTimestamp' \
+              --format 'value(metadata.name)' --limit 2 | tail -1)
+            if [ -n "$anterior" ]; then
+              echo "::warning::Revirtiendo $servicio a $anterior"
+              gcloud run services update-traffic "$servicio" \
+                --region "${{ env.REGION }}" --to-revisions "$anterior=100" --quiet
+            else
+              echo "::warning::$servicio no tiene revisión anterior a la cual volver"
+            fi
+          done
