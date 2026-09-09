@@ -4,6 +4,7 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+import compression from 'compression';
 import express from 'express';
 import { join } from 'node:path';
 import { crearClienteContratos } from '@tecnosport/contratos';
@@ -20,7 +21,21 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * Antes que nada, y antes que los estáticos: en el ambiente desplegado la web y la API son dos
+ * Compresión, y **antes que todo lo demás**. Ni `express.static` ni el manejador de Angular
+ * comprimen por su cuenta, y Cloud Run tampoco lo hace por nosotros: pedido el ambiente desplegado
+ * con `Accept-Encoding: gzip, br`, ninguna respuesta traía `content-encoding`. La carga inicial de
+ * la portada eran 669 KB de HTML, JS y CSS; con gzip son 208 KB.
+ *
+ * Va **delante del proxy de `/api`** y no solo de los estáticos, y ese orden es la parte que no se
+ * ve: `fetch` descomprime la respuesta del backend al leerla, así que `proxy-api.ts` borra
+ * `content-encoding` a propósito —copiarlo dejaría al navegador esperando bytes que no llegan— y
+ * el JSON del catálogo terminaba viajando en claro. Doble codificación no puede haber justamente
+ * porque el proxy nunca declara ninguna.
+ */
+app.use(compression());
+
+/**
+ * Antes que los estáticos: en el ambiente desplegado la web y la API son dos
  * servicios distintos, y el sitio necesita verlas en el mismo origen para que la cookie de sesión
  * viaje. Ver `proxy-api.ts`. En local no se monta — ahí lo hace `proxy.conf.json`.
  */
