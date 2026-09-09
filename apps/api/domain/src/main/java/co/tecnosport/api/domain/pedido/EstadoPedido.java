@@ -13,9 +13,9 @@ import java.util.Set;
  *
  * <p>{@code RECAUDO_CONCILIADO} también sale hacia {@code DEVUELTO}, y no es una simetría
  * decorativa: el retracto del artículo 47 de la Ley 1480 de 2011 no distingue el método de pago,
- * así que un contraentrega ya entregado y recaudado puede devolverse igual que uno pagado en
- * línea. Sin esa arista, el único camino de vuelta era el de pago en línea y la mitad de las
- * compras no tenía a dónde ir.
+ * así que un contraentrega ya entregado y recaudado puede devolverse igual que uno pagado en línea.
+ * Sin esa arista, el único camino de vuelta era el de pago en línea y la mitad de las compras no
+ * tenía a dónde ir.
  */
 public enum EstadoPedido {
   CREADO,
