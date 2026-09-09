@@ -16,12 +16,17 @@ RUN chmod +x gradlew && ./gradlew --no-daemon :bootstrap:bootJar -x test
 # `min_instance_count = 0`, el SSR de la portada espera a que arranque el backend antes de servir
 # un byte, y en los registros de Cloud Run eso eran 20-23 s de pantalla en blanco.
 #
-# Dos técnicas, medidas contra este mismo jar (3 corridas cada una, `spring.context.exit=onRefresh`
-# contra el PostgreSQL de `docker-compose.yml`):
+# Dos técnicas, medidas **en la forma de Cloud Run** (`--cpus=1 --memory=1g`), 3 corridas cada
+# una, leyendo el «Started TecnosportApiApplication in N seconds» del propio arranque:
 #
-#   fat jar, que es lo que había     14.542 ms
-#   jar extraído                     11.364 ms   -22%
-#   jar extraído + CDS                8.442 ms   -42%
+#   fat jar, que es lo que había     32,65 s   (29,76 · 34,82 · 33,38)
+#   jar extraído + CDS               18,25 s   (17,60 · 19,62 · 17,53)   -44%
+#
+# Sin `startup_cpu_boost`, que el servicio sí tiene: por eso el arranque real en Cloud Run era de
+# 20-23 s y no de 32. La proporción es lo que se traslada, no el número absoluto.
+#
+# Sobre el host, sin límite de CPU, la separación entre las dos técnicas se ve mejor:
+# 14.542 ms el fat jar, 11.364 ms solo con extraer, 8.442 ms extrayendo y con CDS.
 #
 # **El directorio tiene que ser el mismo aquí y en ejecución.** Un archivo CDS guarda la ruta del
 # classpath con el que se entrenó; si la etapa de ejecución montara la aplicación en otro
@@ -59,11 +64,15 @@ RUN java -XX:ArchiveClassesAtExit=aplicacion.jsa \
       -jar app.jar
 
 FROM eclipse-temurin:21-jre AS ejecucion
-WORKDIR /app
-COPY --from=preparacion /app ./
-
 # Usuario propio: si algo se cuela por una vulnerabilidad, que no entre como root.
-RUN useradd --system --uid 1001 --create-home tecnosport && chown -R tecnosport:tecnosport /app
+#
+# **Se crea antes de copiar, y el COPY entrega los archivos ya con dueño.** Hacerlo al revés —
+# copiar y después `chown -R /app`— cuesta 234 MB: el chown reescribe cada archivo, así que Docker
+# guarda una capa nueva con una copia entera de lo que la capa anterior acababa de copiar. Medido
+# construyendo las dos formas: 1,2 GB contra 827 MB.
+RUN useradd --system --uid 1001 --create-home tecnosport
+WORKDIR /app
+COPY --from=preparacion --chown=tecnosport:tecnosport /app ./
 USER tecnosport
 
 # Cloud Run inyecta PORT y espera que el proceso escuche ahí; application.yml ya lo lee.
