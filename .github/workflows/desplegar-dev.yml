@@ -12,11 +12,12 @@
 # condición está en `infra/envs/dev/main.tf`).
 name: desplegar dev
 
-# Solo a demanda **todavía**, y es deliberado: sin base de datos la API no arranca, así que
-# engancharlo a `main` hoy solo produciría un despliegue rojo en cada merge. En cuanto exista el
-# proyecto de Neon y los secretos tengan valor, esto pasa a `push: branches: [main]` — y ese
-# cambio es el que hay que probar disparándolo a mano primero.
+# Al mezclar a `main`, y también a demanda. Estuvo solo a demanda hasta que hubo base de datos y
+# hasta que dos corridas manuales demostraron que el flujo entero funciona —construir, migrar,
+# desplegar y comprobar salud— porque engancharlo antes solo habría producido despliegues rojos.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 # Un despliegue a la vez, y **sin cancelar el que va**: matar un `gcloud run deploy` a mitad deja

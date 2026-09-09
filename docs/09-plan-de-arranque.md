@@ -2582,67 +2582,84 @@ a `pull_request` es una línea.
 Tiempos de la etapa, medidos: `web` 84 s, `contrato` 60 s, `api` 207 s,
 `recorridos` 128 s.
 
-#### Etapa 3: un ambiente `dev` en línea, y gratis
+#### Etapa 3, cerrada: el ambiente `dev` en línea, y gratis
 
-Decidido el 8 de septiembre de 2026 después de verificar los límites contra la
-documentación de Google, no de memoria. **Se puede tener el sitio en línea sin
-pagar, con una sola excepción: PostgreSQL.**
+**El sitio está en línea** (9 de septiembre de 2026):
+`https://tecnosport-web-sdlqfchkiq-ue.a.run.app`, cuatro productos servidos desde Neon, portada en
+200 en menos de medio segundo, ficha y portada traducidas en los dos idiomas, `sitemap.xml` con 18
+URL y el proxy de `/api` sirviendo desde el dominio de la web.
 
-| Pieza | Capa gratuita | ¿Alcanza? |
+Los límites de la capa gratuita se verificaron contra la documentación de Google, no de memoria.
+**Se puede tener el sitio en línea sin pagar, con una sola excepción: PostgreSQL.**
+
+| Pieza | Capa gratuita | ¿Alcanzó? |
 |---|---|---|
-| Cloud Run (API y web) | 2 M peticiones, 180.000 vCPU-s, 360.000 GiB-s, 1 GB de salida desde NA, al mes | Sí, escalando a cero |
-| Cloud Storage | 5 GB-mes, solo `us-central1`/`us-east1`/`us-west1` | Sí, ya se usa así |
-| Artifact Registry | 0,5 GB | Justo: hace falta podar versiones |
-| Secret Manager | 6 versiones activas | Justo: el proyecto tiene más secretos |
-| Cloud SQL | **ninguna** (solo 30 días de prueba) | **No** |
-| Balanceador y CDN | ninguna | No hacen falta en dev |
+| Cloud Run (API y web) | 2 M peticiones, 180.000 vCPU-s, 360.000 GiB-s, 1 GB de salida desde NA | Sí, escalando a cero |
+| Cloud Storage | 5 GB-mes, solo `us-central1`/`us-east1`/`us-west1` | Sí |
+| Artifact Registry | 0,5 GB | Con poda: 3 versiones y borrado a los 7 días |
+| Secret Manager | 6 versiones activas | Justo; sobra una y cuesta centavos |
+| Cloud SQL | **ninguna** | Por eso la base es Neon |
+| Balanceador | ninguna | No hace falta: el SSR hace de proxy |
 
-Tres decisiones que salen de ahí:
+Todo vive en `us-east1`, la región del bucket de imágenes que ya existía.
 
-- **La base de datos de dev es Neon** (0,5 GB y 100 CU-hora al mes, se suspende
-  a los 5 minutos de inactividad). Una VM `e2-micro` con Postgres propio parece
-  gratis y no lo es: la IPv4 externa se cobra, y además es un servidor que
-  parchar. Al pasar a producción cambia una variable de entorno, no el código.
-- **Sin balanceador, el servidor SSR hace de proxy de `/api`.** No es un atajo:
-  la cookie de refresco es `HttpOnly`, `SameSite=Lax` y acotada a
-  `/api/v1/auth`, y `baseUrl()` es relativa a propósito. Con la web y la API en
-  dos dominios `*.run.app` distintos, la autenticación se cae y habría que
-  tocar código para vivir con CORS. Es además el proxy que le faltó a la
-  medición de Lighthouse.
-- **`min-instances = 0` en dev.** Una instancia siempre encendida son ~2,59
-  millones de vCPU-s al mes contra los 180.000 gratis: alcanza para unas 50
-  horas. En dev se paga con arranque en frío de la JVM; en producción, con
-  dinero.
+**Decisiones que quedaron en el código y conviene no volver a discutir:**
 
-**El correo de dev es Resend** (decidido el 8 de septiembre de 2026): plan
-gratuito de 3.000 correos al mes con tope de 100 al día, transaccional por SMTP
-(`smtp.resend.com:587`, usuario literal `resend`, clave la API key), y del lado
-del código no hay nada que hacer porque `spring.mail` ya sale de variables y
-`starttls.enable` ya está en `true`. Hacía falta decidirlo porque sin SMTP no se
-puede probar el registro: la verificación de correo es obligatoria.
+- **La base de dev es Neon**, con el punto de conexión **directo y no el del pooler**: por el
+  pooler, las migraciones pueden topar con sentencias que PgBouncer no admite en modo transacción.
+- **Sin balanceador: el servidor SSR hace de proxy de `/api`.** No es un atajo. La cookie de
+  refresco es `HttpOnly`, `SameSite=Lax` y acotada a `/api/v1/auth`; con la API en otro dominio, el
+  navegador no la manda y la sesión no sobrevive a un F5.
+- **`min-instances = 0`**: una instancia siempre encendida son ~2,59 millones de vCPU-s al mes
+  contra los 180.000 gratuitos. Se paga con arranque en frío.
+- **Federación de identidad, cero llaves JSON**, acotada por condición al repositorio. Esa
+  condición es la seguridad entera.
+- **Los valores de los secretos nunca pasan por Terraform**: el recipiente sí, el contenido se
+  carga con `gcloud`. Lo que se le pasa por variable acaba escrito en el estado.
+- **La imagen del servicio está en `ignore_changes`**: la mueve el despliegue, y sin eso cada
+  `apply` desharía el último despliegue en silencio.
 
-El remitente es `no-responder@dev.tecnosport.co`, en subdominio, y el motivo hay
-que decirlo bien: **no** es que verificar la raíz rompa el SPF —los registros de
-envío de Resend cuelgan de `send.<dominio>` y el ápice no se toca—, es el radio
-de daño. Mandando como `@tecnosport.co`, cada rebote y cada prueba mal dirigida
-de un ambiente donde se rompen cosas a propósito se acumularían sobre la
-reputación del dominio con el que el negocio le escribe a sus clientes. Lo que sí
-salió de consultar la zona real es que el DMARC no lleva `sp=`, así que el
-subdominio hereda `p=quarantine` y tiene que quedar bien autenticado o su correo
-se va a no deseado en silencio. El detalle está en `docs/07-infra-gcp.md`.
+**Nueve defectos, y ninguno se veía leyendo.** Todos salieron de correr las cosas —la imagen en
+local, el `apply` de verdad, el sitio desde afuera— y esa es la lección de la etapa:
 
-**Para producción sigue abierto**, y a propósito: `[[PROVEEDOR DE CORREO
-TRANSACCIONAL]]` no se cierra heredando lo que se eligió para dev. No es que
-Resend no sirva —es transaccional de primera intención—; es que el proveedor de
-producción se elige por volumen, precio al crecer y soporte, y esa decisión se
-toma, no se arrastra.
+1. **`NG_ALLOWED_HOSTS`**: `security.allowedHosts` de `angular.json` viaja dentro del bundle del
+   servidor y solo admitía `tecnosport.co`. En un dominio `*.run.app`, **400 a cada petición**. Se
+   resolvió con comodín, porque la URL no se conoce antes de crear el servicio.
+2. **Sin `API_URL_PUBLICA`, el SSR se pide a sí mismo.** `baseUrl()` cae a `localhost:8080`, que
+   dentro del contenedor es el propio servidor web: cada render dispara otro render. Cuelga sin
+   error.
+3. **El SSR pedía sus traducciones por HTTP** resolviendo una ruta relativa contra el `Host`. Sin
+   alcanzarse, la página sale con las claves de Transloco crudas y **sin un solo error**. Ahora las
+   lee del disco (`docs/05-i18n.md`).
+4. **Un secreto sin versión no se puede montar**: la revisión no arranca y Cloud Run lo reporta
+   como "internal error" sin mencionar los secretos. De ahí `secretos_cargados`.
+5. **La sonda de arranque HTTP no cabía con la imagen de arranque**, que no sirve `/api/v1/salud`:
+   el servicio no habría podido existir antes del primer despliegue real.
+6. **`DB_PARAMS` faltaba en la plantilla de la URL de JDBC.** Neon exige TLS y la rechaza sin
+   `?sslmode=require`.
+7. **El paso de migraciones leía `template.containers`** (API v2) cuando `gcloud run services
+   describe` devuelve la forma Knative. Habría abortado diciendo que faltaba `DB_HOST` con
+   `DB_HOST` puesto.
+8. **El primer despliegue quedó en verde con la tienda vacía**: los sembradores cuelgan de
+   `@Profile("local")` y en Cloud Run no hay perfil. Que no siembren solos en un ambiente
+   desplegado es correcto; lo que faltaba es que dev existe para recorrer el sitio. Ahora
+   `@Profile({"local","dev"})`, y son idempotentes, que con arranques en frío importa.
+9. **Un POST sin cuerpo por el proxy salía sin longitud y daba 411.** Encontrado comparando el
+   mismo endpoint por los dos caminos: 204 contra la API, 411 por la web. Era la petición de toda
+   visita anónima — el error de consola arreglado esa misma mañana, de vuelta disfrazado.
 
-Y obliga a revisar una decisión escrita: `infra/dev/README.md` dice que dev se
-crea **fuera** de Terraform porque no se paga el arranque en frío del bucket de
-estado "solo por un bucket y una cuenta de servicio". Era correcto para lo que
-dev era; deja de serlo cuando dev tiene dos servicios de Cloud Run, un registro
-de imágenes, IAM y federación de identidad. El bucket de estado lo crea el mismo
-script que ya crea el de imágenes, y Terraform monta lo demás encima.
+**Dos hallazgos de configuración que el código ya contradecía:** la llave privada de Wompi no la
+lee nadie (el estado de una transacción se consulta con la pública, `Authorization: Bearer`), así
+que se fue de `.env.example` y del documento; y `WOMPI_LLAVE_PUBLICA` faltaba en el servicio, con
+lo que la aplicación arrancaba con un relleno que Wompi rechaza.
+
+**Y una advertencia que se pagó en el camino:** editando la zona de `tecnosport.co` para el
+subdominio de Resend **se perdió el SPF de la raíz**. Se detectó consultando el servidor
+autoritativo y se restauró con el valor que este proyecto había anotado esa misma mañana. Sin ese
+apunte, no habríamos sabido qué restaurar.
+
+**El despliegue ya corre al mezclar a `main`.** Estuvo solo a demanda hasta que hubo base de datos
+y hasta que dos corridas manuales demostraron el flujo completo.
 
 #### Etapa 4: producción
 
