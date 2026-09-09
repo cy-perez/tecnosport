@@ -13,10 +13,16 @@ function peticionFalsa(opciones: {
   // Buffer y no cadena: un `req` de Express real entrega Uint8Array, y `Readable.toWeb` —lo que
   // usa el proxy para reenviar el cuerpo en flujo— rechaza cualquier otra cosa.
   const flujo = Readable.from(opciones.cuerpo ? [Buffer.from(opciones.cuerpo)] : []);
+  // Con `content-length` cuando hay cuerpo, como lo entrega un Express real: toda petición
+  // declara su trama, y el proxy decide si reenvía cuerpo justamente a partir de eso.
+  const cabeceras: Record<string, string | string[]> = { ...(opciones.headers ?? {}) };
+  if (opciones.cuerpo && cabeceras['content-length'] === undefined) {
+    cabeceras['content-length'] = String(Buffer.byteLength(opciones.cuerpo));
+  }
   return Object.assign(flujo, {
     method: opciones.method ?? 'GET',
     originalUrl: opciones.originalUrl ?? '/api/v1/productos',
-    headers: opciones.headers ?? {},
+    headers: cabeceras,
   }) as unknown as Request;
 }
 
@@ -144,6 +150,35 @@ describe('crearProxyApi', () => {
     expect(vista?.cuerpo).toBe('{"lineas":[]}');
     expect(respuesta.estado).toBe(201);
     expect(respuesta.cuerpo).toBe('{"ok":true}');
+  });
+
+  // El caso que se rompió en el ambiente desplegado: un POST sin cuerpo reenviado como flujo
+  // vacío sale sin longitud declarada, y el frontend de Cloud Run responde 411. Es la petición
+  // que hace **toda** visita anónima al arrancar.
+  it('un POST sin cuerpo tampoco lleva cuerpo, y declara longitud cero', async () => {
+    let cuerpoEnviado: unknown = 'no preguntado';
+    let largoVisto: string | null = null;
+    const buscar = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      cuerpoEnviado = init?.body;
+      largoVisto = new Headers(init?.headers).get('content-length');
+      return new Response(null, { status: 204 });
+    });
+    const respuesta = new RespuestaFalsa();
+
+    crearProxyApi(DESTINO, buscar as unknown as typeof fetch)(
+      peticionFalsa({
+        method: 'POST',
+        originalUrl: '/api/v1/auth/refresco',
+        headers: { 'content-length': '0' },
+      }),
+      respuesta.comoExpress(),
+      () => undefined,
+    );
+    await hastaQueTermine(respuesta);
+
+    expect(cuerpoEnviado).toBeUndefined();
+    expect(largoVisto).toBe('0');
+    expect(respuesta.estado).toBe(204);
   });
 
   it('un GET no lleva cuerpo', async () => {
