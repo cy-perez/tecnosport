@@ -39,3 +39,25 @@ variable "secretos_cargados" {
   type        = bool
   default     = false
 }
+
+variable "db_host" {
+  description = "Punto de conexión de Neon. Vacío mientras no exista: con esto vacío, el servicio no recibe ninguna variable de base de datos, que es mejor que recibirlas a medias."
+  type        = string
+  default     = ""
+}
+
+variable "db_nombre" {
+  type    = string
+  default = ""
+}
+
+variable "db_usuario" {
+  type    = string
+  default = ""
+}
+
+variable "db_params" {
+  description = "Parámetros de la URL de JDBC. Neon **exige** TLS, y sin esto la conexión se rechaza; la plantilla de application.yml no tenía dónde ponerlos."
+  type        = string
+  default     = "?sslmode=require"
+}

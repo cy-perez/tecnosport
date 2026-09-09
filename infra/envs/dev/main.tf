@@ -202,7 +202,10 @@ module "api" {
   cuenta_de_servicio = google_service_account.api.email
   memoria            = "1Gi" # una JVM en 512Mi arranca demasiado justa
 
-  variables = {
+  # Las de la base se agregan solo cuando hay a dónde conectarse. Un DB_HOST vacío armaría
+  # `jdbc:postgresql://:5432/` y el arranque moriría con un error sobre la URL, no sobre lo que
+  # de verdad falta.
+  variables = merge({
     APP_URL_PUBLICA     = var.dominio_publico_web
     GCS_BUCKET_IMAGENES = var.bucket_imagenes
     SMTP_HOST           = "smtp.resend.com"
@@ -211,7 +214,13 @@ module "api" {
     SMTP_USUARIO        = "resend"
     CORREO_REMITENTE    = "no-responder@dev.tecnosport.co"
     WOMPI_AMBIENTE      = "sandbox"
-  }
+    }, var.db_host == "" ? {} : {
+    DB_HOST    = var.db_host
+    DB_NOMBRE  = var.db_nombre
+    DB_USUARIO = var.db_usuario
+    # Neon exige TLS. Sin esto la conexión se rechaza y el síntoma no menciona el certificado.
+    DB_PARAMS = var.db_params
+  })
 
   # **Solo cuando los secretos tengan valor.** Un secreto recién creado no tiene ninguna versión,
   # y montar `latest` de algo que no existe hace que la revisión no arranque — con un "internal

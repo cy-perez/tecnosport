@@ -7,7 +7,11 @@ spring:
   application:
     name: tecnosport-api
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}
+    # DB_PARAMS al final y vacío por omisión: en local no hace falta nada, pero un Postgres
+    # gestionado exige TLS (Neon rechaza la conexión sin `?sslmode=require`) y la plantilla no
+    # tenía dónde ponerlo. Encontrado al montar el ambiente desplegado, antes de que costara un
+    # despliegue que no arranca.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}${DB_PARAMS:}
     username: ${DB_USUARIO:tecnosport}
     password: ${DB_CLAVE:tecnosport}
   flyway:
