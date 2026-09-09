@@ -30,7 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * principio).
  */
 @Component
-@Profile("local")
+@Profile({"local", "dev"})
 @Order(2)
 public class SembradorInventario implements ApplicationRunner {
 

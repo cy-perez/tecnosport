@@ -233,6 +233,11 @@ module "api" {
     # el esquema al arrancar (`ddl-auto: validate`) y la revisión falla en voz alta en vez de
     # migrar por su cuenta a medias.
     SPRING_FLYWAY_ENABLED = "false"
+    # `dev` enciende los sembradores de catálogo e inventario (`@Profile({"local","dev"})`). Sin
+    # esto el ambiente arranca con el esquema migrado y **cero productos**, que es exactamente lo
+    # que pasó en el primer despliegue: la API respondía 200 y la tienda estaba vacía. Los
+    # sembradores son idempotentes, así que sobrevive a los arranques en frío.
+    SPRING_PROFILES_ACTIVE = "dev"
     }, var.wompi_llave_publica == "" ? {} : {
     WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {
