@@ -10,6 +10,12 @@ import java.util.Set;
  * dos salidas posibles ({@code DEVUELTO} para pago en línea, {@code RECAUDO_PENDIENTE} para
  * contraentrega) porque el diagrama no separa el estado por método de pago; quien orquesta la
  * transición es responsable de no mezclar los dos caminos.
+ *
+ * <p>{@code RECAUDO_CONCILIADO} también sale hacia {@code DEVUELTO}, y no es una simetría
+ * decorativa: el retracto del artículo 47 de la Ley 1480 de 2011 no distingue el método de pago,
+ * así que un contraentrega ya entregado y recaudado puede devolverse igual que uno pagado en
+ * línea. Sin esa arista, el único camino de vuelta era el de pago en línea y la mitad de las
+ * compras no tenía a dónde ir.
  */
 public enum EstadoPedido {
   CREADO,
@@ -40,7 +46,7 @@ public enum EstadoPedido {
     TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.noneOf(EstadoPedido.class));
     TRANSICIONES_VALIDAS.put(DEVUELTO, EnumSet.noneOf(EstadoPedido.class));
     TRANSICIONES_VALIDAS.put(RECAUDO_PENDIENTE, EnumSet.of(RECAUDO_CONCILIADO));
-    TRANSICIONES_VALIDAS.put(RECAUDO_CONCILIADO, EnumSet.noneOf(EstadoPedido.class));
+    TRANSICIONES_VALIDAS.put(RECAUDO_CONCILIADO, EnumSet.of(DEVUELTO));
   }
 
   public boolean puedeTransicionarA(EstadoPedido siguiente) {

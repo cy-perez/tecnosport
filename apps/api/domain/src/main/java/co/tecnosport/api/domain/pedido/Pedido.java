@@ -170,6 +170,25 @@ public final class Pedido {
   }
 
   /**
+   * La fecha en que se entregó, leída del historial y no de una columna propia.
+   *
+   * <p>De ella cuelgan dos plazos legales —los cinco días hábiles del retracto y el año de la
+   * garantía (docs/12-legales-de-envio.md)—, así que conviene dejar escrito por qué no es un campo
+   * del agregado: el historial no se sobrescribe nunca y el grafo de {@link EstadoPedido} solo
+   * deja llegar a {@code ENTREGADO} desde {@code DESPACHADO}, una sola vez. Una columna aparte
+   * sería una segunda verdad, capaz de divergir de la primera sin que nada avise.
+   *
+   * <p>Vacío mientras el pedido no se haya entregado, que es lo que distingue "el plazo todavía no
+   * empezó a correr" de "empezó tal día".
+   */
+  public Optional<Instant> fechaDeEntrega() {
+    return historial.stream()
+        .filter(registro -> registro.estado() == EstadoPedido.ENTREGADO)
+        .map(HistorialPedido::fecha)
+        .findFirst();
+  }
+
+  /**
    * Reemplaza el {@code idReserva} de cada línea tras un reintento de pago
    * (docs/02-modelo-datos.md: "el pago rechazado... la libera", así que un reintento necesita una
    * reserva nueva). El resto de cada línea —precio, nombre, sku, cantidad— sigue congelado: solo
