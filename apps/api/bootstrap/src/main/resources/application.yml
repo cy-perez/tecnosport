@@ -1,11 +1,17 @@
 server:
-  port: 8080
+  # PORT y no un número fijo: Cloud Run inyecta el puerto en esa variable y espera que el proceso
+  # escuche exactamente ahí. En local no está definida y cae a 8080, que es lo de siempre.
+  port: ${PORT:8080}
 
 spring:
   application:
     name: tecnosport-api
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}
+    # DB_PARAMS al final y vacío por omisión: en local no hace falta nada, pero un Postgres
+    # gestionado exige TLS (Neon rechaza la conexión sin `?sslmode=require`) y la plantilla no
+    # tenía dónde ponerlo. Encontrado al montar el ambiente desplegado, antes de que costara un
+    # despliegue que no arranca.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PUERTO:5432}/${DB_NOMBRE:tecnosport}${DB_PARAMS:}
     username: ${DB_USUARIO:tecnosport}
     password: ${DB_CLAVE:tecnosport}
   flyway:

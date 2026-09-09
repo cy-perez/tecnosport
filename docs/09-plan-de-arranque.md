@@ -2614,23 +2614,28 @@ Tres decisiones que salen de ahí:
   horas. En dev se paga con arranque en frío de la JVM; en producción, con
   dinero.
 
-**El correo de dev es Sender** (decidido el 8 de septiembre de 2026): plan
-gratuito de 15.000 correos al mes, transaccional por SMTP, y del lado del código
-no hay nada que hacer porque `spring.mail` ya sale de variables y
+**El correo de dev es Resend** (decidido el 8 de septiembre de 2026): plan
+gratuito de 3.000 correos al mes con tope de 100 al día, transaccional por SMTP
+(`smtp.resend.com:587`, usuario literal `resend`, clave la API key), y del lado
+del código no hay nada que hacer porque `spring.mail` ya sale de variables y
 `starttls.enable` ya está en `true`. Hacía falta decidirlo porque sin SMTP no se
 puede probar el registro: la verificación de correo es obligatoria.
 
-El remitente es `no-responder@dev.tecnosport.co` y el subdominio **es la parte
-importante**. Consultada la zona real, `tecnosport.co` tiene un SPF único que
-termina en `-all` y un DMARC sin `sp=`, o sea que los subdominios heredan
-`p=quarantine`; autenticar el proveedor sobre la raíz obligaría a editar ese SPF
-y un error ahí lo paga el correo del negocio, que hoy vive en los MX de
-`secureserver.net`. El detalle está en `docs/07-infra-gcp.md`.
+El remitente es `no-responder@dev.tecnosport.co`, en subdominio, y el motivo hay
+que decirlo bien: **no** es que verificar la raíz rompa el SPF —los registros de
+envío de Resend cuelgan de `send.<dominio>` y el ápice no se toca—, es el radio
+de daño. Mandando como `@tecnosport.co`, cada rebote y cada prueba mal dirigida
+de un ambiente donde se rompen cosas a propósito se acumularían sobre la
+reputación del dominio con el que el negocio le escribe a sus clientes. Lo que sí
+salió de consultar la zona real es que el DMARC no lleva `sp=`, así que el
+subdominio hereda `p=quarantine` y tiene que quedar bien autenticado o su correo
+se va a no deseado en silencio. El detalle está en `docs/07-infra-gcp.md`.
 
 **Para producción sigue abierto**, y a propósito: `[[PROVEEDOR DE CORREO
-TRANSACCIONAL]]` no se cierra heredando lo que se eligió para dev. Sender es una
-plataforma de marketing, y separar el correo comercial del transaccional es una
-decisión que se toma, no que se arrastra.
+TRANSACCIONAL]]` no se cierra heredando lo que se eligió para dev. No es que
+Resend no sirva —es transaccional de primera intención—; es que el proveedor de
+producción se elige por volumen, precio al crecer y soporte, y esa decisión se
+toma, no se arrastra.
 
 Y obliga a revisar una decisión escrita: `infra/dev/README.md` dice que dev se
 crea **fuera** de Terraform porque no se paga el arranque en frío del bucket de

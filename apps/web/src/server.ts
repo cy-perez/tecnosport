@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from './app/core/http/base-url';
 import { origenPublico } from './app/core/seo/origen-publico';
+import { crearProxyApi } from './proxy-api';
 import { construirRobots, construirSitemap, PaginaDelSitio } from './sitemap/constructor';
 import legalesEs from './assets/i18n/scopes/legales/es.json';
 import { conTemaAplicado, leerTema } from './tema-ssr';
@@ -17,6 +18,16 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Antes que nada, y antes que los estáticos: en el ambiente desplegado la web y la API son dos
+ * servicios distintos, y el sitio necesita verlas en el mismo origen para que la cookie de sesión
+ * viaje. Ver `proxy-api.ts`. En local no se monta — ahí lo hace `proxy.conf.json`.
+ */
+const apiPublica = process.env['API_URL_PUBLICA'];
+if (apiPublica) {
+  app.use('/api', crearProxyApi(apiPublica));
+}
 
 /**
  * Serve static files from /browser

@@ -12,9 +12,7 @@
       "Bash(git log:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(docker compose:*)",
-      "Bash(terraform plan:*)",
-      "Bash(terraform fmt:*)"
+      "Bash(docker compose:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",

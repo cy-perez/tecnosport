@@ -275,7 +275,7 @@ verificada en el navegador**, no solo escrita en el JSON.
 | `[[PLAZO DE ENTREGA REAL]]` | El plazo que el negocio de verdad promete, distinto del estimado que devuelve la cotización | Negocio. Sigue abierto desde la Fase 6 |
 | `[[HORARIO DE ATENCIÓN]]` | Horario del canal de PQR y del punto de recogida | Negocio. Sigue abierto desde la Fase 6 |
 | `[[GARANTÍA DE CELULARES]]` | Meses de garantía del fabricante | Negocio. Sigue abierto desde la Fase 6 |
-| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Sender** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Resend** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 |
 | Razón social exacta de Skydropx | Con qué entidad se contrata: la mexicana o una filial colombiana. Cambia el análisis de transferencia internacional | Negocio, al firmar |
 | Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |
 | IVA sobre el flete cobrado | Si el costo de envío que se le cobra al comprador lleva IVA | Contador |

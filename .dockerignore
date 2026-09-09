@@ -1,0 +1,12 @@
+# Lo que no tiene por qué entrar al contexto de construcción: lo pesado, lo generado y lo secreto.
+.git
+node_modules
+**/node_modules
+apps/api/.gradle
+apps/api/**/build
+apps/web/dist
+apps/web/.angular
+apps/web/coverage
+apps/web/test-results
+.env.local
+.env.*.local
