@@ -3,11 +3,25 @@
 Lo mínimo de GCP que el entorno de desarrollo necesita para funcionar de verdad.
 
 Producción se define con Terraform y no se toca a mano — esa regla, la del
-`README.md` de arriba, no cambia. Esto es otra cosa: un proyecto de GCP separado
-(`tecnosport-dev`), en la capa gratuita, que existe solo para que la subida de
-imágenes se pueda probar contra Cloud Storage real. Montarlo con Terraform
-exigiría primero un bucket de estado remoto para el propio Terraform, y ese
-arranque en frío no se paga solo por un bucket y una cuenta de servicio.
+`README.md` de arriba, no cambia. Y **dev tampoco, ya no**: desde que el ambiente
+de desarrollo se despliega (`infra/envs/dev`), lo administra Terraform como
+cualquier otro.
+
+Lo que queda aquí es solo el arranque en frío, que Terraform no puede hacerse a
+sí mismo: el bucket donde vive su estado. Cuando este directorio era "un bucket y
+una cuenta de servicio" no valía la pena montar Terraform para eso; con dos
+servicios de Cloud Run, un registro de imágenes, identidades y federación con
+GitHub, sí. El razonamiento cambió porque cambió lo que hay.
+
+## El bucket del estado de Terraform
+
+```
+node infra/dev/bucket-estado.mjs
+```
+
+Idempotente, igual que el de abajo. Crea `gs://tecnosport-dev-estado-terraform`
+con versionado y acceso público bloqueado, y con eso `terraform init` en
+`infra/envs/dev` ya tiene dónde guardar.
 
 ## El bucket de imágenes
 
