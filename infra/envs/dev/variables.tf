@@ -61,3 +61,9 @@ variable "db_params" {
   type        = string
   default     = "?sslmode=require"
 }
+
+variable "wompi_llave_publica" {
+  description = "Llave pública de Wompi sandbox (`pub_test_...`). No es secreta —el navegador la recibe para abrir el checkout— así que va aquí y no en Secret Manager. Vacía mientras no se tenga: la aplicación arranca igual, con un valor de relleno que Wompi rechaza, y el pago con tarjeta no funciona."
+  type        = string
+  default     = ""
+}

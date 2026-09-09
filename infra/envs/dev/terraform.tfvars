@@ -18,3 +18,8 @@ db_usuario = "tecnosport"
 # La cadena que da Neon trae además `channel_binding=require`, que es un parámetro de libpq y no
 # del driver de JDBC: no va en DB_PARAMS. Queda `?sslmode=require`, que es el valor por omisión de
 # la variable, y es lo que Neon exige de verdad.
+
+# Los siete secretos ya tienen al menos una versión (verificado el 9 de septiembre de 2026), así
+# que los servicios pueden montarlos. Con esto en false, un secreto vacío haría que la revisión no
+# arranque y Cloud Run lo reportaría como un error interno que no menciona los secretos.
+secretos_cargados = true

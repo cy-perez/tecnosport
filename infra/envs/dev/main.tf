@@ -186,6 +186,20 @@ resource "google_secret_manager_secret_iam_member" "api_lee_sus_secretos" {
   member    = "serviceAccount:${google_service_account.api.email}"
 }
 
+# **Solo `db-clave`, y solo porque el despliegue migra.** Si integración continua corre Flyway,
+# integración continua conoce la contraseña de la base: es inherente, no un descuido. Lo que sí es
+# una decisión es que sea ese secreto y no los siete — la cuenta de despliegue no tiene por qué
+# poder leer las llaves de Wompi ni el secreto del JWT.
+#
+# La alternativa que no reparte la contraseña es un trabajo de Cloud Run que migre con la cuenta
+# de la API, que ya la lee. Cuesta un modo "solo migrar" que la aplicación no tiene, y es lo que
+# corresponde mirar para producción; para dev, esto.
+resource "google_secret_manager_secret_iam_member" "despliegue_lee_la_clave_de_la_base" {
+  secret_id = google_secret_manager_secret.api["db-clave"].id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.despliegue.email}"
+}
+
 # ── Servicios ───────────────────────────────────────────────────────────────────────────────────
 # Imagen de arranque de Google: el servicio tiene que existir antes de que exista una imagen
 # nuestra que desplegar, y el despliegue la reemplaza. Ver `ignore_changes` en el módulo.
@@ -214,6 +228,14 @@ module "api" {
     SMTP_USUARIO        = "resend"
     CORREO_REMITENTE    = "no-responder@dev.tecnosport.co"
     WOMPI_AMBIENTE      = "sandbox"
+    # La aplicación **no** migra al arrancar: lo hace el flujo de despliegue, en un paso propio y
+    # antes de mover la revisión. Es lo que `docs/07-infra-gcp.md` exige para producción, y dev
+    # existe para ensayar producción. Y si el paso se saltara, esto no lo tapa: Hibernate valida
+    # el esquema al arrancar (`ddl-auto: validate`) y la revisión falla en voz alta en vez de
+    # migrar por su cuenta a medias.
+    SPRING_FLYWAY_ENABLED = "false"
+    }, var.wompi_llave_publica == "" ? {} : {
+    WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {
     DB_HOST    = var.db_host
     DB_NOMBRE  = var.db_nombre
@@ -227,12 +249,16 @@ module "api" {
   # error" de Cloud Run que no menciona los secretos por ningún lado. Se descubrió aplicando esto
   # la primera vez. La secuencia es: crear los recipientes, cargar los valores con gcloud, poner
   # `secretos_cargados = true` y volver a aplicar.
+  # `wompi-llave-privada` no se monta: **el código no la lee en ninguna parte**. Está en
+  # `.env.example` y en `docs/07-infra-gcp.md`, pero ni `WompiClient` ni las propiedades tipadas la
+  # consumen — el checkout usa la llave pública, el secreto de integridad para firmar y el de
+  # eventos para el checksum del webhook. El recipiente se queda creado (documentado, y el valor ya
+  # está cargado) pero montarlo sería darle a la aplicación una variable que nadie usa.
   secretos = var.secretos_cargados ? {
     DB_CLAVE                 = "db-clave"
     JWT_SECRETO              = "jwt-secreto"
     SMTP_CLAVE               = "smtp-clave"
     ADMIN_CLAVE              = "admin-clave"
-    WOMPI_LLAVE_PRIVADA      = "wompi-llave-privada"
     WOMPI_SECRETO_EVENTOS    = "wompi-secreto-eventos"
     WOMPI_SECRETO_INTEGRIDAD = "wompi-secreto-integridad"
   } : {}

@@ -65,6 +65,39 @@ jobs:
             echo "::endgroup::"
           done
 
+      # ── Migraciones, en un paso propio y antes de mover la revisión ─────────────────────────
+      # No al arrancar la aplicación, que es como corre en local: con varias instancias, dos
+      # arranques migrando la misma base es una carrera (Flyway la resuelve con un bloqueo, pero
+      # entonces el arranque de un contenedor depende de cuánto tarde una migración ajena), y un
+      # fallo se ve como "la revisión no arrancó" sin decir por qué. Aquí falla con el registro de
+      # Flyway a la vista y el despliegue se detiene **antes** de tocar el tráfico.
+      #
+      # El servicio lleva SPRING_FLYWAY_ENABLED=false, así que si este paso se salta, la
+      # aplicación no migra por su cuenta: Hibernate valida el esquema y la revisión falla en voz
+      # alta. Es lo que se quiere — un esquema a medias es peor que un despliegue detenido.
+      #
+      # La versión de la imagen es la misma que trae Spring Boot (flyway-core 12.4.0): dos
+      # versiones distintas de Flyway pueden discrepar sobre el formato de su propia tabla de
+      # historial.
+      - name: Migrar la base
+        run: |
+          # Host, base y usuario se leen del servicio desplegado en vez de repetirlos aquí:
+          # Terraform es el dueño de esos valores y así no hay dos copias que se desincronicen.
+          entorno=$(gcloud run services describe "${{ env.SERVICIO_API }}"             --region "${{ env.REGION }}" --format=json | jq -c '.template.containers[0].env')
+          valor() { echo "$entorno" | jq -r --arg n "$1" '.[] | select(.name==$n) | .value'; }
+          host=$(valor DB_HOST); base=$(valor DB_NOMBRE); usuario=$(valor DB_USUARIO)
+          params=$(valor DB_PARAMS)
+          if [ -z "$host" ]; then
+            echo "::error::El servicio no tiene DB_HOST: falta aplicar Terraform con los datos de la base"
+            exit 1
+          fi
+
+          clave=$(gcloud secrets versions access latest --secret=db-clave)
+          echo "::add-mask::$clave"
+
+          echo "Migrando $usuario@$host/$base"
+          docker run --rm             -v "$PWD/apps/api/infrastructure/src/main/resources/db/migration:/flyway/sql:ro"             -e FLYWAY_PASSWORD="$clave"             flyway/flyway:12.4.0             -url="jdbc:postgresql://$host:5432/$base$params"             -user="$usuario"             -connectRetries=10             -connectRetriesInterval=6             migrate
+
       # La API primero: la web la consulta al renderizar, y desplegarlas al revés deja una ventana
       # en la que el SSR pide contratos que el backend todavía no sirve.
       - name: Desplegar la API
