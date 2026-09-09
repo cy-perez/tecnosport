@@ -25,6 +25,19 @@ type Buscar = typeof fetch;
 const SIN_CUERPO = new Set(['GET', 'HEAD']);
 
 /**
+ * Un `POST` sin cuerpo —el refresco silencioso de cada visita anónima lo es— **no** puede
+ * reenviarse como un flujo vacío: la petición sale sin longitud declarada y el frontend de Cloud
+ * Run la rechaza con `411 Length Required`. Se comprobó contra el ambiente desplegado, donde
+ * `/api/v1/auth/refresco` devolvía 411 mientras la API respondía 204 si se la pedía directo.
+ */
+function tieneCuerpo(req: Request): boolean {
+  if (SIN_CUERPO.has(req.method)) return false;
+  const largo = req.headers['content-length'];
+  if (largo !== undefined) return Number(largo) > 0;
+  return req.headers['transfer-encoding'] !== undefined;
+}
+
+/**
  * Cabeceras de salto: describen la conexión con *este* servidor, no la petición del visitante.
  * Reenviarlas corrompe la conexión de más allá.
  *
@@ -96,22 +109,31 @@ export function crearProxyApi(destino: string, buscar: Buscar = fetch): RequestH
   };
 }
 
+async function recolectar(req: Request): Promise<Buffer[]> {
+  const trozos: Buffer[] = [];
+  for await (const trozo of req) trozos.push(trozo as Buffer);
+  return trozos;
+}
+
 async function reenviar(
   origen: string,
   buscar: Buscar,
   req: Request,
   res: Response,
 ): Promise<void> {
+  // El cuerpo se junta en memoria en vez de reenviarse en flujo, y es a propósito: por aquí solo
+  // pasa JSON de tamaño modesto —las imágenes van directo a Cloud Storage con URL firmada, nunca
+  // por el backend— y a cambio la petición sale con `Content-Length` en vez de troceada, que es
+  // lo que todo intermediario acepta sin discutir. El flujo no compraba nada y costaba un 411.
+  const cuerpo = tieneCuerpo(req) ? Buffer.concat(await recolectar(req)) : undefined;
+
   const respuesta = await buscar(origen + req.originalUrl, {
     method: req.method,
     headers: cabecerasParaElBackend(req.headers),
-    // El cuerpo se reenvía en flujo, sin juntarlo en memoria. `duplex: 'half'` es obligatorio al
-    // mandar un flujo y todavía no está en los tipos de TypeScript, de ahí el molde.
-    body: SIN_CUERPO.has(req.method) ? undefined : (Readable.toWeb(req) as unknown as BodyInit),
-    duplex: 'half',
+    body: cuerpo,
     // Una redirección la decide el cliente, no el proxy.
     redirect: 'manual',
-  } as RequestInit);
+  });
 
   res.status(respuesta.status);
   copiarCabecerasAlNavegador(res, respuesta.headers);
