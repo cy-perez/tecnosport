@@ -125,5 +125,9 @@
     "captura360": {
       "titulo": "Captura 360 · Tecno Sport"
     }
+  },
+  "comun": {
+    "error_servidor_titulo": "No pudimos conectarnos",
+    "error_servidor": "No pudimos conectarnos con el servidor. Intenta de nuevo en unos minutos."
   }
 }

@@ -9,6 +9,7 @@ import {
   REPOSITORIO_SESION,
   RepositorioSesion,
 } from '../../../core/autenticacion/repositorio-sesion.puerto';
+import { ErrorHttp } from '../../../core/http/respuesta-http';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { IniciarSesionAdminPage } from './iniciar-sesion-admin.page';
 
@@ -16,7 +17,7 @@ class RepositorioSesionFalso implements RepositorioSesion {
   llamadasCerrar = 0;
 
   constructor(
-    private sesionAlIniciar: Sesion | { error: true } = {
+    private sesionAlIniciar: Sesion | { error: true } | { falloServidor: true } = {
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt',
@@ -24,8 +25,13 @@ class RepositorioSesionFalso implements RepositorioSesion {
   ) {}
 
   async iniciarSesion(): Promise<Sesion> {
+    // El adaptador real lanza `ErrorHttp` con su código (`sesion-http.repositorio.ts`); el
+    // doble imita esa forma para que la pantalla se pruebe contra el fallo de verdad.
     if ('error' in this.sesionAlIniciar) {
-      throw new Error('correo o clave incorrectos');
+      throw new ErrorHttp(401, 'no se pudo iniciar sesión');
+    }
+    if ('falloServidor' in this.sesionAlIniciar) {
+      throw new ErrorHttp(500, 'no se pudo iniciar sesión');
     }
     return this.sesionAlIniciar;
   }

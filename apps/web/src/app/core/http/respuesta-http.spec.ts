@@ -1,4 +1,4 @@
-import { ErrorHttp, desempaquetar, exigirExito } from './respuesta-http';
+import { ErrorHttp, desempaquetar, esFalloDelServidor, exigirExito } from './respuesta-http';
 
 /**
  * Reproduce la forma que devuelve `openapi-fetch`: cuando el cuerpo del fallo no es JSON, `error`
@@ -58,5 +58,24 @@ describe('exigirExito', () => {
     } catch (error) {
       expect((error as ErrorHttp).estado).toBe(503);
     }
+  });
+});
+
+describe('esFalloDelServidor', () => {
+  it('un 5xx es del servidor', () => {
+    expect(esFalloDelServidor(new ErrorHttp(500, 'x'))).toBe(true);
+    expect(esFalloDelServidor(new ErrorHttp(503, 'x'))).toBe(true);
+  });
+
+  it('un 4xx no lo es: ahí sí hay algo que quien lo usa puede corregir', () => {
+    expect(esFalloDelServidor(new ErrorHttp(401, 'x'))).toBe(false);
+    expect(esFalloDelServidor(new ErrorHttp(404, 'x'))).toBe(false);
+    expect(esFalloDelServidor(new ErrorHttp(422, 'x'))).toBe(false);
+  });
+
+  it('un fallo sin respuesta —la red caída— cuenta como del servidor', () => {
+    // `fetch` rechaza con TypeError antes de que exista una `Response`; ahí tampoco hay nada
+    // que el usuario pueda arreglar escribiendo otra cosa.
+    expect(esFalloDelServidor(new TypeError('Failed to fetch'))).toBe(true);
   });
 });

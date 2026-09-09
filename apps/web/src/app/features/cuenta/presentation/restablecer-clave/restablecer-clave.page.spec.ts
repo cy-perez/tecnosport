@@ -5,13 +5,16 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { RestablecerClavePage } from './restablecer-clave.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
   llamadasRestablecer: { token: string; claveNueva: string }[] = [];
 
-  constructor(private falla = false) {}
+  /** El código con el que falla, no un booleano: la pantalla distingue el 4xx del enlace
+   * gastado del 5xx del servidor caído, y con un `true` no se podían probar las dos ramas. */
+  constructor(private falla: number | false = false) {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
   async registrar(): Promise<void> {}
@@ -25,7 +28,7 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async restablecerClave(token: string, claveNueva: string): Promise<void> {
     this.llamadasRestablecer.push({ token, claveNueva });
     if (this.falla) {
-      throw new Error('token inválido');
+      throw new ErrorHttp(this.falla, 'no se pudo restablecer la clave');
     }
   }
 }
@@ -90,11 +93,23 @@ describe('RestablecerClavePage', () => {
   });
 
   it('con un token que el servidor rechaza, muestra el error correspondiente', async () => {
-    await renderPagina(new RepositorioCuentaFalso(true), 'token-vencido');
+    await renderPagina(new RepositorioCuentaFalso(422), 'token-vencido');
 
     await llenarYEnviar();
 
     expect(await screen.findByText('El enlace no es válido o ya venció. Pide uno nuevo.')).toBeTruthy();
+  });
+
+  it('con el servidor caído, no culpa al enlace', async () => {
+    await renderPagina(new RepositorioCuentaFalso(500), 'token-valido');
+    await llenarYEnviar();
+
+    expect(
+      await screen.findByText(
+        'No pudimos conectarnos con el servidor. Intenta de nuevo en unos minutos.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('El enlace no es válido o ya venció. Pide uno nuevo.')).toBeNull();
   });
 
   it('con claves que no coinciden, muestra el error de confirmación', async () => {

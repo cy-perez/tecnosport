@@ -125,5 +125,9 @@
     "captura360": {
       "titulo": "360 capture · Tecno Sport"
     }
+  },
+  "comun": {
+    "error_servidor_titulo": "We couldn't connect",
+    "error_servidor": "We couldn't reach the server. Please try again in a few minutes."
   }
 }

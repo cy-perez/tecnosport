@@ -51,3 +51,18 @@ export function exigirExito(resultado: { response: Response }, detalle: string):
     throw new ErrorHttp(resultado.response.status, detalle);
   }
 }
+
+/**
+ * ¿El fallo fue del servidor o de la red, y no de lo que escribió quien lo usa?
+ *
+ * <p>Existe para que las pantallas no repartan aritmética de códigos HTTP: lo que una pantalla
+ * necesita decidir es a quién atribuir el fallo, no qué número llegó. Sin esto, un 500 acaba
+ * mostrándose como "correo o clave incorrectos", que es culpar al comprador de una caída propia.
+ *
+ * <p>Cuenta como fallo del servidor cualquier cosa que **no** sea un {@link ErrorHttp} de 4xx: un
+ * 5xx, y también un error que ni siquiera llegó a tener respuesta —`fetch` rechaza antes, con la
+ * red caída o el DNS sin resolver— porque ahí tampoco hay nada que el usuario pueda corregir.
+ */
+export function esFalloDelServidor(error: unknown): boolean {
+  return !(error instanceof ErrorHttp) || error.estado >= 500;
+}

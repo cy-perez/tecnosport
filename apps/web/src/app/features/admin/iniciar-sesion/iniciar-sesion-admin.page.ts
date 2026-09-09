@@ -7,6 +7,7 @@ import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
+import { esFalloDelServidor } from '../../../core/http/respuesta-http';
 
 /**
  * Solo para `ADMIN` — el login de `CLIENTE` es `features/cuenta/`, todavía
@@ -82,8 +83,12 @@ export class IniciarSesionAdminPage {
       }
       const idioma = this.transloco.activeLang();
       void this.router.navigateByUrl(this.destinoTrasIniciar(idioma));
-    } catch {
-      this.error.set(this.transloco.translate('admin.iniciarSesion.error'));
+    } catch (error) {
+      this.error.set(
+        this.transloco.translate(
+          esFalloDelServidor(error) ? 'comun.error_servidor' : 'admin.iniciarSesion.error',
+        ),
+      );
     } finally {
       this.enviando.set(false);
     }
