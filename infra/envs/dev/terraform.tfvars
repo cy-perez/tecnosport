@@ -6,8 +6,15 @@
 # necesitan el nombre público del sitio, y sin él salen apuntando a localhost.
 dominio_publico_web = "https://tecnosport-web-sdlqfchkiq-ue.a.run.app"
 
-# Base de datos en Neon. Vacío hasta que exista el proyecto allá; mientras lo esté, el servicio de
-# la API no recibe ninguna variable de base de datos en vez de recibirlas a medias.
-db_host    = ""
-db_nombre  = ""
-db_usuario = ""
+# Base de datos en Neon, región us-east-1 de AWS — la más cercana a us-east1 de Cloud Run.
+#
+# **El punto de conexión directo, no el del pooler.** Neon ofrece los dos: el host con `-pooler`
+# pasa por PgBouncer, y ahí las migraciones de Flyway pueden encontrarse con sentencias que el
+# pooler no admite en modo transacción. Con un solo host para todo, el directo es el correcto.
+db_host    = "ep-withered-river-aubmpufh.c-10.us-east-1.aws.neon.tech"
+db_nombre  = "tecnosport"
+db_usuario = "tecnosport"
+
+# La cadena que da Neon trae además `channel_binding=require`, que es un parámetro de libpq y no
+# del driver de JDBC: no va en DB_PARAMS. Queda `?sslmode=require`, que es el valor por omisión de
+# la variable, y es lo que Neon exige de verdad.
