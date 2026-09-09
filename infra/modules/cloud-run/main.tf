@@ -69,16 +69,23 @@ resource "google_cloud_run_v2_service" "este" {
         container_port = 8080
       }
 
-      startup_probe {
-        http_get {
-          path = var.ruta_de_salud
+      # Sonda de arranque **opcional**, y por omisión ninguna. Cloud Run ya espera por su cuenta a
+      # que el proceso escuche en el puerto, que es lo que "arrancó" quiere decir. Una sonda HTTP
+      # contra una ruta de la aplicación suena mejor y es peor aquí: el servicio nace con la
+      # imagen de arranque de Google, que no sirve `/api/v1/salud`, así que la sonda no podría
+      # pasar nunca y el servicio no llegaría a existir. Que la ruta de salud de verdad responda
+      # lo comprueba el flujo de despliegue después de mover la imagen, que además puede revertir.
+      dynamic "startup_probe" {
+        for_each = var.ruta_de_salud == null ? [] : [var.ruta_de_salud]
+        content {
+          http_get {
+            path = startup_probe.value
+          }
+          initial_delay_seconds = 10
+          period_seconds        = 5
+          failure_threshold     = 30
+          timeout_seconds       = 3
         }
-        # Una JVM tarda en levantar y Cloud Run mata lo que no responde. Con margen: el fallo aquí
-        # se ve como un despliegue que "no sirve" sin más explicación.
-        initial_delay_seconds = 10
-        period_seconds        = 5
-        failure_threshold     = 30
-        timeout_seconds       = 3
       }
     }
   }

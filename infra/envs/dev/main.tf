@@ -200,7 +200,6 @@ module "api" {
   region             = var.region
   imagen             = local.imagen_de_arranque
   cuenta_de_servicio = google_service_account.api.email
-  ruta_de_salud      = "/api/v1/salud"
   memoria            = "1Gi" # una JVM en 512Mi arranca demasiado justa
 
   variables = {
@@ -214,7 +213,12 @@ module "api" {
     WOMPI_AMBIENTE      = "sandbox"
   }
 
-  secretos = {
+  # **Solo cuando los secretos tengan valor.** Un secreto recién creado no tiene ninguna versión,
+  # y montar `latest` de algo que no existe hace que la revisión no arranque — con un "internal
+  # error" de Cloud Run que no menciona los secretos por ningún lado. Se descubrió aplicando esto
+  # la primera vez. La secuencia es: crear los recipientes, cargar los valores con gcloud, poner
+  # `secretos_cargados = true` y volver a aplicar.
+  secretos = var.secretos_cargados ? {
     DB_CLAVE                 = "db-clave"
     JWT_SECRETO              = "jwt-secreto"
     SMTP_CLAVE               = "smtp-clave"
@@ -222,7 +226,7 @@ module "api" {
     WOMPI_LLAVE_PRIVADA      = "wompi-llave-privada"
     WOMPI_SECRETO_EVENTOS    = "wompi-secreto-eventos"
     WOMPI_SECRETO_INTEGRIDAD = "wompi-secreto-integridad"
-  }
+  } : {}
 
   depends_on = [google_project_service.apis]
 }
@@ -234,11 +238,6 @@ module "web" {
   region             = var.region
   imagen             = local.imagen_de_arranque
   cuenta_de_servicio = google_service_account.web.email
-  # Sin datos y sin backend: dice "el proceso levantó y sirve", que es lo que una sonda de
-  # arranque tiene que decir. Una ruta que consulte la API haría que un backend caído se viera
-  # como una web que no arranca.
-  ruta_de_salud = "/robots.txt"
-
   variables = {
     # El SSR consulta la API por su URL directa; el navegador, por el proxy de /api de este mismo
     # servidor. Dos dominios distintos romperían la cookie de sesión — ver `proxy-api.ts`.

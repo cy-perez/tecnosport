@@ -51,7 +51,9 @@ variable "memoria" {
 }
 
 variable "ruta_de_salud" {
-  type = string
+  description = "Ruta para la sonda de arranque HTTP. `null` —lo normal mientras el servicio corra la imagen de arranque— deja la espera por omisión de Cloud Run, que es que el proceso escuche en el puerto."
+  type        = string
+  default     = null
 }
 
 variable "publico" {

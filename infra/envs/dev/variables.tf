@@ -33,3 +33,9 @@ variable "dominio_publico_web" {
   type        = string
   default     = ""
 }
+
+variable "secretos_cargados" {
+  description = "Si los secretos de Secret Manager ya tienen al menos una versión. Mientras sea false, los servicios no los montan: un secreto vacío hace que la revisión no arranque, y Cloud Run lo reporta como un error interno que no menciona los secretos."
+  type        = bool
+  default     = false
+}
