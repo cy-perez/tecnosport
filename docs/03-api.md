@@ -194,12 +194,41 @@ POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, r
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
 POST /api/v1/admin/pedidos/{id}/conciliar-transferencia     concilia transferencia manual
 
+GET /api/v1/admin/pedidos/{id}/retractos            las solicitudes de retracto del pedido, la más nueva primero
+POST /api/v1/admin/pedidos/{id}/retractos           radica un retracto ejercido por correo o WhatsApp
+POST /api/v1/admin/retractos/{id}/recepcion         el producto volvió: pedido a DEVUELTO e inventario de vuelta
+POST /api/v1/admin/retractos/{id}/reembolso         deja la constancia del dinero devuelto y cierra la solicitud
+
 POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
 POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
 POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
 DELETE /api/v1/admin/sets-rotacion/{id}             borra el set y sus objetos del bucket
 ```
+
+**El retracto lo radica el negocio, no el comprador**, y por eso sus rutas están
+bajo `/admin`: el canal que los términos publicados prometen es el correo y
+WhatsApp (Ley 1480 de 2011, art. 47), así que estos endpoints dejan constancia de
+un acto que ocurre por fuera del sitio. Radicar cuelga del pedido porque una
+solicitud no existe sin él; los dos pasos siguientes cuelgan de la solicitud, que
+es lo que avanza.
+
+`verdictoAlRadicar` tiene **tres** valores: `EN_PLAZO`, `VENCIDO` e
+`INDETERMINADO`. El tercero no es un estado de error — significa que pasó el
+límite más temprano posible pero el calendario de festivos no está cargado, y sin
+él afirmar que un plazo venció sería negarle un derecho a alguien que quizá está
+a tiempo. Ninguno de los tres bloquea la radicación: decide una persona con el
+dato delante.
+
+`reembolso` **no mueve dinero**. Es el registro de un acto hecho por fuera —dos de
+los tres métodos de pago se devuelven así por definición— y sirve para demostrar
+el plazo de quince días calendario del reintegro, que corre desde
+`productoRecibidoEn` y que el servidor devuelve ya calculado en
+`limiteDeReintegro`.
+
+Sin `Idempotency-Key`: la máquina de estados de la solicitud ya hace idempotentes
+estas acciones administrativas de un solo actor, y radicar dos veces lo bloquea
+la guarda de "una sola en curso" con un 409.
 
 El set se abre **prometiendo cuántos fotogramas va a tener** (entre 4 y 16), y esa
 promesa manda en todo lo demás: `/subidas` emite exactamente esas N URL —el
