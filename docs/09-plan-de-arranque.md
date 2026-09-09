@@ -2644,9 +2644,17 @@ local, el `apply` de verdad, el sitio desde afuera— y esa es la lección de la
    `@Profile("local")` y en Cloud Run no hay perfil. Que no siembren solos en un ambiente
    desplegado es correcto; lo que faltaba es que dev existe para recorrer el sitio. Ahora
    `@Profile({"local","dev"})`, y son idempotentes, que con arranques en frío importa.
-9. **Un POST sin cuerpo por el proxy salía sin longitud y daba 411.** Encontrado comparando el
-   mismo endpoint por los dos caminos: 204 contra la API, 411 por la web. Era la petición de toda
-   visita anónima — el error de consola arreglado esa misma mañana, de vuelta disfrazado.
+9. **El 411 del POST sin cuerpo era una falsa alarma, y queda escrita porque enseña más que un
+   defecto.** `POST /api/v1/auth/refresco` devolvía 411 a través del proxy, y se dio por hecho que
+   era el proxy reenviando un flujo vacío sin longitud declarada. Al comprobarlo por los dos
+   caminos con más cuidado, **la petición directa a la API también daba 411**: la causa era `curl
+   -X POST` sin datos, que no manda `Content-Length`, y el frontend de Cloud Run la exige. Un
+   navegador siempre la manda, y con ella son 204 por los dos caminos. **La aplicación nunca
+   estuvo rota.** El cambio que se hizo —juntar el cuerpo en memoria en vez de reenviarlo en
+   flujo— se queda porque garantiza una longitud declarada sea lo que sea que mande el cliente, y
+   porque por aquí solo pasa JSON pequeño; pero su motivo real es robustez, no arreglar un fallo
+   de producción. La lección: una herramienta de diagnóstico también es una variable del
+   experimento.
 
 **Dos hallazgos de configuración que el código ya contradecía:** la llave privada de Wompi no la
 lee nadie (el estado de una transacción se consulta con la pública, `Authorization: Bearer`), así
