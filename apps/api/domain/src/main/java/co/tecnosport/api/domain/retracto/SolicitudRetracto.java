@@ -31,6 +31,7 @@ public final class SolicitudRetracto {
   private final VerdictoPlazo verdictoAlRadicar;
   private EstadoSolicitudRetracto estado;
   private Instant productoRecibidoEn;
+  private Reembolso reembolso;
 
   public SolicitudRetracto(
       UUID id,
@@ -40,7 +41,8 @@ public final class SolicitudRetracto {
       String motivo,
       VerdictoPlazo verdictoAlRadicar,
       EstadoSolicitudRetracto estado,
-      Instant productoRecibidoEn) {
+      Instant productoRecibidoEn,
+      Reembolso reembolso) {
     this.id = Objects.requireNonNull(id, "El id de la solicitud no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.radicadaEn =
@@ -58,6 +60,11 @@ public final class SolicitudRetracto {
           "Una solicitud con el producto recibido necesita la fecha en que volvió.");
     }
     this.productoRecibidoEn = productoRecibidoEn;
+    if (reembolso == null && estado == EstadoSolicitudRetracto.REEMBOLSADA) {
+      throw new ExcepcionDeDominio(
+          "Una solicitud reembolsada necesita su constancia de reembolso.");
+    }
+    this.reembolso = reembolso;
   }
 
   /**
@@ -81,6 +88,7 @@ public final class SolicitudRetracto {
         motivo,
         PlazoDeRetracto.verdicto(entregadoEn, ahora, calendario),
         EstadoSolicitudRetracto.RADICADA,
+        null,
         null);
   }
 
@@ -124,6 +132,21 @@ public final class SolicitudRetracto {
     Objects.requireNonNull(ahora, "La fecha en que vuelve el producto no puede ser nula.");
     transicionar(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO);
     this.productoRecibidoEn = ahora;
+  }
+
+  public Optional<Reembolso> reembolso() {
+    return Optional.ofNullable(reembolso);
+  }
+
+  /**
+   * Deja la constancia del dinero devuelto y cierra la solicitud. Como {@link #recibirProducto}, es
+   * su propio método porque el paso trae un dato: sin la constancia no hay forma de demostrar que
+   * se cumplió el plazo del artículo 47, y demostrarlo es justo para lo que existe esto.
+   */
+  public void reembolsar(Reembolso reembolso) {
+    Objects.requireNonNull(reembolso, "El reembolso no puede ser nulo.");
+    transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
+    this.reembolso = reembolso;
   }
 
   public void transicionar(EstadoSolicitudRetracto siguiente) {
