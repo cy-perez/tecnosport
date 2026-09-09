@@ -193,22 +193,23 @@ ninguno dice en voz alta cuál es la causa:
 | `APP_URL_PUBLICA` | canónicos y `hreflang` apuntando al puerto local | Ya estaba documentada; aquí se confirma que el contenedor la necesita |
 | `NG_TRUST_PROXY_HEADERS` | aviso en consola en cada petición | Detrás de Cloud Run todo llega con `x-forwarded-*`; sin declararlas, `@angular/ssr` las descarta y avisa |
 
-### Un hallazgo que todavía no está arreglado: el SSR se pide sus propias traducciones
+### El SSR se pedía sus propias traducciones, y ya no
 
 `TranslocoHttpLoader` pide los JSON de i18n por HTTP con una ruta **relativa**, y en el servidor
-eso se resuelve contra la cabecera `Host` de la petición que se está renderizando. O sea: **cada
-render sale a la red para pedirse a sí mismo los textos**.
+eso se resuelve contra la cabecera `Host` de la petición que se está renderizando: cada render
+salía a la red para pedirse a sí mismo los textos.
 
-Se ve al correr la imagen con el puerto de fuera distinto del de dentro: el contenedor intenta
-alcanzarse en un puerto donde no escucha, la carga falla y la página sale **con las claves de
-Transloco crudas en vez de los textos** (`catalogo.seo.ficha.titulo_con_nombre` en el `<title>`).
-Con el puerto igual dentro y fuera, funciona.
+Se vio al correr la imagen con el puerto de fuera distinto del de dentro: el contenedor intentaba
+alcanzarse en un puerto donde no escucha, la carga fallaba y la página salía **con las claves de
+Transloco crudas en vez de los textos** (`catalogo.seo.ficha.titulo_con_nombre` en el `<title>`),
+sin un solo error en el registro. En Cloud Run habría funcionado, pero pagando una ida y vuelta
+por la red pública en cada render y con ese mismo fallo mudo esperando al día que el servicio
+quede detrás de autenticación.
 
-En Cloud Run funcionaría —el dominio público sí resuelve desde dentro— pero al precio de una ida y
-vuelta por la red pública en cada render, y con un modo de fallo silencioso: si el servicio queda
-detrás de autenticación o el dominio no resuelve desde el contenedor, el sitio se sirve sin
-traducir y nadie recibe un error. **Lo que corresponde es un cargador propio del servidor que lea
-los JSON del disco**, que ya están en la imagen. Pendiente.
+Arreglado con un cargador propio del servidor que lee los JSON del disco, donde ya están dentro de
+la imagen (`docs/05-i18n.md`). Verificado en el mismo escenario que lo destapó: con los puertos
+distintos, la ficha vuelve a servirse traducida en los dos idiomas y no se registra ni un respaldo
+por HTTP.
 
 ## Infraestructura como código
 
