@@ -23,3 +23,8 @@ db_usuario = "tecnosport"
 # que los servicios pueden montarlos. Con esto en false, un secreto vacío haría que la revisión no
 # arranque y Cloud Run lo reportaría como un error interno que no menciona los secretos.
 secretos_cargados = true
+
+# Llave pública de Wompi sandbox. No es secreta: el navegador la recibe en la respuesta del intento
+# de pago para abrir el checkout, y además es con esta —no con la privada— con la que el backend
+# consulta el estado de una transacción.
+wompi_llave_publica = "pub_test_TXyoe5ZvJWZKfaCe2riF0NrCFIMvt96R"

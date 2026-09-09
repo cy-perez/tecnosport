@@ -275,7 +275,11 @@ NG_TRUST_PROXY_HEADERS  (solo el servicio web)
 
 DB_HOST, DB_PUERTO, DB_NOMBRE, DB_USUARIO, DB_CLAVE
 
-WOMPI_LLAVE_PUBLICA, WOMPI_LLAVE_PRIVADA
+WOMPI_LLAVE_PUBLICA     (no hay llave privada: esta integración no la usa — el checkout se abre
+                         con la pública y el estado de una transacción se consulta con ella misma,
+                         `Authorization: Bearer <llave pública>`. La privada sirve para operar
+                         transacciones desde el servidor, que es lo que este diseño evita para no
+                         ampliar el alcance de PCI)
 WOMPI_SECRETO_EVENTOS, WOMPI_SECRETO_INTEGRIDAD, WOMPI_AMBIENTE
 WOMPI_CONCILIACION_INTERVALO_MINUTOS, WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS
 

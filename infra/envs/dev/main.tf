@@ -162,7 +162,6 @@ locals {
     "jwt-secreto",
     "smtp-clave",
     "admin-clave",
-    "wompi-llave-privada",
     "wompi-secreto-eventos",
     "wompi-secreto-integridad",
   ]
@@ -249,11 +248,12 @@ module "api" {
   # error" de Cloud Run que no menciona los secretos por ningún lado. Se descubrió aplicando esto
   # la primera vez. La secuencia es: crear los recipientes, cargar los valores con gcloud, poner
   # `secretos_cargados = true` y volver a aplicar.
-  # `wompi-llave-privada` no se monta: **el código no la lee en ninguna parte**. Está en
-  # `.env.example` y en `docs/07-infra-gcp.md`, pero ni `WompiClient` ni las propiedades tipadas la
-  # consumen — el checkout usa la llave pública, el secreto de integridad para firmar y el de
-  # eventos para el checksum del webhook. El recipiente se queda creado (documentado, y el valor ya
-  # está cargado) pero montarlo sería darle a la aplicación una variable que nadie usa.
+  # La llave privada de Wompi no está en esta lista **ni existe como secreto**, y no es un olvido:
+  # esta integración no la necesita. El navegador abre el checkout con la llave pública, el backend
+  # firma con el secreto de integridad, valida el webhook con el de eventos y consulta el estado de
+  # una transacción con `Authorization: Bearer <llave pública>` — está verificado en el Javadoc de
+  # `WompiClient`. La privada sirve para operar transacciones desde el servidor, que es justo lo que
+  # este diseño evita para no ampliar el alcance de PCI (`docs/11-pagos-y-envios.md`).
   secretos = var.secretos_cargados ? {
     DB_CLAVE                 = "db-clave"
     JWT_SECRETO              = "jwt-secreto"
