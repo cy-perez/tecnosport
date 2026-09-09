@@ -30,6 +30,7 @@ public final class SolicitudRetracto {
   private final String motivo;
   private final VerdictoPlazo verdictoAlRadicar;
   private EstadoSolicitudRetracto estado;
+  private Instant productoRecibidoEn;
 
   public SolicitudRetracto(
       UUID id,
@@ -38,7 +39,8 @@ public final class SolicitudRetracto {
       String radicadaPor,
       String motivo,
       VerdictoPlazo verdictoAlRadicar,
-      EstadoSolicitudRetracto estado) {
+      EstadoSolicitudRetracto estado,
+      Instant productoRecibidoEn) {
     this.id = Objects.requireNonNull(id, "El id de la solicitud no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.radicadaEn =
@@ -51,6 +53,11 @@ public final class SolicitudRetracto {
     this.verdictoAlRadicar =
         Objects.requireNonNull(verdictoAlRadicar, "El veredicto de plazo no puede ser nulo.");
     this.estado = Objects.requireNonNull(estado, "El estado no puede ser nulo.");
+    if (productoRecibidoEn == null && estado == EstadoSolicitudRetracto.PRODUCTO_RECIBIDO) {
+      throw new ExcepcionDeDominio(
+          "Una solicitud con el producto recibido necesita la fecha en que volvió.");
+    }
+    this.productoRecibidoEn = productoRecibidoEn;
   }
 
   /**
@@ -73,7 +80,8 @@ public final class SolicitudRetracto {
         radicadaPor,
         motivo,
         PlazoDeRetracto.verdicto(entregadoEn, ahora, calendario),
-        EstadoSolicitudRetracto.RADICADA);
+        EstadoSolicitudRetracto.RADICADA,
+        null);
   }
 
   public UUID id() {
@@ -104,6 +112,20 @@ public final class SolicitudRetracto {
     return estado;
   }
 
+  public Optional<Instant> productoRecibidoEn() {
+    return Optional.ofNullable(productoRecibidoEn);
+  }
+
+  /**
+   * El producto volvió. Es su propio método y no un {@code transicionar} más porque este paso trae
+   * un dato consigo: la fecha desde la que corre el plazo de reintegro contra el negocio.
+   */
+  public void recibirProducto(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha en que vuelve el producto no puede ser nula.");
+    transicionar(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO);
+    this.productoRecibidoEn = ahora;
+  }
+
   public void transicionar(EstadoSolicitudRetracto siguiente) {
     Objects.requireNonNull(siguiente, "El estado siguiente no puede ser nulo.");
     if (!estado.puedeTransicionarA(siguiente)) {
@@ -119,8 +141,8 @@ public final class SolicitudRetracto {
    * modificado por la Ley 2439 de 2024). Vacío mientras el producto no haya vuelto: antes de eso no
    * hay plazo corriendo contra el negocio.
    */
-  public Optional<Instant> limiteDeReintegro(Instant productoRecibidoEn) {
-    if (productoRecibidoEn == null || estado == EstadoSolicitudRetracto.RADICADA) {
+  public Optional<Instant> limiteDeReintegro() {
+    if (productoRecibidoEn == null) {
       return Optional.empty();
     }
     return Optional.of(

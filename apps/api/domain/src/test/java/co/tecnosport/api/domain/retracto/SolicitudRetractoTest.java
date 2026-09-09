@@ -100,7 +100,7 @@ class SolicitudRetractoTest {
   void elCaminoCompletoLlegaAReembolsada() {
     SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
 
-    solicitud.transicionar(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO);
+    solicitud.recibirProducto(enBogota(9, 16));
     solicitud.transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
 
     assertEquals(EstadoSolicitudRetracto.REEMBOLSADA, solicitud.estado());
@@ -109,7 +109,7 @@ class SolicitudRetractoTest {
   @Test
   void unaSolicitudReembolsadaYaNoSeMueve() {
     SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
-    solicitud.transicionar(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO);
+    solicitud.recibirProducto(enBogota(9, 16));
     solicitud.transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
 
     assertThrows(
@@ -120,17 +120,27 @@ class SolicitudRetractoTest {
   void elPlazoDeReintegroNoCorreMientrasElProductoNoVuelve() {
     SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
 
-    assertTrue(solicitud.limiteDeReintegro(enBogota(9, 16)).isEmpty());
+    assertTrue(solicitud.limiteDeReintegro().isEmpty());
   }
 
   @Test
   void elPlazoDeReintegroEsDeQuinceDiasCalendarioDesdeQueVuelveElProducto() {
     SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
-    solicitud.transicionar(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO);
+    solicitud.recibirProducto(enBogota(9, 16));
 
     // Recibido el 16 de septiembre: el plazo se agota al terminar el 1 de octubre.
     assertEquals(
         ZonedDateTime.of(2026, 10, 2, 0, 0, 0, 0, PlazoDeRetracto.ZONA).toInstant(),
-        solicitud.limiteDeReintegro(enBogota(9, 16)).orElseThrow());
+        solicitud.limiteDeReintegro().orElseThrow());
+  }
+
+  @Test
+  void recibirElProductoGuardaLaFechaEnLaSolicitud() {
+    SolicitudRetracto solicitud = radicadaEl(enBogota(9, 14));
+
+    solicitud.recibirProducto(enBogota(9, 16));
+
+    assertEquals(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO, solicitud.estado());
+    assertEquals(enBogota(9, 16), solicitud.productoRecibidoEn().orElseThrow());
   }
 }
