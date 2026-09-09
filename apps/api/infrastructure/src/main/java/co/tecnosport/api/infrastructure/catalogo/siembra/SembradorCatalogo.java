@@ -40,7 +40,13 @@ import org.springframework.stereotype.Component;
  * para este sembrador sería anticipar la Fase 4 sin un consumidor.
  */
 @Component
-@Profile("local")
+// `dev` además de `local`: el ambiente de desarrollo desplegado también necesita catálogo — sin
+// él no hay nada que recorrer, que es para lo que existe. Producción **nunca** activa ninguno de
+// los dos, y por eso el perfil es una lista corta y explícita en vez de "cualquiera que no sea
+// producción": lo que siembra datos falsos se enciende a mano, no por omisión.
+// Correr esto en cada arranque es seguro porque `run` sale temprano si ya hay productos, y con
+// `min-instances=0` los arranques en frío son muchos.
+@Profile({"local", "dev"})
 @Order(1)
 public class SembradorCatalogo implements ApplicationRunner {
 
