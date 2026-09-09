@@ -226,6 +226,17 @@ el plazo de quince días calendario del reintegro, que corre desde
 `productoRecibidoEn` y que el servidor devuelve ya calculado en
 `limiteDeReintegro`.
 
+**El comprador ve su retracto en `GET /pedidos/{id}/seguimiento`**, que desde
+ahora devuelve `PedidoSeguimientoRespuesta` y no `PedidoRespuesta`. Son dos
+records distintos a propósito: compartir uno solo entre el panel y el público fue
+lo que dejó salir durante toda la fase 3 el costo real del flete y la comisión de
+recaudo a cualquiera con un id de pedido y el correo correcto. La respuesta
+pública lleva `EnvioPublicoRespuesta` —transportadora, guía y fecha de despacho, y
+nada de dinero— y `RetractoPublicoRespuesta`, que deja fuera quién atendió la
+solicitud y el veredicto de plazo: ese último puede valer `INDETERMINADO`, y
+decirle a un comprador "fuera de plazo" es una afirmación jurídica que el sistema
+no siempre puede sostener.
+
 Sin `Idempotency-Key`: la máquina de estados de la solicitud ya hace idempotentes
 estas acciones administrativas de un solo actor, y radicar dos veces lo bloquea
 la guarda de "una sola en curso" con un 409.

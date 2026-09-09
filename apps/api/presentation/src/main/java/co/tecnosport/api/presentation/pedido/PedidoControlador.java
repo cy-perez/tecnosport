@@ -16,6 +16,7 @@ import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +47,7 @@ public class PedidoControlador {
   private final ReintentarPago reintentarPago;
   private final ConsultarSeguimientoPedido consultarSeguimientoPedido;
   private final MapeadorRespuestasPedido mapeador;
+  private final MapeadorSeguimiento mapeadorSeguimiento;
   private final TransactionTemplate transaccion;
 
   public PedidoControlador(
@@ -54,7 +56,9 @@ public class PedidoControlador {
       ReintentarPago reintentarPago,
       ConsultarSeguimientoPedido consultarSeguimientoPedido,
       MapeadorRespuestasPedido mapeador,
+      MapeadorSeguimiento mapeadorSeguimiento,
       PlatformTransactionManager transactionManager) {
+    this.mapeadorSeguimiento = Objects.requireNonNull(mapeadorSeguimiento);
     this.crearPedido = Objects.requireNonNull(crearPedido);
     this.metodosDePagoDisponibles = Objects.requireNonNull(metodosDePagoDisponibles);
     this.reintentarPago = Objects.requireNonNull(reintentarPago);
@@ -96,10 +100,11 @@ public class PedidoControlador {
   }
 
   @GetMapping("/{id}/seguimiento")
-  public PedidoRespuesta seguimiento(@PathVariable UUID id, @RequestParam String correo) {
+  public PedidoSeguimientoRespuesta seguimiento(
+      @PathVariable UUID id, @RequestParam String correo) {
     Pedido pedido =
         consultarSeguimientoPedido.ejecutar(new ConsultarSeguimientoPedidoComando(id, correo));
-    return mapeador.aRespuestaPublica(pedido);
+    return mapeadorSeguimiento.aRespuesta(pedido);
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {

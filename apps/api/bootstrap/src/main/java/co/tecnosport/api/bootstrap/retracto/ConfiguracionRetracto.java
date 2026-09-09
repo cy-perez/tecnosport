@@ -1,5 +1,6 @@
 package co.tecnosport.api.bootstrap.retracto;
 
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -33,9 +34,10 @@ public class ConfiguracionRetracto {
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       CalendarioHabil calendarioHabil,
+      EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     return new RegistrarRetracto(
-        repositorioSolicitudes, repositorioPedidos, calendarioHabil, reloj);
+        repositorioSolicitudes, repositorioPedidos, calendarioHabil, enviadorDeCorreo, reloj);
   }
 
   @Bean
@@ -52,7 +54,9 @@ public class ConfiguracionRetracto {
   public RegistrarReembolso registrarReembolso(
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
+      EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
-    return new RegistrarReembolso(repositorioSolicitudes, repositorioPedidos, reloj);
+    return new RegistrarReembolso(
+        repositorioSolicitudes, repositorioPedidos, enviadorDeCorreo, reloj);
   }
 }

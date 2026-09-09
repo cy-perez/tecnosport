@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.retracto;
 
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -24,16 +25,19 @@ public final class RegistrarRetracto {
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
   private final RepositorioPedidos repositorioPedidos;
   private final CalendarioHabil calendario;
+  private final EnviadorDeCorreo enviadorDeCorreo;
   private final Reloj reloj;
 
   public RegistrarRetracto(
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       CalendarioHabil calendario,
+      EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.calendario = Objects.requireNonNull(calendario);
+    this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -54,7 +58,32 @@ public final class RegistrarRetracto {
         SolicitudRetracto.radicar(
             pedido.id(), entregadoEn, reloj.ahora(), comando.actor(), comando.motivo(), calendario);
     repositorioSolicitudes.guardar(solicitud);
+    enviarAcuse(pedido);
     return solicitud;
+  }
+
+  /**
+   * El acuse va dentro de la misma transaccion que abre el controlador, igual que en {@code
+   * RegistrarUsuario}: si el correo falla, la solicitud tampoco se guarda y quien atiende ve el
+   * error y reintenta. Es a proposito. Guardar la constancia y callar el fallo dejaria al panel
+   * diciendo "radicado" con un comprador que nunca recibio nada, y el acuse es parte de lo que
+   * demuestra que el tramite arranco el dia que dice.
+   */
+  private void enviarAcuse(Pedido pedido) {
+    enviadorDeCorreo.enviar(
+        pedido.correo(), "Recibimos tu solicitud de retracto — TecnoSport", cuerpoAcuse(pedido));
+  }
+
+  private String cuerpoAcuse(Pedido pedido) {
+    return "<p>Recibimos tu solicitud de retracto del pedido "
+        + pedido.numeroPedido().valor()
+        + ".</p>"
+        + "<p>Para completarla, devuelvenos el producto en el mismo estado en que lo recibiste. "
+        + "El costo del transporte de la devolucion lo asume el comprador, segun el articulo 47 "
+        + "de la Ley 1480 de 2011.</p>"
+        + "<p>Cuando el producto llegue, te reintegramos el dinero dentro de los quince (15) dias "
+        + "calendario siguientes, por el mismo medio de pago que usaste o por el que acordemos "
+        + "contigo.</p>";
   }
 
   /**

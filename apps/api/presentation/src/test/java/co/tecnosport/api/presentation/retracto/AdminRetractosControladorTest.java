@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -288,15 +289,23 @@ class AdminRetractosControladorTest {
 
     /** Dos dias despues de la entrega: dentro de los cinco habiles, sin depender del reloj real. */
     @Bean
+    EnviadorDeCorreo enviadorDeCorreo() {
+      return new EnviadorDeCorreoDobleDePrueba();
+    }
+
+    @Bean
     Reloj reloj() {
       return () -> ENTREGA.plusSeconds(172_800);
     }
 
     @Bean
     RegistrarRetracto registrarRetracto(
-        RepositorioSolicitudesRetracto solicitudes, RepositorioPedidos pedidos, Reloj reloj) {
+        RepositorioSolicitudesRetracto solicitudes,
+        RepositorioPedidos pedidos,
+        EnviadorDeCorreo correos,
+        Reloj reloj) {
       return new RegistrarRetracto(
-          solicitudes, pedidos, CalendarioHabil.sinFestivosCargados(), reloj);
+          solicitudes, pedidos, CalendarioHabil.sinFestivosCargados(), correos, reloj);
     }
 
     @Bean
@@ -310,8 +319,11 @@ class AdminRetractosControladorTest {
 
     @Bean
     RegistrarReembolso registrarReembolso(
-        RepositorioSolicitudesRetracto solicitudes, RepositorioPedidos pedidos, Reloj reloj) {
-      return new RegistrarReembolso(solicitudes, pedidos, reloj);
+        RepositorioSolicitudesRetracto solicitudes,
+        RepositorioPedidos pedidos,
+        EnviadorDeCorreo correos,
+        Reloj reloj) {
+      return new RegistrarReembolso(solicitudes, pedidos, correos, reloj);
     }
 
     @Bean

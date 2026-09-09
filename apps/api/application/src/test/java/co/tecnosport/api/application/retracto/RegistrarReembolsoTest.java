@@ -31,9 +31,10 @@ class RegistrarReembolsoTest {
       new RepositorioSolicitudesRetractoFalso();
   private final RepositorioPedidosParaRetractoFalso pedidos =
       new RepositorioPedidosParaRetractoFalso();
+  private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private RegistrarReembolso casoDeUso() {
-    return new RegistrarReembolso(solicitudes, pedidos, new RelojFalso(REEMBOLSO));
+    return new RegistrarReembolso(solicitudes, pedidos, correos, new RelojFalso(REEMBOLSO));
   }
 
   /** El pedido de prueba vale una línea de 50.000. */
@@ -173,5 +174,22 @@ class RegistrarReembolsoTest {
                         MedioReembolso.WOMPI,
                         null,
                         "admin:1")));
+  }
+
+  @Test
+  void avisaAlCompradorDeQueElDineroSalio() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+
+    casoDeUso()
+        .ejecutar(
+            new RegistrarReembolsoComando(
+                solicitud.id(),
+                BigDecimal.valueOf(50_000),
+                MedioReembolso.TRANSFERENCIA_BANCARIA,
+                null,
+                "admin:1"));
+
+    assertEquals(1, correos.enviados().size());
+    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("50000"));
   }
 }

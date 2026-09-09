@@ -1164,6 +1164,43 @@ export interface components {
             fotogramas?: number;
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
         };
+        EnvioPublicoRespuesta: {
+            transportadora?: string;
+            guia?: string;
+            /** Format: date-time */
+            despachadoEn?: string;
+        };
+        PedidoSeguimientoRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            numeroPedido?: string;
+            correo?: string;
+            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
+            tipoEntrega?: string;
+            direccion?: components["schemas"]["DireccionRespuesta"];
+            metodoPago?: string;
+            estado?: string;
+            total?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            creadoEn?: string;
+            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            envio?: components["schemas"]["EnvioPublicoRespuesta"];
+            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
+            retractos?: components["schemas"]["RetractoPublicoRespuesta"][];
+        };
+        RetractoPublicoRespuesta: {
+            estado?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            motivo?: string;
+            /** Format: date-time */
+            productoRecibidoEn?: string;
+            /** Format: date-time */
+            limiteDeReintegro?: string;
+            montoReembolsado?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            reembolsadoEn?: string;
+        };
         ResultadoPaginadoRespuestaMarcaRespuesta: {
             items?: components["schemas"]["MarcaRespuesta"][];
             cursorSiguiente?: string;
@@ -2244,7 +2281,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
+                    "*/*": components["schemas"]["PedidoSeguimientoRespuesta"];
                 };
             };
         };

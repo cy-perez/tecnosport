@@ -3,9 +3,9 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar } from '../../../core/http/respuesta-http';
 import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../domain/pedido.comandos';
-import { Direccion, MetodoPago, Pedido } from '../domain/pedido.model';
+import { Direccion, MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
-import { aPedido } from './mapeador-pedido';
+import { aPedido, aSeguimiento } from './mapeador-pedido';
 
 function aDireccionRequest(direccion: Direccion | null) {
   if (!direccion) {
@@ -66,13 +66,13 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     return aPedido(desempaquetar(respuesta, 'no se pudo reintentar el pago'));
   }
 
-  async consultarSeguimiento(pedidoId: string, correo: string): Promise<Pedido | null> {
+  async consultarSeguimiento(pedidoId: string, correo: string): Promise<Seguimiento | null> {
     const respuesta = await this.cliente.GET('/api/v1/pedidos/{id}/seguimiento', {
       params: { path: { id: pedidoId }, query: { correo } },
     });
     if (respuesta.response.status === 404) {
       return null;
     }
-    return aPedido(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
+    return aSeguimiento(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
   }
 }

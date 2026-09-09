@@ -72,6 +72,18 @@
       "devuelto": "Returned",
       "recaudo_pendiente": "Delivered, payment collection pending",
       "recaudo_conciliado": "Delivered and settled"
+    },
+    "retracto": {
+      "titulo": "Your withdrawal request",
+      "estado": "Status",
+      "limite": "We will refund you no later than",
+      "reembolsado": "Amount refunded",
+      "estados": {
+        "radicada": "We received your request. Send the product back to continue.",
+        "producto_recibido": "We received the product. Your refund is being processed.",
+        "reembolsada": "We refunded your money.",
+        "rechazada": "We could not accept the request. Write to us and we will review it."
+      }
     }
   },
   "transferencia": {

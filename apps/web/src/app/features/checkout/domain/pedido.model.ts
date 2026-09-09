@@ -75,3 +75,28 @@ export interface Pedido {
   readonly creadoEn: string;
   readonly datosTransferencia: DatosTransferencia | null;
 }
+
+export type EstadoRetracto = 'RADICADA' | 'PRODUCTO_RECIBIDO' | 'REEMBOLSADA' | 'RECHAZADA';
+
+/**
+ * El retracto tal como lo ve quien lo ejerció. No trae ni el actor que lo atendió ni el veredicto
+ * de plazo: eso es información interna del panel (`RetractoPublicoRespuesta` en el backend).
+ */
+export interface RetractoPublico {
+  readonly estado: EstadoRetracto;
+  readonly radicadaEn: string;
+  readonly motivo: string | null;
+  readonly productoRecibidoEn: string | null;
+  readonly limiteDeReintegro: string | null;
+  readonly montoReembolsado: Dinero | null;
+  readonly reembolsadoEn: string | null;
+}
+
+/**
+ * Lo que devuelve `GET /pedidos/{id}/seguimiento`. Tipo propio y no `Pedido` con un campo más: el
+ * backend separó las dos respuestas justamente porque compartirlas fue lo que dejó salir el costo
+ * real del flete, y repetir aquí la mezcla desharía esa separación desde el otro lado.
+ */
+export interface Seguimiento extends Pedido {
+  readonly retractos: readonly RetractoPublico[];
+}

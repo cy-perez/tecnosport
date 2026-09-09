@@ -3,7 +3,7 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 import { render } from '@testing-library/angular';
 import { IntentoDePago } from '../domain/intento-pago.model';
 import { CrearPedidoComando } from '../domain/pedido.comandos';
-import { MetodoPago, Pedido } from '../domain/pedido.model';
+import { MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
 import { CheckoutStore } from './checkout.store';
@@ -46,7 +46,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return this.pedido;
   }
 
-  async consultarSeguimiento(): Promise<Pedido | null> {
+  async consultarSeguimiento(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
   }
 }

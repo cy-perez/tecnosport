@@ -5,11 +5,16 @@ import {
   EstadoPedido,
   LineaPedido,
   MetodoPago,
+  EstadoRetracto,
   Pedido,
+  RetractoPublico,
+  Seguimiento,
   TipoEntrega,
 } from '../domain/pedido.model';
 
 type PedidoDto = components['schemas']['PedidoRespuesta'];
+type SeguimientoDto = components['schemas']['PedidoSeguimientoRespuesta'];
+type RetractoDto = components['schemas']['RetractoPublicoRespuesta'];
 type DireccionDto = components['schemas']['DireccionRespuesta'];
 type LineaPedidoDto = components['schemas']['LineaPedidoRespuesta'];
 type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'];
@@ -71,5 +76,32 @@ function aDatosTransferencia(dto: DatosTransferenciaDto): DatosTransferencia {
     numeroCuenta: dto.numeroCuenta ?? '',
     titular: dto.titular ?? '',
     referencia: dto.referencia ?? '',
+  };
+}
+
+/**
+ * El seguimiento tiene su propio DTO en el contrato, así que tiene su propio mapeador. No basta
+ * con reutilizar `aPedido`: los dos tipos son estructuralmente compatibles —todo campo generado es
+ * opcional— y TypeScript dejaría pasar el error sin decir nada, perdiendo los retractos por el
+ * camino.
+ */
+export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
+  return {
+    ...aPedido(dto as PedidoDto),
+    retractos: (dto.retractos ?? []).map(aRetracto),
+  };
+}
+
+function aRetracto(dto: RetractoDto): RetractoPublico {
+  return {
+    estado: (dto.estado ?? 'RADICADA') as EstadoRetracto,
+    radicadaEn: dto.radicadaEn ?? '',
+    motivo: dto.motivo ?? null,
+    productoRecibidoEn: dto.productoRecibidoEn ?? null,
+    limiteDeReintegro: dto.limiteDeReintegro ?? null,
+    montoReembolsado: dto.montoReembolsado
+      ? { valor: dto.montoReembolsado.valor ?? 0, moneda: dto.montoReembolsado.moneda ?? 'COP' }
+      : null,
+    reembolsadoEn: dto.reembolsadoEn ?? null,
   };
 }

@@ -29,13 +29,14 @@ class RegistrarRetractoTest {
       new RepositorioSolicitudesRetractoFalso();
   private final RepositorioPedidosParaRetractoFalso pedidos =
       new RepositorioPedidosParaRetractoFalso();
+  private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private static Instant enBogota(int mes, int dia) {
     return ZonedDateTime.of(2026, mes, dia, 10, 0, 0, 0, PlazoDeRetracto.ZONA).toInstant();
   }
 
   private RegistrarRetracto casoDeUso(Instant ahora, CalendarioHabil calendario) {
-    return new RegistrarRetracto(solicitudes, pedidos, calendario, new RelojFalso(ahora));
+    return new RegistrarRetracto(solicitudes, pedidos, calendario, correos, new RelojFalso(ahora));
   }
 
   private Pedido pedidoEntregado() {
@@ -132,5 +133,32 @@ class RegistrarRetractoTest {
             .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
 
     assertEquals(VerdictoPlazo.INDETERMINADO, solicitud.verdictoAlRadicar());
+  }
+
+  @Test
+  void avisaAlCompradorConElAcuseDeRecibo() {
+    Pedido pedido = pedidoEntregado();
+
+    casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
+        .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+
+    assertEquals(1, correos.enviados().size());
+    assertEquals("cliente@tecnosport.co", correos.enviados().get(0).destinatario().valor());
+    // Los dos datos que el acuse tiene que llevar: quien paga el flete de vuelta y el plazo del
+    // reintegro. Sin ellos el comprador no sabe que hacer con el producto.
+    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("articulo 47"));
+    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("quince (15) dias"));
+  }
+
+  @Test
+  void siElCorreoFallaNoQuedaUnaSolicitudSinAcuse() {
+    Pedido pedido = pedidoEntregado();
+    correos.hazQueFalle();
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
+                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1")));
   }
 }

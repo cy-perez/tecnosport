@@ -72,6 +72,18 @@
       "devuelto": "Devuelto",
       "recaudo_pendiente": "Entregado, recaudo pendiente",
       "recaudo_conciliado": "Entregado y conciliado"
+    },
+    "retracto": {
+      "titulo": "Tu solicitud de retracto",
+      "estado": "Estado",
+      "limite": "Te reintegramos el dinero a más tardar el",
+      "reembolsado": "Dinero reintegrado",
+      "estados": {
+        "radicada": "Recibimos tu solicitud. Devuélvenos el producto para continuar.",
+        "producto_recibido": "Recibimos el producto. Estamos procesando tu reintegro.",
+        "reembolsada": "Reintegramos tu dinero.",
+        "rechazada": "No pudimos aceptar la solicitud. Escríbenos y lo revisamos."
+      }
     }
   },
   "transferencia": {
