@@ -2848,6 +2848,25 @@ entrar libera la reserva y no deja constancia, cancelar con el dinero adentro se
 bloquea con 422 hasta que se informa el reintegro, y entonces la reserva
 confirmada vuelve como `ENTRADA` —no como liberación— con su fila en `reintegro`.
 
+**El recorrido con clics reales encontró tres defectos que la batería no veía**, y
+es el argumento entero de por qué esa regla existe:
+
+1. El botón de cerrar sesión se montaba **encima** del enlace nuevo del panel. El
+   host de `ts-boton` es `display: inline`, y el margen inferior de un
+   `inline-block` no separa a un hermano en la misma línea: con dos enlaces cabía
+   por poco, con el tercero dejó de caber.
+2. La ayuda de los campos de fecha, escrita como un `<p>` suelto antes del
+   componente, quedaba pegada al campo **anterior** —en la bandeja parecía ser del
+   asunto— y ningún lector de pantalla la relacionaba con nada. `ts-campo` ganó
+   `ayuda`, atada con `aria-describedby`.
+3. Los textos nuevos en castellano iban **sin tildes**, en un sitio donde todo el
+   resto las lleva.
+
+Y una lección sobre cómo no arreglarlo: el primer intento de poner las tildes fue
+un reemplazo por expresión regular sobre todo el JSON, y rompió la clave de
+interpolación `{{dias}}` y, en los specs, el identificador `ReclamacionGarantia`.
+Se rehízo con el mapeo exacto del diff y solo dentro de literales entre comillas.
+
 **Datos de negocio que siguen pendientes**, ninguno inventado:
 `TODO: FESTIVOS_COLOMBIA` (ahora con tres plazos colgando),
 `[[GARANTÍA DE CELULARES]]` (su categoría responde `INDETERMINADA` en vez de caer
