@@ -64,6 +64,13 @@ public final class RegistrarReintegro {
             .buscarPorId(solicitud.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(solicitud.pedidoId()));
 
+    // Antes de registrar nada: cerrar la solicitud la deja REEMBOLSADA, y con el dinero ya
+    // devuelto el dominio no acepta anotar preferencias — anotarla ahí sería escribir el examen
+    // viendo las respuestas.
+    if (comando.medioPreferido() != null) {
+      solicitud.anotarMedioPreferido(comando.medioPreferido());
+    }
+
     Dinero monto = Dinero.deCop(comando.monto());
     if (monto.valor().compareTo(pedido.total().valor()) > 0) {
       throw new MontoDeReintegroInvalidoException(monto, pedido.total());

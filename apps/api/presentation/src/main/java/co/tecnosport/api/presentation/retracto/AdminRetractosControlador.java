@@ -82,10 +82,12 @@ public class AdminRetractosControlador {
       @PathVariable UUID pedidoId, @RequestBody(required = false) RegistrarRetractoRequest cuerpo) {
     String actor = "admin:" + actorId();
     String motivo = cuerpo == null ? null : cuerpo.motivo();
+    MedioReintegro medioPreferido = medioDe(cuerpo == null ? null : cuerpo.medioPreferido());
     SolicitudRetracto solicitud =
         transaccion.execute(
             estado ->
-                registrarRetracto.ejecutar(new RegistrarRetractoComando(pedidoId, motivo, actor)));
+                registrarRetracto.ejecutar(
+                    new RegistrarRetractoComando(pedidoId, motivo, medioPreferido, actor)));
     return aRespuestaConSuReintegro(solicitud);
   }
 
@@ -111,9 +113,19 @@ public class AdminRetractosControlador {
                         id,
                         cuerpo.monto(),
                         MedioReintegro.valueOf(cuerpo.medio()),
+                        medioDe(cuerpo.medioPreferido()),
                         cuerpo.comprobante(),
                         actor)));
     return aRespuestaConSuReintegro(solicitud);
+  }
+
+  /**
+   * Un medio opcional que llega como texto. Vacio y ausente son lo mismo aqui —"no lo dijo"— y un
+   * valor que no existe en el enum revienta con {@code IllegalArgumentException}, que {@code
+   * ManejadorDeErrores} ya traduce a 400: es un cuerpo mal formado, no un caso de negocio.
+   */
+  private MedioReintegro medioDe(String valor) {
+    return valor == null || valor.isBlank() ? null : MedioReintegro.valueOf(valor);
   }
 
   /** Una consulta mas por solicitud, y a proposito: la constancia es otro agregado. */

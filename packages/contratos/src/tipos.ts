@@ -1212,6 +1212,7 @@ export interface components {
         RegistrarReintegroRequest: {
             monto?: number;
             medio?: string;
+            medioPreferido?: string;
             comprobante?: string;
         };
         ReintegroRespuesta: {
@@ -1237,6 +1238,8 @@ export interface components {
             productoRecibidoEn?: string;
             /** Format: date-time */
             limiteDeReintegro?: string;
+            medioPreferido?: string;
+            preferenciaRespetada?: boolean;
             reintegro?: components["schemas"]["ReintegroRespuesta"];
         };
         CrearProductoPeticion: {
@@ -1309,6 +1312,7 @@ export interface components {
         };
         RegistrarRetractoRequest: {
             motivo?: string;
+            medioPreferido?: string;
         };
         RadicarGarantiaRequest: {
             /** Format: uuid */

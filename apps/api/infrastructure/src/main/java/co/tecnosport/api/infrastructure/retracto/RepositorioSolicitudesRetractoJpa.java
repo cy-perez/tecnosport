@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.retracto;
 
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.domain.retracto.EstadoSolicitudRetracto;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import co.tecnosport.api.infrastructure.retracto.entidad.SolicitudRetractoJpaEntity;
@@ -50,7 +51,8 @@ public class RepositorioSolicitudesRetractoJpa implements RepositorioSolicitudes
             solicitud.verdictoAlRadicar().name(),
             solicitud.estado().name(),
             solicitud.productoRecibidoEn().orElse(null),
-            solicitud.reintegroId().orElse(null)));
+            solicitud.reintegroId().orElse(null),
+            solicitud.medioPreferido().map(Enum::name).orElse(null)));
   }
 
   private SolicitudRetracto aSolicitud(SolicitudRetractoJpaEntity entidad) {
@@ -63,6 +65,9 @@ public class RepositorioSolicitudesRetractoJpa implements RepositorioSolicitudes
         VerdictoPlazo.valueOf(entidad.getVerdictoPlazo()),
         EstadoSolicitudRetracto.valueOf(entidad.getEstado()),
         entidad.getProductoRecibidoEn(),
-        entidad.getReintegroId());
+        entidad.getReintegroId(),
+        entidad.getMedioPreferido() == null
+            ? null
+            : MedioReintegro.valueOf(entidad.getMedioPreferido()));
   }
 }

@@ -83,6 +83,7 @@ class RecibirProductoDevueltoTest {
             RADICACION,
             "admin:1",
             null,
+            null,
             CalendarioHabil.sinFestivosCargados());
     solicitudes.guardar(solicitud);
     return solicitud;

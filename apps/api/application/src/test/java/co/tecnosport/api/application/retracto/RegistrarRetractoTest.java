@@ -53,7 +53,7 @@ class RegistrarRetractoTest {
 
     SolicitudRetracto solicitud =
         casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
 
     assertEquals(VerdictoPlazo.EN_PLAZO, solicitud.verdictoAlRadicar());
     assertEquals(EstadoSolicitudRetracto.RADICADA, solicitud.estado());
@@ -72,7 +72,7 @@ class RegistrarRetractoTest {
         PedidoSinEntregarException.class,
         () ->
             casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1")));
+                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1")));
     assertTrue(solicitudes.todas().isEmpty());
   }
 
@@ -82,18 +82,18 @@ class RegistrarRetractoTest {
         PedidoNoEncontradoException.class,
         () ->
             casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-                .ejecutar(new RegistrarRetractoComando(UUID.randomUUID(), null, "admin:1")));
+                .ejecutar(new RegistrarRetractoComando(UUID.randomUUID(), null, null, "admin:1")));
   }
 
   @Test
   void noSeRadicaDosVecesSobreElMismoPedido() {
     Pedido pedido = pedidoEntregado();
     RegistrarRetracto caso = casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados());
-    caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+    caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
 
     assertThrows(
         RetractoYaRadicadoException.class,
-        () -> caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1")));
+        () -> caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1")));
     assertEquals(1, solicitudes.todas().size());
   }
 
@@ -103,11 +103,11 @@ class RegistrarRetractoTest {
     Pedido pedido = pedidoEntregado();
     RegistrarRetracto caso = casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados());
     SolicitudRetracto primera =
-        caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+        caso.ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
     primera.transicionar(EstadoSolicitudRetracto.RECHAZADA);
     solicitudes.guardar(primera);
 
-    caso.ejecutar(new RegistrarRetractoComando(pedido.id(), "trae la factura", "admin:1"));
+    caso.ejecutar(new RegistrarRetractoComando(pedido.id(), "trae la factura", null, "admin:1"));
 
     assertEquals(2, solicitudes.todas().size());
   }
@@ -118,7 +118,7 @@ class RegistrarRetractoTest {
 
     SolicitudRetracto solicitud =
         casoDeUso(enBogota(10, 30), CalendarioHabil.con(Map.of(2026, Set.of())))
-            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
 
     assertEquals(VerdictoPlazo.VENCIDO, solicitud.verdictoAlRadicar());
     assertEquals(1, solicitudes.todas().size());
@@ -130,7 +130,7 @@ class RegistrarRetractoTest {
 
     SolicitudRetracto solicitud =
         casoDeUso(enBogota(10, 30), CalendarioHabil.sinFestivosCargados())
-            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+            .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
 
     assertEquals(VerdictoPlazo.INDETERMINADO, solicitud.verdictoAlRadicar());
   }
@@ -140,7 +140,7 @@ class RegistrarRetractoTest {
     Pedido pedido = pedidoEntregado();
 
     casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-        .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1"));
+        .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
 
     assertEquals(1, correos.enviados().size());
     assertEquals("cliente@tecnosport.co", correos.enviados().get(0).destinatario().valor());
@@ -159,6 +159,6 @@ class RegistrarRetractoTest {
         IllegalStateException.class,
         () ->
             casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, "admin:1")));
+                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1")));
   }
 }
