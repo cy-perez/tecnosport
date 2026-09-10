@@ -58,7 +58,7 @@
       }
 
       @case ('PRODUCTO_RECIBIDO') {
-        @if (diasParaReintegrar(); as dias) {
+        @if (hayPlazoDeReintegro()) {
           <p
             role="status"
             class="mb-8"
@@ -68,7 +68,7 @@
             @if (plazoVencido()) {
               {{ 'admin.retractos.plazo_vencido' | transloco }}
             } @else {
-              {{ 'admin.retractos.plazo_restante' | transloco: { dias: dias } }}
+              {{ 'admin.retractos.plazo_restante' | transloco: { dias: diasParaReintegrar() } }}
             }
           </p>
         }

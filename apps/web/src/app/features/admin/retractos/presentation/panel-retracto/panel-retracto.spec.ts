@@ -268,6 +268,49 @@ describe('PanelRetracto', () => {
     ).toBeTruthy();
   });
 
+  /**
+   * El mismo aviso, pero el día en que el plazo se acaba de agotar. Fechas relativas al reloj y no
+   * fijas, a propósito: lo que se prueba es la distancia al límite, y con una fecha fija el caso
+   * dejaría de ser el que interesa en cuanto pasara el tiempo.
+   *
+   * Esta prueba nació de un defecto real que la de arriba no podía atrapar. `diasParaReintegrar`
+   * era `Math.ceil((limite - ahora) / 86_400_000)`, y con el límite vencido hace unas horas eso da
+   * `-0`: la plantilla lo escondía todo porque `@if (dias; as ...)` lo ve como falso, y
+   * `plazoVencido` decía que no porque `-0 < 0` también es falso. Durante las primeras
+   * veinticuatro horas de incumplimiento el panel no decía nada. La prueba de arriba usa el año
+   * 2020, o sea miles de días negativos, y pasaba tan tranquila.
+   */
+  it('un plazo vencido hace horas también lo dice', async () => {
+    const haceCincoHoras = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString(),
+        limiteDeReintegro: haceCincoHoras,
+      }),
+    ]);
+
+    expect(
+      await screen.findByText('El plazo de quince dias para reintegrar ya vencio.'),
+    ).toBeTruthy();
+  });
+
+  /** Y con el plazo vivo dice cuánto queda, que es la otra mitad y no tenía prueba propia. */
+  it('con el plazo de reintegro corriendo, dice cuántos días quedan', async () => {
+    const enTresDias = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 - 60_000).toISOString();
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+        limiteDeReintegro: enTresDias,
+      }),
+    ]);
+
+    expect(
+      await screen.findByText('Quedan 3 dias calendario para reintegrar el dinero.'),
+    ).toBeTruthy();
+  });
+
   it('una solicitud ya reembolsada muestra su constancia', async () => {
     await renderPanel([
       solicitud({
