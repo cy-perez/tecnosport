@@ -7,6 +7,7 @@ import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaExcep
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -68,6 +69,7 @@ public final class ResolverGarantia {
 
   public ReclamacionGarantia ejecutar(ResolverGarantiaComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    exigirDatosDelReintegro(comando);
     ReclamacionGarantia reclamacion =
         repositorioReclamaciones
             .buscarPorId(comando.reclamacionId())
@@ -89,6 +91,21 @@ public final class ResolverGarantia {
         new ResponderSolicitudComando(
             reclamacion.solicitudId(), comando.resumenParaElComprador(), comando.actor()));
     return reclamacion;
+  }
+
+  /**
+   * Antes de tocar nada: elegir {@code REINTEGRO} y no decir cuánto ni por dónde no es un error de
+   * sistema, es un cuerpo incompleto. Sin esta guarda el monto en nulo llegaba hasta el constructor
+   * de {@code Dinero} y salía un 500 con "ocurrió un error inesperado", que no le dice a quien
+   * atiende qué le falta. Es la misma guarda que {@code CancelarPedido} tenía desde el principio.
+   */
+  private static void exigirDatosDelReintegro(ResolverGarantiaComando comando) {
+    if (comando.desenlace() != DesenlaceGarantia.REINTEGRO) {
+      return;
+    }
+    if (comando.monto() == null || comando.medio() == null) {
+      throw ReintegroRequeridoException.porqueElDesenlaceDevuelveDinero(comando.desenlace().name());
+    }
   }
 
   private Reintegro registrarReintegro(

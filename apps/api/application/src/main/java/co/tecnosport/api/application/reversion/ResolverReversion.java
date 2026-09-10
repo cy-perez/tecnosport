@@ -5,6 +5,7 @@ import co.tecnosport.api.application.atencion.ResponderSolicitudComando;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -55,6 +56,7 @@ public final class ResolverReversion {
 
   public SolicitudReversion ejecutar(ResolverReversionComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    exigirDatosDelReintegro(comando);
     SolicitudReversion reversion =
         repositorioReversiones
             .buscarPorId(comando.reversionId())
@@ -72,6 +74,20 @@ public final class ResolverReversion {
         new ResponderSolicitudComando(
             reversion.solicitudId(), comando.resumenParaElComprador(), comando.actor()));
     return reversion;
+  }
+
+  /**
+   * Igual que en la garantía: el único desenlace en que el dinero sale de aquí exige decir cuánto y
+   * por dónde. Si revirtió el emisor no hace falta nada de eso, porque este sistema no movió un
+   * peso.
+   */
+  private static void exigirDatosDelReintegro(ResolverReversionComando comando) {
+    if (comando.desenlace() != DesenlaceReversion.REINTEGRADO_DIRECTAMENTE) {
+      return;
+    }
+    if (comando.monto() == null || comando.medio() == null) {
+      throw ReintegroRequeridoException.porqueElDesenlaceDevuelveDinero(comando.desenlace().name());
+    }
   }
 
   private Reintegro registrarReintegro(

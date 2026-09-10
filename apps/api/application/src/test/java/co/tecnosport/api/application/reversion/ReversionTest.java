@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
@@ -188,6 +189,32 @@ class ReversionTest {
     assertEquals(EstadoSolicitudReversion.RESUELTA, reversion.estado());
     assertTrue(reversion.reintegroId().isEmpty());
     assertTrue(reintegros.guardados().isEmpty(), "no salio dinero de aqui");
+  }
+
+  /**
+   * Lo mismo que en la garantía, y por el mismo motivo: el único desenlace en que el dinero sale de
+   * aquí exige decir cuánto y por dónde. Sin la guarda era un 500.
+   */
+  @Test
+  void reintegrarDirectamenteSinMontoNiMedioPideLosDatosEnVezDeReventar() {
+    SolicitudReversion reversion = radicar(CausalReversion.PRODUCTO_NO_CORRESPONDE, HECHO);
+
+    assertThrows(
+        ReintegroRequeridoException.class,
+        () ->
+            resolvedor(HECHO.plusSeconds(86_400))
+                .ejecutar(
+                    new ResolverReversionComando(
+                        reversion.id(),
+                        DesenlaceReversion.REINTEGRADO_DIRECTAMENTE,
+                        "Se devolvio el dinero",
+                        null,
+                        null,
+                        null,
+                        "admin:1")));
+
+    assertTrue(reintegros.guardados().isEmpty(), "no queda constancia de un reintegro sin datos");
+    assertTrue(reversion.desenlace().isEmpty(), "la solicitud sigue abierta");
   }
 
   @Test

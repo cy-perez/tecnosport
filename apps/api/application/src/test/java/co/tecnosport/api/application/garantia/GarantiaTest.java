@@ -8,6 +8,7 @@ import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
@@ -206,6 +207,42 @@ class GarantiaTest {
 
     assertEquals(DesenlaceGarantia.REPOSICION, reclamacion.desenlace().orElseThrow());
     assertTrue(reintegros.guardados().isEmpty());
+  }
+
+  /**
+   * Elegir la salida que devuelve el dinero y no decir cuánto ni por dónde es un cuerpo incompleto,
+   * no un error de sistema. Antes de la guarda, el monto en nulo viajaba hasta el constructor de
+   * {@code Dinero} y salía un 500 con "ocurrió un error inesperado" — quien atiende no tenía forma
+   * de saber qué le faltaba. {@code CancelarPedido} tenía esta guarda desde el principio; garantía
+   * y reversión no la heredaron.
+   */
+  @Test
+  void resolverConReintegroSinMontoNiMedioPideLosDatosEnVezDeReventar() {
+    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+
+    assertThrows(
+        ReintegroRequeridoException.class, () -> resolverConReintegro(reclamacion, null, null));
+    // Y con la mitad de los datos tampoco: una constancia sin medio no demuestra por dónde salió.
+    assertThrows(
+        ReintegroRequeridoException.class,
+        () -> resolverConReintegro(reclamacion, BigDecimal.valueOf(50_000), null));
+
+    assertTrue(reintegros.guardados().isEmpty(), "no queda constancia de un reintegro sin datos");
+    assertTrue(reclamacion.desenlace().isEmpty(), "la reclamacion sigue abierta");
+  }
+
+  private void resolverConReintegro(
+      ReclamacionGarantia reclamacion, BigDecimal monto, MedioReintegro medio) {
+    resolvedor(RECLAMO.plusSeconds(86_400))
+        .ejecutar(
+            new ResolverGarantiaComando(
+                reclamacion.id(),
+                DesenlaceGarantia.REINTEGRO,
+                "Se devolvio el dinero",
+                monto,
+                medio,
+                null,
+                "admin:1"));
   }
 
   /** La tercera salida deja la misma constancia que los otros cuatro caminos, con su motivo. */

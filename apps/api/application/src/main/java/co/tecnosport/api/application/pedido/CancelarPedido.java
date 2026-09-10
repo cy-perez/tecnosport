@@ -3,6 +3,7 @@ package co.tecnosport.api.application.pedido;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -75,7 +76,7 @@ public final class CancelarPedido {
 
     boolean elDineroYaEntro = elDineroYaEntro(pedido);
     if (elDineroYaEntro && (comando.monto() == null || comando.medio() == null)) {
-      throw new ReintegroRequeridoException(pedido.id());
+      throw ReintegroRequeridoException.porqueElDineroYaEntro(pedido.id());
     }
 
     Instant ahora = reloj.ahora();
