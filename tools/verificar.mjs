@@ -34,6 +34,10 @@ if (!soloApi) {
   // llevaron seis a producción durante una fase entera: la plantilla pinta la clave tal como está
   // y ninguna prueba mira el contenido del texto.
   ejecutar("node tools/verificar-marcadores.mjs");
+  // Y por el mismo motivo, un dato del negocio que diga cosas distintas segun donde se lea. El
+  // celular del negocio estuvo mal en el pie y en tres parrafos de los legales durante una fase
+  // entera, y al corregirlo no quedo nada que impidiera que volviera a pasar.
+  ejecutar("node tools/verificar-datos-de-negocio.mjs");
   ejecutar("npm run lint --workspaces --if-present");
   ejecutar("npm test --workspaces --if-present");
   ejecutar("npm run build --workspaces --if-present");
