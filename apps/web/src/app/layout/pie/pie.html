@@ -63,10 +63,12 @@
     </nav>
 
     <!--
-      Enlaces de texto y no logos de marca: `lucide` no trae iconos de marca —los retiró—, así que
-      poner los de Facebook e Instagram exigiría una dependencia nueva (`simple-icons`) o pegar sus
-      SVG a mano, y ninguna de las dos cosas vale un logo (`docs/04-ui-marca.md`: cada dependencia
-      es deuda). El pie ya enlazaba WhatsApp como texto.
+      Los logos salen de `marcas.generado.ts`, que produce `npm run iconos-marca` desde
+      `simple-icons` (`ADR-0026`): la librería se usa al generar y no entra en el paquete que se
+      sirve, así que no es una dependencia de producción. Antes aquí había un comentario diciendo lo
+      contrario —que poner estos logos exigiría una dependencia nueva y no valía la pena—, y siguió
+      ahí después de que se pusieran, ocho líneas más arriba de los `ts-icono-marca` que lo
+      desmienten.
 
       `rel="me"` y no `noopener`: son perfiles propios, y `me` es lo que declara la relación de
       identidad que `sameAs` repite en los datos estructurados. `target` no se fija: forzar pestaña
@@ -153,13 +155,21 @@
          normal es invisible en tema claro. Y el estado se manda, no se
          alterna a ciegas: la casilla informa el suyo y el pie lo guarda, así
          no hay dos verdades que puedan separarse. -->
-    <ts-checkbox
-      idCasilla="ts-reducir-movimiento"
-      [etiqueta]="'pie.reducir_movimiento' | transloco"
-      [marcado]="movimientoReducido()"
-      [sobreMarca]="true"
-      (marcadoCambio)="fijarMovimientoReducido($event)"
-    />
+    <div class="flex flex-col gap-4">
+      <ts-checkbox
+        idCasilla="ts-reducir-movimiento"
+        [etiqueta]="'pie.reducir_movimiento' | transloco"
+        [marcado]="movimientoReducido()"
+        [deshabilitado]="sistemaPideReducir()"
+        [sobreMarca]="true"
+        (marcadoCambio)="fijarMovimientoReducido($event)"
+      />
+      <!-- Se dice por qué está deshabilitada en vez de dejar una casilla que no responde: la regla
+           del sistema vive en `tokens.css`, generado, y desde aquí no se puede vencer. -->
+      @if (sistemaPideReducir()) {
+        <p class="m-0 text-xs">{{ 'pie.reducir_movimiento_del_sistema' | transloco }}</p>
+      }
+    </div>
   </div>
 
   <p class="mx-auto my-0 max-w-contenido px-24 pb-24 text-xs">

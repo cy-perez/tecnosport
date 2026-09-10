@@ -191,7 +191,8 @@ class AdminAtencionControladorTest {
     @Bean
     RadicarSolicitud radicarSolicitud(
         RepositorioSolicitudesAtencion repositorio, EnviadorDeCorreo correos, Reloj reloj) {
-      return new RadicarSolicitud(repositorio, correos, reloj);
+      return new RadicarSolicitud(
+          repositorio, correos, (texto, argumentos) -> texto.clave(), reloj);
     }
 
     @Bean
@@ -205,7 +206,8 @@ class AdminAtencionControladorTest {
         CalendarioHabil calendario,
         EnviadorDeCorreo correos,
         Reloj reloj) {
-      return new ProrrogarSolicitud(repositorio, PLAZOS, calendario, correos, reloj);
+      return new ProrrogarSolicitud(
+          repositorio, PLAZOS, calendario, correos, (texto, argumentos) -> texto.clave(), reloj);
     }
 
     @Bean

@@ -2,6 +2,8 @@ package co.tecnosport.api.application.atencion;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.atencion.NumeroRadicado;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -26,12 +28,17 @@ public final class RadicarSolicitud {
 
   private final RepositorioSolicitudesAtencion repositorio;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public RadicarSolicitud(
-      RepositorioSolicitudesAtencion repositorio, EnviadorDeCorreo enviadorDeCorreo, Reloj reloj) {
+      RepositorioSolicitudesAtencion repositorio,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj) {
     this.repositorio = Objects.requireNonNull(repositorio);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -65,15 +72,10 @@ public final class RadicarSolicitud {
   private void enviarAcuse(SolicitudAtencion solicitud) {
     enviadorDeCorreo.enviar(
         solicitud.correo(),
-        "Radicamos tu solicitud " + solicitud.numeroRadicado().valor() + " — TecnoSport",
-        "<p>Radicamos tu solicitud con el numero <strong>"
-            + solicitud.numeroRadicado().valor()
-            + "</strong>. Guardalo: con ese numero puedes preguntarnos por ella cuando quieras.</p>"
-            + "<p>Asunto: "
-            + solicitud.asunto()
-            + "</p>"
-            + "<p>Te respondemos dentro del plazo que corresponde a tu solicitud. Si necesitamos "
-            + "mas tiempo del previsto y la ley lo permite, te avisamos antes de que ese plazo "
-            + "venza, con los motivos.</p>");
+        textos.texto(TextoDeCorreo.ATENCION_ACUSE_ASUNTO, solicitud.numeroRadicado().valor()),
+        textos.texto(
+            TextoDeCorreo.ATENCION_ACUSE_CUERPO,
+            solicitud.numeroRadicado().valor(),
+            solicitud.asunto()));
   }
 }

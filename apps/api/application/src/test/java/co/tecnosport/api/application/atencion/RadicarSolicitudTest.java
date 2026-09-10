@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
@@ -26,7 +27,8 @@ class RadicarSolicitudTest {
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private RadicarSolicitud casoDeUso() {
-    return new RadicarSolicitud(repositorio, correos, new RelojFalso(AHORA));
+    return new RadicarSolicitud(
+        repositorio, correos, new TextosDeCorreoFalso(), new RelojFalso(AHORA));
   }
 
   private RadicarSolicitudComando comando(TipoSolicitud tipo, Instant recibidaEn) {

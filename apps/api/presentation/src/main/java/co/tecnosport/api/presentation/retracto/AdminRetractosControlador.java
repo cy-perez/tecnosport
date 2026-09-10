@@ -112,7 +112,7 @@ public class AdminRetractosControlador {
                     new RegistrarReintegroComando(
                         id,
                         cuerpo.monto(),
-                        MedioReintegro.valueOf(cuerpo.medio()),
+                        medioDe(cuerpo.medio()),
                         medioDe(cuerpo.medioPreferido()),
                         cuerpo.comprobante(),
                         actor)));
@@ -120,9 +120,12 @@ public class AdminRetractosControlador {
   }
 
   /**
-   * Un medio opcional que llega como texto. Vacio y ausente son lo mismo aqui —"no lo dijo"— y un
-   * valor que no existe en el enum revienta con {@code IllegalArgumentException}, que {@code
-   * ManejadorDeErrores} ya traduce a 400: es un cuerpo mal formado, no un caso de negocio.
+   * Un medio que llega como texto, y que aquí puede venir nulo aunque el reintegro lo exija: quien
+   * decide es {@code RegistrarReintegro}, con un 422 que dice qué falta, y no un {@code valueOf}
+   * que revienta con un {@code NullPointerException} y sale como 500. Vacio y ausente son lo mismo
+   * aqui —"no lo dijo"— y un valor que no existe en el enum revienta con {@code
+   * IllegalArgumentException}, que {@code ManejadorDeErrores} ya traduce a 400: es un cuerpo mal
+   * formado, no un caso de negocio.
    */
   private MedioReintegro medioDe(String valor) {
     return valor == null || valor.isBlank() ? null : MedioReintegro.valueOf(valor);

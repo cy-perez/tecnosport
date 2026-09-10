@@ -12,6 +12,57 @@ function resultado<T>(cuerpo: T | undefined, estado: number, tipo = 'application
   };
 }
 
+/** El mismo resultado, pero con el ProblemDetail que el backend si manda cuando el fallo es JSON. */
+function resultadoConCodigo(estado: number, cuerpo: unknown) {
+  return {
+    data: undefined,
+    error: cuerpo,
+    response: new Response(null, { status: estado, headers: { 'Content-Type': 'application/json' } }),
+  };
+}
+
+describe('el codigo del ProblemDetail', () => {
+  it('viaja en el ErrorHttp para que la pantalla pueda decir que paso', () => {
+    const fallo = resultadoConCodigo(422, { codigo: 'MONTO_DE_REINTEGRO_INVALIDO', detail: 'no cabe' });
+
+    try {
+      desempaquetar(fallo, 'no se pudo reintegrar');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).codigo).toBe('MONTO_DE_REINTEGRO_INVALIDO');
+    }
+  });
+
+  it('tambien en las respuestas sin cuerpo, que es donde viven las acciones del panel', () => {
+    try {
+      exigirExito(resultadoConCodigo(409, { codigo: 'RETRACTO_YA_RADICADO' }), 'no se pudo radicar');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).codigo).toBe('RETRACTO_YA_RADICADO');
+    }
+  });
+
+  // Un balanceador que responde 502 en HTML no trae ProblemDetail, y la pantalla tiene que caer a su
+  // mensaje generico en vez de reventar buscando un codigo.
+  it('queda indefinido cuando el fallo no trae cuerpo JSON', () => {
+    try {
+      desempaquetar(resultado(undefined, 502, 'text/html'), 'sin backend');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).codigo).toBeUndefined();
+    }
+  });
+
+  it('ignora un codigo que no sea una cadena', () => {
+    try {
+      exigirExito(resultadoConCodigo(500, { codigo: 42 }), 'raro');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).codigo).toBeUndefined();
+    }
+  });
+});
+
 describe('desempaquetar', () => {
   it('devuelve el cuerpo cuando la respuesta es exitosa', () => {
     expect(desempaquetar(resultado({ id: 'c1' }, 200), 'no se pudo cargar')).toEqual({ id: 'c1' });

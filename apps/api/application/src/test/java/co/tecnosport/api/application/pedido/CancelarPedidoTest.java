@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -42,7 +46,14 @@ class CancelarPedidoTest {
   private UUID idReserva;
 
   private CancelarPedido casoDeUso() {
-    return new CancelarPedido(pedidos, inventarios, reintegros, correos, new RelojFalso(AHORA));
+    return new CancelarPedido(
+        pedidos,
+        inventarios,
+        reintegros,
+        new TopeDeReintegro(reintegros),
+        correos,
+        new TextosDeCorreoFalso(),
+        new RelojFalso(AHORA));
   }
 
   /** Cinco unidades, una reservada, confirmada o no segun si el pago ya entro. */

@@ -28,7 +28,7 @@
   "pie": {
     "nombre_comercial": "Tecno Sport",
     "nit": "NIT 1054994043-9",
-    "direccion": "Cra. 26C #38B-31, Medellín, Antioquia, Colombia",
+    "direccion": "Cra. 26C # 38B-31, Medellín, Antioquia, Colombia",
     "telefono_e164": "+573138816711",
     "whatsapp_numero": "573138816711",
     "llamar": "Call",
@@ -49,7 +49,8 @@
     "legales_titulo": "Legal",
     "terminos": "Terms and conditions",
     "privacidad": "Data policy",
-    "cookies": "Cookies"
+    "cookies": "Cookies",
+    "reducir_movimiento_del_sistema": "Your system already asks for reduced motion, so this option comes switched on from there."
   },
   "portada": {
     "titulo": "Sportswear, footwear, bags and phones",

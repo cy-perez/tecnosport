@@ -16,6 +16,10 @@ import {
   SolicitudRetracto,
   VerdictoPlazo,
 } from '../../domain/retracto.model';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+
+/** El plazo de reintegro se muestra en días, y esta es la única conversión. */
+const MILISEGUNDOS_POR_DIA = 86_400_000;
 
 const MEDIOS: readonly MedioReintegro[] = [
   'TRANSFERENCIA_BANCARIA',
@@ -151,35 +155,80 @@ export class PanelRetracto {
   }
 
   /**
-   * Días que faltan para agotar el plazo de reintegro. Se calcula en el navegador **solo para
-   * decidir el énfasis visual**: la fecha límite la manda el servidor ya resuelta, y esta cuenta
-   * nunca decide nada que el backend no haya decidido antes.
+   * El instante en que se agota el plazo de reintegro, o `null` mientras no corra —el producto no
+   * ha vuelto—. Todo lo demás se decide sobre este número y no sobre los días redondeados, que es
+   * de donde salió un defecto real: `Math.ceil` de un plazo vencido hace unas horas da `-0`, y
+   * `-0` es *falsy* y tampoco es `< 0`. El aviso desaparecía de la pantalla —ni "quedan días" ni
+   * "vencido"— durante las primeras veinticuatro horas de incumplimiento, que es justo cuando hay
+   * que verlo. Desde la hora 24 volvía a aparecer, así que tampoco se notaba mirando.
+   *
+   * Una fecha que no se puede leer se trata como "no hay plazo": no es un plazo vencido, y pintar
+   * "quedan NaN días" es peor que no pintar nada.
    */
-  protected readonly diasParaReintegrar = computed<number | null>(() => {
+  private readonly limiteDeReintegro = computed<number | null>(() => {
     const limite = this.enCurso()?.limiteDeReintegro;
     if (!limite) {
       return null;
     }
-    const milisegundosPorDia = 86_400_000;
-    return Math.ceil((new Date(limite).getTime() - Date.now()) / milisegundosPorDia);
+    const instante = new Date(limite).getTime();
+    return Number.isFinite(instante) ? instante : null;
   });
 
+  /**
+   * Si hay plazo del que hablar. La plantilla pregunta esto y no un número: `@if (dias; as ...)`
+   * esconde el bloque cuando el número es cero, y cero es un día que existe.
+   */
+  protected readonly hayPlazoDeReintegro = computed(() => this.limiteDeReintegro() !== null);
+
+  /**
+   * El reloj, leído **una vez** por evaluación. Dos lecturas distintas —una en `plazoVencido` y otra
+   * en `diasParaReintegrar`— podían caer una a cada lado del límite y devolver "quedan 0 días" con
+   * el plazo ya vencido, que es el mismo `-0` del defecto original por otra puerta.
+   *
+   * <p>Sigue siendo una foto del momento en que se evaluó la señal: con la pestaña abierta durante
+   * horas, el aviso no se refresca solo. Está anotado y no resuelto porque la salida —un temporizador
+   * que invalide la señal— es otra decisión: hoy quien atiende recarga la fila para operar.
+   */
+  private readonly ahora = computed(() => {
+    this.enCurso();
+    return Date.now();
+  });
+
+  /** Vencido se decide comparando instantes. Nunca días, nunca signos. */
   protected readonly plazoVencido = computed(() => {
-    const dias = this.diasParaReintegrar();
-    return dias !== null && dias < 0;
+    const limite = this.limiteDeReintegro();
+    return limite !== null && limite <= this.ahora();
+  });
+
+  /**
+   * Días que faltan para agotar el plazo. Se calcula en el navegador **solo para decidir el énfasis
+   * visual**: la fecha límite la manda el servidor ya resuelta, y esta cuenta nunca decide nada que
+   * el backend no haya decidido antes. Solo se pinta con el plazo vivo, así que siempre es uno o
+   * más.
+   */
+  protected readonly diasParaReintegrar = computed<number | null>(() => {
+    const limite = this.limiteDeReintegro();
+    if (limite === null) {
+      return null;
+    }
+    return Math.ceil((limite - this.ahora()) / MILISEGUNDOS_POR_DIA);
   });
 
   protected async radicar(): Promise<void> {
     const motivo = this.formularioRadicar.controls.motivo.value.trim();
     const preferido = this.formularioRadicar.controls.medioPreferido.value;
-    await this.ejecutar(() =>
+    const salioBien = await this.ejecutar(() =>
       this.acciones.radicar.mutateAsync({
         pedidoId: this.pedidoId(),
         motivo: motivo === '' ? null : motivo,
         medioPreferido: preferido === '' ? null : (preferido as MedioReintegro),
       }),
     );
-    this.formularioRadicar.reset({ motivo: '', medioPreferido: '' });
+    // Solo si funcionó: borrar el motivo que alguien acabó de escribir, justo cuando el mensaje de
+    // error le pide corregir algo, es perder su trabajo en el peor momento.
+    if (salioBien) {
+      this.formularioRadicar.reset({ motivo: '', medioPreferido: '' });
+    }
   }
 
   protected async recibirProducto(solicitud: SolicitudRetracto): Promise<void> {
@@ -221,12 +270,16 @@ export class PanelRetracto {
     );
   }
 
-  private async ejecutar(accion: () => Promise<unknown>): Promise<void> {
+  /** Devuelve si la acción salió bien, para que quien llame decida si limpia su formulario. */
+  private async ejecutar(accion: () => Promise<unknown>): Promise<boolean> {
     this.error.set(null);
     try {
       await accion();
-    } catch {
-      this.error.set(this.transloco.translate('admin.retractos.error'));
+      return true;
+    } catch (error) {
+      // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
+      this.error.set(mensajeDeError(error, this.transloco, 'admin.retractos.error'));
+      return false;
     }
   }
 }

@@ -7,6 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
@@ -14,6 +19,7 @@ import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.garantia.DesenlaceGarantia;
@@ -84,7 +90,8 @@ class GarantiaTest {
         reclamaciones,
         pedidos,
         productos,
-        new RadicarSolicitud(solicitudes, correos, new RelojFalso(ahora)),
+        new RadicarSolicitud(
+            solicitudes, correos, new TextosDeCorreoFalso(), new RelojFalso(ahora)),
         TERMINOS,
         new RelojFalso(ahora));
   }
@@ -95,6 +102,7 @@ class GarantiaTest {
         solicitudes,
         pedidos,
         reintegros,
+        new TopeDeReintegro(reintegros),
         new ResponderSolicitud(solicitudes, new RelojFalso(ahora)),
         new RelojFalso(ahora));
   }
@@ -204,6 +212,42 @@ class GarantiaTest {
     assertTrue(reintegros.guardados().isEmpty());
   }
 
+  /**
+   * Elegir la salida que devuelve el dinero y no decir cuánto ni por dónde es un cuerpo incompleto,
+   * no un error de sistema. Antes de la guarda, el monto en nulo viajaba hasta el constructor de
+   * {@code Dinero} y salía un 500 con "ocurrió un error inesperado" — quien atiende no tenía forma
+   * de saber qué le faltaba. {@code CancelarPedido} tenía esta guarda desde el principio; garantía
+   * y reversión no la heredaron.
+   */
+  @Test
+  void resolverConReintegroSinMontoNiMedioPideLosDatosEnVezDeReventar() {
+    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+
+    assertThrows(
+        ReintegroRequeridoException.class, () -> resolverConReintegro(reclamacion, null, null));
+    // Y con la mitad de los datos tampoco: una constancia sin medio no demuestra por dónde salió.
+    assertThrows(
+        ReintegroRequeridoException.class,
+        () -> resolverConReintegro(reclamacion, BigDecimal.valueOf(50_000), null));
+
+    assertTrue(reintegros.guardados().isEmpty(), "no queda constancia de un reintegro sin datos");
+    assertTrue(reclamacion.desenlace().isEmpty(), "la reclamacion sigue abierta");
+  }
+
+  private void resolverConReintegro(
+      ReclamacionGarantia reclamacion, BigDecimal monto, MedioReintegro medio) {
+    resolvedor(RECLAMO.plusSeconds(86_400))
+        .ejecutar(
+            new ResolverGarantiaComando(
+                reclamacion.id(),
+                DesenlaceGarantia.REINTEGRO,
+                "Se devolvio el dinero",
+                monto,
+                medio,
+                null,
+                "admin:1"));
+  }
+
   /** La tercera salida deja la misma constancia que los otros cuatro caminos, con su motivo. */
   @Test
   void devolverElDineroDejaUnReintegroConMotivoGarantia() {
@@ -225,6 +269,52 @@ class GarantiaTest {
     assertEquals(MotivoReintegro.GARANTIA, reintegro.motivo());
     assertEquals(reclamacion.id(), reintegro.origenId());
     assertEquals(reintegro.id(), reclamacion.reintegroId().orElseThrow());
+  }
+
+  /**
+   * El recorrido cruzado que estaba abierto: el pedido ya se devolvio completo por otro camino
+   * —aqui un retracto, que deja su constancia con motivo RETRACTO— y despues alguien resuelve una
+   * garantia del mismo pedido devolviendo el dinero otra vez. Los dos montos eran validos por
+   * separado, porque cada camino solo se comparaba con el total del pedido; sumados, devolvian el
+   * doble de lo que entro.
+   *
+   * <p>Radicar la garantia sigue siendo posible a proposito: puede haber razones para dejar
+   * constancia, y prohibirlo seria una regla de negocio que nadie decidio. Lo que no puede es
+   * pagarse dos veces.
+   */
+  @Test
+  void unaGarantiaNoDevuelveLoQueOtroCaminoYaDevolvio() {
+    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    reintegros.guardar(
+        Reintegro.registrar(
+            reclamacion.pedidoId(),
+            MotivoReintegro.RETRACTO,
+            UUID.randomUUID(),
+            Dinero.deCop(BigDecimal.valueOf(50_000)),
+            MedioReintegro.TRANSFERENCIA_BANCARIA,
+            "TRF-1",
+            ENTREGA,
+            "admin:1"));
+
+    assertThrows(
+        MontoDeReintegroInvalidoException.class,
+        () ->
+            resolvedor(RECLAMO.plusSeconds(86_400))
+                .ejecutar(
+                    new ResolverGarantiaComando(
+                        reclamacion.id(),
+                        DesenlaceGarantia.REINTEGRO,
+                        "Se devolvio el dinero otra vez",
+                        BigDecimal.valueOf(50_000),
+                        MedioReintegro.TRANSFERENCIA_BANCARIA,
+                        "TRF-88",
+                        "admin:1")));
+
+    // Ni segunda constancia ni reclamacion resuelta: la transaccion del controlador revierte, pero
+    // esta prueba comprueba que el caso de uso no llego a escribir nada.
+    assertEquals(1, reintegros.guardados().size());
+    assertEquals(MotivoReintegro.RETRACTO, reintegros.guardados().get(0).motivo());
+    assertTrue(reclamacion.desenlace().isEmpty());
   }
 
   /**

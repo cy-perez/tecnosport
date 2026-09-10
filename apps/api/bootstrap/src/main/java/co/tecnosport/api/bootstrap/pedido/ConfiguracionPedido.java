@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -21,6 +22,7 @@ import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
@@ -100,10 +102,18 @@ public class ConfiguracionPedido {
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     return new CancelarPedido(
-        repositorioPedidos, repositorioInventario, repositorioReintegros, enviadorDeCorreo, reloj);
+        repositorioPedidos,
+        repositorioInventario,
+        repositorioReintegros,
+        tope,
+        enviadorDeCorreo,
+        textos,
+        reloj);
   }
 
   @Bean

@@ -18,7 +18,8 @@
     "capas": "node tools/verificar-capas.mjs",
     "marcadores": "node tools/verificar-marcadores.mjs",
     "iconos-marca": "node tools/generar-iconos-marca.mjs",
-    "lighthouse": "node tools/medir-lighthouse.mjs"
+    "lighthouse": "node tools/medir-lighthouse.mjs",
+    "datos-negocio": "node tools/verificar-datos-de-negocio.mjs"
   },
   "allowScripts": {
     "esbuild": true,

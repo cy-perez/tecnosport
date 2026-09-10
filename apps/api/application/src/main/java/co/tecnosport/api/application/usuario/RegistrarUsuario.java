@@ -4,6 +4,8 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
@@ -26,6 +28,7 @@ public final class RegistrarUsuario {
   private final RepositorioTokensVerificacion repositorioTokens;
   private final CodificadorDeClaves codificadorDeClaves;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
   private final Duration vigenciaToken;
   private final String urlBaseVerificacion;
@@ -40,6 +43,7 @@ public final class RegistrarUsuario {
       RepositorioTokensVerificacion repositorioTokens,
       CodificadorDeClaves codificadorDeClaves,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj,
       Duration vigenciaToken,
       String urlBaseVerificacion,
@@ -52,6 +56,7 @@ public final class RegistrarUsuario {
     this.repositorioTokens = Objects.requireNonNull(repositorioTokens);
     this.codificadorDeClaves = Objects.requireNonNull(codificadorDeClaves);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaToken = Objects.requireNonNull(vigenciaToken);
     this.urlBaseVerificacion = Objects.requireNonNull(urlBaseVerificacion);
@@ -107,14 +112,9 @@ public final class RegistrarUsuario {
     repositorioTokens.guardar(token);
 
     String enlace = urlBaseVerificacion + "?token=" + token.id();
-    enviadorDeCorreo.enviar(correo, "Verifica tu correo — TecnoSport", cuerpoCorreo(enlace));
-  }
-
-  private String cuerpoCorreo(String enlace) {
-    return "<p>Gracias por registrarte en TecnoSport.</p>"
-        + "<p>Confirma tu correo para poder iniciar sesión:</p>"
-        + "<p><a href=\""
-        + enlace
-        + "\">Verificar mi correo</a></p>";
+    enviadorDeCorreo.enviar(
+        correo,
+        textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_ASUNTO),
+        textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_CUERPO, enlace));
   }
 }

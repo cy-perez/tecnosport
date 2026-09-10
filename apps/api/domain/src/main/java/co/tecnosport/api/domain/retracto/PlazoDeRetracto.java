@@ -32,9 +32,13 @@ public final class PlazoDeRetracto {
   private PlazoDeRetracto() {}
 
   /**
-   * El último instante para retractarse, calculado con el calendario dado. Con los festivos sin
-   * cargar devuelve el límite <b>más temprano posible</b>: los festivos solo lo empujan hacia
-   * adelante, nunca lo adelantan.
+   * El último instante para retractarse, calculado con el calendario dado.
+   *
+   * <p>Con un calendario que no conozca el año devuelve el límite <b>más temprano posible</b>,
+   * porque los festivos solo lo empujan hacia adelante y nunca lo adelantan. En producción eso ya
+   * no pasa —{@code CalendarioHabil.calculado()} resuelve cualquier año desde {@code ADR-0024}— y
+   * el caso sobrevive por dos motivos: las pruebas lo usan para fijar el comportamiento, y el
+   * dominio no tiene por qué asumir que quien le pasa un calendario sabe de festivos.
    */
   public static Instant limite(Instant entregadoEn, CalendarioHabil calendario) {
     Objects.requireNonNull(entregadoEn, "La fecha de entrega no puede ser nula.");

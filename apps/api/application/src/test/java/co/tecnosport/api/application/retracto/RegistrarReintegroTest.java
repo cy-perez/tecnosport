@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -40,7 +44,13 @@ class RegistrarReintegroTest {
 
   private RegistrarReintegro casoDeUso() {
     return new RegistrarReintegro(
-        solicitudes, pedidos, reintegros, correos, new RelojFalso(REINTEGRO));
+        solicitudes,
+        pedidos,
+        reintegros,
+        new TopeDeReintegro(reintegros),
+        correos,
+        new TextosDeCorreoFalso(),
+        new RelojFalso(REINTEGRO));
   }
 
   private Reintegro elReintegroDe(SolicitudRetracto solicitud) {
@@ -266,9 +276,12 @@ class RegistrarReintegroTest {
   }
 
   /**
-   * Y no deja una segunda constancia por el camino: la transición va antes de guardar nada, así que
-   * el doble clic muere en la máquina de estados. Sin esa segunda afirmación, una implementación
-   * que guardara primero pasaría esta prueba escribiendo dos veces el mismo hecho.
+   * Y no deja una segunda constancia por el camino. Lo para el tope y no la máquina de estados, y
+   * conviene saber por qué: el primer reintegro se llevó el total, así que al segundo ya no le
+   * queda nada por devolver y el tope dictamina antes de que la solicitud se toque. Hasta que el
+   * tope existió esto moría en la máquina de estados; las dos guardas siguen puestas y ninguna
+   * escribe. La segunda afirmación es la que importa: sin ella, una implementación que guardara
+   * primero pasaría esta prueba escribiendo dos veces el mismo hecho.
    */
   @Test
   void noSeReintegraDosVeces() {
@@ -284,8 +297,76 @@ class RegistrarReintegroTest {
             "admin:1");
     caso.ejecutar(comando);
 
-    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(comando));
+    assertThrows(MontoDeReintegroInvalidoException.class, () -> caso.ejecutar(comando));
     assertEquals(1, reintegros.guardados().size(), "constancias del mismo hecho");
+  }
+
+  /**
+   * Y cuando al tope sí le queda margen —el primer reintegro fue parcial—, el doble clic muere
+   * donde siempre: en la máquina de estados de la solicitud, que es la que sabe que este trámite ya
+   * se cerró. Sin esta prueba, esa guarda podría desaparecer sin que nada se quejara.
+   */
+  @Test
+  void unSegundoReintegroSobreLaMismaSolicitudMuereEnLaMaquinaDeEstados() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+    RegistrarReintegro caso = casoDeUso();
+    RegistrarReintegroComando parcial =
+        new RegistrarReintegroComando(
+            solicitud.id(),
+            BigDecimal.valueOf(20_000),
+            MedioReintegro.WOMPI,
+            null,
+            null,
+            "admin:1");
+    caso.ejecutar(parcial);
+
+    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(parcial));
+    assertEquals(1, reintegros.guardados().size(), "constancias del mismo hecho");
+  }
+
+  /**
+   * Lo que la máquina de estados de la solicitud no puede ver: este pedido ya devolvió su total por
+   * <b>otro</b> camino. Esta solicitud de retracto está impecable —radicada, producto recibido,
+   * nunca reembolsada— y aun así no queda un peso por devolver.
+   *
+   * <p>Antes del tope esto pasaba: el retracto comparaba 50.000 contra el total del pedido, 50.000,
+   * y lo dejaba pasar sin mirar la constancia de la garantía.
+   */
+  @Test
+  void unRetractoNoDevuelveLoQueLaGarantiaYaDevolvio() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+    reintegros.guardar(
+        Reintegro.registrar(
+            solicitud.pedidoId(),
+            MotivoReintegro.GARANTIA,
+            UUID.randomUUID(),
+            Dinero.deCop(BigDecimal.valueOf(50_000)),
+            MedioReintegro.TRANSFERENCIA_BANCARIA,
+            "TRF-1",
+            ENTREGA,
+            "admin:1"));
+
+    MontoDeReintegroInvalidoException error =
+        assertThrows(
+            MontoDeReintegroInvalidoException.class,
+            () ->
+                casoDeUso()
+                    .ejecutar(
+                        new RegistrarReintegroComando(
+                            solicitud.id(),
+                            BigDecimal.valueOf(50_000),
+                            MedioReintegro.WOMPI,
+                            null,
+                            null,
+                            "admin:1")));
+
+    assertTrue(error.getMessage().contains("ya se devolvieron 50000"), error.getMessage());
+    assertEquals(1, reintegros.guardados().size(), "constancias del pedido");
+    // La solicitud sigue abierta: nada se guardó, así que el reintegro se puede registrar por el
+    // monto que de verdad quede, si queda alguno.
+    assertEquals(
+        EstadoSolicitudRetracto.PRODUCTO_RECIBIDO,
+        solicitudes.buscarPorId(solicitud.id()).orElseThrow().estado());
   }
 
   @Test

@@ -65,11 +65,28 @@ export class Pie {
   protected readonly anioActual = new Date().getFullYear();
   protected readonly movimientoReducido = signal(false);
 
+  /**
+   * Si el sistema operativo ya pide menos movimiento. Cuando lo pide, la casilla se marca y se
+   * **deshabilita**, y no es una comodidad: la regla que reduce el movimiento por preferencia del
+   * sistema vive en `tokens.css`, que es generado y no se edita (regla dura #3), así que desde aquí
+   * no hay forma de vencerla. Antes la casilla salía sin marcar mientras el CSS sí reducía —o sea,
+   * informaba lo contrario de lo que pasaba, que con lector de pantalla es lo único perceptible— y
+   * desmarcarla escribía `data-movimiento="normal"`, un valor del que no cuelga ninguna regla: la
+   * posición "off" no hacía nada y no lo decía.
+   */
+  protected readonly sistemaPideReducir = signal(false);
+
   constructor() {
     afterNextRender(() => {
-      const guardado = window.localStorage.getItem(CLAVE_ALMACEN) === 'true';
-      if (guardado) {
-        this.movimientoReducido.set(true);
+      const delSistema =
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+      this.sistemaPideReducir.set(delSistema);
+      // Lo guardado manda sobre el sistema, y "guardado en falso" no es lo mismo que "sin guardar":
+      // de ahí que la lectura devuelva `null` cuando no hay nada. Mismo criterio que el tema, donde
+      // "sistema" es un valor y no la ausencia de valor.
+      const reducido = this.preferenciaGuardada() ?? delSistema;
+      this.movimientoReducido.set(reducido);
+      if (reducido) {
         document.documentElement.setAttribute('data-movimiento', 'reducido');
       }
     });
@@ -84,7 +101,35 @@ export class Pie {
    */
   protected fijarMovimientoReducido(reducido: boolean): void {
     this.movimientoReducido.set(reducido);
-    window.localStorage.setItem(CLAVE_ALMACEN, String(reducido));
+    // Aplicar primero y recordar después, y el orden es el arreglo de un defecto real: guardando
+    // antes, un `localStorage` que lanza —Safari en privado, políticas de empresa— dejaba la casilla
+    // marcada y el movimiento sin reducir, porque la línea del atributo nunca se ejecutaba. Quien
+    // pide menos movimiento suele pedirlo porque el movimiento le hace daño; que no se recuerde para
+    // la próxima visita es un inconveniente, que no se aplique ahora es el fallo.
     document.documentElement.setAttribute('data-movimiento', reducido ? 'reducido' : 'normal');
+    this.recordarPreferencia(reducido);
+  }
+
+  /**
+   * Leer y escribir la preferencia, con el almacenamiento tratado como algo que puede no estar.
+   * `afterNextRender` ya garantiza que hay navegador, así que lo que se protege no es el SSR: es un
+   * navegador que tiene `localStorage` y responde con una excepción al usarlo.
+   */
+  private preferenciaGuardada(): boolean | null {
+    try {
+      const guardado = window.localStorage.getItem(CLAVE_ALMACEN);
+      return guardado === null ? null : guardado === 'true';
+    } catch {
+      return null;
+    }
+  }
+
+  private recordarPreferencia(reducido: boolean): void {
+    try {
+      window.localStorage.setItem(CLAVE_ALMACEN, String(reducido));
+    } catch {
+      // Sin sitio donde recordarlo: la preferencia vale para esta visita y se vuelve a pedir en la
+      // siguiente. No hay nada que avisarle a quien la pidió, porque lo que pidió sí está aplicado.
+    }
   }
 }

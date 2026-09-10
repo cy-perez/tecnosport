@@ -2,10 +2,13 @@ package co.tecnosport.api.application.retracto;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
-import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
@@ -29,6 +32,10 @@ import java.util.Objects;
  * máquina de estados y no llega a escribir una segunda constancia del mismo hecho. Los dos guardar
  * comparten la transacción que abre el controlador, así que o quedan ambos o no queda ninguno.
  *
+ * <p>El monto lo acota {@link TopeDeReintegro}, que cuenta lo ya devuelto por este pedido y no solo
+ * esta operación: el retracto es uno de los cinco caminos que devuelven dinero, y ninguno puede
+ * pasarse del total por su cuenta.
+ *
  * <p>El estado previo lo exige la máquina de estados: solo se reembolsa lo que ya volvió. Pagar
  * antes de recibir es una decisión comercial legítima, pero no se registra como retracto cumplido.
  */
@@ -37,24 +44,37 @@ public final class RegistrarReintegro {
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioReintegros repositorioReintegros;
+  private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public RegistrarReintegro(
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
   public SolicitudRetracto ejecutar(RegistrarReintegroComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    // El tercer camino del dinero, que se quedó sin la guarda que sí recibieron la garantía y la
+    // reversión: un cuerpo sin monto o sin medio llegaba hasta el requireNonNull de Dinero y salía
+    // como 500. El formulario del panel lo evita, pero el backend no asume que la web es su único
+    // cliente.
+    if (comando.monto() == null || comando.medio() == null) {
+      throw ReintegroRequeridoException.porqueUnReintegroSiempreDevuelve();
+    }
     SolicitudRetracto solicitud =
         repositorioSolicitudes
             .buscarPorId(comando.solicitudId())
@@ -72,9 +92,16 @@ public final class RegistrarReintegro {
     }
 
     Dinero monto = Dinero.deCop(comando.monto());
-    if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
-    }
+    // El tope va antes de <b>transicionar</b> la solicitud —no antes de tocarla: la preferencia de
+    // arriba ya la tocó— porque noSeDevuelveMasDeLoQueSePago fija que un monto inválido no la
+    // transicione, y con razón: quien reintenta con el monto corregido tiene que encontrarla como
+    // la
+    // dejó. Cuesta que un doble clic de un reintegro por el total lo rechace el tope y no la
+    // máquina
+    // de estados, con un mensaje que habla del pedido en vez de la solicitud; es el precio
+    // correcto,
+    // porque las dos guardas bloquean y ninguna escribe.
+    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
 
     Reintegro reintegro =
         Reintegro.registrar(
@@ -88,6 +115,7 @@ public final class RegistrarReintegro {
             comando.actor());
 
     solicitud.registrarReintegro(reintegro.id());
+
     repositorioReintegros.guardar(reintegro);
     repositorioSolicitudes.guardar(solicitud);
     enviarConstancia(pedido, monto);
@@ -95,23 +123,21 @@ public final class RegistrarReintegro {
   }
 
   /**
-   * Mismo criterio que el acuse de {@code RegistrarRetracto}: si el correo falla, tampoco se guarda
-   * la constancia. Aqui pesa todavia mas — este es el correo que le dice al comprador que su dinero
-   * salio, y darlo por enviado sin que salga es justo lo que genera el reclamo que el registro
-   * pretendia evitar.
+   * Mismo caso que el acuse de {@code RegistrarRetracto}, y aquí pesa más: este es el correo que le
+   * dice al comprador que su dinero salió. La garantía que este comentario prometía —si el correo
+   * falla, tampoco se guarda la constancia— <b>no existe</b>: el adaptador se traga el fallo. O sea
+   * que hoy puede quedar un reintegro registrado que el comprador nunca supo, y la única señal es
+   * el registro de error del adaptador. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
   private void enviarConstancia(Pedido pedido, Dinero monto) {
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        "Reintegramos el dinero de tu pedido — TecnoSport",
-        "<p>Reintegramos "
-            + monto.valor().toPlainString()
-            + " "
-            + Dinero.MONEDA
-            + " del pedido "
-            + pedido.numeroPedido().valor()
-            + ".</p>"
-            + "<p>Segun el medio, el dinero puede tardar en reflejarse en tu cuenta. Si pasados "
-            + "unos dias no lo ves, escribenos y lo revisamos contigo.</p>");
+        textos.texto(TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
+        textos.texto(
+            TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
+            monto.valor().toPlainString(),
+            Dinero.MONEDA,
+            pedido.numeroPedido().valor()));
   }
 }

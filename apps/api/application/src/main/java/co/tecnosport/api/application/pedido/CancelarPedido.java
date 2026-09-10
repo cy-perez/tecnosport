@@ -2,9 +2,12 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
-import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -36,6 +39,9 @@ import java.util.Objects;
  * ocurrió. Cuando sí entró, la constancia es obligatoria — un pedido cancelado sin reintegro
  * después de haber cobrado es plata retenida sin explicación.
  *
+ * <p>El monto lo acota {@link TopeDeReintegro}, que cuenta lo ya devuelto por este pedido y no solo
+ * esta cancelación.
+ *
  * <p>El inventario vuelve por {@code Inventario.devolver}, que decide entre entrada y liberación
  * según cómo quedó la reserva: un pago aprobado ya la confirmó, un contraentrega la tiene abierta.
  */
@@ -44,19 +50,25 @@ public final class CancelarPedido {
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioInventario repositorioInventario;
   private final RepositorioReintegros repositorioReintegros;
+  private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public CancelarPedido(
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -69,7 +81,7 @@ public final class CancelarPedido {
 
     boolean elDineroYaEntro = elDineroYaEntro(pedido);
     if (elDineroYaEntro && (comando.monto() == null || comando.medio() == null)) {
-      throw new ReintegroRequeridoException(pedido.id());
+      throw ReintegroRequeridoException.porqueElDineroYaEntro(pedido.id());
     }
 
     Instant ahora = reloj.ahora();
@@ -109,9 +121,7 @@ public final class CancelarPedido {
 
   private void registrarReintegro(Pedido pedido, CancelarPedidoComando comando, Instant ahora) {
     Dinero monto = Dinero.deCop(comando.monto());
-    if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
-    }
+    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
     repositorioReintegros.guardar(
         Reintegro.registrar(
             pedido.id(),
@@ -139,24 +149,26 @@ public final class CancelarPedido {
   }
 
   /**
-   * "Te lo comunicaremos de inmediato", dice el texto. Dentro de la misma transacción, mismo
-   * criterio que el resto: si el correo falla, tampoco queda el pedido cancelado — un comprador que
-   * no se entera de que su pedido no va a llegar es justo el reclamo que esto viene a evitar.
+   * "Te lo comunicaremos de inmediato", dice el texto, y por eso el aviso va dentro de la misma
+   * transacción. Lo que este comentario prometía —que un correo caído tampoco dejara el pedido
+   * cancelado— <b>no ocurre</b>: el adaptador se traga el fallo, así que el pedido queda cancelado
+   * y el comprador puede no enterarse, que es justo el reclamo que esto venía a evitar. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
   private void avisar(Pedido pedido, CancelarPedidoComando comando, boolean huboReintegro) {
-    String explicacion =
+    TextoDeCorreo explicacion =
         comando.motivo() == MotivoCancelacion.NO_DISPONIBILIDAD
-            ? "<p>Un producto de tu pedido dejo de estar disponible despues de tu compra, asi que"
-                + " cancelamos el pedido.</p>"
-            : "<p>No pudimos entregarte dentro del plazo, asi que cancelamos el pedido.</p>";
-    String dinero =
+            ? TextoDeCorreo.PEDIDO_CANCELACION_NO_DISPONIBILIDAD
+            : TextoDeCorreo.PEDIDO_CANCELACION_PLAZO_INCUMPLIDO;
+    TextoDeCorreo dinero =
         huboReintegro
-            ? "<p>Te reintegramos el dinero por el medio acordado. Segun el medio, puede tardar en"
-                + " reflejarse en tu cuenta.</p>"
-            : "<p>No se te cobro nada por este pedido.</p>";
+            ? TextoDeCorreo.PEDIDO_CANCELACION_CON_REINTEGRO
+            : TextoDeCorreo.PEDIDO_CANCELACION_SIN_COBRO;
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        "Cancelamos tu pedido " + pedido.numeroPedido().valor() + " — TecnoSport",
-        explicacion + dinero + "<p>Si quieres volver a intentarlo, escribenos y te ayudamos.</p>");
+        textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, pedido.numeroPedido().valor()),
+        textos.texto(explicacion)
+            + textos.texto(dinero)
+            + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_CIERRE));
   }
 }

@@ -3007,6 +3007,161 @@ normal" como exclusión de garantía; si describir a un tercero por su categorí
 —en vez de nombrarlo— satisface el deber de información mientras ese tercero no
 reciba datos; y en qué región procesa Resend, que es dato de contrato.
 
+## La revisión adversarial de los tres bloques sin fase (2026-09-10)
+
+Los bloques del retracto, de la atención y del cierre de datos pendientes se
+habían mezclado a `main` sin pasar por `/revisar`, que es lo que el plan pide al
+terminar cada fase. La revisión cubrió 210 archivos productivos y unas 18.700
+líneas, con la batería en verde antes de empezar: **todo lo que sigue lo dejaron
+pasar 723 pruebas de Vitest, 872 del backend, `npm run capas` y
+`npm run marcadores`.**
+
+Doce hallazgos. Los tres primeros son los que no habrían debido llegar a la
+Fase 7.
+
+### El tope del reintegro era por operación y no acumulado
+
+Los cuatro caminos que devuelven dinero —retracto, garantía, reversión y
+cancelación— llevaban cada uno su copia de la misma comparación, y las cuatro
+miraban lo mismo: que el monto de *esa* operación no pasara del total del pedido.
+Ninguna miraba lo ya devuelto.
+
+Un pedido de 500.000 entregado admitía, por endpoints del panel y sin tocar la
+base: retracto, recepción y reintegro por 500.000; y después una garantía
+radicada sobre el mismo pedido —`RadicarReclamacionGarantia` solo exige que tenga
+fecha de entrega, no mira su estado— resuelta con `REINTEGRO` por otros 500.000.
+Cada monto válido por separado, un millón devuelto sobre una venta de quinientos
+mil, y la mercancía de vuelta en el almacén.
+
+La consulta que lo destapa, `RepositorioReintegros.buscarPorPedido`, existía
+desde que se creó el puerto y **no la llamaba nadie**: servía para pintar
+pantallas. Y el Javadoc de `MontoDeReintegroInvalidoException` ya decía
+"compartida por los cinco motivos: ninguno puede devolver más de lo que entró" —
+la intención estaba escrita y la suma nunca se hizo.
+
+`TopeDeReintegro` es ahora el único dueño de la regla, con el patrón de
+`AplicadorDeResultadoDePago`. Bloquea en vez de advertir, a diferencia del medio
+preferido o de la vigencia de garantía: si 500.001 de golpe se rechaza desde la
+Fase 3, 500.000 más 500.000 en dos pasos no puede pasar. Radicar una garantía
+sobre un pedido ya devuelto sigue permitido a propósito — la fuga la cierra el
+tope, y prohibir la radicación sería una regla de negocio que nadie decidió.
+
+**Una prueba que ya existía decidió el diseño.** Poner el tope después de la
+transición de la solicitud —para que un doble clic muriera en la máquina de
+estados, que diagnostica mejor ese caso— rompió `noSeDevuelveMasDeLoQueSePago`,
+que exige que un monto inválido **no** transicione la solicitud: quien reintenta
+con el monto corregido tiene que encontrarla como la dejó. Tenía razón la prueba.
+
+### El plazo de reintegro desaparecía de la pantalla el día que vencía
+
+`panel-retracto.html` preguntaba `@if (diasParaReintegrar(); as dias)`, y los días
+salían de `Math.ceil((límite - ahora) / 86.400.000)`. Con el límite vencido hace
+unas horas eso da **`-0`**, que es *falsy* —así que el bloque entero se escondía—
+y tampoco es `< 0` —así que `plazoVencido()` decía que no—. Durante las primeras
+veinticuatro horas de incumplimiento del plazo de quince días calendario del
+artículo 47, el panel no decía nada; a partir de la hora 24 el aviso volvía, así
+que mirando la pantalla tampoco se notaba.
+
+Había prueba de plazo vencido y pasaba: usaba el año 2020, o sea miles de días
+negativos, que sí son *truthy* y sí son menores que cero. La nueva usa fechas
+relativas al reloj, porque lo que se prueba es la distancia al límite.
+
+### Dos caminos de dinero respondían 500 por un cuerpo incompleto
+
+`ResolverGarantia` y `ResolverReversion` no validaban nada del cuerpo: con
+desenlace `REINTEGRO` y monto ausente, el nulo llegaba hasta el `requireNonNull`
+de `Dinero`, y `NullPointerException` no cae en el 422 de "solicitud inválida"
+sino en el manejador genérico. `CancelarPedido` tenía la guarda desde el primer
+día; los otros dos no la heredaron.
+
+### Los correos: la regla dura #4 incumplida en tres mitades
+
+Los siete correos transaccionales se concatenaban dentro de los casos de uso, en
+un solo idioma; los cinco nuevos iban **sin una sola tilde** ("articulo 47",
+"quince (15) dias", "Guardalo"), y el asunto de una PQR se interpolaba en HTML
+sin escapar — lo escribe una persona en el panel, y un `<` rompía el correo del
+comprador. El mismo razonamiento del escapado ya se había aplicado al JSON-LD de
+la ficha y no aquí.
+
+Ahora hay un puerto con llaves tipadas y dos paquetes de mensajes. El enum no es
+ceremonia: permite que el adaptador recorra `values()` al arrancar y se niegue a
+levantar el servicio si falta un texto. El idioma es el castellano y está
+razonado, no elegido por comodidad: ni `Pedido` ni `Usuario` guardan idioma, y la
+Ley 1480 exige la información mínima en castellano (art. 23) y ese idioma en los
+contratos (art. 37.1).
+
+**La guarda de arranque tumbó las 154 pruebas de `infrastructure`**, porque sus
+contextos no cargan el `application.yml` de `bootstrap` y el `MessageSource`
+inyectado llegaba sin paquete. Lo encontró el build, y enseña algo que vale más
+que el arreglo: *un componente que se niega a arrancar sin su configuración no
+puede depender de que otra capa se acuerde de configurarlo.* Ahora el adaptador
+construye su propio `ResourceBundleMessageSource`.
+
+### El dato de negocio que se publica en diez sitios, ahora con guardián
+
+El celular corregido el 10 de septiembre estaba mal en el pie y en tres párrafos
+legales, y al arreglarlo no quedó nada que impidiera la reincidencia: el teléfono
+vive en diez copias y dos formatos, el NIT en ocho, el correo en catorce.
+`npm run datos-negocio` toma como fuente el bloque `pie` de `es.json` y exige que
+toda aparición coincida, normalizando el formato; y comprueba la versión legal en
+los cuatro sitios donde vive, que es el caso más grave — si `legales.comun.version`
+se separa de `POLITICA_DATOS_VERSION`, cada fila de `autorizacion_datos` apunta a
+una versión del texto que nunca se publicó.
+
+**Encontró algo en su primera corrida, antes de estar comiteado**: la dirección
+del punto de recogida estaba escrita de dos formas, con y sin espacio tras el
+numeral. Unificada.
+
+### Lo demás, y por qué también contaba
+
+- **El pie guardaba antes de aplicar.** Con el almacenamiento bloqueado, el
+  `setItem` lanzaba y la línea que pone `data-movimiento` nunca corría: la casilla
+  quedaba marcada y el movimiento sin reducir. No es persistencia, es la
+  preferencia de accesibilidad sin aplicar. La primera prueba escrita para esto no
+  valía —espiando `setItem` sobre `window.localStorage`, jsdom no lo intercepta y
+  pasaba con el defecto puesto—; sobre `Storage.prototype` sí.
+- **Un comentario que argumentaba contra su propio archivo**: decía que poner los
+  logos de Facebook e Instagram exigiría una dependencia nueva y no valía la pena,
+  ocho líneas encima de los `ts-icono-marca` que los pintan.
+- **Los seis paneles tapaban el motivo del error.** El 422 de "el reintegro no
+  cabe", el 409 de "ya hay un retracto en curso" y una caída de red se veían
+  idénticos, y el `codigo` del `ProblemDetail` se tiraba a la basura. Ahora el
+  código elige una clave de Transloco; el `detail` del backend no se muestra,
+  porque viene en un solo idioma y escrito fuera de Transloco.
+- **Nadie había decidido no versionar los agregados.** Buscando bloqueo optimista
+  en los cinco nuevos apareció que **ninguna de las veinticinco entidades JPA lo
+  tiene**. `ADR-0027` fija la decisión, lo que sí está protegido y probado (dinero,
+  inventario, consecutivo) y el disparador para volver: el día que exista un
+  segundo `ADMIN`.
+- **Tres comentarios explicaban decisiones con "los festivos pueden cargarse más
+  adelante"**, que dejó de ser cierto con `ADR-0024`. Dos siguen siendo correctas
+  por otra razón, más duradera, y ahora es la que está escrita: un calendario
+  legal cambia —la Ley 2578 llegó con el año empezado y está demandada— y
+  recalcular movería hacia atrás el dato con el que alguien decidió. El comentario
+  de `V22` **no se corrige**: editar una migración aplicada le cambia el checksum y
+  Flyway rechaza la base entera. La explicación va a la columna en `V28`.
+
+### Lo que esta revisión enseñó sobre las pruebas
+
+Tres veces pasó lo mismo y conviene que quede escrito: **una prueba verde no dice
+que el código esté bien, dice que la prueba pasa.**
+
+1. `RegistrarRetractoTest` afirmaba `contains("articulo 47")`, sin tilde: la prueba
+   estaba **fijando** el defecto.
+2. La prueba del plazo vencido usaba el año 2020, el único rango donde el `-0` no
+   aparece.
+3. La primera prueba del `localStorage` pasaba con el defecto puesto.
+
+De ahí la regla que se siguió en los cinco commits de arreglo: **revertir el
+arreglo y comprobar que la prueba falla**, antes de darla por buena. Los cinco lo
+tienen anotado en su mensaje.
+
+Quedan, para cuando se retomen: el orden de las guardas en `ResolverGarantia` y
+`ResolverReversion`, que construyen el `Reintegro` antes de la guarda de estado de
+su agregado —hoy lo cubren el tope y la transacción—, y las cuatro copias
+idénticas de `RepositorioReintegrosFalso` en las pruebas.
+
+
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
 Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código

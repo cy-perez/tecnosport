@@ -7,6 +7,7 @@ import co.tecnosport.api.application.atencion.RepositorioSolicitudesAtencion;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.atencion.PlazosDeAtencion;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,8 +35,11 @@ public class ConfiguracionAtencion {
 
   @Bean
   public RadicarSolicitud radicarSolicitud(
-      RepositorioSolicitudesAtencion repositorio, EnviadorDeCorreo enviadorDeCorreo, Reloj reloj) {
-    return new RadicarSolicitud(repositorio, enviadorDeCorreo, reloj);
+      RepositorioSolicitudesAtencion repositorio,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj) {
+    return new RadicarSolicitud(repositorio, enviadorDeCorreo, textos, reloj);
   }
 
   @Bean
@@ -50,8 +54,9 @@ public class ConfiguracionAtencion {
       PlazosDeAtencion plazos,
       CalendarioHabil calendario,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
-    return new ProrrogarSolicitud(repositorio, plazos, calendario, enviadorDeCorreo, reloj);
+    return new ProrrogarSolicitud(repositorio, plazos, calendario, enviadorDeCorreo, textos, reloj);
   }
 
   @Bean

@@ -10,6 +10,7 @@ import co.tecnosport.api.application.garantia.RepositorioReclamacionesGarantia;
 import co.tecnosport.api.application.garantia.ResolverGarantia;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.garantia.TerminosDeGarantia;
 import java.util.Set;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -51,6 +52,7 @@ public class ConfiguracionGarantia {
       RepositorioSolicitudesAtencion repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       ResponderSolicitud responderSolicitud,
       Reloj reloj) {
     return new ResolverGarantia(
@@ -58,6 +60,7 @@ public class ConfiguracionGarantia {
         repositorioSolicitudes,
         repositorioPedidos,
         repositorioReintegros,
+        tope,
         responderSolicitud,
         reloj);
   }

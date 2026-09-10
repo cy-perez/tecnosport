@@ -1,4 +1,19 @@
 {
+  "errores": {
+    "monto_de_reintegro_invalido": "The amount does not fit in what is left to refund for this order.",
+    "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
+    "retracto_ya_radicado": "This order already has a withdrawal in progress.",
+    "pedido_sin_entregar": "This order has not been delivered yet.",
+    "existencia_insuficiente": "There is no longer enough stock for this operation.",
+    "linea_no_es_del_pedido": "That product is not part of this order.",
+    "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
+    "metodo_de_pago_no_es_transferencia_manual": "This order was not paid by transfer, so it cannot be reconciled by hand.",
+    "contraentrega_no_disponible": "Cash on delivery is not available for this order.",
+    "excepcion_de_dominio": "The operation breaks a business rule and the server does not say which. Check the data again.",
+    "sesion_de_refresco_invalida": "Your session expired. Sign in again: retrying will not help.",
+    "credenciales_invalidas": "Wrong email or password.",
+    "limite_de_intentos_excedido": "Too many attempts in a row. Wait a few minutes before trying again."
+  },
   "iniciarSesion": {
     "titulo": "Admin panel",
     "correo": "Email address",
@@ -170,7 +185,7 @@
     "no_aplica": "Withdrawal only applies to an order that has been delivered.",
     "ayuda_radicar": "The buyer exercises it by email or WhatsApp. This is the record of it.",
     "esperando_producto": "Waiting for the product to come back.",
-    "plazo_restante": "{{dias}} calendar days left to refund.",
+    "plazo_restante": "{{dias}} calendar days left to refund the money.",
     "plazo_vencido": "The fifteen-day refund deadline has passed.",
     "medio_preferido": "Medium the buyer asked for",
     "medio_preferido_ninguno": "Not stated",
@@ -208,7 +223,8 @@
       "medio_preferido": "Medium the buyer asked for (optional)",
       "comprobante": "Receipt (optional)",
       "registrar_reintegro": "Record refund"
-    }
+    },
+    "plazo_restante_uno": "1 calendar day left to refund the money."
   },
   "atencion": {
     "titulo": "Requests, complaints and claims",

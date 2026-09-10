@@ -2,6 +2,8 @@ package co.tecnosport.api.application.retracto;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
@@ -17,8 +19,11 @@ import java.util.Objects;
  * eso el actor es siempre una persona del negocio.
  *
  * <p>No bloquea por plazo vencido. El veredicto se congela en la solicitud y decide una persona con
- * ese dato delante — puede haber un acuerdo comercial o una garantía por detrás, y sin el
- * calendario de festivos cargado el sistema ni siquiera puede afirmar que venció.
+ * ese dato delante: puede haber un acuerdo comercial o una garantía por detrás, y un derecho del
+ * consumidor no se cierra con una guarda de software. Antes había una segunda razón —sin los
+ * festivos cargados el sistema no podía ni afirmar que había vencido— que dejó de aplicar con
+ * {@code ADR-0024}: hoy se calculan, y el veredicto en producción siempre es {@code EN_PLAZO} o
+ * {@code VENCIDO}.
  */
 public final class RegistrarRetracto {
 
@@ -26,6 +31,7 @@ public final class RegistrarRetracto {
   private final RepositorioPedidos repositorioPedidos;
   private final CalendarioHabil calendario;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public RegistrarRetracto(
@@ -33,11 +39,13 @@ public final class RegistrarRetracto {
       RepositorioPedidos repositorioPedidos,
       CalendarioHabil calendario,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.calendario = Objects.requireNonNull(calendario);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -69,27 +77,18 @@ public final class RegistrarRetracto {
   }
 
   /**
-   * El acuse va dentro de la misma transaccion que abre el controlador, igual que en {@code
-   * RegistrarUsuario}: si el correo falla, la solicitud tampoco se guarda y quien atiende ve el
-   * error y reintenta. Es a proposito. Guardar la constancia y callar el fallo dejaria al panel
-   * diciendo "radicado" con un comprador que nunca recibio nada, y el acuse es parte de lo que
-   * demuestra que el tramite arranco el dia que dice.
+   * El acuse va dentro de la misma transacción que abre el controlador. La intención era que un
+   * correo caído tampoco dejara la solicitud guardada —el acuse es parte de lo que demuestra que el
+   * trámite arrancó el día que dice— y <b>eso no es lo que pasa</b>: el adaptador de producción se
+   * traga el fallo y no lo relanza. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}, que lo explica entero y dice cuál
+   * es la salida. Aquí queda dicho para que nadie vuelva a apoyarse en una garantía que no existe.
    */
   private void enviarAcuse(Pedido pedido) {
     enviadorDeCorreo.enviar(
-        pedido.correo(), "Recibimos tu solicitud de retracto — TecnoSport", cuerpoAcuse(pedido));
-  }
-
-  private String cuerpoAcuse(Pedido pedido) {
-    return "<p>Recibimos tu solicitud de retracto del pedido "
-        + pedido.numeroPedido().valor()
-        + ".</p>"
-        + "<p>Para completarla, devuelvenos el producto en el mismo estado en que lo recibiste. "
-        + "El costo del transporte de la devolucion lo asume el comprador, segun el articulo 47 "
-        + "de la Ley 1480 de 2011.</p>"
-        + "<p>Cuando el producto llegue, te reintegramos el dinero dentro de los quince (15) dias "
-        + "calendario siguientes, por el medio de pago que prefieras. Si no nos has dicho cual, "
-        + "respondenos este correo y lo anotamos.</p>";
+        pedido.correo(),
+        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_ASUNTO),
+        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_CUERPO, pedido.numeroPedido().valor()));
   }
 
   /**

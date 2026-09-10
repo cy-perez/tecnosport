@@ -1,4 +1,19 @@
 {
+  "errores": {
+    "monto_de_reintegro_invalido": "El monto no cabe en lo que queda por devolver de este pedido.",
+    "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
+    "retracto_ya_radicado": "Este pedido ya tiene un retracto en curso.",
+    "pedido_sin_entregar": "Este pedido todavía no se ha entregado.",
+    "existencia_insuficiente": "Ya no hay existencias suficientes para esta operación.",
+    "linea_no_es_del_pedido": "Ese producto no está en este pedido.",
+    "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
+    "metodo_de_pago_no_es_transferencia_manual": "Este pedido no se pagó por transferencia, así que no se concilia a mano.",
+    "contraentrega_no_disponible": "La contraentrega no está disponible para este pedido.",
+    "excepcion_de_dominio": "La operación no cumple una regla del negocio y el servidor no dice cuál. Vuelve a mirar los datos.",
+    "sesion_de_refresco_invalida": "Tu sesión expiró. Vuelve a iniciar sesión: reintentar no va a servir.",
+    "credenciales_invalidas": "Correo o clave incorrectos.",
+    "limite_de_intentos_excedido": "Demasiados intentos seguidos. Espera unos minutos antes de volver a intentarlo."
+  },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
     "correo": "Correo electrónico",
@@ -170,8 +185,8 @@
     "no_aplica": "El retracto solo aplica a un pedido ya entregado.",
     "ayuda_radicar": "El comprador lo ejerce por correo o WhatsApp. Aqui queda la constancia.",
     "esperando_producto": "A la espera de que el producto vuelva.",
-    "plazo_restante": "Quedan {{dias}} dias calendario para reintegrar el dinero.",
-    "plazo_vencido": "El plazo de quince dias para reintegrar ya vencio.",
+    "plazo_restante": "Quedan {{dias}} días calendario para reintegrar el dinero.",
+    "plazo_vencido": "El plazo de quince días para reintegrar ya venció.",
     "medio_preferido": "Medio que pidio el comprador",
     "medio_preferido_ninguno": "No lo dijo",
     "medio_preferido_ayuda": "La Ley 2439 de 2024 obliga a devolver el dinero por el medio que el comprador prefiera. Anotalo tal como lo pidio: despues no se puede corregir.",
@@ -180,7 +195,7 @@
     "reintegrado_por": "Reintegrado por",
     "comprobante": "Comprobante",
     "sin_comprobante": "sin comprobante",
-    "error": "No se pudo completar la accion. Intenta de nuevo.",
+    "error": "No se pudo completar la acción. Inténtalo de nuevo.",
     "estados": {
       "radicada": "Radicada",
       "producto_recibido": "Producto recibido",
@@ -208,7 +223,8 @@
       "medio_preferido": "Medio que pidio el comprador (opcional)",
       "comprobante": "Comprobante (opcional)",
       "registrar_reintegro": "Registrar reintegro"
-    }
+    },
+    "plazo_restante_uno": "Queda 1 día calendario para reintegrar el dinero."
   },
   "atencion": {
     "titulo": "Peticiones, quejas y reclamos",
