@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
@@ -25,7 +26,11 @@ class TopeDeReintegroTest {
   private static final Dinero TOTAL = Dinero.deCop(BigDecimal.valueOf(50_000));
 
   private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
-  private final TopeDeReintegro tope = new TopeDeReintegro(reintegros);
+
+  // El tope cuenta tambien lo que revirtio el emisor, que vive en las reversiones del pedido.
+  private final RepositorioSolicitudesReversionFalso reversionesParaElTope =
+      new RepositorioSolicitudesReversionFalso();
+  private final TopeDeReintegro tope = new TopeDeReintegro(reintegros, reversionesParaElTope);
   private final UUID pedidoId = UUID.randomUUID();
 
   /** Devolver el total completo es lo normal en un retracto, y es lo que precarga el panel. */

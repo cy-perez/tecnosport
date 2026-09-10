@@ -113,6 +113,8 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     metodoPago: 'TRANSFERENCIA_MANUAL',
     estado: 'PAGO_PENDIENTE',
     total: { valor: 50_000, moneda: 'COP' },
+    dineroRecibido: { valor: 50_000, moneda: 'COP' },
+    yaDevuelto: { valor: 0, moneda: 'COP' },
     creadoEn: '2026-01-01T12:00:00Z',
     datosTransferencia: null,
     envio: null,

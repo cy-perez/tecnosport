@@ -149,15 +149,20 @@ describe('PanelReversion', () => {
   });
 
   /**
-   * Si revierte el emisor, la plata vuelve por la red de pagos: el formulario ni siquiera ofrece
-   * los campos de dinero, y lo que viaja no lleva monto. Sin esta prueba, un formulario que mandara
-   * siempre el monto dejaria constancias de pagos que no hicimos.
+   * Si revierte el emisor, la plata vuelve por la red de pagos y no hay constancia que registrar: el
+   * formulario no ofrece medio ni comprobante. Lo que sí pide, y es lo que cambió, es **cuánto**
+   * revirtió: sin ese dato ese dinero no contaba contra lo que el pedido todavía puede devolver, y un
+   * contracargo seguido de un retracto devolvía el total dos veces.
    */
-  it('si revierte el emisor no pide monto y viaja sin datos de dinero', async () => {
+  it('si revierte el emisor pide cuánto, pero no medio ni comprobante', async () => {
     const { repositorio } = await renderPanel([reversion()]);
     await screen.findByRole('button', { name: 'Resolver reversión' });
 
     expect(screen.queryByLabelText('Monto devuelto')).toBeNull();
+    expect(screen.queryByLabelText('Comprobante')).toBeNull();
+    // El monto del emisor viene precargado con el total, que es el caso normal de una reversión.
+    const monto = screen.getByLabelText('Cuánto revirtió el emisor') as HTMLInputElement;
+    expect(monto.value).toBe('50000');
 
     fireEvent.input(screen.getByLabelText('Qué se le respondió al comprador'), {
       target: { value: 'El emisor confirmo la reversion' },
@@ -170,7 +175,7 @@ describe('PanelReversion', () => {
       reversionId: 'r1',
       desenlace: 'REVERTIDO_POR_EL_EMISOR',
       resumenParaElComprador: 'El emisor confirmo la reversion',
-      monto: null,
+      monto: 50_000,
       medio: null,
       comprobante: null,
     });

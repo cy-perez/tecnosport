@@ -8,6 +8,7 @@ import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
@@ -59,6 +60,10 @@ class GarantiaTest {
   private final RepositorioSolicitudesAtencionFalso solicitudes =
       new RepositorioSolicitudesAtencionFalso();
   private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
+
+  // El tope cuenta tambien lo que revirtio el emisor, que vive en las reversiones del pedido.
+  private final RepositorioSolicitudesReversionFalso reversionesParaElTope =
+      new RepositorioSolicitudesReversionFalso();
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private UUID varianteId;
@@ -102,7 +107,7 @@ class GarantiaTest {
         solicitudes,
         pedidos,
         reintegros,
-        new TopeDeReintegro(reintegros),
+        new TopeDeReintegro(reintegros, reversionesParaElTope),
         new ResponderSolicitud(solicitudes, new RelojFalso(ahora)),
         new RelojFalso(ahora));
   }

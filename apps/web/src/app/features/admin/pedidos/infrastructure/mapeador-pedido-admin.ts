@@ -39,6 +39,11 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago,
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
+    dineroRecibido: {
+      valor: dto.dineroRecibido?.valor ?? 0,
+      moneda: dto.dineroRecibido?.moneda ?? 'COP',
+    },
+    yaDevuelto: { valor: dto.yaDevuelto?.valor ?? 0, moneda: dto.yaDevuelto?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
     envio: dto.envio ? aEnvio(dto.envio) : null,

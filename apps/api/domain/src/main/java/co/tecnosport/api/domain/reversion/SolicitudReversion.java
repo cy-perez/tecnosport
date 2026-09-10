@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.reversion;
 
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
@@ -43,6 +44,7 @@ public final class SolicitudReversion {
   private DesenlaceReversion desenlace;
   private Instant resueltaEn;
   private UUID reintegroId;
+  private Dinero montoRevertidoPorElEmisor;
 
   public SolicitudReversion(
       UUID id,
@@ -58,7 +60,8 @@ public final class SolicitudReversion {
       String gestion,
       DesenlaceReversion desenlace,
       Instant resueltaEn,
-      UUID reintegroId) {
+      UUID reintegroId,
+      Dinero montoRevertidoPorElEmisor) {
     this.id = Objects.requireNonNull(id, "El id de la solicitud no puede ser nulo.");
     this.solicitudId =
         Objects.requireNonNull(solicitudId, "La reversión necesita su solicitud de atención.");
@@ -89,6 +92,7 @@ public final class SolicitudReversion {
     this.desenlace = desenlace;
     this.resueltaEn = resueltaEn;
     this.reintegroId = reintegroId;
+    this.montoRevertidoPorElEmisor = montoRevertidoPorElEmisor;
   }
 
   public static SolicitudReversion radicar(
@@ -110,6 +114,7 @@ public final class SolicitudReversion {
         calendario.verdicto(
             calendario.limiteTrasDiasHabiles(fechaDelHecho, DIAS_HABILES_PARA_SOLICITAR), ahora),
         EstadoSolicitudReversion.RADICADA,
+        null,
         null,
         null,
         null,
@@ -201,7 +206,25 @@ public final class SolicitudReversion {
    * los demás desenlaces: cuando revierte el emisor, el dinero vuelve por la red de pagos y este
    * sistema no movió un peso — inventarle una constancia sería registrar un pago que no hicimos.
    */
-  public void resolver(DesenlaceReversion desenlace, UUID reintegroId, Instant ahora) {
+  /**
+   * {@code montoRevertidoPorElEmisor} solo se anota —y se exige— con {@code
+   * REVERTIDO_POR_EL_EMISOR}, y es el hueco que cerró una revisión adversarial: ese desenlace no
+   * deja {@code Reintegro} a propósito, porque el dinero volvió por la red de pagos y registrar un
+   * pago que no hicimos descuadraría la constancia. Al no dejarlo, tampoco consumía el tope de lo
+   * que un pedido puede devolver: un contracargo seguido de un retracto devolvía el total dos
+   * veces.
+   *
+   * <p>La salida no es inventar la constancia, es <b>anotar el hecho</b>: cuánto revirtió el
+   * emisor. Lo sabe quien resuelve, porque se lo dijo el emisor, y con eso {@code TopeDeReintegro}
+   * puede contarlo sin fingir que salió de nuestra caja. Sirve además para el caso que antes no
+   * tenía respuesta: una reversión parcial, que el artículo 51 y el Decreto 587 de 2016 contemplan
+   * cuando la compra fue de varios productos.
+   */
+  public void resolver(
+      DesenlaceReversion desenlace,
+      UUID reintegroId,
+      Dinero montoRevertidoPorElEmisor,
+      Instant ahora) {
     Objects.requireNonNull(desenlace, "El desenlace no puede ser nulo.");
     if (estado == EstadoSolicitudReversion.RESUELTA) {
       throw new ExcepcionDeDominio("Esta solicitud de reversión ya se resolvió.");
@@ -215,9 +238,25 @@ public final class SolicitudReversion {
       throw new ExcepcionDeDominio(
           "Solo el desenlace en que el comercio devuelve el dinero apunta a una constancia.");
     }
+    boolean revirtioElEmisor = desenlace == DesenlaceReversion.REVERTIDO_POR_EL_EMISOR;
+    if (revirtioElEmisor && montoRevertidoPorElEmisor == null) {
+      throw new ExcepcionDeDominio(
+          "Una reversión que hizo el emisor necesita cuánto revirtió: sin eso, ese dinero no cuenta"
+              + " contra lo que el pedido todavía puede devolver.");
+    }
+    if (!revirtioElEmisor && montoRevertidoPorElEmisor != null) {
+      throw new ExcepcionDeDominio(
+          "Solo el desenlace en que revirtió el emisor lleva el monto que revirtió.");
+    }
+    this.montoRevertidoPorElEmisor = montoRevertidoPorElEmisor;
     this.desenlace = desenlace;
     this.reintegroId = reintegroId;
     this.resueltaEn = Objects.requireNonNull(ahora, "La fecha de resolución no puede ser nula.");
     this.estado = EstadoSolicitudReversion.RESUELTA;
+  }
+
+  /** Cuánto devolvió el emisor por su cuenta. Vacío en los otros tres desenlaces. */
+  public Optional<Dinero> montoRevertidoPorElEmisor() {
+    return Optional.ofNullable(montoRevertidoPorElEmisor);
   }
 }

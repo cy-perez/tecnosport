@@ -1,22 +1,25 @@
 package co.tecnosport.api.application.reintegro;
 
+import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
 import co.tecnosport.api.domain.compartido.Dinero;
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Ningún pedido devuelve más de lo que entró por él, contando lo ya devuelto <b>que este sistema
- * registró</b> y no solo la operación en curso.
+ * Ningún pedido devuelve más de lo que entró por él, contando <b>todo</b> lo que volvió al
+ * comprador y no solo la operación en curso.
  *
- * <p>Ese matiz —"que este sistema registró"— es un hueco conocido y conviene leerlo antes de
- * confiar en el tope: una reversión resuelta como {@code REVERTIDO_POR_EL_EMISOR} devuelve el
- * dinero por la red de pagos y <b>no deja {@code Reintegro}</b>, a propósito, porque registrar un
- * pago que no hicimos descuadraría la única pregunta que la constancia responde. Como no lo deja,
- * tampoco consume este tope: un contracargo seguido de un retracto sobre el mismo pedido devuelve
- * el total dos veces y el tope lo deja pasar. Cerrarlo exige decidir dos cosas que no son de
- * programación —si un contracargo se cuenta como devolución total, y qué hacer cuando el emisor
- * revirtió solo una parte, que {@code SolicitudReversion} hoy no guarda—.
+ * <p>"Todo" son dos fuentes, y hasta hace poco era una. Las constancias de {@code Reintegro} son el
+ * dinero que salió de nuestra caja. La otra es la reversión que hizo <b>el emisor</b>: ese
+ * desenlace no deja {@code Reintegro} a propósito —el dinero volvió por la red de pagos, y
+ * registrar un pago que no hicimos descuadraría la única pregunta que la constancia responde—, así
+ * que durante un tiempo tampoco consumía este tope, y un contracargo seguido de un retracto
+ * devolvía el total dos veces. Lo levantó una revisión adversarial de los caminos del dinero. La
+ * salida no fue inventar la constancia sino anotar el hecho: {@code
+ * SolicitudReversion.montoRevertidoPorElEmisor}, que quien resuelve sabe porque se lo dijo el
+ * emisor, y que además da respuesta a la reversión parcial que contemplan el artículo 51 y el
+ * Decreto 587 de 2016.
  *
  * <p>Existe porque los cuatro caminos que devuelven dinero —retracto, garantía, reversión y
  * cancelación— llevaban cada uno su propia copia de la comparación, y las cuatro miraban lo mismo:
@@ -46,9 +49,12 @@ import java.util.UUID;
 public final class TopeDeReintegro {
 
   private final RepositorioReintegros repositorio;
+  private final RepositorioSolicitudesReversion reversiones;
 
-  public TopeDeReintegro(RepositorioReintegros repositorio) {
+  public TopeDeReintegro(
+      RepositorioReintegros repositorio, RepositorioSolicitudesReversion reversiones) {
     this.repositorio = Objects.requireNonNull(repositorio);
+    this.reversiones = Objects.requireNonNull(reversiones);
   }
 
   /**
@@ -77,13 +83,21 @@ public final class TopeDeReintegro {
   }
 
   /**
-   * Lo devuelto hasta ahora por ese pedido, sumando los cinco motivos: la plata no sabe de cuál.
+   * Lo que ya volvió al comprador por ese pedido: las constancias de los cinco motivos más lo que
+   * revirtió el emisor. La plata no sabe por qué camino salió ni quién la movió.
    */
   public Dinero yaDevuelto(UUID pedidoId) {
     Objects.requireNonNull(pedidoId, "El pedido no puede ser nulo.");
-    return Dinero.deCop(
+    BigDecimal deNuestraCaja =
         repositorio.buscarPorPedido(pedidoId).stream()
             .map(reintegro -> reintegro.monto().valor())
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal delEmisor =
+        reversiones.buscarPorPedidoId(pedidoId).stream()
+            .map(reversion -> reversion.montoRevertidoPorElEmisor().orElse(null))
+            .filter(Objects::nonNull)
+            .map(Dinero::valor)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    return Dinero.deCop(deNuestraCaja.add(delEmisor));
   }
 }

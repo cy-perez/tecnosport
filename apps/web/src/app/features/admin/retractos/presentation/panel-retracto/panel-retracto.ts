@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -76,6 +76,27 @@ export class PanelRetracto {
   readonly estadoPedido = input.required<string>();
   /** El total del pedido: precarga el monto del reintegro, que es el caso normal. */
   readonly totalPedido = input.required<number>();
+
+  /**
+   * Cuánto entró de verdad por el pedido y cuánto ya volvió al comprador. Se pintan porque el 422 del
+   * tope decía "revisa cuánto se le devolvió ya a este pedido" y <b>no había dónde revisarlo</b>:
+   * ningún endpoint lo exponía, así que el único camino era reintentar con cifras hasta que una
+   * entrara — que es exactamente cómo se registra un reintegro por el monto equivocado.
+   */
+  readonly dineroRecibido = input.required<number>();
+  readonly yaDevuelto = input.required<number>();
+
+  /** Lo que el pedido todavía puede devolver. Nunca negativo: si ya se pasó, es cero. */
+  protected readonly quedaPorDevolver = computed(() =>
+    Math.max(this.totalPedido() - this.yaDevuelto(), 0),
+  );
+
+  /**
+   * Si se le va a devolver un dinero que todavía no ha entrado. No bloquea —el comprador que pagó en
+   * efectivo tiene derecho aunque la transportadora no haya dispersado— pero quien decide tiene que
+   * verlo: si el recaudo nunca llega, la pérdida es doble.
+   */
+  protected readonly dineroSinEntrar = computed(() => this.dineroRecibido() < this.totalPedido());
 
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
@@ -240,9 +261,24 @@ export class PanelRetracto {
     );
   }
 
+  constructor() {
+    // Se precarga al abrir y no solo al enfocar el campo, por lo mismo que en el panel de reversion:
+    // `(focusin)` deja el monto vacio para quien llega directo al boton, y un monto vacio en un
+    // formulario de dinero acaba en un 422 en vez de en una cifra. El efecto depende de las entradas,
+    // que no existen antes del primer render.
+    effect(() => {
+      this.quedaPorDevolver();
+      this.prepararReintegro();
+    });
+  }
+
+  /**
+   * Precarga lo que queda por devolver y no el total: con un reintegro previo del mismo pedido, el
+   * total era una cifra que el tope iba a rechazar, y el operador se enteraba por un 422.
+   */
   protected prepararReintegro(): void {
     if (this.formularioReintegro.controls.monto.value === null) {
-      this.formularioReintegro.controls.monto.setValue(this.totalPedido());
+      this.formularioReintegro.controls.monto.setValue(this.quedaPorDevolver());
     }
   }
 

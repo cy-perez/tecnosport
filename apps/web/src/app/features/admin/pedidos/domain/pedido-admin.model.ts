@@ -80,6 +80,13 @@ export interface PedidoAdmin {
   readonly metodoPago: MetodoPago;
   readonly estado: EstadoPedido;
   readonly total: Dinero;
+  /**
+   * Cuánto entró de verdad por el pedido, que no es `total`: aquél es lo que el comprador debe. En
+   * contraentrega el dinero es del negocio cuando el recaudo se concilia, no cuando se entrega.
+   */
+  readonly dineroRecibido: Dinero;
+  /** Cuánto ya volvió al comprador, contando los cinco motivos y lo que revirtió el emisor. */
+  readonly yaDevuelto: Dinero;
   readonly creadoEn: string;
   readonly datosTransferencia: DatosTransferencia | null;
   readonly envio: EnvioAdmin | null;

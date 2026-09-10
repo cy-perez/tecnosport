@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -102,6 +102,17 @@ export class PanelReversion {
     () => this.desenlaceElegido() === 'REINTEGRADO_DIRECTAMENTE',
   );
 
+  /**
+   * Con el desenlace en que revirtió el emisor también hace falta una cifra, y no es la misma
+   * pregunta: aquí no se registra una constancia —el dinero no salió de nuestra caja— sino cuánto
+   * volvió al comprador por la red de pagos. Sin ese dato, ese dinero no contaba contra lo que el
+   * pedido todavía puede devolver, y un contracargo seguido de un retracto devolvía el total dos
+   * veces. El medio no se pregunta, porque lo eligió el emisor y no nosotros.
+   */
+  protected readonly revirtioElEmisor = computed(
+    () => this.desenlaceElegido() === 'REVERTIDO_POR_EL_EMISOR',
+  );
+
   protected readonly opcionesCausal = computed<OpcionSelect[]>(() =>
     CAUSALES.map((causal) => ({
       valor: causal,
@@ -132,11 +143,35 @@ export class PanelReversion {
     return this.traducir()(CLAVE_VERDICTO[verdicto]);
   }
 
+  /**
+   * La precarga tenía que correr también sin que nadie tocara el selector: `REVERTIDO_POR_EL_EMISOR`
+   * es el valor inicial, así que quien abría el panel y resolvía sin cambiar nada veía el campo del
+   * monto vacío y se enteraba por un 422 de que hacía falta. El efecto depende de `totalPedido`, que
+   * es una entrada: antes de que llegue no hay nada con que precargar.
+   */
+  constructor() {
+    effect(() => {
+      const total = this.totalPedido();
+      const monto = this.formularioResolver.controls.monto;
+      if (monto.value === null && this.pideMonto(this.desenlaceElegido())) {
+        monto.setValue(total);
+      }
+    });
+  }
+
+  /** Los dos desenlaces que mueven dinero, cada uno preguntando una cosa distinta. */
+  private pideMonto(desenlace: string): boolean {
+    return desenlace === 'REINTEGRADO_DIRECTAMENTE' || desenlace === 'REVERTIDO_POR_EL_EMISOR';
+  }
+
   protected alCambiarDesenlace(): void {
     const valor = this.formularioResolver.controls.desenlace.value;
     this.desenlaceElegido.set(valor);
     const monto = this.formularioResolver.controls.monto;
-    if (valor === 'REINTEGRADO_DIRECTAMENTE' && monto.value === null) {
+    // Los dos desenlaces que mueven dinero precargan el total, que es el caso normal en los dos: una
+    // reversión del artículo 51 es por el valor de la transacción salvo que el emisor revierta solo
+    // una parte, que el Decreto 587 de 2016 contempla cuando la compra fue de varios productos.
+    if (this.pideMonto(valor) && monto.value === null) {
       monto.setValue(this.totalPedido());
     }
   }
@@ -184,6 +219,7 @@ export class PanelReversion {
     }
     const valores = this.formularioResolver.getRawValue();
     const devolvemos = valores.desenlace === 'REINTEGRADO_DIRECTAMENTE';
+    const revirtio = valores.desenlace === 'REVERTIDO_POR_EL_EMISOR';
     const comprobante = valores.comprobante.trim();
     await this.ejecutar(() =>
       this.acciones.resolver.mutateAsync({
@@ -191,7 +227,9 @@ export class PanelReversion {
         reversionId: reversion.id,
         desenlace: valores.desenlace as DesenlaceReversion,
         resumenParaElComprador: valores.resumenParaElComprador.trim(),
-        monto: devolvemos ? (valores.monto ?? 0) : null,
+        // El mismo campo para dos preguntas distintas: cuánto devolvimos, o cuánto revirtió el
+        // emisor. El backend sabe cuál según el desenlace, y se niega si falta.
+        monto: devolvemos || revirtio ? (valores.monto ?? 0) : null,
         medio: devolvemos ? (valores.medio as MedioReintegro) : null,
         comprobante: devolvemos && comprobante !== '' ? comprobante : null,
       }),
