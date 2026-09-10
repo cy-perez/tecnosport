@@ -4,14 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.retracto.CalendarioHabil;
 import co.tecnosport.api.domain.retracto.EstadoSolicitudRetracto;
 import co.tecnosport.api.domain.retracto.PlazoDeRetracto;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
@@ -47,12 +48,22 @@ class RecibirProductoDevueltoTest {
    * método de pago, pedido entregado y solicitud radicada.
    */
   private SolicitudRetracto escenario(MetodoPago metodoPago) {
+    return escenario(metodoPago, true);
+  }
+
+  /**
+   * {@code reservaConfirmada} en falso es el caso de ADR-0014: un pago aprobado tarde sobre una
+   * reserva ya vencida se marca pagado igual, sin confirmarla. Ese pedido llega hasta aqui con la
+   * reserva sin resolver, y es lo unico que mantiene viva la rama de liberacion de {@code
+   * Inventario.devolver} ahora que un contraentrega confirma la suya al entregar.
+   */
+  private SolicitudRetracto escenario(MetodoPago metodoPago, boolean reservaConfirmada) {
     UUID varianteId = UUID.randomUUID();
     Inventario inventario = Inventario.crear(varianteId);
     inventario.registrarEntrada(5, "siembra", ENTREGA.minusSeconds(1000));
     Duration vigencia = metodoPago == MetodoPago.CONTRAENTREGA ? null : Duration.ofMinutes(30);
     MovimientoInventario reserva = inventario.reservar(1, vigencia, ENTREGA.minusSeconds(900));
-    if (metodoPago != MetodoPago.CONTRAENTREGA) {
+    if (reservaConfirmada) {
       inventario.confirmar(reserva.id(), ENTREGA.minusSeconds(800));
     }
     inventarios.sembrar(inventario);
@@ -124,6 +135,39 @@ class RecibirProductoDevueltoTest {
     assertEquals(
         EstadoPedido.DEVUELTO, pedidos.buscarPorId(solicitud.pedidoId()).orElseThrow().estado());
     assertSaldos(5, 5);
+    assertEquals(
+        1,
+        inventarioDeLaLinea().movimientos().stream()
+            .filter(m -> m.tipo() == TipoMovimientoInventario.ENTRADA && m.referenciaId() != null)
+            .count(),
+        "la mercancía vuelve como entrada, no como liberación de una reserva que nunca salió");
+  }
+
+  /**
+   * El mismo retracto sobre un pedido cuya reserva nunca se confirmó (ADR-0014): aquí sí se libera,
+   * porque no hubo salida que compensar. Los saldos coinciden con los del otro camino; lo que
+   * cambia es el movimiento que queda escrito, y por eso se afirma sobre él y no solo sobre las
+   * cifras.
+   */
+  @Test
+  void unaReservaSinConfirmarSeLiberaEnVezDeEntrar() {
+    SolicitudRetracto solicitud = escenario(MetodoPago.NEQUI, false);
+
+    casoDeUso().ejecutar(new RecibirProductoDevueltoComando(solicitud.id(), "admin:1"));
+
+    assertSaldos(5, 5);
+    assertEquals(
+        0,
+        inventarioDeLaLinea().movimientos().stream()
+            .filter(m -> m.tipo() == TipoMovimientoInventario.ENTRADA && m.referenciaId() != null)
+            .count(),
+        "entradas por devolución");
+    assertEquals(
+        1,
+        inventarioDeLaLinea().movimientos().stream()
+            .filter(m -> m.tipo() == TipoMovimientoInventario.LIBERACION)
+            .count(),
+        "liberaciones");
   }
 
   @Test

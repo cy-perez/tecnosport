@@ -1,15 +1,19 @@
 package co.tecnosport.api.presentation.retracto;
 
-import co.tecnosport.api.domain.retracto.Reembolso;
+import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
-import co.tecnosport.api.presentation.retracto.dto.ReembolsoRespuesta;
+import co.tecnosport.api.presentation.retracto.dto.ReintegroRespuesta;
 import co.tecnosport.api.presentation.retracto.dto.SolicitudRetractoRespuesta;
 import org.springframework.stereotype.Component;
 
+/**
+ * El reintegro llega por fuera de la solicitud porque son dos agregados: la solicitud guarda su id,
+ * no la constancia entera. Quien llame lo resuelve y lo pasa; {@code null} cuando todavia no hay.
+ */
 @Component
 public class MapeadorRespuestasRetracto {
 
-  public SolicitudRetractoRespuesta aRespuesta(SolicitudRetracto solicitud) {
+  public SolicitudRetractoRespuesta aRespuesta(SolicitudRetracto solicitud, Reintegro reintegro) {
     return new SolicitudRetractoRespuesta(
         solicitud.id().toString(),
         solicitud.pedidoId().toString(),
@@ -20,15 +24,17 @@ public class MapeadorRespuestasRetracto {
         solicitud.estado().name(),
         solicitud.productoRecibidoEn().orElse(null),
         solicitud.limiteDeReintegro().orElse(null),
-        solicitud.reembolso().map(this::aRespuesta).orElse(null));
+        reintegro == null ? null : aRespuesta(reintegro));
   }
 
-  private ReembolsoRespuesta aRespuesta(Reembolso reembolso) {
-    return new ReembolsoRespuesta(
-        reembolso.monto().valor(),
-        reembolso.medio().name(),
-        reembolso.comprobanteOpcional().orElse(null),
-        reembolso.registradoEn(),
-        reembolso.registradoPor());
+  private ReintegroRespuesta aRespuesta(Reintegro reintegro) {
+    return new ReintegroRespuesta(
+        reintegro.id().toString(),
+        reintegro.motivo().name(),
+        reintegro.monto().valor(),
+        reintegro.medio().name(),
+        reintegro.comprobante().orElse(null),
+        reintegro.registradoEn(),
+        reintegro.registradoPor());
   }
 }

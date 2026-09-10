@@ -4,7 +4,7 @@ import { baseUrl } from '../../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { desempaquetar } from '../../../../core/http/respuesta-http';
 import { RepositorioRetractos } from '../domain/repositorio-retractos.puerto';
-import { MedioReembolso, SolicitudRetracto } from '../domain/retracto.model';
+import { MedioReintegro, SolicitudRetracto } from '../domain/retracto.model';
 import { aSolicitudRetracto } from './mapeador-retracto';
 
 /** Todo bajo `/api/v1/admin/**` exige `Authorization: Bearer`. */
@@ -37,16 +37,16 @@ export class RetractosHttpRepositorio implements RepositorioRetractos {
     );
   }
 
-  async registrarReembolso(
+  async registrarReintegro(
     solicitudId: string,
     monto: number,
-    medio: MedioReembolso,
+    medio: MedioReintegro,
     comprobante: string | null,
   ): Promise<SolicitudRetracto> {
-    const respuesta = await this.cliente.POST('/api/v1/admin/retractos/{id}/reembolso', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/retractos/{id}/reintegro', {
       params: { path: { id: solicitudId } },
       body: { monto, medio, comprobante: comprobante ?? undefined },
     });
-    return aSolicitudRetracto(desempaquetar(respuesta, 'no se pudo registrar el reembolso'));
+    return aSolicitudRetracto(desempaquetar(respuesta, 'no se pudo registrar el reintegro'));
   }
 }

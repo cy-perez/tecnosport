@@ -3,7 +3,13 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { baseUrl } from '../../../../core/http/base-url';
 import { desempaquetar } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
-import { FiltroPedidosAdmin, PedidoAdmin, PedidosPaginadosAdmin } from '../domain/pedido-admin.model';
+import { MedioReintegro } from '../../retractos/domain/retracto.model';
+import {
+  FiltroPedidosAdmin,
+  MotivoCancelacion,
+  PedidoAdmin,
+  PedidosPaginadosAdmin,
+} from '../domain/pedido-admin.model';
 import { RepositorioPedidosAdmin } from '../domain/repositorio-pedidos-admin.puerto';
 import { aPedidoAdmin, aPedidosPaginadosAdmin } from './mapeador-pedido-admin';
 
@@ -64,5 +70,24 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       body: { comisionRecaudo },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar el recaudo'));
+  }
+
+  async cancelar(entrada: {
+    pedidoId: string;
+    motivo: MotivoCancelacion;
+    monto: number | null;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }): Promise<PedidoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/cancelacion', {
+      params: { path: { id: entrada.pedidoId } },
+      body: {
+        motivo: entrada.motivo,
+        monto: entrada.monto ?? undefined,
+        medio: entrada.medio ?? undefined,
+        comprobante: entrada.comprobante ?? undefined,
+      },
+    });
+    return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo cancelar el pedido'));
   }
 }

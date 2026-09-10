@@ -1,14 +1,14 @@
 import type { components } from '@tecnosport/contratos';
 import {
   EstadoSolicitudRetracto,
-  MedioReembolso,
-  Reembolso,
+  MedioReintegro,
+  Reintegro,
   SolicitudRetracto,
   VerdictoPlazo,
 } from '../domain/retracto.model';
 
 type SolicitudDto = components['schemas']['SolicitudRetractoRespuesta'];
-type ReembolsoDto = components['schemas']['ReembolsoRespuesta'];
+type ReintegroDto = components['schemas']['ReintegroRespuesta'];
 
 /**
  * DTO generado -> modelo propio, mismo criterio que `mapeador-pedido-admin.ts`: los enums llegan
@@ -26,14 +26,14 @@ export function aSolicitudRetracto(dto: SolicitudDto): SolicitudRetracto {
     estado: (dto.estado ?? 'RADICADA') as EstadoSolicitudRetracto,
     productoRecibidoEn: dto.productoRecibidoEn ?? null,
     limiteDeReintegro: dto.limiteDeReintegro ?? null,
-    reembolso: dto.reembolso ? aReembolso(dto.reembolso) : null,
+    reintegro: dto.reintegro ? aReintegro(dto.reintegro) : null,
   };
 }
 
-function aReembolso(dto: ReembolsoDto): Reembolso {
+function aReintegro(dto: ReintegroDto): Reintegro {
   return {
     monto: dto.monto ?? 0,
-    medio: (dto.medio ?? 'OTRO') as MedioReembolso,
+    medio: (dto.medio ?? 'OTRO') as MedioReintegro,
     comprobante: dto.comprobante ?? null,
     registradoEn: dto.registradoEn ?? '',
     registradoPor: dto.registradoPor ?? '',

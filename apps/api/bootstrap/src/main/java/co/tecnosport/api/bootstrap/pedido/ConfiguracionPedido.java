@@ -1,12 +1,14 @@
 package co.tecnosport.api.bootstrap.pedido;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
+import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
@@ -18,6 +20,7 @@ import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
@@ -93,8 +96,22 @@ public class ConfiguracionPedido {
   }
 
   @Bean
-  public MarcarEntregado marcarEntregado(RepositorioPedidos repositorioPedidos, Reloj reloj) {
-    return new MarcarEntregado(repositorioPedidos, reloj);
+  public CancelarPedido cancelarPedido(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      RepositorioReintegros repositorioReintegros,
+      EnviadorDeCorreo enviadorDeCorreo,
+      Reloj reloj) {
+    return new CancelarPedido(
+        repositorioPedidos, repositorioInventario, repositorioReintegros, enviadorDeCorreo, reloj);
+  }
+
+  @Bean
+  public MarcarEntregado marcarEntregado(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new MarcarEntregado(repositorioPedidos, repositorioInventario, reloj);
   }
 
   @Bean

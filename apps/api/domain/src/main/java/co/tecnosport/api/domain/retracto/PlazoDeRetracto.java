@@ -1,7 +1,9 @@
 package co.tecnosport.api.domain.retracto;
 
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Objects;
 
@@ -18,8 +20,12 @@ import java.util.Objects;
  */
 public final class PlazoDeRetracto {
 
-  /** El negocio opera en Medellín y los plazos legales se cuentan con su calendario. */
-  public static final ZoneId ZONA = ZoneId.of("America/Bogota");
+  /**
+   * Alias del huso del negocio, conservado porque medio proyecto ya cuenta plazos con {@code
+   * PlazoDeRetracto.ZONA} y renombrarlo en todos lados no aporta nada. La definición vive en {@link
+   * ZonaDelNegocio}, que es donde la comparten los demás plazos.
+   */
+  public static final ZoneId ZONA = ZonaDelNegocio.ZONA;
 
   private static final int DIAS_HABILES = 5;
 
@@ -33,15 +39,7 @@ public final class PlazoDeRetracto {
   public static Instant limite(Instant entregadoEn, CalendarioHabil calendario) {
     Objects.requireNonNull(entregadoEn, "La fecha de entrega no puede ser nula.");
     Objects.requireNonNull(calendario, "El calendario no puede ser nulo.");
-    LocalDate dia = entregadoEn.atZone(ZONA).toLocalDate();
-    int habilesContados = 0;
-    while (habilesContados < DIAS_HABILES) {
-      dia = dia.plusDays(1);
-      if (calendario.esHabil(dia)) {
-        habilesContados++;
-      }
-    }
-    return dia.plusDays(1).atStartOfDay(ZONA).toInstant();
+    return calendario.limiteTrasDiasHabiles(entregadoEn, DIAS_HABILES);
   }
 
   /**
@@ -52,12 +50,6 @@ public final class PlazoDeRetracto {
   public static VerdictoPlazo verdicto(
       Instant entregadoEn, Instant ahora, CalendarioHabil calendario) {
     Objects.requireNonNull(ahora, "El instante actual no puede ser nulo.");
-    Instant limite = limite(entregadoEn, calendario);
-    if (!ahora.isAfter(limite)) {
-      return VerdictoPlazo.EN_PLAZO;
-    }
-    return calendario.cubre(limite.atZone(ZONA).toLocalDate().getYear())
-        ? VerdictoPlazo.VENCIDO
-        : VerdictoPlazo.INDETERMINADO;
+    return calendario.verdicto(limite(entregadoEn, calendario), ahora);
   }
 }

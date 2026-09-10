@@ -21,6 +21,7 @@ import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -673,8 +674,15 @@ class PedidoControladorTest {
     MapeadorSeguimiento mapeadorSeguimiento(
         MapeadorRespuestasPedido mapeadorPedido,
         RepositorioEnvios repositorioEnvios,
-        RepositorioSolicitudesRetracto repositorioSolicitudes) {
-      return new MapeadorSeguimiento(mapeadorPedido, repositorioEnvios, repositorioSolicitudes);
+        RepositorioSolicitudesRetracto repositorioSolicitudes,
+        RepositorioReintegros repositorioReintegros) {
+      return new MapeadorSeguimiento(
+          mapeadorPedido, repositorioEnvios, repositorioSolicitudes, repositorioReintegros);
+    }
+
+    @Bean
+    RepositorioReintegros repositorioReintegros() {
+      return new RepositorioReintegrosDobleDePrueba();
     }
   }
 }

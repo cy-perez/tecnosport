@@ -23,3 +23,5 @@ export const CLASES_CONTROL =
 /** La etiqueta y el mensaje de error, por el mismo motivo. */
 export const CLASES_ETIQUETA = 'text-sm text-ts-texto-suave';
 export const CLASES_ERROR = 'm-0 text-sm text-ts-error';
+/** Apoyo bajo la etiqueta: mismo tamaño que ella, y nunca compite con el error. */
+export const CLASES_AYUDA = 'm-0 text-sm text-ts-texto-suave';

@@ -194,10 +194,25 @@ ni píxeles, así que solo hay cookies necesarias y de preferencia; un banner qu
 pide consentimiento para nada es teatro de cumplimiento. La política se
 compromete a pedirlo antes de añadir analítica.
 
-**Lo que la ley pide y el sistema todavía no puede hacer** — ver la lista de
-hallazgos de coherencia al cierre de la Fase 6 en `docs/09-plan-de-arranque.md`.
-Lo principal: el texto promete retracto, garantía y reversión del pago, y no
-existe ningún flujo que los ejecute; hoy se atienden a mano por correo.
+**Retracto, garantía, reversión del pago y radicación de PQR ya tienen flujo**
+(2026-09-10, ver `docs/09-plan-de-arranque.md`). Ninguno mueve dinero por su
+cuenta —dos de los tres métodos de pago se devuelven por fuera del sistema por
+definición, y para el tercero no está verificado que la pasarela exponga la
+devolución por API—, pero los cuatro dejan constancia: quién, cuándo, por qué y
+con qué comprobante, que es lo que la ley pide poder demostrar.
+
+Con ellos entraron dos caminos más que los términos publicados prometían y que
+nadie había contado: **cancelación por no disponibilidad sobrevenida** y **por
+incumplimiento del plazo de entrega**. Los cinco caminos que devuelven dinero
+comparten una sola constancia (`Reintegro`, con su motivo), así que "cuánto
+devolvimos el mes pasado" se responde sin sumar tablas a mano.
+
+**Una contradicción entre documentos publicados, pendiente de corregir en el
+texto:** los términos prometen quince días hábiles para "toda petición" y la
+política de datos promete diez para una consulta, y las dos frases apuntan al
+mismo correo. El sistema cumple el plazo más corto que corresponda a cada tipo,
+que es lo único defendible; ajustar el texto es tarea de
+`textos-legales-comerciales` y necesita revisión de abogado.
 
 **Y algo que quedó desactualizado el 8 de septiembre de 2026, a propósito:** los
 tres documentos publicados dicen que el precio incluye el envío y que no hay

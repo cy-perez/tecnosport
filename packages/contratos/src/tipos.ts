@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/retractos/{id}/reembolso": {
+    "/api/v1/admin/reversiones/{id}/resolucion": {
         parameters: {
             query?: never;
             header?: never;
@@ -317,7 +317,39 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["reembolsar"];
+        post: operations["resolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reversiones/{id}/gestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["gestionar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retractos/{id}/reintegro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reintegrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -388,7 +420,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
+    "/api/v1/admin/pedidos/{pedidoId}/reversiones": {
         parameters: {
             query?: never;
             header?: never;
@@ -398,6 +430,38 @@ export interface paths {
         get: operations["listar_1"];
         put?: never;
         post: operations["radicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_2"];
+        put?: never;
+        post: operations["radicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
+        put?: never;
+        post: operations["radicar_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -500,6 +564,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{id}/cancelacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/garantias/{id}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolver_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/cobertura-contraentrega": {
         parameters: {
             query?: never;
@@ -510,6 +606,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["agregar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_4"];
+        put?: never;
+        post: operations["radicar_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/respuesta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["responder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/prorroga": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["prorrogar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -635,7 +779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -667,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -683,7 +827,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -715,7 +859,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -731,7 +875,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarDePedido"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1019,12 +1179,44 @@ export interface components {
             alto?: number;
             hash?: string;
         };
-        RegistrarReembolsoRequest: {
+        ResolverReversionRequest: {
+            desenlace?: string;
+            resumenParaElComprador?: string;
             monto?: number;
             medio?: string;
             comprobante?: string;
         };
-        ReembolsoRespuesta: {
+        SolicitudReversionRespuesta: {
+            id?: string;
+            solicitudId?: string;
+            pedidoId?: string;
+            causal?: string;
+            /** Format: date-time */
+            fechaDelHecho?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            verdictoAlRadicar?: string;
+            estado?: string;
+            /** Format: date-time */
+            gestionadaEn?: string;
+            gestionadaPor?: string;
+            gestion?: string;
+            desenlace?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            reintegroId?: string;
+        };
+        RegistrarGestionRequest: {
+            gestion?: string;
+        };
+        RegistrarReintegroRequest: {
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
+        };
+        ReintegroRespuesta: {
+            id?: string;
+            motivo?: string;
             monto?: number;
             medio?: string;
             comprobante?: string;
@@ -1045,7 +1237,7 @@ export interface components {
             productoRecibidoEn?: string;
             /** Format: date-time */
             limiteDeReintegro?: string;
-            reembolso?: components["schemas"]["ReembolsoRespuesta"];
+            reintegro?: components["schemas"]["ReintegroRespuesta"];
         };
         CrearProductoPeticion: {
             nombre?: string;
@@ -1107,8 +1299,45 @@ export interface components {
             url?: string;
             objectKey?: string;
         };
+        RadicarReversionRequest: {
+            causal?: string;
+            /** Format: date-time */
+            fechaDelHecho?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            descripcion?: string;
+        };
         RegistrarRetractoRequest: {
             motivo?: string;
+        };
+        RadicarGarantiaRequest: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            descripcionDelFallo?: string;
+        };
+        ReclamacionGarantiaRespuesta: {
+            id?: string;
+            solicitudId?: string;
+            pedidoId?: string;
+            varianteId?: string;
+            /** Format: date-time */
+            entregadoEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            /** Format: int32 */
+            mesesDeTermino?: number;
+            /** Format: date-time */
+            finDelTermino?: string;
+            vigencia?: string;
+            descripcionDelFallo?: string;
+            estado?: string;
+            desenlace?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            resueltaPor?: string;
+            reintegroId?: string;
         };
         VerificarContraentregaRequest: {
             motivo?: string;
@@ -1126,8 +1355,69 @@ export interface components {
             /** Format: int64 */
             costoEnvio?: number;
         };
+        CancelarPedidoRequest: {
+            motivo?: string;
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
+        };
+        ResolverGarantiaRequest: {
+            desenlace?: string;
+            resumenParaElComprador?: string;
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
+        };
         CoberturaContraentregaRequest: {
             codigoDaneCiudad?: string;
+        };
+        RadicarSolicitudRequest: {
+            tipo?: string;
+            correo?: string;
+            /** Format: uuid */
+            pedidoId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            asunto?: string;
+        };
+        ProrrogaRespuesta: {
+            /** Format: date-time */
+            otorgadaEn?: string;
+            otorgadaPor?: string;
+            motivo?: string;
+            /** Format: date-time */
+            avisadaEn?: string;
+        };
+        RespuestaRespuesta: {
+            /** Format: date-time */
+            respondidaEn?: string;
+            respondidaPor?: string;
+            resumen?: string;
+        };
+        SolicitudAtencionRespuesta: {
+            id?: string;
+            numeroRadicado?: string;
+            tipo?: string;
+            correo?: string;
+            pedidoId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            radicadaPor?: string;
+            asunto?: string;
+            estado?: string;
+            /** Format: date-time */
+            limiteDeRespuesta?: string;
+            verdicto?: string;
+            prorroga?: components["schemas"]["ProrrogaRespuesta"];
+            respuesta?: components["schemas"]["RespuestaRespuesta"];
+        };
+        ResponderSolicitudRequest: {
+            resumen?: string;
+        };
+        ProrrogarSolicitudRequest: {
+            motivo?: string;
         };
         RegistrarIdTransaccionWompiRequest: {
             idTransaccionWompi?: string;
@@ -1703,7 +1993,7 @@ export interface operations {
             };
         };
     };
-    reembolsar: {
+    resolver: {
         parameters: {
             query?: never;
             header?: never;
@@ -1714,7 +2004,59 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegistrarReembolsoRequest"];
+                "application/json": components["schemas"]["ResolverReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    gestionar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarGestionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    reintegrar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarReintegroRequest"];
             };
         };
         responses: {
@@ -1867,12 +2209,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"][];
                 };
             };
         };
     };
     radicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    listar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1894,6 +2284,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SolicitudRetractoRespuesta"];
+                };
+            };
+        };
+    };
+    listar_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarGarantiaRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
                 };
             };
         };
@@ -2046,6 +2484,58 @@ export interface operations {
             };
         };
     };
+    cancelar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelarPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    resolver_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverGarantiaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                };
+            };
+        };
+    };
     agregar: {
         parameters: {
             query?: never;
@@ -2065,6 +2555,104 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listar_4: {
+        parameters: {
+            query?: {
+                estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    responder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponderSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    prorrogar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProrrogarSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
             };
         };
     };
@@ -2286,7 +2874,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2326,7 +2914,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2346,7 +2934,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2388,7 +2976,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2408,7 +2996,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_9: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -2428,6 +3016,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    listarDePedido: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
                 };
             };
         };

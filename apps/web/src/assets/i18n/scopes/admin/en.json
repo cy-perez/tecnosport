@@ -13,7 +13,8 @@
     "bienvenida": "Signed in as {{rol}}.",
     "cerrar_sesion": "Sign out",
     "ir_a_pedidos": "Orders",
-    "ir_a_productos": "Products"
+    "ir_a_productos": "Products",
+    "ir_a_atencion": "Requests"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -71,6 +72,20 @@
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
       "conciliar_recaudo": "Reconcile collection"
+    },
+    "cancelacion": {
+      "titulo": "Cancel the order",
+      "ayuda": "On our side and before dispatch: the product became unavailable, or we did not deliver within the agreed time.",
+      "motivo": "Reason",
+      "dinero_ayuda": "This order had already been paid, so cancelling it requires refunding. It cannot be cancelled without an amount.",
+      "sin_dinero": "Nothing had been charged for this order yet, so there is nothing to refund.",
+      "monto": "Amount to refund",
+      "comprobante": "Reference",
+      "cancelar": "Cancel order",
+      "motivos": {
+        "no_disponibilidad": "The product became unavailable",
+        "plazo_incumplido": "We did not deliver on time"
+      }
     }
   },
   "productos": {
@@ -157,7 +172,7 @@
     "esperando_producto": "Waiting for the product to come back.",
     "plazo_restante": "{{dias}} calendar days left to refund.",
     "plazo_vencido": "The fifteen-day refund deadline has passed.",
-    "reembolsado_por": "Refunded",
+    "reintegrado_por": "Refunded",
     "comprobante": "Receipt",
     "sin_comprobante": "no receipt",
     "error": "The action could not be completed. Please try again.",
@@ -186,7 +201,147 @@
       "monto": "Amount to refund",
       "medio": "Refund method",
       "comprobante": "Receipt (optional)",
-      "registrar_reembolso": "Record refund"
+      "registrar_reintegro": "Record refund"
+    }
+  },
+  "atencion": {
+    "titulo": "Requests, complaints and claims",
+    "ayuda": "Whatever arrives by email or WhatsApp is filed here: it gets a number, an arrival date and a deadline running.",
+    "cargando": "Loading the inbox...",
+    "vacia": "No open requests.",
+    "error": "The action could not be completed. Please try again.",
+    "filtros": "Filter requests",
+    "filtro_abiertas": "Open",
+    "filtro_respondidas": "Answered",
+    "estado": "Status",
+    "limite": "Answer before",
+    "verdicto_titulo": "Deadline",
+    "recibida_en": "Arrived on",
+    "radicada_en": "Filed on {{fecha}}",
+    "plazo_restante": "{{dias}} days left.",
+    "plazo_pasado": "The deadline to answer has passed.",
+    "prorrogada_por": "Deadline extended: {{motivo}}",
+    "respondida_con": "Answer",
+    "radicar": {
+      "titulo": "File a request",
+      "ayuda": "The type sets the response deadline, so it cannot be changed later.",
+      "tipo": "Request type",
+      "correo": "Email of the person filing it",
+      "asunto": "Subject",
+      "recibida_en": "Date it arrived",
+      "recibida_en_ayuda": "The date on the email or message, not today's: the deadline runs from it. Leave empty if it just arrived.",
+      "enviar": "File"
+    },
+    "acciones": {
+      "abrir": "Handle",
+      "resumen": "What was answered",
+      "responder": "Record answer",
+      "motivo": "Reason for the extension",
+      "prorrogar": "Extend the deadline",
+      "prorroga_ayuda": "An extension is only valid if notified: recording it sends the notice with these reasons."
+    },
+    "tipos": {
+      "peticion": "Request",
+      "queja": "Complaint",
+      "reclamo": "Claim",
+      "consulta_datos": "Personal data enquiry",
+      "reclamo_datos": "Personal data claim",
+      "garantia": "Warranty",
+      "reversion": "Payment reversal"
+    },
+    "estados": {
+      "radicada": "Filed",
+      "prorrogada": "Deadline extended",
+      "respondida": "Answered"
+    },
+    "verdicto": {
+      "en_plazo": "Within deadline",
+      "vencido": "Past deadline",
+      "indeterminado": "Undetermined",
+      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed."
+    }
+  },
+  "garantias": {
+    "titulo": "Statutory warranty",
+    "cargando": "Loading warranties...",
+    "error": "The action could not be completed. Please try again.",
+    "ayuda_radicar": "The buyer claims it by email or WhatsApp. Filing it gives it a number and a response deadline, like any other request.",
+    "no_aplica": "The warranty runs from delivery: it only applies to an order already delivered.",
+    "fallo": "Reported fault",
+    "vigencia_titulo": "Coverage when claimed",
+    "termino": "{{meses}}-month term from delivery.",
+    "desenlace": "Outcome",
+    "vigencia": {
+      "cubierta": "Within term",
+      "fuera_de_termino": "Past term",
+      "indeterminada": "Undetermined",
+      "indeterminada_ayuda": "That category's term is not loaded, so it cannot be stated that the warranty has expired. A person decides."
+    },
+    "desenlaces": {
+      "reparacion": "Repair",
+      "reposicion": "Replace",
+      "reintegro": "Refund"
+    },
+    "acciones": {
+      "linea": "Product in the order",
+      "elegir_linea": "Choose the product",
+      "fallo": "What failed",
+      "radicar": "File warranty claim",
+      "desenlace": "What was done",
+      "resumen": "What the buyer was told",
+      "monto": "Amount to refund",
+      "comprobante": "Reference",
+      "resolver": "Resolve warranty"
+    }
+  },
+  "reversiones": {
+    "titulo": "Payment reversal",
+    "cargando": "Loading reversals...",
+    "error": "The action could not be completed. Please try again.",
+    "ayuda_radicar": "This is not a withdrawal: it applies to fraud, non-delivery, wrong product or a defective one. The buyer must also request it from their payment method issuer.",
+    "causal": "Ground",
+    "estado": "Status",
+    "plazo_al_radicar": "Buyer's deadline",
+    "gestion": "What was done to facilitate the process",
+    "desenlace": "Outcome",
+    "causales": {
+      "fraude": "Fraud",
+      "no_entregado": "The product was not delivered",
+      "no_corresponde": "Does not match what was ordered",
+      "defectuoso": "The product was defective"
+    },
+    "desenlaces": {
+      "revertido_por_el_emisor": "Reversed by the issuer",
+      "reintegrado_directamente": "We refunded it ourselves",
+      "rechazada": "Rejected",
+      "desistida": "The buyer withdrew the request"
+    },
+    "estados": {
+      "radicada": "Filed",
+      "gestionada": "Raised with the issuer",
+      "resuelta": "Resolved"
+    },
+    "verdicto": {
+      "en_plazo": "Within deadline",
+      "vencido": "Past deadline",
+      "indeterminado": "Undetermined",
+      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed. It can still be filed."
+    },
+    "acciones": {
+      "causal": "Ground invoked",
+      "fecha_del_hecho": "Date of the event",
+      "fecha_ayuda": "When the buyer learned of it: their five business days run from there, not from the purchase.",
+      "descripcion": "Description",
+      "radicar": "File reversal",
+      "gestion": "What was done",
+      "gestion_ayuda": "The terms promise to facilitate the process. Without writing down what was done, the promise cannot be proven.",
+      "gestionar": "Record action taken",
+      "desenlace": "How it ended",
+      "resumen": "What the buyer was told",
+      "dinero_ayuda": "Only here does money leave us. If the issuer reverses it, the funds return through the payment network.",
+      "monto": "Amount refunded",
+      "comprobante": "Reference",
+      "resolver": "Resolve reversal"
     }
   }
 }

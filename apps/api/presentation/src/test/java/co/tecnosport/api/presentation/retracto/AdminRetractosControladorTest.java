@@ -9,10 +9,12 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
-import co.tecnosport.api.application.retracto.RegistrarReembolso;
+import co.tecnosport.api.application.retracto.RegistrarReintegro;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -25,7 +27,6 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
-import co.tecnosport.api.domain.retracto.CalendarioHabil;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -208,14 +209,14 @@ class AdminRetractosControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/admin/retractos/{id}/reembolso", id[0])
+            post("/api/v1/admin/retractos/{id}/reintegro", id[0])
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"monto\":50000,\"medio\":\"TRANSFERENCIA_BANCARIA\",\"comprobante\":\"TRF-1\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.estado").value("REEMBOLSADA"))
-        .andExpect(jsonPath("$.reembolso.medio").value("TRANSFERENCIA_BANCARIA"))
-        .andExpect(jsonPath("$.reembolso.comprobante").value("TRF-1"));
+        .andExpect(jsonPath("$.reintegro.medio").value("TRANSFERENCIA_BANCARIA"))
+        .andExpect(jsonPath("$.reintegro.comprobante").value("TRF-1"));
   }
 
   @Test
@@ -227,7 +228,7 @@ class AdminRetractosControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/admin/retractos/{id}/reembolso", id[0])
+            post("/api/v1/admin/retractos/{id}/reintegro", id[0])
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"monto\":50001,\"medio\":\"WOMPI\"}"))
         .andExpect(status().isUnprocessableContent());
@@ -241,7 +242,7 @@ class AdminRetractosControladorTest {
 
     mockMvc
         .perform(
-            post("/api/v1/admin/retractos/{id}/reembolso", solicitudId)
+            post("/api/v1/admin/retractos/{id}/reintegro", solicitudId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"monto\":50000,\"medio\":\"WOMPI\"}"))
         .andExpect(status().isUnprocessableContent());
@@ -318,12 +319,18 @@ class AdminRetractosControladorTest {
     }
 
     @Bean
-    RegistrarReembolso registrarReembolso(
+    RegistrarReintegro registrarReintegro(
         RepositorioSolicitudesRetracto solicitudes,
         RepositorioPedidos pedidos,
+        RepositorioReintegros reintegros,
         EnviadorDeCorreo correos,
         Reloj reloj) {
-      return new RegistrarReembolso(solicitudes, pedidos, correos, reloj);
+      return new RegistrarReintegro(solicitudes, pedidos, reintegros, correos, reloj);
+    }
+
+    @Bean
+    RepositorioReintegros repositorioReintegros() {
+      return new RepositorioReintegrosDobleDePrueba();
     }
 
     @Bean

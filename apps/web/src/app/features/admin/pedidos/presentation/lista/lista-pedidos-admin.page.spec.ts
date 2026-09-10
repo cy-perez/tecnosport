@@ -6,7 +6,12 @@ import { of } from 'rxjs';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
-import { PedidoAdmin, PedidosPaginadosAdmin } from '../../domain/pedido-admin.model';
+import { MedioReintegro } from '../../../retractos/domain/retracto.model';
+import {
+  MotivoCancelacion,
+  PedidoAdmin,
+  PedidosPaginadosAdmin,
+} from '../../domain/pedido-admin.model';
 import {
   REPOSITORIO_PEDIDOS_ADMIN,
   RepositorioPedidosAdmin,
@@ -16,6 +21,16 @@ import {
   RepositorioRetractos,
 } from '../../../retractos/domain/repositorio-retractos.puerto';
 import { SolicitudRetracto } from '../../../retractos/domain/retracto.model';
+import {
+  REPOSITORIO_GARANTIAS,
+  RepositorioGarantias,
+} from '../../../garantias/domain/repositorio-garantias.puerto';
+import { ReclamacionGarantia } from '../../../garantias/domain/garantia.model';
+import {
+  REPOSITORIO_REVERSIONES,
+  RepositorioReversiones,
+} from '../../../reversiones/domain/repositorio-reversiones.puerto';
+import { SolicitudReversion } from '../../../reversiones/domain/reversion.model';
 import { ListaPedidosAdminPage } from './lista-pedidos-admin.page';
 
 /**
@@ -36,7 +51,41 @@ class RepositorioRetractosVacio implements RepositorioRetractos {
     throw new Error('no usado en estas pruebas');
   }
 
-  async registrarReembolso(): Promise<SolicitudRetracto> {
+  async registrarReintegro(): Promise<SolicitudRetracto> {
+    throw new Error('no usado en estas pruebas');
+  }
+}
+
+/** Mismo motivo que el de retractos: `PanelGarantia` tambien vive en la fila expandida. */
+class RepositorioGarantiasVacio implements RepositorioGarantias {
+  async listarDePedido(): Promise<readonly ReclamacionGarantia[]> {
+    return [];
+  }
+
+  async radicar(): Promise<ReclamacionGarantia> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async resolver(): Promise<ReclamacionGarantia> {
+    throw new Error('no usado en estas pruebas');
+  }
+}
+
+/** Y `PanelReversion`, que completa los tres paneles de la fila expandida. */
+class RepositorioReversionesVacio implements RepositorioReversiones {
+  async listarDePedido(): Promise<readonly SolicitudReversion[]> {
+    return [];
+  }
+
+  async radicar(): Promise<SolicitudReversion> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async registrarGestion(): Promise<SolicitudReversion> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async resolver(): Promise<SolicitudReversion> {
     throw new Error('no usado en estas pruebas');
   }
 }
@@ -115,6 +164,25 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   async conciliarRecaudo(): Promise<PedidoAdmin> {
     return this.items[0];
   }
+
+  cancelaciones: {
+    pedidoId: string;
+    motivo: MotivoCancelacion;
+    monto: number | null;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }[] = [];
+
+  async cancelar(entrada: {
+    pedidoId: string;
+    motivo: MotivoCancelacion;
+    monto: number | null;
+    medio: MedioReintegro | null;
+    comprobante: string | null;
+  }): Promise<PedidoAdmin> {
+    this.cancelaciones.push(entrada);
+    return this.items[0];
+  }
 }
 
 // El filtro de estado vive en la URL (ADR-0011): para distinguir "no hay
@@ -143,6 +211,8 @@ async function renderLista(
       },
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
       { provide: REPOSITORIO_RETRACTOS, useValue: new RepositorioRetractosVacio() },
+      { provide: REPOSITORIO_GARANTIAS, useValue: new RepositorioGarantiasVacio() },
+      { provide: REPOSITORIO_REVERSIONES, useValue: new RepositorioReversionesVacio() },
     ],
   });
   return { ...resultado, repositorio };
@@ -215,5 +285,54 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Conciliar transferencia' }));
     await vi.waitFor(() => expect(repositorio.llamadasConciliarTransferencia).toEqual(['p1']));
     expect(repositorio.llamadasListar).toBeGreaterThan(1);
+  });
+  /**
+   * El pedido ya tenia el dinero recibido, asi que cancelarlo exige devolverlo: el formulario pide
+   * el monto y lo que viaja lo lleva.
+   */
+  it('cancelar un pedido ya pagado pide el monto y lo manda', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'PAGADO' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.input(await screen.findByLabelText('Monto a devolver'), {
+      target: { value: '50000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
+
+    await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
+    expect(repositorio.cancelaciones[0].motivo).toBe('NO_DISPONIBILIDAD');
+    expect(repositorio.cancelaciones[0].monto).toBe(50_000);
+    expect(repositorio.cancelaciones[0].medio).toBe('WOMPI');
+  });
+
+  /**
+   * Un contraentrega sin despachar no cobro nada. Ni siquiera se ofrecen los campos, y lo que viaja
+   * va sin monto: exigirlo obligaria a inventar un reintegro que nunca ocurrio.
+   */
+  it('cancelar un contraentrega sin despachar no pide monto y viaja sin dinero', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({ estado: 'CONFIRMADO_CONTRAENTREGA', metodoPago: 'CONTRAENTREGA' }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByRole('button', { name: 'Cancelar pedido' });
+
+    expect(screen.queryByLabelText('Monto a devolver')).toBeNull();
+    expect(
+      screen.getByText('Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.'),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
+
+    await vi.waitFor(() => expect(repositorio.cancelaciones.length).toBe(1));
+    expect(repositorio.cancelaciones[0].monto).toBeNull();
+    expect(repositorio.cancelaciones[0].medio).toBeNull();
+  });
+
+  /** Despues de despachar ya existen los caminos que corresponden: no se ofrece cancelar. */
+  it('un pedido despachado no ofrece cancelacion', async () => {
+    await renderLista([pedidoDePrueba({ estado: 'DESPACHADO' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).toBeNull();
   });
 });

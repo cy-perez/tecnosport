@@ -1,5 +1,8 @@
 <div class="flex flex-col gap-4">
   <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+  @if (ayuda(); as textoDeAyuda) {
+    <p [class]="clasesAyuda" [id]="idCampo() + '-ayuda'">{{ textoDeAyuda }}</p>
+  }
   <input
     [class]="clasesControl"
     [id]="idCampo()"
@@ -7,7 +10,7 @@
     [value]="valorMostrado()"
     [disabled]="deshabilitado()"
     [attr.aria-invalid]="error() ? 'true' : null"
-    [attr.aria-describedby]="error() ? idCampo() + '-error' : null"
+    [attr.aria-describedby]="descripcion()"
     (input)="manejarEntrada($any($event.target).value)"
     (blur)="manejarSalida()"
   />

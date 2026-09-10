@@ -100,3 +100,49 @@ describe('TsCampo con error', () => {
     expect(clases).toContain('min-h-tactil');
   });
 });
+
+@Component({
+  imports: [ReactiveFormsModule, TsCampo],
+  template: `
+    <ts-campo
+      idCampo="fecha"
+      label="Fecha en que llegó"
+      ayuda="La del correo, no la de hoy."
+      [error]="error()"
+      [formControl]="control"
+    />
+  `,
+})
+class AnfitrionConAyuda {
+  readonly control = new FormControl('');
+  readonly error = signal<string | null>(null);
+}
+
+describe('TsCampo con ayuda', () => {
+  /**
+   * La ayuda tiene que quedar atada al control, no solo cerca. Escrita como un `<p>` suelto antes
+   * del componente se veía pegada al campo anterior y un lector de pantalla no la relacionaba con
+   * nada — que es como estaba antes de que el recorrido en el navegador lo dejara a la vista.
+   */
+  it('describe el control con la ayuda', async () => {
+    await render(AnfitrionConAyuda);
+    const campo = screen.getByLabelText('Fecha en que llegó');
+
+    expect(campo.getAttribute('aria-describedby')).toBe('fecha-ayuda');
+    expect(screen.getByText('La del correo, no la de hoy.').id).toBe('fecha-ayuda');
+  });
+
+  /**
+   * Con error, los dos: sin esto, mostrar un error dejaba la ayuda fuera de la descripción del
+   * control justo cuando más falta hace.
+   */
+  it('con error describe la ayuda y el error a la vez', async () => {
+    const { fixture } = await render(AnfitrionConAyuda);
+    fixture.componentInstance.error.set('Fecha inválida');
+    await fixture.whenStable();
+
+    expect(screen.getByLabelText('Fecha en que llegó').getAttribute('aria-describedby')).toBe(
+      'fecha-ayuda fecha-error',
+    );
+  });
+});

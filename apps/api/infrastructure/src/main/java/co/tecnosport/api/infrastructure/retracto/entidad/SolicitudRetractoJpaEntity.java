@@ -4,11 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-/** El reembolso son columnas de esta misma fila: es un valor del agregado, no una entidad. */
+/**
+ * {@code reintegroId} apunta a la constancia del dinero devuelto, que desde V23 vive en su propia
+ * tabla: es una sola para los cinco caminos que devuelven dinero, y el retracto es uno de ellos.
+ */
 @Entity
 @Table(name = "solicitud_retracto")
 public class SolicitudRetractoJpaEntity {
@@ -35,20 +37,8 @@ public class SolicitudRetractoJpaEntity {
   @Column(name = "producto_recibido_en")
   private Instant productoRecibidoEn;
 
-  @Column(name = "reembolso_monto")
-  private BigDecimal reembolsoMonto;
-
-  @Column(name = "reembolso_medio")
-  private String reembolsoMedio;
-
-  @Column(name = "reembolso_comprobante")
-  private String reembolsoComprobante;
-
-  @Column(name = "reembolso_registrado_en")
-  private Instant reembolsoRegistradoEn;
-
-  @Column(name = "reembolso_registrado_por")
-  private String reembolsoRegistradoPor;
+  @Column(name = "reintegro_id")
+  private UUID reintegroId;
 
   protected SolicitudRetractoJpaEntity() {}
 
@@ -61,11 +51,7 @@ public class SolicitudRetractoJpaEntity {
       String verdictoPlazo,
       String estado,
       Instant productoRecibidoEn,
-      BigDecimal reembolsoMonto,
-      String reembolsoMedio,
-      String reembolsoComprobante,
-      Instant reembolsoRegistradoEn,
-      String reembolsoRegistradoPor) {
+      UUID reintegroId) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.radicadaEn = radicadaEn;
@@ -74,11 +60,7 @@ public class SolicitudRetractoJpaEntity {
     this.verdictoPlazo = verdictoPlazo;
     this.estado = estado;
     this.productoRecibidoEn = productoRecibidoEn;
-    this.reembolsoMonto = reembolsoMonto;
-    this.reembolsoMedio = reembolsoMedio;
-    this.reembolsoComprobante = reembolsoComprobante;
-    this.reembolsoRegistradoEn = reembolsoRegistradoEn;
-    this.reembolsoRegistradoPor = reembolsoRegistradoPor;
+    this.reintegroId = reintegroId;
   }
 
   public UUID getId() {
@@ -113,23 +95,7 @@ public class SolicitudRetractoJpaEntity {
     return productoRecibidoEn;
   }
 
-  public BigDecimal getReembolsoMonto() {
-    return reembolsoMonto;
-  }
-
-  public String getReembolsoMedio() {
-    return reembolsoMedio;
-  }
-
-  public String getReembolsoComprobante() {
-    return reembolsoComprobante;
-  }
-
-  public Instant getReembolsoRegistradoEn() {
-    return reembolsoRegistradoEn;
-  }
-
-  public String getReembolsoRegistradoPor() {
-    return reembolsoRegistradoPor;
+  public UUID getReintegroId() {
+    return reintegroId;
   }
 }

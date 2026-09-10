@@ -60,42 +60,42 @@
         }
 
         <form
-          [formGroup]="formularioReembolso"
-          (submit)="$event.preventDefault(); registrarReembolso(solicitud)"
+          [formGroup]="formularioReintegro"
+          (submit)="$event.preventDefault(); registrarReintegro(solicitud)"
         >
           <ts-campo
-            [idCampo]="'reembolso-monto-' + solicitud.id"
+            [idCampo]="'reintegro-monto-' + solicitud.id"
             tipo="number"
             [label]="'admin.retractos.acciones.monto' | transloco"
             formControlName="monto"
-            (focusin)="prepararReembolso()"
+            (focusin)="prepararReintegro()"
           />
           <ts-select
-            [idCampo]="'reembolso-medio-' + solicitud.id"
+            [idCampo]="'reintegro-medio-' + solicitud.id"
             [label]="'admin.retractos.acciones.medio' | transloco"
             [opciones]="opcionesMedio()"
             formControlName="medio"
           />
           <ts-campo
-            [idCampo]="'reembolso-comprobante-' + solicitud.id"
+            [idCampo]="'reintegro-comprobante-' + solicitud.id"
             [label]="'admin.retractos.acciones.comprobante' | transloco"
             formControlName="comprobante"
           />
-          <ts-boton tipo="submit" [cargando]="acciones.registrarReembolso.isPending()">
-            {{ 'admin.retractos.acciones.registrar_reembolso' | transloco }}
+          <ts-boton tipo="submit" [cargando]="acciones.registrarReintegro.isPending()">
+            {{ 'admin.retractos.acciones.registrar_reintegro' | transloco }}
           </ts-boton>
         </form>
       }
 
       @case ('REEMBOLSADA') {
-        @if (solicitud.reembolso; as reembolso) {
+        @if (solicitud.reintegro; as reintegro) {
           <p class="m-0">
-            {{ 'admin.retractos.reembolsado_por' | transloco }}
-            <ts-precio [valor]="reembolso.monto" />
+            {{ 'admin.retractos.reintegrado_por' | transloco }}
+            <ts-precio [valor]="reintegro.monto" />
           </p>
           <p class="m-0 text-ts-texto-suave">
             {{ 'admin.retractos.comprobante' | transloco }}:
-            {{ reembolso.comprobante ?? ('admin.retractos.sin_comprobante' | transloco) }}
+            {{ reintegro.comprobante ?? ('admin.retractos.sin_comprobante' | transloco) }}
           </p>
         }
       }

@@ -17,6 +17,52 @@ del sistema está mal.**
 
 ---
 
+## Antes de las fichas: cuenta los caminos que terminan en devolver dinero
+
+Las fichas que siguen están separadas por figura legal, y leerlas una por una
+tiene un efecto secundario que hay que neutralizar de entrada: **se encuentran
+tres huecos donde hay uno solo, y se pierden los que no tienen ficha.**
+
+Haz este inventario **antes** de rastrear ninguna figura. Recorre los documentos
+publicados buscando toda frase que prometa devolver dinero, tenga o no un nombre
+legal, y anota su disparador y su plazo. En una tienda colombiana típica salen
+más de los tres que uno espera:
+
+| Camino | Lo dispara | Suele tener ficha propia |
+|---|---|---|
+| Retracto | el comprador se arrepiente, sin motivo | sí |
+| Reversión del pago | fraude, no entrega, producto distinto o defectuoso | sí |
+| Garantía legal | el producto falla, y la salida elegida es devolver el dinero | sí |
+| **No disponibilidad sobrevenida** | el stock desaparece después de comprar | **no** |
+| **Incumplimiento del plazo de entrega** | no se entregó a tiempo y el comprador termina el contrato | **no** |
+| Rechazo o cancelación antes de entregar | según cómo esté redactado | no |
+
+Los dos marcados son los que se escapan, y se escapan por la misma razón: viven
+en secciones del documento que no se leen como secciones de dinero —
+"Disponibilidad", "Envío y entrega"— y aun así traen un plazo y una obligación de
+reintegrar.
+
+**Qué hacer con el inventario, que es el punto:**
+
+- **Cada camino conserva su propio disparador, su propio plazo y su propia
+  causal.** No se unifican: son obligaciones distintas y confundirlas es el error
+  de fondo que la ficha de reversión ya advierte.
+- **La constancia del dinero que salió es una sola cosa** —cuánto, por qué medio,
+  cuándo, quién lo registró y con qué comprobante— y debería modelarse una vez.
+  Un sistema con tres constancias distintas para el mismo hecho no puede
+  responder "cuánto dinero devolvimos el mes pasado" sin sumar a mano.
+- **Si en el sistema ya existe uno de estos caminos, ábrelo y mira dónde vive su
+  constancia.** El primero que se construye casi siempre la mete *dentro* de su
+  propio agregado, con un argumento correcto —"así es imposible un reembolso sin
+  solicitud"—, y esa decisión, que era buena para uno, es la que bloquea a los
+  otros cuatro. Encontrarla ahora cuesta una nota en el informe; encontrarla
+  después cuesta una migración.
+
+**Prueba que lo sostiene:** que el inventario de caminos esté escrito y fechado.
+Es lo único que hace visible el camino que nadie contó.
+
+---
+
 ## Derecho de retracto
 
 **Promete:** que el comprador puede arrepentirse dentro del plazo legal desde la
@@ -184,14 +230,49 @@ cliente.
 
 ## Canales de atención, PQR y horario
 
-**Promete:** un correo, un teléfono, un WhatsApp, un formulario, un horario.
+**Promete:** un correo, un teléfono, un WhatsApp, un formulario, un horario, y
+—cuando el texto usa la palabra **radicación**— que la solicitud queda radicada,
+que es bastante más que leída.
 
-**Rastro mínimo:** que existan, que alguien los lea, y que el que aparece en el
-documento sea el mismo que aparece en el pie, en el checkout y en los correos
-transaccionales. Tres direcciones distintas en tres lugares es un hallazgo.
+**Rastro mínimo:**
 
-**Dónde suele romperse:** el horario de atención es casi siempre un dato de
-negocio que nadie decidió. No se inventa: `[[ ]]`.
+1. Que los canales existan y que el que aparece en el documento sea el mismo que
+   aparece en el pie, en el checkout y en los correos transaccionales. Tres
+   direcciones distintas en tres lugares es un hallazgo.
+2. Un **registro por solicitud** con su identificador visible para quien la
+   presentó. "Radicar" sin número de radicado es recibir, no radicar; y sin
+   identificador el comprador no tiene cómo referirse después a lo que pidió.
+3. **Dos fechas, no una:** cuándo llegó la solicitud y cuándo se registró. El
+   plazo corre desde la primera; la segunda es la única que explica por qué nadie
+   se enteró. Cuando el canal es un correo o un WhatsApp, quien radica es una
+   persona del negocio, y el sistema deja constancia de un acto que ocurrió por
+   fuera: guarda **quién radicó**, y esa constancia no sustituye el acto.
+4. **El tipo de la solicitud, porque de él depende el reloj.** Este es el punto
+   que se salta todo el mundo: el mismo buzón recibe peticiones que la ley cuenta
+   con relojes distintos. Consultas y reclamos de datos personales tienen sus
+   plazos y sus prórrogas; las peticiones del consumidor, los suyos; y el sitio
+   además suele **prometer** un plazo propio. Verifica cada uno en
+   `marco-normativo.md`: no los unifiques en una constante.
+5. La **respuesta** registrada con su fecha, y la **prórroga** —si el plazo la
+   admite— registrada como tal, con el aviso al interesado antes de que venza el
+   plazo inicial. Una prórroga que nadie avisó no es una prórroga.
+6. Alguna forma de **ver lo que está por vencerse**. Un plazo que solo existe en
+   una columna no lo cumple nadie.
+
+**Dónde suele romperse:** dos sitios.
+
+- El horario de atención es casi siempre un dato de negocio que nadie decidió. No
+  se inventa: `[[ ]]`.
+- **Los documentos se contradicen entre sí sobre el mismo buzón.** Los términos
+  prometen un plazo para "toda petición" y la política de datos promete otro,
+  más corto, para las consultas — y las dos frases apuntan al mismo correo. No es
+  una errata: es el caso 2 del encabezado de esta skill, el que nadie ve porque
+  las dos partes funcionan. Compara los plazos **entre documentos**, no solo
+  contra el código.
+
+**Prueba que lo sostiene:** que una solicitud de cada tipo reciba el plazo que le
+corresponde y no el mismo para todas; y que el vencimiento se calcule sobre la
+fecha de llegada, no sobre la de registro.
 
 ---
 

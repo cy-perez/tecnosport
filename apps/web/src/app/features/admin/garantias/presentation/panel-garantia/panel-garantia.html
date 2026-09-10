@@ -1,0 +1,101 @@
+<section>
+  <h2 class="mt-16 mb-8 text-base font-medio">
+    {{ 'admin.garantias.titulo' | transloco }}
+  </h2>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="mb-8 text-ts-error">{{ mensaje }}</p>
+  }
+
+  @if (consulta.isPending()) {
+    <p role="status" class="text-ts-texto-suave">{{ 'admin.garantias.cargando' | transloco }}</p>
+  } @else {
+    @for (reclamacion of reclamaciones(); track reclamacion.id) {
+      <dl class="m-0 mb-16">
+        <dt class="text-ts-texto-suave">{{ 'admin.garantias.fallo' | transloco }}</dt>
+        <dd class="m-0 mb-8">{{ reclamacion.descripcionDelFallo }}</dd>
+
+        <dt class="text-ts-texto-suave">{{ 'admin.garantias.vigencia_titulo' | transloco }}</dt>
+        <dd class="m-0 mb-8">
+          {{ etiquetaVigencia(reclamacion.vigencia) }}
+          @if (reclamacion.vigencia === 'INDETERMINADA') {
+            <span class="block text-ts-texto-suave">
+              {{ 'admin.garantias.vigencia.indeterminada_ayuda' | transloco }}
+            </span>
+          } @else if (reclamacion.mesesDeTermino; as meses) {
+            <span class="block text-ts-texto-suave">
+              {{ 'admin.garantias.termino' | transloco: { meses: meses } }}
+            </span>
+          }
+        </dd>
+
+        @if (reclamacion.desenlace; as desenlace) {
+          <dt class="text-ts-texto-suave">{{ 'admin.garantias.desenlace' | transloco }}</dt>
+          <dd class="m-0 mb-8">{{ etiquetaDesenlace(desenlace) }}</dd>
+        }
+      </dl>
+
+      @if (reclamacion.estado === 'RADICADA') {
+        <form
+          class="mb-16"
+          [formGroup]="formularioResolver"
+          (submit)="$event.preventDefault(); resolver(reclamacion)"
+        >
+          <ts-select
+            [idCampo]="'garantia-desenlace-' + reclamacion.id"
+            [label]="'admin.garantias.acciones.desenlace' | transloco"
+            [opciones]="opcionesDesenlace()"
+            formControlName="desenlace"
+            (change)="alCambiarDesenlace()"
+          />
+          <ts-campo
+            [idCampo]="'garantia-resumen-' + reclamacion.id"
+            [label]="'admin.garantias.acciones.resumen' | transloco"
+            formControlName="resumenParaElComprador"
+          />
+
+          @if (esReintegro()) {
+            <ts-campo
+              [idCampo]="'garantia-monto-' + reclamacion.id"
+              tipo="number"
+              [label]="'admin.garantias.acciones.monto' | transloco"
+              formControlName="monto"
+            />
+            <ts-campo
+              [idCampo]="'garantia-comprobante-' + reclamacion.id"
+              [label]="'admin.garantias.acciones.comprobante' | transloco"
+              formControlName="comprobante"
+            />
+          }
+
+          <ts-boton tipo="submit" [cargando]="acciones.resolver.isPending()">
+            {{ 'admin.garantias.acciones.resolver' | transloco }}
+          </ts-boton>
+        </form>
+      }
+    }
+
+    @if (puedeRadicar()) {
+      <form [formGroup]="formularioRadicar" (submit)="$event.preventDefault(); radicar()">
+        <p class="mb-8 text-ts-texto-suave">{{ 'admin.garantias.ayuda_radicar' | transloco }}</p>
+        <ts-select
+          [idCampo]="'garantia-linea-' + pedidoId()"
+          [label]="'admin.garantias.acciones.linea' | transloco"
+          [opciones]="opcionesLinea()"
+          [placeholder]="'admin.garantias.acciones.elegir_linea' | transloco"
+          formControlName="varianteId"
+        />
+        <ts-campo
+          [idCampo]="'garantia-fallo-' + pedidoId()"
+          [label]="'admin.garantias.acciones.fallo' | transloco"
+          formControlName="descripcionDelFallo"
+        />
+        <ts-boton tipo="submit" [cargando]="acciones.radicar.isPending()">
+          {{ 'admin.garantias.acciones.radicar' | transloco }}
+        </ts-boton>
+      </form>
+    } @else {
+      <p class="text-ts-texto-suave">{{ 'admin.garantias.no_aplica' | transloco }}</p>
+    }
+  }
+</section>

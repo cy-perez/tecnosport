@@ -12,11 +12,11 @@ export type EstadoSolicitudRetracto =
   | 'REEMBOLSADA'
   | 'RECHAZADA';
 
-export type MedioReembolso = 'WOMPI' | 'TRANSFERENCIA_BANCARIA' | 'EFECTIVO' | 'OTRO';
+export type MedioReintegro = 'WOMPI' | 'TRANSFERENCIA_BANCARIA' | 'EFECTIVO' | 'OTRO';
 
-export interface Reembolso {
+export interface Reintegro {
   readonly monto: number;
-  readonly medio: MedioReembolso;
+  readonly medio: MedioReintegro;
   readonly comprobante: string | null;
   readonly registradoEn: string;
   readonly registradoPor: string;
@@ -33,7 +33,7 @@ export interface SolicitudRetracto {
   readonly productoRecibidoEn: string | null;
   /** Lo calcula el servidor: es el plazo del artículo 47 y no puede depender del reloj del navegador. */
   readonly limiteDeReintegro: string | null;
-  readonly reembolso: Reembolso | null;
+  readonly reintegro: Reintegro | null;
 }
 
 /** Solo un pedido entregado admite retracto, y el grafo llega a `DEVUELTO` por los dos caminos. */

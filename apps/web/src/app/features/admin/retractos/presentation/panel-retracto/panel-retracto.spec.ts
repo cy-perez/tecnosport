@@ -8,7 +8,7 @@ import {
   REPOSITORIO_RETRACTOS,
   RepositorioRetractos,
 } from '../../domain/repositorio-retractos.puerto';
-import { MedioReembolso, SolicitudRetracto } from '../../domain/retracto.model';
+import { MedioReintegro, SolicitudRetracto } from '../../domain/retracto.model';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { PanelRetracto } from './panel-retracto';
 
@@ -23,7 +23,7 @@ function solicitud(overrides: Partial<SolicitudRetracto> = {}): SolicitudRetract
     estado: 'RADICADA',
     productoRecibidoEn: null,
     limiteDeReintegro: null,
-    reembolso: null,
+    reintegro: null,
     ...overrides,
   };
 }
@@ -31,7 +31,7 @@ function solicitud(overrides: Partial<SolicitudRetracto> = {}): SolicitudRetract
 class RepositorioRetractosFalso implements RepositorioRetractos {
   radicados: { pedidoId: string; motivo: string | null }[] = [];
   recibidos: string[] = [];
-  reembolsos: { solicitudId: string; monto: number; medio: MedioReembolso; comprobante: string | null }[] =
+  reintegros: { solicitudId: string; monto: number; medio: MedioReintegro; comprobante: string | null }[] =
     [];
 
   constructor(private solicitudes: SolicitudRetracto[] = []) {}
@@ -50,13 +50,13 @@ class RepositorioRetractosFalso implements RepositorioRetractos {
     return solicitud({ estado: 'PRODUCTO_RECIBIDO' });
   }
 
-  async registrarReembolso(
+  async registrarReintegro(
     solicitudId: string,
     monto: number,
-    medio: MedioReembolso,
+    medio: MedioReintegro,
     comprobante: string | null,
   ): Promise<SolicitudRetracto> {
-    this.reembolsos.push({ solicitudId, monto, medio, comprobante });
+    this.reintegros.push({ solicitudId, monto, medio, comprobante });
     return solicitud({ estado: 'REEMBOLSADA' });
   }
 }
@@ -127,12 +127,12 @@ describe('PanelRetracto', () => {
     expect(screen.queryByText('Fuera de plazo')).toBeNull();
     expect(
       screen.getByText(
-        'Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio.',
+        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció.',
       ),
     ).toBeTruthy();
   });
 
-  it('con el producto recibido, registra el reembolso con el medio elegido', async () => {
+  it('con el producto recibido, registra el reintegro con el medio elegido', async () => {
     const { repositorio } = await renderPanel([
       solicitud({
         estado: 'PRODUCTO_RECIBIDO',
@@ -143,10 +143,10 @@ describe('PanelRetracto', () => {
 
     const monto = await screen.findByLabelText('Monto a reembolsar');
     fireEvent.input(monto, { target: { value: '50000' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar reembolso' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar reintegro' }));
 
     await vi.waitFor(() =>
-      expect(repositorio.reembolsos).toEqual([
+      expect(repositorio.reintegros).toEqual([
         {
           solicitudId: 's1',
           monto: 50_000,
@@ -175,7 +175,7 @@ describe('PanelRetracto', () => {
     await renderPanel([
       solicitud({
         estado: 'REEMBOLSADA',
-        reembolso: {
+        reintegro: {
           monto: 50_000,
           medio: 'TRANSFERENCIA_BANCARIA',
           comprobante: 'TRF-9912',
@@ -186,7 +186,7 @@ describe('PanelRetracto', () => {
     ]);
 
     expect(await screen.findByText(/TRF-9912/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Registrar reembolso' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Registrar reintegro' })).toBeNull();
   });
 
   it('una solicitud rechazada no bloquea radicar otra', async () => {
@@ -195,7 +195,7 @@ describe('PanelRetracto', () => {
     expect(await screen.findByRole('button', { name: 'Radicar retracto' })).toBeTruthy();
   });
 
-  it('el formulario de reembolso no tiene violaciones de WCAG 2.2 AA', async () => {
+  it('el formulario de reintegro no tiene violaciones de WCAG 2.2 AA', async () => {
     const { container } = await renderPanel([
       solicitud({
         estado: 'PRODUCTO_RECIBIDO',

@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.retracto.CalendarioHabil;
 import co.tecnosport.api.domain.retracto.EstadoSolicitudRetracto;
 import co.tecnosport.api.domain.retracto.PlazoDeRetracto;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
-import co.tecnosport.api.domain.retracto.VerdictoPlazo;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Map;

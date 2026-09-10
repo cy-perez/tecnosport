@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation;
 
+import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaException;
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
@@ -11,17 +12,21 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
+import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
+import co.tecnosport.api.application.pedido.ReintegroRequeridoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
-import co.tecnosport.api.application.retracto.MontoDeReembolsoInvalidoException;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
 import co.tecnosport.api.application.retracto.RetractoYaRadicadoException;
 import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaException;
+import co.tecnosport.api.application.reversion.SolicitudReversionNoEncontradaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
@@ -121,9 +126,37 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.CONFLICT, "Retracto ya radicado", excepcion);
   }
 
-  @ExceptionHandler(MontoDeReembolsoInvalidoException.class)
-  public ProblemDetail montoDeReembolsoInvalido(MontoDeReembolsoInvalidoException excepcion) {
-    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reembolso invalido", excepcion);
+  @ExceptionHandler(SolicitudAtencionNoEncontradaException.class)
+  public ProblemDetail solicitudAtencionNoEncontrada(
+      SolicitudAtencionNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Solicitud de atencion no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(ReclamacionGarantiaNoEncontradaException.class)
+  public ProblemDetail reclamacionGarantiaNoEncontrada(
+      ReclamacionGarantiaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Reclamacion de garantia no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(LineaNoEsDelPedidoException.class)
+  public ProblemDetail lineaNoEsDelPedido(LineaNoEsDelPedidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "La linea no es de ese pedido", excepcion);
+  }
+
+  @ExceptionHandler(SolicitudReversionNoEncontradaException.class)
+  public ProblemDetail solicitudReversionNoEncontrada(
+      SolicitudReversionNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Solicitud de reversion no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(ReintegroRequeridoException.class)
+  public ProblemDetail reintegroRequerido(ReintegroRequeridoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el reintegro", excepcion);
+  }
+
+  @ExceptionHandler(MontoDeReintegroInvalidoException.class)
+  public ProblemDetail montoDeReintegroInvalido(MontoDeReintegroInvalidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reintegro invalido", excepcion);
   }
 
   @ExceptionHandler(SkuYaEnUsoException.class)

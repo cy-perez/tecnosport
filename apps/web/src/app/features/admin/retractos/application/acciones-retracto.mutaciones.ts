@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { QueryClient, injectMutation } from '@tanstack/angular-query-experimental';
 import { REPOSITORIO_RETRACTOS } from '../domain/repositorio-retractos.puerto';
-import { MedioReembolso, SolicitudRetracto } from '../domain/retracto.model';
+import { MedioReintegro, SolicitudRetracto } from '../domain/retracto.model';
 import { claveRetractosDePedido } from './retractos-de-pedido.consulta';
 
 /**
@@ -36,15 +36,15 @@ export function usarAccionesRetracto() {
     onSuccess: (_datos, variables) => invalidar(variables.pedidoId),
   }));
 
-  const registrarReembolso = injectMutation(() => ({
+  const registrarReintegro = injectMutation(() => ({
     mutationFn: (variables: {
       pedidoId: string;
       solicitudId: string;
       monto: number;
-      medio: MedioReembolso;
+      medio: MedioReintegro;
       comprobante: string | null;
     }): Promise<SolicitudRetracto> =>
-      repositorio.registrarReembolso(
+      repositorio.registrarReintegro(
         variables.solicitudId,
         variables.monto,
         variables.medio,
@@ -53,5 +53,5 @@ export function usarAccionesRetracto() {
     onSuccess: (_datos, variables) => invalidar(variables.pedidoId),
   }));
 
-  return { radicar, recibirProducto, registrarReembolso };
+  return { radicar, recibirProducto, registrarReintegro };
 }

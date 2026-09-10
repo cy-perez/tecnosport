@@ -5,12 +5,23 @@
     <p>{{ 'admin.panel.bienvenida' | transloco: { rol: sesion.rol } }}</p>
   }
 
-  <a class="anillo-foco mb-24 inline-block text-ts-primario" routerLink="../pedidos">{{
-    'admin.panel.ir_a_pedidos' | transloco
-  }}</a>
-  <a class="anillo-foco mb-24 inline-block text-ts-primario ml-16" routerLink="../productos">{{
-    'admin.panel.ir_a_productos' | transloco
-  }}</a>
+  <!--
+    Fila propia para los destinos, y el cierre de sesion aparte. Con los tres enlaces en linea y el
+    boton detras, el host de `ts-boton` —que es `display: inline`— se montaba encima del ultimo
+    enlace: el margen inferior de los `inline-block` no separa a un hermano en la misma linea. Se
+    veia solo en el navegador, con los tres enlaces puestos; con dos cabia por poco.
+  -->
+  <nav class="mb-24 flex flex-wrap gap-16">
+    <a class="anillo-foco text-ts-primario" routerLink="../pedidos">{{
+      'admin.panel.ir_a_pedidos' | transloco
+    }}</a>
+    <a class="anillo-foco text-ts-primario" routerLink="../productos">{{
+      'admin.panel.ir_a_productos' | transloco
+    }}</a>
+    <a class="anillo-foco text-ts-primario" routerLink="../atencion">{{
+      'admin.panel.ir_a_atencion' | transloco
+    }}</a>
+  </nav>
 
   <ts-boton variante="secundario" (click)="cerrarSesion()">
     {{ 'admin.panel.cerrar_sesion' | transloco }}

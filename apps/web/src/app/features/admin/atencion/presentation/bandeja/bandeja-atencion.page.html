@@ -1,0 +1,186 @@
+<section class="mx-auto my-32 max-w-contenido px-16">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-8 font-display text-2xl">{{ 'admin.atencion.titulo' | transloco }}</h1>
+  <p class="mt-0 mb-24 text-ts-texto-suave">{{ 'admin.atencion.ayuda' | transloco }}</p>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="mb-16 text-ts-error">{{ mensaje }}</p>
+  }
+
+  <form
+    class="mb-32"
+    [formGroup]="formularioRadicar"
+    (submit)="$event.preventDefault(); radicar()"
+  >
+    <h2 class="mt-0 mb-8 text-base font-medio">{{ 'admin.atencion.radicar.titulo' | transloco }}</h2>
+    <p class="mt-0 mb-16 text-ts-texto-suave">
+      {{ 'admin.atencion.radicar.ayuda' | transloco }}
+    </p>
+
+    <ts-select
+      idCampo="atencion-tipo"
+      [label]="'admin.atencion.radicar.tipo' | transloco"
+      [opciones]="opcionesTipo()"
+      formControlName="tipo"
+    />
+    <ts-campo
+      idCampo="atencion-correo"
+      tipo="email"
+      [label]="'admin.atencion.radicar.correo' | transloco"
+      formControlName="correo"
+    />
+    <ts-campo
+      idCampo="atencion-asunto"
+      [label]="'admin.atencion.radicar.asunto' | transloco"
+      formControlName="asunto"
+    />
+    <ts-campo
+      idCampo="atencion-recibida"
+      tipo="datetime-local"
+      [label]="'admin.atencion.radicar.recibida_en' | transloco"
+      [ayuda]="'admin.atencion.radicar.recibida_en_ayuda' | transloco"
+      formControlName="recibidaEn"
+    />
+    <ts-boton tipo="submit" [cargando]="acciones.radicar.isPending()">
+      {{ 'admin.atencion.radicar.enviar' | transloco }}
+    </ts-boton>
+  </form>
+
+  <div class="mb-16 flex gap-8" role="group" [attr.aria-label]="'admin.atencion.filtros' | transloco">
+    <ts-boton
+      [variante]="filtro() === null ? 'primario' : 'secundario'"
+      (click)="filtrar(null)"
+    >
+      {{ 'admin.atencion.filtro_abiertas' | transloco }}
+    </ts-boton>
+    <ts-boton
+      [variante]="filtro() === 'RESPONDIDA' ? 'primario' : 'secundario'"
+      (click)="filtrar('RESPONDIDA')"
+    >
+      {{ 'admin.atencion.filtro_respondidas' | transloco }}
+    </ts-boton>
+  </div>
+
+  @if (consulta.isPending()) {
+    <p role="status" class="text-ts-texto-suave">{{ 'admin.atencion.cargando' | transloco }}</p>
+  } @else if (solicitudes().length === 0) {
+    <p role="status" class="text-ts-texto-suave">{{ 'admin.atencion.vacia' | transloco }}</p>
+  } @else {
+    <ul class="m-0 list-none p-0">
+      @for (solicitud of solicitudes(); track solicitud.id) {
+        <li class="mb-16 border-b border-ts-borde pb-16">
+          <h3 class="m-0 mb-4 text-base font-medio">
+            {{ solicitud.numeroRadicado }} · {{ etiquetaTipo(solicitud.tipo) }}
+          </h3>
+          <p class="m-0 mb-4">{{ solicitud.asunto }}</p>
+          <p class="m-0 mb-4 text-ts-texto-suave">{{ solicitud.correo }}</p>
+
+          <dl class="m-0 mb-8">
+            <dt class="text-ts-texto-suave">{{ 'admin.atencion.estado' | transloco }}</dt>
+            <dd class="m-0 mb-8">{{ etiquetaEstado(solicitud.estado) }}</dd>
+
+            <dt class="text-ts-texto-suave">{{ 'admin.atencion.limite' | transloco }}</dt>
+            <dd class="m-0 mb-8">
+              {{ solicitud.limiteDeRespuesta | date: 'medium' }}
+              @if (solicitud.estado !== 'RESPONDIDA') {
+                <span
+                  class="block"
+                  [class.text-ts-error]="diasRestantes(solicitud) < 0"
+                  [class.text-ts-texto-suave]="diasRestantes(solicitud) >= 0"
+                >
+                  @if (diasRestantes(solicitud) < 0) {
+                    {{ 'admin.atencion.plazo_pasado' | transloco }}
+                  } @else {
+                    {{
+                      'admin.atencion.plazo_restante'
+                        | transloco: { dias: diasRestantes(solicitud) }
+                    }}
+                  }
+                </span>
+              }
+            </dd>
+
+            <dt class="text-ts-texto-suave">{{ 'admin.atencion.verdicto_titulo' | transloco }}</dt>
+            <dd class="m-0 mb-8">
+              {{ etiquetaVerdicto(solicitud.verdicto) }}
+              @if (solicitud.verdicto === 'INDETERMINADO') {
+                <span class="block text-ts-texto-suave">
+                  {{ 'admin.atencion.verdicto.indeterminado_ayuda' | transloco }}
+                </span>
+              }
+            </dd>
+
+            <dt class="text-ts-texto-suave">{{ 'admin.atencion.recibida_en' | transloco }}</dt>
+            <dd class="m-0 mb-8">
+              {{ solicitud.recibidaEn | date: 'medium' }}
+              <span class="block text-ts-texto-suave">
+                {{
+                  'admin.atencion.radicada_en'
+                    | transloco: { fecha: solicitud.radicadaEn | date: 'medium' }
+                }}
+              </span>
+            </dd>
+          </dl>
+
+          @if (solicitud.prorroga; as prorroga) {
+            <p class="m-0 mb-8 text-ts-texto-suave">
+              {{ 'admin.atencion.prorrogada_por' | transloco: { motivo: prorroga.motivo } }}
+            </p>
+          }
+
+          @if (solicitud.respuesta; as respuesta) {
+            <p class="m-0 mb-8">
+              {{ 'admin.atencion.respondida_con' | transloco }}: {{ respuesta.resumen }}
+            </p>
+          } @else {
+            <ts-boton variante="secundario" (click)="alternar(solicitud.id)">
+              {{ 'admin.atencion.acciones.abrir' | transloco }}
+            </ts-boton>
+
+            @if (abierta() === solicitud.id) {
+              <form
+                class="mt-16"
+                [formGroup]="formularioResponder"
+                (submit)="$event.preventDefault(); responder(solicitud)"
+              >
+                <ts-campo
+                  [idCampo]="'atencion-resumen-' + solicitud.id"
+                  [label]="'admin.atencion.acciones.resumen' | transloco"
+                  formControlName="resumen"
+                />
+                <ts-boton tipo="submit" [cargando]="acciones.responder.isPending()">
+                  {{ 'admin.atencion.acciones.responder' | transloco }}
+                </ts-boton>
+              </form>
+
+              @if (admiteProrroga(solicitud)) {
+                <form
+                  class="mt-16"
+                  [formGroup]="formularioProrrogar"
+                  (submit)="$event.preventDefault(); prorrogar(solicitud)"
+                >
+                  <p class="mt-0 mb-8 text-ts-texto-suave">
+                    {{ 'admin.atencion.acciones.prorroga_ayuda' | transloco }}
+                  </p>
+                  <ts-campo
+                    [idCampo]="'atencion-motivo-' + solicitud.id"
+                    [label]="'admin.atencion.acciones.motivo' | transloco"
+                    formControlName="motivo"
+                  />
+                  <ts-boton
+                    variante="secundario"
+                    tipo="submit"
+                    [cargando]="acciones.prorrogar.isPending()"
+                  >
+                    {{ 'admin.atencion.acciones.prorrogar' | transloco }}
+                  </ts-boton>
+                </form>
+              }
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>
