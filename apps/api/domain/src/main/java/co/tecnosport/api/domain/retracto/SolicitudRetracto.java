@@ -20,9 +20,14 @@ import java.util.UUID;
  * es siempre una persona del negocio, no el comprador: de ahí {@code radicadaPor}. Este agregado
  * deja constancia de un acto que ocurre por fuera; no lo sustituye.
  *
- * <p>{@code verdictoAlRadicar} se congela al crear y no se recalcula después. Es una foto de lo que
- * se sabía ese día: el calendario de festivos puede cargarse más adelante y cambiaría un veredicto
- * ya usado para tomar una decisión, que es justo lo que no debe pasar.
+ * <p>{@code verdictoAlRadicar} se congela al crear y no se recalcula después, y la razón cambió sin
+ * que el campo cambiara. Nació porque el calendario de festivos era un dato pendiente y cargarlo
+ * habría movido un veredicto ya usado para decidir; desde {@code ADR-0024} los festivos se calculan
+ * y ese riesgo desapareció. Sigue congelado por otro motivo, más duradero: la <b>Ley 2578 de
+ * 2026</b> declaró festivo el 9 de julio con el año ya empezado, y contra ella hay una demanda de
+ * constitucionalidad en curso. Un calendario legal cambia, y con él cambiaría hacia atrás el
+ * veredicto con el que alguien decidió algo. La foto del día en que se radicó es lo que se puede
+ * defender después.
  */
 public final class SolicitudRetracto {
 

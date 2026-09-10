@@ -19,8 +19,11 @@ import java.util.Objects;
  * eso el actor es siempre una persona del negocio.
  *
  * <p>No bloquea por plazo vencido. El veredicto se congela en la solicitud y decide una persona con
- * ese dato delante — puede haber un acuerdo comercial o una garantía por detrás, y sin el
- * calendario de festivos cargado el sistema ni siquiera puede afirmar que venció.
+ * ese dato delante: puede haber un acuerdo comercial o una garantía por detrás, y un derecho del
+ * consumidor no se cierra con una guarda de software. Antes había una segunda razón —sin los
+ * festivos cargados el sistema no podía ni afirmar que había vencido— que dejó de aplicar con
+ * {@code ADR-0024}: hoy se calculan, y el veredicto en producción siempre es {@code EN_PLAZO} o
+ * {@code VENCIDO}.
  */
 public final class RegistrarRetracto {
 
