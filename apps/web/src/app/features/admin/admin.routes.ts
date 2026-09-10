@@ -7,6 +7,8 @@ import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-h
 import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias-http.repositorio';
 import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
 import { adminGuard } from './admin.guard';
+import { REPOSITORIO_ATENCION } from './atencion/domain/repositorio-atencion.puerto';
+import { AtencionHttpRepositorio } from './atencion/infrastructure/atencion-http.repositorio';
 import { CapturaStore } from '../captura360/application/captura.store';
 import { ALMACEN_LOCAL_DE_CAPTURAS } from '../captura360/domain/almacen-local-capturas.puerto';
 import { PROCESADOR_DE_FOTOGRAMAS } from '../captura360/domain/procesador-fotogramas.puerto';
@@ -71,6 +73,15 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
             (m) => m.ListaPedidosAdminPage,
+          ),
+      },
+      {
+        path: 'atencion',
+        canActivate: [adminGuard],
+        providers: [{ provide: REPOSITORIO_ATENCION, useClass: AtencionHttpRepositorio }],
+        loadComponent: () =>
+          import('./atencion/presentation/bandeja/bandeja-atencion.page').then(
+            (m) => m.BandejaAtencionPage,
           ),
       },
       {

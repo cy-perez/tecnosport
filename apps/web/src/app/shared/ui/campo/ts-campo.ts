@@ -2,7 +2,18 @@ import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
 
-export type TipoCampo = 'text' | 'number' | 'search' | 'password' | 'email';
+/**
+ * `datetime-local` entró con la bandeja de atención: quien radica una PQR escribe la fecha en que
+ * llegó, que es de la que cuelga el plazo legal, y no siempre es "ahora". El control nativo del
+ * navegador es lo que hay; un selector propio sería otro componente y otra auditoría de foco.
+ */
+export type TipoCampo =
+  | 'text'
+  | 'number'
+  | 'search'
+  | 'password'
+  | 'email'
+  | 'datetime-local';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- valor por defecto hasta que Forms registre el real
 function sinOperacion(): void {}

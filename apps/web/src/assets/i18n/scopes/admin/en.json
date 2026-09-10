@@ -13,7 +13,8 @@
     "bienvenida": "Signed in as {{rol}}.",
     "cerrar_sesion": "Sign out",
     "ir_a_pedidos": "Orders",
-    "ir_a_productos": "Products"
+    "ir_a_productos": "Products",
+    "ir_a_atencion": "Requests"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -187,6 +188,63 @@
       "medio": "Refund method",
       "comprobante": "Receipt (optional)",
       "registrar_reintegro": "Record refund"
+    }
+  },
+  "atencion": {
+    "titulo": "Requests, complaints and claims",
+    "ayuda": "Whatever arrives by email or WhatsApp is filed here: it gets a number, an arrival date and a deadline running.",
+    "cargando": "Loading the inbox...",
+    "vacia": "No open requests.",
+    "error": "The action could not be completed. Please try again.",
+    "filtros": "Filter requests",
+    "filtro_abiertas": "Open",
+    "filtro_respondidas": "Answered",
+    "estado": "Status",
+    "limite": "Answer before",
+    "verdicto_titulo": "Deadline",
+    "recibida_en": "Arrived on",
+    "radicada_en": "Filed on {{fecha}}",
+    "plazo_restante": "{{dias}} days left.",
+    "plazo_pasado": "The deadline to answer has passed.",
+    "prorrogada_por": "Deadline extended: {{motivo}}",
+    "respondida_con": "Answer",
+    "radicar": {
+      "titulo": "File a request",
+      "ayuda": "The type sets the response deadline, so it cannot be changed later.",
+      "tipo": "Request type",
+      "correo": "Email of the person filing it",
+      "asunto": "Subject",
+      "recibida_en": "Date it arrived",
+      "recibida_en_ayuda": "The date on the email or message, not today's: the deadline runs from it. Leave empty if it just arrived.",
+      "enviar": "File"
+    },
+    "acciones": {
+      "abrir": "Handle",
+      "resumen": "What was answered",
+      "responder": "Record answer",
+      "motivo": "Reason for the extension",
+      "prorrogar": "Extend the deadline",
+      "prorroga_ayuda": "An extension is only valid if notified: recording it sends the notice with these reasons."
+    },
+    "tipos": {
+      "peticion": "Request",
+      "queja": "Complaint",
+      "reclamo": "Claim",
+      "consulta_datos": "Personal data enquiry",
+      "reclamo_datos": "Personal data claim",
+      "garantia": "Warranty",
+      "reversion": "Payment reversal"
+    },
+    "estados": {
+      "radicada": "Filed",
+      "prorrogada": "Deadline extended",
+      "respondida": "Answered"
+    },
+    "verdicto": {
+      "en_plazo": "Within deadline",
+      "vencido": "Past deadline",
+      "indeterminado": "Undetermined",
+      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed."
     }
   }
 }

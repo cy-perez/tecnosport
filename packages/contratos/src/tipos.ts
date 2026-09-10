@@ -516,6 +516,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_2"];
+        put?: never;
+        post: operations["radicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/respuesta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["responder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/prorroga": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["prorrogar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pagos/intentos/{referencia}": {
         parameters: {
             query?: never;
@@ -635,7 +683,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -667,7 +715,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -683,7 +731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -715,7 +763,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -731,7 +779,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarDePedido"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1130,6 +1194,54 @@ export interface components {
         };
         CoberturaContraentregaRequest: {
             codigoDaneCiudad?: string;
+        };
+        RadicarSolicitudRequest: {
+            tipo?: string;
+            correo?: string;
+            /** Format: uuid */
+            pedidoId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            asunto?: string;
+        };
+        ProrrogaRespuesta: {
+            /** Format: date-time */
+            otorgadaEn?: string;
+            otorgadaPor?: string;
+            motivo?: string;
+            /** Format: date-time */
+            avisadaEn?: string;
+        };
+        RespuestaRespuesta: {
+            /** Format: date-time */
+            respondidaEn?: string;
+            respondidaPor?: string;
+            resumen?: string;
+        };
+        SolicitudAtencionRespuesta: {
+            id?: string;
+            numeroRadicado?: string;
+            tipo?: string;
+            correo?: string;
+            pedidoId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            radicadaPor?: string;
+            asunto?: string;
+            estado?: string;
+            /** Format: date-time */
+            limiteDeRespuesta?: string;
+            verdicto?: string;
+            prorroga?: components["schemas"]["ProrrogaRespuesta"];
+            respuesta?: components["schemas"]["RespuestaRespuesta"];
+        };
+        ResponderSolicitudRequest: {
+            resumen?: string;
+        };
+        ProrrogarSolicitudRequest: {
+            motivo?: string;
         };
         RegistrarIdTransaccionWompiRequest: {
             idTransaccionWompi?: string;
@@ -2070,6 +2182,104 @@ export interface operations {
             };
         };
     };
+    listar_2: {
+        parameters: {
+            query?: {
+                estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    responder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponderSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    prorrogar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProrrogarSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
     registrarIdTransaccion: {
         parameters: {
             query?: never;
@@ -2288,7 +2498,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2328,7 +2538,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2348,7 +2558,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2390,7 +2600,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2410,7 +2620,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -2430,6 +2640,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    listarDePedido: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
                 };
             };
         };
