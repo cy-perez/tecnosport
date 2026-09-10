@@ -10,6 +10,7 @@ import {
 } from '../../domain/repositorio-retractos.puerto';
 import { MedioReintegro, SolicitudRetracto } from '../../domain/retracto.model';
 import { esperarSinViolaciones } from '../../../../../../testing/axe';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import { PanelRetracto } from './panel-retracto';
 
 function solicitud(overrides: Partial<SolicitudRetracto> = {}): SolicitudRetracto {
@@ -77,12 +78,34 @@ class RepositorioRetractosFalso implements RepositorioRetractos {
   }
 }
 
+/**
+ * El repositorio que falla como falla el backend: con el codigo del ProblemDetail dentro. Antes el
+ * panel lo tiraba a la basura y pintaba "no se pudo completar la accion" para todo, asi que quien
+ * atiende no sabia si corregir el monto, mirar otra solicitud o reintentar.
+ */
+class RepositorioRetractosQueRechaza extends RepositorioRetractosFalso {
+  constructor(private readonly codigo: string) {
+    super([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2026-09-16T15:00:00Z',
+        limiteDeReintegro: '2026-10-02T05:00:00Z',
+      }),
+    ]);
+  }
+
+  override async registrarReintegro(): Promise<SolicitudRetracto> {
+    throw new ErrorHttp(422, 'diagnostico para quien programa', this.codigo);
+  }
+}
+
 async function renderPanel(
   solicitudes: SolicitudRetracto[],
   estadoPedido = 'ENTREGADO',
   totalPedido = 50_000,
+  repositorioDado?: RepositorioRetractosFalso,
 ) {
-  const repositorio = new RepositorioRetractosFalso(solicitudes);
+  const repositorio = repositorioDado ?? new RepositorioRetractosFalso(solicitudes);
   const resultado = await render(PanelRetracto, {
     inputs: { pedidoId: 'p1', estadoPedido, totalPedido },
     imports: [
@@ -309,6 +332,22 @@ describe('PanelRetracto', () => {
     expect(
       await screen.findByText('Quedan 3 dias calendario para reintegrar el dinero.'),
     ).toBeTruthy();
+  });
+
+  it('cuando el backend dice por que, el panel lo dice', async () => {
+    await renderPanel(
+      [],
+      'ENTREGADO',
+      50_000,
+      new RepositorioRetractosQueRechaza('MONTO_DE_REINTEGRO_INVALIDO'),
+    );
+
+    fireEvent.input(await screen.findByLabelText('Monto a reembolsar'), {
+      target: { value: '50000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar reintegro' }));
+
+    expect(await screen.findByText(esAdmin.errores.monto_de_reintegro_invalido)).toBeTruthy();
   });
 
   it('una solicitud ya reembolsada muestra su constancia', async () => {

@@ -16,6 +16,7 @@ import {
   SolicitudRetracto,
   VerdictoPlazo,
 } from '../../domain/retracto.model';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 
 /** El plazo de reintegro se muestra en días, y esta es la única conversión. */
 const MILISEGUNDOS_POR_DIA = 86_400_000;
@@ -255,8 +256,9 @@ export class PanelRetracto {
     this.error.set(null);
     try {
       await accion();
-    } catch {
-      this.error.set(this.transloco.translate('admin.retractos.error'));
+    } catch (error) {
+      // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
+      this.error.set(mensajeDeError(error, this.transloco, 'admin.retractos.error'));
     }
   }
 }

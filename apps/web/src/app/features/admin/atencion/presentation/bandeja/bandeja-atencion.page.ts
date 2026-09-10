@@ -19,6 +19,7 @@ import {
   TipoSolicitud,
   VerdictoPlazo,
 } from '../../domain/atencion.model';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 
 const CLAVE_TIPO: Record<TipoSolicitud, string> = {
   PETICION: 'admin.atencion.tipos.peticion',
@@ -197,8 +198,9 @@ export class BandejaAtencionPage {
     this.error.set(null);
     try {
       await accion();
-    } catch {
-      this.error.set(this.transloco.translate('admin.atencion.error'));
+    } catch (error) {
+      // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
+      this.error.set(mensajeDeError(error, this.transloco, 'admin.atencion.error'));
     }
   }
 }

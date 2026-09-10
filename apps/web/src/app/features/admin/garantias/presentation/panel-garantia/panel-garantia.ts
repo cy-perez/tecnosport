@@ -16,6 +16,7 @@ import {
   ReclamacionGarantia,
   VigenciaGarantia,
 } from '../../domain/garantia.model';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 
 /** Una linea del pedido, con lo minimo para elegir sobre cual se reclama. */
 export interface LineaParaGarantia {
@@ -171,8 +172,9 @@ export class PanelGarantia {
     this.error.set(null);
     try {
       await accion();
-    } catch {
-      this.error.set(this.transloco.translate('admin.garantias.error'));
+    } catch (error) {
+      // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
+      this.error.set(mensajeDeError(error, this.transloco, 'admin.garantias.error'));
     }
   }
 }

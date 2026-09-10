@@ -1,4 +1,16 @@
 {
+  "errores": {
+    "monto_de_reintegro_invalido": "The amount does not fit: check how much was already refunded for this order.",
+    "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
+    "retracto_ya_radicado": "This order already has a withdrawal in progress.",
+    "pedido_sin_entregar": "This order has not been delivered yet.",
+    "existencia_insuficiente": "There is no longer enough stock for this operation.",
+    "linea_no_es_del_pedido": "That product is not part of this order.",
+    "transicion_de_estado_invalida": "That step is not possible from the current state. Reload and check again.",
+    "metodo_de_pago_no_es_transferencia_manual": "This order was not paid by transfer, so it cannot be reconciled by hand.",
+    "contraentrega_no_disponible": "Cash on delivery is not available for this order.",
+    "excepcion_de_dominio": "The operation breaks a business rule. The details are in the server log."
+  },
   "iniciarSesion": {
     "titulo": "Admin panel",
     "correo": "Email address",

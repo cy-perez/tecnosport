@@ -1,4 +1,16 @@
 {
+  "errores": {
+    "monto_de_reintegro_invalido": "El monto no cabe: revisa cuanto se le devolvio ya a este pedido.",
+    "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
+    "retracto_ya_radicado": "Este pedido ya tiene un retracto en curso.",
+    "pedido_sin_entregar": "Este pedido todavia no se ha entregado.",
+    "existencia_insuficiente": "Ya no hay existencias suficientes para esta operacion.",
+    "linea_no_es_del_pedido": "Ese producto no esta en este pedido.",
+    "transicion_de_estado_invalida": "Ese paso no se puede dar desde el estado actual. Recarga y vuelve a mirar.",
+    "metodo_de_pago_no_es_transferencia_manual": "Este pedido no se pago por transferencia, asi que no se concilia a mano.",
+    "contraentrega_no_disponible": "La contraentrega no esta disponible para este pedido.",
+    "excepcion_de_dominio": "La operacion no cumple una regla del negocio. El detalle esta en el registro del servidor."
+  },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
     "correo": "Correo electrónico",

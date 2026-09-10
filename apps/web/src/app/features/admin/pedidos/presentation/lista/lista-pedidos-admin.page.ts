@@ -35,6 +35,7 @@ import {
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 
 const ESTADOS: readonly EstadoPedido[] = [
   'PAGO_PENDIENTE',
@@ -375,8 +376,9 @@ export class ListaPedidosAdminPage {
     this.errorAccion.set(null);
     try {
       await accion();
-    } catch {
-      this.errorAccion.set(this.transloco.translate('admin.pedidos.acciones.error'));
+    } catch (error) {
+      // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
+      this.errorAccion.set(mensajeDeError(error, this.transloco, 'admin.pedidos.acciones.error'));
     }
   }
 
