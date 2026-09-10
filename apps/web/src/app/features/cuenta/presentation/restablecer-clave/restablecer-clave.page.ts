@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -75,8 +76,14 @@ export class RestablecerClavePage {
     try {
       await this.repositorio.restablecerClave(this.token, this.form.controls.claveNueva.value);
       this.restablecida.set(true);
-    } catch {
-      this.error.set(this.transloco.translate('cuenta.restablecerClave.error_token_invalido'));
+    } catch (error) {
+      this.error.set(
+        this.transloco.translate(
+          esFalloDelServidor(error)
+            ? 'comun.error_servidor'
+            : 'cuenta.restablecerClave.error_token_invalido',
+        ),
+      );
     } finally {
       this.enviando.set(false);
     }

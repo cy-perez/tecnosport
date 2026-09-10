@@ -5,13 +5,16 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { VerificarCorreoPage } from './verificar-correo.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
   llamadasVerificar: string[] = [];
 
-  constructor(private falla = false) {}
+  /** El código con el que falla, no un booleano: la pantalla distingue el 4xx del enlace
+   * gastado del 5xx del servidor caído, y con un `true` no se podían probar las dos ramas. */
+  constructor(private falla: number | false = false) {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
   async registrar(): Promise<void> {}
@@ -19,7 +22,7 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async verificarCorreo(token: string): Promise<void> {
     this.llamadasVerificar.push(token);
     if (this.falla) {
-      throw new Error('token inválido');
+      throw new ErrorHttp(this.falla, 'no se pudo verificar el correo');
     }
   }
 
@@ -67,9 +70,18 @@ describe('VerificarCorreoPage', () => {
   });
 
   it('con un token que el servidor rechaza, muestra el mensaje de error', async () => {
-    await renderPagina(new RepositorioCuentaFalso(true), 'token-vencido');
+    await renderPagina(new RepositorioCuentaFalso(422), 'token-vencido');
 
     expect(await screen.findByText('Enlace no válido')).toBeTruthy();
+  });
+
+  it('con el servidor caído, no dice que el enlace no sirve', async () => {
+    await renderPagina(new RepositorioCuentaFalso(500), 'token-valido');
+
+    expect(await screen.findByText('No pudimos conectarnos')).toBeTruthy();
+    // Lo que importa no es solo que aparezca el mensaje nuevo: es que no le diga a quien
+    // llega que pida otro enlace, porque el que tiene sigue siendo bueno.
+    expect(screen.queryByText('Enlace no válido')).toBeNull();
   });
 
   it('sin token en la URL, muestra el mensaje de error sin llamar al repositorio', async () => {

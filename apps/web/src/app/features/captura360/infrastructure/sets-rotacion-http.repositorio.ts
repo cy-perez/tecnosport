@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../core/http/cliente-autenticado';
+import { desempaquetar, exigirExito } from '../../../core/http/respuesta-http';
 import {
   AbrirSetRotacion,
   FotogramaSubido,
@@ -16,7 +17,7 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
   private readonly cliente = crearClienteAutenticado(baseUrl(), inject(SesionStore));
 
   async abrir(comando: AbrirSetRotacion): Promise<SetRotacionAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/sets-rotacion', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/sets-rotacion', {
       body: {
         productoId: comando.productoId,
         fotogramas: comando.fotogramas,
@@ -24,21 +25,16 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
         versionAsistente: comando.versionAsistente,
       },
     });
-    if (error || !data) {
-      throw new Error('No se pudo abrir el set de rotación.');
-    }
-    return aSetRotacion(data);
+    return aSetRotacion(desempaquetar(respuesta, 'no se pudo abrir el set de rotación'));
   }
 
   async urlsDeSubida(setId: string, contentType: string): Promise<SubidaDeFotograma[]> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/subidas', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/subidas', {
       params: { path: { id: setId } },
       body: { contentType },
     });
-    if (error || !data) {
-      throw new Error('No se pudieron pedir las URL de subida.');
-    }
-    return data.map((subida) => ({
+    const datos = desempaquetar(respuesta, 'no se pudieron pedir las URL de subida');
+    return datos.map((subida) => ({
       orden: subida.orden ?? 0,
       url: subida.url ?? '',
       objectKey: subida.objectKey ?? '',
@@ -67,7 +63,7 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
     setId: string,
     fotogramas: readonly FotogramaSubido[],
   ): Promise<SetRotacionAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/completar', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/completar', {
       params: { path: { id: setId } },
       body: {
         fotogramas: fotogramas.map((fotograma) => ({
@@ -79,29 +75,21 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
         })),
       },
     });
-    if (error || !data) {
-      throw new Error('No se pudo completar el set.');
-    }
-    return aSetRotacion(data);
+    return aSetRotacion(desempaquetar(respuesta, 'no se pudo completar el set'));
   }
 
   async publicar(setId: string): Promise<SetRotacionAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/publicar', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/sets-rotacion/{id}/publicar', {
       params: { path: { id: setId } },
     });
-    if (error || !data) {
-      throw new Error('No se pudo publicar el set.');
-    }
-    return aSetRotacion(data);
+    return aSetRotacion(desempaquetar(respuesta, 'no se pudo publicar el set'));
   }
 
   async eliminar(setId: string): Promise<void> {
-    const { error } = await this.cliente.DELETE('/api/v1/admin/sets-rotacion/{id}', {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/sets-rotacion/{id}', {
       params: { path: { id: setId } },
     });
-    if (error) {
-      throw new Error('No se pudo borrar el set.');
-    }
+    exigirExito(respuesta, 'no se pudo borrar el set');
   }
 }
 

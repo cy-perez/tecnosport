@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { CorreoSinVerificarError } from '../../../../core/autenticacion/sesion.errores';
+import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -64,6 +65,8 @@ export class IniciarSesionClientePage {
     } catch (error) {
       if (error instanceof CorreoSinVerificarError) {
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.error_sin_verificar'));
+      } else if (esFalloDelServidor(error)) {
+        this.error.set(this.transloco.translate('comun.error_servidor'));
       } else {
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.error'));
       }

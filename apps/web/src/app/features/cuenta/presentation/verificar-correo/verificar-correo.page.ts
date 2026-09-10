@@ -9,9 +9,15 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 
-type EstadoVerificacion = 'cargando' | 'exito' | 'error';
+/**
+ * `error` es "el enlace no sirve" y `fallo_servidor` es "no llegamos a preguntarlo". Se separan
+ * porque el texto de `error` le dice a quien llega que pida un enlace nuevo, y decirle eso cuando
+ * el servidor está caído lo manda a gastar el que ya tenía, que sí era válido.
+ */
+type EstadoVerificacion = 'cargando' | 'exito' | 'error' | 'fallo_servidor';
 
 /**
  * El token es de un solo uso (docs/08-seguridad-legal.md) — si el servidor lo consumiera durante
@@ -51,8 +57,8 @@ export class VerificarCorreoPage {
     try {
       await this.repositorio.verificarCorreo(token);
       this.estado.set('exito');
-    } catch {
-      this.estado.set('error');
+    } catch (error) {
+      this.estado.set(esFalloDelServidor(error) ? 'fallo_servidor' : 'error');
     }
   }
 }

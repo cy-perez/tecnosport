@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
+import { desempaquetar } from '../../../core/http/respuesta-http';
 import { CrearPedidoComando, MetodosDePagoDisponiblesComando } from '../domain/pedido.comandos';
 import { Direccion, MetodoPago, Pedido } from '../domain/pedido.model';
 import { RepositorioPedidos } from '../domain/repositorio-pedidos.puerto';
@@ -32,7 +33,7 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
    * invoca (una invocación = un intento real de confirmar).
    */
   async crear(comando: CrearPedidoComando): Promise<Pedido> {
-    const { data, error } = await this.cliente.POST('/api/v1/pedidos', {
+    const respuesta = await this.cliente.POST('/api/v1/pedidos', {
       headers: { 'Idempotency-Key': crypto.randomUUID() },
       body: {
         correo: comando.correo,
@@ -43,14 +44,11 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         autorizaDatos: comando.autorizaDatos,
       },
     });
-    if (error) {
-      throw new Error('No se pudo crear el pedido.');
-    }
-    return aPedido(data);
+    return aPedido(desempaquetar(respuesta, 'no se pudo crear el pedido'));
   }
 
   async metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]> {
-    const { data, error } = await this.cliente.POST('/api/v1/pedidos/metodos-de-pago-disponibles', {
+    const respuesta = await this.cliente.POST('/api/v1/pedidos/metodos-de-pago-disponibles', {
       body: {
         correo: comando.correo,
         lineas: comando.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
@@ -58,32 +56,23 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         direccion: aDireccionRequest(comando.direccion),
       },
     });
-    if (error) {
-      throw new Error('No se pudieron consultar los métodos de pago disponibles.');
-    }
-    return (data ?? []) as MetodoPago[];
+    return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles') as MetodoPago[];
   }
 
   async reintentarPago(pedidoId: string): Promise<Pedido> {
-    const { data, error } = await this.cliente.POST('/api/v1/pedidos/{id}/reintentar-pago', {
+    const respuesta = await this.cliente.POST('/api/v1/pedidos/{id}/reintentar-pago', {
       params: { path: { id: pedidoId } },
     });
-    if (error) {
-      throw new Error('No se pudo reintentar el pago.');
-    }
-    return aPedido(data);
+    return aPedido(desempaquetar(respuesta, 'no se pudo reintentar el pago'));
   }
 
   async consultarSeguimiento(pedidoId: string, correo: string): Promise<Pedido | null> {
-    const { data, error, response } = await this.cliente.GET('/api/v1/pedidos/{id}/seguimiento', {
+    const respuesta = await this.cliente.GET('/api/v1/pedidos/{id}/seguimiento', {
       params: { path: { id: pedidoId }, query: { correo } },
     });
-    if (response.status === 404) {
+    if (respuesta.response.status === 404) {
       return null;
     }
-    if (error) {
-      throw new Error('No se pudo consultar el estado del pedido.');
-    }
-    return aPedido(data);
+    return aPedido(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
   }
 }

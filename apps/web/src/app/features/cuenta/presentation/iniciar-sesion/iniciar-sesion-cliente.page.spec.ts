@@ -7,6 +7,7 @@ import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
 import { CorreoSinVerificarError } from '../../../../core/autenticacion/sesion.errores';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import {
   REPOSITORIO_SESION,
   RepositorioSesion,
@@ -18,7 +19,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
   llamadasCerrar = 0;
 
   constructor(
-    private sesionAlIniciar: Sesion | { error: true } | { errorSinVerificar: true } = {
+    private sesionAlIniciar:
+      | Sesion
+      | { error: true }
+      | { errorSinVerificar: true }
+      | { falloServidor: true } = {
       usuarioId: 'u1',
       rol: 'CLIENTE',
       accessToken: 'jwt',
@@ -26,8 +31,14 @@ class RepositorioSesionFalso implements RepositorioSesion {
   ) {}
 
   async iniciarSesion(): Promise<Sesion> {
+    // Lo que lanza el adaptador de verdad ante credenciales malas es un `ErrorHttp` 401
+    // (`sesion-http.repositorio.ts`), no un `Error` pelado: el doble lo imita para que la
+    // pantalla se pruebe contra la forma real del fallo.
     if ('error' in this.sesionAlIniciar) {
-      throw new Error('correo o clave incorrectos');
+      throw new ErrorHttp(401, 'no se pudo iniciar sesión');
+    }
+    if ('falloServidor' in this.sesionAlIniciar) {
+      throw new ErrorHttp(500, 'no se pudo iniciar sesión');
     }
     if ('errorSinVerificar' in this.sesionAlIniciar) {
       throw new CorreoSinVerificarError();
@@ -112,6 +123,19 @@ describe('IniciarSesionClientePage', () => {
     await llenarYEnviar();
 
     expect(await screen.findByText('Correo o clave incorrectos.')).toBeTruthy();
+  });
+
+  it('con el servidor caído, no le echa la culpa al correo ni a la clave', async () => {
+    await renderPagina(new RepositorioSesionFalso({ falloServidor: true }));
+
+    await llenarYEnviar();
+
+    expect(
+      await screen.findByText(
+        'No pudimos conectarnos con el servidor. Intenta de nuevo en unos minutos.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Correo o clave incorrectos.')).toBeNull();
   });
 
   it('con un correo sin verificar, muestra ese error específico', async () => {

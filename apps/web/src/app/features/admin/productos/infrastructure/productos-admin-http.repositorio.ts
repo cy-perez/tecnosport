@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { sha256Hex } from '../../../../core/hash/sha256';
 import { baseUrl } from '../../../../core/http/base-url';
+import { ErrorHttp, desempaquetar, exigirExito } from '../../../../core/http/respuesta-http';
 import { crearClienteAutenticado } from '../../../../core/http/cliente-autenticado';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import {
@@ -23,17 +24,14 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
   private readonly cliente = crearClienteAutenticado(baseUrl(), inject(SesionStore));
 
   async listar(filtro: FiltroProductosAdmin): Promise<ProductosPaginadosAdmin> {
-    const { data, error } = await this.cliente.GET('/api/v1/admin/productos', {
+    const respuesta = await this.cliente.GET('/api/v1/admin/productos', {
       params: { query: { pagina: filtro.pagina, tamano: filtro.tamano } },
     });
-    if (error) {
-      throw new Error('No se pudo listar los productos.');
-    }
-    return aProductosPaginadosAdmin(data);
+    return aProductosPaginadosAdmin(desempaquetar(respuesta, 'no se pudo listar los productos'));
   }
 
   async crear(comando: CrearProductoAdmin): Promise<ProductoAdmin> {
-    const { data, error } = await this.cliente.POST('/api/v1/admin/productos', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/productos', {
       body: {
         nombre: comando.nombre,
         descripcion: comando.descripcion,
@@ -41,24 +39,18 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         categoriaId: comando.categoriaId,
       },
     });
-    if (error) {
-      throw new Error('No se pudo crear el producto.');
-    }
-    return aProductoAdmin(data);
+    return aProductoAdmin(desempaquetar(respuesta, 'no se pudo crear el producto'));
   }
 
   async obtener(id: string): Promise<ProductoAdmin> {
-    const { data, error } = await this.cliente.GET('/api/v1/admin/productos/{id}', {
+    const respuesta = await this.cliente.GET('/api/v1/admin/productos/{id}', {
       params: { path: { id } },
     });
-    if (error) {
-      throw new Error('No se pudo cargar el producto.');
-    }
-    return aProductoAdmin(data);
+    return aProductoAdmin(desempaquetar(respuesta, 'no se pudo cargar el producto'));
   }
 
   async editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin> {
-    const { data, error } = await this.cliente.PATCH('/api/v1/admin/productos/{id}', {
+    const respuesta = await this.cliente.PATCH('/api/v1/admin/productos/{id}', {
       params: { path: { id } },
       body: {
         nombre: comando.nombre,
@@ -67,14 +59,11 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         categoriaId: comando.categoriaId,
       },
     });
-    if (error) {
-      throw new Error('No se pudo editar el producto.');
-    }
-    return aProductoAdmin(data);
+    return aProductoAdmin(desempaquetar(respuesta, 'no se pudo editar el producto'));
   }
 
   async agregarVariante(comando: AgregarVarianteAdmin): Promise<void> {
-    const { error } = await this.cliente.POST('/api/v1/admin/variantes', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/variantes', {
       body: {
         productoId: comando.productoId,
         sku: comando.sku,
@@ -89,21 +78,20 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         })),
       },
     });
-    if (error) {
-      throw new Error('No se pudo agregar la variante.');
-    }
+    exigirExito(respuesta, 'no se pudo agregar la variante');
   }
 
   async subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin> {
-    const { data: solicitud, error: errorSolicitud } = await this.cliente.POST(
+    const respuestaSolicitud = await this.cliente.POST(
       '/api/v1/admin/productos/{id}/imagen-principal/url-subida',
       {
         params: { path: { id: comando.productoId } },
         body: { contentType: comando.archivo.type },
       },
     );
-    if (errorSolicitud || !solicitud?.url || !solicitud.objectKey) {
-      throw new Error('No se pudo solicitar la URL de subida.');
+    const solicitud = desempaquetar(respuestaSolicitud, 'no se pudo solicitar la URL de subida');
+    if (!solicitud.url || !solicitud.objectKey) {
+      throw new ErrorHttp(respuestaSolicitud.response.status, 'la URL de subida llegó incompleta');
     }
 
     const respuestaSubida = await fetch(solicitud.url, {
@@ -115,7 +103,7 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       throw new Error('No se pudo subir la imagen a Cloud Storage.');
     }
 
-    const { data, error } = await this.cliente.POST('/api/v1/admin/productos/{id}/imagen-principal', {
+    const respuesta = await this.cliente.POST('/api/v1/admin/productos/{id}/imagen-principal', {
       params: { path: { id: comando.productoId } },
       body: {
         objectKey: solicitud.objectKey,
@@ -126,9 +114,6 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         altEn: comando.altEn,
       },
     });
-    if (error) {
-      throw new Error('No se pudo confirmar la imagen principal.');
-    }
-    return aImagenAdmin(data);
+    return aImagenAdmin(desempaquetar(respuesta, 'no se pudo confirmar la imagen principal'));
   }
 }

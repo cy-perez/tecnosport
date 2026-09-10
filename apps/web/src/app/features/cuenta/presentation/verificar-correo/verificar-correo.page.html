@@ -9,6 +9,12 @@
       </h1>
       <p>{{ 'cuenta.verificarCorreo.exito_mensaje' | transloco }}</p>
     }
+    @case ('fallo_servidor') {
+      <h1 class="m-0 mb-24 font-display text-2xl">
+        {{ 'comun.error_servidor_titulo' | transloco }}
+      </h1>
+      <p role="alert">{{ 'comun.error_servidor' | transloco }}</p>
+    }
     @case ('error') {
       <h1 class="m-0 mb-24 font-display text-2xl">
         {{ 'cuenta.verificarCorreo.error_titulo' | transloco }}
