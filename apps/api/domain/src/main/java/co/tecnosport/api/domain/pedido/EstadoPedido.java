@@ -29,24 +29,37 @@ public enum EstadoPedido {
   RECHAZADO_EN_ENTREGA,
   DEVUELTO,
   RECAUDO_PENDIENTE,
-  RECAUDO_CONCILIADO;
+  RECAUDO_CONCILIADO,
+
+  /**
+   * El pedido se cancela antes de despachar, por causa del negocio y no del comprador: la
+   * existencia desapareció después de la compra, o no se entregó dentro del plazo pactado y el
+   * comprador terminó el contrato. Los dos casos están prometidos en los términos publicados y
+   * ninguno tenía a dónde ir en este grafo.
+   *
+   * <p>Solo antes de despachar. Después de que la mercancía sale ya existen los caminos que
+   * corresponden —entrega, rechazo en la entrega, devolución— y añadir aquí un atajo los
+   * duplicaría.
+   */
+  CANCELADO;
 
   private static final Map<EstadoPedido, Set<EstadoPedido>> TRANSICIONES_VALIDAS =
       new EnumMap<>(EstadoPedido.class);
 
   static {
     TRANSICIONES_VALIDAS.put(CREADO, EnumSet.of(PAGO_PENDIENTE, CONFIRMADO_CONTRAENTREGA));
-    TRANSICIONES_VALIDAS.put(PAGO_PENDIENTE, EnumSet.of(PAGADO, PAGO_FALLIDO));
+    TRANSICIONES_VALIDAS.put(PAGO_PENDIENTE, EnumSet.of(PAGADO, PAGO_FALLIDO, CANCELADO));
     TRANSICIONES_VALIDAS.put(PAGO_FALLIDO, EnumSet.of(PAGO_PENDIENTE));
-    TRANSICIONES_VALIDAS.put(PAGADO, EnumSet.of(EN_PREPARACION));
-    TRANSICIONES_VALIDAS.put(CONFIRMADO_CONTRAENTREGA, EnumSet.of(EN_PREPARACION));
-    TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO));
+    TRANSICIONES_VALIDAS.put(PAGADO, EnumSet.of(EN_PREPARACION, CANCELADO));
+    TRANSICIONES_VALIDAS.put(CONFIRMADO_CONTRAENTREGA, EnumSet.of(EN_PREPARACION, CANCELADO));
+    TRANSICIONES_VALIDAS.put(EN_PREPARACION, EnumSet.of(DESPACHADO, CANCELADO));
     TRANSICIONES_VALIDAS.put(DESPACHADO, EnumSet.of(ENTREGADO, RECHAZADO_EN_ENTREGA));
     TRANSICIONES_VALIDAS.put(ENTREGADO, EnumSet.of(DEVUELTO, RECAUDO_PENDIENTE));
     TRANSICIONES_VALIDAS.put(RECHAZADO_EN_ENTREGA, EnumSet.noneOf(EstadoPedido.class));
     TRANSICIONES_VALIDAS.put(DEVUELTO, EnumSet.noneOf(EstadoPedido.class));
     TRANSICIONES_VALIDAS.put(RECAUDO_PENDIENTE, EnumSet.of(RECAUDO_CONCILIADO));
     TRANSICIONES_VALIDAS.put(RECAUDO_CONCILIADO, EnumSet.of(DEVUELTO));
+    TRANSICIONES_VALIDAS.put(CANCELADO, EnumSet.noneOf(EstadoPedido.class));
   }
 
   public boolean puedeTransicionarA(EstadoPedido siguiente) {

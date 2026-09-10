@@ -20,6 +20,7 @@ import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
+import co.tecnosport.api.application.pedido.ReintegroRequeridoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
@@ -146,6 +147,11 @@ public class ManejadorDeErrores {
   public ProblemDetail solicitudReversionNoEncontrada(
       SolicitudReversionNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Solicitud de reversion no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(ReintegroRequeridoException.class)
+  public ProblemDetail reintegroRequerido(ReintegroRequeridoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el reintegro", excepcion);
   }
 
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)

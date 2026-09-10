@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.pedido.CancelarPedido;
+import co.tecnosport.api.application.pedido.CancelarPedidoComando;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarRecaudoComando;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
@@ -18,7 +20,10 @@ import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.MotivoCancelacion;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
+import co.tecnosport.api.presentation.pedido.dto.CancelarPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.ConciliarRecaudoRequest;
 import co.tecnosport.api.presentation.pedido.dto.DespacharPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
@@ -63,6 +68,7 @@ public class AdminPedidosControlador {
   private final VerificarContraentrega verificarContraentrega;
   private final DespacharPedido despacharPedido;
   private final MarcarEntregado marcarEntregado;
+  private final CancelarPedido cancelarPedido;
   private final RechazarEnEntrega rechazarEnEntrega;
   private final ConciliarRecaudo conciliarRecaudo;
   private final MapeadorRespuestasPedido mapeador;
@@ -74,6 +80,7 @@ public class AdminPedidosControlador {
       VerificarContraentrega verificarContraentrega,
       DespacharPedido despacharPedido,
       MarcarEntregado marcarEntregado,
+      CancelarPedido cancelarPedido,
       RechazarEnEntrega rechazarEnEntrega,
       ConciliarRecaudo conciliarRecaudo,
       MapeadorRespuestasPedido mapeador,
@@ -83,6 +90,7 @@ public class AdminPedidosControlador {
     this.verificarContraentrega = Objects.requireNonNull(verificarContraentrega);
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
+    this.cancelarPedido = Objects.requireNonNull(cancelarPedido);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
     this.conciliarRecaudo = Objects.requireNonNull(conciliarRecaudo);
     this.mapeador = Objects.requireNonNull(mapeador);
@@ -181,6 +189,28 @@ public class AdminPedidosControlador {
                 conciliarRecaudo.ejecutar(
                     new ConciliarRecaudoComando(
                         id, Dinero.deCop(cuerpo.comisionRecaudo()), actor)));
+    return mapeador.aRespuesta(pedido);
+  }
+
+  /**
+   * Cancelacion por causa del negocio: la existencia desaparecio despues de la compra, o no se
+   * entrego dentro del plazo. Los dos estan prometidos en los terminos publicados.
+   */
+  @PostMapping("/{id}/cancelacion")
+  public PedidoRespuesta cancelar(
+      @PathVariable UUID id, @RequestBody CancelarPedidoRequest cuerpo) {
+    String actor = "admin:" + actorId();
+    Pedido pedido =
+        transaccion.execute(
+            estado ->
+                cancelarPedido.ejecutar(
+                    new CancelarPedidoComando(
+                        id,
+                        MotivoCancelacion.valueOf(cuerpo.motivo()),
+                        cuerpo.monto(),
+                        cuerpo.medio() == null ? null : MedioReintegro.valueOf(cuerpo.medio()),
+                        cuerpo.comprobante(),
+                        actor)));
     return mapeador.aRespuesta(pedido);
   }
 

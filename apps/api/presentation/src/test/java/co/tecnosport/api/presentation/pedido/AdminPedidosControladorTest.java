@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.DespacharPedido;
@@ -16,6 +17,7 @@ import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -363,6 +365,24 @@ class AdminPedidosControladorTest {
     DespacharPedido despacharPedido(
         RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios) {
       return new DespacharPedido(repositorioPedidos, repositorioEnvios, Instant::now);
+    }
+
+    @Bean
+    CancelarPedido cancelarPedido(
+        RepositorioPedidos repositorioPedidos,
+        RepositorioInventario repositorioInventario,
+        RepositorioReintegros repositorioReintegros) {
+      return new CancelarPedido(
+          repositorioPedidos,
+          repositorioInventario,
+          repositorioReintegros,
+          (destinatario, asunto, cuerpo) -> {},
+          Instant::now);
+    }
+
+    @Bean
+    RepositorioReintegros repositorioReintegros() {
+      return new RepositorioReintegrosDobleDePrueba();
     }
 
     @Bean
