@@ -33,12 +33,23 @@ Las reglas, verificadas en fuente oficial el 10 de septiembre de 2026:
   6 de enero, el 19 de marzo, el 29 de junio, el 15 de agosto, el 12 de octubre,
   el 1 y el 11 de noviembre, y los tres que dependen de la Pascua. **El Jueves y
   el Viernes Santos no se trasladan**, y es el detalle que más se equivoca.
-- **Ley 2578 de 2026**, art. 6, sancionada el 1 de junio de 2026: el 9 de julio
-  es festivo nacional y remite a la Ley 51 para fijar la fecha del descanso, o
-  sea que también se traslada. Colombia pasó de dieciocho festivos a diecinueve
-  tres meses antes de esta decisión. Contra esa ley hay una demanda de
-  constitucionalidad en curso; mientras no haya decisión, rige, y aquí se
-  aplica.
+- **Ley 2578 de 2026**, art. 6, sancionada el 1 de junio de 2026 y publicada en
+  el Diario Oficial No. 53.510 del 2 de junio: declara festivo nacional el 9 de
+  julio, y "se aplicarán las disposiciones de la Ley 51 de 1983 para efectos de
+  determinar el día en el cual se disfrute del descanso remunerado" — o sea que
+  también se traslada al lunes. Rige desde su promulgación, así que su primera
+  ocurrencia es el 9 de julio de 2026; de ahí que el cálculo lo incluya solo
+  desde ese año. Colombia pasó de dieciocho festivos a diecinueve tres meses
+  antes de esta decisión. Contra esa ley hay una demanda de constitucionalidad en
+  curso; mientras no haya decisión, rige, y aquí se aplica.
+
+  **Sobre el cotejo de esta ley, para no repetir el rodeo:** el texto se
+  confirmó en las fichas de la Secretaría del Senado y de SUIN Juriscol. El PDF
+  promulgado que publica Presidencia (`dapre.presidencia.gov.co`) **no se pudo
+  abrir desde esta máquina**: responde con un reto de bot en vez del archivo. Y
+  `funcionpublica.gov.co`, `suin-juriscol.gov.co` y
+  `secretariasenado.gov.co` fallan por certificado o rechazan la conexión. Lo
+  que sí funciona está anotado en la memoria del proyecto.
 - El Domingo de Pascua, con el algoritmo gregoriano de Meeus.
 
 ## Alternativas

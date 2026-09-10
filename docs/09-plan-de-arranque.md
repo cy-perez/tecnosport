@@ -2895,11 +2895,12 @@ diciembre que nadie se acordara los tres plazos volverían a responder "no se sa
 sin que ninguna prueba se quejara. `ADR-0024`.
 
 **Verificar antes de escribir código no fue un trámite**: apareció la **Ley 2578
-del 1 de junio de 2026**, que declaró festivo el 9 de julio y remite a la Ley 51
-de 1983 para fijar la fecha del descanso. Colombia pasó de dieciocho festivos a
-diecinueve tres meses antes, y un calendario escrito de memoria habría estado mal
-desde el primer día. Contra esa ley hay una demanda de constitucionalidad en
-curso.
+del 1 de junio de 2026** (Diario Oficial No. 53.510 del 2 de junio), que declaró
+festivo el 9 de julio y remite a la Ley 51 de 1983 para fijar la fecha del
+descanso. Colombia pasó de dieciocho festivos a diecinueve tres meses antes, y un
+calendario escrito de memoria habría estado mal desde el primer día. Contra esa
+ley hay una demanda de constitucionalidad en curso; mientras no haya decisión,
+rige.
 
 Dos detalles que conviene no volver a discutir: **el Jueves y el Viernes Santos
 no se trasladan** —no están en la lista del art. 1— y **2025 tuvo diecisiete
