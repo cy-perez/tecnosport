@@ -11,6 +11,28 @@ import { DocumentoLegalPage } from './documento-legal.page';
 
 type Documento = 'privacidad' | 'terminos' | 'cookies';
 
+interface SeccionComparable {
+  readonly titulo: string;
+  readonly parrafos?: readonly string[];
+  readonly lista?: readonly string[];
+  readonly cierre?: readonly string[];
+}
+
+/**
+ * La forma de una sección: su número y cuántos bloques trae de cada tipo. El título **no** entra
+ * —está traducido, y compararlo sería comparar el inglés con el castellano—, pero el número que lo
+ * encabeza sí: es el que se cita en una reclamación, y tiene que ser el mismo en los dos idiomas.
+ */
+function forma(seccion: SeccionComparable): string {
+  const numero = seccion.titulo.split('.')[0];
+  return [
+    numero,
+    seccion.parrafos?.length ?? 0,
+    seccion.lista?.length ?? 0,
+    seccion.cierre?.length ?? 0,
+  ].join('/');
+}
+
 async function renderDocumento(documento: Documento, lang: 'es' | 'en' = 'es') {
   return render(DocumentoLegalPage, {
     imports: [
@@ -106,6 +128,31 @@ describe('DocumentoLegalPage', () => {
 
     expect(screen.getByText(texto)).toBeTruthy();
   });
+
+  /**
+   * **Son dos documentos y los dos se leen.** Una promesa que el texto hace en un idioma y no en
+   * el otro no es una errata de traducción: es un documento legal distinto para quien navega en
+   * inglés, y no hay nota de cortesía que lo salve — la nota dice cuál rige, no rellena lo que
+   * falta.
+   *
+   * Esta prueba nació de un fallo real: al reescribir la sección de envío se cambió un párrafo en
+   * castellano ("el plazo aplicable") y el inglés se quedó con el anterior ("the agreed term"),
+   * que ya no era cierto porque no hay plazo pactado. Nadie lo habría visto: las dos páginas
+   * renderizan, las dos pasan accesibilidad, y ninguna prueba comparaba los textos entre sí.
+   *
+   * Compara la **estructura**, que es lo que se puede comparar sin saber inglés: mismos títulos de
+   * sección en el mismo orden, y misma cantidad de párrafos, viñetas y cierres en cada una. Un
+   * párrafo que se añade en un idioma y no en el otro rompe aquí.
+   */
+  it.each([['privacidad' as Documento], ['terminos' as Documento], ['cookies' as Documento]])(
+    'el documento de %s tiene la misma estructura en los dos idiomas',
+    (documento) => {
+      const seccionesEs = legalesEs[documento].secciones as readonly SeccionComparable[];
+      const seccionesEn = legalesEn[documento].secciones as readonly SeccionComparable[];
+
+      expect(seccionesEn.map(forma)).toEqual(seccionesEs.map(forma));
+    },
+  );
 
   // Son las páginas que más texto largo tienen del sitio, y las que alguien va a leer con lector
   // de pantalla justo cuando tiene un problema con una compra.

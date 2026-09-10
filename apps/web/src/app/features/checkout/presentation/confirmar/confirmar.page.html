@@ -27,6 +27,14 @@
         <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>
       }
 
+      <!-- El que retira necesita saber a dónde va, y este es el único momento del recorrido en
+           que se le puede decir antes de pagar. Va aquí y no en la etiqueta de la opción: una
+           etiqueta de radio con una dirección dentro es ilegible con lector de pantalla. -->
+      @if (datos.tipoEntrega === 'RETIRO_EN_PUNTO') {
+        <dt>{{ 'checkout.resumen.retiro_direccion_titulo' | transloco }}</dt>
+        <dd>{{ 'checkout.resumen.retiro_direccion' | transloco }}</dd>
+      }
+
       <dt>{{ 'checkout.metodoPago.titulo' | transloco }}</dt>
       <dd>{{ etiquetaMetodoPago() }}</dd>
 
