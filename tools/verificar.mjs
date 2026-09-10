@@ -30,6 +30,10 @@ if (!soloApi) {
   // mínimo de la WCAG es un defecto, y hasta ahora solo se veía si alguien se acordaba de correr
   // `npm run contrastes` a mano.
   ejecutar("node tools/verificar-contrastes.mjs");
+  // Y por el mismo motivo, un marcador [[ ]] en un texto que se publica. Los documentos legales
+  // llevaron seis a producción durante una fase entera: la plantilla pinta la clave tal como está
+  // y ninguna prueba mira el contenido del texto.
+  ejecutar("node tools/verificar-marcadores.mjs");
   ejecutar("npm run lint --workspaces --if-present");
   ejecutar("npm test --workspaces --if-present");
   ejecutar("npm run build --workspaces --if-present");

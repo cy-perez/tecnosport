@@ -16,6 +16,7 @@
     "clases": "node tools/verificar-clases-tailwind.mjs",
     "contrastes": "node tools/verificar-contrastes.mjs",
     "capas": "node tools/verificar-capas.mjs",
+    "marcadores": "node tools/verificar-marcadores.mjs",
     "lighthouse": "node tools/medir-lighthouse.mjs"
   },
   "allowScripts": {
