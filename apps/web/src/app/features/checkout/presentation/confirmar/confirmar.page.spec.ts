@@ -230,8 +230,23 @@ describe('ConfirmarPage', () => {
     await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
 
     expect(await screen.findByText('compra@ejemplo.co')).toBeTruthy();
-    expect(screen.getByText('Retiro en punto (Medellín, sin costo)')).toBeTruthy();
+    // Del JSON y no repetida aquí: la etiqueta ya cambió una vez —le sobraba un "sin costo" que
+    // es falso mientras el flete va embebido en el precio— y lo que se verifica es que se pinte.
+    expect(screen.getByText(esCheckout.resumen.retiro_en_punto)).toBeTruthy();
     expect(screen.getByText('Pago contra entrega')).toBeTruthy();
+  });
+
+  /**
+   * Quien retira necesita saber a dónde va, y este es el único punto del recorrido donde se le
+   * puede decir antes de pagar. Va junto al tipo de entrega y no dentro de la etiqueta de la
+   * opción: una etiqueta de radio con la dirección dentro no se lee bien con lector de pantalla.
+   */
+  it('con retiro en punto, muestra la dirección del punto y cómo se coordina', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
+
+    expect(await screen.findByText(esCheckout.resumen.retiro_direccion)).toBeTruthy();
   });
 
   it('con un método de Wompi, crea el pedido, pide el intento y redirige al Web Checkout', async () => {

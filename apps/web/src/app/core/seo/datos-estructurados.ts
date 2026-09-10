@@ -12,9 +12,11 @@ export interface DatosNegocio {
   /** Tal como lo publica el pie, con su etiqueta: `NIT 1054994043-9`. */
   readonly nit: string;
   readonly direccion: string;
-  /** En E.164, como lo guarda el pie: `+573104209655`. */
+  /** En E.164, como lo guarda el pie: `+573138816711`. */
   readonly telefono: string;
   readonly correo: string;
+  /** Perfiles propios, absolutos. Van a `sameAs`, que es cómo se declara "esta cuenta es mía". */
+  readonly redes?: readonly string[];
 }
 
 export interface ProductoEstructurado {
@@ -49,10 +51,12 @@ function soloElNit(nit: string): string {
  * Quién vende. Va en la portada y no en todas las páginas: repetirlo en cada una no añade nada y
  * multiplica el sitio donde un dato puede quedar desactualizado.
  *
- * `openingHours` **no se emite**: el horario de atención es uno de los datos de negocio todavía sin
- * decidir (`[[HORARIO DE ATENCIÓN]]` en los textos legales). Declarar un horario inventado en datos
- * estructurados es peor que callarlo — Google lo muestra en el resultado de búsqueda como si fuera
- * cierto.
+ * `openingHours` **no se emite**, y ya no por falta del dato: el horario existe y se publica en
+ * el pie y en los términos. No se emite porque no es una propiedad válida de `Organization`, y
+ * emitirlo obligaría a declarar el negocio como `Store` — es decir, a anunciar horario de visita a
+ * un local. Lo que hay es un horario de **canales de atención**, y un punto de recogida que se
+ * coordina al confirmar el pedido. Google muestra esas horas en el resultado de búsqueda como si
+ * fueran de puerta abierta.
  */
 export function organizacionJsonLd(origen: string, negocio: DatosNegocio): object {
   return {
@@ -69,6 +73,9 @@ export function organizacionJsonLd(origen: string, negocio: DatosNegocio): objec
     address: negocio.direccion,
     telephone: negocio.telefono,
     email: negocio.correo,
+    // Se omite si no hay ninguno, en vez de emitir un arreglo vacío: un `sameAs: []` no dice
+    // "no tengo perfiles", dice "los tengo y no te los doy".
+    ...(negocio.redes?.length ? { sameAs: [...negocio.redes] } : {}),
   };
 }
 

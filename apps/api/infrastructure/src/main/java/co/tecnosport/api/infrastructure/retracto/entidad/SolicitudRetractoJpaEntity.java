@@ -40,6 +40,14 @@ public class SolicitudRetractoJpaEntity {
   @Column(name = "reintegro_id")
   private UUID reintegroId;
 
+  /**
+   * Guardado como {@code String} y no como {@code @Enumerated}: la columna lleva su propio {@code
+   * check} en V27, y un enum de JPA por ordinal es la forma clásica de que reordenar el enum cambie
+   * el significado de las filas ya escritas.
+   */
+  @Column(name = "medio_preferido")
+  private String medioPreferido;
+
   protected SolicitudRetractoJpaEntity() {}
 
   public SolicitudRetractoJpaEntity(
@@ -51,7 +59,8 @@ public class SolicitudRetractoJpaEntity {
       String verdictoPlazo,
       String estado,
       Instant productoRecibidoEn,
-      UUID reintegroId) {
+      UUID reintegroId,
+      String medioPreferido) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.radicadaEn = radicadaEn;
@@ -61,6 +70,7 @@ public class SolicitudRetractoJpaEntity {
     this.estado = estado;
     this.productoRecibidoEn = productoRecibidoEn;
     this.reintegroId = reintegroId;
+    this.medioPreferido = medioPreferido;
   }
 
   public UUID getId() {
@@ -97,5 +107,9 @@ public class SolicitudRetractoJpaEntity {
 
   public UUID getReintegroId() {
     return reintegroId;
+  }
+
+  public String getMedioPreferido() {
+    return medioPreferido;
   }
 }

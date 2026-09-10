@@ -1,4 +1,6 @@
 import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
+import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -39,11 +41,14 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
  */
 @Component({
   selector: 'app-estado',
-  imports: [DatePipe, NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
+  imports: [DatePipe, NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
   templateUrl: './estado.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EstadoPage {
+  protected readonly iconoEnvio = iconoEnvio;
+  protected readonly iconoUbicacion = iconoUbicacion;
+
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();

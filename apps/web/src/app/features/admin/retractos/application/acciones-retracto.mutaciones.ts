@@ -24,7 +24,9 @@ export function usarAccionesRetracto() {
     mutationFn: (variables: {
       pedidoId: string;
       motivo: string | null;
-    }): Promise<SolicitudRetracto> => repositorio.radicar(variables.pedidoId, variables.motivo),
+      medioPreferido: MedioReintegro | null;
+    }): Promise<SolicitudRetracto> =>
+      repositorio.radicar(variables.pedidoId, variables.motivo, variables.medioPreferido),
     onSuccess: (_datos, variables) => invalidar(variables.pedidoId),
   }));
 
@@ -42,12 +44,14 @@ export function usarAccionesRetracto() {
       solicitudId: string;
       monto: number;
       medio: MedioReintegro;
+      medioPreferido: MedioReintegro | null;
       comprobante: string | null;
     }): Promise<SolicitudRetracto> =>
       repositorio.registrarReintegro(
         variables.solicitudId,
         variables.monto,
         variables.medio,
+        variables.medioPreferido,
         variables.comprobante,
       ),
     onSuccess: (_datos, variables) => invalidar(variables.pedidoId),

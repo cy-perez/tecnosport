@@ -136,7 +136,7 @@ describe('BandejaAtencionPage', () => {
 
     expect(
       await screen.findByText(
-        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció.',
+        esAdmin.atencion.verdicto.indeterminado_ayuda,
       ),
     ).toBeTruthy();
   });

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
+import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
@@ -38,11 +40,14 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
  */
 @Component({
   selector: 'app-confirmar',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
+  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
   templateUrl: './confirmar.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmarPage {
+  protected readonly iconoEnvio = iconoEnvio;
+  protected readonly iconoUbicacion = iconoUbicacion;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);

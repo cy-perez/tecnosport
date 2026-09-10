@@ -13,18 +13,34 @@
       <dd>{{ datos.correo }}</dd>
 
       <dt>{{ 'checkout.resumen.tipo_entrega' | transloco }}</dt>
-      <dd>
-        {{
-          (datos.tipoEntrega === 'ENVIO_A_DOMICILIO'
-            ? 'checkout.resumen.envio_a_domicilio'
-            : 'checkout.resumen.retiro_en_punto'
-          ) | transloco
-        }}
+      <dd class="flex items-center gap-8">
+        <!-- Que te lo lleven o que lo recojas es lo primero que alguien busca al volver a mirar su
+             pedido. El icono es `aria-hidden`: el texto sigue siendo el que se lee. -->
+        <ts-icono
+          [icono]="datos.tipoEntrega === 'ENVIO_A_DOMICILIO' ? iconoEnvio : iconoUbicacion"
+          clase="size-16"
+        />
+        <span>
+          {{
+            (datos.tipoEntrega === 'ENVIO_A_DOMICILIO'
+              ? 'checkout.resumen.envio_a_domicilio'
+              : 'checkout.resumen.retiro_en_punto'
+            ) | transloco
+          }}
+        </span>
       </dd>
 
       @if (datos.direccion; as direccion) {
         <dt>{{ 'checkout.resumen.direccion' | transloco }}</dt>
         <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>
+      }
+
+      <!-- El que retira necesita saber a dónde va, y este es el único momento del recorrido en
+           que se le puede decir antes de pagar. Va aquí y no en la etiqueta de la opción: una
+           etiqueta de radio con una dirección dentro es ilegible con lector de pantalla. -->
+      @if (datos.tipoEntrega === 'RETIRO_EN_PUNTO') {
+        <dt>{{ 'checkout.resumen.retiro_direccion_titulo' | transloco }}</dt>
+        <dd>{{ 'checkout.resumen.retiro_direccion' | transloco }}</dd>
       }
 
       <dt>{{ 'checkout.metodoPago.titulo' | transloco }}</dt>

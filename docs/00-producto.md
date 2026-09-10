@@ -8,7 +8,7 @@ precio del producto—, además de recogida sin costo en el punto de Medellín.
 
 TecnoSport es un negocio real con diez años de oficio: distribuidor de tecnología
 y ropa y calzado deportivo en Medellín. Persona natural, NIT 1054994043-9,
-Cra. 26C #38B-31, Medellín. Teléfono y WhatsApp 310 420 9655. Correo
+Cra. 26C #38B-31, Medellín. Teléfono y WhatsApp 313 881 6711. Correo
 contact@tecnosport.co. Dominio tecnosport.co.
 
 ## Alcance de la fase 1

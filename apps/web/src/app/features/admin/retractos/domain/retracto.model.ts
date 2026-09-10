@@ -33,6 +33,18 @@ export interface SolicitudRetracto {
   readonly productoRecibidoEn: string | null;
   /** Lo calcula el servidor: es el plazo del artículo 47 y no puede depender del reloj del navegador. */
   readonly limiteDeReintegro: string | null;
+  /**
+   * Por dónde pidió el comprador que le devolvieran el dinero (Ley 2439 de 2024). `null` cuando no
+   * lo dijo, que es distinto de "da igual": sin preferencia no hay nada que incumplir, con
+   * preferencia devolver por otro medio es un incumplimiento.
+   */
+  readonly medioPreferido: MedioReintegro | null;
+  /**
+   * Si el reintegro respetó esa preferencia. **Lo decide el servidor**, no esta pantalla: es la
+   * respuesta a "cumplimos o no", y no se deja a una comparación de cadenas en el navegador.
+   * `null` mientras no haya reintegro — todavía no hay nada que comparar.
+   */
+  readonly preferenciaRespetada: boolean | null;
   readonly reintegro: Reintegro | null;
 }
 

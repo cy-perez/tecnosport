@@ -3,6 +3,7 @@ package co.tecnosport.api.domain.retracto;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +35,7 @@ public final class SolicitudRetracto {
   private EstadoSolicitudRetracto estado;
   private Instant productoRecibidoEn;
   private UUID reintegroId;
+  private MedioReintegro medioPreferido;
 
   public SolicitudRetracto(
       UUID id,
@@ -44,7 +46,8 @@ public final class SolicitudRetracto {
       VerdictoPlazo verdictoAlRadicar,
       EstadoSolicitudRetracto estado,
       Instant productoRecibidoEn,
-      UUID reintegroId) {
+      UUID reintegroId,
+      MedioReintegro medioPreferido) {
     this.id = Objects.requireNonNull(id, "El id de la solicitud no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.radicadaEn =
@@ -67,12 +70,17 @@ public final class SolicitudRetracto {
           "Una solicitud reembolsada necesita el id de su constancia de reintegro.");
     }
     this.reintegroId = reintegroId;
+    this.medioPreferido = medioPreferido;
   }
 
   /**
    * El motivo es opcional y así tiene que ser: el retracto se ejerce "sin necesidad de justificar
    * la decisión" (art. 47). Exigirlo aquí convertiría un derecho incondicional en un trámite con
    * condiciones.
+   *
+   * <p>{@code medioPreferido} también es opcional, y por otra razón: el comprador puede decirlo en
+   * el mismo correo con que se retracta o mandarlo después, y no se le puede exigir para arrancar
+   * el trámite. Ver {@link #anotarMedioPreferido}.
    */
   public static SolicitudRetracto radicar(
       UUID pedidoId,
@@ -80,6 +88,7 @@ public final class SolicitudRetracto {
       Instant ahora,
       String radicadaPor,
       String motivo,
+      MedioReintegro medioPreferido,
       CalendarioHabil calendario) {
     Objects.requireNonNull(entregadoEn, "Un pedido sin entregar no admite retracto.");
     return new SolicitudRetracto(
@@ -91,7 +100,8 @@ public final class SolicitudRetracto {
         PlazoDeRetracto.verdicto(entregadoEn, ahora, calendario),
         EstadoSolicitudRetracto.RADICADA,
         null,
-        null);
+        null,
+        medioPreferido);
   }
 
   public UUID id() {
@@ -155,6 +165,51 @@ public final class SolicitudRetracto {
     Objects.requireNonNull(reintegroId, "El id del reintegro no puede ser nulo.");
     transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
     this.reintegroId = reintegroId;
+  }
+
+  public Optional<MedioReintegro> medioPreferido() {
+    return Optional.ofNullable(medioPreferido);
+  }
+
+  /**
+   * Por dónde pidió el comprador que le devolvieran el dinero.
+   *
+   * <p>Existe porque la <b>Ley 2439 de 2024</b> no dejó la elección al negocio: la devolución
+   * "deberá realizarse a través del medio de pago que prefiera el consumidor". Sin este dato no se
+   * puede demostrar que se respetó, y quien tiene la carga de probar que cumplió es el negocio.
+   *
+   * <p>Se anota una vez y no se corrige. Cambiarla borraría la constancia de lo que el comprador
+   * pidió, que es justo lo que este campo existe para conservar — si de verdad pidió otra cosa
+   * después, eso es un hecho nuevo y va en el motivo o en la solicitud de atención, no encima del
+   * anterior. Y después de devolver el dinero ya no se anota nada: anotar la preferencia con el
+   * pago hecho es escribir el examen viendo las respuestas.
+   */
+  public void anotarMedioPreferido(MedioReintegro medio) {
+    Objects.requireNonNull(medio, "El medio preferido no puede ser nulo.");
+    if (estado == EstadoSolicitudRetracto.REEMBOLSADA) {
+      throw new ExcepcionDeDominio(
+          "El dinero ya se devolvió: anotar ahora lo que el comprador prefería no prueba nada.");
+    }
+    if (medioPreferido != null && medioPreferido != medio) {
+      throw new ExcepcionDeDominio(
+          "El comprador ya pidió "
+              + medioPreferido
+              + ": cambiarlo borraría la constancia de lo que pidió.");
+    }
+    this.medioPreferido = medio;
+  }
+
+  /**
+   * Si devolver el dinero por {@code usado} respeta lo que el comprador pidió.
+   *
+   * <p>Sin preferencia anotada responde {@code true}: no se puede incumplir una preferencia que
+   * nadie expresó. No bloquea nada —quien decide es una persona, y puede haber un motivo real, como
+   * una cuenta que rebota— pero deja el contraste hecho para que el panel lo advierta antes de
+   * guardar y para que después se pueda leer qué pasó.
+   */
+  public boolean respetaLaPreferencia(MedioReintegro usado) {
+    Objects.requireNonNull(usado, "El medio usado no puede ser nulo.");
+    return medioPreferido == null || medioPreferido == usado;
   }
 
   public void transicionar(EstadoSolicitudRetracto siguiente) {

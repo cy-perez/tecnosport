@@ -7,48 +7,74 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Qué días cuentan como hábiles, por año.
  *
- * <p>Guarda los festivos <b>por año</b> y no en un conjunto plano porque necesita distinguir dos
- * cosas que un conjunto vacío confunde: "ese año no tiene festivos" —que nunca es cierto en
- * Colombia— y "ese año no se ha cargado". Sin la distinción, un calendario sin cargar haría pasar
- * los festivos por días hábiles y el plazo del retracto vencería antes de tiempo, en contra de
- * quien compra.
+ * <p>Pregunta los festivos <b>por año</b>, y la respuesta es un {@code Optional}, porque hay que
+ * distinguir dos cosas que un conjunto vacío confunde: "ese año no tiene festivos" —que nunca es
+ * cierto en Colombia— y "ese año no se conoce". Sin la distinción, un calendario sin resolver haría
+ * pasar los festivos por días hábiles y el plazo del retracto vencería antes de tiempo, en contra
+ * de quien compra.
  *
- * <p>Los festivos colombianos (Ley 51 de 1983, con los que se trasladan al lunes siguiente) son un
- * dato que este proyecto todavía no tiene cargado. TODO: FESTIVOS_COLOMBIA — cargar el calendario
- * oficial por año. Mientras tanto, {@link #cubre} responde {@code false} y quien pregunte por el
- * plazo recibe {@code INDETERMINADO} en vez de un veredicto inventado.
+ * <p>En producción se construye con {@link #calculado()}, que resuelve cualquier año con {@link
+ * FestivosColombia}. Los otros dos constructores existen para las pruebas y para dejar dicho, en
+ * código, qué pasa cuando el calendario no se conoce: {@link #cubre} responde {@code false} y quien
+ * pregunte por el plazo recibe {@code INDETERMINADO} en vez de un veredicto inventado.
  *
- * <p>De ese dato pendiente cuelgan ya dos plazos legales y no uno: los cinco días hábiles del
- * retracto y los de respuesta a peticiones, quejas y reclamos. Cargarlo cierra los dos a la vez.
+ * <p>De este calendario cuelgan tres plazos legales: los cinco días hábiles del retracto, los de
+ * respuesta a peticiones, quejas y reclamos, y los de la solicitud de reversión del pago. Los tres
+ * daban {@code INDETERMINADO} pasado el límite mientras los festivos fueron un dato pendiente.
  */
 public final class CalendarioHabil {
 
-  private final Map<Integer, Set<LocalDate>> festivosPorAnio;
-
-  private CalendarioHabil(Map<Integer, Set<LocalDate>> festivosPorAnio) {
-    this.festivosPorAnio = festivosPorAnio;
+  /**
+   * De dónde salen los festivos de un año. Vacío significa "ese año no se conoce", que es distinto
+   * de "ese año no tiene festivos" — lo segundo no es cierto de ningún año en Colombia.
+   */
+  @FunctionalInterface
+  public interface Festivos {
+    Optional<Set<LocalDate>> delAnio(int anio);
   }
 
-  /** El estado de hoy: se conocen los fines de semana, no los festivos. */
+  private final Festivos festivos;
+
+  private CalendarioHabil(Festivos festivos) {
+    this.festivos = festivos;
+  }
+
+  /**
+   * El calendario de producción: cualquier año, calculado con {@link FestivosColombia}.
+   *
+   * <p>Memoriza lo ya calculado porque {@link #limiteTrasDiasHabiles} pregunta por un día tras
+   * otro, y recalcular diecinueve fechas en cada vuelta del bucle no aporta nada. El mapa es
+   * concurrente porque el {@code bean} es único y lo comparten todas las peticiones.
+   */
+  public static CalendarioHabil calculado() {
+    Map<Integer, Set<LocalDate>> memoria = new ConcurrentHashMap<>();
+    return new CalendarioHabil(
+        anio -> Optional.of(memoria.computeIfAbsent(anio, FestivosColombia::delAnio)));
+  }
+
+  /** Solo los fines de semana: el calendario que no sabe de festivos. */
   public static CalendarioHabil sinFestivosCargados() {
-    return new CalendarioHabil(Map.of());
+    return new CalendarioHabil(anio -> Optional.empty());
   }
 
   public static CalendarioHabil con(Map<Integer, Set<LocalDate>> festivosPorAnio) {
     Objects.requireNonNull(festivosPorAnio, "El mapa de festivos no puede ser nulo.");
     Map<Integer, Set<LocalDate>> copia = new HashMap<>();
     festivosPorAnio.forEach((anio, dias) -> copia.put(anio, Set.copyOf(new HashSet<>(dias))));
-    return new CalendarioHabil(Map.copyOf(copia));
+    Map<Integer, Set<LocalDate>> inmutable = Map.copyOf(copia);
+    return new CalendarioHabil(anio -> Optional.ofNullable(inmutable.get(anio)));
   }
 
-  /** ¿Se cargó el calendario de festivos de ese año? */
+  /** ¿Se conoce el calendario de festivos de ese año? */
   public boolean cubre(int anio) {
-    return festivosPorAnio.containsKey(anio);
+    return festivos.delAnio(anio).isPresent();
   }
 
   /**
@@ -60,7 +86,7 @@ public final class CalendarioHabil {
     if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
       return false;
     }
-    return !festivosPorAnio.getOrDefault(dia.getYear(), Set.of()).contains(dia);
+    return !festivos.delAnio(dia.getYear()).orElseGet(Set::of).contains(dia);
   }
 
   /**

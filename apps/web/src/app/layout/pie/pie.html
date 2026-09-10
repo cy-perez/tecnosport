@@ -62,31 +62,90 @@
       </a>
     </nav>
 
+    <!--
+      Enlaces de texto y no logos de marca: `lucide` no trae iconos de marca —los retiró—, así que
+      poner los de Facebook e Instagram exigiría una dependencia nueva (`simple-icons`) o pegar sus
+      SVG a mano, y ninguna de las dos cosas vale un logo (`docs/04-ui-marca.md`: cada dependencia
+      es deuda). El pie ya enlazaba WhatsApp como texto.
+
+      `rel="me"` y no `noopener`: son perfiles propios, y `me` es lo que declara la relación de
+      identidad que `sameAs` repite en los datos estructurados. `target` no se fija: forzar pestaña
+      nueva le quita al usuario la decisión, y el aviso de que abre fuera del sitio tendría que ser
+      audible para cumplir.
+
+      WhatsApp no se repite aquí: vive abajo, en el bloque de contacto, porque ahí es una acción de
+      atención y no un perfil que se sigue.
+    -->
+    <nav class="flex flex-col gap-8" [attr.aria-label]="'pie.redes_titulo' | transloco">
+      <p class="m-0 text-xs uppercase">{{ 'pie.redes_titulo' | transloco }}</p>
+      <!-- El logo va con el nombre y no en su lugar. Es `aria-hidden`, así que un enlace de solo
+           logo se quedaría sin nombre accesible; y aunque se le pusiera un `aria-label`, un icono
+           suelto es peor objetivo de lectura para quien no reconoce el logo. -->
+      <a
+        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit"
+        rel="me"
+        [href]="'pie.facebook_url' | transloco"
+      >
+        <ts-icono-marca [marca]="marcaFacebook" clase="size-16" />
+        {{ 'pie.facebook' | transloco }}
+      </a>
+      <a
+        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit"
+        rel="me"
+        [href]="'pie.instagram_url' | transloco"
+      >
+        <ts-icono-marca [marca]="marcaInstagram" clase="size-16" />
+        {{ 'pie.instagram' | transloco }}
+      </a>
+    </nav>
+
     <!-- `not-italic` porque un <address> lo es por omisión del navegador, y
          aquí no hay Preflight que lo resetee (src/tailwind.css). -->
+    <!-- Los iconos son `aria-hidden`: no añaden nada al lector de pantalla, que sigue leyendo
+         "Cra. 26C…", "Llamar", el correo y el horario. Lo que hacen es para quien mira: cinco
+         líneas de texto plano se leían como un párrafo desde que entraron el horario y las redes.
+         Van dentro de la línea, sin objetivo táctil propio, por el mismo motivo que los enlaces de
+         este bloque (WCAG 2.2, excepción "inline" de 2.5.8). -->
     <address class="flex flex-col gap-4 text-sm not-italic">
       <p class="m-0">{{ 'pie.nombre_comercial' | transloco }}</p>
       <p class="m-0">{{ 'pie.nit' | transloco }}</p>
-      <p class="m-0">{{ 'pie.direccion' | transloco }}</p>
-      <p class="m-0">
-        <a
-          class="anillo-foco-sobre-marca text-ts-sobre-marca"
-          [href]="'tel:' + ('pie.telefono_e164' | transloco)"
-          >{{ 'pie.llamar' | transloco }}</a
-        >
-        ·
-        <a
-          class="anillo-foco-sobre-marca text-ts-sobre-marca"
-          [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
-          >{{ 'pie.whatsapp' | transloco }}</a
-        >
+      <p class="m-0 flex items-start gap-8">
+        <ts-icono [icono]="iconoUbicacion" clase="size-16" />
+        <span>{{ 'pie.direccion' | transloco }}</span>
       </p>
-      <p class="m-0">
+      <p class="m-0 flex items-center gap-8">
+        <ts-icono [icono]="iconoTelefono" clase="size-16" />
+        <span>
+          <a
+            class="anillo-foco-sobre-marca text-ts-sobre-marca"
+            [href]="'tel:' + ('pie.telefono_e164' | transloco)"
+            >{{ 'pie.llamar' | transloco }}</a
+          >
+          ·
+          <a
+            class="anillo-foco-sobre-marca inline-flex items-center gap-4 text-ts-sobre-marca"
+            [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
+          >
+            <ts-icono-marca [marca]="marcaWhatsapp" clase="size-16" />
+            {{ 'pie.whatsapp' | transloco }}
+          </a>
+        </span>
+      </p>
+      <p class="m-0 flex items-center gap-8">
+        <ts-icono [icono]="iconoCorreo" clase="size-16" />
         <a
           class="anillo-foco-sobre-marca text-ts-sobre-marca"
           [href]="'mailto:' + ('pie.correo' | transloco)"
           >{{ 'pie.correo' | transloco }}</a
         >
+      </p>
+      <!-- El horario es de los canales de atención, no de un local: aquí no se
+           visita a nadie. Por eso vive en el bloque de contacto y no como
+           openingHours en los datos estructurados, que obligaría a declarar
+           el negocio como Store y a anunciar horario de visita. -->
+      <p class="m-0 flex items-center gap-8">
+        <ts-icono [icono]="iconoHorario" clase="size-16" />
+        <span>{{ 'pie.horario' | transloco }}</span>
       </p>
     </address>
 

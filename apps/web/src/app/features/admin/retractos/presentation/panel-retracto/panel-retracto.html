@@ -28,6 +28,20 @@
         <dt class="text-ts-texto-suave">{{ 'admin.retractos.motivo' | transloco }}</dt>
         <dd class="m-0 mb-8">{{ motivo }}</dd>
       }
+
+      <!-- Se muestra también cuando no lo dijo, y a propósito: "no pidió nada" es un hecho que
+           quien atiende necesita ver antes de elegir por dónde devolver. Callarlo dejaría la duda
+           de si el dato existe y no se está pintando. -->
+      <dt class="text-ts-texto-suave">{{ 'admin.retractos.medio_preferido' | transloco }}</dt>
+      <dd class="m-0 mb-8">
+        @if (solicitud.medioPreferido; as pedido) {
+          {{ etiquetaMedio(pedido) }}
+        } @else {
+          <span class="text-ts-texto-suave">
+            {{ 'admin.retractos.medio_preferido_ninguno' | transloco }}
+          </span>
+        }
+      </dd>
     </dl>
 
     @switch (solicitud.estado) {
@@ -76,6 +90,25 @@
             [opciones]="opcionesMedio()"
             formControlName="medio"
           />
+
+          <!-- Solo cuando la solicitud no lo trae: ya anotado, el backend se niega a cambiarlo, y
+               ofrecer el control invitaría a intentarlo. -->
+          @if (!solicitud.medioPreferido) {
+            <ts-select
+              [idCampo]="'reintegro-preferido-' + solicitud.id"
+              [label]="'admin.retractos.acciones.medio_preferido' | transloco"
+              [ayuda]="'admin.retractos.medio_preferido_ayuda' | transloco"
+              [placeholder]="'admin.retractos.medio_preferido_ninguno' | transloco"
+              [opciones]="opcionesMedio()"
+              formControlName="medioPreferido"
+            />
+          }
+
+          @if (preferenciaEnRiesgo(); as pedido) {
+            <p role="alert" class="mb-8 text-ts-error">
+              {{ 'admin.retractos.preferencia_en_riesgo' | transloco: { medio: pedido } }}
+            </p>
+          }
           <ts-campo
             [idCampo]="'reintegro-comprobante-' + solicitud.id"
             [label]="'admin.retractos.acciones.comprobante' | transloco"
@@ -97,6 +130,13 @@
             {{ 'admin.retractos.comprobante' | transloco }}:
             {{ reintegro.comprobante ?? ('admin.retractos.sin_comprobante' | transloco) }}
           </p>
+          <!-- El contraste lo hizo el servidor. Se pinta después del hecho porque es lo que hay
+               que poder leer el día de la reclamación: salió por otro medio del que pidieron. -->
+          @if (solicitud.preferenciaRespetada === false) {
+            <p role="alert" class="m-0 text-ts-error">
+              {{ 'admin.retractos.preferencia_no_respetada' | transloco }}
+            </p>
+          }
         }
       }
     }
@@ -107,6 +147,14 @@
         [idCampo]="'retracto-motivo-' + pedidoId()"
         [label]="'admin.retractos.acciones.motivo_opcional' | transloco"
         formControlName="motivo"
+      />
+      <ts-select
+        [idCampo]="'retracto-preferido-' + pedidoId()"
+        [label]="'admin.retractos.acciones.medio_preferido' | transloco"
+        [ayuda]="'admin.retractos.medio_preferido_ayuda' | transloco"
+        [placeholder]="'admin.retractos.medio_preferido_ninguno' | transloco"
+        [opciones]="opcionesMedio()"
+        formControlName="medioPreferido"
       />
       <ts-boton tipo="submit" [cargando]="acciones.radicar.isPending()">
         {{ 'admin.retractos.acciones.radicar' | transloco }}

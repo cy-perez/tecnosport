@@ -2,6 +2,19 @@ import { afterNextRender, ChangeDetectionStrategy, Component, inject, signal } f
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsCheckbox } from '../../shared/ui/checkbox/ts-checkbox';
+import { TsIcono } from '../../shared/ui/icono/ts-icono';
+import { TsIconoMarca } from '../../shared/ui/icono/ts-icono-marca';
+import {
+  iconoCorreo,
+  iconoHorario,
+  iconoTelefono,
+  iconoUbicacion,
+} from '../../shared/ui/icono/iconos';
+import {
+  marcaFacebook,
+  marcaInstagram,
+  marcaWhatsapp,
+} from '../../shared/ui/icono/marcas.generado';
 
 const CLAVE_ALMACEN = 'ts-movimiento-reducido';
 
@@ -35,11 +48,19 @@ const CLAVE_ALMACEN = 'ts-movimiento-reducido';
  */
 @Component({
   selector: 'app-pie',
-  imports: [TranslocoPipe, RouterLink, TsCheckbox],
+  imports: [TranslocoPipe, RouterLink, TsCheckbox, TsIcono, TsIconoMarca],
   templateUrl: './pie.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Pie {
+  protected readonly iconoTelefono = iconoTelefono;
+  protected readonly iconoCorreo = iconoCorreo;
+  protected readonly iconoUbicacion = iconoUbicacion;
+  protected readonly iconoHorario = iconoHorario;
+  protected readonly marcaFacebook = marcaFacebook;
+  protected readonly marcaInstagram = marcaInstagram;
+  protected readonly marcaWhatsapp = marcaWhatsapp;
+
   protected readonly idioma = inject(TranslocoService).activeLang;
   protected readonly anioActual = new Date().getFullYear();
   protected readonly movimientoReducido = signal(false);

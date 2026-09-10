@@ -58,7 +58,7 @@ fue el plazo del reintegro.
 |---|---|---|---|
 | Términos y condiciones | 4. Productos, imágenes y precios | "El precio publicado incluye además el costo del envío a cualquier parte del país: no hay cobros adicionales al final del proceso" | Precio base sin flete, flete cotizado por destino y visible antes de pagar, total con las dos cifras |
 | Términos y condiciones | 7. Pago contraentrega | Disponibilidad decidida por el sistema | Añade: se cobra el **total con el flete incluido**, y **solo en efectivo** |
-| Términos y condiciones | 8. Envío y entrega | Despacho nacional y plazo `[[PLAZO DE ENTREGA REAL]]`, con el supletivo de 30 días | Cotización por destino, plazo estimado del transportador frente al plazo prometido, recogida sin costo, destinos sin cobertura |
+| Términos y condiciones | 8. Envío y entrega | Despacho nacional con el término legal supletivo de 30 días —**se decidió no prometer plazo propio**—, y el punto de retiro con su dirección | Cotización por destino, plazo estimado del transportador **como estimado**, recogida sin costo, destinos sin cobertura |
 | Términos y condiciones | 9. Derecho de retracto | `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` | El comprador paga el transporte de la devolución (art. 47); se le reintegra lo que pagó, flete de ida incluido |
 | Términos y condiciones | 11. Reversión del pago | Causales y plazo | Sin cambios de fondo; ver el punto para abogado sobre el flete |
 | Política de datos | 7. Finalidades | "Procesar, confirmar y despachar tu pedido" | Añade cotizar el envío, generar la guía y seguir el paquete |
@@ -270,18 +270,33 @@ verificada en el navegador**, no solo escrita en el JSON.
 
 ## 4. Campos por completar
 
-| Marca | Qué falta | Quién lo decide |
-|---|---|---|
-| `[[PLAZO DE ENTREGA REAL]]` | El plazo que el negocio de verdad promete, distinto del estimado que devuelve la cotización | Negocio. Sigue abierto desde la Fase 6 |
-| `[[HORARIO DE ATENCIÓN]]` | Horario del canal de PQR y del punto de recogida | Negocio. Sigue abierto desde la Fase 6 |
-| `[[GARANTÍA DE CELULARES]]` | Meses de garantía del fabricante | Negocio. Sigue abierto desde la Fase 6 |
-| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Resend** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 |
+**Ninguno de estos marcadores se publica ya.** El 10 de septiembre de 2026 los
+seis que estaban impresos en los documentos legales se cerraron con una de las dos
+salidas del `ADR-0025` —quitar la promesa concreta, o declarar el mínimo legal
+diciendo que es el legal—, y una guarda (`npm run marcadores`) impide que vuelva a
+pasar. Lo que sigue abierto es el **dato**, no el texto: el documento publicado es
+verdadero sin él.
+
+| Marca | Qué falta | Quién lo decide | Qué dice el texto mientras tanto |
+|---|---|---|---|
+| `[[PLAZO DE ENTREGA REAL]]` | **Nada: se decidió no prometer plazo propio** (10 de septiembre de 2026). El sitio queda atado a los plazos de la transportadora y a la gestión de Skydropx, así que lo que obliga es el término legal | Decidido | El término legal supletivo de 30 días calendario, declarado como legal. En la Fase 7, el estimado de la cotización se muestra **como estimado** |
+| `[[HORARIO DE ATENCIÓN]]` | **Nada: cerrado con dato** (todos los días, 8:00 a.m.–9:00 p.m.). Es horario de canales, no de local | Decidido | Publicado en los términos y en el pie. No se emite como `openingHours` |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | **Nada: Resend también en producción** (`docs/07-infra-gcp.md`). La política de datos lo nombra | Decidido | Nombrado. Queda pendiente de contrato la región de procesamiento y la razón social |
+| `[[TRANSPORTADORA]]` | Se nombra a Skydropx y a las transportadoras el día que reciban datos, que es un paso de esta fase | Ya decidido (`ADR-0021/0023`); falta construirlo | "La empresa de transporte que despache tu pedido" |
 | Razón social exacta de Skydropx | Con qué entidad se contrata: la mexicana o una filial colombiana. Cambia el análisis de transferencia internacional | Negocio, al firmar |
 | Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |
 | IVA sobre el flete cobrado | Si el costo de envío que se le cobra al comprador lleva IVA | Contador |
 
 `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` **queda resuelto** y sale de la lista: lo
 paga el comprador, y no por decisión del negocio sino porque el art. 47 lo dice.
+Conviene anotar cuánto tardó eso en llegar al documento: esta línea se escribió el
+8 de septiembre y el marcador siguió publicado hasta el 10, porque resolver un
+dato en un documento de trabajo no cierra el texto que lo promete. Y no era una
+respuesta sino dos: en garantía el transporte lo paga el vendedor (art. 11).
+
+`[[GARANTÍA DE CELULARES]]` **también sale**, y por el mismo motivo: no hay
+régimen especial para equipos terminales. Un año para producto nuevo, y el mayor
+que anuncie el productor si lo anuncia.
 
 ---
 

@@ -80,6 +80,27 @@ class PlazoDeRetractoTest {
   }
 
   @Test
+  void conElCalendarioDeProduccionUnFestivoRealEmpujaElLimite() {
+    // Entrega el jueves 8 de enero de 2026. El lunes 12 es festivo —el 6 de enero trasladado—, así
+    // que el quinto día hábil deja de ser el jueves 15 y pasa a ser el viernes 16.
+    Instant entrega = ZonedDateTime.of(2026, 1, 8, 15, 30, 0, 0, PlazoDeRetracto.ZONA).toInstant();
+
+    assertEquals(
+        enBogota(2026, 1, 17, 0), PlazoDeRetracto.limite(entrega, CalendarioHabil.calculado()));
+  }
+
+  @Test
+  void pasadoElLimiteConElCalendarioDeProduccionSiSeAfirmaQueVencio() {
+    // La promesa de la etapa: quien compró hace dos semanas recibe un veredicto, no un "no se
+    // sabe".
+    VerdictoPlazo verdicto =
+        PlazoDeRetracto.verdicto(
+            ENTREGA_JUEVES, enBogota(2026, 9, 21, 10), CalendarioHabil.calculado());
+
+    assertEquals(VerdictoPlazo.VENCIDO, verdicto);
+  }
+
+  @Test
   void elDiaDeLaEntregaNoCuenta() {
     // "dentro de los cinco días hábiles siguientes a la entrega": la cuenta arranca al día
     // siguiente. Entregado el viernes, el quinto hábil es el viernes siguiente.

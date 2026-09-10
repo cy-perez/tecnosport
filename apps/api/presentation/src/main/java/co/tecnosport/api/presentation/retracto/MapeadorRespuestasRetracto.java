@@ -24,6 +24,8 @@ public class MapeadorRespuestasRetracto {
         solicitud.estado().name(),
         solicitud.productoRecibidoEn().orElse(null),
         solicitud.limiteDeReintegro().orElse(null),
+        solicitud.medioPreferido().map(Enum::name).orElse(null),
+        reintegro == null ? null : solicitud.respetaLaPreferencia(reintegro.medio()),
         reintegro == null ? null : aRespuesta(reintegro));
   }
 

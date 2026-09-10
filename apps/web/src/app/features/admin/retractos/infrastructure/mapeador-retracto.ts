@@ -26,6 +26,8 @@ export function aSolicitudRetracto(dto: SolicitudDto): SolicitudRetracto {
     estado: (dto.estado ?? 'RADICADA') as EstadoSolicitudRetracto,
     productoRecibidoEn: dto.productoRecibidoEn ?? null,
     limiteDeReintegro: dto.limiteDeReintegro ?? null,
+    medioPreferido: (dto.medioPreferido ?? null) as MedioReintegro | null,
+    preferenciaRespetada: dto.preferenciaRespetada ?? null,
     reintegro: dto.reintegro ? aReintegro(dto.reintegro) : null,
   };
 }

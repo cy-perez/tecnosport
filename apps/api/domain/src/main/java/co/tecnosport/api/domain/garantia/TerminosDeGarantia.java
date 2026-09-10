@@ -10,15 +10,14 @@ import java.util.Set;
 /**
  * Cuántos meses dura la garantía legal según la categoría del producto.
  *
- * <p><b>No es un número global</b>, y ese es el punto. El catálogo mezcla ropa, calzado y
- * celulares; los términos publicados prometen un año desde la entrega "salvo que el productor
- * anuncie uno mayor" y, para celulares, el del fabricante. Un único valor incrustado para todo el
- * catálogo daría la respuesta equivocada en una de las tres líneas del negocio.
+ * <p><b>No es un número global</b>, y ese es el punto. Los términos publicados prometen un año
+ * desde la entrega "salvo que el productor anuncie uno mayor", y ese "mayor" es por productor y por
+ * categoría: un único valor incrustado para todo el catálogo daría la respuesta equivocada la
+ * primera vez que un fabricante anuncie dos años.
  *
- * <p>{@code sinTerminoConocido} es lo que impide inventarlo. Una categoría listada ahí no cae al
- * término por defecto: responde {@link Optional#empty()}, y quien pregunte recibe {@code
- * INDETERMINADA} en vez de un plazo que nadie decidió. Hoy vive ahí la categoría de celulares,
- * esperando el dato del fabricante.
+ * <p>{@code sinTerminoConocido} es lo que impide inventar el término que no se sabe. Una categoría
+ * listada ahí no cae al término por defecto: responde {@link Optional#empty()}, y quien pregunte
+ * recibe {@code INDETERMINADA} en vez de un plazo que nadie decidió. Hoy no hay ninguna listada.
  */
 public final class TerminosDeGarantia {
 

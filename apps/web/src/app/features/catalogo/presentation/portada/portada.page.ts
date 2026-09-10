@@ -50,6 +50,7 @@ export class PortadaPage {
         direccion: traducir('pie.direccion'),
         telefono: traducir('pie.telefono_e164'),
         correo: traducir('pie.correo'),
+        redes: [traducir('pie.facebook_url'), traducir('pie.instagram_url')],
       }),
       sitioWebJsonLd(origen, this.idioma(), traducir('app.titulo')),
     ];

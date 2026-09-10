@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.retracto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,9 +67,80 @@ class RegistrarReintegroTest {
             ENTREGA.plusSeconds(3600),
             "admin:1",
             null,
+            null,
             CalendarioHabil.sinFestivosCargados());
     solicitudes.guardar(solicitud);
     return solicitud;
+  }
+
+  /**
+   * El caso corriente de la Ley 2439: el comprador dice por donde quiere el dinero cuando manda los
+   * datos de la cuenta, o sea despues de radicar. Se anota al registrar el reintegro, y tiene que
+   * anotarse **antes** de cerrar la solicitud — con el dinero ya devuelto el dominio no lo acepta.
+   */
+  @Test
+  void anotaLaPreferenciaQueLlegoDespuesDeRadicar() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+
+    casoDeUso()
+        .ejecutar(
+            new RegistrarReintegroComando(
+                solicitud.id(),
+                BigDecimal.valueOf(50_000),
+                MedioReintegro.TRANSFERENCIA_BANCARIA,
+                MedioReintegro.TRANSFERENCIA_BANCARIA,
+                null,
+                "admin:1"));
+
+    assertEquals(EstadoSolicitudRetracto.REEMBOLSADA, solicitud.estado());
+    assertEquals(MedioReintegro.TRANSFERENCIA_BANCARIA, solicitud.medioPreferido().orElseThrow());
+    assertTrue(solicitud.respetaLaPreferencia(elReintegroDe(solicitud).medio()));
+  }
+
+  /**
+   * Devolver por un medio distinto del pedido **no se bloquea**: puede haber un motivo real, como
+   * una cuenta que rebota, y quien decide es una persona. Lo que no puede pasar es que no quede
+   * rastro — con la preferencia guardada y el medio en la constancia, el incumplimiento es
+   * demostrable en las dos direcciones, que es justo lo que la ley exige poder probar.
+   */
+  @Test
+  void devolverPorOtroMedioNoSeBloqueaPeroQuedaContrastable() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+    solicitud.anotarMedioPreferido(MedioReintegro.TRANSFERENCIA_BANCARIA);
+
+    casoDeUso()
+        .ejecutar(
+            new RegistrarReintegroComando(
+                solicitud.id(),
+                BigDecimal.valueOf(50_000),
+                MedioReintegro.EFECTIVO,
+                null,
+                null,
+                "admin:1"));
+
+    assertEquals(EstadoSolicitudRetracto.REEMBOLSADA, solicitud.estado());
+    assertEquals(MedioReintegro.EFECTIVO, elReintegroDe(solicitud).medio());
+    assertFalse(solicitud.respetaLaPreferencia(elReintegroDe(solicitud).medio()));
+  }
+
+  /** Y lo que ya se pidio no se reescribe al pagar: seria borrar la constancia de lo pedido. */
+  @Test
+  void noSePuedeCambiarLaPreferenciaAlRegistrarElReintegro() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+    solicitud.anotarMedioPreferido(MedioReintegro.TRANSFERENCIA_BANCARIA);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () ->
+            casoDeUso()
+                .ejecutar(
+                    new RegistrarReintegroComando(
+                        solicitud.id(),
+                        BigDecimal.valueOf(50_000),
+                        MedioReintegro.EFECTIVO,
+                        MedioReintegro.EFECTIVO,
+                        null,
+                        "admin:1")));
   }
 
   @Test
@@ -81,6 +153,7 @@ class RegistrarReintegroTest {
                 solicitud.id(),
                 BigDecimal.valueOf(50_000),
                 MedioReintegro.TRANSFERENCIA_BANCARIA,
+                null,
                 "TRF-9912",
                 "admin:1"));
 
@@ -103,7 +176,12 @@ class RegistrarReintegroTest {
     casoDeUso()
         .ejecutar(
             new RegistrarReintegroComando(
-                solicitud.id(), BigDecimal.valueOf(50_000), MedioReintegro.WOMPI, null, "admin:1"));
+                solicitud.id(),
+                BigDecimal.valueOf(50_000),
+                MedioReintegro.WOMPI,
+                null,
+                null,
+                "admin:1"));
 
     Reintegro reintegro = elReintegroDe(solicitud);
     assertEquals(MotivoReintegro.RETRACTO, reintegro.motivo());
@@ -125,6 +203,7 @@ class RegistrarReintegroTest {
                         BigDecimal.valueOf(50_000),
                         MedioReintegro.WOMPI,
                         null,
+                        null,
                         "admin:1")));
     assertTrue(solicitud.reintegroId().isEmpty());
     assertTrue(reintegros.guardados().isEmpty(), "no queda constancia de un reintegro que no fue");
@@ -144,6 +223,7 @@ class RegistrarReintegroTest {
                         BigDecimal.valueOf(50_001),
                         MedioReintegro.WOMPI,
                         null,
+                        null,
                         "admin:1")));
     assertEquals(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO, solicitud.estado());
   }
@@ -161,6 +241,7 @@ class RegistrarReintegroTest {
                 BigDecimal.valueOf(30_000),
                 MedioReintegro.EFECTIVO,
                 null,
+                null,
                 "admin:1"));
 
     assertEquals(BigDecimal.valueOf(30_000), elReintegroDe(solicitud).monto().valor());
@@ -176,7 +257,12 @@ class RegistrarReintegroTest {
             casoDeUso()
                 .ejecutar(
                     new RegistrarReintegroComando(
-                        solicitud.id(), BigDecimal.ZERO, MedioReintegro.WOMPI, null, "admin:1")));
+                        solicitud.id(),
+                        BigDecimal.ZERO,
+                        MedioReintegro.WOMPI,
+                        null,
+                        null,
+                        "admin:1")));
   }
 
   /**
@@ -190,7 +276,12 @@ class RegistrarReintegroTest {
     RegistrarReintegro caso = casoDeUso();
     RegistrarReintegroComando comando =
         new RegistrarReintegroComando(
-            solicitud.id(), BigDecimal.valueOf(50_000), MedioReintegro.WOMPI, null, "admin:1");
+            solicitud.id(),
+            BigDecimal.valueOf(50_000),
+            MedioReintegro.WOMPI,
+            null,
+            null,
+            "admin:1");
     caso.ejecutar(comando);
 
     assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(comando));
@@ -209,6 +300,7 @@ class RegistrarReintegroTest {
                         BigDecimal.valueOf(1000),
                         MedioReintegro.WOMPI,
                         null,
+                        null,
                         "admin:1")));
   }
 
@@ -222,6 +314,7 @@ class RegistrarReintegroTest {
                 solicitud.id(),
                 BigDecimal.valueOf(50_000),
                 MedioReintegro.TRANSFERENCIA_BANCARIA,
+                null,
                 null,
                 "admin:1"));
 

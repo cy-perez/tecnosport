@@ -1,6 +1,6 @@
 ---
 name: vacios-legales-del-sitio
-description: Audita el sitio construido contra lo que sus propios documentos legales prometen y contra lo que la ley colombiana exige aunque el documento calle, y cierra los huecos en el código. Úsala cuando alguien pregunte "¿qué nos falta legalmente para abrir?", "¿el sitio cumple lo que dicen los términos?", "¿podemos publicar ya?", "revisa los vacíos legales", "qué promete el texto que el sistema no hace", "auditoría legal del sitio", "coherencia entre los legales y el código"; cuando haya que implementar retracto, reembolso, reversión del pago, garantía, PQR, ejercicio de derechos del titular o eliminación de cuenta; cuando se vaya a lanzar o mover el DNS a producción; cuando cambie el modelo de cobro o de entrega —cotizar el envío, cobrar el flete aparte del precio, ofrecer recogida sin costo, cambiar de transportadora o de plataforma logística, activar el recaudo contra entrega— y haya que revisar qué promesas de costo y de plazo quedan falsas; o cuando un texto legal cambie y haya que ver qué código arrastra. Complementa a `textos-legales-comerciales`, que redacta los documentos: esta hace que el software los cumpla. Covers Colombian e-commerce compliance gap analysis, mapping legal promises to code, retracto, reversión del pago, garantía legal, habeas data rights implementation.
+description: Audita el sitio construido contra lo que sus propios documentos legales prometen y contra lo que la ley colombiana exige aunque el documento calle, y cierra los huecos en el código. Úsala cuando alguien pregunte "¿qué nos falta legalmente para abrir?", "¿el sitio cumple lo que dicen los términos?", "¿podemos publicar ya?", "revisa los vacíos legales", "qué promete el texto que el sistema no hace", "auditoría legal del sitio", "coherencia entre los legales y el código"; cuando haya que implementar retracto, reembolso, reversión del pago, garantía, PQR, ejercicio de derechos del titular o eliminación de cuenta; cuando se vaya a lanzar o mover el DNS a producción; cuando cambie el modelo de cobro o de entrega —cotizar el envío, cobrar el flete aparte del precio, ofrecer recogida sin costo, cambiar de transportadora o de plataforma logística, activar el recaudo contra entrega— y haya que revisar qué promesas de costo y de plazo quedan falsas; cuando un texto legal cambie y haya que ver qué código arrastra; o cuando haya que cerrar los marcadores `[[ ]]` que dejó una auditoría anterior — "cierra los datos pendientes", "qué nos falta por decidir", "resuelve los marcadores de los textos legales", "el documento publicado tiene un marcador a la vista". Complementa a `textos-legales-comerciales`, que redacta los documentos: esta hace que el software los cumpla. Covers Colombian e-commerce compliance gap analysis, mapping legal promises to code, retracto, reversión del pago, garantía legal, habeas data rights implementation.
 ---
 
 # Vacíos legales del sitio — de la promesa al código
@@ -52,10 +52,17 @@ produce asesoría jurídica ni texto legal.
   `textos-legales-comerciales`, que impone la verificación de vigencia de la
   norma. Un plazo redactado a mano en mitad de una auditoría es exactamente el
   error que las dos skills existen para evitar.
-- **Cuando el arreglo exige un dato del negocio que no tienes** —el plazo de
-  entrega real, quién paga el flete de la devolución, el horario de atención—
-  **no lo inventes**. Se marca `[[ ]]` y se pregunta. Un plazo inventado en el
-  código es peor que uno inventado en un párrafo: se ejecuta.
+- **Cuando el arreglo exige un dato del negocio que no tienes** —el horario de
+  atención, el plazo de entrega que la operación puede sostener— **no lo
+  inventes**. Se marca `[[ ]]`, se ajusta el documento para no publicar el
+  marcador, y se pregunta. Un plazo inventado en el código es peor que uno
+  inventado en un párrafo: se ejecuta.
+- **Antes de preguntar, clasifica el dato que falta.** La mitad de los marcadores
+  no son datos del negocio: unos están en la ley o en un calendario oficial
+  —quién paga el flete de la devolución, los festivos—, otros ya se decidieron en
+  un ADR y el texto no se enteró. Preguntarle al negocio un dato normativo no lo
+  retrasa: lo congela, porque nadie va a decidir un festivo. El triaje está en
+  `references/cerrar-marcadores.md`.
 - **Cierra siempre recomendando revisión de un abogado colegiado** para los
   hallazgos que impliquen una decisión de riesgo. Una vez, al final.
 
@@ -235,7 +242,39 @@ grave porque era grande.
 - **Si el arreglo es cambiar el texto**, cambia el texto con la otra skill y
   revisa qué código arrastra: una versión, una fecha de vigencia, una prueba.
 - **No cierres un hueco inventando el dato que le falta.** Márcalo `[[ ]]`,
-  pregunta, y deja el resto listo.
+  pregunta, y deja el resto listo — con el documento ajustado, porque **el
+  marcador no se publica**. Ver `references/cerrar-marcadores.md`.
+
+---
+
+### Fase 5b — Cierra los marcadores que dejaron las auditorías anteriores
+
+Puede ser el trabajo entero: "cierra los datos que quedaron pendientes" es una
+tarea que llega sola, sin una auditoría nueva detrás. Y es la única fase que se
+recorre **hacia atrás**, sobre los `[[ ]]` que esta misma skill sembró.
+
+Importa porque un marcador no dispara nada. No rompe una prueba, no sale en un
+informe y no lo mira nadie — hasta que alguien lee el documento publicado y lo
+encuentra ahí, en mitad de una frase que promete un plazo.
+
+Tres reglas, y el detalle en `references/cerrar-marcadores.md`:
+
+1. **Un marcador no se publica nunca.** Es una anotación para quien audita, no un
+   texto para quien lee. Compruébalo en la pantalla renderizada y no en el
+   archivo de textos: la plantilla suele pintar la clave tal como está, y ese es
+   justo el motivo por el que los marcadores llegan a producción.
+2. **Clasifica antes de preguntar.** Dato normativo público / ya decidido en el
+   repositorio / con respuesta en la norma / de verdad del negocio. Solo la
+   cuarta clase se pregunta.
+3. **Mientras el dato no llegue, dos salidas y solo dos:** quitar la promesa
+   concreta, o declarar el mínimo legal diciendo que es el legal. Inventar un
+   valor plausible no es la tercera: es convertir un dato faltante en un
+   incumplimiento con prueba escrita.
+
+Y cerrar un marcador nunca es cambiar un texto: arrastra el otro idioma, la
+versión y la vigencia del documento, la versión guardada en cada constancia de
+autorización, y el código que respondía "no se sabe" mientras el dato faltaba —
+con su prueba, que cambia de sentido y no solo de valor.
 
 ---
 
@@ -287,6 +326,14 @@ y escribe lo que hay.
   escrito.
 - **Cerrar un hueco sin prueba.** Vuelve solo, y la próxima vez nadie lo mira
   porque "eso ya se había arreglado".
+- **Dejar el marcador a la vista.** Marcar el hueco es correcto; publicarlo es un
+  incumplimiento del deber de información por sí mismo, y encima deja por escrito
+  que el comerciante sabía que le faltaba el dato. Se comprueba en la pantalla,
+  no en el archivo de textos.
+- **Tratar un dato normativo público como dato del negocio.** Los festivos, los
+  términos supletivos y el reparto legal de costos no los decide una tienda. Un
+  marcador mal clasificado no espera: se queda para siempre, y con él todo lo que
+  cuelgue de él.
 - **Auditar una sola vez.** El inventario se rehace cuando cambia un texto legal
   o cuando entra un flujo que toca dinero, datos o entrega.
 
@@ -297,6 +344,8 @@ y escribe lo que hay.
   qué tiene que existir en el sistema para que sea verdad
 - `obligaciones-sin-texto.md` — lo que la ley exige aunque ningún documento lo
   mencione, y qué exige del código
+- `cerrar-marcadores.md` — la operación inversa: cómo se cierra un `[[ ]]` que ya
+  existe, por qué no se publica nunca, y qué arrastra cerrarlo
 
 De la skill hermana `textos-legales-comerciales`:
 - `references/marco-normativo.md` — mapa de normas y fuentes oficiales para

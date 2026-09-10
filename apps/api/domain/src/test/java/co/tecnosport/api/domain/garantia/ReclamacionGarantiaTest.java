@@ -56,9 +56,10 @@ class ReclamacionGarantiaTest {
   }
 
   /**
-   * Sin el termino de la categoria no se afirma nada. Es el caso de los celulares mientras
-   * [[GARANTIA DE CELULARES]] siga pendiente, y decir FUERA_DE_TERMINO ahi seria negarle un derecho
-   * a alguien que quiza lo tiene.
+   * Sin el termino de la categoria no se afirma nada: decir FUERA_DE_TERMINO ahi seria negarle un
+   * derecho a alguien que quiza lo tiene. Ninguna categoria del catalogo esta en ese estado hoy
+   * —los celulares salieron cuando se verifico que su termino es el ano legal—, pero el mecanismo
+   * se queda: es la unica respuesta honesta el dia que aparezca una que si lo necesite.
    */
   @Test
   void sinTerminoConocidoLaVigenciaEsIndeterminada() {
@@ -149,11 +150,35 @@ class ReclamacionGarantiaTest {
   @Test
   void unaCategoriaSinTerminoConocidoNoCaeAlPorDefecto() {
     TerminosDeGarantia terminos =
-        TerminosDeGarantia.de(12, Map.of("calzado", 6), Set.of("celulares"));
+        TerminosDeGarantia.de(12, Map.of("calzado", 6), Set.of("linea-por-decidir"));
 
-    assertTrue(terminos.mesesPara("celulares").isEmpty());
+    assertTrue(terminos.mesesPara("linea-por-decidir").isEmpty());
     assertEquals(6, terminos.mesesPara("calzado").orElseThrow());
     assertEquals(12, terminos.mesesPara("ropa-deportiva").orElseThrow());
+  }
+
+  /**
+   * La promesa que se acaba de publicar: un celular nuevo tiene el mismo ano legal que cualquier
+   * otro producto nuevo. Con la categoria fuera de la lista de pendientes, un celular reclamado
+   * dentro del ano queda CUBIERTA y no INDETERMINADA, que es lo que respondia antes.
+   */
+  @Test
+  void unCelularNuevoTieneElAnoLegalComoCualquierProductoNuevo() {
+    TerminosDeGarantia terminos = TerminosDeGarantia.de(12, Map.of(), Set.of());
+
+    assertEquals(12, terminos.mesesPara("celulares").orElseThrow());
+    assertEquals(
+        VigenciaGarantia.CUBIERTA,
+        reclamacion(enFecha(2026, 12, 1), terminos.mesesPara("celulares").orElseThrow())
+            .vigencia());
+  }
+
+  /** Y si un fabricante anuncia mas, manda el mayor: eso es lo que la ley obliga a respetar. */
+  @Test
+  void unTerminoAnunciadoMayorPorElProductorManda() {
+    TerminosDeGarantia terminos = TerminosDeGarantia.de(12, Map.of("celulares", 24), Set.of());
+
+    assertEquals(24, terminos.mesesPara("celulares").orElseThrow());
   }
 
   @Test

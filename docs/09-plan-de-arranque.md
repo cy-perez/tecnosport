@@ -2867,16 +2867,145 @@ un reemplazo por expresión regular sobre todo el JSON, y rompió la clave de
 interpolación `{{dias}}` y, en los specs, el identificador `ReclamacionGarantia`.
 Se rehízo con el mapeo exacto del diff y solo dentro de literales entre comillas.
 
-**Datos de negocio que siguen pendientes**, ninguno inventado:
-`TODO: FESTIVOS_COLOMBIA` (ahora con tres plazos colgando),
-`[[GARANTÍA DE CELULARES]]` (su categoría responde `INDETERMINADA` en vez de caer
-al término general), `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]`,
-`[[HORARIO DE ATENCIÓN]]` y `[[PLAZO DE ENTREGA REAL]]`.
+**Datos de negocio que quedaron pendientes al cerrar el bloque**, ninguno
+inventado: `TODO: FESTIVOS_COLOMBIA` (con tres plazos colgando),
+`[[GARANTÍA DE CELULARES]]`, `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]`,
+`[[HORARIO DE ATENCIÓN]]` y `[[PLAZO DE ENTREGA REAL]]`. **Cinco de estos se
+cerraron el 10 de septiembre**, y el bloque siguiente cuenta por qué cuatro nunca
+fueron datos del negocio.
 
 **Para revisión de abogado**, sin resolver aquí: el 10 contra el 15 sobre el mismo
 buzón —si se corrige el texto de los términos o el sistema cumple siempre el más
 corto—, y "desgaste normal" como exclusión de garantía, que podría ser más amplia
 que la legal.
+
+## El cierre de los datos pendientes
+
+10 de septiembre de 2026. Dos frentes que parecían dos tareas de datos y eran
+una de clasificación: **la mitad de lo que estaba esperando una decisión del
+negocio no dependía del negocio.**
+
+### Los festivos no eran un dato de negocio
+
+De `TODO: FESTIVOS_COLOMBIA` colgaban tres plazos legales, y llevaba una fase
+entera sin moverse por una razón simple: **nadie va a decidir un festivo.** Están
+en la ley y la ley es determinista. Se calculan ahora, y no se cargan de una
+tabla por año, porque una tabla habría que alimentarla cada diciembre y el
+diciembre que nadie se acordara los tres plazos volverían a responder "no se sabe"
+sin que ninguna prueba se quejara. `ADR-0024`.
+
+**Verificar antes de escribir código no fue un trámite**: apareció la **Ley 2578
+del 1 de junio de 2026** (Diario Oficial No. 53.510 del 2 de junio), que declaró
+festivo el 9 de julio y remite a la Ley 51 de 1983 para fijar la fecha del
+descanso. Colombia pasó de dieciocho festivos a diecinueve tres meses antes, y un
+calendario escrito de memoria habría estado mal desde el primer día. Contra esa
+ley hay una demanda de constitucionalidad en curso; mientras no haya decisión,
+rige.
+
+Dos detalles que conviene no volver a discutir: **el Jueves y el Viernes Santos
+no se trasladan** —no están en la lista del art. 1— y **2025 tuvo diecisiete
+festivos y no dieciocho**, porque el 29 de junio cayó domingo y el Sagrado Corazón
+viernes, y los dos se trasladaron al mismo lunes 30. Lo segundo salió de una
+prueba que falló: contar festivos por la lista de la ley da un número equivocado.
+
+### Los seis marcadores estaban publicados
+
+La plantilla del documento legal pinta cada párrafo tal como está
+(`documento-legal.page.html:29`), así que los seis `[[ ]]` no eran una anotación
+interna: la página de términos decía "el plazo de entrega es de
+`[[PLAZO DE ENTREGA REAL]]` días calendario". En dos idiomas, durante una fase
+completa, sin que nada fallara — ninguna prueba mira el contenido de un texto
+legal.
+
+**Cuatro de los seis no eran datos del negocio**, y por eso no se movían:
+
+| Marcador | Qué era en realidad |
+|---|---|
+| `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` | Lo reparte la ley, y con **dos** respuestas: por retracto el transporte lo paga el comprador (art. 47 de la Ley 1480), pero los gastos de devolver el dinero los paga el vendedor; en garantía la reparación y su transporte son gratuitos (art. 11). Donde había una frase ahora hay dos, en dos secciones. Y la respuesta estaba escrita en `docs/12-legales-de-envio.md` desde el 8 de septiembre |
+| `[[GARANTÍA DE CELULARES]]` | El texto prometía "la garantía del fabricante", que puede ser **menor** que la legal. No hay régimen especial para equipos terminales: un año para producto nuevo, y si el productor anuncia más, manda el mayor |
+| `[[TRANSPORTADORA]]` | Decidida en `ADR-0021/0023`, pero Skydropx todavía no despacha ni un pedido |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Resend está decidido para dev (`docs/07-infra-gcp.md`), no para producción |
+
+Los dos últimos enseñaron algo que no estaba escrito: **decidido no es
+construido.** Nombrar en la política de datos a un tercero que todavía no recibe
+ni un dato es cambiar una promesa falsa por otra más concreta y más fácil de
+desmentir. Los dos quedan descritos por su categoría, y se los nombra el día que
+reciban datos — que en el caso de Skydropx es un paso de la Fase 7.
+
+Los dos que sí son del negocio quedaron sin marcador y sin dato inventado, con las
+dos únicas salidas honestas: el **plazo de entrega** declara el término legal
+supletivo de treinta días calendario diciendo que es el legal, y el **horario de
+atención** se quita, porque el plazo de quince días hábiles se sostiene sin él.
+`ADR-0025`, con la regla y su guarda: `npm run marcadores`, dentro de
+`npm run verificar`.
+
+### Los tres datos del negocio, cerrados
+
+Llegaron el mismo día, y uno de los tres se cerró **decidiendo no prometer**:
+
+- **Plazo de entrega: no se promete plazo propio.** El despacho depende de la
+  transportadora y de la gestión de Skydropx, así que lo que obliga es el término
+  legal supletivo de treinta días calendario, publicado como legal. En la Fase 7
+  el estimado de la cotización se muestra **como estimado**, nunca como promesa.
+  Decidido así con la consecuencia sobre la mesa: un plazo propio más corto es
+  exigible el primer día, y **nadie vigila hoy su vencimiento** — ver el pendiente
+  de más abajo.
+- **Horario de atención: todos los días, de 8:00 a.m. a 9:00 p.m.** Publicado en
+  los términos y en el pie, y con una distinción que no conviene perder: es el
+  horario de los **canales**, no de un local. Por eso no se emite como
+  `openingHours` en los datos estructurados — emitirlo obligaría a declarar el
+  negocio como `Store`, o sea a anunciar horario de visita, y el punto de recogida
+  es un apartamento. Lo anunciado obliga: alguien que toque el timbre un domingo a
+  las 8:50 p.m. tendría razón.
+- **Proveedor de correo: Resend, también en producción.** Se eligió el que ya
+  funciona en dev. La política de datos lo nombra; quedan a mano la verificación
+  del dominio y la clave, y **sin decidir** la región de procesamiento y la razón
+  social, que no se suponen (`docs/07-infra-gcp.md`).
+
+Con eso se enlazaron también **las redes sociales** en el pie —Facebook e
+Instagram, con `sameAs` en los datos estructurados— y se corrigió el número de
+contacto, que el sitio publicaba con el celular equivocado en el pie y en tres
+párrafos de los legales.
+
+Y el **punto de retiro** quedó publicado con su dirección, sin el "sin costo" de
+la etiqueta: mientras el flete va embebido en el precio, recoger no ahorra nada, y
+un "sin costo" que no evita ningún costo es publicidad engañosa el primer día. Es
+el hallazgo 3 de `docs/12-legales-de-envio.md`, adelantado — vuelve a ser cierto
+en la Fase 7.
+
+### El medio de pago que prefiere el comprador
+
+El hallazgo de la Ley 2439 se cerró el mismo día en que se encontró, y vale
+recordar qué era: el sistema **podía cumplir la ley y no podía demostrarlo**.
+Sabía por dónde salió la plata y no por dónde la pidieron.
+
+`SolicitudRetracto` gana `medioPreferido` (`V27`), con tres reglas que valen más
+que el campo: se anota una vez y no se corrige —corregirla borraría la constancia
+de lo que el comprador pidió—, con el dinero ya devuelto no se anota nada, y
+devolver por otro medio **no se bloquea** pero queda contrastado. Lo último es
+deliberado: puede haber una cuenta que rebota, y quien decide es una persona; lo
+que no puede pasar es que no quede rastro.
+
+El texto publicado pasa al estándar de la ley ("por el medio de pago que
+prefieras"), y el acuse de retracto también — prometía el estándar viejo.
+
+**PSE no hacía falta construirlo.** Se revisó porque parecía pendiente y ya
+estaba: `MetodoPago.PSE` existe desde la Fase 3, `MetodosDePagoDisponibles`
+devuelve `EnumSet.allOf` y el checkout lo lista con su etiqueta. Wompi resuelve el
+flujo en su Web Checkout.
+
+### Lo que queda abierto
+
+**Nadie vigila el vencimiento del plazo de entrega.** `MotivoCancelacion` ya trae
+`PLAZO_INCUMPLIDO`, pero las dos únicas tareas programadas son la purga de
+carritos y la conciliación de Wompi. Con el término legal de treinta días
+publicado, un pedido pagado y sin despachar lo incumple en silencio. Encaja en la
+Fase 7, donde ya entra la conciliación de envíos.
+
+**Sigue para revisión de abogado**, además de lo que ya estaba: el "desgaste
+normal" como exclusión de garantía; si describir a un tercero por su categoría
+—en vez de nombrarlo— satisface el deber de información mientras ese tercero no
+reciba datos; y en qué región procesa Resend, que es dato de contrato.
 
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
@@ -2936,14 +3065,21 @@ perder de vista al construir:
   la transacción.
 - `GET /api/v1/pedidos/{id}/seguimiento` devuelve el `Envio` completo, con el
   costo real y la comisión de recaudo, a quien tenga el id y el correo.
-- "Retiro en punto (Medellín, sin costo)" hoy engaña, porque el flete va embebido
-  en el precio y recoger no ahorra nada. Con la cotización se vuelve cierto.
+- "Retiro en punto (Medellín, sin costo)" engañaba, porque el flete va embebido
+  en el precio y recoger no ahorra nada. **Se adelantó el arreglo el 10 de
+  septiembre**: la etiqueta perdió el "sin costo" y ganó la dirección del punto.
+  Con la cotización vuelve a ser cierto, y ahí se puede volver a poner — junto con
+  `resumen.retiro_ahorro`, que dice cuánto se ahorra de verdad.
 
 **Datos de negocio pendientes que bloquean partes de la fase**, todos en la
 sección 4 de `docs/12-legales-de-envio.md`: el IVA del flete, los límites y la
-comisión del recaudo, la entidad con la que se firma con Skydropx, el plazo de
-entrega real, el peso y las dimensiones del catálogo sembrado, y la dirección y
-el horario del punto de recogida.
+comisión del recaudo, la entidad con la que se firma con Skydropx, y el peso y las
+dimensiones del catálogo sembrado.
+
+Tres de los que estaban en esta lista se cerraron el 10 de septiembre: el plazo de
+entrega real —decidiendo **no** prometer uno propio—, y la dirección y el horario
+del punto de recogida, que es Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401,
+y se coordina al confirmar el pedido en vez de tener horario de mostrador.
 
 ## Cómo conversar con Claude Code en este proyecto
 

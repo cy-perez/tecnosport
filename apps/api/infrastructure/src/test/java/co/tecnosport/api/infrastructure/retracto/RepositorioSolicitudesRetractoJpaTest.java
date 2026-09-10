@@ -85,6 +85,7 @@ class RepositorioSolicitudesRetractoJpaTest {
         ENTREGA.plusSeconds(86_400),
         "admin:1",
         "no le sirvió la talla",
+        MedioReintegro.TRANSFERENCIA_BANCARIA,
         CalendarioHabil.sinFestivosCargados());
   }
 
@@ -151,6 +152,7 @@ class RepositorioSolicitudesRetractoJpaTest {
             ENTREGA.plusSeconds(172_800),
             "admin:1",
             null,
+            null,
             CalendarioHabil.sinFestivosCargados());
     repositorio.guardar(segunda);
 
@@ -183,6 +185,7 @@ class RepositorioSolicitudesRetractoJpaTest {
                       VerdictoPlazo.EN_PLAZO.name(),
                       EstadoSolicitudRetracto.REEMBOLSADA.name(),
                       ENTREGA,
+                      null,
                       null));
               jpa.flush();
             })

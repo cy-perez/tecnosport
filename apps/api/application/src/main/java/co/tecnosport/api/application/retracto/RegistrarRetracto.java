@@ -56,7 +56,13 @@ public final class RegistrarRetracto {
     }
     SolicitudRetracto solicitud =
         SolicitudRetracto.radicar(
-            pedido.id(), entregadoEn, reloj.ahora(), comando.actor(), comando.motivo(), calendario);
+            pedido.id(),
+            entregadoEn,
+            reloj.ahora(),
+            comando.actor(),
+            comando.motivo(),
+            comando.medioPreferido(),
+            calendario);
     repositorioSolicitudes.guardar(solicitud);
     enviarAcuse(pedido);
     return solicitud;
@@ -82,8 +88,8 @@ public final class RegistrarRetracto {
         + "El costo del transporte de la devolucion lo asume el comprador, segun el articulo 47 "
         + "de la Ley 1480 de 2011.</p>"
         + "<p>Cuando el producto llegue, te reintegramos el dinero dentro de los quince (15) dias "
-        + "calendario siguientes, por el mismo medio de pago que usaste o por el que acordemos "
-        + "contigo.</p>";
+        + "calendario siguientes, por el medio de pago que prefieras. Si no nos has dicho cual, "
+        + "respondenos este correo y lo anotamos.</p>";
   }
 
   /**

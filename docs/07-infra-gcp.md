@@ -99,10 +99,29 @@ entonces mover la raíz. Bajar el TTL a 300 segundos un día antes.
 
 ## Correo saliente
 
-`docs/12-legales-de-envio.md` marca `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` como
-dato de negocio pendiente. **Sigue pendiente para producción**, y se decidió
-solo el de dev, que es otra pregunta: en dev basta con que los correos salgan
-para poder recorrer el registro y la recuperación de clave.
+**Resend también en producción**, decidido el 10 de septiembre de 2026. El
+`[[PROVEEDOR DE CORREO TRANSACCIONAL]]` que `docs/12-legales-de-envio.md` marcaba
+como pendiente queda cerrado, y la política de datos **lo nombra** en su sección 8
+— que es la mitad del trabajo que nadie apunta: nombrar al tercero es parte de
+contratarlo (`ADR-0025`).
+
+Se eligió el que ya funciona: no hay una línea de código que cambiar, `spring.mail`
+sale de variables y `starttls.enable` ya está en `true`. Las alternativas (SES,
+Brevo, Mailgun) valdrían la pena por precio a un volumen que este sitio no tiene.
+
+**Dos cosas que hay que hacer a mano antes de publicar**, y que ningún despliegue
+resuelve: verificar el dominio `tecnosport.co` en Resend —el de dev es el
+subdominio, ver más abajo— y crear la clave de producción. Y un límite que conviene
+tener escrito: el plan gratuito son **3.000 correos al mes con tope de 100 al
+día**. A partir de ahí, o se paga el plan o se cambia de proveedor; con el tope
+alcanzado, los correos de verificación de cuenta y de recuperación de clave
+**dejan de salir**, y los dos bloquean el acceso de quien compra.
+
+**Lo que sigue sin decidirse, y toca a un abogado:** en qué región procesa Resend
+los datos. La cláusula de transferencia internacional dice hoy "fuera de Colombia"
+sin nombrar país, que es verdadero y suficiente; declarar un país exige leerlo en
+el contrato, no suponerlo. Mismo pendiente que la entidad exacta con la que se
+firma — la política nombra "Resend" y no una razón social, a propósito.
 
 **Dev usa Resend** (`resend.com`, plan gratuito: 3.000 correos al mes con tope de
 100 al día, 3 dominios y 30 días de registros). No hay nada que programar:
