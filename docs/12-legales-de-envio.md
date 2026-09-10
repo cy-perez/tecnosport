@@ -58,7 +58,7 @@ fue el plazo del reintegro.
 |---|---|---|---|
 | Términos y condiciones | 4. Productos, imágenes y precios | "El precio publicado incluye además el costo del envío a cualquier parte del país: no hay cobros adicionales al final del proceso" | Precio base sin flete, flete cotizado por destino y visible antes de pagar, total con las dos cifras |
 | Términos y condiciones | 7. Pago contraentrega | Disponibilidad decidida por el sistema | Añade: se cobra el **total con el flete incluido**, y **solo en efectivo** |
-| Términos y condiciones | 8. Envío y entrega | Despacho nacional y plazo `[[PLAZO DE ENTREGA REAL]]`, con el supletivo de 30 días | Cotización por destino, plazo estimado del transportador frente al plazo prometido, recogida sin costo, destinos sin cobertura |
+| Términos y condiciones | 8. Envío y entrega | Despacho nacional con el término legal supletivo de 30 días —**se decidió no prometer plazo propio**—, y el punto de retiro con su dirección | Cotización por destino, plazo estimado del transportador **como estimado**, recogida sin costo, destinos sin cobertura |
 | Términos y condiciones | 9. Derecho de retracto | `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` | El comprador paga el transporte de la devolución (art. 47); se le reintegra lo que pagó, flete de ida incluido |
 | Términos y condiciones | 11. Reversión del pago | Causales y plazo | Sin cambios de fondo; ver el punto para abogado sobre el flete |
 | Política de datos | 7. Finalidades | "Procesar, confirmar y despachar tu pedido" | Añade cotizar el envío, generar la guía y seguir el paquete |
