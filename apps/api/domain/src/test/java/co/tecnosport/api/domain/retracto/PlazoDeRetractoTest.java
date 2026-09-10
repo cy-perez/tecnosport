@@ -2,6 +2,8 @@ package co.tecnosport.api.domain.retracto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;

@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Map;

@@ -1,9 +1,9 @@
 package co.tecnosport.api.infrastructure.retracto;
 
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.retracto.EstadoSolicitudRetracto;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
-import co.tecnosport.api.domain.retracto.VerdictoPlazo;
 import co.tecnosport.api.infrastructure.retracto.entidad.SolicitudRetractoJpaEntity;
 import java.util.List;
 import java.util.Objects;

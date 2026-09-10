@@ -116,6 +116,15 @@ tecnosport:
   recuperacion-clave:
     # docs/08-seguridad-legal.md: "token de un solo uso, válido 30 minutos".
     minutos-vencimiento: ${RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO:30}
+  atencion:
+    # Plazos de respuesta en dias habiles. Los dos primeros son de la Ley 1581 de 2012 (consultas y
+    # reclamos de datos personales, con sus prorrogas); el tercero es el que los terminos publicados
+    # prometen para las peticiones del consumidor, y ese texto no menciona prorroga.
+    dias-consulta-datos: ${ATENCION_DIAS_CONSULTA_DATOS:10}
+    dias-prorroga-consulta-datos: ${ATENCION_DIAS_PRORROGA_CONSULTA_DATOS:5}
+    dias-reclamo-datos: ${ATENCION_DIAS_RECLAMO_DATOS:15}
+    dias-prorroga-reclamo-datos: ${ATENCION_DIAS_PRORROGA_RECLAMO_DATOS:8}
+    dias-consumidor: ${ATENCION_DIAS_CONSUMIDOR:15}
   limite-intentos:
     # docs/08-seguridad-legal.md pide el límite, pero no da números — dato de seguridad, no de
     # negocio, ajustable. "auth" agrupa sesión/registro/recuperación (mismo tipo de abuso);

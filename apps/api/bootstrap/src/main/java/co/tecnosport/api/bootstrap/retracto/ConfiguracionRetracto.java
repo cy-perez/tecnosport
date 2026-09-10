@@ -9,7 +9,7 @@ import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
 import co.tecnosport.api.application.retracto.RegistrarReintegro;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
-import co.tecnosport.api.domain.retracto.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

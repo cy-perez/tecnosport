@@ -1,5 +1,8 @@
 package co.tecnosport.api.domain.retracto;
 
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
+import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -18,8 +21,12 @@ import java.util.Objects;
  */
 public final class PlazoDeRetracto {
 
-  /** El negocio opera en Medellín y los plazos legales se cuentan con su calendario. */
-  public static final ZoneId ZONA = ZoneId.of("America/Bogota");
+  /**
+   * Alias del huso del negocio, conservado porque medio proyecto ya cuenta plazos con {@code
+   * PlazoDeRetracto.ZONA} y renombrarlo en todos lados no aporta nada. La definición vive en {@link
+   * ZonaDelNegocio}, que es donde la comparten los demás plazos.
+   */
+  public static final ZoneId ZONA = ZonaDelNegocio.ZONA;
 
   private static final int DIAS_HABILES = 5;
 

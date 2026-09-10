@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation;
 
+import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaException;
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
@@ -119,6 +120,12 @@ public class ManejadorDeErrores {
   @ExceptionHandler(RetractoYaRadicadoException.class)
   public ProblemDetail retractoYaRadicado(RetractoYaRadicadoException excepcion) {
     return problema(HttpStatus.CONFLICT, "Retracto ya radicado", excepcion);
+  }
+
+  @ExceptionHandler(SolicitudAtencionNoEncontradaException.class)
+  public ProblemDetail solicitudAtencionNoEncontrada(
+      SolicitudAtencionNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Solicitud de atencion no encontrada", excepcion);
   }
 
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)

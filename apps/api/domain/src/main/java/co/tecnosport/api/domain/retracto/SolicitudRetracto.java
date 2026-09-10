@@ -1,6 +1,8 @@
 package co.tecnosport.api.domain.retracto;
 
+import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
+import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package co.tecnosport.api.domain.retracto;
+package co.tecnosport.api.domain.compartido;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -21,6 +21,9 @@ import java.util.Set;
  * dato que este proyecto todavía no tiene cargado. TODO: FESTIVOS_COLOMBIA — cargar el calendario
  * oficial por año. Mientras tanto, {@link #cubre} responde {@code false} y quien pregunte por el
  * plazo recibe {@code INDETERMINADO} en vez de un veredicto inventado.
+ *
+ * <p>De ese dato pendiente cuelgan ya dos plazos legales y no uno: los cinco días hábiles del
+ * retracto y los de respuesta a peticiones, quejas y reclamos. Cargarlo cierra los dos a la vez.
  */
 public final class CalendarioHabil {
 
