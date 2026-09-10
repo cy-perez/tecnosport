@@ -37,6 +37,19 @@ resource "google_cloud_run_v2_service" "este" {
           cpu    = var.cpu
           memory = var.memoria
         }
+
+        # **CPU solo durante la petición.** Sin declararlo, el servicio quedaba con CPU asignada
+        # todo el tiempo: comprobado sobre la revisión desplegada, que traía
+        # `run.googleapis.com/cpu-throttling: false`. El valor por omisión de este recurso es el
+        # contrario al de `gcloud run deploy`, así que el ambiente venía facturando vCPU
+        # durante toda la vida de cada instancia y no solo mientras atendía peticiones.
+        #
+        # Es el mismo cálculo que justifica `min_instance_count = 0` unas líneas más arriba, y por
+        # el otro extremo: no basta con que no haya instancias en reposo si cada instancia que
+        # despierta cobra CPU hasta que Cloud Run la apaga varios minutos después. Una visita
+        # aislada por hora bastaba para gastar la capa gratuita.
+        cpu_idle = true
+
         # El arranque en frío de una JVM con CPU limitada es doloroso; este impulso solo se cobra
         # durante el arranque.
         startup_cpu_boost = true

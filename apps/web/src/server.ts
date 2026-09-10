@@ -4,6 +4,7 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+import compression from 'compression';
 import express from 'express';
 import { join } from 'node:path';
 import { crearClienteContratos } from '@tecnosport/contratos';
@@ -20,7 +21,51 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * Antes que nada, y antes que los estáticos: en el ambiente desplegado la web y la API son dos
+ * Cabeceras de seguridad, en el borde y para todo lo que sale de este servidor.
+ *
+ * No estaban: la respuesta del ambiente desplegado traía `content-type`, `date`, `server` y un
+ * `x-powered-by` que solo sirve para anunciar con qué se construyó esto. Ninguna de las cuatro
+ * cuesta nada y las cuatro cierran un ataque concreto — degradar a HTTP, adivinar el tipo de un
+ * archivo servido, enmarcar el sitio para robar un clic, y filtrar la ruta completa al enlazar
+ * hacia afuera.
+ *
+ * `X-Frame-Options: DENY` es sobre quién puede enmarcarnos, no sobre a quién enmarcamos nosotros:
+ * el checkout de Wompi lo abre el navegador con la llave pública y no depende de esto.
+ *
+ * Sin CSP todavía, y a propósito: una política que sirva para Angular necesita nonces por
+ * respuesta, y media a medias es peor que ninguna porque invita a confiar en ella.
+ */
+app.disable('x-powered-by');
+app.use((_req, res, next) => {
+  res.setHeader('strict-transport-security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('x-content-type-options', 'nosniff');
+  res.setHeader('x-frame-options', 'DENY');
+  res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+/**
+ * Compresión, y **antes de todo lo que escriba un cuerpo**. Ni `express.static` ni el manejador
+ * de Angular comprimen por su cuenta, y Cloud Run tampoco lo hace por nosotros: pedido el
+ * ambiente desplegado con `Accept-Encoding: gzip, br`, ninguna respuesta traía
+ * `content-encoding`. La carga inicial de la portada eran 664 KB de HTML, JS y CSS; comprimida
+ * son 213 KB.
+ *
+ * Negocia **brotli** cuando el cliente lo acepta, que es lo que hace cualquier navegador, y ahí
+ * salen esos 213 KB. Con gzip son 211 KB — brotli queda dos kilobytes *peor*, porque el paquete
+ * usa una calidad de brotli baja a propósito para no gastar en CPU lo que ahorra en red. La
+ * diferencia entre las dos es ruido; la que importa es contra los 664 KB de no comprimir nada.
+ *
+ * Va **delante del proxy de `/api`** y no solo de los estáticos, y ese orden es la parte que no
+ * se ve: `fetch` descomprime la respuesta del backend al leerla, así que `proxy-api.ts` borra
+ * `content-encoding` a propósito —copiarlo dejaría al navegador esperando bytes que no
+ * llegan— y el JSON del catálogo terminaba viajando en claro. Doble codificación no puede
+ * haber justamente porque el proxy nunca declara ninguna.
+ */
+app.use(compression());
+
+/**
+ * Antes que los estáticos: en el ambiente desplegado la web y la API son dos
  * servicios distintos, y el sitio necesita verlas en el mismo origen para que la cookie de sesión
  * viaje. Ver `proxy-api.ts`. En local no se monta — ahí lo hace `proxy.conf.json`.
  */

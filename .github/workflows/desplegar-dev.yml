@@ -150,15 +150,54 @@ jobs:
           done
           [ "$estado" = "200" ] || { echo "::error::La API no responde 200 en /api/v1/salud"; exit 1; }
 
+          # La web no se da por sana con un 200, y la razón la aprendió sendik antes que nosotros:
+          # `@angular/ssr` **renuncia al renderizado en servidor** si le llega una cabecera
+          # `x-forwarded-*` que no esté declarada como confiable, y en ese caso entrega la página
+          # de cliente — raíz vacía, sin estado transferido, y estado 200. El sitio queda en blanco
+          # para todo el mundo y esta comprobación lo daba por bueno. `NG_TRUST_PROXY_HEADERS` está
+          # puesto en Terraform; esto es lo que avisa el día que deje de estarlo.
+          #
+          # Se pide por la URL de `run.app` a propósito: es el camino que recorre un visitante, con
+          # el proxy de Google delante y por tanto con esas cabeceras puestas.
           for intento in 1 2 3 4 5 6; do
-            estado=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$web/es" || echo 000)
+            estado=$(curl -s -o portada.html -D cabeceras.txt -w '%{http_code}' \
+              --compressed --max-time 60 "$web/es" || echo 000)
             [ "$estado" = "200" ] && break
             echo "salud de la web: $estado (intento $intento)"
             sleep 10
           done
           [ "$estado" = "200" ] || { echo "::error::La web no responde 200 en /es"; exit 1; }
 
-          echo "Las dos responden."
+          if grep -q '<app-root></app-root>' portada.html; then
+            echo "::error::Respondió 200 pero la página llegó SIN renderizar: <app-root> viene vacía."
+            echo "Es la renuncia al SSR de @angular/ssr por cabeceras x-forwarded-* no declaradas."
+            exit 1
+          fi
+
+          # Y la comprobación en positivo, porque «la raíz no está vacía» también lo cumple un
+          # error pintado por el cliente: el estado transferido solo existe si se renderizó en el
+          # servidor de verdad.
+          grep -q 'ng-state' portada.html || {
+            echo "::error::Respondió 200 y con marcado, pero sin estado transferido."
+            exit 1
+          }
+
+          # La compresión no se puede afirmar desde Vitest —montar el motor de Angular exige el
+          # manifiesto que solo existe tras construir— así que se afirma aquí, contra el servicio
+          # ya desplegado, que es donde la afirmación significa algo. Sin esto, la portada vuelve a
+          # pesar 664 KB en vez de 211 KB y nada se pone rojo.
+          #
+          # Cualquier codificación, no `gzip` a secas: `compression` negocia **brotli** cuando el
+          # cliente lo acepta, que es lo que hace todo navegador y lo que hace `curl --compressed`.
+          # Escrita contra `gzip`, esta comprobación fallaba con la compresión funcionando
+          # perfectamente — encontrado al probarla contra el servidor construido, no en revisión.
+          grep -qiE '^content-encoding: (br|gzip|deflate|zstd)' cabeceras.txt || {
+            echo "::error::La web responde sin comprimir: falta el middleware de compresión en server.ts"
+            grep -i '^content-encoding' cabeceras.txt || echo "(no vino ninguna cabecera content-encoding)"
+            exit 1
+          }
+
+          echo "Las dos responden, la web renderizada en servidor y comprimida."
 
       # Solo si la comprobación falló. Devuelve el tráfico a la revisión anterior, que es la que
       # estaba sirviendo hace un minuto y de la que sabemos que funcionaba.
