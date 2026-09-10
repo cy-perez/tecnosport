@@ -79,13 +79,11 @@
           />
 
           @if (devolvemosNosotros()) {
-            <p class="mt-0 mb-8 text-ts-texto-suave">
-              {{ 'admin.reversiones.acciones.dinero_ayuda' | transloco }}
-            </p>
             <ts-campo
               [idCampo]="'reversion-monto-' + reversion.id"
               tipo="number"
               [label]="'admin.reversiones.acciones.monto' | transloco"
+              [ayuda]="'admin.reversiones.acciones.dinero_ayuda' | transloco"
               formControlName="monto"
             />
             <ts-campo
@@ -110,13 +108,11 @@
         [opciones]="opcionesCausal()"
         formControlName="causal"
       />
-      <p class="mt-0 mb-4 text-ts-texto-suave">
-        {{ 'admin.reversiones.acciones.fecha_ayuda' | transloco }}
-      </p>
       <ts-campo
         [idCampo]="'reversion-fecha-' + pedidoId()"
         tipo="datetime-local"
         [label]="'admin.reversiones.acciones.fecha_del_hecho' | transloco"
+        [ayuda]="'admin.reversiones.acciones.fecha_ayuda' | transloco"
         formControlName="fechaDelHecho"
       />
       <ts-campo

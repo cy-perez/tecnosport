@@ -104,7 +104,7 @@ describe('PanelGarantia', () => {
   it('sobre un pedido entregado ofrece radicar la garantia', async () => {
     await renderPanel([]);
 
-    expect(await screen.findByRole('button', { name: 'Radicar garantia' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Radicar garantía' })).toBeTruthy();
   });
 
   /** La garantia se cuenta desde la entrega: sin entrega no hay termino que empezar a contar. */
@@ -113,10 +113,10 @@ describe('PanelGarantia', () => {
 
     expect(
       await screen.findByText(
-        'La garantia se cuenta desde la entrega: solo aplica a un pedido ya entregado.',
+        'La garantía se cuenta desde la entrega: solo aplica a un pedido ya entregado.',
       ),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Radicar garantia' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Radicar garantía' })).toBeNull();
   });
 
   it('radicar manda la linea elegida y el fallo', async () => {
@@ -124,10 +124,10 @@ describe('PanelGarantia', () => {
     fireEvent.change(await screen.findByLabelText('Producto del pedido'), {
       target: { value: 'v1' },
     });
-    fireEvent.input(screen.getByLabelText('Que fallo'), {
+    fireEvent.input(screen.getByLabelText('Qué falló'), {
       target: { value: 'La costura se abrio' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Radicar garantia' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Radicar garantía' }));
 
     await vi.waitFor(() =>
       expect(repositorio.radicadas).toEqual([
@@ -147,10 +147,10 @@ describe('PanelGarantia', () => {
 
     expect(
       await screen.findByText(
-        'El termino de esa categoria no esta cargado, asi que no se puede afirmar que la garantia vencio. Decide una persona.',
+        'El término de esa categoría no está cargado, así que no se puede afirmar que la garantía venció. Decide una persona.',
       ),
     ).toBeTruthy();
-    expect(screen.queryByText('Fuera del termino')).toBeNull();
+    expect(screen.queryByText('Fuera del término')).toBeNull();
   });
 
   /**
@@ -160,14 +160,14 @@ describe('PanelGarantia', () => {
    */
   it('reparar no pide monto y viaja sin datos de dinero', async () => {
     const { repositorio } = await renderPanel([reclamacion()]);
-    await screen.findByRole('button', { name: 'Resolver garantia' });
+    await screen.findByRole('button', { name: 'Resolver garantía' });
 
     expect(screen.queryByLabelText('Monto a devolver')).toBeNull();
 
-    fireEvent.input(screen.getByLabelText('Que se le respondio al comprador'), {
+    fireEvent.input(screen.getByLabelText('Qué se le respondió al comprador'), {
       target: { value: 'Se reparo la costura' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Resolver garantia' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolver garantía' }));
 
     await vi.waitFor(() =>
       expect(repositorio.resueltas).toEqual([
@@ -186,7 +186,7 @@ describe('PanelGarantia', () => {
 
   it('elegir devolver el dinero pide el monto y lo precarga con el total', async () => {
     await renderPanel([reclamacion()]);
-    const desenlace = await screen.findByLabelText('Que se hizo');
+    const desenlace = await screen.findByLabelText('Qué se hizo');
     fireEvent.change(desenlace, { target: { value: 'REINTEGRO' } });
 
     const monto = await screen.findByLabelText<HTMLInputElement>('Monto a devolver');
@@ -197,12 +197,12 @@ describe('PanelGarantia', () => {
     await renderPanel([reclamacion({ estado: 'RESUELTA', desenlace: 'REPOSICION' })]);
 
     expect(await screen.findByText('Reponer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Resolver garantia' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resolver garantía' })).toBeNull();
   });
 
   it('el panel no tiene violaciones de WCAG 2.2 AA', async () => {
     const { container } = await renderPanel([reclamacion()]);
-    await screen.findByRole('button', { name: 'Resolver garantia' });
+    await screen.findByRole('button', { name: 'Resolver garantía' });
 
     await esperarSinViolaciones(container);
   });

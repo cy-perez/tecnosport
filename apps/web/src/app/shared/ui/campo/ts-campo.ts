@@ -1,6 +1,18 @@
-import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  input,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
+import {
+  CLASES_AYUDA,
+  CLASES_CONTROL,
+  CLASES_ERROR,
+  CLASES_ETIQUETA,
+} from '../clases-control';
 
 /**
  * `datetime-local` entró con la bandeja de atención: quien radica una PQR escribe la fecha en que
@@ -53,10 +65,34 @@ export class TsCampo implements ControlValueAccessor {
   readonly label = input.required<string>();
   readonly tipo = input<TipoCampo>('text');
   readonly error = input<string | null>(null);
+  /**
+   * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
+   *
+   * Entró porque escribirlo como un `<p>` suelto antes del componente lo deja visualmente pegado al
+   * campo <b>anterior</b> —se vio en la bandeja de PQR, donde la ayuda de "fecha en que llegó"
+   * parecía ser del asunto— y además un lector de pantalla nunca lo relacionaba con nada.
+   */
+  readonly ayuda = input<string | null>(null);
 
   protected readonly clasesControl = CLASES_CONTROL;
   protected readonly clasesEtiqueta = CLASES_ETIQUETA;
   protected readonly clasesError = CLASES_ERROR;
+  protected readonly clasesAyuda = CLASES_AYUDA;
+
+  /**
+   * Los dos textos de apoyo a la vez cuando los hay: sin esto, mostrar un error dejaba la ayuda
+   * fuera del nombre accesible del control justo cuando más falta hace.
+   */
+  protected readonly descripcion = computed(() => {
+    const partes: string[] = [];
+    if (this.ayuda()) {
+      partes.push(this.idCampo() + '-ayuda');
+    }
+    if (this.error()) {
+      partes.push(this.idCampo() + '-error');
+    }
+    return partes.length === 0 ? null : partes.join(' ');
+  });
 
   protected readonly valorMostrado = signal('');
   protected readonly deshabilitado = signal(false);

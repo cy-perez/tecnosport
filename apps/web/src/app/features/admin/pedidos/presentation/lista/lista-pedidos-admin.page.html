@@ -271,13 +271,11 @@
                       formControlName="motivo"
                     />
                     @if (elDineroYaEntro(pedido)) {
-                      <p class="mt-0 mb-8 text-ts-texto-suave">
-                        {{ 'admin.pedidos.cancelacion.dinero_ayuda' | transloco }}
-                      </p>
                       <ts-campo
                         [idCampo]="'cancelacion-monto-' + pedido.id"
                         tipo="number"
                         [label]="'admin.pedidos.cancelacion.monto' | transloco"
+                        [ayuda]="'admin.pedidos.cancelacion.dinero_ayuda' | transloco"
                         formControlName="monto"
                       />
                       <ts-campo

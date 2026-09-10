@@ -318,7 +318,7 @@ describe('ListaPedidosAdminPage', () => {
 
     expect(screen.queryByLabelText('Monto a devolver')).toBeNull();
     expect(
-      screen.getByText('Este pedido todavia no habia cobrado nada, asi que no hay dinero que devolver.'),
+      screen.getByText('Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.'),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));

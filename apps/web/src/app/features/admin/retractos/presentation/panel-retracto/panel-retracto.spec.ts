@@ -127,7 +127,7 @@ describe('PanelRetracto', () => {
     expect(screen.queryByText('Fuera de plazo')).toBeNull();
     expect(
       screen.getByText(
-        'Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio.',
+        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció.',
       ),
     ).toBeTruthy();
   });

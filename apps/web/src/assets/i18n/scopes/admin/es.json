@@ -77,8 +77,8 @@
       "titulo": "Cancelar el pedido",
       "ayuda": "Por causa nuestra y antes de despachar: el producto dejo de estar disponible, o no lo entregamos dentro del plazo.",
       "motivo": "Motivo",
-      "dinero_ayuda": "Este pedido ya tenia el dinero recibido, asi que cancelarlo exige devolverlo. Sin monto no se puede cancelar.",
-      "sin_dinero": "Este pedido todavia no habia cobrado nada, asi que no hay dinero que devolver.",
+      "dinero_ayuda": "Este pedido ya tenia el dinero recibido, así que cancelarlo exige devolverlo. Sin monto no se puede cancelar.",
+      "sin_dinero": "Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.",
       "monto": "Monto a devolver",
       "comprobante": "Comprobante",
       "cancelar": "Cancelar pedido",
@@ -186,7 +186,7 @@
       "en_plazo": "Dentro de los cinco dias habiles",
       "vencido": "Fuera de plazo",
       "indeterminado": "Plazo indeterminado",
-      "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio."
+      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció."
     },
     "medios": {
       "transferencia_bancaria": "Transferencia bancaria",
@@ -206,48 +206,48 @@
   },
   "atencion": {
     "titulo": "Peticiones, quejas y reclamos",
-    "ayuda": "Lo que llega por correo o por WhatsApp se radica aqui: queda con numero, con fecha de llegada y con un plazo corriendo.",
+    "ayuda": "Lo que llega por correo o por WhatsApp se radica aquí: queda con número, con fecha de llegada y con un plazo corriendo.",
     "cargando": "Cargando la bandeja...",
     "vacia": "No hay solicitudes abiertas.",
-    "error": "No se pudo completar la accion. Intentalo de nuevo.",
+    "error": "No se pudo completar la acción. Inténtalo de nuevo.",
     "filtros": "Filtrar solicitudes",
     "filtro_abiertas": "Abiertas",
     "filtro_respondidas": "Respondidas",
     "estado": "Estado",
     "limite": "Responder antes de",
     "verdicto_titulo": "Plazo",
-    "recibida_en": "Llego el",
+    "recibida_en": "Llegó el",
     "radicada_en": "Radicada el {{fecha}}",
-    "plazo_restante": "Quedan {{dias}} dias.",
-    "plazo_pasado": "El plazo para responder ya paso.",
+    "plazo_restante": "Quedan {{dias}} días.",
+    "plazo_pasado": "El plazo para responder ya pasó.",
     "prorrogada_por": "Plazo prorrogado: {{motivo}}",
     "respondida_con": "Respuesta",
     "radicar": {
       "titulo": "Radicar una solicitud",
-      "ayuda": "El tipo decide el plazo de respuesta, asi que no se puede cambiar despues.",
+      "ayuda": "El tipo decide el plazo de respuesta, así que no se puede cambiar después.",
       "tipo": "Tipo de solicitud",
       "correo": "Correo de quien la presenta",
       "asunto": "Asunto",
-      "recibida_en": "Fecha en que llego",
-      "recibida_en_ayuda": "La del correo o el mensaje, no la de hoy: de esta fecha cuelga el plazo. Vacia significa que llego ahora.",
+      "recibida_en": "Fecha en que llegó",
+      "recibida_en_ayuda": "La del correo o el mensaje, no la de hoy: de esta fecha cuelga el plazo. Vacía significa que llegó ahora.",
       "enviar": "Radicar"
     },
     "acciones": {
       "abrir": "Atender",
-      "resumen": "Que se le respondio",
+      "resumen": "Qué se le respondió",
       "responder": "Registrar respuesta",
-      "motivo": "Motivo de la prorroga",
+      "motivo": "Motivo de la prórroga",
       "prorrogar": "Prorrogar el plazo",
-      "prorroga_ayuda": "La prorroga vale porque se avisa: al registrarla le enviamos el aviso con estos motivos."
+      "prorroga_ayuda": "La prórroga vale porque se avisa: al registrarla le enviamos el aviso con estos motivos."
     },
     "tipos": {
-      "peticion": "Peticion",
+      "peticion": "Petición",
       "queja": "Queja",
       "reclamo": "Reclamo",
       "consulta_datos": "Consulta de datos personales",
       "reclamo_datos": "Reclamo de datos personales",
-      "garantia": "Garantia",
-      "reversion": "Reversion del pago"
+      "garantia": "Garantía",
+      "reversion": "Reversión del pago"
     },
     "estados": {
       "radicada": "Radicada",
@@ -258,24 +258,24 @@
       "en_plazo": "En plazo",
       "vencido": "Fuera de plazo",
       "indeterminado": "Indeterminado",
-      "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio."
+      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció."
     }
   },
   "garantias": {
-    "titulo": "Garantia legal",
-    "cargando": "Cargando garantias...",
-    "error": "No se pudo completar la accion. Intentalo de nuevo.",
-    "ayuda_radicar": "El comprador la reclama por correo o WhatsApp. Al radicarla queda con numero y con plazo de respuesta, como cualquier otra solicitud.",
-    "no_aplica": "La garantia se cuenta desde la entrega: solo aplica a un pedido ya entregado.",
+    "titulo": "Garantía legal",
+    "cargando": "Cargando garantías...",
+    "error": "No se pudo completar la acción. Inténtalo de nuevo.",
+    "ayuda_radicar": "El comprador la reclama por correo o WhatsApp. Al radicarla queda con número y con plazo de respuesta, como cualquier otra solicitud.",
+    "no_aplica": "La garantía se cuenta desde la entrega: solo aplica a un pedido ya entregado.",
     "fallo": "Fallo reportado",
     "vigencia_titulo": "Vigencia al reclamar",
-    "termino": "Termino de {{meses}} meses desde la entrega.",
+    "termino": "Término de {{meses}} meses desde la entrega.",
     "desenlace": "Desenlace",
     "vigencia": {
-      "cubierta": "Dentro del termino",
-      "fuera_de_termino": "Fuera del termino",
+      "cubierta": "Dentro del término",
+      "fuera_de_termino": "Fuera del término",
       "indeterminada": "Indeterminada",
-      "indeterminada_ayuda": "El termino de esa categoria no esta cargado, asi que no se puede afirmar que la garantia vencio. Decide una persona."
+      "indeterminada_ayuda": "El término de esa categoría no está cargado, así que no se puede afirmar que la garantía venció. Decide una persona."
     },
     "desenlaces": {
       "reparacion": "Reparar",
@@ -285,24 +285,24 @@
     "acciones": {
       "linea": "Producto del pedido",
       "elegir_linea": "Elige el producto",
-      "fallo": "Que fallo",
-      "radicar": "Radicar garantia",
-      "desenlace": "Que se hizo",
-      "resumen": "Que se le respondio al comprador",
+      "fallo": "Qué falló",
+      "radicar": "Radicar garantía",
+      "desenlace": "Qué se hizo",
+      "resumen": "Qué se le respondió al comprador",
       "monto": "Monto a devolver",
       "comprobante": "Comprobante",
-      "resolver": "Resolver garantia"
+      "resolver": "Resolver garantía"
     }
   },
   "reversiones": {
-    "titulo": "Reversion del pago",
+    "titulo": "Reversión del pago",
     "cargando": "Cargando reversiones...",
-    "error": "No se pudo completar la accion. Intentalo de nuevo.",
+    "error": "No se pudo completar la acción. Inténtalo de nuevo.",
     "ayuda_radicar": "No es un retracto: procede por fraude, por no entrega, por producto distinto o por defectuoso. El comprador debe pedirla tambien ante el emisor de su medio de pago.",
     "causal": "Causal",
     "estado": "Estado",
     "plazo_al_radicar": "Plazo del comprador",
-    "gestion": "Que se hizo para facilitar el tramite",
+    "gestion": "Qué se hizo para facilitar el trámite",
     "desenlace": "Desenlace",
     "causales": {
       "fraude": "Fraude",
@@ -311,10 +311,10 @@
       "defectuoso": "El producto resulto defectuoso"
     },
     "desenlaces": {
-      "revertido_por_el_emisor": "Lo revirtio el emisor",
+      "revertido_por_el_emisor": "Lo revirtió el emisor",
       "reintegrado_directamente": "Devolvimos el dinero nosotros",
       "rechazada": "Rechazada",
-      "desistida": "El comprador desistio"
+      "desistida": "El comprador desistió"
     },
     "estados": {
       "radicada": "Radicada",
@@ -325,23 +325,23 @@
       "en_plazo": "En plazo",
       "vencido": "Fuera de plazo",
       "indeterminado": "Indeterminado",
-      "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio. Radicarla sigue siendo posible."
+      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció. Radicarla sigue siendo posible."
     },
     "acciones": {
       "causal": "Causal invocada",
       "fecha_del_hecho": "Fecha del hecho",
-      "fecha_ayuda": "Cuando el comprador tuvo noticia de lo ocurrido: de ahi cuentan sus cinco dias habiles, no desde que compro.",
-      "descripcion": "Descripcion",
-      "radicar": "Radicar reversion",
-      "gestion": "Que se hizo",
-      "gestion_ayuda": "Los terminos prometen facilitar el tramite. Sin dejar escrito que se hizo, la promesa es indemostrable.",
-      "gestionar": "Registrar gestion",
-      "desenlace": "Como termino",
-      "resumen": "Que se le respondio al comprador",
-      "dinero_ayuda": "Solo aqui sale dinero de nosotros. Si revierte el emisor, la plata vuelve por la red de pagos.",
+      "fecha_ayuda": "Cuando el comprador tuvo noticia de lo ocurrido: de ahi cuentan sus cinco días hábiles, no desde que compro.",
+      "descripcion": "Descripción",
+      "radicar": "Radicar reversión",
+      "gestion": "Qué se hizo",
+      "gestion_ayuda": "Los terminos prometen facilitar el trámite. Sin dejar escrito que se hizo, la promesa es indemostrable.",
+      "gestionar": "Registrar gestión",
+      "desenlace": "Cómo terminó",
+      "resumen": "Qué se le respondió al comprador",
+      "dinero_ayuda": "Solo aquí sale dinero de nosotros. Si revierte el emisor, la plata vuelve por la red de pagos.",
       "monto": "Monto devuelto",
       "comprobante": "Comprobante",
-      "resolver": "Resolver reversion"
+      "resolver": "Resolver reversión"
     }
   }
 }

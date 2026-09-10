@@ -124,7 +124,7 @@ describe('BandejaAtencionPage', () => {
       solicitud({ limiteDeRespuesta: HACE_UNA_SEMANA, verdicto: 'INDETERMINADO' }),
     ]);
 
-    expect(await screen.findByText('El plazo para responder ya paso.')).toBeTruthy();
+    expect(await screen.findByText('El plazo para responder ya pasó.')).toBeTruthy();
   });
 
   /**
@@ -136,7 +136,7 @@ describe('BandejaAtencionPage', () => {
 
     expect(
       await screen.findByText(
-        'Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio.',
+        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció.',
       ),
     ).toBeTruthy();
   });
@@ -183,7 +183,7 @@ describe('BandejaAtencionPage', () => {
   it('responder manda el resumen, que es lo que queda como constancia', async () => {
     const { repositorio } = await renderBandeja([solicitud()]);
     fireEvent.click(await screen.findByRole('button', { name: 'Atender' }));
-    fireEvent.input(screen.getByLabelText('Que se le respondio'), {
+    fireEvent.input(screen.getByLabelText('Qué se le respondió'), {
       target: { value: 'se reenvio la guia' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar respuesta' }));

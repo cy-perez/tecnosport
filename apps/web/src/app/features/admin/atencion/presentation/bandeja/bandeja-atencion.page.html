@@ -35,13 +35,11 @@
       [label]="'admin.atencion.radicar.asunto' | transloco"
       formControlName="asunto"
     />
-    <p class="mt-0 mb-4 text-ts-texto-suave">
-      {{ 'admin.atencion.radicar.recibida_en_ayuda' | transloco }}
-    </p>
     <ts-campo
       idCampo="atencion-recibida"
       tipo="datetime-local"
       [label]="'admin.atencion.radicar.recibida_en' | transloco"
+      [ayuda]="'admin.atencion.radicar.recibida_en_ayuda' | transloco"
       formControlName="recibidaEn"
     />
     <ts-boton tipo="submit" [cargando]="acciones.radicar.isPending()">

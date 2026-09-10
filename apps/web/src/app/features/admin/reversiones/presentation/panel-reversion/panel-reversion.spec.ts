@@ -116,7 +116,7 @@ describe('PanelReversion', () => {
     fireEvent.input(screen.getByLabelText('Fecha del hecho'), {
       target: { value: '2026-09-10T10:00' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Radicar reversion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Radicar reversión' }));
 
     await vi.waitFor(() => expect(repositorio.radicadas.length).toBe(1));
     expect(repositorio.radicadas[0].causal).toBe('FRAUDE');
@@ -130,16 +130,16 @@ describe('PanelReversion', () => {
   it('no exige que el pedido este entregado', async () => {
     await renderPanel([]);
 
-    expect(await screen.findByRole('button', { name: 'Radicar reversion' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Radicar reversión' })).toBeTruthy();
   });
 
   /** "Facilitamos el tramite" es una promesa de conducta: sin texto no queda prueba de nada. */
   it('la gestion pide por escrito que se hizo', async () => {
     const { repositorio } = await renderPanel([reversion()]);
-    fireEvent.input(await screen.findByLabelText('Que se hizo'), {
+    fireEvent.input(await screen.findByLabelText('Qué se hizo'), {
       target: { value: 'Se radico ante Wompi con el soporte' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar gestion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar gestión' }));
 
     await vi.waitFor(() =>
       expect(repositorio.gestiones).toEqual([
@@ -155,14 +155,14 @@ describe('PanelReversion', () => {
    */
   it('si revierte el emisor no pide monto y viaja sin datos de dinero', async () => {
     const { repositorio } = await renderPanel([reversion()]);
-    await screen.findByRole('button', { name: 'Resolver reversion' });
+    await screen.findByRole('button', { name: 'Resolver reversión' });
 
     expect(screen.queryByLabelText('Monto devuelto')).toBeNull();
 
-    fireEvent.input(screen.getByLabelText('Que se le respondio al comprador'), {
+    fireEvent.input(screen.getByLabelText('Qué se le respondió al comprador'), {
       target: { value: 'El emisor confirmo la reversion' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Resolver reversion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolver reversión' }));
 
     await vi.waitFor(() => expect(repositorio.resueltas.length).toBe(1));
     expect(repositorio.resueltas[0]).toEqual({
@@ -178,7 +178,7 @@ describe('PanelReversion', () => {
 
   it('si devolvemos nosotros pide el monto y lo precarga con el total', async () => {
     await renderPanel([reversion()]);
-    fireEvent.change(await screen.findByLabelText('Como termino'), {
+    fireEvent.change(await screen.findByLabelText('Cómo terminó'), {
       target: { value: 'REINTEGRADO_DIRECTAMENTE' },
     });
 
@@ -191,7 +191,7 @@ describe('PanelReversion', () => {
 
     expect(
       await screen.findByText(
-        'Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio. Radicarla sigue siendo posible.',
+        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció. Radicarla sigue siendo posible.',
       ),
     ).toBeTruthy();
   });
@@ -202,12 +202,12 @@ describe('PanelReversion', () => {
     ]);
 
     expect(await screen.findByText('Rechazada')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Resolver reversion' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resolver reversión' })).toBeNull();
   });
 
   it('el panel no tiene violaciones de WCAG 2.2 AA', async () => {
     const { container } = await renderPanel([reversion()]);
-    await screen.findByRole('button', { name: 'Resolver reversion' });
+    await screen.findByRole('button', { name: 'Resolver reversión' });
 
     await esperarSinViolaciones(container);
   });
