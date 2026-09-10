@@ -2704,6 +2704,65 @@ el modelo de cobro, y montar los secretos de producción antes significa
 volver a tocarlos.
 
 
+## El bloque del retracto, que tampoco tenía fase (2026-09-09)
+
+La Fase 6 dejó escrito que "no existe ningún flujo de retracto, reembolso ni
+reversión del pago" y lo llamó *la deuda más grande que deja este bloque*. Se
+cierra la parte del retracto y el reembolso; la reversión del pago y la garantía
+siguen sin flujo, y ahora es una decisión escrita y no un olvido.
+
+**El texto publicado no mentía, y eso cambió el alcance.** Los términos prometen
+el retracto por correo y WhatsApp, no un flujo en el sitio. Así que no hacía falta
+pantalla para el comprador: lo que faltaba era que quedara constancia, que el
+plazo fuera medible y que el estado del pedido lo reflejara.
+
+**Dos huecos reales encontrados en el camino, ninguno previsto:**
+
+1. **`RECAUDO_CONCILIADO` era terminal**, así que una compra contraentrega
+   entregada y cobrada **no tenía ningún camino de vuelta**. El artículo 47 no
+   distingue el método de pago. Ahora sale hacia `DEVUELTO`; desde
+   `RECAUDO_PENDIENTE` sigue sin poderse, porque mientras el dinero no haya
+   llegado no hay nada que reintegrar.
+2. **Una compra contraentrega nunca confirma su reserva de inventario.** Solo lo
+   hacen el pago por Wompi y la transferencia conciliada, así que la unidad
+   vendida jamás sale del saldo total: queda una reserva abierta para siempre.
+   `Inventario.devolver` lo soporta —decide entre entrada y liberación según cómo
+   quedó la reserva— pero **no lo arregla**. Queda como deuda propia.
+
+**El veredicto de plazo tiene tres valores y no dos.** Sin el calendario de
+festivos cargado, el límite calculable es el más temprano posible —un festivo solo
+lo empuja hacia adelante—, así que "llegó a tiempo" se puede afirmar pero "llegó
+tarde" no. De ahí `INDETERMINADO`, que desaparece solo el día que se cargue el
+calendario. **`TODO: FESTIVOS_COLOMBIA`** es el dato pendiente. Radicar fuera de
+plazo nunca se bloquea: decide una persona con el dato delante.
+
+**El reembolso es un registro, no una orden de pago.** De los tres métodos de
+pago, dos se devuelven por fuera del sistema por definición, y para el tercero no
+está verificado que Wompi exponga la devolución por API. Un caso de uso que
+pretendiera devolver automáticamente sería mentira en dos de cada tres pedidos.
+
+**Se cerró de paso el hallazgo 3 de `docs/12-legales-de-envio.md`**, que estaba
+asignado a la Fase 7: el seguimiento público devolvía el `Envio` completo —costo
+real del flete y comisión de recaudo— a cualquiera con un id y el correo. No tenía
+sentido añadirle el retracto a un DTO que ya filtraba de más. La causa de fondo
+quedó escrita: **el panel y el comprador compartían el mismo record**, y por eso la
+fuga era invisible.
+
+**Tres pruebas propias nacieron vacías y los mutantes las destaparon**, que es la
+lección transversal de este bloque:
+
+- La del contraentrega solo miraba `saldoDisponible`, y ese número da lo mismo con
+  la implementación correcta que sumando una entrada indebida.
+- La de la fuga del flete afirmaba sobre un pedido que **todavía no tenía envío**,
+  así que el bloque no se ejercitaba.
+- El primer mutante del plazo —contar el día de la entrega y salir un día antes—
+  resultó **equivalente por accidente** y no rompió nada.
+
+**Lo que este bloque no hizo:** reversión del pago, garantía y radicación de PQR
+con número, los tres prometidos en los términos y los tres atendidos a mano
+todavía. Y falta el recorrido a mano contra `bootRun` real, que en este proyecto
+es donde aparecen los defectos que las pruebas no ven.
+
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
 Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código
