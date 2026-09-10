@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.PlazosDeAtencion;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
@@ -36,7 +37,8 @@ class BandejaYProrrogaTest {
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private SolicitudAtencion radicar(TipoSolicitud tipo) {
-    return new RadicarSolicitud(repositorio, correos, new RelojFalso(LLEGADA))
+    return new RadicarSolicitud(
+            repositorio, correos, new TextosDeCorreoFalso(), new RelojFalso(LLEGADA))
         .ejecutar(
             new RadicarSolicitudComando(
                 tipo, "cliente@tecnosport.co", null, LLEGADA, "Asunto", "admin:1"));
@@ -95,7 +97,12 @@ class BandejaYProrrogaTest {
     int acusesPrevios = correos.enviados().size();
 
     new ProrrogarSolicitud(
-            repositorio, PLAZOS, SIN_FESTIVOS, correos, new RelojFalso(LLEGADA.plusSeconds(86_400)))
+            repositorio,
+            PLAZOS,
+            SIN_FESTIVOS,
+            correos,
+            new TextosDeCorreoFalso(),
+            new RelojFalso(LLEGADA.plusSeconds(86_400)))
         .ejecutar(
             new ProrrogarSolicitudComando(
                 solicitud.id(), "falta el soporte del proveedor", "admin:1"));

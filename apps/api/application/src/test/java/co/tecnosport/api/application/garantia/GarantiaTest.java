@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
@@ -88,7 +89,8 @@ class GarantiaTest {
         reclamaciones,
         pedidos,
         productos,
-        new RadicarSolicitud(solicitudes, correos, new RelojFalso(ahora)),
+        new RadicarSolicitud(
+            solicitudes, correos, new TextosDeCorreoFalso(), new RelojFalso(ahora)),
         TERMINOS,
         new RelojFalso(ahora));
   }

@@ -307,7 +307,12 @@ class AdminRetractosControladorTest {
         EnviadorDeCorreo correos,
         Reloj reloj) {
       return new RegistrarRetracto(
-          solicitudes, pedidos, CalendarioHabil.sinFestivosCargados(), correos, reloj);
+          solicitudes,
+          pedidos,
+          CalendarioHabil.sinFestivosCargados(),
+          correos,
+          (texto, argumentos) -> texto.clave(),
+          reloj);
     }
 
     @Bean
@@ -327,7 +332,13 @@ class AdminRetractosControladorTest {
         EnviadorDeCorreo correos,
         Reloj reloj) {
       return new RegistrarReintegro(
-          solicitudes, pedidos, reintegros, new TopeDeReintegro(reintegros), correos, reloj);
+          solicitudes,
+          pedidos,
+          reintegros,
+          new TopeDeReintegro(reintegros),
+          correos,
+          (texto, argumentos) -> texto.clave(),
+          reloj);
     }
 
     @Bean

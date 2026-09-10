@@ -2,6 +2,8 @@ package co.tecnosport.api.application.retracto;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
@@ -43,6 +45,7 @@ public final class RegistrarReintegro {
   private final RepositorioReintegros repositorioReintegros;
   private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public RegistrarReintegro(
@@ -51,12 +54,14 @@ public final class RegistrarReintegro {
       RepositorioReintegros repositorioReintegros,
       TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
     this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -114,15 +119,11 @@ public final class RegistrarReintegro {
   private void enviarConstancia(Pedido pedido, Dinero monto) {
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        "Reintegramos el dinero de tu pedido — TecnoSport",
-        "<p>Reintegramos "
-            + monto.valor().toPlainString()
-            + " "
-            + Dinero.MONEDA
-            + " del pedido "
-            + pedido.numeroPedido().valor()
-            + ".</p>"
-            + "<p>Segun el medio, el dinero puede tardar en reflejarse en tu cuenta. Si pasados "
-            + "unos dias no lo ves, escribenos y lo revisamos contigo.</p>");
+        textos.texto(TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
+        textos.texto(
+            TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
+            monto.valor().toPlainString(),
+            Dinero.MONEDA,
+            pedido.numeroPedido().valor()));
   }
 }

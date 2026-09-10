@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -103,6 +104,7 @@ public class ConfiguracionPedido {
       RepositorioReintegros repositorioReintegros,
       TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     return new CancelarPedido(
         repositorioPedidos,
@@ -110,6 +112,7 @@ public class ConfiguracionPedido {
         repositorioReintegros,
         tope,
         enviadorDeCorreo,
+        textos,
         reloj);
   }
 

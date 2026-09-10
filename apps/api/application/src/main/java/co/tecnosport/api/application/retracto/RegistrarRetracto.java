@@ -2,6 +2,8 @@ package co.tecnosport.api.application.retracto;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
@@ -26,6 +28,7 @@ public final class RegistrarRetracto {
   private final RepositorioPedidos repositorioPedidos;
   private final CalendarioHabil calendario;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public RegistrarRetracto(
@@ -33,11 +36,13 @@ public final class RegistrarRetracto {
       RepositorioPedidos repositorioPedidos,
       CalendarioHabil calendario,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.calendario = Objects.requireNonNull(calendario);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -77,19 +82,9 @@ public final class RegistrarRetracto {
    */
   private void enviarAcuse(Pedido pedido) {
     enviadorDeCorreo.enviar(
-        pedido.correo(), "Recibimos tu solicitud de retracto — TecnoSport", cuerpoAcuse(pedido));
-  }
-
-  private String cuerpoAcuse(Pedido pedido) {
-    return "<p>Recibimos tu solicitud de retracto del pedido "
-        + pedido.numeroPedido().valor()
-        + ".</p>"
-        + "<p>Para completarla, devuelvenos el producto en el mismo estado en que lo recibiste. "
-        + "El costo del transporte de la devolucion lo asume el comprador, segun el articulo 47 "
-        + "de la Ley 1480 de 2011.</p>"
-        + "<p>Cuando el producto llegue, te reintegramos el dinero dentro de los quince (15) dias "
-        + "calendario siguientes, por el medio de pago que prefieras. Si no nos has dicho cual, "
-        + "respondenos este correo y lo anotamos.</p>";
+        pedido.correo(),
+        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_ASUNTO),
+        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_CUERPO, pedido.numeroPedido().valor()));
   }
 
   /**

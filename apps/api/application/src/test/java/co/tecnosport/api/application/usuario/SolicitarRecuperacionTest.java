@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.Rol;
 import co.tecnosport.api.domain.usuario.Usuario;
@@ -35,6 +36,7 @@ class SolicitarRecuperacionTest {
         usuarios,
         tokens,
         enviador,
+        new TextosDeCorreoFalso(),
         new RelojFalso(AHORA),
         VIGENCIA_TOKEN,
         URL_BASE,

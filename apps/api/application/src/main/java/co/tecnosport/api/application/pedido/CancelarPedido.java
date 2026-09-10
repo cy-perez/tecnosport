@@ -2,6 +2,8 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
@@ -50,6 +52,7 @@ public final class CancelarPedido {
   private final RepositorioReintegros repositorioReintegros;
   private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public CancelarPedido(
@@ -58,12 +61,14 @@ public final class CancelarPedido {
       RepositorioReintegros repositorioReintegros,
       TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
     this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -149,19 +154,19 @@ public final class CancelarPedido {
    * no se entera de que su pedido no va a llegar es justo el reclamo que esto viene a evitar.
    */
   private void avisar(Pedido pedido, CancelarPedidoComando comando, boolean huboReintegro) {
-    String explicacion =
+    TextoDeCorreo explicacion =
         comando.motivo() == MotivoCancelacion.NO_DISPONIBILIDAD
-            ? "<p>Un producto de tu pedido dejo de estar disponible despues de tu compra, asi que"
-                + " cancelamos el pedido.</p>"
-            : "<p>No pudimos entregarte dentro del plazo, asi que cancelamos el pedido.</p>";
-    String dinero =
+            ? TextoDeCorreo.PEDIDO_CANCELACION_NO_DISPONIBILIDAD
+            : TextoDeCorreo.PEDIDO_CANCELACION_PLAZO_INCUMPLIDO;
+    TextoDeCorreo dinero =
         huboReintegro
-            ? "<p>Te reintegramos el dinero por el medio acordado. Segun el medio, puede tardar en"
-                + " reflejarse en tu cuenta.</p>"
-            : "<p>No se te cobro nada por este pedido.</p>";
+            ? TextoDeCorreo.PEDIDO_CANCELACION_CON_REINTEGRO
+            : TextoDeCorreo.PEDIDO_CANCELACION_SIN_COBRO;
     enviadorDeCorreo.enviar(
         pedido.correo(),
-        "Cancelamos tu pedido " + pedido.numeroPedido().valor() + " — TecnoSport",
-        explicacion + dinero + "<p>Si quieres volver a intentarlo, escribenos y te ayudamos.</p>");
+        textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, pedido.numeroPedido().valor()),
+        textos.texto(explicacion)
+            + textos.texto(dinero)
+            + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_CIERRE));
   }
 }

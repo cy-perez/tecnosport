@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.usuario;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
@@ -109,6 +110,7 @@ public class ConfiguracionUsuario {
       RepositorioTokensVerificacion repositorioTokensVerificacion,
       CodificadorDeClaves codificadorDeClaves,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj,
       PropiedadesVerificacionCorreo propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
@@ -120,6 +122,7 @@ public class ConfiguracionUsuario {
         repositorioTokensVerificacion,
         codificadorDeClaves,
         enviadorDeCorreo,
+        textos,
         reloj,
         Duration.ofHours(propiedades.horasVencimiento()),
         propiedades.urlPublica() + "/es/cuenta/verificar-correo",
@@ -143,6 +146,7 @@ public class ConfiguracionUsuario {
       RepositorioUsuarios repositorioUsuarios,
       RepositorioTokensRecuperacion repositorioTokensRecuperacion,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj,
       PropiedadesRecuperacionClave propiedadesRecuperacion,
       PropiedadesVerificacionCorreo propiedadesVerificacion,
@@ -152,6 +156,7 @@ public class ConfiguracionUsuario {
         repositorioUsuarios,
         repositorioTokensRecuperacion,
         enviadorDeCorreo,
+        textos,
         reloj,
         Duration.ofMinutes(propiedadesRecuperacion.minutosVencimiento()),
         propiedadesVerificacion.urlPublica() + "/es/cuenta/restablecer-clave",

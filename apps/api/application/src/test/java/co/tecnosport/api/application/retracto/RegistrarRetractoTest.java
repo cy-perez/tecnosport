@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
@@ -36,7 +37,13 @@ class RegistrarRetractoTest {
   }
 
   private RegistrarRetracto casoDeUso(Instant ahora, CalendarioHabil calendario) {
-    return new RegistrarRetracto(solicitudes, pedidos, calendario, correos, new RelojFalso(ahora));
+    return new RegistrarRetracto(
+        solicitudes,
+        pedidos,
+        calendario,
+        correos,
+        new TextosDeCorreoFalso(),
+        new RelojFalso(ahora));
   }
 
   private Pedido pedidoEntregado() {
@@ -144,10 +151,17 @@ class RegistrarRetractoTest {
 
     assertEquals(1, correos.enviados().size());
     assertEquals("cliente@tecnosport.co", correos.enviados().get(0).destinatario().valor());
-    // Los dos datos que el acuse tiene que llevar: quien paga el flete de vuelta y el plazo del
-    // reintegro. Sin ellos el comprador no sabe que hacer con el producto.
-    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("articulo 47"));
-    assertTrue(correos.enviados().get(0).cuerpoHtml().contains("quince (15) dias"));
+    // Que manda el acuse, con el numero del pedido dentro. Lo que la frase tiene que decir —quien
+    // paga el flete de vuelta y el plazo del reintegro— se prueba donde vive el texto, en
+    // TextosDeCorreoMessageSourceTest: aqui se afirmaba sobre la prosa y ademas sobre una version
+    // sin tildes de "articulo 47", que es justo el defecto que el texto tenia.
+    assertTrue(
+        correos
+            .enviados()
+            .get(0)
+            .cuerpoHtml()
+            .contains("[retracto.acuse.cuerpo|" + pedido.numeroPedido().valor() + "]"),
+        "el acuse va con el numero del pedido");
   }
 
   @Test

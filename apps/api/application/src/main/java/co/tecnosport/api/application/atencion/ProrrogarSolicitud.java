@@ -2,6 +2,8 @@ package co.tecnosport.api.application.atencion;
 
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.atencion.PlazosDeAtencion;
 import co.tecnosport.api.domain.atencion.Prorroga;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
@@ -26,6 +28,7 @@ public final class ProrrogarSolicitud {
   private final PlazosDeAtencion plazos;
   private final CalendarioHabil calendario;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
 
   public ProrrogarSolicitud(
@@ -33,11 +36,13 @@ public final class ProrrogarSolicitud {
       PlazosDeAtencion plazos,
       CalendarioHabil calendario,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj) {
     this.repositorio = Objects.requireNonNull(repositorio);
     this.plazos = Objects.requireNonNull(plazos);
     this.calendario = Objects.requireNonNull(calendario);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
@@ -59,16 +64,8 @@ public final class ProrrogarSolicitud {
   private void avisar(SolicitudAtencion solicitud, String motivo) {
     enviadorDeCorreo.enviar(
         solicitud.correo(),
-        "Necesitamos mas tiempo con tu solicitud "
-            + solicitud.numeroRadicado().valor()
-            + " — TecnoSport",
-        "<p>Sobre tu solicitud <strong>"
-            + solicitud.numeroRadicado().valor()
-            + "</strong>: necesitamos mas tiempo para responderte de fondo, y la ley nos permite "
-            + "prorrogar el plazo avisandote antes de que venza, con los motivos.</p>"
-            + "<p>Motivo: "
-            + motivo
-            + "</p>"
-            + "<p>Te respondemos dentro del plazo prorrogado.</p>");
+        textos.texto(TextoDeCorreo.ATENCION_PRORROGA_ASUNTO, solicitud.numeroRadicado().valor()),
+        textos.texto(
+            TextoDeCorreo.ATENCION_PRORROGA_CUERPO, solicitud.numeroRadicado().valor(), motivo));
   }
 }

@@ -379,6 +379,7 @@ class AdminPedidosControladorTest {
           repositorioReintegros,
           new TopeDeReintegro(repositorioReintegros),
           (destinatario, asunto, cuerpo) -> {},
+          (texto, argumentos) -> texto.clave(),
           Instant::now);
     }
 

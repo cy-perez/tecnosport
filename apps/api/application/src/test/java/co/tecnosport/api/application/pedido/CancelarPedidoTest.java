@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -50,6 +51,7 @@ class CancelarPedidoTest {
         reintegros,
         new TopeDeReintegro(reintegros),
         correos,
+        new TextosDeCorreoFalso(),
         new RelojFalso(AHORA));
   }
 

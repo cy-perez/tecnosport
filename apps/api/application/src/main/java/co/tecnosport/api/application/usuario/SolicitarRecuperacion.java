@@ -4,6 +4,8 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
 import co.tecnosport.api.domain.usuario.Usuario;
@@ -21,6 +23,7 @@ public final class SolicitarRecuperacion {
   private final RepositorioUsuarios repositorioUsuarios;
   private final RepositorioTokensRecuperacion repositorioTokens;
   private final EnviadorDeCorreo enviadorDeCorreo;
+  private final TextosDeCorreo textos;
   private final Reloj reloj;
   private final Duration vigenciaToken;
   private final String urlBaseRecuperacion;
@@ -32,6 +35,7 @@ public final class SolicitarRecuperacion {
       RepositorioUsuarios repositorioUsuarios,
       RepositorioTokensRecuperacion repositorioTokens,
       EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
       Reloj reloj,
       Duration vigenciaToken,
       String urlBaseRecuperacion,
@@ -41,6 +45,7 @@ public final class SolicitarRecuperacion {
     this.repositorioUsuarios = Objects.requireNonNull(repositorioUsuarios);
     this.repositorioTokens = Objects.requireNonNull(repositorioTokens);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
+    this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
     this.vigenciaToken = Objects.requireNonNull(vigenciaToken);
     this.urlBaseRecuperacion = Objects.requireNonNull(urlBaseRecuperacion);
@@ -73,15 +78,9 @@ public final class SolicitarRecuperacion {
     repositorioTokens.guardar(token);
 
     String enlace = urlBaseRecuperacion + "?token=" + token.id();
-    enviadorDeCorreo.enviar(correo, "Recupera tu contraseña — TecnoSport", cuerpoCorreo(enlace));
-  }
-
-  private String cuerpoCorreo(String enlace) {
-    return "<p>Pediste recuperar tu contraseña en TecnoSport.</p>"
-        + "<p>Elige una nueva:</p>"
-        + "<p><a href=\""
-        + enlace
-        + "\">Restablecer mi clave</a></p>"
-        + "<p>Si no fuiste tú, ignora este correo.</p>";
+    enviadorDeCorreo.enviar(
+        correo,
+        textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_ASUNTO),
+        textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_CUERPO, enlace));
   }
 }
