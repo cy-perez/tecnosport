@@ -12,7 +12,7 @@ const NEGOCIO = {
   nombre: 'Tecno Sport',
   nit: 'NIT 1054994043-9',
   direccion: 'Cra. 26C #38B-31, Medellín, Antioquia',
-  telefono: '+573104209655',
+  telefono: '+573138816711',
   correo: 'contacto@tecnosport.co',
 };
 
@@ -36,9 +36,25 @@ describe('organizacionJsonLd', () => {
     expect(json['@type']).toBe('Organization');
     expect(json['name']).toBe('Tecno Sport');
     expect(json['address']).toBe('Cra. 26C #38B-31, Medellín, Antioquia');
-    expect(json['telephone']).toBe('+573104209655');
+    expect(json['telephone']).toBe('+573138816711');
     expect(json['email']).toBe('contacto@tecnosport.co');
     expect(json['url']).toBe(ORIGEN);
+  });
+
+  /**
+   * `sameAs` es cómo se declara "esta cuenta de Instagram es mía", y es lo que permite que un
+   * buscador una el sitio con los perfiles. Y se **omite** cuando no hay ninguno: un arreglo vacío
+   * no dice "no tengo perfiles", dice "los tengo y no te los doy".
+   */
+  it('declara los perfiles propios en sameAs, y los omite si no hay', () => {
+    const conRedes = organizacionJsonLd(ORIGEN, {
+      ...NEGOCIO,
+      redes: ['https://www.facebook.com/tecnosport.co'],
+    }) as Record<string, unknown>;
+    const sinRedes = organizacionJsonLd(ORIGEN, NEGOCIO) as Record<string, unknown>;
+
+    expect(conRedes['sameAs']).toEqual(['https://www.facebook.com/tecnosport.co']);
+    expect('sameAs' in sinRedes).toBe(false);
   });
 
   // `taxID` quiere el identificador, no la etiqueta con la que el pie lo muestra.
@@ -49,11 +65,13 @@ describe('organizacionJsonLd', () => {
   });
 
   /**
-   * El horario de atención sigue sin decidirse —los textos legales dejaron de prometerlo en vez de
-   * publicar el marcador— y Google muestra `openingHours` en el resultado de búsqueda como si fuera
-   * cierto.
+   * El horario ya existe y se publica en el pie y en los términos —todos los días, 8 a 21— pero
+   * **no** se declara aquí, y la diferencia importa: `openingHours` no es propiedad válida de
+   * `Organization`, y emitirlo obligaría a declarar el negocio como `Store`, o sea a anunciar
+   * horario de visita a un local. El horario es de los canales de atención; el punto de recogida
+   * se coordina al confirmar el pedido.
    */
-  it('no declara horario de atención, que es un dato de negocio que todavía no existe', () => {
+  it('no declara horario de visita: el horario publicado es de los canales, no de un local', () => {
     const json = organizacionJsonLd(ORIGEN, NEGOCIO) as Record<string, unknown>;
 
     expect(json['openingHours']).toBeUndefined();

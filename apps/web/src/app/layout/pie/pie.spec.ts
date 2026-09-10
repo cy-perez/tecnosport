@@ -55,11 +55,18 @@ describe('Pie', () => {
     expect(screen.getByText('NIT 1054994043-9')).toBeTruthy();
   });
 
+  // El número sale del JSON y no repetido aquí, igual que la dirección: es un dato de negocio
+  // que ya cambió una vez —el 310 pasó a ser 313— y lo que hay que verificar es el cableado de
+  // `tel:` y de `wa.me`, no el valor.
   it('enlaza el teléfono a tel: y a wa.me', async () => {
     await renderPie();
 
-    expect(screen.getByRole('link', { name: 'Llamar' }).getAttribute('href')).toBe('tel:+573104209655');
-    expect(screen.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe('https://wa.me/573104209655');
+    expect(screen.getByRole('link', { name: 'Llamar' }).getAttribute('href')).toBe(
+      `tel:${es.pie.telefono_e164}`,
+    );
+    expect(screen.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe(
+      `https://wa.me/${es.pie.whatsapp_numero}`,
+    );
   });
 
   // La dirección sale del JSON, no repetida aquí: es un dato de negocio que ya
@@ -71,6 +78,28 @@ describe('Pie', () => {
     const correo = es.pie.correo;
 
     expect(screen.getByRole('link', { name: correo }).getAttribute('href')).toBe(`mailto:${correo}`);
+  });
+
+  // Los perfiles se enlazan de verdad, con su URL: un pie que dice "Facebook" sin enlace es lo
+  // que había, y no llevaba a ninguna parte.
+  it('enlaza los perfiles de redes sociales', async () => {
+    await renderPie();
+
+    expect(screen.getByRole('link', { name: 'Facebook' }).getAttribute('href')).toBe(
+      es.pie.facebook_url,
+    );
+    expect(screen.getByRole('link', { name: 'Instagram' }).getAttribute('href')).toBe(
+      es.pie.instagram_url,
+    );
+  });
+
+  // El horario se publica porque es exigible: lo anunciado obliga. Y es el de los canales, no
+  // el de un punto de venta — la prueba lo fija para que nadie lo mueva sin querer al retocar el
+  // bloque de contacto.
+  it('publica el horario de atención de los canales', async () => {
+    await renderPie();
+
+    expect(screen.getByText(es.pie.horario)).toBeTruthy();
   });
 
   it('muestra el año actual en el copyright', async () => {

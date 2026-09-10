@@ -62,6 +62,36 @@
       </a>
     </nav>
 
+    <!--
+      Enlaces de texto y no logos de marca: `lucide` no trae iconos de marca —los retiró—, así que
+      poner los de Facebook e Instagram exigiría una dependencia nueva (`simple-icons`) o pegar sus
+      SVG a mano, y ninguna de las dos cosas vale un logo (`docs/04-ui-marca.md`: cada dependencia
+      es deuda). El pie ya enlazaba WhatsApp como texto.
+
+      `rel="me"` y no `noopener`: son perfiles propios, y `me` es lo que declara la relación de
+      identidad que `sameAs` repite en los datos estructurados. `target` no se fija: forzar pestaña
+      nueva le quita al usuario la decisión, y el aviso de que abre fuera del sitio tendría que ser
+      audible para cumplir.
+
+      WhatsApp no se repite aquí: vive abajo, en el bloque de contacto, porque ahí es una acción de
+      atención y no un perfil que se sigue.
+    -->
+    <nav class="flex flex-col gap-8" [attr.aria-label]="'pie.redes_titulo' | transloco">
+      <p class="m-0 text-xs uppercase">{{ 'pie.redes_titulo' | transloco }}</p>
+      <a
+        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit"
+        rel="me"
+        [href]="'pie.facebook_url' | transloco"
+        >{{ 'pie.facebook' | transloco }}</a
+      >
+      <a
+        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit"
+        rel="me"
+        [href]="'pie.instagram_url' | transloco"
+        >{{ 'pie.instagram' | transloco }}</a
+      >
+    </nav>
+
     <!-- `not-italic` porque un <address> lo es por omisión del navegador, y
          aquí no hay Preflight que lo resetee (src/tailwind.css). -->
     <address class="flex flex-col gap-4 text-sm not-italic">
@@ -88,6 +118,11 @@
           >{{ 'pie.correo' | transloco }}</a
         >
       </p>
+      <!-- El horario es de los canales de atención, no de un local: aquí no se
+           visita a nadie. Por eso vive en el bloque de contacto y no como
+           openingHours en los datos estructurados, que obligaría a declarar
+           el negocio como Store y a anunciar horario de visita. -->
+      <p class="m-0">{{ 'pie.horario' | transloco }}</p>
     </address>
 
     <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco
