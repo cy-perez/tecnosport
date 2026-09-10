@@ -308,6 +308,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reversiones/{id}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reversiones/{id}/gestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["gestionar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/retractos/{id}/reintegro": {
         parameters: {
             query?: never;
@@ -388,7 +420,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
+    "/api/v1/admin/pedidos/{pedidoId}/reversiones": {
         parameters: {
             query?: never;
             header?: never;
@@ -404,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
+    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
         parameters: {
             query?: never;
             header?: never;
@@ -414,6 +446,22 @@ export interface paths {
         get: operations["listar_2"];
         put?: never;
         post: operations["radicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
+        put?: never;
+        post: operations["radicar_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -525,7 +573,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["resolver"];
+        post: operations["resolver_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -555,9 +603,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
-        post: operations["radicar_2"];
+        post: operations["radicar_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -715,7 +763,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -747,7 +795,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -763,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -795,7 +843,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -811,7 +859,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_8"];
+        get: operations["listar_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1115,6 +1163,36 @@ export interface components {
             alto?: number;
             hash?: string;
         };
+        ResolverReversionRequest: {
+            desenlace?: string;
+            resumenParaElComprador?: string;
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
+        };
+        SolicitudReversionRespuesta: {
+            id?: string;
+            solicitudId?: string;
+            pedidoId?: string;
+            causal?: string;
+            /** Format: date-time */
+            fechaDelHecho?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            verdictoAlRadicar?: string;
+            estado?: string;
+            /** Format: date-time */
+            gestionadaEn?: string;
+            gestionadaPor?: string;
+            gestion?: string;
+            desenlace?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            reintegroId?: string;
+        };
+        RegistrarGestionRequest: {
+            gestion?: string;
+        };
         RegistrarReintegroRequest: {
             monto?: number;
             medio?: string;
@@ -1204,6 +1282,14 @@ export interface components {
         UrlSubidaRespuesta: {
             url?: string;
             objectKey?: string;
+        };
+        RadicarReversionRequest: {
+            causal?: string;
+            /** Format: date-time */
+            fechaDelHecho?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            descripcion?: string;
         };
         RegistrarRetractoRequest: {
             motivo?: string;
@@ -1885,6 +1971,58 @@ export interface operations {
             };
         };
     };
+    resolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    gestionar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarGestionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
     reintegrar: {
         parameters: {
             query?: never;
@@ -2049,12 +2187,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"][];
                 };
             };
         };
     };
     radicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    listar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2080,7 +2266,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2102,7 +2288,7 @@ export interface operations {
             };
         };
     };
-    radicar_1: {
+    radicar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2276,7 +2462,7 @@ export interface operations {
             };
         };
     };
-    resolver: {
+    resolver_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2324,7 +2510,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query?: {
                 estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
@@ -2346,7 +2532,7 @@ export interface operations {
             };
         };
     };
-    radicar_2: {
+    radicar_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2640,7 +2826,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2680,7 +2866,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2700,7 +2886,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2742,7 +2928,7 @@ export interface operations {
             };
         };
     };
-    listar_7: {
+    listar_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2762,7 +2948,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_9: {
         parameters: {
             query?: {
                 pagina?: number;

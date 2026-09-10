@@ -279,5 +279,55 @@
       "comprobante": "Reference",
       "resolver": "Resolve warranty"
     }
+  },
+  "reversiones": {
+    "titulo": "Payment reversal",
+    "cargando": "Loading reversals...",
+    "error": "The action could not be completed. Please try again.",
+    "ayuda_radicar": "This is not a withdrawal: it applies to fraud, non-delivery, wrong product or a defective one. The buyer must also request it from their payment method issuer.",
+    "causal": "Ground",
+    "estado": "Status",
+    "plazo_al_radicar": "Buyer's deadline",
+    "gestion": "What was done to facilitate the process",
+    "desenlace": "Outcome",
+    "causales": {
+      "fraude": "Fraud",
+      "no_entregado": "The product was not delivered",
+      "no_corresponde": "Does not match what was ordered",
+      "defectuoso": "The product was defective"
+    },
+    "desenlaces": {
+      "revertido_por_el_emisor": "Reversed by the issuer",
+      "reintegrado_directamente": "We refunded it ourselves",
+      "rechazada": "Rejected",
+      "desistida": "The buyer withdrew the request"
+    },
+    "estados": {
+      "radicada": "Filed",
+      "gestionada": "Raised with the issuer",
+      "resuelta": "Resolved"
+    },
+    "verdicto": {
+      "en_plazo": "Within deadline",
+      "vencido": "Past deadline",
+      "indeterminado": "Undetermined",
+      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed. It can still be filed."
+    },
+    "acciones": {
+      "causal": "Ground invoked",
+      "fecha_del_hecho": "Date of the event",
+      "fecha_ayuda": "When the buyer learned of it: their five business days run from there, not from the purchase.",
+      "descripcion": "Description",
+      "radicar": "File reversal",
+      "gestion": "What was done",
+      "gestion_ayuda": "The terms promise to facilitate the process. Without writing down what was done, the promise cannot be proven.",
+      "gestionar": "Record action taken",
+      "desenlace": "How it ended",
+      "resumen": "What the buyer was told",
+      "dinero_ayuda": "Only here does money leave us. If the issuer reverses it, the funds return through the payment network.",
+      "monto": "Amount refunded",
+      "comprobante": "Reference",
+      "resolver": "Resolve reversal"
+    }
   }
 }

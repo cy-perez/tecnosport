@@ -264,6 +264,11 @@
                   [lineas]="pedido.lineas"
                   [totalPedido]="pedido.total.valor"
                 />
+
+                <app-panel-reversion
+                  [pedidoId]="pedido.id"
+                  [totalPedido]="pedido.total.valor"
+                />
               </td>
             </tr>
           }

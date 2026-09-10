@@ -279,5 +279,55 @@
       "comprobante": "Comprobante",
       "resolver": "Resolver garantia"
     }
+  },
+  "reversiones": {
+    "titulo": "Reversion del pago",
+    "cargando": "Cargando reversiones...",
+    "error": "No se pudo completar la accion. Intentalo de nuevo.",
+    "ayuda_radicar": "No es un retracto: procede por fraude, por no entrega, por producto distinto o por defectuoso. El comprador debe pedirla tambien ante el emisor de su medio de pago.",
+    "causal": "Causal",
+    "estado": "Estado",
+    "plazo_al_radicar": "Plazo del comprador",
+    "gestion": "Que se hizo para facilitar el tramite",
+    "desenlace": "Desenlace",
+    "causales": {
+      "fraude": "Fraude",
+      "no_entregado": "El producto no fue entregado",
+      "no_corresponde": "No corresponde a lo pedido",
+      "defectuoso": "El producto resulto defectuoso"
+    },
+    "desenlaces": {
+      "revertido_por_el_emisor": "Lo revirtio el emisor",
+      "reintegrado_directamente": "Devolvimos el dinero nosotros",
+      "rechazada": "Rechazada",
+      "desistida": "El comprador desistio"
+    },
+    "estados": {
+      "radicada": "Radicada",
+      "gestionada": "Gestionada ante el emisor",
+      "resuelta": "Resuelta"
+    },
+    "verdicto": {
+      "en_plazo": "En plazo",
+      "vencido": "Fuera de plazo",
+      "indeterminado": "Indeterminado",
+      "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio. Radicarla sigue siendo posible."
+    },
+    "acciones": {
+      "causal": "Causal invocada",
+      "fecha_del_hecho": "Fecha del hecho",
+      "fecha_ayuda": "Cuando el comprador tuvo noticia de lo ocurrido: de ahi cuentan sus cinco dias habiles, no desde que compro.",
+      "descripcion": "Descripcion",
+      "radicar": "Radicar reversion",
+      "gestion": "Que se hizo",
+      "gestion_ayuda": "Los terminos prometen facilitar el tramite. Sin dejar escrito que se hizo, la promesa es indemostrable.",
+      "gestionar": "Registrar gestion",
+      "desenlace": "Como termino",
+      "resumen": "Que se le respondio al comprador",
+      "dinero_ayuda": "Solo aqui sale dinero de nosotros. Si revierte el emisor, la plata vuelve por la red de pagos.",
+      "monto": "Monto devuelto",
+      "comprobante": "Comprobante",
+      "resolver": "Resolver reversion"
+    }
   }
 }

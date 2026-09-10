@@ -21,6 +21,11 @@ import {
   RepositorioGarantias,
 } from '../../../garantias/domain/repositorio-garantias.puerto';
 import { ReclamacionGarantia } from '../../../garantias/domain/garantia.model';
+import {
+  REPOSITORIO_REVERSIONES,
+  RepositorioReversiones,
+} from '../../../reversiones/domain/repositorio-reversiones.puerto';
+import { SolicitudReversion } from '../../../reversiones/domain/reversion.model';
 import { ListaPedidosAdminPage } from './lista-pedidos-admin.page';
 
 /**
@@ -57,6 +62,25 @@ class RepositorioGarantiasVacio implements RepositorioGarantias {
   }
 
   async resolver(): Promise<ReclamacionGarantia> {
+    throw new Error('no usado en estas pruebas');
+  }
+}
+
+/** Y `PanelReversion`, que completa los tres paneles de la fila expandida. */
+class RepositorioReversionesVacio implements RepositorioReversiones {
+  async listarDePedido(): Promise<readonly SolicitudReversion[]> {
+    return [];
+  }
+
+  async radicar(): Promise<SolicitudReversion> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async registrarGestion(): Promise<SolicitudReversion> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async resolver(): Promise<SolicitudReversion> {
     throw new Error('no usado en estas pruebas');
   }
 }
@@ -164,6 +188,7 @@ async function renderLista(
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
       { provide: REPOSITORIO_RETRACTOS, useValue: new RepositorioRetractosVacio() },
       { provide: REPOSITORIO_GARANTIAS, useValue: new RepositorioGarantiasVacio() },
+      { provide: REPOSITORIO_REVERSIONES, useValue: new RepositorioReversionesVacio() },
     ],
   });
   return { ...resultado, repositorio };

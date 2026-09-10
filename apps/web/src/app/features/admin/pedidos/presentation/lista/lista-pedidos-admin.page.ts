@@ -21,6 +21,7 @@ import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-selec
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { PanelGarantia } from '../../../garantias/presentation/panel-garantia/panel-garantia';
 import { PanelRetracto } from '../../../retractos/presentation/panel-retracto/panel-retracto';
+import { PanelReversion } from '../../../reversiones/presentation/panel-reversion/panel-reversion';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
@@ -80,6 +81,7 @@ interface FormularioRecaudo {
   imports: [
     PanelGarantia,
     PanelRetracto,
+    PanelReversion,
     ReactiveFormsModule,
     TranslocoPipe,
     TsBoton,

@@ -25,6 +25,8 @@ import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-
 import { REPOSITORIO_GARANTIAS } from './garantias/domain/repositorio-garantias.puerto';
 import { GarantiasHttpRepositorio } from './garantias/infrastructure/garantias-http.repositorio';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
+import { REPOSITORIO_REVERSIONES } from './reversiones/domain/repositorio-reversiones.puerto';
+import { ReversionesHttpRepositorio } from './reversiones/infrastructure/reversiones-http.repositorio';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
 import { REPOSITORIO_RETRACTOS } from './retractos/domain/repositorio-retractos.puerto';
 import { RetractosHttpRepositorio } from './retractos/infrastructure/retractos-http.repositorio';
@@ -66,12 +68,13 @@ export const adminRoutes: Routes = [
       {
         path: 'pedidos',
         canActivate: [adminGuard],
-        // Los paneles de retracto y de garantía viven dentro de la fila expandida de esta lista,
-        // así que sus puertos se proveen en la misma ruta y no en una propia.
+        // Los paneles de retracto, garantía y reversión viven dentro de la fila expandida de esta
+        // lista, así que sus puertos se proveen en la misma ruta y no en una propia.
         providers: [
           { provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio },
           { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
           { provide: REPOSITORIO_GARANTIAS, useClass: GarantiasHttpRepositorio },
+          { provide: REPOSITORIO_REVERSIONES, useClass: ReversionesHttpRepositorio },
         ],
         loadComponent: () =>
           import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
