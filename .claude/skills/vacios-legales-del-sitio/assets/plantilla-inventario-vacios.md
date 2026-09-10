@@ -49,14 +49,25 @@ Ordenados por riesgo, no por esfuerzo. Cada uno clasificado como **bug**,
 
 ---
 
-## Datos del negocio que faltan
+## Marcadores `[[ ]]`
 
-Nada de esto se inventa. Sin estos datos, los hallazgos que dependen de ellos
-quedan abiertos.
+Nada de esto se inventa. Pero antes de dar un marcador por "dato que falta",
+clasifícalo: solo la clase **negocio** se pregunta. Las otras tres se cierran
+verificando la norma o leyendo el repositorio, y confundirlas congela el
+marcador para siempre. Ver `references/cerrar-marcadores.md`.
 
-| Marca | Qué falta | Qué bloquea |
-|---|---|---|
-| `[[PLAZO DE ENTREGA REAL]]` | | |
+Clases: **normativo** (está en la ley o en un calendario oficial) · **decidido**
+(hay un ADR o una variable que lo responde, y el texto no se enteró) ·
+**en la norma** (parece del negocio y no lo es) · **negocio**.
+
+**Ningún marcador se publica.** La columna de medida provisional no puede quedar
+vacía mientras el dato no llegue: o se quitó la promesa concreta, o se declaró el
+mínimo legal. Si dice "ninguna", el marcador está a la vista en el documento y
+eso es un hallazgo, no una nota al pie.
+
+| Marcador | Clase | Qué falta | Medida provisional publicada | Qué lo desbloquea |
+|---|---|---|---|---|
+| `[[PLAZO DE ENTREGA REAL]]` | negocio | | | |
 
 ---
 

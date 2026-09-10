@@ -169,7 +169,10 @@ informarlo.
 **Dónde suele romperse:** el plazo aparece como texto suelto en una plantilla de
 i18n y como constante en el backend, y nadie los sincroniza. O el documento trae
 el término supletivo legal porque el plazo real nunca se decidió — eso no es un
-bug, es un dato de negocio pendiente y hay que marcarlo `[[ ]]`.
+bug, es un dato de negocio pendiente y hay que marcarlo `[[ ]]`. Declarar el
+término supletivo **diciendo que es el legal** es una salida válida mientras el
+dato no llegue; dejar el marcador impreso en el documento no lo es
+(`cerrar-marcadores.md`).
 
 ---
 
@@ -262,7 +265,9 @@ que es bastante más que leída.
 **Dónde suele romperse:** dos sitios.
 
 - El horario de atención es casi siempre un dato de negocio que nadie decidió. No
-  se inventa: `[[ ]]`.
+  se inventa: `[[ ]]`. Y mientras nadie lo decida, se quita la frase del horario
+  en vez de publicar el marcador — el plazo de respuesta se sostiene sin él
+  (`cerrar-marcadores.md`).
 - **Los documentos se contradicen entre sí sobre el mismo buzón.** Los términos
   prometen un plazo para "toda petición" y la política de datos promete otro,
   más corto, para las consultas — y las dos frases apuntan al mismo correo. No es
