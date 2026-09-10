@@ -270,18 +270,33 @@ verificada en el navegador**, no solo escrita en el JSON.
 
 ## 4. Campos por completar
 
-| Marca | Qué falta | Quién lo decide |
-|---|---|---|
-| `[[PLAZO DE ENTREGA REAL]]` | El plazo que el negocio de verdad promete, distinto del estimado que devuelve la cotización | Negocio. Sigue abierto desde la Fase 6 |
-| `[[HORARIO DE ATENCIÓN]]` | Horario del canal de PQR y del punto de recogida | Negocio. Sigue abierto desde la Fase 6 |
-| `[[GARANTÍA DE CELULARES]]` | Meses de garantía del fabricante | Negocio. Sigue abierto desde la Fase 6 |
-| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Resend** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 |
+**Ninguno de estos marcadores se publica ya.** El 10 de septiembre de 2026 los
+seis que estaban impresos en los documentos legales se cerraron con una de las dos
+salidas del `ADR-0025` —quitar la promesa concreta, o declarar el mínimo legal
+diciendo que es el legal—, y una guarda (`npm run marcadores`) impide que vuelva a
+pasar. Lo que sigue abierto es el **dato**, no el texto: el documento publicado es
+verdadero sin él.
+
+| Marca | Qué falta | Quién lo decide | Qué dice el texto mientras tanto |
+|---|---|---|---|
+| `[[PLAZO DE ENTREGA REAL]]` | El plazo que el negocio de verdad promete, distinto del estimado que devuelve la cotización | Negocio. Sigue abierto desde la Fase 6 | El término legal supletivo de 30 días calendario, declarado como legal |
+| `[[HORARIO DE ATENCIÓN]]` | Horario del canal de PQR y del punto de recogida | Negocio. Sigue abierto desde la Fase 6 | Nada: se quitó la frase. El plazo de 15 días hábiles se sostiene sin horario |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Resend** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 | "El proveedor de correo transaccional que usemos": la categoría, no el nombre |
+| `[[TRANSPORTADORA]]` | Se nombra a Skydropx y a las transportadoras el día que reciban datos, que es un paso de esta fase | Ya decidido (`ADR-0021/0023`); falta construirlo | "La empresa de transporte que despache tu pedido" |
 | Razón social exacta de Skydropx | Con qué entidad se contrata: la mexicana o una filial colombiana. Cambia el análisis de transferencia internacional | Negocio, al firmar |
 | Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |
 | IVA sobre el flete cobrado | Si el costo de envío que se le cobra al comprador lleva IVA | Contador |
 
 `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` **queda resuelto** y sale de la lista: lo
 paga el comprador, y no por decisión del negocio sino porque el art. 47 lo dice.
+Conviene anotar cuánto tardó eso en llegar al documento: esta línea se escribió el
+8 de septiembre y el marcador siguió publicado hasta el 10, porque resolver un
+dato en un documento de trabajo no cierra el texto que lo promete. Y no era una
+respuesta sino dos: en garantía el transporte lo paga el vendedor (art. 11).
+
+`[[GARANTÍA DE CELULARES]]` **también sale**, y por el mismo motivo: no hay
+régimen especial para equipos terminales. Un año para producto nuevo, y el mayor
+que anuncie el productor si lo anuncia.
 
 ---
 

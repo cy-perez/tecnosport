@@ -118,7 +118,10 @@ No es opcional y hay que resolverlo antes de abrir.
 - **Derecho de retracto: 5 días hábiles** desde la entrega en compras a distancia.
   Debe estar explicado y ser ejercible.
 - **Reversión del pago** cuando aplique, dentro de los plazos legales.
-- Garantía mínima legal informada por producto, y la propia de los celulares.
+- Garantía mínima legal informada por producto. Los celulares **no** tienen una
+  propia: no hay régimen especial para equipos terminales, así que es el año legal
+  de cualquier producto nuevo, y el mayor que anuncie el productor si lo anuncia
+  (verificado el 10 de septiembre de 2026).
 - Constancia de la transacción enviada al comprador.
 - Canal de PQR visible.
 

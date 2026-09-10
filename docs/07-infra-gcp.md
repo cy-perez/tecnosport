@@ -104,6 +104,11 @@ dato de negocio pendiente. **Sigue pendiente para producción**, y se decidió
 solo el de dev, que es otra pregunta: en dev basta con que los correos salgan
 para poder recorrer el registro y la recuperación de clave.
 
+Lo que sí cambió es el texto publicado: la política de datos ya no imprime el
+marcador, describe la categoría ("el proveedor de correo transaccional que
+usemos"). El día que se decida el de producción hay que **nombrarlo ahí** y subir
+la versión del documento — es la mitad del trabajo que nadie apunta. `ADR-0025`.
+
 **Dev usa Resend** (`resend.com`, plan gratuito: 3.000 correos al mes con tope de
 100 al día, 3 dominios y 30 días de registros). No hay nada que programar:
 `spring.mail` ya sale de variables y `starttls.enable` ya está en `true`, así que

@@ -56,6 +56,14 @@ para y dime por qué antes de escribir el código.
 4. **Ningún texto visible escrito directo en una plantilla.** Todo pasa por
    Transloco, en español e inglés, incluidos los mensajes de error y los
    `aria-label`.
+   Y **ningún marcador `[[ ]]` en un texto que se publica**: es una anotación
+   para quien audita, no un texto para quien lee. Los documentos legales
+   publicaron seis durante una fase entera —"el plazo de entrega es de
+   `[[PLAZO DE ENTREGA REAL]]` días calendario"— porque la plantilla pinta la
+   clave tal como está y ninguna prueba mira el contenido de un texto legal.
+   Mientras el dato falte hay dos salidas y solo dos: quitar la promesa concreta,
+   o declarar el mínimo legal diciendo que es el legal. Lo verifica
+   `npm run marcadores`, dentro de `npm run verificar`. Ver `ADR-0025`.
 5. **Ninguna URL, credencial, clave ni endpoint literal en el código.**
    Configuración por variables de entorno, tipada y validada al arrancar.
 6. **El dinero nunca es `double` ni `float`.** Ver `docs/02-modelo-datos.md`.
@@ -89,6 +97,7 @@ npm run contratos                        regenera el cliente desde el OpenAPI
 npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verdad?
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
 npm run capas                            ¿alguna dependencia invertida en el frontend?
+npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 docker compose up -d                     PostgreSQL, Mailpit, Adminer
 
 cd apps/api
