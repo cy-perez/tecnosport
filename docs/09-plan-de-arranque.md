@@ -2492,6 +2492,32 @@ conservan su valor al recargar con la URL filtrada — que es el caso de
 rendimiento medido no significa nada mientras 16 de las 51 peticiones de la
 ficha vayan a `picsum.photos`.
 
+### El arnés de Lighthouse, y lo que la medición nueva confirmó (2026-09-09)
+
+`lighthouse` era dependencia de `apps/web` pero **no había ningún script que lo
+corriera**: la medición de la Fase 6 se hizo a mano, incluido el proxy que la hizo
+válida, y repetirla significaba reconstruir de memoria una trampa ya documentada.
+`npm run lighthouse` (`tools/medir-lighthouse.mjs`) levanta el build de
+producción, el servidor SSR y **el proxy que manda `/api` al backend**, y mide las
+tres pantallas.
+
+Lo que lo convierte en arnés y no en script son dos guardas que fallan **antes**
+de medir, en vez de dejar salir cifras sin sentido: que el catálogo responda a
+través del proxy, y que la ficha no salga `noindex`. Comprobado que disparan
+apuntando el proxy a un puerto muerto — el fallo exacto de la primera corrida.
+
+| | rendimiento | accesibilidad | buenas prácticas | SEO |
+|---|---|---|---|---|
+| portada | 69–70 | 100 | **100** | 100 |
+| ficha | 62 | 100 | **100** | 100 |
+| legales | 70–71 | 100 | **100** | 100 |
+
+**Buenas prácticas pasó de 96 a 100**, y eso es una confirmación medida y no
+supuesta: el 96 venía del error de consola que dejaba `POST /auth/refresco` con
+401 en toda visita anónima, y ese arreglo (ahora 204) se dio por bueno sin volver
+a medir. El rendimiento sube un par de puntos y **sigue sin significar nada**
+mientras las imágenes vengan de `picsum.photos`.
+
 
 ### El bloque de infraestructura, que no tenía fase (2026-09-08)
 
