@@ -1,5 +1,8 @@
 <div class="flex flex-col gap-4">
   <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+  @if (ayuda(); as textoDeAyuda) {
+    <p [class]="clasesAyuda" [id]="idCampo() + '-ayuda'">{{ textoDeAyuda }}</p>
+  }
   <!-- La opción activa se marca con `[selected]` en cada `<option>`, no con un
        `[value]` en el `<select>`. Con `[value]`, Angular fija la propiedad del
        select una sola vez y no vuelve a intentarlo: si las opciones llegan
@@ -12,7 +15,7 @@
     [id]="idCampo()"
     [disabled]="deshabilitado()"
     [attr.aria-invalid]="error() ? 'true' : null"
-    [attr.aria-describedby]="error() ? idCampo() + '-error' : null"
+    [attr.aria-describedby]="descripcion()"
     (change)="manejarCambio($any($event.target).value)"
   >
     @if (placeholder()) {

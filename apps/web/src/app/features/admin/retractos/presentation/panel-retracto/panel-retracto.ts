@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -97,17 +98,49 @@ export class PanelRetracto {
 
   protected readonly formularioRadicar = new FormGroup({
     motivo: new FormControl('', { nonNullable: true }),
+    // Vacío es "no lo dijo", y es el valor por omisión a propósito: preseleccionar un medio sería
+    // inventar lo que el comprador pidió, y esa anotación no se corrige después.
+    medioPreferido: new FormControl<string>('', { nonNullable: true }),
   });
 
   protected readonly formularioReintegro = new FormGroup({
     monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     medio: new FormControl<string>('TRANSFERENCIA_BANCARIA', { nonNullable: true }),
+    medioPreferido: new FormControl<string>('', { nonNullable: true }),
     comprobante: new FormControl('', { nonNullable: true }),
   });
 
   protected readonly opcionesMedio = computed<OpcionSelect[]>(() =>
     MEDIOS.map((medio) => ({ valor: medio, etiqueta: this.traducir()(CLAVE_MEDIO[medio]) })),
   );
+
+  /**
+   * El medio elegido, como señal. Hace falta porque la advertencia de la Ley 2439 tiene que
+   * aparecer mientras se elige y no al guardar: un `FormControl` no es una señal, así que un
+   * `computed` que leyera `.value` no volvería a evaluarse nunca.
+   */
+  private readonly medioElegido = toSignal(this.formularioReintegro.controls.medio.valueChanges, {
+    initialValue: this.formularioReintegro.controls.medio.value,
+  });
+
+  /**
+   * El medio que el comprador pidió, cuando el que está por guardarse no lo respeta. Nulo si
+   * coinciden o si no pidió nada.
+   *
+   * <p>Advierte y no bloquea: puede haber un motivo real —una cuenta que rebota— y quien decide es
+   * una persona. Lo que no puede pasar es que devuelva por otro medio sin haberlo visto.
+   */
+  protected readonly preferenciaEnRiesgo = computed<string | null>(() => {
+    const pedido = this.enCurso()?.medioPreferido;
+    if (!pedido || pedido === this.medioElegido()) {
+      return null;
+    }
+    return this.traducir()(CLAVE_MEDIO[pedido]);
+  });
+
+  protected etiquetaMedio(medio: MedioReintegro): string {
+    return this.traducir()(CLAVE_MEDIO[medio]);
+  }
 
   protected etiquetaVerdicto(verdicto: VerdictoPlazo): string {
     return this.traducir()(CLAVE_VERDICTO[verdicto]);
@@ -138,13 +171,15 @@ export class PanelRetracto {
 
   protected async radicar(): Promise<void> {
     const motivo = this.formularioRadicar.controls.motivo.value.trim();
+    const preferido = this.formularioRadicar.controls.medioPreferido.value;
     await this.ejecutar(() =>
       this.acciones.radicar.mutateAsync({
         pedidoId: this.pedidoId(),
         motivo: motivo === '' ? null : motivo,
+        medioPreferido: preferido === '' ? null : (preferido as MedioReintegro),
       }),
     );
-    this.formularioRadicar.reset({ motivo: '' });
+    this.formularioRadicar.reset({ motivo: '', medioPreferido: '' });
   }
 
   protected async recibirProducto(solicitud: SolicitudRetracto): Promise<void> {
@@ -175,6 +210,12 @@ export class PanelRetracto {
         solicitudId: solicitud.id,
         monto: valores.monto ?? 0,
         medio: valores.medio as MedioReintegro,
+        // Solo si la solicitud no lo traía: ya anotado, el backend se niega a cambiarlo, y
+        // mandarlo otra vez desde aquí sería pedirle que lo haga.
+        medioPreferido:
+          solicitud.medioPreferido || valores.medioPreferido === ''
+            ? null
+            : (valores.medioPreferido as MedioReintegro),
         comprobante: comprobante === '' ? null : comprobante,
       }),
     );

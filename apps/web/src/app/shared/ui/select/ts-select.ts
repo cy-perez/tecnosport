@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
-import { CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import { CLASES_AYUDA, CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
 
 export interface OpcionSelect {
   readonly valor: string;
@@ -29,6 +29,7 @@ export class TsSelect {
   protected readonly clasesControl = CLASES_CONTROL;
   protected readonly clasesEtiqueta = CLASES_ETIQUETA;
   protected readonly clasesError = CLASES_ERROR;
+  protected readonly clasesAyuda = CLASES_AYUDA;
 
   readonly idCampo = input.required<string>();
   readonly label = input.required<string>();
@@ -36,6 +37,29 @@ export class TsSelect {
   /** Texto de la opción vacía, para un select que representa "sin filtro". */
   readonly placeholder = input<string | null>(null);
   readonly error = input<string | null>(null);
+
+  /**
+   * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
+   *
+   * Lo mismo que ya tenía `ts-campo`, y por el mismo motivo: escribirlo como un `<p>` suelto antes
+   * del componente lo deja visualmente pegado al campo **anterior** y ningún lector de pantalla lo
+   * relaciona con nada. Faltaba aquí, y se notó al explicar por qué el medio de reintegro que pide
+   * el comprador no se puede corregir después — una advertencia legal que el lector de pantalla no
+   * asocia al control es una advertencia que no está.
+   */
+  readonly ayuda = input<string | null>(null);
+
+  /** Los dos textos de apoyo a la vez cuando los hay, igual que en `ts-campo`. */
+  protected readonly descripcion = computed(() => {
+    const partes: string[] = [];
+    if (this.ayuda()) {
+      partes.push(this.idCampo() + '-ayuda');
+    }
+    if (this.error()) {
+      partes.push(this.idCampo() + '-error');
+    }
+    return partes.length === 0 ? null : partes.join(' ');
+  });
 
   /** Escribible desde fuera: así lo mueve `TsSelectControl` sin que este componente sepa que
    * existen los formularios de Angular. */

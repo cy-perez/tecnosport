@@ -23,16 +23,27 @@ function solicitud(overrides: Partial<SolicitudRetracto> = {}): SolicitudRetract
     estado: 'RADICADA',
     productoRecibidoEn: null,
     limiteDeReintegro: null,
+    medioPreferido: null,
+    preferenciaRespetada: null,
     reintegro: null,
     ...overrides,
   };
 }
 
 class RepositorioRetractosFalso implements RepositorioRetractos {
-  radicados: { pedidoId: string; motivo: string | null }[] = [];
+  radicados: {
+    pedidoId: string;
+    motivo: string | null;
+    medioPreferido: MedioReintegro | null;
+  }[] = [];
   recibidos: string[] = [];
-  reintegros: { solicitudId: string; monto: number; medio: MedioReintegro; comprobante: string | null }[] =
-    [];
+  reintegros: {
+    solicitudId: string;
+    monto: number;
+    medio: MedioReintegro;
+    medioPreferido: MedioReintegro | null;
+    comprobante: string | null;
+  }[] = [];
 
   constructor(private solicitudes: SolicitudRetracto[] = []) {}
 
@@ -40,8 +51,12 @@ class RepositorioRetractosFalso implements RepositorioRetractos {
     return this.solicitudes;
   }
 
-  async radicar(pedidoId: string, motivo: string | null): Promise<SolicitudRetracto> {
-    this.radicados.push({ pedidoId, motivo });
+  async radicar(
+    pedidoId: string,
+    motivo: string | null,
+    medioPreferido: MedioReintegro | null,
+  ): Promise<SolicitudRetracto> {
+    this.radicados.push({ pedidoId, motivo, medioPreferido });
     return solicitud();
   }
 
@@ -54,9 +69,10 @@ class RepositorioRetractosFalso implements RepositorioRetractos {
     solicitudId: string,
     monto: number,
     medio: MedioReintegro,
+    medioPreferido: MedioReintegro | null,
     comprobante: string | null,
   ): Promise<SolicitudRetracto> {
-    this.reintegros.push({ solicitudId, monto, medio, comprobante });
+    this.reintegros.push({ solicitudId, monto, medio, medioPreferido, comprobante });
     return solicitud({ estado: 'REEMBOLSADA' });
   }
 }
@@ -106,7 +122,9 @@ describe('PanelRetracto', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Radicar retracto' }));
 
     await vi.waitFor(() =>
-      expect(repositorio.radicados).toEqual([{ pedidoId: 'p1', motivo: null }]),
+      expect(repositorio.radicados).toEqual([
+        { pedidoId: 'p1', motivo: null, medioPreferido: null },
+      ]),
     );
   });
 
@@ -127,7 +145,7 @@ describe('PanelRetracto', () => {
     expect(screen.queryByText('Fuera de plazo')).toBeNull();
     expect(
       screen.getByText(
-        'Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció.',
+        esAdmin.retractos.verdicto.indeterminado_ayuda,
       ),
     ).toBeTruthy();
   });
@@ -151,10 +169,89 @@ describe('PanelRetracto', () => {
           solicitudId: 's1',
           monto: 50_000,
           medio: 'TRANSFERENCIA_BANCARIA',
+          medioPreferido: null,
           comprobante: null,
         },
       ]),
     );
+  });
+
+  // ---- El medio que pidio el comprador (Ley 2439 de 2024) ----
+
+  it('al radicar, manda el medio que pidio el comprador', async () => {
+    const { repositorio } = await renderPanel([]);
+    const preferido = await screen.findByLabelText(
+      esAdmin.retractos.acciones.medio_preferido,
+    );
+
+    fireEvent.change(preferido, { target: { value: 'EFECTIVO' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Radicar retracto' }));
+
+    await vi.waitFor(() =>
+      expect(repositorio.radicados).toEqual([
+        { pedidoId: 'p1', motivo: null, medioPreferido: 'EFECTIVO' },
+      ]),
+    );
+  });
+
+  /**
+   * La advertencia tiene que salir **mientras se elige**, no al guardar: quien atiende tiene que
+   * poder cambiar de idea antes de mover la plata. No bloquea — puede haber un motivo real, como
+   * una cuenta que rebota.
+   */
+  it('advierte si el medio elegido no es el que pidio el comprador, y no bloquea', async () => {
+    const { repositorio } = await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2026-09-16T15:00:00Z',
+        medioPreferido: 'TRANSFERENCIA_BANCARIA',
+      }),
+    ]);
+
+    const medio = await screen.findByLabelText(esAdmin.retractos.acciones.medio);
+    fireEvent.change(medio, { target: { value: 'EFECTIVO' } });
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    const monto = screen.getByLabelText(esAdmin.retractos.acciones.monto);
+    fireEvent.input(monto, { target: { value: '50000' } });
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.retractos.acciones.registrar_reintegro }));
+
+    await vi.waitFor(() => expect(repositorio.reintegros).toHaveLength(1));
+  });
+
+  /** Ya anotado, el backend se niega a cambiarlo: ofrecer el control invitaria a intentarlo. */
+  it('con la preferencia ya anotada, no ofrece volver a elegirla', async () => {
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2026-09-16T15:00:00Z',
+        medioPreferido: 'WOMPI',
+      }),
+    ]);
+
+    await screen.findByLabelText(esAdmin.retractos.acciones.medio);
+    expect(screen.queryByLabelText(esAdmin.retractos.acciones.medio_preferido)).toBeNull();
+  });
+
+  /** Y despues del hecho queda leible, que es lo que sirve el dia de la reclamacion. */
+  it('si el reintegro no respeto la preferencia, lo deja dicho', async () => {
+    await renderPanel([
+      solicitud({
+        estado: 'REEMBOLSADA',
+        medioPreferido: 'TRANSFERENCIA_BANCARIA',
+        preferenciaRespetada: false,
+        reintegro: {
+          monto: 50_000,
+          medio: 'EFECTIVO',
+          comprobante: null,
+          registradoEn: '2026-09-20T15:00:00Z',
+          registradoPor: 'admin:1',
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText(esAdmin.retractos.preferencia_no_respetada)).toBeTruthy();
   });
 
   it('con el plazo de reintegro vencido, lo dice', async () => {

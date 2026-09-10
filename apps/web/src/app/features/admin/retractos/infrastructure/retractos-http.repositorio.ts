@@ -20,10 +20,14 @@ export class RetractosHttpRepositorio implements RepositorioRetractos {
     return datos.map(aSolicitudRetracto);
   }
 
-  async radicar(pedidoId: string, motivo: string | null): Promise<SolicitudRetracto> {
+  async radicar(
+    pedidoId: string,
+    motivo: string | null,
+    medioPreferido: MedioReintegro | null,
+  ): Promise<SolicitudRetracto> {
     const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{pedidoId}/retractos', {
       params: { path: { pedidoId } },
-      body: { motivo: motivo ?? undefined },
+      body: { motivo: motivo ?? undefined, medioPreferido: medioPreferido ?? undefined },
     });
     return aSolicitudRetracto(desempaquetar(respuesta, 'no se pudo radicar el retracto'));
   }
@@ -41,11 +45,17 @@ export class RetractosHttpRepositorio implements RepositorioRetractos {
     solicitudId: string,
     monto: number,
     medio: MedioReintegro,
+    medioPreferido: MedioReintegro | null,
     comprobante: string | null,
   ): Promise<SolicitudRetracto> {
     const respuesta = await this.cliente.POST('/api/v1/admin/retractos/{id}/reintegro', {
       params: { path: { id: solicitudId } },
-      body: { monto, medio, comprobante: comprobante ?? undefined },
+      body: {
+        monto,
+        medio,
+        medioPreferido: medioPreferido ?? undefined,
+        comprobante: comprobante ?? undefined,
+      },
     });
     return aSolicitudRetracto(desempaquetar(respuesta, 'no se pudo registrar el reintegro'));
   }

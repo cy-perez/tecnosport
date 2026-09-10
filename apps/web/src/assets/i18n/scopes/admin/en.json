@@ -172,6 +172,11 @@
     "esperando_producto": "Waiting for the product to come back.",
     "plazo_restante": "{{dias}} calendar days left to refund.",
     "plazo_vencido": "The fifteen-day refund deadline has passed.",
+    "medio_preferido": "Medium the buyer asked for",
+    "medio_preferido_ninguno": "Not stated",
+    "medio_preferido_ayuda": "Law 2439 of 2024 requires refunding through the medium the buyer prefers. Record it exactly as they asked: it cannot be corrected later.",
+    "preferencia_en_riesgo": "The buyer asked for {{medio}}. Refunding through another medium breaches Law 2439 of 2024; if there is a reason, note it in the receipt.",
+    "preferencia_no_respetada": "The refund went out through a medium other than the one the buyer asked for.",
     "reintegrado_por": "Refunded",
     "comprobante": "Receipt",
     "sin_comprobante": "no receipt",
@@ -186,7 +191,7 @@
       "en_plazo": "Within the five business days",
       "vencido": "Past the deadline",
       "indeterminado": "Deadline undetermined",
-      "indeterminado_ayuda": "It is past the earliest possible deadline, but without the public-holiday calendar loaded we cannot state that it expired."
+      "indeterminado_ayuda": "It was filed when the public-holiday calendar was not loaded: that day it could not be stated that the term had expired, and the verdict stays frozen as it was seen then."
     },
     "medios": {
       "transferencia_bancaria": "Bank transfer",
@@ -200,6 +205,7 @@
       "recibir_producto": "The product came back",
       "monto": "Amount to refund",
       "medio": "Refund method",
+      "medio_preferido": "Medium the buyer asked for (optional)",
       "comprobante": "Receipt (optional)",
       "registrar_reintegro": "Record refund"
     }
@@ -258,7 +264,7 @@
       "en_plazo": "Within deadline",
       "vencido": "Past deadline",
       "indeterminado": "Undetermined",
-      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed."
+      "indeterminado_ayuda": "It was filed when the public-holiday calendar was not loaded: that day it could not be stated as missed, and the verdict stays frozen as it was seen then."
     }
   },
   "garantias": {
@@ -325,7 +331,7 @@
       "en_plazo": "Within deadline",
       "vencido": "Past deadline",
       "indeterminado": "Undetermined",
-      "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed. It can still be filed."
+      "indeterminado_ayuda": "It was filed when the public-holiday calendar was not loaded: that day it could not be stated as missed, and the verdict stays frozen as it was seen then. It can still be filed."
     },
     "acciones": {
       "causal": "Ground invoked",

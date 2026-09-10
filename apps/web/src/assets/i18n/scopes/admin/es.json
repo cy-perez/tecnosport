@@ -172,6 +172,11 @@
     "esperando_producto": "A la espera de que el producto vuelva.",
     "plazo_restante": "Quedan {{dias}} dias calendario para reintegrar el dinero.",
     "plazo_vencido": "El plazo de quince dias para reintegrar ya vencio.",
+    "medio_preferido": "Medio que pidio el comprador",
+    "medio_preferido_ninguno": "No lo dijo",
+    "medio_preferido_ayuda": "La Ley 2439 de 2024 obliga a devolver el dinero por el medio que el comprador prefiera. Anotalo tal como lo pidio: despues no se puede corregir.",
+    "preferencia_en_riesgo": "El comprador pidio {{medio}}. Devolver por otro medio incumple la Ley 2439 de 2024; si hay un motivo, dejalo en el comprobante.",
+    "preferencia_no_respetada": "Se devolvio por un medio distinto del que pidio el comprador.",
     "reintegrado_por": "Reintegrado por",
     "comprobante": "Comprobante",
     "sin_comprobante": "sin comprobante",
@@ -186,7 +191,7 @@
       "en_plazo": "Dentro de los cinco dias habiles",
       "vencido": "Fuera de plazo",
       "indeterminado": "Plazo indeterminado",
-      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció."
+      "indeterminado_ayuda": "Se radicó cuando el calendario de festivos no estaba cargado: ese día no se pudo afirmar que el plazo había vencido, y el veredicto queda congelado como se vio entonces."
     },
     "medios": {
       "transferencia_bancaria": "Transferencia bancaria",
@@ -200,6 +205,7 @@
       "recibir_producto": "El producto volvio",
       "monto": "Monto a reembolsar",
       "medio": "Medio del reintegro",
+      "medio_preferido": "Medio que pidio el comprador (opcional)",
       "comprobante": "Comprobante (opcional)",
       "registrar_reintegro": "Registrar reintegro"
     }
@@ -258,7 +264,7 @@
       "en_plazo": "En plazo",
       "vencido": "Fuera de plazo",
       "indeterminado": "Indeterminado",
-      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció."
+      "indeterminado_ayuda": "Se radicó cuando el calendario de festivos no estaba cargado: ese día no se pudo afirmar que el plazo había vencido, y el veredicto queda congelado como se vio entonces."
     }
   },
   "garantias": {
@@ -325,7 +331,7 @@
       "en_plazo": "En plazo",
       "vencido": "Fuera de plazo",
       "indeterminado": "Indeterminado",
-      "indeterminado_ayuda": "Pasó el límite más temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que venció. Radicarla sigue siendo posible."
+      "indeterminado_ayuda": "Se radicó cuando el calendario de festivos no estaba cargado: ese día no se pudo afirmar que el plazo había vencido, y el veredicto queda congelado como se vio entonces. Radicarla sigue siendo posible."
     },
     "acciones": {
       "causal": "Causal invocada",
