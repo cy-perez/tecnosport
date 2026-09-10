@@ -72,6 +72,20 @@
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",
       "conciliar_recaudo": "Conciliar recaudo"
+    },
+    "cancelacion": {
+      "titulo": "Cancelar el pedido",
+      "ayuda": "Por causa nuestra y antes de despachar: el producto dejo de estar disponible, o no lo entregamos dentro del plazo.",
+      "motivo": "Motivo",
+      "dinero_ayuda": "Este pedido ya tenia el dinero recibido, asi que cancelarlo exige devolverlo. Sin monto no se puede cancelar.",
+      "sin_dinero": "Este pedido todavia no habia cobrado nada, asi que no hay dinero que devolver.",
+      "monto": "Monto a devolver",
+      "comprobante": "Comprobante",
+      "cancelar": "Cancelar pedido",
+      "motivos": {
+        "no_disponibilidad": "El producto dejo de estar disponible",
+        "plazo_incumplido": "No entregamos dentro del plazo"
+      }
     }
   },
   "productos": {

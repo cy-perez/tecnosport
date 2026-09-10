@@ -25,7 +25,15 @@ import { PanelReversion } from '../../../reversiones/presentation/panel-reversio
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
-import { EstadoPedido, FiltroPedidosAdmin, PedidoAdmin } from '../../domain/pedido-admin.model';
+import { MedioReintegro } from '../../../retractos/domain/retracto.model';
+import {
+  ESTADOS_QUE_ADMITEN_CANCELACION,
+  EstadoPedido,
+  FiltroPedidosAdmin,
+  MOTIVOS_CANCELACION,
+  MotivoCancelacion,
+  PedidoAdmin,
+} from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 
 const ESTADOS: readonly EstadoPedido[] = [
@@ -69,6 +77,18 @@ interface FormularioDespacho {
 interface FormularioRecaudo {
   comisionRecaudo: FormControl<number | null>;
 }
+
+interface FormularioCancelacion {
+  motivo: FormControl<string>;
+  monto: FormControl<number | null>;
+  medio: FormControl<string>;
+  comprobante: FormControl<string>;
+}
+
+const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
+  NO_DISPONIBILIDAD: 'admin.pedidos.cancelacion.motivos.no_disponibilidad',
+  PLAZO_INCUMPLIDO: 'admin.pedidos.cancelacion.motivos.plazo_incumplido',
+};
 
 /**
  * Fila expandible en vez de una pantalla de detalle aparte: no existe
@@ -145,6 +165,10 @@ export class ListaPedidosAdminPage {
   private readonly formulariosMotivo = new Map<string, FormGroup<FormularioMotivo>>();
   private readonly formulariosDespacho = new Map<string, FormGroup<FormularioDespacho>>();
   private readonly formulariosRecaudo = new Map<string, FormGroup<FormularioRecaudo>>();
+  private readonly formulariosCancelacion = new Map<
+    string,
+    FormGroup<FormularioCancelacion>
+  >();
 
   constructor() {
     effect(() => {
@@ -218,6 +242,63 @@ export class ListaPedidosAdminPage {
       this.formulariosRecaudo.set(pedidoId, form);
     }
     return form;
+  }
+
+  protected formularioCancelacion(pedidoId: string): FormGroup<FormularioCancelacion> {
+    let form = this.formulariosCancelacion.get(pedidoId);
+    if (!form) {
+      form = new FormGroup({
+        motivo: new FormControl<string>('NO_DISPONIBILIDAD', { nonNullable: true }),
+        monto: new FormControl<number | null>(null),
+        medio: new FormControl<string>('WOMPI', { nonNullable: true }),
+        comprobante: new FormControl('', { nonNullable: true }),
+      });
+      this.formulariosCancelacion.set(pedidoId, form);
+    }
+    return form;
+  }
+
+  protected readonly opcionesMotivoCancelacion = computed<OpcionSelect[]>(() =>
+    MOTIVOS_CANCELACION.map((motivo) => ({
+      valor: motivo,
+      etiqueta: this.traducir()(CLAVE_MOTIVO_CANCELACION[motivo]),
+    })),
+  );
+
+  protected puedeCancelar(pedido: PedidoAdmin): boolean {
+    return (ESTADOS_QUE_ADMITEN_CANCELACION as readonly string[]).includes(pedido.estado);
+  }
+
+  /**
+   * Un contraentrega cobra al entregar, asi que antes de despachar nunca entro un peso. En los
+   * demas metodos, llegar a PAGADO o EN_PREPARACION significa que el pago se aplico. La misma regla
+   * que aplica el servidor, aqui solo para decidir que campos mostrar: quien manda es el.
+   */
+  protected elDineroYaEntro(pedido: PedidoAdmin): boolean {
+    if (pedido.metodoPago === 'CONTRAENTREGA') {
+      return false;
+    }
+    return pedido.estado === 'PAGADO' || pedido.estado === 'EN_PREPARACION';
+  }
+
+  protected async cancelar(pedido: PedidoAdmin): Promise<void> {
+    const form = this.formularioCancelacion(pedido.id);
+    if (form.invalid) {
+      form.markAllAsTouched();
+      return;
+    }
+    const valores = form.getRawValue();
+    const hayDinero = this.elDineroYaEntro(pedido);
+    const comprobante = valores.comprobante.trim();
+    await this.ejecutar(() =>
+      this.acciones.cancelar.mutateAsync({
+        pedidoId: pedido.id,
+        motivo: valores.motivo as MotivoCancelacion,
+        monto: hayDinero ? (valores.monto ?? pedido.total.valor) : null,
+        medio: hayDinero ? (valores.medio as MedioReintegro) : null,
+        comprobante: hayDinero && comprobante !== '' ? comprobante : null,
+      }),
+    );
   }
 
   protected async conciliarTransferencia(pedidoId: string): Promise<void> {

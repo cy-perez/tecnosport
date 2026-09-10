@@ -98,3 +98,22 @@ export interface FiltroPedidosAdmin {
   readonly tamano: number;
   readonly estado: EstadoPedido | null;
 }
+
+/**
+ * Por que el negocio cancela un pedido antes de despacharlo. Los dos salen de los terminos
+ * publicados: "Disponibilidad" y "Envio y entrega".
+ */
+export type MotivoCancelacion = 'NO_DISPONIBILIDAD' | 'PLAZO_INCUMPLIDO';
+
+export const MOTIVOS_CANCELACION: readonly MotivoCancelacion[] = [
+  'NO_DISPONIBILIDAD',
+  'PLAZO_INCUMPLIDO',
+];
+
+/** Solo antes de despachar: despues ya existen entrega, rechazo en la entrega y devolucion. */
+export const ESTADOS_QUE_ADMITEN_CANCELACION = [
+  'PAGO_PENDIENTE',
+  'PAGADO',
+  'CONFIRMADO_CONTRAENTREGA',
+  'EN_PREPARACION',
+] as const;

@@ -252,6 +252,54 @@
                   }
                 }
 
+                @if (puedeCancelar(pedido)) {
+                  <form
+                    class="mt-16"
+                    [formGroup]="formularioCancelacion(pedido.id)"
+                    (submit)="$event.preventDefault(); cancelar(pedido)"
+                  >
+                    <h2 class="mt-0 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.cancelacion.titulo' | transloco }}
+                    </h2>
+                    <p class="mt-0 mb-8 text-ts-texto-suave">
+                      {{ 'admin.pedidos.cancelacion.ayuda' | transloco }}
+                    </p>
+                    <ts-select
+                      [idCampo]="'cancelacion-motivo-' + pedido.id"
+                      [label]="'admin.pedidos.cancelacion.motivo' | transloco"
+                      [opciones]="opcionesMotivoCancelacion()"
+                      formControlName="motivo"
+                    />
+                    @if (elDineroYaEntro(pedido)) {
+                      <p class="mt-0 mb-8 text-ts-texto-suave">
+                        {{ 'admin.pedidos.cancelacion.dinero_ayuda' | transloco }}
+                      </p>
+                      <ts-campo
+                        [idCampo]="'cancelacion-monto-' + pedido.id"
+                        tipo="number"
+                        [label]="'admin.pedidos.cancelacion.monto' | transloco"
+                        formControlName="monto"
+                      />
+                      <ts-campo
+                        [idCampo]="'cancelacion-comprobante-' + pedido.id"
+                        [label]="'admin.pedidos.cancelacion.comprobante' | transloco"
+                        formControlName="comprobante"
+                      />
+                    } @else {
+                      <p class="mt-0 mb-8 text-ts-texto-suave">
+                        {{ 'admin.pedidos.cancelacion.sin_dinero' | transloco }}
+                      </p>
+                    }
+                    <ts-boton
+                      variante="secundario"
+                      tipo="submit"
+                      [cargando]="acciones.cancelar.isPending()"
+                    >
+                      {{ 'admin.pedidos.cancelacion.cancelar' | transloco }}
+                    </ts-boton>
+                  </form>
+                }
+
                 <app-panel-retracto
                   [pedidoId]="pedido.id"
                   [estadoPedido]="pedido.estado"

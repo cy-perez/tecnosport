@@ -564,6 +564,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{id}/cancelacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/garantias/{id}/resolucion": {
         parameters: {
             query?: never;
@@ -1338,6 +1354,12 @@ export interface components {
             guia?: string;
             /** Format: int64 */
             costoEnvio?: number;
+        };
+        CancelarPedidoRequest: {
+            motivo?: string;
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
         };
         ResolverGarantiaRequest: {
             desenlace?: string;
@@ -2450,6 +2472,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    cancelar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelarPedidoRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

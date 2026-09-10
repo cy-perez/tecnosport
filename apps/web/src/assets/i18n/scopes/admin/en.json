@@ -72,6 +72,20 @@
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
       "conciliar_recaudo": "Reconcile collection"
+    },
+    "cancelacion": {
+      "titulo": "Cancel the order",
+      "ayuda": "On our side and before dispatch: the product became unavailable, or we did not deliver within the agreed time.",
+      "motivo": "Reason",
+      "dinero_ayuda": "This order had already been paid, so cancelling it requires refunding. It cannot be cancelled without an amount.",
+      "sin_dinero": "Nothing had been charged for this order yet, so there is nothing to refund.",
+      "monto": "Amount to refund",
+      "comprobante": "Reference",
+      "cancelar": "Cancel order",
+      "motivos": {
+        "no_disponibilidad": "The product became unavailable",
+        "plazo_incumplido": "We did not deliver on time"
+      }
     }
   },
   "productos": {
