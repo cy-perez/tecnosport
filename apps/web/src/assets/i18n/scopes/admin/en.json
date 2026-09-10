@@ -246,5 +246,38 @@
       "indeterminado": "Undetermined",
       "indeterminado_ayuda": "The earliest possible limit has passed, but without the public-holiday calendar loaded it cannot be stated as missed."
     }
+  },
+  "garantias": {
+    "titulo": "Statutory warranty",
+    "cargando": "Loading warranties...",
+    "error": "The action could not be completed. Please try again.",
+    "ayuda_radicar": "The buyer claims it by email or WhatsApp. Filing it gives it a number and a response deadline, like any other request.",
+    "no_aplica": "The warranty runs from delivery: it only applies to an order already delivered.",
+    "fallo": "Reported fault",
+    "vigencia_titulo": "Coverage when claimed",
+    "termino": "{{meses}}-month term from delivery.",
+    "desenlace": "Outcome",
+    "vigencia": {
+      "cubierta": "Within term",
+      "fuera_de_termino": "Past term",
+      "indeterminada": "Undetermined",
+      "indeterminada_ayuda": "That category's term is not loaded, so it cannot be stated that the warranty has expired. A person decides."
+    },
+    "desenlaces": {
+      "reparacion": "Repair",
+      "reposicion": "Replace",
+      "reintegro": "Refund"
+    },
+    "acciones": {
+      "linea": "Product in the order",
+      "elegir_linea": "Choose the product",
+      "fallo": "What failed",
+      "radicar": "File warranty claim",
+      "desenlace": "What was done",
+      "resumen": "What the buyer was told",
+      "monto": "Amount to refund",
+      "comprobante": "Reference",
+      "resolver": "Resolve warranty"
+    }
   }
 }

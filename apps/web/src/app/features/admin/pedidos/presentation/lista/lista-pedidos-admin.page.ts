@@ -19,6 +19,7 @@ import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
+import { PanelGarantia } from '../../../garantias/presentation/panel-garantia/panel-garantia';
 import { PanelRetracto } from '../../../retractos/presentation/panel-retracto/panel-retracto';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin.mutaciones';
@@ -77,6 +78,7 @@ interface FormularioRecaudo {
 @Component({
   selector: 'app-lista-pedidos-admin',
   imports: [
+    PanelGarantia,
     PanelRetracto,
     ReactiveFormsModule,
     TranslocoPipe,

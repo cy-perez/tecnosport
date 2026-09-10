@@ -257,6 +257,13 @@
                   [estadoPedido]="pedido.estado"
                   [totalPedido]="pedido.total.valor"
                 />
+
+                <app-panel-garantia
+                  [pedidoId]="pedido.id"
+                  [estadoPedido]="pedido.estado"
+                  [lineas]="pedido.lineas"
+                  [totalPedido]="pedido.total.valor"
+                />
               </td>
             </tr>
           }

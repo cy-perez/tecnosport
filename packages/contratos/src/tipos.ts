@@ -404,6 +404,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_2"];
+        put?: never;
+        post: operations["radicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{id}/verificar-contraentrega": {
         parameters: {
             query?: never;
@@ -500,6 +516,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/garantias/{id}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolver"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/cobertura-contraentrega": {
         parameters: {
             query?: never;
@@ -523,9 +555,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_2"];
+        get: operations["listar_3"];
         put?: never;
-        post: operations["radicar_1"];
+        post: operations["radicar_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -683,7 +715,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_3"];
+        get: operations["listar_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -715,7 +747,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_4"];
+        get: operations["listar_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -731,7 +763,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -763,7 +795,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -779,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1176,6 +1208,35 @@ export interface components {
         RegistrarRetractoRequest: {
             motivo?: string;
         };
+        RadicarGarantiaRequest: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            descripcionDelFallo?: string;
+        };
+        ReclamacionGarantiaRespuesta: {
+            id?: string;
+            solicitudId?: string;
+            pedidoId?: string;
+            varianteId?: string;
+            /** Format: date-time */
+            entregadoEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            /** Format: int32 */
+            mesesDeTermino?: number;
+            /** Format: date-time */
+            finDelTermino?: string;
+            vigencia?: string;
+            descripcionDelFallo?: string;
+            estado?: string;
+            desenlace?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            resueltaPor?: string;
+            reintegroId?: string;
+        };
         VerificarContraentregaRequest: {
             motivo?: string;
         };
@@ -1191,6 +1252,13 @@ export interface components {
             guia?: string;
             /** Format: int64 */
             costoEnvio?: number;
+        };
+        ResolverGarantiaRequest: {
+            desenlace?: string;
+            resumenParaElComprador?: string;
+            monto?: number;
+            medio?: string;
+            comprobante?: string;
         };
         CoberturaContraentregaRequest: {
             codigoDaneCiudad?: string;
@@ -2012,6 +2080,54 @@ export interface operations {
             };
         };
     };
+    listar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarGarantiaRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                };
+            };
+        };
+    };
     verificar: {
         parameters: {
             query?: never;
@@ -2160,6 +2276,32 @@ export interface operations {
             };
         };
     };
+    resolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverGarantiaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                };
+            };
+        };
+    };
     agregar: {
         parameters: {
             query?: never;
@@ -2182,7 +2324,7 @@ export interface operations {
             };
         };
     };
-    listar_2: {
+    listar_3: {
         parameters: {
             query?: {
                 estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
@@ -2204,7 +2346,7 @@ export interface operations {
             };
         };
     };
-    radicar_1: {
+    radicar_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2498,7 +2640,7 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    listar_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2538,7 +2680,7 @@ export interface operations {
             };
         };
     };
-    listar_4: {
+    listar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2558,7 +2700,7 @@ export interface operations {
             };
         };
     };
-    listar_5: {
+    listar_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2600,7 +2742,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2620,7 +2762,7 @@ export interface operations {
             };
         };
     };
-    listar_7: {
+    listar_8: {
         parameters: {
             query?: {
                 pagina?: number;

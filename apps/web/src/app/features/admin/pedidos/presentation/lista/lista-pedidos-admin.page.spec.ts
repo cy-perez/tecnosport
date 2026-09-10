@@ -16,6 +16,11 @@ import {
   RepositorioRetractos,
 } from '../../../retractos/domain/repositorio-retractos.puerto';
 import { SolicitudRetracto } from '../../../retractos/domain/retracto.model';
+import {
+  REPOSITORIO_GARANTIAS,
+  RepositorioGarantias,
+} from '../../../garantias/domain/repositorio-garantias.puerto';
+import { ReclamacionGarantia } from '../../../garantias/domain/garantia.model';
 import { ListaPedidosAdminPage } from './lista-pedidos-admin.page';
 
 /**
@@ -37,6 +42,21 @@ class RepositorioRetractosVacio implements RepositorioRetractos {
   }
 
   async registrarReintegro(): Promise<SolicitudRetracto> {
+    throw new Error('no usado en estas pruebas');
+  }
+}
+
+/** Mismo motivo que el de retractos: `PanelGarantia` tambien vive en la fila expandida. */
+class RepositorioGarantiasVacio implements RepositorioGarantias {
+  async listarDePedido(): Promise<readonly ReclamacionGarantia[]> {
+    return [];
+  }
+
+  async radicar(): Promise<ReclamacionGarantia> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async resolver(): Promise<ReclamacionGarantia> {
     throw new Error('no usado en estas pruebas');
   }
 }
@@ -143,6 +163,7 @@ async function renderLista(
       },
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
       { provide: REPOSITORIO_RETRACTOS, useValue: new RepositorioRetractosVacio() },
+      { provide: REPOSITORIO_GARANTIAS, useValue: new RepositorioGarantiasVacio() },
     ],
   });
   return { ...resultado, repositorio };

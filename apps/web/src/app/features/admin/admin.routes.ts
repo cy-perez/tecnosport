@@ -22,6 +22,8 @@ import { SENSOR_ORIENTACION } from '../captura360/domain/sensor-orientacion.puer
 import { CamaraNavegador } from '../captura360/infrastructure/camara-navegador';
 import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantalla-despierta-navegador';
 import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
+import { REPOSITORIO_GARANTIAS } from './garantias/domain/repositorio-garantias.puerto';
+import { GarantiasHttpRepositorio } from './garantias/infrastructure/garantias-http.repositorio';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
 import { REPOSITORIO_RETRACTOS } from './retractos/domain/repositorio-retractos.puerto';
@@ -64,11 +66,12 @@ export const adminRoutes: Routes = [
       {
         path: 'pedidos',
         canActivate: [adminGuard],
-        // El panel de retracto vive dentro de la fila expandida de esta lista, así que su puerto
-        // se provee en la misma ruta y no en una propia.
+        // Los paneles de retracto y de garantía viven dentro de la fila expandida de esta lista,
+        // así que sus puertos se proveen en la misma ruta y no en una propia.
         providers: [
           { provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio },
           { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
+          { provide: REPOSITORIO_GARANTIAS, useClass: GarantiasHttpRepositorio },
         ],
         loadComponent: () =>
           import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(

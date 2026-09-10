@@ -246,5 +246,38 @@
       "indeterminado": "Indeterminado",
       "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio."
     }
+  },
+  "garantias": {
+    "titulo": "Garantia legal",
+    "cargando": "Cargando garantias...",
+    "error": "No se pudo completar la accion. Intentalo de nuevo.",
+    "ayuda_radicar": "El comprador la reclama por correo o WhatsApp. Al radicarla queda con numero y con plazo de respuesta, como cualquier otra solicitud.",
+    "no_aplica": "La garantia se cuenta desde la entrega: solo aplica a un pedido ya entregado.",
+    "fallo": "Fallo reportado",
+    "vigencia_titulo": "Vigencia al reclamar",
+    "termino": "Termino de {{meses}} meses desde la entrega.",
+    "desenlace": "Desenlace",
+    "vigencia": {
+      "cubierta": "Dentro del termino",
+      "fuera_de_termino": "Fuera del termino",
+      "indeterminada": "Indeterminada",
+      "indeterminada_ayuda": "El termino de esa categoria no esta cargado, asi que no se puede afirmar que la garantia vencio. Decide una persona."
+    },
+    "desenlaces": {
+      "reparacion": "Reparar",
+      "reposicion": "Reponer",
+      "reintegro": "Devolver el dinero"
+    },
+    "acciones": {
+      "linea": "Producto del pedido",
+      "elegir_linea": "Elige el producto",
+      "fallo": "Que fallo",
+      "radicar": "Radicar garantia",
+      "desenlace": "Que se hizo",
+      "resumen": "Que se le respondio al comprador",
+      "monto": "Monto a devolver",
+      "comprobante": "Comprobante",
+      "resolver": "Resolver garantia"
+    }
   }
 }
