@@ -14,10 +14,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * El {@code CalendarioHabil} lo provee {@code ConfiguracionRetracto}: es el mismo para los dos
- * plazos y tenerlo dos veces sería tener dos calendarios que algún día divergen. Con eso, del
- * {@code TODO: FESTIVOS_COLOMBIA} cuelgan ya dos obligaciones legales y no una — cargarlo cierra
- * las dos a la vez.
+ * El {@code CalendarioHabil} lo provee {@code ConfiguracionCalendario}: es el mismo para los tres
+ * plazos hábiles del sistema —retracto, respuesta a una PQR y solicitud de reversión— y tenerlo
+ * tres veces sería tener tres calendarios que algún día divergen.
  */
 @Configuration
 @EnableConfigurationProperties(PropiedadesAtencion.class)

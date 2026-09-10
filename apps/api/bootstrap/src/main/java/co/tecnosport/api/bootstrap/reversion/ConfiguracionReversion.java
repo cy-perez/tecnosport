@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * El {@code CalendarioHabil} lo provee {@code ConfiguracionRetracto}: es el mismo para los tres
+ * El {@code CalendarioHabil} lo provee {@code ConfiguracionCalendario}: es el mismo para los tres
  * plazos hábiles del sistema —retracto, respuesta a una PQR y solicitud de reversión— y tenerlo
  * tres veces sería tener tres calendarios que algún día divergen.
  */
