@@ -80,6 +80,10 @@ métrica no puede demostrar que respondió en plazo. Si no hay registro de cuán
 llegó cada solicitud, el incumplimiento es indemostrable en las dos direcciones —
 y quien tiene la carga de probar que cumplió es el responsable.
 
+Y no es un solo reloj: el mismo buzón recibe solicitudes de tipos distintos con
+plazos distintos, incluido el que el propio sitio se haya comprometido a cumplir.
+El rastro completo está en la ficha de canales de `promesas-y-su-rastro.md`.
+
 ---
 
 ## 4.1. La entrega dispara plazos, y hay que saber cuándo ocurrió

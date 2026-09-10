@@ -2763,6 +2763,102 @@ con número, los tres prometidos en los términos y los tres atendidos a mano
 todavía. Y falta el recorrido a mano contra `bootRun` real, que en este proyecto
 es donde aparecen los defectos que las pruebas no ven.
 
+## El bloque de la atención, que cerró los tres legales pendientes (2026-09-10)
+
+El bloque del retracto dejó escrito lo que no había hecho: "reversión del pago,
+garantía y radicación de PQR, los tres prometidos en los términos y los tres
+atendidos a mano". Esto los cierra, y cierra también la deuda de inventario que
+ese mismo bloque había dejado anotada.
+
+**El plan salió de una auditoría con `vacios-legales-del-sitio`, y la skill se
+corrigió antes de usarla.** Le faltaban dos cosas para este trabajo: la ficha de
+PQR era la única de las cuatro sin `rastro mínimo`, y no había ninguna ficha del
+reintegro como asunto compartido. Lo segundo importaba más de lo que parecía —
+siguiendo la skill al pie de la letra se auditan las figuras una por una, y así
+se pierden las que no tienen ficha.
+
+**Los términos publicados prometen cinco caminos que devuelven dinero, no tres.**
+Retracto, garantía y reversión son los que uno espera. Los otros dos aparecieron
+leyendo el documento entero en busca de toda frase que prometiera devolver dinero,
+y viven en secciones que nadie lee como secciones de dinero: **no disponibilidad
+sobrevenida** ("Disponibilidad", quince días calendario) e **incumplimiento del
+plazo de entrega** ("Envío y entrega"). Llevaban tiempo prometidos sin una línea
+de código detrás y sin que nadie los hubiera contado.
+
+**El hallazgo que ordenó el diseño de la atención:** el mismo buzón recibe
+solicitudes con relojes legales distintos. Los términos prometen quince días
+hábiles para "toda petición" y la política de datos promete diez para una
+consulta, apuntando las dos al mismo correo. Una sola constante habría incumplido
+la más corta sin que nadie lo notara — es el caso 2 del encabezado de la skill,
+el que nadie ve porque las dos partes funcionan. El sistema cumple el más corto
+por tipo; **corregir la contradicción del texto es otra tarea y no es de código**.
+
+**Lo que se construyó, en orden:**
+
+1. **La deuda de inventario del contraentrega.** `ConfirmarReservasDeLineas` solo
+   se llamaba desde el pago de Wompi y desde la transferencia conciliada, o sea
+   desde los dos caminos por los que entra dinero antes de despachar. Un
+   contraentrega no pasa por ninguno: su reserva quedaba abierta para siempre.
+   Ahora confirma **al entregar** y no al conciliar el recaudo — la mercancía sale
+   cuando el comprador la recibe, y entre `ENTREGADO` y `RECAUDO_CONCILIADO`
+   pueden pasar semanas.
+2. **`Reintegro` sale de dentro de `SolicitudRetracto`** y pasa a ser agregado
+   propio con `motivo` y `origenId` obligatorios (`V23`). Lo que se perdió, dicho
+   sin adornos: ya no es estructuralmente imposible escribir un reintegro
+   huérfano. Lo sustituye la invariante del lado contrario — una solicitud que se
+   declara reembolsada exige el id de su constancia, en el dominio y en la base.
+3. **Radicación de PQR** con número (`TS-PQR-2026-000123`), tipo, y **dos fechas
+   y no una**: el plazo corre desde que llegó, no desde que alguien la registró.
+   La prórroga vale por el aviso, no por otorgarla. `V24`.
+4. **Garantía** con las **tres** salidas de la ley y el término **por categoría**.
+   `V25`.
+5. **Reversión** con sus cuatro causales tasadas y el registro de qué se hizo para
+   facilitar el trámite. `V26`.
+6. **Cancelación** por los dos caminos que nadie había contado: `EstadoPedido`
+   gana `CANCELADO`, alcanzable solo antes de despachar.
+
+**Tres decisiones que conviene no volver a discutir:**
+
+- **Garantía y reversión radican su propia solicitud de atención; la cancelación
+  no.** Aquéllas son peticiones del comprador con su plazo corriendo; ésta es el
+  negocio avisando de algo suyo. Meterla en la bandeja llenaría de ruido lo que
+  hay que responder.
+- **Resolver una garantía o una reversión responde su solicitud.** Separarlas
+  dejaría casos resueltos con el plazo corriendo para siempre en la bandeja.
+- **Solo queda constancia de dinero cuando el dinero salió de aquí.** Si revierte
+  el emisor, la plata vuelve por la red de pagos: inventarle un `Reintegro` sería
+  registrar un pago que no hicimos.
+
+**Un defecto real lo atrapó una prueba**, y es el que vale la pena recordar:
+encadenar dos `Optional` con `flatMap` confundía "no encuentro el producto" con
+"nadie ha decidido este término", y los dos caían al término general de doce
+meses. El segundo es justo el que no debe caer — es el de los celulares.
+
+**Y una duplicación que iba por su tercera copia:** la cuenta de días hábiles y el
+veredicto de plazo salieron de `PlazoDeRetracto` y `PlazoDeRespuesta` a
+`CalendarioHabil`. Del `TODO: FESTIVOS_COLOMBIA` cuelgan ahora **tres** plazos
+legales y no uno; cargarlo los cierra los tres a la vez.
+
+**Recorrido a mano contra `bootRun` + PostgreSQL + Mailpit reales**, que es donde
+aparecen los defectos que las pruebas no ven: dos solicitudes del mismo día con
+límites distintos (23 y 30 de septiembre), prórroga aceptada en la consulta de
+datos y rechazada con 422 en la petición, respuesta que la saca de la bandeja,
+tres correos reales en Mailpit; y del lado del dinero, cancelar con el pago sin
+entrar libera la reserva y no deja constancia, cancelar con el dinero adentro se
+bloquea con 422 hasta que se informa el reintegro, y entonces la reserva
+confirmada vuelve como `ENTRADA` —no como liberación— con su fila en `reintegro`.
+
+**Datos de negocio que siguen pendientes**, ninguno inventado:
+`TODO: FESTIVOS_COLOMBIA` (ahora con tres plazos colgando),
+`[[GARANTÍA DE CELULARES]]` (su categoría responde `INDETERMINADA` en vez de caer
+al término general), `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]`,
+`[[HORARIO DE ATENCIÓN]]` y `[[PLAZO DE ENTREGA REAL]]`.
+
+**Para revisión de abogado**, sin resolver aquí: el 10 contra el 15 sobre el mismo
+buzón —si se corrige el texto de los términos o el sistema cumple siempre el más
+corto—, y "desgaste normal" como exclusión de garantía, que podría ser más amplia
+que la legal.
+
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
 Decidida el 8 de septiembre de 2026, **documentada y sin una línea de código

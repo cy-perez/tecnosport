@@ -218,6 +218,12 @@ grave porque era grande.
 
 - **Un hueco por cambio.** No mezcles el retracto con la garantía porque los dos
   tocan el pedido: son dos decisiones y dos revisiones.
+- **Cerrar de a uno no es modelar de a uno.** Es la otra cara de la regla
+  anterior y se olvida siempre: los caminos legales se cierran por separado, pero
+  lo que comparten —la constancia del dinero devuelto, el registro de una
+  solicitud radicada por fuera— se modela una vez. El inventario de caminos de
+  `promesas-y-su-rastro.md` va **antes** del primer commit, no después del
+  tercero.
 - **Cada hueco cerrado deja una prueba que falla si se reabre.** Es la regla dura
   #8 del proyecto y aquí tiene una vuelta de tuerca: la prueba tiene que
   comprobar **la promesa**, no la implementación. "El caso de uso devuelve
