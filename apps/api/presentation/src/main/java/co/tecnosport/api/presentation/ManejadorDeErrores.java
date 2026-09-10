@@ -25,6 +25,7 @@ import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
 import co.tecnosport.api.application.retracto.RetractoYaRadicadoException;
 import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaException;
+import co.tecnosport.api.application.reversion.SolicitudReversionNoEncontradaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
@@ -139,6 +140,12 @@ public class ManejadorDeErrores {
   @ExceptionHandler(LineaNoEsDelPedidoException.class)
   public ProblemDetail lineaNoEsDelPedido(LineaNoEsDelPedidoException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "La linea no es de ese pedido", excepcion);
+  }
+
+  @ExceptionHandler(SolicitudReversionNoEncontradaException.class)
+  public ProblemDetail solicitudReversionNoEncontrada(
+      SolicitudReversionNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Solicitud de reversion no encontrada", excepcion);
   }
 
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)

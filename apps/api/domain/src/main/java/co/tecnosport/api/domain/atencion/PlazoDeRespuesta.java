@@ -2,9 +2,7 @@ package co.tecnosport.api.domain.atencion;
 
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
-import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -27,15 +25,7 @@ public final class PlazoDeRespuesta {
   public static Instant limite(Instant recibidaEn, int diasHabiles, CalendarioHabil calendario) {
     Objects.requireNonNull(recibidaEn, "La fecha en que llegó la solicitud no puede ser nula.");
     Objects.requireNonNull(calendario, "El calendario no puede ser nulo.");
-    LocalDate dia = recibidaEn.atZone(ZonaDelNegocio.ZONA).toLocalDate();
-    int contados = 0;
-    while (contados < diasHabiles) {
-      dia = dia.plusDays(1);
-      if (calendario.esHabil(dia)) {
-        contados++;
-      }
-    }
-    return dia.plusDays(1).atStartOfDay(ZonaDelNegocio.ZONA).toInstant();
+    return calendario.limiteTrasDiasHabiles(recibidaEn, diasHabiles);
   }
 
   /**
@@ -44,13 +34,6 @@ public final class PlazoDeRespuesta {
    */
   public static VerdictoPlazo verdicto(
       Instant limite, Instant referencia, CalendarioHabil calendario) {
-    Objects.requireNonNull(limite, "El límite no puede ser nulo.");
-    Objects.requireNonNull(referencia, "El instante de referencia no puede ser nulo.");
-    if (!referencia.isAfter(limite)) {
-      return VerdictoPlazo.EN_PLAZO;
-    }
-    return calendario.cubre(limite.atZone(ZonaDelNegocio.ZONA).toLocalDate().getYear())
-        ? VerdictoPlazo.VENCIDO
-        : VerdictoPlazo.INDETERMINADO;
+    return calendario.verdicto(limite, referencia);
   }
 }

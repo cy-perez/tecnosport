@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.compartido;
 
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,5 +61,47 @@ public final class CalendarioHabil {
       return false;
     }
     return !festivosPorAnio.getOrDefault(dia.getYear(), Set.of()).contains(dia);
+  }
+
+  /**
+   * El instante en que se agota un plazo de {@code diasHabiles} contados desde {@code desde}.
+   *
+   * <p>La cuenta empieza el día <b>siguiente</b> —"dentro de los cinco días hábiles siguientes",
+   * dice la norma— y el plazo termina al acabar el último día hábil, no a la hora exacta del hecho:
+   * un plazo en días se agota cuando el día se agota.
+   *
+   * <p>Vive aquí y no dentro de cada plazo concreto porque ya iba por su tercera copia —el
+   * retracto, la respuesta a una PQR y la solicitud de reversión cuentan igual— y una cuenta legal
+   * repetida en tres archivos se desincroniza el día que cambie una de ellas.
+   */
+  public Instant limiteTrasDiasHabiles(Instant desde, int diasHabiles) {
+    Objects.requireNonNull(desde, "La fecha de inicio del plazo no puede ser nula.");
+    LocalDate dia = desde.atZone(ZonaDelNegocio.ZONA).toLocalDate();
+    int contados = 0;
+    while (contados < diasHabiles) {
+      dia = dia.plusDays(1);
+      if (esHabil(dia)) {
+        contados++;
+      }
+    }
+    return dia.plusDays(1).atStartOfDay(ZonaDelNegocio.ZONA).toInstant();
+  }
+
+  /**
+   * Si {@code referencia} cayó dentro del plazo.
+   *
+   * <p>Con los festivos de ese año sin cargar, el límite calculado es el <b>más temprano
+   * posible</b> —un festivo solo lo empuja hacia adelante—, así que pasado ese límite no se puede
+   * afirmar nada: de ahí {@code INDETERMINADO} en vez de dar un plazo por vencido.
+   */
+  public VerdictoPlazo verdicto(Instant limite, Instant referencia) {
+    Objects.requireNonNull(limite, "El límite no puede ser nulo.");
+    Objects.requireNonNull(referencia, "El instante de referencia no puede ser nulo.");
+    if (!referencia.isAfter(limite)) {
+      return VerdictoPlazo.EN_PLAZO;
+    }
+    return cubre(limite.atZone(ZonaDelNegocio.ZONA).toLocalDate().getYear())
+        ? VerdictoPlazo.VENCIDO
+        : VerdictoPlazo.INDETERMINADO;
   }
 }
