@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
@@ -71,6 +72,7 @@ class ReversionTest {
         reversiones,
         pedidos,
         reintegros,
+        new TopeDeReintegro(reintegros),
         new ResponderSolicitud(solicitudes, new RelojFalso(ahora)),
         new RelojFalso(ahora));
   }

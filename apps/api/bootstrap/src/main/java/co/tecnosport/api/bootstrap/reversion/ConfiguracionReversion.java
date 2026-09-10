@@ -5,6 +5,7 @@ import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.reversion.RadicarReversion;
 import co.tecnosport.api.application.reversion.RegistrarGestionReversion;
 import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
@@ -43,12 +44,14 @@ public class ConfiguracionReversion {
       RepositorioSolicitudesReversion repositorioReversiones,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       ResponderSolicitud responderSolicitud,
       Reloj reloj) {
     return new ResolverReversion(
         repositorioReversiones,
         repositorioPedidos,
         repositorioReintegros,
+        tope,
         responderSolicitud,
         reloj);
   }

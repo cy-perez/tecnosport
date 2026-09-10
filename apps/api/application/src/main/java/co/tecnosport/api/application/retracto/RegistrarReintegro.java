@@ -4,8 +4,8 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
-import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
@@ -29,6 +29,10 @@ import java.util.Objects;
  * máquina de estados y no llega a escribir una segunda constancia del mismo hecho. Los dos guardar
  * comparten la transacción que abre el controlador, así que o quedan ambos o no queda ninguno.
  *
+ * <p>El monto lo acota {@link TopeDeReintegro}, que cuenta lo ya devuelto por este pedido y no solo
+ * esta operación: el retracto es uno de los cinco caminos que devuelven dinero, y ninguno puede
+ * pasarse del total por su cuenta.
+ *
  * <p>El estado previo lo exige la máquina de estados: solo se reembolsa lo que ya volvió. Pagar
  * antes de recibir es una decisión comercial legítima, pero no se registra como retracto cumplido.
  */
@@ -37,6 +41,7 @@ public final class RegistrarReintegro {
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioReintegros repositorioReintegros;
+  private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
   private final Reloj reloj;
 
@@ -44,11 +49,13 @@ public final class RegistrarReintegro {
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.reloj = Objects.requireNonNull(reloj);
   }
@@ -72,9 +79,12 @@ public final class RegistrarReintegro {
     }
 
     Dinero monto = Dinero.deCop(comando.monto());
-    if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
-    }
+    // El tope va antes de tocar la solicitud, no después: noSeDevuelveMasDeLoQueSePago fija que
+    // un monto inválido no la transicione, y con razón — quien reintenta con el monto corregido
+    // tiene que encontrarla como la dejó. Cuesta que un doble clic de un reintegro por el total
+    // lo rechace el tope y no la máquina de estados, con un mensaje que habla del pedido en vez
+    // de la solicitud; es el precio correcto, porque las dos guardas bloquean y ninguna escribe.
+    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
 
     Reintegro reintegro =
         Reintegro.registrar(
@@ -88,6 +98,7 @@ public final class RegistrarReintegro {
             comando.actor());
 
     solicitud.registrarReintegro(reintegro.id());
+
     repositorioReintegros.guardar(reintegro);
     repositorioSolicitudes.guardar(solicitud);
     enviarConstancia(pedido, monto);

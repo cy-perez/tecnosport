@@ -18,6 +18,7 @@ import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -376,6 +377,7 @@ class AdminPedidosControladorTest {
           repositorioPedidos,
           repositorioInventario,
           repositorioReintegros,
+          new TopeDeReintegro(repositorioReintegros),
           (destinatario, asunto, cuerpo) -> {},
           Instant::now);
     }

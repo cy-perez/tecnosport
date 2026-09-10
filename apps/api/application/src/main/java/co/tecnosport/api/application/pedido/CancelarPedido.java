@@ -3,8 +3,8 @@ package co.tecnosport.api.application.pedido;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
-import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -36,6 +36,9 @@ import java.util.Objects;
  * ocurrió. Cuando sí entró, la constancia es obligatoria — un pedido cancelado sin reintegro
  * después de haber cobrado es plata retenida sin explicación.
  *
+ * <p>El monto lo acota {@link TopeDeReintegro}, que cuenta lo ya devuelto por este pedido y no solo
+ * esta cancelación.
+ *
  * <p>El inventario vuelve por {@code Inventario.devolver}, que decide entre entrada y liberación
  * según cómo quedó la reserva: un pago aprobado ya la confirmó, un contraentrega la tiene abierta.
  */
@@ -44,6 +47,7 @@ public final class CancelarPedido {
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioInventario repositorioInventario;
   private final RepositorioReintegros repositorioReintegros;
+  private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
   private final Reloj reloj;
 
@@ -51,11 +55,13 @@ public final class CancelarPedido {
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.reloj = Objects.requireNonNull(reloj);
   }
@@ -109,9 +115,7 @@ public final class CancelarPedido {
 
   private void registrarReintegro(Pedido pedido, CancelarPedidoComando comando, Instant ahora) {
     Dinero monto = Dinero.deCop(comando.monto());
-    if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
-    }
+    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
     repositorioReintegros.guardar(
         Reintegro.registrar(
             pedido.id(),

@@ -5,8 +5,8 @@ import co.tecnosport.api.application.atencion.ResponderSolicitudComando;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
-import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
@@ -25,12 +25,16 @@ import java.util.UUID;
  * volvió por la red de pagos y este sistema no movió un peso: inventarle un {@code Reintegro} sería
  * registrar un pago que no hicimos, y descuadraría la única pregunta que la constancia existe para
  * responder.
+ *
+ * <p>Cuando sí salió de aquí, el monto lo acota {@link TopeDeReintegro} contando lo ya devuelto por
+ * este pedido: la reversión es uno de los cinco caminos, y el tope es del pedido, no de cada uno.
  */
 public final class ResolverReversion {
 
   private final RepositorioSolicitudesReversion repositorioReversiones;
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioReintegros repositorioReintegros;
+  private final TopeDeReintegro tope;
   private final ResponderSolicitud responderSolicitud;
   private final Reloj reloj;
 
@@ -38,11 +42,13 @@ public final class ResolverReversion {
       RepositorioSolicitudesReversion repositorioReversiones,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       ResponderSolicitud responderSolicitud,
       Reloj reloj) {
     this.repositorioReversiones = Objects.requireNonNull(repositorioReversiones);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.tope = Objects.requireNonNull(tope);
     this.responderSolicitud = Objects.requireNonNull(responderSolicitud);
     this.reloj = Objects.requireNonNull(reloj);
   }
@@ -75,9 +81,7 @@ public final class ResolverReversion {
             .buscarPorId(reversion.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(reversion.pedidoId()));
     Dinero monto = Dinero.deCop(comando.monto());
-    if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
-    }
+    tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
     Reintegro reintegro =
         Reintegro.registrar(
             pedido.id(),

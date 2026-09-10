@@ -10,6 +10,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
 import co.tecnosport.api.application.retracto.RegistrarReintegro;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
@@ -325,7 +326,8 @@ class AdminRetractosControladorTest {
         RepositorioReintegros reintegros,
         EnviadorDeCorreo correos,
         Reloj reloj) {
-      return new RegistrarReintegro(solicitudes, pedidos, reintegros, correos, reloj);
+      return new RegistrarReintegro(
+          solicitudes, pedidos, reintegros, new TopeDeReintegro(reintegros), correos, reloj);
     }
 
     @Bean

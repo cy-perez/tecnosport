@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.SolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
@@ -14,6 +16,7 @@ import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
 import co.tecnosport.api.domain.garantia.DesenlaceGarantia;
@@ -95,6 +98,7 @@ class GarantiaTest {
         solicitudes,
         pedidos,
         reintegros,
+        new TopeDeReintegro(reintegros),
         new ResponderSolicitud(solicitudes, new RelojFalso(ahora)),
         new RelojFalso(ahora));
   }
@@ -225,6 +229,52 @@ class GarantiaTest {
     assertEquals(MotivoReintegro.GARANTIA, reintegro.motivo());
     assertEquals(reclamacion.id(), reintegro.origenId());
     assertEquals(reintegro.id(), reclamacion.reintegroId().orElseThrow());
+  }
+
+  /**
+   * El recorrido cruzado que estaba abierto: el pedido ya se devolvio completo por otro camino
+   * —aqui un retracto, que deja su constancia con motivo RETRACTO— y despues alguien resuelve una
+   * garantia del mismo pedido devolviendo el dinero otra vez. Los dos montos eran validos por
+   * separado, porque cada camino solo se comparaba con el total del pedido; sumados, devolvian el
+   * doble de lo que entro.
+   *
+   * <p>Radicar la garantia sigue siendo posible a proposito: puede haber razones para dejar
+   * constancia, y prohibirlo seria una regla de negocio que nadie decidio. Lo que no puede es
+   * pagarse dos veces.
+   */
+  @Test
+  void unaGarantiaNoDevuelveLoQueOtroCaminoYaDevolvio() {
+    ReclamacionGarantia reclamacion = radicar("ropa-deportiva");
+    reintegros.guardar(
+        Reintegro.registrar(
+            reclamacion.pedidoId(),
+            MotivoReintegro.RETRACTO,
+            UUID.randomUUID(),
+            Dinero.deCop(BigDecimal.valueOf(50_000)),
+            MedioReintegro.TRANSFERENCIA_BANCARIA,
+            "TRF-1",
+            ENTREGA,
+            "admin:1"));
+
+    assertThrows(
+        MontoDeReintegroInvalidoException.class,
+        () ->
+            resolvedor(RECLAMO.plusSeconds(86_400))
+                .ejecutar(
+                    new ResolverGarantiaComando(
+                        reclamacion.id(),
+                        DesenlaceGarantia.REINTEGRO,
+                        "Se devolvio el dinero otra vez",
+                        BigDecimal.valueOf(50_000),
+                        MedioReintegro.TRANSFERENCIA_BANCARIA,
+                        "TRF-88",
+                        "admin:1")));
+
+    // Ni segunda constancia ni reclamacion resuelta: la transaccion del controlador revierte, pero
+    // esta prueba comprueba que el caso de uso no llego a escribir nada.
+    assertEquals(1, reintegros.guardados().size());
+    assertEquals(MotivoReintegro.RETRACTO, reintegros.guardados().get(0).motivo());
+    assertTrue(reclamacion.desenlace().isEmpty());
   }
 
   /**

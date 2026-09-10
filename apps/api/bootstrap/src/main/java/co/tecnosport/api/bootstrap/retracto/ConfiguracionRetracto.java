@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
 import co.tecnosport.api.application.retracto.RegistrarReintegro;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
@@ -42,9 +43,15 @@ public class ConfiguracionRetracto {
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
       RepositorioReintegros repositorioReintegros,
+      TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     return new RegistrarReintegro(
-        repositorioSolicitudes, repositorioPedidos, repositorioReintegros, enviadorDeCorreo, reloj);
+        repositorioSolicitudes,
+        repositorioPedidos,
+        repositorioReintegros,
+        tope,
+        enviadorDeCorreo,
+        reloj);
   }
 }
