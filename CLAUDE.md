@@ -20,8 +20,12 @@ para y dime por qué antes de escribir el código.
 
 1. **La dirección de las dependencias no se invierte nunca.**
    `presentation → application → domain` e `infrastructure → application → domain`.
-   `domain` no importa nada de Spring, de JPA ni de Jackson. ArchUnit lo verifica
-   y el build falla si se rompe. En el frontend lo verifica
+   `domain` no importa nada de Spring, de JPA ni de Jackson, y `application`
+   tampoco: lo impide el classpath, porque `domain/build.gradle.kts` no declara
+   ninguna dependencia y `application` solo declara `:domain` — un import de
+   framework en esas dos capas **no compila**. ArchUnit lo verifica además, para
+   el día que alguien agregue la dependencia y el error de compilación
+   desaparezca. En el frontend lo verifica
    **`npm run capas`**, y hay una historia detrás que conviene conocer:
    `eslint-plugin-boundaries` estaba configurado con la sintaxis legada y el
    plugin v7 **la acepta sin aplicarla** — se comprobó metiendo violaciones a

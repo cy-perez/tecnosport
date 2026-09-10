@@ -64,6 +64,10 @@ const celular = (valor) => soloDigitos(valor).slice(-10);
 
 const calleCanonica = es.pie.direccion.split(",")[0].trim();
 
+/** La calle, con la vía escrita igual venga abreviada o completa. */
+const calleNormalizada = (valor) =>
+  valor.trim().replace(/^(?:Cra\.?|Carrera)/, "Cra.").replace(/\s+/g, " ");
+
 const reglas = [
   {
     nombre: "teléfono",
@@ -84,10 +88,16 @@ const reglas = [
     canonico: es.pie.correo.toLowerCase(),
   },
   {
+    // "Cra." y "Carrera" son la misma calle escrita de dos formas, y las dos se publican: el pie
+    // abrevia y los textos legales no. La primera versión de esta regla solo buscaba "Cra." y por
+    // eso no veía seis de las ocho apariciones — entre ellas las tres del domicilio del responsable
+    // en el aviso de privacidad y en los términos, que es el dato que la Ley 1480 obliga a
+    // publicar. Un guardián que dispara pero no donde importa es el problema del plugin de capas
+    // otra vez.
     nombre: "dirección del punto",
-    patron: /Cra\.?\s*26C[^,)\n"]*/g,
-    normaliza: (valor) => valor.trim().replace(/\s+/g, " "),
-    canonico: calleCanonica.replace(/\s+/g, " "),
+    patron: /(?:Cra\.?|Carrera)\s*26C[^,)\n"]*/g,
+    normaliza: (valor) => calleNormalizada(valor),
+    canonico: calleNormalizada(calleCanonica),
   },
 ];
 

@@ -67,6 +67,10 @@
           >
             @if (plazoVencido()) {
               {{ 'admin.retractos.plazo_vencido' | transloco }}
+            } @else if (diasParaReintegrar() === 1) {
+              <!-- Clave aparte para el singular: en el monorepo no hay transloco-messageformat, y
+                   "Quedan 1 dias" se veria justo el ultimo dia, que es el que importa. -->
+              {{ 'admin.retractos.plazo_restante_uno' | transloco }}
             } @else {
               {{ 'admin.retractos.plazo_restante' | transloco: { dias: diasParaReintegrar() } }}
             }

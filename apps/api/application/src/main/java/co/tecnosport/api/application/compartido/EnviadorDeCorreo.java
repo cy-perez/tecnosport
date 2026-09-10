@@ -16,18 +16,32 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
  * artículos de la Ley 1480 con faltas de ortografía. Esto sigue separando "cómo se manda un correo"
  * de "qué correo hay que mandar", y ahora también de "qué dice".
  *
- * <p><b>El envío ocurre dentro de la transacción de quien llama, y eso tiene dos caras.</b> La que
- * este proyecto eligió a propósito está escrita en cada caso de uso: si el correo falla, la
- * operación tampoco se guarda, porque dejar constancia y callar que el aviso no salió es el reclamo
- * que la constancia venía a evitar.
+ * <p><b>Un envío que falla no cancela nada, y durante cuatro fases este proyecto creyó lo
+ * contrario.</b> Cinco casos de uso llevan escrito que "si el correo falla, la operación tampoco se
+ * guarda", y es falso: el único adaptador de producción, {@code EnviadorDeCorreoSpringMail},
+ * registra el fallo y se lo traga sin relanzarlo. Lo hace por una razón buena y también escrita
+ * —{@code SolicitarRecuperacion} responde 204 exista o no la cuenta, y un 500 solo cuando la cuenta
+ * sí existe sería justo el oráculo de enumeración que ese diseño evita—, así que el defecto no es
+ * el adaptador: es que la promesa se escribió en el otro extremo sin comprobar este.
  *
- * <p>La otra cara nunca se había dicho, y conviene que quede escrita: el correo sale <b>antes</b>
- * del commit, así que un fallo al comprometer deja al comprador con un correo que dice
- * "reintegramos el dinero de tu pedido" y al sistema sin ninguna constancia de ese reintegro —
- * exactamente el estado inverso al que se quería evitar. Se acepta con los ojos abiertos: el orden
- * contrario exigiría una bandeja de salida (registrar el correo en la misma transacción y mandarlo
- * después, reintentando), que es un mecanismo entero y no una línea, y hoy no hay volumen que lo
- * justifique. El día que lo haya, esta es la nota que dice por dónde empezar.
+ * <p>Lo encontró una revisión adversarial, y conviene saber por qué ninguna prueba lo destapó: los
+ * dobles de prueba <b>sí</b> lanzan ({@code EnviadorDeCorreoFalso.hazQueFalle()}), así que las
+ * pruebas que afirman "un correo caído no deja la solicitud guardada a medias" comprueban un
+ * escenario que el adaptador de producción no puede producir. Siguen valiendo para lo que fijan
+ * —qué hace el caso de uso si el puerto lanza— pero no demuestran la garantía.
+ *
+ * <p>Lo que de verdad ocurre hoy, dicho sin adornos: si el correo no sale, la operación queda
+ * comprometida igual y el comprador no se entera. En los caminos del dinero eso significa un
+ * reintegro registrado que nadie le comunicó. La salida es una bandeja de salida —guardar el correo
+ * en la misma transacción y mandarlo después, con reintentos—, que es un mecanismo entero y no una
+ * línea; mientras no exista, el registro de error del adaptador es la única señal, y hay que
+ * mirarlo. Decidir si además el envío debería poder tumbar la transacción en los caminos del dinero
+ * es una decisión de negocio, no de programación, y no está tomada.
+ *
+ * <p>El otro sentido, que tampoco estaba dicho: el envío ocurre <b>dentro</b> de la transacción de
+ * quien llama y antes del commit, así que un fallo al comprometer deja al comprador con un correo
+ * que dice "reintegramos el dinero de tu pedido" y al sistema sin ninguna constancia de ese
+ * reintegro. La misma bandeja de salida lo cerraría.
  */
 public interface EnviadorDeCorreo {
 

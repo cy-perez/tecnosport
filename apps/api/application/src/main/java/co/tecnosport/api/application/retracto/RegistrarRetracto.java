@@ -77,11 +77,12 @@ public final class RegistrarRetracto {
   }
 
   /**
-   * El acuse va dentro de la misma transaccion que abre el controlador, igual que en {@code
-   * RegistrarUsuario}: si el correo falla, la solicitud tampoco se guarda y quien atiende ve el
-   * error y reintenta. Es a proposito. Guardar la constancia y callar el fallo dejaria al panel
-   * diciendo "radicado" con un comprador que nunca recibio nada, y el acuse es parte de lo que
-   * demuestra que el tramite arranco el dia que dice.
+   * El acuse va dentro de la misma transacción que abre el controlador. La intención era que un
+   * correo caído tampoco dejara la solicitud guardada —el acuse es parte de lo que demuestra que el
+   * trámite arrancó el día que dice— y <b>eso no es lo que pasa</b>: el adaptador de producción se
+   * traga el fallo y no lo relanza. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}, que lo explica entero y dice cuál
+   * es la salida. Aquí queda dicho para que nadie vuelva a apoyarse en una garantía que no existe.
    */
   private void enviarAcuse(Pedido pedido) {
     enviadorDeCorreo.enviar(

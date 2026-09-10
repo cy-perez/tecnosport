@@ -149,9 +149,11 @@ public final class CancelarPedido {
   }
 
   /**
-   * "Te lo comunicaremos de inmediato", dice el texto. Dentro de la misma transacción, mismo
-   * criterio que el resto: si el correo falla, tampoco queda el pedido cancelado — un comprador que
-   * no se entera de que su pedido no va a llegar es justo el reclamo que esto viene a evitar.
+   * "Te lo comunicaremos de inmediato", dice el texto, y por eso el aviso va dentro de la misma
+   * transacción. Lo que este comentario prometía —que un correo caído tampoco dejara el pedido
+   * cancelado— <b>no ocurre</b>: el adaptador se traga el fallo, así que el pedido queda cancelado
+   * y el comprador puede no enterarse, que es justo el reclamo que esto venía a evitar. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
   private void avisar(Pedido pedido, CancelarPedidoComando comando, boolean huboReintegro) {
     TextoDeCorreo explicacion =

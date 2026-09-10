@@ -6,6 +6,7 @@ import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -67,6 +68,13 @@ public final class RegistrarReintegro {
 
   public SolicitudRetracto ejecutar(RegistrarReintegroComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+    // El tercer camino del dinero, que se quedó sin la guarda que sí recibieron la garantía y la
+    // reversión: un cuerpo sin monto o sin medio llegaba hasta el requireNonNull de Dinero y salía
+    // como 500. El formulario del panel lo evita, pero el backend no asume que la web es su único
+    // cliente.
+    if (comando.monto() == null || comando.medio() == null) {
+      throw ReintegroRequeridoException.porqueUnReintegroSiempreDevuelve();
+    }
     SolicitudRetracto solicitud =
         repositorioSolicitudes
             .buscarPorId(comando.solicitudId())
@@ -84,11 +92,15 @@ public final class RegistrarReintegro {
     }
 
     Dinero monto = Dinero.deCop(comando.monto());
-    // El tope va antes de tocar la solicitud, no después: noSeDevuelveMasDeLoQueSePago fija que
-    // un monto inválido no la transicione, y con razón — quien reintenta con el monto corregido
-    // tiene que encontrarla como la dejó. Cuesta que un doble clic de un reintegro por el total
-    // lo rechace el tope y no la máquina de estados, con un mensaje que habla del pedido en vez
-    // de la solicitud; es el precio correcto, porque las dos guardas bloquean y ninguna escribe.
+    // El tope va antes de <b>transicionar</b> la solicitud —no antes de tocarla: la preferencia de
+    // arriba ya la tocó— porque noSeDevuelveMasDeLoQueSePago fija que un monto inválido no la
+    // transicione, y con razón: quien reintenta con el monto corregido tiene que encontrarla como
+    // la
+    // dejó. Cuesta que un doble clic de un reintegro por el total lo rechace el tope y no la
+    // máquina
+    // de estados, con un mensaje que habla del pedido en vez de la solicitud; es el precio
+    // correcto,
+    // porque las dos guardas bloquean y ninguna escribe.
     tope.exigirQueQuepa(pedido.id(), pedido.total(), monto);
 
     Reintegro reintegro =
@@ -111,10 +123,12 @@ public final class RegistrarReintegro {
   }
 
   /**
-   * Mismo criterio que el acuse de {@code RegistrarRetracto}: si el correo falla, tampoco se guarda
-   * la constancia. Aqui pesa todavia mas — este es el correo que le dice al comprador que su dinero
-   * salio, y darlo por enviado sin que salga es justo lo que genera el reclamo que el registro
-   * pretendia evitar.
+   * Mismo caso que el acuse de {@code RegistrarRetracto}, y aquí pesa más: este es el correo que le
+   * dice al comprador que su dinero salió. La garantía que este comentario prometía —si el correo
+   * falla, tampoco se guarda la constancia— <b>no existe</b>: el adaptador se traga el fallo. O sea
+   * que hoy puede quedar un reintegro registrado que el comprador nunca supo, y la única señal es
+   * el registro de error del adaptador. Ver {@link
+   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
   private void enviarConstancia(Pedido pedido, Dinero monto) {
     enviadorDeCorreo.enviar(

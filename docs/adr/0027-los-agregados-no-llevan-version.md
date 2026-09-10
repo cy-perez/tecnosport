@@ -20,11 +20,18 @@ no dice que hubo una carrera.
 
 Lo que ya está protegido, y conviene no confundirlo con lo que no:
 
-- **El dinero.** `ux_reintegro_origen` (`V23`) es un índice único sobre
-  `origen_id`, así que dos constancias de reintegro para la misma solicitud, la
-  misma reclamación o la misma reversión no se pueden escribir, corran o no en
-  paralelo. Y desde `TopeDeReintegro`, la suma de lo devuelto por un pedido no
-  puede pasar de su total.
+- **El dinero, con una salvedad que hay que leer.** `ux_reintegro_origen` (`V23`)
+  es un índice único sobre `origen_id`, así que dos constancias de reintegro para
+  la misma solicitud, la misma reclamación o la misma reversión no se pueden
+  escribir, corran o no en paralelo. **Lo que no está protegido son dos orígenes
+  distintos a la vez**: `TopeDeReintegro` lee la suma y después escribe, sin
+  bloqueo, así que un retracto y una garantía del mismo pedido, concurrentes, leen
+  los dos lo mismo y pasan los dos. Con un solo operador hacen falta dos pestañas,
+  pero no hace falta un segundo `ADMIN` — o sea que **para el dinero el disparador
+  de más abajo no aplica**, y esta es la parte que conviene cerrar antes que las
+  demás. La salida es la misma que este ADR prefiere para el estado: la
+  comprobación del tope dentro de un `update` condicional, o un bloqueo pesimista
+  sobre el pedido mientras se decide.
 - **El inventario.** `RepositorioInventarioJpa` usa bloqueo pesimista desde la
   Fase 2, con una prueba de concurrencia real de dos hilos por la última unidad.
 - **El consecutivo del pedido.** `V6` lo resuelve con un `insert ... on conflict
@@ -61,8 +68,10 @@ Tres cosas la sostienen:
 ## Consecuencias
 
 - Dos administradores simultáneos sobre la misma solicitud pueden perder una de
-  las dos escrituras, sin error y sin rastro. El dinero no se duplica, el
-  inventario no se descuadra: lo que se pierde es un cambio de estado o una nota.
+  las dos escrituras, sin error y sin rastro. El inventario no se descuadra y una
+  constancia del mismo origen no se duplica; lo que se pierde es un cambio de
+  estado o una nota. **El dinero sí puede duplicarse por la vía de arriba** —dos
+  orígenes distintos en paralelo— y eso no depende de que haya dos operadores.
 - **El disparador para volver aquí es concreto: el día que exista un segundo
   operador.** No "cuando crezca el tráfico" —el tráfico de compradores no toca
   esto— sino cuando haya dos personas con rol `ADMIN`. Ese día esta decisión

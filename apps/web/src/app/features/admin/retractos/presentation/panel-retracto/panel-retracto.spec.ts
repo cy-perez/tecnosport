@@ -83,15 +83,20 @@ class RepositorioRetractosFalso implements RepositorioRetractos {
  * panel lo tiraba a la basura y pintaba "no se pudo completar la accion" para todo, asi que quien
  * atiende no sabia si corregir el monto, mirar otra solicitud o reintentar.
  */
+const conProductoRecibido = [
+  solicitud({
+    estado: 'PRODUCTO_RECIBIDO',
+    productoRecibidoEn: '2026-09-16T15:00:00Z',
+    limiteDeReintegro: '2026-10-02T05:00:00Z',
+  }),
+];
+
 class RepositorioRetractosQueRechaza extends RepositorioRetractosFalso {
-  constructor(private readonly codigo: string) {
-    super([
-      solicitud({
-        estado: 'PRODUCTO_RECIBIDO',
-        productoRecibidoEn: '2026-09-16T15:00:00Z',
-        limiteDeReintegro: '2026-10-02T05:00:00Z',
-      }),
-    ]);
+  constructor(
+    private readonly codigo: string,
+    solicitudes: SolicitudRetracto[],
+  ) {
+    super(solicitudes);
   }
 
   override async registrarReintegro(): Promise<SolicitudRetracto> {
@@ -287,7 +292,7 @@ describe('PanelRetracto', () => {
     ]);
 
     expect(
-      await screen.findByText('El plazo de quince dias para reintegrar ya vencio.'),
+      await screen.findByText(esAdmin.retractos.plazo_vencido),
     ).toBeTruthy();
   });
 
@@ -314,7 +319,7 @@ describe('PanelRetracto', () => {
     ]);
 
     expect(
-      await screen.findByText('El plazo de quince dias para reintegrar ya vencio.'),
+      await screen.findByText(esAdmin.retractos.plazo_vencido),
     ).toBeTruthy();
   });
 
@@ -330,16 +335,16 @@ describe('PanelRetracto', () => {
     ]);
 
     expect(
-      await screen.findByText('Quedan 3 dias calendario para reintegrar el dinero.'),
+      await screen.findByText(esAdmin.retractos.plazo_restante.replace('{{dias}}', '3')),
     ).toBeTruthy();
   });
 
   it('cuando el backend dice por que, el panel lo dice', async () => {
     await renderPanel(
-      [],
+      conProductoRecibido,
       'ENTREGADO',
       50_000,
-      new RepositorioRetractosQueRechaza('MONTO_DE_REINTEGRO_INVALIDO'),
+      new RepositorioRetractosQueRechaza('MONTO_DE_REINTEGRO_INVALIDO', conProductoRecibido),
     );
 
     fireEvent.input(await screen.findByLabelText('Monto a reembolsar'), {

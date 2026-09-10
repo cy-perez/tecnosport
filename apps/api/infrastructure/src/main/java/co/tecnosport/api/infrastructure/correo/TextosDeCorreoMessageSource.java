@@ -36,6 +36,20 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
 
   private static final Locale[] IDIOMAS_QUE_DEBEN_EXISTIR = {Locale.of("es"), Locale.of("en")};
 
+  /**
+   * Argumentos de relleno para la comprobación de arranque, y no son decorativos: {@code
+   * AbstractMessageSource} <b>omite {@code MessageFormat} por completo</b> cuando los argumentos
+   * están vacíos, así que resolver con {@code null} solo detectaba un texto ausente. Con relleno,
+   * el patrón se formatea de verdad y salen a la luz las dos trampas que el encabezado de los
+   * {@code .properties} advierte y nadie comprobaba: un apóstrofe suelto —{@code MessageFormat} lo
+   * trata como escape y se come el marcador siguiente— y un {@code &#123;3&#125;} que nadie
+   * rellena. Las dos dejan un {@code &#123;} en el resultado, que es lo que se busca después.
+   *
+   * <p>Tres es el máximo de argumentos que usa hoy el texto más largo. Si algún día hace falta un
+   * cuarto, esta comprobación lo dice en el arranque en vez de dejarlo llegar al comprador.
+   */
+  private static final Object[] RELLENO = {"x", "x", "x"};
+
   private final MessageSource mensajes;
 
   public TextosDeCorreoMessageSource() {
@@ -83,8 +97,9 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
   public void afterPropertiesSet() {
     for (Locale idioma : IDIOMAS_QUE_DEBEN_EXISTIR) {
       for (TextoDeCorreo texto : TextoDeCorreo.values()) {
+        String resuelto;
         try {
-          mensajes.getMessage(texto.clave(), null, idioma);
+          resuelto = mensajes.getMessage(texto.clave(), RELLENO, idioma);
         } catch (NoSuchMessageException ausente) {
           throw new IllegalStateException(
               "Falta el texto de correo "
@@ -93,6 +108,15 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
                   + idioma.getLanguage()
                   + ": un correo sin texto es un 500 con alguien esperándolo.",
               ausente);
+        }
+        if (resuelto.indexOf('{') >= 0) {
+          throw new IllegalStateException(
+              "El texto de correo "
+                  + texto.clave()
+                  + " en "
+                  + idioma.getLanguage()
+                  + " dejó un marcador sin rellenar: "
+                  + resuelto);
         }
       }
     }

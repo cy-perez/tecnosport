@@ -1,4 +1,4 @@
-package co.tecnosport.api.application.garantia;
+package co.tecnosport.api.application.compartido;
 
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.domain.reintegro.Reintegro;
@@ -7,12 +7,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
-final class RepositorioReintegrosFalso implements RepositorioReintegros {
+/**
+ * Doble escrito a mano, sin Mockito (docs/06-testing.md). Público y en {@code compartido} por lo
+ * mismo que {@link RelojFalso} y {@link TextosDeCorreoFalso}: lo necesitan cuatro paquetes de
+ * prueba.
+ *
+ * <p>Antes había cuatro copias idénticas —una en {@code garantia}, {@code pedido}, {@code retracto}
+ * y {@code reversion}, byte a byte iguales salvo la línea del paquete— y la prueba del tope
+ * acumulado estuvo a punto de ser la quinta: se anidó dentro del propio test con un comentario que
+ * decía "no hacen falta cinco", que es exactamente lo que era. Lo levantó una revisión adversarial,
+ * y con razón: la solución ya estaba en la misma rama, dos archivos más allá.
+ */
+public final class RepositorioReintegrosFalso implements RepositorioReintegros {
 
   private final List<Reintegro> guardados = new ArrayList<>();
 
-  List<Reintegro> guardados() {
+  public List<Reintegro> guardados() {
     return List.copyOf(guardados);
   }
 

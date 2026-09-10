@@ -5,15 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
 import co.tecnosport.api.domain.reintegro.Reintegro;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +65,14 @@ class TopeDeReintegroTest {
     assertTrue(error.getMessage().contains("ya se devolvieron 50000"), error.getMessage());
   }
 
-  /** Un reintegro en tramos es legitimo mientras la suma quepa. */
+  /**
+   * Dos constancias del mismo pedido caben mientras la suma quepa, y eso es lo que ocurre cuando el
+   * dinero sale por dos caminos distintos —una garantia y despues una cancelacion, cada una con su
+   * propio origen—. Lo que <b>no</b> es posible es partir el reintegro de <i>una misma</i>
+   * solicitud en dos tramos: el indice ux_reintegro_origen (V23) es unico por origen y la maquina
+   * de estados de la solicitud lo mata antes. De ahi que aqui cada tramo lleve un origen distinto:
+   * probar lo contrario seria sugerir una capacidad que el esquema prohibe.
+   */
   @Test
   void variosTramosCabenSiSumanElTotal() {
     devolver(MotivoReintegro.GARANTIA, 30_000);
@@ -118,35 +123,5 @@ class TopeDeReintegroTest {
             null,
             AHORA,
             "admin:1"));
-  }
-
-  /**
-   * Doble escrito a mano, sin Mockito (docs/06-testing.md). Anidado y no un archivo mas: ya hay
-   * cuatro copias identicas de este doble, una por paquete de prueba, y no hacen falta cinco.
-   */
-  private static final class RepositorioReintegrosFalso implements RepositorioReintegros {
-
-    private final List<Reintegro> guardados = new ArrayList<>();
-
-    @Override
-    public void guardar(Reintegro reintegro) {
-      guardados.removeIf(r -> r.id().equals(reintegro.id()));
-      guardados.add(reintegro);
-    }
-
-    @Override
-    public Optional<Reintegro> buscarPorId(UUID id) {
-      return guardados.stream().filter(r -> r.id().equals(id)).findFirst();
-    }
-
-    @Override
-    public List<Reintegro> buscarPorPedido(UUID pedidoId) {
-      return guardados.stream().filter(r -> r.pedidoId().equals(pedidoId)).toList();
-    }
-
-    @Override
-    public Optional<Reintegro> buscarPorOrigen(UUID origenId) {
-      return guardados.stream().filter(r -> r.origenId().equals(origenId)).findFirst();
-    }
   }
 }

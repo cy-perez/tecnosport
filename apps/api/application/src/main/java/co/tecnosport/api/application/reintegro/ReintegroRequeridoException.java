@@ -33,6 +33,16 @@ public class ReintegroRequeridoException extends RuntimeException {
   }
 
   /**
+   * Registrar un reintegro es, por definición, devolver dinero: sin monto ni medio no hay
+   * constancia.
+   */
+  public static ReintegroRequeridoException porqueUnReintegroSiempreDevuelve() {
+    return new ReintegroRequeridoException(
+        "Registrar un reintegro exige el monto y el medio: sin ellos no queda constancia de cuánto"
+            + " salió ni por dónde.");
+  }
+
+  /**
    * De las tres salidas de la garantía y de los desenlaces de la reversión, solo algunos devuelven
    * dinero. Elegir uno de ésos y no decir cuánto ni por dónde es dejar la constancia a medias.
    */

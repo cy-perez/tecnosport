@@ -65,10 +65,28 @@ export class Pie {
   protected readonly anioActual = new Date().getFullYear();
   protected readonly movimientoReducido = signal(false);
 
+  /**
+   * Si el sistema operativo ya pide menos movimiento. Cuando lo pide, la casilla se marca y se
+   * **deshabilita**, y no es una comodidad: la regla que reduce el movimiento por preferencia del
+   * sistema vive en `tokens.css`, que es generado y no se edita (regla dura #3), así que desde aquí
+   * no hay forma de vencerla. Antes la casilla salía sin marcar mientras el CSS sí reducía —o sea,
+   * informaba lo contrario de lo que pasaba, que con lector de pantalla es lo único perceptible— y
+   * desmarcarla escribía `data-movimiento="normal"`, un valor del que no cuelga ninguna regla: la
+   * posición "off" no hacía nada y no lo decía.
+   */
+  protected readonly sistemaPideReducir = signal(false);
+
   constructor() {
     afterNextRender(() => {
-      if (this.preferenciaGuardada()) {
-        this.movimientoReducido.set(true);
+      const delSistema =
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+      this.sistemaPideReducir.set(delSistema);
+      // Lo guardado manda sobre el sistema, y "guardado en falso" no es lo mismo que "sin guardar":
+      // de ahí que la lectura devuelva `null` cuando no hay nada. Mismo criterio que el tema, donde
+      // "sistema" es un valor y no la ausencia de valor.
+      const reducido = this.preferenciaGuardada() ?? delSistema;
+      this.movimientoReducido.set(reducido);
+      if (reducido) {
         document.documentElement.setAttribute('data-movimiento', 'reducido');
       }
     });
@@ -97,11 +115,12 @@ export class Pie {
    * `afterNextRender` ya garantiza que hay navegador, así que lo que se protege no es el SSR: es un
    * navegador que tiene `localStorage` y responde con una excepción al usarlo.
    */
-  private preferenciaGuardada(): boolean {
+  private preferenciaGuardada(): boolean | null {
     try {
-      return window.localStorage.getItem(CLAVE_ALMACEN) === 'true';
+      const guardado = window.localStorage.getItem(CLAVE_ALMACEN);
+      return guardado === null ? null : guardado === 'true';
     } catch {
-      return false;
+      return null;
     }
   }
 

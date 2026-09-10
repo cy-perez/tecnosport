@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;

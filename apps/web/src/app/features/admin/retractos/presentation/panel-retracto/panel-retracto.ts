@@ -180,10 +180,24 @@ export class PanelRetracto {
    */
   protected readonly hayPlazoDeReintegro = computed(() => this.limiteDeReintegro() !== null);
 
+  /**
+   * El reloj, leído **una vez** por evaluación. Dos lecturas distintas —una en `plazoVencido` y otra
+   * en `diasParaReintegrar`— podían caer una a cada lado del límite y devolver "quedan 0 días" con
+   * el plazo ya vencido, que es el mismo `-0` del defecto original por otra puerta.
+   *
+   * <p>Sigue siendo una foto del momento en que se evaluó la señal: con la pestaña abierta durante
+   * horas, el aviso no se refresca solo. Está anotado y no resuelto porque la salida —un temporizador
+   * que invalide la señal— es otra decisión: hoy quien atiende recarga la fila para operar.
+   */
+  private readonly ahora = computed(() => {
+    this.enCurso();
+    return Date.now();
+  });
+
   /** Vencido se decide comparando instantes. Nunca días, nunca signos. */
   protected readonly plazoVencido = computed(() => {
     const limite = this.limiteDeReintegro();
-    return limite !== null && limite <= Date.now();
+    return limite !== null && limite <= this.ahora();
   });
 
   /**
@@ -197,20 +211,24 @@ export class PanelRetracto {
     if (limite === null) {
       return null;
     }
-    return Math.ceil((limite - Date.now()) / MILISEGUNDOS_POR_DIA);
+    return Math.ceil((limite - this.ahora()) / MILISEGUNDOS_POR_DIA);
   });
 
   protected async radicar(): Promise<void> {
     const motivo = this.formularioRadicar.controls.motivo.value.trim();
     const preferido = this.formularioRadicar.controls.medioPreferido.value;
-    await this.ejecutar(() =>
+    const salioBien = await this.ejecutar(() =>
       this.acciones.radicar.mutateAsync({
         pedidoId: this.pedidoId(),
         motivo: motivo === '' ? null : motivo,
         medioPreferido: preferido === '' ? null : (preferido as MedioReintegro),
       }),
     );
-    this.formularioRadicar.reset({ motivo: '', medioPreferido: '' });
+    // Solo si funcionó: borrar el motivo que alguien acabó de escribir, justo cuando el mensaje de
+    // error le pide corregir algo, es perder su trabajo en el peor momento.
+    if (salioBien) {
+      this.formularioRadicar.reset({ motivo: '', medioPreferido: '' });
+    }
   }
 
   protected async recibirProducto(solicitud: SolicitudRetracto): Promise<void> {
@@ -252,13 +270,16 @@ export class PanelRetracto {
     );
   }
 
-  private async ejecutar(accion: () => Promise<unknown>): Promise<void> {
+  /** Devuelve si la acción salió bien, para que quien llame decida si limpia su formulario. */
+  private async ejecutar(accion: () => Promise<unknown>): Promise<boolean> {
     this.error.set(null);
     try {
       await accion();
+      return true;
     } catch (error) {
       // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
       this.error.set(mensajeDeError(error, this.transloco, 'admin.retractos.error'));
+      return false;
     }
   }
 }
