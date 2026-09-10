@@ -56,6 +56,13 @@ para y dime por qué antes de escribir el código.
 4. **Ningún texto visible escrito directo en una plantilla.** Todo pasa por
    Transloco, en español e inglés, incluidos los mensajes de error y los
    `aria-label`.
+   **En el backend vale igual, y el sitio es otro**: los textos de los correos
+   transaccionales viven en `correos_es.properties` y `correos_en.properties` de
+   `infrastructure`, con sus llaves en el enum `TextoDeCorreo`, y el caso de uso
+   solo elige la llave y los datos. Los siete correos del sistema se concatenaron
+   dentro de los casos de uso durante cuatro fases, en un solo idioma y sin una
+   sola tilde, citando artículos de la Ley 1480 con faltas. Los argumentos se
+   escapan para HTML en el puerto: varios los escribe una persona en el panel.
    Y **ningún marcador `[[ ]]` en un texto que se publica**: es una anotación
    para quien audita, no un texto para quien lee. Los documentos legales
    publicaron seis durante una fase entera —"el plazo de entrega es de
@@ -98,6 +105,7 @@ npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verda
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
+npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 docker compose up -d                     PostgreSQL, Mailpit, Adminer
 
