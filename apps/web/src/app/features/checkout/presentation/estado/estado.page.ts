@@ -1,4 +1,4 @@
-import { NgOptimizedImage } from '@angular/common';
+import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -8,7 +8,7 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
 import { CriteriosSeguimiento, usarSeguimientoPedido } from '../../application/seguimiento-pedido.consulta';
-import { EstadoPedido, Pedido } from '../../domain/pedido.model';
+import { EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
 import { esMetodoPagoWompi, puedeReintentarPago } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 
@@ -39,7 +39,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
  */
 @Component({
   selector: 'app-estado',
-  imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
+  imports: [DatePipe, NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsPrecio],
   templateUrl: './estado.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -64,6 +64,19 @@ export class EstadoPage {
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
 
   protected readonly pedido = computed<Pedido | null>(() => this.checkout.pedido() ?? this.consulta.data() ?? null);
+
+  /**
+   * Solo del seguimiento, nunca del store: el pedido que `CheckoutStore` guarda es el que acaba de
+   * crearse en esta misma visita, y sobre uno recién creado no puede haber ningún retracto. Que
+   * este bloque no aparezca ahí no es un olvido.
+   */
+  protected readonly retractos = computed<readonly RetractoPublico[]>(
+    () => this.consulta.data()?.retractos ?? [],
+  );
+
+  protected etiquetaEstadoRetracto(estado: RetractoPublico['estado']): string {
+    return this.traducir()('checkout.estado.retracto.estados.' + estado.toLowerCase());
+  }
 
   protected readonly etiquetaEstado = computed(() => {
     const pedido = this.pedido();

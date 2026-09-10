@@ -12,7 +12,7 @@ import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { DatosEntrega } from '../../domain/pedido.comandos';
-import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { MetodoPagoPage } from './metodo-pago.page';
@@ -67,7 +67,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async consultarSeguimiento(): Promise<Pedido | null> {
+  async consultarSeguimiento(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
   }
 }

@@ -145,5 +145,48 @@
       "error": "No se pudo agregar la variante. Intenta de nuevo."
     },
     "capturar360": "Capturar 360"
+  },
+  "retractos": {
+    "titulo": "Retracto",
+    "cargando": "Cargando retractos…",
+    "estado": "Estado de la solicitud",
+    "plazo_al_radicar": "Plazo al radicar",
+    "motivo": "Motivo",
+    "no_aplica": "El retracto solo aplica a un pedido ya entregado.",
+    "ayuda_radicar": "El comprador lo ejerce por correo o WhatsApp. Aqui queda la constancia.",
+    "esperando_producto": "A la espera de que el producto vuelva.",
+    "plazo_restante": "Quedan {{dias}} dias calendario para reintegrar el dinero.",
+    "plazo_vencido": "El plazo de quince dias para reintegrar ya vencio.",
+    "reembolsado_por": "Reembolsado por",
+    "comprobante": "Comprobante",
+    "sin_comprobante": "sin comprobante",
+    "error": "No se pudo completar la accion. Intenta de nuevo.",
+    "estados": {
+      "radicada": "Radicada",
+      "producto_recibido": "Producto recibido",
+      "reembolsada": "Reembolsada",
+      "rechazada": "Rechazada"
+    },
+    "verdicto": {
+      "en_plazo": "Dentro de los cinco dias habiles",
+      "vencido": "Fuera de plazo",
+      "indeterminado": "Plazo indeterminado",
+      "indeterminado_ayuda": "Paso el limite mas temprano posible, pero sin el calendario de festivos cargado no se puede afirmar que vencio."
+    },
+    "medios": {
+      "transferencia_bancaria": "Transferencia bancaria",
+      "wompi": "Wompi",
+      "efectivo": "Efectivo",
+      "otro": "Otro"
+    },
+    "acciones": {
+      "radicar": "Radicar retracto",
+      "motivo_opcional": "Motivo (opcional)",
+      "recibir_producto": "El producto volvio",
+      "monto": "Monto a reembolsar",
+      "medio": "Medio del reembolso",
+      "comprobante": "Comprobante (opcional)",
+      "registrar_reembolso": "Registrar reembolso"
+    }
   }
 }

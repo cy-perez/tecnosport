@@ -251,6 +251,12 @@
                     }}</span>
                   }
                 }
+
+                <app-panel-retracto
+                  [pedidoId]="pedido.id"
+                  [estadoPedido]="pedido.estado"
+                  [totalPedido]="pedido.total.valor"
+                />
               </td>
             </tr>
           }

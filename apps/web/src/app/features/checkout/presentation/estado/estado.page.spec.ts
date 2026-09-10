@@ -9,7 +9,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { EstadoPage } from './estado.page';
@@ -43,11 +43,16 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
   };
 }
 
+/** Un pedido visto por el endpoint de seguimiento: el mismo, mas sus retractos. */
+function seguimientoDePrueba(overrides: Parameters<typeof pedidoDePrueba>[0] = {}): Seguimiento {
+  return { ...pedidoDePrueba(overrides), retractos: [] };
+}
+
 class RepositorioPedidosFalso implements RepositorioPedidos {
   llamadasReintentar = 0;
 
   constructor(
-    private seguimiento: Pedido | null = null,
+    private seguimiento: Seguimiento | null = null,
     private pedidoReintentado: Pedido = pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'CONTRAENTREGA' }),
   ) {}
 
@@ -64,7 +69,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return this.pedidoReintentado;
   }
 
-  async consultarSeguimiento(): Promise<Pedido | null> {
+  async consultarSeguimiento(): Promise<Seguimiento | null> {
     return this.seguimiento;
   }
 }
@@ -155,7 +160,7 @@ describe('EstadoPage', () => {
   });
 
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {
-    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }));
+    const pedidos = new RepositorioPedidosFalso(seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }));
 
     await renderConProviders(pedidos, new RepositorioPagosFalso(), {
       pedidoId: 'pedido-1',
@@ -228,5 +233,43 @@ describe('EstadoPage', () => {
     await screen.findByText('Pedido TS-2026-000001');
 
     await esperarSinViolaciones(container);
+  });
+
+  it('muestra el retracto del comprador cuando el seguimiento lo trae', async () => {
+    const pedidos = new RepositorioPedidosFalso({
+      ...pedidoDePrueba({ estado: 'DEVUELTO', metodoPago: 'TARJETA' }),
+      retractos: [
+        {
+          estado: 'REEMBOLSADA',
+          radicadaEn: '2026-09-14T15:00:00Z',
+          motivo: null,
+          productoRecibidoEn: '2026-09-16T15:00:00Z',
+          limiteDeReintegro: '2026-10-02T05:00:00Z',
+          montoReembolsado: { valor: 50_000, moneda: 'COP' },
+          reembolsadoEn: '2026-09-20T15:00:00Z',
+        },
+      ],
+    });
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    expect(await screen.findByText('Reintegramos tu dinero.')).toBeTruthy();
+  });
+
+  it('no muestra el bloque de retracto cuando no hay ninguno', async () => {
+    const pedidos = new RepositorioPedidosFalso(
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+    );
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    await screen.findByText(/TS-/);
+    expect(screen.queryByText('Tu solicitud de retracto')).toBeNull();
   });
 });

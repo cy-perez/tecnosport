@@ -241,6 +241,8 @@ CREADO
                               RECAUDO_PENDIENTE              (libera inventario)
                                        |
                                  RECAUDO_CONCILIADO
+                                       |
+                                   DEVUELTO
 ```
 
 Cada transición se registra en `HistorialPedido` con fecha, actor y motivo. Las
@@ -250,6 +252,14 @@ transiciones válidas se declaran en el dominio: un pedido `ENTREGADO` no vuelve
 `RECAUDO_PENDIENTE` y `RECAUDO_CONCILIADO` existen porque en contraentrega el
 dinero lo cobra la transportadora y llega días después. Un pedido entregado con
 recaudo sin conciliar es plata en la calle y tiene que ser visible.
+
+**`DEVUELTO` se alcanza por los dos caminos**, desde `ENTREGADO` en pago en línea
+y desde `RECAUDO_CONCILIADO` en contraentrega. El retracto del artículo 47 de la
+Ley 1480 de 2011 no distingue el método de pago, y hasta septiembre de 2026 el
+grafo sí lo hacía: `RECAUDO_CONCILIADO` era terminal, así que una compra
+contraentrega entregada y cobrada no tenía ningún camino de vuelta. No se
+devuelve desde `RECAUDO_PENDIENTE`: mientras el dinero no haya llegado no hay
+nada que reintegrar, y el paso es conciliar primero.
 
 **El grafo no cambia con Skydropx, cambia quién dispara las transiciones.**
 `DESPACHADO`, `ENTREGADO` y `RECHAZADO_EN_ENTREGA` ahora pueden llegar por el

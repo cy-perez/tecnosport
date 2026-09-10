@@ -145,5 +145,48 @@
       "error": "Couldn't add the variant. Try again."
     },
     "capturar360": "Capture 360"
+  },
+  "retractos": {
+    "titulo": "Withdrawal",
+    "cargando": "Loading withdrawals…",
+    "estado": "Request status",
+    "plazo_al_radicar": "Deadline when filed",
+    "motivo": "Reason",
+    "no_aplica": "Withdrawal only applies to an order that has been delivered.",
+    "ayuda_radicar": "The buyer exercises it by email or WhatsApp. This is the record of it.",
+    "esperando_producto": "Waiting for the product to come back.",
+    "plazo_restante": "{{dias}} calendar days left to refund.",
+    "plazo_vencido": "The fifteen-day refund deadline has passed.",
+    "reembolsado_por": "Refunded",
+    "comprobante": "Receipt",
+    "sin_comprobante": "no receipt",
+    "error": "The action could not be completed. Please try again.",
+    "estados": {
+      "radicada": "Filed",
+      "producto_recibido": "Product received",
+      "reembolsada": "Refunded",
+      "rechazada": "Rejected"
+    },
+    "verdicto": {
+      "en_plazo": "Within the five business days",
+      "vencido": "Past the deadline",
+      "indeterminado": "Deadline undetermined",
+      "indeterminado_ayuda": "It is past the earliest possible deadline, but without the public-holiday calendar loaded we cannot state that it expired."
+    },
+    "medios": {
+      "transferencia_bancaria": "Bank transfer",
+      "wompi": "Wompi",
+      "efectivo": "Cash",
+      "otro": "Other"
+    },
+    "acciones": {
+      "radicar": "File withdrawal",
+      "motivo_opcional": "Reason (optional)",
+      "recibir_producto": "The product came back",
+      "monto": "Amount to refund",
+      "medio": "Refund method",
+      "comprobante": "Receipt (optional)",
+      "registrar_reembolso": "Record refund"
+    }
   }
 }

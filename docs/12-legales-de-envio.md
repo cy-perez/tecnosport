@@ -328,7 +328,14 @@ total mostrado es subtotal + envío, y un `costoEnvio` manipulado en el cuerpo d
 petición que el servidor ignora.
 
 **3. El seguimiento público expone el costo real del flete y la comisión de
-recaudo.** *Bug, y existe hoy.*
+recaudo.** ~~*Bug, y existe hoy.*~~ **Cerrado el 9 de septiembre de 2026**, antes
+de la Fase 7 y no dentro de ella: al hacer visible el retracto en esa misma
+respuesta no tenía sentido añadirle campos a un DTO que ya filtraba de más. El
+cierre fue el que este documento pedía —un DTO público reducido— y la lección de
+fondo quedó escrita en `PedidoSeguimientoRespuesta`: el panel y el comprador
+compartían el mismo record, y por eso la fuga era invisible. Dos audiencias, dos
+tipos. La prueba afirma sobre el texto crudo de la respuesta que las palabras
+`costoEnvio` y `comisionRecaudo` no aparecen.
 `apps/api/presentation/.../pedido/MapeadorRespuestasPedido.java:59` construye la
 respuesta pública anulando con cuidado el `actor` y el `motivo` del historial
 —porque no son del comprador— y a continuación copia `completa.envio()` tal cual,

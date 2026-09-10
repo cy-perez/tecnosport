@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
-import { Pedido } from '../domain/pedido.model';
+import { Seguimiento } from '../domain/pedido.model';
 import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
 
 export interface CriteriosSeguimiento {
@@ -21,7 +21,7 @@ export function usarSeguimientoPedido(criterios: () => CriteriosSeguimiento | nu
     const valor = criterios();
     return {
       queryKey: ['checkout', 'seguimiento', valor] as const,
-      queryFn: (): Promise<Pedido | null> => {
+      queryFn: (): Promise<Seguimiento | null> => {
         const criterios = valor as CriteriosSeguimiento;
         return repositorio.consultarSeguimiento(criterios.pedidoId, criterios.correo);
       },

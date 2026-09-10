@@ -8,7 +8,7 @@ import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { TransferenciaPage } from './transferencia.page';
@@ -37,8 +37,13 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
   };
 }
 
+/** Un pedido visto por el endpoint de seguimiento: el mismo, mas sus retractos. */
+function seguimientoDePrueba(overrides: Parameters<typeof pedidoDePrueba>[0] = {}): Seguimiento {
+  return { ...pedidoDePrueba(overrides), retractos: [] };
+}
+
 class RepositorioPedidosFalso implements RepositorioPedidos {
-  constructor(private seguimiento: Pedido | null = null) {}
+  constructor(private seguimiento: Seguimiento | null = null) {}
 
   async crear(): Promise<Pedido> {
     throw new Error('no usado en esta prueba');
@@ -52,7 +57,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async consultarSeguimiento(): Promise<Pedido | null> {
+  async consultarSeguimiento(): Promise<Seguimiento | null> {
     return this.seguimiento;
   }
 }
@@ -116,7 +121,7 @@ describe('TransferenciaPage', () => {
   });
 
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {
-    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba());
+    const pedidos = new RepositorioPedidosFalso(seguimientoDePrueba());
 
     await renderConProviders(pedidos, { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' });
 

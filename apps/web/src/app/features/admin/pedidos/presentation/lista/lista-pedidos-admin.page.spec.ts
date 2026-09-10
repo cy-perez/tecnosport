@@ -11,7 +11,35 @@ import {
   REPOSITORIO_PEDIDOS_ADMIN,
   RepositorioPedidosAdmin,
 } from '../../domain/repositorio-pedidos-admin.puerto';
+import {
+  REPOSITORIO_RETRACTOS,
+  RepositorioRetractos,
+} from '../../../retractos/domain/repositorio-retractos.puerto';
+import { SolicitudRetracto } from '../../../retractos/domain/retracto.model';
 import { ListaPedidosAdminPage } from './lista-pedidos-admin.page';
+
+/**
+ * La fila expandida incluye `PanelRetracto`, que inyecta su propio puerto. Sin este doble, abrir
+ * el detalle revienta — y esa es justamente la señal de que el panel quedó enganchado de verdad
+ * en la lista y no colgando de una ruta que nadie visita.
+ */
+class RepositorioRetractosVacio implements RepositorioRetractos {
+  async listarDePedido(): Promise<readonly SolicitudRetracto[]> {
+    return [];
+  }
+
+  async radicar(): Promise<SolicitudRetracto> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async recibirProducto(): Promise<SolicitudRetracto> {
+    throw new Error('no usado en estas pruebas');
+  }
+
+  async registrarReembolso(): Promise<SolicitudRetracto> {
+    throw new Error('no usado en estas pruebas');
+  }
+}
 
 function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
   return {
@@ -114,6 +142,7 @@ async function renderLista(
         useValue: { queryParams: of(queryParams), snapshot: { queryParams } },
       },
       { provide: REPOSITORIO_PEDIDOS_ADMIN, useValue: repositorio },
+      { provide: REPOSITORIO_RETRACTOS, useValue: new RepositorioRetractosVacio() },
     ],
   });
   return { ...resultado, repositorio };
