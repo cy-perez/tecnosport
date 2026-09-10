@@ -93,8 +93,11 @@ public class ConfiguracionPedido {
   }
 
   @Bean
-  public MarcarEntregado marcarEntregado(RepositorioPedidos repositorioPedidos, Reloj reloj) {
-    return new MarcarEntregado(repositorioPedidos, reloj);
+  public MarcarEntregado marcarEntregado(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new MarcarEntregado(repositorioPedidos, repositorioInventario, reloj);
   }
 
   @Bean

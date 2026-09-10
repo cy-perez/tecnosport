@@ -13,6 +13,7 @@ import co.tecnosport.api.application.pedido.MarcarEntregadoComando;
 import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RechazarEnEntregaComando;
+import co.tecnosport.api.application.pedido.ResultadoEntrega;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -26,6 +27,8 @@ import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
 import co.tecnosport.api.presentation.pedido.dto.VerificarContraentregaRequest;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -50,6 +53,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/pedidos")
 public class AdminPedidosControlador {
+
+  private static final Logger log = LoggerFactory.getLogger(AdminPedidosControlador.class);
 
   private static final int TAMANO_PAGINA_PREDETERMINADO = 20;
 
@@ -141,10 +146,17 @@ public class AdminPedidosControlador {
   @PostMapping("/{id}/entrega")
   public PedidoRespuesta marcarEntregado(@PathVariable UUID id) {
     String actor = "admin:" + actorId();
-    Pedido pedido =
+    ResultadoEntrega resultado =
         transaccion.execute(
             estado -> marcarEntregado.ejecutar(new MarcarEntregadoComando(id, actor)));
-    return mapeador.aRespuesta(pedido);
+    if (!resultado.inventarioConfirmado()) {
+      log.error(
+          "Pedido entregado pero no se pudo confirmar la reserva de inventario de alguna línea"
+              + " (venció o ya se había resuelto) — el saldo total queda por encima de la"
+              + " existencia real, revisar a mano. pedido={}",
+          id);
+    }
+    return mapeador.aRespuesta(resultado.pedido());
   }
 
   @PostMapping("/{id}/rechazo-entrega")

@@ -366,8 +366,9 @@ class AdminPedidosControladorTest {
     }
 
     @Bean
-    MarcarEntregado marcarEntregado(RepositorioPedidos repositorioPedidos) {
-      return new MarcarEntregado(repositorioPedidos, Instant::now);
+    MarcarEntregado marcarEntregado(
+        RepositorioPedidos repositorioPedidos, RepositorioInventario repositorioInventario) {
+      return new MarcarEntregado(repositorioPedidos, repositorioInventario, Instant::now);
     }
 
     @Bean
