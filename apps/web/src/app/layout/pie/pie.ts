@@ -67,8 +67,7 @@ export class Pie {
 
   constructor() {
     afterNextRender(() => {
-      const guardado = window.localStorage.getItem(CLAVE_ALMACEN) === 'true';
-      if (guardado) {
+      if (this.preferenciaGuardada()) {
         this.movimientoReducido.set(true);
         document.documentElement.setAttribute('data-movimiento', 'reducido');
       }
@@ -84,7 +83,34 @@ export class Pie {
    */
   protected fijarMovimientoReducido(reducido: boolean): void {
     this.movimientoReducido.set(reducido);
-    window.localStorage.setItem(CLAVE_ALMACEN, String(reducido));
+    // Aplicar primero y recordar después, y el orden es el arreglo de un defecto real: guardando
+    // antes, un `localStorage` que lanza —Safari en privado, políticas de empresa— dejaba la casilla
+    // marcada y el movimiento sin reducir, porque la línea del atributo nunca se ejecutaba. Quien
+    // pide menos movimiento suele pedirlo porque el movimiento le hace daño; que no se recuerde para
+    // la próxima visita es un inconveniente, que no se aplique ahora es el fallo.
     document.documentElement.setAttribute('data-movimiento', reducido ? 'reducido' : 'normal');
+    this.recordarPreferencia(reducido);
+  }
+
+  /**
+   * Leer y escribir la preferencia, con el almacenamiento tratado como algo que puede no estar.
+   * `afterNextRender` ya garantiza que hay navegador, así que lo que se protege no es el SSR: es un
+   * navegador que tiene `localStorage` y responde con una excepción al usarlo.
+   */
+  private preferenciaGuardada(): boolean {
+    try {
+      return window.localStorage.getItem(CLAVE_ALMACEN) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private recordarPreferencia(reducido: boolean): void {
+    try {
+      window.localStorage.setItem(CLAVE_ALMACEN, String(reducido));
+    } catch {
+      // Sin sitio donde recordarlo: la preferencia vale para esta visita y se vuelve a pedir en la
+      // siguiente. No hay nada que avisarle a quien la pidió, porque lo que pidió sí está aplicado.
+    }
   }
 }

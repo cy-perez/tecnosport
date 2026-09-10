@@ -63,10 +63,12 @@
     </nav>
 
     <!--
-      Enlaces de texto y no logos de marca: `lucide` no trae iconos de marca —los retiró—, así que
-      poner los de Facebook e Instagram exigiría una dependencia nueva (`simple-icons`) o pegar sus
-      SVG a mano, y ninguna de las dos cosas vale un logo (`docs/04-ui-marca.md`: cada dependencia
-      es deuda). El pie ya enlazaba WhatsApp como texto.
+      Los logos salen de `marcas.generado.ts`, que produce `npm run iconos-marca` desde
+      `simple-icons` (`ADR-0026`): la librería se usa al generar y no entra en el paquete que se
+      sirve, así que no es una dependencia de producción. Antes aquí había un comentario diciendo lo
+      contrario —que poner estos logos exigiría una dependencia nueva y no valía la pena—, y siguió
+      ahí después de que se pusieran, ocho líneas más arriba de los `ts-icono-marca` que lo
+      desmienten.
 
       `rel="me"` y no `noopener`: son perfiles propios, y `me` es lo que declara la relación de
       identidad que `sameAs` repite en los datos estructurados. `target` no se fija: forzar pestaña

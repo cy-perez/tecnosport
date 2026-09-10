@@ -48,6 +48,28 @@ describe('Pie', () => {
     expect(window.localStorage.getItem('ts-movimiento-reducido')).toBe('false');
   });
 
+  /**
+   * El caso que el orden anterior rompía: con el almacenamiento bloqueado —Safari en privado,
+   * políticas de empresa— se guardaba antes de aplicar, así que la excepción dejaba la casilla
+   * marcada y el documento sin `data-movimiento`. La preferencia de accesibilidad no se aplicaba, y
+   * eso es peor que no recordarla.
+   */
+  it('con el almacenamiento bloqueado, la preferencia se aplica igual', async () => {
+    // El espia va en Storage.prototype y no en window.localStorage: sobre la instancia, jsdom no
+    // lo intercepta y la prueba pasaba con el defecto puesto — comprobado revirtiendo el arreglo.
+    const guardar = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+    await renderPie();
+    const control = screen.getByRole('checkbox', { name: 'Reducir movimiento' }) as HTMLInputElement;
+
+    fireEvent.click(control);
+
+    expect(control.checked).toBe(true);
+    expect(document.documentElement.getAttribute('data-movimiento')).toBe('reducido');
+    guardar.mockRestore();
+  });
+
   it('muestra el nombre comercial y el NIT, sin sigla societaria', async () => {
     await renderPie();
 
