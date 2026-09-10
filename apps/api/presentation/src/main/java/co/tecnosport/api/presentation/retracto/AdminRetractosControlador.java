@@ -1,15 +1,17 @@
 package co.tecnosport.api.presentation.retracto;
 
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
 import co.tecnosport.api.application.retracto.RecibirProductoDevueltoComando;
-import co.tecnosport.api.application.retracto.RegistrarReembolso;
-import co.tecnosport.api.application.retracto.RegistrarReembolsoComando;
+import co.tecnosport.api.application.retracto.RegistrarReintegro;
+import co.tecnosport.api.application.retracto.RegistrarReintegroComando;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
 import co.tecnosport.api.application.retracto.RegistrarRetractoComando;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
-import co.tecnosport.api.domain.retracto.MedioReembolso;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
+import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
-import co.tecnosport.api.presentation.retracto.dto.RegistrarReembolsoRequest;
+import co.tecnosport.api.presentation.retracto.dto.RegistrarReintegroRequest;
 import co.tecnosport.api.presentation.retracto.dto.RegistrarRetractoRequest;
 import co.tecnosport.api.presentation.retracto.dto.SolicitudRetractoRespuesta;
 import java.util.List;
@@ -44,22 +46,25 @@ public class AdminRetractosControlador {
 
   private final RegistrarRetracto registrarRetracto;
   private final RecibirProductoDevuelto recibirProductoDevuelto;
-  private final RegistrarReembolso registrarReembolso;
+  private final RegistrarReintegro registrarReintegro;
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
+  private final RepositorioReintegros repositorioReintegros;
   private final MapeadorRespuestasRetracto mapeador;
   private final TransactionTemplate transaccion;
 
   public AdminRetractosControlador(
       RegistrarRetracto registrarRetracto,
       RecibirProductoDevuelto recibirProductoDevuelto,
-      RegistrarReembolso registrarReembolso,
+      RegistrarReintegro registrarReintegro,
       RepositorioSolicitudesRetracto repositorioSolicitudes,
+      RepositorioReintegros repositorioReintegros,
       MapeadorRespuestasRetracto mapeador,
       PlatformTransactionManager transactionManager) {
     this.registrarRetracto = Objects.requireNonNull(registrarRetracto);
     this.recibirProductoDevuelto = Objects.requireNonNull(recibirProductoDevuelto);
-    this.registrarReembolso = Objects.requireNonNull(registrarReembolso);
+    this.registrarReintegro = Objects.requireNonNull(registrarReintegro);
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
+    this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -67,7 +72,7 @@ public class AdminRetractosControlador {
   @GetMapping("/pedidos/{pedidoId}/retractos")
   public List<SolicitudRetractoRespuesta> listar(@PathVariable UUID pedidoId) {
     return repositorioSolicitudes.buscarPorPedidoId(pedidoId).stream()
-        .map(mapeador::aRespuesta)
+        .map(this::aRespuestaConSuReintegro)
         .toList();
   }
 
@@ -81,7 +86,7 @@ public class AdminRetractosControlador {
         transaccion.execute(
             estado ->
                 registrarRetracto.ejecutar(new RegistrarRetractoComando(pedidoId, motivo, actor)));
-    return mapeador.aRespuesta(solicitud);
+    return aRespuestaConSuReintegro(solicitud);
   }
 
   @PostMapping("/retractos/{id}/recepcion")
@@ -91,24 +96,31 @@ public class AdminRetractosControlador {
         transaccion.execute(
             estado ->
                 recibirProductoDevuelto.ejecutar(new RecibirProductoDevueltoComando(id, actor)));
-    return mapeador.aRespuesta(solicitud);
+    return aRespuestaConSuReintegro(solicitud);
   }
 
-  @PostMapping("/retractos/{id}/reembolso")
-  public SolicitudRetractoRespuesta reembolsar(
-      @PathVariable UUID id, @RequestBody RegistrarReembolsoRequest cuerpo) {
+  @PostMapping("/retractos/{id}/reintegro")
+  public SolicitudRetractoRespuesta reintegrar(
+      @PathVariable UUID id, @RequestBody RegistrarReintegroRequest cuerpo) {
     String actor = "admin:" + actorId();
     SolicitudRetracto solicitud =
         transaccion.execute(
             estado ->
-                registrarReembolso.ejecutar(
-                    new RegistrarReembolsoComando(
+                registrarReintegro.ejecutar(
+                    new RegistrarReintegroComando(
                         id,
                         cuerpo.monto(),
-                        MedioReembolso.valueOf(cuerpo.medio()),
+                        MedioReintegro.valueOf(cuerpo.medio()),
                         cuerpo.comprobante(),
                         actor)));
-    return mapeador.aRespuesta(solicitud);
+    return aRespuestaConSuReintegro(solicitud);
+  }
+
+  /** Una consulta mas por solicitud, y a proposito: la constancia es otro agregado. */
+  private SolicitudRetractoRespuesta aRespuestaConSuReintegro(SolicitudRetracto solicitud) {
+    Reintegro reintegro =
+        solicitud.reintegroId().flatMap(repositorioReintegros::buscarPorId).orElse(null);
+    return mapeador.aRespuesta(solicitud, reintegro);
   }
 
   private UUID actorId() {

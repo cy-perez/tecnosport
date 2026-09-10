@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/retractos/{id}/reembolso": {
+    "/api/v1/admin/retractos/{id}/reintegro": {
         parameters: {
             query?: never;
             header?: never;
@@ -317,7 +317,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["reembolsar"];
+        post: operations["reintegrar"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1019,12 +1019,14 @@ export interface components {
             alto?: number;
             hash?: string;
         };
-        RegistrarReembolsoRequest: {
+        RegistrarReintegroRequest: {
             monto?: number;
             medio?: string;
             comprobante?: string;
         };
-        ReembolsoRespuesta: {
+        ReintegroRespuesta: {
+            id?: string;
+            motivo?: string;
             monto?: number;
             medio?: string;
             comprobante?: string;
@@ -1045,7 +1047,7 @@ export interface components {
             productoRecibidoEn?: string;
             /** Format: date-time */
             limiteDeReintegro?: string;
-            reembolso?: components["schemas"]["ReembolsoRespuesta"];
+            reintegro?: components["schemas"]["ReintegroRespuesta"];
         };
         CrearProductoPeticion: {
             nombre?: string;
@@ -1703,7 +1705,7 @@ export interface operations {
             };
         };
     };
-    reembolsar: {
+    reintegrar: {
         parameters: {
             query?: never;
             header?: never;
@@ -1714,7 +1716,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegistrarReembolsoRequest"];
+                "application/json": components["schemas"]["RegistrarReintegroRequest"];
             };
         };
         responses: {

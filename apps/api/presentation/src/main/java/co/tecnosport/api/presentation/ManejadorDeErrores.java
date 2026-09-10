@@ -18,7 +18,7 @@ import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
-import co.tecnosport.api.application.retracto.MontoDeReembolsoInvalidoException;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
 import co.tecnosport.api.application.retracto.RetractoYaRadicadoException;
 import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaException;
@@ -121,9 +121,9 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.CONFLICT, "Retracto ya radicado", excepcion);
   }
 
-  @ExceptionHandler(MontoDeReembolsoInvalidoException.class)
-  public ProblemDetail montoDeReembolsoInvalido(MontoDeReembolsoInvalidoException excepcion) {
-    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reembolso invalido", excepcion);
+  @ExceptionHandler(MontoDeReintegroInvalidoException.class)
+  public ProblemDetail montoDeReintegroInvalido(MontoDeReintegroInvalidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reintegro invalido", excepcion);
   }
 
   @ExceptionHandler(SkuYaEnUsoException.class)

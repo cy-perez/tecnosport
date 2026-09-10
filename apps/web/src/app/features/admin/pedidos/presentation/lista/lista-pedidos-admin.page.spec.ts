@@ -36,7 +36,7 @@ class RepositorioRetractosVacio implements RepositorioRetractos {
     throw new Error('no usado en estas pruebas');
   }
 
-  async registrarReembolso(): Promise<SolicitudRetracto> {
+  async registrarReintegro(): Promise<SolicitudRetracto> {
     throw new Error('no usado en estas pruebas');
   }
 }

@@ -1,4 +1,4 @@
-package co.tecnosport.api.domain.retracto;
+package co.tecnosport.api.domain.reintegro;
 
 /**
  * Por dónde salió la plata. Los términos publicados prometen devolver "por el mismo medio de pago
@@ -9,7 +9,7 @@ package co.tecnosport.api.domain.retracto;
  * sistema. Incluido {@code WOMPI} — hoy se anota a mano después de devolver desde el panel de la
  * pasarela.
  */
-public enum MedioReembolso {
+public enum MedioReintegro {
   WOMPI,
   TRANSFERENCIA_BANCARIA,
   EFECTIVO,

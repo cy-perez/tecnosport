@@ -20,4 +20,4 @@ public record SolicitudRetractoRespuesta(
     String estado,
     Instant productoRecibidoEn,
     Instant limiteDeReintegro,
-    ReembolsoRespuesta reembolso) {}
+    ReintegroRespuesta reintegro) {}

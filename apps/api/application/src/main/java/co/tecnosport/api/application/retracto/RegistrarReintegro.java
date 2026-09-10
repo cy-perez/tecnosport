@@ -4,14 +4,17 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.retracto.Reembolso;
+import co.tecnosport.api.domain.reintegro.MotivoReintegro;
+import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import java.util.Objects;
 
 /**
- * Anota que el dinero salió y cierra la solicitud.
+ * Anota que el dinero salió por un retracto y cierra la solicitud.
  *
  * <p>No mueve un peso, y eso es deliberado: de los tres métodos de pago del sitio, dos
  * —transferencia manual y contraentrega— se devuelven por fuera del sistema pase lo que pase, y
@@ -20,28 +23,37 @@ import java.util.Objects;
  * hace falta —y es lo que la ley pide demostrar— es la constancia de cuándo salió, por dónde y
  * cuánto.
  *
+ * <p>La constancia es un {@code Reintegro} con motivo {@code RETRACTO}, del mismo tipo que dejan
+ * los otros cuatro caminos que devuelven dinero. La transición de la solicitud va <b>antes</b> de
+ * guardar nada, mismo criterio que el resto del proyecto: un segundo intento se bloquea en la
+ * máquina de estados y no llega a escribir una segunda constancia del mismo hecho. Los dos guardar
+ * comparten la transacción que abre el controlador, así que o quedan ambos o no queda ninguno.
+ *
  * <p>El estado previo lo exige la máquina de estados: solo se reembolsa lo que ya volvió. Pagar
  * antes de recibir es una decisión comercial legítima, pero no se registra como retracto cumplido.
  */
-public final class RegistrarReembolso {
+public final class RegistrarReintegro {
 
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
   private final RepositorioPedidos repositorioPedidos;
+  private final RepositorioReintegros repositorioReintegros;
   private final EnviadorDeCorreo enviadorDeCorreo;
   private final Reloj reloj;
 
-  public RegistrarReembolso(
+  public RegistrarReintegro(
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
+      RepositorioReintegros repositorioReintegros,
       EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
+    this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.reloj = Objects.requireNonNull(reloj);
   }
 
-  public SolicitudRetracto ejecutar(RegistrarReembolsoComando comando) {
+  public SolicitudRetracto ejecutar(RegistrarReintegroComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     SolicitudRetracto solicitud =
         repositorioSolicitudes
@@ -54,12 +66,22 @@ public final class RegistrarReembolso {
 
     Dinero monto = Dinero.deCop(comando.monto());
     if (monto.valor().compareTo(pedido.total().valor()) > 0) {
-      throw new MontoDeReembolsoInvalidoException(monto, pedido.total());
+      throw new MontoDeReintegroInvalidoException(monto, pedido.total());
     }
 
-    solicitud.reembolsar(
-        new Reembolso(
-            monto, comando.medio(), comando.comprobante(), reloj.ahora(), comando.actor()));
+    Reintegro reintegro =
+        Reintegro.registrar(
+            pedido.id(),
+            MotivoReintegro.RETRACTO,
+            solicitud.id(),
+            monto,
+            comando.medio(),
+            comando.comprobante(),
+            reloj.ahora(),
+            comando.actor());
+
+    solicitud.registrarReintegro(reintegro.id());
+    repositorioReintegros.guardar(reintegro);
     repositorioSolicitudes.guardar(solicitud);
     enviarConstancia(pedido, monto);
     return solicitud;

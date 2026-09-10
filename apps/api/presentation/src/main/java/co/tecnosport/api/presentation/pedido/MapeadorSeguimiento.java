@@ -1,11 +1,12 @@
 package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.pedido.Pedido;
-import co.tecnosport.api.domain.retracto.Reembolso;
+import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.EnvioPublicoRespuesta;
@@ -29,14 +30,17 @@ public class MapeadorSeguimiento {
   private final MapeadorRespuestasPedido mapeadorPedido;
   private final RepositorioEnvios repositorioEnvios;
   private final RepositorioSolicitudesRetracto repositorioSolicitudes;
+  private final RepositorioReintegros repositorioReintegros;
 
   public MapeadorSeguimiento(
       MapeadorRespuestasPedido mapeadorPedido,
       RepositorioEnvios repositorioEnvios,
-      RepositorioSolicitudesRetracto repositorioSolicitudes) {
+      RepositorioSolicitudesRetracto repositorioSolicitudes,
+      RepositorioReintegros repositorioReintegros) {
     this.mapeadorPedido = Objects.requireNonNull(mapeadorPedido);
     this.repositorioEnvios = Objects.requireNonNull(repositorioEnvios);
     this.repositorioSolicitudes = Objects.requireNonNull(repositorioSolicitudes);
+    this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
   }
 
   public PedidoSeguimientoRespuesta aRespuesta(Pedido pedido) {
@@ -68,16 +72,23 @@ public class MapeadorSeguimiento {
     return new EnvioPublicoRespuesta(envio.transportadora(), envio.guia(), envio.despachadoEn());
   }
 
+  /**
+   * Del reintegro salen dos datos y nada más: cuánto volvió y cuándo. Ni el medio, ni el
+   * comprobante, ni quién lo registró — el comprador ya sabe por dónde recibió su dinero, y el
+   * actor es una nota interna. Mismo criterio que dejó el resto de este mapeador escrito campo a
+   * campo.
+   */
   private RetractoPublicoRespuesta aRespuesta(SolicitudRetracto solicitud) {
-    Reembolso reembolso = solicitud.reembolso().orElse(null);
+    Reintegro reintegro =
+        solicitud.reintegroId().flatMap(repositorioReintegros::buscarPorId).orElse(null);
     return new RetractoPublicoRespuesta(
         solicitud.estado().name(),
         solicitud.radicadaEn(),
         solicitud.motivo().orElse(null),
         solicitud.productoRecibidoEn().orElse(null),
         solicitud.limiteDeReintegro().orElse(null),
-        reembolso == null ? null : aRespuesta(reembolso.monto()),
-        reembolso == null ? null : reembolso.registradoEn());
+        reintegro == null ? null : aRespuesta(reintegro.monto()),
+        reintegro == null ? null : reintegro.registradoEn());
   }
 
   private DineroRespuesta aRespuesta(Dinero dinero) {

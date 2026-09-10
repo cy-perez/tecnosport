@@ -157,7 +157,7 @@
     "esperando_producto": "Waiting for the product to come back.",
     "plazo_restante": "{{dias}} calendar days left to refund.",
     "plazo_vencido": "The fifteen-day refund deadline has passed.",
-    "reembolsado_por": "Refunded",
+    "reintegrado_por": "Refunded",
     "comprobante": "Receipt",
     "sin_comprobante": "no receipt",
     "error": "The action could not be completed. Please try again.",
@@ -186,7 +186,7 @@
       "monto": "Amount to refund",
       "medio": "Refund method",
       "comprobante": "Receipt (optional)",
-      "registrar_reembolso": "Record refund"
+      "registrar_reintegro": "Record refund"
     }
   }
 }

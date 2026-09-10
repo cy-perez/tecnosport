@@ -5,14 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
+import co.tecnosport.api.domain.reintegro.MotivoReintegro;
+import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.CalendarioHabil;
 import co.tecnosport.api.domain.retracto.EstadoSolicitudRetracto;
-import co.tecnosport.api.domain.retracto.MedioReembolso;
 import co.tecnosport.api.domain.retracto.PlazoDeRetracto;
-import co.tecnosport.api.domain.retracto.Reembolso;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -20,11 +22,11 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class RegistrarReembolsoTest {
+class RegistrarReintegroTest {
 
   private static final Instant ENTREGA =
       ZonedDateTime.of(2026, 9, 10, 15, 30, 0, 0, PlazoDeRetracto.ZONA).toInstant();
-  private static final Instant REEMBOLSO =
+  private static final Instant REINTEGRO =
       ZonedDateTime.of(2026, 9, 20, 10, 0, 0, 0, PlazoDeRetracto.ZONA).toInstant();
 
   private final RepositorioSolicitudesRetractoFalso solicitudes =
@@ -33,8 +35,15 @@ class RegistrarReembolsoTest {
       new RepositorioPedidosParaRetractoFalso();
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
-  private RegistrarReembolso casoDeUso() {
-    return new RegistrarReembolso(solicitudes, pedidos, correos, new RelojFalso(REEMBOLSO));
+  private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
+
+  private RegistrarReintegro casoDeUso() {
+    return new RegistrarReintegro(
+        solicitudes, pedidos, reintegros, correos, new RelojFalso(REINTEGRO));
+  }
+
+  private Reintegro elReintegroDe(SolicitudRetracto solicitud) {
+    return reintegros.buscarPorId(solicitud.reintegroId().orElseThrow()).orElseThrow();
   }
 
   /** El pedido de prueba vale una línea de 50.000. */
@@ -68,18 +77,38 @@ class RegistrarReembolsoTest {
 
     casoDeUso()
         .ejecutar(
-            new RegistrarReembolsoComando(
+            new RegistrarReintegroComando(
                 solicitud.id(),
                 BigDecimal.valueOf(50_000),
-                MedioReembolso.TRANSFERENCIA_BANCARIA,
+                MedioReintegro.TRANSFERENCIA_BANCARIA,
                 "TRF-9912",
                 "admin:1"));
 
     assertEquals(EstadoSolicitudRetracto.REEMBOLSADA, solicitud.estado());
-    Reembolso reembolso = solicitud.reembolso().orElseThrow();
-    assertEquals(BigDecimal.valueOf(50_000), reembolso.monto().valor());
-    assertEquals(REEMBOLSO, reembolso.registradoEn());
-    assertEquals("TRF-9912", reembolso.comprobanteOpcional().orElseThrow());
+    Reintegro reintegro = elReintegroDe(solicitud);
+    assertEquals(BigDecimal.valueOf(50_000), reintegro.monto().valor());
+    assertEquals(REINTEGRO, reintegro.registradoEn());
+    assertEquals("TRF-9912", reintegro.comprobante().orElseThrow());
+  }
+
+  /**
+   * La constancia sabe de qué obligación nació y a qué solicitud responde. Sin las dos cosas es
+   * plata que salió sin explicación, y es lo único que sostiene la invariante ahora que el
+   * reintegro vive fuera de la solicitud.
+   */
+  @Test
+  void laConstanciaGuardaSuMotivoYLaSolicitudQueLaJustifica() {
+    SolicitudRetracto solicitud = conProductoRecibido();
+
+    casoDeUso()
+        .ejecutar(
+            new RegistrarReintegroComando(
+                solicitud.id(), BigDecimal.valueOf(50_000), MedioReintegro.WOMPI, null, "admin:1"));
+
+    Reintegro reintegro = elReintegroDe(solicitud);
+    assertEquals(MotivoReintegro.RETRACTO, reintegro.motivo());
+    assertEquals(solicitud.id(), reintegro.origenId());
+    assertEquals(solicitud.pedidoId(), reintegro.pedidoId());
   }
 
   @Test
@@ -91,13 +120,14 @@ class RegistrarReembolsoTest {
         () ->
             casoDeUso()
                 .ejecutar(
-                    new RegistrarReembolsoComando(
+                    new RegistrarReintegroComando(
                         solicitud.id(),
                         BigDecimal.valueOf(50_000),
-                        MedioReembolso.WOMPI,
+                        MedioReintegro.WOMPI,
                         null,
                         "admin:1")));
-    assertTrue(solicitud.reembolso().isEmpty());
+    assertTrue(solicitud.reintegroId().isEmpty());
+    assertTrue(reintegros.guardados().isEmpty(), "no queda constancia de un reintegro que no fue");
   }
 
   @Test
@@ -105,39 +135,39 @@ class RegistrarReembolsoTest {
     SolicitudRetracto solicitud = conProductoRecibido();
 
     assertThrows(
-        MontoDeReembolsoInvalidoException.class,
+        MontoDeReintegroInvalidoException.class,
         () ->
             casoDeUso()
                 .ejecutar(
-                    new RegistrarReembolsoComando(
+                    new RegistrarReintegroComando(
                         solicitud.id(),
                         BigDecimal.valueOf(50_001),
-                        MedioReembolso.WOMPI,
+                        MedioReintegro.WOMPI,
                         null,
                         "admin:1")));
     assertEquals(EstadoSolicitudRetracto.PRODUCTO_RECIBIDO, solicitud.estado());
   }
 
   @Test
-  void unReembolsoParcialSeAdmite() {
+  void unReintegroParcialSeAdmite() {
     // Puede haber un descuento pactado o una línea de varias: la ley pone un techo, no un valor
     // exacto.
     SolicitudRetracto solicitud = conProductoRecibido();
 
     casoDeUso()
         .ejecutar(
-            new RegistrarReembolsoComando(
+            new RegistrarReintegroComando(
                 solicitud.id(),
                 BigDecimal.valueOf(30_000),
-                MedioReembolso.EFECTIVO,
+                MedioReintegro.EFECTIVO,
                 null,
                 "admin:1"));
 
-    assertEquals(BigDecimal.valueOf(30_000), solicitud.reembolso().orElseThrow().monto().valor());
+    assertEquals(BigDecimal.valueOf(30_000), elReintegroDe(solicitud).monto().valor());
   }
 
   @Test
-  void unReembolsoDeCeroNoEsUnReembolso() {
+  void unReintegroDeCeroNoEsUnReintegro() {
     SolicitudRetracto solicitud = conProductoRecibido();
 
     assertThrows(
@@ -145,20 +175,26 @@ class RegistrarReembolsoTest {
         () ->
             casoDeUso()
                 .ejecutar(
-                    new RegistrarReembolsoComando(
-                        solicitud.id(), BigDecimal.ZERO, MedioReembolso.WOMPI, null, "admin:1")));
+                    new RegistrarReintegroComando(
+                        solicitud.id(), BigDecimal.ZERO, MedioReintegro.WOMPI, null, "admin:1")));
   }
 
+  /**
+   * Y no deja una segunda constancia por el camino: la transición va antes de guardar nada, así que
+   * el doble clic muere en la máquina de estados. Sin esa segunda afirmación, una implementación
+   * que guardara primero pasaría esta prueba escribiendo dos veces el mismo hecho.
+   */
   @Test
-  void noSeReembolsaDosVeces() {
+  void noSeReintegraDosVeces() {
     SolicitudRetracto solicitud = conProductoRecibido();
-    RegistrarReembolso caso = casoDeUso();
-    RegistrarReembolsoComando comando =
-        new RegistrarReembolsoComando(
-            solicitud.id(), BigDecimal.valueOf(50_000), MedioReembolso.WOMPI, null, "admin:1");
+    RegistrarReintegro caso = casoDeUso();
+    RegistrarReintegroComando comando =
+        new RegistrarReintegroComando(
+            solicitud.id(), BigDecimal.valueOf(50_000), MedioReintegro.WOMPI, null, "admin:1");
     caso.ejecutar(comando);
 
     assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(comando));
+    assertEquals(1, reintegros.guardados().size(), "constancias del mismo hecho");
   }
 
   @Test
@@ -168,10 +204,10 @@ class RegistrarReembolsoTest {
         () ->
             casoDeUso()
                 .ejecutar(
-                    new RegistrarReembolsoComando(
+                    new RegistrarReintegroComando(
                         UUID.randomUUID(),
                         BigDecimal.valueOf(1000),
-                        MedioReembolso.WOMPI,
+                        MedioReintegro.WOMPI,
                         null,
                         "admin:1")));
   }
@@ -182,10 +218,10 @@ class RegistrarReembolsoTest {
 
     casoDeUso()
         .ejecutar(
-            new RegistrarReembolsoComando(
+            new RegistrarReintegroComando(
                 solicitud.id(),
                 BigDecimal.valueOf(50_000),
-                MedioReembolso.TRANSFERENCIA_BANCARIA,
+                MedioReintegro.TRANSFERENCIA_BANCARIA,
                 null,
                 "admin:1"));
 

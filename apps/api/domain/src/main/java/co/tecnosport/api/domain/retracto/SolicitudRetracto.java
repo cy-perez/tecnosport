@@ -31,7 +31,7 @@ public final class SolicitudRetracto {
   private final VerdictoPlazo verdictoAlRadicar;
   private EstadoSolicitudRetracto estado;
   private Instant productoRecibidoEn;
-  private Reembolso reembolso;
+  private UUID reintegroId;
 
   public SolicitudRetracto(
       UUID id,
@@ -42,7 +42,7 @@ public final class SolicitudRetracto {
       VerdictoPlazo verdictoAlRadicar,
       EstadoSolicitudRetracto estado,
       Instant productoRecibidoEn,
-      Reembolso reembolso) {
+      UUID reintegroId) {
     this.id = Objects.requireNonNull(id, "El id de la solicitud no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.radicadaEn =
@@ -60,11 +60,11 @@ public final class SolicitudRetracto {
           "Una solicitud con el producto recibido necesita la fecha en que volvió.");
     }
     this.productoRecibidoEn = productoRecibidoEn;
-    if (reembolso == null && estado == EstadoSolicitudRetracto.REEMBOLSADA) {
+    if (reintegroId == null && estado == EstadoSolicitudRetracto.REEMBOLSADA) {
       throw new ExcepcionDeDominio(
-          "Una solicitud reembolsada necesita su constancia de reembolso.");
+          "Una solicitud reembolsada necesita el id de su constancia de reintegro.");
     }
-    this.reembolso = reembolso;
+    this.reintegroId = reintegroId;
   }
 
   /**
@@ -134,19 +134,25 @@ public final class SolicitudRetracto {
     this.productoRecibidoEn = ahora;
   }
 
-  public Optional<Reembolso> reembolso() {
-    return Optional.ofNullable(reembolso);
+  public Optional<UUID> reintegroId() {
+    return Optional.ofNullable(reintegroId);
   }
 
   /**
-   * Deja la constancia del dinero devuelto y cierra la solicitud. Como {@link #recibirProducto}, es
-   * su propio método porque el paso trae un dato: sin la constancia no hay forma de demostrar que
-   * se cumplió el plazo del artículo 47, y demostrarlo es justo para lo que existe esto.
+   * Apunta a la constancia del dinero devuelto y cierra la solicitud. Como {@link
+   * #recibirProducto}, es su propio método porque el paso trae un dato: sin la constancia no hay
+   * forma de demostrar que se cumplió el plazo del artículo 47, y demostrarlo es justo para lo que
+   * existe esto.
+   *
+   * <p>Guarda el id y no el {@code Reintegro} entero porque son dos agregados: la constancia es una
+   * sola para los cinco caminos que devuelven dinero, y el retracto es uno de ellos. Exigirlo aquí
+   * es lo que impide que una solicitud se declare reembolsada sin que exista nada detrás — la
+   * invariante que se perdió al sacar la constancia de dentro, recuperada por el otro extremo.
    */
-  public void reembolsar(Reembolso reembolso) {
-    Objects.requireNonNull(reembolso, "El reembolso no puede ser nulo.");
+  public void registrarReintegro(UUID reintegroId) {
+    Objects.requireNonNull(reintegroId, "El id del reintegro no puede ser nulo.");
     transicionar(EstadoSolicitudRetracto.REEMBOLSADA);
-    this.reembolso = reembolso;
+    this.reintegroId = reintegroId;
   }
 
   public void transicionar(EstadoSolicitudRetracto siguiente) {

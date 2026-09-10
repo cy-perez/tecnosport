@@ -11,19 +11,19 @@ import { usarAccionesRetracto } from '../../application/acciones-retracto.mutaci
 import { usarRetractosDePedido } from '../../application/retractos-de-pedido.consulta';
 import {
   ESTADOS_QUE_ADMITEN_RETRACTO,
-  MedioReembolso,
+  MedioReintegro,
   SolicitudRetracto,
   VerdictoPlazo,
 } from '../../domain/retracto.model';
 
-const MEDIOS: readonly MedioReembolso[] = [
+const MEDIOS: readonly MedioReintegro[] = [
   'TRANSFERENCIA_BANCARIA',
   'WOMPI',
   'EFECTIVO',
   'OTRO',
 ];
 
-const CLAVE_MEDIO: Record<MedioReembolso, string> = {
+const CLAVE_MEDIO: Record<MedioReintegro, string> = {
   TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
   WOMPI: 'admin.retractos.medios.wompi',
   EFECTIVO: 'admin.retractos.medios.efectivo',
@@ -69,7 +69,7 @@ const CLAVE_ESTADO: Record<SolicitudRetracto['estado'], string> = {
 export class PanelRetracto {
   readonly pedidoId = input.required<string>();
   readonly estadoPedido = input.required<string>();
-  /** El total del pedido: precarga el monto del reembolso, que es el caso normal. */
+  /** El total del pedido: precarga el monto del reintegro, que es el caso normal. */
   readonly totalPedido = input.required<number>();
 
   private readonly transloco = inject(TranslocoService);
@@ -99,7 +99,7 @@ export class PanelRetracto {
     motivo: new FormControl('', { nonNullable: true }),
   });
 
-  protected readonly formularioReembolso = new FormGroup({
+  protected readonly formularioReintegro = new FormGroup({
     monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     medio: new FormControl<string>('TRANSFERENCIA_BANCARIA', { nonNullable: true }),
     comprobante: new FormControl('', { nonNullable: true }),
@@ -156,25 +156,25 @@ export class PanelRetracto {
     );
   }
 
-  protected prepararReembolso(): void {
-    if (this.formularioReembolso.controls.monto.value === null) {
-      this.formularioReembolso.controls.monto.setValue(this.totalPedido());
+  protected prepararReintegro(): void {
+    if (this.formularioReintegro.controls.monto.value === null) {
+      this.formularioReintegro.controls.monto.setValue(this.totalPedido());
     }
   }
 
-  protected async registrarReembolso(solicitud: SolicitudRetracto): Promise<void> {
-    if (this.formularioReembolso.invalid) {
-      this.formularioReembolso.markAllAsTouched();
+  protected async registrarReintegro(solicitud: SolicitudRetracto): Promise<void> {
+    if (this.formularioReintegro.invalid) {
+      this.formularioReintegro.markAllAsTouched();
       return;
     }
-    const valores = this.formularioReembolso.getRawValue();
+    const valores = this.formularioReintegro.getRawValue();
     const comprobante = valores.comprobante.trim();
     await this.ejecutar(() =>
-      this.acciones.registrarReembolso.mutateAsync({
+      this.acciones.registrarReintegro.mutateAsync({
         pedidoId: this.pedidoId(),
         solicitudId: solicitud.id,
         monto: valores.monto ?? 0,
-        medio: valores.medio as MedioReembolso,
+        medio: valores.medio as MedioReintegro,
         comprobante: comprobante === '' ? null : comprobante,
       }),
     );

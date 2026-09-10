@@ -157,7 +157,7 @@
     "esperando_producto": "A la espera de que el producto vuelva.",
     "plazo_restante": "Quedan {{dias}} dias calendario para reintegrar el dinero.",
     "plazo_vencido": "El plazo de quince dias para reintegrar ya vencio.",
-    "reembolsado_por": "Reembolsado por",
+    "reintegrado_por": "Reintegrado por",
     "comprobante": "Comprobante",
     "sin_comprobante": "sin comprobante",
     "error": "No se pudo completar la accion. Intenta de nuevo.",
@@ -184,9 +184,9 @@
       "motivo_opcional": "Motivo (opcional)",
       "recibir_producto": "El producto volvio",
       "monto": "Monto a reembolsar",
-      "medio": "Medio del reembolso",
+      "medio": "Medio del reintegro",
       "comprobante": "Comprobante (opcional)",
-      "registrar_reembolso": "Registrar reembolso"
+      "registrar_reintegro": "Registrar reintegro"
     }
   }
 }

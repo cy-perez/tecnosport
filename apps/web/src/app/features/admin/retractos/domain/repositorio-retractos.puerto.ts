@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { MedioReembolso, SolicitudRetracto } from './retracto.model';
+import { MedioReintegro, SolicitudRetracto } from './retracto.model';
 
 export interface RepositorioRetractos {
   listarDePedido(pedidoId: string): Promise<readonly SolicitudRetracto[]>;
@@ -8,10 +8,10 @@ export interface RepositorioRetractos {
 
   recibirProducto(solicitudId: string): Promise<SolicitudRetracto>;
 
-  registrarReembolso(
+  registrarReintegro(
     solicitudId: string,
     monto: number,
-    medio: MedioReembolso,
+    medio: MedioReintegro,
     comprobante: string | null,
   ): Promise<SolicitudRetracto>;
 }

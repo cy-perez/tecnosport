@@ -4,8 +4,9 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.retracto.RecibirProductoDevuelto;
-import co.tecnosport.api.application.retracto.RegistrarReembolso;
+import co.tecnosport.api.application.retracto.RegistrarReintegro;
 import co.tecnosport.api.application.retracto.RegistrarRetracto;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.retracto.CalendarioHabil;
@@ -51,12 +52,13 @@ public class ConfiguracionRetracto {
   }
 
   @Bean
-  public RegistrarReembolso registrarReembolso(
+  public RegistrarReintegro registrarReintegro(
       RepositorioSolicitudesRetracto repositorioSolicitudes,
       RepositorioPedidos repositorioPedidos,
+      RepositorioReintegros repositorioReintegros,
       EnviadorDeCorreo enviadorDeCorreo,
       Reloj reloj) {
-    return new RegistrarReembolso(
-        repositorioSolicitudes, repositorioPedidos, enviadorDeCorreo, reloj);
+    return new RegistrarReintegro(
+        repositorioSolicitudes, repositorioPedidos, repositorioReintegros, enviadorDeCorreo, reloj);
   }
 }
