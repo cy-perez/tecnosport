@@ -12,6 +12,8 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
+import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
@@ -126,6 +128,17 @@ public class ManejadorDeErrores {
   public ProblemDetail solicitudAtencionNoEncontrada(
       SolicitudAtencionNoEncontradaException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Solicitud de atencion no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(ReclamacionGarantiaNoEncontradaException.class)
+  public ProblemDetail reclamacionGarantiaNoEncontrada(
+      ReclamacionGarantiaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Reclamacion de garantia no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(LineaNoEsDelPedidoException.class)
+  public ProblemDetail lineaNoEsDelPedido(LineaNoEsDelPedidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "La linea no es de ese pedido", excepcion);
   }
 
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)
