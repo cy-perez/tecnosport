@@ -38,7 +38,7 @@ cita.
 | Antes de finalizar la transacción, un resumen del pedido con el precio individual de cada bien, el precio total, **los costos adicionales de envío informados de forma adecuada y separada**, y la suma total a pagar | **Ley 1480 de 2011, art. 50** | Es la obligación que **sostiene** el modelo nuevo: cobrar el flete aparte no es un riesgo legal, es lo que la norma describe. Lo que sí es riesgo es no mostrar la cifra antes de pagar |
 | Los costos adicionales al precio —transporte, seguros, estudios de crédito— se informan de forma adecuada, con su razón y su valor | Ley 1480 de 2011 (deber de información de precios) | El flete lleva su valor exacto, no un "más gastos de envío" |
 | Retracto: 5 días hábiles desde la entrega, sin justificar | **Ley 1480 de 2011, art. 47** | Cuelga de la fecha de entrega, que ahora la reporta la transportadora |
-| Reintegro del dinero: máximo **15 días calendario** en comercio electrónico desde que se ejerce el derecho y se cumplen las obligaciones del consumidor, aplicado al mismo instrumento de pago o al medio acordado, y el plazo **obliga a todos los intervinientes, incluida la entidad financiera** | **Art. 47, modificado por la Ley 2439 de 2024** | Ya estaba en los términos publicados y no cambia |
+| Reintegro del dinero: máximo **15 días calendario** en comercio electrónico desde que se ejerce el derecho y se cumplen **dos** obligaciones del consumidor —(i) suministrar los datos correctos y completos que el proveedor requiere para el proceso, (ii) devolver el producto—, aplicado al mismo instrumento de pago o al medio acordado, y el plazo **obliga a todos los intervinientes, incluida la entidad financiera** | **Art. 47, modificado por el art. 3 de la Ley 2439 de 2024** | Verificado literal el 10 de septiembre de 2026. Las **dos** condiciones son nuevas en este registro: antes decía "y se cumplen las obligaciones" en bloque, y esa imprecisión es la que dejó la cláusula 9 prometiendo el plazo desde el solo ejercicio del derecho. Ver el hallazgo 8 |
 | **"Los costos de transporte y los demás que conlleve la devolución del bien serán cubiertos por el consumidor"** | **Ley 1480 de 2011, art. 47** | Resuelve el `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` que quedó abierto en la Fase 6: **el flete de la devolución lo paga el comprador** |
 | Los gastos que genere la devolución del dinero, incluidos los costos financieros, los asume quien vendió, no el consumidor | Concepto de la SIC sobre el art. 47 | La comisión de la pasarela por devolver la plata no se le descuenta al comprador |
 | Reversión del pago con causales tasadas, y reversión parcial cuando la compra fue de varios productos | Ley 1480 de 2011, art. 51, y Decreto 587 de 2016 | Ya está en los términos. Con flete aparte aparece la pregunta de si el flete se reversa; ver sección 7 |
@@ -378,6 +378,38 @@ programada no es un lujo operativo: sin ella, un `delivered` perdido corre el
 retracto y la garantía sin que el sistema los esté contando.
 
 ### Nivel 3 — incoherencias latentes
+
+**8. El plazo de la reversión lo cuenta el código desde un hecho distinto del que
+promete el texto.** *Incoherencia texto ↔ código, y esta va en contra del
+comprador.* La cláusula 11 dice "dentro de los cinco (5) días hábiles siguientes a
+que **tengas noticia del hecho**"; `SolicitudReversion` cuenta desde
+`fechaDelHecho` (`domain/reversion/SolicitudReversion.java:115`). Son dos momentos
+distintos: de un fraude uno se entera después. Con el disparador movido, el panel
+puede marcar **VENCIDO** un plazo que legalmente está vivo.
+
+Atenúa, y no cierra: el veredicto no bloquea nada —lo decide una persona con el
+dato delante, igual que en el retracto—, así que no niega el derecho por sí solo.
+Lo que sí hace es informar mal a quien decide.
+
+**Cierre propuesto, no hecho:** `RadicarReversionComando` tiene `fechaDelHecho` y
+`recibidaEn`, y ninguno es la noticia. Hace falta un dato nuevo —cuándo se enteró
+el comprador, que lo dice él— con su columna, su campo en el panel y el veredicto
+colgando de ahí. Mientras no exista, lo honesto sería no afirmar `VENCIDO` en la
+reversión, porque el sistema no conoce el momento desde el que la norma cuenta.
+Encontrado con la Fase 2b de `vacios-legales-del-sitio`, que existe justo para
+esto.
+
+**9. La versión de los documentos tiene granularidad de día, y una corrección del
+mismo día es invisible.** *Deuda de evidencia.* `legales.comun.version` es una
+fecha (`2026-09-10`), y la corrección de la cláusula 9 —el hallazgo 8 de la
+sección 6, ya cerrado— se hizo el mismo día en que se publicó la versión anterior.
+Los dos textos comparten identificador, así que una constancia de
+`autorizacion_datos` de hoy no distingue cuál de los dos se leyó.
+
+Hoy no tiene consecuencia: el único ambiente desplegado es `dev` y no hay
+constancias de compradores reales. Queda escrito porque **el día que la haya, una
+corrección del mismo día exige más granularidad** que una fecha —un sufijo, o la
+hora—, y esa decisión es más fácil tomarla antes que después de necesitarla.
 
 **6. "Retiro en punto (Medellín, sin costo)" hoy engaña.**
 `apps/web/src/assets/i18n/scopes/checkout/es.json:13`. Con el flete embebido en el
