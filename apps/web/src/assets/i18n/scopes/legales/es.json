@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-07",
-    "vigencia": "Vigente desde el 7 de septiembre de 2026.",
+    "version": "2026-09-10",
+    "vigencia": "Vigente desde el 10 de septiembre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -89,8 +89,8 @@
         "lista": [
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
-          "[[TRANSPORTADORA]], como empresa de transporte, para entregar el pedido; recibe nombre, teléfono y dirección de entrega.",
-          "[[PROVEEDOR DE CORREO TRANSACCIONAL]], para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
+          "La empresa de transporte que despache tu pedido, para entregarlo; recibe nombre, teléfono y dirección de entrega.",
+          "El proveedor de correo transaccional que usemos, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
         ],
         "cierre": [
           "No vendemos, arrendamos ni cedemos datos personales a terceros para fines propios de esos terceros."
@@ -209,8 +209,8 @@
       {
         "titulo": "8. Envío y entrega",
         "parrafos": [
-          "Despachamos a todo el territorio nacional. El plazo de entrega es de [[PLAZO DE ENTREGA REAL]] días calendario contados desde la confirmación del pago; a falta de un plazo pactado expresamente contigo antes de comprar, aplica el término legal de treinta (30) días calendario.",
-          "Si no entregamos dentro del plazo pactado, puedes terminar el contrato y recuperar tu dinero."
+          "Despachamos a todo el territorio nacional. No pactamos contigo un plazo de entrega distinto del legal, así que aplica el término de treinta (30) días calendario contados desde la confirmación del pago. Si para un pedido concreto te anunciamos un plazo menor, ese plazo anunciado es el que nos obliga.",
+          "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero."
         ]
       },
       {
@@ -219,7 +219,7 @@
           "Como esta es una venta a distancia, puedes retractarte dentro de los cinco (5) días hábiles siguientes a la entrega del producto, sin tener que explicar por qué.",
           "Para ejercerlo, escríbenos a contacto@tecnosport.co dentro de ese plazo, devuelve el producto en el mismo estado en que lo recibiste y suminístranos los datos que necesitemos para el reintegro.",
           "Te devolvemos el dinero dentro de los quince (15) días calendario siguientes a que ejerzas el derecho, por el mismo medio de pago que usaste o por el que acordemos contigo. Ese plazo cobija a todos los intervinientes, incluida la entidad financiera.",
-          "El costo del transporte de la devolución lo asume [[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]].",
+          "El costo del transporte de la devolución lo asumes tú, como lo dispone el artículo 47 de la Ley 1480 de 2011. Los gastos de devolverte el dinero, incluidos los costos financieros, los asumimos nosotros.",
           "El retracto no aplica a los productos confeccionados o personalizados según tus especificaciones, ni a los demás casos que excluye el artículo 47 de la Ley 1480 de 2011."
         ]
       },
@@ -227,7 +227,8 @@
         "titulo": "10. Garantía legal",
         "parrafos": [
           "Todos nuestros productos tienen garantía legal: si el producto falla, no sirve para lo que se ofreció o no corresponde a lo que compraste, tienes derecho a que lo reparemos, lo repongamos o te devolvamos el dinero, según el caso.",
-          "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor. Para teléfonos celulares aplica la garantía del fabricante, de [[GARANTÍA DE CELULARES]].",
+          "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor, y en ese caso rige el mayor. Ese mismo término de un año aplica a los teléfonos celulares nuevos.",
+          "Hacer efectiva la garantía no te cuesta: la reparación y el transporte del producto para repararlo corren por nuestra cuenta, como lo dispone el artículo 11 de la Ley 1480 de 2011.",
           "La garantía no cubre el daño causado por uso indebido, modificación no autorizada, desgaste normal ni fuerza mayor.",
           "Para hacerla efectiva, escríbenos a contacto@tecnosport.co con tu número de pedido y una descripción del problema."
         ]
@@ -242,7 +243,7 @@
         "titulo": "12. Atención al cliente",
         "parrafos": [
           "Canales de orientación, asistencia y radicación de peticiones, quejas y reclamos: contacto@tecnosport.co y WhatsApp +57 310 420 9655.",
-          "Horario de atención: [[HORARIO DE ATENCIÓN]]. Respondemos toda petición en un plazo máximo de quince (15) días hábiles."
+          "Respondemos toda petición en un plazo máximo de quince (15) días hábiles."
         ]
       },
       {

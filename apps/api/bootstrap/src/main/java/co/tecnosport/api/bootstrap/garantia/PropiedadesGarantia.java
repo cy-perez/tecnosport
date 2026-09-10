@@ -10,11 +10,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>{@code mesesPorDefecto} son los doce meses que prometen los términos publicados para producto
  * nuevo. {@code mesesPorCategoria} permite el término mayor que anuncie un productor concreto.
  *
- * <p>{@code categoriasSinTerminoConocido} es la pieza que impide inventar un dato. Los términos
- * dicen que para teléfonos celulares aplica la garantía del fabricante, y ese plazo sigue marcado
- * como pendiente ({@code [[GARANTÍA DE CELULARES]]}). Su categoría se declara aquí y responde "no
- * se sabe" en vez de caer a los doce meses generales — que sería inventarlo. El día que llegue el
- * dato, se mueve de esta lista a {@code mesesPorCategoria} y nada más cambia.
+ * <p>{@code categoriasSinTerminoConocido} es la pieza que impide inventar un dato: una categoría
+ * declarada aquí responde "no se sabe" en vez de caer a los doce meses generales. <b>Hoy va
+ * vacía</b>, y conviene saber por qué existe igual. Los celulares estuvieron en esta lista mientras
+ * se creyó que su término era un dato del negocio, porque los términos publicados prometían "la
+ * garantía del fabricante". No lo era: el término lo fija la ley —un año para producto nuevo, sin
+ * régimen especial para equipos terminales— y lo que el productor anuncie solo cuenta si es mayor,
+ * y entonces va en {@code mesesPorCategoria}. La lista se queda para el caso que sí la necesita:
+ * una categoría cuyo término dependa de una norma que aquí no esté cargada.
  */
 @ConfigurationProperties(prefix = "tecnosport.garantia")
 public record PropiedadesGarantia(

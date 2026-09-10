@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-07",
-    "vigencia": "In force since 7 September 2026.",
+    "version": "2026-09-10",
+    "vigencia": "In force since 10 September 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -89,8 +89,8 @@
         "lista": [
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
-          "[[COURIER]], as the shipping company, to deliver your order; it receives your name, phone number, and delivery address.",
-          "[[TRANSACTIONAL EMAIL PROVIDER]], to send you account verification, password recovery, and order status emails."
+          "The shipping company that dispatches your order, in order to deliver it; it receives your name, phone number, and delivery address.",
+          "The transactional email provider we use, to send you account verification, password recovery, and order status emails."
         ],
         "cierre": [
           "We do not sell, rent, or transfer personal data to third parties for those third parties' own purposes."
@@ -209,7 +209,7 @@
       {
         "titulo": "8. Shipping and delivery",
         "parrafos": [
-          "We ship nationwide. The delivery time is [[ACTUAL DELIVERY TIME]] calendar days from payment confirmation; absent a term expressly agreed with you before purchase, the statutory term of thirty (30) calendar days applies.",
+          "We ship nationwide. We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a specific order, that announced term is the one that binds us.",
           "If we do not deliver within the agreed term, you may terminate the contract and recover your money."
         ]
       },
@@ -219,7 +219,7 @@
           "As this is a distance sale, you may withdraw within five (5) business days following delivery of the product, without having to explain why.",
           "To exercise it, write to contacto@tecnosport.co within that period, return the product in the same condition in which you received it, and give us the details we need for the refund.",
           "We refund your money within fifteen (15) calendar days from when you exercise the right, using the same payment method you used or another we agree with you. That period covers everyone involved, including the financial institution.",
-          "The cost of return shipping is borne by [[WHO PAYS RETURN SHIPPING]].",
+          "The cost of return shipping is borne by you, as provided in article 47 of Law 1480 of 2011. The costs of returning your money, including any financial costs, are borne by us.",
           "Withdrawal does not apply to products made or personalised to your specifications, nor to the other cases excluded by article 47 of Law 1480 of 2011."
         ]
       },
@@ -227,7 +227,8 @@
         "titulo": "10. Statutory warranty",
         "parrafos": [
           "All our products carry the statutory warranty: if the product fails, does not work for what it was offered for, or does not match what you bought, you are entitled to have it repaired, replaced, or refunded, as applicable.",
-          "The statutory warranty term is one (1) year from delivery, unless the producer announces a longer one. For mobile phones, the manufacturer's warranty applies, of [[MOBILE PHONE WARRANTY]].",
+          "The statutory warranty term is one (1) year from delivery, unless the producer announces a longer one, in which case the longer term governs. That same one-year term applies to new mobile phones.",
+          "Claiming the warranty costs you nothing: repair, and shipping the product for repair, are on us, as provided in article 11 of Law 1480 of 2011.",
           "The warranty does not cover damage caused by improper use, unauthorised modification, normal wear, or force majeure.",
           "To claim it, write to contacto@tecnosport.co with your order number and a description of the problem."
         ]
@@ -242,7 +243,7 @@
         "titulo": "12. Customer support",
         "parrafos": [
           "Channels for guidance, assistance, and filing requests, complaints, and claims: contacto@tecnosport.co and WhatsApp +57 310 420 9655.",
-          "Opening hours: [[OPENING HOURS]]. We answer every request within a maximum of fifteen (15) business days."
+          "We answer every request within a maximum of fifteen (15) business days."
         ]
       },
       {

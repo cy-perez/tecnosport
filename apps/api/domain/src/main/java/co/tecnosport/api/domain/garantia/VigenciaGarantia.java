@@ -3,11 +3,11 @@ package co.tecnosport.api.domain.garantia;
 /**
  * Si el producto sigue amparado por la garantía legal cuando se reclama.
  *
- * <p>Tres valores y no dos, por el mismo motivo que {@code VerdictoPlazo} en el retracto: hay un
- * dato que este proyecto todavía no tiene. Los términos publicados dicen que para teléfonos
- * celulares aplica la garantía del fabricante, y ese plazo está marcado como pendiente ({@code
- * [[GARANTÍA DE CELULARES]]}). Sin él, el sistema no puede afirmar que un celular está fuera de
- * término — y afirmarlo sería negarle un derecho a alguien que quizá lo tiene.
+ * <p>Tres valores y no dos, por el mismo motivo que {@code VerdictoPlazo} en el retracto: puede
+ * faltar el término de una categoría, y entonces el sistema no puede afirmar que algo está fuera de
+ * término — afirmarlo sería negarle un derecho a alguien que quizá lo tiene. Hoy no falta ninguno:
+ * los celulares ocuparon este estado mientras se creyó que su término era un dato del negocio, y
+ * resultó ser el año legal de cualquier producto nuevo.
  *
  * <p>{@code INDETERMINADA} nunca bloquea: quien decide es una persona, con este dato delante.
  */

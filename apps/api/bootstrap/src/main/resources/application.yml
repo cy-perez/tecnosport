@@ -107,7 +107,7 @@ tecnosport:
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-09-07}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-09-10}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.
@@ -120,11 +120,14 @@ tecnosport:
     # Doce meses para producto nuevo, que es lo que prometen los terminos publicados. Un productor
     # puede anunciar uno mayor: eso va en meses-por-categoria.
     meses-por-defecto: ${GARANTIA_MESES_POR_DEFECTO:12}
-    # categorias-sin-termino-conocido impide inventar un dato: los terminos dicen que para celulares
-    # aplica la garantia del fabricante, y ese plazo sigue pendiente. Mientras este en esta lista, el
-    # sistema responde INDETERMINADA en vez de caer a los doce meses generales.
-    # TODO: GARANTIA DE CELULARES — al llegar el dato, mover la categoria a meses-por-categoria.
-    categorias-sin-termino-conocido: ${GARANTIA_CATEGORIAS_SIN_TERMINO:celulares}
+    # categorias-sin-termino-conocido impide inventar un dato: una categoria listada aqui responde
+    # INDETERMINADA en vez de caer a los doce meses generales. Hoy va vacia. Los celulares estuvieron
+    # ahi por un malentendido: los terminos prometian "la garantia del fabricante" y se trato como
+    # dato pendiente del negocio, pero el termino lo fija la ley — un ano para producto nuevo,
+    # celulares incluidos (art. 8 de la Ley 1480 de 2011 y concepto de la SIC sobre equipos
+    # terminales, verificados el 10 de septiembre de 2026). Si algun productor anuncia uno mayor, va
+    # en meses-por-categoria, que es lo que la ley manda respetar.
+    categorias-sin-termino-conocido: ${GARANTIA_CATEGORIAS_SIN_TERMINO:}
   atencion:
     # Plazos de respuesta en dias habiles. Los dos primeros son de la Ley 1581 de 2012 (consultas y
     # reclamos de datos personales, con sus prorrogas); el tercero es el que los terminos publicados

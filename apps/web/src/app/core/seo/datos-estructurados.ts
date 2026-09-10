@@ -49,10 +49,11 @@ function soloElNit(nit: string): string {
  * Quién vende. Va en la portada y no en todas las páginas: repetirlo en cada una no añade nada y
  * multiplica el sitio donde un dato puede quedar desactualizado.
  *
- * `openingHours` **no se emite**: el horario de atención es uno de los datos de negocio todavía sin
- * decidir (`[[HORARIO DE ATENCIÓN]]` en los textos legales). Declarar un horario inventado en datos
- * estructurados es peor que callarlo — Google lo muestra en el resultado de búsqueda como si fuera
- * cierto.
+ * `openingHours` **no se emite**: el horario de atención sigue siendo un dato de negocio sin
+ * decidir. Los textos legales ya no lo prometen —la promesa concreta se quitó y quedó el plazo de
+ * respuesta, que se sostiene sin horario—, y aquí callarlo es lo mismo: declarar un horario
+ * inventado en datos estructurados es peor que no declararlo, porque Google lo muestra en el
+ * resultado de búsqueda como si fuera cierto.
  */
 export function organizacionJsonLd(origen: string, negocio: DatosNegocio): object {
   return {

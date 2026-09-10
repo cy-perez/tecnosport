@@ -49,8 +49,9 @@ describe('organizacionJsonLd', () => {
   });
 
   /**
-   * El horario de atención sigue sin decidirse (`[[HORARIO DE ATENCIÓN]]` en los textos legales), y
-   * Google muestra `openingHours` en el resultado de búsqueda como si fuera cierto.
+   * El horario de atención sigue sin decidirse —los textos legales dejaron de prometerlo en vez de
+   * publicar el marcador— y Google muestra `openingHours` en el resultado de búsqueda como si fuera
+   * cierto.
    */
   it('no declara horario de atención, que es un dato de negocio que todavía no existe', () => {
     const json = organizacionJsonLd(ORIGEN, NEGOCIO) as Record<string, unknown>;
