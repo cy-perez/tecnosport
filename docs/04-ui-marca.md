@@ -342,6 +342,33 @@ Ahora:
   `focusable="false"`, porque **el icono nunca es el nombre accesible**: eso le
   toca al control que lo contiene, con su `aria-label` traducido.
 
+### Logos de marca: otro componente, y una dependencia que no llega a producción
+
+Los logos de Facebook, Instagram y WhatsApp del pie **no** son iconos de
+interfaz, y no salen de `lucide`: Lucide retiró los iconos de marca de su set.
+La decisión, del 10 de septiembre de 2026, está en `ADR-0026`. En corto:
+
+- **`simple-icons` entra como `devDependency`, no como dependencia de
+  producción.** Su único punto de entrada JS es un `index.mjs` de **5,2 MB** con
+  las miles de marcas en un archivo, y `simple-icons/icons/*` expone `.svg`, no
+  módulos: no hay import por icono. Para tres logos, eso no entra al grafo de
+  producción.
+- **`npm run iconos-marca`** extrae los tres `path` a
+  `shared/ui/icono/marcas.generado.ts` (4,5 kB). Es un archivo **generado**: no
+  se edita a mano, se regenera — mismo trato que `packages/marca` con
+  `copiar-marca.mjs`. Se corre al subir la versión de `simple-icons` o al
+  agregar una marca, que es cuando una marca se rediseña.
+- **`shared/ui/icono/ts-icono-marca` los pinta, y es otro componente a
+  propósito.** Un logo se distribuye como un `path` **relleno**; pasarlo por
+  `ts-icono` —`fill="none"`, trazo de 1,5— lo dejaría invisible o deformado.
+  Meterle un modo a `ts-icono` habría convertido un componente con una regla en
+  uno con una excepción.
+- **El logo va con el nombre, no en su lugar.** Es `aria-hidden` como cualquier
+  icono, así que un enlace de solo logo se queda sin nombre accesible; y un
+  icono suelto es peor objetivo para quien no reconoce la marca.
+- Las marcas registradas siguen siendo de sus titulares. Aquí se usan para
+  enlazar los perfiles propios del negocio, no como respaldo de nadie.
+
 ## Modo oscuro
 
 Atributo `data-tema="oscuro"` en `<html>`. Tres opciones para el usuario: claro,

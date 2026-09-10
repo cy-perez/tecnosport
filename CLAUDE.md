@@ -98,6 +98,7 @@ npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verda
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
+npm run iconos-marca                     regenera los logos de marca desde simple-icons
 docker compose up -d                     PostgreSQL, Mailpit, Adminer
 
 cd apps/api

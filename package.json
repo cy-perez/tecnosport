@@ -17,6 +17,7 @@
     "contrastes": "node tools/verificar-contrastes.mjs",
     "capas": "node tools/verificar-capas.mjs",
     "marcadores": "node tools/verificar-marcadores.mjs",
+    "iconos-marca": "node tools/generar-iconos-marca.mjs",
     "lighthouse": "node tools/medir-lighthouse.mjs"
   },
   "allowScripts": {
@@ -24,5 +25,8 @@
     "lmdb": true,
     "msgpackr-extract": true,
     "@parcel/watcher": true
+  },
+  "devDependencies": {
+    "simple-icons": "^16.30.0"
   }
 }
