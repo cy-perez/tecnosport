@@ -1,0 +1,191 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
+import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
+import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
+import { TsPrecio } from '../../../../../shared/ts-precio/ts-precio';
+import { usarAccionesRetracto } from '../../application/acciones-retracto.mutaciones';
+import { usarRetractosDePedido } from '../../application/retractos-de-pedido.consulta';
+import {
+  ESTADOS_QUE_ADMITEN_RETRACTO,
+  MedioReembolso,
+  SolicitudRetracto,
+  VerdictoPlazo,
+} from '../../domain/retracto.model';
+
+const MEDIOS: readonly MedioReembolso[] = [
+  'TRANSFERENCIA_BANCARIA',
+  'WOMPI',
+  'EFECTIVO',
+  'OTRO',
+];
+
+const CLAVE_MEDIO: Record<MedioReembolso, string> = {
+  TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
+  WOMPI: 'admin.retractos.medios.wompi',
+  EFECTIVO: 'admin.retractos.medios.efectivo',
+  OTRO: 'admin.retractos.medios.otro',
+};
+
+const CLAVE_VERDICTO: Record<VerdictoPlazo, string> = {
+  EN_PLAZO: 'admin.retractos.verdicto.en_plazo',
+  VENCIDO: 'admin.retractos.verdicto.vencido',
+  INDETERMINADO: 'admin.retractos.verdicto.indeterminado',
+};
+
+const CLAVE_ESTADO: Record<SolicitudRetracto['estado'], string> = {
+  RADICADA: 'admin.retractos.estados.radicada',
+  PRODUCTO_RECIBIDO: 'admin.retractos.estados.producto_recibido',
+  REEMBOLSADA: 'admin.retractos.estados.reembolsada',
+  RECHAZADA: 'admin.retractos.estados.rechazada',
+};
+
+/**
+ * Vive dentro de la fila expandida de la lista de pedidos, no en pantalla propia: un retracto no se
+ * entiende sin el pedido delante —el total, las líneas, la fecha de entrega— y obligar a navegar a
+ * otro sitio para radicarlo sería pedirle a quien atiende que recuerde de memoria lo que acaba de
+ * mirar.
+ *
+ * <p>Consulta y mutaciones propias, en vez de crecer `ListaPedidosAdminPage`: esa página ya lleva
+ * seis acciones y tres formularios, y el retracto tiene su propio ciclo de tres pasos.
+ */
+@Component({
+  selector: 'app-panel-retracto',
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsPrecio,
+    TsSelect,
+    TsSelectControl,
+  ],
+  templateUrl: './panel-retracto.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class PanelRetracto {
+  readonly pedidoId = input.required<string>();
+  readonly estadoPedido = input.required<string>();
+  /** El total del pedido: precarga el monto del reembolso, que es el caso normal. */
+  readonly totalPedido = input.required<number>();
+
+  private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
+
+  protected readonly consulta = usarRetractosDePedido(() => this.pedidoId());
+  protected readonly acciones = usarAccionesRetracto();
+
+  protected readonly error = signal<string | null>(null);
+
+  protected readonly solicitudes = computed<readonly SolicitudRetracto[]>(
+    () => this.consulta.data() ?? [],
+  );
+
+  /** La que sigue viva. Una rechazada no cuenta: se puede volver a radicar sobre ella. */
+  protected readonly enCurso = computed<SolicitudRetracto | null>(
+    () => this.solicitudes().find((s) => s.estado !== 'RECHAZADA') ?? null,
+  );
+
+  protected readonly puedeRadicar = computed(
+    () =>
+      !this.enCurso() &&
+      (ESTADOS_QUE_ADMITEN_RETRACTO as readonly string[]).includes(this.estadoPedido()),
+  );
+
+  protected readonly formularioRadicar = new FormGroup({
+    motivo: new FormControl('', { nonNullable: true }),
+  });
+
+  protected readonly formularioReembolso = new FormGroup({
+    monto: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    medio: new FormControl<string>('TRANSFERENCIA_BANCARIA', { nonNullable: true }),
+    comprobante: new FormControl('', { nonNullable: true }),
+  });
+
+  protected readonly opcionesMedio = computed<OpcionSelect[]>(() =>
+    MEDIOS.map((medio) => ({ valor: medio, etiqueta: this.traducir()(CLAVE_MEDIO[medio]) })),
+  );
+
+  protected etiquetaVerdicto(verdicto: VerdictoPlazo): string {
+    return this.traducir()(CLAVE_VERDICTO[verdicto]);
+  }
+
+  protected etiquetaEstado(estado: SolicitudRetracto['estado']): string {
+    return this.traducir()(CLAVE_ESTADO[estado]);
+  }
+
+  /**
+   * Días que faltan para agotar el plazo de reintegro. Se calcula en el navegador **solo para
+   * decidir el énfasis visual**: la fecha límite la manda el servidor ya resuelta, y esta cuenta
+   * nunca decide nada que el backend no haya decidido antes.
+   */
+  protected readonly diasParaReintegrar = computed<number | null>(() => {
+    const limite = this.enCurso()?.limiteDeReintegro;
+    if (!limite) {
+      return null;
+    }
+    const milisegundosPorDia = 86_400_000;
+    return Math.ceil((new Date(limite).getTime() - Date.now()) / milisegundosPorDia);
+  });
+
+  protected readonly plazoVencido = computed(() => {
+    const dias = this.diasParaReintegrar();
+    return dias !== null && dias < 0;
+  });
+
+  protected async radicar(): Promise<void> {
+    const motivo = this.formularioRadicar.controls.motivo.value.trim();
+    await this.ejecutar(() =>
+      this.acciones.radicar.mutateAsync({
+        pedidoId: this.pedidoId(),
+        motivo: motivo === '' ? null : motivo,
+      }),
+    );
+    this.formularioRadicar.reset({ motivo: '' });
+  }
+
+  protected async recibirProducto(solicitud: SolicitudRetracto): Promise<void> {
+    await this.ejecutar(() =>
+      this.acciones.recibirProducto.mutateAsync({
+        pedidoId: this.pedidoId(),
+        solicitudId: solicitud.id,
+      }),
+    );
+  }
+
+  protected prepararReembolso(): void {
+    if (this.formularioReembolso.controls.monto.value === null) {
+      this.formularioReembolso.controls.monto.setValue(this.totalPedido());
+    }
+  }
+
+  protected async registrarReembolso(solicitud: SolicitudRetracto): Promise<void> {
+    if (this.formularioReembolso.invalid) {
+      this.formularioReembolso.markAllAsTouched();
+      return;
+    }
+    const valores = this.formularioReembolso.getRawValue();
+    const comprobante = valores.comprobante.trim();
+    await this.ejecutar(() =>
+      this.acciones.registrarReembolso.mutateAsync({
+        pedidoId: this.pedidoId(),
+        solicitudId: solicitud.id,
+        monto: valores.monto ?? 0,
+        medio: valores.medio as MedioReembolso,
+        comprobante: comprobante === '' ? null : comprobante,
+      }),
+    );
+  }
+
+  private async ejecutar(accion: () => Promise<unknown>): Promise<void> {
+    this.error.set(null);
+    try {
+      await accion();
+    } catch {
+      this.error.set(this.transloco.translate('admin.retractos.error'));
+    }
+  }
+}

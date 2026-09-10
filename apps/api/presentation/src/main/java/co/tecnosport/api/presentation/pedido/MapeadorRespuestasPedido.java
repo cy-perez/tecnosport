@@ -49,34 +49,6 @@ public class MapeadorRespuestasPedido {
         pedido.historial().stream().map(this::aRespuesta).toList());
   }
 
-  /**
-   * Mismos datos que {@link #aRespuesta(Pedido)}, pero con {@code actor} y {@code motivo} del
-   * historial siempre nulos: el seguimiento público ({@code PedidoControlador.seguimiento}, sin
-   * autenticación, solo correo + id) no debe exponer el identificador del administrador que operó
-   * cada transición ni el detalle interno de por qué — {@code AdminPedidosControlador} sigue viendo
-   * el historial completo con {@link #aRespuesta(Pedido)}.
-   */
-  public PedidoRespuesta aRespuestaPublica(Pedido pedido) {
-    PedidoRespuesta completa = aRespuesta(pedido);
-    return new PedidoRespuesta(
-        completa.id(),
-        completa.numeroPedido(),
-        completa.usuarioId(),
-        completa.correo(),
-        completa.lineas(),
-        completa.tipoEntrega(),
-        completa.direccion(),
-        completa.metodoPago(),
-        completa.estado(),
-        completa.total(),
-        completa.creadoEn(),
-        completa.datosTransferencia(),
-        completa.envio(),
-        completa.historial().stream()
-            .map(h -> new HistorialPedidoRespuesta(h.estado(), h.fecha(), null, null))
-            .toList());
-  }
-
   private EnvioRespuesta aRespuesta(Envio envio) {
     return new EnvioRespuesta(
         envio.transportadora(),

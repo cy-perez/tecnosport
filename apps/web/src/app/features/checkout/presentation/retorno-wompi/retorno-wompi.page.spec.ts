@@ -7,7 +7,7 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
 import { RetornoWompiPage } from './retorno-wompi.page';
@@ -25,7 +25,7 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     throw new Error('no usado en esta prueba');
   }
 
-  async consultarSeguimiento(): Promise<Pedido | null> {
+  async consultarSeguimiento(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
   }
 }

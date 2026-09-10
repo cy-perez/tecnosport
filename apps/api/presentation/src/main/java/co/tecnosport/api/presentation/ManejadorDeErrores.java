@@ -18,6 +18,10 @@ import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.application.retracto.MontoDeReembolsoInvalidoException;
+import co.tecnosport.api.application.retracto.PedidoSinEntregarException;
+import co.tecnosport.api.application.retracto.RetractoYaRadicadoException;
+import co.tecnosport.api.application.retracto.SolicitudRetractoNoEncontradaException;
 import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
@@ -97,6 +101,29 @@ public class ManejadorDeErrores {
   public ProblemDetail setRotacionPublicadoExistente(
       SetRotacionPublicadoExistenteException excepcion) {
     return problema(HttpStatus.CONFLICT, "El producto ya tiene un set publicado", excepcion);
+  }
+
+  @ExceptionHandler(SolicitudRetractoNoEncontradaException.class)
+  public ProblemDetail solicitudRetractoNoEncontrada(
+      SolicitudRetractoNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Solicitud de retracto no encontrada", excepcion);
+  }
+
+  // 409 y no 422: el pedido existe y la peticion esta bien formada. Lo que pasa es que todavia no
+  // se puede, y eso puede cambiar solo — con la entrega.
+  @ExceptionHandler(PedidoSinEntregarException.class)
+  public ProblemDetail pedidoSinEntregar(PedidoSinEntregarException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El pedido todavia no se ha entregado", excepcion);
+  }
+
+  @ExceptionHandler(RetractoYaRadicadoException.class)
+  public ProblemDetail retractoYaRadicado(RetractoYaRadicadoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Retracto ya radicado", excepcion);
+  }
+
+  @ExceptionHandler(MontoDeReembolsoInvalidoException.class)
+  public ProblemDetail montoDeReembolsoInvalido(MontoDeReembolsoInvalidoException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reembolso invalido", excepcion);
   }
 
   @ExceptionHandler(SkuYaEnUsoException.class)

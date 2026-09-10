@@ -64,6 +64,32 @@
       }
     </dl>
 
+    @if (retractos().length > 0) {
+      <h2 class="mt-24 mb-8 font-display text-lg">
+        {{ 'checkout.estado.retracto.titulo' | transloco }}
+      </h2>
+      @for (retracto of retractos(); track retracto.radicadaEn) {
+        <dl class="m-0 mb-16">
+          <dt class="text-ts-texto-suave">{{ 'checkout.estado.retracto.estado' | transloco }}</dt>
+          <dd class="m-0 mb-8">{{ etiquetaEstadoRetracto(retracto.estado) }}</dd>
+
+          @if (retracto.limiteDeReintegro; as limite) {
+            <dt class="text-ts-texto-suave">
+              {{ 'checkout.estado.retracto.limite' | transloco }}
+            </dt>
+            <dd class="m-0 mb-8">{{ limite | date: 'longDate' }}</dd>
+          }
+
+          @if (retracto.montoReembolsado; as monto) {
+            <dt class="text-ts-texto-suave">
+              {{ 'checkout.estado.retracto.reembolsado' | transloco }}
+            </dt>
+            <dd class="m-0"><ts-precio [valor]="monto.valor" /></dd>
+          }
+        </dl>
+      }
+    }
+
     @if (error()) {
       <p class="mb-16 text-ts-error" role="alert">{{ error() }}</p>
     }

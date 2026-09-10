@@ -22,6 +22,8 @@ import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantall
 import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
 import { PedidosAdminHttpRepositorio } from './pedidos/infrastructure/pedidos-admin-http.repositorio';
+import { REPOSITORIO_RETRACTOS } from './retractos/domain/repositorio-retractos.puerto';
+import { RetractosHttpRepositorio } from './retractos/infrastructure/retractos-http.repositorio';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from './productos/domain/repositorio-productos-admin.puerto';
 import { ProductosAdminHttpRepositorio } from './productos/infrastructure/productos-admin-http.repositorio';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
@@ -60,7 +62,12 @@ export const adminRoutes: Routes = [
       {
         path: 'pedidos',
         canActivate: [adminGuard],
-        providers: [{ provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio }],
+        // El panel de retracto vive dentro de la fila expandida de esta lista, así que su puerto
+        // se provee en la misma ruta y no en una propia.
+        providers: [
+          { provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio },
+          { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
+        ],
         loadComponent: () =>
           import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
             (m) => m.ListaPedidosAdminPage,

@@ -224,4 +224,48 @@ class PedidoTest {
         TransicionDeEstadoInvalidaException.class,
         () -> pedido.transicionar(EstadoPedido.DESPACHADO, "admin", "salto inválido", AHORA));
   }
+
+  private Pedido entregado(MetodoPago metodoPago, Instant cuandoSeEntrego) {
+    Pedido pedido = crearAlDomicilio(metodoPago);
+    if (metodoPago != MetodoPago.CONTRAENTREGA) {
+      pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", AHORA);
+    }
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "verificado", AHORA);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guía 123", AHORA);
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:1", "entregado", cuandoSeEntrego);
+    return pedido;
+  }
+
+  @Test
+  void unPedidoSinEntregarNoTieneFechaDeEntrega() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    pedido.transicionar(EstadoPedido.PAGADO, "sistema", "pago aprobado", AHORA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:1", "listo", AHORA);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:1", "guía 123", AHORA);
+
+    assertTrue(pedido.fechaDeEntrega().isEmpty());
+  }
+
+  @Test
+  void laFechaDeEntregaEsLaDelRegistroDeEntregaYNoLaDeOtraTransicion() {
+    Instant entrega = Instant.parse("2026-09-10T15:30:00Z");
+    Pedido pedido = entregado(MetodoPago.NEQUI, entrega);
+
+    assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
+  }
+
+  @Test
+  void enContraentregaElRecaudoPosteriorNoMueveLaFechaDeEntrega() {
+    // El recaudo encadena ENTREGADO -> RECAUDO_PENDIENTE en la misma llamada y ocurre después:
+    // si la fecha se leyera del último registro, los plazos legales arrancarían tarde.
+    Instant entrega = Instant.parse("2026-09-10T15:30:00Z");
+    Pedido pedido = entregado(MetodoPago.CONTRAENTREGA, entrega);
+    pedido.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE,
+        "admin:1",
+        "pendiente de recaudo",
+        Instant.parse("2026-09-12T09:00:00Z"));
+
+    assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
+  }
 }

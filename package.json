@@ -15,7 +15,8 @@
     "contratos": "node tools/generar-contratos.mjs",
     "clases": "node tools/verificar-clases-tailwind.mjs",
     "contrastes": "node tools/verificar-contrastes.mjs",
-    "capas": "node tools/verificar-capas.mjs"
+    "capas": "node tools/verificar-capas.mjs",
+    "lighthouse": "node tools/medir-lighthouse.mjs"
   },
   "allowScripts": {
     "esbuild": true,

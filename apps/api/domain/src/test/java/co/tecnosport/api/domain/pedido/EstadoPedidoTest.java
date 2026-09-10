@@ -42,6 +42,18 @@ class EstadoPedidoTest {
   }
 
   @Test
+  void unContraentregaYaRecaudadoTambienPuedeDevolverse() {
+    // El retracto no distingue el método de pago (Ley 1480 de 2011, art. 47). Sin esta arista,
+    // devolver solo era posible por el camino de pago en línea.
+    assertTrue(EstadoPedido.RECAUDO_CONCILIADO.puedeTransicionarA(EstadoPedido.DEVUELTO));
+  }
+
+  @Test
+  void devolverNoSaltaPasosDelCaminoDeContraentrega() {
+    assertFalse(EstadoPedido.RECAUDO_PENDIENTE.puedeTransicionarA(EstadoPedido.DEVUELTO));
+  }
+
+  @Test
   void recaudoPendienteConciliaHaciaRecaudoConciliado() {
     assertTrue(EstadoPedido.RECAUDO_PENDIENTE.puedeTransicionarA(EstadoPedido.RECAUDO_CONCILIADO));
   }

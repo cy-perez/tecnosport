@@ -21,6 +21,7 @@ import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -33,6 +34,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -66,6 +68,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 class PedidoControladorTest {
 
   @Autowired private MockMvc mockMvc;
+  @Autowired private RepositorioEnviosDobleDePrueba envios;
   @Autowired private RepositorioProductosDobleDePrueba productos;
   @Autowired private RepositorioInventarioDobleDePrueba inventarios;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
@@ -494,6 +497,38 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.historial[0].estado").value("CONFIRMADO_CONTRAENTREGA"));
   }
 
+  /**
+   * El hallazgo 3 de docs/12-legales-de-envio.md, con su prueba. Era un defecto en produccion: el
+   * seguimiento devolvia el {@code Envio} completo, con lo que la transportadora nos cobra y la
+   * comision del recaudo, a cualquiera con un id de pedido y el correo correcto.
+   */
+  @Test
+  void elSeguimientoNoExponeElCostoRealDelFleteNiLaComisionDeRecaudo() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+    // Con envio sembrado, y con recaudo conciliado: sin esto la prueba no ejercitaba el bloque de
+    // envio en absoluto —un pedido recien confirmado todavia no tiene envio— y pasaba en verde
+    // aunque el mapeador filtrara. Se comprobo metiendo la fuga a proposito.
+    Envio envio =
+        Envio.crear(pedido.id(), "Interrapidisimo", "GUIA-99", Dinero.deCop(12_000), Instant.now());
+    envio.conciliarRecaudo(Dinero.deCop(3_500), Instant.now());
+    envios.guardar(envio);
+
+    String cuerpo =
+        mockMvc
+            .perform(
+                get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                    .param("correo", "cliente@tecnosport.co"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // Sobre el texto crudo y no sobre un jsonPath: lo que hay que afirmar es que esos nombres no
+    // aparecen en ninguna parte de la respuesta, no que un campo concreto venga nulo.
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("costoEnvio"));
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("comisionRecaudo"));
+  }
+
   @Test
   void seguimientoConElCorreoEquivocadoDevuelve404() throws Exception {
     Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
@@ -627,6 +662,19 @@ class PedidoControladorTest {
         PropiedadesTransferenciaManual propiedadesTransferencia,
         RepositorioEnvios repositorioEnvios) {
       return new MapeadorRespuestasPedido(propiedadesTransferencia, repositorioEnvios);
+    }
+
+    @Bean
+    RepositorioSolicitudesRetracto repositorioSolicitudesRetracto() {
+      return new RepositorioSolicitudesRetractoDobleDePrueba();
+    }
+
+    @Bean
+    MapeadorSeguimiento mapeadorSeguimiento(
+        MapeadorRespuestasPedido mapeadorPedido,
+        RepositorioEnvios repositorioEnvios,
+        RepositorioSolicitudesRetracto repositorioSolicitudes) {
+      return new MapeadorSeguimiento(mapeadorPedido, repositorioEnvios, repositorioSolicitudes);
     }
   }
 }
