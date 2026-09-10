@@ -279,9 +279,9 @@ verdadero sin él.
 
 | Marca | Qué falta | Quién lo decide | Qué dice el texto mientras tanto |
 |---|---|---|---|
-| `[[PLAZO DE ENTREGA REAL]]` | El plazo que el negocio de verdad promete, distinto del estimado que devuelve la cotización | Negocio. Sigue abierto desde la Fase 6 | El término legal supletivo de 30 días calendario, declarado como legal |
-| `[[HORARIO DE ATENCIÓN]]` | Horario del canal de PQR y del punto de recogida | Negocio. Sigue abierto desde la Fase 6 | Nada: se quitó la frase. El plazo de 15 días hábiles se sostiene sin horario |
-| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Quién envía los correos en producción. **Dev ya usa Resend** (`docs/07-infra-gcp.md`), y eso no decide producción | Negocio. Sigue abierto desde la Fase 6 | "El proveedor de correo transaccional que usemos": la categoría, no el nombre |
+| `[[PLAZO DE ENTREGA REAL]]` | **Nada: se decidió no prometer plazo propio** (10 de septiembre de 2026). El sitio queda atado a los plazos de la transportadora y a la gestión de Skydropx, así que lo que obliga es el término legal | Decidido | El término legal supletivo de 30 días calendario, declarado como legal. En la Fase 7, el estimado de la cotización se muestra **como estimado** |
+| `[[HORARIO DE ATENCIÓN]]` | **Nada: cerrado con dato** (todos los días, 8:00 a.m.–9:00 p.m.). Es horario de canales, no de local | Decidido | Publicado en los términos y en el pie. No se emite como `openingHours` |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | **Nada: Resend también en producción** (`docs/07-infra-gcp.md`). La política de datos lo nombra | Decidido | Nombrado. Queda pendiente de contrato la región de procesamiento y la razón social |
 | `[[TRANSPORTADORA]]` | Se nombra a Skydropx y a las transportadoras el día que reciban datos, que es un paso de esta fase | Ya decidido (`ADR-0021/0023`); falta construirlo | "La empresa de transporte que despache tu pedido" |
 | Razón social exacta de Skydropx | Con qué entidad se contrata: la mexicana o una filial colombiana. Cambia el análisis de transferencia internacional | Negocio, al firmar |
 | Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |

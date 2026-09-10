@@ -90,7 +90,7 @@
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
           "La empresa de transporte que despache tu pedido, para entregarlo; recibe nombre, teléfono y dirección de entrega.",
-          "El proveedor de correo transaccional que usemos, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
+          "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
         ],
         "cierre": [
           "No vendemos, arrendamos ni cedemos datos personales a terceros para fines propios de esos terceros."
@@ -99,7 +99,7 @@
       {
         "titulo": "9. Transferencia y transmisión internacional",
         "parrafos": [
-          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia. Esas transmisiones se hacen bajo contrato con el proveedor y con el único fin de prestar el servicio descrito en esta política."
+          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. Esas transmisiones se hacen bajo contrato con el proveedor y con el único fin de prestar el servicio descrito en esta política."
         ]
       },
       {

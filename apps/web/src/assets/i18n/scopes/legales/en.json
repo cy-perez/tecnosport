@@ -90,7 +90,7 @@
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
           "The shipping company that dispatches your order, in order to deliver it; it receives your name, phone number, and delivery address.",
-          "The transactional email provider we use, to send you account verification, password recovery, and order status emails."
+          "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
         ],
         "cierre": [
           "We do not sell, rent, or transfer personal data to third parties for those third parties' own purposes."
@@ -99,7 +99,7 @@
       {
         "titulo": "9. International transfer and transmission",
         "parrafos": [
-          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia. Those transmissions take place under contract with the provider and solely to deliver the service described in this policy."
+          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. Those transmissions take place under contract with the provider and solely to deliver the service described in this policy."
         ]
       },
       {
