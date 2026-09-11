@@ -9,6 +9,7 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
+import co.tecnosport.api.application.pedido.AvisarPlazosDeEntregaVencidos;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
@@ -40,6 +41,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties({
   PropiedadesPedido.class,
+  PropiedadesVigilanciaPlazoEntrega.class,
   PropiedadesTransferenciaManual.class,
   PropiedadesLegal.class
 })
@@ -114,6 +116,15 @@ public class ConfiguracionPedido {
         enviadorDeCorreo,
         textos,
         reloj);
+  }
+
+  @Bean
+  public AvisarPlazosDeEntregaVencidos avisarPlazosDeEntregaVencidos(
+      RepositorioPedidos repositorioPedidos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj) {
+    return new AvisarPlazosDeEntregaVencidos(repositorioPedidos, enviadorDeCorreo, textos, reloj);
   }
 
   @Bean

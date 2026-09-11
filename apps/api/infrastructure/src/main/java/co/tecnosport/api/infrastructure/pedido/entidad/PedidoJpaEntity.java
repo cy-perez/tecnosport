@@ -49,6 +49,9 @@ public class PedidoJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  @Column(name = "aviso_plazo_entrega_enviado_en")
+  private Instant avisoPlazoEntregaEnviadoEn;
+
   protected PedidoJpaEntity() {}
 
   public PedidoJpaEntity(
@@ -65,7 +68,8 @@ public class PedidoJpaEntity {
       String indicaciones,
       String metodoPago,
       String estado,
-      Instant creadoEn) {
+      Instant creadoEn,
+      Instant avisoPlazoEntregaEnviadoEn) {
     this.id = id;
     this.numeroPedido = numeroPedido;
     this.usuarioId = usuarioId;
@@ -80,6 +84,7 @@ public class PedidoJpaEntity {
     this.metodoPago = metodoPago;
     this.estado = estado;
     this.creadoEn = creadoEn;
+    this.avisoPlazoEntregaEnviadoEn = avisoPlazoEntregaEnviadoEn;
   }
 
   public UUID getId() {
@@ -136,5 +141,9 @@ public class PedidoJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public Instant getAvisoPlazoEntregaEnviadoEn() {
+    return avisoPlazoEntregaEnviadoEn;
   }
 }

@@ -49,6 +49,11 @@ tecnosport:
   pedido:
     minutos-reserva-inventario: ${MINUTOS_RESERVA_INVENTARIO:30}
     horas-vencimiento-transferencia: ${TRANSFERENCIA_HORAS_VENCIMIENTO:24}
+    vigilancia-plazo:
+      # El plazo vigilado es de 30 dias calendario (Ley 1480 de 2011, art. 18), asi que medio dia de
+      # retraso en detectarlo no le cuesta nada a nadie. No es un dato de negocio: el 30 vive en
+      # PlazoDeEntrega, esto es solo cada cuanto se mira.
+      intervalo-horas: ${PLAZO_ENTREGA_VIGILANCIA_INTERVALO_HORAS:12}
   gcs:
     # bucket-imagenes y url-publica no son secretos (docs/07-infra-gcp.md los documenta), por eso
     # sí llevan default real de dev — a diferencia de los placeholders de Wompi de abajo, que son

@@ -3,7 +3,9 @@ package co.tecnosport.api.application.pedido;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +57,17 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
             : filtrados.subList(desde, Math.min(desde + tamanoPagina, filtrados.size()));
     int totalPaginas = (int) Math.ceil(filtrados.size() / (double) tamanoPagina);
     return new PedidosPaginados(List.copyOf(contenido), pagina, totalPaginas, filtrados.size());
+  }
+
+  @Override
+  public List<Pedido> buscarSinAvisoDePlazo(
+      Collection<EstadoPedido> estados, Instant creadosAntesDe) {
+    return pedidos.values().stream()
+        .filter(p -> estados.contains(p.estado()))
+        .filter(p -> p.avisoDePlazoEnviadoEn().isEmpty())
+        .filter(p -> p.creadoEn().isBefore(creadosAntesDe))
+        .sorted(Comparator.comparing(Pedido::creadoEn))
+        .toList();
   }
 
   @Override

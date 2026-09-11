@@ -16,6 +16,8 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.infrastructure.pedido.entidad.HistorialPedidoJpaEntity;
 import co.tecnosport.api.infrastructure.pedido.entidad.LineaPedidoJpaEntity;
 import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -124,6 +126,27 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  public List<Pedido> buscarSinAvisoDePlazo(
+      Collection<EstadoPedido> estados, Instant creadosAntesDe) {
+    Objects.requireNonNull(estados, "Los estados no pueden ser nulos.");
+    Objects.requireNonNull(creadosAntesDe, "La fecha de corte no puede ser nula.");
+    if (estados.isEmpty()) {
+      return List.of();
+    }
+    return pedidos
+        .findByEstadoInAndAvisoPlazoEntregaEnviadoEnIsNullAndCreadoEnBefore(
+            estados.stream().map(EstadoPedido::name).toList(), creadosAntesDe)
+        .stream()
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())))
+        .toList();
+  }
+
+  @Override
   public NumeroPedido siguienteNumero(int anio) {
     Long secuencial =
         jdbc.queryForObject(
@@ -156,7 +179,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         MetodoPago.valueOf(entidad.getMetodoPago()),
         EstadoPedido.valueOf(entidad.getEstado()),
         historialJpa.stream().map(this::aHistorial).toList(),
-        entidad.getCreadoEn());
+        entidad.getCreadoEn(),
+        entidad.getAvisoPlazoEntregaEnviadoEn());
   }
 
   private LineaPedido aLinea(LineaPedidoJpaEntity l) {
@@ -193,7 +217,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         direccion == null ? null : direccion.indicaciones(),
         pedido.metodoPago().name(),
         pedido.estado().name(),
-        pedido.creadoEn());
+        pedido.creadoEn(),
+        pedido.avisoDePlazoEnviadoEn().orElse(null));
   }
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {

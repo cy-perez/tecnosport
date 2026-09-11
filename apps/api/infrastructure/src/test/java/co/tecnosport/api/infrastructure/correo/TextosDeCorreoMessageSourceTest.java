@@ -25,7 +25,7 @@ class TextosDeCorreoMessageSourceTest {
   }
 
   /**
-   * Los dieciocho textos, en los dos idiomas. Es la prueba que hace que {@code
+   * Los veinticuatro textos, en los dos idiomas. Es la prueba que hace que {@code
    * correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
    */
   @Test
@@ -54,6 +54,33 @@ class TextosDeCorreoMessageSourceTest {
     assertTrue(cuerpo.contains("artículo 47"), cuerpo);
     assertTrue(cuerpo.contains("quince (15) días calendario"), cuerpo);
     assertTrue(cuerpo.contains("TS-2026-000001"), cuerpo);
+  }
+
+  /**
+   * El aviso del plazo de entrega vencido nombra la norma que le da la salida a quien compró. Sin
+   * ella el correo diría "se nos pasó el plazo" y no que puede terminar el contrato, que es lo que
+   * los términos publicados prometen.
+   */
+  @Test
+  void elAvisoDePlazoVencidoCitaLaNormaYElTermino() {
+    String cuerpo = textos().texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CUERPO);
+
+    assertTrue(cuerpo.contains("artículo 18"), cuerpo);
+    assertTrue(cuerpo.contains("treinta (30) días calendario"), cuerpo);
+    assertTrue(cuerpo.contains("terminar el contrato"), cuerpo);
+  }
+
+  /**
+   * Un contraentrega sin entregar no ha cobrado nada, así que su mitad del correo no puede prometer
+   * una devolución. Las dos mitades existen por lo mismo que en la cancelación.
+   */
+  @Test
+  void laMitadSinCobroNoPrometeNingunaDevolucion() {
+    String sinCobro = textos().texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_SIN_COBRO);
+
+    assertTrue(sinCobro.contains("no hay dinero que devolverte"), sinCobro);
+    assertTrue(
+        textos().texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CON_DINERO).contains("te devolvemos"));
   }
 
   /** Las tildes de verdad, en el disco y a través del codificado. Es el defecto que había. */

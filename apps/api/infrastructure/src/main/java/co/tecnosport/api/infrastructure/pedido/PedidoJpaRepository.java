@@ -1,6 +1,9 @@
 package co.tecnosport.api.infrastructure.pedido;
 
 import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,4 +14,7 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
   boolean existsByCorreoAndEstado(String correo, String estado);
 
   Page<PedidoJpaEntity> findByEstado(String estado, Pageable pageable);
+
+  List<PedidoJpaEntity> findByEstadoInAndAvisoPlazoEntregaEnviadoEnIsNullAndCreadoEnBefore(
+      Collection<String> estados, Instant creadosAntesDe);
 }

@@ -285,4 +285,90 @@ class RepositorioPedidosJpaTest {
     Set<Long> esperados = LongStream.rangeClosed(1, hilos).boxed().collect(Collectors.toSet());
     assertThat(secuenciales).isEqualTo(esperados);
   }
+
+  // --- El vigilante del plazo de entrega (ADR-0028) ---
+
+  private Pedido pedidoCreadoEn(long secuencial, Instant creadoEn, MetodoPago metodoPago) {
+    return Pedido.crear(
+        NumeroPedido.de(2026, secuencial),
+        null,
+        new CorreoElectronico("cliente@tecnosport.co"),
+        List.of(linea()),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        metodoPago,
+        "cliente@tecnosport.co",
+        creadoEn);
+  }
+
+  @Test
+  void elAvisoDePlazoSobreviveAlGuardado() {
+    Instant hace40Dias = Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS);
+    Pedido pedido = pedidoCreadoEn(700, hace40Dias, MetodoPago.CONTRAENTREGA);
+    Instant aviso = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+    pedido.marcarAvisoDePlazoEnviado(aviso);
+
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().avisoDePlazoEnviadoEn())
+        .contains(aviso);
+  }
+
+  @Test
+  void unPedidoNuevoSeGuardaSinAviso() {
+    Pedido pedido = pedidoCreadoEn(701, Instant.now(), MetodoPago.CONTRAENTREGA);
+
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().avisoDePlazoEnviadoEn())
+        .isEmpty();
+  }
+
+  @Test
+  void laConsultaDelVigilanteTraeLosViejosSinAvisoYEnLosEstadosPedidos() {
+    Instant corte = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
+    Instant viejo = corte.minus(10, java.time.temporal.ChronoUnit.DAYS);
+
+    Pedido candidato = pedidoCreadoEn(710, viejo, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(candidato);
+
+    Pedido reciente = pedidoCreadoEn(711, Instant.now(), MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(reciente);
+
+    Pedido yaAvisado = pedidoCreadoEn(712, viejo, MetodoPago.CONTRAENTREGA);
+    yaAvisado.marcarAvisoDePlazoEnviado(Instant.now());
+    repositorio.guardar(yaAvisado);
+
+    Pedido enOtroEstado = pedidoCreadoEn(713, viejo, MetodoPago.NEQUI);
+    repositorio.guardar(enOtroEstado);
+
+    List<Pedido> encontrados =
+        repositorio.buscarSinAvisoDePlazo(
+            Set.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA, EstadoPedido.PAGADO), corte);
+
+    assertThat(encontrados).extracting(Pedido::id).containsExactly(candidato.id());
+  }
+
+  @Test
+  void laConsultaDelVigilanteReconstruyeElPedidoCompleto() {
+    Instant viejo = Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS);
+    Pedido guardado = pedidoCreadoEn(720, viejo, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(guardado);
+
+    Pedido encontrado =
+        repositorio
+            .buscarSinAvisoDePlazo(Set.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA), Instant.now())
+            .get(0);
+
+    // El historial es lo que decide si el plazo venció: sin él, el vigilante no sabría desde cuándo
+    // contar.
+    assertThat(encontrado.historial()).hasSize(1);
+    assertThat(encontrado.lineas()).hasSize(1);
+    assertThat(encontrado.fechaDeInicioDelPlazoDeEntrega()).isPresent();
+  }
+
+  @Test
+  void sinEstadosLaConsultaNoVaALaBase() {
+    assertThat(repositorio.buscarSinAvisoDePlazo(Set.of(), Instant.now())).isEmpty();
+  }
 }

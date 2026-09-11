@@ -272,6 +272,20 @@ mover.
 La tabla `cobertura_contraentrega` **se retira** (`ADR-0023`): la cobertura sale
 de la cotización, no de una lista propia cargada a mano.
 
+**El plazo de entrega no es una columna.** Los treinta días calendario del
+artículo 18 de la Ley 1480 de 2011 se cuentan desde el registro de `PAGADO` del
+historial —o el de `CONFIRMADO_CONTRAENTREGA`, que es donde se celebra el
+contrato cuando se paga al recibir—, igual que la fecha de entrega se lee del
+registro de `ENTREGADO`. El historial no se sobrescribe y cada uno de esos
+estados se alcanza una sola vez, así que una columna propia sería una segunda
+verdad capaz de divergir sin que nada avise.
+
+Lo que sí se guarda es `pedido.aviso_plazo_entrega_enviado_en`: cuándo se le
+avisó al comprador de que el plazo venció. Ese no se deduce de ningún estado —es
+el hecho de que salió un correo— y de él depende que el vigilante no vuelva a
+escribir en cada vuelta. Vencer no cancela nada: quien decide terminar el
+contrato es quien compró (`ADR-0028`).
+
 ## Envío: cotización congelada y seguimiento
 
 El costo de envío se cotiza contra Skydropx antes de pagar y **se congela en el
