@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/envios/cotizacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cotizar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carritos": {
         parameters: {
             query?: never;
@@ -1056,6 +1072,19 @@ export interface components {
             llavePublica?: string;
             ambiente?: string;
         };
+        CotizacionEnvioRequest: {
+            lineas?: components["schemas"]["LineaRequest"][];
+            direccion?: components["schemas"]["DireccionRequest"];
+        };
+        CotizacionEnvioRespuesta: {
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            transportadora?: string;
+            /** Format: int32 */
+            diasEstimados?: number;
+            /** Format: date-time */
+            venceEn?: string;
+            admiteContraentrega?: boolean;
+        };
         CarritoRespuesta: {
             /** Format: uuid */
             id?: string;
@@ -1684,6 +1713,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IntentoDePagoRespuesta"];
+                };
+            };
+        };
+    };
+    cotizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CotizacionEnvioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CotizacionEnvioRespuesta"];
                 };
             };
         };

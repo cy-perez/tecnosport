@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AgregarCoberturaContraentrega;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.ListarCoberturaContraentrega;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.QuitarCoberturaContraentrega;
@@ -64,6 +65,12 @@ public class ConfiguracionEnvio {
    * peticiones por segundo lo frenaría igual, y el hilo esperaría en otro sitio.
    */
   private static final Duration INTERVALO_SONDEO = Duration.ofMillis(500);
+
+  @Bean
+  public CotizarEnvio cotizarEnvio(
+      RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
+    return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+  }
 
   @Bean
   public CriteriosContraentrega criteriosContraentrega(PropiedadesContraentrega propiedades) {
