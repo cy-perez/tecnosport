@@ -3382,10 +3382,31 @@ Orden de construcción, un caso de uso a la vez:
 
    Los pedidos anteriores quedan con envío en cero, y es históricamente cierto:
    bajo `adr/0012` su flete ya estaba cobrado dentro de cada línea.
-5. **Checkout.** Cotización en el paso de dirección, línea de envío y total en el
-   resumen, ahorro visible en la recogida, y el aviso de efectivo en
-   contraentrega. Las claves de i18n están redactadas en
-   `docs/12-legales-de-envio.md`, sección 3.
+5. ~~**Checkout.**~~ **Hecho el 11 de septiembre de 2026.** Cotización en el
+   paso de dirección, subtotal / envío / total en el resumen, plazo estimado
+   cuando la tarifa lo declara, ahorro visible en la recogida y el aviso de
+   efectivo en contraentrega. Las ocho claves de `docs/12-legales-de-envio.md`,
+   sección 3, escritas en los dos idiomas.
+
+   Tres cosas que vale la pena no volver a descubrir:
+
+   - **El bug lo encontró el navegador, no las pruebas.** Quien cotizaba
+     Medellín en 9.540, cambiaba a Bogotá —sin cobertura— y elegía recoger,
+     leía "te ahorras $ 9.540" sin ahorrarse nada. El ahorro de la ciudad
+     anterior sobrevivía al cambio de ciudad. Es exactamente lo que advierte
+     `docs/06-testing.md`: hay cosas que solo se ven abriendo la pantalla.
+   - **La clave de la consulta no incluye la calle.** El flete depende del DANE
+     de la ciudad y de los bultos; con la calle dentro, cada tecla era una
+     llamada a un proveedor limitado a dos peticiones por segundo.
+   - **Sin cobertura se bloquea «Continuar».** Dejar pasar al comprador solo
+     habría movido el 409 dos pantallas más adelante, después de que eligiera
+     método de pago.
+
+   **Lo que no se pudo verificar en el navegador:** el aviso de contraentrega.
+   El backend local no la ofrece —`CONTRAENTREGA_HABILITADA` está en falso— así
+   que la opción nunca aparece y el aviso tampoco. Queda cubierto por dos
+   pruebas, una por cada lado de la condición, y pendiente de verse en pantalla
+   el día que se encienda.
 6. **Contraentrega desde la cotización** (`ADR-0023`): retirar
    `cobertura_contraentrega` y sus endpoints, y que `MetodosDePagoDisponibles`
    dependa de la tarifa con recaudo.
