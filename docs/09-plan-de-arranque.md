@@ -3355,9 +3355,33 @@ Orden de construcción, un caso de uso a la vez:
      de la regla dura #1.
 3. **`POST /api/v1/envios/cotizacion`**, con `409 ENVIO_SIN_COBERTURA` como caso
    de negocio y no como error de sistema.
-4. **Totales del pedido.** `Pedido` gana el costo de envío y la tarifa congelada;
-   `Pedido.total()` pasa a ser líneas más envío, y su Javadoc actual —"el envío no
-   se agrega: ya está en cada precio unitario"— muere con el cambio.
+4. ~~**Totales del pedido.**~~ **Hecho el 11 de septiembre de 2026.** `Pedido`
+   congela la `TarifaEnvio` con la que se cotizó, `total()` pasa a ser
+   `subtotal()` más envío, y el Javadoc de `adr/0012` muere con el cambio — que
+   además no documentaba nada: había dos Javadoc seguidos y el compilador se
+   comía el primero.
+
+   Cuatro cosas que solo aparecieron al construirlo:
+
+   - **Un campo y no dos.** Se guarda la tarifa entera y el costo sale de ella. Un
+     monto aparte sería el mismo dinero en dos sitios, capaces de divergir.
+   - **La cotización va antes de reservar.** No por elegancia: `CrearPedido` corre
+     dentro de una transacción que toma bloqueos pesimistas sobre el inventario, y
+     cotizar después habría dejado esas filas trancadas mientras responde un
+     proveedor externo. Así la transacción está abierta pero todavía no bloquea
+     nada, y un destino sin cobertura no compromete existencias ni quema un número
+     de pedido.
+   - **La invariante "a domicilio exige tarifa" quedó en el caso de uso, no en el
+     agregado**, porque el constructor de `Pedido` es también con el que el
+     repositorio reconstruye los pedidos viejos, que no tienen ninguna y son
+     válidos. Está anotado en `docs/02-modelo-datos.md` con lo que haría falta el
+     día que exista otro camino para crear pedidos.
+   - **`PedidoRespuesta` gana `subtotal` y `costoEnvio`**, que es el hallazgo 1 de
+     la auditoría legal: el artículo 50 de la Ley 1480 exige el desglose, y un
+     total sin él no informa lo que la norma manda informar.
+
+   Los pedidos anteriores quedan con envío en cero, y es históricamente cierto:
+   bajo `adr/0012` su flete ya estaba cobrado dentro de cada línea.
 5. **Checkout.** Cotización en el paso de dirección, línea de envío y total en el
    resumen, ahorro visible en la recogida, y el aviso de efectivo en
    contraentrega. Las claves de i18n están redactadas en
