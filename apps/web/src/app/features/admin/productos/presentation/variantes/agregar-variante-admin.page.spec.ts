@@ -94,9 +94,43 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, pro
 }
 
 
+/** El paquete es obligatorio desde adr/0021, así que el mínimo enviable ya no es SKU y precio. */
+function llenarPaquete() {
+  fireEvent.input(screen.getByLabelText('Peso (gramos)'), { target: { value: '180' } });
+  fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '30' } });
+  fireEvent.input(screen.getByLabelText('Ancho (cm)'), { target: { value: '25' } });
+  fireEvent.input(screen.getByLabelText('Alto (cm)'), { target: { value: '4' } });
+}
+
 describe('AgregarVarianteAdminPage', () => {
   it('el botón crear arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioProductosAdminFalso());
+
+    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
+
+  it('sin el paquete, el botón crear sigue deshabilitado aunque haya SKU y precio', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+
+    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
+  });
+
+  it('con una dimensión en cero, el botón crear sigue deshabilitado', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    llenarPaquete();
+    fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '0' } });
 
     expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
       true,
@@ -121,6 +155,7 @@ describe('AgregarVarianteAdminPage', () => {
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-CAM-AZ-M' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '89900' } });
+    llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
     await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
 
@@ -132,6 +167,10 @@ describe('AgregarVarianteAdminPage', () => {
         tasaIva: 0.19,
         codigoBarras: null,
         existenciaInicial: 0,
+        pesoGramos: 180,
+        largoCm: 30,
+        anchoCm: 25,
+        altoCm: 4,
         atributos: [],
       },
     ]);
@@ -143,6 +182,7 @@ describe('AgregarVarianteAdminPage', () => {
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    llenarPaquete();
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
     // `findByText`, no `await esperar(50)`: la espera fija pasaba en aislamiento

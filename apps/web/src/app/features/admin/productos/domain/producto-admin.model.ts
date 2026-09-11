@@ -64,6 +64,11 @@ export interface AgregarVarianteAdmin {
   readonly tasaIva: number;
   readonly codigoBarras: string | null;
   readonly existenciaInicial: number;
+  /** El paquete: sin peso ni dimensiones no hay cotización de envío (adr/0021). */
+  readonly pesoGramos: number;
+  readonly largoCm: number;
+  readonly anchoCm: number;
+  readonly altoCm: number;
   readonly atributos: readonly ValorAtributoAdmin[];
 }
 

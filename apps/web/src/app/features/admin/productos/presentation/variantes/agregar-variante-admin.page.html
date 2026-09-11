@@ -39,6 +39,39 @@
       formControlName="existenciaInicial"
     />
 
+    <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+      <legend>{{ 'admin.productos.agregarVariante.paquete' | transloco }}</legend>
+      <p>{{ 'admin.productos.agregarVariante.paqueteAyuda' | transloco }}</p>
+
+      <ts-campo
+        idCampo="variante-peso-gramos"
+        tipo="number"
+        [label]="'admin.productos.agregarVariante.pesoGramos' | transloco"
+        formControlName="pesoGramos"
+      />
+
+      <ts-campo
+        idCampo="variante-largo-cm"
+        tipo="number"
+        [label]="'admin.productos.agregarVariante.largoCm' | transloco"
+        formControlName="largoCm"
+      />
+
+      <ts-campo
+        idCampo="variante-ancho-cm"
+        tipo="number"
+        [label]="'admin.productos.agregarVariante.anchoCm' | transloco"
+        formControlName="anchoCm"
+      />
+
+      <ts-campo
+        idCampo="variante-alto-cm"
+        tipo="number"
+        [label]="'admin.productos.agregarVariante.altoCm' | transloco"
+        formControlName="altoCm"
+      />
+    </fieldset>
+
     <fieldset class="flex flex-col gap-16 border border-ts-borde p-16" formArrayName="atributos">
       <legend>{{ 'admin.productos.agregarVariante.atributos' | transloco }}</legend>
 
