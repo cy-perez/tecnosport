@@ -3197,15 +3197,49 @@ juzga contra su fecha de entrega y no contra el reloj de hoy. Medirlo contra aho
 habría pintado como incumplido cualquier pedido viejo entregado en plazo — un
 panel que grita en las filas equivocadas deja de mirarse.
 
-La tarea corre cada doce horas (`PLAZO_ENTREGA_VIGILANCIA_INTERVALO_HORAS`) y es
-la tercera del sistema, junto a la purga de carritos y la conciliación de Wompi.
-El aviso se marca y se guarda **antes** de enviar el correo: el adaptador de
-producción se traga los fallos de envío, así que el orden contrario volvería a
-escribirle al comprador cada doce horas hasta que alguien despachara.
+La tarea corre cada doce horas y es la tercera del sistema, junto a la purga de
+carritos y la conciliación de Wompi.
 
-Dos commits: el backend completo —dominio, migración `V31`, puerto, caso de uso,
-seis textos en los dos idiomas y la tarea— y el panel, que ya lo ve en la lista
-sin tener que expandir la fila.
+### La revisión adversarial, que reescribió la garantía
+
+Los dos commits pasaron por `/revisar` antes del PR, con la batería en verde. Doce
+hallazgos; los tres primeros tumbaron el mecanismo entero y están contados en
+`ADR-0028`: el barrido en una sola transacción reenviaba los correos ya
+mandados si fallaba tarde, varias instancias de Cloud Run escribían N veces, y
+`guardar` pisaba la marca. Los tres se cerraron con una escritura condicional
+atómica, y la columna quedó de solo lectura para el agregado.
+
+Otros dos merecen quedar escritos porque son el mismo error de siempre —prometer
+lo que el software no hace—:
+
+- **El correo del despachado prometía una cancelación imposible.** De
+  `DESPACHADO` solo se sale entregando o con el rechazo en la entrega. El panel
+  repetía la promesa mandando a usar un botón que ese estado no ofrece.
+- **El retraso inicial igualaba al intervalo**, así que cada despliegue reiniciaba
+  la cuenta de doce horas: desplegando a diario, el vigilante no habría corrido
+  nunca. Ahora arranca a los cinco minutos y las propiedades se niegan a
+  levantarse si alguien vuelve a igualarlos.
+
+Y dos que solo aparecieron **mirando la pantalla**, que es lo que
+`docs/06-testing.md` dice que las pruebas no atrapan:
+
+- El detalle decía «Vence 1/09/2026, 12:00 a. m.» para un plazo que se agotó al
+  terminar el 31 de agosto. El límite es el instante siguiente al último día;
+  pintarlo crudo regala un día.
+- **Todo pedido `CANCELADO` salía con la columna Estado en blanco**, y eso es
+  anterior a este trabajo: `CLAVE_ETIQUETA_ESTADO` no tenía esa entrada ni el tipo
+  del panel ese valor, desde que se construyó la cancelación. Ninguna prueba lo
+  vio porque ninguna sembraba un cancelado. De paso el filtro de estado lo ganó,
+  que tampoco lo tenía.
+
+El par de contraste del rojo sobre la superficie elevada tampoco estaba en
+`npm run contrastes` —pasa, 5.52 y 5.04— y ahora está: el guardián miraba el rojo
+sobre fondo y sobre superficie, pero no sobre la fila expandida, que es donde se
+pinta.
+
+Dos commits: el backend completo —dominio, migración `V31`, los dos puertos, caso
+de uso, seis textos en los dos idiomas y la tarea— y el panel, que ya lo ve en la
+lista sin tener que expandir la fila.
 
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 

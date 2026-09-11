@@ -20,7 +20,8 @@ export type EstadoPedido =
   | 'RECHAZADO_EN_ENTREGA'
   | 'DEVUELTO'
   | 'RECAUDO_PENDIENTE'
-  | 'RECAUDO_CONCILIADO';
+  | 'RECAUDO_CONCILIADO'
+  | 'CANCELADO';
 
 export interface Direccion {
   readonly codigoDaneDepartamento: string;

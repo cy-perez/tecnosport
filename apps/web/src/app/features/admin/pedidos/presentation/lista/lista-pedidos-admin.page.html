@@ -56,10 +56,20 @@
             <td>{{ pedido.correo }}</td>
             <td>
               {{ etiquetaEstado(pedido.estado) }}
-              @if (pedido.plazoDeEntrega?.verdicto === 'VENCIDO') {
-                <span class="block text-ts-error">
-                  {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
-                </span>
+              @if (pedido.plazoDeEntrega; as plazo) {
+                @if (plazo.verdicto === 'VENCIDO') {
+                  <!-- Vencido y sin avisar es lo accionable; vencido y ya avisado es seguimiento.
+                       Pintarlos igual obligaba a expandir fila por fila para saber cuál era cuál. -->
+                  @if (plazo.avisadoEn) {
+                    <span class="block text-ts-texto-suave">
+                      {{ 'admin.pedidos.plazo_entrega.verdicto.vencido_avisado' | transloco }}
+                    </span>
+                  } @else {
+                    <span class="block text-ts-error">
+                      {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
+                    </span>
+                  }
+                }
               }
             </td>
             <td><ts-precio [valor]="pedido.total.valor" [moneda]="pedido.total.moneda" /></td>
@@ -93,7 +103,7 @@
                       {{ 'admin.pedidos.plazo_entrega.limite' | transloco }}
                     </dt>
                     <dd class="m-0 mb-8">
-                      {{ formatearFecha(plazo.limite) }}
+                      {{ formatearUltimoDia(plazo.limite) }}
                       @if (plazo.verdicto === 'VENCIDO') {
                         <span class="block text-ts-error">
                           {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
@@ -124,7 +134,11 @@
 
                   @if (plazo.verdicto === 'VENCIDO') {
                     <p class="mb-8 text-ts-texto-suave">
-                      {{ 'admin.pedidos.plazo_entrega.que_sigue' | transloco }}
+                      @if (pedido.estado === 'DESPACHADO') {
+                        {{ 'admin.pedidos.plazo_entrega.que_sigue_despachado' | transloco }}
+                      } @else {
+                        {{ 'admin.pedidos.plazo_entrega.que_sigue' | transloco }}
+                      }
                     </p>
                   }
                 }

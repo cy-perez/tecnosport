@@ -49,6 +49,7 @@ const ESTADOS: readonly EstadoPedido[] = [
   'DEVUELTO',
   'RECAUDO_PENDIENTE',
   'RECAUDO_CONCILIADO',
+  'CANCELADO',
 ];
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
@@ -63,6 +64,10 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   DEVUELTO: 'admin.pedidos.estados.devuelto',
   RECAUDO_PENDIENTE: 'admin.pedidos.estados.recaudo_pendiente',
   RECAUDO_CONCILIADO: 'admin.pedidos.estados.recaudo_conciliado',
+  // Faltaba desde que se construyó la cancelación: el panel pintaba la celda de Estado en blanco
+  // para todo pedido cancelado, porque `etiquetaEstado` no encontraba clave. Se vio mirando la
+  // pantalla, no en una prueba.
+  CANCELADO: 'admin.pedidos.estados.cancelado',
 };
 
 interface FormularioMotivo {
@@ -422,6 +427,26 @@ export class ListaPedidosAdminPage {
       this.acciones.conciliarRecaudo.isPending() &&
       this.acciones.conciliarRecaudo.variables()?.pedidoId === pedidoId
     );
+  }
+
+  /**
+   * El último día en que todavía se podía entregar, sin hora.
+   *
+   * El límite que manda el servidor es el instante en que el plazo se agota, o sea el comienzo del
+   * día siguiente: pintarlo tal cual decía «vence 1/09/2026, 12:00 a. m.» y se leía como que había
+   * hasta el 1 de septiembre, cuando el último día era el 31 de agosto. Se resta un milisegundo y
+   * se pinta solo el día, que es la granularidad que tiene un plazo contado en días.
+   */
+  protected formatearUltimoDia(iso: string): string {
+    if (!iso) {
+      return '';
+    }
+    const idioma = this.transloco.activeLang();
+    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: 'long',
+      timeZone: 'America/Bogota',
+    }).format(new Date(Date.parse(iso) - 1));
   }
 
   protected formatearFecha(iso: string): string {
