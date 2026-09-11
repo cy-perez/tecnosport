@@ -11,15 +11,30 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <p>{@code codigoPostal} es el único opcional: en Colombia no se usa de forma fiable en todas las
  * direcciones, y exigirlo impediría arrancar por un dato que muchas transportadoras ignoran.
+ *
+ * <p>{@code departamento} y {@code ciudad} son los <em>nombres</em>, y son obligatorios porque
+ * Skydropx los exige: sin ellos la cotización responde {@code 422 area_level1/area_level2 no puede
+ * estar en blanco} (verificado contra el sandbox el 11 de septiembre de 2026). Duplican lo que el
+ * código DANE ya identifica, y aun así van aquí: el catálogo DIVIPOLA que los traduce vive en el
+ * frontend, y traerlo al backend entero para resolver una sola fila sería mucho catálogo para un
+ * dato que cambia el día que el negocio se mude.
  */
 @ConfigurationProperties(prefix = "tecnosport.origen")
 public record PropiedadesOrigen(
-    String nombre, String telefono, String direccion, String ciudadDane, String codigoPostal) {
+    String nombre,
+    String telefono,
+    String direccion,
+    String departamento,
+    String ciudad,
+    String ciudadDane,
+    String codigoPostal) {
 
   public PropiedadesOrigen {
     exigir(nombre, "tecnosport.origen.nombre");
     exigir(telefono, "tecnosport.origen.telefono");
     exigir(direccion, "tecnosport.origen.direccion");
+    exigir(departamento, "tecnosport.origen.departamento");
+    exigir(ciudad, "tecnosport.origen.ciudad");
     exigir(ciudadDane, "tecnosport.origen.ciudad-dane");
   }
 

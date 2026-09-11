@@ -15,20 +15,16 @@ import tools.jackson.databind.JsonNode;
  * is_completed} sea verdadero, y las tarifas valen 24 horas. Eso es lo que implementa {@link
  * SkydropxClient} y se puede probar entero.
  *
- * <p>Lo que <strong>no</strong> está confirmado es el <em>mapeo</em>: los campos exactos de {@code
- * address_from}/{@code address_to} para Colombia, la unidad de peso de {@code parcels} —nuestro
- * dominio guarda gramos y el único ejemplo encontrado parece usar kilos—, y la forma de la
- * respuesta de la creación. Ver docs/13-skydropx-capacidades.md, sección 6.
+ * <p>El <em>mapeo</em> se confirmó el 11 de septiembre de 2026 pidiendo cotizaciones reales al
+ * sandbox, y está en {@link MapeadorCotizacionSkydropxV1}. Mientras no se confirmó vivió detrás de
+ * esta interfaz fallando cerrado, y la interfaz se queda: separa lo que se puede probar contra un
+ * servidor de prueba —el protocolo— de lo que solo se puede saber preguntándole al proveedor.
  *
- * <p>Por eso vive detrás de esta interfaz y no incrustado en el cliente. La regla dura #9 no es
- * paranoia en este repo: {@code WompiClientTest} deja escrito que un vector de firma "de ejemplo"
- * de la documentación resultó fabricado por la herramienta que resumió la página, y al verificar
- * Skydropx pasó lo mismo con un cuerpo de {@code /pickups}. Un peso en la unidad equivocada es el
- * flete mil veces mal cobrado.
- *
- * <p>La implementación de producción es {@link MapeadorCotizacionPendiente}, que falla cerrado
- * hasta que alguien entre al panel con las credenciales. El día que se confirmen, esto es una clase
- * y sus pruebas — no una reescritura.
+ * <p>La regla dura #9 no es paranoia en este repo: {@code WompiClientTest} deja escrito que un
+ * vector de firma "de ejemplo" de la documentación resultó fabricado por la herramienta que resumió
+ * la página, y al verificar Skydropx pasó lo mismo con un cuerpo de {@code /pickups}. De hecho la
+ * sospecha era buena: la documentación sugería kilos con dudas, y lo eran — pero {@code
+ * postal_code} resultó ser el código DANE, que no lo decía ninguna fuente.
  */
 interface MapeadorCotizacionSkydropx {
 

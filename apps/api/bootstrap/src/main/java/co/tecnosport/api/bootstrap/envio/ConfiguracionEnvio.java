@@ -49,6 +49,8 @@ public class ConfiguracionEnvio {
             origen.nombre(),
             origen.telefono(),
             origen.direccion(),
+            origen.departamento(),
+            origen.ciudad(),
             origen.ciudadDane(),
             origen.codigoPostal()),
         Duration.ofSeconds(skydropx.cotizacionTimeoutSegundos()),

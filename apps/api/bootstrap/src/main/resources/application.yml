@@ -111,7 +111,13 @@ tecnosport:
     # Entre comillas obligatorias: el "#" de la nomenclatura abre un comentario en YAML y la
     # dirección se cortaría en "Cra. 26C" sin que nada fallara.
     direccion: "${ORIGEN_DIRECCION:Cra. 26C # 38B-31, apto. 401, La Milagrosa}"
-    # Medellín.
+    # Los nombres, que Skydropx exige aparte del código DANE: sin ellos la cotización responde
+    # 422 "area_level1/area_level2 no puede estar en blanco". Las grafías son las de DIVIPOLA,
+    # las mismas que manda el frontend en la dirección de destino.
+    departamento: ${ORIGEN_DEPARTAMENTO:Antioquia}
+    ciudad: ${ORIGEN_CIUDAD:Medellín}
+    # Medellín en DIVIPOLA. Ojo: esto es lo que Skydropx recibe como "postal_code" — su catálogo
+    # es el DANE, no el postal de cinco dígitos.
     ciudad-dane: ${ORIGEN_CIUDAD_DANE:05001}
     # Opcional a propósito: en Colombia no se usa de forma fiable y muchas transportadoras lo
     # ignoran. Exigirlo impediría arrancar por un dato que a nadie le sirve.

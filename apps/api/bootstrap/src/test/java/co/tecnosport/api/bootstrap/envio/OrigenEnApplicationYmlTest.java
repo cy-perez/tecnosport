@@ -57,19 +57,43 @@ class OrigenEnApplicationYmlTest {
   }
 
   /**
-   * Las cinco propiedades existen con marcador de variable de entorno. Si alguien borra una, la
+   * Las siete propiedades existen con marcador de variable de entorno. Si alguien borra una, la
    * aplicación deja de arrancar en producción y no aquí — mejor que falle aquí.
    */
   @Test
-  void lasCincoPropiedadesDeOrigenEstanDeclaradas() throws IOException {
+  void lasSietePropiedadesDeOrigenEstanDeclaradas() throws IOException {
     PropertySource<?> yml = applicationYml();
 
     for (String propiedad :
-        List.of("nombre", "telefono", "direccion", "ciudad-dane", "codigo-postal")) {
+        List.of(
+            "nombre",
+            "telefono",
+            "direccion",
+            "departamento",
+            "ciudad",
+            "ciudad-dane",
+            "codigo-postal")) {
       assertTrue(
           yml.containsProperty("tecnosport.origen." + propiedad),
           "Falta tecnosport.origen." + propiedad);
     }
+  }
+
+  /**
+   * Skydropx exige los nombres del departamento y la ciudad aparte del código DANE: sin ellos la
+   * cotización responde 422 y el checkout se queda sin tarifas para siempre, sin que nada falle al
+   * arrancar. Verificado contra el sandbox el 11 de septiembre de 2026.
+   */
+  @Test
+  void elDepartamentoYLaCiudadDeOrigenSonLosDeMedellin() throws IOException {
+    PropertySource<?> yml = applicationYml();
+
+    assertTrue(
+        String.valueOf(yml.getProperty("tecnosport.origen.departamento")).contains("Antioquia"),
+        String.valueOf(yml.getProperty("tecnosport.origen.departamento")));
+    assertTrue(
+        String.valueOf(yml.getProperty("tecnosport.origen.ciudad")).contains("Medellín"),
+        String.valueOf(yml.getProperty("tecnosport.origen.ciudad")));
   }
 
   @Test
