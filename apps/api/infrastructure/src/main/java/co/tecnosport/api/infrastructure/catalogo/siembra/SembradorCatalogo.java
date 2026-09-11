@@ -1,5 +1,6 @@
 package co.tecnosport.api.infrastructure.catalogo.siembra;
 
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.infrastructure.catalogo.AtributoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
@@ -67,6 +68,23 @@ public class SembradorCatalogo implements ApplicationRunner {
 
   /** El mínimo publicable de la misma tabla: cada arrastre salta 90 grados. */
   private static final int FOTOGRAMAS_MINIMOS = 4;
+
+  /*
+   * Paquetes de DEMOSTRACIÓN. Este catálogo es ficción completa —ni "Under Trail" ni el "Celular
+   * TecnoSport Aurora" existen—, así que no hay peso real que averiguar: no se está inventando un
+   * dato de negocio, se está amueblando un ejemplo. Mismo criterio que las fotos de picsum y que
+   * hashDeSiembra al final de esta clase.
+   *
+   * Están duplicados en V32__paquete_por_variante.sql, que rellena las bases que ya existían. Si se
+   * tocan aquí, se tocan allá.
+   *
+   * TODO: peso y dimensiones reales de las variantes del catálogo de producción, medidos con el
+   * producto empacado. No se heredan de estos valores.
+   */
+  private static final Paquete PAQUETE_CAMISETA = new Paquete(180, 30, 25, 4);
+  private static final Paquete PAQUETE_TENIS = new Paquete(900, 33, 22, 13);
+  private static final Paquete PAQUETE_MORRAL = new Paquete(700, 45, 30, 20);
+  private static final Paquete PAQUETE_CELULAR = new Paquete(400, 18, 10, 6);
 
   private final MarcaJpaRepository marcas;
   private final CategoriaJpaRepository categorias;
@@ -143,6 +161,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "89900",
         "0.19",
         12,
+        PAQUETE_CAMISETA,
         ahora,
         List.of(
             valor(tallaRopa, "M", null),
@@ -154,6 +173,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "89900",
         "0.19",
         8,
+        PAQUETE_CAMISETA,
         ahora,
         List.of(
             valor(tallaRopa, "L", null),
@@ -169,6 +189,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "349900",
         "0.19",
         5,
+        PAQUETE_TENIS,
         ahora,
         List.of(
             valor(tallaCalzado, "40", null),
@@ -180,6 +201,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "349900",
         "0.19",
         4,
+        PAQUETE_TENIS,
         ahora,
         List.of(
             valor(tallaCalzado, "38.5", null),
@@ -195,6 +217,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "159900",
         "0.19",
         10,
+        PAQUETE_MORRAL,
         ahora,
         List.of(valor(capacidad, "25L", null), valor(color, "Negro", "#111111")));
     guardarVariante(
@@ -203,6 +226,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "159900",
         "0.19",
         6,
+        PAQUETE_MORRAL,
         ahora,
         List.of(valor(capacidad, "25L", null), valor(color, "Azul marino", "#1E3A8A")));
 
@@ -215,6 +239,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "1299900",
         "0.19",
         3,
+        PAQUETE_CELULAR,
         ahora,
         List.of(
             valor(almacenamiento, "128GB", null),
@@ -227,6 +252,7 @@ public class SembradorCatalogo implements ApplicationRunner {
         "1499900",
         "0.19",
         2,
+        PAQUETE_CELULAR,
         ahora,
         List.of(
             valor(almacenamiento, "256GB", null),
@@ -300,6 +326,7 @@ public class SembradorCatalogo implements ApplicationRunner {
       String precio,
       String tasaIva,
       int existencia,
+      Paquete paquete,
       Instant ahora,
       List<ValorPendiente> valores) {
     VarianteJpaEntity variante =
@@ -312,6 +339,10 @@ public class SembradorCatalogo implements ApplicationRunner {
                 new BigDecimal(tasaIva),
                 existencia,
                 null,
+                paquete.pesoGramos(),
+                paquete.largoCm(),
+                paquete.anchoCm(),
+                paquete.altoCm(),
                 "ACTIVA",
                 ahora));
 

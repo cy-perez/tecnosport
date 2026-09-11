@@ -32,6 +32,18 @@ public class VarianteJpaEntity {
   @Column(name = "codigo_barras")
   private String codigoBarras;
 
+  @Column(name = "peso_gramos", nullable = false)
+  private int pesoGramos;
+
+  @Column(name = "largo_cm", nullable = false)
+  private int largoCm;
+
+  @Column(name = "ancho_cm", nullable = false)
+  private int anchoCm;
+
+  @Column(name = "alto_cm", nullable = false)
+  private int altoCm;
+
   @Column(nullable = false)
   private String estado;
 
@@ -48,6 +60,10 @@ public class VarianteJpaEntity {
       BigDecimal tasaIva,
       int existencia,
       String codigoBarras,
+      int pesoGramos,
+      int largoCm,
+      int anchoCm,
+      int altoCm,
       String estado,
       Instant creadoEn) {
     this.id = id;
@@ -57,6 +73,10 @@ public class VarianteJpaEntity {
     this.tasaIva = tasaIva;
     this.existencia = existencia;
     this.codigoBarras = codigoBarras;
+    this.pesoGramos = pesoGramos;
+    this.largoCm = largoCm;
+    this.anchoCm = anchoCm;
+    this.altoCm = altoCm;
     this.estado = estado;
     this.creadoEn = creadoEn;
   }
@@ -87,6 +107,22 @@ public class VarianteJpaEntity {
 
   public String getCodigoBarras() {
     return codigoBarras;
+  }
+
+  public int getPesoGramos() {
+    return pesoGramos;
+  }
+
+  public int getLargoCm() {
+    return largoCm;
+  }
+
+  public int getAnchoCm() {
+    return anchoCm;
+  }
+
+  public int getAltoCm() {
+    return altoCm;
   }
 
   public String getEstado() {

@@ -116,6 +116,12 @@ class ProductoTest {
 
   private static Variante variante(String sku) {
     return Variante.crear(
-        new Sku(sku), Dinero.deCop(89_900), new BigDecimal("0.19"), 5, null, List.of());
+        new Sku(sku),
+        Dinero.deCop(89_900),
+        new BigDecimal("0.19"),
+        5,
+        null,
+        new Paquete(180, 30, 25, 4),
+        List.of());
   }
 }

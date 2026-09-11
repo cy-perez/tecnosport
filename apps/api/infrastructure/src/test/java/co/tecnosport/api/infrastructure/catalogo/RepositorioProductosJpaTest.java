@@ -12,6 +12,7 @@ import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
@@ -176,6 +177,10 @@ class RepositorioProductosJpaTest {
             new BigDecimal("0.19"),
             0,
             null,
+            400,
+            18,
+            10,
+            6,
             "INACTIVA",
             Instant.now()));
     imagenPrincipal(producto);
@@ -466,6 +471,7 @@ class RepositorioProductosJpaTest {
             new BigDecimal("0.19"),
             5,
             null,
+            new Paquete(180, 30, 25, 4),
             List.of(ValorAtributo.deColor(color, "Azul marino", "#1E3A8A")));
 
     repositorio.agregarVariante(productoJpa.getId(), variante);
@@ -581,6 +587,10 @@ class RepositorioProductosJpaTest {
             new BigDecimal("0.19"),
             5,
             null,
+            180,
+            30,
+            25,
+            4,
             "ACTIVA",
             Instant.now()));
   }

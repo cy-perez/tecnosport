@@ -59,7 +59,7 @@ class AdminVarianteControladorTest {
                 .content(
                     """
                     {"productoId":"%s","sku":"TS-CAM-AZ-M","precio":89900,"tasaIva":0.19,
-                     "codigoBarras":null,"existenciaInicial":5,
+                     "codigoBarras":null,"existenciaInicial":5,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,
                      "atributos":[{"atributoId":"%s","valor":"Azul marino","colorHex":"#1E3A8A"}]}
                     """
                         .formatted(producto.id(), color.id())))
@@ -78,7 +78,7 @@ class AdminVarianteControladorTest {
                 .content(
                     """
                     {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
-                     "codigoBarras":null,"existenciaInicial":0,"atributos":[]}
+                     "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,"atributos":[]}
                     """
                         .formatted(UUID.randomUUID())))
         .andExpect(status().isNotFound());
@@ -97,7 +97,7 @@ class AdminVarianteControladorTest {
                 .content(
                     """
                     {"productoId":"%s","sku":"TS-YA-EXISTE","precio":1000,"tasaIva":0.19,
-                     "codigoBarras":null,"existenciaInicial":0,"atributos":[]}
+                     "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,"atributos":[]}
                     """
                         .formatted(producto.id())))
         .andExpect(status().isConflict());
@@ -115,11 +115,53 @@ class AdminVarianteControladorTest {
                 .content(
                     """
                     {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
-                     "codigoBarras":null,"existenciaInicial":0,
+                     "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,
                      "atributos":[{"atributoId":"%s","valor":"Azul","colorHex":null}]}
                     """
                         .formatted(producto.id(), UUID.randomUUID())))
         .andExpect(status().isNotFound());
+  }
+
+  /**
+   * Un cuerpo sin los campos del paquete no cae en cero por omisión: Jackson 3 no rellena los
+   * componentes que falten de un record y la deserialización entera muere. Es el resultado que se
+   * quiere — una variante sin peso no se puede cotizar.
+   */
+  @Test
+  void crearSinLosCamposDelPaqueteDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/variantes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                     "codigoBarras":null,"existenciaInicial":0,"atributos":[]}
+                    """
+                        .formatted(producto.id())))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void crearConUnaDimensionEnCeroDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/variantes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                     "codigoBarras":null,"existenciaInicial":0,
+                     "pesoGramos":180,"largoCm":0,"anchoCm":25,"altoCm":4,"atributos":[]}
+                    """
+                        .formatted(producto.id())))
+        .andExpect(status().isUnprocessableContent());
   }
 
   @TestConfiguration

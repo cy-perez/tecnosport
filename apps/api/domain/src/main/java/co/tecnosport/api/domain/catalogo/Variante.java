@@ -14,6 +14,9 @@ import java.util.UUID;
  * La unidad de inventario y de compra. {@code existencia} es un conteo simple en este paso de solo
  * lectura; el agregado {@code Inventario} por movimientos llega en Fase 2, ver
  * docs/09-plan-de-arranque.md.
+ *
+ * <p>El {@link Paquete} es obligatorio, igual que el SKU: una variante sin peso ni dimensiones no
+ * se puede cotizar y por lo tanto no se puede vender (adr/0021).
  */
 public final class Variante {
 
@@ -23,6 +26,7 @@ public final class Variante {
   private final BigDecimal tasaIva;
   private final int existencia;
   private final String codigoBarras;
+  private final Paquete paquete;
   private final EstadoVariante estado;
   private final List<ValorAtributo> atributos;
   private final SetRotacion setRotacionPropio;
@@ -34,6 +38,7 @@ public final class Variante {
       BigDecimal tasaIva,
       int existencia,
       String codigoBarras,
+      Paquete paquete,
       EstadoVariante estado,
       List<ValorAtributo> atributos,
       SetRotacion setRotacionPropio) {
@@ -46,6 +51,11 @@ public final class Variante {
     }
     this.existencia = existencia;
     this.codigoBarras = codigoBarras == null || codigoBarras.isBlank() ? null : codigoBarras.trim();
+    this.paquete =
+        Objects.requireNonNull(
+            paquete,
+            "El paquete de la variante no puede ser nulo: sin peso ni dimensiones no hay"
+                + " cotización de envío.");
     this.estado = Objects.requireNonNull(estado, "El estado de la variante no puede ser nulo.");
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
     this.setRotacionPropio = setRotacionPropio;
@@ -57,6 +67,7 @@ public final class Variante {
       BigDecimal tasaIva,
       int existencia,
       String codigoBarras,
+      Paquete paquete,
       List<ValorAtributo> atributos) {
     return new Variante(
         GeneradorIdentificador.nuevo(),
@@ -65,6 +76,7 @@ public final class Variante {
         tasaIva,
         existencia,
         codigoBarras,
+        paquete,
         EstadoVariante.ACTIVA,
         atributos,
         null);
@@ -100,6 +112,10 @@ public final class Variante {
 
   public Optional<String> codigoBarras() {
     return Optional.ofNullable(codigoBarras);
+  }
+
+  public Paquete paquete() {
+    return paquete;
   }
 
   public EstadoVariante estado() {
