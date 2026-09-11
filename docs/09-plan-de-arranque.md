@@ -2996,11 +2996,12 @@ flujo en su Web Checkout.
 
 ### Lo que queda abierto
 
-**Nadie vigila el vencimiento del plazo de entrega.** `MotivoCancelacion` ya trae
-`PLAZO_INCUMPLIDO`, pero las dos únicas tareas programadas son la purga de
+**Nadie vigila el vencimiento del plazo de entrega.** ~~`MotivoCancelacion` ya
+trae `PLAZO_INCUMPLIDO`, pero las dos únicas tareas programadas son la purga de
 carritos y la conciliación de Wompi. Con el término legal de treinta días
-publicado, un pedido pagado y sin despachar lo incumple en silencio. Encaja en la
-Fase 7, donde ya entra la conciliación de envíos.
+publicado, un pedido pagado y sin despachar lo incumple en silencio.~~ **Cerrado
+el 10 de septiembre**, antes de entrar a la Fase 7 y no dentro de ella: no
+dependía de nada del envío cotizado y era un incumplimiento vivo. Ver abajo.
 
 **Sigue para revisión de abogado**, además de lo que ya estaba: el "desgaste
 normal" como exclusión de garantía; si describir a un tercero por su categoría
@@ -3161,6 +3162,50 @@ Quedan, para cuando se retomen: el orden de las guardas en `ResolverGarantia` y
 su agregado —hoy lo cubren el tope y la transacción—, y las cuatro copias
 idénticas de `RepositorioReintegrosFalso` en las pruebas.
 
+
+## El vigilante del plazo de entrega (2026-09-10)
+
+Lo único que la revisión adversarial dejó abierto y no era de la Fase 7. Los
+términos publicados prometen treinta días calendario para entregar (Ley 1480 de
+2011, art. 18) y que, si no se cumple, quien compró puede terminar el contrato y
+recuperar su dinero. La segunda mitad tenía código desde el bloque del retracto
+—`CancelarPedido` acepta `PLAZO_INCUMPLIDO`—; la primera no tenía nada.
+
+**Avisa y no cancela** (`ADR-0028`). El artículo 18 le da la opción al consumidor,
+no obliga al vendedor a deshacer el pedido por su cuenta: puede preferir esperar,
+y cancelárselo sin preguntarle sería decidir por él. Quien decide es una persona,
+y entonces corre el `CancelarPedido` que ya existía. Tampoco radica una PQR, por
+lo mismo que no la radica aquél: esa bandeja es de peticiones del comprador.
+
+Tres decisiones con filo, las tres anotadas en el ADR:
+
+- **El plazo cuelga del historial, no de una columna.** Se lee del registro de
+  `PAGADO`, o del de `CONFIRMADO_CONTRAENTREGA` cuando se paga al recibir —ahí se
+  celebra el contrato y no hay confirmación de pago que esperar—. Mismo
+  razonamiento que `Pedido.fechaDeEntrega()`. La única columna nueva es cuándo
+  salió el aviso, que no se deduce de ningún estado.
+- **Días calendario, no hábiles**, así que `PlazoDeEntrega` no recibe
+  `CalendarioHabil` y nunca responde `INDETERMINADO`. Es el primer plazo del
+  sistema que no pasa por los festivos de `ADR-0024`.
+- **Cubre los despachados sin entregar**, porque el plazo corre hasta la entrega.
+  El falso positivo está asumido a sabiendas —hoy la entrega se marca a mano— y por
+  eso ese caso lleva un párrafo propio que no acusa a nadie. Con el seguimiento de
+  la Fase 7 (`ADR-0022`) esa marca deja de ser manual y el párrafo sobra.
+
+Un detalle que solo apareció al pintar el panel: un pedido **ya entregado** se
+juzga contra su fecha de entrega y no contra el reloj de hoy. Medirlo contra ahora
+habría pintado como incumplido cualquier pedido viejo entregado en plazo — un
+panel que grita en las filas equivocadas deja de mirarse.
+
+La tarea corre cada doce horas (`PLAZO_ENTREGA_VIGILANCIA_INTERVALO_HORAS`) y es
+la tercera del sistema, junto a la purga de carritos y la conciliación de Wompi.
+El aviso se marca y se guarda **antes** de enviar el correo: el adaptador de
+producción se traga los fallos de envío, así que el orden contrario volvería a
+escribirle al comprador cada doce horas hasta que alguien despachara.
+
+Dos commits: el backend completo —dominio, migración `V31`, puerto, caso de uso,
+seis textos en los dos idiomas y la tarea— y el panel, que ya lo ve en la lista
+sin tener que expandir la fila.
 
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 

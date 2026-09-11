@@ -59,6 +59,18 @@
       "recaudo_pendiente": "Collection pending",
       "recaudo_conciliado": "Collection reconciled"
     },
+    "plazo_entrega": {
+      "titulo": "Delivery deadline",
+      "limite": "Due",
+      "verdicto": {
+        "en_plazo": "Within the deadline",
+        "vencido": "Deadline passed"
+      },
+      "aviso": "Notice to the buyer",
+      "avisado_el": "Notified on {{fecha}}",
+      "sin_aviso": "Not notified yet. The watcher checks every twelve hours.",
+      "que_sigue": "Terminating the contract is the buyer's decision. If they ask for it, cancel the order with the reason “deadline missed”."
+    },
     "lista": {
       "ver_detalle": "View detail",
       "ocultar": "Hide"

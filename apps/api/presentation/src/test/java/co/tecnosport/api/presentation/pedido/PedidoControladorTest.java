@@ -673,7 +673,8 @@ class PedidoControladorTest {
       return new MapeadorRespuestasPedido(
           propiedadesTransferencia,
           repositorioEnvios,
-          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()));
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
+          java.time.Instant::now);
     }
 
     @Bean

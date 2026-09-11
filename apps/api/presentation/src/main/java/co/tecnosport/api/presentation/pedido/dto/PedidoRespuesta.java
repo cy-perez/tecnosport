@@ -31,4 +31,10 @@ public record PedidoRespuesta(
      * el emisor. Sin este dato, el panel pedía "revisa cuánto se le devolvió ya" y no había dónde
      * revisarlo: ningún endpoint lo exponía.
      */
-    DineroRespuesta yaDevuelto) {}
+    DineroRespuesta yaDevuelto,
+    /**
+     * El plazo legal para entregar y en qué va, o nulo mientras no haya arrancado. Sin este dato el
+     * panel no tenía forma de ver un incumplimiento que el sistema ya conoce: lo calculaba el
+     * vigilante cada doce horas y no lo sabía nadie más.
+     */
+    PlazoDeEntregaRespuesta plazoDeEntrega) {}

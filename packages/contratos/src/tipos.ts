@@ -1028,6 +1028,16 @@ export interface components {
             historial?: components["schemas"]["HistorialPedidoRespuesta"][];
             dineroRecibido?: components["schemas"]["DineroRespuesta"];
             yaDevuelto?: components["schemas"]["DineroRespuesta"];
+            plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
+        };
+        PlazoDeEntregaRespuesta: {
+            /** Format: date-time */
+            inicio?: string;
+            /** Format: date-time */
+            limite?: string;
+            verdicto?: string;
+            /** Format: date-time */
+            avisadoEn?: string;
         };
         MetodosDePagoDisponiblesRequest: {
             lineas?: components["schemas"]["LineaRequest"][];

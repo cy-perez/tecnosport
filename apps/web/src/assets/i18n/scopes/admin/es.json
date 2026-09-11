@@ -59,6 +59,18 @@
       "recaudo_pendiente": "Recaudo pendiente",
       "recaudo_conciliado": "Recaudo conciliado"
     },
+    "plazo_entrega": {
+      "titulo": "Plazo de entrega",
+      "limite": "Vence",
+      "verdicto": {
+        "en_plazo": "Dentro del plazo",
+        "vencido": "Plazo vencido"
+      },
+      "aviso": "Aviso al comprador",
+      "avisado_el": "Avisado el {{fecha}}",
+      "sin_aviso": "Todavía no se le ha avisado. El vigilante revisa cada doce horas.",
+      "que_sigue": "Terminar el contrato lo decide quien compró. Si lo pide, cancela el pedido con el motivo «plazo incumplido»."
+    },
     "lista": {
       "ver_detalle": "Ver detalle",
       "ocultar": "Ocultar"

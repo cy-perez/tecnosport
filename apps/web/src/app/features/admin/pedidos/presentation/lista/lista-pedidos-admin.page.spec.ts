@@ -119,6 +119,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     datosTransferencia: null,
     envio: null,
     historial: [],
+    plazoDeEntrega: null,
     ...overrides,
   };
 }
@@ -277,6 +278,88 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
 
     expect(await screen.findByText(/Camiseta/)).toBeTruthy();
+  });
+
+  /**
+   * El plazo vencido se ve sin abrir el detalle: quien opera el panel tiene que enterarse de un
+   * incumplimiento mirando la lista, no expandiendo pedido por pedido.
+   */
+  it('un plazo de entrega vencido se marca en la propia fila', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText('Plazo vencido')).toBeTruthy();
+  });
+
+  it('un pedido dentro del plazo no marca nada en la fila', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'EN_PLAZO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    expect(screen.queryByText('Plazo vencido')).toBeNull();
+  });
+
+  it('el detalle dice que al comprador todavía no se le ha avisado', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Todavía no se le ha avisado/)).toBeTruthy();
+    // Y que cancelar lo decide quien compró, no el panel (ADR-0028).
+    expect(screen.getByText(/Terminar el contrato lo decide quien compró/)).toBeTruthy();
+  });
+
+  it('el detalle dice cuándo se le avisó, si ya se hizo', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: '2026-02-01T15:00:00Z',
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Avisado el/)).toBeTruthy();
+    expect(screen.queryByText(/Todavía no se le ha avisado/)).toBeNull();
+  });
+
+  it('un pedido sin plazo arrancado no muestra el bloque', async () => {
+    await renderLista([pedidoDePrueba()]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByText(/Camiseta/);
+
+    expect(screen.queryByText('Plazo de entrega')).toBeNull();
   });
 
   it('conciliar transferencia llama al repositorio y refresca la lista', async () => {
