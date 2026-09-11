@@ -15,6 +15,8 @@ import { IntentoDePago } from '../../domain/intento-pago.model';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
+import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
+import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ResumenPage } from './resumen.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
 import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../../testing/carrito';
@@ -71,6 +73,37 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 }
 
+class RepositorioEnviosFalso implements RepositorioEnvios {
+  llamadas = 0;
+
+  constructor(private readonly respuesta: CotizacionEnvio | null | Error = null) {}
+
+  async cotizar(): Promise<CotizacionEnvio | null> {
+    this.llamadas += 1;
+    if (this.respuesta instanceof Error) {
+      throw this.respuesta;
+    }
+    return this.respuesta;
+  }
+}
+
+class RepositorioEnviosPorCiudad implements RepositorioEnvios {
+  constructor(private readonly porCiudad: Record<string, CotizacionEnvio | null>) {}
+
+  async cotizar(comando: CotizarEnvioComando): Promise<CotizacionEnvio | null> {
+    return this.porCiudad[comando.direccion.codigoDaneCiudad] ?? null;
+  }
+}
+
+const COTIZACION: CotizacionEnvio = {
+  costoEnvio: 9_540,
+  moneda: 'COP',
+  transportadora: '99 minutes',
+  diasEstimados: 2,
+  venceEn: '2026-09-12T12:00:00Z',
+  admiteContraentrega: false,
+};
+
 function snapshotDePrueba(varianteId: string): SnapshotLinea {
   return {
     varianteId,
@@ -92,7 +125,7 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
 @Component({ selector: 'app-metodo-pago-mudo', template: '' })
 class MetodoPagoMudo {}
 
-async function renderResumen(carrito: RepositorioCarrito) {
+async function renderResumen(carrito: RepositorioCarrito, envios: RepositorioEnvios = new RepositorioEnviosFalso(null)) {
   return render(ResumenPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -108,8 +141,16 @@ async function renderResumen(carrito: RepositorioCarrito) {
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
       { provide: REPOSITORIO_PEDIDOS, useValue: new RepositorioPedidosFalso() },
       { provide: REPOSITORIO_PAGOS, useValue: new RepositorioPagosFalso() },
+      { provide: REPOSITORIO_ENVIOS, useValue: envios },
     ],
   });
+}
+
+/** Deja el formulario en el estado que dispara la cotización: ciudad y calle. */
+async function llenarDireccionEnMedellin() {
+  fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
+  fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
+  fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Circular 4 # 70-20' } });
 }
 
 const CARRITO_CON_LINEAS: Carrito = {
@@ -122,6 +163,101 @@ const CARRITO_CON_LINEAS: Carrito = {
 describe('ResumenPage', () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  /**
+   * El artículo 50 de la Ley 1480 de 2011 exige el desglose antes de pagar: productos, envío
+   * aparte y la suma. Hasta la Fase 7 esta pantalla mostraba solo "Subtotal".
+   */
+  it('con la dirección completa, muestra el costo de envío y el total', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(COTIZACION));
+    await screen.findByText('Morral urbano');
+
+    await llenarDireccionEnMedellin();
+
+    expect(await screen.findByText('Costo de envío')).toBeTruthy();
+    expect(screen.getAllByText(/9\.540/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Total a pagar')).toBeTruthy();
+    expect(screen.getAllByText(/309\.540/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Entrega estimada: 2 días')).toBeTruthy();
+  });
+
+  /**
+   * Sin cobertura no se puede continuar: el pedido respondería el mismo 409 dos pantallas
+   * después. Se dice aquí, con la salida —recoger en el punto— en el mismo texto.
+   */
+  it('sin cobertura lo explica y bloquea el botón de continuar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(null));
+    await screen.findByText('Morral urbano');
+
+    await llenarDireccionEnMedellin();
+
+    expect(
+      await screen.findByText(/No tenemos transporte hasta esta dirección/),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('el retiro en punto no cotiza nada', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosFalso(COTIZACION);
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    await screen.findByText('Morral urbano');
+
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+
+    expect(envios.llamadas).toBe(0);
+  });
+
+  /** El ahorro solo se muestra si de verdad se cotizó: una cifra inventada sería peor que nada. */
+  it('al cambiar a retiro en punto dice cuánto se ahorra de envío', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(COTIZACION));
+    await screen.findByText('Morral urbano');
+
+    await llenarDireccionEnMedellin();
+    await screen.findByText('Costo de envío');
+
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+
+    expect(await screen.findByText(/Te ahorras .* de envío/)).toBeTruthy();
+  });
+
+  /**
+   * Lo encontró el recorrido en el navegador. Quien cotiza Medellín, cambia a una ciudad sin
+   * transporte y elige recoger, no se ahorra nada: a esa ciudad no había cómo enviarlo. El ahorro
+   * de la ciudad anterior no puede sobrevivir al cambio.
+   */
+  it('no promete ahorro si la última dirección se quedó sin cobertura', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosPorCiudad({ '05001': COTIZACION, '11001': null }),
+    );
+    await screen.findByText('Morral urbano');
+
+    await llenarDireccionEnMedellin();
+    await screen.findByText('Costo de envío');
+
+    fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '11' } });
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '11001' } });
+    await screen.findByText(/No tenemos transporte hasta esta dirección/);
+
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+
+    expect(screen.queryByText(/Te ahorras/)).toBeFalsy();
   });
 
   it('sin carrito guardado, muestra el mensaje de vacío', async () => {

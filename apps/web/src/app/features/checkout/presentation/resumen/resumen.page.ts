@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,11 +10,14 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
+import { formatearPrecio } from '../../../../shared/ts-precio/formato-precio';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
+import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
 import { DEPARTAMENTOS, municipiosDeDepartamento } from '../../domain/geografia-co';
 import { Direccion, TipoEntrega } from '../../domain/pedido.model';
 import { requiereDireccion as tipoEntregaRequiereDireccion } from '../../domain/reglas-pedido';
@@ -73,6 +76,21 @@ export class ResumenPage {
       return suma + (snapshot ? snapshot.precioValor * linea.cantidad : 0);
     }, 0);
   });
+
+  /**
+   * La cotización de envío se pide aquí y no en un paso aparte porque aquí es
+   * donde el comprador escribe la ciudad. El artículo 50 de la Ley 1480 de 2011
+   * exige mostrar el costo del envío separado y el total antes de finalizar la
+   * compra, y esta es la pantalla donde se finaliza.
+   */
+  protected readonly cotizacion = usarCotizacionEnvio(() => this.criteriosCotizacion());
+
+  /**
+   * La última cotización que sí salió, para poder decir cuánto se ahorra quien
+   * cambia a recogida en el punto. Sin esto, "te ahorras X" no tendría de dónde
+   * sacar la X — y un ahorro inventado es peor que no mostrarlo.
+   */
+  private readonly ultimaCotizacion = signal<CotizacionEnvio | null>(null);
 
   protected readonly form = new FormGroup({
     correo: new FormControl('', {
@@ -185,7 +203,94 @@ export class ResumenPage {
       : null;
   });
 
+  /** Mismo patrón de tick que los errores de campo: se relee el control. */
+  private readonly tickGrupoDireccion = toSignal(this.form.controls.direccion.valueChanges, {
+    initialValue: null,
+  });
+
+  /**
+   * `null` deshabilita la consulta. Pasa en tres casos y en los tres es
+   * correcto no llamar al proveedor: recogida en el punto (no hay a dónde
+   * despachar), carrito vacío, o dirección todavía a medio llenar.
+   */
+  protected readonly criteriosCotizacion = computed<CotizarEnvioComando | null>(() => {
+    if (!this.requiereDireccion()) {
+      return null;
+    }
+    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+    }));
+    if (lineas.length === 0) {
+      return null;
+    }
+    this.tickGrupoDireccion();
+    const direccion = this.direccionDesdeValores(this.form.controls.direccion.getRawValue());
+    if (!direccion.codigoDaneCiudad || !direccion.direccion.trim()) {
+      return null;
+    }
+    return { lineas, direccion };
+  });
+
+  protected readonly cotizando = computed(
+    () => this.criteriosCotizacion() !== null && this.cotizacion.isFetching(),
+  );
+
+  /**
+   * Sin cobertura es un dato, no un error: la consulta terminó bien y la
+   * respuesta fue "nadie llega ahí". Se distingue de `isError()`, que es "no se
+   * pudo preguntar" — mandar a cambiar una dirección que estaba bien por una
+   * caída nuestra sería culpar al comprador.
+   */
+  protected readonly sinCobertura = computed(
+    () => this.criteriosCotizacion() !== null && this.cotizacion.isSuccess() && this.cotizacion.data() === null,
+  );
+
+  protected readonly costoEnvio = computed(() => this.cotizacion.data()?.costoEnvio ?? 0);
+
+  protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
+
+  /**
+   * Solo si se llegó a cotizar: un ahorro que nadie calculó no se muestra. Va
+   * ya formateado porque se interpola dentro de una frase, no se pinta como
+   * elemento aparte.
+   */
+  protected readonly ahorroPorRecoger = computed(() => {
+    const cotizada = this.ultimaCotizacion();
+    if (!cotizada || this.requiereDireccion()) {
+      return null;
+    }
+    return formatearPrecio(cotizada.costoEnvio, cotizada.moneda, this.idioma());
+  });
+
+  /**
+   * Sin transportadora no se puede confirmar un envío a domicilio: el pedido
+   * respondería el mismo 409 dos pantallas después. Se bloquea aquí, junto al
+   * texto que explica por qué y ofrece la recogida.
+   */
+  protected readonly bloqueadoPorCobertura = computed(() => this.sinCobertura());
+
   constructor() {
+    // Recordar la última cotización buena para poder decir cuánto se ahorra
+    // quien cambia a recogida. Se guarda al llegar, no se recalcula después:
+    // al cambiar a retiro la consulta se deshabilita y `data()` se vacía.
+    //
+    // Y se **olvida** cuando la dirección nueva no tiene cobertura. Sin eso, el
+    // ahorro de la ciudad anterior sobrevivía al cambio de ciudad: quien cotizó
+    // Medellín en 9.540, cambió a Bogotá —sin transporte— y eligió recoger, leía
+    // "te ahorras $ 9.540" sin ahorrarse nada, porque a Bogotá no había cómo
+    // enviarlo. Lo encontró el recorrido en el navegador, no las pruebas.
+    effect(() => {
+      if (this.sinCobertura()) {
+        this.ultimaCotizacion.set(null);
+        return;
+      }
+      const cotizada = this.cotizacion.data();
+      if (cotizada) {
+        this.ultimaCotizacion.set(cotizada);
+      }
+    });
+
     // La ciudad depende del departamento elegido: si cambia el departamento,
     // la ciudad ya elegida puede no pertenecerle.
     this.form.controls.direccion.controls.codigoDaneDepartamento.valueChanges
@@ -225,9 +330,10 @@ export class ResumenPage {
   }
 
   private direccionDesdeFormulario(valores: ValoresDireccion): Direccion | null {
-    if (!this.requiereDireccion()) {
-      return null;
-    }
+    return this.requiereDireccion() ? this.direccionDesdeValores(valores) : null;
+  }
+
+  private direccionDesdeValores(valores: ValoresDireccion): Direccion {
     const departamento = DEPARTAMENTOS.find((d) => d.codigo === valores.codigoDaneDepartamento);
     const ciudad = municipiosDeDepartamento(valores.codigoDaneDepartamento).find(
       (m) => m.codigo === valores.codigoDaneCiudad,

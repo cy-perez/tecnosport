@@ -10,7 +10,7 @@
     "correo": "Correo electrónico",
     "tipo_entrega": "Tipo de entrega",
     "envio_a_domicilio": "Envío a domicilio",
-    "retiro_en_punto": "Retiro en punto (Medellín)",
+    "retiro_en_punto": "Recoger en el punto (Medellín) — sin costo de envío",
     "retiro_direccion_titulo": "Punto de retiro",
     "retiro_direccion": "Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín. Coordinamos la entrega contigo por WhatsApp o correo cuando confirmemos el pedido.",
     "direccion_titulo": "Dirección de entrega",
@@ -29,7 +29,13 @@
       "autorizacion_requerida": "Tienes que autorizar el tratamiento de datos para continuar."
     },
     "autoriza_datos": "Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.",
-    "ver_politica": "Leer la política de tratamiento de datos"
+    "ver_politica": "Leer la política de tratamiento de datos",
+    "costo_envio": "Costo de envío",
+    "total": "Total a pagar",
+    "envio_estimado": "Entrega estimada: {{dias}} días",
+    "envio_calculando": "Calculando el costo de envío…",
+    "envio_sin_cobertura": "No tenemos transporte hasta esta dirección. Puedes recoger tu pedido en nuestro punto de Medellín.",
+    "retiro_ahorro": "Te ahorras {{valor}} de envío"
   },
   "metodoPago": {
     "titulo": "Método de pago",
@@ -43,7 +49,8 @@
     "bancolombia": "Botón Bancolombia",
     "addi": "Addi (crédito)",
     "transferencia_manual": "Transferencia bancaria",
-    "contraentrega": "Pago contra entrega"
+    "contraentrega": "Pago contra entrega",
+    "contraentrega_efectivo": "Contra entrega: pagas el total, envío incluido, y solo en efectivo"
   },
   "confirmar": {
     "titulo": "Confirmar pedido",

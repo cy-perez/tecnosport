@@ -172,6 +172,37 @@ describe('MetodoPagoPage', () => {
     expect(screen.getByRole('button', { name: 'Pago contra entrega' })).toBeTruthy();
   });
 
+  /**
+   * El aviso se muestra cuando la opción se ofrece, no cuando se elige: informar es previo a
+   * decidir. Dice las dos cosas que sorprenden al recibir el paquete — que se cobra el total con
+   * el envío incluido, y que la transportadora solo recibe efectivo (docs/12-legales-de-envio.md).
+   */
+  it('cuando se ofrece contraentrega, avisa que se cobra el total y solo en efectivo', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TARJETA', 'CONTRAENTREGA']),
+    );
+
+    expect(
+      await screen.findByText('Contra entrega: pagas el total, envío incluido, y solo en efectivo'),
+    ).toBeTruthy();
+  });
+
+  /** Sin la opción no hay nada que advertir, y un aviso que no aplica es ruido. */
+  it('sin contraentrega entre las opciones, el aviso no aparece', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TARJETA', 'PSE']),
+    );
+
+    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+    expect(screen.queryByText(/solo en efectivo/)).toBeFalsy();
+  });
+
   it('el botón continuar arranca deshabilitado hasta elegir un método', async () => {
     sembrarCarritoId('carrito-1');
 
