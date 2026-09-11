@@ -111,6 +111,96 @@ class AdminPedidosControladorTest {
     return pedido;
   }
 
+  /** Un pedido creado hace {@code diasAtras} y llevado hasta {@code transiciones}. */
+  private Pedido pedidoViejo(MetodoPago metodoPago, int diasAtras, EstadoPedido... transiciones) {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    Instant nacimiento = Instant.now().minus(diasAtras, java.time.temporal.ChronoUnit.DAYS);
+    inventario.registrarEntrada(1, "stock inicial de prueba", nacimiento);
+    MovimientoInventario reserva = inventario.reservar(1, null, nacimiento);
+    inventarios.conInventario(inventario);
+
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 2),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    reserva.id())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            metodoPago,
+            "cliente@tecnosport.co",
+            nacimiento);
+    Instant momento = nacimiento;
+    for (EstadoPedido siguiente : transiciones) {
+      momento = momento.plusSeconds(3600);
+      pedido.transicionar(siguiente, "sistema", "prueba", momento);
+    }
+    pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  @Test
+  void elPanelVeElPlazoDeEntregaVencido() throws Exception {
+    pedidoViejo(MetodoPago.NEQUI, 40, EstadoPedido.PAGADO);
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega.verdicto").value("VENCIDO"))
+        // Vencido y sin aviso es un estado normal: el vigilante pasa cada doce horas.
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega.avisadoEn").doesNotExist())
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega.limite").exists());
+  }
+
+  @Test
+  void unPedidoDentroDelPlazoNoSePintaComoIncumplido() throws Exception {
+    pedidoViejo(MetodoPago.NEQUI, 3, EstadoPedido.PAGADO);
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega.verdicto").value("EN_PLAZO"));
+  }
+
+  @Test
+  void mientrasElPagoSigaPendienteNoHayPlazoQueMostrar() throws Exception {
+    pedidoViejo(MetodoPago.NEQUI, 40);
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega").doesNotExist());
+  }
+
+  @Test
+  void unPedidoViejoEntregadoATiempoSigueEnPlazo() throws Exception {
+    // Se juzga contra su fecha de entrega, no contra el reloj de hoy: si no, cualquier pedido
+    // antiguo cumplido aparecería como incumplido para siempre.
+    pedidoViejo(
+        MetodoPago.NEQUI,
+        120,
+        EstadoPedido.PAGADO,
+        EstadoPedido.EN_PREPARACION,
+        EstadoPedido.DESPACHADO,
+        EstadoPedido.ENTREGADO);
+
+    mockMvc
+        .perform(get("/api/v1/admin/pedidos"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].plazoDeEntrega.verdicto").value("EN_PLAZO"));
+  }
+
   @Test
   void listaLosPedidosPaginados() throws Exception {
     pedidoConMetodo(MetodoPago.NEQUI);
@@ -426,7 +516,8 @@ class AdminPedidosControladorTest {
       return new MapeadorRespuestasPedido(
           propiedadesTransferencia,
           repositorioEnvios,
-          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()));
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
+          java.time.Instant::now);
     }
   }
 }

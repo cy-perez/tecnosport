@@ -33,6 +33,7 @@ public final class Pedido {
   private final List<HistorialPedido> historial;
   private final Instant creadoEn;
   private EstadoPedido estado;
+  private final Instant avisoDePlazoEnviadoEn;
 
   public Pedido(
       UUID id,
@@ -46,6 +47,43 @@ public final class Pedido {
       EstadoPedido estado,
       List<HistorialPedido> historial,
       Instant creadoEn) {
+    this(
+        id,
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        estado,
+        historial,
+        creadoEn,
+        null);
+  }
+
+  /**
+   * El constructor que usa quien reconstruye el pedido desde la base: el mismo, más la fecha en que
+   * se le avisó al comprador que el plazo de entrega venció.
+   *
+   * <p>Sobrecarga y no un parámetro más en el de arriba porque un pedido que nace nunca tiene ese
+   * aviso —el plazo no ha empezado siquiera a correr— y obligar a los treinta y tantos sitios que
+   * crean pedidos a escribir {@code null} solo repartiría ruido.
+   */
+  public Pedido(
+      UUID id,
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      EstadoPedido estado,
+      List<HistorialPedido> historial,
+      Instant creadoEn,
+      Instant avisoDePlazoEnviadoEn) {
+    this.avisoDePlazoEnviadoEn = avisoDePlazoEnviadoEn;
     this.id = Objects.requireNonNull(id, "El id del pedido no puede ser nulo.");
     this.numeroPedido =
         Objects.requireNonNull(numeroPedido, "El número de pedido no puede ser nulo.");
@@ -217,6 +255,48 @@ public final class Pedido {
         .filter(registro -> registro.estado() == EstadoPedido.ENTREGADO)
         .map(HistorialPedido::fecha)
         .findFirst();
+  }
+
+  /**
+   * Cuándo empezó a correr el plazo de entrega, leído del historial por el mismo motivo que {@link
+   * #fechaDeEntrega()}: una columna aparte sería una segunda verdad.
+   *
+   * <p>Qué registro lo marca depende del método de pago, y es la única regla aquí. En contraentrega
+   * es {@code CONFIRMADO_CONTRAENTREGA}: ahí se celebra el contrato y no hay ninguna confirmación
+   * de pago que esperar, porque se paga al recibir. En los demás es {@code PAGADO}, que es lo que
+   * los términos publicados llaman "la confirmación del pago".
+   *
+   * <p>Vacío mientras el pago siga pendiente, que es lo que distingue "el plazo todavía no empezó a
+   * correr" de "empezó tal día". Un pedido que nunca se pagó no puede incumplir una entrega.
+   */
+  public Optional<Instant> fechaDeInicioDelPlazoDeEntrega() {
+    EstadoPedido cuandoArranca =
+        metodoPago == MetodoPago.CONTRAENTREGA
+            ? EstadoPedido.CONFIRMADO_CONTRAENTREGA
+            : EstadoPedido.PAGADO;
+    return historial.stream()
+        .filter(registro -> registro.estado() == cuandoArranca)
+        .map(HistorialPedido::fecha)
+        .findFirst();
+  }
+
+  /**
+   * Cuándo se le avisó al comprador que el plazo de entrega venció, o vacío si todavía no.
+   *
+   * <p>Este sí es un campo propio y no algo derivable del historial, a diferencia de los dos de
+   * arriba: es un hecho nuevo —se escribió un correo— y no una consecuencia de ningún cambio de
+   * estado. De él depende que el vigilante no vuelva a escribir en cada vuelta.
+   *
+   * <p><b>Solo de lectura, y es la parte que importa.</b> No hay un método para marcarlo aquí
+   * porque este agregado no puede sostener la garantía que hace falta: que solo <i>uno</i> de los
+   * que lo intenten a la vez gane. Eso exige una escritura condicional atómica, y quien la sostiene
+   * es {@code RepositorioPedidos.reclamarAvisoDePlazo}, con el {@code where ... is null} de la base
+   * — con varias instancias de Cloud Run, una invariante comprobada en memoria no impide nada. La
+   * columna, además, es de solo lectura para el mapeo del agregado, así que ningún {@code guardar}
+   * de otra operación puede pisarla.
+   */
+  public Optional<Instant> avisoDePlazoEnviadoEn() {
+    return Optional.ofNullable(avisoDePlazoEnviadoEn);
   }
 
   /**

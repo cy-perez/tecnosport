@@ -268,4 +268,83 @@ class PedidoTest {
 
     assertEquals(entrega, pedido.fechaDeEntrega().orElseThrow());
   }
+
+  @Test
+  void elPlazoDeEntregaArrancaCuandoSeAplicaElPago() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Instant pagado = AHORA.plusSeconds(3600);
+    pedido.transicionar(EstadoPedido.PAGADO, "wompi", "pago aprobado", pagado);
+
+    assertEquals(pagado, pedido.fechaDeInicioDelPlazoDeEntrega().orElseThrow());
+  }
+
+  @Test
+  void enContraentregaElPlazoArrancaAlConfirmar() {
+    // No hay confirmación de pago que esperar: se paga al recibir, y el contrato queda celebrado
+    // cuando se confirma el pedido.
+    Pedido pedido = crearAlDomicilio(MetodoPago.CONTRAENTREGA);
+
+    assertEquals(AHORA, pedido.fechaDeInicioDelPlazoDeEntrega().orElseThrow());
+  }
+
+  @Test
+  void mientrasElPagoSigaPendienteElPlazoNoHaArrancado() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+
+    assertTrue(pedido.fechaDeInicioDelPlazoDeEntrega().isEmpty());
+  }
+
+  @Test
+  void unPagoFallidoTampocoArrancaElPlazo() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    pedido.transicionar(EstadoPedido.PAGO_FALLIDO, "wompi", "rechazado", AHORA.plusSeconds(60));
+
+    assertTrue(pedido.fechaDeInicioDelPlazoDeEntrega().isEmpty());
+  }
+
+  @Test
+  void elPlazoSigueColgandoDelPrimerPagoAunqueElPedidoAvance() {
+    // Despachar tarde no reinicia nada: el plazo se cuenta desde que se pagó, no desde el último
+    // movimiento del pedido.
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+    Instant pagado = AHORA.plusSeconds(3600);
+    pedido.transicionar(EstadoPedido.PAGADO, "wompi", "pago aprobado", pagado);
+    pedido.transicionar(
+        EstadoPedido.EN_PREPARACION, "admin", "alistando", pagado.plusSeconds(86400));
+
+    assertEquals(pagado, pedido.fechaDeInicioDelPlazoDeEntrega().orElseThrow());
+  }
+
+  @Test
+  void unPedidoNuevoNoTieneAvisoDePlazo() {
+    assertTrue(crearAlDomicilio(MetodoPago.NEQUI).avisoDePlazoEnviadoEn().isEmpty());
+  }
+
+  /**
+   * El aviso solo entra al reconstruir desde la base: no hay forma de marcarlo aquí, porque la
+   * garantía de "una sola vez" con varias instancias la sostiene la escritura condicional del
+   * repositorio y no una comprobación en memoria.
+   */
+  @Test
+  void elAvisoSoloLlegaAlReconstruirElPedido() {
+    Pedido nuevo = crearAlDomicilio(MetodoPago.NEQUI);
+    Instant aviso = AHORA.plusSeconds(86_400L * 31);
+
+    Pedido reconstruido =
+        new Pedido(
+            nuevo.id(),
+            nuevo.numeroPedido(),
+            null,
+            nuevo.correo(),
+            nuevo.lineas(),
+            nuevo.tipoEntrega(),
+            nuevo.direccion().orElse(null),
+            nuevo.metodoPago(),
+            nuevo.estado(),
+            nuevo.historial(),
+            nuevo.creadoEn(),
+            aviso);
+
+    assertEquals(aviso, reconstruido.avisoDePlazoEnviadoEn().orElseThrow());
+  }
 }

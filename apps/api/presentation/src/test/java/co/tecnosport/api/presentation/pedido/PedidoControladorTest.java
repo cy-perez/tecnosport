@@ -235,7 +235,15 @@ class PedidoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json.writeValueAsString(cuerpo)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
+        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"))
+        // Y con el plazo de entrega dentro, que es deliberado y no un descuido de reutilizar el DTO
+        // del panel: en contraentrega el contrato queda celebrado aquí mismo, así que el plazo ya
+        // arrancó, y decirle a quien compró hasta cuándo tenemos para entregarle es información
+        // suya. Lo que no sale por aquí —costo real del flete, comisión de recaudo— se afirma en
+        // `seguimientoNoExponeLosCostosInternos`.
+        .andExpect(jsonPath("$.plazoDeEntrega.limite").exists())
+        .andExpect(jsonPath("$.plazoDeEntrega.verdicto").value("EN_PLAZO"))
+        .andExpect(jsonPath("$.plazoDeEntrega.avisadoEn").doesNotExist());
   }
 
   @Test
@@ -673,7 +681,8 @@ class PedidoControladorTest {
       return new MapeadorRespuestasPedido(
           propiedadesTransferencia,
           repositorioEnvios,
-          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()));
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
+          java.time.Instant::now);
     }
 
     @Bean

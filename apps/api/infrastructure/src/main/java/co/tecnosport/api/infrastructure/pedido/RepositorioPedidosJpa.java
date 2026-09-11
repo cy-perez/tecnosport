@@ -16,6 +16,8 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.infrastructure.pedido.entidad.HistorialPedidoJpaEntity;
 import co.tecnosport.api.infrastructure.pedido.entidad.LineaPedidoJpaEntity;
 import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Sin {@code @Transactional} propio a propósito, igual que {@code RepositorioInventarioJpa}: {@code
@@ -124,6 +127,47 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  public List<Pedido> buscarSinAvisoDePlazo(
+      Collection<EstadoPedido> estados, Instant creadosAntesDe) {
+    Objects.requireNonNull(estados, "Los estados no pueden ser nulos.");
+    Objects.requireNonNull(creadosAntesDe, "La fecha de corte no puede ser nula.");
+    if (estados.isEmpty()) {
+      return List.of();
+    }
+    return pedidos
+        .findByEstadoInAndAvisoPlazoEntregaEnviadoEnIsNullAndCreadoEnBefore(
+            estados.stream().map(EstadoPedido::name).toList(), creadosAntesDe)
+        .stream()
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())))
+        .toList();
+  }
+
+  /**
+   * La <b>única</b> excepción al "sin {@code @Transactional} propio" de arriba, y es deliberada:
+   * una sentencia {@code @Modifying} sin transacción activa revienta con {@code
+   * TransactionRequiredException} (apps/api/CLAUDE.md), y este método se llama desde una tarea que
+   * a propósito no abre ninguna.
+   *
+   * <p>Y de ahí sale la garantía que importa, así que conviene decir dónde <b>no</b> está: no está
+   * aquí. Es {@code TareaAvisoDePlazoDeEntrega} quien la sostiene, no envolviendo el barrido — con
+   * una transacción por reclamo, un fallo a mitad del lote no revierte los reclamos ya
+   * comprometidos, y nadie recibe el correo dos veces. Si alguien vuelve a envolver el lote, la
+   * garantía se cae en silencio; por eso está escrito en los dos sitios.
+   */
+  @Override
+  @Transactional
+  public boolean reclamarAvisoDePlazo(UUID pedidoId, Instant ahora) {
+    Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
+    Objects.requireNonNull(ahora, "La fecha del aviso no puede ser nula.");
+    return pedidos.reclamarAvisoDePlazo(pedidoId, ahora) == 1;
+  }
+
+  @Override
   public NumeroPedido siguienteNumero(int anio) {
     Long secuencial =
         jdbc.queryForObject(
@@ -156,7 +200,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         MetodoPago.valueOf(entidad.getMetodoPago()),
         EstadoPedido.valueOf(entidad.getEstado()),
         historialJpa.stream().map(this::aHistorial).toList(),
-        entidad.getCreadoEn());
+        entidad.getCreadoEn(),
+        entidad.getAvisoPlazoEntregaEnviadoEn());
   }
 
   private LineaPedido aLinea(LineaPedidoJpaEntity l) {
@@ -193,7 +238,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         direccion == null ? null : direccion.indicaciones(),
         pedido.metodoPago().name(),
         pedido.estado().name(),
-        pedido.creadoEn());
+        pedido.creadoEn(),
+        pedido.avisoDePlazoEnviadoEn().orElse(null));
   }
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {

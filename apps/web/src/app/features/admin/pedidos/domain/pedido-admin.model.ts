@@ -20,7 +20,8 @@ export type EstadoPedido =
   | 'RECHAZADO_EN_ENTREGA'
   | 'DEVUELTO'
   | 'RECAUDO_PENDIENTE'
-  | 'RECAUDO_CONCILIADO';
+  | 'RECAUDO_CONCILIADO'
+  | 'CANCELADO';
 
 export interface Direccion {
   readonly codigoDaneDepartamento: string;
@@ -69,6 +70,27 @@ export interface HistorialPedidoAdmin {
   readonly motivo: string;
 }
 
+/**
+ * El veredicto del plazo de entrega. **Nunca `INDETERMINADO`**, a diferencia del del retracto: los
+ * treinta días del artículo 18 de la Ley 1480 de 2011 son calendario, así que no hay festivos que
+ * puedan empujar el límite ni incertidumbre que declarar.
+ */
+export type VerdictoPlazoEntrega = 'EN_PLAZO' | 'VENCIDO';
+
+/**
+ * El plazo legal para entregar, calculado en el servidor: un plazo legal no puede depender del
+ * reloj ni de la zona horaria del navegador de quien mire la pantalla.
+ *
+ * `avisadoEn` es cuándo se le escribió al comprador para decirle que puede terminar el contrato.
+ * Vencido y sin aviso no es un estado imposible: el vigilante pasa cada doce horas.
+ */
+export interface PlazoDeEntregaAdmin {
+  readonly inicio: string;
+  readonly limite: string;
+  readonly verdicto: VerdictoPlazoEntrega;
+  readonly avisadoEn: string | null;
+}
+
 export interface PedidoAdmin {
   readonly id: string;
   readonly numeroPedido: string;
@@ -91,6 +113,8 @@ export interface PedidoAdmin {
   readonly datosTransferencia: DatosTransferencia | null;
   readonly envio: EnvioAdmin | null;
   readonly historial: readonly HistorialPedidoAdmin[];
+  /** Nulo mientras el plazo no haya arrancado: un pago pendiente no tiene contrato que incumplir. */
+  readonly plazoDeEntrega: PlazoDeEntregaAdmin | null;
 }
 
 export interface PedidosPaginadosAdmin {

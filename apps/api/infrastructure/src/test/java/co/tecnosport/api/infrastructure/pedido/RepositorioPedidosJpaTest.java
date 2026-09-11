@@ -285,4 +285,138 @@ class RepositorioPedidosJpaTest {
     Set<Long> esperados = LongStream.rangeClosed(1, hilos).boxed().collect(Collectors.toSet());
     assertThat(secuenciales).isEqualTo(esperados);
   }
+
+  // --- El vigilante del plazo de entrega (ADR-0028) ---
+
+  private Pedido pedidoCreadoEn(long secuencial, Instant creadoEn, MetodoPago metodoPago) {
+    return Pedido.crear(
+        NumeroPedido.de(2026, secuencial),
+        null,
+        new CorreoElectronico("cliente@tecnosport.co"),
+        List.of(linea()),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        metodoPago,
+        "cliente@tecnosport.co",
+        creadoEn);
+  }
+
+  @Test
+  void elReclamoSeLeeDeVueltaEnElAgregado() {
+    Instant hace40Dias = Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS);
+    Pedido pedido = pedidoCreadoEn(700, hace40Dias, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(pedido);
+    Instant aviso = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+
+    assertThat(repositorio.reclamarAvisoDePlazo(pedido.id(), aviso)).isTrue();
+
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().avisoDePlazoEnviadoEn())
+        .contains(aviso);
+  }
+
+  /** El segundo que lo intente pierde: es lo único que impide dos correos al mismo comprador. */
+  @Test
+  void soloElPrimerReclamoGana() {
+    Pedido pedido =
+        pedidoCreadoEn(
+            701, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.NEQUI);
+    repositorio.guardar(pedido);
+    Instant primero = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+
+    assertThat(repositorio.reclamarAvisoDePlazo(pedido.id(), primero)).isTrue();
+    assertThat(repositorio.reclamarAvisoDePlazo(pedido.id(), primero.plusSeconds(3600))).isFalse();
+
+    // Y la fecha sigue siendo la del primero: cuándo se avisó por primera vez es el dato que
+    // importa si alguien reclama.
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().avisoDePlazoEnviadoEn())
+        .contains(primero);
+  }
+
+  /**
+   * La razón por la que la columna es {@code updatable = false}: quien despacha el pedido lo cargó
+   * antes del reclamo, así que su copia en memoria lo tiene en nulo. Si {@code guardar} escribiera
+   * esa columna, el reclamo desaparecería y el comprador recibiría el mismo correo otra vez.
+   */
+  @Test
+  void guardarElPedidoNoPisaUnReclamoYaHecho() {
+    Pedido pedido =
+        pedidoCreadoEn(
+            702, Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS), MetodoPago.NEQUI);
+    repositorio.guardar(pedido);
+    Instant aviso = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+    repositorio.reclamarAvisoDePlazo(pedido.id(), aviso);
+
+    // `pedido` es la copia vieja, sin aviso, como la tendría cualquier otra operación en vuelo.
+    assertThat(pedido.avisoDePlazoEnviadoEn()).isEmpty();
+    repositorio.guardar(pedido);
+
+    // Se comprueba con otro reclamo y no leyendo el agregado, y la diferencia importa: el reclamo
+    // es una sentencia masiva que va a la base de verdad, mientras que una lectura dentro de esta
+    // misma transacción devolvería la copia que Hibernate tiene en memoria. Si `guardar` hubiera
+    // pisado la columna, este segundo reclamo la encontraría en nulo y ganaría.
+    assertThat(repositorio.reclamarAvisoDePlazo(pedido.id(), aviso.plusSeconds(60))).isFalse();
+  }
+
+  @Test
+  void reclamarUnPedidoQueNoExisteNoGanaNada() {
+    assertThat(repositorio.reclamarAvisoDePlazo(UUID.randomUUID(), Instant.now())).isFalse();
+  }
+
+  @Test
+  void unPedidoNuevoSeGuardaSinAviso() {
+    Pedido pedido = pedidoCreadoEn(701, Instant.now(), MetodoPago.CONTRAENTREGA);
+
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().avisoDePlazoEnviadoEn())
+        .isEmpty();
+  }
+
+  @Test
+  void laConsultaDelVigilanteTraeLosViejosSinAvisoYEnLosEstadosPedidos() {
+    Instant corte = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
+    Instant viejo = corte.minus(10, java.time.temporal.ChronoUnit.DAYS);
+
+    Pedido candidato = pedidoCreadoEn(710, viejo, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(candidato);
+
+    Pedido reciente = pedidoCreadoEn(711, Instant.now(), MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(reciente);
+
+    Pedido yaAvisado = pedidoCreadoEn(712, viejo, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(yaAvisado);
+    repositorio.reclamarAvisoDePlazo(yaAvisado.id(), Instant.now());
+
+    Pedido enOtroEstado = pedidoCreadoEn(713, viejo, MetodoPago.NEQUI);
+    repositorio.guardar(enOtroEstado);
+
+    List<Pedido> encontrados =
+        repositorio.buscarSinAvisoDePlazo(
+            Set.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA, EstadoPedido.PAGADO), corte);
+
+    assertThat(encontrados).extracting(Pedido::id).containsExactly(candidato.id());
+  }
+
+  @Test
+  void laConsultaDelVigilanteReconstruyeElPedidoCompleto() {
+    Instant viejo = Instant.now().minus(40, java.time.temporal.ChronoUnit.DAYS);
+    Pedido guardado = pedidoCreadoEn(720, viejo, MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(guardado);
+
+    Pedido encontrado =
+        repositorio
+            .buscarSinAvisoDePlazo(Set.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA), Instant.now())
+            .get(0);
+
+    // El historial es lo que decide si el plazo venció: sin él, el vigilante no sabría desde cuándo
+    // contar.
+    assertThat(encontrado.historial()).hasSize(1);
+    assertThat(encontrado.lineas()).hasSize(1);
+    assertThat(encontrado.fechaDeInicioDelPlazoDeEntrega()).isPresent();
+  }
+
+  @Test
+  void sinEstadosLaConsultaNoVaALaBase() {
+    assertThat(repositorio.buscarSinAvisoDePlazo(Set.of(), Instant.now())).isEmpty();
+  }
 }

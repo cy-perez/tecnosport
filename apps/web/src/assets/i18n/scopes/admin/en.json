@@ -57,7 +57,22 @@
       "rechazado_en_entrega": "Rejected on delivery",
       "devuelto": "Returned",
       "recaudo_pendiente": "Collection pending",
-      "recaudo_conciliado": "Collection reconciled"
+      "recaudo_conciliado": "Collection reconciled",
+      "cancelado": "Cancelled"
+    },
+    "plazo_entrega": {
+      "titulo": "Delivery deadline",
+      "limite": "Ran out on",
+      "verdicto": {
+        "en_plazo": "Within the deadline",
+        "vencido": "Deadline passed",
+        "vencido_avisado": "Deadline passed · already notified"
+      },
+      "aviso": "Notice to the buyer",
+      "avisado_el": "Notified on {{fecha}}",
+      "sin_aviso": "Not notified yet. The watcher checks every twelve hours.",
+      "que_sigue": "Terminating the contract is the buyer's decision. If they ask for it, cancel the order with the reason “deadline missed”.",
+      "que_sigue_despachado": "This order has already shipped and cannot be cancelled: from shipped the only ways out are delivery or rejection on delivery. If the buyer wants to terminate the contract, the return has to be arranged with the carrier."
     },
     "lista": {
       "ver_detalle": "View detail",

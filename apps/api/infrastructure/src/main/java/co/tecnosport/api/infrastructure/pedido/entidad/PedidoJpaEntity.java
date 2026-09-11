@@ -49,6 +49,16 @@ public class PedidoJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  /**
+   * {@code insertable = false, updatable = false}: el único que escribe esta columna es la
+   * sentencia condicional de {@code PedidoJpaRepository.reclamarAvisoDePlazo}. Sin eso, {@code
+   * guardar} la incluiría en cada actualización del pedido, y una acción del panel hecha sobre un
+   * agregado leído antes del reclamo lo dejaría otra vez en nulo — el comprador recibiría el mismo
+   * correo dos veces. Lo levantó una revisión adversarial del propio vigilante.
+   */
+  @Column(name = "aviso_plazo_entrega_enviado_en", insertable = false, updatable = false)
+  private Instant avisoPlazoEntregaEnviadoEn;
+
   protected PedidoJpaEntity() {}
 
   public PedidoJpaEntity(
@@ -65,7 +75,8 @@ public class PedidoJpaEntity {
       String indicaciones,
       String metodoPago,
       String estado,
-      Instant creadoEn) {
+      Instant creadoEn,
+      Instant avisoPlazoEntregaEnviadoEn) {
     this.id = id;
     this.numeroPedido = numeroPedido;
     this.usuarioId = usuarioId;
@@ -80,6 +91,7 @@ public class PedidoJpaEntity {
     this.metodoPago = metodoPago;
     this.estado = estado;
     this.creadoEn = creadoEn;
+    this.avisoPlazoEntregaEnviadoEn = avisoPlazoEntregaEnviadoEn;
   }
 
   public UUID getId() {
@@ -136,5 +148,9 @@ public class PedidoJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public Instant getAvisoPlazoEntregaEnviadoEn() {
+    return avisoPlazoEntregaEnviadoEn;
   }
 }

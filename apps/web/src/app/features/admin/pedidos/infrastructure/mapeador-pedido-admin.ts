@@ -9,7 +9,9 @@ import {
   MetodoPago,
   PedidoAdmin,
   PedidosPaginadosAdmin,
+  PlazoDeEntregaAdmin,
   TipoEntrega,
+  VerdictoPlazoEntrega,
 } from '../domain/pedido-admin.model';
 
 type PedidoDto = components['schemas']['PedidoRespuesta'];
@@ -19,6 +21,7 @@ type LineaPedidoDto = components['schemas']['LineaPedidoRespuesta'];
 type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'];
 type EnvioDto = components['schemas']['EnvioRespuesta'];
 type HistorialPedidoDto = components['schemas']['HistorialPedidoRespuesta'];
+type PlazoDeEntregaDto = components['schemas']['PlazoDeEntregaRespuesta'];
 
 /**
  * DTO generado -> modelo propio del panel. Mismo criterio que
@@ -48,6 +51,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
     envio: dto.envio ? aEnvio(dto.envio) : null,
     historial: (dto.historial ?? []).map(aHistorial),
+    plazoDeEntrega: dto.plazoDeEntrega ? aPlazoDeEntrega(dto.plazoDeEntrega) : null,
   };
 }
 
@@ -102,6 +106,15 @@ function aEnvio(dto: EnvioDto): EnvioAdmin {
     despachadoEn: dto.despachadoEn ?? '',
     comisionRecaudo: dto.comisionRecaudo ? { valor: dto.comisionRecaudo.valor ?? 0, moneda: dto.comisionRecaudo.moneda ?? 'COP' } : null,
     recaudoConciliadoEn: dto.recaudoConciliadoEn ?? null,
+  };
+}
+
+function aPlazoDeEntrega(dto: PlazoDeEntregaDto): PlazoDeEntregaAdmin {
+  return {
+    inicio: dto.inicio ?? '',
+    limite: dto.limite ?? '',
+    verdicto: (dto.verdicto ?? 'EN_PLAZO') as VerdictoPlazoEntrega,
+    avisadoEn: dto.avisadoEn ?? null,
   };
 }
 

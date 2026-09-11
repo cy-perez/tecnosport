@@ -119,6 +119,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     datosTransferencia: null,
     envio: null,
     historial: [],
+    plazoDeEntrega: null,
     ...overrides,
   };
 }
@@ -277,6 +278,166 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
 
     expect(await screen.findByText(/Camiseta/)).toBeTruthy();
+  });
+
+  /**
+   * El plazo vencido se ve sin abrir el detalle: quien opera el panel tiene que enterarse de un
+   * incumplimiento mirando la lista, no expandiendo pedido por pedido.
+   */
+  it('un plazo de entrega vencido se marca en la propia fila', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText('Plazo vencido')).toBeTruthy();
+  });
+
+  it('un pedido dentro del plazo no marca nada en la fila', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'EN_PLAZO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    await screen.findByText('TS-2026-000123');
+
+    expect(screen.queryByText('Plazo vencido')).toBeNull();
+  });
+
+  it('el detalle dice que al comprador todavía no se le ha avisado', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Todavía no se le ha avisado/)).toBeTruthy();
+    // Y que cancelar lo decide quien compró, no el panel (ADR-0028).
+    expect(screen.getByText(/Terminar el contrato lo decide quien compró/)).toBeTruthy();
+  });
+
+  it('el detalle dice cuándo se le avisó, si ya se hizo', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-01-31T23:59:59Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: '2026-02-01T15:00:00Z',
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/Avisado el/)).toBeTruthy();
+    expect(screen.queryByText(/Todavía no se le ha avisado/)).toBeNull();
+  });
+
+  it('un pedido sin plazo arrancado no muestra el bloque', async () => {
+    await renderLista([pedidoDePrueba()]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByText(/Camiseta/);
+
+    expect(screen.queryByText('Plazo de entrega')).toBeNull();
+  });
+
+  /**
+   * Vencido y sin avisar es lo accionable; vencido y ya avisado es seguimiento. Pintarlos igual
+   * obligaba a expandir fila por fila para distinguirlos — se vio en el navegador, con dos pedidos
+   * sembrados que se veían idénticos.
+   */
+  it('un plazo vencido al que ya se le avisó no se marca igual que uno sin avisar', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'EN_PREPARACION',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-02-01T05:00:00Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: '2026-02-03T15:00:00Z',
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText('Plazo vencido · ya avisado')).toBeTruthy();
+    expect(screen.queryByText('Plazo vencido')).toBeNull();
+  });
+
+  /**
+   * El límite que manda el servidor es el instante en que el plazo se agota, o sea el comienzo del
+   * día siguiente. Pintarlo tal cual decía «1 de septiembre, 12:00 a. m.» y se leía como que había
+   * hasta ese día, cuando el último era el 31 de agosto.
+   */
+  it('el detalle muestra el último día del plazo, no el instante en que se agota', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'PAGADO',
+        // 2026-09-01 00:00 en Medellín: el plazo se agotó al terminar el 31 de agosto.
+        plazoDeEntrega: {
+          inicio: '2026-08-01T12:00:00Z',
+          limite: '2026-09-01T05:00:00Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/31 de agosto de 2026/)).toBeTruthy();
+    expect(screen.queryByText(/1 de septiembre de 2026/)).toBeNull();
+  });
+
+  /**
+   * De `DESPACHADO` solo se sale entregando o con el rechazo en la entrega, así que el panel no
+   * ofrece cancelación y el texto no puede mandar a cancelar.
+   */
+  it('a un despachado vencido no se le dice que cancele el pedido', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'DESPACHADO',
+        plazoDeEntrega: {
+          inicio: '2026-01-01T12:00:00Z',
+          limite: '2026-02-01T05:00:00Z',
+          verdicto: 'VENCIDO',
+          avisadoEn: null,
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByText(/no admite cancelación/)).toBeTruthy();
+    expect(screen.queryByText(/cancela el pedido con el motivo/)).toBeNull();
+  });
+
+  /**
+   * La celda de Estado salía vacía para todo pedido cancelado: `CLAVE_ETIQUETA_ESTADO` no tenía esa
+   * entrada. Ninguna prueba lo vio porque ninguna sembraba un cancelado; se vio mirando la pantalla.
+   */
+  it('un pedido cancelado dice que está cancelado', async () => {
+    await renderLista([pedidoDePrueba({ estado: 'CANCELADO' })]);
+
+    expect(await screen.findByRole('cell', { name: 'Cancelado' })).toBeTruthy();
   });
 
   it('conciliar transferencia llama al repositorio y refresca la lista', async () => {

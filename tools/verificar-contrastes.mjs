@@ -64,6 +64,10 @@ const PARES = [
   ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie, franjas de marca y pista del visor 360"],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],
+  // La fila expandida del panel de pedidos vive sobre la superficie elevada, y ahí pinta en rojo el
+  // plazo de entrega vencido. Faltaba el par: el guardián miraba el rojo sobre fondo y sobre
+  // superficie, pero no sobre esta.
+  ["--color-error", "--color-superficie-alt", UMBRAL_TEXTO, "plazo vencido en la fila expandida"],
   ["--color-exito", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de disponible"],
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],

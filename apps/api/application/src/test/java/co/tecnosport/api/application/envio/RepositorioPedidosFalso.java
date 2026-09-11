@@ -43,4 +43,17 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   public boolean tieneRechazoEnEntrega(String correo) {
     return correosConRechazoEnEntrega.contains(correo);
   }
+
+  /** Ningún caso de uso de este paquete vigila plazos de entrega. */
+  @Override
+  public java.util.List<co.tecnosport.api.domain.pedido.Pedido> buscarSinAvisoDePlazo(
+      java.util.Collection<co.tecnosport.api.domain.pedido.EstadoPedido> estados,
+      java.time.Instant creadosAntesDe) {
+    return java.util.List.of();
+  }
+
+  @Override
+  public boolean reclamarAvisoDePlazo(java.util.UUID pedidoId, java.time.Instant ahora) {
+    return false;
+  }
 }

@@ -2996,11 +2996,12 @@ flujo en su Web Checkout.
 
 ### Lo que queda abierto
 
-**Nadie vigila el vencimiento del plazo de entrega.** `MotivoCancelacion` ya trae
-`PLAZO_INCUMPLIDO`, pero las dos únicas tareas programadas son la purga de
+**Nadie vigila el vencimiento del plazo de entrega.** ~~`MotivoCancelacion` ya
+trae `PLAZO_INCUMPLIDO`, pero las dos únicas tareas programadas son la purga de
 carritos y la conciliación de Wompi. Con el término legal de treinta días
-publicado, un pedido pagado y sin despachar lo incumple en silencio. Encaja en la
-Fase 7, donde ya entra la conciliación de envíos.
+publicado, un pedido pagado y sin despachar lo incumple en silencio.~~ **Cerrado
+el 10 de septiembre**, antes de entrar a la Fase 7 y no dentro de ella: no
+dependía de nada del envío cotizado y era un incumplimiento vivo. Ver abajo.
 
 **Sigue para revisión de abogado**, además de lo que ya estaba: el "desgaste
 normal" como exclusión de garantía; si describir a un tercero por su categoría
@@ -3161,6 +3162,84 @@ Quedan, para cuando se retomen: el orden de las guardas en `ResolverGarantia` y
 su agregado —hoy lo cubren el tope y la transacción—, y las cuatro copias
 idénticas de `RepositorioReintegrosFalso` en las pruebas.
 
+
+## El vigilante del plazo de entrega (2026-09-10)
+
+Lo único que la revisión adversarial dejó abierto y no era de la Fase 7. Los
+términos publicados prometen treinta días calendario para entregar (Ley 1480 de
+2011, art. 18) y que, si no se cumple, quien compró puede terminar el contrato y
+recuperar su dinero. La segunda mitad tenía código desde el bloque del retracto
+—`CancelarPedido` acepta `PLAZO_INCUMPLIDO`—; la primera no tenía nada.
+
+**Avisa y no cancela** (`ADR-0028`). El artículo 18 le da la opción al consumidor,
+no obliga al vendedor a deshacer el pedido por su cuenta: puede preferir esperar,
+y cancelárselo sin preguntarle sería decidir por él. Quien decide es una persona,
+y entonces corre el `CancelarPedido` que ya existía. Tampoco radica una PQR, por
+lo mismo que no la radica aquél: esa bandeja es de peticiones del comprador.
+
+Tres decisiones con filo, las tres anotadas en el ADR:
+
+- **El plazo cuelga del historial, no de una columna.** Se lee del registro de
+  `PAGADO`, o del de `CONFIRMADO_CONTRAENTREGA` cuando se paga al recibir —ahí se
+  celebra el contrato y no hay confirmación de pago que esperar—. Mismo
+  razonamiento que `Pedido.fechaDeEntrega()`. La única columna nueva es cuándo
+  salió el aviso, que no se deduce de ningún estado.
+- **Días calendario, no hábiles**, así que `PlazoDeEntrega` no recibe
+  `CalendarioHabil` y nunca responde `INDETERMINADO`. Es el primer plazo del
+  sistema que no pasa por los festivos de `ADR-0024`.
+- **Cubre los despachados sin entregar**, porque el plazo corre hasta la entrega.
+  El falso positivo está asumido a sabiendas —hoy la entrega se marca a mano— y por
+  eso ese caso lleva un párrafo propio que no acusa a nadie. Con el seguimiento de
+  la Fase 7 (`ADR-0022`) esa marca deja de ser manual y el párrafo sobra.
+
+Un detalle que solo apareció al pintar el panel: un pedido **ya entregado** se
+juzga contra su fecha de entrega y no contra el reloj de hoy. Medirlo contra ahora
+habría pintado como incumplido cualquier pedido viejo entregado en plazo — un
+panel que grita en las filas equivocadas deja de mirarse.
+
+La tarea corre cada doce horas y es la tercera del sistema, junto a la purga de
+carritos y la conciliación de Wompi.
+
+### La revisión adversarial, que reescribió la garantía
+
+Los dos commits pasaron por `/revisar` antes del PR, con la batería en verde. Doce
+hallazgos; los tres primeros tumbaron el mecanismo entero y están contados en
+`ADR-0028`: el barrido en una sola transacción reenviaba los correos ya
+mandados si fallaba tarde, varias instancias de Cloud Run escribían N veces, y
+`guardar` pisaba la marca. Los tres se cerraron con una escritura condicional
+atómica, y la columna quedó de solo lectura para el agregado.
+
+Otros dos merecen quedar escritos porque son el mismo error de siempre —prometer
+lo que el software no hace—:
+
+- **El correo del despachado prometía una cancelación imposible.** De
+  `DESPACHADO` solo se sale entregando o con el rechazo en la entrega. El panel
+  repetía la promesa mandando a usar un botón que ese estado no ofrece.
+- **El retraso inicial igualaba al intervalo**, así que cada despliegue reiniciaba
+  la cuenta de doce horas: desplegando a diario, el vigilante no habría corrido
+  nunca. Ahora arranca a los cinco minutos y las propiedades se niegan a
+  levantarse si alguien vuelve a igualarlos.
+
+Y dos que solo aparecieron **mirando la pantalla**, que es lo que
+`docs/06-testing.md` dice que las pruebas no atrapan:
+
+- El detalle decía «Vence 1/09/2026, 12:00 a. m.» para un plazo que se agotó al
+  terminar el 31 de agosto. El límite es el instante siguiente al último día;
+  pintarlo crudo regala un día.
+- **Todo pedido `CANCELADO` salía con la columna Estado en blanco**, y eso es
+  anterior a este trabajo: `CLAVE_ETIQUETA_ESTADO` no tenía esa entrada ni el tipo
+  del panel ese valor, desde que se construyó la cancelación. Ninguna prueba lo
+  vio porque ninguna sembraba un cancelado. De paso el filtro de estado lo ganó,
+  que tampoco lo tenía.
+
+El par de contraste del rojo sobre la superficie elevada tampoco estaba en
+`npm run contrastes` —pasa, 5.52 y 5.04— y ahora está: el guardián miraba el rojo
+sobre fondo y sobre superficie, pero no sobre la fila expandida, que es donde se
+pinta.
+
+Dos commits: el backend completo —dominio, migración `V31`, los dos puertos, caso
+de uso, seis textos en los dos idiomas y la tarea— y el panel, que ya lo ve en la
+lista sin tener que expandir la fila.
 
 ## Fase 7. Envío cotizado con Skydropx y seguimiento
 
