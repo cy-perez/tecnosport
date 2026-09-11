@@ -25,9 +25,9 @@ tres importan por motivos distintos:
 
 El tercero es el que la gente espera encontrar. El segundo es el que hunde casos.
 
-## Bug, promesa incumplible y hueco de la ley
+## Bug, promesa incumplible, hueco de la ley y promesa más estrecha que la norma
 
-Son tres cosas distintas y mezclarlas arruina el informe.
+Son cuatro cosas distintas y mezclarlas arruina el informe.
 
 - **Bug**: el sistema intenta cumplir y falla. Se arregla como cualquier defecto.
 - **Promesa que la operación todavía no puede cumplir**: el código está bien, el
@@ -38,10 +38,33 @@ Son tres cosas distintas y mezclarlas arruina el informe.
   decidió**. Lo intolerable es que nadie lo sepa.
 - **Hueco de la ley**: la obligación existe aunque ningún documento la mencione.
   Callar no exime. Ver `references/obligaciones-sin-texto.md`.
+- **Promesa más estrecha que la norma**: el texto publicado se compromete a
+  **más** de lo que la ley exige, y por eso obliga. El código puede estar
+  impecable —cumpliendo la ley— y el sitio incumplir su propio documento. Las tres
+  clases anteriores tienen el daño del lado del comprador; ésta lo tiene del lado
+  del negocio, y por eso se escapa: quien audita busca dónde se le falla a alguien
+  y aquí no se le falla a nadie hasta que alguien lee el párrafo y lo exige.
 
-Clasifica cada hallazgo en una de las tres. Un informe donde todo es "bug"
+  Ejemplo real de este proyecto, encontrado por una revisión adversarial y no por
+  una auditoría legal: la cláusula del retracto prometía reintegrar "dentro de los
+  quince (15) días calendario **siguientes a que ejerzas el derecho**", cuando el
+  art. 47 (modificado por la Ley 2439 de 2024) los cuenta desde que se ejerce el
+  derecho **y se cumplen las obligaciones del consumidor** —o sea, desde que el
+  producto vuelve—. El código contaba bien, desde la devolución; el texto había
+  perdido la mitad de la condición al redactarse, y el propio párrafo anterior sí
+  exigía devolver el producto. Un comprador que se retracta el día 1 y devuelve el
+  día 12 tenía, según el documento, derecho al dinero el día 16.
+
+  **Lo publicado obliga** (Ley 1480, y la publicidad como fuente de obligación),
+  así que esto no es una errata: es una obligación autoimpuesta más corta que la
+  legal, exigible desde el primer día, y con el agravante de que el propio correo
+  del negocio puede ser la prueba en contra.
+
+Clasifica cada hallazgo en una de las cuatro. Un informe donde todo es "bug"
 esconde decisiones de negocio; uno donde todo es "decisión pendiente" esconde
-defectos.
+defectos; y uno que solo mira si el sistema cumple el texto **no ve nunca esta
+cuarta clase**, porque para verla hay que comparar el texto con la norma y no con
+el código.
 
 ## Lo que esta skill sí es y lo que no
 
@@ -68,7 +91,7 @@ produce asesoría jurídica ni texto legal.
 
 ---
 
-## El flujo: verificar → inventariar → rastrear → contrastar → clasificar → cerrar
+## El flujo: verificar → inventariar → rastrear → cotejar el plazo → contrastar → clasificar → cerrar
 
 ### Fase 0 — Verifica la obligación antes de auditarla
 
@@ -187,6 +210,45 @@ queda escrita.
 
 ---
 
+### Fase 2b — Compara cada plazo con la norma, y compara el **disparador**
+
+Fase 2 pregunta si el sistema cumple el texto. Esta pregunta lo contrario: si el
+texto dice lo que la norma dice. Son dos comparaciones distintas y la segunda casi
+nunca se hace, porque el documento "ya se verificó cuando se escribió".
+
+**El error que hay que buscar no es el número: es el disparador.** Un plazo son
+dos cosas —cuántos días y desde cuándo— y al redactar se copia el número con
+cuidado y se parafrasea el arranque. Ahí se pierde la mitad de una condición
+compuesta. Para cada plazo publicado, escribe estas tres líneas y compáralas:
+
+| | |
+|---|---|
+| Lo que dice el documento | "…quince (15) días calendario siguientes a que ejerzas el derecho" |
+| Lo que dice la norma | "…dentro de los quince (15) días calendario siguientes a que ejerza el derecho **y cumpla las obligaciones a su cargo**" |
+| Lo que hace el código | cuenta desde `productoRecibidoEn` |
+
+Cuando las tres no coinciden, la pregunta correcta **no** es "¿el código está
+mal?" sino "¿cuál de los tres es el que hay que mover?". En el ejemplo, el código
+y la norma coincidían: el que estaba mal era el texto, y era el único de los tres
+que obliga por publicidad.
+
+Tres formas concretas en que un disparador se pierde, todas vistas:
+
+- **Se cae la mitad de una condición compuesta** ("ejerce el derecho **y**
+  devuelve el producto" → "ejerce el derecho").
+- **Se cambia el hecho por otro cercano**: "desde la entrega" por "desde el
+  despacho", "desde la reclamación" por "desde la respuesta".
+- **Se hereda de otro plazo del mismo documento** porque se redactaron juntos, y
+  uno de los dos arranca en otro momento.
+
+Y un cuidado que evita el falso positivo: el correo transaccional y la cláusula
+tienen que decir **lo mismo**. En este proyecto el acuse del retracto decía
+"cuando el producto llegue, te reintegramos…" —correcto— mientras la cláusula
+decía otra cosa. Si los dos textos del mismo hecho no coinciden, uno de los dos ya
+está mal antes de mirar el código.
+
+---
+
 ### Fase 3 — Contrasta también contra lo que el documento no dice
 
 Un sitio puede tener textos impecables y aun así incumplir, porque hay
@@ -214,6 +276,13 @@ arreglarlos. El criterio, de mayor a menor:
 3. **Incoherencia latente.** El texto y el código no coinciden pero nadie lo ha
    ejercido todavía.
 4. **Deuda de evidencia.** Se cumple pero no queda rastro.
+
+Una **promesa más estrecha que la norma** no es incoherencia latente aunque lo
+parezca: es exigible desde que está publicada, sin que nadie tenga que hacer nada
+raro para provocarla. Va en el nivel 2 cuando la operación puede sostener el plazo
+corto que se autoimpuso —entonces lo que hace falta es que alguien lo sepa y lo
+acepte— y en el nivel 1 cuando no puede, porque entonces se incumple el propio
+documento el primer día que alguien lo lea.
 
 Un hallazgo del nivel 1 que se arregla en diez minutos va antes que uno del nivel
 3 que toma una semana. La ordenación por esfuerzo es la que deja abierto lo

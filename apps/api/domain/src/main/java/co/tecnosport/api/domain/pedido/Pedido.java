@@ -163,6 +163,37 @@ public final class Pedido {
   }
 
   /** Suma de las líneas congeladas. El envío no se agrega: ya está en cada precio unitario. */
+  /**
+   * Cuánto de este pedido <b>entró de verdad</b>, que no es lo mismo que {@link #total()}: aquél es
+   * lo que el comprador debe, éste es lo que se cobró.
+   *
+   * <p>La distinción no era teórica. {@code TopeDeReintegro} acotaba los reintegros contra el
+   * total, así que una garantía resuelta devolviendo el dinero sobre un <b>contraentrega entregado
+   * y sin conciliar</b> —el comprador pagó en efectivo al repartidor, la transportadora todavía no
+   * ha dispersado— pasaba el tope por el total completo. Doble pérdida si el recaudo no llega
+   * nunca. Lo levantó una revisión adversarial de los caminos del dinero.
+   *
+   * <p>El momento en que entra depende del método de pago, y es la única regla aquí: en
+   * contraentrega el dinero es del negocio cuando el recaudo se concilia; en los demás, cuando el
+   * pedido llegó a {@code PAGADO}, que es el único camino para alcanzar ese estado. Se pregunta al
+   * <b>historial</b> y no al estado actual, porque un pedido devuelto o cancelado cobró igual
+   * antes.
+   *
+   * <p>Deliberadamente <b>no</b> bloquea nada: un comprador que pagó en efectivo tiene derecho a
+   * que se le devuelva aunque la transportadora no haya dispersado, y negarle el reintegro para
+   * proteger la caja sería resolver el problema contra quien no lo causó. Lo que hace falta es que
+   * quien decide lo vea, y para eso está este dato en el panel.
+   */
+  public Dinero dineroRecibido() {
+    EstadoPedido cuandoEntra =
+        metodoPago == MetodoPago.CONTRAENTREGA
+            ? EstadoPedido.RECAUDO_CONCILIADO
+            : EstadoPedido.PAGADO;
+    boolean entro =
+        estado == cuandoEntra || historial.stream().anyMatch(h -> h.estado() == cuandoEntra);
+    return entro ? total() : Dinero.deCop(0L);
+  }
+
   public Dinero total() {
     BigDecimal suma =
         lineas.stream().map(l -> l.subtotal().valor()).reduce(BigDecimal.ZERO, BigDecimal::add);

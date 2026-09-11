@@ -43,6 +43,16 @@ public class ReintegroRequeridoException extends RuntimeException {
   }
 
   /**
+   * Una reversión que hizo el emisor no deja constancia —el dinero no salió de aquí— pero sí tiene
+   * que decir cuánto volvió: sin eso, ese pedido podría devolver su total otra vez por otro camino.
+   */
+  public static ReintegroRequeridoException porqueRevirtioElEmisor() {
+    return new ReintegroRequeridoException(
+        "Una reversión que hizo el emisor exige cuánto revirtió: sin ese dato, este pedido podría"
+            + " devolver su total otra vez por otro camino.");
+  }
+
+  /**
    * De las tres salidas de la garantía y de los desenlaces de la reversión, solo algunos devuelven
    * dinero. Elegir uno de ésos y no decir cuánto ni por dónde es dejar la constancia a medias.
    */

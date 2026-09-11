@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
@@ -40,6 +41,10 @@ class CancelarPedidoTest {
   private final RepositorioPedidosFalso pedidos = new RepositorioPedidosFalso();
   private final RepositorioInventarioFalso inventarios = new RepositorioInventarioFalso();
   private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
+
+  // El tope cuenta tambien lo que revirtio el emisor, que vive en las reversiones del pedido.
+  private final RepositorioSolicitudesReversionFalso reversionesParaElTope =
+      new RepositorioSolicitudesReversionFalso();
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
 
   private UUID varianteId;
@@ -50,7 +55,7 @@ class CancelarPedidoTest {
         pedidos,
         inventarios,
         reintegros,
-        new TopeDeReintegro(reintegros),
+        new TopeDeReintegro(reintegros, reversionesParaElTope),
         correos,
         new TextosDeCorreoFalso(),
         new RelojFalso(AHORA));

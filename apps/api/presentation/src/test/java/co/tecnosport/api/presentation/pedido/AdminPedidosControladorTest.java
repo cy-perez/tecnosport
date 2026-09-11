@@ -32,6 +32,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -377,7 +378,7 @@ class AdminPedidosControladorTest {
           repositorioPedidos,
           repositorioInventario,
           repositorioReintegros,
-          new TopeDeReintegro(repositorioReintegros),
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
           (destinatario, asunto, cuerpo) -> {},
           (texto, argumentos) -> texto.clave(),
           Instant::now);
@@ -420,8 +421,12 @@ class AdminPedidosControladorTest {
     @Bean
     MapeadorRespuestasPedido mapeadorRespuestasPedido(
         PropiedadesTransferenciaManual propiedadesTransferencia,
-        RepositorioEnvios repositorioEnvios) {
-      return new MapeadorRespuestasPedido(propiedadesTransferencia, repositorioEnvios);
+        RepositorioEnvios repositorioEnvios,
+        RepositorioReintegros repositorioReintegros) {
+      return new MapeadorRespuestasPedido(
+          propiedadesTransferencia,
+          repositorioEnvios,
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()));
     }
   }
 }

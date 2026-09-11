@@ -19,4 +19,16 @@ public record PedidoRespuesta(
     Instant creadoEn,
     DatosTransferenciaRespuesta datosTransferencia,
     EnvioRespuesta envio,
-    List<HistorialPedidoRespuesta> historial) {}
+    List<HistorialPedidoRespuesta> historial,
+    /**
+     * Cuánto entró de verdad por este pedido, que no es {@code total}: aquél es lo que el comprador
+     * debe. En contraentrega el dinero es del negocio cuando el recaudo se concilia, no cuando se
+     * entrega.
+     */
+    DineroRespuesta dineroRecibido,
+    /**
+     * Cuánto ya volvió al comprador, sumando las constancias de los cinco motivos y lo que revirtió
+     * el emisor. Sin este dato, el panel pedía "revisa cuánto se le devolvió ya" y no había dónde
+     * revisarlo: ningún endpoint lo exponía.
+     */
+    DineroRespuesta yaDevuelto) {}

@@ -109,10 +109,14 @@ async function renderPanel(
   estadoPedido = 'ENTREGADO',
   totalPedido = 50_000,
   repositorioDado?: RepositorioRetractosFalso,
+  // Un pedido pagado y sin nada devuelto: el caso por omision. Las pruebas que miran las cifras
+  // pasan las suyas.
+  dineroRecibido = 50_000,
+  yaDevuelto = 0,
 ) {
   const repositorio = repositorioDado ?? new RepositorioRetractosFalso(solicitudes);
   const resultado = await render(PanelRetracto, {
-    inputs: { pedidoId: 'p1', estadoPedido, totalPedido },
+    inputs: { pedidoId: 'p1', estadoPedido, totalPedido, dineroRecibido, yaDevuelto },
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'admin/es': esAdmin } as never,
@@ -353,6 +357,34 @@ describe('PanelRetracto', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrar reintegro' }));
 
     expect(await screen.findByText(esAdmin.errores.monto_de_reintegro_invalido)).toBeTruthy();
+  });
+
+  /**
+   * Las tres cifras que hacen falta para escribir un monto con criterio. Antes el 422 del tope decía
+   * "revisa cuánto se le devolvió ya a este pedido" y no había dónde revisarlo: ningún endpoint lo
+   * exponía, así que el único camino era reintentar con cifras hasta que una entrara.
+   */
+  it('muestra lo que entró, lo devuelto y lo que queda', async () => {
+    await renderPanel(conProductoRecibido, 'ENTREGADO', 50_000, undefined, 50_000, 20_000);
+
+    expect(await screen.findByText(esAdmin.retractos.dinero_del_pedido)).toBeTruthy();
+    // El monto se precarga con lo que queda y no con el total: precargar 50.000 con 20.000 ya
+    // devueltos era ofrecer una cifra que el tope va a rechazar.
+    const monto = (await screen.findByLabelText('Monto a reembolsar')) as HTMLInputElement;
+    expect(monto.value).toBe('30000');
+  });
+
+  /**
+   * Un contraentrega entregado y sin conciliar: el comprador pagó en efectivo al repartidor y la
+   * transportadora todavía no dispersó. Devolverle es válido —tiene derecho— pero si el recaudo nunca
+   * llega la pérdida es doble, así que quien decide tiene que verlo. Advierte y no bloquea.
+   */
+  it('avisa cuando se va a devolver un dinero que todavía no ha entrado', async () => {
+    await renderPanel(conProductoRecibido, 'ENTREGADO', 50_000, undefined, 0, 0);
+
+    expect(await screen.findByText(esAdmin.retractos.dinero_sin_entrar)).toBeTruthy();
+    // Y el botón sigue ahí: es un aviso, no una guarda.
+    expect(screen.getByRole('button', { name: 'Registrar reintegro' })).toBeTruthy();
   });
 
   it('una solicitud ya reembolsada muestra su constancia', async () => {

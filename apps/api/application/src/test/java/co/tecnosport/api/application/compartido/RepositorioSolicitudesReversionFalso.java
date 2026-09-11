@@ -1,5 +1,6 @@
-package co.tecnosport.api.application.reversion;
+package co.tecnosport.api.application.compartido;
 
+import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
 import co.tecnosport.api.domain.reversion.SolicitudReversion;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,11 +8,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
-final class RepositorioSolicitudesReversionFalso implements RepositorioSolicitudesReversion {
+public final class RepositorioSolicitudesReversionFalso implements RepositorioSolicitudesReversion {
 
   private final List<SolicitudReversion> guardadas = new ArrayList<>();
 
-  List<SolicitudReversion> guardadas() {
+  public List<SolicitudReversion> guardadas() {
     return List.copyOf(guardadas);
   }
 

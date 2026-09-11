@@ -78,6 +78,19 @@
             formControlName="resumenParaElComprador"
           />
 
+          <!-- Con el emisor revirtiendo se pide la cifra y nada más: no hay constancia que
+               registrar, pero sí hay que saber cuánto volvió al comprador para que ese dinero cuente
+               contra lo que el pedido todavía puede devolver. -->
+          @if (revirtioElEmisor()) {
+            <ts-campo
+              [idCampo]="'reversion-monto-emisor-' + reversion.id"
+              tipo="number"
+              [label]="'admin.reversiones.acciones.monto_del_emisor' | transloco"
+              [ayuda]="'admin.reversiones.acciones.monto_del_emisor_ayuda' | transloco"
+              formControlName="monto"
+            />
+          }
+
           @if (devolvemosNosotros()) {
             <ts-campo
               [idCampo]="'reversion-monto-' + reversion.id"

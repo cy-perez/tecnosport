@@ -224,7 +224,12 @@
       "comprobante": "Receipt (optional)",
       "registrar_reintegro": "Record refund"
     },
-    "plazo_restante_uno": "1 calendar day left to refund the money."
+    "plazo_restante_uno": "1 calendar day left to refund the money.",
+    "dinero_del_pedido": "Money for this order",
+    "entro": "Came in:",
+    "devuelto": "Already refunded:",
+    "queda": "Left to refund:",
+    "dinero_sin_entrar": "Careful: not all the money for this order has come in yet. Refunding is valid, but if the collection never arrives, the loss is double."
   },
   "atencion": {
     "titulo": "Requests, complaints and claims",
@@ -363,7 +368,9 @@
       "dinero_ayuda": "Only here does money leave us. If the issuer reverses it, the funds return through the payment network.",
       "monto": "Amount refunded",
       "comprobante": "Reference",
-      "resolver": "Resolve reversal"
+      "resolver": "Resolve reversal",
+      "monto_del_emisor": "Amount the issuer reversed",
+      "monto_del_emisor_ayuda": "The amount the issuer returned to the buyer. It does not come out of our own funds, but it counts against what this order can still refund."
     }
   }
 }

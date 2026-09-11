@@ -224,7 +224,12 @@
       "comprobante": "Comprobante (opcional)",
       "registrar_reintegro": "Registrar reintegro"
     },
-    "plazo_restante_uno": "Queda 1 día calendario para reintegrar el dinero."
+    "plazo_restante_uno": "Queda 1 día calendario para reintegrar el dinero.",
+    "dinero_del_pedido": "Dinero de este pedido",
+    "entro": "Entró:",
+    "devuelto": "Ya devuelto:",
+    "queda": "Queda por devolver:",
+    "dinero_sin_entrar": "Cuidado: de este pedido todavía no ha entrado todo el dinero. Devolverlo es válido, pero si el recaudo no llega, la pérdida es doble."
   },
   "atencion": {
     "titulo": "Peticiones, quejas y reclamos",
@@ -363,7 +368,9 @@
       "dinero_ayuda": "Solo aquí sale dinero de nosotros. Si revierte el emisor, la plata vuelve por la red de pagos.",
       "monto": "Monto devuelto",
       "comprobante": "Comprobante",
-      "resolver": "Resolver reversión"
+      "resolver": "Resolver reversión",
+      "monto_del_emisor": "Cuánto revirtió el emisor",
+      "monto_del_emisor_ayuda": "La cifra que el emisor devolvió al comprador. No sale de nuestra caja, pero cuenta contra lo que este pedido todavía puede devolver."
     }
   }
 }

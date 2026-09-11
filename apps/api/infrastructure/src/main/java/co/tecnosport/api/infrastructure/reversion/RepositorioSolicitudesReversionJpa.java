@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.reversion;
 
 import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.reversion.CausalReversion;
 import co.tecnosport.api.domain.reversion.DesenlaceReversion;
@@ -40,7 +41,8 @@ public class RepositorioSolicitudesReversionJpa implements RepositorioSolicitude
             solicitud.gestion().orElse(null),
             solicitud.desenlace().map(DesenlaceReversion::name).orElse(null),
             solicitud.resueltaEn().orElse(null),
-            solicitud.reintegroId().orElse(null)));
+            solicitud.reintegroId().orElse(null),
+            solicitud.montoRevertidoPorElEmisor().map(Dinero::valor).orElse(null)));
   }
 
   @Override
@@ -75,6 +77,9 @@ public class RepositorioSolicitudesReversionJpa implements RepositorioSolicitude
         entidad.getGestion(),
         entidad.getDesenlace() == null ? null : DesenlaceReversion.valueOf(entidad.getDesenlace()),
         entidad.getResueltaEn(),
-        entidad.getReintegroId());
+        entidad.getReintegroId(),
+        entidad.getMontoRevertidoPorElEmisor() == null
+            ? null
+            : Dinero.deCop(entidad.getMontoRevertidoPorElEmisor()));
   }
 }

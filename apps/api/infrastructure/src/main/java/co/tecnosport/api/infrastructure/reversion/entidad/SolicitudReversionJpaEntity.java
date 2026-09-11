@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -51,6 +52,14 @@ public class SolicitudReversionJpaEntity {
   @Column(name = "reintegro_id")
   private UUID reintegroId;
 
+  /**
+   * Cuánto revirtió el emisor por su cuenta. Nulo en los otros tres desenlaces, y nulo también en
+   * las filas anteriores a {@code V29}: son reversiones resueltas antes de que el dato se pidiera,
+   * y inventarles una cifra sería peor que dejarlas sin ella.
+   */
+  @Column(name = "monto_revertido_por_el_emisor")
+  private BigDecimal montoRevertidoPorElEmisor;
+
   protected SolicitudReversionJpaEntity() {}
 
   public SolicitudReversionJpaEntity(
@@ -67,7 +76,8 @@ public class SolicitudReversionJpaEntity {
       String gestion,
       String desenlace,
       Instant resueltaEn,
-      UUID reintegroId) {
+      UUID reintegroId,
+      BigDecimal montoRevertidoPorElEmisor) {
     this.id = id;
     this.solicitudId = solicitudId;
     this.pedidoId = pedidoId;
@@ -82,6 +92,7 @@ public class SolicitudReversionJpaEntity {
     this.desenlace = desenlace;
     this.resueltaEn = resueltaEn;
     this.reintegroId = reintegroId;
+    this.montoRevertidoPorElEmisor = montoRevertidoPorElEmisor;
   }
 
   public UUID getId() {
@@ -138,5 +149,9 @@ public class SolicitudReversionJpaEntity {
 
   public UUID getReintegroId() {
     return reintegroId;
+  }
+
+  public BigDecimal getMontoRevertidoPorElEmisor() {
+    return montoRevertidoPorElEmisor;
   }
 }

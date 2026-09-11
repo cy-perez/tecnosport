@@ -11,9 +11,21 @@ del sistema está mal.**
 ## Cómo se lee cada ficha
 
 - **Promete** — la frase del documento que hay que rastrear.
+- **Disparador según la norma** — desde qué hecho corre el plazo, con las palabras
+  de la ley y no con las del documento. Es el campo que más se salta y el que más
+  cuesta: un plazo son dos cosas, cuántos días y desde cuándo, y al redactar se
+  copia el número con cuidado y se parafrasea el arranque. Ahí se pierde la mitad
+  de una condición compuesta —"ejerce el derecho **y** cumple sus obligaciones"
+  redactado como "ejerce el derecho"— y el documento queda prometiendo menos plazo
+  del que la ley da. Como lo publicado obliga, esa versión más corta es la que rige
+  contra el negocio. Ver la Fase 2b de `SKILL.md`.
 - **Rastro mínimo** — lo que tiene que existir. Si falta un eslabón, hay hueco.
 - **Dónde suele romperse** — el fallo concreto que aparece una y otra vez.
 - **Prueba que lo sostiene** — qué comprobar para que no se reabra.
+
+**Compara los tres**: lo que dice el documento, lo que dice la norma y lo que hace
+el código. Cuando no coinciden, la pregunta no es "¿el código está mal?" — puede
+ser el texto el que se movió, y es el único de los tres que obliga por publicidad.
 
 ---
 

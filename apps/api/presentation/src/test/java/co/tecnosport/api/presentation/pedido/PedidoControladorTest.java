@@ -22,6 +22,7 @@ import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.application.retracto.RepositorioSolicitudesRetracto;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -45,6 +46,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
 import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -528,6 +530,11 @@ class PedidoControladorTest {
     // aparecen en ninguna parte de la respuesta, no que un campo concreto venga nulo.
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("costoEnvio"));
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("comisionRecaudo"));
+    // Las dos cifras que el panel necesita para decidir un reintegro tampoco salen: cuanto entro
+    // por el pedido y cuanto ya se devolvio son datos de operacion, no del comprador. Se afirma
+    // aqui porque MapeadorRespuestasPedido las agrego y MapeadorSeguimiento comparte su origen.
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("dineroRecibido"));
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("yaDevuelto"));
   }
 
   @Test
@@ -661,8 +668,12 @@ class PedidoControladorTest {
     @Bean
     MapeadorRespuestasPedido mapeadorRespuestasPedido(
         PropiedadesTransferenciaManual propiedadesTransferencia,
-        RepositorioEnvios repositorioEnvios) {
-      return new MapeadorRespuestasPedido(propiedadesTransferencia, repositorioEnvios);
+        RepositorioEnvios repositorioEnvios,
+        RepositorioReintegros repositorioReintegros) {
+      return new MapeadorRespuestasPedido(
+          propiedadesTransferencia,
+          repositorioEnvios,
+          new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()));
     }
 
     @Bean

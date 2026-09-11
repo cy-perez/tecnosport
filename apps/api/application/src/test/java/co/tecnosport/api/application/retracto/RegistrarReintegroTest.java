@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
@@ -42,12 +43,16 @@ class RegistrarReintegroTest {
 
   private final RepositorioReintegrosFalso reintegros = new RepositorioReintegrosFalso();
 
+  // El tope cuenta tambien lo que revirtio el emisor, que vive en las reversiones del pedido.
+  private final RepositorioSolicitudesReversionFalso reversionesParaElTope =
+      new RepositorioSolicitudesReversionFalso();
+
   private RegistrarReintegro casoDeUso() {
     return new RegistrarReintegro(
         solicitudes,
         pedidos,
         reintegros,
-        new TopeDeReintegro(reintegros),
+        new TopeDeReintegro(reintegros, reversionesParaElTope),
         correos,
         new TextosDeCorreoFalso(),
         new RelojFalso(REINTEGRO));

@@ -2,6 +2,7 @@ package co.tecnosport.api.bootstrap.reintegro;
 
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
+import co.tecnosport.api.application.reversion.RepositorioSolicitudesReversion;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,7 +19,9 @@ import org.springframework.context.annotation.Configuration;
 public class ConfiguracionReintegro {
 
   @Bean
-  public TopeDeReintegro topeDeReintegro(RepositorioReintegros repositorioReintegros) {
-    return new TopeDeReintegro(repositorioReintegros);
+  public TopeDeReintegro topeDeReintegro(
+      RepositorioReintegros repositorioReintegros,
+      RepositorioSolicitudesReversion repositorioReversiones) {
+    return new TopeDeReintegro(repositorioReintegros, repositorioReversiones);
   }
 }

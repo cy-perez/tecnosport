@@ -1026,6 +1026,8 @@ export interface components {
             datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
             envio?: components["schemas"]["EnvioRespuesta"];
             historial?: components["schemas"]["HistorialPedidoRespuesta"][];
+            dineroRecibido?: components["schemas"]["DineroRespuesta"];
+            yaDevuelto?: components["schemas"]["DineroRespuesta"];
         };
         MetodosDePagoDisponiblesRequest: {
             lineas?: components["schemas"]["LineaRequest"][];

@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -23,12 +24,15 @@ public class MapeadorRespuestasPedido {
 
   private final PropiedadesTransferenciaManual propiedadesTransferencia;
   private final RepositorioEnvios repositorioEnvios;
+  private final TopeDeReintegro tope;
 
   public MapeadorRespuestasPedido(
       PropiedadesTransferenciaManual propiedadesTransferencia,
-      RepositorioEnvios repositorioEnvios) {
+      RepositorioEnvios repositorioEnvios,
+      TopeDeReintegro tope) {
     this.propiedadesTransferencia = Objects.requireNonNull(propiedadesTransferencia);
     this.repositorioEnvios = Objects.requireNonNull(repositorioEnvios);
+    this.tope = Objects.requireNonNull(tope);
   }
 
   public PedidoRespuesta aRespuesta(Pedido pedido) {
@@ -46,7 +50,12 @@ public class MapeadorRespuestasPedido {
         pedido.creadoEn(),
         datosTransferencia(pedido),
         repositorioEnvios.buscarPorPedidoId(pedido.id()).map(this::aRespuesta).orElse(null),
-        pedido.historial().stream().map(this::aRespuesta).toList());
+        pedido.historial().stream().map(this::aRespuesta).toList(),
+        aRespuesta(pedido.dineroRecibido()),
+        // Se le pregunta al tope y no se vuelve a sumar aquí: es la misma cifra con la que decide,
+        // y
+        // dos sumas del mismo dinero en dos capas distintas se separan el día que una cambie.
+        aRespuesta(tope.yaDevuelto(pedido.id())));
   }
 
   private EnvioRespuesta aRespuesta(Envio envio) {

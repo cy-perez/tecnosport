@@ -67,7 +67,11 @@ public final class ResolverReversion {
       reintegroId = registrarReintegro(reversion, comando).id();
     }
 
-    reversion.resolver(comando.desenlace(), reintegroId, reloj.ahora());
+    Dinero revertidoPorElEmisor =
+        comando.desenlace() == DesenlaceReversion.REVERTIDO_POR_EL_EMISOR
+            ? Dinero.deCop(comando.monto())
+            : null;
+    reversion.resolver(comando.desenlace(), reintegroId, revertidoPorElEmisor, reloj.ahora());
     repositorioReversiones.guardar(reversion);
 
     responderSolicitud.ejecutar(
@@ -82,6 +86,15 @@ public final class ResolverReversion {
    * peso.
    */
   private static void exigirDatosDelReintegro(ResolverReversionComando comando) {
+    if (comando.desenlace() == DesenlaceReversion.REVERTIDO_POR_EL_EMISOR) {
+      // Aquí el monto no es para una constancia —no la hay— sino para saber cuánto volvió al
+      // comprador por la red de pagos: sin ese dato, este pedido podría devolver su total otra vez
+      // por otro camino. El medio no hace falta, porque lo eligió el emisor y no nosotros.
+      if (comando.monto() == null) {
+        throw ReintegroRequeridoException.porqueRevirtioElEmisor();
+      }
+      return;
+    }
     if (comando.desenlace() != DesenlaceReversion.REINTEGRADO_DIRECTAMENTE) {
       return;
     }

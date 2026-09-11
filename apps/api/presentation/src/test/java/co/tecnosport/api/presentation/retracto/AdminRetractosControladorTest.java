@@ -28,6 +28,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
+import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -335,7 +336,7 @@ class AdminRetractosControladorTest {
           solicitudes,
           pedidos,
           reintegros,
-          new TopeDeReintegro(reintegros),
+          new TopeDeReintegro(reintegros, new RepositorioSolicitudesReversionVacio()),
           correos,
           (texto, argumentos) -> texto.clave(),
           reloj);

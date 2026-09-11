@@ -8,12 +8,15 @@ import co.tecnosport.api.application.atencion.RadicarSolicitud;
 import co.tecnosport.api.application.atencion.ResponderSolicitud;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
+import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
+import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.atencion.EstadoSolicitudAtencion;
 import co.tecnosport.api.domain.atencion.TipoSolicitud;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.VerdictoPlazo;
 import co.tecnosport.api.domain.compartido.ZonaDelNegocio;
@@ -76,7 +79,7 @@ class ReversionTest {
         reversiones,
         pedidos,
         reintegros,
-        new TopeDeReintegro(reintegros),
+        new TopeDeReintegro(reintegros, reversiones),
         new ResponderSolicitud(solicitudes, new RelojFalso(ahora)),
         new RelojFalso(ahora));
   }
@@ -173,9 +176,13 @@ class ReversionTest {
   /**
    * El emisor revirtio: el dinero volvio por la red de pagos y este sistema no movio un peso.
    * Inventarle una constancia seria registrar un pago que no hicimos.
+   *
+   * <p>Pero el monto si se anota, y eso es lo nuevo: sin el, ese dinero no contaba contra lo que el
+   * pedido todavia puede devolver. Las dos afirmaciones juntas son el punto — no hay constancia y
+   * si hay cifra.
    */
   @Test
-  void siRevierteElEmisorNoQuedaConstanciaDeDineroNuestro() {
+  void siRevierteElEmisorNoQuedaConstanciaPeroSiQuedaLaCifra() {
     SolicitudReversion reversion = radicar(CausalReversion.PRODUCTO_NO_ENTREGADO, HECHO);
 
     resolvedor(HECHO.plusSeconds(86_400))
@@ -184,7 +191,7 @@ class ReversionTest {
                 reversion.id(),
                 DesenlaceReversion.REVERTIDO_POR_EL_EMISOR,
                 "El emisor confirmo la reversion",
-                null,
+                BigDecimal.valueOf(50_000),
                 null,
                 null,
                 "admin:1"));
@@ -192,6 +199,70 @@ class ReversionTest {
     assertEquals(EstadoSolicitudReversion.RESUELTA, reversion.estado());
     assertTrue(reversion.reintegroId().isEmpty());
     assertTrue(reintegros.guardados().isEmpty(), "no salio dinero de aqui");
+    assertEquals(
+        Dinero.deCop(BigDecimal.valueOf(50_000)),
+        reversion.montoRevertidoPorElEmisor().orElseThrow(),
+        "la cifra que revirtio el emisor queda anotada aunque no haya constancia");
+  }
+
+  /**
+   * <b>El hallazgo.</b> El emisor revirtio el total y despues alguien intenta devolver otra vez por
+   * otro camino. Antes pasaba: ese desenlace no deja {@code Reintegro}, asi que {@code yaDevuelto}
+   * veia cero y el tope dejaba salir el total completo por segunda vez. Un contracargo es justo el
+   * antecedente de un comprador insistente, o sea el caso probable y no el raro.
+   */
+  @Test
+  void loQueRevirtioElEmisorConsumeElTopeDelPedido() {
+    SolicitudReversion reversion = radicar(CausalReversion.PRODUCTO_NO_ENTREGADO, HECHO);
+    resolvedor(HECHO.plusSeconds(86_400))
+        .ejecutar(
+            new ResolverReversionComando(
+                reversion.id(),
+                DesenlaceReversion.REVERTIDO_POR_EL_EMISOR,
+                "El emisor confirmo la reversion",
+                BigDecimal.valueOf(50_000),
+                null,
+                null,
+                "admin:1"));
+
+    TopeDeReintegro tope = new TopeDeReintegro(reintegros, reversiones);
+
+    assertEquals(
+        Dinero.deCop(BigDecimal.valueOf(50_000)),
+        tope.yaDevuelto(reversion.pedidoId()),
+        "lo que devolvio el emisor cuenta igual que lo que devolvimos nosotros");
+    assertThrows(
+        MontoDeReintegroInvalidoException.class,
+        () ->
+            tope.exigirQueQuepa(
+                reversion.pedidoId(),
+                Dinero.deCop(BigDecimal.valueOf(50_000)),
+                Dinero.deCop(BigDecimal.valueOf(50_000))));
+  }
+
+  /**
+   * Y no se puede resolver como reversion del emisor sin decir cuanto: seria dejar el tope ciego
+   * otra vez, que es exactamente el defecto que esto cerro.
+   */
+  @Test
+  void unaReversionDelEmisorSinMontoNoSeResuelve() {
+    SolicitudReversion reversion = radicar(CausalReversion.FRAUDE, HECHO);
+
+    assertThrows(
+        ReintegroRequeridoException.class,
+        () ->
+            resolvedor(HECHO.plusSeconds(86_400))
+                .ejecutar(
+                    new ResolverReversionComando(
+                        reversion.id(),
+                        DesenlaceReversion.REVERTIDO_POR_EL_EMISOR,
+                        "El emisor confirmo la reversion",
+                        null,
+                        null,
+                        null,
+                        "admin:1")));
+
+    assertTrue(reversion.desenlace().isEmpty(), "la solicitud sigue abierta");
   }
 
   /**

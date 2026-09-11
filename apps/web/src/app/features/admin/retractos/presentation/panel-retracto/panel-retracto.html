@@ -77,6 +77,23 @@
           </p>
         }
 
+        <!-- Las tres cifras que hacen falta para escribir un monto con criterio. La de "sin entrar"
+             advierte y no bloquea: quien pago en efectivo tiene derecho a que se le devuelva aunque
+             la transportadora no haya dispersado, y decidir es de una persona. -->
+        <dl class="m-0 mb-8 text-sm">
+          <dt class="text-ts-texto-suave">{{ 'admin.retractos.dinero_del_pedido' | transloco }}</dt>
+          <dd class="m-0">
+            {{ 'admin.retractos.entro' | transloco }} <ts-precio [valor]="dineroRecibido()" />
+            · {{ 'admin.retractos.devuelto' | transloco }} <ts-precio [valor]="yaDevuelto()" />
+            · {{ 'admin.retractos.queda' | transloco }} <ts-precio [valor]="quedaPorDevolver()" />
+          </dd>
+        </dl>
+        @if (dineroSinEntrar()) {
+          <p role="status" class="mb-8 text-ts-error">
+            {{ 'admin.retractos.dinero_sin_entrar' | transloco }}
+          </p>
+        }
+
         <form
           [formGroup]="formularioReintegro"
           (submit)="$event.preventDefault(); registrarReintegro(solicitud)"
