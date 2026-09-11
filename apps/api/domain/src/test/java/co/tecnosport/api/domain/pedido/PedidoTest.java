@@ -320,25 +320,31 @@ class PedidoTest {
     assertTrue(crearAlDomicilio(MetodoPago.NEQUI).avisoDePlazoEnviadoEn().isEmpty());
   }
 
+  /**
+   * El aviso solo entra al reconstruir desde la base: no hay forma de marcarlo aquí, porque la
+   * garantía de "una sola vez" con varias instancias la sostiene la escritura condicional del
+   * repositorio y no una comprobación en memoria.
+   */
   @Test
-  void marcarElAvisoDejaConstanciaDeCuandoSeEscribio() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+  void elAvisoSoloLlegaAlReconstruirElPedido() {
+    Pedido nuevo = crearAlDomicilio(MetodoPago.NEQUI);
     Instant aviso = AHORA.plusSeconds(86_400L * 31);
 
-    pedido.marcarAvisoDePlazoEnviado(aviso);
+    Pedido reconstruido =
+        new Pedido(
+            nuevo.id(),
+            nuevo.numeroPedido(),
+            null,
+            nuevo.correo(),
+            nuevo.lineas(),
+            nuevo.tipoEntrega(),
+            nuevo.direccion().orElse(null),
+            nuevo.metodoPago(),
+            nuevo.estado(),
+            nuevo.historial(),
+            nuevo.creadoEn(),
+            aviso);
 
-    assertEquals(aviso, pedido.avisoDePlazoEnviadoEn().orElseThrow());
-  }
-
-  @Test
-  void avisarDosVecesNoReescribeLaFechaDelPrimerAviso() {
-    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
-    Instant primero = AHORA.plusSeconds(86_400L * 31);
-    pedido.marcarAvisoDePlazoEnviado(primero);
-
-    assertThrows(
-        ExcepcionDeDominio.class,
-        () -> pedido.marcarAvisoDePlazoEnviado(primero.plusSeconds(86_400)));
-    assertEquals(primero, pedido.avisoDePlazoEnviadoEn().orElseThrow());
+    assertEquals(aviso, reconstruido.avisoDePlazoEnviadoEn().orElseThrow());
   }
 }

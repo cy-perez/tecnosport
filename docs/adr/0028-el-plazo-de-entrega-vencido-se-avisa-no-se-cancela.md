@@ -71,6 +71,14 @@ pedido ya salió y va en camino; si ya lo recibiste, escríbenos y lo
 corregimos"—. Con el seguimiento de la Fase 7 (`ADR-0022`), la entrega dejará de
 marcarse a mano y ese párrafo perderá su razón de ser.
 
+Ese mismo párrafo **no puede prometer una cancelación**, y la primera versión sí
+la prometía. De `DESPACHADO` solo se sale hacia la entrega o hacia el rechazo en
+la entrega, así que `CancelarPedido` lanzaría una transición inválida: el correo
+le decía al comprador "respóndenos y lo cancelamos" y el software no podía
+hacerlo. Ahora ese caso dice lo que sí es cierto —coordinar la devolución con la
+transportadora y reintegrar cuando el producto vuelva— y el panel, en vez de
+mandar a cancelar, explica por qué ese pedido no admite cancelación.
+
 ## Alternativas
 
 **Cancelar y reintegrar automáticamente.** Es menos código —la tarea llamaría a
@@ -89,19 +97,60 @@ pero deja fuera el caso en que la transportadora se queda con la mercancía, que
 es exactamente cuando el comprador necesita saber que puede terminar el
 contrato.
 
+## Cómo se garantiza que nadie recibe el correo dos veces
+
+Es la parte que costó más y la que una revisión adversarial reescribió entera. La
+primera versión marcaba el agregado y lo guardaba, todo dentro de una transacción
+para el barrido completo. Tres agujeros, los tres reales:
+
+1. **El lote.** Un fallo en el pedido veinte —o al comprometer— revertía las
+   marcas de los diecinueve anteriores, *cuyos correos ya habían salido*. En la
+   vuelta siguiente les escribía otra vez. Era justo lo que la columna venía a
+   impedir.
+2. **Varias instancias.** Cloud Run corre con un **mínimo** de una instancia, no
+   con un máximo. Bajo carga hay varias, cada una con su tarea, y todas leen las
+   mismas filas con el aviso en nulo: N instancias, N correos. Una invariante
+   comprobada en memoria no impide nada entre procesos.
+3. **`guardar` pisaba el aviso.** La columna viajaba en el mapeo del agregado, así
+   que cualquier operación del panel hecha sobre un pedido leído antes del reclamo
+   la devolvía a nulo al guardar.
+
+Los tres se cierran con la misma pieza: `reclamarAvisoDePlazo`, una escritura
+condicional atómica (`where aviso is null`) que devuelve si la ganó quien llama.
+El `where` serializa a las instancias; una transacción por reclamo hace que un
+fallo tardío no revierta lo ya comprometido; y la columna quedó
+`insertable = false, updatable = false` en la entidad JPA, de modo que esa
+sentencia es su **único** escritor. `Pedido` perdió el método para marcarla: solo
+la lee.
+
+El peor caso que queda es una marca puesta y un correo que no salió —un aviso
+perdido—, que es el lado por el que se prefiere fallar mientras no exista la
+bandeja de salida que `EnviadorDeCorreo` viene pidiendo.
+
 ## Consecuencias
 
 - Migración `V31`: una columna nueva en `pedido` y un índice parcial sobre los
   que todavía no tienen aviso.
-- Un puerto nuevo en `RepositorioPedidos`, con filtro grueso: acota por
-  `creado_en`, que siempre es anterior o igual al inicio del plazo, y la última
-  palabra la tiene el dominio sobre la fecha real del historial.
+- Dos puertos nuevos en `RepositorioPedidos`: la consulta, con filtro grueso
+  —acota por `creado_en`, que siempre es anterior o igual al inicio del plazo, y
+  la última palabra la tiene el dominio sobre la fecha real del historial—, y el
+  reclamo atómico de arriba.
+- La única excepción al "sin `@Transactional` propio" de `RepositorioPedidosJpa`,
+  porque una sentencia `@Modifying` sin transacción activa revienta. Con
+  `flushAutomatically` y `clearAutomatically`, las dos: sin la primera no ve las
+  escrituras pendientes y actualiza cero filas, sin la segunda quien lea después
+  se lleva la copia vieja en caché.
 - Seis textos nuevos en `correos_es.properties` y `correos_en.properties`.
-- `PLAZO_ENTREGA_VIGILANCIA_INTERVALO_HORAS`, doce por omisión. No es un dato de
-  negocio: el treinta vive en `PlazoDeEntrega`.
-- El aviso se marca y se guarda **antes** de enviar el correo. El adaptador de
-  producción se traga los fallos de envío (ver `EnviadorDeCorreo`), así que el
-  orden contrario dejaría al pedido sin marcar y el vigilante volvería a
-  escribirle cada doce horas. Un aviso perdido es mejor que uno repetido, y
-  mientras no exista la bandeja de salida que ese puerto pide, no hay una tercera
-  opción.
+- `PLAZO_ENTREGA_VIGILANCIA_INTERVALO_MINUTOS` (720) y
+  `PLAZO_ENTREGA_VIGILANCIA_RETRASO_INICIAL_MINUTOS` (5). No son datos de
+  negocio: el treinta vive en `PlazoDeEntrega`. El retraso inicial es corto y
+  **menor que el intervalo** a propósito: igualándolos, cada despliegue reinicia
+  la cuenta y con despliegues diarios la tarea no correría nunca.
+
+## Lo que queda como deuda
+
+Estas tareas periódicas corren con `@Scheduled` dentro de la aplicación, y
+`docs/07-infra-gcp.md` dice que van por **Cloud Scheduler**. La divergencia es
+anterior a esta decisión —la comparten la purga de carritos y la conciliación de
+Wompi— y cambiarla es trabajo de infraestructura, no de este caso de uso. Con el
+reclamo atómico, mientras tanto, que corran varias a la vez ya no hace daño.

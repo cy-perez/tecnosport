@@ -85,12 +85,16 @@ public final class AvisarPlazosDeEntregaVencidos {
 
     int avisados = 0;
     for (Pedido pedido : candidatos) {
-      if (vencio(pedido, ahora)) {
-        pedido.marcarAvisoDePlazoEnviado(ahora);
-        repositorioPedidos.guardar(pedido);
-        avisar(pedido);
-        avisados++;
+      if (!vencio(pedido, ahora)) {
+        continue;
       }
+      // Reclamar antes de escribir, y solo escribir si se ganó el reclamo: el que pierde es otra
+      // instancia que ya le escribió a este mismo comprador.
+      if (!repositorioPedidos.reclamarAvisoDePlazo(pedido.id(), ahora)) {
+        continue;
+      }
+      avisar(pedido);
+      avisados++;
     }
     return new ResultadoVigilanciaPlazos(candidatos.size(), avisados);
   }
@@ -108,11 +112,18 @@ public final class AvisarPlazosDeEntregaVencidos {
   }
 
   /**
-   * Se marca y se guarda <b>antes</b> de escribir, no después, y no es un descuido del orden: el
-   * envío ocurre dentro de esta misma transacción y el adaptador de producción se traga los fallos
-   * ({@link EnviadorDeCorreo}). Con el orden contrario, un correo que revienta de otra forma
-   * dejaría el pedido sin marcar y el vigilante volvería a escribirle en la siguiente vuelta, cada
-   * doce horas, hasta que alguien lo despachara. Prefiero un aviso perdido que uno repetido.
+   * <b>Un pedido ya despachado no ofrece cancelación, y el texto no puede prometerla.</b> El grafo
+   * de {@link EstadoPedido} solo deja salir de {@code DESPACHADO} hacia la entrega o hacia el
+   * rechazo en la entrega, así que {@code CancelarPedido} lanzaría una transición inválida:
+   * escribirle "respóndenos y lo cancelamos" sería prometer algo que el software no puede hacer.
+   * Por eso ese caso lleva su propio párrafo —coordinar la devolución con la transportadora, que sí
+   * es el camino real— en vez del de siempre. Lo levantó una revisión adversarial del propio
+   * vigilante.
+   *
+   * <p>El envío va después del reclamo, nunca antes: ver {@link
+   * RepositorioPedidos#reclamarAvisoDePlazo}. Un fallo aquí deja la marca puesta y el correo sin
+   * salir, que es el lado por el que se prefiere fallar — el adaptador de producción se traga los
+   * fallos de envío de todas formas ({@link EnviadorDeCorreo}).
    */
   private void avisar(Pedido pedido) {
     boolean yaDespachado = pedido.estado() == EstadoPedido.DESPACHADO;
@@ -121,12 +132,13 @@ public final class AvisarPlazosDeEntregaVencidos {
     String cuerpo = textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CUERPO);
     if (yaDespachado) {
       cuerpo += textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_EN_CAMINO);
+    } else {
+      cuerpo +=
+          textos.texto(
+              huboCobro
+                  ? TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CON_DINERO
+                  : TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_SIN_COBRO);
     }
-    cuerpo +=
-        textos.texto(
-            huboCobro
-                ? TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CON_DINERO
-                : TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_SIN_COBRO);
     cuerpo += textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CIERRE);
 
     enviadorDeCorreo.enviar(

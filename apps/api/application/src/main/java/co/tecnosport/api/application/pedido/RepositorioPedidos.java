@@ -51,4 +51,23 @@ public interface RepositorioPedidos {
    * grande, el problema no es la consulta.
    */
   List<Pedido> buscarSinAvisoDePlazo(Collection<EstadoPedido> estados, Instant creadosAntesDe);
+
+  /**
+   * Reclama el derecho a avisarle a un pedido que su plazo de entrega venció. Devuelve {@code true}
+   * si lo ganó quien llama, {@code false} si ya estaba reclamado.
+   *
+   * <p><b>Es una sola escritura condicional y atómica</b>, no un guardado del agregado, y de eso
+   * depende que nadie reciba dos veces el mismo correo. Dos razones, las dos reales:
+   *
+   * <p>La primera es que Cloud Run corre con un <b>mínimo</b> de una instancia, no con un máximo:
+   * bajo carga hay varias, cada una con su tarea programada, y todas leen las mismas filas con el
+   * aviso en nulo. Sin el {@code where} condicional, las N escriben y las N escriben un correo.
+   *
+   * <p>La segunda es el lote. Antes esto era {@code marcar} + {@code guardar} dentro de una sola
+   * transacción para todo el barrido, y un fallo en el pedido veinte —o al comprometer— revertía
+   * las marcas de los diecinueve anteriores <b>cuyos correos ya habían salido</b>. Con una
+   * escritura por pedido, comprometida por sí misma, el peor caso es una marca puesta y un correo
+   * que no salió: un aviso perdido, que es el lado por el que se prefiere fallar.
+   */
+  boolean reclamarAvisoDePlazo(UUID pedidoId, Instant ahora);
 }

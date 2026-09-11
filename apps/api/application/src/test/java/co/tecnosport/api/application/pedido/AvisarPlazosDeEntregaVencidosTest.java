@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
@@ -98,7 +99,9 @@ class AvisarPlazosDeEntregaVencidosTest {
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
     assertEquals(EstadoPedido.PAGADO, pedido.estado());
-    assertEquals(PASADO_EL_PLAZO, pedido.avisoDePlazoEnviadoEn().orElseThrow());
+    // Ni un registro de historial nuevo: el vigilante no transiciona nada.
+    assertEquals(2, pedido.historial().size());
+    assertEquals(List.of(pedido.id()), pedidos.reclamos());
   }
 
   @Test
@@ -160,13 +163,60 @@ class AvisarPlazosDeEntregaVencidosTest {
     assertTrue(contiene(correos.enviados(), TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_EN_CAMINO));
   }
 
+  /**
+   * De {@code DESPACHADO} solo se sale hacia la entrega o hacia el rechazo en la entrega, así que
+   * {@code CancelarPedido} lanzaría una transición inválida. Prometerle al comprador que se le
+   * cancela sería prometer algo que el software no puede hacer: su párrafo lo dice de otra forma.
+   */
+  @Test
+  void aUnDespachadoNoSeLePrometeUnaCancelacionQueElDominioNoPermite() {
+    pedidoEn(
+        MetodoPago.NEQUI,
+        EstadoPedido.PAGADO,
+        EstadoPedido.EN_PREPARACION,
+        EstadoPedido.DESPACHADO);
+
+    casoDeUso(PASADO_EL_PLAZO).ejecutar();
+
+    assertFalse(contiene(correos.enviados(), TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CON_DINERO));
+    assertFalse(contiene(correos.enviados(), TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_SIN_COBRO));
+  }
+
+  /**
+   * El reclamo es lo único que impide que dos instancias de Cloud Run le escriban dos veces al
+   * mismo comprador. Si se pierde, no se escribe — y esta prueba falla si alguien vuelve a poner el
+   * envío antes del reclamo.
+   */
+  @Test
+  void siOtraInstanciaGanaElReclamoNoSeEscribeNada() {
+    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidos.queOtroGaneElReclamoDe(pedido.id());
+
+    ResultadoVigilanciaPlazos resultado = casoDeUso(PASADO_EL_PLAZO).ejecutar();
+
+    assertEquals(new ResultadoVigilanciaPlazos(1, 0), resultado);
+    assertTrue(correos.enviados().isEmpty());
+  }
+
+  /** Y se reclama antes de escribir, no después: el orden es la garantía. */
+  @Test
+  void seReclamaCadaPedidoVencidoYSoloUnaVez() {
+    Pedido vencido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    pedidoEn(MetodoPago.NEQUI);
+
+    casoDeUso(PASADO_EL_PLAZO).ejecutar();
+    casoDeUso(PASADO_EL_PLAZO.plus(12, ChronoUnit.HOURS)).ejecutar();
+
+    assertEquals(List.of(vencido.id()), pedidos.reclamos());
+  }
+
   @Test
   void unPedidoSinDespacharNoDiceQueVaEnCamino() {
     pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
 
     casoDeUso(PASADO_EL_PLAZO).ejecutar();
 
-    assertTrue(!contiene(correos.enviados(), TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_EN_CAMINO));
+    assertFalse(contiene(correos.enviados(), TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_EN_CAMINO));
   }
 
   @Test

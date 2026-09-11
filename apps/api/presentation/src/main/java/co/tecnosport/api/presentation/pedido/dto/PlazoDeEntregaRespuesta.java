@@ -20,6 +20,12 @@ import java.time.Instant;
  *
  * <p>El objeto entero es nulo mientras el plazo no haya arrancado —un pago pendiente no tiene
  * contrato que incumplir—, que es distinto de "arrancó y va en plazo".
+ *
+ * <p><b>Viaja también por los dos endpoints públicos</b> que devuelven {@code PedidoRespuesta}
+ * —crear el pedido y reintentar el pago—, y está decidido así: en contraentrega el plazo arranca al
+ * confirmar, y hasta cuándo hay para entregarle es información de quien compró, no de operación. Lo
+ * pinta {@code crearPedidoContraentregaQuedaConfirmadoSinPagoPendiente}, para que quede como
+ * decisión y no como consecuencia de compartir el DTO.
  */
 public record PlazoDeEntregaRespuesta(
     Instant inicio, Instant limite, String verdicto, Instant avisadoEn) {}

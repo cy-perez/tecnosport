@@ -51,4 +51,9 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
       java.time.Instant creadosAntesDe) {
     return java.util.List.of();
   }
+
+  @Override
+  public boolean reclamarAvisoDePlazo(java.util.UUID pedidoId, java.time.Instant ahora) {
+    return false;
+  }
 }

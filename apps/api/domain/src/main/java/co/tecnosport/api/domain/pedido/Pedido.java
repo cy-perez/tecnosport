@@ -33,7 +33,7 @@ public final class Pedido {
   private final List<HistorialPedido> historial;
   private final Instant creadoEn;
   private EstadoPedido estado;
-  private Instant avisoDePlazoEnviadoEn;
+  private final Instant avisoDePlazoEnviadoEn;
 
   public Pedido(
       UUID id,
@@ -286,22 +286,17 @@ public final class Pedido {
    * <p>Este sí es un campo propio y no algo derivable del historial, a diferencia de los dos de
    * arriba: es un hecho nuevo —se escribió un correo— y no una consecuencia de ningún cambio de
    * estado. De él depende que el vigilante no vuelva a escribir en cada vuelta.
+   *
+   * <p><b>Solo de lectura, y es la parte que importa.</b> No hay un método para marcarlo aquí
+   * porque este agregado no puede sostener la garantía que hace falta: que solo <i>uno</i> de los
+   * que lo intenten a la vez gane. Eso exige una escritura condicional atómica, y quien la sostiene
+   * es {@code RepositorioPedidos.reclamarAvisoDePlazo}, con el {@code where ... is null} de la base
+   * — con varias instancias de Cloud Run, una invariante comprobada en memoria no impide nada. La
+   * columna, además, es de solo lectura para el mapeo del agregado, así que ningún {@code guardar}
+   * de otra operación puede pisarla.
    */
   public Optional<Instant> avisoDePlazoEnviadoEn() {
     return Optional.ofNullable(avisoDePlazoEnviadoEn);
-  }
-
-  /**
-   * Deja constancia del aviso. Una sola vez: volver a marcarlo reescribiría la fecha del primero, y
-   * cuándo se avisó por primera vez es justo el dato que importa si alguien reclama.
-   */
-  public void marcarAvisoDePlazoEnviado(Instant ahora) {
-    Objects.requireNonNull(ahora, "La fecha del aviso no puede ser nula.");
-    if (avisoDePlazoEnviadoEn != null) {
-      throw new ExcepcionDeDominio(
-          "Al pedido " + numeroPedido.valor() + " ya se le avisó del plazo vencido.");
-    }
-    this.avisoDePlazoEnviadoEn = ahora;
   }
 
   /**
