@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.catalogo.EstadoVariante;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
@@ -236,6 +237,7 @@ public class MapeadorCatalogo {
         v.getTasaIva(),
         v.getExistencia(),
         v.getCodigoBarras(),
+        new Paquete(v.getPesoGramos(), v.getLargoCm(), v.getAnchoCm(), v.getAltoCm()),
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
         setRotacionPropio);

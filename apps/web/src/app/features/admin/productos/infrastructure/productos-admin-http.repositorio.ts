@@ -71,6 +71,10 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         tasaIva: comando.tasaIva,
         codigoBarras: comando.codigoBarras ?? undefined,
         existenciaInicial: comando.existenciaInicial,
+        pesoGramos: comando.pesoGramos,
+        largoCm: comando.largoCm,
+        anchoCm: comando.anchoCm,
+        altoCm: comando.altoCm,
         atributos: comando.atributos.map((a) => ({
           atributoId: a.atributoId,
           valor: a.valor,

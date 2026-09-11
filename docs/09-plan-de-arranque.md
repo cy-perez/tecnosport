@@ -3261,10 +3261,31 @@ cabecera de firma del webhook, y los límites y comisiones del recaudo.
 
 Orden de construcción, un caso de uso a la vez:
 
-1. **Paquete por variante.** `peso_gramos`, `largo_cm`, `ancho_cm`, `alto_cm`
-   como columnas obligatorias, invariante de dominio, y el panel pidiéndolos al
-   crear una variante. Migración con relleno del catálogo sembrado — **el peso
-   real no se inventa** (`docs/02-modelo-datos.md`).
+1. ~~**Paquete por variante.**~~ **Hecho el 10 de septiembre de 2026.** Objeto de
+   valor `Paquete` en el dominio, las cuatro columnas `not null` en `V32` con un
+   `check` de positividad, y el panel pidiéndolas al crear una variante.
+
+   Tres cosas que solo aparecieron al construirlo:
+
+   - **La migración rellena por SKU explícito y falla si no reconoce una fila.**
+     Un `default` le habría puesto el mismo peso a una camiseta y a unos tenis.
+     Preferible un despliegue detenido a un flete cobrado de menos.
+   - **El catálogo sembrado lleva medidas de demostración declaradas como tales**,
+     y eso no viola "no inventes datos de negocio": ese catálogo es ficción
+     completa, y `hashDeSiembra` ya había resuelto antes el mismo dilema en esta
+     misma clase.
+   - **El `check` de positividad está en la base además de en el dominio** porque
+     `SembradorCatalogo` escribe entidades JPA directo, sin pasar por `Paquete`.
+     Una invariante que solo vive en el dominio no protege al que lo esquiva.
+
+   Y una cuarta que vale para la fase entera: **`packages/contratos/src/tipos.ts`
+   quedó desactualizado y `npm run verificar` pasó igual.** Los cuatro campos
+   nuevos no estaban en el tipo generado, el frontend los mandaba, y ni el lint ni
+   el build ni las 748 pruebas dijeron nada. Hay que correr `npm run contratos`
+   con el backend arriba **cada vez que cambie un DTO**, porque ningún guardián lo
+   vigila.
+
+   Queda vivo el `TODO` del peso real del catálogo de producción.
 2. **Puerto `CotizadorEnvio` y `SkydropxClient`.** Con el token cacheado, el
    sondeo acotado por tiempo e intentos, y una prueba que ejercite la cotización
    que **nunca** completa. Aquí entran también las variables `SKYDROPX_*` y

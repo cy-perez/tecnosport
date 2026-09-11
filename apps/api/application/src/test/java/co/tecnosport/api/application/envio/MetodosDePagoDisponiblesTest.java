@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -74,6 +75,7 @@ class MetodosDePagoDisponiblesTest {
             new BigDecimal("0.19"),
             5,
             null,
+            new Paquete(180, 30, 25, 4),
             List.of());
     producto.agregarVariante(variante);
     producto.publicar();

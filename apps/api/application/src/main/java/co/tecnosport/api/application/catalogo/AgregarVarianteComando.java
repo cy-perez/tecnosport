@@ -11,4 +11,8 @@ public record AgregarVarianteComando(
     BigDecimal tasaIva,
     String codigoBarras,
     int existenciaInicial,
+    int pesoGramos,
+    int largoCm,
+    int anchoCm,
+    int altoCm,
     List<ValorAtributoComando> atributos) {}

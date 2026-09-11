@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.compartido.Slug;
@@ -52,9 +53,14 @@ class AgregarVarianteTest {
                 new BigDecimal("0.19"),
                 null,
                 5,
+                180,
+                30,
+                25,
+                4,
                 List.of(new ValorAtributoComando(color.id(), "Azul marino", "#1E3A8A"))));
 
     assertEquals("TS-CAM-AZ-M", variante.sku().valor());
+    assertEquals(new Paquete(180, 30, 25, 4), variante.paquete());
     assertEquals(1, variante.atributos().size());
     assertEquals("Azul marino", variante.atributos().get(0).valor());
     assertEquals(producto.id(), repositorioProductos.ultimoProductoIdConVariante);
@@ -74,7 +80,17 @@ class AgregarVarianteTest {
 
     agregarVariante.ejecutar(
         new AgregarVarianteComando(
-            producto.id(), "TS-CAM-AZ-M", 89_900, new BigDecimal("0.19"), null, 0, List.of()));
+            producto.id(),
+            "TS-CAM-AZ-M",
+            89_900,
+            new BigDecimal("0.19"),
+            null,
+            0,
+            180,
+            30,
+            25,
+            4,
+            List.of()));
 
     assertTrue(repositorioInventario.ultimoGuardado.movimientos().isEmpty());
   }
@@ -88,7 +104,17 @@ class AgregarVarianteTest {
         () ->
             agregarVariante.ejecutar(
                 new AgregarVarianteComando(
-                    productoId, "TS-1", 1000, new BigDecimal("0.19"), null, 0, List.of())));
+                    productoId,
+                    "TS-1",
+                    1000,
+                    new BigDecimal("0.19"),
+                    null,
+                    0,
+                    180,
+                    30,
+                    25,
+                    4,
+                    List.of())));
   }
 
   @Test
@@ -108,6 +134,10 @@ class AgregarVarianteTest {
                     new BigDecimal("0.19"),
                     null,
                     0,
+                    180,
+                    30,
+                    25,
+                    4,
                     List.of())));
   }
 
@@ -128,6 +158,10 @@ class AgregarVarianteTest {
                     new BigDecimal("0.19"),
                     null,
                     0,
+                    180,
+                    30,
+                    25,
+                    4,
                     List.of(new ValorAtributoComando(atributoId, "Azul", null)))));
   }
 }

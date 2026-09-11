@@ -85,6 +85,10 @@ class RepositorioInventarioJpaTest {
                 new BigDecimal("0.19"),
                 0,
                 null,
+                180,
+                30,
+                25,
+                4,
                 "ACTIVA",
                 ahora));
     return variante.getId();

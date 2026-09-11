@@ -64,6 +64,20 @@ export class AgregarVarianteAdminPage {
     }),
     codigoBarras: new FormControl('', { nonNullable: true }),
     existenciaInicial: new FormControl(0, { nonNullable: true, validators: [Validators.min(0)] }),
+    // El paquete es obligatorio y no tiene valor por omisión: un cero heredado de un formulario en
+    // blanco sería un peso inventado, y el servidor lo rechazaría igual (adr/0021).
+    pesoGramos: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
+    largoCm: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
+    anchoCm: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
+    altoCm: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1)],
+    }),
     atributos: new FormArray<GrupoAtributo>([]),
   });
 
@@ -113,6 +127,10 @@ export class AgregarVarianteAdminPage {
         tasaIva: valores.tasaIva,
         codigoBarras: valores.codigoBarras || null,
         existenciaInicial: valores.existenciaInicial,
+        pesoGramos: valores.pesoGramos ?? 0,
+        largoCm: valores.largoCm ?? 0,
+        anchoCm: valores.anchoCm ?? 0,
+        altoCm: valores.altoCm ?? 0,
         atributos: valores.atributos.map((a) => ({
           atributoId: a.atributoId,
           valor: a.valor,

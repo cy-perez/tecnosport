@@ -143,6 +143,10 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             variante.tasaIva(),
             variante.existencia(),
             variante.codigoBarras().orElse(null),
+            variante.paquete().pesoGramos(),
+            variante.paquete().largoCm(),
+            variante.paquete().anchoCm(),
+            variante.paquete().altoCm(),
             variante.estado().name(),
             Instant.now()));
     List<VarianteAtributoValorJpaEntity> atributos =

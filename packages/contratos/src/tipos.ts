@@ -1114,6 +1114,14 @@ export interface components {
             codigoBarras?: string;
             /** Format: int32 */
             existenciaInicial?: number;
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            altoCm?: number;
             atributos?: components["schemas"]["ValorAtributoPeticion"][];
         };
         ValorAtributoPeticion: {

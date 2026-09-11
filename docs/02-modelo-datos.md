@@ -86,12 +86,27 @@ cuatro valores no se puede publicar — es una invariante del dominio, igual que
 SKU. Van como columnas y no como pares atributo-valor porque no describen el
 producto para el comprador: los consume el cotizador, y un dato que un adaptador
 necesita leer siempre no puede vivir en una bolsa de atributos opcionales.
-`adr/0012` los había eliminado; `adr/0021` los devuelve, y el catálogo ya sembrado
-necesita relleno antes de encender la cotización.
+`adr/0012` los había eliminado; `adr/0021` los devuelve. **Construido el 10 de
+septiembre de 2026** (`V32`): objeto de valor `Paquete` en el dominio, cuatro
+columnas `not null` con un `check` de positividad —que también está en el dominio,
+pero el sembrador escribe entidades JPA directo y no pasa por él—, y el panel
+pidiéndolos al crear una variante.
 
-`TODO: peso y dimensiones reales de las variantes ya sembradas.` No se inventan:
-un peso inventado es un flete cobrado de menos, o un pedido que la transportadora
-reliquida después.
+El catálogo sembrado quedó con **medidas de demostración, declaradas como tales**
+en `SembradorCatalogo` y en la migración. No es inventar un dato de negocio: ese
+catálogo es ficción completa —ni "Under Trail" ni el "Celular TecnoSport Aurora"
+existen—, y es el mismo criterio de `hashDeSiembra` y de las fotos de picsum.
+
+La migración rellena **por SKU explícito** y solo después pone las columnas en
+`not null`: si aparece una fila que no reconoce, falla y detiene el despliegue. Un
+relleno por defecto le habría puesto el mismo peso a una camiseta y a un par de
+tenis.
+
+`TODO: peso y dimensiones reales de las variantes del catálogo de producción,
+medidos con el producto empacado.` No se heredan de las filas sembradas ni se
+inventan: un peso inventado es un flete cobrado de menos, o un pedido que la
+transportadora reliquida después —y eso último se puede vigilar con
+`finance/extra-charges`, ver `docs/13-skydropx-capacidades.md`.
 
 **El catálogo de atributos es global, no tipado por categoría en el esquema**
 (confirmado al construir Track B, Fase 4): no existe ninguna columna ni tabla

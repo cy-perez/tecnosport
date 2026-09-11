@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -58,6 +59,8 @@ public final class AgregarVariante {
             comando.tasaIva(),
             comando.existenciaInicial(),
             comando.codigoBarras(),
+            new Paquete(
+                comando.pesoGramos(), comando.largoCm(), comando.anchoCm(), comando.altoCm()),
             atributos);
     producto.agregarVariante(variante);
     repositorioProductos.agregarVariante(producto.id(), variante);

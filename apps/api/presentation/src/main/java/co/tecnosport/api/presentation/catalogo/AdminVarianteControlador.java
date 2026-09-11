@@ -62,6 +62,10 @@ public class AdminVarianteControlador {
         cuerpo.tasaIva(),
         cuerpo.codigoBarras(),
         cuerpo.existenciaInicial(),
+        cuerpo.pesoGramos(),
+        cuerpo.largoCm(),
+        cuerpo.anchoCm(),
+        cuerpo.altoCm(),
         atributos);
   }
 
