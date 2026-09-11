@@ -3295,7 +3295,38 @@ Orden de construcción, un caso de uso a la vez:
    por segundo y el sondeo acotado por tiempo **y** por intentos. Incluida la
    prueba de la cotización que nunca completa, que pedía este plan.
 
-   **2b, cuando haya credenciales.** El mapeo de campos y nada más.
+   **2b, hecho el 11 de septiembre de 2026.** El mapeo de campos, confirmado
+   contra el sandbox con las credenciales reales. Se comprobó pidiendo
+   cotizaciones de verdad, y las respuestas capturadas quedaron como fixtures de
+   `MapeadorCotizacionSkydropxV1Test` — que es lo contrario de la prueba del
+   cliente, donde un servidor falso que habla el idioma inventado del cliente
+   pasa siempre. El detalle está en `docs/13-skydropx-capacidades.md`, sección 6.
+
+   Lo que la sesión cambió respecto a lo planeado:
+
+   - **`postal_code` es el código DANE**, no el postal de cinco dígitos. Ninguna
+     fuente lo decía y el dominio ya lo tenía: la suerte fue haber modelado
+     `Direccion` con códigos DANE desde la Fase 3.
+   - **La sospecha del peso era correcta**: son kilos, y el dominio guarda
+     gramos. Partir la fase en 2a y 2b se pagó solo con este dato.
+   - **El origen necesitaba dos datos más** —`ORIGEN_DEPARTAMENTO` y
+     `ORIGEN_CIUDAD`—, porque Skydropx exige los nombres aparte del DANE y el
+     catálogo DIVIPOLA que los traduce vive en el frontend.
+   - **El flete es `total` y no `amount`.** La diferencia son los `extra_fees`,
+     el seguro entre ellos, y es plata que paga el negocio.
+   - **Faltaba el valor declarado.** `CotizacionEnvio` no lo llevaba; sin él cada
+     paquete se declara en COP 2.500 y la transportadora responde hasta ahí. Ahora
+     viaja por bulto, en `Bulto`, con el valor de lo que va dentro.
+   - **Skydropx deduplica cotizaciones por contenido**, y la repetida ni siquiera
+     se revalida. Un fallo transitorio de una transportadora queda congelado
+     contra ese carrito y esa dirección, y reintentar no lo arregla. Habrá que
+     tenerlo presente en el paso 3, cuando el endpoint pueda ser llamado dos veces
+     seguidas por el mismo comprador.
+
+   Queda abierto lo que el sandbox no pudo responder: la cobertura de
+   contraentrega por tarifa —ninguna tarifa exitosa trae un campo que la declare,
+   así que el mapeador no la promete—, el host de producción, y qué
+   transportadoras están activas en la cuenta.
 
    Lo que ordenó ese corte: **los campos del cuerpo no se pueden escribir sin la
    cuenta**, y no es un detalle cosmético — nuestro dominio guarda gramos y el

@@ -225,8 +225,13 @@ mueva hay un paso con nombre propio.
 1. **Recolección programada o entrega en oficina.** Determina si la Fase 7 gana
    un agregado `Recoleccion`, una pantalla de panel y una cuarta tarea
    programada, o si el despacho termina en "alguien lleva los paquetes".
-2. **Un bulto o varios.** Peso sumado y dimensiones máximas, contra un `parcel`
-   por línea. Cambia el flete y cambia la invariante del paquete.
+2. ~~**Un bulto o varios.**~~ **Decidido el 11 de septiembre de 2026: un `parcel`
+   por variante.** Es lo que el modelo ya sabe —cada variante tiene su `Paquete`
+   con peso y medidas reales— y evita inventar las dimensiones de una caja
+   combinada. Pesa además que el peso sumado se saldría del tope de 8 kg de
+   Envía y dejaría transportadoras fuera. Con él se decidió el valor declarado:
+   **el total de lo que va en cada bulto**, no el mínimo ni el 2.500 por omisión,
+   porque la transportadora responde hasta lo declarado.
 3. **Asegurar los envíos** (`protect`), y con qué criterio. Un celular no es una
    camiseta.
 4. **Validar la dirección** con `verify_by_carriers` antes de cobrar, o no.
@@ -236,26 +241,87 @@ mueva hay un paso con nombre propio.
 7. **Cancelar la guía** cuando se cancela un pedido ya despachado.
 8. **v1 o v2** en cotizaciones y envíos.
 
-## 6. Lo que solo se cierra con la cuenta real
+## 6. Lo que se cerró con la cuenta real
 
-Nada de esto se implementa de memoria.
+**Sesión del 11 de septiembre de 2026 contra el sandbox**, con las credenciales
+de la cuenta. Todo lo que sigue se comprobó pidiendo cotizaciones de verdad: no
+hay una sola línea deducida de la documentación. Las respuestas capturadas —
+recortadas, no reescritas— viven como fixtures en
+`MapeadorCotizacionSkydropxV1Test`.
 
-- **La URL base de la cuenta colombiana.** ⚠️ Un SDK de terceros dice
-  `https://app.skydropx.com` para pruebas y producción, y el panel colombiano vive
-  bajo `/co`. No es suficiente para escribirlo en una variable de entorno.
-- **La firma del webhook.** ⚠️ La única pista concreta es de terceros: cabecera
-  `authorization` con el formato `HMAC {firma}` y **HMAC SHA-512** sobre el
-  cuerpo. Coincide con el algoritmo que `ADR-0022` ya anotaba, lo que sube algo la
-  confianza, pero el nombre de la cabecera sigue siendo de una sola fuente no
-  oficial.
-- **El cuerpo de `POST /pickups`.** ⚠️ Dos formas incompatibles.
-- **Los campos de contraentrega al crear el envío.** ❌ Sin ellos no hay recaudo.
-- **Los límites, la comisión y el seguro del recaudo.** ❌
-- **Si hay ambiente de pruebas separado** y cómo se pide. ❌
+### Confirmado
 
-`[[ CONFIRMAR CON LA CUENTA: los seis puntos de esta sección, en una sola sesión
-con las credenciales reales. Es una tarea de una tarde y desbloquea la mitad de la
-Fase 7. ]]`
+- ✅ **El host de pruebas es `sb-pro.skydropx.com`.** Es el único de los tres
+  candidatos que autentica: `api-pro.skydropx.com` y `pro.skydropx.com` devuelven
+  `invalid_client` con estas credenciales. El panel dice que el de producción es
+  `api-pro.skydropx.com`, y eso **queda sin comprobar** hasta tener credenciales
+  de producción.
+- ✅ **El token acepta form-encoded y JSON**, devuelve `expires_in: 7200` y
+  `scope: default`. Lo que ya estaba implementado siguiendo el RFC es correcto.
+- ✅ **El cuerpo de la cotización va envuelto en `quotation`.** Plano da 400.
+- ✅ **`postal_code` es el código DANE de cinco dígitos**, no el postal real. Un
+  postal de seis dígitos devuelve `422 "no existe"`. Ninguna fuente lo decía, y es
+  el hallazgo que más caro habría costado adivinar.
+- ✅ **`area_level1` (departamento) y `area_level2` (ciudad) son obligatorios**;
+  `area_level3`, `street1`, `name` y `phone` no lo son para cotizar. Los nombres
+  se **normalizan**: "Bogotá, D.C." y "Bogotá" caen en la misma cotización, así que
+  las grafías de DIVIPOLA que ya manda el frontend sirven tal cual. Por eso el
+  origen ganó `ORIGEN_DEPARTAMENTO` y `ORIGEN_CIUDAD`.
+- ✅ **El peso va en kilos.** Comprobado por contradicción: mandando `1000` las
+  seis transportadoras responden `max_weight debe ser menor que o igual a
+  60 / 150 / 200 / 8 / 500 / 25`. Esos son, de paso, los topes reales por
+  transportadora — y **Envía/paquete terrestre se cae en 8 kg**.
+- ✅ **Cobran peso volumétrico.** Un 30×25×10 de 1 kg real se cotizó como 3 kg.
+- ✅ **El flete es `total`, no `amount`.** La diferencia son los `extra_fees`, el
+  seguro entre ellos: `amount` 18.356 contra `total` 19.616, con
+  `extra_fees: [{code: "insurance", value: 1260}]`. Cobrar `amount` regalaría la
+  diferencia en cada envío.
+- ✅ **`declared_value` va en cada `parcel` y por omisión queda en COP 2.500.**
+  `declared_amount` es obligatorio a nivel de cotización, aparte.
+- ✅ **Seis transportadoras en el sandbox**: Inter Rapidísimo, Servientrega,
+  Coordinadora, Envía (mercancía y paquete terrestre) y 99 minutes.
+- ✅ **Los montos vienen como cadena y los tipos alternan** entre una tarifa y la
+  siguiente: `weight` es `"0.0"` en una y `3` en otra. Cualquier lectura con tipo
+  fijo se rompe con la tarifa de al lado.
+- ✅ **`vat_fee` existe por tarifa** y en el sandbox llega en `"0.0"`. No alcanza
+  para cerrar el dato de negocio del IVA del flete, pero sí dice dónde mirarlo.
+
+### Dos trampas que no estaban en ninguna documentación
+
+- ⚠️ **Skydropx deduplica cotizaciones por contenido.** El mismo cuerpo devuelve
+  el mismo `id` —comprobado cuatro veces seguidas— con el mismo resultado. Un
+  fallo transitorio de una transportadora **queda congelado** contra ese carrito y
+  esa dirección: reintentar no lo arregla. Y la petición repetida **no se vuelve a
+  validar**, así que un cuerpo inválido puede responder 201 solo porque uno
+  parecido pasó antes.
+- ⚠️ **Las transportadoras responden distinto en momentos distintos.** Con el
+  mismo cuerpo se obtuvieron tarifas en una sesión y `tariff_price_not_found` en
+  otra. Servientrega y Envía lo devuelven de forma constante, lo que apunta a
+  transportadoras o planes sin activar en la cuenta.
+  `[[ CONFIRMAR EN EL PANEL: qué transportadoras y qué planes hay activos en el
+  sandbox, porque sin una tarifa estable no se puede verificar el camino feliz de
+  punta a punta. ]]`
+
+### Sigue sin confirmarse
+
+- ❌ **El host de producción**, hasta la primera cotización con credenciales de
+  producción.
+- ❌ **La cobertura de contraentrega por tarifa.** El objeto de una tarifa exitosa
+  **no trae ningún campo** que la declare; `cash_on_delivery` es de la cotización
+  entera y hay que pedirlo. Mientras tanto el mapeador no promete contraentrega en
+  ninguna tarifa, que es fallar cerrado.
+- ❌ **El nombre del campo del monto a recaudar.** `on_delivery_amount` se mandó y
+  volvió en `null`.
+- ⚠️ **Los límites del recaudo, parcialmente.** Pidiendo `cash_on_delivery: true`
+  aparecieron los primeros mínimos con fuente: **valor declarado ≥ 10.000 en
+  Coordinadora y Envía, ≥ 5.000 en Servientrega**. La comisión, el máximo y el
+  seguro siguen sin confirmar, y la cifra de COP 2.000 / COP 2.000.000 que cita
+  `ADR-0023` sigue sin aparecer en ninguna fuente.
+- ❌ **La firma del webhook**, **el cuerpo de `POST /pickups`** y **los campos de
+  contraentrega al crear el envío**: son del paso 7 de la fase y no se tocaron en
+  esta sesión.
+- ❌ **La comisión financiera del retiro a banco.** Es comercial, no técnica: va
+  por el ejecutivo de cuenta.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
