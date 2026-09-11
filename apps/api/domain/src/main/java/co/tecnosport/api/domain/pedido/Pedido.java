@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,11 +15,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Raíz transaccional (docs/02-modelo-datos.md). El envío no aparece en el total: es un costo
- * estándar ya incluido en el precio de cada línea (docs/adr/0012), no algo que este agregado sume
- * ni calcule. El número legible ({@link NumeroPedido}) no lo genera este agregado: llega ya
- * reservado por quien llame a {@link #crear}, porque su secuencial exige una atomicidad que solo da
- * la base de datos.
+ * Raíz transaccional (docs/02-modelo-datos.md). El número legible ({@link NumeroPedido}) no lo
+ * genera este agregado: llega ya reservado por quien llame a {@link #crear}, porque su secuencial
+ * exige una atomicidad que solo da la base de datos.
+ *
+ * <p><strong>El envío sí entra en el total desde la Fase 7</strong> (adr/0021). Hasta entonces el
+ * flete era un costo estándar metido en el precio de cada línea (adr/0012) y este agregado no lo
+ * sumaba ni lo conocía. Ahora congela la {@link TarifaEnvio} que se cobró, y de ella sale todo: no
+ * hay un campo de costo aparte, porque el mismo dinero en dos sitios son dos verdades capaces de
+ * divergir.
+ *
+ * <p>La tarifa es nula en dos casos legítimos: el retiro en punto, que no cotiza porque no hay a
+ * dónde despachar, y los pedidos anteriores a la Fase 7, cuyo flete ya estaba cobrado dentro de las
+ * líneas. Los dos dan envío cero, y para los dos es cierto.
  */
 public final class Pedido {
 
@@ -34,6 +43,7 @@ public final class Pedido {
   private final Instant creadoEn;
   private EstadoPedido estado;
   private final Instant avisoDePlazoEnviadoEn;
+  private final TarifaEnvio tarifaEnvio;
 
   public Pedido(
       UUID id,
@@ -59,6 +69,7 @@ public final class Pedido {
         estado,
         historial,
         creadoEn,
+        null,
         null);
   }
 
@@ -83,6 +94,41 @@ public final class Pedido {
       List<HistorialPedido> historial,
       Instant creadoEn,
       Instant avisoDePlazoEnviadoEn) {
+    this(
+        id,
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        estado,
+        historial,
+        creadoEn,
+        avisoDePlazoEnviadoEn,
+        null);
+  }
+
+  /**
+   * El canónico: el mismo, más la tarifa de envío congelada. Tercera sobrecarga por la misma razón
+   * que la segunda — un pedido que nace de un retiro en punto no tiene tarifa, y obligar a todos
+   * los sitios que crean pedidos a escribir un {@code null} más solo repartiría ruido.
+   */
+  public Pedido(
+      UUID id,
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      EstadoPedido estado,
+      List<HistorialPedido> historial,
+      Instant creadoEn,
+      Instant avisoDePlazoEnviadoEn,
+      TarifaEnvio tarifaEnvio) {
     this.avisoDePlazoEnviadoEn = avisoDePlazoEnviadoEn;
     this.id = Objects.requireNonNull(id, "El id del pedido no puede ser nulo.");
     this.numeroPedido =
@@ -100,6 +146,10 @@ public final class Pedido {
     if (tipoEntrega == TipoEntrega.RETIRO_EN_PUNTO && direccion != null) {
       throw new ExcepcionDeDominio("El retiro en punto no lleva dirección.");
     }
+    if (tipoEntrega == TipoEntrega.RETIRO_EN_PUNTO && tarifaEnvio != null) {
+      throw new ExcepcionDeDominio("El retiro en punto no lleva tarifa de envío.");
+    }
+    this.tarifaEnvio = tarifaEnvio;
     this.direccion = direccion;
     this.metodoPago = Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
     this.estado = Objects.requireNonNull(estado, "El estado no puede ser nulo.");
@@ -126,6 +176,31 @@ public final class Pedido {
       MetodoPago metodoPago,
       String actor,
       Instant ahora) {
+    return crear(
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        actor,
+        ahora,
+        null);
+  }
+
+  /** El mismo, con la tarifa que se cotizó al confirmar y que este pedido congela (adr/0021). */
+  public static Pedido crear(
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      String actor,
+      Instant ahora,
+      TarifaEnvio tarifaEnvio) {
     Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
     EstadoPedido estadoInicial = estadoInicial(metodoPago);
     HistorialPedido primerRegistro =
@@ -142,7 +217,9 @@ public final class Pedido {
         metodoPago,
         estadoInicial,
         List.of(primerRegistro),
-        ahora);
+        ahora,
+        null,
+        tarifaEnvio);
   }
 
   private static EstadoPedido estadoInicial(MetodoPago metodoPago) {
@@ -200,7 +277,6 @@ public final class Pedido {
     return creadoEn;
   }
 
-  /** Suma de las líneas congeladas. El envío no se agrega: ya está en cada precio unitario. */
   /**
    * Cuánto de este pedido <b>entró de verdad</b>, que no es lo mismo que {@link #total()}: aquél es
    * lo que el comprador debe, éste es lo que se cobró.
@@ -232,10 +308,40 @@ public final class Pedido {
     return entro ? total() : Dinero.deCop(0L);
   }
 
-  public Dinero total() {
+  /**
+   * La tarifa que se cotizó al confirmar y que este pedido cobra, congelada. Vacía en el retiro en
+   * punto y en los pedidos anteriores a la Fase 7.
+   */
+  public Optional<TarifaEnvio> tarifaEnvio() {
+    return Optional.ofNullable(tarifaEnvio);
+  }
+
+  /**
+   * Lo que el comprador paga de flete. <strong>No es lo que el flete cuesta</strong>: eso vive en
+   * {@code Envio.costoEnvio}, se conoce al despachar y puede no coincidir. Este es el precio, aquél
+   * es el costo, y confundirlos es cobrar mal o creer que se gana lo que no.
+   */
+  public Dinero costoEnvio() {
+    return tarifaEnvio == null ? Dinero.deCop(0L) : tarifaEnvio.costo();
+  }
+
+  /** Suma de las líneas congeladas. */
+  public Dinero subtotal() {
     BigDecimal suma =
         lineas.stream().map(l -> l.subtotal().valor()).reduce(BigDecimal.ZERO, BigDecimal::add);
     return Dinero.deCop(suma);
+  }
+
+  /**
+   * Lo que el comprador debe: las líneas más el envío.
+   *
+   * <p>Hasta la Fase 7 era solo las líneas, porque el flete iba dentro de cada precio unitario
+   * (adr/0012). Con el envío cotizado por destino eso dejó de ser cierto, y de este método cuelga
+   * todo lo que mueve plata: lo que se le cobra a la pasarela, el monto que recauda la
+   * transportadora en contraentrega y el tope de cualquier devolución.
+   */
+  public Dinero total() {
+    return Dinero.deCop(subtotal().valor().add(costoEnvio().valor()));
   }
 
   /**
