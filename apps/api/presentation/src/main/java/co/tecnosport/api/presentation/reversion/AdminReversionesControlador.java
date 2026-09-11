@@ -80,7 +80,7 @@ public class AdminReversionesControlador {
                     new RadicarReversionComando(
                         pedidoId,
                         CausalReversion.valueOf(cuerpo.causal()),
-                        cuerpo.fechaDelHecho(),
+                        cuerpo.fechaDeNoticia(),
                         cuerpo.recibidaEn(),
                         cuerpo.descripcion(),
                         actor)));

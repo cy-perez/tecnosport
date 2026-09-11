@@ -1194,7 +1194,7 @@ export interface components {
             pedidoId?: string;
             causal?: string;
             /** Format: date-time */
-            fechaDelHecho?: string;
+            fechaDeNoticia?: string;
             /** Format: date-time */
             radicadaEn?: string;
             verdictoAlRadicar?: string;
@@ -1307,7 +1307,7 @@ export interface components {
         RadicarReversionRequest: {
             causal?: string;
             /** Format: date-time */
-            fechaDelHecho?: string;
+            fechaDeNoticia?: string;
             /** Format: date-time */
             recibidaEn?: string;
             descripcion?: string;

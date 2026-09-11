@@ -356,8 +356,8 @@
     },
     "acciones": {
       "causal": "Causal invocada",
-      "fecha_del_hecho": "Fecha del hecho",
-      "fecha_ayuda": "Cuando el comprador tuvo noticia de lo ocurrido: de ahi cuentan sus cinco días hábiles, no desde que compro.",
+      "fecha_de_noticia": "Cuándo se enteró el comprador",
+      "fecha_ayuda": "El día en que el comprador tuvo noticia de lo ocurrido, no el día en que ocurrió ni el día en que escribió: de ahí cuentan sus cinco días hábiles para pedir la reversión. De un fraude uno se entera después, y con la fecha equivocada el plazo sale mal.",
       "descripcion": "Descripción",
       "radicar": "Radicar reversión",
       "gestion": "Qué se hizo",

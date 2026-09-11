@@ -24,8 +24,8 @@ public class SolicitudReversionJpaEntity {
   @Column(nullable = false)
   private String causal;
 
-  @Column(name = "fecha_del_hecho", nullable = false)
-  private Instant fechaDelHecho;
+  @Column(name = "fecha_de_noticia", nullable = false)
+  private Instant fechaDeNoticia;
 
   @Column(name = "radicada_en", nullable = false)
   private Instant radicadaEn;
@@ -67,7 +67,7 @@ public class SolicitudReversionJpaEntity {
       UUID solicitudId,
       UUID pedidoId,
       String causal,
-      Instant fechaDelHecho,
+      Instant fechaDeNoticia,
       Instant radicadaEn,
       String verdictoPlazo,
       String estado,
@@ -82,7 +82,7 @@ public class SolicitudReversionJpaEntity {
     this.solicitudId = solicitudId;
     this.pedidoId = pedidoId;
     this.causal = causal;
-    this.fechaDelHecho = fechaDelHecho;
+    this.fechaDeNoticia = fechaDeNoticia;
     this.radicadaEn = radicadaEn;
     this.verdictoPlazo = verdictoPlazo;
     this.estado = estado;
@@ -111,8 +111,8 @@ public class SolicitudReversionJpaEntity {
     return causal;
   }
 
-  public Instant getFechaDelHecho() {
-    return fechaDelHecho;
+  public Instant getFechaDeNoticia() {
+    return fechaDeNoticia;
   }
 
   public Instant getRadicadaEn() {

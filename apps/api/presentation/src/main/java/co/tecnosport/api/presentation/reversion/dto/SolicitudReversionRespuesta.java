@@ -14,7 +14,7 @@ public record SolicitudReversionRespuesta(
     String solicitudId,
     String pedidoId,
     String causal,
-    Instant fechaDelHecho,
+    Instant fechaDeNoticia,
     Instant radicadaEn,
     String verdictoAlRadicar,
     String estado,

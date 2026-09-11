@@ -18,9 +18,27 @@ import java.util.UUID;
  * del medio de pago. Un pedido puede llegar aquí sin haber pasado nunca por un retracto, y al
  * revés.
  *
- * <p>{@code fechaDelHecho} es cuándo el comprador tuvo noticia de lo ocurrido, no cuándo compró ni
+ * <p>{@code fechaDeNoticia} es cuándo el comprador tuvo noticia de lo ocurrido, no cuándo compró ni
  * cuándo escribió. De ella cuelga el plazo que los términos publicados le imponen a él —cinco días
  * hábiles para solicitarla— y por eso se guarda aparte de {@code radicadaEn}.
+ *
+ * <p>Se llamaba {@code fechaDelHecho} hasta {@code V30}, y el nombre decía otra cosa que este mismo
+ * javadoc: el panel pedía "Fecha del hecho" en la etiqueta y "cuándo el comprador tuvo noticia" en
+ * la ayuda de abajo. Dos operadores leyendo lo mismo escribían dos fechas distintas en la misma
+ * columna, y de un fraude uno se entera después: con la fecha del hecho, el panel podía marcar
+ * vencida una solicitud que estaba en plazo. Lo levantó una revisión adversarial que leyó el nombre
+ * y no la ayuda —exactamente lo que le pasa a quien llena el formulario—.
+ *
+ * <p><b>El decreto no usa un solo arranque, y el sitio sí.</b> El Decreto 587 de 2016, que
+ * reglamenta el art. 51, cuenta los cinco días hábiles desde que el consumidor tuvo noticia de la
+ * operación fraudulenta o no solicitada, <b>o de que el producto debió recibirse o se recibió
+ * defectuoso</b>: son tres momentos según la causal. La cláusula publicada promete uno solo —la
+ * noticia— y eso es deliberado y admisible, porque para las otras dos causales la noticia llega
+ * igual o después que el momento del decreto: un defecto se descubre usando el producto, no al
+ * recibirlo. O sea que la ventana que el sitio se autoimpone es <b>más amplia a favor del
+ * consumidor</b> que la del decreto, y lo publicado obliga. Si algún día se quiere ceñir a la norma
+ * causal por causal, este es el campo que se parte en tres y la cláusula que hay que cambiar con
+ * él.
  *
  * <p>El plazo <b>nunca bloquea</b>: quien decide es una persona con el veredicto delante, igual que
  * en el retracto. Y el veredicto se congela al radicar, porque es la foto de lo que se sabía ese
@@ -34,7 +52,7 @@ public final class SolicitudReversion {
   private final UUID solicitudId;
   private final UUID pedidoId;
   private final CausalReversion causal;
-  private final Instant fechaDelHecho;
+  private final Instant fechaDeNoticia;
   private final Instant radicadaEn;
   private final VerdictoPlazo verdictoAlRadicar;
   private EstadoSolicitudReversion estado;
@@ -51,7 +69,7 @@ public final class SolicitudReversion {
       UUID solicitudId,
       UUID pedidoId,
       CausalReversion causal,
-      Instant fechaDelHecho,
+      Instant fechaDeNoticia,
       Instant radicadaEn,
       VerdictoPlazo verdictoAlRadicar,
       EstadoSolicitudReversion estado,
@@ -69,11 +87,11 @@ public final class SolicitudReversion {
     this.causal =
         Objects.requireNonNull(
             causal, "Una reversión sin causal no se puede tramitar: son tasadas.");
-    this.fechaDelHecho =
-        Objects.requireNonNull(fechaDelHecho, "La fecha del hecho no puede ser nula.");
+    this.fechaDeNoticia =
+        Objects.requireNonNull(fechaDeNoticia, "La fecha del hecho no puede ser nula.");
     this.radicadaEn =
         Objects.requireNonNull(radicadaEn, "La fecha de radicación no puede ser nula.");
-    if (fechaDelHecho.isAfter(radicadaEn)) {
+    if (fechaDeNoticia.isAfter(radicadaEn)) {
       throw new ExcepcionDeDominio("El hecho no puede ser posterior a la solicitud.");
     }
     this.verdictoAlRadicar =
@@ -99,20 +117,20 @@ public final class SolicitudReversion {
       UUID solicitudId,
       UUID pedidoId,
       CausalReversion causal,
-      Instant fechaDelHecho,
+      Instant fechaDeNoticia,
       Instant ahora,
       CalendarioHabil calendario) {
     Objects.requireNonNull(calendario, "El calendario no puede ser nulo.");
-    Objects.requireNonNull(fechaDelHecho, "La fecha del hecho no puede ser nula.");
+    Objects.requireNonNull(fechaDeNoticia, "La fecha del hecho no puede ser nula.");
     return new SolicitudReversion(
         GeneradorIdentificador.nuevo(),
         solicitudId,
         pedidoId,
         causal,
-        fechaDelHecho,
+        fechaDeNoticia,
         ahora,
         calendario.verdicto(
-            calendario.limiteTrasDiasHabiles(fechaDelHecho, DIAS_HABILES_PARA_SOLICITAR), ahora),
+            calendario.limiteTrasDiasHabiles(fechaDeNoticia, DIAS_HABILES_PARA_SOLICITAR), ahora),
         EstadoSolicitudReversion.RADICADA,
         null,
         null,
@@ -139,8 +157,8 @@ public final class SolicitudReversion {
     return causal;
   }
 
-  public Instant fechaDelHecho() {
-    return fechaDelHecho;
+  public Instant fechaDeNoticia() {
+    return fechaDeNoticia;
   }
 
   public Instant radicadaEn() {

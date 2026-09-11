@@ -76,7 +76,7 @@ export class PanelReversion {
 
   protected readonly formularioRadicar = new FormGroup({
     causal: new FormControl<string>('PRODUCTO_NO_ENTREGADO', { nonNullable: true }),
-    fechaDelHecho: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    fechaDeNoticia: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     descripcion: new FormControl('', { nonNullable: true }),
   });
 
@@ -186,13 +186,13 @@ export class PanelReversion {
       this.acciones.radicar.mutateAsync({
         pedidoId: this.pedidoId(),
         causal: valores.causal as CausalReversion,
-        fechaDelHecho: new Date(valores.fechaDelHecho).toISOString(),
+        fechaDeNoticia: new Date(valores.fechaDeNoticia).toISOString(),
         descripcion: valores.descripcion.trim(),
       }),
     );
     this.formularioRadicar.reset({
       causal: 'PRODUCTO_NO_ENTREGADO',
-      fechaDelHecho: '',
+      fechaDeNoticia: '',
       descripcion: '',
     });
   }

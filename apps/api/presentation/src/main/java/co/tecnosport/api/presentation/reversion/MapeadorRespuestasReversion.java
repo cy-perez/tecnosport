@@ -14,7 +14,7 @@ public class MapeadorRespuestasReversion {
         solicitud.solicitudId().toString(),
         solicitud.pedidoId().toString(),
         solicitud.causal().name(),
-        solicitud.fechaDelHecho(),
+        solicitud.fechaDeNoticia(),
         solicitud.radicadaEn(),
         solicitud.verdictoAlRadicar().name(),
         solicitud.estado().name(),

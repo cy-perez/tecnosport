@@ -23,7 +23,7 @@ function reversion(overrides: Partial<SolicitudReversion> = {}): SolicitudRevers
     solicitudId: 's1',
     pedidoId: 'p1',
     causal: 'PRODUCTO_NO_ENTREGADO',
-    fechaDelHecho: '2026-09-10T15:00:00Z',
+    fechaDeNoticia: '2026-09-10T15:00:00Z',
     radicadaEn: '2026-09-12T15:00:00Z',
     verdictoAlRadicar: 'EN_PLAZO',
     estado: 'RADICADA',
@@ -41,7 +41,7 @@ class RepositorioReversionesFalso implements RepositorioReversiones {
   radicadas: {
     pedidoId: string;
     causal: CausalReversion;
-    fechaDelHecho: string;
+    fechaDeNoticia: string;
     descripcion: string;
   }[] = [];
   gestiones: { reversionId: string; gestion: string }[] = [];
@@ -63,7 +63,7 @@ class RepositorioReversionesFalso implements RepositorioReversiones {
   async radicar(entrada: {
     pedidoId: string;
     causal: CausalReversion;
-    fechaDelHecho: string;
+    fechaDeNoticia: string;
     descripcion: string;
   }): Promise<SolicitudReversion> {
     this.radicadas.push(entrada);
@@ -113,7 +113,7 @@ describe('PanelReversion', () => {
     fireEvent.change(await screen.findByLabelText('Causal invocada'), {
       target: { value: 'FRAUDE' },
     });
-    fireEvent.input(screen.getByLabelText('Fecha del hecho'), {
+    fireEvent.input(screen.getByLabelText(esAdmin.reversiones.acciones.fecha_de_noticia), {
       target: { value: '2026-09-10T10:00' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Radicar reversión' }));

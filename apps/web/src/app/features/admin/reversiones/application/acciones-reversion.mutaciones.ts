@@ -24,7 +24,7 @@ export function usarAccionesReversion() {
     mutationFn: (variables: {
       pedidoId: string;
       causal: CausalReversion;
-      fechaDelHecho: string;
+      fechaDeNoticia: string;
       descripcion: string;
     }): Promise<SolicitudReversion> => repositorio.radicar(variables),
     onSuccess: (_datos, variables) => invalidar(variables.pedidoId),
