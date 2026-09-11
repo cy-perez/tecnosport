@@ -3286,11 +3286,42 @@ Orden de construcción, un caso de uso a la vez:
    vigila.
 
    Queda vivo el `TODO` del peso real del catálogo de producción.
-2. **Puerto `CotizadorEnvio` y `SkydropxClient`.** Con el token cacheado, el
-   sondeo acotado por tiempo e intentos, y una prueba que ejercite la cotización
-   que **nunca** completa. Aquí entran también las variables `SKYDROPX_*` y
-   `ORIGEN_*` en `.env.example` y en las propiedades tipadas: hoy están
-   documentadas en `docs/07-infra-gcp.md` y no existen en ningún archivo.
+2. **Puerto `CotizadorEnvio` y `SkydropxClient`.** Partido en dos al construirlo,
+   porque no todo depende de la cuenta.
+
+   **2a, hecho el 11 de septiembre de 2026.** El dominio (`TarifaEnvio`, con la
+   regla de la más económica), el puerto, las propiedades tipadas `SKYDROPX_*` y
+   `ORIGEN_*`, y el cliente con el token en caché, el limitador de 2 peticiones
+   por segundo y el sondeo acotado por tiempo **y** por intentos. Incluida la
+   prueba de la cotización que nunca completa, que pedía este plan.
+
+   **2b, cuando haya credenciales.** El mapeo de campos y nada más.
+
+   Lo que ordenó ese corte: **los campos del cuerpo no se pueden escribir sin la
+   cuenta**, y no es un detalle cosmético — nuestro dominio guarda gramos y el
+   único ejemplo encontrado parece usar kilos. Un peso en la unidad equivocada es
+   el flete mil veces mal cobrado. Así que el mapeo vive detrás de
+   `MapeadorCotizacionSkydropx`, la implementación de producción falla a
+   propósito, y el cliente **falla cerrado**: sin tarifas, que para el checkout es
+   "solo recogida en el punto" — justo lo que `ADR-0021` ya decidía para cuando no
+   hay tarifa. El protocolo de alrededor sí está probado entero.
+
+   Tres cosas que aparecieron construyendo:
+
+   - **El sondeo se corta por las dos cosas a la vez.** Solo intentos no basta —si
+     cada uno tarda, se acumulan— y solo tiempo tampoco —un proveedor rápido haría
+     cientos de llamadas contra un límite de 2 por segundo—. Hay una prueba por
+     cada tope.
+   - **Un token sin `expires_in` no se cachea.** Suponerle una duración es
+     arriesgarse a usar uno muerto a mitad de una cotización; se pide uno nuevo y
+     ya.
+   - **El `#` de la dirección de origen abre un comentario en YAML.** Sin comillas,
+     `ORIGEN_DIRECCION` se corta en "Cra. 26C", la aplicación arranca igual y la
+     transportadora entrega donde puede. Ninguna prueba lo habría visto porque
+     todas construyen el origen con un literal de Java, así que
+     `OrigenEnApplicationYmlTest` lee el `application.yml` de verdad — y se
+     comprobó que dispara quitándole las comillas a propósito, que es la lección
+     de la regla dura #1.
 3. **`POST /api/v1/envios/cotizacion`**, con `409 ENVIO_SIN_COBERTURA` como caso
    de negocio y no como error de sistema.
 4. **Totales del pedido.** `Pedido` gana el costo de envío y la tarifa congelada;

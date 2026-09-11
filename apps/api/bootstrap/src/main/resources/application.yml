@@ -85,6 +85,37 @@ tecnosport:
     # (ROPA_Y_CALZADO, BOLSOS, CELULARES) cuando exista.
     habilitada: ${CONTRAENTREGA_HABILITADA:false}
     monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:100000}
+  skydropx:
+    # El host de la cuenta colombiana NO está confirmado (docs/13-skydropx-capacidades.md, §6):
+    # la documentación pública muestra pro.skydropx.com y sb-pro.skydropx.com, y según la fuente
+    # aparecen también api-pro.skydropx.com y app.skydropx.com. Este valor por omisión apunta al
+    # de pruebas y no sirve para cotizar de verdad — hoy no importa, porque el mapeo tampoco está
+    # confirmado y el cliente falla cerrado.
+    url-base: ${SKYDROPX_URL_BASE:https://sb-pro.skydropx.com}
+    # Credenciales de desarrollo que no autentican contra nada (regla dura #5). Producción las
+    # sobrescribe desde Secret Manager.
+    client-id: ${SKYDROPX_CLIENT_ID:client_id_pendiente_de_configurar}
+    client-secret: ${SKYDROPX_CLIENT_SECRET:client_secret_pendiente_de_configurar}
+    # Parámetros técnicos del sondeo, no datos de negocio: la cotización es asíncrona y hay que
+    # decidir cuánto se espera antes de darla por fallida. Diez segundos es lo que un comprador
+    # tolera mirando un resumen de pedido sin total.
+    cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
+    cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
+  origen:
+    # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
+    # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).
+    nombre: ${ORIGEN_NOMBRE:TecnoSport}
+    # El mismo celular que publica el pie del sitio y los textos legales (npm run datos-negocio
+    # vigila que no se separen). No es un número inventado.
+    telefono: ${ORIGEN_TELEFONO:+573138816711}
+    # Entre comillas obligatorias: el "#" de la nomenclatura abre un comentario en YAML y la
+    # dirección se cortaría en "Cra. 26C" sin que nada fallara.
+    direccion: "${ORIGEN_DIRECCION:Cra. 26C # 38B-31, apto. 401, La Milagrosa}"
+    # Medellín.
+    ciudad-dane: ${ORIGEN_CIUDAD_DANE:05001}
+    # Opcional a propósito: en Colombia no se usa de forma fiable y muchas transportadoras lo
+    # ignoran. Exigirlo impediría arrancar por un dato que a nadie le sirve.
+    codigo-postal: ${ORIGEN_CODIGO_POSTAL:}
   transferencia-manual:
     # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
     # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.
