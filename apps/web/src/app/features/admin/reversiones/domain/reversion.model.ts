@@ -31,7 +31,7 @@ export interface SolicitudReversion {
   readonly pedidoId: string;
   readonly causal: CausalReversion;
   /** Cuando el comprador tuvo noticia del hecho: de aqui cuelga su plazo de cinco dias habiles. */
-  readonly fechaDelHecho: string;
+  readonly fechaDeNoticia: string;
   readonly radicadaEn: string;
   readonly verdictoAlRadicar: VerdictoPlazo;
   readonly estado: EstadoSolicitudReversion;

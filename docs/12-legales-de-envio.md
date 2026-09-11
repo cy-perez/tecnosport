@@ -379,25 +379,35 @@ retracto y la garantía sin que el sistema los esté contando.
 
 ### Nivel 3 — incoherencias latentes
 
-**8. El plazo de la reversión lo cuenta el código desde un hecho distinto del que
-promete el texto.** *Incoherencia texto ↔ código, y esta va en contra del
-comprador.* La cláusula 11 dice "dentro de los cinco (5) días hábiles siguientes a
-que **tengas noticia del hecho**"; `SolicitudReversion` cuenta desde
-`fechaDelHecho` (`domain/reversion/SolicitudReversion.java:115`). Son dos momentos
-distintos: de un fraude uno se entera después. Con el disparador movido, el panel
-puede marcar **VENCIDO** un plazo que legalmente está vivo.
+**8. El plazo de la reversión colgaba de una columna mal nombrada. CERRADO
+(`V30`).** *No era lo que parecía, y lo que era resultó peor.* La sospecha, de la
+Fase 2b: la cláusula 11 promete cinco días hábiles "siguientes a que **tengas
+noticia del hecho**" y el código contaba desde `fechaDelHecho`. Al abrirlo apareció
+que el javadoc del agregado **ya decía** que ese campo era la noticia, y el texto de
+ayuda del panel también — mientras la etiqueta, justo encima, decía "Fecha del
+hecho".
 
-Atenúa, y no cierra: el veredicto no bloquea nada —lo decide una persona con el
-dato delante, igual que en el retracto—, así que no niega el derecho por sí solo.
-Lo que sí hace es informar mal a quien decide.
+O sea que no había un disparador equivocado: había **un dato con dos nombres**, y
+dos operadores leyendo la misma pantalla escribían dos fechas distintas en la misma
+columna. De un fraude uno se entera después, así que con la del hecho el panel
+podía marcar **VENCIDA** una solicitud en plazo. Es el defecto más difícil de ver de
+los tres tipos que trae esta sección, porque cada pieza por separado estaba
+defendible.
 
-**Cierre propuesto, no hecho:** `RadicarReversionComando` tiene `fechaDelHecho` y
-`recibidaEn`, y ninguno es la noticia. Hace falta un dato nuevo —cuándo se enteró
-el comprador, que lo dice él— con su columna, su campo en el panel y el veredicto
-colgando de ahí. Mientras no exista, lo honesto sería no afirmar `VENCIDO` en la
-reversión, porque el sistema no conoce el momento desde el que la norma cuenta.
-Encontrado con la Fase 2b de `vacios-legales-del-sitio`, que existe justo para
-esto.
+Cerrado renombrando el concepto de punta a punta —dominio, puerto, DTO, modelo del
+frontend, etiqueta y ayuda— a `fechaDeNoticia`, con la columna renombrada en
+`V30` y su `comment on`. Un `add column` habría dejado la vieja llena de valores
+que nadie sabría cómo leer: no hay dos datos, hay uno mal nombrado.
+
+**Y de paso, lo que la verificación de la norma añadió**: el Decreto 587 de 2016 no
+usa un solo arranque. Cuenta los cinco días hábiles desde que el consumidor tuvo
+noticia de la operación fraudulenta o no solicitada, **o de que el producto debió
+recibirse o se recibió defectuoso** — tres momentos según la causal. La cláusula
+publicada promete uno solo, el de la noticia, y eso es admisible **porque es más
+amplio a favor del consumidor**: un defecto se descubre usando el producto, no al
+recibirlo. Queda escrito en el agregado, con la nota de que ceñirse al decreto
+causal por causal significaría partir el campo en tres y cambiar la cláusula con
+él.
 
 **9. La versión de los documentos tiene granularidad de día, y una corrección del
 mismo día es invisible.** *Deuda de evidencia.* `legales.comun.version` es una

@@ -16,7 +16,7 @@ export function aSolicitudReversion(dto: ReversionDto): SolicitudReversion {
     solicitudId: dto.solicitudId ?? '',
     pedidoId: dto.pedidoId ?? '',
     causal: (dto.causal ?? 'FRAUDE') as CausalReversion,
-    fechaDelHecho: dto.fechaDelHecho ?? '',
+    fechaDeNoticia: dto.fechaDeNoticia ?? '',
     radicadaEn: dto.radicadaEn ?? '',
     verdictoAlRadicar: (dto.verdictoAlRadicar ?? 'INDETERMINADO') as VerdictoPlazo,
     estado: (dto.estado ?? 'RADICADA') as EstadoSolicitudReversion,

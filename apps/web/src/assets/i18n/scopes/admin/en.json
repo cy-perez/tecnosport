@@ -356,8 +356,8 @@
     },
     "acciones": {
       "causal": "Ground invoked",
-      "fecha_del_hecho": "Date of the event",
-      "fecha_ayuda": "When the buyer learned of it: their five business days run from there, not from the purchase.",
+      "fecha_de_noticia": "When the buyer found out",
+      "fecha_ayuda": "The day the buyer learned what happened, not the day it happened nor the day they wrote to us: their five business days to request the reversal start there. People find out about fraud later, and with the wrong date the deadline comes out wrong.",
       "descripcion": "Description",
       "radicar": "File reversal",
       "gestion": "What was done",

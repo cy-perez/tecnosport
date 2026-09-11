@@ -24,14 +24,14 @@ export class ReversionesHttpRepositorio implements RepositorioReversiones {
   async radicar(entrada: {
     pedidoId: string;
     causal: CausalReversion;
-    fechaDelHecho: string;
+    fechaDeNoticia: string;
     descripcion: string;
   }): Promise<SolicitudReversion> {
     const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{pedidoId}/reversiones', {
       params: { path: { pedidoId: entrada.pedidoId } },
       body: {
         causal: entrada.causal,
-        fechaDelHecho: entrada.fechaDelHecho,
+        fechaDeNoticia: entrada.fechaDeNoticia,
         descripcion: entrada.descripcion,
       },
     });

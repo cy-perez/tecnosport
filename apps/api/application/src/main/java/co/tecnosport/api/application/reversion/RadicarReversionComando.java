@@ -5,15 +5,15 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * {@code fechaDelHecho} es cuándo el comprador tuvo noticia de lo ocurrido: de ella cuelga el plazo
- * de cinco días hábiles que los términos publicados le imponen a él. {@code recibidaEn} es cuándo
- * llegó su mensaje, y de ella cuelga el plazo de respuesta que nos imponemos nosotros. Son dos
- * relojes distintos y por eso son dos campos.
+ * {@code fechaDeNoticia} es cuándo el comprador tuvo noticia de lo ocurrido: de ella cuelga el
+ * plazo de cinco días hábiles que los términos publicados le imponen a él. {@code recibidaEn} es
+ * cuándo llegó su mensaje, y de ella cuelga el plazo de respuesta que nos imponemos nosotros. Son
+ * dos relojes distintos y por eso son dos campos.
  */
 public record RadicarReversionComando(
     UUID pedidoId,
     CausalReversion causal,
-    Instant fechaDelHecho,
+    Instant fechaDeNoticia,
     Instant recibidaEn,
     String descripcion,
     String actor) {

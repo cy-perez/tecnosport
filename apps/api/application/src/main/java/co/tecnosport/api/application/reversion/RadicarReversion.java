@@ -66,7 +66,7 @@ public final class RadicarReversion {
             solicitud.id(),
             pedido.id(),
             comando.causal(),
-            comando.fechaDelHecho(),
+            comando.fechaDeNoticia(),
             reloj.ahora(),
             calendario);
     repositorioReversiones.guardar(reversion);

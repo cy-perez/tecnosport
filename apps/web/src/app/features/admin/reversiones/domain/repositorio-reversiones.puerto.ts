@@ -8,7 +8,7 @@ export interface RepositorioReversiones {
   radicar(entrada: {
     pedidoId: string;
     causal: CausalReversion;
-    fechaDelHecho: string;
+    fechaDeNoticia: string;
     descripcion: string;
   }): Promise<SolicitudReversion>;
 
