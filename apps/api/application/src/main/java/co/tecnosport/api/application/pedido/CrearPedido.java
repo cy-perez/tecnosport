@@ -4,6 +4,8 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvioComando;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -16,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
@@ -23,6 +26,7 @@ import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -54,6 +58,7 @@ public final class CrearPedido {
   private final RepositorioInventario repositorioInventario;
   private final RepositorioPedidos repositorioPedidos;
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
+  private final CotizarEnvio cotizarEnvio;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
   private final Duration duracionReservaTransferencia;
@@ -68,6 +73,7 @@ public final class CrearPedido {
       RepositorioInventario repositorioInventario,
       RepositorioPedidos repositorioPedidos,
       MetodosDePagoDisponibles metodosDePagoDisponibles,
+      CotizarEnvio cotizarEnvio,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
       Duration duracionReservaTransferencia,
@@ -105,6 +111,7 @@ public final class CrearPedido {
     this.repositorioAutorizaciones =
         Objects.requireNonNull(
             repositorioAutorizaciones, "El repositorio de autorizaciones no puede ser nulo.");
+    this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio, "El cotizador no puede ser nulo.");
     this.versionPolitica =
         Objects.requireNonNull(versionPolitica, "La versión de la política no puede ser nula.");
   }
@@ -132,6 +139,16 @@ public final class CrearPedido {
     }
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
 
+    // Antes de reservar, y por dos motivos. Uno: el costo del envío lo fija el servidor cotizando
+    // otra vez, nunca lo que el cliente diga que le mostró el checkout (regla dura #7); si entre
+    // las dos llamadas la tarifa cambió, manda esta. Dos: cotizar es una llamada a un proveedor
+    // externo, y hacerla después de reservar dejaría las filas del inventario bloqueadas
+    // esperándola. Aquí la transacción está abierta pero todavía no ha tomado ningún bloqueo.
+    //
+    // Si no hay tarifa, no hay pedido a domicilio: EnvioSinCoberturaException sale hacia el 409, y
+    // el inventario ni se tocó.
+    TarifaEnvio tarifaEnvio = cotizarSiVaADomicilio(comando);
+
     List<LineaPedido> lineasCongeladas = new ArrayList<>();
     for (CrearPedidoComando.LineaComando lineaComando : comando.lineas()) {
       lineasCongeladas.add(congelarLinea(lineaComando, vigenciaReserva, ahora));
@@ -150,7 +167,8 @@ public final class CrearPedido {
             comando.direccion(),
             comando.metodoPago(),
             comando.correo(),
-            ahora);
+            ahora,
+            tarifaEnvio);
 
     repositorioPedidos.guardar(pedido);
     repositorioAutorizaciones.guardar(
@@ -162,6 +180,23 @@ public final class CrearPedido {
             comando.direccionIp(),
             ahora));
     return pedido;
+  }
+
+  /**
+   * El retiro en punto no cotiza: no hay a dónde despachar y el flete es cero por definición
+   * (docs/03-api.md). Para todo lo demás, la tarifa que salga de aquí es la que el pedido congela y
+   * la que se cobra.
+   */
+  private TarifaEnvio cotizarSiVaADomicilio(CrearPedidoComando comando) {
+    if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO) {
+      return null;
+    }
+    return cotizarEnvio.ejecutar(
+        new CotizarEnvioComando(
+            comando.lineas().stream()
+                .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
+                .toList(),
+            comando.direccion()));
   }
 
   private void exigirContraentregaDisponible(CrearPedidoComando comando) {

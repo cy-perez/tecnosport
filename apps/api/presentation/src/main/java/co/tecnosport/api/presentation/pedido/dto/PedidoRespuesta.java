@@ -15,6 +15,15 @@ public record PedidoRespuesta(
     DireccionRespuesta direccion,
     String metodoPago,
     String estado,
+    /** Solo las líneas. */
+    DineroRespuesta subtotal,
+    /**
+     * Lo que el comprador paga de flete. Va separado del total porque el artículo 50 de la Ley 1480
+     * de 2011 exige que el resumen muestre los costos de envío aparte y la suma después: un total
+     * sin desglose no informa lo que la norma manda informar.
+     */
+    DineroRespuesta costoEnvio,
+    /** Líneas más envío: lo que el comprador debe. */
     DineroRespuesta total,
     Instant creadoEn,
     DatosTransferenciaRespuesta datosTransferencia,

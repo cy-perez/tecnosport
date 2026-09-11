@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
@@ -38,6 +40,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -170,7 +173,9 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"))
         .andExpect(jsonPath("$.metodoPago").value("NEQUI"))
         .andExpect(jsonPath("$.lineas[0].sku").value("TS-CAM-AZ-M"))
-        .andExpect(jsonPath("$.total.valor").value(100_000))
+        .andExpect(jsonPath("$.subtotal.valor").value(100_000))
+        .andExpect(jsonPath("$.costoEnvio.valor").value(14_900))
+        .andExpect(jsonPath("$.total.valor").value(114_900))
         .andExpect(jsonPath("$.direccion.ciudad").value("Medellín"));
   }
 
@@ -568,6 +573,16 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }
 
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          false,
+          Instant.parse("2026-09-30T12:00:00Z"));
+
   @TestConfiguration
   static class Configuracion {
 
@@ -635,12 +650,28 @@ class PedidoControladorTest {
       return new LimitadorDeIntentosDobleDePrueba();
     }
 
+    /**
+     * Una tarifa fija: lo que se prueba aquí es el controlador, no la cotización. {@code
+     * CotizadorEnvio} tiene un solo método, así que el doble cabe en una lambda.
+     */
+    @Bean
+    CotizadorEnvio cotizadorEnvio() {
+      return cotizacion -> List.of(TARIFA);
+    }
+
+    @Bean
+    CotizarEnvio cotizarEnvio(
+        RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
+      return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+    }
+
     @Bean
     CrearPedido crearPedido(
         RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         RepositorioPedidos repositorioPedidos,
         MetodosDePagoDisponibles metodosDePagoDisponibles,
+        CotizarEnvio cotizarEnvio,
         Reloj reloj,
         LimitadorDeIntentos limitadorDeIntentos,
         RepositorioAutorizaciones repositorioAutorizaciones) {
@@ -649,6 +680,7 @@ class PedidoControladorTest {
           repositorioInventario,
           repositorioPedidos,
           metodosDePagoDisponibles,
+          cotizarEnvio,
           reloj,
           Duration.ofMinutes(30),
           Duration.ofHours(24),

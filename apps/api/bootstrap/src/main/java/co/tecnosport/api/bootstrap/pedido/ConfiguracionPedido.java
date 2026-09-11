@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -53,6 +54,7 @@ public class ConfiguracionPedido {
       RepositorioInventario repositorioInventario,
       RepositorioPedidos repositorioPedidos,
       MetodosDePagoDisponibles metodosDePagoDisponibles,
+      CotizarEnvio cotizarEnvio,
       Reloj reloj,
       PropiedadesPedido propiedades,
       LimitadorDeIntentos limitadorDeIntentos,
@@ -64,6 +66,7 @@ public class ConfiguracionPedido {
         repositorioInventario,
         repositorioPedidos,
         metodosDePagoDisponibles,
+        cotizarEnvio,
         reloj,
         Duration.ofMinutes(propiedades.minutosReservaInventario()),
         Duration.ofHours(propiedades.horasVencimientoTransferencia()),

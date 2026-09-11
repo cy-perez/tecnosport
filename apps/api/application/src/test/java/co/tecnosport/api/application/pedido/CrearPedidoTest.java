@@ -8,6 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -24,6 +28,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
@@ -65,6 +70,19 @@ class CrearPedidoTest {
   private RepositorioCoberturaContraentregaFalso cobertura;
   private LimitadorDeIntentosFalso limitadorDeIntentos;
   private RepositorioAutorizacionesFalso autorizaciones;
+  private CotizadorEnvioFalso cotizador;
+
+  /** Lo que devuelve el cotizador en todas las pruebas que no digan otra cosa. */
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          false,
+          Instant.parse("2026-09-03T12:00:00Z"));
+
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final String IP = "190.24.10.5";
 
@@ -86,11 +104,14 @@ class CrearPedidoTest {
     }
     MetodosDePagoDisponibles metodosDePagoDisponibles =
         new MetodosDePagoDisponibles(productos, cobertura, pedidos, criterios);
+    cotizador = new CotizadorEnvioFalso();
+    cotizador.conTarifas(TARIFA);
     return new CrearPedido(
         productos,
         inventarios,
         pedidos,
         metodosDePagoDisponibles,
+        new CotizarEnvio(productos, cotizador, () -> AHORA),
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
         RESERVA_TRANSFERENCIA,
@@ -142,6 +163,18 @@ class CrearPedidoTest {
     inventarios.conInventario(inventario);
   }
 
+  private CrearPedidoComando comandoRetiroEnPunto(MetodoPago metodoPago, int cantidad) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
+        TipoEntrega.RETIRO_EN_PUNTO,
+        null,
+        metodoPago,
+        true,
+        IP);
+  }
+
   private CrearPedidoComando comando(MetodoPago metodoPago, int cantidad) {
     return new CrearPedidoComando(
         null,
@@ -168,7 +201,81 @@ class CrearPedidoTest {
     assertEquals(Dinero.deCop(50_000), linea.precioUnitario());
     assertEquals(new BigDecimal("0.19"), linea.tasaIva());
     assertEquals("https://cdn.tecnosport.co/img.jpg", linea.imagenUrl());
-    assertEquals(Dinero.deCop(100_000), pedido.total());
+    assertEquals(Dinero.deCop(100_000), pedido.subtotal());
+    assertEquals(Dinero.deCop(114_900), pedido.total());
+  }
+
+  /**
+   * El costo del envío lo fija el servidor cotizando otra vez al confirmar, y el pedido congela la
+   * tarifa: una cotización vive 24 horas y el pedido vive para siempre (adr/0021).
+   */
+  @Test
+  void congelaLaTarifaConLaQueCotizoAlConfirmar() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+
+    assertEquals(TARIFA, pedido.tarifaEnvio().orElseThrow());
+    assertEquals(Dinero.deCop(14_900), pedido.costoEnvio());
+  }
+
+  /**
+   * Sin tarifa no hay envío a domicilio. Lo que importa aquí no es solo que falle, sino
+   * <strong>dónde</strong>: la cotización va antes de reservar, así que un destino sin cobertura no
+   * deja existencias comprometidas ni quema un número de pedido.
+   */
+  @Test
+  void sinCoberturaNoSeCreaElPedidoNiSeTocaElInventario() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    cotizador.sinTarifas();
+
+    assertThrows(
+        EnvioSinCoberturaException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 2)));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  /** El retiro en punto no cotiza: no hay a dónde despachar y el flete es cero por definición. */
+  @Test
+  void elRetiroEnPuntoNiCotizaNiCobraEnvio() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.NEQUI, 2));
+
+    assertEquals(0, cotizador.vecesLlamado());
+    assertTrue(pedido.tarifaEnvio().isEmpty());
+    assertEquals(Dinero.deCop(0), pedido.costoEnvio());
+    assertEquals(pedido.subtotal(), pedido.total());
+  }
+
+  /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
+  private static final class CotizadorEnvioFalso implements CotizadorEnvio {
+
+    private List<TarifaEnvio> tarifas = List.of();
+    private int veces;
+
+    void conTarifas(TarifaEnvio... tarifas) {
+      this.tarifas = List.of(tarifas);
+    }
+
+    void sinTarifas() {
+      this.tarifas = List.of();
+    }
+
+    int vecesLlamado() {
+      return veces;
+    }
+
+    @Override
+    public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+      veces++;
+      return tarifas;
+    }
   }
 
   @Test
