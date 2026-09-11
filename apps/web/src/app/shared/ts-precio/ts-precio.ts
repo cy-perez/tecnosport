@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
+import { formatearPrecio } from './formato-precio';
 
 /**
  * docs/05-i18n.md: la moneda no se convierte, solo cambia el formato por
@@ -36,15 +37,7 @@ export class TsPrecio {
   /** Ya traducido por quien llama, p. ej. "Desde". `null` para no mostrarlo. */
   readonly prefijo = input<string | null>(null);
 
-  protected readonly formateado = computed(() => {
-    const idioma = this.transloco.activeLang();
-    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: this.moneda(),
-      currencyDisplay: idioma === 'en' ? 'code' : 'symbol',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(this.valor());
-  });
+  protected readonly formateado = computed(() =>
+    formatearPrecio(this.valor(), this.moneda(), this.transloco.activeLang()),
+  );
 }
