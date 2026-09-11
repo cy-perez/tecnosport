@@ -6,6 +6,7 @@ import co.tecnosport.api.application.pedido.PedidosPaginados;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -71,7 +72,21 @@ class RepositorioPedidosJpaTest {
         UUID.randomUUID());
   }
 
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          true,
+          Instant.parse("2026-09-30T12:00:00Z"));
+
   private Pedido pedidoAlDomicilio(MetodoPago metodoPago) {
+    return pedidoAlDomicilio(metodoPago, null);
+  }
+
+  private Pedido pedidoAlDomicilio(MetodoPago metodoPago, TarifaEnvio tarifa) {
     return Pedido.crear(
         NUMERO,
         null,
@@ -81,7 +96,42 @@ class RepositorioPedidosJpaTest {
         DIRECCION_MEDELLIN,
         metodoPago,
         "cliente@tecnosport.co",
-        Instant.now());
+        Instant.now(),
+        tarifa);
+  }
+
+  /**
+   * La tarifa congelada tiene que volver entera de la base, no solo su monto: el identificador es
+   * con lo que se emitirá la guía, y la transportadora y el plazo son lo que el comprador vio al
+   * comprar. Las siete columnas van juntas o no van (check de V33).
+   */
+  @Test
+  void laTarifaCongeladaVuelveEnteraDeLaBase() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI, TARIFA);
+
+    repositorio.guardar(pedido);
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    assertThat(encontrado.tarifaEnvio()).contains(TARIFA);
+    assertThat(encontrado.costoEnvio()).isEqualTo(Dinero.deCop(14_900));
+    assertThat(encontrado.subtotal()).isEqualTo(Dinero.deCop(100_000));
+    assertThat(encontrado.total()).isEqualTo(Dinero.deCop(114_900));
+  }
+
+  /**
+   * Sin tarifa el flete es cero y así vuelve. Es el caso de los pedidos anteriores a la Fase 7,
+   * cuyo flete ya estaba dentro del precio de cada línea (adr/0012), y el del retiro en punto.
+   */
+  @Test
+  void unPedidoSinTarifaVuelveConEnvioEnCero() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+
+    repositorio.guardar(pedido);
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    assertThat(encontrado.tarifaEnvio()).isEmpty();
+    assertThat(encontrado.costoEnvio()).isEqualTo(Dinero.deCop(0));
+    assertThat(encontrado.total()).isEqualTo(encontrado.subtotal());
   }
 
   @Test

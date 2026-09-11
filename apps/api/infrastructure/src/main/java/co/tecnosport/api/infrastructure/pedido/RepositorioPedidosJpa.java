@@ -5,6 +5,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.HistorialPedido;
@@ -201,7 +202,26 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         EstadoPedido.valueOf(entidad.getEstado()),
         historialJpa.stream().map(this::aHistorial).toList(),
         entidad.getCreadoEn(),
-        entidad.getAvisoPlazoEntregaEnviadoEn());
+        entidad.getAvisoPlazoEntregaEnviadoEn(),
+        aTarifa(entidad));
+  }
+
+  /**
+   * O están los seis campos o no está ninguno — lo garantiza el {@code check} de {@code V33}, y
+   * aquí basta con mirar el identificador. Media tarifa reconstruida sería un cobro sin respaldo.
+   */
+  private TarifaEnvio aTarifa(PedidoJpaEntity entidad) {
+    if (entidad.getTarifaEnvioId() == null) {
+      return null;
+    }
+    return new TarifaEnvio(
+        entidad.getTarifaEnvioId(),
+        entidad.getTarifaEnvioTransportadora(),
+        entidad.getTarifaEnvioServicio(),
+        Dinero.deCop(entidad.getCostoEnvio()),
+        entidad.getTarifaEnvioDias(),
+        entidad.getTarifaEnvioAdmiteContraentrega(),
+        entidad.getTarifaEnvioVenceEn());
   }
 
   private LineaPedido aLinea(LineaPedidoJpaEntity l) {
@@ -224,6 +244,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
 
   private PedidoJpaEntity aEntidad(Pedido pedido) {
     Direccion direccion = pedido.direccion().orElse(null);
+    TarifaEnvio tarifa = pedido.tarifaEnvio().orElse(null);
     return new PedidoJpaEntity(
         pedido.id(),
         pedido.numeroPedido().valor(),
@@ -239,7 +260,14 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         pedido.metodoPago().name(),
         pedido.estado().name(),
         pedido.creadoEn(),
-        pedido.avisoDePlazoEnviadoEn().orElse(null));
+        pedido.avisoDePlazoEnviadoEn().orElse(null),
+        pedido.costoEnvio().valor(),
+        tarifa == null ? null : tarifa.idTarifa(),
+        tarifa == null ? null : tarifa.transportadora(),
+        tarifa == null ? null : tarifa.servicio(),
+        tarifa == null ? null : tarifa.diasEstimados(),
+        tarifa == null ? null : tarifa.admiteContraentrega(),
+        tarifa == null ? null : tarifa.venceEn());
   }
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {
