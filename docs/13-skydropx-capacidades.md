@@ -306,12 +306,25 @@ recortadas, no reescritas— viven como fixtures en
 
 - ❌ **El host de producción**, hasta la primera cotización con credenciales de
   producción.
-- ❌ **La cobertura de contraentrega por tarifa.** El objeto de una tarifa exitosa
-  **no trae ningún campo** que la declare; `cash_on_delivery` es de la cotización
-  entera y hay que pedirlo. Mientras tanto el mapeador no promete contraentrega en
-  ninguna tarifa, que es fallar cerrado.
-- ❌ **El nombre del campo del monto a recaudar.** `on_delivery_amount` se mandó y
-  volvió en `null`.
+- ✅ **La cobertura de contraentrega, resuelta el 11 de septiembre de 2026 por otra
+  vía.** No hay un campo por tarifa que la declare —eso sigue siendo cierto— pero
+  **pedir la cotización con `cash_on_delivery: true` sí discrimina**: sin él
+  ninguna tarifa se queja de recaudo; con él, las que no lo admiten se caen con
+  restricciones propias (`declared_amount debe ser mayor que o igual a 10000` en
+  Coordinadora y Envía, `5000` en Servientrega, `max_weight debe ser menor que o
+  igual a 1`) y las que sí sobreviven, al mismo precio. Comprobado con 99 minutes
+  dentro de Medellín: 10.540 con recaudo y sin él.
+
+  **Sobrevivir a una cotización con recaudo es la señal de cobertura**, y es de lo
+  que depende `MetodosDePagoDisponibles` desde la Fase 7, paso 6.
+- ❌ **El nombre del campo del monto a recaudar.** Se probaron diez grafías
+  —`on_delivery_amount`, `cash_on_delivery_amount`, `collection_amount`,
+  `amount_to_collect`, `cod_amount`, `collect_amount`, `value_to_collect`,
+  `total_to_collect`, `cash_on_delivery_value`, `payment_amount`—, en la
+  cotización y dentro del bulto, y también `cash_on_delivery` como objeto.
+  Ninguna quedó reflejada: `on_delivery_amount` siempre vuelve `null`. La
+  conclusión es que **ese dato no se declara al cotizar**, sino al crear el
+  envío, que es el paso 7.
 - ⚠️ **Los límites del recaudo, parcialmente.** Pidiendo `cash_on_delivery: true`
   aparecieron los primeros mínimos con fuente: **valor declarado ≥ 10.000 en
   Coordinadora y Envía, ≥ 5.000 en Servientrega**. La comisión, el máximo y el

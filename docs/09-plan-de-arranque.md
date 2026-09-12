@@ -3407,9 +3407,34 @@ Orden de construcción, un caso de uso a la vez:
    que la opción nunca aparece y el aviso tampoco. Queda cubierto por dos
    pruebas, una por cada lado de la condición, y pendiente de verse en pantalla
    el día que se encienda.
-6. **Contraentrega desde la cotización** (`ADR-0023`): retirar
-   `cobertura_contraentrega` y sus endpoints, y que `MetodosDePagoDisponibles`
-   dependa de la tarifa con recaudo.
+6. ~~**Contraentrega desde la cotización**~~ (`ADR-0023`). **Hecho el 11 de
+   septiembre de 2026.** Se retiró `cobertura_contraentrega` —tabla, puerto,
+   repositorio, tres casos de uso, dos controladores y sus pruebas— y
+   `MetodosDePagoDisponibles` pregunta ahora por una tarifa con recaudo.
+
+   **El paso arrancó bloqueado y se destrabó midiendo.** Al cerrar el paso 5
+   quedó escrito que Skydropx no declara la cobertura por tarifa, y que hacer
+   depender la contraentrega de eso la apagaría en todo el país. Es cierto que
+   no hay campo; lo que no se había probado es que **pedir la cotización con
+   `cash_on_delivery` sí discrimina**: las transportadoras que no recaudan se
+   caen con sus propias restricciones y las que sí sobreviven, al mismo precio.
+   Sobrevivir es la señal. Está en `docs/13-skydropx-capacidades.md`, sección 6.
+
+   Tres cosas que aparecieron construyéndolo:
+
+   - **`CrearPedido` cotiza con recaudo cuando el pago es contraentrega.** Sin
+     eso congelaría la tarifa más barata de las que **no** cobran en la puerta,
+     y el despacho se encontraría con una guía que no recauda.
+   - **El tope del recaudo pasa a compararse contra el total, flete incluido.**
+     Es lo que el mensajero carga de verdad (`ADR-0023`), y hasta ahora el
+     límite miraba solo la mercancía.
+   - **La disponibilidad depende ahora de un proveedor externo.** Si Skydropx no
+     responde, no se ofrece contraentrega. Falla cerrado, como la cotización.
+
+   Con el sandbox de hoy eso significa que **la contraentrega solo se ofrece en
+   Medellín**, porque 99 minutes es la única que recauda y la única con
+   cobertura urbana. Se ensancha solo cuando las otras transportadoras
+   respondan.
 7. **Guía en el despacho** y **seguimiento**: webhook firmado, eventos
    `append-only`, `TareaConciliacionEnvios`, y el DTO público de seguimiento
    **reducido** — hoy expone el costo real del flete y la comisión de recaudo, que
