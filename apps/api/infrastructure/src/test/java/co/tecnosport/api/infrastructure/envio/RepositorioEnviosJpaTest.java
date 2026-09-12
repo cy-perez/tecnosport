@@ -48,9 +48,17 @@ class RepositorioEnviosJpaTest {
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private UUID sembrarPedidoContraentrega() {
+    return sembrarPedidoContraentrega(1);
+  }
+
+  /**
+   * El número de pedido es único en la base, así que una prueba con varios pedidos necesita decir
+   * cuál es cuál.
+   */
+  private UUID sembrarPedidoContraentrega(int secuencial) {
     Pedido pedido =
         Pedido.crear(
-            NumeroPedido.de(2026, 1),
+            NumeroPedido.de(2026, secuencial),
             null,
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(
@@ -71,6 +79,12 @@ class RepositorioEnviosJpaTest {
             Instant.now());
     pedidos.guardar(pedido);
     return pedido.id();
+  }
+
+  private static EventoSeguimiento evento(
+      EstadoEnvio estado, String idExterno, Instant ocurrioEn, Instant recibidoEn) {
+    return new EventoSeguimiento(
+        GeneradorIdentificador.nuevo(), estado, "en ruta", ocurrioEn, recibidoEn, idExterno);
   }
 
   private static EventoSeguimiento evento(EstadoEnvio estado, String idExterno, Instant ocurrioEn) {
@@ -125,6 +139,62 @@ class RepositorioEnviosJpaTest {
     assertThat(encontrado.eventos()).hasSize(2);
     assertThat(encontrado.eventos().stream().map(EventoSeguimiento::idExterno))
         .containsExactly("ev-1", "ev-2");
+  }
+
+  /**
+   * La consulta que alimenta la conciliación. Los dos {@code not exists} hacen cosas distintas y
+   * las dos importan: uno deja fuera a los que acaban de hablar, el otro a los que ya terminaron su
+   * historia — sin ese segundo, un paquete entregado se consultaría para siempre.
+   */
+  @Test
+  void losCalladosSonLosDespachadosHaceRatoYSinEventoReciente() {
+    Instant corte = Instant.parse("2026-09-12T00:00:00Z");
+    UUID pedidoCallado = sembrarPedidoContraentrega(1);
+    Envio callado =
+        Envio.crear(
+            pedidoCallado,
+            "99 minutes",
+            "CALLADO",
+            Dinero.deCop(10_540),
+            corte.minusSeconds(86_400));
+    repositorio.guardar(callado);
+
+    UUID pedidoReciente = sembrarPedidoContraentrega(2);
+    Envio conEventoReciente =
+        Envio.crear(
+            pedidoReciente,
+            "99 minutes",
+            "RECIENTE",
+            Dinero.deCop(10_540),
+            corte.minusSeconds(86_400));
+    conEventoReciente.registrarEvento(
+        evento(
+            EstadoEnvio.EN_TRANSITO, "ev-reciente", corte.plusSeconds(60), corte.plusSeconds(60)));
+    repositorio.guardar(conEventoReciente);
+
+    UUID pedidoEntregado = sembrarPedidoContraentrega(3);
+    Envio yaEntregado =
+        Envio.crear(
+            pedidoEntregado,
+            "99 minutes",
+            "ENTREGADO",
+            Dinero.deCop(10_540),
+            corte.minusSeconds(172_800));
+    yaEntregado.registrarEvento(
+        evento(
+            EstadoEnvio.ENTREGADO,
+            "ev-entregado",
+            corte.minusSeconds(90_000),
+            corte.minusSeconds(90_000)));
+    repositorio.guardar(yaEntregado);
+
+    UUID pedidoNuevo = sembrarPedidoContraentrega(4);
+    repositorio.guardar(
+        Envio.crear(
+            pedidoNuevo, "99 minutes", "NUEVO", Dinero.deCop(10_540), corte.plusSeconds(600)));
+
+    assertThat(repositorio.buscarSinEventosDesde(corte).stream().map(Envio::guia))
+        .containsExactly("CALLADO");
   }
 
   @Test

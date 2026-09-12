@@ -101,6 +101,13 @@ tecnosport:
     # tolera mirando un resumen de pedido sin total.
     cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
     cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
+    seguimiento:
+      # Cada cuánto le pregunta la conciliación a la transportadora por los envíos callados, y
+      # desde cuándo se considera callado uno. Las doce horas no son capricho: menos que eso
+      # pisaría al webhook, que suele traer el evento antes, y gastaría cuota de un proveedor
+      # limitado a dos peticiones por segundo para llegar a la misma conclusión.
+      intervalo-minutos: ${SKYDROPX_SEGUIMIENTO_INTERVALO_MINUTOS:360}
+      antiguedad-minima-horas: ${SKYDROPX_SEGUIMIENTO_ANTIGUEDAD_MINIMA_HORAS:12}
   origen:
     # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
     # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).

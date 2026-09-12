@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
 import co.tecnosport.api.infrastructure.envio.entidad.EnvioJpaEntity;
 import co.tecnosport.api.infrastructure.envio.entidad.EventoSeguimientoJpaEntity;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,6 +86,11 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
   @Override
   public Optional<Envio> buscarPorGuia(String guia) {
     return repositorio.findByGuia(guia).map(this::aEnvio);
+  }
+
+  @Override
+  public List<Envio> buscarSinEventosDesde(Instant corte) {
+    return repositorio.buscarSinEventosDesde(corte).stream().map(this::aEnvio).toList();
   }
 
   private Envio aEnvio(EnvioJpaEntity entidad) {

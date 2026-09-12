@@ -3,6 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
+import co.tecnosport.api.application.envio.ConciliarEnvios;
+import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
@@ -32,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
   PropiedadesContraentrega.class,
   PropiedadesSkydropx.class,
+  PropiedadesSeguimientoEnvios.class,
   PropiedadesOrigen.class
 })
 public class ConfiguracionEnvio {
@@ -74,6 +77,21 @@ public class ConfiguracionEnvio {
    * medir contra un evento real (docs/13-skydropx-capacidades.md, sección 6). Se registran igual
    * para que el día que se confirmen sea cambiar una implementación y no montar el cableado.
    */
+  @Bean
+  public ConciliarEnvios conciliarEnvios(
+      RepositorioEnvios repositorioEnvios,
+      ConsultorDeSeguimiento consultor,
+      AplicarEventoDeEnvio aplicarEvento,
+      Reloj reloj,
+      PropiedadesSeguimientoEnvios propiedades) {
+    return new ConciliarEnvios(
+        repositorioEnvios,
+        consultor,
+        aplicarEvento,
+        reloj,
+        Duration.ofHours(propiedades.antiguedadMinimaHoras()));
+  }
+
   @Bean
   public RecibirEventoDeEnvio recibirEventoDeEnvio(
       VerificadorFirmaEnvio verificadorFirma,

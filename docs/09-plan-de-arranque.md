@@ -3464,8 +3464,28 @@ Orden de construcción, un caso de uso a la vez:
    respuesta fue `422 No tienes los créditos suficientes para este envío`.
 
    Sin créditos no hay guía; sin guía no hay webhook que firmar ni evento que
-   mapear. **Lo que falta del paso 7 —emitir la guía, el webhook firmado y
-   `TareaConciliacionEnvios`— espera a que la cuenta de sandbox tenga saldo.**
+   mapear.
+
+   **Hecho el 12 de septiembre, con lo que no depende de eso.** El webhook y la
+   conciliación quedaron construidos y probados enteros, con lo que depende de
+   Skydropx detrás de tres puertos que fallan cerrado — el mismo patrón del paso
+   2a, que ya se pagó solo una vez:
+
+   - `AplicarEventoDeEnvio`, el componente por el que entran los dos caminos.
+     Reutiliza `MarcarEntregado` y `RechazarEnEntrega` en vez de reimplementar
+     qué pasa con el inventario cuando un paquete se entrega o se devuelve.
+   - `POST /api/v1/envios/webhook`, público, firma primero y siempre 200. El
+     cuerpo se recibe como cadena: el HMAC es sobre los bytes que llegaron, y
+     reserializar un JSON reordena claves.
+   - `ConciliarEnvios` y `TareaConciliacionEnvios`, la tercera tarea programada.
+   - Pendientes y escritos: `VerificadorFirmaEnvio` rechaza todo,
+     `LectorEventoDeEnvio` no sabe leer nada y `ConsultorDeSeguimiento` devuelve
+     lista vacía. Los tres explican qué falta y qué pasaría si alguien los
+     escribiera de memoria.
+
+   **Lo que sigue esperando al saldo** es emitir la guía, y confirmar la firma y
+   la forma del evento contra uno real. El día que lleguen los créditos, el paso
+   7 es cambiar tres implementaciones, no montar el cableado.
 
    Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:
 
