@@ -2,9 +2,16 @@ package co.tecnosport.api.bootstrap.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
+import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
+import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -61,6 +68,30 @@ public class ConfiguracionEnvio {
    * peticiones por segundo lo frenaría igual, y el hilo esperaría en otro sitio.
    */
   private static final Duration INTERVALO_SONDEO = Duration.ofMillis(500);
+
+  /**
+   * El webhook queda cableado y sin efecto: sus dos puertos fallan cerrado mientras no se puedan
+   * medir contra un evento real (docs/13-skydropx-capacidades.md, sección 6). Se registran igual
+   * para que el día que se confirmen sea cambiar una implementación y no montar el cableado.
+   */
+  @Bean
+  public RecibirEventoDeEnvio recibirEventoDeEnvio(
+      VerificadorFirmaEnvio verificadorFirma,
+      LectorEventoDeEnvio lector,
+      AplicarEventoDeEnvio aplicarEvento) {
+    return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicarEvento);
+  }
+
+  @Bean
+  public AplicarEventoDeEnvio aplicarEventoDeEnvio(
+      RepositorioEnvios repositorioEnvios,
+      RepositorioPedidos repositorioPedidos,
+      MarcarEntregado marcarEntregado,
+      RechazarEnEntrega rechazarEnEntrega,
+      Reloj reloj) {
+    return new AplicarEventoDeEnvio(
+        repositorioEnvios, repositorioPedidos, marcarEntregado, rechazarEnEntrega, reloj);
+  }
 
   @Bean
   public CotizarEnvio cotizarEnvio(
