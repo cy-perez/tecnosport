@@ -3402,11 +3402,11 @@ Orden de construcción, un caso de uso a la vez:
      habría movido el 409 dos pantallas más adelante, después de que eligiera
      método de pago.
 
-   **Lo que no se pudo verificar en el navegador:** el aviso de contraentrega.
-   El backend local no la ofrece —`CONTRAENTREGA_HABILITADA` está en falso— así
-   que la opción nunca aparece y el aviso tampoco. Queda cubierto por dos
-   pruebas, una por cada lado de la condición, y pendiente de verse en pantalla
-   el día que se encienda.
+   **El aviso de contraentrega quedó verificado el 12 de septiembre**, al
+   cerrar el paso 6: arrancando el backend con `CONTRAENTREGA_HABILITADA=true`
+   —exportada en la terminal, que le gana al `.env.local`— la opción aparece
+   para Medellín y el aviso con ella. Con la variable en falso, que es como
+   está el entorno local, no se ve ninguna de las dos.
 6. ~~**Contraentrega desde la cotización**~~ (`ADR-0023`). **Hecho el 11 de
    septiembre de 2026.** Se retiró `cobertura_contraentrega` —tabla, puerto,
    repositorio, tres casos de uso, dos controladores y sus pruebas— y
@@ -3435,6 +3435,12 @@ Orden de construcción, un caso de uso a la vez:
    Medellín**, porque 99 minutes es la única que recauda y la única con
    cobertura urbana. Se ensancha solo cuando las otras transportadoras
    respondan.
+
+   **Verificado contra Skydropx de verdad**, no solo con dobles: con
+   `CONTRAENTREGA_HABILITADA=true`, `/metodos-de-pago-disponibles` devuelve
+   `CONTRAENTREGA` para Medellín y no la devuelve para Bogotá, sin ninguna
+   tabla de por medio. Y en el navegador, la opción y su aviso de efectivo
+   aparecen en la pantalla de método de pago.
 7. **Guía en el despacho** y **seguimiento**: webhook firmado, eventos
    `append-only`, `TareaConciliacionEnvios`, y el DTO público de seguimiento
    **reducido** — hoy expone el costo real del flete y la comisión de recaudo, que
