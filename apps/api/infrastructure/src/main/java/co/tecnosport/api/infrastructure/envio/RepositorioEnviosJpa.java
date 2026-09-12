@@ -82,6 +82,11 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
     return repositorio.findByPedidoId(pedidoId).map(this::aEnvio);
   }
 
+  @Override
+  public Optional<Envio> buscarPorGuia(String guia) {
+    return repositorio.findByGuia(guia).map(this::aEnvio);
+  }
+
   private Envio aEnvio(EnvioJpaEntity entidad) {
     return new Envio(
         entidad.getId(),

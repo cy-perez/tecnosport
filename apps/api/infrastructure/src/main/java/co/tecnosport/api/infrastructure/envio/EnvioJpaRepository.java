@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EnvioJpaRepository extends JpaRepository<EnvioJpaEntity, UUID> {
 
   Optional<EnvioJpaEntity> findByPedidoId(UUID pedidoId);
+
+  Optional<EnvioJpaEntity> findByGuia(String guia);
 }

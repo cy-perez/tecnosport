@@ -25,4 +25,9 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
   List<Envio> guardados() {
     return List.copyOf(envios);
   }
+
+  @Override
+  public Optional<Envio> buscarPorGuia(String guia) {
+    return envios.stream().filter(e -> e.guia().equals(guia)).findFirst();
+  }
 }

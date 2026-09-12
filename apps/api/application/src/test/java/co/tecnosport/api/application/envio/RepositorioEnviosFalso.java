@@ -1,6 +1,5 @@
-package co.tecnosport.api.application.pedido;
+package co.tecnosport.api.application.envio;
 
-import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.domain.envio.Envio;
 import java.util.ArrayList;
 import java.util.List;
