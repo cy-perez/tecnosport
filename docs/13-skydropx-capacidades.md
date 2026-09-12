@@ -353,10 +353,18 @@ recortadas, no reescritas— viven como fixtures en
   que lo más probable es que sea ruido de una validación previa que no llega a
   ejecutarse sin saldo.
 
-  `[[ CONFIRMAR CON LA CUENTA: cargar créditos de prueba en el sandbox. Sin eso
-  no se puede emitir una guía, y sin una guía emitida no hay webhook que firmar
-  ni evento que mapear — es decir, el resto del paso 7 de la Fase 7 está topado
-  por la cuenta, no por el código. ]]`
+  **Cuánto falta, medido el 12 de septiembre:** el panel muestra 1.000 de saldo
+  y **la guía más barata que la cuenta puede cotizar cuesta 9.540** —99 minutes,
+  un sobre de 20×15×2 y 100 gramos dentro de Medellín, que es el piso: la única
+  transportadora que responde hoy y su tarifa mínima—. Se intentó emitir esa
+  misma y devolvió el mismo error, así que con 1.000 no se puede emitir ni una.
+  No existe endpoint de saldo: se probaron siete rutas y las siete dan 404.
+
+  `[[ CONFIRMAR CON LA CUENTA: cargar créditos de prueba en el sandbox, al menos
+  unos 100.000 para poder emitir varias guías y recorrer el ciclo entero
+  —emisión, webhook, conciliación y recaudo—. Sin eso no hay guía, y sin guía no
+  hay webhook que firmar ni evento que mapear: el resto del paso 7 de la Fase 7
+  está topado por la cuenta, no por el código. ]]`
 
 - ❌ **La firma del webhook** y **el cuerpo de `POST /pickups`**: siguen sin
   confirmarse, y no se pueden confirmar hasta que exista un envío real.
