@@ -3441,11 +3441,41 @@ Orden de construcción, un caso de uso a la vez:
    `CONTRAENTREGA` para Medellín y no la devuelve para Bogotá, sin ninguna
    tabla de por medio. Y en el navegador, la opción y su aviso de efectivo
    aparecen en la pantalla de método de pago.
-7. **Guía en el despacho** y **seguimiento**: webhook firmado, eventos
-   `append-only`, `TareaConciliacionEnvios`, y el DTO público de seguimiento
-   **reducido** — hoy expone el costo real del flete y la comisión de recaudo, que
-   es el hallazgo 3 de `docs/12-legales-de-envio.md` y es un bug de hoy, no del
-   cambio.
+7. **Guía en el despacho** y **seguimiento**. **En curso.**
+
+   **El DTO público reducido ya no es parte de este paso**: el hallazgo 3 se
+   cerró el 9 de septiembre, antes de la fase, y tiene un guardián que afirma
+   sobre el texto crudo de la respuesta que no aparecen `costoEnvio` ni
+   `comisionRecaudo`. Este plan lo siguió listando como pendiente por descuido.
+
+   **Hecho el 12 de septiembre: los eventos `append-only`.** `EstadoEnvio` con
+   los doce estados de la plataforma, `EventoSeguimiento` con sus dos instantes
+   —cuándo ocurrió y cuándo nos enteramos, que no son lo mismo—, `Envio` que los
+   registra sin sobrescribir y es idempotente por el identificador externo del
+   evento, y `V35` con su restricción única. Es el tramo que no depende de
+   nadie: el vocabulario lo fija `ADR-0022` y el modelo es nuestro.
+
+   **Y aquí el paso se topó, por la cuenta y no por el código.** Midiendo
+   `POST /shipments` se obtuvo su forma exacta —va envuelto en `shipment`, con
+   `quotation_id`, `rate_id`, las dos direcciones y los bultos— y dos exigencias
+   que no estaban escritas en ninguna parte: las direcciones piden **`email` y
+   `reference`** obligatorios en los dos extremos, y cada bulto pide
+   **`package_type` y `package_content`**. Pero al mandar el cuerpo completo la
+   respuesta fue `422 No tienes los créditos suficientes para este envío`.
+
+   Sin créditos no hay guía; sin guía no hay webhook que firmar ni evento que
+   mapear. **Lo que falta del paso 7 —emitir la guía, el webhook firmado y
+   `TareaConciliacionEnvios`— espera a que la cuenta de sandbox tenga saldo.**
+
+   Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:
+
+   - **`reference` no se pide hoy en el checkout.** El campo `indicaciones` que
+     ya existe puede servir, pero es opcional y la guía lo exige.
+   - **El origen no tiene correo configurado.** Haría falta un `ORIGEN_CORREO`
+     junto a las otras siete variables de `ORIGEN_*`.
+   - **`package_content` es texto libre** y describe qué va dentro. Hay que
+     decidir qué se escribe ahí: el nombre del producto, la categoría, o algo
+     genérico. No es un detalle: es lo que lee quien revisa el paquete.
 8. **Textos legales**, en el mismo commit que enciende la cotización, con la
    fecha de versión nueva.
 

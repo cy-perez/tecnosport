@@ -330,9 +330,36 @@ recortadas, no reescritas— viven como fixtures en
   Coordinadora y Envía, ≥ 5.000 en Servientrega**. La comisión, el máximo y el
   seguro siguen sin confirmar, y la cifra de COP 2.000 / COP 2.000.000 que cita
   `ADR-0023` sigue sin aparecer en ninguna fuente.
-- ❌ **La firma del webhook**, **el cuerpo de `POST /pickups`** y **los campos de
-  contraentrega al crear el envío**: son del paso 7 de la fase y no se tocaron en
-  esta sesión.
+- ✅ **La forma de `POST /shipments`, medida el 12 de septiembre de 2026.** El
+  cuerpo va envuelto en `shipment` y lleva `quotation_id`, `rate_id`,
+  `address_from`, `address_to` y `parcels`. Lo dijo el propio 422 al mandarle
+  solo los dos identificadores, y trae **dos exigencias que no estaban en
+  ninguna parte**:
+
+  - Las direcciones piden además **`email` y `reference`**, las dos obligatorias
+    y en los dos extremos. El correo del comprador ya lo tenemos; `reference`
+    —una referencia para encontrar el sitio— no se pide hoy en el checkout, y el
+    origen tampoco tiene correo configurado.
+  - Cada bulto pide **`package_type` y `package_content`**: qué tipo de empaque
+    es y qué va dentro, en texto.
+
+- ⛔ **No se pudo emitir ninguna guía: la cuenta no tiene créditos.** El intento
+  con el cuerpo completo respondió
+  `422 No tienes los créditos suficientes para este envío. Agrega créditos y
+  continúa.` No se creó nada ni se consumió saldo. Junto a ese mensaje aparece
+  `Valor declarado es obligatorio`, que **no** cede con ninguna de siete grafías
+  —`declared_value` y `declared_amount`, en el envío y en el bulto, más
+  `insurance` y `protect`—; tiene la forma de un error de la transportadora, así
+  que lo más probable es que sea ruido de una validación previa que no llega a
+  ejecutarse sin saldo.
+
+  `[[ CONFIRMAR CON LA CUENTA: cargar créditos de prueba en el sandbox. Sin eso
+  no se puede emitir una guía, y sin una guía emitida no hay webhook que firmar
+  ni evento que mapear — es decir, el resto del paso 7 de la Fase 7 está topado
+  por la cuenta, no por el código. ]]`
+
+- ❌ **La firma del webhook** y **el cuerpo de `POST /pickups`**: siguen sin
+  confirmarse, y no se pueden confirmar hasta que exista un envío real.
 - ❌ **La comisión financiera del retiro a banco.** Es comercial, no técnica: va
   por el ejecutivo de cuenta.
 
