@@ -67,7 +67,6 @@ class CrearPedidoTest {
   private RepositorioProductosFalso productos;
   private RepositorioInventarioFalso inventarios;
   private RepositorioPedidosFalso pedidos;
-  private RepositorioCoberturaContraentregaFalso cobertura;
   private LimitadorDeIntentosFalso limitadorDeIntentos;
   private RepositorioAutorizacionesFalso autorizaciones;
   private CotizadorEnvioFalso cotizador;
@@ -92,26 +91,24 @@ class CrearPedidoTest {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
   }
 
-  private CrearPedido crear(CriteriosContraentrega criterios, boolean medellinCubierta) {
+  private CrearPedido crear(CriteriosContraentrega criterios, boolean recaudaEnElDestino) {
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
     pedidos = new RepositorioPedidosFalso();
-    cobertura = new RepositorioCoberturaContraentregaFalso();
     limitadorDeIntentos = new LimitadorDeIntentosFalso();
     autorizaciones = new RepositorioAutorizacionesFalso();
-    if (medellinCubierta) {
-      cobertura.conCiudadCubierta(DIRECCION_MEDELLIN.codigoDaneCiudad());
-    }
-    MetodosDePagoDisponibles metodosDePagoDisponibles =
-        new MetodosDePagoDisponibles(productos, cobertura, pedidos, criterios);
     cotizador = new CotizadorEnvioFalso();
     cotizador.conTarifas(TARIFA);
+    cotizador.recaudaEnElDestino(recaudaEnElDestino);
+    CotizarEnvio cotizarEnvio = new CotizarEnvio(productos, cotizador, () -> AHORA);
+    MetodosDePagoDisponibles metodosDePagoDisponibles =
+        new MetodosDePagoDisponibles(productos, cotizarEnvio, pedidos, criterios);
     return new CrearPedido(
         productos,
         inventarios,
         pedidos,
         metodosDePagoDisponibles,
-        new CotizarEnvio(productos, cotizador, () -> AHORA),
+        cotizarEnvio,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
         RESERVA_TRANSFERENCIA,
@@ -257,6 +254,7 @@ class CrearPedidoTest {
   private static final class CotizadorEnvioFalso implements CotizadorEnvio {
 
     private List<TarifaEnvio> tarifas = List.of();
+    private boolean recauda = true;
     private int veces;
 
     void conTarifas(TarifaEnvio... tarifas) {
@@ -267,14 +265,37 @@ class CrearPedidoTest {
       this.tarifas = List.of();
     }
 
+    void recaudaEnElDestino(boolean recauda) {
+      this.recauda = recauda;
+    }
+
     int vecesLlamado() {
       return veces;
     }
 
+    /**
+     * Imita a Skydropx: en una cotización pedida con recaudo solo responden las transportadoras que
+     * lo admiten, y toda tarifa que sobrevive queda marcada como que recauda. Si ninguna lo admite,
+     * la cotización vuelve vacía — que es distinto de no tener envío.
+     */
     @Override
     public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
       veces++;
-      return tarifas;
+      if (cotizacion.conRecaudo() && !recauda) {
+        return List.of();
+      }
+      return tarifas.stream().map(t -> conRecaudo(t, cotizacion.conRecaudo())).toList();
+    }
+
+    private static TarifaEnvio conRecaudo(TarifaEnvio tarifa, boolean admite) {
+      return new TarifaEnvio(
+          tarifa.idTarifa(),
+          tarifa.transportadora(),
+          tarifa.servicio(),
+          tarifa.costo(),
+          tarifa.diasEstimados(),
+          admite,
+          tarifa.venceEn());
     }
   }
 
@@ -322,8 +343,9 @@ class CrearPedidoTest {
     assertNull(ultimaReserva().expiraEn());
   }
 
+  /** Ninguna transportadora cobra en la puerta en ese destino (adr/0023). */
   @Test
-  void contraentregaSeRechazaSiLaCiudadNoEstaCubierta() {
+  void contraentregaSeRechazaSiNingunaTarifaRecauda() {
     CrearPedido caso = crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, false);
     publicarProductoConVarianteYExistencia(5);
 

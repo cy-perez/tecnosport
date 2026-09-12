@@ -191,12 +191,17 @@ public final class CrearPedido {
     if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO) {
       return null;
     }
+    // Con recaudo si se paga contra entrega: la tarifa que se congela tiene que ser de una
+    // transportadora que cobre en la puerta, no la más barata de las que no cobran. Es la segunda
+    // cotización con este mismo cuerpo —la primera la hizo la comprobación de contraentrega— y
+    // Skydropx deduplica por contenido, así que devuelve la misma al instante.
     return cotizarEnvio.ejecutar(
         new CotizarEnvioComando(
             comando.lineas().stream()
                 .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
                 .toList(),
-            comando.direccion()));
+            comando.direccion(),
+            comando.metodoPago() == MetodoPago.CONTRAENTREGA));
   }
 
   private void exigirContraentregaDisponible(CrearPedidoComando comando) {
