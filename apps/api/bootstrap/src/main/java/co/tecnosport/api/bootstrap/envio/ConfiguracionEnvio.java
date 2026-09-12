@@ -2,13 +2,9 @@ package co.tecnosport.api.bootstrap.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.application.envio.AgregarCoberturaContraentrega;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
-import co.tecnosport.api.application.envio.ListarCoberturaContraentrega;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
-import co.tecnosport.api.application.envio.QuitarCoberturaContraentrega;
-import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -85,28 +81,10 @@ public class ConfiguracionEnvio {
   @Bean
   public MetodosDePagoDisponibles metodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
-      RepositorioCoberturaContraentrega repositorioCobertura,
+      CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega) {
     return new MetodosDePagoDisponibles(
-        repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
-  }
-
-  @Bean
-  public ListarCoberturaContraentrega listarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new ListarCoberturaContraentrega(repositorio);
-  }
-
-  @Bean
-  public AgregarCoberturaContraentrega agregarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new AgregarCoberturaContraentrega(repositorio);
-  }
-
-  @Bean
-  public QuitarCoberturaContraentrega quitarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new QuitarCoberturaContraentrega(repositorio);
+        repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
   }
 }

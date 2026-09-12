@@ -15,7 +15,6 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
-import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
@@ -357,7 +356,7 @@ class PedidoControladorTest {
   }
 
   @Test
-  void crearPedidoContraentregaSinCoberturaDevuelve409() throws Exception {
+  void crearPedidoContraentregaDevuelve409SiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
         solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_BOGOTA, "CONTRAENTREGA");
@@ -391,7 +390,7 @@ class PedidoControladorTest {
   }
 
   @Test
-  void metodosDePagoDisponiblesExcluyeContraentregaSinCobertura() throws Exception {
+  void metodosDePagoDisponiblesExcluyeContraentregaSiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     MetodosDePagoDisponiblesRequest cuerpo =
         new MetodosDePagoDisponiblesRequest(
@@ -573,6 +572,9 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }
 
+  /** Medellín recauda; el resto del país, no. Es lo que hace hoy el sandbox. */
+  private static final String CIUDAD_QUE_RECAUDA = "05001";
+
   private static final TarifaEnvio TARIFA =
       new TarifaEnvio(
           "rate_1",
@@ -602,11 +604,6 @@ class PedidoControladorTest {
     }
 
     @Bean
-    RepositorioCoberturaContraentregaDobleDePrueba repositorioCoberturaContraentrega() {
-      return new RepositorioCoberturaContraentregaDobleDePrueba().conCiudadCubierta("05001");
-    }
-
-    @Bean
     CriteriosContraentrega criteriosContraentrega() {
       return new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
     }
@@ -614,11 +611,11 @@ class PedidoControladorTest {
     @Bean
     MetodosDePagoDisponibles metodosDePagoDisponibles(
         RepositorioProductos repositorioProductos,
-        RepositorioCoberturaContraentrega repositorioCobertura,
+        CotizarEnvio cotizarEnvio,
         RepositorioPedidos repositorioPedidos,
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
-          repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
+          repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
     }
 
     @Bean
@@ -656,7 +653,24 @@ class PedidoControladorTest {
      */
     @Bean
     CotizadorEnvio cotizadorEnvio() {
-      return cotizacion -> List.of(TARIFA);
+      // Como el adaptador real: en una cotización pedida con recaudo solo responden las
+      // transportadoras que lo admiten, y la tarifa que sobrevive queda marcada. Aquí recauda
+      // Medellín y nadie más, que es además lo que hace hoy el sandbox de Skydropx.
+      return cotizacion -> {
+        boolean recaudaAhi = CIUDAD_QUE_RECAUDA.equals(cotizacion.destino().codigoDaneCiudad());
+        if (cotizacion.conRecaudo() && !recaudaAhi) {
+          return List.of();
+        }
+        return List.of(
+            new TarifaEnvio(
+                TARIFA.idTarifa(),
+                TARIFA.transportadora(),
+                TARIFA.servicio(),
+                TARIFA.costo(),
+                TARIFA.diasEstimados(),
+                cotizacion.conRecaudo(),
+                TARIFA.venceEn()));
+      };
     }
 
     @Bean

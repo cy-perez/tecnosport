@@ -1,0 +1,17 @@
+-- Se retira la tabla de cobertura de contraentrega: ahora la cobertura la decide la tarifa.
+--
+-- V10 la creó como "tabla propia, alimentada por lo que cubre la transportadora con recaudo",
+-- cargada a mano por el administrador porque no había integración. Con adr/0023 sí la hay: se
+-- pide la cotización con recaudo y las transportadoras que no lo admiten se caen solas. La lista
+-- manual no sabía nada de pesos, de montos ni de qué transportadora responde hoy, así que decía
+-- "sí" en ciudades donde nadie recauda y "no" en ciudades donde alguien sí.
+--
+-- Se borra en vez de dejarla huérfana. Una tabla que ya nadie lee es una segunda verdad esperando
+-- a divergir: el día que alguien la encuentre va a pensar que de ahí sale la cobertura, y va a
+-- editarla esperando un efecto que no va a ocurrir.
+--
+-- No hay vuelta atrás para las filas que tenga, y es aceptable: eran códigos DANE escritos a
+-- mano, no un dato que el negocio no pueda reconstruir. El índice ix_pedido_correo que V10 creó
+-- en la misma migración **se queda**: lo sigue usando la consulta de rechazos en entrega, que no
+-- cambia.
+drop table cobertura_contraentrega;

@@ -612,22 +612,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/cobertura-contraentrega": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["agregar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/atencion": {
         parameters: {
             query?: never;
@@ -820,22 +804,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/envios/cobertura": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_6"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/categorias": {
         parameters: {
             query?: never;
@@ -843,7 +811,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -875,7 +843,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_8"];
+        get: operations["listar_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -891,7 +859,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_9"];
+        get: operations["listar_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -927,22 +895,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["eliminar"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/cobertura-contraentrega/{codigoDaneCiudad}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["quitar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1422,9 +1374,6 @@ export interface components {
             monto?: number;
             medio?: string;
             comprobante?: string;
-        };
-        CoberturaContraentregaRequest: {
-            codigoDaneCiudad?: string;
         };
         RadicarSolicitudRequest: {
             tipo?: string;
@@ -2615,28 +2564,6 @@ export interface operations {
             };
         };
     };
-    agregar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CoberturaContraentregaRequest"];
-            };
-        };
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     listar_4: {
         parameters: {
             query?: {
@@ -3008,26 +2935,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": string[];
-                };
-            };
-        };
-    };
-    listar_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
                     "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
                 };
             };
@@ -3055,7 +2962,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3075,7 +2982,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_8: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -3127,26 +3034,6 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    quitar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                codigoDaneCiudad: string;
             };
             cookie?: never;
         };
