@@ -237,15 +237,56 @@ class MapeadorCotizacionSkydropxV1Test {
   }
 
   /**
-   * La contraentrega no se promete mientras no se confirme: ninguna tarifa exitosa trae un campo
-   * que declare la cobertura, y prometerla sin dato es ofrecer un pago que después no existe.
+   * Una cotización que no pidió recaudo no dice nada sobre quién recauda, así que ninguna tarifa
+   * suya lo promete. Prometerlo sin dato es ofrecer un pago que después no existe.
    */
   @Test
-  void ningunaTarifaPrometeContraentregaTodavia() {
+  void sinRecaudoNingunaTarifaLoPromete() {
     List<TarifaEnvio> tarifas =
         mapeador.tarifasSiCompleto(json.readTree(RESPUESTA_CON_EXITO), AHORA).orElseThrow();
 
     assertFalse(tarifas.get(0).admiteContraentrega());
+  }
+
+  /**
+   * Y esta es la señal entera de cobertura de recaudo, porque no hay otra: si la cotización vuelve
+   * marcada con contraentrega, toda tarifa que sobrevivió en ella la admite. Las que no recaudan no
+   * llegan hasta aquí — se cayeron con sus propias restricciones y {@code success} en falso.
+   * Verificado contra el sandbox el 11 de septiembre de 2026.
+   */
+  @Test
+  void enUnaCotizacionConRecaudoLaTarifaQueSobrevivioLoAdmite() {
+    String respuesta =
+        RESPUESTA_CON_EXITO.replace("\"cash_on_delivery\": false", "\"cash_on_delivery\": true");
+
+    List<TarifaEnvio> tarifas =
+        mapeador.tarifasSiCompleto(json.readTree(respuesta), AHORA).orElseThrow();
+
+    assertTrue(tarifas.get(0).admiteContraentrega());
+  }
+
+  /** Pedirlo cambia quién responde, así que tiene que llegar en el cuerpo. */
+  @Test
+  void pedirRecaudoViajaEnElCuerpo() {
+    CotizacionEnvio conRecaudo =
+        new CotizacionEnvio(
+            BOGOTA, List.of(new Bulto(new Paquete(180, 30, 25, 4), Dinero.deCop(150_000))), true);
+
+    JsonNode quotation = quotationDe(conRecaudo);
+
+    assertTrue(quotation.path("cash_on_delivery").asBoolean(false));
+  }
+
+  /**
+   * Y no pedirlo tiene que ser no mandarlo: una cotización con {@code cash_on_delivery: false}
+   * explícito no es lo mismo que una sin el campo, y la del checkout no pide recaudo.
+   */
+  @Test
+  void sinRecaudoElCampoNoViaja() {
+    JsonNode quotation =
+        quotationDe(cotizacionDe(new Bulto(new Paquete(180, 30, 25, 4), Dinero.deCop(150_000))));
+
+    assertTrue(quotation.path("cash_on_delivery").isMissingNode());
   }
 
   /**

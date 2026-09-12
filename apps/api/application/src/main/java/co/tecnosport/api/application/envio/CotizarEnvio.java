@@ -48,7 +48,8 @@ public final class CotizarEnvio {
     }
 
     List<TarifaEnvio> tarifas =
-        cotizador.cotizar(new CotizacionEnvio(destino, bultosDe(comando.lineas())));
+        cotizador.cotizar(
+            new CotizacionEnvio(destino, bultosDe(comando.lineas()), comando.conRecaudo()));
 
     return TarifaEnvio.masEconomica(vigentes(tarifas))
         .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));

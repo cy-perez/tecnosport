@@ -79,6 +79,14 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
 
     // Obligatorio aparte del valor de cada bulto: sin el la cotizacion responde 422.
     quotation.put("declared_amount", cotizacion.valorDeclaradoTotal().valor());
+
+    // Pedir la cotización con recaudo cambia quién responde: las transportadoras que no lo
+    // admiten se caen con restricciones propias del recaudo. El monto a recaudar NO va aquí —
+    // se probaron diez grafías y ninguna quedó reflejada; ese dato es de la guía, no de la
+    // cotización. Ver docs/13-skydropx-capacidades.md, sección 6.
+    if (cotizacion.conRecaudo()) {
+      quotation.put("cash_on_delivery", true);
+    }
     return json.writeValueAsString(raiz);
   }
 
@@ -137,9 +145,14 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
       return Optional.empty();
     }
 
+    // La cobertura de recaudo se lee de la respuesta y no de lo que se pidió: si la cotización
+    // vuelve marcada con contraentrega, toda tarifa que sobrevivió en ella la admite. Es la única
+    // señal que hay — ninguna tarifa trae un campo propio que la declare.
+    boolean conRecaudo = esVerdadero(respuestaDeSondeo.path("cash_on_delivery"));
+
     List<TarifaEnvio> tarifas = new ArrayList<>();
     for (JsonNode rate : respuestaDeSondeo.path("rates")) {
-      tarifa(rate, ahora).ifPresent(tarifas::add);
+      tarifa(rate, ahora, conRecaudo).ifPresent(tarifas::add);
     }
     return Optional.of(List.copyOf(tarifas));
   }
@@ -150,8 +163,12 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
    * descartan son las que traen {@code success: false} —la mayoría, con su motivo en {@code
    * error_messages}— y las que vengan en otra moneda o sin total, que son casos que no se han visto
    * pero que no se pueden cobrar a ciegas.
+   *
+   * <p>En una cotización pedida con recaudo, {@code success: false} incluye a las transportadoras
+   * que no recaudan: se caen con sus propias restricciones. Por eso sobrevivir <em>es</em> la señal
+   * de cobertura.
    */
-  private Optional<TarifaEnvio> tarifa(JsonNode rate, Instant ahora) {
+  private Optional<TarifaEnvio> tarifa(JsonNode rate, Instant ahora, boolean conRecaudo) {
     if (!esVerdadero(rate.path("success"))) {
       return Optional.empty();
     }
@@ -176,10 +193,7 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
             servicio,
             Dinero.deCop(total.get()),
             dias(rate),
-            // La cobertura de contraentrega por tarifa no está confirmada: el objeto de una tarifa
-            // exitosa no trae ningún campo que la declare, y el cash_on_delivery que sí existe es
-            // de la cotización entera y hay que pedirlo. Hasta confirmarlo, no se promete.
-            false,
+            conRecaudo,
             ahora.plus(VIGENCIA)));
   }
 

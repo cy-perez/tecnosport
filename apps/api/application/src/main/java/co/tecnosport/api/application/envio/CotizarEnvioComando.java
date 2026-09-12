@@ -10,7 +10,13 @@ import java.util.UUID;
  * valor de cada variante los resuelve el caso de uso contra el catálogo real. El cliente no cotiza
  * con los pesos que él diga (regla dura #7).
  */
-public record CotizarEnvioComando(List<LineaComando> lineas, Direccion direccion) {
+public record CotizarEnvioComando(
+    List<LineaComando> lineas, Direccion direccion, boolean conRecaudo) {
+
+  /** Sin recaudo: lo que pide el resumen del checkout, antes de elegir método de pago. */
+  public CotizarEnvioComando(List<LineaComando> lineas, Direccion direccion) {
+    this(lineas, direccion, false);
+  }
 
   public record LineaComando(UUID varianteId, int cantidad) {}
 }
