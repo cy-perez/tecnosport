@@ -4,6 +4,9 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +27,7 @@ public final class Envio {
   private final Instant despachadoEn;
   private Dinero comisionRecaudo;
   private Instant recaudoConciliadoEn;
+  private final List<EventoSeguimiento> eventos;
 
   public Envio(
       UUID id,
@@ -34,6 +38,30 @@ public final class Envio {
       Instant despachadoEn,
       Dinero comisionRecaudo,
       Instant recaudoConciliadoEn) {
+    this(
+        id,
+        pedidoId,
+        transportadora,
+        guia,
+        costoEnvio,
+        despachadoEn,
+        comisionRecaudo,
+        recaudoConciliadoEn,
+        List.of());
+  }
+
+  /** El canónico: el mismo, más el rastro de eventos con el que lo reconstruye el repositorio. */
+  public Envio(
+      UUID id,
+      UUID pedidoId,
+      String transportadora,
+      String guia,
+      Dinero costoEnvio,
+      Instant despachadoEn,
+      Dinero comisionRecaudo,
+      Instant recaudoConciliadoEn,
+      List<EventoSeguimiento> eventos) {
+    this.eventos = new ArrayList<>(Objects.requireNonNullElse(eventos, List.of()));
     this.id = Objects.requireNonNull(id, "El id del envío no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     if (transportadora == null || transportadora.isBlank()) {
@@ -62,6 +90,43 @@ public final class Envio {
         ahora,
         null,
         null);
+  }
+
+  /**
+   * Registra un movimiento del paquete. <strong>Append-only</strong>: nada se sobrescribe y nada se
+   * borra (adr/0022).
+   *
+   * <p>Idempotente por el identificador del evento en la plataforma, que es lo que hace inofensivo
+   * un reintento del webhook: el mismo evento dos veces se guarda una. Devuelve si el evento era
+   * nuevo, porque de eso depende que el caso de uso mueva o no el pedido — aplicar dos veces un
+   * {@code ENTREGADO} reabriría plazos legales que ya estaban corriendo.
+   *
+   * <p>No valida el orden. Las transportadoras mandan eventos desordenados y con retraso, y
+   * rechazar uno "viejo" sería perder justo el que faltaba para entender qué pasó.
+   */
+  public boolean registrarEvento(EventoSeguimiento evento) {
+    Objects.requireNonNull(evento, "El evento no puede ser nulo.");
+    boolean yaEstaba = eventos.stream().anyMatch(e -> e.idExterno().equals(evento.idExterno()));
+    if (yaEstaba) {
+      return false;
+    }
+    eventos.add(evento);
+    return true;
+  }
+
+  /** En el orden en que ocurrieron, no en el que llegaron. */
+  public List<EventoSeguimiento> eventos() {
+    return eventos.stream().sorted(Comparator.comparing(EventoSeguimiento::ocurrioEn)).toList();
+  }
+
+  /**
+   * El último estado conocido del paquete, o vacío si todavía no hay eventos — un envío recién
+   * despachado, o uno cuyo webhook no ha llegado.
+   */
+  public Optional<EstadoEnvio> ultimoEstado() {
+    return eventos().stream()
+        .reduce((primero, siguiente) -> siguiente)
+        .map(EventoSeguimiento::estado);
   }
 
   /** Idempotente por diseño: un envío ya conciliado rechaza un segundo intento. */
