@@ -31,7 +31,7 @@
 
   <h2 class="mt-48 mb-16 font-display text-lg">{{ 'portada.novedades' | transloco }}</h2>
   @if (consulta.isPending()) {
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-tarjeta),1fr))] gap-16">
+    <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       @for (marcador of marcadoresDeCarga; track marcador) {
         <ts-esqueleto />
       }
@@ -41,7 +41,13 @@
   } @else if (novedades().length === 0) {
     <p class="text-ts-texto-suave">{{ 'portada.sin_novedades' | transloco }}</p>
   } @else {
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-tarjeta),1fr))] gap-16">
+    <!-- Las mismas columnas que la rejilla del catálogo, y no `auto-fill` con el
+         ancho mínimo de tarjeta: con 220 px de mínimo, un teléfono de 390 px
+         pintaba una sola columna y cada novedad ocupaba una pantalla entera —
+         cuatro pantallas de desplazamiento para ver cuatro productos, y al
+         tocar "Ver el catálogo" el mismo producto aparecía a dos columnas. Una
+         tienda enseña dos por fila en el teléfono; el catálogo ya lo hacía. -->
+    <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
       <!-- Toda la franja va prioritaria, no solo la primera: la portada no
            tiene <img> de hero (el suyo es un bloque de CSS), así que el LCP es
            una de estas cuatro, y las cuatro se pintan del mismo tamaño y a la
