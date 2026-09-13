@@ -69,7 +69,14 @@
     </nav>
 
     <div class="flex items-center gap-16">
-      <div class="hidden items-center gap-16 desde-movil:flex">
+      <!-- `items-end`, no `items-center`: los selectores de idioma y tema son
+           etiqueta encima de control, así que su centro vertical queda en el
+           borde superior del control. Centrar los enlaces de sesión contra esa
+           caja los dejaba flotando a la altura de las etiquetas "Idioma" y
+           "Tema" — se veía en escritorio como un escalón entre "Cerrar sesión"
+           y los dos selectores. Alineados por la base, el texto de los enlaces
+           queda a la altura del texto de los selectores. -->
+      <div class="hidden items-end gap-16 desde-movil:flex">
         <ng-container [ngTemplateOutlet]="controlesSesion" />
         <ts-selector-idioma />
         <ts-selector-tema />
@@ -183,8 +190,11 @@
   @if (sesion.sesion()) {
     <!-- Se ve como los enlaces de al lado, pero es un <button> porque dispara
          una acción, no una navegación. -->
+    <!-- `self-start` es para el panel móvil, donde va en columna y sin él se
+         estiraría al ancho completo; en la fila de escritorio vuelve a `auto`
+         para que lo alinee el contenedor, como a los enlaces de al lado. -->
     <button
-      class="anillo-foco inline-flex min-h-tactil cursor-pointer items-center self-start border-0 bg-transparent p-0 font-texto text-sm text-ts-texto hover:underline"
+      class="anillo-foco inline-flex min-h-tactil cursor-pointer items-center self-start border-0 bg-transparent p-0 font-texto text-sm text-ts-texto hover:underline desde-movil:self-auto"
       type="button"
       (click)="cerrarSesion()"
     >
