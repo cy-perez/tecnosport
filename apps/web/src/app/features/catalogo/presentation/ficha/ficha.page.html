@@ -66,5 +66,10 @@
     </div>
   } @else {
     <p class="text-ts-error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
+    <!-- Un enlace roto o un producto despublicado no puede ser un callejón sin
+         salida: se ofrece el camino de vuelta a la vitrina. -->
+    <ts-boton variante="secundario" [enlace]="['/', idioma(), 'productos']">
+      {{ 'catalogo.ficha.volver_al_catalogo' | transloco }}
+    </ts-boton>
   }
 </section>

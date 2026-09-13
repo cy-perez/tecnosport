@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,6 +18,7 @@ import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control'
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
 import {
   FiltroProductos,
+  hayFiltrosActivos,
   LINEAS,
   ORDEN_POR_DEFECTO,
   OrdenProductos,
@@ -87,6 +95,17 @@ export class FiltrosProductos {
   private readonly router = inject(Router);
 
   protected readonly opciones = usarOpcionesFiltro();
+
+  /**
+   * Solo cuenta por debajo del primer punto de quiebre, donde el formulario va
+   * tras un botón (ver la plantilla). Arranca abierto si la URL ya trae algún
+   * filtro, para que lo aplicado se vea; el orden solo no cuenta como filtro.
+   * Un cambio de filtro no lo pliega: quien está afinando la búsqueda suele
+   * tocar más de un control seguido.
+   */
+  protected readonly abierto = signal(
+    hayFiltrosActivos(filtroDesdeQueryParams(this.route.snapshot.queryParams)),
+  );
 
   protected readonly form = new FormGroup({
     categoria: new FormControl('', { nonNullable: true }),
@@ -167,6 +186,10 @@ export class FiltrosProductos {
         queryParams: queryParamsDesdeFiltro(filtro),
       });
     });
+  }
+
+  protected alternar(): void {
+    this.abierto.update((abierto) => !abierto);
   }
 
   protected limpiar(): void {

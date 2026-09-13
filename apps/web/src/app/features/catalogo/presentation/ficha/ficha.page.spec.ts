@@ -209,6 +209,8 @@ describe('FichaPage', () => {
       'textContent',
       'No encontramos este producto.',
     );
+    // Un enlace roto no puede ser un callejón sin salida.
+    expect(screen.getByRole('link', { name: 'Volver al catálogo' })).toBeTruthy();
   });
 
   it('muestra un mensaje de error si la consulta falla', async () => {
