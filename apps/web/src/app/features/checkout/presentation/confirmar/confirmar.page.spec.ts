@@ -203,9 +203,12 @@ class RutaMuda {}
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioEnviosFalso implements RepositorioEnvios {
-  constructor(private readonly respuesta: CotizacionEnvio | null = COTIZACION) {}
+  constructor(private readonly respuesta: CotizacionEnvio | null | Error = COTIZACION) {}
 
   async cotizar(): Promise<CotizacionEnvio | null> {
+    if (this.respuesta instanceof Error) {
+      throw this.respuesta;
+    }
     return this.respuesta;
   }
 }
@@ -224,6 +227,7 @@ async function renderConDatos(
   pedidos: RepositorioPedidos,
   pagos: RepositorioPagos = new RepositorioPagosFalso(),
   datos: DatosEntrega = DATOS_ENTREGA,
+  envios: RepositorioEnvios = new RepositorioEnviosFalso(),
 ) {
   return render(anfitrionConDatos(metodoPago, datos), {
     imports: [
@@ -240,10 +244,10 @@ async function renderConDatos(
         { path: 'transferencia', component: RutaMuda },
         { path: 'estado', component: RutaMuda },
       ]),
-      provideTanStackQuery(new QueryClient()),
+      provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
-      { provide: REPOSITORIO_ENVIOS, useValue: new RepositorioEnviosFalso() },
+      { provide: REPOSITORIO_ENVIOS, useValue: envios },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
     ],
   });
@@ -446,6 +450,90 @@ describe('ConfirmarPage', () => {
       await screen.findByText('No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.'),
     ).toBeTruthy();
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Sin tarifa el servidor responde 409 y hace bien. Esta pantalla mandaba el pedido igual y
+   * traducía ese 409 a "revisa tus datos e intenta de nuevo": culpaba al comprador de algo que no
+   * era suyo y le proponía lo único que no arregla nada, que es reintentar. Ahora ni se manda, y
+   * el texto dice qué pasó y cuál es la salida.
+   */
+  it('sin cobertura no manda el pedido y explica la salida en vez de culpar al comprador', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso(null),
+    );
+    await esperarCarritoCargado(fixture);
+    expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText(/no podemos crear este pedido[\s\S]*recoger en nuestro punto/),
+    ).toBeTruthy();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  /**
+   * El otro motivo por el que puede faltar la tarifa, y no se dice igual: una caída nuestra no es
+   * "no llegamos a esa dirección". Esta pantalla los mezclaba en un solo `@else`.
+   */
+  it('si la cotización se cae lo dice como falla nuestra, no como falta de cobertura', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso(new Error('la red se cayó')),
+    );
+    await esperarCarritoCargado(fixture);
+
+    // Timeout explícito: la consulta reintenta una vez antes de darse por vencida (ver
+    // `usarCotizacionEnvio`), así que `isError()` llega alrededor de un segundo después del
+    // primer fallo — por encima del segundo que Testing Library espera por omisión.
+    expect(
+      await screen.findByText(/No pudimos calcular el costo de envío/, {}, { timeout: 5_000 }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/No tenemos transporte hasta esta dirección/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    await vi.waitFor(() => expect(pedidos.llamadasCrear).toBe(0));
+  });
+
+  /**
+   * `costoEnvio` cae a cero sin cotización, así que "Total a pagar" mostraba el subtotal: un
+   * precio que no es el precio, en la pantalla misma donde se finaliza la transacción. El artículo
+   * 50 de la Ley 1480 de 2011 pide ahí el desglose completo, y un total incompleto no lo es.
+   */
+  it('sin cobertura no pinta un total que no es el total', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso(null),
+    );
+    await esperarCarritoCargado(fixture);
+
+    expect(await screen.findByText('Falta el costo de envío')).toBeTruthy();
   });
 
   it('un reintento no vuelve a crear el pedido si ya existe uno de este intento', async () => {

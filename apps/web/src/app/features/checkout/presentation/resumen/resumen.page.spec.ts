@@ -87,6 +87,26 @@ class RepositorioEnviosFalso implements RepositorioEnvios {
   }
 }
 
+/**
+ * Cotiza cuando la prueba lo diga, no cuando la promesa quiera. Es lo único que reproduce la
+ * carrera real: el comprador —o Playwright, que tarda milisegundos— da clic en "Continuar" con la
+ * cotización todavía en vuelo. Un doble que responde de inmediato nunca la ve.
+ */
+class RepositorioEnviosDiferido implements RepositorioEnvios {
+  private responder!: (cotizacion: CotizacionEnvio | null) => void;
+  private readonly enVuelo = new Promise<CotizacionEnvio | null>((resolver) => {
+    this.responder = resolver;
+  });
+
+  async cotizar(): Promise<CotizacionEnvio | null> {
+    return this.enVuelo;
+  }
+
+  resolverCon(cotizacion: CotizacionEnvio | null): void {
+    this.responder(cotizacion);
+  }
+}
+
 class RepositorioEnviosPorCiudad implements RepositorioEnvios {
   constructor(private readonly porCiudad: Record<string, CotizacionEnvio | null>) {}
 
@@ -136,13 +156,22 @@ async function renderResumen(carrito: RepositorioCarrito, envios: RepositorioEnv
     providers: [
       ...proveerAlmacenesCarrito(),
       provideRouter([{ path: 'metodo-pago', component: MetodoPagoMudo }]),
-      provideTanStackQuery(new QueryClient()),
+      provideTanStackQuery(clienteDePrueba()),
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
       { provide: REPOSITORIO_PEDIDOS, useValue: new RepositorioPedidosFalso() },
       { provide: REPOSITORIO_PAGOS, useValue: new RepositorioPagosFalso() },
       { provide: REPOSITORIO_ENVIOS, useValue: envios },
     ],
   });
+}
+
+/**
+ * Sin reintentos: TanStack reintenta tres veces con espera creciente por omisión, así que una
+ * consulta que falla tarda segundos en llegar a `isError()` y la prueba que comprueba justamente
+ * ese estado se agota antes. En el navegador el reintento es deseable; aquí solo alarga.
+ */
+function clienteDePrueba(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
 /** Deja el formulario en el estado que dispara la cotización: ciudad y calle. */
@@ -216,6 +245,133 @@ describe('ResumenPage', () => {
     fireEvent.click(continuar);
 
     expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * La carrera que dejó pasar al recorrido de Playwright en la corrida del 13 de septiembre de
+   * 2026: `bloqueadoPorCobertura` mira `isSuccess()`, así que mientras la consulta iba en vuelo
+   * valía `false` y el formulario pasaba. Quien llenaba la dirección y daba clic enseguida se
+   * saltaba el bloqueo y llegaba a confirmar, donde el pedido respondía 409 y la pantalla le decía
+   * "revisa tus datos": no había nada que revisar.
+   *
+   * La prueba anterior no lo atrapaba porque esperaba a ver el mensaje —y para entonces la
+   * cotización ya había vuelto—. Aquí el clic ocurre **antes** de la respuesta, a propósito.
+   */
+  it('no deja continuar si se hace clic con la cotización todavía en vuelo y no hay cobertura', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosDiferido();
+
+    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    // Sin esperar la cotización: es justo el instante en el que antes se colaba.
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    envios.resolverCon(null);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+      expect(checkout.datosEntrega()).toBeNull();
+    });
+  });
+
+  /**
+   * El otro lado, y hace falta: "esperar la cotización" no puede convertirse en "no continuar
+   * nunca". Mismo clic prematuro, pero con tarifa, y el paso sí ocurre.
+   */
+  it('con el clic adelantado, continúa igual cuando la cotización llega con tarifa', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const envios = new RepositorioEnviosDiferido();
+
+    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    envios.resolverCon(COTIZACION);
+
+    await vi.waitFor(() => {
+      expect(checkout.datosEntrega()?.correo).toBe('cliente@tecnosport.co');
+    });
+  });
+
+  /**
+   * Una caída de la cotización no es "no llegamos a esa dirección". Se dice distinto —mandar a
+   * corregir una dirección que estaba bien es culpar al comprador de lo nuestro— y tampoco deja
+   * pasar, porque sin tarifa el pedido responde 409 igual.
+   */
+  it('si la cotización falla lo dice como falla nuestra, no como falta de cobertura', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(new Error('la red se cayó')),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    // Timeout explícito: la consulta reintenta una vez antes de darse por vencida (ver
+    // `usarCotizacionEnvio`), así que `isError()` llega alrededor de un segundo después del
+    // primer fallo — por encima del segundo que Testing Library espera por omisión.
+    expect(
+      await screen.findByText(/No pudimos calcular el costo de envío/, {}, { timeout: 5_000 }),
+    ).toBeTruthy();
+    expect(screen.queryByText(/No tenemos transporte hasta esta dirección/)).toBeNull();
+
+    // Y tampoco un total falso. Este caso se escapó de la primera versión del arreglo:
+    // `totalConocido` comparaba con `!== null`, pero TanStack devuelve `undefined` cuando no hay
+    // datos —`null` es aquí un dato— así que con la consulta caída el subtotal seguía pintándose
+    // como "Total a pagar". Lo encontró el recorrido en el navegador, no esta prueba.
+    const celdaTotal = screen.getByText('Total a pagar').parentElement;
+    expect(celdaTotal?.textContent).toContain('Falta el costo de envío');
+    expect(celdaTotal?.textContent).not.toMatch(/300\.000/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * Sin flete no hay total. Mostrar el subtotal bajo "Total a pagar" es decir un precio que no es
+   * el precio, y el artículo 50 de la Ley 1480 de 2011 pide el desglose completo antes de pagar.
+   */
+  it('sin cobertura no pinta un total que no es el total', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(null));
+    await screen.findByText('Morral urbano');
+
+    await llenarDireccionEnMedellin();
+
+    expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
+    // Se mira la celda del total y no la página entera: 300.000 (2 x 150.000) aparece también
+    // como subtotal y en la línea del producto, y contar apariciones sueltas haría que la prueba
+    // se rompiera al tocar cualquier otra parte del resumen.
+    const celdaTotal = screen.getByText('Total a pagar').parentElement;
+    expect(celdaTotal?.textContent).toContain('Falta el costo de envío');
+    expect(celdaTotal?.textContent).not.toMatch(/300\.000/);
   });
 
   it('el retiro en punto no cotiza nada', async () => {
@@ -324,7 +480,13 @@ describe('ResumenPage', () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
-    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    // Con tarifa, y eso es parte de lo que se prueba: esta prueba pasaba con el cotizador por
+    // omisión —que responde "sin cobertura"— porque el clic llegaba antes que la respuesta y el
+    // bloqueo no había podido aplicarse todavía. Verde por la carrera, no por el comportamiento.
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
@@ -393,7 +555,13 @@ describe('ResumenPage', () => {
   it('sin marcar la autorización de datos, no guarda el borrador', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
-    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
+    // Con tarifa, y eso es parte de lo que se prueba: esta prueba pasaba con el cotizador por
+    // omisión —que responde "sin cobertura"— porque el clic llegaba antes que la respuesta y el
+    // bloqueo no había podido aplicarse todavía. Verde por la carrera, no por el comportamiento.
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 

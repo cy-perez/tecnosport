@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { filter, firstValueFrom } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -88,6 +90,56 @@ export class ConfirmarPage {
   /** Retiro en punto: no hay flete que mostrar, y el total es el subtotal. */
   protected readonly muestraEnvio = computed(() => this.criteriosCotizacion() !== null);
 
+  /**
+   * Los dos motivos por los que puede no haber tarifa, separados igual que en el
+   * resumen. Esta pantalla los mezclaba en un solo `@else` y le decía "no
+   * tenemos transporte hasta esta dirección" a quien en realidad se había topado
+   * con una caída nuestra — mandándolo a corregir una dirección que estaba bien.
+   */
+  protected readonly sinCobertura = computed(
+    () => this.muestraEnvio() && this.cotizacion.isSuccess() && this.cotizacion.data() === null,
+  );
+
+  protected readonly errorCotizacion = computed(
+    () => this.muestraEnvio() && this.cotizacion.isError(),
+  );
+
+  /**
+   * A domicilio y sin tarifa, el subtotal no es el total. Mostrarlo como "Total a
+   * pagar" en la pantalla donde se finaliza la transacción es justo lo que el
+   * artículo 50 de la Ley 1480 de 2011 no permite — y esta pantalla lo hacía,
+   * porque `costoEnvio` cae a cero cuando no hay cotización.
+   *
+   * `!= null` a propósito: TanStack devuelve `undefined` mientras no hay datos y
+   * `null` es aquí un dato ("nadie llega ahí"), así que `!== null` dejaba pasar
+   * el total falso mientras se cotizaba y cuando la consulta se caía.
+   */
+  protected readonly totalConocido = computed(
+    () => !this.muestraEnvio() || this.cotizacion.data() != null,
+  );
+
+  /**
+   * Sin tarifa no hay pedido: el servidor responde 409 y hace bien. El resumen ya
+   * bloquea dos pantallas antes, pero se bloquea también aquí porque a esta se
+   * puede llegar sin pasar por aquella —con la URL, o volviendo atrás después de
+   * cambiar algo— y porque la tarifa puede haber caducado en el camino.
+   *
+   * <p>Exige la tarifa en vez de reconocer su ausencia, por el mismo motivo que en
+   * el resumen: mirar los estados terminales de la consulta deja una rendija entre
+   * que los criterios quedan listos y que TanStack arranca la petición.
+   */
+  protected readonly bloqueadoPorCobertura = computed(() => !this.totalConocido());
+
+  /** Si la consulta ya llegó a un desenlace; no `isFetching`, por la rendija de arriba. */
+  protected readonly cotizacionResuelta = computed(
+    () => !this.muestraEnvio() || this.cotizacion.isSuccess() || this.cotizacion.isError(),
+  );
+
+  private readonly cotizacionResuelta$ = toObservable(this.cotizacionResuelta);
+
+  /** Solo mientras `confirmar()` espera la cotización, para que el botón lo diga. */
+  protected readonly esperandoCotizacion = signal(false);
+
   protected readonly subtotal = computed(() => {
     const datosCarrito = this.carrito.consulta.data();
     if (!datosCarrito) {
@@ -105,7 +157,7 @@ export class ConfirmarPage {
   });
 
   protected readonly enviando = computed(
-    () => this.checkout.creando() || this.checkout.iniciandoPago(),
+    () => this.checkout.creando() || this.checkout.iniciandoPago() || this.esperandoCotizacion(),
   );
 
   constructor() {
@@ -131,6 +183,33 @@ export class ConfirmarPage {
       return;
     }
     this.error.set(null);
+
+    // Igual que en el resumen: primero esperar la cotización si va en vuelo. Decidir con
+    // `isSuccess()` mientras la consulta todavía no ha vuelto es mirar un `false` que solo
+    // significa "aún no sé".
+    if (!this.cotizacionResuelta()) {
+      this.esperandoCotizacion.set(true);
+      try {
+        await firstValueFrom(this.cotizacionResuelta$.pipe(filter((resuelta) => resuelta)));
+      } finally {
+        this.esperandoCotizacion.set(false);
+      }
+    }
+
+    // Sin tarifa no se manda el pedido. Antes se mandaba, el servidor respondía 409 —con razón— y
+    // aquí se traducía a "revisa tus datos e intenta de nuevo": un mensaje que culpa al comprador
+    // de algo que no es suyo y que reintentar no arregla. El texto ahora dice qué pasó y qué
+    // puede hacer, que es volver y elegir la recogida en el punto.
+    if (this.bloqueadoPorCobertura()) {
+      this.error.set(
+        this.transloco.translate(
+          this.sinCobertura()
+            ? 'checkout.confirmar.sin_cobertura'
+            : 'checkout.confirmar.envio_no_calculado',
+        ),
+      );
+      return;
+    }
 
     const comando: CrearPedidoComando = {
       correo: datos.correo,

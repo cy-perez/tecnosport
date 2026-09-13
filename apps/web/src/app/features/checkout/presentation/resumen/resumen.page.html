@@ -90,6 +90,12 @@
             <p class="m-0 text-ts-error" role="alert">
               {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
             </p>
+          } @else if (errorCotizacion()) {
+            <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una
+                 dirección que puede estar bien. Esto es una caída nuestra y se dice como tal. -->
+            <p class="m-0 text-ts-error" role="alert">
+              {{ 'checkout.resumen.envio_no_calculado' | transloco }}
+            </p>
           }
         } @else if (ahorroPorRecoger(); as ahorro) {
           <p class="m-0 text-sm text-ts-texto-suave">
@@ -97,9 +103,26 @@
           </p>
         }
 
+        <!-- Sin flete no hay total. Mostrar el subtotal bajo la etiqueta "Total a pagar" sería
+             decir un precio que no es el precio, justo donde el artículo 50 de la Ley 1480 de
+             2011 exige el desglose completo antes de finalizar. -->
         <div class="flex items-baseline justify-between text-lg font-medio">
           <dt>{{ 'checkout.resumen.total' | transloco }}</dt>
-          <dd class="m-0"><ts-precio [valor]="total()" moneda="COP" /></dd>
+          <dd class="m-0">
+            @if (totalConocido()) {
+              <ts-precio [valor]="total()" moneda="COP" />
+            } @else if (cotizando()) {
+              <!-- "Falta el costo de envío" mientras se está calculando sería contarlo como una
+                   falla: todavía no falta, está en camino. -->
+              <span class="text-base font-regular text-ts-texto-suave">{{
+                'checkout.resumen.envio_calculando' | transloco
+              }}</span>
+            } @else {
+              <span class="text-base font-regular text-ts-texto-suave">{{
+                'checkout.resumen.total_pendiente' | transloco
+              }}</span>
+            }
+          </dd>
         </div>
       </dl>
 
@@ -189,7 +212,12 @@
              tabulación, así que quien navega con teclado llega y no puede enfocarlo para
              entender por qué. Se deja alcanzable y es `enviar()` quien no deja pasar; el motivo
              ya está arriba, en un `role="alert"`. -->
-        <ts-boton variante="primario" tipo="submit">
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="esperandoCotizacion()"
+          [etiquetaCargando]="'checkout.resumen.envio_calculando' | transloco"
+        >
           {{ 'checkout.resumen.continuar' | transloco }}
         </ts-boton>
       </form>

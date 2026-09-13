@@ -1,8 +1,9 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { filter, firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
@@ -246,6 +247,35 @@ export class ResumenPage {
     () => this.criteriosCotizacion() !== null && this.cotizacion.isSuccess() && this.cotizacion.data() === null,
   );
 
+  /**
+   * "No se pudo preguntar", el otro lado de `sinCobertura`. Tenía que existir
+   * aquí y no solo en el texto: sin él, una cotización caída no pintaba nada en
+   * absoluto —ni costo ni motivo— y el total de abajo se quedaba en el subtotal,
+   * que es un total que no es el total. Sigue adelante nadie: el flete que se
+   * cobra sale del servidor, y sin tarifa no hay pedido que crear.
+   */
+  protected readonly errorCotizacion = computed(
+    () => this.criteriosCotizacion() !== null && this.cotizacion.isError(),
+  );
+
+  /**
+   * Solo hay total que mostrar cuando hay con qué sumarlo. A domicilio y sin
+   * tarifa —sin cobertura, o la consulta caída— el subtotal no es el total, y
+   * pintarlo como si lo fuera es justo lo que el artículo 50 de la Ley 1480 de
+   * 2011 no permite antes de finalizar la transacción.
+   *
+   * `!= null` y no `!== null`, y la diferencia no es de estilo: TanStack
+   * devuelve `undefined` mientras no hay datos y `null` es aquí un dato de
+   * verdad ("nadie llega ahí"). Con `!==` esto valía `true` mientras la
+   * cotización iba en vuelo y con la consulta caída, y el total falso volvía a
+   * aparecer en los dos casos. Lo encontró el recorrido en el navegador contra
+   * el backend real, no las pruebas: en jsdom la cotización responde al
+   * instante y ese estado intermedio casi no existe.
+   */
+  protected readonly totalConocido = computed(
+    () => !this.requiereDireccion() || this.cotizacion.data() != null,
+  );
+
   protected readonly costoEnvio = computed(() => this.cotizacion.data()?.costoEnvio ?? 0);
 
   protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
@@ -264,16 +294,45 @@ export class ResumenPage {
   });
 
   /**
-   * Sin transportadora no se puede confirmar un envío a domicilio: el pedido
-   * respondería el mismo 409 dos pantallas después. Se bloquea aquí, junto al
-   * texto que explica por qué y ofrece la recogida.
+   * Sin tarifa no se puede confirmar un envío a domicilio: el pedido respondería el mismo 409 dos
+   * pantallas después. No deshabilita el botón —eso lo sacaría del orden de tabulación— sino que
+   * corta en `enviar()`, con el motivo ya visible y anunciado.
+   *
+   * <p>Está escrito como **"exijo una tarifa"** y no como "sé que no hay tarifa", y esa diferencia
+   * es un segundo error que solo apareció en el navegador. La versión anterior era `sinCobertura()
+   * || errorCotizacion()`, y las dos miran un estado terminal de la consulta: entre el momento en
+   * que la dirección queda completa y el momento en que TanStack arranca la petición —su registro
+   * ocurre en un `effect()`, agendado async, el mismo detalle que documenta `apps/web/CLAUDE.md`
+   * para SSR— no hay ni éxito, ni error, ni `isFetching`. Un clic que caiga en esa rendija veía
+   * las dos señales en `false` y pasaba. Preguntar por la tarifa no tiene rendijas: o está, o no
+   * se sigue.
+   *
+   * <p>Los dos motivos por los que puede faltar se distinguen solo para **decirlos**, con textos
+   * distintos, en la plantilla.
    */
+  protected readonly bloqueadoPorCobertura = computed(() => !this.totalConocido());
+
   /**
-   * Sin transportadora no se puede confirmar un envío a domicilio: el pedido respondería el mismo
-   * 409 dos pantallas después. No deshabilita el botón —eso lo sacaría del orden de tabulación—
-   * sino que corta en `enviar()`, con el motivo ya visible y anunciado.
+   * Si la consulta ya llegó a un desenlace. Es lo que `enviar()` espera, y por lo mismo de arriba
+   * no puede ser `isFetching()`: hay un instante en que la petición todavía no ha arrancado y
+   * `isFetching` es `false` sin que haya nada resuelto.
    */
-  protected readonly bloqueadoPorCobertura = computed(() => this.sinCobertura());
+  protected readonly cotizacionResuelta = computed(
+    () => !this.requiereDireccion() || this.cotizacion.isSuccess() || this.cotizacion.isError(),
+  );
+
+  /**
+   * El desenlace de la cotización, como observable, para poder esperarlo en `enviar()`.
+   * Se crea aquí —contexto de inyección— y no dentro del método.
+   */
+  private readonly cotizacionResuelta$ = toObservable(this.cotizacionResuelta);
+
+  /**
+   * Solo mientras `enviar()` espera la cotización, no cada vez que hay una en
+   * vuelo: el botón no tiene por qué ponerse a cargar mientras el comprador
+   * todavía está llenando el formulario.
+   */
+  protected readonly esperandoCotizacion = signal(false);
 
   constructor() {
     // Recordar la última cotización buena para poder decir cuánto se ahorra
@@ -314,9 +373,35 @@ export class ResumenPage {
     });
   }
 
-  protected enviar(): void {
+  /**
+   * Espera la cotización antes de decidir, y esa espera es el arreglo de una
+   * carrera real: `bloqueadoPorCobertura` mira `isSuccess()`, así que mientras
+   * la consulta iba en vuelo valía `false` y el formulario pasaba. Quien llenaba
+   * la dirección y daba clic enseguida —o el recorrido de Playwright, que tarda
+   * milisegundos— se saltaba el bloqueo y llegaba a confirmar, donde el pedido
+   * respondía 409 y la pantalla le decía "revisa tus datos": no había nada que
+   * revisar, la dirección estaba bien.
+   *
+   * <p>Se espera en vez de bloquear en seco porque bloquear mientras se cotiza
+   * es un botón que no hace nada sin decir por qué. Aquí el botón se pone a
+   * cargar, y al llegar la respuesta o continúa o explica.
+   */
+  protected async enviar(): Promise<void> {
     this.form.markAllAsTouched();
-    if (this.form.invalid || this.bloqueadoPorCobertura()) {
+    if (this.form.invalid) {
+      return;
+    }
+
+    if (!this.cotizacionResuelta()) {
+      this.esperandoCotizacion.set(true);
+      try {
+        await firstValueFrom(this.cotizacionResuelta$.pipe(filter((resuelta) => resuelta)));
+      } finally {
+        this.esperandoCotizacion.set(false);
+      }
+    }
+
+    if (this.bloqueadoPorCobertura()) {
       return;
     }
 

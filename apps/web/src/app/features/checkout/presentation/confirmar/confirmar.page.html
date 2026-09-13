@@ -62,16 +62,38 @@
             <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
           } @else if (cotizacion.data(); as envio) {
             <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
-          } @else {
+          } @else if (sinCobertura()) {
             <span class="text-ts-error" role="alert">{{
               'checkout.resumen.envio_sin_cobertura' | transloco
+            }}</span>
+          } @else {
+            <!-- Un `@else` solo, como estaba, le decía "no llegamos a esa dirección" también a
+                 quien se topó con una caída nuestra: lo mandaba a corregir una dirección que
+                 estaba bien. Son dos cosas distintas y se dicen distinto. -->
+            <span class="text-ts-error" role="alert">{{
+              'checkout.resumen.envio_no_calculado' | transloco
             }}</span>
           }
         </dd>
       }
 
       <dt class="font-medio">{{ 'checkout.resumen.total' | transloco }}</dt>
-      <dd class="font-medio"><ts-precio [valor]="total()" moneda="COP" /></dd>
+      <dd class="font-medio">
+        <!-- Sin flete conocido no hay total: `costoEnvio` cae a cero sin cotización, y eso pintaba
+             el subtotal bajo la etiqueta "Total a pagar" en la pantalla misma donde se finaliza la
+             transacción — que es lo que el artículo 50 de la Ley 1480 de 2011 no permite. -->
+        @if (totalConocido()) {
+          <ts-precio [valor]="total()" moneda="COP" />
+        } @else if (cotizacion.isFetching()) {
+          <span class="font-regular text-ts-texto-suave">{{
+            'checkout.resumen.envio_calculando' | transloco
+          }}</span>
+        } @else {
+          <span class="font-regular text-ts-texto-suave">{{
+            'checkout.resumen.total_pendiente' | transloco
+          }}</span>
+        }
+      </dd>
     </dl>
 
     @if (error()) {

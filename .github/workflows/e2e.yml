@@ -39,10 +39,14 @@ jobs:
       - name: Levantar PostgreSQL
         run: docker compose up -d postgres
 
+      # `-Pperfiles=local,e2e`: `local` siembra el catálogo que el recorrido navega, y `e2e`
+      # sustituye el cliente de Skydropx por CotizadorEnvioSembrado. Sin ese segundo perfil no hay
+      # credenciales del proveedor, el cliente real falla cerrado —como debe— y la compra a
+      # domicilio queda bloqueada en el resumen sin llegar nunca al pedido creado.
       - name: Levantar la API y esperarla
         working-directory: apps/api
         run: |
-          ./gradlew bootRun > /tmp/api.log 2>&1 &
+          ./gradlew bootRun -Pperfiles=local,e2e > /tmp/api.log 2>&1 &
           for intento in $(seq 1 60); do
             if curl -sf http://localhost:8080/api/v1/salud > /dev/null; then
               echo "API arriba al intento $intento"
