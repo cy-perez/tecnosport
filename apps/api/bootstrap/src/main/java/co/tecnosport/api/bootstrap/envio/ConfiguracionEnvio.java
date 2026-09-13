@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
+import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /** Mismo patrón que {@code ConfiguracionCarrito}/{@code ConfiguracionCatalogo}. */
 @Configuration
@@ -46,8 +48,15 @@ public class ConfiguracionEnvio {
    * checkout significa "solo recogida en el punto", que es lo que adr/0021 decidió para cuando no
    * hay tarifa. Se registra igual, y no se deja el puerto sin implementación, porque el día que se
    * confirme el mapeo no hay que tocar el cableado.
+   *
+   * <p>{@code @Profile("!e2e")} y no {@code @ConditionalOnMissingBean}: los recorridos de
+   * Playwright sustituyen este bean por {@link CotizadorEnvioSembrado}, y de las dos formas de
+   * hacerlo esta es la que no se puede leer al revés. Con dos beans registrados y una precedencia,
+   * alguien tiene que saber cuál gana; aquí solo existe uno de los dos y el contenedor no arranca
+   * si el perfil dice otra cosa.
    */
   @Bean
+  @Profile("!e2e")
   public CotizadorEnvio cotizadorEnvio(
       PropiedadesSkydropx skydropx, PropiedadesOrigen origen, Reloj reloj) {
     return new SkydropxClient(
@@ -66,6 +75,18 @@ public class ConfiguracionEnvio {
         skydropx.cotizacionIntentos(),
         INTERVALO_SONDEO,
         reloj);
+  }
+
+  /**
+   * El cotizador de los recorridos de Playwright, y de nada más. El porqué entero está en {@link
+   * CotizadorEnvioSembrado}; lo que importa aquí es que el perfil {@code e2e} no se activa en
+   * ningún despliegue: {@code bootRun} fija {@code local}, el jar de Cloud Run no fija ninguno, y
+   * el único sitio que pide {@code e2e} es el flujo {@code recorridos} de integración continua.
+   */
+  @Bean
+  @Profile("e2e")
+  public CotizadorEnvio cotizadorEnvioSembrado(Reloj reloj) {
+    return new CotizadorEnvioSembrado(reloj);
   }
 
   /**

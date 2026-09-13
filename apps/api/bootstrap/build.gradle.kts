@@ -62,7 +62,15 @@ fun leerVariablesDeEntorno(archivo: java.io.File): Map<String, String> {
 // Solo para desarrollo local: activa SembradorCatalogo (@Profile("local")).
 // No afecta el jar empaquetado que corre en Cloud Run.
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-    systemProperty("spring.profiles.active", "local")
+    // `local` por omisión, y el valor entero se puede reemplazar con -Dperfiles=... El único que
+    // lo hace es el flujo `recorridos` de integración continua, que pide `local,e2e` para que
+    // CotizadorEnvioSembrado sustituya al cliente de Skydropx (sin credenciales allí, el cliente
+    // real falla cerrado y el recorrido de compra a domicilio no llega nunca al pedido creado).
+    //
+    // Es una propiedad de Gradle y no una variable de entorno a propósito: SPRING_PROFILES_ACTIVE
+    // en el entorno la pisaría este systemProperty sin decir nada, y ese es justo el tipo de
+    // configuración que parece aplicada y no lo está.
+    systemProperty("spring.profiles.active", (project.findProperty("perfiles") as String?) ?: "local")
 
     // Spring Boot lee variables de entorno del proceso, no archivos `.env`: sin
     // esto, `.env.local` no tenía ningún efecto sobre `bootRun` y toda la
