@@ -18,6 +18,7 @@ public record PedidoSeguimientoRespuesta(
     UUID id,
     String numeroPedido,
     String correo,
+    ContactoRespuesta contacto,
     List<LineaPedidoRespuesta> lineas,
     String tipoEntrega,
     DireccionRespuesta direccion,

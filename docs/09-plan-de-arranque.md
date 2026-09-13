@@ -489,11 +489,12 @@ tampoco se puede dar por resuelto:
   construirse.~~ Cerrado en la Fase 4, Track A — ver más abajo.
 - **Rotación de clave de un ADMIN ya creado**: sigue sin construirse (ya
   estaba anotado).
-- **El historial de rechazos en la entrega compara solo por correo**, sin
-  teléfono en el dominio. Un mismo comprador con otro correo, o un rechazo
-  reportado solo por teléfono, no se detecta — riesgo de negocio real,
-  aceptado implícitamente al no haber campo de teléfono, nunca discutido
-  como una decisión consciente hasta este cierre.
+- **El historial de rechazos en la entrega compara solo por correo.** Desde
+  el 13 de septiembre de 2026 el pedido sí guarda nombre y teléfono de quien
+  recibe (`Contacto`, `V36`) —el recorrido visual encontró que el checkout no
+  los pedía y sin ellos no hay guía ni contraentrega—, pero el historial de
+  rechazos todavía no los usa: un mismo comprador con otro correo sigue sin
+  detectarse. Ya no es por falta del dato; queda como decisión pendiente.
 - **Sin tope al número de reintentos de un pago fallido** — cada uno
   re-reserva inventario. No se decidió si debería tener un límite.
 - **Sin pruebas contra Wompi sandbox real** (ya estaba anotado, faltan

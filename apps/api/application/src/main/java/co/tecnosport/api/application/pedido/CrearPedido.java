@@ -122,6 +122,11 @@ public final class CrearPedido {
     if (comando.lineas() == null || comando.lineas().isEmpty()) {
       throw new ExcepcionDeDominio("Un pedido no se confirma sin líneas.");
     }
+    // Aquí y no en el constructor de Pedido, por lo mismo que la tarifa (docs/02-modelo-datos.md):
+    // el agregado también reconstruye los pedidos anteriores a este campo, que no lo tienen.
+    if (comando.contacto() == null) {
+      throw new ExcepcionDeDominio("Un pedido exige el nombre y el teléfono de quien recibe.");
+    }
     Instant ahora = reloj.ahora();
     CorreoElectronico correoComprador = new CorreoElectronico(comando.correo());
     if (!limitadorDeIntentos.permitir(
@@ -165,7 +170,8 @@ public final class CrearPedido {
             comando.metodoPago(),
             comando.correo(),
             ahora,
-            tarifaEnvio);
+            tarifaEnvio,
+            comando.contacto());
 
     repositorioPedidos.guardar(pedido);
     repositorioAutorizaciones.guardar(

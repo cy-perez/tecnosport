@@ -49,6 +49,7 @@ public class MapeadorSeguimiento {
         completa.id(),
         completa.numeroPedido(),
         completa.correo(),
+        completa.contacto(),
         completa.lineas(),
         completa.tipoEntrega(),
         completa.direccion(),

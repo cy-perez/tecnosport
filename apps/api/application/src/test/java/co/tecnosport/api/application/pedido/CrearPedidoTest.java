@@ -25,6 +25,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
@@ -35,6 +36,7 @@ import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
 import co.tecnosport.api.domain.legal.AutorizacionRequeridaException;
 import co.tecnosport.api.domain.legal.OrigenAutorizacion;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -84,6 +86,7 @@ class CrearPedidoTest {
 
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final String IP = "190.24.10.5";
+  private static final Contacto CONTACTO = new Contacto("Ana Pérez", "3138816711");
 
   private Variante variante;
 
@@ -164,6 +167,7 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
         TipoEntrega.RETIRO_EN_PUNTO,
         null,
@@ -176,12 +180,50 @@ class CrearPedidoTest {
     return new CrearPedidoComando(
         null,
         "cliente@tecnosport.co",
+        CONTACTO,
         List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
         TipoEntrega.ENVIO_A_DOMICILIO,
         DIRECCION_MEDELLIN,
         metodoPago,
         true,
         IP);
+  }
+
+  /**
+   * Sin nombre ni teléfono no hay guía que emitir ni mensajero que avise. La exigencia vive aquí y
+   * no en el agregado, que también reconstruye los pedidos anteriores a este campo.
+   */
+  @Test
+  void sinContactoNoCreaElPedidoNiReservaNada() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    CrearPedidoComando sinContacto =
+        new CrearPedidoComando(
+            null,
+            "cliente@tecnosport.co",
+            null,
+            List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.NEQUI,
+            true,
+            IP);
+
+    assertThrows(ExcepcionDeDominio.class, () -> caso.ejecutar(sinContacto));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  @Test
+  void elPedidoCreadoConservaElContacto() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 1));
+
+    assertEquals(CONTACTO, pedido.contacto().orElseThrow());
   }
 
   @Test
@@ -435,6 +477,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.RETIRO_EN_PUNTO,
             null,
@@ -505,6 +548,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(UUID.randomUUID(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
@@ -542,6 +586,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(varianteSinPublicar.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
@@ -604,6 +649,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,
@@ -627,6 +673,7 @@ class CrearPedidoTest {
         new CrearPedidoComando(
             null,
             "cliente@tecnosport.co",
+            CONTACTO,
             List.of(new CrearPedidoComando.LineaComando(variante.id(), 1)),
             TipoEntrega.ENVIO_A_DOMICILIO,
             DIRECCION_MEDELLIN,

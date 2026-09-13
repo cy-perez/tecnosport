@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.HistorialPedido;
@@ -203,7 +204,16 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         historialJpa.stream().map(this::aHistorial).toList(),
         entidad.getCreadoEn(),
         entidad.getAvisoPlazoEntregaEnviadoEn(),
-        aTarifa(entidad));
+        aTarifa(entidad),
+        aContacto(entidad));
+  }
+
+  /** Los dos o ninguno, garantizado por el {@code check} de {@code V36}; basta mirar el nombre. */
+  private Contacto aContacto(PedidoJpaEntity entidad) {
+    if (entidad.getNombreContacto() == null) {
+      return null;
+    }
+    return new Contacto(entidad.getNombreContacto(), entidad.getTelefonoContacto());
   }
 
   /**
@@ -245,6 +255,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   private PedidoJpaEntity aEntidad(Pedido pedido) {
     Direccion direccion = pedido.direccion().orElse(null);
     TarifaEnvio tarifa = pedido.tarifaEnvio().orElse(null);
+    Contacto contacto = pedido.contacto().orElse(null);
     return new PedidoJpaEntity(
         pedido.id(),
         pedido.numeroPedido().valor(),
@@ -267,7 +278,9 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         tarifa == null ? null : tarifa.servicio(),
         tarifa == null ? null : tarifa.diasEstimados(),
         tarifa == null ? null : tarifa.admiteContraentrega(),
-        tarifa == null ? null : tarifa.venceEn());
+        tarifa == null ? null : tarifa.venceEn(),
+        contacto == null ? null : contacto.nombre(),
+        contacto == null ? null : contacto.telefono());
   }
 
   private LineaPedidoJpaEntity aEntidadLinea(UUID pedidoId, LineaPedido l) {
