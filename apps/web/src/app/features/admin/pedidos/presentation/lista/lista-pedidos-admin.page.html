@@ -34,361 +34,376 @@
       }}
     </p>
   } @else {
-    <table
-      class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
-    >
-      <thead>
-        <tr>
-          <th scope="col">{{ 'admin.pedidos.columnas.numero' | transloco }}</th>
-          <th scope="col">{{ 'admin.pedidos.columnas.correo' | transloco }}</th>
-          <th scope="col">{{ 'admin.pedidos.columnas.estado' | transloco }}</th>
-          <th scope="col">{{ 'admin.pedidos.columnas.total' | transloco }}</th>
-          <th scope="col">{{ 'admin.pedidos.columnas.fecha' | transloco }}</th>
-          <th scope="col">
-            <span class="sr-only">{{ 'admin.pedidos.columnas.detalle' | transloco }}</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (pedido of pedidos(); track pedido.id) {
+    <!-- Mismo criterio que la lista de productos: seis columnas no caben en un
+         teléfono —medido a 390 px, el documento se iba a 796 px y la página
+         entera se desplazaba en horizontal, encabezado incluido—. La tabla se
+         desplaza dentro de su propia caja.
+
+         `relative` no es decorativo: el `sr-only` de la última columna es
+         `position: absolute`, y sin un ancestro posicionado dentro de la caja
+         su bloque contenedor era `app-root`, así que se pintaba a 705 px del
+         borde, **fuera** del recorte, y el documento seguía desbordando aunque
+         la tabla ya no. Medido: 705 px de ancho de documento con la caja y sin
+         `relative`; 375 con las dos. -->
+    <div class="relative overflow-x-auto">
+      <table
+        class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+      >
+        <thead>
           <tr>
-            <td>{{ pedido.numeroPedido }}</td>
-            <td>{{ pedido.correo }}</td>
-            <td>
-              {{ etiquetaEstado(pedido.estado) }}
-              @if (pedido.plazoDeEntrega; as plazo) {
-                @if (plazo.verdicto === 'VENCIDO') {
-                  <!-- Vencido y sin avisar es lo accionable; vencido y ya avisado es seguimiento.
+            <th scope="col">{{ 'admin.pedidos.columnas.numero' | transloco }}</th>
+            <th scope="col">{{ 'admin.pedidos.columnas.correo' | transloco }}</th>
+            <th scope="col">{{ 'admin.pedidos.columnas.estado' | transloco }}</th>
+            <th scope="col">{{ 'admin.pedidos.columnas.total' | transloco }}</th>
+            <th scope="col">{{ 'admin.pedidos.columnas.fecha' | transloco }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ 'admin.pedidos.columnas.detalle' | transloco }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pedido of pedidos(); track pedido.id) {
+            <tr>
+              <td>{{ pedido.numeroPedido }}</td>
+              <td>{{ pedido.correo }}</td>
+              <td>
+                {{ etiquetaEstado(pedido.estado) }}
+                @if (pedido.plazoDeEntrega; as plazo) {
+                  @if (plazo.verdicto === 'VENCIDO') {
+                    <!-- Vencido y sin avisar es lo accionable; vencido y ya avisado es seguimiento.
                        Pintarlos igual obligaba a expandir fila por fila para saber cuál era cuál. -->
-                  @if (plazo.avisadoEn) {
-                    <span class="block text-ts-texto-suave">
-                      {{ 'admin.pedidos.plazo_entrega.verdicto.vencido_avisado' | transloco }}
-                    </span>
-                  } @else {
-                    <span class="block text-ts-error">
-                      {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
-                    </span>
+                    @if (plazo.avisadoEn) {
+                      <span class="block text-ts-texto-suave">
+                        {{ 'admin.pedidos.plazo_entrega.verdicto.vencido_avisado' | transloco }}
+                      </span>
+                    } @else {
+                      <span class="block text-ts-error">
+                        {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
+                      </span>
+                    }
                   }
                 }
-              }
-            </td>
-            <td><ts-precio [valor]="pedido.total.valor" [moneda]="pedido.total.moneda" /></td>
-            <td>{{ formatearFecha(pedido.creadoEn) }}</td>
-            <td>
-              <ts-boton
-                variante="texto"
-                [attr.aria-expanded]="pedidoExpandidoId() === pedido.id"
-                [attr.aria-controls]="'detalle-' + pedido.id"
-                (click)="alternarExpandido(pedido.id)"
-              >
-                {{
-                  (pedidoExpandidoId() === pedido.id
-                    ? 'admin.pedidos.lista.ocultar'
-                    : 'admin.pedidos.lista.ver_detalle'
-                  ) | transloco
-                }}
-              </ts-boton>
-            </td>
-          </tr>
+              </td>
+              <td><ts-precio [valor]="pedido.total.valor" [moneda]="pedido.total.moneda" /></td>
+              <td>{{ formatearFecha(pedido.creadoEn) }}</td>
+              <td>
+                <ts-boton
+                  variante="texto"
+                  [attr.aria-expanded]="pedidoExpandidoId() === pedido.id"
+                  [attr.aria-controls]="'detalle-' + pedido.id"
+                  (click)="alternarExpandido(pedido.id)"
+                >
+                  {{
+                    (pedidoExpandidoId() === pedido.id
+                      ? 'admin.pedidos.lista.ocultar'
+                      : 'admin.pedidos.lista.ver_detalle'
+                    ) | transloco
+                  }}
+                </ts-boton>
+              </td>
+            </tr>
 
-          @if (pedidoExpandidoId() === pedido.id) {
-            <tr [id]="'detalle-' + pedido.id" class="bg-ts-superficie-alt">
-              <td colspan="6">
-                @if (pedido.plazoDeEntrega; as plazo) {
+            @if (pedidoExpandidoId() === pedido.id) {
+              <tr [id]="'detalle-' + pedido.id" class="bg-ts-superficie-alt">
+                <td colspan="6">
+                  @if (pedido.plazoDeEntrega; as plazo) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.plazo_entrega.titulo' | transloco }}
+                    </h2>
+                    <dl class="m-0 mb-8">
+                      <dt class="text-ts-texto-suave">
+                        {{ 'admin.pedidos.plazo_entrega.limite' | transloco }}
+                      </dt>
+                      <dd class="m-0 mb-8">
+                        {{ formatearUltimoDia(plazo.limite) }}
+                        @if (plazo.verdicto === 'VENCIDO') {
+                          <span class="block text-ts-error">
+                            {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
+                          </span>
+                        } @else {
+                          <span class="block text-ts-texto-suave">
+                            {{ 'admin.pedidos.plazo_entrega.verdicto.en_plazo' | transloco }}
+                          </span>
+                        }
+                      </dd>
+
+                      <dt class="text-ts-texto-suave">
+                        {{ 'admin.pedidos.plazo_entrega.aviso' | transloco }}
+                      </dt>
+                      <dd class="m-0 mb-8">
+                        @if (plazo.avisadoEn; as avisadoEn) {
+                          {{
+                            'admin.pedidos.plazo_entrega.avisado_el'
+                              | transloco: { fecha: formatearFecha(avisadoEn) }
+                          }}
+                        } @else {
+                          <span class="text-ts-texto-suave">
+                            {{ 'admin.pedidos.plazo_entrega.sin_aviso' | transloco }}
+                          </span>
+                        }
+                      </dd>
+                    </dl>
+
+                    @if (plazo.verdicto === 'VENCIDO') {
+                      <p class="mb-8 text-ts-texto-suave">
+                        @if (pedido.estado === 'DESPACHADO') {
+                          {{ 'admin.pedidos.plazo_entrega.que_sigue_despachado' | transloco }}
+                        } @else {
+                          {{ 'admin.pedidos.plazo_entrega.que_sigue' | transloco }}
+                        }
+                      </p>
+                    }
+                  }
+
                   <h2 class="mt-16 mb-8 text-base font-medio">
-                    {{ 'admin.pedidos.plazo_entrega.titulo' | transloco }}
+                    {{ 'admin.pedidos.detalle.lineas' | transloco }}
                   </h2>
-                  <dl class="m-0 mb-8">
-                    <dt class="text-ts-texto-suave">
-                      {{ 'admin.pedidos.plazo_entrega.limite' | transloco }}
-                    </dt>
-                    <dd class="m-0 mb-8">
-                      {{ formatearUltimoDia(plazo.limite) }}
-                      @if (plazo.verdicto === 'VENCIDO') {
-                        <span class="block text-ts-error">
-                          {{ 'admin.pedidos.plazo_entrega.verdicto.vencido' | transloco }}
-                        </span>
-                      } @else {
-                        <span class="block text-ts-texto-suave">
-                          {{ 'admin.pedidos.plazo_entrega.verdicto.en_plazo' | transloco }}
-                        </span>
-                      }
-                    </dd>
+                  <ul class="m-0 pl-16">
+                    @for (linea of pedido.lineas; track linea.id) {
+                      <li>
+                        {{ linea.cantidad }} × {{ linea.nombre }} ({{ linea.sku }}) —
+                        <ts-precio
+                          [valor]="linea.precioUnitario.valor"
+                          [moneda]="linea.precioUnitario.moneda"
+                        />
+                      </li>
+                    }
+                  </ul>
 
-                    <dt class="text-ts-texto-suave">
-                      {{ 'admin.pedidos.plazo_entrega.aviso' | transloco }}
-                    </dt>
-                    <dd class="m-0 mb-8">
-                      @if (plazo.avisadoEn; as avisadoEn) {
-                        {{
-                          'admin.pedidos.plazo_entrega.avisado_el'
-                            | transloco: { fecha: formatearFecha(avisadoEn) }
-                        }}
-                      } @else {
-                        <span class="text-ts-texto-suave">
-                          {{ 'admin.pedidos.plazo_entrega.sin_aviso' | transloco }}
-                        </span>
-                      }
-                    </dd>
-                  </dl>
-
-                  @if (plazo.verdicto === 'VENCIDO') {
-                    <p class="mb-8 text-ts-texto-suave">
-                      @if (pedido.estado === 'DESPACHADO') {
-                        {{ 'admin.pedidos.plazo_entrega.que_sigue_despachado' | transloco }}
-                      } @else {
-                        {{ 'admin.pedidos.plazo_entrega.que_sigue' | transloco }}
+                  @if (pedido.direccion; as direccion) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.detalle.direccion' | transloco }}
+                    </h2>
+                    <p>
+                      {{ direccion.direccion }}, {{ direccion.ciudad }},
+                      {{ direccion.departamento }}
+                      @if (direccion.indicaciones) {
+                        — {{ direccion.indicaciones }}
                       }
                     </p>
                   }
-                }
 
-                <h2 class="mt-16 mb-8 text-base font-medio">
-                  {{ 'admin.pedidos.detalle.lineas' | transloco }}
-                </h2>
-                <ul class="m-0 pl-16">
-                  @for (linea of pedido.lineas; track linea.id) {
-                    <li>
-                      {{ linea.cantidad }} × {{ linea.nombre }} ({{ linea.sku }}) —
-                      <ts-precio
-                        [valor]="linea.precioUnitario.valor"
-                        [moneda]="linea.precioUnitario.moneda"
-                      />
-                    </li>
+                  @if (pedido.datosTransferencia; as transferencia) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.detalle.transferencia' | transloco }}
+                    </h2>
+                    <p>
+                      {{ transferencia.banco }} — {{ transferencia.tipoCuenta }}
+                      {{ transferencia.numeroCuenta }} — {{ transferencia.titular }} —
+                      {{ 'admin.pedidos.detalle.referencia' | transloco }}:
+                      {{ transferencia.referencia }}
+                    </p>
                   }
-                </ul>
 
-                @if (pedido.direccion; as direccion) {
-                  <h2 class="mt-16 mb-8 text-base font-medio">
-                    {{ 'admin.pedidos.detalle.direccion' | transloco }}
-                  </h2>
-                  <p>
-                    {{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}
-                    @if (direccion.indicaciones) {
-                      — {{ direccion.indicaciones }}
-                    }
-                  </p>
-                }
-
-                @if (pedido.datosTransferencia; as transferencia) {
-                  <h2 class="mt-16 mb-8 text-base font-medio">
-                    {{ 'admin.pedidos.detalle.transferencia' | transloco }}
-                  </h2>
-                  <p>
-                    {{ transferencia.banco }} — {{ transferencia.tipoCuenta }}
-                    {{ transferencia.numeroCuenta }} — {{ transferencia.titular }} —
-                    {{ 'admin.pedidos.detalle.referencia' | transloco }}:
-                    {{ transferencia.referencia }}
-                  </p>
-                }
-
-                @if (pedido.envio; as envio) {
-                  <h2 class="mt-16 mb-8 text-base font-medio">
-                    {{ 'admin.pedidos.detalle.envio' | transloco }}
-                  </h2>
-                  <p>
-                    {{ envio.transportadora }} — {{ envio.guia }} —
-                    <ts-precio
-                      [valor]="envio.costoEnvio.valor"
-                      [moneda]="envio.costoEnvio.moneda"
-                    />
-                    @if (envio.comisionRecaudo) {
-                      — {{ 'admin.pedidos.detalle.comision' | transloco }}:
+                  @if (pedido.envio; as envio) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.detalle.envio' | transloco }}
+                    </h2>
+                    <p>
+                      {{ envio.transportadora }} — {{ envio.guia }} —
                       <ts-precio
-                        [valor]="envio.comisionRecaudo.valor"
-                        [moneda]="envio.comisionRecaudo.moneda"
+                        [valor]="envio.costoEnvio.valor"
+                        [moneda]="envio.costoEnvio.moneda"
                       />
-                    }
-                  </p>
-                }
-
-                <h2 class="mt-16 mb-8 text-base font-medio">
-                  {{ 'admin.pedidos.detalle.historial' | transloco }}
-                </h2>
-                <ul class="m-0 pl-16">
-                  @for (entrada of pedido.historial; track entrada.fecha + entrada.estado) {
-                    <li>
-                      {{ formatearFecha(entrada.fecha) }} — {{ etiquetaEstado(entrada.estado) }} —
-                      {{ entrada.motivo }}
-                    </li>
+                      @if (envio.comisionRecaudo) {
+                        — {{ 'admin.pedidos.detalle.comision' | transloco }}:
+                        <ts-precio
+                          [valor]="envio.comisionRecaudo.valor"
+                          [moneda]="envio.comisionRecaudo.moneda"
+                        />
+                      }
+                    </p>
                   }
-                </ul>
 
-                <h2 class="mt-16 mb-8 text-base font-medio">
-                  {{ 'admin.pedidos.detalle.acciones' | transloco }}
-                </h2>
-                @switch (pedido.estado) {
-                  @case ('PAGO_PENDIENTE') {
-                    @if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
-                      <ts-boton
-                        [cargando]="conciliandoTransferencia(pedido.id)"
-                        (click)="conciliarTransferencia(pedido.id)"
+                  <h2 class="mt-16 mb-8 text-base font-medio">
+                    {{ 'admin.pedidos.detalle.historial' | transloco }}
+                  </h2>
+                  <ul class="m-0 pl-16">
+                    @for (entrada of pedido.historial; track entrada.fecha + entrada.estado) {
+                      <li>
+                        {{ formatearFecha(entrada.fecha) }} — {{ etiquetaEstado(entrada.estado) }} —
+                        {{ entrada.motivo }}
+                      </li>
+                    }
+                  </ul>
+
+                  <h2 class="mt-16 mb-8 text-base font-medio">
+                    {{ 'admin.pedidos.detalle.acciones' | transloco }}
+                  </h2>
+                  @switch (pedido.estado) {
+                    @case ('PAGO_PENDIENTE') {
+                      @if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
+                        <ts-boton
+                          [cargando]="conciliandoTransferencia(pedido.id)"
+                          (click)="conciliarTransferencia(pedido.id)"
+                        >
+                          {{ 'admin.pedidos.acciones.conciliar_transferencia' | transloco }}
+                        </ts-boton>
+                      } @else {
+                        <span class="text-ts-texto-suave">{{
+                          'admin.pedidos.acciones.sin_accion' | transloco
+                        }}</span>
+                      }
+                    }
+                    @case ('CONFIRMADO_CONTRAENTREGA') {
+                      <form
+                        [formGroup]="formularioMotivo(pedido.id)"
+                        (submit)="$event.preventDefault(); verificarContraentrega(pedido)"
                       >
-                        {{ 'admin.pedidos.acciones.conciliar_transferencia' | transloco }}
+                        <ts-campo
+                          [idCampo]="'motivo-verificar-' + pedido.id"
+                          [label]="'admin.pedidos.acciones.motivo' | transloco"
+                          formControlName="motivo"
+                        />
+                        <ts-boton tipo="submit" [cargando]="verificandoContraentrega(pedido.id)">
+                          {{ 'admin.pedidos.acciones.verificar_contraentrega' | transloco }}
+                        </ts-boton>
+                      </form>
+                    }
+                    @case ('EN_PREPARACION') {
+                      <form
+                        [formGroup]="formularioDespacho(pedido.id)"
+                        (submit)="$event.preventDefault(); despachar(pedido)"
+                      >
+                        <ts-campo
+                          [idCampo]="'transportadora-' + pedido.id"
+                          [label]="'admin.pedidos.acciones.transportadora' | transloco"
+                          formControlName="transportadora"
+                        />
+                        <ts-campo
+                          [idCampo]="'guia-' + pedido.id"
+                          [label]="'admin.pedidos.acciones.guia' | transloco"
+                          formControlName="guia"
+                        />
+                        <ts-campo
+                          [idCampo]="'costo-envio-' + pedido.id"
+                          tipo="number"
+                          [label]="'admin.pedidos.acciones.costo_envio' | transloco"
+                          formControlName="costoEnvio"
+                        />
+                        <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
+                          {{ 'admin.pedidos.acciones.despachar' | transloco }}
+                        </ts-boton>
+                      </form>
+                    }
+                    @case ('DESPACHADO') {
+                      <ts-boton
+                        [cargando]="marcandoEntregado(pedido.id)"
+                        (click)="marcarEntregado(pedido.id)"
+                      >
+                        {{ 'admin.pedidos.acciones.marcar_entregado' | transloco }}
                       </ts-boton>
-                    } @else {
+
+                      <form
+                        [formGroup]="formularioMotivo(pedido.id)"
+                        (submit)="$event.preventDefault(); rechazarEnEntrega(pedido)"
+                      >
+                        <ts-campo
+                          [idCampo]="'motivo-rechazo-' + pedido.id"
+                          [label]="'admin.pedidos.acciones.motivo' | transloco"
+                          formControlName="motivo"
+                        />
+                        <ts-boton
+                          variante="peligro"
+                          tipo="submit"
+                          [cargando]="rechazando(pedido.id)"
+                        >
+                          {{ 'admin.pedidos.acciones.rechazar_en_entrega' | transloco }}
+                        </ts-boton>
+                      </form>
+                    }
+                    @case ('RECAUDO_PENDIENTE') {
+                      <form
+                        [formGroup]="formularioRecaudo(pedido.id)"
+                        (submit)="$event.preventDefault(); conciliarRecaudo(pedido)"
+                      >
+                        <ts-campo
+                          [idCampo]="'comision-' + pedido.id"
+                          tipo="number"
+                          [label]="'admin.pedidos.acciones.comision_recaudo' | transloco"
+                          formControlName="comisionRecaudo"
+                        />
+                        <ts-boton tipo="submit" [cargando]="conciliandoRecaudo(pedido.id)">
+                          {{ 'admin.pedidos.acciones.conciliar_recaudo' | transloco }}
+                        </ts-boton>
+                      </form>
+                    }
+                    @default {
                       <span class="text-ts-texto-suave">{{
                         'admin.pedidos.acciones.sin_accion' | transloco
                       }}</span>
                     }
                   }
-                  @case ('CONFIRMADO_CONTRAENTREGA') {
-                    <form
-                      [formGroup]="formularioMotivo(pedido.id)"
-                      (submit)="$event.preventDefault(); verificarContraentrega(pedido)"
-                    >
-                      <ts-campo
-                        [idCampo]="'motivo-verificar-' + pedido.id"
-                        [label]="'admin.pedidos.acciones.motivo' | transloco"
-                        formControlName="motivo"
-                      />
-                      <ts-boton tipo="submit" [cargando]="verificandoContraentrega(pedido.id)">
-                        {{ 'admin.pedidos.acciones.verificar_contraentrega' | transloco }}
-                      </ts-boton>
-                    </form>
-                  }
-                  @case ('EN_PREPARACION') {
-                    <form
-                      [formGroup]="formularioDespacho(pedido.id)"
-                      (submit)="$event.preventDefault(); despachar(pedido)"
-                    >
-                      <ts-campo
-                        [idCampo]="'transportadora-' + pedido.id"
-                        [label]="'admin.pedidos.acciones.transportadora' | transloco"
-                        formControlName="transportadora"
-                      />
-                      <ts-campo
-                        [idCampo]="'guia-' + pedido.id"
-                        [label]="'admin.pedidos.acciones.guia' | transloco"
-                        formControlName="guia"
-                      />
-                      <ts-campo
-                        [idCampo]="'costo-envio-' + pedido.id"
-                        tipo="number"
-                        [label]="'admin.pedidos.acciones.costo_envio' | transloco"
-                        formControlName="costoEnvio"
-                      />
-                      <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
-                        {{ 'admin.pedidos.acciones.despachar' | transloco }}
-                      </ts-boton>
-                    </form>
-                  }
-                  @case ('DESPACHADO') {
-                    <ts-boton
-                      [cargando]="marcandoEntregado(pedido.id)"
-                      (click)="marcarEntregado(pedido.id)"
-                    >
-                      {{ 'admin.pedidos.acciones.marcar_entregado' | transloco }}
-                    </ts-boton>
 
+                  @if (puedeCancelar(pedido)) {
                     <form
-                      [formGroup]="formularioMotivo(pedido.id)"
-                      (submit)="$event.preventDefault(); rechazarEnEntrega(pedido)"
+                      class="mt-16"
+                      [formGroup]="formularioCancelacion(pedido.id)"
+                      (submit)="$event.preventDefault(); cancelar(pedido)"
                     >
-                      <ts-campo
-                        [idCampo]="'motivo-rechazo-' + pedido.id"
-                        [label]="'admin.pedidos.acciones.motivo' | transloco"
-                        formControlName="motivo"
-                      />
-                      <ts-boton variante="peligro" tipo="submit" [cargando]="rechazando(pedido.id)">
-                        {{ 'admin.pedidos.acciones.rechazar_en_entrega' | transloco }}
-                      </ts-boton>
-                    </form>
-                  }
-                  @case ('RECAUDO_PENDIENTE') {
-                    <form
-                      [formGroup]="formularioRecaudo(pedido.id)"
-                      (submit)="$event.preventDefault(); conciliarRecaudo(pedido)"
-                    >
-                      <ts-campo
-                        [idCampo]="'comision-' + pedido.id"
-                        tipo="number"
-                        [label]="'admin.pedidos.acciones.comision_recaudo' | transloco"
-                        formControlName="comisionRecaudo"
-                      />
-                      <ts-boton tipo="submit" [cargando]="conciliandoRecaudo(pedido.id)">
-                        {{ 'admin.pedidos.acciones.conciliar_recaudo' | transloco }}
-                      </ts-boton>
-                    </form>
-                  }
-                  @default {
-                    <span class="text-ts-texto-suave">{{
-                      'admin.pedidos.acciones.sin_accion' | transloco
-                    }}</span>
-                  }
-                }
-
-                @if (puedeCancelar(pedido)) {
-                  <form
-                    class="mt-16"
-                    [formGroup]="formularioCancelacion(pedido.id)"
-                    (submit)="$event.preventDefault(); cancelar(pedido)"
-                  >
-                    <h2 class="mt-0 mb-8 text-base font-medio">
-                      {{ 'admin.pedidos.cancelacion.titulo' | transloco }}
-                    </h2>
-                    <p class="mt-0 mb-8 text-ts-texto-suave">
-                      {{ 'admin.pedidos.cancelacion.ayuda' | transloco }}
-                    </p>
-                    <ts-select
-                      [idCampo]="'cancelacion-motivo-' + pedido.id"
-                      [label]="'admin.pedidos.cancelacion.motivo' | transloco"
-                      [opciones]="opcionesMotivoCancelacion()"
-                      formControlName="motivo"
-                    />
-                    @if (elDineroYaEntro(pedido)) {
-                      <ts-campo
-                        [idCampo]="'cancelacion-monto-' + pedido.id"
-                        tipo="number"
-                        [label]="'admin.pedidos.cancelacion.monto' | transloco"
-                        [ayuda]="'admin.pedidos.cancelacion.dinero_ayuda' | transloco"
-                        formControlName="monto"
-                      />
-                      <ts-campo
-                        [idCampo]="'cancelacion-comprobante-' + pedido.id"
-                        [label]="'admin.pedidos.cancelacion.comprobante' | transloco"
-                        formControlName="comprobante"
-                      />
-                    } @else {
+                      <h2 class="mt-0 mb-8 text-base font-medio">
+                        {{ 'admin.pedidos.cancelacion.titulo' | transloco }}
+                      </h2>
                       <p class="mt-0 mb-8 text-ts-texto-suave">
-                        {{ 'admin.pedidos.cancelacion.sin_dinero' | transloco }}
+                        {{ 'admin.pedidos.cancelacion.ayuda' | transloco }}
                       </p>
-                    }
-                    <ts-boton
-                      variante="secundario"
-                      tipo="submit"
-                      [cargando]="acciones.cancelar.isPending()"
-                    >
-                      {{ 'admin.pedidos.cancelacion.cancelar' | transloco }}
-                    </ts-boton>
-                  </form>
-                }
+                      <ts-select
+                        [idCampo]="'cancelacion-motivo-' + pedido.id"
+                        [label]="'admin.pedidos.cancelacion.motivo' | transloco"
+                        [opciones]="opcionesMotivoCancelacion()"
+                        formControlName="motivo"
+                      />
+                      @if (elDineroYaEntro(pedido)) {
+                        <ts-campo
+                          [idCampo]="'cancelacion-monto-' + pedido.id"
+                          tipo="number"
+                          [label]="'admin.pedidos.cancelacion.monto' | transloco"
+                          [ayuda]="'admin.pedidos.cancelacion.dinero_ayuda' | transloco"
+                          formControlName="monto"
+                        />
+                        <ts-campo
+                          [idCampo]="'cancelacion-comprobante-' + pedido.id"
+                          [label]="'admin.pedidos.cancelacion.comprobante' | transloco"
+                          formControlName="comprobante"
+                        />
+                      } @else {
+                        <p class="mt-0 mb-8 text-ts-texto-suave">
+                          {{ 'admin.pedidos.cancelacion.sin_dinero' | transloco }}
+                        </p>
+                      }
+                      <ts-boton
+                        variante="secundario"
+                        tipo="submit"
+                        [cargando]="acciones.cancelar.isPending()"
+                      >
+                        {{ 'admin.pedidos.cancelacion.cancelar' | transloco }}
+                      </ts-boton>
+                    </form>
+                  }
 
-                <app-panel-retracto
-                  [pedidoId]="pedido.id"
-                  [estadoPedido]="pedido.estado"
-                  [totalPedido]="pedido.total.valor"
-                  [dineroRecibido]="pedido.dineroRecibido.valor"
-                  [yaDevuelto]="pedido.yaDevuelto.valor"
-                />
+                  <app-panel-retracto
+                    [pedidoId]="pedido.id"
+                    [estadoPedido]="pedido.estado"
+                    [totalPedido]="pedido.total.valor"
+                    [dineroRecibido]="pedido.dineroRecibido.valor"
+                    [yaDevuelto]="pedido.yaDevuelto.valor"
+                  />
 
-                <app-panel-garantia
-                  [pedidoId]="pedido.id"
-                  [estadoPedido]="pedido.estado"
-                  [lineas]="pedido.lineas"
-                  [totalPedido]="pedido.total.valor"
-                />
+                  <app-panel-garantia
+                    [pedidoId]="pedido.id"
+                    [estadoPedido]="pedido.estado"
+                    [lineas]="pedido.lineas"
+                    [totalPedido]="pedido.total.valor"
+                  />
 
-                <app-panel-reversion
-                  [pedidoId]="pedido.id"
-                  [totalPedido]="pedido.total.valor"
-                />
-              </td>
-            </tr>
+                  <app-panel-reversion [pedidoId]="pedido.id" [totalPedido]="pedido.total.valor" />
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
 
     <ts-paginador
       [pagina]="filtro().pagina"
