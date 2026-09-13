@@ -71,6 +71,11 @@ export interface Pedido {
   readonly direccion: Direccion | null;
   readonly metodoPago: MetodoPago;
   readonly estado: EstadoPedido;
+  /** Solo las líneas. */
+  readonly subtotal: Dinero;
+  /** Lo que el comprador paga de flete, ya cobrado: no es la cotización, es lo que quedó congelado. */
+  readonly costoEnvio: Dinero;
+  /** Líneas más envío. */
   readonly total: Dinero;
   readonly creadoEn: string;
   readonly datosTransferencia: DatosTransferencia | null;

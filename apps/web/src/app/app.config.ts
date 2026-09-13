@@ -20,8 +20,10 @@ import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carri
 import { CarritoIdLocalStorageAlmacen } from './features/carrito/infrastructure/carrito-id.almacen';
 import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastructure/snapshot-lineas.almacen';
 import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
+import { REPOSITORIO_ENVIOS } from './features/checkout/domain/repositorio-envios.puerto';
 import { REPOSITORIO_PAGOS } from './features/checkout/domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from './features/checkout/domain/repositorio-pedidos.puerto';
+import { EnvioHttpRepositorio } from './features/checkout/infrastructure/envio-http.repositorio';
 import { PagoHttpRepositorio } from './features/checkout/infrastructure/pago-http.repositorio';
 import { PedidoHttpRepositorio } from './features/checkout/infrastructure/pedido-http.repositorio';
 import { MetadatosSeo } from './core/seo/metadatos.servicio';
@@ -66,6 +68,7 @@ export const appConfig: ApplicationConfig = {
     // navegación quedaba muerta. Un servicio de raíz exige puertos de raíz.
     { provide: REPOSITORIO_PEDIDOS, useClass: PedidoHttpRepositorio },
     { provide: REPOSITORIO_PAGOS, useClass: PagoHttpRepositorio },
+    { provide: REPOSITORIO_ENVIOS, useClass: EnvioHttpRepositorio },
     provideTransloco({
       config: {
         availableLangs: ['es', 'en'],

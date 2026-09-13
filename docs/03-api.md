@@ -72,19 +72,44 @@ si hay contraentrega para ese destino.
 
 ### Cotización de envío
 
-`POST /api/v1/envios/cotizacion` recibe el id del carrito y el destino (código
-DANE de departamento y ciudad), y devuelve **una** opción, la más económica que
-cubre el destino:
+`POST /api/v1/envios/cotizacion` recibe **las líneas del carrito** —variante y
+cantidad— y el destino, y devuelve **una** opción, la más económica que cubre el
+destino:
 
 ```json
 {
   "costoEnvio": { "valor": 14900, "moneda": "COP" },
-  "transportadora": "SERVIENTREGA",
+  "transportadora": "Coordinadora",
   "diasEstimados": 3,
-  "venceEn": "2026-09-09T14:05:00Z",
-  "admiteContraentrega": true
+  "venceEn": "2026-09-09T14:05:00Z"
 }
 ```
+
+- **Líneas y no el id del carrito**, decidido al construirlo el 11 de septiembre
+  de 2026. Es lo mismo que reciben `POST /api/v1/pedidos` y
+  `/pedidos/metodos-de-pago-disponibles`, que el checkout llama en el mismo paso:
+  mandar `carritoId` a uno y `lineas` al otro obligaba al frontend a hablar dos
+  idiomas para la misma pantalla. No afloja la regla dura #7 — el peso, las
+  medidas y el precio los sigue resolviendo el servidor contra el catálogo, y lo
+  único que el cliente elige es qué variantes cotizar.
+- **`transportadora` es el nombre para mostrar** tal como lo da el proveedor
+  ("Coordinadora", "Inter Rapidísimo"), no un código. Es un nombre propio: no se
+  traduce y no pasa por Transloco.
+- **`diasEstimados` en cero significa sin estimado**, no "llega hoy". Hay tarifas
+  que no declaran plazo y no se les inventa uno.
+- **No dice nada de contraentrega.** Llevó un `admiteContraentrega` que era
+  estructuralmente falso siempre: esta cotización se pide **sin** recaudo —el
+  comprador todavía no ha elegido cómo paga— y la cobertura de recaudo solo se
+  sabe pidiéndola con recaudo. Un booleano que no puede ser cierto engaña al
+  siguiente que lo lea. Quien lo necesite pregunta a
+  `/pedidos/metodos-de-pago-disponibles`, que es donde este documento ya decía
+  que se resuelve.
+- **Tiene límite de peticiones por IP**, a diferencia del resto de endpoints
+  públicos de lectura: es el único que llama sincrónicamente a un proveedor
+  externo con cuota y que se paga.
+- **Una tarifa vencida no se ofrece.** Skydropx deduplica cotizaciones por
+  contenido y puede devolver la de ayer, con su vencimiento original, al mismo
+  carrito y el mismo destino.
 
 - **`POST` y no `GET`** aunque no cree nada persistente para el cliente: el cuerpo
   lleva el carrito y la dirección, y una dirección de entrega no va en una URL que

@@ -30,6 +30,8 @@ describe('aPedido', () => {
       },
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
+      subtotal: { valor: 160_000, moneda: 'COP' },
+      costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
       datosTransferencia: {
@@ -69,6 +71,8 @@ describe('aPedido', () => {
       },
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
+      subtotal: { valor: 160_000, moneda: 'COP' },
+      costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 160_000, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
       datosTransferencia: {
@@ -90,6 +94,8 @@ describe('aPedido', () => {
       tipoEntrega: 'RETIRO_EN_PUNTO',
       metodoPago: 'CONTRAENTREGA',
       estado: 'CONFIRMADO_CONTRAENTREGA',
+      subtotal: { valor: 0, moneda: 'COP' },
+      costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 0, moneda: 'COP' },
       creadoEn: '2026-09-04T12:00:00Z',
     });
@@ -112,6 +118,8 @@ describe('aPedido', () => {
       direccion: null,
       metodoPago: 'TARJETA',
       estado: 'PAGO_PENDIENTE',
+      subtotal: { valor: 0, moneda: 'COP' },
+      costoEnvio: { valor: 0, moneda: 'COP' },
       total: { valor: 0, moneda: 'COP' },
       creadoEn: '',
       datosTransferencia: null,

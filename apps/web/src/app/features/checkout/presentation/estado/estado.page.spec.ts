@@ -36,6 +36,8 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     direccion: null,
     metodoPago: 'CONTRAENTREGA',
     estado: 'CONFIRMADO_CONTRAENTREGA',
+    subtotal: { valor: 300_000, moneda: 'COP' },
+    costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 300_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
     datosTransferencia: null,

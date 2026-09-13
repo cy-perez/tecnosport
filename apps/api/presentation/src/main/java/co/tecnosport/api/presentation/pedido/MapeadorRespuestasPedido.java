@@ -53,6 +53,8 @@ public class MapeadorRespuestasPedido {
         pedido.direccion().map(this::aRespuesta).orElse(null),
         pedido.metodoPago().name(),
         pedido.estado().name(),
+        aRespuesta(pedido.subtotal()),
+        aRespuesta(pedido.costoEnvio()),
         aRespuesta(pedido.total()),
         pedido.creadoEn(),
         datosTransferencia(pedido),

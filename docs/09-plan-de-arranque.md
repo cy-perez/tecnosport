@@ -3295,7 +3295,38 @@ Orden de construcción, un caso de uso a la vez:
    por segundo y el sondeo acotado por tiempo **y** por intentos. Incluida la
    prueba de la cotización que nunca completa, que pedía este plan.
 
-   **2b, cuando haya credenciales.** El mapeo de campos y nada más.
+   **2b, hecho el 11 de septiembre de 2026.** El mapeo de campos, confirmado
+   contra el sandbox con las credenciales reales. Se comprobó pidiendo
+   cotizaciones de verdad, y las respuestas capturadas quedaron como fixtures de
+   `MapeadorCotizacionSkydropxV1Test` — que es lo contrario de la prueba del
+   cliente, donde un servidor falso que habla el idioma inventado del cliente
+   pasa siempre. El detalle está en `docs/13-skydropx-capacidades.md`, sección 6.
+
+   Lo que la sesión cambió respecto a lo planeado:
+
+   - **`postal_code` es el código DANE**, no el postal de cinco dígitos. Ninguna
+     fuente lo decía y el dominio ya lo tenía: la suerte fue haber modelado
+     `Direccion` con códigos DANE desde la Fase 3.
+   - **La sospecha del peso era correcta**: son kilos, y el dominio guarda
+     gramos. Partir la fase en 2a y 2b se pagó solo con este dato.
+   - **El origen necesitaba dos datos más** —`ORIGEN_DEPARTAMENTO` y
+     `ORIGEN_CIUDAD`—, porque Skydropx exige los nombres aparte del DANE y el
+     catálogo DIVIPOLA que los traduce vive en el frontend.
+   - **El flete es `total` y no `amount`.** La diferencia son los `extra_fees`,
+     el seguro entre ellos, y es plata que paga el negocio.
+   - **Faltaba el valor declarado.** `CotizacionEnvio` no lo llevaba; sin él cada
+     paquete se declara en COP 2.500 y la transportadora responde hasta ahí. Ahora
+     viaja por bulto, en `Bulto`, con el valor de lo que va dentro.
+   - **Skydropx deduplica cotizaciones por contenido**, y la repetida ni siquiera
+     se revalida. Un fallo transitorio de una transportadora queda congelado
+     contra ese carrito y esa dirección, y reintentar no lo arregla. Habrá que
+     tenerlo presente en el paso 3, cuando el endpoint pueda ser llamado dos veces
+     seguidas por el mismo comprador.
+
+   Queda abierto lo que el sandbox no pudo responder: la cobertura de
+   contraentrega por tarifa —ninguna tarifa exitosa trae un campo que la declare,
+   así que el mapeador no la promete—, el host de producción, y qué
+   transportadoras están activas en la cuenta.
 
    Lo que ordenó ese corte: **los campos del cuerpo no se pueden escribir sin la
    cuenta**, y no es un detalle cosmético — nuestro dominio guarda gramos y el
@@ -3324,21 +3355,147 @@ Orden de construcción, un caso de uso a la vez:
      de la regla dura #1.
 3. **`POST /api/v1/envios/cotizacion`**, con `409 ENVIO_SIN_COBERTURA` como caso
    de negocio y no como error de sistema.
-4. **Totales del pedido.** `Pedido` gana el costo de envío y la tarifa congelada;
-   `Pedido.total()` pasa a ser líneas más envío, y su Javadoc actual —"el envío no
-   se agrega: ya está en cada precio unitario"— muere con el cambio.
-5. **Checkout.** Cotización en el paso de dirección, línea de envío y total en el
-   resumen, ahorro visible en la recogida, y el aviso de efectivo en
-   contraentrega. Las claves de i18n están redactadas en
-   `docs/12-legales-de-envio.md`, sección 3.
-6. **Contraentrega desde la cotización** (`ADR-0023`): retirar
-   `cobertura_contraentrega` y sus endpoints, y que `MetodosDePagoDisponibles`
-   dependa de la tarifa con recaudo.
-7. **Guía en el despacho** y **seguimiento**: webhook firmado, eventos
-   `append-only`, `TareaConciliacionEnvios`, y el DTO público de seguimiento
-   **reducido** — hoy expone el costo real del flete y la comisión de recaudo, que
-   es el hallazgo 3 de `docs/12-legales-de-envio.md` y es un bug de hoy, no del
-   cambio.
+4. ~~**Totales del pedido.**~~ **Hecho el 11 de septiembre de 2026.** `Pedido`
+   congela la `TarifaEnvio` con la que se cotizó, `total()` pasa a ser
+   `subtotal()` más envío, y el Javadoc de `adr/0012` muere con el cambio — que
+   además no documentaba nada: había dos Javadoc seguidos y el compilador se
+   comía el primero.
+
+   Cuatro cosas que solo aparecieron al construirlo:
+
+   - **Un campo y no dos.** Se guarda la tarifa entera y el costo sale de ella. Un
+     monto aparte sería el mismo dinero en dos sitios, capaces de divergir.
+   - **La cotización va antes de reservar.** No por elegancia: `CrearPedido` corre
+     dentro de una transacción que toma bloqueos pesimistas sobre el inventario, y
+     cotizar después habría dejado esas filas trancadas mientras responde un
+     proveedor externo. Así la transacción está abierta pero todavía no bloquea
+     nada, y un destino sin cobertura no compromete existencias ni quema un número
+     de pedido.
+   - **La invariante "a domicilio exige tarifa" quedó en el caso de uso, no en el
+     agregado**, porque el constructor de `Pedido` es también con el que el
+     repositorio reconstruye los pedidos viejos, que no tienen ninguna y son
+     válidos. Está anotado en `docs/02-modelo-datos.md` con lo que haría falta el
+     día que exista otro camino para crear pedidos.
+   - **`PedidoRespuesta` gana `subtotal` y `costoEnvio`**, que es el hallazgo 1 de
+     la auditoría legal: el artículo 50 de la Ley 1480 exige el desglose, y un
+     total sin él no informa lo que la norma manda informar.
+
+   Los pedidos anteriores quedan con envío en cero, y es históricamente cierto:
+   bajo `adr/0012` su flete ya estaba cobrado dentro de cada línea.
+5. ~~**Checkout.**~~ **Hecho el 11 de septiembre de 2026.** Cotización en el
+   paso de dirección, subtotal / envío / total en el resumen, plazo estimado
+   cuando la tarifa lo declara, ahorro visible en la recogida y el aviso de
+   efectivo en contraentrega. Las ocho claves de `docs/12-legales-de-envio.md`,
+   sección 3, escritas en los dos idiomas.
+
+   Tres cosas que vale la pena no volver a descubrir:
+
+   - **El bug lo encontró el navegador, no las pruebas.** Quien cotizaba
+     Medellín en 9.540, cambiaba a Bogotá —sin cobertura— y elegía recoger,
+     leía "te ahorras $ 9.540" sin ahorrarse nada. El ahorro de la ciudad
+     anterior sobrevivía al cambio de ciudad. Es exactamente lo que advierte
+     `docs/06-testing.md`: hay cosas que solo se ven abriendo la pantalla.
+   - **La clave de la consulta no incluye la calle.** El flete depende del DANE
+     de la ciudad y de los bultos; con la calle dentro, cada tecla era una
+     llamada a un proveedor limitado a dos peticiones por segundo.
+   - **Sin cobertura se bloquea «Continuar».** Dejar pasar al comprador solo
+     habría movido el 409 dos pantallas más adelante, después de que eligiera
+     método de pago.
+
+   **El aviso de contraentrega quedó verificado el 12 de septiembre**, al
+   cerrar el paso 6: arrancando el backend con `CONTRAENTREGA_HABILITADA=true`
+   —exportada en la terminal, que le gana al `.env.local`— la opción aparece
+   para Medellín y el aviso con ella. Con la variable en falso, que es como
+   está el entorno local, no se ve ninguna de las dos.
+6. ~~**Contraentrega desde la cotización**~~ (`ADR-0023`). **Hecho el 11 de
+   septiembre de 2026.** Se retiró `cobertura_contraentrega` —tabla, puerto,
+   repositorio, tres casos de uso, dos controladores y sus pruebas— y
+   `MetodosDePagoDisponibles` pregunta ahora por una tarifa con recaudo.
+
+   **El paso arrancó bloqueado y se destrabó midiendo.** Al cerrar el paso 5
+   quedó escrito que Skydropx no declara la cobertura por tarifa, y que hacer
+   depender la contraentrega de eso la apagaría en todo el país. Es cierto que
+   no hay campo; lo que no se había probado es que **pedir la cotización con
+   `cash_on_delivery` sí discrimina**: las transportadoras que no recaudan se
+   caen con sus propias restricciones y las que sí sobreviven, al mismo precio.
+   Sobrevivir es la señal. Está en `docs/13-skydropx-capacidades.md`, sección 6.
+
+   Tres cosas que aparecieron construyéndolo:
+
+   - **`CrearPedido` cotiza con recaudo cuando el pago es contraentrega.** Sin
+     eso congelaría la tarifa más barata de las que **no** cobran en la puerta,
+     y el despacho se encontraría con una guía que no recauda.
+   - **El tope del recaudo pasa a compararse contra el total, flete incluido.**
+     Es lo que el mensajero carga de verdad (`ADR-0023`), y hasta ahora el
+     límite miraba solo la mercancía.
+   - **La disponibilidad depende ahora de un proveedor externo.** Si Skydropx no
+     responde, no se ofrece contraentrega. Falla cerrado, como la cotización.
+
+   Con el sandbox de hoy eso significa que **la contraentrega solo se ofrece en
+   Medellín**, porque 99 minutes es la única que recauda y la única con
+   cobertura urbana. Se ensancha solo cuando las otras transportadoras
+   respondan.
+
+   **Verificado contra Skydropx de verdad**, no solo con dobles: con
+   `CONTRAENTREGA_HABILITADA=true`, `/metodos-de-pago-disponibles` devuelve
+   `CONTRAENTREGA` para Medellín y no la devuelve para Bogotá, sin ninguna
+   tabla de por medio. Y en el navegador, la opción y su aviso de efectivo
+   aparecen en la pantalla de método de pago.
+7. **Guía en el despacho** y **seguimiento**. **En curso.**
+
+   **El DTO público reducido ya no es parte de este paso**: el hallazgo 3 se
+   cerró el 9 de septiembre, antes de la fase, y tiene un guardián que afirma
+   sobre el texto crudo de la respuesta que no aparecen `costoEnvio` ni
+   `comisionRecaudo`. Este plan lo siguió listando como pendiente por descuido.
+
+   **Hecho el 12 de septiembre: los eventos `append-only`.** `EstadoEnvio` con
+   los doce estados de la plataforma, `EventoSeguimiento` con sus dos instantes
+   —cuándo ocurrió y cuándo nos enteramos, que no son lo mismo—, `Envio` que los
+   registra sin sobrescribir y es idempotente por el identificador externo del
+   evento, y `V35` con su restricción única. Es el tramo que no depende de
+   nadie: el vocabulario lo fija `ADR-0022` y el modelo es nuestro.
+
+   **Y aquí el paso se topó, por la cuenta y no por el código.** Midiendo
+   `POST /shipments` se obtuvo su forma exacta —va envuelto en `shipment`, con
+   `quotation_id`, `rate_id`, las dos direcciones y los bultos— y dos exigencias
+   que no estaban escritas en ninguna parte: las direcciones piden **`email` y
+   `reference`** obligatorios en los dos extremos, y cada bulto pide
+   **`package_type` y `package_content`**. Pero al mandar el cuerpo completo la
+   respuesta fue `422 No tienes los créditos suficientes para este envío`.
+
+   Sin créditos no hay guía; sin guía no hay webhook que firmar ni evento que
+   mapear.
+
+   **Hecho el 12 de septiembre, con lo que no depende de eso.** El webhook y la
+   conciliación quedaron construidos y probados enteros, con lo que depende de
+   Skydropx detrás de tres puertos que fallan cerrado — el mismo patrón del paso
+   2a, que ya se pagó solo una vez:
+
+   - `AplicarEventoDeEnvio`, el componente por el que entran los dos caminos.
+     Reutiliza `MarcarEntregado` y `RechazarEnEntrega` en vez de reimplementar
+     qué pasa con el inventario cuando un paquete se entrega o se devuelve.
+   - `POST /api/v1/envios/webhook`, público, firma primero y siempre 200. El
+     cuerpo se recibe como cadena: el HMAC es sobre los bytes que llegaron, y
+     reserializar un JSON reordena claves.
+   - `ConciliarEnvios` y `TareaConciliacionEnvios`, la tercera tarea programada.
+   - Pendientes y escritos: `VerificadorFirmaEnvio` rechaza todo,
+     `LectorEventoDeEnvio` no sabe leer nada y `ConsultorDeSeguimiento` devuelve
+     lista vacía. Los tres explican qué falta y qué pasaría si alguien los
+     escribiera de memoria.
+
+   **Lo que sigue esperando al saldo** es emitir la guía, y confirmar la firma y
+   la forma del evento contra uno real. El día que lleguen los créditos, el paso
+   7 es cambiar tres implementaciones, no montar el cableado.
+
+   Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:
+
+   - **`reference` no se pide hoy en el checkout.** El campo `indicaciones` que
+     ya existe puede servir, pero es opcional y la guía lo exige.
+   - **El origen no tiene correo configurado.** Haría falta un `ORIGEN_CORREO`
+     junto a las otras siete variables de `ORIGEN_*`.
+   - **`package_content` es texto libre** y describe qué va dentro. Hay que
+     decidir qué se escribe ahí: el nombre del producto, la categoría, o algo
+     genérico. No es un detalle: es lo que lee quien revisa el paquete.
 8. **Textos legales**, en el mismo commit que enciende la cotización, con la
    fecha de versión nueva.
 

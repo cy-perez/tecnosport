@@ -12,8 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
-import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
@@ -38,6 +39,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -170,7 +172,9 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"))
         .andExpect(jsonPath("$.metodoPago").value("NEQUI"))
         .andExpect(jsonPath("$.lineas[0].sku").value("TS-CAM-AZ-M"))
-        .andExpect(jsonPath("$.total.valor").value(100_000))
+        .andExpect(jsonPath("$.subtotal.valor").value(100_000))
+        .andExpect(jsonPath("$.costoEnvio.valor").value(14_900))
+        .andExpect(jsonPath("$.total.valor").value(114_900))
         .andExpect(jsonPath("$.direccion.ciudad").value("Medellín"));
   }
 
@@ -352,7 +356,7 @@ class PedidoControladorTest {
   }
 
   @Test
-  void crearPedidoContraentregaSinCoberturaDevuelve409() throws Exception {
+  void crearPedidoContraentregaDevuelve409SiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
         solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_BOGOTA, "CONTRAENTREGA");
@@ -386,7 +390,7 @@ class PedidoControladorTest {
   }
 
   @Test
-  void metodosDePagoDisponiblesExcluyeContraentregaSinCobertura() throws Exception {
+  void metodosDePagoDisponiblesExcluyeContraentregaSiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     MetodosDePagoDisponiblesRequest cuerpo =
         new MetodosDePagoDisponiblesRequest(
@@ -568,6 +572,19 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.codigo").value("PEDIDO_NO_ENCONTRADO"));
   }
 
+  /** Medellín recauda; el resto del país, no. Es lo que hace hoy el sandbox. */
+  private static final String CIUDAD_QUE_RECAUDA = "05001";
+
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          false,
+          Instant.parse("2026-09-30T12:00:00Z"));
+
   @TestConfiguration
   static class Configuracion {
 
@@ -587,11 +604,6 @@ class PedidoControladorTest {
     }
 
     @Bean
-    RepositorioCoberturaContraentregaDobleDePrueba repositorioCoberturaContraentrega() {
-      return new RepositorioCoberturaContraentregaDobleDePrueba().conCiudadCubierta("05001");
-    }
-
-    @Bean
     CriteriosContraentrega criteriosContraentrega() {
       return new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
     }
@@ -599,11 +611,11 @@ class PedidoControladorTest {
     @Bean
     MetodosDePagoDisponibles metodosDePagoDisponibles(
         RepositorioProductos repositorioProductos,
-        RepositorioCoberturaContraentrega repositorioCobertura,
+        CotizarEnvio cotizarEnvio,
         RepositorioPedidos repositorioPedidos,
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
-          repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
+          repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
     }
 
     @Bean
@@ -635,12 +647,45 @@ class PedidoControladorTest {
       return new LimitadorDeIntentosDobleDePrueba();
     }
 
+    /**
+     * Una tarifa fija: lo que se prueba aquí es el controlador, no la cotización. {@code
+     * CotizadorEnvio} tiene un solo método, así que el doble cabe en una lambda.
+     */
+    @Bean
+    CotizadorEnvio cotizadorEnvio() {
+      // Como el adaptador real: en una cotización pedida con recaudo solo responden las
+      // transportadoras que lo admiten, y la tarifa que sobrevive queda marcada. Aquí recauda
+      // Medellín y nadie más, que es además lo que hace hoy el sandbox de Skydropx.
+      return cotizacion -> {
+        boolean recaudaAhi = CIUDAD_QUE_RECAUDA.equals(cotizacion.destino().codigoDaneCiudad());
+        if (cotizacion.conRecaudo() && !recaudaAhi) {
+          return List.of();
+        }
+        return List.of(
+            new TarifaEnvio(
+                TARIFA.idTarifa(),
+                TARIFA.transportadora(),
+                TARIFA.servicio(),
+                TARIFA.costo(),
+                TARIFA.diasEstimados(),
+                cotizacion.conRecaudo(),
+                TARIFA.venceEn()));
+      };
+    }
+
+    @Bean
+    CotizarEnvio cotizarEnvio(
+        RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
+      return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+    }
+
     @Bean
     CrearPedido crearPedido(
         RepositorioProductos repositorioProductos,
         RepositorioInventario repositorioInventario,
         RepositorioPedidos repositorioPedidos,
         MetodosDePagoDisponibles metodosDePagoDisponibles,
+        CotizarEnvio cotizarEnvio,
         Reloj reloj,
         LimitadorDeIntentos limitadorDeIntentos,
         RepositorioAutorizaciones repositorioAutorizaciones) {
@@ -649,6 +694,7 @@ class PedidoControladorTest {
           repositorioInventario,
           repositorioPedidos,
           metodosDePagoDisponibles,
+          cotizarEnvio,
           reloj,
           Duration.ofMinutes(30),
           Duration.ofHours(24),

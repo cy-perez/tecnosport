@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,34 @@ class PedidoTest {
         new BigDecimal("0.19"),
         "https://cdn.tecnosport.co/img.webp",
         UUID.randomUUID());
+  }
+
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          false,
+          Instant.parse("2026-09-03T12:00:00Z"));
+
+  private Pedido crearAlDomicilioCon(TarifaEnvio tarifa) {
+    return crearAlDomicilioCon(tarifa, MetodoPago.NEQUI);
+  }
+
+  private Pedido crearAlDomicilioCon(TarifaEnvio tarifa, MetodoPago metodoPago) {
+    return Pedido.crear(
+        NUMERO,
+        null,
+        CORREO,
+        List.of(linea(BigDecimal.valueOf(50_000), 2)),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        metodoPago,
+        "cliente@tecnosport.co",
+        AHORA,
+        tarifa);
   }
 
   private Pedido crearAlDomicilio(MetodoPago metodoPago) {
@@ -151,7 +180,7 @@ class PedidoTest {
   }
 
   @Test
-  void totalSumaElSubtotalDeCadaLinea() {
+  void elSubtotalSumaCadaLinea() {
     Pedido pedido =
         Pedido.crear(
             NUMERO,
@@ -164,7 +193,73 @@ class PedidoTest {
             "cliente@tecnosport.co",
             AHORA);
 
-    assertEquals(Dinero.deCop(130_000), pedido.total());
+    assertEquals(Dinero.deCop(130_000), pedido.subtotal());
+  }
+
+  /**
+   * Lo que cambió en la Fase 7. Hasta entonces el total era solo las líneas porque el flete iba
+   * dentro de cada precio (adr/0012); con el envío cotizado por destino, cobrar solo las líneas
+   * sería regalar el flete en cada pedido.
+   */
+  @Test
+  void elTotalSumaElEnvioAlSubtotal() {
+    Pedido pedido = crearAlDomicilioCon(TARIFA);
+
+    assertEquals(Dinero.deCop(100_000), pedido.subtotal());
+    assertEquals(Dinero.deCop(14_900), pedido.costoEnvio());
+    assertEquals(Dinero.deCop(114_900), pedido.total());
+  }
+
+  /** Sin tarifa el envío es cero, y es cierto en los dos casos en que pasa. */
+  @Test
+  void sinTarifaElEnvioEsCeroYElTotalEsElSubtotal() {
+    Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
+
+    assertEquals(Dinero.deCop(0), pedido.costoEnvio());
+    assertEquals(pedido.subtotal(), pedido.total());
+    assertTrue(pedido.tarifaEnvio().isEmpty());
+  }
+
+  @Test
+  void elPedidoCongelaLaTarifaConLaQueSeCotizo() {
+    Pedido pedido = crearAlDomicilioCon(TARIFA);
+
+    assertEquals(TARIFA, pedido.tarifaEnvio().orElseThrow());
+  }
+
+  /** No hay a dónde despachar, así que una tarifa ahí no significa nada. */
+  @Test
+  void retiroEnPuntoConTarifaSeRechaza() {
+    ExcepcionDeDominio error =
+        assertThrows(
+            ExcepcionDeDominio.class,
+            () ->
+                Pedido.crear(
+                    NUMERO,
+                    null,
+                    CORREO,
+                    List.of(linea(BigDecimal.valueOf(50_000), 1)),
+                    TipoEntrega.RETIRO_EN_PUNTO,
+                    null,
+                    MetodoPago.NEQUI,
+                    "cliente@tecnosport.co",
+                    AHORA,
+                    TARIFA));
+
+    assertEquals("El retiro en punto no lleva tarifa de envío.", error.getMessage());
+  }
+
+  /** En contraentrega la transportadora recauda el total, flete incluido (adr/0023). */
+  @Test
+  void enContraentregaElDineroRecibidoIncluyeElEnvio() {
+    Pedido pedido = crearAlDomicilioCon(TARIFA, MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin", "alistado", AHORA);
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin", "despachado", AHORA);
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin", "entregado", AHORA);
+    pedido.transicionar(EstadoPedido.RECAUDO_PENDIENTE, "admin", "pendiente de recaudo", AHORA);
+    pedido.transicionar(EstadoPedido.RECAUDO_CONCILIADO, "admin", "conciliado", AHORA);
+
+    assertEquals(Dinero.deCop(114_900), pedido.dineroRecibido());
   }
 
   @Test

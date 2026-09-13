@@ -2,18 +2,25 @@ package co.tecnosport.api.bootstrap.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.application.envio.AgregarCoberturaContraentrega;
+import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
+import co.tecnosport.api.application.envio.ConciliarEnvios;
+import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
-import co.tecnosport.api.application.envio.ListarCoberturaContraentrega;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
-import co.tecnosport.api.application.envio.QuitarCoberturaContraentrega;
-import co.tecnosport.api.application.envio.RepositorioCoberturaContraentrega;
+import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
+import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
+import co.tecnosport.api.application.pedido.MarcarEntregado;
+import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
+import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Locale;
@@ -28,6 +35,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
   PropiedadesContraentrega.class,
   PropiedadesSkydropx.class,
+  PropiedadesSeguimientoEnvios.class,
+  PropiedadesWebhookEnvio.class,
   PropiedadesOrigen.class
 })
 public class ConfiguracionEnvio {
@@ -49,6 +58,8 @@ public class ConfiguracionEnvio {
             origen.nombre(),
             origen.telefono(),
             origen.direccion(),
+            origen.departamento(),
+            origen.ciudad(),
             origen.ciudadDane(),
             origen.codigoPostal()),
         Duration.ofSeconds(skydropx.cotizacionTimeoutSegundos()),
@@ -63,6 +74,52 @@ public class ConfiguracionEnvio {
    */
   private static final Duration INTERVALO_SONDEO = Duration.ofMillis(500);
 
+  /**
+   * El webhook queda cableado y sin efecto: sus dos puertos fallan cerrado mientras no se puedan
+   * medir contra un evento real (docs/13-skydropx-capacidades.md, sección 6). Se registran igual
+   * para que el día que se confirmen sea cambiar una implementación y no montar el cableado.
+   */
+  @Bean
+  public ConciliarEnvios conciliarEnvios(
+      RepositorioEnvios repositorioEnvios,
+      ConsultorDeSeguimiento consultor,
+      AplicarEventoDeEnvio aplicarEvento,
+      Reloj reloj,
+      PropiedadesSeguimientoEnvios propiedades) {
+    return new ConciliarEnvios(
+        repositorioEnvios,
+        consultor,
+        aplicarEvento,
+        reloj,
+        Duration.ofHours(propiedades.antiguedadMinimaHoras()),
+        propiedades.maximoPorCorrida());
+  }
+
+  @Bean
+  public RecibirEventoDeEnvio recibirEventoDeEnvio(
+      VerificadorFirmaEnvio verificadorFirma,
+      LectorEventoDeEnvio lector,
+      AplicarEventoDeEnvio aplicarEvento) {
+    return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicarEvento);
+  }
+
+  @Bean
+  public AplicarEventoDeEnvio aplicarEventoDeEnvio(
+      RepositorioEnvios repositorioEnvios,
+      RepositorioPedidos repositorioPedidos,
+      MarcarEntregado marcarEntregado,
+      RechazarEnEntrega rechazarEnEntrega,
+      Reloj reloj) {
+    return new AplicarEventoDeEnvio(
+        repositorioEnvios, repositorioPedidos, marcarEntregado, rechazarEnEntrega, reloj);
+  }
+
+  @Bean
+  public CotizarEnvio cotizarEnvio(
+      RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
+    return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+  }
+
   @Bean
   public CriteriosContraentrega criteriosContraentrega(PropiedadesContraentrega propiedades) {
     Set<LineaCatalogo> categoriasExcluidas =
@@ -76,28 +133,10 @@ public class ConfiguracionEnvio {
   @Bean
   public MetodosDePagoDisponibles metodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
-      RepositorioCoberturaContraentrega repositorioCobertura,
+      CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega) {
     return new MetodosDePagoDisponibles(
-        repositorioProductos, repositorioCobertura, repositorioPedidos, criteriosContraentrega);
-  }
-
-  @Bean
-  public ListarCoberturaContraentrega listarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new ListarCoberturaContraentrega(repositorio);
-  }
-
-  @Bean
-  public AgregarCoberturaContraentrega agregarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new AgregarCoberturaContraentrega(repositorio);
-  }
-
-  @Bean
-  public QuitarCoberturaContraentrega quitarCoberturaContraentrega(
-      RepositorioCoberturaContraentrega repositorio) {
-    return new QuitarCoberturaContraentrega(repositorio);
+        repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
   }
 }

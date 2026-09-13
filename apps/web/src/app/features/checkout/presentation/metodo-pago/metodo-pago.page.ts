@@ -67,6 +67,17 @@ export class MetodoPagoPage {
     })),
   );
 
+  /**
+   * El aviso de contraentrega se muestra cuando la opción se ofrece, no cuando
+   * se elige: el deber de informar es previo a la decisión, no posterior. Dice
+   * las dos cosas que sorprenden al recibir el paquete — que se cobra el total
+   * con el envío incluido, y que la transportadora solo recibe efectivo
+   * (docs/12-legales-de-envio.md, sección 3).
+   */
+  protected readonly ofreceContraentrega = computed(() =>
+    this.opciones().some((opcion) => opcion.valor === 'CONTRAENTREGA'),
+  );
+
   constructor() {
     // Sin datos de entrega, o con el carrito vacío (se vació en otra
     // pestaña, por ejemplo): no hay nada que consultar. De vuelta al

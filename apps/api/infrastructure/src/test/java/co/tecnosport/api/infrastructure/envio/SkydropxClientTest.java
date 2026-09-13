@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -30,16 +31,14 @@ import tools.jackson.databind.JsonNode;
  * De extremo a extremo contra un servidor HTTP de prueba ({@link HttpServer}, del JDK, sin
  * dependencia nueva), igual que {@code WompiClientTest}.
  *
- * <p>Lo que se prueba aquí es el <strong>protocolo</strong>, que sí está verificado: el token se
- * pide una vez y se reutiliza, se renueva al vencer, el sondeo se corta por intentos y por tiempo,
- * y cualquier fallo termina en lista vacía. El <strong>mapeo</strong> no está confirmado y por eso
- * entra por constructor: el doble de prueba de abajo implementa la forma que la documentación
- * describe, y el de producción ({@code MapeadorCotizacionPendiente}) falla a propósito — las dos
- * cosas se prueban.
+ * <p>Lo que se prueba aquí es el <strong>protocolo</strong>: el token se pide una vez y se
+ * reutiliza, se renueva al vencer, el sondeo se corta por intentos y por tiempo, y cualquier fallo
+ * termina en lista vacía. El mapeo entra por constructor y aquí se usa un doble.
  *
  * <p>Ese doble <strong>no valida</strong> que Skydropx use esos nombres de campo. Sería un
- * autoengaño: un servidor falso que habla el mismo idioma inventado que el cliente pasa siempre. Lo
- * único que demuestra es que la máquina de alrededor funciona.
+ * autoengaño: un servidor falso que habla el mismo idioma que el cliente pasa siempre. Lo único que
+ * demuestra es que la máquina de alrededor funciona. El mapeo de verdad se prueba contra respuestas
+ * capturadas de la cuenta real, en {@code MapeadorCotizacionSkydropxV1Test}.
  */
 class SkydropxClientTest {
 
@@ -47,12 +46,19 @@ class SkydropxClientTest {
   private static final Duration TOPE = Duration.ofSeconds(10);
 
   private static final OrigenDespacho ORIGEN =
-      new OrigenDespacho("TecnoSport", "+573138816711", "Cra. 26C # 38B-31", "05001", null);
+      new OrigenDespacho(
+          "TecnoSport",
+          "+573138816711",
+          "Cra. 26C # 38B-31",
+          "Antioquia",
+          "Medellín",
+          "05001",
+          null);
 
   private static final CotizacionEnvio COTIZACION =
       new CotizacionEnvio(
           new Direccion("11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null),
-          List.of(new Paquete(180, 30, 25, 4)));
+          List.of(new Bulto(new Paquete(180, 30, 25, 4), Dinero.deCop(150_000))));
 
   private HttpServer servidor;
 
@@ -318,22 +324,42 @@ class SkydropxClientTest {
   }
 
   /**
-   * El mapeador de producción todavía no se puede escribir, y su excepción no puede escaparse: para
-   * el checkout tiene que ser indistinguible de "el proveedor no respondió" — sin envío a
-   * domicilio, solo recogida en el punto (adr/0021).
+   * Un mapeador que revienta no puede tumbar el checkout: para el comprador tiene que ser
+   * indistinguible de "el proveedor no respondió" — sin envío a domicilio, solo recogida en el
+   * punto (adr/0021). Cubre el {@code catch (RuntimeException)} del cliente, que existe porque un
+   * campo inesperado del proveedor no puede dejar a nadie sin comprar.
    */
   @Test
-  void conElMapeadorPendienteLaCotizacionFallaCerradaYNoLanza() throws IOException {
+  void unMapeadorQueRevientaFallaCerradoYNoLanza() throws IOException {
     SkydropxClient cliente =
         clienteContra(
             token(7200),
             200,
             "{\"id\":\"q1\"}",
             numero -> UNA_TARIFA,
-            new MapeadorCotizacionPendiente(),
+            new MapeadorQueRevienta(),
             8);
 
     assertTrue(cliente.cotizar(COTIZACION).isEmpty());
     assertEquals(0, sondeos.get());
+  }
+
+  /** Cualquier cosa inesperada al armar el cuerpo. */
+  private static final class MapeadorQueRevienta implements MapeadorCotizacionSkydropx {
+
+    @Override
+    public String cuerpoDeCotizacion(CotizacionEnvio cotizacion, OrigenDespacho origen) {
+      throw new IllegalStateException("Un campo que no estaba donde se esperaba.");
+    }
+
+    @Override
+    public Optional<String> idDeCotizacion(JsonNode respuestaDeCreacion) {
+      throw new IllegalStateException("No se llega aquí.");
+    }
+
+    @Override
+    public Optional<List<TarifaEnvio>> tarifasSiCompleto(JsonNode respuesta, Instant ahora) {
+      throw new IllegalStateException("No se llega aquí.");
+    }
   }
 }

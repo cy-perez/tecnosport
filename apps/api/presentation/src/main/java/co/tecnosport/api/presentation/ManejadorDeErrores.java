@@ -12,6 +12,7 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
@@ -201,6 +202,14 @@ public class ManejadorDeErrores {
   }
 
   // Mismo criterio que ExistenciaInsuficienteException: la solicitud está bien formada, pero
+  // Ninguna transportadora cotiza ese destino. Es un caso de negocio, no una falla: un 502
+  // echaría la culpa al proveedor cuando lo que pasa es que esa ciudad hoy no se despacha. El
+  // checkout lo traduce a "solo recogida en el punto" (docs/03-api.md).
+  @ExceptionHandler(EnvioSinCoberturaException.class)
+  public ProblemDetail envioSinCobertura(EnvioSinCoberturaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Envío sin cobertura", excepcion);
+  }
+
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo
   // previo) — el cliente pudo haber consultado /metodos-de-pago-disponibles hace un rato.
   @ExceptionHandler(ContraentregaNoDisponibleException.class)

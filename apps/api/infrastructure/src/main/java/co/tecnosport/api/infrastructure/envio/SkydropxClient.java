@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -28,14 +27,13 @@ import tools.jackson.databind.json.JsonMapper;
  * segundo; y la cotización asíncrona — {@code POST /api/v1/quotations} crea, {@code GET
  * /api/v1/quotations/{id}} se sondea hasta {@code is_completed}, las tarifas valen 24 horas.
  *
- * <p><strong>Lo que falta</strong> es el mapeo de campos, y está detrás de {@link
- * MapeadorCotizacionSkydropx} con su motivo escrito. Mientras no se confirme, la cotización falla
- * cerrado: lista vacía, que para el checkout es "solo recogida en el punto".
+ * <p><strong>El mapeo de campos</strong> se confirmó contra la cuenta el 11 de septiembre de 2026 y
+ * vive en {@link MapeadorCotizacionSkydropxV1}. Sigue detrás de la interfaz porque la frontera
+ * sirve igual para probar el protocolo sin depender del proveedor.
  *
- * <p>La petición del token va <em>form-encoded</em> porque es lo que manda el RFC 6749 §4.4.2 para
- * credenciales de cliente. La documentación de Skydropx nombra los tres parámetros pero no dice la
- * codificación; se sigue el estándar, y si el proveedor se desvía, se desvía él. {@code TODO:
- * confirmar en el panel que el token acepta form-encoded y no JSON.}
+ * <p>La petición del token va <em>form-encoded</em>, que es lo que manda el RFC 6749 §4.4.2 para
+ * credenciales de cliente. Comprobado contra el sandbox: Skydropx acepta form-encoded y también
+ * JSON, y devuelve {@code expires_in: 7200}.
  *
  * <p>El token se renueva con margen y no justo al vencer: una cotización que arranca con el token
  * al filo se quedaría a medias entre la creación y el primer sondeo.
@@ -88,7 +86,7 @@ public final class SkydropxClient implements CotizadorEnvio {
         intentosDeSondeo,
         intervaloDeSondeo,
         reloj,
-        new MapeadorCotizacionPendiente(),
+        new MapeadorCotizacionSkydropxV1(),
         LimitadorDePeticiones.deSegundo(PETICIONES_POR_SEGUNDO),
         Thread::sleep,
         HttpClient.newHttpClient());
@@ -128,15 +126,20 @@ public final class SkydropxClient implements CotizadorEnvio {
 
   /**
    * Ninguna excepción sale de aquí. Un fallo de red, un cuerpo ilegible, un token rechazado o un
-   * mapeo sin confirmar terminan igual: sin tarifas. El checkout no distingue entre esos casos
+   * mapeo que revienta terminan igual: sin tarifas. El checkout no distingue entre esos casos
    * porque hace lo mismo en todos — ofrecer la recogida en el punto (adr/0021).
+   *
+   * <p>Se atrapa {@link RuntimeException} entera, y es a propósito: el contrato de este puerto es
+   * que cotizar no tumba el checkout, y un campo inesperado en la respuesta del proveedor no puede
+   * dejar sin comprar a nadie. Lo que se pierde —un fallo de programación que pasa desapercibido—
+   * lo cubren las pruebas del mapeador, que sí ven la excepción.
    */
   @Override
   public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
     Objects.requireNonNull(cotizacion, "La cotización no puede ser nula.");
     try {
       return cotizarOFallarCerrado(cotizacion);
-    } catch (MapeoSinConfirmarException | IOException | JacksonException e) {
+    } catch (IOException | RuntimeException e) {
       return List.of();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

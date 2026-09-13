@@ -8,6 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -24,6 +28,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
@@ -62,9 +67,21 @@ class CrearPedidoTest {
   private RepositorioProductosFalso productos;
   private RepositorioInventarioFalso inventarios;
   private RepositorioPedidosFalso pedidos;
-  private RepositorioCoberturaContraentregaFalso cobertura;
   private LimitadorDeIntentosFalso limitadorDeIntentos;
   private RepositorioAutorizacionesFalso autorizaciones;
+  private CotizadorEnvioFalso cotizador;
+
+  /** Lo que devuelve el cotizador en todas las pruebas que no digan otra cosa. */
+  private static final TarifaEnvio TARIFA =
+      new TarifaEnvio(
+          "rate_1",
+          "Coordinadora",
+          "Standard",
+          Dinero.deCop(14_900),
+          2,
+          false,
+          Instant.parse("2026-09-03T12:00:00Z"));
+
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final String IP = "190.24.10.5";
 
@@ -74,23 +91,24 @@ class CrearPedidoTest {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
   }
 
-  private CrearPedido crear(CriteriosContraentrega criterios, boolean medellinCubierta) {
+  private CrearPedido crear(CriteriosContraentrega criterios, boolean recaudaEnElDestino) {
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
     pedidos = new RepositorioPedidosFalso();
-    cobertura = new RepositorioCoberturaContraentregaFalso();
     limitadorDeIntentos = new LimitadorDeIntentosFalso();
     autorizaciones = new RepositorioAutorizacionesFalso();
-    if (medellinCubierta) {
-      cobertura.conCiudadCubierta(DIRECCION_MEDELLIN.codigoDaneCiudad());
-    }
+    cotizador = new CotizadorEnvioFalso();
+    cotizador.conTarifas(TARIFA);
+    cotizador.recaudaEnElDestino(recaudaEnElDestino);
+    CotizarEnvio cotizarEnvio = new CotizarEnvio(productos, cotizador, () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
-        new MetodosDePagoDisponibles(productos, cobertura, pedidos, criterios);
+        new MetodosDePagoDisponibles(productos, cotizarEnvio, pedidos, criterios);
     return new CrearPedido(
         productos,
         inventarios,
         pedidos,
         metodosDePagoDisponibles,
+        cotizarEnvio,
         new RelojFalso(AHORA),
         RESERVA_PAGO_EN_LINEA,
         RESERVA_TRANSFERENCIA,
@@ -142,6 +160,18 @@ class CrearPedidoTest {
     inventarios.conInventario(inventario);
   }
 
+  private CrearPedidoComando comandoRetiroEnPunto(MetodoPago metodoPago, int cantidad) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        List.of(new CrearPedidoComando.LineaComando(variante.id(), cantidad)),
+        TipoEntrega.RETIRO_EN_PUNTO,
+        null,
+        metodoPago,
+        true,
+        IP);
+  }
+
   private CrearPedidoComando comando(MetodoPago metodoPago, int cantidad) {
     return new CrearPedidoComando(
         null,
@@ -168,7 +198,105 @@ class CrearPedidoTest {
     assertEquals(Dinero.deCop(50_000), linea.precioUnitario());
     assertEquals(new BigDecimal("0.19"), linea.tasaIva());
     assertEquals("https://cdn.tecnosport.co/img.jpg", linea.imagenUrl());
-    assertEquals(Dinero.deCop(100_000), pedido.total());
+    assertEquals(Dinero.deCop(100_000), pedido.subtotal());
+    assertEquals(Dinero.deCop(114_900), pedido.total());
+  }
+
+  /**
+   * El costo del envío lo fija el servidor cotizando otra vez al confirmar, y el pedido congela la
+   * tarifa: una cotización vive 24 horas y el pedido vive para siempre (adr/0021).
+   */
+  @Test
+  void congelaLaTarifaConLaQueCotizoAlConfirmar() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comando(MetodoPago.NEQUI, 2));
+
+    assertEquals(TARIFA, pedido.tarifaEnvio().orElseThrow());
+    assertEquals(Dinero.deCop(14_900), pedido.costoEnvio());
+  }
+
+  /**
+   * Sin tarifa no hay envío a domicilio. Lo que importa aquí no es solo que falle, sino
+   * <strong>dónde</strong>: la cotización va antes de reservar, así que un destino sin cobertura no
+   * deja existencias comprometidas ni quema un número de pedido.
+   */
+  @Test
+  void sinCoberturaNoSeCreaElPedidoNiSeTocaElInventario() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    cotizador.sinTarifas();
+
+    assertThrows(
+        EnvioSinCoberturaException.class, () -> caso.ejecutar(comando(MetodoPago.NEQUI, 2)));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
+    assertTrue(pedidos.todos().isEmpty());
+  }
+
+  /** El retiro en punto no cotiza: no hay a dónde despachar y el flete es cero por definición. */
+  @Test
+  void elRetiroEnPuntoNiCotizaNiCobraEnvio() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    Pedido pedido = caso.ejecutar(comandoRetiroEnPunto(MetodoPago.NEQUI, 2));
+
+    assertEquals(0, cotizador.vecesLlamado());
+    assertTrue(pedido.tarifaEnvio().isEmpty());
+    assertEquals(Dinero.deCop(0), pedido.costoEnvio());
+    assertEquals(pedido.subtotal(), pedido.total());
+  }
+
+  /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
+  private static final class CotizadorEnvioFalso implements CotizadorEnvio {
+
+    private List<TarifaEnvio> tarifas = List.of();
+    private boolean recauda = true;
+    private int veces;
+
+    void conTarifas(TarifaEnvio... tarifas) {
+      this.tarifas = List.of(tarifas);
+    }
+
+    void sinTarifas() {
+      this.tarifas = List.of();
+    }
+
+    void recaudaEnElDestino(boolean recauda) {
+      this.recauda = recauda;
+    }
+
+    int vecesLlamado() {
+      return veces;
+    }
+
+    /**
+     * Imita a Skydropx: en una cotización pedida con recaudo solo responden las transportadoras que
+     * lo admiten, y toda tarifa que sobrevive queda marcada como que recauda. Si ninguna lo admite,
+     * la cotización vuelve vacía — que es distinto de no tener envío.
+     */
+    @Override
+    public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+      veces++;
+      if (cotizacion.conRecaudo() && !recauda) {
+        return List.of();
+      }
+      return tarifas.stream().map(t -> conRecaudo(t, cotizacion.conRecaudo())).toList();
+    }
+
+    private static TarifaEnvio conRecaudo(TarifaEnvio tarifa, boolean admite) {
+      return new TarifaEnvio(
+          tarifa.idTarifa(),
+          tarifa.transportadora(),
+          tarifa.servicio(),
+          tarifa.costo(),
+          tarifa.diasEstimados(),
+          admite,
+          tarifa.venceEn());
+    }
   }
 
   @Test
@@ -215,8 +343,9 @@ class CrearPedidoTest {
     assertNull(ultimaReserva().expiraEn());
   }
 
+  /** Ninguna transportadora cobra en la puerta en ese destino (adr/0023). */
   @Test
-  void contraentregaSeRechazaSiLaCiudadNoEstaCubierta() {
+  void contraentregaSeRechazaSiNingunaTarifaRecauda() {
     CrearPedido caso = crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, false);
     publicarProductoConVarianteYExistencia(5);
 

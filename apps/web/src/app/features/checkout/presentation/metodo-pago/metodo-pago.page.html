@@ -19,6 +19,12 @@
       (seleccionCambio)="elegir($event)"
     />
 
+    @if (ofreceContraentrega()) {
+      <p class="mt-16 mb-0 text-sm text-ts-texto-suave">
+        {{ 'checkout.metodoPago.contraentrega_efectivo' | transloco }}
+      </p>
+    }
+
     <ts-boton
       class="mt-24 block"
       variante="primario"

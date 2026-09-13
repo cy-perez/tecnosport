@@ -333,6 +333,15 @@ discutir. **Cierre:** las cláusulas de la sección 3, en el mismo commit, más
 actualizadas — las tres van acopladas al texto y se mueven juntas.
 
 **2. El resumen del checkout no muestra ni el costo de envío ni el total a pagar.**
+~~Pendiente.~~ **Cerrado el 13 de septiembre de 2026, y en dos pantallas y no en
+una.** El primer cierre puso el desglose en `resumen`, que es donde se escribe la
+dirección, y dio el hallazgo por resuelto. Estaba a medias: el artículo 50 habla
+de *antes de finalizar la transacción*, y la transacción se finaliza en
+`confirmar`, que seguía mostrando una sola línea de "Subtotal" calculada por el
+navegador. Lo encontró una revisión adversarial. Ahora las dos pantallas muestran
+subtotal, envío por separado y total; la de confirmar reutiliza la cotización ya
+cacheada, así que no cuesta una llamada más.
+
 *Hueco de la ley (art. 50).* `apps/web/src/app/features/checkout/presentation/resumen/resumen.page.html:55`
 pinta una sola línea, `checkout.resumen.subtotal`, y el valor lo calcula el
 navegador (`resumen.page.ts:64`). Falta la línea de envío, falta el total, y falta

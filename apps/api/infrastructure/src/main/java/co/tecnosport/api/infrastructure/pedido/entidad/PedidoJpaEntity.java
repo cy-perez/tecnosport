@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -59,6 +60,31 @@ public class PedidoJpaEntity {
   @Column(name = "aviso_plazo_entrega_enviado_en", insertable = false, updatable = false)
   private Instant avisoPlazoEntregaEnviadoEn;
 
+  /**
+   * Lo que el comprador paga de flete, congelado al confirmar. No confundir con {@code
+   * EnvioJpaEntity.costoEnvio}, que es lo que el despacho le cuesta al negocio.
+   */
+  @Column(name = "costo_envio", nullable = false)
+  private BigDecimal costoEnvio;
+
+  @Column(name = "tarifa_envio_id")
+  private String tarifaEnvioId;
+
+  @Column(name = "tarifa_envio_transportadora")
+  private String tarifaEnvioTransportadora;
+
+  @Column(name = "tarifa_envio_servicio")
+  private String tarifaEnvioServicio;
+
+  @Column(name = "tarifa_envio_dias")
+  private Integer tarifaEnvioDias;
+
+  @Column(name = "tarifa_envio_admite_contraentrega")
+  private Boolean tarifaEnvioAdmiteContraentrega;
+
+  @Column(name = "tarifa_envio_vence_en")
+  private Instant tarifaEnvioVenceEn;
+
   protected PedidoJpaEntity() {}
 
   public PedidoJpaEntity(
@@ -76,7 +102,14 @@ public class PedidoJpaEntity {
       String metodoPago,
       String estado,
       Instant creadoEn,
-      Instant avisoPlazoEntregaEnviadoEn) {
+      Instant avisoPlazoEntregaEnviadoEn,
+      BigDecimal costoEnvio,
+      String tarifaEnvioId,
+      String tarifaEnvioTransportadora,
+      String tarifaEnvioServicio,
+      Integer tarifaEnvioDias,
+      Boolean tarifaEnvioAdmiteContraentrega,
+      Instant tarifaEnvioVenceEn) {
     this.id = id;
     this.numeroPedido = numeroPedido;
     this.usuarioId = usuarioId;
@@ -92,6 +125,41 @@ public class PedidoJpaEntity {
     this.estado = estado;
     this.creadoEn = creadoEn;
     this.avisoPlazoEntregaEnviadoEn = avisoPlazoEntregaEnviadoEn;
+    this.costoEnvio = costoEnvio;
+    this.tarifaEnvioId = tarifaEnvioId;
+    this.tarifaEnvioTransportadora = tarifaEnvioTransportadora;
+    this.tarifaEnvioServicio = tarifaEnvioServicio;
+    this.tarifaEnvioDias = tarifaEnvioDias;
+    this.tarifaEnvioAdmiteContraentrega = tarifaEnvioAdmiteContraentrega;
+    this.tarifaEnvioVenceEn = tarifaEnvioVenceEn;
+  }
+
+  public BigDecimal getCostoEnvio() {
+    return costoEnvio;
+  }
+
+  public String getTarifaEnvioId() {
+    return tarifaEnvioId;
+  }
+
+  public String getTarifaEnvioTransportadora() {
+    return tarifaEnvioTransportadora;
+  }
+
+  public String getTarifaEnvioServicio() {
+    return tarifaEnvioServicio;
+  }
+
+  public Integer getTarifaEnvioDias() {
+    return tarifaEnvioDias;
+  }
+
+  public Boolean getTarifaEnvioAdmiteContraentrega() {
+    return tarifaEnvioAdmiteContraentrega;
+  }
+
+  public Instant getTarifaEnvioVenceEn() {
+    return tarifaEnvioVenceEn;
   }
 
   public UUID getId() {

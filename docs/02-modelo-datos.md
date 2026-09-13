@@ -309,12 +309,19 @@ comprador necesita el costo mucho antes de eso.
 
 ```
 pedido
-  ... , tipo_entrega, costo_envio, transportadora_cotizada,
-  servicio_cotizado, tarifa_id_proveedor, dias_estimados,
-  tarifa_vence_en
+  ... , tipo_entrega, costo_envio, tarifa_envio_id,
+  tarifa_envio_transportadora, tarifa_envio_servicio,
+  tarifa_envio_dias, tarifa_envio_admite_contraentrega,
+  tarifa_envio_vence_en
 
 tipo_entrega: ENVIO_A_DOMICILIO | RETIRO_EN_PUNTO
 ```
+
+Los nombres se decidieron al escribir `V33` (11 de septiembre de 2026): las seis
+columnas de la tarifa comparten el prefijo `tarifa_envio_` para que se lean como
+lo que son —un solo objeto de valor desarmado en columnas— y para que un `check`
+pueda exigirlas juntas. `costo_envio` se queda fuera del prefijo porque no es
+parte de la tarifa: es lo que se cobró, y existe también cuando no hubo tarifa.
 
 `TipoEntrega` ya existe con esos dos nombres y **no se renombra**: el enum es del
 dominio y el texto de la interfaz es de Transloco. Que la vitrina diga "recogida
@@ -327,11 +334,24 @@ Reglas:
 - **`RETIRO_EN_PUNTO` implica `costo_envio` en cero** y las columnas de tarifa en
   nulo: no se cotizó nada porque no hay nada que enviar. Es una invariante del
   agregado, no una convención de la interfaz.
-- **`ENVIO_A_DOMICILIO` exige tarifa.** Un pedido a domicilio sin tarifa congelada no se
-  puede crear: significaría que el flete se decidió después de que el comprador
-  aceptó el total.
-- **`tarifa_id_proveedor` es opaco.** Es el `rate_id` de Skydropx y solo sirve
-  para emitir la guía; no se muestra ni se acepta desde el cliente.
+- **`ENVIO_A_DOMICILIO` exige tarifa.** Un pedido a domicilio sin tarifa congelada
+  no se puede crear: significaría que el flete se decidió después de que el
+  comprador aceptó el total.
+
+  **Dónde vive hoy esa exigencia**, porque no es donde se esperaría: en
+  `CrearPedido`, que cotiza siempre antes de reservar y aborta si no hay tarifa, y
+  no en el constructor de `Pedido`. El agregado la acepta nula a propósito, porque
+  es el mismo constructor con el que el repositorio reconstruye los pedidos
+  anteriores a la Fase 7, que no tienen ninguna y son válidos. Mientras
+  `CrearPedido` sea el único que crea pedidos la regla se cumple; el día que
+  aparezca otro camino —una importación, un pedido creado desde el panel— hay que
+  subirla al agregado separando el constructor de reconstrucción del de creación.
+- **`tarifa_envio_id` es opaco.** Es el `rate_id` de Skydropx y solo sirve para
+  emitir la guía; no se muestra ni se acepta desde el cliente.
+- **`tarifa_envio_admite_contraentrega` se guarda en falso por ahora.** Skydropx
+  no declara la cobertura de recaudo en la tarifa —ninguna tarifa exitosa trae un
+  campo que lo diga— y prometerla sin dato sería ofrecer un pago que después no
+  existe. Ver `docs/13-skydropx-capacidades.md`, sección 6.
 - **`tarifa_vence_en` no bloquea el pago.** Guarda cuándo caducan las 24 horas de
   validez de la tarifa, para que al despachar se sepa si hay que cotizar de nuevo.
   Un pedido no cambia de total porque la tarifa venció (`docs/11-pagos-y-envios.md`).

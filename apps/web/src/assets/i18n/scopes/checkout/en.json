@@ -10,7 +10,7 @@
     "correo": "Email address",
     "tipo_entrega": "Delivery type",
     "envio_a_domicilio": "Home delivery",
-    "retiro_en_punto": "Pickup (Medellín)",
+    "retiro_en_punto": "Pick up at our location (Medellín) — no shipping cost",
     "retiro_direccion_titulo": "Pickup point",
     "retiro_direccion": "Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín. We arrange the handover with you by WhatsApp or email once we confirm your order.",
     "direccion_titulo": "Delivery address",
@@ -29,7 +29,14 @@
       "autorizacion_requerida": "You must authorise the processing of your data to continue."
     },
     "autoriza_datos": "I authorise the processing of my personal data to process and deliver this order.",
-    "ver_politica": "Read the personal data policy"
+    "ver_politica": "Read the personal data policy",
+    "costo_envio": "Shipping cost",
+    "total": "Total to pay",
+    "envio_estimado": "Estimated delivery: {{dias}} days",
+    "envio_calculando": "Calculating shipping cost…",
+    "envio_sin_cobertura": "We have no carrier for this address. You can pick up your order at our Medellín location.",
+    "retiro_ahorro": "You save {{valor}} in shipping",
+    "envio_estimado_un_dia": "Estimated delivery: 1 day"
   },
   "metodoPago": {
     "titulo": "Payment method",
@@ -43,7 +50,8 @@
     "bancolombia": "Bancolombia Button",
     "addi": "Addi (installments)",
     "transferencia_manual": "Bank transfer",
-    "contraentrega": "Cash on delivery"
+    "contraentrega": "Cash on delivery",
+    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only"
   },
   "confirmar": {
     "titulo": "Confirm order",

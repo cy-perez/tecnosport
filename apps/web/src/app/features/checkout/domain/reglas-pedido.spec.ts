@@ -17,6 +17,8 @@ function pedidoDePrueba(overrides: Partial<Pedido>): Pedido {
     direccion: null,
     metodoPago: 'TARJETA',
     estado: 'PAGO_PENDIENTE',
+    subtotal: { valor: 100_000, moneda: 'COP' },
+    costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 100_000, moneda: 'COP' },
     creadoEn: '2026-09-04T00:00:00Z',
     datosTransferencia: null,

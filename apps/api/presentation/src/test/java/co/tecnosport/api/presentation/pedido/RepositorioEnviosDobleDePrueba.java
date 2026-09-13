@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.domain.envio.Envio;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,5 +25,21 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
 
   List<Envio> guardados() {
     return List.copyOf(envios);
+  }
+
+  @Override
+  public Optional<Envio> buscarPorGuia(String guia) {
+    return envios.stream().filter(e -> e.guia().equals(guia)).findFirst();
+  }
+
+  /** Mismo criterio que la consulta real: callado desde el corte y sin evento terminal. */
+  @Override
+  public List<Envio> buscarSinEventosDesde(Instant corte, int maximo) {
+    return envios.stream()
+        .filter(e -> e.despachadoEn().isBefore(corte))
+        .filter(e -> e.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte)))
+        .filter(e -> e.eventos().stream().noneMatch(ev -> ev.estado().esTerminal()))
+        .limit(maximo)
+        .toList();
   }
 }

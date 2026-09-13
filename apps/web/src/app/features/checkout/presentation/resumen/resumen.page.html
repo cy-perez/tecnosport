@@ -49,12 +49,59 @@
         }
       </div>
 
-      <div
-        class="mt-24 flex items-baseline justify-between border-t-2 border-ts-borde pt-16 text-lg font-medio"
-      >
-        <span>{{ 'checkout.resumen.subtotal' | transloco }}</span>
-        <ts-precio [valor]="subtotal()" moneda="COP" />
-      </div>
+      <!--
+        El desglose completo antes de pagar: productos, envío por separado y la suma. Lo exige el
+        artículo 50 de la Ley 1480 de 2011, y hasta la Fase 7 aquí solo había un "Subtotal" — que
+        además era el total, porque el flete iba escondido en cada precio.
+      -->
+      <dl class="m-0 mt-24 flex flex-col gap-8 border-t-2 border-ts-borde pt-16">
+        <div class="flex items-baseline justify-between">
+          <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
+          <dd class="m-0"><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
+        </div>
+
+        @if (requiereDireccion()) {
+          @if (cotizando()) {
+            <p class="m-0 text-ts-texto-suave" aria-live="polite">
+              {{ 'checkout.resumen.envio_calculando' | transloco }}
+            </p>
+          } @else if (cotizacion.data(); as envio) {
+            <div class="flex items-baseline justify-between">
+              <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
+              <dd class="m-0"><ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" /></dd>
+            </div>
+            <!--
+              Cero días significa "sin estimado", no "llega hoy": hay tarifas que no declaran plazo
+              y no se les inventa uno. Y es un estimado de la transportadora, no el plazo que
+              prometen los términos — eso lo dice el documento legal, no esta línea.
+            -->
+            <!-- Un día y varios días son dos textos, no una interpolación: "1 días" es lo que sale
+                 de fingir que el plural es siempre. -->
+            @if (envio.diasEstimados === 1) {
+              <p class="m-0 text-sm text-ts-texto-suave">
+                {{ 'checkout.resumen.envio_estimado_un_dia' | transloco }}
+              </p>
+            } @else if (envio.diasEstimados > 1) {
+              <p class="m-0 text-sm text-ts-texto-suave">
+                {{ 'checkout.resumen.envio_estimado' | transloco: { dias: envio.diasEstimados } }}
+              </p>
+            }
+          } @else if (sinCobertura()) {
+            <p class="m-0 text-ts-error" role="alert">
+              {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
+            </p>
+          }
+        } @else if (ahorroPorRecoger(); as ahorro) {
+          <p class="m-0 text-sm text-ts-texto-suave">
+            {{ 'checkout.resumen.retiro_ahorro' | transloco: { valor: ahorro } }}
+          </p>
+        }
+
+        <div class="flex items-baseline justify-between text-lg font-medio">
+          <dt>{{ 'checkout.resumen.total' | transloco }}</dt>
+          <dd class="m-0"><ts-precio [valor]="total()" moneda="COP" /></dd>
+        </div>
+      </dl>
 
       <form
         class="mt-32 flex max-w-formulario-lg flex-col gap-16"
@@ -138,6 +185,10 @@
           }
         </div>
 
+        <!-- Habilitado aunque no haya cobertura: un botón deshabilitado sale del orden de
+             tabulación, así que quien navega con teclado llega y no puede enfocarlo para
+             entender por qué. Se deja alcanzable y es `enviar()` quien no deja pasar; el motivo
+             ya está arriba, en un `role="alert"`. -->
         <ts-boton variante="primario" tipo="submit">
           {{ 'checkout.resumen.continuar' | transloco }}
         </ts-boton>

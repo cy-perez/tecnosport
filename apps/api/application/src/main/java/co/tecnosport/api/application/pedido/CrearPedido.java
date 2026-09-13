@@ -4,6 +4,9 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvioComando;
+import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -16,6 +19,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.legal.AutorizacionDatos;
@@ -23,6 +27,7 @@ import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -54,6 +59,7 @@ public final class CrearPedido {
   private final RepositorioInventario repositorioInventario;
   private final RepositorioPedidos repositorioPedidos;
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
+  private final CotizarEnvio cotizarEnvio;
   private final Reloj reloj;
   private final Duration duracionReservaPagoEnLinea;
   private final Duration duracionReservaTransferencia;
@@ -68,6 +74,7 @@ public final class CrearPedido {
       RepositorioInventario repositorioInventario,
       RepositorioPedidos repositorioPedidos,
       MetodosDePagoDisponibles metodosDePagoDisponibles,
+      CotizarEnvio cotizarEnvio,
       Reloj reloj,
       Duration duracionReservaPagoEnLinea,
       Duration duracionReservaTransferencia,
@@ -105,6 +112,7 @@ public final class CrearPedido {
     this.repositorioAutorizaciones =
         Objects.requireNonNull(
             repositorioAutorizaciones, "El repositorio de autorizaciones no puede ser nulo.");
+    this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio, "El cotizador no puede ser nulo.");
     this.versionPolitica =
         Objects.requireNonNull(versionPolitica, "La versión de la política no puede ser nula.");
   }
@@ -127,8 +135,14 @@ public final class CrearPedido {
     // compra, y fallar después habría dejado existencias comprometidas por nada.
     AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
 
+    // La cotización va antes de la comprobación de contraentrega y no al revés: la tarifa que sale
+    // de aquí es la misma que decide si hay recaudo y la que después se congela. Antes eran dos
+    // cotizaciones con el mismo cuerpo, y si la segunda volvía sin tarifa el comprador recibía un
+    // 409 después de que el sistema le acabara de decir que sí había contraentrega.
+    TarifaEnvio tarifaEnvio = cotizarSiVaADomicilio(comando);
+
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
-      exigirContraentregaDisponible(comando);
+      exigirContraentregaDisponible(comando, tarifaEnvio);
     }
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
 
@@ -150,7 +164,8 @@ public final class CrearPedido {
             comando.direccion(),
             comando.metodoPago(),
             comando.correo(),
-            ahora);
+            ahora,
+            tarifaEnvio);
 
     repositorioPedidos.guardar(pedido);
     repositorioAutorizaciones.guardar(
@@ -164,7 +179,50 @@ public final class CrearPedido {
     return pedido;
   }
 
-  private void exigirContraentregaDisponible(CrearPedidoComando comando) {
+  /**
+   * El retiro en punto no cotiza: no hay a dónde despachar y el flete es cero por definición
+   * (docs/03-api.md). Para todo lo demás, la tarifa que salga de aquí es la que el pedido congela y
+   * la que se cobra.
+   */
+  private TarifaEnvio cotizarSiVaADomicilio(CrearPedidoComando comando) {
+    if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO) {
+      return null;
+    }
+    // Con recaudo si se paga contra entrega: la tarifa que se congela tiene que ser de una
+    // transportadora que cobre en la puerta, no la más barata de las que no cobran.
+    //
+    // Es la única cotización del pedido, y va antes de reservar por dos motivos. Uno: el costo lo
+    // fija el servidor, nunca lo que el cliente diga que le mostró el checkout (regla dura #7).
+    // Dos: cotizar llama a un proveedor externo, y hacerlo después de reservar dejaría las filas
+    // del inventario bloqueadas esperándolo. Aquí la transacción está abierta pero todavía no ha
+    // tomado ningún bloqueo, y un destino sin cobertura no compromete existencias.
+    boolean conRecaudo = comando.metodoPago() == MetodoPago.CONTRAENTREGA;
+    CotizarEnvioComando cotizacion =
+        new CotizarEnvioComando(
+            comando.lineas().stream()
+                .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
+                .toList(),
+            comando.direccion(),
+            conRecaudo);
+    if (!conRecaudo) {
+      return cotizarEnvio.ejecutar(cotizacion);
+    }
+    // Pedida con recaudo, quedarse sin tarifa no significa que no haya cómo enviar: puede haber
+    // transportadoras de sobra y ninguna que cobre en la puerta. Decirle al comprador "no tenemos
+    // transporte hasta esta dirección" sería mandarlo a cambiar una dirección que estaba bien.
+    try {
+      return cotizarEnvio.ejecutar(cotizacion);
+    } catch (EnvioSinCoberturaException e) {
+      throw new ContraentregaNoDisponibleException();
+    }
+  }
+
+  /**
+   * La tarifa ya cotizada viaja en el comando para que {@code MetodosDePagoDisponibles} no vuelva a
+   * preguntarle al proveedor: es la misma pregunta con el mismo cuerpo, y dos respuestas distintas
+   * a la misma pregunta es justo lo que había que evitar.
+   */
+  private void exigirContraentregaDisponible(CrearPedidoComando comando, TarifaEnvio tarifa) {
     MetodosDePagoDisponiblesComando consulta =
         new MetodosDePagoDisponiblesComando(
             comando.lineas().stream()
@@ -175,7 +233,8 @@ public final class CrearPedido {
                 .toList(),
             comando.correo(),
             comando.tipoEntrega(),
-            comando.direccion());
+            comando.direccion(),
+            tarifa);
     if (!metodosDePagoDisponibles.ejecutar(consulta).contains(MetodoPago.CONTRAENTREGA)) {
       throw new ContraentregaNoDisponibleException();
     }

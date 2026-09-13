@@ -16,9 +16,15 @@ import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
+import { CotizacionEnvio } from '../../domain/envio.model';
+import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ConfirmarPage } from './confirmar.page';
 import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
-import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testing/carrito';
+import {
+  proveerAlmacenesCarrito,
+  sembrarCarritoId,
+  sembrarSnapshotLinea,
+} from '../../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -55,6 +61,8 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     direccion: null,
     metodoPago: 'TARJETA',
     estado: 'PAGO_PENDIENTE',
+    subtotal: { valor: 150_000, moneda: 'COP' },
+    costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 150_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
     datosTransferencia: null,
@@ -146,16 +154,43 @@ const DATOS_ENTREGA: DatosEntrega = {
   autorizaDatos: true,
 };
 
+const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
+  correo: 'compra@ejemplo.co',
+  tipoEntrega: 'ENVIO_A_DOMICILIO',
+  direccion: {
+    codigoDaneDepartamento: '05',
+    departamento: 'Antioquia',
+    codigoDaneCiudad: '05001',
+    ciudad: 'Medellín',
+    direccion: 'Circular 4 # 70-20',
+    indicaciones: null,
+  },
+  autorizaDatos: true,
+};
+
+function snapshotDePrueba(varianteId: string) {
+  return {
+    varianteId,
+    nombreProducto: 'Morral urbano',
+    slugProducto: 'morral-urbano',
+    sku: 'SKU-1',
+    imagenUrl: null,
+    imagenAlt: 'Morral urbano',
+    precioValor: 150_000,
+    precioMoneda: 'COP',
+  };
+}
+
 /** Mismo motivo que en `metodo-pago.page.spec.ts`: el guardia corre en el
  * primer `effect()`, así que los datos tienen que existir antes de que
  * `ConfirmarPage` se construya. */
-function anfitrionConDatos(metodoPago: MetodoPago) {
+function anfitrionConDatos(metodoPago: MetodoPago, datos: DatosEntrega = DATOS_ENTREGA) {
   @Component({ selector: 'app-anfitrion-de-prueba', imports: [ConfirmarPage], template: `<app-confirmar />` })
   class AnfitrionDePrueba {
     private readonly checkout = inject(CheckoutStore);
 
     constructor() {
-      this.checkout.guardarDatosEntrega(DATOS_ENTREGA);
+      this.checkout.guardarDatosEntrega(datos);
       this.checkout.elegirMetodoPago(metodoPago);
     }
   }
@@ -165,13 +200,32 @@ function anfitrionConDatos(metodoPago: MetodoPago) {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
+
+/** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
+class RepositorioEnviosFalso implements RepositorioEnvios {
+  constructor(private readonly respuesta: CotizacionEnvio | null = COTIZACION) {}
+
+  async cotizar(): Promise<CotizacionEnvio | null> {
+    return this.respuesta;
+  }
+}
+
+const COTIZACION: CotizacionEnvio = {
+  costoEnvio: 9_540,
+  moneda: 'COP',
+  transportadora: '99 minutes',
+  diasEstimados: 2,
+  venceEn: '2026-09-14T12:00:00Z',
+};
+
 async function renderConDatos(
   metodoPago: MetodoPago,
   carrito: RepositorioCarrito,
   pedidos: RepositorioPedidos,
   pagos: RepositorioPagos = new RepositorioPagosFalso(),
+  datos: DatosEntrega = DATOS_ENTREGA,
 ) {
-  return render(anfitrionConDatos(metodoPago), {
+  return render(anfitrionConDatos(metodoPago, datos), {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'checkout/es': esCheckout } as never,
@@ -189,6 +243,7 @@ async function renderConDatos(
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_CARRITO, useValue: carrito },
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
+      { provide: REPOSITORIO_ENVIOS, useValue: new RepositorioEnviosFalso() },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
     ],
   });
@@ -222,6 +277,48 @@ describe('ConfirmarPage', () => {
 
   afterEach(() => {
     Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
+  });
+
+  /**
+   * El artículo 50 de la Ley 1480 de 2011 exige el desglose —productos, envío aparte y la suma—
+   * **antes de finalizar la transacción**, y la transacción se finaliza con el botón de esta
+   * pantalla, no con el de dos pasos atrás. Aquí solo se veía "Subtotal".
+   */
+  it('a domicilio, muestra el envío por separado y el total a pagar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      'NEQUI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+    );
+
+    expect(await screen.findByText('Costo de envío')).toBeTruthy();
+    // Se espera al precio y no al rótulo: mientras la cotización viaja, esa celda dice
+    // "Calculando el costo de envío…".
+    expect((await screen.findAllByText(/9\.540/)).length).toBeGreaterThan(0);
+    expect(screen.getByText('Total a pagar')).toBeTruthy();
+    expect((await screen.findAllByText(/159\.540/)).length).toBeGreaterThan(0);
+  });
+
+  /** Recogiendo en el punto no hay flete que desglosar, y el total es el subtotal. */
+  it('con retiro en punto, no muestra línea de envío y el total es el subtotal', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+    );
+
+    expect(await screen.findByText('Total a pagar')).toBeTruthy();
+    expect(screen.queryByText('Costo de envío')).toBeFalsy();
+    // Subtotal y total valen lo mismo cuando no hay flete, así que aparece dos veces.
+    expect((await screen.findAllByText(/150\.000/))).toHaveLength(2);
   });
 
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
