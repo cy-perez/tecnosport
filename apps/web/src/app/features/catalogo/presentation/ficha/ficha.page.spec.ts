@@ -83,14 +83,14 @@ function productoConVariantes(): Producto {
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
         existencia: 5,
-        atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' }],
+        atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null }],
       },
       {
         id: 'variante-ng',
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
         existencia: 3,
-        atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
+        atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null }],
       },
     ],
   };

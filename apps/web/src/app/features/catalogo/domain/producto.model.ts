@@ -29,6 +29,8 @@ export interface ValorAtributo {
   readonly nombre: string;
   readonly valor: string;
   readonly colorHex: string | null;
+  /** Lo que acompaña al valor cuando el número solo no dice nada: "12" + "meses". */
+  readonly unidad: string | null;
 }
 
 export interface Variante {
@@ -53,6 +55,7 @@ export interface Atributo {
   readonly nombre: string;
   readonly tipo: TipoAtributo;
   readonly valoresPermitidos: readonly string[];
+  readonly unidad: string | null;
 }
 
 export interface Categoria {

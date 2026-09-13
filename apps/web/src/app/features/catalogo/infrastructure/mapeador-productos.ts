@@ -40,7 +40,12 @@ export function aMarca(dto?: MarcaDto): Marca {
 }
 
 export function aCategoria(dto?: CategoriaDto): Categoria {
-  return { id: dto?.id ?? '', nombre: dto?.nombre ?? '', slug: dto?.slug ?? '', linea: dto?.linea ?? '' };
+  return {
+    id: dto?.id ?? '',
+    nombre: dto?.nombre ?? '',
+    slug: dto?.slug ?? '',
+    linea: dto?.linea ?? '',
+  };
 }
 
 function aImagen(dto: ImagenDto): Imagen {
@@ -85,7 +90,12 @@ function aVariante(dto: VarianteDto): Variante {
 }
 
 function aValorAtributo(dto: ValorAtributoDto): ValorAtributo {
-  return { nombre: dto.nombre ?? '', valor: dto.valor ?? '', colorHex: dto.colorHex ?? null };
+  return {
+    nombre: dto.nombre ?? '',
+    valor: dto.valor ?? '',
+    colorHex: dto.colorHex ?? null,
+    unidad: dto.unidad ?? null,
+  };
 }
 
 /** El contrato expone `tipo` como `string` (springdoc no emite el enum de Java como unión literal);
@@ -97,5 +107,6 @@ export function aAtributo(dto: AtributoDto): Atributo {
     nombre: dto.nombre ?? '',
     tipo: (dto.tipo ?? 'TEXTO') as TipoAtributo,
     valoresPermitidos: dto.valoresPermitidos ?? [],
+    unidad: dto.unidad ?? null,
   };
 }

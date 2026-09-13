@@ -22,12 +22,19 @@ import {
 } from '../../domain/repositorio-productos-admin.puerto';
 import { AgregarVarianteAdminPage } from './agregar-variante-admin.page';
 
-const COLOR: Atributo = { id: 'a1', nombre: 'Color', tipo: 'COLOR', valoresPermitidos: [] };
+const COLOR: Atributo = {
+  id: 'a1',
+  nombre: 'Color',
+  tipo: 'COLOR',
+  valoresPermitidos: [],
+  unidad: null,
+};
 const TALLA: Atributo = {
   id: 'a2',
   nombre: 'Talla',
   tipo: 'TEXTO',
   valoresPermitidos: ['S', 'M', 'L'],
+  unidad: null,
 };
 
 class RepositorioAtributosFalso implements RepositorioAtributos {
@@ -92,7 +99,6 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, pro
     ],
   });
 }
-
 
 /** El paquete es obligatorio desde adr/0021, así que el mínimo enviable ya no es SKU y precio. */
 function llenarPaquete() {
