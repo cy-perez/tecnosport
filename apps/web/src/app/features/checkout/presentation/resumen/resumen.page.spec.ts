@@ -101,7 +101,6 @@ const COTIZACION: CotizacionEnvio = {
   transportadora: '99 minutes',
   diasEstimados: 2,
   venceEn: '2026-09-12T12:00:00Z',
-  admiteContraentrega: false,
 };
 
 function snapshotDePrueba(varianteId: string): SnapshotLinea {
@@ -188,20 +187,35 @@ describe('ResumenPage', () => {
   /**
    * Sin cobertura no se puede continuar: el pedido respondería el mismo 409 dos pantallas
    * después. Se dice aquí, con la salida —recoger en el punto— en el mismo texto.
+   *
+   * El botón **no** se deshabilita, y eso es deliberado: un control deshabilitado sale del orden
+   * de tabulación, así que quien navega con teclado llega y no puede enfocarlo para entender por
+   * qué. Queda alcanzable y es el envío el que no pasa.
    */
-  it('sin cobertura lo explica y bloquea el botón de continuar', async () => {
+  it('sin cobertura lo explica, deja el botón alcanzable y no deja continuar', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
-    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(null));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(null),
+    );
     await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
     await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
 
-    expect(
-      await screen.findByText(/No tenemos transporte hasta esta dirección/),
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(true);
+    const continuar = screen.getByRole('button', { name: 'Continuar' });
+    expect(continuar.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(continuar);
+
+    expect(checkout.datosEntrega()).toBeNull();
   });
 
   it('el retiro en punto no cotiza nada', async () => {

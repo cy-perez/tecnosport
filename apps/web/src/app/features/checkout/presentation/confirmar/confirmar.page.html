@@ -46,8 +46,32 @@
       <dt>{{ 'checkout.metodoPago.titulo' | transloco }}</dt>
       <dd>{{ etiquetaMetodoPago() }}</dd>
 
+      <!--
+        El desglose completo, y aquí no es una cortesía: el artículo 50 de la Ley 1480 de 2011
+        exige mostrar los costos de envío separados y la suma total ANTES de finalizar la
+        transacción, y la transacción se finaliza con el botón de abajo. Esta pantalla mostraba
+        solo "Subtotal" — que además era el total, porque el flete no se cobraba aparte.
+      -->
       <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
       <dd><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
+
+      @if (muestraEnvio()) {
+        <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
+        <dd>
+          @if (cotizacion.isFetching()) {
+            <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
+          } @else if (cotizacion.data(); as envio) {
+            <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
+          } @else {
+            <span class="text-ts-error" role="alert">{{
+              'checkout.resumen.envio_sin_cobertura' | transloco
+            }}</span>
+          }
+        </dd>
+      }
+
+      <dt class="font-medio">{{ 'checkout.resumen.total' | transloco }}</dt>
+      <dd class="font-medio"><ts-precio [valor]="total()" moneda="COP" /></dd>
     </dl>
 
     @if (error()) {

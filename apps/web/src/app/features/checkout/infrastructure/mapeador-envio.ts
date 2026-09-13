@@ -11,6 +11,5 @@ export function aCotizacionEnvio(dto: CotizacionDto): CotizacionEnvio {
     transportadora: dto.transportadora ?? '',
     diasEstimados: dto.diasEstimados ?? 0,
     venceEn: dto.venceEn ?? '',
-    admiteContraentrega: dto.admiteContraentrega ?? false,
   };
 }

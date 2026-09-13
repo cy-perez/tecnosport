@@ -268,6 +268,11 @@ export class ResumenPage {
    * respondería el mismo 409 dos pantallas después. Se bloquea aquí, junto al
    * texto que explica por qué y ofrece la recogida.
    */
+  /**
+   * Sin transportadora no se puede confirmar un envío a domicilio: el pedido respondería el mismo
+   * 409 dos pantallas después. No deshabilita el botón —eso lo sacaría del orden de tabulación—
+   * sino que corta en `enviar()`, con el motivo ya visible y anunciado.
+   */
   protected readonly bloqueadoPorCobertura = computed(() => this.sinCobertura());
 
   constructor() {
@@ -311,7 +316,7 @@ export class ResumenPage {
 
   protected enviar(): void {
     this.form.markAllAsTouched();
-    if (this.form.invalid) {
+    if (this.form.invalid || this.bloqueadoPorCobertura()) {
       return;
     }
 

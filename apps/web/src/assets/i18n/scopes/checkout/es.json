@@ -35,7 +35,8 @@
     "envio_estimado": "Entrega estimada: {{dias}} días",
     "envio_calculando": "Calculando el costo de envío…",
     "envio_sin_cobertura": "No tenemos transporte hasta esta dirección. Puedes recoger tu pedido en nuestro punto de Medellín.",
-    "retiro_ahorro": "Te ahorras {{valor}} de envío"
+    "retiro_ahorro": "Te ahorras {{valor}} de envío",
+    "envio_estimado_un_dia": "Entrega estimada: 1 día"
   },
   "metodoPago": {
     "titulo": "Método de pago",

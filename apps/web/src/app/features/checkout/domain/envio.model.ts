@@ -7,6 +7,10 @@ import { Direccion } from './pedido.model';
  * identificador del proveedor llegan hasta aquí — si viajaran al navegador,
  * alguien podría devolverlos alterados al crear el pedido.
  *
+ * No dice nada de contraentrega: esta cotización se pide sin recaudo —el comprador todavía no ha
+ * elegido cómo paga— y la cobertura de recaudo solo se sabe pidiéndola con recaudo. Eso lo responde
+ * `POST /pedidos/metodos-de-pago-disponibles`.
+ *
  * Es informativa. El costo que se cobra lo fija el servidor otra vez al crear
  * el pedido, así que el resumen se vuelve a pintar con lo que devuelve el
  * pedido (`docs/03-api.md`).
@@ -21,7 +25,6 @@ export interface CotizacionEnvio {
    * declaran plazo y no se les inventa uno. */
   readonly diasEstimados: number;
   readonly venceEn: string;
-  readonly admiteContraentrega: boolean;
 }
 
 export interface CotizarEnvioComando {

@@ -39,6 +39,8 @@ export function aPedido(dto: PedidoDto): Pedido {
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
     metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago,
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
+    subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
+    costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,

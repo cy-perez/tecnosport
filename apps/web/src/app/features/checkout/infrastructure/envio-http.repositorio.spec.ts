@@ -60,7 +60,6 @@ describe('EnvioHttpRepositorio.cotizar', () => {
       transportadora: '99 minutes',
       diasEstimados: 2,
       venceEn: '2026-09-12T12:00:00Z',
-      admiteContraentrega: false,
     });
   });
 

@@ -35,7 +35,8 @@
     "envio_estimado": "Estimated delivery: {{dias}} days",
     "envio_calculando": "Calculating shipping cost…",
     "envio_sin_cobertura": "We have no carrier for this address. You can pick up your order at our Medellín location.",
-    "retiro_ahorro": "You save {{valor}} in shipping"
+    "retiro_ahorro": "You save {{valor}} in shipping",
+    "envio_estimado_un_dia": "Estimated delivery: 1 day"
   },
   "metodoPago": {
     "titulo": "Payment method",

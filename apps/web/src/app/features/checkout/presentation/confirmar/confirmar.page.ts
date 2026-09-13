@@ -9,6 +9,8 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
+import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta';
+import { CotizarEnvioComando } from '../../domain/envio.model';
 import { CrearPedidoComando } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
 import { esMetodoPagoWompi } from '../../domain/reglas-pedido';
@@ -56,6 +58,35 @@ export class ConfirmarPage {
   protected readonly checkout = inject(CheckoutStore);
 
   protected readonly error = signal<string | null>(null);
+
+  /**
+   * La misma cotización que ya calculó el resumen. Comparte clave de consulta con aquella —ciudad
+   * y bultos— así que TanStack la sirve de su caché y no se gasta una llamada más al proveedor.
+   *
+   * <p>Hace falta aquí y no basta con haberla mostrado en el resumen: el artículo 50 de la Ley
+   * 1480 de 2011 pide el desglose **antes de finalizar la transacción**, y finalizar es este
+   * botón, no el de hace dos pantallas.
+   */
+  protected readonly cotizacion = usarCotizacionEnvio(() => this.criteriosCotizacion());
+
+  protected readonly criteriosCotizacion = computed<CotizarEnvioComando | null>(() => {
+    const datos = this.checkout.datosEntrega();
+    if (!datos || datos.tipoEntrega !== 'ENVIO_A_DOMICILIO' || !datos.direccion) {
+      return null;
+    }
+    const lineas = (this.carrito.consulta.data()?.lineas ?? []).map((linea) => ({
+      varianteId: linea.varianteId,
+      cantidad: linea.cantidad,
+    }));
+    return lineas.length === 0 ? null : { lineas, direccion: datos.direccion };
+  });
+
+  protected readonly costoEnvio = computed(() => this.cotizacion.data()?.costoEnvio ?? 0);
+
+  protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
+
+  /** Retiro en punto: no hay flete que mostrar, y el total es el subtotal. */
+  protected readonly muestraEnvio = computed(() => this.criteriosCotizacion() !== null);
 
   protected readonly subtotal = computed(() => {
     const datosCarrito = this.carrito.consulta.data();
