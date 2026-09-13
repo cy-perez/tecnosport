@@ -922,6 +922,8 @@ export interface components {
     schemas: {
         CrearPedidoRequest: {
             correo?: string;
+            nombre?: string;
+            telefono?: string;
             lineas?: components["schemas"]["LineaRequest"][];
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRequest"];
@@ -941,6 +943,10 @@ export interface components {
             varianteId?: string;
             /** Format: int32 */
             cantidad?: number;
+        };
+        ContactoRespuesta: {
+            nombre?: string;
+            telefono?: string;
         };
         DatosTransferenciaRespuesta: {
             banco?: string;
@@ -999,6 +1005,7 @@ export interface components {
             /** Format: uuid */
             usuarioId?: string;
             correo?: string;
+            contacto?: components["schemas"]["ContactoRespuesta"];
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRespuesta"];
@@ -1132,6 +1139,7 @@ export interface components {
             nombre?: string;
             valor?: string;
             colorHex?: string;
+            unidad?: string;
         };
         VarianteRespuesta: {
             /** Format: uuid */
@@ -1484,6 +1492,7 @@ export interface components {
             id?: string;
             numeroPedido?: string;
             correo?: string;
+            contacto?: components["schemas"]["ContactoRespuesta"];
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRespuesta"];
@@ -1532,6 +1541,7 @@ export interface components {
             nombre?: string;
             tipo?: string;
             valoresPermitidos?: string[];
+            unidad?: string;
         };
         ResultadoPaginadoRespuestaAtributoRespuesta: {
             items?: components["schemas"]["AtributoRespuesta"][];
