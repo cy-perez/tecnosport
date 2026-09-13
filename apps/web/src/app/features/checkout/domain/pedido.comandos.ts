@@ -1,4 +1,4 @@
-import { Direccion, MetodoPago, TipoEntrega } from './pedido.model';
+import { Contacto, Direccion, MetodoPago, TipoEntrega } from './pedido.model';
 
 /** Solo lleva lo que el comprador elige. El precio, el SKU, el nombre y la
  * imagen los decide el servidor con el catálogo real (`docs/00-producto.md`) —
@@ -10,6 +10,7 @@ export interface LineaComando {
 
 export interface CrearPedidoComando {
   readonly correo: string;
+  readonly contacto: Contacto;
   readonly lineas: readonly LineaComando[];
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;
@@ -36,6 +37,7 @@ export interface MetodosDePagoDisponiblesComando {
  */
 export interface DatosEntrega {
   readonly correo: string;
+  readonly contacto: Contacto;
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;
   /** Ver `CrearPedidoComando.autorizaDatos`. Va con los datos de entrega y no en la página de

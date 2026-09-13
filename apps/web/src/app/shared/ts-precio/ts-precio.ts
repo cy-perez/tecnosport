@@ -26,7 +26,14 @@ import { formatearPrecio } from './formato-precio';
   changeDetection: ChangeDetectionStrategy.OnPush,
   // `tabular-nums` en el host y no en un `<span>` interno: es lo que hace que
   // una columna de precios alinee sola (docs/04-ui-marca.md).
-  host: { class: 'inline-flex items-baseline gap-4 font-mono tabular-nums' },
+  //
+  // `flex-wrap`, porque el prefijo y la cifra son dos cajas: en la rejilla a
+  // dos columnas de un teléfono (390 px) la tarjeta deja ~150 px al contenido,
+  // y "Desde $ 1.299.900" mide más. Sin envolver, el `overflow-hidden` de la
+  // tarjeta recortaba la cifra —se leía "$ 1.299.90"— que es lo peor que le
+  // puede pasar a un precio. Envuelto, "Desde" baja de línea y la cifra se
+  // lee entera; donde cabe, no cambia nada.
+  host: { class: 'inline-flex flex-wrap items-baseline gap-4 font-mono tabular-nums' },
 })
 export class TsPrecio {
   private readonly transloco = inject(TranslocoService);

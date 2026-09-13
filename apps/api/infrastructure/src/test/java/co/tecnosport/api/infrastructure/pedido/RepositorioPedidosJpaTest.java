@@ -7,6 +7,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -132,6 +133,40 @@ class RepositorioPedidosJpaTest {
     assertThat(encontrado.tarifaEnvio()).isEmpty();
     assertThat(encontrado.costoEnvio()).isEqualTo(Dinero.deCop(0));
     assertThat(encontrado.total()).isEqualTo(encontrado.subtotal());
+  }
+
+  /** Nombre y teléfono vuelven tal como se guardaron: son lo que va en la guía. */
+  @Test
+  void elContactoVuelveDeLaBase() {
+    Contacto contacto = new Contacto("Ana Pérez", "3138816711");
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(linea()),
+            TipoEntrega.RETIRO_EN_PUNTO,
+            null,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            null,
+            contacto);
+
+    repositorio.guardar(pedido);
+
+    Pedido encontrado = repositorio.buscarPorId(pedido.id()).orElseThrow();
+    assertThat(encontrado.contacto()).contains(contacto);
+  }
+
+  /** Los pedidos anteriores a V36 no tienen contacto y siguen leyéndose. */
+  @Test
+  void unPedidoSinContactoVuelveVacio() {
+    Pedido pedido = pedidoAlDomicilio(MetodoPago.NEQUI);
+
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.buscarPorId(pedido.id()).orElseThrow().contacto()).isEmpty();
   }
 
   @Test

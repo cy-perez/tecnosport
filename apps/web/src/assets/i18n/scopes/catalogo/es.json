@@ -28,12 +28,15 @@
       "precio_asc": "Precio: menor a mayor",
       "precio_desc": "Precio: mayor a menor",
       "mas_recientes": "Más recientes"
-    }
+    },
+    "mostrar": "Filtrar y ordenar",
+    "ocultar": "Ocultar filtros"
   },
   "ficha": {
     "no_encontrado": "No encontramos este producto.",
     "error": "No se pudo cargar el producto. Intenta de nuevo.",
-    "combinacion_no_disponible": "Esta combinación no está disponible."
+    "combinacion_no_disponible": "Esta combinación no está disponible.",
+    "volver_al_catalogo": "Volver al catálogo"
   },
   "seo": {
     "rejilla": {

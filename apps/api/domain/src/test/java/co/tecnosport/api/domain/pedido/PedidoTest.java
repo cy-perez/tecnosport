@@ -80,6 +80,33 @@ class PedidoTest {
   }
 
   @Test
+  void crearConContactoLoConserva() {
+    Contacto contacto = new Contacto("Ana Pérez", "313 881 6711");
+
+    Pedido pedido =
+        Pedido.crear(
+            NUMERO,
+            null,
+            CORREO,
+            List.of(linea(BigDecimal.valueOf(50_000), 2)),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            AHORA,
+            null,
+            contacto);
+
+    assertEquals(contacto, pedido.contacto().orElseThrow());
+  }
+
+  /** Los pedidos anteriores a este campo se reconstruyen sin él y siguen siendo válidos. */
+  @Test
+  void unPedidoSinContactoSigueSiendoValido() {
+    assertTrue(crearAlDomicilio(MetodoPago.NEQUI).contacto().isEmpty());
+  }
+
+  @Test
   void crearConMetodoEnLineaQuedaEnPagoPendiente() {
     Pedido pedido = crearAlDomicilio(MetodoPago.NEQUI);
 

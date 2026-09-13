@@ -86,7 +86,8 @@
       "envio": "Envío",
       "comision": "Comisión de recaudo",
       "historial": "Historial",
-      "acciones": "Acciones"
+      "acciones": "Acciones",
+      "contacto": "Quien recibe"
     },
     "acciones": {
       "sin_accion": "Sin acciones disponibles.",

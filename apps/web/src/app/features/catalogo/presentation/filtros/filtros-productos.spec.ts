@@ -107,6 +107,50 @@ function etiquetasDe(select: HTMLElement): string[] {
 }
 
 describe('FiltrosProductos', () => {
+  // En el teléfono los siete controles ocupaban la primera pantalla entera.
+  // El botón solo se pinta por debajo del primer punto de quiebre (clase
+  // `desde-movil:hidden`, que jsdom no evalúa), así que aquí se prueba el
+  // contrato del *disclosure*: el estado anunciado, a qué región apunta y que
+  // el clic lo alterna.
+  it('sin filtros en la URL, arranca plegado y el botón lo despliega', async () => {
+    await renderFiltros();
+
+    const boton = await screen.findByRole('button', { name: 'Filtrar y ordenar' });
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    expect(boton.getAttribute('aria-controls')).toBe('filtros-productos');
+
+    fireEvent.click(boton);
+
+    const abierto = await screen.findByRole('button', { name: 'Ocultar filtros' });
+    expect(abierto.getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('filtros-productos')).toBeTruthy();
+  });
+
+  it('con un filtro en la URL, arranca desplegado: lo aplicado tiene que verse', async () => {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: { es, en, 'catalogo/es': esCatalogo } as never,
+          translocoConfig: { availableLangs: ['es', 'en'], defaultLang: 'es' },
+          preloadLangs: true,
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideTanStackQuery(new QueryClient()),
+        { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+        { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
+      ],
+    });
+    await TestBed.inject(Router).navigateByUrl('/?linea=BOLSOS');
+
+    const fixture = TestBed.createComponent(FiltrosProductos);
+    fixture.detectChanges();
+
+    const boton = fixture.nativeElement.querySelector('button[aria-controls]') as HTMLElement;
+    expect(boton.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('elegir una línea navega con ese query param, con debounce', async () => {
     const { fixture } = await renderFiltros();
     const router = fixture.debugElement.injector.get(Router);

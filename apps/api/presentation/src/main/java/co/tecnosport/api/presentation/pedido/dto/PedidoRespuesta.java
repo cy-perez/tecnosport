@@ -10,6 +10,7 @@ public record PedidoRespuesta(
     String numeroPedido,
     UUID usuarioId,
     String correo,
+    ContactoRespuesta contacto,
     List<LineaPedidoRespuesta> lineas,
     String tipoEntrega,
     DireccionRespuesta direccion,

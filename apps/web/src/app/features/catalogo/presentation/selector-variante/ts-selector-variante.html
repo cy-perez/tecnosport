@@ -27,7 +27,7 @@
             [presionado]="estaSeleccionada(eje.nombre, opcion)"
             (click)="elegir(eje.nombre, opcion)"
           >
-            {{ opcion.valor }}
+            {{ etiqueta(eje, opcion) }}
           </ts-boton>
         }
       }

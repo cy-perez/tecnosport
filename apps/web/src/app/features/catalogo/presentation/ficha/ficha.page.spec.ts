@@ -83,14 +83,14 @@ function productoConVariantes(): Producto {
         sku: 'SKU-AZ',
         precio: { valor: 89_900, moneda: 'COP' },
         existencia: 5,
-        atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' }],
+        atributos: [{ nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null }],
       },
       {
         id: 'variante-ng',
         sku: 'SKU-NG',
         precio: { valor: 99_900, moneda: 'COP' },
         existencia: 3,
-        atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111' }],
+        atributos: [{ nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null }],
       },
     ],
   };
@@ -209,6 +209,8 @@ describe('FichaPage', () => {
       'textContent',
       'No encontramos este producto.',
     );
+    // Un enlace roto no puede ser un callejón sin salida.
+    expect(screen.getByRole('link', { name: 'Volver al catálogo' })).toBeTruthy();
   });
 
   it('muestra un mensaje de error si la consulta falla', async () => {

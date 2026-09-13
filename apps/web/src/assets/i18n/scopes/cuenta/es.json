@@ -8,7 +8,9 @@
     "error": "Correo o clave incorrectos.",
     "error_sin_verificar": "Verifica tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
     "no_es_cliente": "Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.",
-    "olvidaste_clave": "¿Olvidaste tu clave?"
+    "olvidaste_clave": "¿Olvidaste tu clave?",
+    "sin_cuenta": "¿No tienes cuenta?",
+    "crear_cuenta": "Crear cuenta"
   },
   "registro": {
     "titulo": "Crear cuenta",
@@ -23,7 +25,9 @@
     "error_correo_registrado": "Ya existe una cuenta con ese correo.",
     "error_generico": "No se pudo crear la cuenta. Intenta de nuevo.",
     "autoriza_datos": "Autorizo el tratamiento de mis datos personales para crear mi cuenta.",
-    "ver_politica": "Leer la política de tratamiento de datos"
+    "ver_politica": "Leer la política de tratamiento de datos",
+    "ya_tienes_cuenta": "¿Ya tienes cuenta?",
+    "iniciar_sesion": "Iniciar sesión"
   },
   "verificarCorreo": {
     "titulo": "Verificando tu correo",

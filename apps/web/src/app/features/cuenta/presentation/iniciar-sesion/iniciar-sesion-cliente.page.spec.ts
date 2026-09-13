@@ -20,10 +20,7 @@ class RepositorioSesionFalso implements RepositorioSesion {
 
   constructor(
     private sesionAlIniciar:
-      | Sesion
-      | { error: true }
-      | { errorSinVerificar: true }
-      | { falloServidor: true } = {
+      Sesion | { error: true } | { errorSinVerificar: true } | { falloServidor: true } = {
       usuarioId: 'u1',
       rol: 'CLIENTE',
       accessToken: 'jwt',
@@ -54,7 +51,6 @@ class RepositorioSesionFalso implements RepositorioSesion {
     this.llamadasCerrar++;
   }
 }
-
 
 async function renderPagina(repositorio: RepositorioSesion) {
   return render(IniciarSesionClientePage, {
@@ -154,6 +150,14 @@ describe('IniciarSesionClientePage', () => {
     await renderPagina(new RepositorioSesionFalso());
 
     expect(screen.getByRole('link', { name: '¿Olvidaste tu clave?' })).toBeTruthy();
+  });
+
+  // Quien llega sin cuenta no tenía por dónde crearla desde aquí: el único
+  // enlace de registro estaba en el encabezado.
+  it('muestra un enlace a crear cuenta', async () => {
+    await renderPagina(new RepositorioSesionFalso());
+
+    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toBeTruthy();
   });
 
   it('no tiene violaciones de WCAG 2.2 AA', async () => {

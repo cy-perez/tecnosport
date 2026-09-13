@@ -298,7 +298,11 @@ public class MapeadorCatalogo {
 
   private Atributo aAtributo(AtributoJpaEntity a) {
     return new Atributo(
-        a.getId(), a.getNombre(), TipoAtributo.valueOf(a.getTipo()), a.getValoresPermitidos());
+        a.getId(),
+        a.getNombre(),
+        TipoAtributo.valueOf(a.getTipo()),
+        a.getValoresPermitidos(),
+        a.getUnidad());
   }
 
   private static <T> List<UUID> idsUnicos(List<T> elementos, Function<T, UUID> extractor) {

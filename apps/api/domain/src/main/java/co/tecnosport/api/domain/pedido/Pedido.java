@@ -44,6 +44,7 @@ public final class Pedido {
   private EstadoPedido estado;
   private final Instant avisoDePlazoEnviadoEn;
   private final TarifaEnvio tarifaEnvio;
+  private final Contacto contacto;
 
   public Pedido(
       UUID id,
@@ -129,6 +130,46 @@ public final class Pedido {
       Instant creadoEn,
       Instant avisoDePlazoEnviadoEn,
       TarifaEnvio tarifaEnvio) {
+    this(
+        id,
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        estado,
+        historial,
+        creadoEn,
+        avisoDePlazoEnviadoEn,
+        tarifaEnvio,
+        null);
+  }
+
+  /**
+   * El canónico de verdad: el anterior, más el {@link Contacto} de quien recibe. Nulo solo para los
+   * pedidos anteriores a este campo, que el repositorio reconstruye tal como quedaron; la exigencia
+   * para un pedido nuevo vive en {@code CrearPedido}, por la misma razón documentada en
+   * docs/02-modelo-datos.md para la tarifa de envío: este constructor también sirve para
+   * reconstruir lo que ya existe.
+   */
+  public Pedido(
+      UUID id,
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      EstadoPedido estado,
+      List<HistorialPedido> historial,
+      Instant creadoEn,
+      Instant avisoDePlazoEnviadoEn,
+      TarifaEnvio tarifaEnvio,
+      Contacto contacto) {
+    this.contacto = contacto;
     this.avisoDePlazoEnviadoEn = avisoDePlazoEnviadoEn;
     this.id = Objects.requireNonNull(id, "El id del pedido no puede ser nulo.");
     this.numeroPedido =
@@ -201,6 +242,33 @@ public final class Pedido {
       String actor,
       Instant ahora,
       TarifaEnvio tarifaEnvio) {
+    return crear(
+        numeroPedido,
+        usuarioId,
+        correo,
+        lineas,
+        tipoEntrega,
+        direccion,
+        metodoPago,
+        actor,
+        ahora,
+        tarifaEnvio,
+        null);
+  }
+
+  /** El mismo, con el {@link Contacto} de quien recibe. Es el que usa {@code CrearPedido}. */
+  public static Pedido crear(
+      NumeroPedido numeroPedido,
+      UUID usuarioId,
+      CorreoElectronico correo,
+      List<LineaPedido> lineas,
+      TipoEntrega tipoEntrega,
+      Direccion direccion,
+      MetodoPago metodoPago,
+      String actor,
+      Instant ahora,
+      TarifaEnvio tarifaEnvio,
+      Contacto contacto) {
     Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
     EstadoPedido estadoInicial = estadoInicial(metodoPago);
     HistorialPedido primerRegistro =
@@ -219,7 +287,8 @@ public final class Pedido {
         List.of(primerRegistro),
         ahora,
         null,
-        tarifaEnvio);
+        tarifaEnvio,
+        contacto);
   }
 
   private static EstadoPedido estadoInicial(MetodoPago metodoPago) {
@@ -259,6 +328,11 @@ public final class Pedido {
 
   public Optional<Direccion> direccion() {
     return Optional.ofNullable(direccion);
+  }
+
+  /** Vacío solo en los pedidos anteriores a que se pidiera; ver el constructor canónico. */
+  public Optional<Contacto> contacto() {
+    return Optional.ofNullable(contacto);
   }
 
   public MetodoPago metodoPago() {

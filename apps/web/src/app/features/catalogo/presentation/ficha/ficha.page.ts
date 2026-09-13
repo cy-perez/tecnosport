@@ -65,6 +65,8 @@ export class FichaPage {
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
+  /** Para el enlace de vuelta al catálogo cuando el producto no existe. */
+  protected readonly idioma = this.transloco.activeLang;
 
   private readonly slug = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -172,12 +174,17 @@ export class FichaPage {
     }
 
     const origen = origenPublico();
-    const url = urlAbsoluta(origen, rutaCanonica(`/${this.transloco.activeLang()}/productos/${producto.slug}`));
+    const url = urlAbsoluta(
+      origen,
+      rutaCanonica(`/${this.transloco.activeLang()}/productos/${producto.slug}`),
+    );
     const precios = producto.variantes.map((variante) => variante.precio.valor);
 
     const eslabones: EslabonDeRuta[] = this.migas().map((miga) => ({
       etiqueta: miga.etiqueta,
-      url: miga.enlace ? urlAbsoluta(origen, miga.enlace.join('/').replace(/^\/+/, '/')) : undefined,
+      url: miga.enlace
+        ? urlAbsoluta(origen, miga.enlace.join('/').replace(/^\/+/, '/'))
+        : undefined,
     }));
 
     return [

@@ -5,6 +5,7 @@ import { TsSelectorVariante } from './ts-selector-variante';
 const ejes: EjeAtributo[] = [
   {
     nombre: 'Color',
+    unidad: null,
     opciones: [
       { valor: 'Azul marino', colorHex: '#1E3A8A' },
       { valor: 'Negro', colorHex: '#111111' },
@@ -12,6 +13,7 @@ const ejes: EjeAtributo[] = [
   },
   {
     nombre: 'Talla',
+    unidad: null,
     opciones: [
       { valor: 'M', colorHex: null },
       { valor: 'L', colorHex: null },
@@ -20,6 +22,20 @@ const ejes: EjeAtributo[] = [
 ];
 
 describe('TsSelectorVariante', () => {
+  // "Garantía: 12" se leía así en la ficha, sin decir 12 qué. La unidad es del eje.
+  it('pinta la unidad del eje junto a cada valor', async () => {
+    await render(TsSelectorVariante, {
+      inputs: {
+        ejes: [
+          { nombre: 'Garantía', unidad: 'meses', opciones: [{ valor: '12', colorHex: null }] },
+        ],
+        seleccion: { Garantía: '12' },
+      },
+    });
+
+    expect(screen.getByRole('button', { name: '12 meses' })).toBeTruthy();
+  });
+
   it('elegir un color emite la selección con ese eje actualizado', async () => {
     let emitido: unknown;
     await render(TsSelectorVariante, {

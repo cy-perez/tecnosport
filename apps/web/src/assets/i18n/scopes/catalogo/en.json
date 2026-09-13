@@ -28,12 +28,15 @@
       "precio_asc": "Price: low to high",
       "precio_desc": "Price: high to low",
       "mas_recientes": "Newest"
-    }
+    },
+    "mostrar": "Filter and sort",
+    "ocultar": "Hide filters"
   },
   "ficha": {
     "no_encontrado": "We couldn't find this product.",
     "error": "We couldn't load this product. Please try again.",
-    "combinacion_no_disponible": "This combination is not available."
+    "combinacion_no_disponible": "This combination is not available.",
+    "volver_al_catalogo": "Back to the catalog"
   },
   "seo": {
     "rejilla": {

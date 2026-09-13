@@ -1,5 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { EjeAtributo, OpcionEje, Seleccion } from '../../domain/seleccion-variante';
+import {
+  EjeAtributo,
+  OpcionEje,
+  Seleccion,
+  etiquetaDeOpcion,
+} from '../../domain/seleccion-variante';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 
 /**
@@ -10,7 +15,8 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
  *
  * El botón no pinta nada: sin fondo ni borde, crecer a 44 no se nota.
  */
-const SWATCH = 'anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0';
+const SWATCH =
+  'anillo-foco grid size-tactil cursor-pointer place-items-center border-0 bg-transparent p-0';
 
 const MUESTRA_BASE = 'block size-32';
 const MUESTRA = `${MUESTRA_BASE} border border-ts-borde-control`;
@@ -47,5 +53,9 @@ export class TsSelectorVariante {
 
   protected elegir(nombreEje: string, opcion: OpcionEje): void {
     this.seleccionCambio.emit({ ...this.seleccion(), [nombreEje]: opcion.valor });
+  }
+
+  protected etiqueta(eje: EjeAtributo, opcion: OpcionEje): string {
+    return etiquetaDeOpcion(eje, opcion);
   }
 }

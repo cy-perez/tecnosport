@@ -34,10 +34,21 @@
         <span>{{ 'carrito.total' | transloco }}</span>
         <ts-precio [valor]="total()" moneda="COP" />
       </div>
+      <!-- El total del carrito es sin flete, y hay que decirlo aquí y no solo
+           en el checkout: el precio publicado es base y el envío se cotiza por
+           destino y se cobra aparte (docs/00-producto.md, artículo 50 de la
+           Ley 1480). Un total que después crece sin aviso es la queja clásica
+           de cualquier tienda. -->
+      <p class="mt-8 mb-24 text-sm text-ts-texto-suave">{{ 'carrito.envio_aparte' | transloco }}</p>
 
-      <ts-boton variante="primario" [enlace]="['../checkout']">{{
-        'carrito.ir_a_pagar' | transloco
-      }}</ts-boton>
+      <div class="flex flex-wrap items-center gap-16">
+        <ts-boton variante="primario" [enlace]="['../checkout']">{{
+          'carrito.ir_a_pagar' | transloco
+        }}</ts-boton>
+        <ts-boton variante="texto" [enlace]="['../productos']">{{
+          'carrito.seguir_comprando' | transloco
+        }}</ts-boton>
+      </div>
     }
   } @else {
     <p class="mb-16 text-ts-texto-suave">{{ 'carrito.vacio' | transloco }}</p>

@@ -7,7 +7,14 @@ export interface OpcionEje {
 
 export interface EjeAtributo {
   readonly nombre: string;
+  /** Del eje y no de cada opción: todos los valores de un atributo se miden igual. */
+  readonly unidad: string | null;
   readonly opciones: readonly OpcionEje[];
+}
+
+/** Lo que se pinta en el botón: "12 meses", o "M" cuando el eje no tiene unidad. */
+export function etiquetaDeOpcion(eje: EjeAtributo, opcion: OpcionEje): string {
+  return eje.unidad ? `${opcion.valor} ${eje.unidad}` : opcion.valor;
 }
 
 /** Nombre de atributo -> valor elegido. */
@@ -16,11 +23,13 @@ export type Seleccion = Readonly<Record<string, string>>;
 /** Un eje por cada nombre de atributo distinto entre las variantes del producto (Color, Talla...). */
 export function ejesDeAtributos(producto: Producto): EjeAtributo[] {
   const valoresPorEje = new Map<string, Map<string, string | null>>();
+  const unidadPorEje = new Map<string, string | null>();
 
   for (const variante of producto.variantes) {
     for (const valorAtributo of variante.atributos) {
       if (!valoresPorEje.has(valorAtributo.nombre)) {
         valoresPorEje.set(valorAtributo.nombre, new Map());
+        unidadPorEje.set(valorAtributo.nombre, valorAtributo.unidad);
       }
       valoresPorEje.get(valorAtributo.nombre)!.set(valorAtributo.valor, valorAtributo.colorHex);
     }
@@ -28,6 +37,7 @@ export function ejesDeAtributos(producto: Producto): EjeAtributo[] {
 
   return [...valoresPorEje.entries()].map(([nombre, valores]) => ({
     nombre,
+    unidad: unidadPorEje.get(nombre) ?? null,
     opciones: [...valores.entries()].map(([valor, colorHex]) => ({ valor, colorHex })),
   }));
 }
@@ -49,5 +59,7 @@ export function varianteSeleccionada(producto: Producto, seleccion: Seleccion): 
 
 /** La primera variante con existencia; si ninguna tiene, la primera de todas. */
 export function variantePorDefecto(producto: Producto): Variante | null {
-  return producto.variantes.find((variante) => variante.existencia > 0) ?? producto.variantes[0] ?? null;
+  return (
+    producto.variantes.find((variante) => variante.existencia > 0) ?? producto.variantes[0] ?? null
+  );
 }

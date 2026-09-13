@@ -1,5 +1,6 @@
 import type { components } from '@tecnosport/contratos';
 import {
+  Contacto,
   DatosTransferencia,
   Direccion,
   EstadoPedido,
@@ -16,6 +17,7 @@ type PedidoDto = components['schemas']['PedidoRespuesta'];
 type SeguimientoDto = components['schemas']['PedidoSeguimientoRespuesta'];
 type RetractoDto = components['schemas']['RetractoPublicoRespuesta'];
 type DireccionDto = components['schemas']['DireccionRespuesta'];
+type ContactoDto = components['schemas']['ContactoRespuesta'];
 type LineaPedidoDto = components['schemas']['LineaPedidoRespuesta'];
 type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'];
 
@@ -34,6 +36,7 @@ export function aPedido(dto: PedidoDto): Pedido {
     numeroPedido: dto.numeroPedido ?? '',
     usuarioId: dto.usuarioId ?? null,
     correo: dto.correo ?? '',
+    contacto: dto.contacto ? aContacto(dto.contacto) : null,
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
@@ -45,6 +48,10 @@ export function aPedido(dto: PedidoDto): Pedido {
     creadoEn: dto.creadoEn ?? '',
     datosTransferencia: dto.datosTransferencia ? aDatosTransferencia(dto.datosTransferencia) : null,
   };
+}
+
+export function aContacto(dto: ContactoDto): Contacto {
+  return { nombre: dto.nombre ?? '', telefono: dto.telefono ?? '' };
 }
 
 export function aDireccion(dto: DireccionDto): Direccion {
@@ -65,7 +72,10 @@ function aLineaPedido(dto: LineaPedidoDto): LineaPedido {
     sku: dto.sku ?? '',
     nombre: dto.nombre ?? '',
     cantidad: dto.cantidad ?? 0,
-    precioUnitario: { valor: dto.precioUnitario?.valor ?? 0, moneda: dto.precioUnitario?.moneda ?? 'COP' },
+    precioUnitario: {
+      valor: dto.precioUnitario?.valor ?? 0,
+      moneda: dto.precioUnitario?.moneda ?? 'COP',
+    },
     tasaIva: dto.tasaIva ?? 0,
     imagenUrl: dto.imagenUrl ?? null,
   };

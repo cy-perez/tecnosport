@@ -85,6 +85,12 @@ public class PedidoJpaEntity {
   @Column(name = "tarifa_envio_vence_en")
   private Instant tarifaEnvioVenceEn;
 
+  @Column(name = "nombre_contacto")
+  private String nombreContacto;
+
+  @Column(name = "telefono_contacto")
+  private String telefonoContacto;
+
   protected PedidoJpaEntity() {}
 
   public PedidoJpaEntity(
@@ -109,7 +115,11 @@ public class PedidoJpaEntity {
       String tarifaEnvioServicio,
       Integer tarifaEnvioDias,
       Boolean tarifaEnvioAdmiteContraentrega,
-      Instant tarifaEnvioVenceEn) {
+      Instant tarifaEnvioVenceEn,
+      String nombreContacto,
+      String telefonoContacto) {
+    this.nombreContacto = nombreContacto;
+    this.telefonoContacto = telefonoContacto;
     this.id = id;
     this.numeroPedido = numeroPedido;
     this.usuarioId = usuarioId;
@@ -220,5 +230,13 @@ public class PedidoJpaEntity {
 
   public Instant getAvisoPlazoEntregaEnviadoEn() {
     return avisoPlazoEntregaEnviadoEn;
+  }
+
+  public String getNombreContacto() {
+    return nombreContacto;
+  }
+
+  public String getTelefonoContacto() {
+    return telefonoContacto;
   }
 }

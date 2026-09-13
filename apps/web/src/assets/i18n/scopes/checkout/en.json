@@ -26,7 +26,10 @@
       "departamento_requerido": "Choose a department.",
       "ciudad_requerida": "Choose a city.",
       "direccion_requerida": "Address is required.",
-      "autorizacion_requerida": "You must authorise the processing of your data to continue."
+      "autorizacion_requerida": "You must authorise the processing of your data to continue.",
+      "nombre_requerido": "Enter the recipient's name.",
+      "telefono_requerido": "Phone is required.",
+      "telefono_invalido": "Enter a valid phone number, digits only."
     },
     "autoriza_datos": "I authorise the processing of my personal data to process and deliver this order.",
     "ver_politica": "Read the personal data policy",
@@ -38,7 +41,10 @@
     "retiro_ahorro": "You save {{valor}} in shipping",
     "envio_estimado_un_dia": "Estimated delivery: 1 day",
     "envio_no_calculado": "We couldn't work out the shipping cost right now. Try again in a few minutes, or choose to pick your order up at our Medellín location.",
-    "total_pendiente": "Shipping cost still missing"
+    "total_pendiente": "Shipping cost still missing",
+    "nombre": "Recipient name",
+    "telefono": "Contact phone",
+    "telefono_ayuda": "The carrier or courier calls this number before delivering."
   },
   "metodoPago": {
     "titulo": "Payment method",

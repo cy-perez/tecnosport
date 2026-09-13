@@ -18,7 +18,7 @@ const VARIANTES: Record<VarianteBoton, string> = {
   primario:
     'min-h-tactil bg-ts-primario text-ts-sobre-primario not-disabled:hover:bg-ts-primario-hover not-disabled:active:bg-ts-primario-pressed',
   secundario:
-    'min-h-tactil bg-transparent text-ts-primario border border-ts-borde-control not-disabled:hover:bg-ts-superficie-alt',
+    'min-h-tactil bg-transparent text-ts-primario border-ts-borde-control not-disabled:hover:bg-ts-superficie-alt',
   // `min-h-tactil` también aquí, y esto **revierte** lo que hacía el SCSS.
   // El SCSS ponía el mínimo en la base y lo anulaba con `min-height: auto` en
   // esta variante; al traducirlo se conservó la exención. Medido en el
@@ -28,8 +28,7 @@ const VARIANTES: Record<VarianteBoton, string> = {
   // se pulsa igual que uno con fondo; que no pinte relleno no lo hace más
   // fácil de acertar con el pulgar. Las cuatro variantes lo llevan ahora.
   texto: 'min-h-tactil bg-transparent text-ts-primario px-12 py-8 not-disabled:hover:underline',
-  peligro:
-    'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:hover:brightness-110',
+  peligro: 'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:hover:brightness-110',
 };
 
 /**
@@ -47,8 +46,17 @@ const VARIANTES: Record<VarianteBoton, string> = {
  * de que `clip-path` recorta el anillo de foco, desactivándose en
  * `:focus-visible`. Ninguna utilidad de Tailwind puede reproducir eso.
  */
+/**
+ * `border border-transparent` en la base, y no `border-0`: las cuatro
+ * variantes llevan el mismo borde de 1 px, pintado o no. Con `border-0` en la
+ * base y `border` solo en `secundario`, un botón primario medía 44 px y uno
+ * secundario 46 — medido en el navegador en el selector de variante de la
+ * ficha, donde la opción elegida (primaria) y las demás (secundarias) van en
+ * la misma fila y la diferencia se veía como un escalón. El color lo pone
+ * cada variante; el ancho es de todas.
+ */
 const BASE =
-  'inline-flex items-center justify-center gap-8 py-12 px-24 border-0 ' +
+  'inline-flex items-center justify-center gap-8 py-12 px-24 border border-transparent ' +
   // `no-underline` es por la rama de enlace y no sobra: sin Preflight
   // (`src/tailwind.css`) un `<a>` conserva el subrayado del navegador, y
   // "Ir a pagar" salió subrayado dentro de su fondo ámbar la primera vez que
@@ -82,6 +90,16 @@ export class TsBoton {
    * el nombre accesible del control no cambia.
    */
   readonly etiquetaAccesible = input<string | null>(null);
+  /**
+   * Para usarlo como *disclosure* (un botón que muestra u oculta una región):
+   * `expandido` va a `aria-expanded` y `controla` al `aria-controls` del
+   * `<button>` real. Existen por la misma razón que `etiquetaAccesible`: un
+   * `[attr.aria-expanded]` puesto en `<ts-boton>` cae en el host, y el lector
+   * de pantalla no se entera. `null` no pinta el atributo, que es distinto de
+   * `false`.
+   */
+  readonly expandido = input<boolean | null>(null);
+  readonly controla = input<string | null>(null);
   /** Ajustes puntuales de quien llama, p. ej. `w-full`. Gana sobre la base. */
   readonly clase = input('');
   /**
@@ -102,7 +120,5 @@ export class TsBoton {
   /** Los `queryParams` del enlace. Solo se usa junto con `enlace`. */
   readonly parametrosEnlace = input<Record<string, unknown> | null>(null);
 
-  protected readonly clases = computed(() =>
-    cn(BASE, VARIANTES[this.variante()], this.clase()),
-  );
+  protected readonly clases = computed(() => cn(BASE, VARIANTES[this.variante()], this.clase()));
 }

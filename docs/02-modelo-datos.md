@@ -196,7 +196,7 @@ panel. Ver `ADR-0018`.
 | `UnidadSerializada` | imei, estado, variante | Solo celulares |
 | `Inventario` | movimientos y reservas | El saldo no se edita: se agrega movimiento |
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
-| `Pedido` | líneas congeladas, dirección, tipo de entrega, tarifa de envío congelada, totales, método de pago, estado, historial | Raíz transaccional |
+| `Pedido` | líneas congeladas, contacto de quien recibe, dirección, tipo de entrega, tarifa de envío congelada, totales, método de pago, estado, historial | Raíz transaccional |
 | `Pago` | referencia, método, estado, eventos recibidos | Idempotente por referencia |
 | `Envio` | transportadora, servicio, guía, costo real, comisión y fecha de conciliación del recaudo, eventos de seguimiento | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`, `ADR-0022`) |
 | `EventoSeguimiento` | estado de la transportadora, descripción, momento del evento y de su recepción | Dentro de `Envio`. Se agrega, nunca se sobrescribe |
@@ -205,7 +205,8 @@ panel. Ver `ADR-0018`.
 | `TokenVerificacionCorreo` | token, vencimiento, un solo uso | Separado de `TokenRecuperacionClave` por sensibilidad (`ADR-0015`) |
 | `TokenRecuperacionClave` | token, vencimiento, un solo uso | Consumirlo revoca todas las sesiones del usuario (`ADR-0015`) |
 | `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
-| `Categoria`, `Marca`, `Atributo` | catálogo maestro | |
+| `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
+| `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses" |
 | `SetRotacion`, `ImagenProducto` | material visual | |
 
 ## Reglas de inventario

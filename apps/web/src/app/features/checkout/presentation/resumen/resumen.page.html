@@ -131,11 +131,30 @@
         [formGroup]="form"
         (submit)="$event.preventDefault(); enviar()"
       >
+        <!-- Nombre y teléfono de quien recibe, antes del correo: son los datos de la entrega, y
+             hasta ahora el pedido nacía sin ellos —sin guía posible ni mensajero que avisara—. El
+             comentario de la casilla de autorización ya los daba por recogidos. -->
+        <ts-campo
+          idCampo="resumen-nombre"
+          [label]="'checkout.resumen.nombre' | transloco"
+          [error]="errorNombre()"
+          formControlName="nombre"
+        />
+
         <ts-campo
           idCampo="resumen-correo"
           [label]="'checkout.resumen.correo' | transloco"
           [error]="errorCorreo()"
           formControlName="correo"
+        />
+
+        <ts-campo
+          idCampo="resumen-telefono"
+          tipo="tel"
+          [label]="'checkout.resumen.telefono' | transloco"
+          [ayuda]="'checkout.resumen.telefono_ayuda' | transloco"
+          [error]="errorTelefono()"
+          formControlName="telefono"
         />
 
         <ts-select

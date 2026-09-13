@@ -146,12 +146,21 @@ public class SembradorCatalogo implements ApplicationRunner {
     // "12" meses es un valor de siembra de desarrollo, no una política de garantía real —
     // docs/02-modelo-datos.md exige el atributo, pero el valor lo define el negocio cuando exista
     // un panel para cargarlo (Fase 4). Mismo criterio que los precios y las fotos de picsum.photos.
-    AtributoJpaEntity garantia = guardarAtributo("Garantía", "NUMERO", List.of(), ahora);
+    AtributoJpaEntity garantia =
+        atributos.save(
+            new AtributoJpaEntity(
+                GeneradorIdentificador.nuevo(), "Garantía", "NUMERO", List.of(), ahora, "meses"));
 
+    // Las descripciones son texto de desarrollo, como los precios y las fotos: describen el tipo
+    // de producto sin prometer nada que el negocio no haya dicho. Existen para que la ficha no se
+    // vea vacía mientras se prueba, y para que el hueco de la descripción se note si alguien lo
+    // rompe.
     ProductoJpaEntity camiseta =
         guardarProductoPublicado(
             "Camiseta running Dry-Fit",
             "camiseta-running-dry-fit",
+            "Camiseta de entrenamiento en tejido ligero de secado rápido. Corte regular, cuello"
+                + " redondo y costuras planas para evitar el roce en distancias largas.",
             tecnosport,
             ropaDeportiva,
             ahora);
@@ -182,7 +191,13 @@ public class SembradorCatalogo implements ApplicationRunner {
 
     ProductoJpaEntity tenis =
         guardarProductoPublicado(
-            "Tenis trail runner", "tenis-trail-runner", underTrail, calzadoDeportivo, ahora);
+            "Tenis trail runner",
+            "tenis-trail-runner",
+            "Calzado para sendero con suela de tacos profundos, puntera reforzada y mediasuela"
+                + " amortiguada. Pensado para terreno irregular y subidas con piedra suelta.",
+            underTrail,
+            calzadoDeportivo,
+            ahora);
     guardarVariante(
         tenis,
         "UT-TEN-40",
@@ -210,7 +225,13 @@ public class SembradorCatalogo implements ApplicationRunner {
 
     ProductoJpaEntity morral =
         guardarProductoPublicado(
-            "Morral urbano 25L", "morral-urbano-25l", tecnosport, bolsos, ahora);
+            "Morral urbano 25L",
+            "morral-urbano-25l",
+            "Morral de 25 litros con compartimento acolchado para portátil de hasta 15 pulgadas,"
+                + " bolsillo frontal con organizador y espaldar ventilado.",
+            tecnosport,
+            bolsos,
+            ahora);
     guardarVariante(
         morral,
         "TS-MOR-NG-25",
@@ -232,7 +253,13 @@ public class SembradorCatalogo implements ApplicationRunner {
 
     ProductoJpaEntity celular =
         guardarProductoPublicado(
-            "Celular TecnoSport Aurora", "celular-tecnosport-aurora", tecnosport, celulares, ahora);
+            "Celular TecnoSport Aurora",
+            "celular-tecnosport-aurora",
+            "Teléfono con pantalla de 6,5 pulgadas, doble cámara trasera y batería de carga"
+                + " rápida. Se entrega sellado, con cargador y garantía del fabricante.",
+            tecnosport,
+            celulares,
+            ahora);
     guardarVariante(
         celular,
         "TS-CEL-AUR-128",
@@ -298,6 +325,7 @@ public class SembradorCatalogo implements ApplicationRunner {
   private ProductoJpaEntity guardarProductoPublicado(
       String nombre,
       String slug,
+      String descripcion,
       MarcaJpaEntity marca,
       CategoriaJpaEntity categoria,
       Instant ahora) {
@@ -306,7 +334,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             GeneradorIdentificador.nuevo(),
             nombre,
             slug,
-            "",
+            descripcion,
             marca.getId(),
             categoria.getId(),
             "PUBLICADO",

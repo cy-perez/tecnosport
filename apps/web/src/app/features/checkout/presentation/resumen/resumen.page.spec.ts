@@ -10,7 +10,10 @@ import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { CheckoutStore } from '../../application/checkout.store';
 import { Carrito } from '../../../carrito/domain/carrito.model';
 import { SnapshotLinea } from '../../../carrito/domain/snapshot-linea.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
@@ -19,7 +22,11 @@ import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ResumenPage } from './resumen.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
-import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../../testing/carrito';
+import {
+  proveerAlmacenesCarrito,
+  sembrarCarritoId,
+  sembrarSnapshotLinea,
+} from '../../../../../testing/carrito';
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
@@ -144,7 +151,10 @@ function snapshotDePrueba(varianteId: string): SnapshotLinea {
 @Component({ selector: 'app-metodo-pago-mudo', template: '' })
 class MetodoPagoMudo {}
 
-async function renderResumen(carrito: RepositorioCarrito, envios: RepositorioEnvios = new RepositorioEnviosFalso(null)) {
+async function renderResumen(
+  carrito: RepositorioCarrito,
+  envios: RepositorioEnvios = new RepositorioEnviosFalso(null),
+) {
   return render(ResumenPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -175,6 +185,15 @@ function clienteDePrueba(): QueryClient {
 }
 
 /** Deja el formulario en el estado que dispara la cotización: ciudad y calle. */
+function llenarContacto() {
+  fireEvent.input(screen.getByLabelText('Nombre de quien recibe'), {
+    target: { value: 'Ana Pérez' },
+  });
+  fireEvent.input(screen.getByLabelText('Teléfono de contacto'), {
+    target: { value: '3138816711' },
+  });
+}
+
 async function llenarDireccionEnMedellin() {
   fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
   fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
@@ -201,7 +220,10 @@ describe('ResumenPage', () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
-    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(COTIZACION));
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
     await screen.findByText('Morral urbano');
 
     await llenarDireccionEnMedellin();
@@ -235,6 +257,7 @@ describe('ResumenPage', () => {
     fireEvent.input(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'cliente@tecnosport.co' },
     });
+    llenarContacto();
     await llenarDireccionEnMedellin();
     fireEvent.click(screen.getByRole('checkbox'));
     expect(await screen.findByText(/No tenemos transporte hasta esta dirección/)).toBeTruthy();
@@ -262,13 +285,17 @@ describe('ResumenPage', () => {
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
     const envios = new RepositorioEnviosDiferido();
 
-    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      envios,
+    );
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
     fireEvent.input(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'cliente@tecnosport.co' },
     });
+    llenarContacto();
     await llenarDireccionEnMedellin();
     fireEvent.click(screen.getByRole('checkbox'));
 
@@ -292,13 +319,17 @@ describe('ResumenPage', () => {
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
     const envios = new RepositorioEnviosDiferido();
 
-    const { fixture } = await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      envios,
+    );
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
     fireEvent.input(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'cliente@tecnosport.co' },
     });
+    llenarContacto();
     await llenarDireccionEnMedellin();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
@@ -329,6 +360,7 @@ describe('ResumenPage', () => {
     fireEvent.input(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'cliente@tecnosport.co' },
     });
+    llenarContacto();
     await llenarDireccionEnMedellin();
     fireEvent.click(screen.getByRole('checkbox'));
 
@@ -360,7 +392,10 @@ describe('ResumenPage', () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
-    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(null));
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(null),
+    );
     await screen.findByText('Morral urbano');
 
     await llenarDireccionEnMedellin();
@@ -382,7 +417,9 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), envios);
     await screen.findByText('Morral urbano');
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
 
     expect(envios.llamadas).toBe(0);
   });
@@ -392,13 +429,18 @@ describe('ResumenPage', () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
 
-    await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioEnviosFalso(COTIZACION));
+    await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
     await screen.findByText('Morral urbano');
 
     await llenarDireccionEnMedellin();
     await screen.findByText('Costo de envío');
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
 
     expect(await screen.findByText(/Te ahorras .* de envío/)).toBeTruthy();
   });
@@ -425,7 +467,9 @@ describe('ResumenPage', () => {
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '11001' } });
     await screen.findByText(/No tenemos transporte hasta esta dirección/);
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
 
     expect(screen.queryByText(/Te ahorras/)).toBeFalsy();
   });
@@ -454,7 +498,9 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
 
-    fireEvent.change(screen.getByLabelText('Tipo de entrega'), { target: { value: 'RETIRO_EN_PUNTO' } });
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
 
     expect(screen.queryByLabelText('Dirección')).toBeFalsy();
   });
@@ -476,6 +522,61 @@ describe('ResumenPage', () => {
     expect(checkout.datosEntrega()).toBeNull();
   });
 
+  /**
+   * Sin quien reciba no hay guía ni mensajero: el pedido nacía sin nombre ni teléfono durante
+   * cuatro fases. Se dice en el campo, y no se guarda el borrador.
+   */
+  it('sin teléfono no guarda el borrador y dice por qué', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Nombre de quien recibe'), {
+      target: { value: 'Ana Pérez' },
+    });
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText('El teléfono es obligatorio.')).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  it('un teléfono con letras no pasa', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    llenarContacto();
+    fireEvent.input(screen.getByLabelText('Teléfono de contacto'), {
+      target: { value: '313 ABC 6711' },
+    });
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText('Escribe un teléfono válido, solo números.')).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
   it('con datos válidos, guarda el borrador con la dirección resuelta', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
@@ -490,7 +591,10 @@ describe('ResumenPage', () => {
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
-    fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'compra@ejemplo.co' } });
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    llenarContacto();
     fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
     fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
@@ -514,6 +618,7 @@ describe('ResumenPage', () => {
         direccion: 'Cra. 26C #38B-31',
         indicaciones: null,
       },
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
     });
   });
@@ -540,7 +645,10 @@ describe('ResumenPage', () => {
     await renderResumen(new RepositorioCarritoFalso(CARRITO_CON_LINEAS));
     await screen.findByText('Morral urbano');
 
-    fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'compra@ejemplo.co' } });
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    llenarContacto();
     fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
     fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
@@ -565,7 +673,10 @@ describe('ResumenPage', () => {
     await screen.findByText('Morral urbano');
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
 
-    fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: 'compra@ejemplo.co' } });
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    llenarContacto();
     fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
     fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
     fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });

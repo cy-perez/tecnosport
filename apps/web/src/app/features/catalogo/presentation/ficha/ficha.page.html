@@ -38,33 +38,43 @@
           />
         }
 
-        <div class="my-16 flex items-center gap-16">
+        <!-- En el teléfono el precio y el botón quedaban bajo el pliegue, después de la galería
+             y de los ejes de variante. Este bloque se pega al borde inferior mientras su posición
+             natural esté más abajo, y vuelve al flujo al llegar a ella: un solo botón en el DOM,
+             sin duplicar la acción para una barra aparte. `-mx-16 px-16` lo saca al ancho de la
+             sección para que el fondo cubra de borde a borde; desde tableta todo se anula y queda
+             como estaba, porque ahí cabe sin desplazarse. -->
+        <div
+          class="sticky bottom-0 z-10 -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo px-16 py-12 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
+        >
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
             <ts-etiqueta-stock [disponible]="variante.existencia > 0" />
+            <ts-boton
+              variante="primario"
+              [deshabilitado]="variante.existencia === 0 || carrito.agregando()"
+              [cargando]="carrito.agregando()"
+              [etiquetaCargando]="'carrito.agregando' | transloco"
+              (click)="agregarAlCarrito()"
+            >
+              {{ 'carrito.agregar_al_carrito' | transloco }}
+            </ts-boton>
           } @else {
-            <p class="text-ts-error" role="alert">
+            <p class="m-0 text-ts-error" role="alert">
               {{ 'catalogo.ficha.combinacion_no_disponible' | transloco }}
             </p>
           }
         </div>
-
-        @if (varianteActiva(); as variante) {
-          <ts-boton
-            variante="primario"
-            [deshabilitado]="variante.existencia === 0 || carrito.agregando()"
-            [cargando]="carrito.agregando()"
-            [etiquetaCargando]="'carrito.agregando' | transloco"
-            (click)="agregarAlCarrito()"
-          >
-            {{ 'carrito.agregar_al_carrito' | transloco }}
-          </ts-boton>
-        }
 
         <p class="text-ts-texto">{{ p.descripcion }}</p>
       </div>
     </div>
   } @else {
     <p class="text-ts-error" role="alert">{{ 'catalogo.ficha.no_encontrado' | transloco }}</p>
+    <!-- Un enlace roto o un producto despublicado no puede ser un callejón sin
+         salida: se ofrece el camino de vuelta a la vitrina. -->
+    <ts-boton variante="secundario" [enlace]="['/', idioma(), 'productos']">
+      {{ 'catalogo.ficha.volver_al_catalogo' | transloco }}
+    </ts-boton>
   }
 </section>

@@ -36,6 +36,9 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     numeroPedido: dto.numeroPedido ?? '',
     usuarioId: dto.usuarioId ?? null,
     correo: dto.correo ?? '',
+    contacto: dto.contacto
+      ? { nombre: dto.contacto.nombre ?? '', telefono: dto.contacto.telefono ?? '' }
+      : null,
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
@@ -82,7 +85,10 @@ function aLineaPedido(dto: LineaPedidoDto): LineaPedidoAdmin {
     sku: dto.sku ?? '',
     nombre: dto.nombre ?? '',
     cantidad: dto.cantidad ?? 0,
-    precioUnitario: { valor: dto.precioUnitario?.valor ?? 0, moneda: dto.precioUnitario?.moneda ?? 'COP' },
+    precioUnitario: {
+      valor: dto.precioUnitario?.valor ?? 0,
+      moneda: dto.precioUnitario?.moneda ?? 'COP',
+    },
     tasaIva: dto.tasaIva ?? 0,
     imagenUrl: dto.imagenUrl ?? null,
   };
@@ -104,7 +110,9 @@ function aEnvio(dto: EnvioDto): EnvioAdmin {
     guia: dto.guia ?? '',
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     despachadoEn: dto.despachadoEn ?? '',
-    comisionRecaudo: dto.comisionRecaudo ? { valor: dto.comisionRecaudo.valor ?? 0, moneda: dto.comisionRecaudo.moneda ?? 'COP' } : null,
+    comisionRecaudo: dto.comisionRecaudo
+      ? { valor: dto.comisionRecaudo.valor ?? 0, moneda: dto.comisionRecaudo.moneda ?? 'COP' }
+      : null,
     recaudoConciliadoEn: dto.recaudoConciliadoEn ?? null,
   };
 }

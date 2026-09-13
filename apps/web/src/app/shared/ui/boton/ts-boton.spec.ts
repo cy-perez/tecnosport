@@ -16,6 +16,8 @@ import { TsBoton, VarianteBoton } from './ts-boton';
       [cargando]="cargando()"
       [deshabilitado]="deshabilitado()"
       [presionado]="presionado()"
+      [expandido]="expandido()"
+      [controla]="controla()"
       [etiquetaCargando]="etiquetaCargando()"
       [etiquetaAccesible]="etiquetaAccesible()"
       [clase]="clase()"
@@ -30,6 +32,8 @@ class Anfitrion {
   readonly cargando = signal(false);
   readonly deshabilitado = signal(false);
   readonly presionado = signal<boolean | null>(null);
+  readonly expandido = signal<boolean | null>(null);
+  readonly controla = signal<string | null>(null);
   readonly etiquetaCargando = signal<string | null>(null);
   readonly etiquetaAccesible = signal<string | null>(null);
   readonly clase = signal('');
@@ -41,9 +45,7 @@ function boton(): HTMLButtonElement {
 
 @Component({
   imports: [TsBoton],
-  template: `
-    <ts-boton variante="primario" [enlace]="['/checkout']">Ir a pagar</ts-boton>
-  `,
+  template: ` <ts-boton variante="primario" [enlace]="['/checkout']">Ir a pagar</ts-boton> `,
 })
 class AnfitrionEnlace {}
 
@@ -102,6 +104,30 @@ describe('TsBoton', () => {
     await fixture.whenStable();
 
     expect(boton().disabled).toBe(true);
+  });
+
+  // Mismo caso que `etiquetaAccesible`: un `[attr.aria-expanded]` en
+  // `<ts-boton>` caería en el host y el `<button>` real no lo llevaría.
+  it('expandido y controla llegan al button real como aria-expanded y aria-controls', async () => {
+    const { fixture } = await render(Anfitrion);
+    fixture.componentInstance.expandido.set(false);
+    fixture.componentInstance.controla.set('filtros');
+    await fixture.whenStable();
+
+    expect(boton().getAttribute('aria-expanded')).toBe('false');
+    expect(boton().getAttribute('aria-controls')).toBe('filtros');
+
+    fixture.componentInstance.expandido.set(true);
+    await fixture.whenStable();
+
+    expect(boton().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('sin expandido no pinta aria-expanded: no todo botón es un disclosure', async () => {
+    await render(Anfitrion);
+
+    expect(boton().hasAttribute('aria-expanded')).toBe(false);
+    expect(boton().hasAttribute('aria-controls')).toBe(false);
   });
 
   it('no expone aria-pressed cuando no es un botón de alternancia', async () => {
@@ -165,13 +191,30 @@ describe('TsBoton', () => {
     }
   });
 
-  it('la variante secundaria recupera el borde que la base quita', async () => {
+  it('la variante secundaria pinta el borde con el color de control', async () => {
     const { fixture } = await render(Anfitrion);
     fixture.componentInstance.variante.set('secundario');
     await fixture.whenStable();
 
     expect(boton().className).toContain('border-ts-borde-control');
-    expect(boton().className).not.toContain('border-0');
+    expect(boton().className).not.toContain('border-transparent');
+  });
+
+  // Medido en el navegador: con `border-0` en la base y `border` solo en la
+  // secundaria, la opción elegida del selector de variante (primaria) medía
+  // 44 px y las demás 46, un escalón en la misma fila. El borde de 1 px es
+  // de todas las variantes; solo cambia su color.
+  it('las cuatro variantes llevan el mismo borde de 1 px, pintado o transparente', async () => {
+    const { fixture } = await render(Anfitrion);
+
+    for (const variante of ['primario', 'secundario', 'texto', 'peligro'] as const) {
+      fixture.componentInstance.variante.set(variante);
+      await fixture.whenStable();
+
+      const clases = boton().className.split(' ');
+      expect(clases, `variante ${variante}`).toContain('border');
+      expect(clases, `variante ${variante}`).not.toContain('border-0');
+    }
   });
 
   // MODO ENLACE. Existe porque seis pantallas envolvian <ts-boton> en un <a>
@@ -203,9 +246,7 @@ describe('TsBoton', () => {
   it('el contenido proyectado llega a la rama de enlace', async () => {
     await render(AnfitrionEnlace, { providers: [provideRouter([])] });
 
-    expect(screen.getByRole('link', { name: 'Ir a pagar' }).textContent?.trim()).toBe(
-      'Ir a pagar',
-    );
+    expect(screen.getByRole('link', { name: 'Ir a pagar' }).textContent?.trim()).toBe('Ir a pagar');
   });
 
   it('sin destino sigue siendo un boton', async () => {

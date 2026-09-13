@@ -48,6 +48,13 @@
       <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
       <dd>{{ p.correo }}</dd>
 
+      @if (p.contacto; as contacto) {
+        <dt>{{ 'checkout.resumen.nombre' | transloco }}</dt>
+        <dd>{{ contacto.nombre }}</dd>
+        <dt>{{ 'checkout.resumen.telefono' | transloco }}</dt>
+        <dd>{{ contacto.telefono }}</dd>
+      }
+
       <dt>{{ 'checkout.resumen.tipo_entrega' | transloco }}</dt>
       <dd class="flex items-center gap-8">
         <!-- Que te lo lleven o que lo recojas es lo primero que alguien busca al volver a mirar su

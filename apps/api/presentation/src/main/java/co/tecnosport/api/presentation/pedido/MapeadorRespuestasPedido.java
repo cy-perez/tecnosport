@@ -5,6 +5,7 @@ import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.HistorialPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -12,6 +13,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.PlazoDeEntrega;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.ContactoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DatosTransferenciaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DireccionRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.EnvioRespuesta;
@@ -48,6 +50,7 @@ public class MapeadorRespuestasPedido {
         pedido.numeroPedido().valor(),
         pedido.usuarioId().orElse(null),
         pedido.correo().valor(),
+        pedido.contacto().map(this::aRespuesta).orElse(null),
         pedido.lineas().stream().map(this::aRespuesta).toList(),
         pedido.tipoEntrega().name(),
         pedido.direccion().map(this::aRespuesta).orElse(null),
@@ -112,6 +115,10 @@ public class MapeadorRespuestasPedido {
         aRespuesta(linea.precioUnitario()),
         linea.tasaIva(),
         linea.imagenUrl());
+  }
+
+  private ContactoRespuesta aRespuesta(Contacto contacto) {
+    return new ContactoRespuesta(contacto.nombre(), contacto.telefono());
   }
 
   private DireccionRespuesta aRespuesta(Direccion direccion) {

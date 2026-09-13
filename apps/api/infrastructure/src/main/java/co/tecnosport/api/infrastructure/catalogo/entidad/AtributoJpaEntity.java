@@ -36,15 +36,28 @@ public class AtributoJpaEntity {
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
+  private String unidad;
+
   protected AtributoJpaEntity() {}
 
   public AtributoJpaEntity(
       UUID id, String nombre, String tipo, List<String> valoresPermitidos, Instant creadoEn) {
+    this(id, nombre, tipo, valoresPermitidos, creadoEn, null);
+  }
+
+  public AtributoJpaEntity(
+      UUID id,
+      String nombre,
+      String tipo,
+      List<String> valoresPermitidos,
+      Instant creadoEn,
+      String unidad) {
     this.id = id;
     this.nombre = nombre;
     this.tipo = tipo;
     this.valoresPermitidos = valoresPermitidos;
     this.creadoEn = creadoEn;
+    this.unidad = unidad;
   }
 
   public UUID getId() {
@@ -65,5 +78,9 @@ public class AtributoJpaEntity {
 
   public Instant getCreadoEn() {
     return creadoEn;
+  }
+
+  public String getUnidad() {
+    return unidad;
   }
 }

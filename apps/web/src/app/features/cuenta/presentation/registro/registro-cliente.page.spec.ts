@@ -42,7 +42,6 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
   async restablecerClave(): Promise<void> {}
 }
 
-
 async function renderPagina(repositorio: RepositorioCuenta) {
   return render(RegistroClientePage, {
     imports: [
@@ -74,6 +73,12 @@ async function llenarYEnviar(clave = 'clave-segura', confirmarClave = 'clave-seg
 }
 
 describe('RegistroClientePage', () => {
+  it('muestra un enlace a iniciar sesión, para quien ya tiene cuenta', async () => {
+    await renderPagina(new RepositorioCuentaFalso());
+
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toBeTruthy();
+  });
+
   it('el botón crear cuenta arranca deshabilitado con el formulario vacío', async () => {
     await renderPagina(new RepositorioCuentaFalso());
 
@@ -132,7 +137,9 @@ describe('RegistroClientePage', () => {
     await renderPagina(new RepositorioCuentaFalso());
     llenarCampos();
 
-    expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(
+      true,
+    );
   });
 
   it('la casilla de autorización nunca arranca marcada', async () => {

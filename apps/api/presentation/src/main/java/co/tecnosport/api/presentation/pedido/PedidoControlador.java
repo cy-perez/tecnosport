@@ -8,6 +8,7 @@ import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.CrearPedidoComando;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.ReintentarPagoComando;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -116,6 +117,7 @@ public class PedidoControlador {
     return new CrearPedidoComando(
         null,
         cuerpo.correo(),
+        new Contacto(cuerpo.nombre(), cuerpo.telefono()),
         lineas,
         TipoEntrega.valueOf(cuerpo.tipoEntrega()),
         direccion,

@@ -37,7 +37,12 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
       headers: { 'Idempotency-Key': crypto.randomUUID() },
       body: {
         correo: comando.correo,
-        lineas: comando.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
+        nombre: comando.contacto.nombre,
+        telefono: comando.contacto.telefono,
+        lineas: comando.lineas.map((linea) => ({
+          varianteId: linea.varianteId,
+          cantidad: linea.cantidad,
+        })),
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),
         metodoPago: comando.metodoPago,
@@ -51,12 +56,18 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     const respuesta = await this.cliente.POST('/api/v1/pedidos/metodos-de-pago-disponibles', {
       body: {
         correo: comando.correo,
-        lineas: comando.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
+        lineas: comando.lineas.map((linea) => ({
+          varianteId: linea.varianteId,
+          cantidad: linea.cantidad,
+        })),
         tipoEntrega: comando.tipoEntrega,
         direccion: aDireccionRequest(comando.direccion),
       },
     });
-    return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles') as MetodoPago[];
+    return desempaquetar(
+      respuesta,
+      'no se pudieron consultar los métodos de pago disponibles',
+    ) as MetodoPago[];
   }
 
   async reintentarPago(pedidoId: string): Promise<Pedido> {

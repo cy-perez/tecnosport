@@ -7,12 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import {
-  CLASES_AYUDA,
-  CLASES_CONTROL,
-  CLASES_ERROR,
-  CLASES_ETIQUETA,
-} from '../clases-control';
+import { CLASES_AYUDA, CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
 
 /**
  * `datetime-local` entró con la bandeja de atención: quien radica una PQR escribe la fecha en que
@@ -20,12 +15,7 @@ import {
  * navegador es lo que hay; un selector propio sería otro componente y otra auditoría de foco.
  */
 export type TipoCampo =
-  | 'text'
-  | 'number'
-  | 'search'
-  | 'password'
-  | 'email'
-  | 'datetime-local';
+  'text' | 'number' | 'search' | 'password' | 'email' | 'tel' | 'datetime-local';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- valor por defecto hasta que Forms registre el real
 function sinOperacion(): void {}
@@ -118,7 +108,9 @@ export class TsCampo implements ControlValueAccessor {
 
   protected manejarEntrada(valorCrudo: string): void {
     this.valorMostrado.set(valorCrudo);
-    this.alCambiar(this.tipo() === 'number' ? (valorCrudo === '' ? null : Number(valorCrudo)) : valorCrudo);
+    this.alCambiar(
+      this.tipo() === 'number' ? (valorCrudo === '' ? null : Number(valorCrudo)) : valorCrudo,
+    );
   }
 
   protected manejarSalida(): void {

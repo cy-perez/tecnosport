@@ -148,6 +148,8 @@ class PedidoControladorTest {
       String metodoPago) {
     return new CrearPedidoRequest(
         "cliente@tecnosport.co",
+        "Ana Pérez",
+        "313 881 6711",
         List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 2)),
         tipoEntrega,
         direccion,
@@ -306,6 +308,8 @@ class PedidoControladorTest {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
             "RETIRO_EN_PUNTO",
             null,
@@ -321,11 +325,45 @@ class PedidoControladorTest {
         .andExpect(jsonPath("$.codigo").value("AUTORIZACION_REQUERIDA"));
   }
 
+  /** Sin quien reciba no hay guía ni mensajero: el cuerpo se rechaza antes de tocar nada. */
+  @Test
+  void crearPedidoSinTelefonoDevuelve422() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    String cuerpo =
+        """
+        {"correo":"cliente@tecnosport.co","nombre":"Ana Pérez","telefono":"",
+         "lineas":[{"varianteId":"%s","cantidad":1}],
+         "tipoEntrega":"RETIRO_EN_PUNTO","metodoPago":"TARJETA","autorizaDatos":true}
+        """
+            .formatted(variante.id());
+
+    mockMvc
+        .perform(post("/api/v1/pedidos").contentType(MediaType.APPLICATION_JSON).content(cuerpo))
+        .andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
+  void elPedidoCreadoDevuelveElContactoNormalizado() throws Exception {
+    Variante variante = publicarProductoConVarianteYExistencia(5);
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, "TARJETA");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(cuerpo)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.contacto.nombre").value("Ana Pérez"))
+        .andExpect(jsonPath("$.contacto.telefono").value("3138816711"));
+  }
+
   @Test
   void crearPedidoConVarianteInexistenteDevuelve404() throws Exception {
     CrearPedidoRequest cuerpo =
         new CrearPedidoRequest(
             "cliente@tecnosport.co",
+            "Ana Pérez",
+            "313 881 6711",
             List.of(new CrearPedidoRequest.LineaRequest(java.util.UUID.randomUUID(), 1)),
             "RETIRO_EN_PUNTO",
             null,

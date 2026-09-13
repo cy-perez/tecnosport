@@ -7,6 +7,7 @@ describe('aPedido', () => {
       numeroPedido: 'TS-2026-000001',
       usuarioId: 'usuario-1',
       correo: 'compra@ejemplo.co',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       lineas: [
         {
           id: 'linea-1',
@@ -48,6 +49,7 @@ describe('aPedido', () => {
       numeroPedido: 'TS-2026-000001',
       usuarioId: 'usuario-1',
       correo: 'compra@ejemplo.co',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       lineas: [
         {
           id: 'linea-1',
@@ -90,6 +92,7 @@ describe('aPedido', () => {
       id: 'pedido-2',
       numeroPedido: 'TS-2026-000002',
       correo: 'compra@ejemplo.co',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       lineas: [],
       tipoEntrega: 'RETIRO_EN_PUNTO',
       metodoPago: 'CONTRAENTREGA',
@@ -113,6 +116,7 @@ describe('aPedido', () => {
       numeroPedido: '',
       usuarioId: null,
       correo: '',
+      contacto: null,
       lineas: [],
       tipoEntrega: 'ENVIO_A_DOMICILIO',
       direccion: null,

@@ -21,6 +21,7 @@ function pedidoDePrueba(overrides: Partial<Pedido>): Pedido {
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 100_000, moneda: 'COP' },
     creadoEn: '2026-09-04T00:00:00Z',
+    contacto: null,
     datosTransferencia: null,
     ...overrides,
   };
@@ -37,9 +38,12 @@ describe('requiereDireccion', () => {
 });
 
 describe('esMetodoPagoWompi', () => {
-  it.each(['TARJETA', 'PSE', 'NEQUI', 'BANCOLOMBIA', 'ADDI'] as const)('%s va por Wompi', (metodo) => {
-    expect(esMetodoPagoWompi(metodo)).toBe(true);
-  });
+  it.each(['TARJETA', 'PSE', 'NEQUI', 'BANCOLOMBIA', 'ADDI'] as const)(
+    '%s va por Wompi',
+    (metodo) => {
+      expect(esMetodoPagoWompi(metodo)).toBe(true);
+    },
+  );
 
   it.each(['TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)('%s no va por Wompi', (metodo) => {
     expect(esMetodoPagoWompi(metodo)).toBe(false);
@@ -68,7 +72,10 @@ describe('datosTransferenciaDelPedido', () => {
       titular: 'Tecno Sport',
       referencia: 'TS-2026-000123',
     };
-    const pedido = pedidoDePrueba({ metodoPago: 'TRANSFERENCIA_MANUAL', datosTransferencia: datos });
+    const pedido = pedidoDePrueba({
+      metodoPago: 'TRANSFERENCIA_MANUAL',
+      datosTransferencia: datos,
+    });
 
     expect(datosTransferenciaDelPedido(pedido)).toEqual(datos);
   });
@@ -76,6 +83,7 @@ describe('datosTransferenciaDelPedido', () => {
   it('devuelve null para cualquier otro método de pago, incluso si el campo llegara poblado', () => {
     const pedido = pedidoDePrueba({
       metodoPago: 'TARJETA',
+      contacto: null,
       datosTransferencia: {
         banco: 'Bancolombia',
         tipoCuenta: 'Ahorros',

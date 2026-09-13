@@ -15,6 +15,11 @@ import java.util.UUID;
  */
 public record CrearPedidoRequest(
     String correo,
+    /**
+     * Quien recibe: va en la guía y es a quien llama el mensajero. El formato lo valida el dominio.
+     */
+    String nombre,
+    String telefono,
     List<LineaRequest> lineas,
     String tipoEntrega,
     DireccionRequest direccion,
@@ -24,6 +29,12 @@ public record CrearPedidoRequest(
   public CrearPedidoRequest {
     if (correo == null || correo.isBlank()) {
       throw new IllegalArgumentException("correo es obligatorio.");
+    }
+    if (nombre == null || nombre.isBlank()) {
+      throw new IllegalArgumentException("nombre es obligatorio.");
+    }
+    if (telefono == null || telefono.isBlank()) {
+      throw new IllegalArgumentException("telefono es obligatorio.");
     }
     if (lineas == null || lineas.isEmpty()) {
       throw new IllegalArgumentException("lineas no puede estar vacío.");
