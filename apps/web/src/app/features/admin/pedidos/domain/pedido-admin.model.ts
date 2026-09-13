@@ -5,7 +5,8 @@ export interface Dinero {
 
 export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
-export type MetodoPago = 'TARJETA' | 'PSE' | 'NEQUI' | 'BANCOLOMBIA' | 'ADDI' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
+export type MetodoPago =
+  'TARJETA' | 'PSE' | 'NEQUI' | 'BANCOLOMBIA' | 'ADDI' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
 
 /** Grafo completo de `docs/02-modelo-datos.md` — el panel opera todos los estados, a
  * diferencia de la página de seguimiento del cliente. */
@@ -91,11 +92,18 @@ export interface PlazoDeEntregaAdmin {
   readonly avisadoEn: string | null;
 }
 
+/** Quien recibe: para la guía y para llamar. `null` en los pedidos anteriores a que se pidiera. */
+export interface ContactoAdmin {
+  readonly nombre: string;
+  readonly telefono: string;
+}
+
 export interface PedidoAdmin {
   readonly id: string;
   readonly numeroPedido: string;
   readonly usuarioId: string | null;
   readonly correo: string;
+  readonly contacto: ContactoAdmin | null;
   readonly lineas: readonly LineaPedidoAdmin[];
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;

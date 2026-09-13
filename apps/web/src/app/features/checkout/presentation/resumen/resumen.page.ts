@@ -1,5 +1,12 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -94,6 +101,18 @@ export class ResumenPage {
   private readonly ultimaCotizacion = signal<CotizacionEnvio | null>(null);
 
   protected readonly form = new FormGroup({
+    // Quien recibe: va en la guía de la transportadora y es a quien llama el mensajero. El
+    // patrón del teléfono es laxo a propósito —dígitos, espacios, paréntesis, guiones y un `+`
+    // opcional—: el servidor lo normaliza y es quien decide (`Contacto.java`); aquí solo se evita
+    // que una letra llegue hasta allá.
+    nombre: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(120)],
+    }),
+    telefono: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(/^\+?[0-9 ()\-.]{7,20}$/)],
+    }),
     correo: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.email],
@@ -117,7 +136,9 @@ export class ResumenPage {
     initialValue: this.form.controls.tipoEntrega.value,
   });
 
-  protected readonly requiereDireccion = computed(() => tipoEntregaRequiereDireccion(this.tipoEntregaElegido()));
+  protected readonly requiereDireccion = computed(() =>
+    tipoEntregaRequiereDireccion(this.tipoEntregaElegido()),
+  );
 
   protected readonly opcionesTipoEntrega = computed<OpcionSelect[]>(() => [
     { valor: 'ENVIO_A_DOMICILIO', etiqueta: this.traducir()('checkout.resumen.envio_a_domicilio') },
@@ -125,7 +146,10 @@ export class ResumenPage {
   ]);
 
   protected readonly opcionesDepartamento = computed<OpcionSelect[]>(() =>
-    DEPARTAMENTOS.map((departamento) => ({ valor: departamento.codigo, etiqueta: departamento.nombre })),
+    DEPARTAMENTOS.map((departamento) => ({
+      valor: departamento.codigo,
+      etiqueta: departamento.nombre,
+    })),
   );
 
   private readonly departamentoElegido = toSignal(
@@ -139,6 +163,29 @@ export class ResumenPage {
       etiqueta: municipio.nombre,
     })),
   );
+
+  private readonly tickNombre = toSignal(this.form.controls.nombre.events, { initialValue: null });
+  protected readonly errorNombre = computed(() => {
+    this.tickNombre();
+    const control = this.form.controls.nombre;
+    return control.touched && control.invalid
+      ? this.transloco.translate('checkout.resumen.errores.nombre_requerido')
+      : null;
+  });
+
+  private readonly tickTelefono = toSignal(this.form.controls.telefono.events, {
+    initialValue: null,
+  });
+  protected readonly errorTelefono = computed(() => {
+    this.tickTelefono();
+    const control = this.form.controls.telefono;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return control.hasError('required')
+      ? this.transloco.translate('checkout.resumen.errores.telefono_requerido')
+      : this.transloco.translate('checkout.resumen.errores.telefono_invalido');
+  });
 
   private readonly tickCorreo = toSignal(this.form.controls.correo.events, { initialValue: null });
   protected readonly errorCorreo = computed(() => {
@@ -182,9 +229,12 @@ export class ResumenPage {
       : null;
   });
 
-  private readonly tickCiudad = toSignal(this.form.controls.direccion.controls.codigoDaneCiudad.events, {
-    initialValue: null,
-  });
+  private readonly tickCiudad = toSignal(
+    this.form.controls.direccion.controls.codigoDaneCiudad.events,
+    {
+      initialValue: null,
+    },
+  );
   protected readonly errorCiudad = computed(() => {
     this.tickCiudad();
     const control = this.form.controls.direccion.controls.codigoDaneCiudad;
@@ -193,9 +243,12 @@ export class ResumenPage {
       : null;
   });
 
-  private readonly tickDireccion = toSignal(this.form.controls.direccion.controls.direccion.events, {
-    initialValue: null,
-  });
+  private readonly tickDireccion = toSignal(
+    this.form.controls.direccion.controls.direccion.events,
+    {
+      initialValue: null,
+    },
+  );
   protected readonly errorDireccion = computed(() => {
     this.tickDireccion();
     const control = this.form.controls.direccion.controls.direccion;
@@ -244,7 +297,10 @@ export class ResumenPage {
    * caída nuestra sería culpar al comprador.
    */
   protected readonly sinCobertura = computed(
-    () => this.criteriosCotizacion() !== null && this.cotizacion.isSuccess() && this.cotizacion.data() === null,
+    () =>
+      this.criteriosCotizacion() !== null &&
+      this.cotizacion.isSuccess() &&
+      this.cotizacion.data() === null,
   );
 
   /**
@@ -366,7 +422,11 @@ export class ResumenPage {
     effect(() => {
       const necesitaDireccion = this.requiereDireccion();
       const controles = this.form.controls.direccion.controls;
-      for (const control of [controles.codigoDaneDepartamento, controles.codigoDaneCiudad, controles.direccion]) {
+      for (const control of [
+        controles.codigoDaneDepartamento,
+        controles.codigoDaneCiudad,
+        controles.direccion,
+      ]) {
         control.setValidators(necesitaDireccion ? [Validators.required] : []);
         control.updateValueAndValidity({ emitEvent: false });
       }
@@ -410,6 +470,7 @@ export class ResumenPage {
 
     this.checkout.guardarDatosEntrega({
       correo: valores.correo,
+      contacto: { nombre: valores.nombre.trim(), telefono: valores.telefono.trim() },
       tipoEntrega: valores.tipoEntrega,
       direccion,
       autorizaDatos: valores.autorizaDatos,

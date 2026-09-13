@@ -12,6 +12,14 @@
       <dt>{{ 'checkout.resumen.correo' | transloco }}</dt>
       <dd>{{ datos.correo }}</dd>
 
+      <!-- Aquí se finaliza la transacción: quien recibe y a qué número se le llama se revisan
+           junto con la dirección, no se descubren en el correo de confirmación. -->
+      <dt>{{ 'checkout.resumen.nombre' | transloco }}</dt>
+      <dd>{{ datos.contacto.nombre }}</dd>
+
+      <dt>{{ 'checkout.resumen.telefono' | transloco }}</dt>
+      <dd>{{ datos.contacto.telefono }}</dd>
+
       <dt>{{ 'checkout.resumen.tipo_entrega' | transloco }}</dt>
       <dd class="flex items-center gap-8">
         <!-- Que te lo lleven o que lo recojas es lo primero que alguien busca al volver a mirar su
@@ -58,10 +66,16 @@
       @if (muestraEnvio()) {
         <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
         <dd>
-          @if (cotizacion.isFetching()) {
-            <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
-          } @else if (cotizacion.data(); as envio) {
+          <!-- El dato conocido antes que el estado de la consulta. Con `isFetching()` primero,
+               la revalidación en segundo plano —al volver del método de pago, la cotización de
+               hace un momento sigue en caché y TanStack la refresca— pintaba "Calculando…" al
+               lado de un total ya sumado con ese mismo flete. Visto en el navegador: costo
+               "calculando", total $ 99.440. Si hay cotización se muestra; si llega otra, se
+               reemplaza. -->
+          @if (cotizacion.data(); as envio) {
             <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
+          } @else if (cotizacion.isFetching()) {
+            <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
           } @else if (sinCobertura()) {
             <span class="text-ts-error" role="alert">{{
               'checkout.resumen.envio_sin_cobertura' | transloco

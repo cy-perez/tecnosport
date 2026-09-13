@@ -28,6 +28,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 300_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
+    contacto: null,
     datosTransferencia: {
       banco: 'Bancolombia',
       tipoCuenta: 'Ahorros',
@@ -74,9 +75,12 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
-
 function anfitrionConPedidoEnMemoria(pedido: Pedido) {
-  @Component({ selector: 'app-anfitrion-de-prueba', imports: [TransferenciaPage], template: `<app-transferencia />` })
+  @Component({
+    selector: 'app-anfitrion-de-prueba',
+    imports: [TransferenciaPage],
+    template: `<app-transferencia />`,
+  })
   class AnfitrionDePrueba {
     private readonly checkout = inject(CheckoutStore);
 
@@ -104,7 +108,10 @@ async function renderConProviders(
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: new RepositorioPagosFalso() },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(query) } },
+      },
     ],
   });
 }
@@ -139,7 +146,9 @@ describe('TransferenciaPage', () => {
     await renderConProviders(
       new RepositorioPedidosFalso(),
       {},
-      anfitrionConPedidoEnMemoria(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA', datosTransferencia: null })),
+      anfitrionConPedidoEnMemoria(
+        pedidoDePrueba({ metodoPago: 'CONTRAENTREGA', datosTransferencia: null }),
+      ),
     );
     expect(await screen.findByText('No encontramos los datos de esta transferencia.')).toBeTruthy();
   });

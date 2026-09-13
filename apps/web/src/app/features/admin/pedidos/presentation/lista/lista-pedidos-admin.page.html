@@ -89,8 +89,8 @@
               <td>
                 <ts-boton
                   variante="texto"
-                  [attr.aria-expanded]="pedidoExpandidoId() === pedido.id"
-                  [attr.aria-controls]="'detalle-' + pedido.id"
+                  [expandido]="pedidoExpandidoId() === pedido.id"
+                  [controla]="'detalle-' + pedido.id"
                   (click)="alternarExpandido(pedido.id)"
                 >
                   {{
@@ -169,6 +169,20 @@
                       </li>
                     }
                   </ul>
+
+                  @if (pedido.contacto; as contacto) {
+                    <h2 class="mt-16 mb-8 text-base font-medio">
+                      {{ 'admin.pedidos.detalle.contacto' | transloco }}
+                    </h2>
+                    <!-- `tel:` de verdad: el panel se usa desde el teléfono al despachar, y el
+                         número se marca tocándolo. -->
+                    <p>
+                      {{ contacto.nombre }} —
+                      <a class="anillo-foco text-ts-primario" [href]="'tel:' + contacto.telefono">{{
+                        contacto.telefono
+                      }}</a>
+                    </p>
+                  }
 
                   @if (pedido.direccion; as direccion) {
                     <h2 class="mt-16 mb-8 text-base font-medio">

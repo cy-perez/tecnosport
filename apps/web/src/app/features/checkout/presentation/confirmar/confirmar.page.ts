@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
@@ -213,7 +220,11 @@ export class ConfirmarPage {
 
     const comando: CrearPedidoComando = {
       correo: datos.correo,
-      lineas: datosCarrito.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
+      contacto: datos.contacto,
+      lineas: datosCarrito.lineas.map((linea) => ({
+        varianteId: linea.varianteId,
+        cantidad: linea.cantidad,
+      })),
       tipoEntrega: datos.tipoEntrega,
       direccion: datos.direccion,
       metodoPago,

@@ -23,6 +23,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 150_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
+    contacto: null,
     datosTransferencia: null,
     ...overrides,
   };
@@ -80,6 +81,7 @@ function comandoDePrueba(): CrearPedidoComando {
     tipoEntrega: 'RETIRO_EN_PUNTO',
     direccion: null,
     metodoPago: 'TARJETA',
+    contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
     autorizaDatos: true,
   };
 }
@@ -89,7 +91,10 @@ class AnfitrionDePrueba {
   readonly store = inject(CheckoutStore);
 }
 
-async function renderConRepositorio(repositorio: RepositorioPedidos, pagos: RepositorioPagos = new RepositorioPagosFalso()) {
+async function renderConRepositorio(
+  repositorio: RepositorioPedidos,
+  pagos: RepositorioPagos = new RepositorioPagosFalso(),
+) {
   const { fixture } = await render(AnfitrionDePrueba, {
     providers: [
       provideTanStackQuery(new QueryClient()),
@@ -147,6 +152,7 @@ describe('CheckoutStore', () => {
       correo: 'compra@ejemplo.co',
       tipoEntrega: 'RETIRO_EN_PUNTO',
       direccion: null,
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
     });
 

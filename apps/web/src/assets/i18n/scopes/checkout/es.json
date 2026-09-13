@@ -26,7 +26,10 @@
       "departamento_requerido": "Elige un departamento.",
       "ciudad_requerida": "Elige una ciudad.",
       "direccion_requerida": "La dirección es obligatoria.",
-      "autorizacion_requerida": "Tienes que autorizar el tratamiento de datos para continuar."
+      "autorizacion_requerida": "Tienes que autorizar el tratamiento de datos para continuar.",
+      "nombre_requerido": "Escribe el nombre de quien recibe.",
+      "telefono_requerido": "El teléfono es obligatorio.",
+      "telefono_invalido": "Escribe un teléfono válido, solo números."
     },
     "autoriza_datos": "Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.",
     "ver_politica": "Leer la política de tratamiento de datos",
@@ -38,7 +41,10 @@
     "retiro_ahorro": "Te ahorras {{valor}} de envío",
     "envio_estimado_un_dia": "Entrega estimada: 1 día",
     "envio_no_calculado": "No pudimos calcular el costo de envío en este momento. Vuelve a intentarlo en unos minutos, o elige recoger tu pedido en nuestro punto de Medellín.",
-    "total_pendiente": "Falta el costo de envío"
+    "total_pendiente": "Falta el costo de envío",
+    "nombre": "Nombre de quien recibe",
+    "telefono": "Teléfono de contacto",
+    "telefono_ayuda": "La transportadora o el mensajero te llaman a este número antes de entregar."
   },
   "metodoPago": {
     "titulo": "Método de pago",

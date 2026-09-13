@@ -8,7 +8,10 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
 import { DatosEntrega } from '../../domain/pedido.comandos';
@@ -83,6 +86,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
 };
 
@@ -91,7 +95,11 @@ const DATOS_ENTREGA: DatosEntrega = {
  * inmediato, así que hay que sembrar el dato antes de que exista la página,
  * no después. El constructor del anfitrión corre primero que el de su hijo
  * en el mismo ciclo de creación. */
-@Component({ selector: 'app-anfitrion-de-prueba', imports: [MetodoPagoPage], template: `<app-metodo-pago />` })
+@Component({
+  selector: 'app-anfitrion-de-prueba',
+  imports: [MetodoPagoPage],
+  template: `<app-metodo-pago />`,
+})
 class AnfitrionDePrueba {
   private readonly checkout = inject(CheckoutStore);
 
@@ -102,7 +110,6 @@ class AnfitrionDePrueba {
 
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
-
 
 async function renderConDatosEntrega(carrito: RepositorioCarrito, pedidos: RepositorioPedidos) {
   return render(AnfitrionDePrueba, {
@@ -148,7 +155,7 @@ describe('MetodoPagoPage', () => {
         }),
       ],
       providers: [
-      ...proveerAlmacenesCarrito(),
+        ...proveerAlmacenesCarrito(),
         provideRouter([{ path: 'resumen', component: RutaMuda }]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CARRITO, useValue: new RepositorioCarritoFalso(null) },

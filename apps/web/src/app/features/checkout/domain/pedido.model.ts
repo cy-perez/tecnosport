@@ -8,13 +8,7 @@ export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
 /** Tabla de métodos de `docs/11-pagos-y-envios.md`. */
 export type MetodoPago =
-  | 'TARJETA'
-  | 'PSE'
-  | 'NEQUI'
-  | 'BANCOLOMBIA'
-  | 'ADDI'
-  | 'TRANSFERENCIA_MANUAL'
-  | 'CONTRAENTREGA';
+  'TARJETA' | 'PSE' | 'NEQUI' | 'BANCOLOMBIA' | 'ADDI' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
 
 /** Grafo completo de `docs/02-modelo-datos.md`. Los estados de operación
  * (`EN_PREPARACION` en adelante) solo se ven en la página de seguimiento. */
@@ -30,6 +24,16 @@ export type EstadoPedido =
   | 'DEVUELTO'
   | 'RECAUDO_PENDIENTE'
   | 'RECAUDO_CONCILIADO';
+
+/**
+ * A quién se le entrega y a qué número se le avisa. Distinto del correo: el correo identifica al
+ * comprador, el contacto a quien recibe, y no siempre son la misma persona. Sin esto no hay guía
+ * que emitir ni mensajero de contraentrega que avise.
+ */
+export interface Contacto {
+  readonly nombre: string;
+  readonly telefono: string;
+}
 
 export interface Direccion {
   readonly codigoDaneDepartamento: string;
@@ -66,6 +70,8 @@ export interface Pedido {
   readonly numeroPedido: string;
   readonly usuarioId: string | null;
   readonly correo: string;
+  /** `null` solo en pedidos anteriores a que se pidiera. */
+  readonly contacto: Contacto | null;
   readonly lineas: readonly LineaPedido[];
   readonly tipoEntrega: TipoEntrega;
   readonly direccion: Direccion | null;

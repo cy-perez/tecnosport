@@ -86,7 +86,8 @@
       "envio": "Shipment",
       "comision": "Collection fee",
       "historial": "History",
-      "acciones": "Actions"
+      "acciones": "Actions",
+      "contacto": "Recipient"
     },
     "acciones": {
       "sin_accion": "No actions available.",

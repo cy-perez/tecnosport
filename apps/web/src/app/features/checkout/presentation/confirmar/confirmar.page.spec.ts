@@ -8,7 +8,10 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { Carrito } from '../../../carrito/domain/carrito.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../../../carrito/domain/repositorio-carrito.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from '../../../carrito/domain/repositorio-carrito.puerto';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
@@ -65,6 +68,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 150_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
+    contacto: null,
     datosTransferencia: null,
     ...overrides,
   };
@@ -151,6 +155,7 @@ const DATOS_ENTREGA: DatosEntrega = {
   correo: 'compra@ejemplo.co',
   tipoEntrega: 'RETIRO_EN_PUNTO',
   direccion: null,
+  contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
 };
 
@@ -165,6 +170,7 @@ const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
     direccion: 'Circular 4 # 70-20',
     indicaciones: null,
   },
+  contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,
 };
 
@@ -185,7 +191,11 @@ function snapshotDePrueba(varianteId: string) {
  * primer `effect()`, así que los datos tienen que existir antes de que
  * `ConfirmarPage` se construya. */
 function anfitrionConDatos(metodoPago: MetodoPago, datos: DatosEntrega = DATOS_ENTREGA) {
-  @Component({ selector: 'app-anfitrion-de-prueba', imports: [ConfirmarPage], template: `<app-confirmar />` })
+  @Component({
+    selector: 'app-anfitrion-de-prueba',
+    imports: [ConfirmarPage],
+    template: `<app-confirmar />`,
+  })
   class AnfitrionDePrueba {
     private readonly checkout = inject(CheckoutStore);
 
@@ -199,7 +209,6 @@ function anfitrionConDatos(metodoPago: MetodoPago, datos: DatosEntrega = DATOS_E
 
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
-
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioEnviosFalso implements RepositorioEnvios {
@@ -322,15 +331,22 @@ describe('ConfirmarPage', () => {
     expect(await screen.findByText('Total a pagar')).toBeTruthy();
     expect(screen.queryByText('Costo de envío')).toBeFalsy();
     // Subtotal y total valen lo mismo cuando no hay flete, así que aparece dos veces.
-    expect((await screen.findAllByText(/150\.000/))).toHaveLength(2);
+    expect(await screen.findAllByText(/150\.000/)).toHaveLength(2);
   });
 
   it('muestra correo, tipo de entrega, método de pago y subtotal', async () => {
     sembrarCarritoId('carrito-1');
 
-    await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
+    await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+    );
 
     expect(await screen.findByText('compra@ejemplo.co')).toBeTruthy();
+    // Quien recibe y su teléfono se revisan aquí, donde se finaliza la transacción.
+    expect(screen.getByText('Ana Pérez')).toBeTruthy();
+    expect(screen.getByText('3138816711')).toBeTruthy();
     // Del JSON y no repetida aquí: la etiqueta ya cambió una vez —le sobraba un "sin costo" que
     // es falso mientras el flete va embebido en el precio— y lo que se verifica es que se pinte.
     expect(screen.getByText(esCheckout.resumen.retiro_en_punto)).toBeTruthy();
@@ -345,7 +361,11 @@ describe('ConfirmarPage', () => {
   it('con retiro en punto, muestra la dirección del punto y cómo se coordina', async () => {
     sembrarCarritoId('carrito-1');
 
-    await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), new RepositorioPedidosFalso());
+    await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(),
+    );
 
     expect(await screen.findByText(esCheckout.resumen.retiro_direccion)).toBeTruthy();
   });
@@ -378,7 +398,9 @@ describe('ConfirmarPage', () => {
 
   it('con transferencia manual, navega a la pantalla de transferencia sin pedir intento de pago', async () => {
     sembrarCarritoId('carrito-1');
-    const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'TRANSFERENCIA_MANUAL' }));
+    const pedidos = new RepositorioPedidosFalso(
+      pedidoDePrueba({ metodoPago: 'TRANSFERENCIA_MANUAL' }),
+    );
     const pagos = new RepositorioPagosFalso();
 
     const { fixture } = await renderConDatos(
@@ -402,7 +424,9 @@ describe('ConfirmarPage', () => {
 
     expect(navegar).toHaveBeenCalledWith(
       ['../transferencia'],
-      expect.objectContaining({ queryParams: { pedidoId: 'pedido-1', correo: 'compra@ejemplo.co' } }),
+      expect.objectContaining({
+        queryParams: { pedidoId: 'pedido-1', correo: 'compra@ejemplo.co' },
+      }),
     );
     expect(pagos.llamadasCrearIntento).toBe(0);
   });
@@ -411,7 +435,11 @@ describe('ConfirmarPage', () => {
     sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
-    const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
     await screen.findByText('compra@ejemplo.co');
     // El carrito llega por TanStack Query: sin esperar, el click puede llegar
     // antes de que `carrito.consulta.data()` resuelva y `confirmar()` sale
@@ -447,7 +475,9 @@ describe('ConfirmarPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
     expect(
-      await screen.findByText('No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.'),
+      await screen.findByText(
+        'No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.',
+      ),
     ).toBeTruthy();
     expect(navegar).not.toHaveBeenCalled();
   });
@@ -540,7 +570,11 @@ describe('ConfirmarPage', () => {
     sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
-    const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
     await screen.findByText('compra@ejemplo.co');
     await esperarCarritoCargado(fixture);
     const checkout = fixture.debugElement.injector.get(CheckoutStore);
@@ -552,6 +586,7 @@ describe('ConfirmarPage', () => {
       tipoEntrega: 'RETIRO_EN_PUNTO',
       direccion: null,
       metodoPago: 'CONTRAENTREGA',
+      contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
     });
     expect(pedidos.llamadasCrear).toBe(1);
@@ -566,7 +601,11 @@ describe('ConfirmarPage', () => {
     sembrarCarritoId('carrito-1');
     const pedidos = new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'CONTRAENTREGA' }));
 
-    const { fixture } = await renderConDatos('CONTRAENTREGA', new RepositorioCarritoFalso(CARRITO_CON_LINEAS), pedidos);
+    const { fixture } = await renderConDatos(
+      'CONTRAENTREGA',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+    );
     await screen.findByText('compra@ejemplo.co');
     await esperarCarritoCargado(fixture);
     const carrito = fixture.debugElement.injector.get(CarritoStore);
@@ -596,7 +635,9 @@ describe('ConfirmarPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
 
     expect(
-      await screen.findByText('No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.'),
+      await screen.findByText(
+        'No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.',
+      ),
     ).toBeTruthy();
     expect(carrito.carritoId()).toBe('carrito-1');
     expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');

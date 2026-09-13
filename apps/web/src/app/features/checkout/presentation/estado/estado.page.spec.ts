@@ -40,6 +40,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
     costoEnvio: { valor: 0, moneda: 'COP' },
     total: { valor: 300_000, moneda: 'COP' },
     creadoEn: '2026-01-01T00:00:00Z',
+    contacto: null,
     datosTransferencia: null,
     ...overrides,
   };
@@ -55,7 +56,10 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 
   constructor(
     private seguimiento: Seguimiento | null = null,
-    private pedidoReintentado: Pedido = pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'CONTRAENTREGA' }),
+    private pedidoReintentado: Pedido = pedidoDePrueba({
+      estado: 'PAGO_PENDIENTE',
+      metodoPago: 'CONTRAENTREGA',
+    }),
   ) {}
 
   async crear(): Promise<Pedido> {
@@ -95,12 +99,15 @@ class RepositorioPagosFalso implements RepositorioPagos {
   }
 }
 
-
 /** Siembra `CheckoutStore.pedido` antes de que `EstadoPage` se construya —
  * su `criteriosSeguimiento` computed lo lee de inmediato, mismo motivo que
  * en `metodo-pago.page.spec.ts`. */
 function anfitrionConPedidoEnMemoria(pedido: Pedido) {
-  @Component({ selector: 'app-anfitrion-de-prueba', imports: [EstadoPage], template: `<app-estado />` })
+  @Component({
+    selector: 'app-anfitrion-de-prueba',
+    imports: [EstadoPage],
+    template: `<app-estado />`,
+  })
   class AnfitrionDePrueba {
     private readonly checkout = inject(CheckoutStore);
 
@@ -128,12 +135,19 @@ async function renderConProviders(
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PEDIDOS, useValue: pedidos },
       { provide: REPOSITORIO_PAGOS, useValue: pagos },
-      { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(query) } } },
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { queryParamMap: convertToParamMap(query) } },
+      },
     ],
   });
 }
 
-async function renderConPedidoEnMemoria(pedido: Pedido, pedidos: RepositorioPedidos, pagos: RepositorioPagos) {
+async function renderConPedidoEnMemoria(
+  pedido: Pedido,
+  pedidos: RepositorioPedidos,
+  pagos: RepositorioPagos,
+) {
   return render(anfitrionConPedidoEnMemoria(pedido), {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -162,7 +176,9 @@ describe('EstadoPage', () => {
   });
 
   it('sin pedido en memoria pero con pedidoId y correo en la URL, consulta el seguimiento', async () => {
-    const pedidos = new RepositorioPedidosFalso(seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }));
+    const pedidos = new RepositorioPedidosFalso(
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+    );
 
     await renderConProviders(pedidos, new RepositorioPagosFalso(), {
       pedidoId: 'pedido-1',

@@ -116,6 +116,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
     dineroRecibido: { valor: 50_000, moneda: 'COP' },
     yaDevuelto: { valor: 0, moneda: 'COP' },
     creadoEn: '2026-01-01T12:00:00Z',
+    contacto: null,
     datosTransferencia: null,
     envio: null,
     historial: [],
@@ -220,7 +221,6 @@ async function renderLista(
   });
   return { ...resultado, repositorio };
 }
-
 
 describe('ListaPedidosAdminPage', () => {
   it('lista los pedidos con sus columnas principales', async () => {
@@ -481,7 +481,9 @@ describe('ListaPedidosAdminPage', () => {
 
     expect(screen.queryByLabelText('Monto a devolver')).toBeNull();
     expect(
-      screen.getByText('Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.'),
+      screen.getByText(
+        'Este pedido todavia no habia cobrado nada, así que no hay dinero que devolver.',
+      ),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }));
@@ -497,5 +499,21 @@ describe('ListaPedidosAdminPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
     expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).toBeNull();
+  });
+
+  // `[attr.aria-expanded]` sobre `<ts-boton>` caía en el host, no en el `<button>` real: el lector
+  // de pantalla no se enteraba de que "Ver detalle" abre algo. Ahora va por los inputs del botón.
+  it('el botón de detalle anuncia su estado sobre el control real', async () => {
+    await renderLista([pedidoDePrueba()]);
+
+    const boton = await screen.findByRole('button', { name: 'Ver detalle' });
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    expect(boton.getAttribute('aria-controls')).toBe('detalle-' + pedidoDePrueba().id);
+
+    fireEvent.click(boton);
+
+    expect(
+      (await screen.findByRole('button', { name: 'Ocultar' })).getAttribute('aria-expanded'),
+    ).toBe('true');
   });
 });
