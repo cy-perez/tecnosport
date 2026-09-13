@@ -10,5 +10,7 @@
   "aumentar": "Aumentar cantidad",
   "eliminar": "Eliminar",
   "agregar_al_carrito": "Agregar al carrito",
-  "agregando": "Agregando…"
+  "agregando": "Agregando…",
+  "envio_aparte": "El costo de envío se cotiza al pagar, según tu destino. Recoger en el punto no tiene costo.",
+  "seguir_comprando": "Seguir comprando"
 }

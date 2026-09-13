@@ -11,7 +11,11 @@ import { REPOSITORIO_CARRITO, RepositorioCarrito } from '../domain/repositorio-c
 import { CarritoStore } from '../application/carrito.store';
 import { CarritoPage } from './carrito.page';
 import { esperarSinViolaciones } from '../../../../testing/axe';
-import { proveerAlmacenesCarrito, sembrarCarritoId, sembrarSnapshotLinea } from '../../../../testing/carrito';
+import {
+  proveerAlmacenesCarrito,
+  sembrarCarritoId,
+  sembrarSnapshotLinea,
+} from '../../../../testing/carrito';
 
 class RepositorioCarritoFalso implements RepositorioCarrito {
   constructor(private carrito: Carrito | null) {}
@@ -103,6 +107,25 @@ describe('CarritoPage', () => {
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
     expect(screen.getAllByText(/300\.000/).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'Ir a pagar' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Seguir comprando' })).toBeTruthy();
+  });
+
+  // El total del carrito es sin flete (docs/00-producto.md): el envío se
+  // cotiza por destino en el checkout y se cobra aparte. Hay que decirlo antes
+  // de que el total crezca, no después.
+  it('con líneas, avisa que el envío se cotiza al pagar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const carrito: Carrito = {
+      id: 'carrito-1',
+      usuarioId: null,
+      creadoEn: '2026-01-01T00:00:00Z',
+      lineas: [{ id: 'linea-1', varianteId: 'variante-1', cantidad: 1 }],
+    };
+
+    await renderCarrito(new RepositorioCarritoFalso(carrito));
+
+    expect(await screen.findByText(/El costo de envío se cotiza al pagar/)).toBeTruthy();
   });
 
   it('eliminar una línea la quita de la pantalla', async () => {

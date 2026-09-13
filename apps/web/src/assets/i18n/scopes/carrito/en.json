@@ -10,5 +10,7 @@
   "aumentar": "Increase quantity",
   "eliminar": "Remove",
   "agregar_al_carrito": "Add to cart",
-  "agregando": "Adding…"
+  "agregando": "Adding…",
+  "envio_aparte": "Shipping is quoted at checkout, based on your destination. Pickup at our store is free.",
+  "seguir_comprando": "Continue shopping"
 }
