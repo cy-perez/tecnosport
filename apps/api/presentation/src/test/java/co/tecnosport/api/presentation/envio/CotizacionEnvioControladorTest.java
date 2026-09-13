@@ -120,8 +120,7 @@ class CotizacionEnvioControladorTest {
         .andExpect(jsonPath("$.costoEnvio.moneda").value("COP"))
         .andExpect(jsonPath("$.transportadora").value("Coordinadora"))
         .andExpect(jsonPath("$.diasEstimados").value(1))
-        .andExpect(jsonPath("$.venceEn").value("2026-09-12T12:00:00Z"))
-        .andExpect(jsonPath("$.admiteContraentrega").value(false));
+        .andExpect(jsonPath("$.venceEn").value("2026-09-12T12:00:00Z"));
   }
 
   /**
@@ -141,7 +140,11 @@ class CotizacionEnvioControladorTest {
                 .content(cuerpo()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.idTarifa").doesNotExist())
-        .andExpect(jsonPath("$.servicio").doesNotExist());
+        .andExpect(jsonPath("$.servicio").doesNotExist())
+        // Tampoco la cobertura de recaudo: esta cotización se pide sin recaudo, así que no sabe
+        // nada de contraentrega y no puede fingir que sí. Eso lo responde
+        // /pedidos/metodos-de-pago-disponibles.
+        .andExpect(jsonPath("$.admiteContraentrega").doesNotExist());
   }
 
   /**
