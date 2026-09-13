@@ -36,7 +36,9 @@
     "envio_calculando": "Calculating shipping cost…",
     "envio_sin_cobertura": "We have no carrier for this address. You can pick up your order at our Medellín location.",
     "retiro_ahorro": "You save {{valor}} in shipping",
-    "envio_estimado_un_dia": "Estimated delivery: 1 day"
+    "envio_estimado_un_dia": "Estimated delivery: 1 day",
+    "envio_no_calculado": "We couldn't work out the shipping cost right now. Try again in a few minutes, or choose to pick your order up at our Medellín location.",
+    "total_pendiente": "Shipping cost still missing"
   },
   "metodoPago": {
     "titulo": "Payment method",
@@ -58,7 +60,9 @@
     "volver": "‹ Change payment method",
     "confirmar": "Confirm order",
     "enviando": "Confirming…",
-    "error": "We couldn't confirm your order. Check your details and try again."
+    "error": "We couldn't confirm your order. Check your details and try again.",
+    "sin_cobertura": "We have no carrier for this address, so we cannot create this order. Go back and choose to pick it up at our Medellín location, or enter a different address.",
+    "envio_no_calculado": "We couldn't work out the shipping cost, so we cannot create this order yet. Try again in a few minutes, or go back and choose to pick it up at our Medellín location."
   },
   "retornoWompi": {
     "verificando": "Checking your payment…",
