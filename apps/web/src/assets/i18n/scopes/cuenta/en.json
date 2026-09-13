@@ -8,7 +8,9 @@
     "error": "Incorrect email or password.",
     "error_sin_verificar": "Verify your email before signing in. Check your inbox.",
     "no_es_cliente": "This account belongs to the admin panel, not a customer account.",
-    "olvidaste_clave": "Forgot your password?"
+    "olvidaste_clave": "Forgot your password?",
+    "sin_cuenta": "Don't have an account?",
+    "crear_cuenta": "Create account"
   },
   "registro": {
     "titulo": "Create account",
@@ -23,7 +25,9 @@
     "error_correo_registrado": "An account with that email already exists.",
     "error_generico": "We couldn't create the account. Try again.",
     "autoriza_datos": "I authorise the processing of my personal data to create my account.",
-    "ver_politica": "Read the personal data policy"
+    "ver_politica": "Read the personal data policy",
+    "ya_tienes_cuenta": "Already have an account?",
+    "iniciar_sesion": "Sign in"
   },
   "verificarCorreo": {
     "titulo": "Verifying your email",
