@@ -147,6 +147,12 @@ class EnvioWebhookControladorTest {
       return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicar);
     }
 
+    /** El nombre de la cabecera es configuración; aquí se fija el mismo que usa la prueba. */
+    @Bean
+    PropiedadesWebhookEnvio propiedadesWebhook() {
+      return new PropiedadesWebhookEnvio("authorization");
+    }
+
     @Bean
     PlatformTransactionManager transactionManager() {
       return new PlatformTransactionManagerDobleDePrueba();

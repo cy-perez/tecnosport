@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
+import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Locale;
@@ -35,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
   PropiedadesContraentrega.class,
   PropiedadesSkydropx.class,
   PropiedadesSeguimientoEnvios.class,
+  PropiedadesWebhookEnvio.class,
   PropiedadesOrigen.class
 })
 public class ConfiguracionEnvio {
@@ -89,7 +91,8 @@ public class ConfiguracionEnvio {
         consultor,
         aplicarEvento,
         reloj,
-        Duration.ofHours(propiedades.antiguedadMinimaHoras()));
+        Duration.ofHours(propiedades.antiguedadMinimaHoras()),
+        propiedades.maximoPorCorrida());
   }
 
   @Bean

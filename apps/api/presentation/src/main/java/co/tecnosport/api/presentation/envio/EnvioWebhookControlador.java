@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.envio;
 
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.ResultadoEventoDeEnvio;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,28 +34,31 @@ public class EnvioWebhookControlador {
 
   private static final Logger log = LoggerFactory.getLogger(EnvioWebhookControlador.class);
 
-  /**
-   * El nombre de la cabecera de firma <strong>no está confirmado</strong>. La única pista es de una
-   * fuente no oficial: {@code authorization} con el formato {@code HMAC {firma}}. Se lee de ahí y
-   * se pasa tal cual; el día que se confirme, se cambia esta constante. No se declara obligatoria:
-   * un evento sin firma tiene que llegar al verificador y ser rechazado por él, no morir antes con
-   * un 400 que la plataforma reintentaría.
-   */
-  private static final String CABECERA_FIRMA = "authorization";
-
   private final RecibirEventoDeEnvio recibirEvento;
   private final TransactionTemplate transaccion;
+  private final String cabeceraFirma;
 
   public EnvioWebhookControlador(
-      RecibirEventoDeEnvio recibirEvento, PlatformTransactionManager transactionManager) {
+      RecibirEventoDeEnvio recibirEvento,
+      PlatformTransactionManager transactionManager,
+      PropiedadesWebhookEnvio propiedades) {
     this.recibirEvento = Objects.requireNonNull(recibirEvento);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
+    this.cabeceraFirma = Objects.requireNonNull(propiedades).cabeceraFirma();
   }
 
+  /**
+   * La cabecera se lee de la petición y no con {@code @RequestHeader} porque su nombre es
+   * configuración, y una anotación exige una constante de compilación. {@code getHeader} es
+   * insensible a mayúsculas por especificación de servlets, así que da igual cómo la escriba el
+   * proveedor.
+   *
+   * <p>Una petición sin firma no se rechaza aquí: tiene que llegar al verificador y que él la
+   * descarte. Morir antes con un 400 metería al proveedor en su ciclo de reintentos.
+   */
   @PostMapping
-  public ResponseEntity<Void> webhook(
-      @RequestBody String cuerpo,
-      @RequestHeader(value = CABECERA_FIRMA, required = false) String firma) {
+  public ResponseEntity<Void> webhook(@RequestBody String cuerpo, HttpServletRequest peticion) {
+    String firma = peticion.getHeader(cabeceraFirma);
     ResultadoEventoDeEnvio resultado =
         transaccion.execute(estado -> recibirEvento.ejecutar(cuerpo, firma));
     registrar(resultado);

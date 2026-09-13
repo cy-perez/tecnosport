@@ -101,6 +101,10 @@ tecnosport:
     # tolera mirando un resumen de pedido sin total.
     cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
     cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
+    webhook:
+      # Dónde viene la firma del evento. No está confirmado: la única pista es de una fuente no
+      # oficial (docs/13-skydropx-capacidades.md, sección 6). Por eso es variable y no constante.
+      cabecera-firma: ${SKYDROPX_CABECERA_FIRMA:authorization}
     seguimiento:
       # Cada cuánto le pregunta la conciliación a la transportadora por los envíos callados, y
       # desde cuándo se considera callado uno. Las doce horas no son capricho: menos que eso
@@ -108,6 +112,10 @@ tecnosport:
       # limitado a dos peticiones por segundo para llegar a la misma conclusión.
       intervalo-minutos: ${SKYDROPX_SEGUIMIENTO_INTERVALO_MINUTOS:360}
       antiguedad-minima-horas: ${SKYDROPX_SEGUIMIENTO_ANTIGUEDAD_MINIMA_HORAS:12}
+      # Techo del lote: cada envío revisado es una llamada al proveedor, y la tarea corre dentro
+      # de una transacción. Veinticinco a dos peticiones por segundo son unos trece segundos en el
+      # peor caso; lo que no quepa espera a la vuelta siguiente.
+      maximo-por-corrida: ${SKYDROPX_SEGUIMIENTO_MAXIMO_POR_CORRIDA:25}
   origen:
     # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
     # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).
@@ -198,6 +206,12 @@ tecnosport:
       ip-minutos: ${LIMITE_AUTH_IP_MINUTOS:15}
       cuenta-maximo: ${LIMITE_AUTH_CUENTA_MAXIMO:5}
       cuenta-minutos: ${LIMITE_AUTH_CUENTA_MINUTOS:15}
+    # La cotización llama a un proveedor externo con cuota y se paga: es el único endpoint
+    # público con ese riesgo. Generoso a propósito — un comprador corrige la dirección varias
+    # veces; el tope frena a un script, no a una persona indecisa.
+    cotizacion:
+      ip-maximo: ${LIMITE_COTIZACION_IP_MAXIMO:60}
+      ip-minutos: ${LIMITE_COTIZACION_IP_MINUTOS:30}
     pedidos:
       ip-maximo: ${LIMITE_PEDIDOS_IP_MAXIMO:30}
       ip-minutos: ${LIMITE_PEDIDOS_IP_MINUTOS:60}

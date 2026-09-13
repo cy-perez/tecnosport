@@ -36,11 +36,7 @@ public class CotizacionEnvioControlador {
   public CotizacionEnvioRespuesta cotizar(@RequestBody CotizacionEnvioRequest cuerpo) {
     TarifaEnvio tarifa = cotizarEnvio.ejecutar(aComando(cuerpo));
     return new CotizacionEnvioRespuesta(
-        aDinero(tarifa.costo()),
-        tarifa.transportadora(),
-        tarifa.diasEstimados(),
-        tarifa.venceEn(),
-        tarifa.admiteContraentrega());
+        aDinero(tarifa.costo()), tarifa.transportadora(), tarifa.diasEstimados(), tarifa.venceEn());
   }
 
   private CotizarEnvioComando aComando(CotizacionEnvioRequest cuerpo) {

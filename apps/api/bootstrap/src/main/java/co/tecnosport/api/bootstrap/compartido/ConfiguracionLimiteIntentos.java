@@ -17,7 +17,11 @@ import org.springframework.context.annotation.Configuration;
  * {@code FiltroIdempotencia}: si lo fuera, Spring Boot lo registraría para {@code /*}.
  */
 @Configuration
-@EnableConfigurationProperties({PropiedadesLimiteAuth.class, PropiedadesLimitePedidos.class})
+@EnableConfigurationProperties({
+  PropiedadesLimiteAuth.class,
+  PropiedadesLimitePedidos.class,
+  PropiedadesLimiteCotizacion.class
+})
 public class ConfiguracionLimiteIntentos {
 
   @Bean
@@ -50,6 +54,27 @@ public class ConfiguracionLimiteIntentos {
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns("/api/v1/pedidos");
+    return registro;
+  }
+
+  /**
+   * La cotización tiene su propio perfil porque su riesgo es distinto: no crea nada, pero cada
+   * llamada gasta cuota de un proveedor externo que se paga y que admite dos peticiones por
+   * segundo. El resto de endpoints públicos solo cuestan base de datos propia.
+   */
+  @Bean
+  public FilterRegistrationBean<FiltroLimiteIntentos> filtroLimiteIntentosCotizacion(
+      LimitadorDeIntentos limitadorDeIntentos,
+      Reloj reloj,
+      PropiedadesLimiteCotizacion propiedades) {
+    FilterRegistrationBean<FiltroLimiteIntentos> registro =
+        new FilterRegistrationBean<>(
+            new FiltroLimiteIntentos(
+                limitadorDeIntentos,
+                reloj,
+                propiedades.ipMaximo(),
+                Duration.ofMinutes(propiedades.ipMinutos())));
+    registro.addUrlPatterns("/api/v1/envios/cotizacion");
     return registro;
   }
 }
