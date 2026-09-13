@@ -81,8 +81,7 @@ destino:
   "costoEnvio": { "valor": 14900, "moneda": "COP" },
   "transportadora": "Coordinadora",
   "diasEstimados": 3,
-  "venceEn": "2026-09-09T14:05:00Z",
-  "admiteContraentrega": true
+  "venceEn": "2026-09-09T14:05:00Z"
 }
 ```
 
@@ -98,6 +97,16 @@ destino:
   traduce y no pasa por Transloco.
 - **`diasEstimados` en cero significa sin estimado**, no "llega hoy". Hay tarifas
   que no declaran plazo y no se les inventa uno.
+- **No dice nada de contraentrega.** Llevó un `admiteContraentrega` que era
+  estructuralmente falso siempre: esta cotización se pide **sin** recaudo —el
+  comprador todavía no ha elegido cómo paga— y la cobertura de recaudo solo se
+  sabe pidiéndola con recaudo. Un booleano que no puede ser cierto engaña al
+  siguiente que lo lea. Quien lo necesite pregunta a
+  `/pedidos/metodos-de-pago-disponibles`, que es donde este documento ya decía
+  que se resuelve.
+- **Tiene límite de peticiones por IP**, a diferencia del resto de endpoints
+  públicos de lectura: es el único que llama sincrónicamente a un proveedor
+  externo con cuota y que se paga.
 - **Una tarifa vencida no se ofrece.** Skydropx deduplica cotizaciones por
   contenido y puede devolver la de ayer, con su vencimiento original, al mismo
   carrito y el mismo destino.
