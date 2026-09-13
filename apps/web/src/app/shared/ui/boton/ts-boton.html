@@ -35,6 +35,8 @@
     [disabled]="deshabilitado() || cargando()"
     [attr.aria-busy]="cargando() ? 'true' : null"
     [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
+    [attr.aria-expanded]="expandido() === null ? null : expandido() ? 'true' : 'false'"
+    [attr.aria-controls]="controla()"
     [attr.aria-label]="etiquetaAccesible()"
   >
     <ng-container [ngTemplateOutlet]="contenido" />
