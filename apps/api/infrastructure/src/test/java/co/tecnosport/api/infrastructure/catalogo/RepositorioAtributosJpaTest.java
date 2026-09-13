@@ -64,4 +64,16 @@ class RepositorioAtributosJpaTest {
     assertThat(resultado).isPresent();
     assertThat(resultado.orElseThrow().tipo()).isEqualTo(TipoAtributo.COLOR);
   }
+
+  @Test
+  void laUnidadVuelveDeLaBase() {
+    AtributoJpaEntity garantia =
+        atributos.save(
+            new AtributoJpaEntity(
+                UUID.randomUUID(), "Garantía", "NUMERO", List.of(), Instant.now(), "meses"));
+
+    Atributo encontrado = repositorio.buscarPorId(garantia.getId()).orElseThrow();
+
+    assertThat(encontrado.unidad()).contains("meses");
+  }
 }

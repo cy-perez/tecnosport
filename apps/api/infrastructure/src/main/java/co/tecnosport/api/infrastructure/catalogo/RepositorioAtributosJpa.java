@@ -32,6 +32,10 @@ public class RepositorioAtributosJpa implements RepositorioAtributos {
 
   private Atributo aAtributo(AtributoJpaEntity a) {
     return new Atributo(
-        a.getId(), a.getNombre(), TipoAtributo.valueOf(a.getTipo()), a.getValoresPermitidos());
+        a.getId(),
+        a.getNombre(),
+        TipoAtributo.valueOf(a.getTipo()),
+        a.getValoresPermitidos(),
+        a.getUnidad());
   }
 }

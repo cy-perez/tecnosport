@@ -83,7 +83,11 @@ public class MapeadorRespuestasCatalogo {
 
   public AtributoRespuesta aRespuesta(Atributo atributo) {
     return new AtributoRespuesta(
-        atributo.id(), atributo.nombre(), atributo.tipo().name(), atributo.valoresPermitidos());
+        atributo.id(),
+        atributo.nombre(),
+        atributo.tipo().name(),
+        atributo.valoresPermitidos(),
+        atributo.unidad().orElse(null));
   }
 
   /** Reutilizado por el alta de variante del panel admin, no solo por la ficha pública. */
@@ -124,6 +128,9 @@ public class MapeadorRespuestasCatalogo {
 
   private AtributoValorRespuesta aRespuesta(ValorAtributo valorAtributo) {
     return new AtributoValorRespuesta(
-        valorAtributo.atributo().nombre(), valorAtributo.valor(), valorAtributo.colorHex());
+        valorAtributo.atributo().nombre(),
+        valorAtributo.valor(),
+        valorAtributo.colorHex(),
+        valorAtributo.atributo().unidad().orElse(null));
   }
 }
