@@ -6,6 +6,7 @@ import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoExceptio
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvioComando;
+import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
@@ -134,20 +135,16 @@ public final class CrearPedido {
     // compra, y fallar después habría dejado existencias comprometidas por nada.
     AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
 
+    // La cotización va antes de la comprobación de contraentrega y no al revés: la tarifa que sale
+    // de aquí es la misma que decide si hay recaudo y la que después se congela. Antes eran dos
+    // cotizaciones con el mismo cuerpo, y si la segunda volvía sin tarifa el comprador recibía un
+    // 409 después de que el sistema le acabara de decir que sí había contraentrega.
+    TarifaEnvio tarifaEnvio = cotizarSiVaADomicilio(comando);
+
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
-      exigirContraentregaDisponible(comando);
+      exigirContraentregaDisponible(comando, tarifaEnvio);
     }
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
-
-    // Antes de reservar, y por dos motivos. Uno: el costo del envío lo fija el servidor cotizando
-    // otra vez, nunca lo que el cliente diga que le mostró el checkout (regla dura #7); si entre
-    // las dos llamadas la tarifa cambió, manda esta. Dos: cotizar es una llamada a un proveedor
-    // externo, y hacerla después de reservar dejaría las filas del inventario bloqueadas
-    // esperándola. Aquí la transacción está abierta pero todavía no ha tomado ningún bloqueo.
-    //
-    // Si no hay tarifa, no hay pedido a domicilio: EnvioSinCoberturaException sale hacia el 409, y
-    // el inventario ni se tocó.
-    TarifaEnvio tarifaEnvio = cotizarSiVaADomicilio(comando);
 
     List<LineaPedido> lineasCongeladas = new ArrayList<>();
     for (CrearPedidoComando.LineaComando lineaComando : comando.lineas()) {
@@ -192,19 +189,40 @@ public final class CrearPedido {
       return null;
     }
     // Con recaudo si se paga contra entrega: la tarifa que se congela tiene que ser de una
-    // transportadora que cobre en la puerta, no la más barata de las que no cobran. Es la segunda
-    // cotización con este mismo cuerpo —la primera la hizo la comprobación de contraentrega— y
-    // Skydropx deduplica por contenido, así que devuelve la misma al instante.
-    return cotizarEnvio.ejecutar(
+    // transportadora que cobre en la puerta, no la más barata de las que no cobran.
+    //
+    // Es la única cotización del pedido, y va antes de reservar por dos motivos. Uno: el costo lo
+    // fija el servidor, nunca lo que el cliente diga que le mostró el checkout (regla dura #7).
+    // Dos: cotizar llama a un proveedor externo, y hacerlo después de reservar dejaría las filas
+    // del inventario bloqueadas esperándolo. Aquí la transacción está abierta pero todavía no ha
+    // tomado ningún bloqueo, y un destino sin cobertura no compromete existencias.
+    boolean conRecaudo = comando.metodoPago() == MetodoPago.CONTRAENTREGA;
+    CotizarEnvioComando cotizacion =
         new CotizarEnvioComando(
             comando.lineas().stream()
                 .map(l -> new CotizarEnvioComando.LineaComando(l.varianteId(), l.cantidad()))
                 .toList(),
             comando.direccion(),
-            comando.metodoPago() == MetodoPago.CONTRAENTREGA));
+            conRecaudo);
+    if (!conRecaudo) {
+      return cotizarEnvio.ejecutar(cotizacion);
+    }
+    // Pedida con recaudo, quedarse sin tarifa no significa que no haya cómo enviar: puede haber
+    // transportadoras de sobra y ninguna que cobre en la puerta. Decirle al comprador "no tenemos
+    // transporte hasta esta dirección" sería mandarlo a cambiar una dirección que estaba bien.
+    try {
+      return cotizarEnvio.ejecutar(cotizacion);
+    } catch (EnvioSinCoberturaException e) {
+      throw new ContraentregaNoDisponibleException();
+    }
   }
 
-  private void exigirContraentregaDisponible(CrearPedidoComando comando) {
+  /**
+   * La tarifa ya cotizada viaja en el comando para que {@code MetodosDePagoDisponibles} no vuelva a
+   * preguntarle al proveedor: es la misma pregunta con el mismo cuerpo, y dos respuestas distintas
+   * a la misma pregunta es justo lo que había que evitar.
+   */
+  private void exigirContraentregaDisponible(CrearPedidoComando comando, TarifaEnvio tarifa) {
     MetodosDePagoDisponiblesComando consulta =
         new MetodosDePagoDisponiblesComando(
             comando.lineas().stream()
@@ -215,7 +233,8 @@ public final class CrearPedido {
                 .toList(),
             comando.correo(),
             comando.tipoEntrega(),
-            comando.direccion());
+            comando.direccion(),
+            tarifa);
     if (!metodosDePagoDisponibles.ejecutar(consulta).contains(MetodoPago.CONTRAENTREGA)) {
       throw new ContraentregaNoDisponibleException();
     }

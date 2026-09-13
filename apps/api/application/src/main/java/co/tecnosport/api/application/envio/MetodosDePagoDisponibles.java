@@ -97,6 +97,9 @@ public final class MetodosDePagoDisponibles {
    * de negocio, no una falla, y por eso la excepción se atrapa aquí en vez de subir.
    */
   private Optional<TarifaEnvio> tarifaCotizadaConRecaudo(MetodosDePagoDisponiblesComando comando) {
+    if (comando.tarifaConRecaudoYaCotizada() != null) {
+      return Optional.of(comando.tarifaConRecaudoYaCotizada());
+    }
     try {
       return Optional.of(
           cotizarEnvio.ejecutar(
