@@ -18,6 +18,12 @@ import java.util.Objects;
  * su historia se acabó y preguntar por ellos para siempre gastaría cuota de un proveedor que admite
  * dos peticiones por segundo.
  *
+ * <p><strong>El lote está acotado.</strong> Cada envío se convierte en una llamada al proveedor,
+ * que admite dos peticiones por segundo, y esta tarea corre dentro de una transacción —igual que
+ * {@code TareaConciliacionWompi}, y con el mismo costo: una conexión retenida mientras responde un
+ * tercero—. Con un tope, ese costo tiene techo y lo que no quepa espera a la vuelta siguiente, que
+ * es en minutos. Sin tope, un respaldo tras una caída del webhook vaciaría el pool.
+ *
  * <p><strong>Un proveedor caído no puede tumbar el lote.</strong> Una consulta que falla devuelve
  * lista vacía y ese envío queda para la próxima corrida; los demás se revisan igual. Es el mismo
  * criterio de {@code ConciliarPagosPendientes}: el mecanismo es idempotente, así que reintentar es
@@ -30,23 +36,30 @@ public final class ConciliarEnvios {
   private final AplicarEventoDeEnvio aplicar;
   private final Reloj reloj;
   private final Duration antiguedadMinima;
+  private final int maximoPorCorrida;
 
   public ConciliarEnvios(
       RepositorioEnvios repositorioEnvios,
       ConsultorDeSeguimiento consultor,
       AplicarEventoDeEnvio aplicar,
       Reloj reloj,
-      Duration antiguedadMinima) {
+      Duration antiguedadMinima,
+      int maximoPorCorrida) {
     this.repositorioEnvios = Objects.requireNonNull(repositorioEnvios);
     this.consultor = Objects.requireNonNull(consultor);
     this.aplicar = Objects.requireNonNull(aplicar);
     this.reloj = Objects.requireNonNull(reloj);
     this.antiguedadMinima = Objects.requireNonNull(antiguedadMinima);
+    if (maximoPorCorrida <= 0) {
+      throw new IllegalArgumentException(
+          "El máximo de envíos por corrida debe ser mayor que cero: " + maximoPorCorrida);
+    }
+    this.maximoPorCorrida = maximoPorCorrida;
   }
 
   public ResultadoConciliacionEnvios ejecutar() {
     Instant corte = reloj.ahora().minus(antiguedadMinima);
-    List<Envio> callados = repositorioEnvios.buscarSinEventosDesde(corte);
+    List<Envio> callados = repositorioEnvios.buscarSinEventosDesde(corte, maximoPorCorrida);
 
     int conEventosNuevos = 0;
     for (Envio envio : callados) {

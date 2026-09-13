@@ -29,5 +29,5 @@ public interface RepositorioEnvios {
    * tiene más historia que contar, y seguir preguntando por él gastaría cuota de un proveedor
    * limitado a dos peticiones por segundo.
    */
-  List<Envio> buscarSinEventosDesde(Instant corte);
+  List<Envio> buscarSinEventosDesde(Instant corte, int maximo);
 }

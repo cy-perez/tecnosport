@@ -2,7 +2,6 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.domain.envio.Envio;
-import co.tecnosport.api.domain.envio.EstadoEnvio;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,19 +35,12 @@ final class RepositorioEnviosFalso implements RepositorioEnvios {
 
   /** Mismo criterio que la consulta real: callado desde el corte y sin evento terminal. */
   @Override
-  public List<Envio> buscarSinEventosDesde(Instant corte) {
+  public List<Envio> buscarSinEventosDesde(Instant corte, int maximo) {
     return envios.stream()
         .filter(e -> e.despachadoEn().isBefore(corte))
         .filter(e -> e.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte)))
-        .filter(
-            e ->
-                e.eventos().stream()
-                    .noneMatch(
-                        ev ->
-                            ev.estado() == EstadoEnvio.ENTREGADO
-                                || ev.estado() == EstadoEnvio.EN_DEVOLUCION
-                                || ev.estado() == EstadoEnvio.CANCELADO
-                                || ev.estado() == EstadoEnvio.DESTRUIDO))
+        .filter(e -> e.eventos().stream().noneMatch(ev -> ev.estado().esTerminal()))
+        .limit(maximo)
         .toList();
   }
 }

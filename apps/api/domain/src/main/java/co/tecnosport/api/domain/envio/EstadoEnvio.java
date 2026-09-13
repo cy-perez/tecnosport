@@ -1,5 +1,9 @@
 package co.tecnosport.api.domain.envio;
 
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * Los doce estados con los que Skydropx describe el movimiento de un paquete (adr/0022). Son de la
  * plataforma, no nuestros, y por eso viven en su propio enum en vez de mezclarse con {@code
@@ -32,5 +36,32 @@ public enum EstadoEnvio {
    */
   public boolean exigeRevisionManual() {
     return this == EXCEPCION || this == RETENIDO || this == CANCELADO || this == DESTRUIDO;
+  }
+
+  /**
+   * ¿La historia de este paquete terminó? De estos cuatro no va a llegar nada más, así que la
+   * conciliación deja de preguntar por ellos: sin eso, un paquete entregado hace tres meses se
+   * consultaría en cada vuelta para siempre contra un proveedor limitado a dos peticiones por
+   * segundo.
+   *
+   * <p>No coincide con {@link #exigeRevisionManual()} y conviene no confundirlos: comparten {@code
+   * CANCELADO} y {@code DESTRUIDO}, pero un paquete entregado terminó sin necesitar a nadie, y uno
+   * retenido necesita a alguien y todavía puede moverse.
+   */
+  public boolean esTerminal() {
+    return this == ENTREGADO || this == EN_DEVOLUCION || this == CANCELADO || this == DESTRUIDO;
+  }
+
+  /**
+   * Los terminales, por nombre, para quien tenga que preguntárselo a la base. Existe para que ese
+   * conjunto no se escriba como literales sueltos dentro de una consulta: ahí, renombrar una
+   * constante compila, pasa las pruebas y deja el filtro comparando contra un valor que ya no
+   * existe.
+   */
+  public static Set<String> nombresTerminales() {
+    return EnumSet.allOf(EstadoEnvio.class).stream()
+        .filter(EstadoEnvio::esTerminal)
+        .map(Enum::name)
+        .collect(Collectors.toUnmodifiableSet());
   }
 }

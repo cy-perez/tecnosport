@@ -193,8 +193,30 @@ class RepositorioEnviosJpaTest {
         Envio.crear(
             pedidoNuevo, "99 minutes", "NUEVO", Dinero.deCop(10_540), corte.plusSeconds(600)));
 
-    assertThat(repositorio.buscarSinEventosDesde(corte).stream().map(Envio::guia))
+    assertThat(repositorio.buscarSinEventosDesde(corte, 25).stream().map(Envio::guia))
         .containsExactly("CALLADO");
+  }
+
+  /**
+   * El tope existe porque cada fila que salga de aquí se convierte en una llamada al proveedor. Un
+   * respaldo tras una caída del webhook no puede volverse mil llamadas seguidas.
+   */
+  @Test
+  void elLoteDeCalladosRespetaElTope() {
+    Instant corte = Instant.parse("2026-09-12T00:00:00Z");
+    for (int i = 1; i <= 4; i++) {
+      UUID pedidoId = sembrarPedidoContraentrega(i);
+      repositorio.guardar(
+          Envio.crear(
+              pedidoId,
+              "99 minutes",
+              "CALLADO-" + i,
+              Dinero.deCop(10_540),
+              corte.minusSeconds(86_400L * i)));
+    }
+
+    assertThat(repositorio.buscarSinEventosDesde(corte, 2)).hasSize(2);
+    assertThat(repositorio.buscarSinEventosDesde(corte, 25)).hasSize(4);
   }
 
   @Test

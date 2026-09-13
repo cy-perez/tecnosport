@@ -26,6 +26,7 @@ class ConciliarEnviosTest {
 
   private static final Instant AHORA = Instant.parse("2026-09-12T15:00:00Z");
   private static final Duration ANTIGUEDAD = Duration.ofHours(12);
+  private static final int MAXIMO = 25;
 
   private RepositorioEnviosFalso envios;
   private List<String> guiasConsultadas;
@@ -46,7 +47,7 @@ class ConciliarEnviosTest {
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
             new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
             () -> AHORA);
-    return new ConciliarEnvios(envios, consultor, aplicar, () -> AHORA, ANTIGUEDAD);
+    return new ConciliarEnvios(envios, consultor, aplicar, () -> AHORA, ANTIGUEDAD, MAXIMO);
   }
 
   private Envio sembrarEnvioCallado(String guia) {
