@@ -220,14 +220,40 @@ Es el método con más riesgo operativo del sistema, y el diseño lo refleja.
   abierto. El negocio puede querer un techo más bajo que el del proveedor, y por
   eso el valor es propio y no se lee de la plataforma.
 - **Categorías excluidas.** Configurable en `CONTRAENTREGA_CATEGORIAS_EXCLUIDAS`, y
-  desde el 14 de septiembre de 2026 trae **`CELULARES`** por omisión. No es solo
-  la recomendación de arranque que esta línea traía: mientras el techo estuvo en
-  100.000 ningún celular del catálogo pasaba y el tope hacía de lista de exclusión
-  sin que nadie lo hubiera decidido. Al subirlo a 2.000.000 los dos celulares
-  sembrados (1.299.900 y 1.499.900) quedaron elegibles, así que **esta lista pasó
-  de recomendación a única barrera**. Ojo: la lista excluye líneas de catálogo
-  enteras, no sabe de precios — lo tecnológico por encima de COP 2.000.000 lo frena
-  el techo, y una línea tecnológica nueva hay que agregarla a mano aquí.
+  **vacía a propósito**. Ver abajo: la regla de lo tecnológico es por precio, no por
+  línea, y la implementa el techo. Esta lista queda para el día que alguna línea no
+  deba ir contra entrega **a ningún precio**, que hoy no es el caso de ninguna.
+
+### La regla de lo tecnológico es por precio, no por categoría
+
+Decisión de negocio del 14 de septiembre de 2026, y conviene dejarla escrita con su
+consecuencia técnica porque se implementó mal una vez:
+
+> Lo tecnológico **por encima de COP 2.000.000** no va contra entrega. Un celular
+> **igual o por debajo** de esa cifra sí puede ir.
+
+El primer intento excluyó la línea `CELULARES` entera, y eso bloqueaba también los
+dos celulares del catálogo (1.299.900 y 1.499.900) — justo los que el negocio sí
+quiere despachar contra entrega. **La regla es por precio**, así que la implementa
+`CONTRAENTREGA_MONTO_MAXIMO`, que ya vale 2.000.000: nada que pase de esa cifra
+califica, sea un celular o una camiseta, y no hace falta ninguna lista.
+
+**Dónde la aproximación no es exacta, y hay que saberlo.** El techo se compara contra
+el **total del pedido**, y la regla del negocio habla de **un artículo**. Difieren en
+un carrito mezclado: un celular de 1.500.000 más ropa por 600.000 suma 2.100.000 y el
+techo lo rechaza, aunque ningún artículo pase de 2.000.000. El error va del lado
+seguro —se ofrece contraentrega de menos, nunca de más— y tiene sentido por sí mismo:
+lo que el mensajero carga en efectivo es el total, no el artículo más caro. Si algún
+día el negocio quiere la regla estrictamente por artículo, hay que llevarla al dominio
+como una regla sobre las líneas, no como un tope sobre la suma.
+
+**Las líneas de catálogo que vienen.** Hoy `LineaCatalogo` tiene tres valores
+—`ROPA_Y_CALZADO`, `BOLSOS`, `CELULARES`— y lo tecnológico se va a ampliar: relojes,
+audífonos, cargadores, cables de cargador, power banks, consolas, parlantes,
+computadores, tablets y proyectores. Cuando entren, **la regla de contraentrega no
+cambia**: sigue siendo el techo por precio, y no hay que acordarse de agregar cada
+línea nueva a ninguna lista de exclusión. Esa es la ventaja de que la regla viva en el
+monto y no en la categoría, y la razón de dejarlo escrito aquí.
 - **Historial del comprador.** Si un correo o un teléfono ya rechazó pedidos en la
   entrega, no se le ofrece más. Se registra, no se olvida.
 

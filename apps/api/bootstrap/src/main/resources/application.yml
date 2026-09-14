@@ -89,18 +89,21 @@ tecnosport:
     # El maximo estuvo en 100000, declarado en este mismo sitio como marcador de desarrollo.
     # Se comparan contra el TOTAL del pedido, flete incluido: es lo que se cobra en la puerta.
     #
-    # OJO al cambiar el maximo: mientras estuvo en 100000 ningun celular pasaba, y el tope hacia
-    # de lista de exclusion sin que nadie lo hubiera decidido. Subirlo a 2000000 destapo los dos
-    # celulares del catalogo (1.299.900 y 1.499.900), asi que la exclusion de abajo dejo de ser
-    # una recomendacion y paso a ser la unica barrera.
+    # EL TECHO ES LA REGLA DE LO TECNOLOGICO, y conviene saberlo antes de tocarlo. La decision de
+    # negocio del 14 de septiembre de 2026 es: lo tecnologico por encima de COP 2.000.000 no va
+    # contra entrega, y un celular por debajo de esa cifra SI puede ir. Como el tope se compara
+    # contra el total del pedido, este unico valor ya la implementa — nada que pase de 2.000.000
+    # califica, sea un celular o una camiseta. Bajarlo volveria a excluir celulares que el
+    # negocio si quiere despachar contra entrega.
     monto-minimo: ${CONTRAENTREGA_MONTO_MINIMO:2000}
     monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:2000000}
     # Lista separada por comas de LineaCatalogo (ROPA_Y_CALZADO, BOLSOS, CELULARES).
-    # Decision de negocio del 14 de septiembre de 2026: los celulares no van contra entrega, que
-    # es lo que docs/11-pagos-y-envios.md recomendaba de arranque. Lo tecnologico por encima de
-    # COP 2.000.000 ya lo frena monto-maximo — esta lista no sabe de precios, solo de lineas.
-    # Si aparece otra linea tecnologica en LineaCatalogo, hay que agregarla aqui a mano.
-    categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:CELULARES}
+    #
+    # Vacia a proposito: la regla del negocio es por PRECIO, no por linea, y la implementa
+    # monto-maximo. Excluir CELULARES entera bloquearia tambien los de 1.299.900 y 1.499.900, que
+    # el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
+    # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
+    categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   skydropx:
     # El host de la cuenta colombiana NO está confirmado (docs/13-skydropx-capacidades.md, §6):
     # la documentación pública muestra pro.skydropx.com y sb-pro.skydropx.com, y según la fuente
