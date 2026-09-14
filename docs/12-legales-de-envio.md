@@ -306,6 +306,70 @@ verificada en el navegador**, no solo escrita en el JSON.
 
 ---
 
+## 3 bis. El catálogo tecnológico y lo que movió en los términos (14 de septiembre de 2026)
+
+El negocio amplió lo tecnológico —relojes, audífonos, cargadores, cables, power banks,
+consolas, parlantes, computadores, tablets y proyectores— y eso tocó dos numerales de
+los términos, con la norma verificada antes de escribir.
+
+**Numeral 2 (objeto).** Decía "ropa deportiva, calzado, bolsos y teléfonos celulares", y
+desde que entran computadores y proyectores describía un contrato más estrecho que la
+venta real. La redacción nueva enumera **"entre ellos"**, no de forma taxativa: una
+categoría más no vuelve a falsear el numeral, que es justo lo que acaba de pasar.
+
+**Numeral 10 (garantía).** Decía "ese mismo término de un año aplica a los teléfonos
+celulares nuevos", herencia de cuando se cerró `[[GARANTÍA DE CELULARES]]`. Con el
+catálogo ampliado, singularizar el celular insinuaba que lo demás tiene otro régimen.
+Ahora dice lo que es cierto: un año para todo producto nuevo, sin régimen especial para
+ninguno.
+
+### El hallazgo que dejó la revisión de la norma, y no está cerrado
+
+**El artículo 47 excluye del retracto los "bienes de uso personal"** (excepción 7 de
+siete). Verificado el 14 de septiembre de 2026 en tres fuentes independientes —SUIN,
+leyes.co y un concepto de la SIC— porque el material de referencia de la skill es un
+mapa y no una autoridad.
+
+Hasta ahora esa excepción era teórica aquí: ropa y bolsos se devuelven sin discusión y
+el celular no es de uso personal en ese sentido. **Con audífonos en el catálogo deja de
+serlo**, y hay dos caminos, los dos con costo:
+
+- **Nombrar la exclusión** en el numeral 9 y negar el retracto de audífonos. Es una
+  **interpretación**, no un hecho: que un audífono sea "bien de uso personal" no está
+  resuelto, y la SIC tiene dicho que *el retracto solo puede ser negado por las
+  excepciones establecidas en la ley*. Si la interpretación no se sostiene, negar un
+  retracto con el texto propio como prueba es peor que no haberlo escrito.
+- **Callar y aceptar el retracto**, que es lo que el texto hace hoy con su remisión
+  genérica al artículo 47. Cuesta devoluciones de producto abierto y es la lectura
+  favorable al consumidor, que es además la regla de interpretación legal.
+
+**Se dejó como está —sin exclusión nueva— y la decisión es de abogado.** Dos razones
+para no resolverla en silencio: la primera es que es una decisión de riesgo, no de
+redacción; la segunda es de coherencia, y sale de cotejar el texto con el código:
+**`SolicitudRetracto` no modela ninguna exclusión por categoría**. Escribir la exclusión
+habría creado una regla que ningún guardián verifica y que dependería de que una persona
+se acuerde al atender cada solicitud — exactamente el patrón que este documento existe
+para evitar.
+
+### Lo que se verificó y no aplica
+
+**Ley 2540 de 2025**, que apareció al verificar y el material de referencia de la skill
+no menciona: regula el pacto arbitral en relaciones de consumo y exige que la sola
+aceptación de términos y condiciones **no** valga como pacto arbitral. No toca este
+sitio: el numeral 18 remite a la ley colombiana y a la SIC, y no pacta arbitraje. Queda
+anotada porque el día que alguien quiera meter una cláusula arbitral, esa es la norma.
+
+### La versión no subió, y esta vez el matiz importa
+
+Cuarta publicación bajo `2026-09-14`. Lo que salva la constancia es que **la política de
+datos no cambió**: lo que se movió son los términos, así que `POLITICA_DATOS_VERSION`
+sigue apuntando al texto que el comprador efectivamente autorizó y la constancia del
+habeas data está intacta. El identificador ambiguo afecta al documento de términos, no
+al de datos. Aun así, cuatro textos distintos con la misma etiqueta en un día es la
+señal de que el contador dentro del día ya no es una mejora teórica.
+
+---
+
 ## 4. Campos por completar
 
 **Ninguno de estos marcadores se publica ya.** El 10 de septiembre de 2026 los
