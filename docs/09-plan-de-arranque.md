@@ -3531,6 +3531,15 @@ Orden de construcción, un caso de uso a la vez:
    incluido. Se comprobó reinyectando la frase vieja: dispara en las cuatro
    apariciones, dos por idioma.
 
+   **Corregido el mismo día:** el texto salió llamando a Skydropx "una empresa de
+   origen mexicano", y al establecer la razón social en su sitio oficial resultó
+   ser **SKYDROPX S.A.S., sociedad colombiana, NIT 901.508.804-5, domicilio en
+   Bogotá D.C.** La política de datos identifica ahora al encargado con ese NIT, y
+   el numeral de transferencia internacional dejó de apoyarse en una nacionalidad
+   supuesta. El NIT de un tercero en los textos obligó además a darle al guardián
+   de datos de negocio una lista blanca explícita: uno conocido pasa, uno nuevo
+   sigue fallando, y las dos direcciones están comprobadas.
+
    Cuatro cosas más que aparecieron al construirlo:
 
    - **Un párrafo del borrador no se publicó, porque el sistema no lo cumple.**

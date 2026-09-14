@@ -89,7 +89,7 @@
         "lista": [
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
-          "Skydropx, as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
+          "Skydropx S.A.S., a Colombian company with tax ID (NIT) 901.508.804-5 and registered office in Bogotá D.C., as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
           "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
         ],
         "cierre": [
@@ -99,7 +99,7 @@
       {
         "titulo": "9. International transfer and transmission",
         "parrafos": [
-          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. Our logistics and shipping platform is a company of Mexican origin. Those transmissions are made under contract with each provider, for the sole purpose of providing the service described in this policy, and to countries which the Superintendency of Industry and Commerce has determined offer an adequate level of personal data protection."
+          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. The logistics and shipping platform we contract with is a Colombian company, and its own data processing policy contemplates the transmission and transfer of data, both domestic and international. Those transmissions take place under contract with each provider and solely to deliver the service described in this policy."
         ]
       },
       {

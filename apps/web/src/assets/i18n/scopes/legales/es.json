@@ -89,7 +89,7 @@
         "lista": [
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
-          "Skydropx, como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
+          "Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en Bogotá D.C., como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
           "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
         ],
         "cierre": [
@@ -99,7 +99,7 @@
       {
         "titulo": "9. Transferencia y transmisión internacional",
         "parrafos": [
-          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. Nuestra plataforma de logística y envíos es una empresa de origen mexicano. Esas transmisiones se hacen bajo contrato con cada proveedor, con el único fin de prestar el servicio descrito en esta política, y hacia países respecto de los cuales la Superintendencia de Industria y Comercio ha determinado que ofrecen un nivel adecuado de protección de datos personales."
+          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. La plataforma de logística y envíos con la que contratamos es una sociedad colombiana, y su propia política de tratamiento contempla la transmisión y la transferencia de datos, tanto nacional como internacional. Esas transmisiones se hacen bajo contrato con cada proveedor y con el único fin de prestar el servicio descrito en esta política."
         ]
       },
       {

@@ -71,6 +71,16 @@ const calleCanonica = es.pie.direccion.split(",")[0].trim();
 const calleNormalizada = (valor) =>
   valor.trim().replace(/^(?:Cra\.?|Carrera)/, "Cra.").replace(/\s+/g, " ");
 
+// Los NIT que no son el nuestro y aun así se publican con razón. Desde el 14 de septiembre de 2026
+// la política de datos identifica al encargado de logística con su NIT, que es lo que la Ley 1581
+// pide de un encargado: nombrarlo de forma que se sepa quién es. Sin esta lista, la regla del NIT
+// lo leería como "un NIT que no coincide con el del pie" y fallaría; con ella, un NIT nuevo y
+// desconocido sigue fallando, que es justo lo que tiene que pasar. La forma con puntos hoy no la ve
+// el patrón, pero eso es suerte tipográfica: basta escribirlo sin puntos para que dispare.
+const NITS_DE_TERCEROS = new Map([
+  ["9015088045", "Skydropx S.A.S., plataforma de logística — docs/12-legales-de-envio.md §4"],
+]);
+
 const reglas = [
   {
     nombre: "teléfono",
@@ -109,6 +119,9 @@ for (const ruta of jsons(TEXTOS)) {
   contenido.split("\n").forEach((linea, indice) => {
     for (const { nombre, patron, normaliza, canonico } of reglas) {
       for (const encontrado of linea.match(patron) ?? []) {
+        if (nombre === "NIT" && NITS_DE_TERCEROS.has(normaliza(encontrado))) {
+          continue;
+        }
         if (normaliza(encontrado) !== canonico) {
           problemas.push(
             `${relative(RAIZ, ruta)}:${indice + 1}  ${nombre} "${encontrado}" no coincide con el del pie ("${canonico}")`,
