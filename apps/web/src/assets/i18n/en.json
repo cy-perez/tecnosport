@@ -53,7 +53,7 @@
     "reducir_movimiento_del_sistema": "Your system already asks for reduced motion, so this option comes switched on from there."
   },
   "portada": {
-    "titulo": "Sportswear, footwear, bags and phones",
+    "titulo": "Sportswear, footwear, bags and tech",
     "lema": "Nationwide shipping from Medellín, Colombia.",
     "ver_catalogo": "Browse the catalog",
     "lineas": "Our lines",
@@ -83,8 +83,8 @@
   },
   "seo": {
     "portada": {
-      "titulo": "Tecno Sport · Sportswear, footwear, bags and phones",
-      "descripcion": "Online store for sportswear, footwear, bags and phones. Nationwide shipping across Colombia from Medellín, with online payment or cash on delivery."
+      "titulo": "Tecno Sport · Sportswear, footwear, bags and tech",
+      "descripcion": "Online store for sportswear, footwear, bags and tech: phones, headphones, computers and more. Nationwide shipping across Colombia from Medellín."
     },
     "carrito": {
       "titulo": "Cart · Tecno Sport"

@@ -16,9 +16,31 @@
 - **El costo de envío no se reparte entre las líneas.** Repartirlo obligaría a
   redondear N veces y a decidir qué pasa con el sobrante; es un cargo del pedido,
   no de la mercancía.
-- `TODO: ¿el costo de envío cobrado al comprador lleva IVA? Consultar con el
-  contador.` Mientras no se resuelva, el flete se guarda como un valor sin
-  desglose y no altera el IVA de las líneas.
+- **El flete cobrado al comprador probablemente sí lleva IVA, y el sistema no lo
+  está calculando.** Verificado el 14 de septiembre de 2026, y el resultado sorprende
+  porque son dos preguntas y no una:
+  - El **servicio de transporte de carga**, comprado suelto a la transportadora, está
+    **excluido** de IVA. Eso es cierto y es lo que se encuentra al buscar.
+  - Pero el **flete que el vendedor le recobra al comprador dentro de una venta
+    gravada** es otra cosa: el **artículo 447 del Estatuto Tributario** manda que la
+    base gravable incluya los "acarreos" y demás erogaciones complementarias *"aunque
+    se facturen o convengan por separado y aunque, considerados independientemente, no
+    se encuentren sometidos a imposición"*. El **Concepto DIAN 4945 de 2025** lo
+    confirma para el transporte que contrata el vendedor para entregar, incluso
+    subcontratado a un tercero — que es exactamente este caso.
+  - La distinción que sí exime es que **el comprador contrate el transporte por su
+    cuenta** con un tercero ajeno a la venta. No es lo que hace este sitio.
+
+  **La consecuencia es de plata, no de redacción.** Hoy se le cobra al comprador el
+  `rate.total` de la cotización tal cual, que es el precio de un servicio excluido y por
+  lo tanto no trae IVA dentro. Si ese valor integra la base gravable, de cada flete hay
+  que declarar el 19% — y como no se le sumó al cobrar, sale del margen del negocio en
+  **cada pedido a domicilio**. `TODO: confirmar con el contador y, si aplica, sumar el
+  IVA al flete antes de cobrarlo.`
+
+  Y hay un daño que no se puede reparar hacia atrás: `pedido.costo_envio` se guarda
+  **sin desglose**, así que de los pedidos ya cobrados no se puede separar cuánto era
+  base y cuánto impuesto para facturar. Si se confirma, el desglose hay que agregarlo.
 
 ## Producto, variante y unidad
 

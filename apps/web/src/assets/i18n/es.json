@@ -53,7 +53,7 @@
     "reducir_movimiento_del_sistema": "Tu sistema ya pide menos movimiento, así que esta opción viene activada desde ahí."
   },
   "portada": {
-    "titulo": "Ropa y calzado deportivo, bolsos y celulares",
+    "titulo": "Ropa y calzado deportivo, bolsos y tecnología",
     "lema": "Envío a todo el país desde Medellín.",
     "ver_catalogo": "Ver el catálogo",
     "lineas": "Nuestras líneas",
@@ -83,8 +83,8 @@
   },
   "seo": {
     "portada": {
-      "titulo": "Tecno Sport · Ropa y calzado deportivo, bolsos y celulares",
-      "descripcion": "Tienda en línea de ropa y calzado deportivo, bolsos y celulares. Envío a todo Colombia desde Medellín, con pago en línea o contraentrega."
+      "titulo": "Tecno Sport · Ropa y calzado deportivo, bolsos y tecnología",
+      "descripcion": "Tienda en línea de ropa y calzado deportivo, bolsos y tecnología: celulares, audífonos, computadores y más. Envío a todo Colombia desde Medellín."
     },
     "carrito": {
       "titulo": "Carrito · Tecno Sport"
