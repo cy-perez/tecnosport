@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-10",
-    "vigencia": "Vigente desde el 10 de septiembre de 2026.",
+    "version": "2026-09-14",
+    "vigencia": "Vigente desde el 14 de septiembre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -70,7 +70,7 @@
           "Tratamos tus datos para:"
         ],
         "lista": [
-          "Procesar, confirmar y despachar tu pedido, y mantenerte informado de su estado.",
+          "Procesar, confirmar y despachar tu pedido, cotizar el costo del envío con tu ciudad de destino, generar la guía de transporte y mantenerte informado del estado del envío.",
           "Verificar la disponibilidad del pago contraentrega en tu ciudad y coordinar la entrega.",
           "Atender peticiones, quejas, reclamos, garantías y solicitudes de retracto.",
           "Cumplir obligaciones legales, contables y tributarias.",
@@ -89,7 +89,7 @@
         "lista": [
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
-          "La empresa de transporte que despache tu pedido, para entregarlo; recibe nombre, teléfono y dirección de entrega.",
+          "Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en Bogotá D.C., como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
           "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
         ],
         "cierre": [
@@ -99,7 +99,7 @@
       {
         "titulo": "9. Transferencia y transmisión internacional",
         "parrafos": [
-          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. Esas transmisiones se hacen bajo contrato con el proveedor y con el único fin de prestar el servicio descrito en esta política."
+          "Nuestra infraestructura se apoya en servicios de computación en la nube que pueden almacenar o procesar información en servidores ubicados fuera de Colombia; eso incluye al proveedor de infraestructura y al de correo transaccional. La plataforma de logística y envíos con la que contratamos es una sociedad colombiana, y su propia política de tratamiento contempla la transmisión y la transferencia de datos, tanto nacional como internacional. Esas transmisiones se hacen bajo contrato con cada proveedor y con el único fin de prestar el servicio descrito en esta política."
         ]
       },
       {
@@ -150,7 +150,7 @@
       {
         "titulo": "16. Vigencia",
         "parrafos": [
-          "Esta política rige desde el 7 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
+          "Esta política rige desde el 14 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
         ]
       }
     ]
@@ -183,7 +183,7 @@
         "titulo": "4. Productos, imágenes y precios",
         "parrafos": [
           "Las fotografías de los productos son propias y corresponden a la unidad que vendemos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
-          "Todos los precios se muestran en pesos colombianos (COP) e incluyen el IVA aplicable. El precio publicado incluye además el costo del envío a cualquier parte del país: no hay cobros adicionales al final del proceso.",
+          "Todos los precios se muestran en pesos colombianos (COP) e incluyen el IVA aplicable. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío.",
           "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
           "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y ropa deportiva, el uso distinto del previsto puede afectar la garantía."
         ]
@@ -203,14 +203,16 @@
       {
         "titulo": "7. Pago contraentrega",
         "parrafos": [
-          "La disponibilidad del pago contraentrega la decide el sistema según la ciudad de entrega, el valor del pedido y el tipo de producto, y se te informa antes de elegir el método de pago. Rechazar la entrega no es lo mismo que retractarse: es una compra que no llegó a perfeccionarse, y en ese caso no hay dinero que devolver porque no se recibió. El rechazo reiterado de entregas puede llevarnos a no habilitar este método en compras posteriores."
+          "La disponibilidad del pago contraentrega la decide el sistema según la ciudad de entrega, el valor del pedido y el tipo de producto, y se te informa antes de elegir el método de pago. Cuando pagas contra entrega, el valor que cobra la transportadora es el total del pedido, es decir la mercancía más el costo del envío, y las transportadoras solo reciben efectivo, así que ten a mano el valor exacto. Rechazar la entrega no es lo mismo que retractarse: es una compra que no llegó a perfeccionarse, y en ese caso no hay dinero que devolver porque no se recibió. El rechazo reiterado de entregas puede llevarnos a no habilitar este método en compras posteriores."
         ]
       },
       {
         "titulo": "8. Envío y entrega",
         "parrafos": [
-          "Despachamos a todo el territorio nacional. No pactamos contigo un plazo de entrega distinto del legal, así que aplica el término de treinta (30) días calendario contados desde la confirmación del pago. Si para un pedido concreto te anunciamos un plazo menor, ese plazo anunciado es el que nos obliga.",
-          "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero.",
+          "Despachamos a todo el territorio nacional a través de empresas de transporte, y también puedes recoger tu pedido sin costo en nuestro punto de Medellín.",
+          "El costo del envío se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos. Si no hay empresa de transporte que cubra la dirección que indicaste, te lo decimos en ese momento y podrás recoger el pedido en nuestro punto.",
+          "No pactamos contigo un plazo de entrega distinto del legal, así que aplica el término de treinta (30) días calendario contados desde la confirmación del pago. Si para un pedido concreto te anunciamos un plazo menor, ese plazo anunciado es el que nos obliga. La fecha estimada que muestra la empresa de transporte al momento de la compra es una estimación suya, no un plazo distinto del que acabamos de indicar.",
+          "Si no entregamos dentro del plazo aplicable, puedes terminar el contrato y recuperar tu dinero, incluido el costo del envío que hayas pagado.",
           "También puedes retirar tu pedido en Medellín, en Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín, eligiendo esa opción al comprar. La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador."
         ]
       },
@@ -220,7 +222,7 @@
           "Como esta es una venta a distancia, puedes retractarte dentro de los cinco (5) días hábiles siguientes a la entrega del producto, sin tener que explicar por qué.",
           "Para ejercerlo, escríbenos a contacto@tecnosport.co dentro de ese plazo, devuelve el producto en el mismo estado en que lo recibiste y suminístranos los datos que necesitemos para el reintegro.",
           "Te devolvemos el dinero dentro de los quince (15) días calendario siguientes al día en que se cumplan las dos condiciones anteriores: que nos hayas devuelto el producto y que nos hayas dado los datos que el reintegro necesita. Así cuenta ese plazo el artículo 47 de la Ley 1480 de 2011, modificado por la Ley 2439 de 2024. La devolución la hacemos por el medio de pago que prefieras: dínoslo al retractarte o cuando nos envíes los datos, y es el que usamos. Ese plazo cobija a todos los intervinientes, incluida la entidad financiera.",
-          "El costo del transporte de la devolución lo asumes tú, como lo dispone el artículo 47 de la Ley 1480 de 2011. Los gastos de devolverte el dinero, incluidos los costos financieros, los asumimos nosotros.",
+          "El costo del transporte de la devolución lo asumes tú, como lo dispone el artículo 47 de la Ley 1480 de 2011. Lo que te reintegramos es todo lo que pagaste por la compra, incluido el costo del envío que te cobramos al comprar. Los gastos de devolverte el dinero, incluidos los costos financieros, los asumimos nosotros.",
           "El retracto no aplica a los productos confeccionados o personalizados según tus especificaciones, ni a los demás casos que excluye el artículo 47 de la Ley 1480 de 2011."
         ]
       },
@@ -287,7 +289,7 @@
       {
         "titulo": "19. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 7 de septiembre de 2026."
+          "Versión vigente desde el 14 de septiembre de 2026."
         ]
       }
     ]
@@ -330,7 +332,7 @@
       {
         "titulo": "5. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 7 de septiembre de 2026."
+          "Versión vigente desde el 14 de septiembre de 2026."
         ]
       }
     ]
