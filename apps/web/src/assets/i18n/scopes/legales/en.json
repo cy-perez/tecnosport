@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-10",
-    "vigencia": "In force since 10 September 2026.",
+    "version": "2026-09-14",
+    "vigencia": "In force since 14 September 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -70,7 +70,7 @@
           "We process your data in order to:"
         ],
         "lista": [
-          "Process, confirm, and ship your order, and keep you informed of its status.",
+          "Process, confirm, and ship your order, quote the shipping cost using your destination city, generate the shipping label, and keep you informed of the shipment status.",
           "Check whether cash on delivery is available in your city and coordinate the delivery.",
           "Handle requests, complaints, claims, warranties, and withdrawal requests.",
           "Comply with legal, accounting, and tax obligations.",
@@ -89,7 +89,7 @@
         "lista": [
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
-          "The shipping company that dispatches your order, in order to deliver it; it receives your name, phone number, and delivery address.",
+          "Skydropx S.A.S., a Colombian company with tax ID (NIT) 901.508.804-5 and registered office in Bogotá D.C., as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
           "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
         ],
         "cierre": [
@@ -99,7 +99,7 @@
       {
         "titulo": "9. International transfer and transmission",
         "parrafos": [
-          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. Those transmissions take place under contract with the provider and solely to deliver the service described in this policy."
+          "Our infrastructure relies on cloud computing services that may store or process information on servers located outside Colombia; this includes both our infrastructure provider and our transactional email provider. The logistics and shipping platform we contract with is a Colombian company, and its own data processing policy contemplates the transmission and transfer of data, both domestic and international. Those transmissions take place under contract with each provider and solely to deliver the service described in this policy."
         ]
       },
       {
@@ -150,7 +150,7 @@
       {
         "titulo": "16. Term",
         "parrafos": [
-          "This policy is in force from 7 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
+          "This policy is in force from 14 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
         ]
       }
     ]
@@ -183,7 +183,7 @@
         "titulo": "4. Products, images, and prices",
         "parrafos": [
           "Product photographs are our own and correspond to the unit we sell. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
-          "All prices are shown in Colombian pesos (COP) and include applicable VAT. The published price also includes shipping anywhere in the country: there are no additional charges at the end of the process.",
+          "All prices are shown in Colombian pesos (COP) and include applicable VAT. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay. If you choose to pick up your order at our Medellín location, you pay no shipping cost.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and sportswear, use other than intended may affect the warranty."
         ]
@@ -203,14 +203,16 @@
       {
         "titulo": "7. Cash on delivery",
         "parrafos": [
-          "Whether cash on delivery is available is decided by the system based on the delivery city, the order value, and the product type, and you are told before choosing a payment method. Refusing delivery is not the same as withdrawing: it is a purchase that was never completed, and in that case there is no money to refund because none was received. Repeatedly refusing deliveries may lead us not to enable this method on later purchases."
+          "Whether cash on delivery is available is decided by the system based on the delivery city, the order value, and the product type, and you are told before choosing a payment method. When you pay on delivery, the amount the carrier collects is the order total, that is, the goods plus the shipping cost, and carriers only accept cash, so please have the exact amount ready. Refusing delivery is not the same as withdrawing: it is a purchase that was never completed, and in that case there is no money to refund because none was received. Repeatedly refusing deliveries may lead us not to enable this method on later purchases."
         ]
       },
       {
         "titulo": "8. Shipping and delivery",
         "parrafos": [
-          "We ship nationwide. We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a specific order, that announced term is the one that binds us.",
-          "If we do not deliver within the applicable term, you may terminate the contract and recover your money.",
+          "We ship nationwide through carrier companies, and you may also pick up your order at no cost at our Medellín location.",
+          "The shipping cost is calculated using the destination city you give us and the weight and dimensions of your order. We show it to you before you pay, as an amount separate from the price of the products. If no carrier covers the address you provided, we will tell you at that moment and you may pick the order up at our location.",
+          "We do not agree with you on a delivery term other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a specific order, that announced term is the one that binds us. The estimated date shown by the carrier at the time of purchase is its own estimate, not a term different from the one stated here.",
+          "If we do not deliver within the applicable term, you may terminate the contract and recover your money, including any shipping cost you paid.",
           "You may also pick up your order in Medellín, at Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401, Medellín, by choosing that option at checkout. The handover is arranged with you by WhatsApp or email once we confirm the order; there is no walk-in counter."
         ]
       },
@@ -220,7 +222,7 @@
           "As this is a distance sale, you may withdraw within five (5) business days following delivery of the product, without having to explain why.",
           "To exercise it, write to contacto@tecnosport.co within that period, return the product in the same condition in which you received it, and give us the details we need for the refund.",
           "We refund your money within fifteen (15) calendar days following the day both of the conditions above are met: that you have returned the product and that you have given us the details the refund needs. That is how article 47 of Law 1480 of 2011, as amended by Law 2439 of 2024, counts that period. We refund through the payment method you prefer: tell us when you withdraw or when you send us your details, and that is the one we use. That period covers everyone involved, including the financial institution.",
-          "The cost of return shipping is borne by you, as provided in article 47 of Law 1480 of 2011. The costs of returning your money, including any financial costs, are borne by us.",
+          "The cost of return shipping is borne by you, as provided in article 47 of Law 1480 of 2011. What we refund is everything you paid for the purchase, including the shipping cost we charged you at checkout. The costs of returning your money, including any financial costs, are borne by us.",
           "Withdrawal does not apply to products made or personalised to your specifications, nor to the other cases excluded by article 47 of Law 1480 of 2011."
         ]
       },
@@ -287,7 +289,7 @@
       {
         "titulo": "19. Term",
         "parrafos": [
-          "Version in force since 7 September 2026."
+          "Version in force since 14 September 2026."
         ]
       }
     ]
@@ -330,7 +332,7 @@
       {
         "titulo": "5. Term",
         "parrafos": [
-          "Version in force since 7 September 2026."
+          "Version in force since 14 September 2026."
         ]
       }
     ]

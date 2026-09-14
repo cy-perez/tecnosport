@@ -43,7 +43,7 @@ cita.
 | Los gastos que genere la devolución del dinero, incluidos los costos financieros, los asume quien vendió, no el consumidor | Concepto de la SIC sobre el art. 47 | La comisión de la pasarela por devolver la plata no se le descuenta al comprador |
 | Reversión del pago con causales tasadas, y reversión parcial cuando la compra fue de varios productos | Ley 1480 de 2011, art. 51, y Decreto 587 de 2016 | Ya está en los términos. Con flete aparte aparece la pregunta de si el flete se reversa; ver sección 7 |
 | La información mínima al consumidor debe estar en castellano, y en los contratos se usa el castellano | Ley 1480 de 2011, arts. 23 y 37.1 | Ya resuelto en la Fase 6 con la nota de traducción de cortesía |
-| Transferencia internacional de datos: régimen propio, con lista de países de nivel adecuado | Ley 1581 de 2012 y circular de la SIC sobre nivel adecuado de protección | **México aparece en la lista de países con nivel adecuado** de la SIC. Skydropx es mexicana; eso no cierra el análisis, lo simplifica |
+| Transferencia internacional de datos: régimen propio, con lista de países de nivel adecuado | Ley 1581 de 2012 y circular de la SIC sobre nivel adecuado de protección | ~~**México aparece en la lista de países con nivel adecuado** de la SIC. Skydropx es mexicana; eso no cierra el análisis, lo simplifica.~~ **La premisa era falsa y se corrigió el 14 de septiembre de 2026:** con quien se contrata en Colombia es **SKYDROPX S.A.S., sociedad colombiana** (§4), así que compartirle los datos no es una transferencia internacional. Lo que su propio aviso de privacidad sí contempla es que ella transmita o transfiera datos, nacional o internacionalmente; eso lo declara y responde ella. Queda abierto **dónde procesa los datos la plataforma**, que depende del host de producción — el `TODO` de `PropiedadesSkydropx` — y del contrato: si resulta que se procesan fuera, el numeral 9 de la política vuelve a cambiar |
 | La publicidad obliga | Ley 1480 de 2011 | "Recogida sin costo" y un plazo de entrega en pantalla son promesas exigibles |
 
 Lo que **no** cambió y conviene decirlo: la Ley 1581 de 2012 sigue sin reforma
@@ -83,6 +83,32 @@ Encajan en la estructura que la plantilla ya pinta —`parrafos`, `lista` y
 así que ninguna cláusula nueva necesita un campo que nadie renderice. Esa
 comprobación no es de estilo: un párrafo escrito en el JSON que la plantilla no
 pinta, jurídicamente no está.
+
+**Un párrafo del borrador no se publicó, porque el sistema no lo cumple.** El numeral 8
+de abajo promete que "cuando despachemos tu pedido te enviaremos la empresa de transporte
+y el número de guía, y podrás consultar el estado del envío desde el enlace de seguimiento
+que te llega por correo". **Nada de eso existe hoy:** `TextoDeCorreo` tiene siete correos
+—retracto, cancelación, plazo vencido, atención y los dos de cuenta— y ninguno es de
+despacho; y la pantalla de estado del pedido (`features/checkout/presentation/estado`) no
+pinta transportadora, guía ni eventos, aunque
+`GET /api/v1/pedidos/{id}/seguimiento` ya los devuelva. Publicarlo habría creado
+exactamente el problema que este documento vino a cerrar, con otro signo: "la publicidad
+obliga". El párrafo entra **cuando el paso 7 emita la primera guía y exista el correo de
+despacho**, no antes — y ese es el commit donde vuelve a subir la fecha de versión.
+
+**Publicado el 14 de septiembre de 2026, y adaptado en dos puntos del numeral 8.** Los
+borradores de abajo se redactaron el 8 de septiembre y envejecieron antes de usarse, así
+que pegarlos tal cual habría retrocedido dos decisiones ya tomadas. Primero: el borrador
+del numeral 8 todavía trae `[[PLAZO DE ENTREGA REAL]]` dentro del párrafo del plazo, y
+ese marcador se cerró el 10 de septiembre decidiendo **no** prometer plazo propio —
+publicarlo habría reintroducido un marcador a la vista y tumbado `npm run marcadores`.
+Se conservó la redacción vigente (el término legal de 30 días, declarado como legal) y se
+le sumó solo la frase nueva: que la fecha estimada del transportador es una estimación
+suya. Segundo: el borrador dice "recoger en nuestro punto de Medellín" sin dirección, y el
+texto vigente ya traía la de Cra. 26C # 38B-31 con la coordinación por WhatsApp o correo,
+cerrada también el 10 de septiembre. Se conservó. **Un borrador de un documento de
+trabajo no es el texto publicado**, y la diferencia entre los dos es exactamente lo que
+se decidió en el medio.
 
 **Los marcadores `[[ ]]` están traducidos**, y hay que resolver los dos lados a la
 vez: `[[PLAZO DE ENTREGA REAL]]` es `[[ACTUAL DELIVERY TIME]]` en inglés,
@@ -283,7 +309,7 @@ verdadero sin él.
 | `[[HORARIO DE ATENCIÓN]]` | **Nada: cerrado con dato** (todos los días, 8:00 a.m.–9:00 p.m.). Es horario de canales, no de local | Decidido | Publicado en los términos y en el pie. No se emite como `openingHours` |
 | `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | **Nada: Resend también en producción** (`docs/07-infra-gcp.md`). La política de datos lo nombra | Decidido | Nombrado. Queda pendiente de contrato la región de procesamiento y la razón social |
 | `[[TRANSPORTADORA]]` | Se nombra a Skydropx y a las transportadoras el día que reciban datos, que es un paso de esta fase | Ya decidido (`ADR-0021/0023`); falta construirlo | "La empresa de transporte que despache tu pedido" |
-| Razón social exacta de Skydropx | Con qué entidad se contrata: la mexicana o una filial colombiana. Cambia el análisis de transferencia internacional | Negocio, al firmar |
+| ~~Razón social exacta de Skydropx~~ | **Cerrado el 14 de septiembre de 2026, y la respuesta cambia el análisis: es colombiana.** **SKYDROPX S.A.S.**, sociedad por acciones simplificada constituida conforme a las leyes de la República de Colombia, **NIT 901.508.804-5**, domicilio principal en Bogotá D.C. Verificado en sus propios documentos, no en un directorio de empresas: los [términos y condiciones](https://www.skydropx.com.co/terminos-y-condiciones/) y el [aviso de privacidad](https://www.skydropx.com.co/aviso-privacidad/) de `skydropx.com.co` la identifican así, con el NIT en los dos | Decidido |
 | Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |
 | IVA sobre el flete cobrado | Si el costo de envío que se le cobra al comprador lleva IVA | Contador |
 
@@ -324,13 +350,47 @@ que el documento publicado promete y contra lo que la ley exige.
 ### Nivel 1 — bloquean el encendido de la cotización
 
 **1. El texto publicado quedará falso el día que se cobre el flete.**
-*Incoherencia de texto, no bug.* `apps/web/src/assets/i18n/scopes/legales/es.json:186`
-(y su par en `en.json`) dice que el precio incluye el envío y que "no hay cobros
-adicionales al final del proceso". Un cobro adicional frente a un documento propio
-que promete que no habrá ninguno es la prueba escrita en contra que la SIC lee sin
-discutir. **Cierre:** las cláusulas de la sección 3, en el mismo commit, más
-`legales.comun.version`, `legales.comun.vigencia` y `POLITICA_DATOS_VERSION`
-actualizadas — las tres van acopladas al texto y se mueven juntas.
+~~*Incoherencia de texto, no bug.*~~ **Cerrado el 14 de septiembre de 2026, y quedó
+falso tres días.** `apps/web/src/assets/i18n/scopes/legales/es.json:186` (y su par en
+`en.json`) decía que el precio incluye el envío y que "no hay cobros adicionales al
+final del proceso". Un cobro adicional frente a un documento propio que promete que
+no habrá ninguno es la prueba escrita en contra que la SIC lee sin discutir.
+
+**Lo que enseñó el cierre, y no estaba previsto:** la regla de este documento
+—publicar las cláusulas *en el mismo commit* que encienda la cotización— **no se
+cumplió**. El checkout empezó a cobrar el flete aparte el 11 de septiembre, al cerrar
+el paso 5, y el texto no se movió hasta el 14. No fue un descuido de criterio sino de
+mecánica: la regla vivía escrita en un documento y nada la hacía cumplir. Por eso el
+cierre no fueron solo las cláusulas, sino **la regla 4 de
+`tools/verificar-datos-de-negocio.mjs`**: si existe `CotizarEnvio`, el texto legal no
+puede prometer que el precio incluye el envío. Es un contraste de frases y no una
+lectura del sentido —alguien puede prometer lo mismo con otras palabras y no lo verá—,
+pero dispara en el caso que ya ocurrió. Se comprobó reinyectando la frase vieja a
+propósito: falla en las cuatro apariciones, dos por idioma.
+
+**Y apareció una contradicción de fechas que ya estaba publicada.** El encabezado de
+los tres documentos pinta una versión compartida (`legales.comun.version`), pero cada
+documento tenía además su propia sección de vigencia, y esas tres se quedaron en el 7
+de septiembre cuando el encabezado pasó al 10. Quien abría la política de cookies leía
+dos fechas distintas en la misma página. Se homologaron las tres al 14 de septiembre,
+que es lo coherente con un encabezado compartido: los tres documentos son un conjunto
+versionado junto, y el numeral 17 de los términos ya dice que a cada compra le aplica
+la versión vigente ese día.
+
+**Corregido el mismo día, horas después de publicarlo.** El texto salió diciendo que "nuestra
+plataforma de logística y envíos es una empresa de origen mexicano", y el cierre de la sección 3
+apoyaba en esa premisa una cláusula sobre países de nivel adecuado. Al establecer la razón social
+en la fuente oficial (§4) resultó que **la entidad colombiana es una sociedad colombiana**, así
+que las dos frases sobraban: la política de datos identifica ahora al encargado con su NIT y su
+domicilio, y el numeral 9 vuelve a hablar solo de lo que se puede sostener — la nube y el correo
+transaccional fuera de Colombia, y que el encargado contempla en su propia política la transmisión
+y la transferencia internacional. **La lección es de método:** el borrador de la sección 3 daba la
+nacionalidad por supuesta y el dato estaba a un clic, en el sitio del proveedor. Un documento legal
+no es sitio para una suposición cómoda.
+
+**Cierre aplicado:** las cláusulas de la sección 3, `legales.comun.version`,
+`legales.comun.vigencia`, las tres secciones de vigencia y `POLITICA_DATOS_VERSION`
+—en `application.yml` y en `.env.example`—, todo en el mismo commit.
 
 **2. El resumen del checkout no muestra ni el costo de envío ni el total a pagar.**
 ~~Pendiente.~~ **Cerrado el 13 de septiembre de 2026, y en dos pantallas y no en
