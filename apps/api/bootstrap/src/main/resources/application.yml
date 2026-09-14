@@ -43,6 +43,10 @@ spring:
             enable: true
 
 tecnosport:
+  app:
+    # La raiz del sitio, con la que el backend arma los enlaces que manda por correo. Misma
+    # variable de entorno de siempre: lo que cambio es de quien cuelga, no como se configura.
+    url-publica: ${APP_URL_PUBLICA:http://localhost:4200}
   correo:
     # Dato de negocio real, no inventado (regla dura #5): dominio real del proyecto.
     remitente: ${CORREO_REMITENTE:no-responder@tecnosport.co}
@@ -182,7 +186,6 @@ tecnosport:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.
     horas-vencimiento: ${VERIFICACION_CORREO_HORAS_VENCIMIENTO:24}
-    url-publica: ${APP_URL_PUBLICA:http://localhost:4200}
   recuperacion-clave:
     # docs/08-seguridad-legal.md: "token de un solo uso, válido 30 minutos".
     minutos-vencimiento: ${RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO:30}

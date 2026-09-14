@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO de docs/07-infra-gcp.md. La URL pública para el enlace del
- * correo la reutiliza de {@link PropiedadesVerificacionCorreo#urlPublica()} — no se duplica.
+ * correo sale de {@code co.tecnosport.api.bootstrap.compartido.PropiedadesApp} — no se duplica.
  */
 @ConfigurationProperties(prefix = "tecnosport.recuperacion-clave")
 public record PropiedadesRecuperacionClave(int minutosVencimiento) {

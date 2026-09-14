@@ -19,6 +19,7 @@ import co.tecnosport.api.application.usuario.RepositorioUsuarios;
 import co.tecnosport.api.application.usuario.SolicitarRecuperacion;
 import co.tecnosport.api.application.usuario.VerificadorDeTokens;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
+import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimiteAuth;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.infrastructure.usuario.CodificadorDeClavesBCrypt;
@@ -113,6 +114,7 @@ public class ConfiguracionUsuario {
       TextosDeCorreo textos,
       Reloj reloj,
       PropiedadesVerificacionCorreo propiedades,
+      PropiedadesApp propiedadesApp,
       LimitadorDeIntentos limitadorDeIntentos,
       PropiedadesLimiteAuth propiedadesLimite,
       RepositorioAutorizaciones repositorioAutorizaciones,
@@ -125,7 +127,7 @@ public class ConfiguracionUsuario {
         textos,
         reloj,
         Duration.ofHours(propiedades.horasVencimiento()),
-        propiedades.urlPublica() + "/es/cuenta/verificar-correo",
+        propiedadesApp.urlPublica() + "/es/cuenta/verificar-correo",
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()),
@@ -149,7 +151,7 @@ public class ConfiguracionUsuario {
       TextosDeCorreo textos,
       Reloj reloj,
       PropiedadesRecuperacionClave propiedadesRecuperacion,
-      PropiedadesVerificacionCorreo propiedadesVerificacion,
+      PropiedadesApp propiedadesApp,
       LimitadorDeIntentos limitadorDeIntentos,
       PropiedadesLimiteAuth propiedadesLimite) {
     return new SolicitarRecuperacion(
@@ -159,7 +161,7 @@ public class ConfiguracionUsuario {
         textos,
         reloj,
         Duration.ofMinutes(propiedadesRecuperacion.minutosVencimiento()),
-        propiedadesVerificacion.urlPublica() + "/es/cuenta/restablecer-clave",
+        propiedadesApp.urlPublica() + "/es/cuenta/restablecer-clave",
         limitadorDeIntentos,
         propiedadesLimite.cuentaMaximo(),
         Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
