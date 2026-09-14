@@ -228,8 +228,8 @@ número nuevo.
 
 **Wompi cerrado, sin la conciliación programada** (2026-09-03): Web Checkout
 hospedado, no tokenización propia — decisión consciente para un solo
-desarrollador: Wompi resuelve por su cuenta PSE, el push de Nequi, el 3-D
-Secure de tarjeta y el crédito de Addi, a costa de que el cliente salga del
+desarrollador: Wompi resuelve por su cuenta PSE, el push de Nequi y el 3-D
+Secure de tarjeta, a costa de que el cliente salga del
 sitio unos segundos durante el pago (esa página no es nuestra, no rompe la
 regla de "nada de píxel suelto"). Si el volumen lo justifica más adelante,
 migrar a tokenización con Wompi.js queda localizado a `WompiClient` y al
@@ -501,7 +501,7 @@ tampoco se puede dar por resuelto:
   llaves).
 
 **Backend de la Fase 3 completo, fase todavía abierta.** El backend cobra
-por Wompi (tarjeta, PSE, Nequi, Bancolombia, Addi), por transferencia manual
+por Wompi (tarjeta, PSE, Nequi, Bancolombia), por transferencia manual
 con conciliación en el panel, o contraentrega de punta a punta —
 disponibilidad decidida por el servidor, verificación antes de despachar,
 despacho, entrega o rechazo con liberación de inventario, y recaudo

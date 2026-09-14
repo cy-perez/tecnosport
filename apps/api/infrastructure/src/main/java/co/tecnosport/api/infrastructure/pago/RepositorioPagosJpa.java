@@ -76,7 +76,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         eventosDelPago,
         entidad.getCreadoEn(),
         entidad.getActualizadoEn(),
-        entidad.getIdTransaccionWompi());
+        entidad.getIdTransaccionWompi(),
+        entidad.getMedioReportadoPasarela());
   }
 
   private EventoPago aEvento(EventoPagoJpaEntity e) {
@@ -93,7 +94,8 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         pago.estado().name(),
         pago.creadoEn(),
         pago.actualizadoEn(),
-        pago.idTransaccionWompi().orElse(null));
+        pago.idTransaccionWompi().orElse(null),
+        pago.medioReportadoPorLaPasarela().orElse(null));
   }
 
   private EventoPagoJpaEntity aEntidadEvento(UUID pagoId, EventoPago e) {

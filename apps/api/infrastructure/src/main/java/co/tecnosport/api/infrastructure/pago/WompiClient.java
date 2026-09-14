@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.pago;
 
 import co.tecnosport.api.application.pago.PasarelaDePagos;
+import co.tecnosport.api.application.pago.TransaccionDePasarela;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>{@code consultarTransaccion} sí llama a la API real: {@code GET /transactions/{id}} con {@code
  * Authorization: Bearer <llave pública>} — verificado por búsqueda, no inventado (regla dura #9).
+ * Devuelve {@code data.status} y {@code data.payment_method_type}, el medio con el que se cobró.
  * Las URL base de sandbox y producción son las que Wompi documenta para cada ambiente; cualquier
  * valor de {@code ambiente} que no sea exactamente {@code "produccion"} usa sandbox, para que un
  * valor de configuración mal escrito nunca apunte por accidente a producción.
@@ -104,7 +106,7 @@ public final class WompiClient implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<String> consultarTransaccion(String idTransaccionWompi) {
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
     Objects.requireNonNull(idTransaccionWompi, "El id de transacción no puede ser nulo.");
     try {
       HttpRequest peticion =
@@ -120,8 +122,15 @@ public final class WompiClient implements PasarelaDePagos {
         return Optional.empty();
       }
       JsonNode raiz = json.readTree(respuesta.body());
-      String estado = raiz.path("data").path("status").asString();
-      return estado.isBlank() ? Optional.empty() : Optional.of(estado);
+      JsonNode datos = raiz.path("data");
+      String estado = datos.path("status").asString();
+      if (estado.isBlank()) {
+        return Optional.empty();
+      }
+      // El medio puede faltar sin que la respuesta sea inservible: el estado es lo que la
+      // conciliación necesita para cerrar el pago, el medio es evidencia añadida.
+      String medio = datos.path("payment_method_type").asString();
+      return Optional.of(new TransaccionDePasarela(estado, medio.isBlank() ? null : medio));
     } catch (IOException e) {
       return Optional.empty();
     } catch (InterruptedException e) {

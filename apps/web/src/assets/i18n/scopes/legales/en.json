@@ -197,7 +197,7 @@
       {
         "titulo": "6. Payment methods",
         "parrafos": [
-          "We accept credit and debit cards, PSE, Nequi, Bancolombia, and Addi credit, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. We do not store card data: that information is handled entirely on the gateway's platform."
+          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform."
         ]
       },
       {

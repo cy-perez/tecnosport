@@ -38,6 +38,10 @@ public class PagoJpaEntity {
   @Column(name = "id_transaccion_wompi")
   private String idTransaccionWompi;
 
+  /** El {@code payment_method_type} que reportó Wompi, crudo. Ver V39. */
+  @Column(name = "medio_reportado_pasarela")
+  private String medioReportadoPasarela;
+
   protected PagoJpaEntity() {}
 
   public PagoJpaEntity(
@@ -49,7 +53,8 @@ public class PagoJpaEntity {
       String estado,
       Instant creadoEn,
       Instant actualizadoEn,
-      String idTransaccionWompi) {
+      String idTransaccionWompi,
+      String medioReportadoPasarela) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.referencia = referencia;
@@ -59,6 +64,7 @@ public class PagoJpaEntity {
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
     this.idTransaccionWompi = idTransaccionWompi;
+    this.medioReportadoPasarela = medioReportadoPasarela;
   }
 
   public UUID getId() {
@@ -95,5 +101,9 @@ public class PagoJpaEntity {
 
   public String getIdTransaccionWompi() {
     return idTransaccionWompi;
+  }
+
+  public String getMedioReportadoPasarela() {
+    return medioReportadoPasarela;
   }
 }

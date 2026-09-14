@@ -3,9 +3,11 @@ package co.tecnosport.api.infrastructure.pago;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.pago.TransaccionDePasarela;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import com.sun.net.httpserver.HttpServer;
@@ -220,9 +222,34 @@ class WompiClientTest {
   void consultarTransaccionDevuelveElEstadoSiLaRespuestaEs200() throws IOException {
     WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200);
 
-    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
-    assertEquals(Optional.of("APPROVED"), estado);
+    assertEquals("APPROVED", transaccion.orElseThrow().estado());
+  }
+
+  /**
+   * El medio con el que se cobró de verdad. Wompi no recibe el método que el comprador eligió en
+   * nuestro checkout —el Web Checkout hospedado pinta su propia lista— así que este campo es la
+   * única fuente de ese hecho.
+   */
+  @Test
+  void consultarTransaccionDevuelveTambienElMedioConElQueSeCobro() throws IOException {
+    WompiClient cliente =
+        clienteContra("{\"data\":{\"status\":\"APPROVED\",\"payment_method_type\":\"CARD\"}}", 200);
+
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertEquals("CARD", transaccion.orElseThrow().medio());
+  }
+
+  /** Sin medio la respuesta sigue sirviendo: el estado es lo que la conciliación necesita. */
+  @Test
+  void consultarTransaccionDevuelveMedioNuloSiWompiNoLoManda() throws IOException {
+    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200);
+
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
+
+    assertNull(transaccion.orElseThrow().medio());
   }
 
   @Test
@@ -239,26 +266,26 @@ class WompiClientTest {
   void consultarTransaccionDevuelveVacioSiLaRespuestaNoEs200() throws IOException {
     WompiClient cliente = clienteContra("{\"error\":{\"type\":\"NOT_FOUND_ERROR\"}}", 404);
 
-    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
-    assertEquals(Optional.empty(), estado);
+    assertEquals(Optional.empty(), transaccion);
   }
 
   @Test
   void consultarTransaccionDevuelveVacioSiElCuerpoNoEsJsonValido() throws IOException {
     WompiClient cliente = clienteContra("esto no es json", 200);
 
-    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
-    assertEquals(Optional.empty(), estado);
+    assertEquals(Optional.empty(), transaccion);
   }
 
   @Test
   void consultarTransaccionDevuelveVacioSiElCuerpoNoTraeElStatus() throws IOException {
     WompiClient cliente = clienteContra("{\"data\":{}}", 200);
 
-    Optional<String> estado = cliente.consultarTransaccion("wompi-tx-1");
+    Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
-    assertEquals(Optional.empty(), estado);
+    assertEquals(Optional.empty(), transaccion);
   }
 }

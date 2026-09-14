@@ -22,8 +22,18 @@ import java.util.Set;
 
 /**
  * Regla dura del proyecto: "decidir si un método de pago está disponible para ese destino y ese
- * monto" nunca lo delega el servidor al cliente (docs/03-api.md). El único método condicionado hoy
- * es {@code CONTRAENTREGA} (docs/11-pagos-y-envios.md); el resto siempre está disponible.
+ * monto" nunca lo delega el servidor al cliente (docs/03-api.md).
+ *
+ * <p>Son dos preguntas encadenadas y conviene no mezclarlas. La primera no mira el pedido:
+ * <b>¿ofrece el negocio ese método hoy?</b> — la responde {@link #habilitados()} con lo que la
+ * cuenta de la pasarela tiene activado ({@code tecnosport.wompi.metodos.habilitados}). La segunda
+ * sí lo mira: <b>¿le sirve a este pedido?</b>, y hoy solo {@code CONTRAENTREGA} la tiene.
+ *
+ * <p>Hasta la Fase 3 la primera pregunta no existía: se devolvía el enum entero, así que el
+ * checkout ofrecía cualquier método que el código supiera procesar, estuviera o no activado en la
+ * pasarela. Con Addi eso no habría reventado nada —la URL del Web Checkout no le manda a Wompi el
+ * método elegido, Wompi pinta su propia lista— y ese era el problema: el comprador elegía Addi,
+ * pagaba con tarjeta y el pedido quedaba grabado diciendo Addi.
  *
  * <p>Contraentrega exige una ciudad de destino que cubrir: sin {@code ENVIO_A_DOMICILIO} (por
  * ejemplo, {@code RETIRO_EN_PUNTO}) no se ofrece — no hay transportadora con recaudo en un
@@ -44,12 +54,14 @@ public final class MetodosDePagoDisponibles {
   private final CotizarEnvio cotizarEnvio;
   private final RepositorioPedidos repositorioPedidos;
   private final CriteriosContraentrega criteriosContraentrega;
+  private final Set<MetodoPago> metodosDePasarelaHabilitados;
 
   public MetodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
-      CriteriosContraentrega criteriosContraentrega) {
+      CriteriosContraentrega criteriosContraentrega,
+      Set<MetodoPago> metodosDePasarelaHabilitados) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -59,11 +71,39 @@ public final class MetodosDePagoDisponibles {
     this.criteriosContraentrega =
         Objects.requireNonNull(
             criteriosContraentrega, "Los criterios de contraentrega no pueden ser nulos.");
+    Objects.requireNonNull(
+        metodosDePasarelaHabilitados,
+        "Los métodos habilitados en la pasarela no pueden ser nulos.");
+    for (MetodoPago metodo : metodosDePasarelaHabilitados) {
+      if (!metodo.seProcesaPorPasarela()) {
+        throw new IllegalArgumentException(
+            "El método " + metodo + " no lo procesa la pasarela: no se habilita desde aquí.");
+      }
+    }
+    this.metodosDePasarelaHabilitados =
+        metodosDePasarelaHabilitados.isEmpty()
+            ? EnumSet.noneOf(MetodoPago.class)
+            : EnumSet.copyOf(metodosDePasarelaHabilitados);
+  }
+
+  /**
+   * Lo que el negocio ofrece, sin mirar el pedido: todo menos los métodos de pasarela que la cuenta
+   * no tiene activados. No cotiza ni consulta nada, y por eso {@code CrearPedido} puede exigirlo en
+   * cualquier pedido sin pagarle una llamada de red al proveedor.
+   *
+   * <p>Que un método aparezca aquí no basta para aceptarlo: {@code CONTRAENTREGA} todavía tiene que
+   * pasar {@link #ejecutar}.
+   */
+  public Set<MetodoPago> habilitados() {
+    Set<MetodoPago> habilitados = EnumSet.allOf(MetodoPago.class);
+    habilitados.removeIf(
+        metodo -> metodo.seProcesaPorPasarela() && !metodosDePasarelaHabilitados.contains(metodo));
+    return habilitados;
   }
 
   public Set<MetodoPago> ejecutar(MetodosDePagoDisponiblesComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
-    Set<MetodoPago> disponibles = EnumSet.allOf(MetodoPago.class);
+    Set<MetodoPago> disponibles = habilitados();
     if (!contraentregaElegible(comando)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
     }

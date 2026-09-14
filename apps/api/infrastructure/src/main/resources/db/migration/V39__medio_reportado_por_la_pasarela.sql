@@ -1,0 +1,15 @@
+-- Con qué se cobró de verdad, según Wompi (`payment_method_type`).
+--
+-- `pago.metodo_pago` guarda lo que el comprador eligió en NUESTRO checkout, y hasta
+-- aquí nada lo contrastaba nunca contra lo que pasó: la URL del Web Checkout hospedado
+-- no le manda a Wompi el método elegido, Wompi pinta su propia lista y el comprador
+-- vuelve a elegir allí. Así que un pedido podía decir NEQUI y haberse cobrado con
+-- tarjeta, sin ninguna señal.
+--
+-- Crudo, tal como lo nombra Wompi (CARD, NEQUI, PSE, BANCOLOMBIA_TRANSFER...), y no
+-- traducido a MetodoPago: un valor que hoy no sepamos traducir tiene que quedar
+-- guardado igual en vez de perderse en el mapeo. La traducción vive en MediosDeWompi.
+--
+-- Nulo para todo pago anterior a esta migración y para el que todavía no haya recibido
+-- ni webhook ni conciliación: "no se sabe" y "coincide" no son lo mismo.
+alter table pago add column medio_reportado_pasarela varchar(60);

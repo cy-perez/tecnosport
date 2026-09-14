@@ -17,16 +17,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Mismo patrón que {@code ConfiguracionPedido}. Activa las tres propiedades de Wompi: {@code
+ * Mismo patrón que {@code ConfiguracionPedido}. Activa las cuatro propiedades de Wompi: {@code
  * PropiedadesWompi} (bootstrap, los secretos), {@code PropiedadesWompiPublicas} (presentation, lo
- * que puede llegar al cliente) y {@code PropiedadesConciliacionWompi} — bootstrap puede depender de
- * presentation, nunca al revés.
+ * que puede llegar al cliente), {@code PropiedadesConciliacionWompi} y {@code
+ * PropiedadesMetodosDeWompi} — bootstrap puede depender de presentation, nunca al revés.
+ *
+ * <p>La última la consume {@code ConfiguracionEnvio}, que es donde se arma {@code
+ * MetodosDePagoDisponibles}. Se activa aquí porque es de Wompi, no del envío.
  */
 @Configuration
 @EnableConfigurationProperties({
   PropiedadesWompi.class,
   PropiedadesWompiPublicas.class,
-  PropiedadesConciliacionWompi.class
+  PropiedadesConciliacionWompi.class,
+  PropiedadesMetodosDeWompi.class
 })
 public class ConfiguracionWompi {
 

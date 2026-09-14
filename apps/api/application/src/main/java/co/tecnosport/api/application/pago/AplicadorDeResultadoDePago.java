@@ -18,6 +18,10 @@ import co.tecnosport.api.domain.pedido.Pedido;
  * {@code ConciliarPagosPendientes} (consulta directa), que llegan al mismo punto por caminos
  * distintos.
  *
+ * <p>{@code medioReportadoPorLaPasarela} es el {@code payment_method_type} que trae ese evento o
+ * esa consulta, y se guarda en el {@link Pago} sin tocar el método que el comprador eligió: son dos
+ * hechos distintos y el Web Checkout hospedado permite que no coincidan.
+ *
  * <p>docs/02-modelo-datos.md: "el pago aprobado convierte reserva en salida; el pago rechazado o
  * vencido la libera". Un evento aprobado sobre una reserva que ya venció o se resolvió antes (un
  * webhook tardío, o la conciliación llegando después de los 30 minutos de la reserva) no se puede
@@ -32,6 +36,7 @@ final class AplicadorDeResultadoDePago {
   static ResultadoEventoDePago aplicar(
       Pago pago,
       EventoPago evento,
+      String medioReportadoPorLaPasarela,
       String actor,
       RepositorioPagos repositorioPagos,
       RepositorioPedidos repositorioPedidos,
@@ -40,6 +45,7 @@ final class AplicadorDeResultadoDePago {
     if (!aplicado) {
       return ResultadoEventoDePago.YA_PROCESADO;
     }
+    pago.registrarMedioReportadoPorLaPasarela(medioReportadoPorLaPasarela);
     repositorioPagos.guardar(pago);
     return propagarAlPedido(pago, evento, actor, repositorioPedidos, repositorioInventario);
   }

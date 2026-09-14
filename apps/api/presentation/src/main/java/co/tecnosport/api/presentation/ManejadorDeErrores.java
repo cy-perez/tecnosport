@@ -20,6 +20,7 @@ import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
+import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
@@ -215,6 +216,14 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ContraentregaNoDisponibleException.class)
   public ProblemDetail contraentregaNoDisponible(ContraentregaNoDisponibleException excepcion) {
     return problema(HttpStatus.CONFLICT, "Contraentrega no disponible", excepcion);
+  }
+
+  // El método no lo ofrece el negocio hoy (la cuenta de la pasarela no lo tiene activado). 409 y no
+  // 400: la petición está bien formada y el método existe; lo que cambió es qué se acepta, y el
+  // cliente pudo haber consultado /metodos-de-pago-disponibles antes de ese cambio.
+  @ExceptionHandler(MetodoDePagoNoHabilitadoException.class)
+  public ProblemDetail metodoDePagoNoHabilitado(MetodoDePagoNoHabilitadoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Método de pago no habilitado", excepcion);
   }
 
   @ExceptionHandler(MetodoDePagoNoSoportadoPorWompiException.class)
