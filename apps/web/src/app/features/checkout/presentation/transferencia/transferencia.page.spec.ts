@@ -42,7 +42,7 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
 
 /** Un pedido visto por el endpoint de seguimiento: el mismo, mas sus retractos. */
 function seguimientoDePrueba(overrides: Parameters<typeof pedidoDePrueba>[0] = {}): Seguimiento {
-  return { ...pedidoDePrueba(overrides), retractos: [] };
+  return { ...pedidoDePrueba(overrides), envio: null, retractos: [] };
 }
 
 class RepositorioPedidosFalso implements RepositorioPedidos {

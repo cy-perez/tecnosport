@@ -43,6 +43,10 @@ spring:
             enable: true
 
 tecnosport:
+  app:
+    # La raiz del sitio, con la que el backend arma los enlaces que manda por correo. Misma
+    # variable de entorno de siempre: lo que cambio es de quien cuelga, no como se configura.
+    url-publica: ${APP_URL_PUBLICA:http://localhost:4200}
   correo:
     # Dato de negocio real, no inventado (regla dura #5): dominio real del proyecto.
     remitente: ${CORREO_REMITENTE:no-responder@tecnosport.co}
@@ -77,14 +81,29 @@ tecnosport:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
   contraentrega:
-    # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a propósito.
-    # Se activa explícito cuando el negocio confirme cobertura, monto máximo y categorías
-    # excluidas reales — monto-maximo de abajo es un placeholder de desarrollo, no un límite
-    # decidido. categorias-excluidas sin variable (docs/07-infra-gcp.md,
-    # CONTRAENTREGA_CATEGORIAS_EXCLUIDAS): lista separada por comas de LineaCatalogo
-    # (ROPA_Y_CALZADO, BOLSOS, CELULARES) cuando exista.
+    # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
+    # Se activa explicito cuando el negocio confirme la cobertura.
     habilitada: ${CONTRAENTREGA_HABILITADA:false}
-    monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:100000}
+    # El rango que recauda la transportadora, no una preferencia del negocio: COP 2.000 y
+    # COP 2.000.000, lo que reporta la ayuda publica de Skydropx (docs/12-legales-de-envio.md, 4).
+    # El maximo estuvo en 100000, declarado en este mismo sitio como marcador de desarrollo.
+    # Se comparan contra el TOTAL del pedido, flete incluido: es lo que se cobra en la puerta.
+    #
+    # EL TECHO ES LA REGLA DE LO TECNOLOGICO, y conviene saberlo antes de tocarlo. La decision de
+    # negocio del 14 de septiembre de 2026 es: lo tecnologico por encima de COP 2.000.000 no va
+    # contra entrega, y un celular por debajo de esa cifra SI puede ir. Como el tope se compara
+    # contra el total del pedido, este unico valor ya la implementa — nada que pase de 2.000.000
+    # califica, sea un celular o una camiseta. Bajarlo volveria a excluir celulares que el
+    # negocio si quiere despachar contra entrega.
+    monto-minimo: ${CONTRAENTREGA_MONTO_MINIMO:2000}
+    monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:2000000}
+    # Lista separada por comas de LineaCatalogo (ROPA_Y_CALZADO, BOLSOS, CELULARES).
+    #
+    # Vacia a proposito: la regla del negocio es por PRECIO, no por linea, y la implementa
+    # monto-maximo. Excluir CELULARES entera bloquearia tambien los de 1.299.900 y 1.499.900, que
+    # el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
+    # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
+    categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   skydropx:
     # El host de la cuenta colombiana NO está confirmado (docs/13-skydropx-capacidades.md, §6):
     # la documentación pública muestra pro.skydropx.com y sb-pro.skydropx.com, y según la fuente
@@ -182,7 +201,6 @@ tecnosport:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.
     horas-vencimiento: ${VERIFICACION_CORREO_HORAS_VENCIMIENTO:24}
-    url-publica: ${APP_URL_PUBLICA:http://localhost:4200}
   recuperacion-clave:
     # docs/08-seguridad-legal.md: "token de un solo uso, válido 30 minutos".
     minutos-vencimiento: ${RECUPERACION_CLAVE_MINUTOS_VENCIMIENTO:30}

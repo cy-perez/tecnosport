@@ -164,7 +164,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPorSlugExcluyeVariantesInactivas() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t7", "CELULARES");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t7", "TECNOLOGIA");
     ProductoJpaEntity producto =
         producto("Celular con variante de baja", "celular-t7", "PUBLICADO", marca, categoria);
     variante(producto, "SKU-T7-ACTIVA", "1000000");
@@ -208,7 +208,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarSoloDevuelveProductosPublicados() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t3", "CELULARES");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t3", "TECNOLOGIA");
     ProductoJpaEntity publicado =
         producto("Celular publicado", "celular-publicado-t3", "PUBLICADO", marca, categoria);
     variante(publicado, "SKU-T3-PUB", "1000000");
@@ -334,7 +334,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarParaAdminIncluyeBorradorYPublicadoPaginadoPorPagina() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t8", "CELULARES");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-t8", "TECNOLOGIA");
     producto("Celular publicado t8", "celular-publicado-t8", "PUBLICADO", marca, categoria);
     producto("Celular borrador t8", "celular-borrador-t8", "BORRADOR", marca, categoria);
 
@@ -406,7 +406,7 @@ class RepositorioProductosJpaTest {
     ProductoJpaEntity entidadOriginal =
         producto("Morral t11", "morral-t11", "BORRADOR", marcaOriginal, categoriaOriginal);
     MarcaJpaEntity nuevaMarca = marca("Under Trail");
-    CategoriaJpaEntity nuevaCategoria = categoria("Celulares", "celulares-t11", "CELULARES");
+    CategoriaJpaEntity nuevaCategoria = categoria("Celulares", "celulares-t11", "TECNOLOGIA");
 
     Producto producto =
         Producto.crear(
@@ -418,7 +418,7 @@ class RepositorioProductosJpaTest {
                 nuevaCategoria.getId(),
                 "Celulares",
                 new Slug("celulares-t11"),
-                LineaCatalogo.CELULARES));
+                LineaCatalogo.TECNOLOGIA));
     // Producto.crear() genera un id nuevo, el update tiene que ir contra el id ya existente.
     Producto productoConIdExistente =
         new Producto(

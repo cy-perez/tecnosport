@@ -54,7 +54,7 @@ public class ProductoControlador {
         new FiltroProductos(
             categoria == null ? null : new Slug(categoria),
             marca,
-            linea == null ? null : LineaCatalogo.valueOf(linea.toUpperCase(Locale.ROOT)),
+            aLinea(linea),
             precioMin,
             precioMax,
             texto);
@@ -63,6 +63,27 @@ public class ProductoControlador {
             filtro, OrdenProductos.valueOf(orden.toUpperCase(Locale.ROOT)), cursor, tamano);
 
     return mapeador.aRespuesta(buscarProductos.ejecutar(comando));
+  }
+
+  /**
+   * El nombre de la línea, con el alias de la que se renombró.
+   *
+   * <p>{@code CELULARES} fue una línea hasta el 14 de septiembre de 2026 y hoy es una categoría
+   * dentro de {@code TECNOLOGIA}. Un enlace compartido o indexado con {@code ?linea=CELULARES}
+   * seguiría existiendo mucho después del cambio, y sin esto respondería un error de filtro
+   * inválido: el comprador vería una página rota por una decisión interna de modelado que no le
+   * incumbe. Se traduce en silencio, que es lo que hace un alias.
+   *
+   * <p>Una redirección 301 sería más correcta de cara a un buscador, pero toca el SSR y el
+   * enrutador del frontend; el alias resuelve el caso del comprador con dos líneas y ninguna
+   * dependencia nueva.
+   */
+  private static LineaCatalogo aLinea(String linea) {
+    if (linea == null) {
+      return null;
+    }
+    String nombre = linea.trim().toUpperCase(Locale.ROOT);
+    return LineaCatalogo.valueOf("CELULARES".equals(nombre) ? "TECNOLOGIA" : nombre);
   }
 
   @GetMapping("/{slug}")

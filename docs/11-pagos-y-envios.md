@@ -208,12 +208,52 @@ Es el método con más riesgo operativo del sistema, y el diseño lo refleja.
   contraentrega si al menos una de las tarifas cotizadas admite recaudo. Ya no hay
   tabla propia de cobertura cargada a mano: mantenerla era mantener a mano una
   copia peor de un dato que el proveedor ya da.
-- **Monto máximo.** Configurable en `CONTRAENTREGA_MONTO_MAXIMO`. Un celular de
-  cuatro millones contra entrega es una pérdida esperando ocurrir. Se conserva
-  aunque el proveedor tenga el suyo: un límite ajeno puede cambiar sin avisar, y
-  el negocio puede querer un techo más bajo.
-- **Categorías excluidas.** Configurable. La recomendación de arranque es excluir
-  celulares por encima del monto máximo y aceptar el resto.
+- **Rango del monto.** Configurable en `CONTRAENTREGA_MONTO_MINIMO` y
+  `CONTRAENTREGA_MONTO_MAXIMO`, y **se comparan contra el total del pedido, con el
+  flete dentro** (`adr/0023`): es lo que el mensajero cobra en la puerta, no la
+  mercancía sola. El techo existe porque un celular de cuatro millones contra
+  entrega es una pérdida esperando ocurrir; **el piso existe porque la
+  transportadora no recauda por debajo de cierto valor**, y ofrecerlo ahí sería
+  prometer un medio de pago que nadie puede ejecutar. Los dos valores del 14 de
+  septiembre de 2026 —COP 2.000 y COP 2.000.000— son los que **reporta la ayuda
+  pública de Skydropx**, no un contrato firmado: el marcador de abajo sigue
+  abierto. El negocio puede querer un techo más bajo que el del proveedor, y por
+  eso el valor es propio y no se lee de la plataforma.
+- **Categorías excluidas.** Configurable en `CONTRAENTREGA_CATEGORIAS_EXCLUIDAS`, y
+  **vacía a propósito**. Ver abajo: la regla de lo tecnológico es por precio, no por
+  línea, y la implementa el techo. Esta lista queda para el día que alguna línea no
+  deba ir contra entrega **a ningún precio**, que hoy no es el caso de ninguna.
+
+### La regla de lo tecnológico es por precio, no por categoría
+
+Decisión de negocio del 14 de septiembre de 2026, y conviene dejarla escrita con su
+consecuencia técnica porque se implementó mal una vez:
+
+> Lo tecnológico **por encima de COP 2.000.000** no va contra entrega. Un celular
+> **igual o por debajo** de esa cifra sí puede ir.
+
+El primer intento excluyó la línea `CELULARES` entera, y eso bloqueaba también los
+dos celulares del catálogo (1.299.900 y 1.499.900) — justo los que el negocio sí
+quiere despachar contra entrega. **La regla es por precio**, así que la implementa
+`CONTRAENTREGA_MONTO_MAXIMO`, que ya vale 2.000.000: nada que pase de esa cifra
+califica, sea un celular o una camiseta, y no hace falta ninguna lista.
+
+**Dónde la aproximación no es exacta, y hay que saberlo.** El techo se compara contra
+el **total del pedido**, y la regla del negocio habla de **un artículo**. Difieren en
+un carrito mezclado: un celular de 1.500.000 más ropa por 600.000 suma 2.100.000 y el
+techo lo rechaza, aunque ningún artículo pase de 2.000.000. El error va del lado
+seguro —se ofrece contraentrega de menos, nunca de más— y tiene sentido por sí mismo:
+lo que el mensajero carga en efectivo es el total, no el artículo más caro. Si algún
+día el negocio quiere la regla estrictamente por artículo, hay que llevarla al dominio
+como una regla sobre las líneas, no como un tope sobre la suma.
+
+**Y esto ya se probó con el catálogo real, no en teoría.** El 14 de septiembre de
+2026, el mismo día, lo tecnológico se amplió a relojes, audífonos, cargadores, cables
+de cargador, power banks, consolas, parlantes, computadores, tablets y proyectores.
+Entraron como **categorías** de la línea `TECNOLOGIA` (antes `CELULARES`), y **la
+regla de contraentrega no se tocó**: sigue siendo el techo por precio. Con la regla en
+una lista de categorías habrían sido diez entradas nuevas que alguien tenía que
+acordarse de escribir, y olvidar una era cuestión de tiempo.
 - **Historial del comprador.** Si un correo o un teléfono ya rechazó pedidos en la
   entrega, no se le ofrece más. Se registra, no se olvida.
 
@@ -268,8 +308,18 @@ devuelve todavía: un pendiente explícito para cuando se retome el panel
 administrativo.
 
 `[[ CONFIRMAR EN EL CONTRATO CON SKYDROPX: límites mínimo y máximo del recaudo
-—la ayuda pública reporta COP 2.000 y COP 2.000.000—, porcentaje de comisión,
-seguro obligatorio sobre el valor declarado y plazo de dispersión del dinero. ]]`
+—la ayuda pública reporta COP 2.000 y COP 2.000.000, y **esas son las cifras que
+el sistema ya está usando** desde el 14 de septiembre de 2026, sin contrato que las
+respalde: si el contrato real trae un tope menor, las guías se rechazarán al
+emitirlas con el pedido ya confirmado y el inventario reservado—, seguro
+obligatorio sobre el valor declarado y plazo de dispersión del dinero. ]]`
+
+El **porcentaje de comisión sale de esta lista** (14 de septiembre de 2026): no es
+un dato que bloquee código. La cifra real la pone la transportadora en cada
+liquidación y se teclea al conciliar (`ConciliarRecaudoComando.comisionRecaudo`),
+que es lo correcto — un porcentaje fijo en configuración sería una suposición sobre
+algo que varía envío a envío. Sigue siendo un dato de contrato que conviene conocer,
+pero para saber si el negocio pierde plata, no para poder desplegar.
 
 ## Transferencia manual
 

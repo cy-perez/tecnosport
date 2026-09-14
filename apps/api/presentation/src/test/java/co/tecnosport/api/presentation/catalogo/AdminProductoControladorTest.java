@@ -166,7 +166,7 @@ class AdminProductoControladorTest {
     repositorio.conProductos(producto);
     Marca nuevaMarca = Marca.crear("Under Trail");
     Categoria nuevaCategoria =
-        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.CELULARES);
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA);
     repositorioMarcas.conMarcas(nuevaMarca);
     repositorioCategorias.conCategorias(nuevaCategoria);
 

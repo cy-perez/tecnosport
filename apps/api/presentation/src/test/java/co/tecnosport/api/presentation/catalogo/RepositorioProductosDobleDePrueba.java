@@ -63,9 +63,17 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.resultadoAdmin = resultado;
   }
 
+  /** El último filtro con el que se buscó, para poder afirmar cómo lo tradujo el controlador. */
+  private FiltroProductos ultimoFiltro;
+
+  FiltroProductos ultimoFiltro() {
+    return ultimoFiltro;
+  }
+
   @Override
   public ResultadoPaginado<Producto> buscar(
       FiltroProductos filtro, OrdenProductos orden, String cursor, int tamanoPagina) {
+    this.ultimoFiltro = filtro;
     return resultadoBusqueda;
   }
 

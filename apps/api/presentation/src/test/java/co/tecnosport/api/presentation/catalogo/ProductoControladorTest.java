@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,6 +33,38 @@ class ProductoControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioProductosDobleDePrueba repositorio;
+
+  /**
+   * {@code CELULARES} fue una línea del catálogo hasta el 14 de septiembre de 2026, cuando el
+   * negocio amplió lo tecnológico y pasó a ser una <b>categoría</b> dentro de {@code TECNOLOGIA}.
+   *
+   * <p>Un enlace con {@code ?linea=CELULARES} —compartido por alguien, guardado en un marcador o ya
+   * indexado— sigue existiendo mucho después del cambio. Sin el alias respondería un error de
+   * filtro inválido: una página rota por una decisión interna de modelado que al comprador no le
+   * incumbe. Estas dos pruebas son lo único que impide que alguien "limpie" el alias más adelante
+   * sin saber para qué estaba.
+   */
+  @Test
+  void laLineaViejaDeCelularesSigueResolviendoALaLineaTecnologica() throws Exception {
+    repositorio.devolverEnBusqueda(new ResultadoPaginado<Producto>(List.of(), null));
+
+    mockMvc
+        .perform(get("/api/v1/productos").param("linea", "CELULARES"))
+        .andExpect(status().isOk());
+
+    assertEquals(LineaCatalogo.TECNOLOGIA, repositorio.ultimoFiltro().linea());
+  }
+
+  @Test
+  void laLineaTecnologicaSeAceptaPorSuNombreNuevo() throws Exception {
+    repositorio.devolverEnBusqueda(new ResultadoPaginado<Producto>(List.of(), null));
+
+    mockMvc
+        .perform(get("/api/v1/productos").param("linea", "TECNOLOGIA"))
+        .andExpect(status().isOk());
+
+    assertEquals(LineaCatalogo.TECNOLOGIA, repositorio.ultimoFiltro().linea());
+  }
 
   @Test
   void fichaEncontradaDevuelve200ConRotacionNulaSiNoEstaPublicado() throws Exception {

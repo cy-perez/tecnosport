@@ -46,9 +46,9 @@ function pedidoDePrueba(overrides: Partial<Pedido> = {}): Pedido {
   };
 }
 
-/** Un pedido visto por el endpoint de seguimiento: el mismo, mas sus retractos. */
+/** Un pedido visto por el endpoint de seguimiento: el mismo, mas su envio y sus retractos. */
 function seguimientoDePrueba(overrides: Parameters<typeof pedidoDePrueba>[0] = {}): Seguimiento {
-  return { ...pedidoDePrueba(overrides), retractos: [] };
+  return { ...pedidoDePrueba(overrides), envio: null, retractos: [] };
 }
 
 class RepositorioPedidosFalso implements RepositorioPedidos {
@@ -165,6 +165,20 @@ async function renderConPedidoEnMemoria(
   });
 }
 
+/**
+ * La cifra que corresponde a un rotulo del desglose: en un `<dl>`, el valor de un `<dt>` es el
+ * `<dd>` inmediatamente siguiente. Ata rotulo y numero, que es lo unico que prueba que la etiqueta
+ * no miente — que es el defecto que esta pantalla tuvo.
+ */
+function cifraDe(rotulo: string): string {
+  const dt = screen.getByText(rotulo);
+  const dd = dt.nextElementSibling;
+  if (!dd || dd.tagName !== 'DD') {
+    throw new Error(`"${rotulo}" no tiene un <dd> detras; el desglose cambio de forma.`);
+  }
+  return dd.textContent ?? '';
+}
+
 describe('EstadoPage', () => {
   it('con el pedido ya en memoria, lo muestra sin consultar al servidor', async () => {
     const pedidos = new RepositorioPedidosFalso();
@@ -256,6 +270,7 @@ describe('EstadoPage', () => {
   it('muestra el retracto del comprador cuando el seguimiento lo trae', async () => {
     const pedidos = new RepositorioPedidosFalso({
       ...pedidoDePrueba({ estado: 'DEVUELTO', metodoPago: 'TARJETA' }),
+      envio: null,
       retractos: [
         {
           estado: 'REEMBOLSADA',
@@ -289,5 +304,84 @@ describe('EstadoPage', () => {
 
     await screen.findByText(/TS-/);
     expect(screen.queryByText('Tu solicitud de retracto')).toBeNull();
+  });
+
+  // El desglose. Esta pantalla etiquetaba "Subtotal" sobre el total, y desde que el flete se cobra
+  // aparte era falso: es el unico sitio donde el comprador vuelve a mirar lo que pago.
+  it('desglosa subtotal, envio y total, y el total es la suma', async () => {
+    const pedidos = new RepositorioPedidosFalso(
+      seguimientoDePrueba({
+        estado: 'DESPACHADO',
+        metodoPago: 'TARJETA',
+        tipoEntrega: 'ENVIO_A_DOMICILIO',
+        subtotal: { valor: 300_000, moneda: 'COP' },
+        costoEnvio: { valor: 14_500, moneda: 'COP' },
+        total: { valor: 314_500, moneda: 'COP' },
+      }),
+    );
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    // Cada rotulo con SU cifra, y no los seis textos sueltos dentro del <dl>. La version anterior
+    // de esta prueba tomaba `subtotal.parentElement`, que es el <dl> entero: las seis afirmaciones
+    // se cumplian con los numeros en cualquier orden, asi que intercambiar subtotal y costoEnvio
+    // en la plantilla la dejaba verde. Y el defecto que este commit arregla era exactamente ese —
+    // un rotulo correcto sobre la cifra equivocada, sostenido meses porque las dos coincidian.
+    await screen.findByText('Subtotal');
+    expect(cifraDe('Subtotal')).toContain('300.000');
+    expect(cifraDe('Costo de envío')).toContain('14.500');
+    expect(cifraDe('Total a pagar')).toContain('314.500');
+  });
+
+  // El retiro en punto no paga flete, y los pedidos anteriores a la Fase 7 lo llevaban dentro del
+  // precio: una linea de "$ 0" no informa nada y en el segundo caso ademas mentiria.
+  it('sin flete cobrado no pinta la linea de envio', async () => {
+    const pedidos = new RepositorioPedidosFalso(seguimientoDePrueba());
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    await screen.findByText('Subtotal');
+    expect(screen.queryByText('Costo de envío')).toBeNull();
+  });
+
+  it('muestra la transportadora y la guia cuando el pedido ya se despacho', async () => {
+    const pedidos = new RepositorioPedidosFalso({
+      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'TARJETA' }),
+      envio: {
+        transportadora: 'Servientrega',
+        guia: 'SE123456',
+        despachadoEn: '2026-09-14T15:00:00Z',
+      },
+      retractos: [],
+    });
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    expect(await screen.findByText('Tu envío')).toBeTruthy();
+    expect(screen.getByText('Servientrega')).toBeTruthy();
+    expect(screen.getByText('SE123456')).toBeTruthy();
+  });
+
+  it('sin envio no pinta el bloque de envio', async () => {
+    const pedidos = new RepositorioPedidosFalso(
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+    );
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    await screen.findByText(/TS-/);
+    expect(screen.queryByText('Tu envío')).toBeNull();
   });
 });

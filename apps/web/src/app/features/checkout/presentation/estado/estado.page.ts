@@ -9,8 +9,11 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
-import { CriteriosSeguimiento, usarSeguimientoPedido } from '../../application/seguimiento-pedido.consulta';
-import { EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
+import {
+  CriteriosSeguimiento,
+  usarSeguimientoPedido,
+} from '../../application/seguimiento-pedido.consulta';
+import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
 import { esMetodoPagoWompi, puedeReintentarPago } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 
@@ -68,7 +71,9 @@ export class EstadoPage {
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
 
-  protected readonly pedido = computed<Pedido | null>(() => this.checkout.pedido() ?? this.consulta.data() ?? null);
+  protected readonly pedido = computed<Pedido | null>(
+    () => this.checkout.pedido() ?? this.consulta.data() ?? null,
+  );
 
   /**
    * Solo del seguimiento, nunca del store: el pedido que `CheckoutStore` guarda es el que acaba de
@@ -77,6 +82,15 @@ export class EstadoPage {
    */
   protected readonly retractos = computed<readonly RetractoPublico[]>(
     () => this.consulta.data()?.retractos ?? [],
+  );
+
+  /**
+   * Por el mismo motivo que los retractos: un pedido recién creado en esta visita todavía no se
+   * ha despachado, así que el envío solo puede venir del seguimiento. Es el dato que el correo de
+   * despacho anuncia y al que su enlace trae.
+   */
+  protected readonly envio = computed<EnvioPublico | null>(
+    () => this.consulta.data()?.envio ?? null,
   );
 
   protected etiquetaEstadoRetracto(estado: RetractoPublico['estado']): string {

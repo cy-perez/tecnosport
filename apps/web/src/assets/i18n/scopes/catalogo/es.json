@@ -21,7 +21,7 @@
     "linea": {
       "ropa_y_calzado": "Ropa y calzado",
       "bolsos": "Bolsos",
-      "celulares": "Celulares"
+      "tecnologia": "Tecnología"
     },
     "orden": {
       "relevancia": "Relevancia",
@@ -41,7 +41,7 @@
   "seo": {
     "rejilla": {
       "titulo": "Catálogo · Tecno Sport",
-      "descripcion": "Ropa y calzado deportivo, bolsos y celulares. Filtra por línea, categoría, marca y precio, y compra con envío a todo Colombia."
+      "descripcion": "Ropa y calzado deportivo, bolsos y tecnología. Filtra por línea, categoría, marca y precio, y compra con envío a todo Colombia."
     },
     "ficha": {
       "titulo": "Producto · Tecno Sport",

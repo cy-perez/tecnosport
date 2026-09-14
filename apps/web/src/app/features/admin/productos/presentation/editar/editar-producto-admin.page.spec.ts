@@ -35,7 +35,7 @@ const OTRA_CATEGORIA: Categoria = {
   id: 'c2',
   nombre: 'Celulares',
   slug: 'celulares',
-  linea: 'CELULARES',
+  linea: 'TECNOLOGIA',
 };
 
 function productoDePrueba(): ProductoAdmin {

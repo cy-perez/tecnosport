@@ -15,7 +15,7 @@ class ListarCategoriasTest {
     RepositorioCategoriasFalso repositorio = new RepositorioCategoriasFalso();
     Categoria bolsos = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
     Categoria celulares =
-        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.CELULARES);
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA);
     repositorio.conCategorias(bolsos, celulares);
 
     List<Categoria> resultado = new ListarCategorias(repositorio).ejecutar();

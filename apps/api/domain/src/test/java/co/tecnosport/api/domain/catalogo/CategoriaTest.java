@@ -20,6 +20,6 @@ class CategoriaTest {
   void rechazaNombreVacio() {
     assertThrows(
         ExcepcionDeDominio.class,
-        () -> Categoria.crear(" ", new Slug("x"), LineaCatalogo.CELULARES));
+        () -> Categoria.crear(" ", new Slug("x"), LineaCatalogo.TECNOLOGIA));
   }
 }

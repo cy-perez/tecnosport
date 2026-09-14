@@ -44,7 +44,8 @@
     "total_pendiente": "Shipping cost still missing",
     "nombre": "Recipient name",
     "telefono": "Contact phone",
-    "telefono_ayuda": "The carrier or courier calls this number before delivering."
+    "telefono_ayuda": "The carrier or courier calls this number before delivering.",
+    "iva_incluido": "Product prices include VAT."
   },
   "metodoPago": {
     "titulo": "Payment method",
@@ -104,6 +105,12 @@
         "reembolsada": "We refunded your money.",
         "rechazada": "We could not accept the request. Write to us and we will review it."
       }
+    },
+    "envio": {
+      "titulo": "Your shipment",
+      "transportadora": "Carrier",
+      "guia": "Tracking number",
+      "despachado_en": "Shipped on"
     }
   },
   "transferencia": {

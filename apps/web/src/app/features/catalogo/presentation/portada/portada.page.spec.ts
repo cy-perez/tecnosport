@@ -88,8 +88,8 @@ describe('PortadaPage', () => {
     expect(screen.getByRole('link', { name: 'Bolsos' }).getAttribute('href')).toBe(
       '/es/productos?linea=BOLSOS',
     );
-    expect(screen.getByRole('link', { name: 'Celulares' }).getAttribute('href')).toBe(
-      '/es/productos?linea=CELULARES',
+    expect(screen.getByRole('link', { name: 'Tecnología' }).getAttribute('href')).toBe(
+      '/es/productos?linea=TECNOLOGIA',
     );
   });
 

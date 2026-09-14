@@ -167,7 +167,10 @@ public class ConfiguracionEnvio {
             .map(nombre -> LineaCatalogo.valueOf(nombre.trim().toUpperCase(Locale.ROOT)))
             .collect(Collectors.toSet());
     return new CriteriosContraentrega(
-        propiedades.habilitada(), Dinero.deCop(propiedades.montoMaximo()), categoriasExcluidas);
+        propiedades.habilitada(),
+        Dinero.deCop(propiedades.montoMinimo()),
+        Dinero.deCop(propiedades.montoMaximo()),
+        categoriasExcluidas);
   }
 
   @Bean

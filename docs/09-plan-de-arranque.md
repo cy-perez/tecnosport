@@ -3582,15 +3582,16 @@ Orden de construcción, un caso de uso a la vez:
 
    Cuatro cosas más que aparecieron al construirlo:
 
-   - **Un párrafo del borrador no se publicó, porque el sistema no lo cumple.**
+   - **Un párrafo del borrador no se publicó, porque el sistema no lo cumplía.**
      Prometía el correo con la transportadora y el número de guía, y un enlace de
-     seguimiento. No hay correo de despacho —`TextoDeCorreo` tiene siete y ninguno
-     lo es— y la pantalla de estado del pedido no pinta transportadora ni guía,
-     aunque el endpoint de seguimiento ya las devuelva. Entra cuando el paso 7
-     emita la primera guía, en el commit que suba otra vez la fecha de versión.
+     seguimiento. No había correo de despacho —`TextoDeCorreo` tenía siete y ninguno
+     lo era— y la pantalla de estado del pedido no pintaba transportadora ni guía,
+     aunque el endpoint de seguimiento ya las devolviera.
      **La comprobación no la hizo ninguna herramienta**: salió de leer el párrafo
      y preguntarse si el sistema lo cumple, que es lo que la skill de vacíos
-     legales hace y ningún guardián sustituye.
+     legales hace y ningún guardián sustituye. **Publicado el 14 de septiembre**,
+     reescrito para no prometer el rastreo de eventos que no existe — ver "El
+     despacho visible" al final de esta fase.
    - **El borrador de `docs/12` §3 había envejecido.** Traía
      `[[PLAZO DE ENTREGA REAL]]` en el numeral 8 y perdía la dirección del punto de
      recogida; las dos se habían decidido el 10 de septiembre, después de
@@ -3627,6 +3628,114 @@ Tres de los que estaban en esta lista se cerraron el 10 de septiembre: el plazo 
 entrega real —decidiendo **no** prometer uno propio—, y la dirección y el horario
 del punto de recogida, que es Cra. 26C # 38B-31, barrio La Milagrosa, apto. 401,
 y se coordina al confirmar el pedido en vez de tener horario de mostrador.
+
+### El despacho visible, y la lista de pendientes que encogió (2026-09-14)
+
+El paso 7 dejó abiertas dos cosas que no eran el mismo tipo de cosa, y conviene
+separarlas antes de contar qué se hizo: una era **construir** —el correo de
+despacho y el bloque de envío, que tenían retenido un párrafo de los términos— y la
+otra era **decidir** unos datos de negocio. Se cerraron las dos, y la segunda
+encogió más de lo que decía la lista.
+
+**El despacho ya funcionaba de punta a punta, y esa fue la sorpresa.**
+`DespacharPedido` → `POST /api/v1/pedidos/{id}/despacho` → panel: la transición, la
+transportadora y la guía llevaban fases funcionando, y `GET /seguimiento` ya las
+devolvía. No hacía falta ninguna guía de Skydropx para que un pedido llegara a
+`DESPACHADO`. **La única persona que no se enteraba era la que espera el paquete**,
+y por eso el párrafo del numeral 8 estaba retenido. Lo que faltaba no era un
+mecanismo, era avisar.
+
+**Y la pantalla de estado no tenía un hueco, tenía un defecto vivo.** Etiquetaba
+`checkout.resumen.subtotal` sobre `p.total`. Mientras el flete iba dentro del precio
+las dos cifras coincidían y la etiqueta era inofensiva; desde el 11 de septiembre
+decía algo falso, en el único sitio donde el comprador vuelve a mirar lo que pagó.
+La lección se repite: **un texto que era verdadero se vuelve falso cuando cambia el
+modelo de cobro, sin que nadie lo edite**, y es el mismo patrón que dejó los
+términos prometiendo el envío incluido durante tres días.
+
+**No se podía arreglar solo en el front**, y ahí estaba la trampa fina:
+`PedidoSeguimientoRespuesta` no llevaba `subtotal` ni `costoEnvio`, así que el
+mapeador del front los rellenaba en 0 por su `?? 0`. Al añadirlos aparecen **dos
+cifras que se llaman igual y no son la misma**: `Pedido.costoEnvio()` es el precio
+congelado que el comprador pagó —su factura, se le debe mostrar— y
+`Envio.costoEnvio` es lo que la transportadora nos cobra, que es el margen y es
+justo el hallazgo 3 que se había cerrado. Confundirlas al desglosar habría reabierto
+la fuga sin que se notara. Verificado en la API real: despachado un pedido con
+tarifa de 9.540 y costo registrado de 7.200, el seguimiento devuelve 9.540.
+
+**El guardián del hallazgo 3 tuvo que cambiar de forma, y no se debilitó.** Afirmaba
+`!cuerpo.contains("costoEnvio")` sobre el texto crudo de la respuesta, y esa cadena
+pasó a aparecer de forma legítima. Aflojarlo a "que no venga con el valor
+equivocado" habría dejado pasar cualquier campo nuevo. Ahora fija **el juego exacto
+de llaves** del bloque `envio`, que es por donde se fue la fuga: cualquier campo que
+alguien agregue ahí tumba la prueba, se llame como se llame. Comprobado metiendo la
+fuga a propósito. Es el principio general: **cuando un guardián estorba, se
+reformula sobre lo que de verdad protege, no se afloja.**
+
+**Lo que el borrador prometía de más.** El párrafo retenido decía "podrás consultar
+el estado del envío desde el enlace de seguimiento", que se lee como el recorrido del
+paquete — y este sistema no consume eventos de la transportadora. El texto publicado
+lleva al estado del **pedido** y además dice lo que *no* hacemos: que el recorrido lo
+sigue la transportadora con ese número de guía y que aquí no se muestra. Decirlo es
+más honesto que callarlo. Hay una prueba que afirma en negativo que el correo tampoco
+lo promete, para que no se cuele después.
+
+**Dos detalles de mecánica que costaron su rato:**
+
+- `TextosDeCorreoMessageSource.RELLENO` tenía tres argumentos y el correo de despacho
+  necesita cuatro. El javadoc lo había anticipado, y la trampa es que quedarse corto
+  **no rompe el arranque por sí solo**: deja un `{3}` sin rellenar, que es exactamente
+  lo que la comprobación de arranque busca. El guardián ya estaba puesto para esto.
+- `APP_URL_PUBLICA` colgaba de `tecnosport.verificacion-correo`, donde nació, y la
+  recuperación de clave ya se la pedía prestada con una nota explicando el préstamo —
+  que es la señal de que el dato ya no era de quien lo tenía. El despacho habría sido
+  el segundo préstamo. Se promovió a `tecnosport.app`, **sin cambiar el nombre de la
+  variable de entorno**: ningún despliegue tiene que enterarse.
+
+**La versión de los legales no subió, y es una limitación del esquema.**
+`legales.comun.version` es una fecha, y esta publicación cayó el mismo día que la
+anterior: dos textos distintos comparten el identificador `2026-09-14`. Mismo criterio
+que horas antes, al corregir la nacionalidad del encargado. Si algún día importa —y
+para la constancia de autorización de datos podría—, la salida es un contador dentro
+del día, no fingir una fecha futura que todavía no está vigente.
+
+#### Los datos pendientes: tres entraron, dos no eran datos
+
+- **IVA sobre el flete: ya viene incluido.** El valor que devuelve la cotización se
+  cobra tal cual, así que ningún cálculo cambia. Lo que cambió es el texto: el
+  desglose dice que todos los valores incluyen IVA, **el del envío también**. Una
+  sola línea para todo el desglose y no una nota colgada del flete — señalarlo solo
+  ahí daría a entender que las demás líneas no lo llevan.
+- **Los topes del recaudo: COP 2.000 y COP 2.000.000**, el par que reporta la ayuda
+  pública de Skydropx. El máximo estuvo en 100.000 toda la fase, con una nota que
+  decía textualmente que era un marcador de desarrollo — una cifra provisional con la
+  etiqueta puesta, que es lo correcto, pero solo hasta que llega la de verdad. El
+  **mínimo no existía**, y es el límite menos obvio: el techo protege del riesgo que
+  se ve —despachar mercancía cara contra una promesa de pago—, y el piso de que la
+  transportadora simplemente no recauda por debajo de cierto valor. Ofrecer
+  contraentrega ahí sería prometer un medio de pago que nadie puede ejecutar, y el
+  comprador se enteraría con el mensajero enfrente. Los dos se miden contra el
+  **total con el flete dentro**, que es lo que se cobra en la puerta, y un rango
+  invertido se rechaza al construir en vez de dejar contraentrega "habilitada" y
+  jamás disponible.
+- **La entidad que firma con Skydropx: el mismo NIT que publica el pie.** El análisis
+  de responsable y encargado de la política de datos no cambia. Ningún código.
+- **La comisión del recaudo no era un dato pendiente.** Se teclea al conciliar
+  (`ConciliarRecaudoComando.comisionRecaudo`), que es lo correcto: la cifra real la
+  pone la transportadora en cada liquidación, y un porcentaje fijo en configuración
+  sería una suposición sobre algo que varía. Sigue siendo un dato de contrato útil
+  —para saber si el negocio pierde plata— pero **no bloquea desplegar**, que es lo que
+  la lista afirmaba de él.
+- **El peso y las dimensiones tampoco.** El `TODO` de `SembradorCatalogo` hablaba del
+  catálogo **sembrado**, que es ficción declarada; el de producción entra por el
+  panel, que exige las cuatro medidas desde la V32. No faltaba un valor, faltaba un
+  **procedimiento**: quién mide y con qué al cargar producto real. Así quedó
+  reescrito el `TODO`.
+
+La lección de estos dos últimos vale más que los datos: **una lista de pendientes se
+oxida**, y dos de sus cinco filas no describían nada que faltara. Revisar qué bloquea
+de verdad, antes de salir a conseguir el dato, ahorró dos conversaciones que no hacían
+falta.
 
 ## Cómo conversar con Claude Code en este proyecto
 

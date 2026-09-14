@@ -34,7 +34,7 @@ class MetodosDePagoDisponiblesTest {
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final CriteriosContraentrega CRITERIOS_PERMISIVOS =
-      new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+      new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
 
   private RepositorioProductosFalso productos;
   private CotizadorEnvioFalso cotizador;
@@ -169,7 +169,7 @@ class MetodosDePagoDisponiblesTest {
   @Test
   void elTopeDelRecaudoCuentaTambienElFlete() {
     CriteriosContraentrega topeJusto =
-        new CriteriosContraentrega(true, Dinero.deCop(60_000), Set.of());
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(60_000), Set.of());
     MetodosDePagoDisponibles caso = crear(topeJusto);
     cotizador.conTarifaQueRecauda();
 
@@ -177,6 +177,46 @@ class MetodosDePagoDisponiblesTest {
         caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
 
     assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
+  /**
+   * El piso, con la misma lógica que el techo y por el mismo motivo: lo que se compara es lo que el
+   * mensajero recauda en la puerta, flete incluido. Con mercancía de 50.000 y flete de 14.900 el
+   * recaudo son 64.900, así que un piso de 64.901 lo deja fuera por un peso — y un piso de 60.000
+   * lo dejaría dentro <b>solo</b> gracias al flete, que es la mitad que importa: mirando la
+   * mercancía sola, 50.000 no llega.
+   *
+   * <p>Esta prueba faltaba. El techo tenía la suya desde que se escribió el tope; el piso entró sin
+   * ninguna, y la única que decía cubrirlo vivía en el dominio afirmando sobre una función que
+   * recibe el monto ya sumado — no podía demostrar nada sobre la suma. Aquí sí: si alguien cambia
+   * esta línea por {@code carrito.total()} a secas, esta prueba cae y aquella no se enteraría.
+   */
+  @Test
+  void elPisoDelRecaudoCuentaTambienElFlete() {
+    CriteriosContraentrega pisoPorEncimaDelTotal =
+        new CriteriosContraentrega(true, Dinero.deCop(64_901), Dinero.deCop(10_000_000), Set.of());
+    MetodosDePagoDisponibles caso = crear(pisoPorEncimaDelTotal);
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
+  @Test
+  void elPisoSeCruzaGraciasAlFleteYNoSoloConLaMercancia() {
+    // 50.000 de mercancía no llegan a este piso; 50.000 + 14.900 sí. Si la suma desapareciera,
+    // contraentrega dejaría de ofrecerse aquí y esta prueba lo diría.
+    CriteriosContraentrega pisoEntreLaMercanciaYElTotal =
+        new CriteriosContraentrega(true, Dinero.deCop(60_000), Dinero.deCop(10_000_000), Set.of());
+    MetodosDePagoDisponibles caso = crear(pisoEntreLaMercanciaYElTotal);
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
+
+    assertTrue(disponibles.contains(MetodoPago.CONTRAENTREGA));
   }
 
   @Test
@@ -194,7 +234,7 @@ class MetodosDePagoDisponiblesTest {
   @Test
   void contraentregaNoDisponibleSiElTotalSuperaElMontoMaximo() {
     CriteriosContraentrega montoBajo =
-        new CriteriosContraentrega(true, Dinero.deCop(10_000), Set.of());
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000), Set.of());
     MetodosDePagoDisponibles caso = crear(montoBajo);
     cotizador.conTarifaQueRecauda();
 
@@ -208,7 +248,7 @@ class MetodosDePagoDisponiblesTest {
   void contraentregaNoDisponibleSiLaCategoriaDelCarritoEstaExcluida() {
     CriteriosContraentrega sinRopaYCalzado =
         new CriteriosContraentrega(
-            true, Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
     MetodosDePagoDisponibles caso = crear(sinRopaYCalzado);
     cotizador.conTarifaQueRecauda();
 

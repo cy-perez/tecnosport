@@ -556,6 +556,29 @@ class PedidoControladorTest {
    * El hallazgo 3 de docs/12-legales-de-envio.md, con su prueba. Era un defecto en produccion: el
    * seguimiento devolvia el {@code Envio} completo, con lo que la transportadora nos cobra y la
    * comision del recaudo, a cualquiera con un id de pedido y el correo correcto.
+   *
+   * <p><b>El guardian cambio de forma cuando el seguimiento empezo a desglosar lo cobrado.</b>
+   * Afirmaba {@code !cuerpo.contains("costoEnvio")} sobre el texto crudo, y esa cadena hoy aparece
+   * de forma legitima: es el precio congelado que el comprador pago ({@code Pedido.costoEnvio()}),
+   * que es su factura.
+   *
+   * <p><b>El primer reemplazo se quedo corto, y conviene dejar escrito por que.</b> Fijaba el juego
+   * de llaves del bloque {@code envio} —que es mas fuerte que antes para ese bloque, y ahi si se
+   * gano— pero perdia lo que la afirmacion vieja tenia de bueno: cubria <b>todo</b> el payload. La
+   * diferencia importa porque {@link MapeadorSeguimiento} no escribe todo a mano, pese a lo que
+   * dice su propio javadoc: copia objetos anidados enteros de la respuesta del panel ({@code
+   * lineas}, {@code contacto}, {@code direccion}, {@code datosTransferencia}). Un campo nuevo en
+   * {@code LineaPedidoRespuesta} —un flete prorrateado por linea, por ejemplo— saldria al comprador
+   * y ninguna prueba caeria. Con la afirmacion vieja caia.
+   *
+   * <p>Por eso ahora se fijan <b>los dos</b> juegos de llaves: el de la raiz y el del bloque {@code
+   * envio}. Cualquier campo que aparezca en cualquiera de los dos niveles tumba esta prueba, se
+   * llame como se llame y lo escriba quien lo escriba. Y se afirma ademas el valor: 0, el del
+   * pedido, y no los 12.000 de la transportadora.
+   *
+   * <p>La leccion general, que vale mas que el arreglo: <b>cuando un guardian estorba se reformula
+   * sobre lo que de verdad protege, y hay que comprobar que la formulacion nueva cubre todo lo que
+   * cubria la vieja</b> — no solo el caso que motivo el cambio.
    */
   @Test
   void elSeguimientoNoExponeElCostoRealDelFleteNiLaComisionDeRecaudo() throws Exception {
@@ -574,19 +597,93 @@ class PedidoControladorTest {
                 get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
                     .param("correo", "cliente@tecnosport.co"))
             .andExpect(status().isOk())
+            // El bloque del envio lleva estos tres campos y ni uno mas. `hasKey` sobre el mapa
+            // entero y no tres `exists`: lo que hay que impedir es el campo que nadie previo.
+            .andExpect(jsonPath("$.envio.transportadora").value("Interrapidisimo"))
+            .andExpect(jsonPath("$.envio.guia").value("GUIA-99"))
+            .andExpect(jsonPath("$.envio.despachadoEn").exists())
+            .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(3)))
+            // El juego de llaves de la raiz: los diecisiete campos de PedidoSeguimientoRespuesta.
+            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
+            // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
+            // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
+            // ni se entera — comprobado agregandolo a proposito.
+            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(8)))
+            // Y el costo de envio del pedido es el precio congelado, no el costo real del flete.
+            // Este pedido es de retiro en punto, asi que su precio de envio es 0; si alguien
+            // mapeara aqui `Envio.costoEnvio`, saldrian 12.000 y esta linea lo dice.
+            .andExpect(jsonPath("$.costoEnvio.valor").value(0))
+            .andExpect(jsonPath("$.subtotal.valor").value(50_000))
+            .andExpect(jsonPath("$.total.valor").value(50_000))
             .andReturn()
             .getResponse()
             .getContentAsString();
 
+    // La red que no depende de ningun nombre de campo, y es la mas importante de este metodo: el
+    // costo real del flete son 12.000 en este escenario, y esa cifra no puede aparecer en NINGUNA
+    // parte del cuerpo. Da igual como se llame el campo que la filtre, en que nivel este anidado o
+    // quien lo haya agregado — si el numero sale, la fuga esta abierta. Las cuentas de llaves de
+    // arriba dicen DONDE, esta dice QUE. Vale la pena porque el mapeador copia objetos enteros del
+    // panel y las cuentas solo cubren los niveles que alguien se acordo de contar.
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("12000"), cuerpo);
     // Sobre el texto crudo y no sobre un jsonPath: lo que hay que afirmar es que esos nombres no
     // aparecen en ninguna parte de la respuesta, no que un campo concreto venga nulo.
-    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("costoEnvio"));
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("comisionRecaudo"));
     // Las dos cifras que el panel necesita para decidir un reintegro tampoco salen: cuanto entro
     // por el pedido y cuanto ya se devolvio son datos de operacion, no del comprador. Se afirma
     // aqui porque MapeadorRespuestasPedido las agrego y MapeadorSeguimiento comparte su origen.
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("dineroRecibido"));
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("yaDevuelto"));
+  }
+
+  /**
+   * El desglose que el articulo 50 exige antes de pagar tiene que seguir siendo legible despues de
+   * comprar. Hasta aqui la respuesta del seguimiento solo traia el total, y la pantalla de estado
+   * lo pintaba bajo la etiqueta "Subtotal" — falso desde que el flete se cobra aparte.
+   */
+  @Test
+  void elSeguimientoDesglosaSubtotalYEnvioYElTotalEsLaSuma() throws Exception {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 7),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    java.util.UUID.randomUUID(),
+                    java.util.UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    java.util.UUID.randomUUID())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            new co.tecnosport.api.domain.pedido.Direccion(
+                "05", "Antioquia", "05001", "Medellin", "Cra. 26C #38B-31", null),
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            new co.tecnosport.api.domain.envio.TarifaEnvio(
+                "tar-1",
+                "Servientrega",
+                "Estandar",
+                Dinero.deCop(14_500),
+                3,
+                true,
+                Instant.now().plusSeconds(3600)));
+    pedidos.guardar(pedido);
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subtotal.valor").value(50_000))
+        .andExpect(jsonPath("$.costoEnvio.valor").value(14_500))
+        .andExpect(jsonPath("$.total.valor").value(64_500))
+        .andExpect(jsonPath("$.subtotal.moneda").value("COP"));
   }
 
   @Test
@@ -643,7 +740,7 @@ class PedidoControladorTest {
 
     @Bean
     CriteriosContraentrega criteriosContraentrega() {
-      return new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+      return new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
     }
 
     @Bean

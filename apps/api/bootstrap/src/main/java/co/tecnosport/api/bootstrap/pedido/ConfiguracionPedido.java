@@ -25,6 +25,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
+import co.tecnosport.api.bootstrap.compartido.PropiedadesApp;
 import co.tecnosport.api.bootstrap.compartido.PropiedadesLimitePedidos;
 import co.tecnosport.api.bootstrap.legal.PropiedadesLegal;
 import co.tecnosport.api.presentation.pedido.PropiedadesTransferenciaManual;
@@ -98,8 +99,19 @@ public class ConfiguracionPedido {
 
   @Bean
   public DespacharPedido despacharPedido(
-      RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios, Reloj reloj) {
-    return new DespacharPedido(repositorioPedidos, repositorioEnvios, reloj);
+      RepositorioPedidos repositorioPedidos,
+      RepositorioEnvios repositorioEnvios,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesApp propiedadesApp) {
+    return new DespacharPedido(
+        repositorioPedidos,
+        repositorioEnvios,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        propiedadesApp.urlPublica() + "/es/checkout/estado");
   }
 
   @Bean

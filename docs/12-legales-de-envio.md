@@ -84,17 +84,29 @@ así que ninguna cláusula nueva necesita un campo que nadie renderice. Esa
 comprobación no es de estilo: un párrafo escrito en el JSON que la plantilla no
 pinta, jurídicamente no está.
 
-**Un párrafo del borrador no se publicó, porque el sistema no lo cumple.** El numeral 8
-de abajo promete que "cuando despachemos tu pedido te enviaremos la empresa de transporte
-y el número de guía, y podrás consultar el estado del envío desde el enlace de seguimiento
-que te llega por correo". **Nada de eso existe hoy:** `TextoDeCorreo` tiene siete correos
-—retracto, cancelación, plazo vencido, atención y los dos de cuenta— y ninguno es de
-despacho; y la pantalla de estado del pedido (`features/checkout/presentation/estado`) no
-pinta transportadora, guía ni eventos, aunque
-`GET /api/v1/pedidos/{id}/seguimiento` ya los devuelva. Publicarlo habría creado
-exactamente el problema que este documento vino a cerrar, con otro signo: "la publicidad
-obliga". El párrafo entra **cuando el paso 7 emita la primera guía y exista el correo de
-despacho**, no antes — y ese es el commit donde vuelve a subir la fecha de versión.
+**El párrafo retenido se publicó el 14 de septiembre de 2026, y no dice lo que decía el
+borrador.** Estuvo fuera porque el sistema no lo cumplía: `TextoDeCorreo` tenía siete correos
+—retracto, cancelación, plazo vencido, atención y los dos de cuenta— y ninguno era de despacho,
+y la pantalla de estado no pintaba transportadora ni guía aunque
+`GET /api/v1/pedidos/{id}/seguimiento` ya las devolviera. Ahora las dos cosas existen: el correo
+de despacho (`PEDIDO_DESPACHO_*`) sale al despachar, con transportadora, guía y el enlace a la
+pantalla de estado, y esa pantalla pinta el bloque de envío.
+
+**Lo que el borrador prometía de más, y por eso se reescribió.** Decía "podrás consultar el
+estado del envío desde el enlace de seguimiento": eso se lee como el recorrido del paquete, y
+este sistema no consume eventos de la transportadora ni piensa hacerlo. El enlace lleva al estado
+del **pedido**. El texto publicado lo dice así y además dice lo que *no* hacemos —"el seguimiento
+del recorrido del paquete lo hace la empresa de transporte con ese número de guía; nosotros no lo
+mostramos en este sitio"—, que es más honesto que callarlo y deja cerrada la puerta a que alguien
+lo lea como una promesa nuestra. Hay una prueba que afirma en negativo que el correo tampoco lo
+promete (`TextosDeCorreoMessageSourceTest`), para que no se cuele después.
+
+**La versión no subió, y es una limitación del esquema, no un olvido.** `legales.comun.version`
+es una fecha, y esta publicación cae el mismo día que la anterior — así que dos textos distintos
+comparten el identificador `2026-09-14`. Es el mismo criterio que ya se aplicó horas antes, al
+corregir la nacionalidad del encargado. Un esquema por fecha no distingue dos publicaciones del
+mismo día; si eso llega a importar —y para la constancia de autorización de datos podría—, la
+salida es un contador dentro del día, no fingir una fecha futura que todavía no está vigente.
 
 **Publicado el 14 de septiembre de 2026, y adaptado en dos puntos del numeral 8.** Los
 borradores de abajo se redactaron el 8 de septiembre y envejecieron antes de usarse, así
@@ -294,6 +306,70 @@ verificada en el navegador**, no solo escrita en el JSON.
 
 ---
 
+## 3 bis. El catálogo tecnológico y lo que movió en los términos (14 de septiembre de 2026)
+
+El negocio amplió lo tecnológico —relojes, audífonos, cargadores, cables, power banks,
+consolas, parlantes, computadores, tablets y proyectores— y eso tocó dos numerales de
+los términos, con la norma verificada antes de escribir.
+
+**Numeral 2 (objeto).** Decía "ropa deportiva, calzado, bolsos y teléfonos celulares", y
+desde que entran computadores y proyectores describía un contrato más estrecho que la
+venta real. La redacción nueva enumera **"entre ellos"**, no de forma taxativa: una
+categoría más no vuelve a falsear el numeral, que es justo lo que acaba de pasar.
+
+**Numeral 10 (garantía).** Decía "ese mismo término de un año aplica a los teléfonos
+celulares nuevos", herencia de cuando se cerró `[[GARANTÍA DE CELULARES]]`. Con el
+catálogo ampliado, singularizar el celular insinuaba que lo demás tiene otro régimen.
+Ahora dice lo que es cierto: un año para todo producto nuevo, sin régimen especial para
+ninguno.
+
+### El hallazgo que dejó la revisión de la norma, y no está cerrado
+
+**El artículo 47 excluye del retracto los "bienes de uso personal"** (excepción 7 de
+siete). Verificado el 14 de septiembre de 2026 en tres fuentes independientes —SUIN,
+leyes.co y un concepto de la SIC— porque el material de referencia de la skill es un
+mapa y no una autoridad.
+
+Hasta ahora esa excepción era teórica aquí: ropa y bolsos se devuelven sin discusión y
+el celular no es de uso personal en ese sentido. **Con audífonos en el catálogo deja de
+serlo**, y hay dos caminos, los dos con costo:
+
+- **Nombrar la exclusión** en el numeral 9 y negar el retracto de audífonos. Es una
+  **interpretación**, no un hecho: que un audífono sea "bien de uso personal" no está
+  resuelto, y la SIC tiene dicho que *el retracto solo puede ser negado por las
+  excepciones establecidas en la ley*. Si la interpretación no se sostiene, negar un
+  retracto con el texto propio como prueba es peor que no haberlo escrito.
+- **Callar y aceptar el retracto**, que es lo que el texto hace hoy con su remisión
+  genérica al artículo 47. Cuesta devoluciones de producto abierto y es la lectura
+  favorable al consumidor, que es además la regla de interpretación legal.
+
+**Se dejó como está —sin exclusión nueva— y la decisión es de abogado.** Dos razones
+para no resolverla en silencio: la primera es que es una decisión de riesgo, no de
+redacción; la segunda es de coherencia, y sale de cotejar el texto con el código:
+**`SolicitudRetracto` no modela ninguna exclusión por categoría**. Escribir la exclusión
+habría creado una regla que ningún guardián verifica y que dependería de que una persona
+se acuerde al atender cada solicitud — exactamente el patrón que este documento existe
+para evitar.
+
+### Lo que se verificó y no aplica
+
+**Ley 2540 de 2025**, que apareció al verificar y el material de referencia de la skill
+no menciona: regula el pacto arbitral en relaciones de consumo y exige que la sola
+aceptación de términos y condiciones **no** valga como pacto arbitral. No toca este
+sitio: el numeral 18 remite a la ley colombiana y a la SIC, y no pacta arbitraje. Queda
+anotada porque el día que alguien quiera meter una cláusula arbitral, esa es la norma.
+
+### La versión no subió, y esta vez el matiz importa
+
+Cuarta publicación bajo `2026-09-14`. Lo que salva la constancia es que **la política de
+datos no cambió**: lo que se movió son los términos, así que `POLITICA_DATOS_VERSION`
+sigue apuntando al texto que el comprador efectivamente autorizó y la constancia del
+habeas data está intacta. El identificador ambiguo afecta al documento de términos, no
+al de datos. Aun así, cuatro textos distintos con la misma etiqueta en un día es la
+señal de que el contador dentro del día ya no es una mejora teórica.
+
+---
+
 ## 4. Campos por completar
 
 **Ninguno de estos marcadores se publica ya.** El 10 de septiembre de 2026 los
@@ -308,10 +384,13 @@ verdadero sin él.
 | `[[PLAZO DE ENTREGA REAL]]` | **Nada: se decidió no prometer plazo propio** (10 de septiembre de 2026). El sitio queda atado a los plazos de la transportadora y a la gestión de Skydropx, así que lo que obliga es el término legal | Decidido | El término legal supletivo de 30 días calendario, declarado como legal. En la Fase 7, el estimado de la cotización se muestra **como estimado** |
 | `[[HORARIO DE ATENCIÓN]]` | **Nada: cerrado con dato** (todos los días, 8:00 a.m.–9:00 p.m.). Es horario de canales, no de local | Decidido | Publicado en los términos y en el pie. No se emite como `openingHours` |
 | `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | **Nada: Resend también en producción** (`docs/07-infra-gcp.md`). La política de datos lo nombra | Decidido | Nombrado. Queda pendiente de contrato la región de procesamiento y la razón social |
-| `[[TRANSPORTADORA]]` | Se nombra a Skydropx y a las transportadoras el día que reciban datos, que es un paso de esta fase | Ya decidido (`ADR-0021/0023`); falta construirlo | "La empresa de transporte que despache tu pedido" |
+| ~~`[[TRANSPORTADORA]]`~~ | **Cerrado el 14 de septiembre de 2026.** La política de datos nombra a Skydropx S.A.S. con su NIT y a las transportadoras que ella contrata, y el numeral 8 de los términos ya dice que el correo de despacho trae la empresa de transporte y la guía | Decidido | Nombrado |
 | ~~Razón social exacta de Skydropx~~ | **Cerrado el 14 de septiembre de 2026, y la respuesta cambia el análisis: es colombiana.** **SKYDROPX S.A.S.**, sociedad por acciones simplificada constituida conforme a las leyes de la República de Colombia, **NIT 901.508.804-5**, domicilio principal en Bogotá D.C. Verificado en sus propios documentos, no en un directorio de empresas: los [términos y condiciones](https://www.skydropx.com.co/terminos-y-condiciones/) y el [aviso de privacidad](https://www.skydropx.com.co/aviso-privacidad/) de `skydropx.com.co` la identifican así, con el NIT en los dos | Decidido |
-| Límites y costos del recaudo | Mínimo, máximo, comisión, seguro obligatorio y plazo de dispersión. La ayuda pública reporta COP 2.000 y COP 2.000.000 | Contrato con Skydropx |
-| IVA sobre el flete cobrado | Si el costo de envío que se le cobra al comprador lleva IVA | Contador |
+| Límites del recaudo | **Mínimo y máximo cerrados el 14 de septiembre de 2026** con el par que reporta la ayuda pública: COP 2.000 y COP 2.000.000, en `PropiedadesContraentrega`. Siguen abiertos el seguro obligatorio y el plazo de dispersión, que no bloquean código | Contrato con Skydropx |
+| IVA sobre el flete cobrado | **Reabierto el 14 de septiembre de 2026, y con una respuesta distinta de la que se había dado.** Se cerró creyendo que el valor de la cotización ya traía IVA; al verificarlo resultó que son **dos preguntas**. El servicio de transporte de carga comprado suelto está excluido —eso es lo que se encuentra al buscar y es cierto—, pero el flete que el vendedor le recobra al comprador dentro de una venta gravada integra la **base gravable** por el **art. 447 del Estatuto Tributario** ("acarreos… aunque se facturen o convengan por separado y aunque, considerados independientemente, no se encuentren sometidos a imposición"), y el **Concepto DIAN 4945 de 2025** lo confirma para el transporte que contrata el vendedor, incluso subcontratado. Eximiría solo que el comprador contratara el transporte por su cuenta, que no es lo que hace este sitio. **Consecuencia:** hoy se cobra el `rate.total` sin sumarle el 19%, así que el impuesto saldría del margen en cada pedido a domicilio. Ver `docs/02-modelo-datos.md`. ~~El valor de la cotización ya viene con IVA y se cobra tal cual.~~ No hay nada que sumar, así que ningún cálculo cambia; lo que cambió es el texto — el desglose del checkout y de la pantalla de estado dice que todos los valores incluyen IVA, **el del envío también**. Una sola línea para todo el desglose y no una nota colgada del flete: señalarlo solo ahí daría a entender que las demás líneas no lo llevan | Decidido |
+| ~~Comisión del recaudo~~ | **Sale de esta lista: no bloquea código.** El dato real lo pone la transportadora por envío, y hoy se teclea al conciliar (`ConciliarRecaudoComando.comisionRecaudo`), que es lo correcto — un porcentaje fijo en configuración sería una suposición sobre una cifra que llega con cada liquidación. Sigue siendo un dato de contrato que conviene conocer, pero para saber si el negocio pierde plata, no para poder desplegar | Decidido |
+| ~~Peso y dimensiones del catálogo~~ | **No era un dato que faltara, era un procedimiento.** El `TODO` de `SembradorCatalogo` hablaba del catálogo sembrado, que es ficción declarada; el catálogo real entra por el panel, que exige las cuatro medidas desde la V32. Lo que faltaba por decidir es **quién mide y con qué** al cargar producto real, y así quedó reescrito el `TODO` | Decidido |
+| Entidad que firma con Skydropx | **Cerrado el 14 de septiembre de 2026: el mismo NIT que publica el pie** (`legales.comun.titular_aviso`). El análisis de responsable y encargado de la política de datos no cambia | Decidido |
 
 `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` **queda resuelto** y sale de la lista: lo
 paga el comprador, y no por decisión del negocio sino porque el art. 47 lo dice.
