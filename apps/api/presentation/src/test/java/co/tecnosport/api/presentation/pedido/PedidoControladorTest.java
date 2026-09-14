@@ -713,7 +713,7 @@ class PedidoControladorTest {
 
     @Bean
     CriteriosContraentrega criteriosContraentrega() {
-      return new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+      return new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
     }
 
     @Bean

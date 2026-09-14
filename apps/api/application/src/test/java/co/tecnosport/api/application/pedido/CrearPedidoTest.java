@@ -61,7 +61,7 @@ class CrearPedidoTest {
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final CriteriosContraentrega CRITERIOS_CONTRAENTREGA_PERMISIVOS =
-      new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+      new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
 
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(60);
@@ -399,7 +399,7 @@ class CrearPedidoTest {
   @Test
   void contraentregaSeRechazaSiEstaDeshabilitadaGlobalmente() {
     CriteriosContraentrega deshabilitada =
-        new CriteriosContraentrega(false, Dinero.deCop(10_000_000), Set.of());
+        new CriteriosContraentrega(false, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
     CrearPedido caso = crear(deshabilitada, true);
     publicarProductoConVarianteYExistencia(5);
 
@@ -411,7 +411,7 @@ class CrearPedidoTest {
   @Test
   void contraentregaSeRechazaSiElTotalSuperaElMontoMaximo() {
     CriteriosContraentrega montoBajo =
-        new CriteriosContraentrega(true, Dinero.deCop(10_000), Set.of());
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000), Set.of());
     CrearPedido caso = crear(montoBajo, true);
     publicarProductoConVarianteYExistencia(5);
 
@@ -424,7 +424,7 @@ class CrearPedidoTest {
   void contraentregaSeRechazaSiLaCategoriaEstaExcluida() {
     CriteriosContraentrega sinRopaYCalzado =
         new CriteriosContraentrega(
-            true, Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
     CrearPedido caso = crear(sinRopaYCalzado, true);
     publicarProductoConVarianteYExistencia(5);
 

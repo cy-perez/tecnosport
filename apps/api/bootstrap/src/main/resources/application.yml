@@ -81,14 +81,18 @@ tecnosport:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
   contraentrega:
-    # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a propósito.
-    # Se activa explícito cuando el negocio confirme cobertura, monto máximo y categorías
-    # excluidas reales — monto-maximo de abajo es un placeholder de desarrollo, no un límite
-    # decidido. categorias-excluidas sin variable (docs/07-infra-gcp.md,
+    # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
+    # Se activa explicito cuando el negocio confirme cobertura y categorias excluidas reales.
+    # categorias-excluidas sin variable (docs/07-infra-gcp.md,
     # CONTRAENTREGA_CATEGORIAS_EXCLUIDAS): lista separada por comas de LineaCatalogo
     # (ROPA_Y_CALZADO, BOLSOS, CELULARES) cuando exista.
     habilitada: ${CONTRAENTREGA_HABILITADA:false}
-    monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:100000}
+    # El rango que recauda la transportadora, no una preferencia del negocio: COP 2.000 y
+    # COP 2.000.000, lo que reporta la ayuda publica de Skydropx (docs/12-legales-de-envio.md, 4).
+    # El maximo estuvo en 100000, declarado en este mismo sitio como marcador de desarrollo.
+    # Se comparan contra el TOTAL del pedido, flete incluido: es lo que se cobra en la puerta.
+    monto-minimo: ${CONTRAENTREGA_MONTO_MINIMO:2000}
+    monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:2000000}
   skydropx:
     # El host de la cuenta colombiana NO está confirmado (docs/13-skydropx-capacidades.md, §6):
     # la documentación pública muestra pro.skydropx.com y sb-pro.skydropx.com, y según la fuente

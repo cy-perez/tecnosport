@@ -6,10 +6,11 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Las cuatro reglas de disponibilidad de contraentrega (docs/11-pagos-y-envios.md): cobertura de la
- * ciudad de destino, monto máximo, categorías excluidas, historial de rechazos del comprador. Pura
- * a propósito: quien orquesta ({@code application}) resuelve cobertura y rechazo previo contra sus
- * puertos antes de preguntarle a esta política — el dominio no sabe de repositorios.
+ * Las reglas de disponibilidad de contraentrega (docs/11-pagos-y-envios.md): cobertura de la ciudad
+ * de destino, monto dentro del rango que recauda la transportadora, categorías excluidas, historial
+ * de rechazos del comprador. Pura a propósito: quien orquesta ({@code application}) resuelve
+ * cobertura y rechazo previo contra sus puertos antes de preguntarle a esta política — el dominio
+ * no sabe de repositorios.
  */
 public final class PoliticaContraentrega {
 
@@ -32,6 +33,12 @@ public final class PoliticaContraentrega {
       return false;
     }
     if (compradorConRechazoPrevio) {
+      return false;
+    }
+    // El rango es de la transportadora, no del negocio: por debajo del piso no recauda, y por
+    // encima del techo no asume el riesgo. Se compara contra el total —mercancía más flete—,
+    // porque es lo que cobra en la puerta.
+    if (total.valor().compareTo(criterios.montoMinimo().valor()) < 0) {
       return false;
     }
     if (total.valor().compareTo(criterios.montoMaximo().valor()) > 0) {

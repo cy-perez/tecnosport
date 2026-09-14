@@ -34,7 +34,7 @@ class MetodosDePagoDisponiblesTest {
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final CriteriosContraentrega CRITERIOS_PERMISIVOS =
-      new CriteriosContraentrega(true, Dinero.deCop(10_000_000), Set.of());
+      new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
 
   private RepositorioProductosFalso productos;
   private CotizadorEnvioFalso cotizador;
@@ -169,7 +169,7 @@ class MetodosDePagoDisponiblesTest {
   @Test
   void elTopeDelRecaudoCuentaTambienElFlete() {
     CriteriosContraentrega topeJusto =
-        new CriteriosContraentrega(true, Dinero.deCop(60_000), Set.of());
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(60_000), Set.of());
     MetodosDePagoDisponibles caso = crear(topeJusto);
     cotizador.conTarifaQueRecauda();
 
@@ -194,7 +194,7 @@ class MetodosDePagoDisponiblesTest {
   @Test
   void contraentregaNoDisponibleSiElTotalSuperaElMontoMaximo() {
     CriteriosContraentrega montoBajo =
-        new CriteriosContraentrega(true, Dinero.deCop(10_000), Set.of());
+        new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000), Set.of());
     MetodosDePagoDisponibles caso = crear(montoBajo);
     cotizador.conTarifaQueRecauda();
 
@@ -208,7 +208,7 @@ class MetodosDePagoDisponiblesTest {
   void contraentregaNoDisponibleSiLaCategoriaDelCarritoEstaExcluida() {
     CriteriosContraentrega sinRopaYCalzado =
         new CriteriosContraentrega(
-            true, Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
     MetodosDePagoDisponibles caso = crear(sinRopaYCalzado);
     cotizador.conTarifaQueRecauda();
 

@@ -78,8 +78,17 @@ public class SembradorCatalogo implements ApplicationRunner {
    * Están duplicados en V32__paquete_por_variante.sql, que rellena las bases que ya existían. Si se
    * tocan aquí, se tocan allá.
    *
-   * TODO: peso y dimensiones reales de las variantes del catálogo de producción, medidos con el
-   * producto empacado. No se heredan de estos valores.
+   * Aquí hubo un TODO pidiendo "el peso y las dimensiones reales del catálogo de producción", y
+   * estaba mal planteado: figuraba en la lista de datos de negocio que bloquean el despliegue, y no
+   * bloquea nada. El catálogo de producción no sale de este sembrador —sale del panel, que exige
+   * las cuatro medidas desde la V32—, así que no hay ningún valor pendiente de averiguar para
+   * poder desplegar. Lo que sí falta es un **procedimiento**, y ese es el pendiente de verdad:
+   *
+   * TODO (procedimiento, no dato): definir quién mide y con qué al cargar un producto real —
+   * báscula y cinta disponibles, si se mide el producto empacado tal como sale o el empaque
+   * estándar de esa línea, y quién revisa el dato antes de publicar. La cotización se hace con esas
+   * cuatro cifras: medir de menos es cobrarle de menos al comprador y perder la diferencia en cada
+   * envío, y medir de más es ahuyentarlo con un flete que no corresponde.
    */
   private static final Paquete PAQUETE_CAMISETA = new Paquete(180, 30, 25, 4);
   private static final Paquete PAQUETE_TENIS = new Paquete(900, 33, 22, 13);
