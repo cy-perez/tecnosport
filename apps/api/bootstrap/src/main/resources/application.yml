@@ -102,9 +102,15 @@ tecnosport:
     cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
     cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
     webhook:
-      # Dónde viene la firma del evento. No está confirmado: la única pista es de una fuente no
-      # oficial (docs/13-skydropx-capacidades.md, sección 6). Por eso es variable y no constante.
+      # Dónde viene la firma del evento. Sigue siendo variable, pero ya no porque no se supiera:
+      # la plataforma deja elegir el nombre de la cabecera en el panel, con Authorization por
+      # omisión (docs/13-skydropx-capacidades.md, sección 6.1).
       cabecera-firma: ${SKYDROPX_CABECERA_FIRMA:authorization}
+      # El secreto con el que Skydropx firma el evento; se genera en el panel, en Conexiones >
+      # Webhooks, y todavía no lo tenemos. Marcador de desarrollo como las credenciales de arriba
+      # (regla dura #5): con este valor, toda firma se rechaza, que es lo correcto mientras no
+      # haya con qué verificar. Producción lo sobrescribe desde Secret Manager.
+      secreto: ${SKYDROPX_SECRETO_WEBHOOK:secreto_pendiente_de_configurar}
     seguimiento:
       # Cada cuánto le pregunta la conciliación a la transportadora por los envíos callados, y
       # desde cuándo se considera callado uno. Las doce horas no son capricho: menos que eso

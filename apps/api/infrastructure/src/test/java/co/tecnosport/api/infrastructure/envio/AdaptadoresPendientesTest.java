@@ -1,30 +1,23 @@
 package co.tecnosport.api.infrastructure.envio;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * Las tres piezas del seguimiento que todavía no se pueden escribir, porque la cuenta de sandbox no
+ * Las dos piezas del seguimiento que todavía no se pueden escribir, porque la cuenta de sandbox no
  * tiene créditos para emitir una guía y nadie ha visto un evento real
  * (docs/13-skydropx-capacidades.md, sección 6).
  *
- * <p>Parecen demasiado triviales para probarlas, y es justo al revés: son las tres que alguien va a
- * reemplazar. Sin esto, nada avisa si se quedan a medio implementar — y la del verificador es la
- * peor de las tres, porque un verificador que aceptara de más convierte un endpoint público en la
- * forma de marcar cualquier pedido como entregado.
+ * <p>Eran tres. La firma salió de esta lista el 14 de septiembre de 2026, cuando la documentación
+ * oficial resolvió el algoritmo: ver {@link VerificadorFirmaEnvioHmacTest}. Las otras dos siguen
+ * dependiendo de ver un evento de verdad, porque lo que falta de ellas es la <em>forma</em> del
+ * cuerpo, y esa no la dice ninguna especificación.
+ *
+ * <p>Parecen demasiado triviales para probarlas, y es justo al revés: son las que alguien va a
+ * reemplazar. Sin esto, nada avisa si se quedan a medio implementar.
  */
 class AdaptadoresPendientesTest {
-
-  @Test
-  void elVerificadorDeFirmaRechazaTodo() {
-    VerificadorFirmaEnvioPendiente verificador = new VerificadorFirmaEnvioPendiente();
-
-    assertFalse(verificador.esValida("{\"evento\":1}", "HMAC loquesea"));
-    assertFalse(verificador.esValida("{\"evento\":1}", null));
-    assertFalse(verificador.esValida("", ""));
-  }
 
   @Test
   void elLectorNoSabeLeerNingunCuerpo() {

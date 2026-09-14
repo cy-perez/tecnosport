@@ -3485,6 +3485,32 @@ Orden de construcción, un caso de uso a la vez:
      lista vacía. Los tres explican qué falta y qué pasaría si alguien los
      escribiera de memoria.
 
+   **La firma salió de esa lista el 14 de septiembre de 2026.**
+   `VerificadorFirmaEnvioHmac` reemplaza al adaptador que rechazaba todo, con el
+   algoritmo que la documentación oficial confirmó ese mismo día. Quedan dos
+   pendientes, y los dos por el mismo motivo: lo que les falta es la **forma** del
+   cuerpo, y esa no la dice ninguna especificación — hay que ver un evento.
+
+   Tres cosas que aparecieron al construirlo:
+
+   - **El secreto no existía.** `docs/07-infra-gcp.md` ya listaba
+     `SKYDROPX_SECRETO_WEBHOOK` y nadie lo había conectado: `PropiedadesWebhookEnvio`
+     solo tenía el nombre de la cabecera. Va con marcador de desarrollo, así que
+     **el webhook sigue sin verificar nada** — pero ahora lo que falta es un
+     secreto del panel, que es una variable de entorno, y no un algoritmo, que era
+     un despliegue de código.
+   - **El cuerpo llegaba como `String`, y eso era un fallo esperando.** Con
+     `application/json` sin `charset`, la decodificación la elige el convertidor de
+     Spring; si no fuera UTF-8, recodificar esa cadena para el HMAC daría bytes
+     distintos de los firmados en cuanto el evento trajera una tilde — el nombre de
+     una ciudad basta. El controlador recibe `byte[]` y decodifica UTF-8 a la
+     vista. Mismo género que el `getWriter()` en ISO-8859-1 de la Fase 4.
+   - **El valor esperado de la prueba no lo calcula la prueba.** Sale del **RFC
+     4231**, que publica vectores de HMAC-SHA-512; calcularlo con el mismo `Mac`
+     del adaptador habría dejado pasar un algoritmo equivocado, porque las dos
+     partes se equivocarían igual. Comprobado poniendo SHA-256 a propósito: cuatro
+     de las once pruebas fallan.
+
    **Lo que sigue esperando al saldo** es emitir la guía, y confirmar la firma y
    la forma del evento contra uno real. El día que lleguen los créditos, el paso
    7 es cambiar tres implementaciones, no montar el cableado.

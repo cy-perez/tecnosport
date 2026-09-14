@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.envio;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.ResultadoEventoDeEnvio;
 import jakarta.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,18 @@ import org.springframework.web.bind.annotation.RestController;
  * Los eventos de seguimiento de Skydropx. Público, con firma verificada antes de aplicar nada, y
  * siempre 200 — incluso cuando descarta (adr/0022, docs/03-api.md).
  *
- * <p><strong>El cuerpo se recibe como cadena y no como JSON parseado.</strong> Es deliberado: la
- * firma es un HMAC sobre los bytes que llegaron, y volver a serializar un objeto reordena claves y
- * cambia espacios, con lo que la firma deja de cuadrar por un motivo que nadie encuentra mirando el
- * código. El lector se encarga de parsearlo después, cuando ya está verificado.
+ * <p><strong>El cuerpo se recibe como {@code byte[]} y no como JSON parseado.</strong> Es
+ * deliberado: la firma es un HMAC sobre los bytes que llegaron, y volver a serializar un objeto
+ * reordena claves y cambia espacios, con lo que la firma deja de cuadrar por un motivo que nadie
+ * encuentra mirando el código. El lector se encarga de parsearlo después, cuando ya está
+ * verificado.
+ *
+ * <p><strong>Y son bytes, no una cadena, por la codificación.</strong> Con {@code @RequestBody
+ * String} la decodificación la elige el convertidor de Spring a partir del {@code Content-Type}, y
+ * un {@code application/json} sin {@code charset} no la fija: si no fuera UTF-8, volver a codificar
+ * esa cadena daría bytes distintos de los firmados en cuanto el evento trajera una tilde —el nombre
+ * de una ciudad basta— y la firma se caería sin que nada en el código lo explique. Recibiendo bytes
+ * y decodificando UTF-8 aquí, la ida y la vuelta son exactas y la decisión está a la vista.
  *
  * <p><strong>Siempre 200, y no por pereza.</strong> Firma inválida y guía desconocida no se
  * arreglan reintentando, así que un 4xx solo metería este endpoint en el ciclo de reintentos de la
@@ -57,10 +66,11 @@ public class EnvioWebhookControlador {
    * descarte. Morir antes con un 400 metería al proveedor en su ciclo de reintentos.
    */
   @PostMapping
-  public ResponseEntity<Void> webhook(@RequestBody String cuerpo, HttpServletRequest peticion) {
+  public ResponseEntity<Void> webhook(@RequestBody byte[] cuerpo, HttpServletRequest peticion) {
     String firma = peticion.getHeader(cabeceraFirma);
+    String cuerpoCrudo = new String(cuerpo, StandardCharsets.UTF_8);
     ResultadoEventoDeEnvio resultado =
-        transaccion.execute(estado -> recibirEvento.ejecutar(cuerpo, firma));
+        transaccion.execute(estado -> recibirEvento.ejecutar(cuerpoCrudo, firma));
     registrar(resultado);
     return ResponseEntity.ok().build();
   }
@@ -69,8 +79,9 @@ public class EnvioWebhookControlador {
     switch (resultado) {
       case FIRMA_INVALIDA ->
           log.warn(
-              "Evento de Skydropx descartado por firma: no verificable todavía"
-                  + " (docs/13-skydropx-capacidades.md, sección 6)");
+              "Evento de Skydropx descartado por firma inválida. Si se repite con eventos"
+                  + " legítimos, revisar SKYDROPX_SECRETO_WEBHOOK contra el panel"
+                  + " (Conexiones > Webhooks)");
       case NO_SE_PUDO_LEER ->
           log.warn("Evento de Skydropx con firma válida y cuerpo que no se supo leer");
       case GUIA_DESCONOCIDA -> log.warn("Evento de Skydropx para una guía que no es nuestra");
