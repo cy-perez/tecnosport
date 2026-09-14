@@ -3257,8 +3257,9 @@ peticiones por segundo; la **cotización es asíncrona** (`POST /quotations`, lu
 `GET /quotations/{id}` hasta `is_completed`, tarifas válidas 24 horas); el envío
 se crea con `quotation_id` más `rate_id`; y los estados de seguimiento son los
 doce que lista `ADR-0022`. Lo que **no** se pudo confirmar en fuente oficial y
-queda como `TODO`: el host base de la cuenta colombiana, el nombre exacto de la
-cabecera de firma del webhook, y los límites y comisiones del recaudo.
+queda como `TODO`: el host base de la cuenta colombiana, ~~el nombre exacto de la
+cabecera de firma del webhook~~ (confirmado el 14 de septiembre de 2026,
+`docs/13` §6.1), y los límites y comisiones del recaudo.
 
 Orden de construcción, un caso de uso a la vez:
 
@@ -3487,6 +3488,19 @@ Orden de construcción, un caso de uso a la vez:
    **Lo que sigue esperando al saldo** es emitir la guía, y confirmar la firma y
    la forma del evento contra uno real. El día que lleguen los créditos, el paso
    7 es cambiar tres implementaciones, no montar el cableado.
+
+   **Estado al 14 de septiembre de 2026: el saldo depende de Skydropx y ya se
+   les pidió.** No hay API de recarga, y la recarga del panel del sandbox
+   —que corre contra el sandbox de Mercado Pago— falló dos veces del lado de
+   ellos: una al crear el pago y otra con el pago aprobado por Mercado Pago y
+   sin acreditar en Skydropx. La solicitud se envió ese día con la evidencia.
+   El mismo mensaje lleva las tarifas que Servientrega, Envía y Coordinadora
+   rechazan por errores de la propia transportadora, que tampoco están en
+   nuestras manos. **No hay que volver a investigar ninguna de las dos cosas**:
+   el inventario completo, con identificadores, está en
+   `docs/13-skydropx-capacidades.md`, §6, "Estado al 14 de septiembre".
+   Lo que sí quedó resuelto sin ellos —la firma del webhook, por documentación
+   oficial— habilita implementar `VerificadorFirmaEnvio` mientras se espera.
 
    Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:
 

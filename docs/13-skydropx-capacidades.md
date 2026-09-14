@@ -243,6 +243,27 @@ mueva hay un paso con nombre propio.
 
 ## 6. Lo que se cerró con la cuenta real
 
+### Estado al 14 de septiembre de 2026: qué está en manos de Skydropx
+
+Léase esto antes de volver a probar nada contra el sandbox. Lo que sigue **ya
+se investigó hasta el fondo que permite la cuenta** y el detalle está en §6.1;
+repetir las pruebas no va a cambiar el resultado, porque el fallo está del lado
+de Skydropx y **la solicitud ya se les envió el 14 de septiembre de 2026**.
+
+| Tema | Estado | Qué falta y de quién depende |
+|---|---|---|
+| Firma del webhook | ✅ Resuelto con la documentación oficial | Implementar HMAC‑SHA512 sobre los bytes crudos, cabecera `Authorization: HMAC <firma>`; comprobar contra un evento real cuando haya guía. **Nuestro.** |
+| DHL en el panel | ✅ Resuelto: solo internacional | Nada. No aplica al negocio. |
+| Servientrega, Envía, Coordinadora sin tarifa | ⛔ Bloqueado por Skydropx | La API de cada transportadora rechaza lo que Skydropx le manda (valor declarado ausente o petición inválida). Solicitud enviada con identificadores de cotización. **De ellos.** |
+| Inter Rapidísimo `to_f >= 25` | ⏳ Verificación de origen pendiente | Plantilla `535bd77b-fce2-46f0-9354-56b9c42fba5f` en `pending_to_send`. **Una sola acción nuestra:** volver a cotizar con `address_from.address_template_id` desde el 16 de septiembre. Si sigue igual, es de ellos y ya está en la solicitud. |
+| Créditos del sandbox | ⛔ Bloqueado por Skydropx | No hay API de recarga. La recarga del panel corre contra el sandbox de Mercado Pago: un intento falló al crear el pago y otro fue aprobado por Mercado Pago y **no se acreditó**. Solicitud enviada. **De ellos.** |
+| Guía, webhook real, recolección, recaudo | ⏸ Esperan a los créditos | Cuando lleguen: emitir una guía con `auto_advance: true` y el ciclo entero se dispara solo. |
+
+Mientras Skydropx responde, lo que sí se puede hacer sin tocar el sandbox:
+implementar la verificación HMAC con pruebas de vector propio, decidir el
+tratamiento del valor declarado bajo 10.000 COP, y decidir si el origen pasa a
+ser una plantilla de dirección con identificador (§6.1, Inter Rapidísimo).
+
 **Sesión del 11 de septiembre de 2026 contra el sandbox**, con las credenciales
 de la cuenta. Todo lo que sigue se comprobó pidiendo cotizaciones de verdad: no
 hay una sola línea deducida de la documentación. Las respuestas capturadas —
@@ -296,11 +317,10 @@ recortadas, no reescritas— viven como fixtures en
   parecido pasó antes.
 - ⚠️ **Las transportadoras responden distinto en momentos distintos.** Con el
   mismo cuerpo se obtuvieron tarifas en una sesión y `tariff_price_not_found` en
-  otra. Servientrega y Envía lo devuelven de forma constante, lo que apunta a
-  transportadoras o planes sin activar en la cuenta.
-  `[[ CONFIRMAR EN EL PANEL: qué transportadoras y qué planes hay activos en el
-  sandbox, porque sin una tarifa estable no se puede verificar el camino feliz de
-  punta a punta. ]]`
+  otra. Servientrega y Envía lo devuelven de forma constante. **Resuelto en parte
+  el 14 de septiembre** (§6.1): no es un plan sin activar, es la API de cada
+  transportadora rechazando la petición que Skydropx le arma, y el error viene
+  escrito en `error_messages`.
 
 ### Sigue sin confirmarse
 
@@ -358,18 +378,292 @@ recortadas, no reescritas— viven como fixtures en
   un sobre de 20×15×2 y 100 gramos dentro de Medellín, que es el piso: la única
   transportadora que responde hoy y su tarifa mínima—. Se intentó emitir esa
   misma y devolvió el mismo error, así que con 1.000 no se puede emitir ni una.
-  No existe endpoint de saldo: se probaron siete rutas y las siete dan 404.
+  ~~No existe endpoint de saldo: se probaron siete rutas y las siete dan 404.~~
+  **Corregido el 14 de septiembre:** sí existe, `GET /api/v1/finance/credits`,
+  y responde `{"balance": 1000.0, "currency": "COP"}`. Las siete rutas del día 12
+  no eran esa. `GET /api/v1/transaction_stats` muestra el movimiento: un depósito
+  de 1.000 con origen `sandbox_registration` del 11 de septiembre.
 
-  `[[ CONFIRMAR CON LA CUENTA: cargar créditos de prueba en el sandbox, al menos
-  unos 100.000 para poder emitir varias guías y recorrer el ciclo entero
-  —emisión, webhook, conciliación y recaudo—. Sin eso no hay guía, y sin guía no
-  hay webhook que firmar ni evento que mapear: el resto del paso 7 de la Fase 7
-  está topado por la cuenta, no por el código. ]]`
+  **Cerrado el 14 de septiembre de 2026, del único modo posible:** se agotó la
+  vía de autoservicio (§6.1, "Créditos del sandbox") y **se envió la solicitud a
+  Skydropx** pidiendo unos 100.000 COP de prueba o la acreditación del pago que
+  Mercado Pago aprobó. Sin eso no hay guía, y sin guía no hay webhook que firmar
+  ni evento que mapear: el resto del paso 7 de la Fase 7 está topado por la
+  cuenta, no por el código.
 
-- ❌ **La firma del webhook** y **el cuerpo de `POST /pickups`**: siguen sin
-  confirmarse, y no se pueden confirmar hasta que exista un envío real.
+- ✅ **La firma del webhook, confirmada el 14 de septiembre de 2026 en la
+  documentación oficial** (sección *Webhooks* de `sb-pro.skydropx.com/es-CO/api-docs`,
+  que el navegador arma con JavaScript y por eso no llegaba en la descarga; el
+  texto está en el HTML servido, no en el OpenAPI). Detalle en §6.1. Lo que
+  sigue pendiente es **comprobarla contra un evento real**, que exige una guía, y
+  la guía exige créditos.
+- ❌ **El cuerpo de `POST /pickups`**: sigue sin confirmarse hasta que exista un
+  envío real.
 - ❌ **La comisión financiera del retiro a banco.** Es comercial, no técnica: va
   por el ejecutivo de cuenta.
+
+### 6.1 Sesión del 14 de septiembre de 2026: las cuatro preguntas para Skydropx
+
+Se habían acumulado cuatro preguntas para el soporte de Skydropx. Antes de
+mandarlas se volvió a leer la documentación —esta vez el OpenAPI completo, que
+está en `https://sb-pro.skydropx.com/es-CO/api-docs.json`, y el texto de la
+página, que sí trae la sección de webhooks— y se corrieron treinta y dos
+cotizaciones nuevas contra el sandbox variando una cosa a la vez. Lo que sigue
+es lo que cambia.
+
+**Dos de las cuatro no hay que preguntarlas: la respuesta ya estaba escrita.**
+
+#### La firma del webhook — resuelta, sin preguntar
+
+La documentación oficial dice, literalmente:
+
+- La cabecera por omisión es **`Authorization`**, y **su nombre se configura**
+  en el panel (entre 3 y 25 caracteres, sin espacios). La variable
+  `SKYDROPX_CABECERA_FIRMA` que ya existe es exactamente lo que hacía falta.
+- Dos modos: `Authorization: Bearer <token>` con un token estático que da
+  Skydropx (lo llaman "menos seguro"), o **`Authorization: HMAC <firma>`**.
+- La firma es **HMAC con SHA-512** (cita el RFC 6234), con la clave secreta
+  propia, **sobre el cuerpo crudo de la petición —"bytes exactos, sin
+  formato"— y codificada en hexadecimal en minúsculas**.
+- Se activa en el panel, en **Conexiones > Webhooks**. La URL debe ser HTTPS.
+- El cuerpo es JSON:API — `data.type` es `"packages"` para los eventos de
+  envío, con `attributes.status` (`delivered`, `in_return`…),
+  `tracking_number`, `tracking_url_provider`, `label_url`, `returned` y
+  `returned_status`, y `relationships.shipment.data.id`. Los dos últimos
+  **siempre vienen**, aunque el envío no esté en retorno. También llegan
+  eventos de tipo `orders`, `quotation`, `rate`, `extra_charges` y `pickups`,
+  así que el lector tiene que **filtrar por `data.type`** antes de buscar la
+  guía. Y aviso explícito: durante un retorno, las suscripciones **siguen
+  disparando el estado operativo real** (`in_transit`, `last_mile`), no
+  `in_return`; el retorno se lee en `returned: true`.
+- Por privacidad el evento no trae todo: hay que seguir el `links.related`
+  para el detalle.
+
+Con eso `VerificadorFirmaEnvioPendiente` ya puede dejar de rechazar todo:
+`Mac.getInstance("HmacSHA512")` sobre los bytes crudos, comparación en tiempo
+constante, prefijo `HMAC ` recortado. La prueba contra un evento real sigue
+siendo obligatoria antes de producción —el cuerpo se recibe como `String` y la
+codificación de los bytes importa—, pero ya no hay nada que inventar.
+
+#### DHL — resuelta, sin preguntar
+
+`GET /api/v1/shipments/carrier_services` —la ruta real del catálogo; la de la
+sección 1 sin el prefijo `shipments/` da 404— lista los siete servicios de la
+cuenta, y el de DHL es **`International Worldwide` con `is_national: false`**.
+Los otros seis son nacionales: Coordinadora Standard, Envía Paquete Terrestre,
+Envía Mercancía Terrestre, Inter Rapidísimo Standard, 99 minutes Next day y
+Servientrega Standard. Se comprobó por los dos lados: una cotización nacional
+con `requested_carriers: ["dhl"]` responde `found_carriers: ["dhl"]` y **cero
+tarifas**, y una internacional a Miami sí la trae —con
+`CARRIER_RESPONSE_ERROR ... status code 401 ... at DUTIES_AND_TAXES`, que en el
+sandbox es esperable—. DHL figura en el panel porque la cuenta lo tiene para
+exportar; TecnoSport no exporta. **No hay nada roto.**
+
+De paso: `requested_carriers` es el campo oficial para acotar la cotización a
+unas transportadoras, y la respuesta lo confirma en
+`quotation_scope.{carriers_scoped_to, found_carriers, not_found_carriers}`.
+
+**Las otras dos sí van a Skydropx, y ahora con evidencia en vez de con una
+sospecha.**
+
+#### Servientrega, Envía y —novedad— Coordinadora: el error lo escribe la transportadora
+
+`tariff_price_not_found` es, según el OpenAPI, "tarifa sin precio", y hoy llega
+acompañado de `error_messages` que el día 11 no venían:
+
+| Transportadora | Estado | `error_messages` |
+|---|---|---|
+| Servientrega Standard | `tariff_price_not_found` | `CARRIER_RESPONSE_ERROR: External carrier API service error: status code 400 reason: The request is invalid. at SHIPPING` |
+| Envía Paquete Terrestre | `tariff_price_not_found` | a veces vacío, a veces `... status code 400 reason: Falta Valor_Declarado. at SHIPPING` |
+| Envía Mercancía Terrestre | `not_applicable` | `longer_side debe ser mayor que 45`, `max_weight debe ser mayor que 9` (restricción propia: es para bultos grandes); con 40×30×25 y 12 kg pasa a `Falta Valor_Declarado` |
+| Coordinadora Standard | `not_applicable` | `CARRIER_RESPONSE_ERROR: External carrier API service error: La valoración de la guía es menor a la valoración mínima por guía del producto` |
+
+Los tres mensajes vienen de la API de la transportadora, no de una validación
+de Skydropx, y **ninguno cambia con nada que esté en nuestras manos**: se probó
+con valor declarado de 10.000, 25.000, 50.000, 100.000 y 1.000.000; con
+`declared_value` como número, como cadena y ausente del bulto; con
+`package_protected: true`; con todos los campos de dirección (nombre,
+teléfono, correo, referencia, barrio) en los dos extremos; con destino Bogotá,
+Medellín y Cali; con el endpoint v2. Siempre igual.
+
+La pista fuerte es Coordinadora: **el 11 de septiembre cotizó 19.616 con un
+valor declarado de 2.500** (la captura vive en `MapeadorCotizacionSkydropxV1Test`)
+y hoy dice que un valor de 1.000.000 es "menor al mínimo". Que Envía diga a la
+vez "falta valor declarado" apunta a lo mismo: **entre el 11 y el 14 de
+septiembre el sandbox dejó de reenviar el valor declarado a las
+transportadoras**. Encaja con otro cambio del mismo intervalo: el 11 se cotizaba
+con 2.500 y hoy `POST /quotations` responde
+`422 {"errors":{"declared_amount":["El valor declarado debe ser mayor o igual a 10000"]}}`
+—el mínimo asegurable de 10.000 que el centro de ayuda ya mencionaba y que ahora
+se valida en la entrada—. Y en el eco de la cotización el bulto vuelve como
+`{"package_protected": true, "declared_value": "10000.0", "protection_value": 0}`:
+si lo que viaja a la transportadora es `protection_value`, viaja en cero. Es una
+hipótesis; el diagnóstico es de ellos.
+
+Lo de Servientrega es distinto: `The request is invalid` con estado 400 es la
+API de Servientrega rechazando la petición entera, y con destino Cali responde
+`no_coverage` limpio, así que la ruta sí se evalúa. Eso huele a credenciales o
+a contrato de Servientrega sin configurar para esta cuenta de sandbox.
+
+**Consecuencia para el código, ya:** el mínimo de 10.000 en `declared_amount`
+es una regla de entrada. `MapeadorCotizacionSkydropxV1` manda
+`valorDeclaradoTotal()` tal cual, y un pedido de una media de 8.000 pesos
+recibiría un 422 y se quedaría sin envío a domicilio. Hay que decidir si el
+valor declarado se eleva al mínimo asegurable —declarar más de lo que vale no
+es mentir a la transportadora, es asegurar por más— o si ese pedido se ofrece
+solo con recogida. Es dato de negocio y va en el ADR, no aquí.
+
+#### Inter Rapidísimo y `to_f debe ser mayor que o igual a 25`
+
+El mensaje es un error de Rails con el nombre del atributo perdido: `to_f` es
+la conversión a decimal, y lo que se estaba validando era `algo.to_f >= 25`.
+Se verificó que **no depende de nada del paquete ni del destino**: falla igual
+con 0,1 kg y con 26 kg, con 20×15×2 y con 40×30×25, con valor declarado de
+10.000 y de 1.000.000, a Bogotá, a Medellín y a Cali, por v1 y por v2. El
+`weight` de su tarifa vuelve siempre `"0.0"`, o sea que la restricción se
+evalúa **antes** de calcular el peso: es una precondición de la cuenta, no del
+envío.
+
+Lo que sí es distinto en Inter Rapidísimo, y solo en ella: su tarifa es la
+única que trae **`requires_origin_verification: true`**, y el centro de ayuda
+colombiano tiene dos artículos que lo explican —"Cómo crear envíos con Inter
+Rapidísimo vía API" y "Cómo activar Inter Rapidísimo en mi cuenta"—: **antes de
+cotizar o crear un envío hay que guardar la dirección de origen como
+`address_template` y pedir su verificación**, la transportadora valida la
+cobertura **en hasta dos días hábiles**, y desde entonces se cotiza con
+`address_from.address_template_id`.
+
+Se hizo ese trámite en la sesión: se creó la plantilla
+`535bd77b-fce2-46f0-9354-56b9c42fba5f` ("TecnoSport origen (prueba)", tipo
+`from`, con la dirección real de despacho) y se pidió
+`verify_by_carriers` con `["interrapidisimo"]`; respondió `202` y la plantilla
+quedó con `verified_carriers: [{carrier_name: "interrapidisimo", status:
+"pending_to_send"}]`. Cotizar de inmediato con el `address_template_id` dio el
+mismo `to_f`, que es lo esperado con la verificación pendiente. **Hay que
+volver a cotizar el 16 de septiembre o después**: si con el origen verificado
+Inter Rapidísimo cotiza, el `to_f` era la verificación pendiente mal
+enunciada; si sigue igual, es un error de ellos y va con la evidencia de arriba.
+
+Nota para el diseño: si la cotización de Inter Rapidísimo exige una plantilla
+de origen verificada, el origen deja de ser solo cinco variables de entorno y
+pasa a ser también **un recurso en Skydropx con un identificador**, que habrá
+que configurar (`SKYDROPX_ORIGEN_TEMPLATE_ID` o equivalente) y mandar en
+`address_from`. Eso toca `OrigenDespacho` y el mapeador; se decide en el ADR
+cuando la verificación responda.
+
+#### Otras dos cosas que el OpenAPI aclaró de paso
+
+- **`POST /shipments` en sandbox acepta `auto_advance: true`**, que "simula la
+  progresión automática del tracking" (`created → picked_up → in_transit → …`).
+  Es la forma de ver webhooks de verdad sin esperar a que un paquete se mueva:
+  en cuanto haya créditos, una guía con `auto_advance` dispara el ciclo entero.
+- El rastreo por guía es `GET /api/v1/shipments/tracking?tracking_number=…&carrier_name=…`
+  —con parámetros de consulta, no en la ruta como decía la sección 1— y
+  devuelve una lista de eventos con `status`, `description`,
+  `event_description`, `location` y `date`. `event_description` "coincide con
+  la enviada por el webhook", que es lo que permite que la conciliación y el
+  webhook escriban el mismo `EventoSeguimiento`.
+
+#### Qué se le pregunta a Skydropx, entonces
+
+1. Servientrega, Envía y Coordinadora: los tres `error_messages` de la tabla,
+   con los identificadores de cotización `addd6512-fbbc-4a96-9ea5-c5e6aba534ed`
+   (Bogotá, 1 kg, declarado 10.000) y `cb4923ce-826d-4632-968a-0c96d605c6f4`
+   (declarado 1.000.000), y la cotización del 11 de septiembre en que
+   Coordinadora sí respondió, `19526bde-1c4e-4a3f-9f0e-3f2b7a51c9d2`. La
+   pregunta concreta: **¿el sandbox reenvía el valor declarado a las
+   transportadoras?**, y ¿Servientrega está configurada para esta cuenta?
+2. Inter Rapidísimo: si `to_f debe ser mayor que o igual a 25` es la
+   verificación de origen pendiente, que lo digan y de paso arreglen el
+   mensaje; si no lo es, qué atributo es. Se adjunta la plantilla
+   `535bd77b-fce2-46f0-9354-56b9c42fba5f` en `pending_to_send`.
+3. Créditos de prueba para el sandbox. **Se intentó la vía de autoservicio y
+   falló del lado de ellos** (ver abajo): la recarga por Mercado Pago en modo
+   prueba muere en `payment_creation_failed`. Se pide con la evidencia de esa
+   operación.
+
+DHL y la firma del webhook **no se preguntan**.
+
+#### Créditos del sandbox: hay una vía sin pasar por soporte
+
+Verificado el 14 de septiembre de 2026 en el propio panel
+(`sb-pro.skydropx.com`, con el selector de país en **Colombia**; en México el
+saldo aparece como `$0.00 MXN` y las opciones de pago son las mexicanas):
+
+- Por API no existe ninguna ruta que abone saldo: en finanzas solo hay
+  `GET /finance/credits` y `GET /finance/extra-charges`. El único movimiento de
+  la cuenta es el depósito de 1.000 con origen `sandbox_registration`.
+- El centro de ayuda describe la recarga por PSE, Mercado Pago o tarjeta con
+  comisión y factura, y no menciona créditos de prueba.
+- **Pero el botón "Agregar créditos" del sandbox funciona contra el ambiente de
+  pruebas de Mercado Pago.** Los tres métodos —PSE, Mercado Pago y Tarjetas—
+  cargan el SDK de Mercado Pago con la llave pública
+  `TEST-8c2eb7a4-98f5-42e7-b6e2-23506cc95a84`, y las llaves `TEST-` de Mercado
+  Pago son, por definición, las de su sandbox: no mueven dinero real. La página
+  además declara `window.env = "sandbox"`. El depósito mínimo es de 10 COP, la
+  comisión que muestra es 1,1 % (PSE y Mercado Pago) o 2,55 % (tarjeta) más
+  IVA, y pide datos de facturación después de tres cargas o al superar
+  104.748 COP.
+
+La vía, entonces, es: panel sandbox en Colombia → "Agregar créditos" →
+**Tarjetas** → cantidad (con 100.000 alcanza para varias guías) → pagar con una
+**tarjeta de prueba de Mercado Pago Colombia**, que están publicadas en su
+documentación (`mercadopago.com.co/developers/es/docs/your-integrations/test/cards`):
+Mastercard `5254 1336 7440 3564`, CVV `123`, vencimiento `11/30`, y el nombre
+del titular **`APRO`**, que es el que fuerza la aprobación. Con `OTHE` se
+simula un rechazo. Después se comprueba con `GET /api/v1/finance/credits`.
+
+**Se hizo, y no funcionó.** El 14 de septiembre de 2026 a las 11:01 (hora del
+checkout, UTC−4) se intentó una recarga de 100.000 COP por "Tarjetas" con la
+Mastercard de prueba y titular `APRO`. Mercado Pago abrió su Checkout Pro de
+sandbox (`sandbox.mercadopago.com.co`, `liveMode: false`, la misma llave
+`TEST-8c2eb7a4…`) y terminó en la pantalla "No pudimos procesar tu pago" con
+`payment_status: failed` y **`payment_status_detail: payment_creation_failed`**:
+el pago no fue rechazado por la tarjeta, **no llegó a crearse**. Datos de la
+operación: `preference_id 1143081151-e255d976-fff1-48b7-a4a7-718196b243f9`,
+`external_reference b38267b1-3183-4c00-9531-7d4bddf14797`, `collector_id
+1143081151`, `processing_mode aggregator`, `payment_method_id master`.
+
+El porqué está en la documentación de Mercado Pago, no en la nuestra: la
+compra de prueba con Checkout Pro se hace **iniciando sesión con un usuario de
+prueba comprador**, y las cuentas de prueba —vendedor y comprador— las crea el
+dueño de la aplicación, que es Skydropx. La integración de Skydropx manda al
+comprador como invitado con la llave `TEST-` de su cuenta real, que es justo la
+combinación que la comunidad de Mercado Pago reporta como "falla al crear el
+pago" con este mismo mensaje. No hay nada que se pueda cambiar desde nuestro
+lado: ni la llave, ni la preferencia, ni el usuario de prueba son nuestros.
+
+**Segundo intento, con la Visa de prueba `4013 5406 8274 6260`: Mercado Pago
+lo dio por acreditado y Skydropx no lo registró.** Revisado a las 10:13 de
+Colombia, minutos después del pago: `GET /api/v1/finance/credits` sigue en 1.000, `transaction_stats`
+sigue con un único movimiento (el depósito inicial) y la pantalla
+Administración > Finanzas > Movimientos del panel muestra lo mismo: ni
+depósito acreditado, ni pendiente, ni rechazado. El pago existe en el sandbox
+de Mercado Pago y no existe en Skydropx.
+
+Eso ubica el fallo en el tramo que va de Mercado Pago a Skydropx —el aviso de
+pago o la verificación del pago en su callback— y ese tramo es enteramente de
+ellos. La primera vía (Mastercard, `APRO`) falló al crear el pago; la segunda
+creó y aprobó el pago y no se acreditó. Las dos van en el mensaje a Skydropx,
+con el número de operación de Mercado Pago del segundo intento.
+
+De paso, el panel muestra en Facturación "Hay un error con tus datos de
+facturación" con botones Editar y Reintentar: los datos que se intentaron
+registrar no pasaron. No es prerrequisito de la recarga —la piden después de
+tres cargas o al superar 104.748 COP—, pero conviene decirlo en el mismo
+mensaje por si en su lado sí bloquea el abono.
+
+Dos datos más que el panel dejó a la vista, y que la API no decía:
+
+- El formulario de cotización acota el **valor declarado entre 10.000 y
+  5.000.000 COP**. Es el rango que hay que respetar en `declared_amount`, y el
+  tope es el primero con fuente para el máximo de `ADR-0023`.
+- La contraentrega tiene dos interruptores: "Contra entrega" (la transportadora
+  recauda el valor declarado) e **"Incluir costo del envío"** (el destinatario
+  paga el flete al recibir). Es la elección "solo producto" o "producto más
+  flete" de la sección 3, y confirma que **lo que se recauda es el valor
+  declarado**, así que el valor declarado del pedido contraentrega tiene que
+  ser el total a cobrar, no el mínimo asegurable.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
