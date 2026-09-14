@@ -21,10 +21,15 @@ estados propios de la plataforma: `created`, `picked_up`, `in_transit`,
 **`POST /api/v1/envios/webhook`**, público y con firma verificada antes de aplicar
 nada, exactamente como el de Wompi: evento sin firma válida se descarta y se
 registra. Skydropx firma con HMAC sobre el cuerpo usando el secreto del webhook
-que se configura en el panel. `TODO: confirmar el nombre exacto de la cabecera de
-firma y el algoritmo (la documentación pública menciona HMAC SHA-512) contra la
-cuenta real antes de implementar.` No se codifica de memoria: es el mismo error
-que ya costó una sesión con el vector de firma de Wompi.
+que se configura en el panel. ~~`TODO: confirmar el nombre exacto de la cabecera
+de firma y el algoritmo (la documentación pública menciona HMAC SHA-512) contra
+la cuenta real antes de implementar.`~~ **Confirmado el 14 de septiembre de 2026
+en la documentación oficial** (`docs/13-skydropx-capacidades.md`, §6.1): cabecera
+`Authorization` —nombre configurable en el panel—, formato `HMAC <firma>`,
+HMAC‑SHA512 sobre los bytes crudos del cuerpo, hexadecimal en minúsculas. Queda
+comprobarlo contra un evento real cuando la cuenta pueda emitir una guía. No se
+codifica de memoria: es el mismo error que ya costó una sesión con el vector de
+firma de Wompi.
 
 **Idempotente por identificador de evento**, y si Skydropx no manda uno propio,
 por el hash de la firma — el mismo truco que resolvió el webhook de Wompi. Un
