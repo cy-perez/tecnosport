@@ -456,7 +456,13 @@ class AdminPedidosControladorTest {
     @Bean
     DespacharPedido despacharPedido(
         RepositorioPedidos repositorioPedidos, RepositorioEnvios repositorioEnvios) {
-      return new DespacharPedido(repositorioPedidos, repositorioEnvios, Instant::now);
+      return new DespacharPedido(
+          repositorioPedidos,
+          repositorioEnvios,
+          (destinatario, asunto, cuerpo) -> {},
+          (texto, argumentos) -> texto.clave(),
+          Instant::now,
+          "https://tecnosport.co/es/checkout/estado");
     }
 
     @Bean

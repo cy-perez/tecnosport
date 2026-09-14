@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -29,13 +31,18 @@ class DespacharPedidoTest {
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
+  private static final String URL_ESTADO = "https://tecnosport.co/es/checkout/estado";
+
   private RepositorioPedidosFalso pedidos;
   private RepositorioEnviosFalso envios;
+  private EnviadorDeCorreoFalso correos;
 
   private DespacharPedido crear() {
     pedidos = new RepositorioPedidosFalso();
     envios = new RepositorioEnviosFalso();
-    return new DespacharPedido(pedidos, envios, new RelojFalso(AHORA));
+    correos = new EnviadorDeCorreoFalso();
+    return new DespacharPedido(
+        pedidos, envios, correos, new TextosDeCorreoFalso(), new RelojFalso(AHORA), URL_ESTADO);
   }
 
   private Pedido pedidoEnPreparacion() {
@@ -93,6 +100,7 @@ class DespacharPedidoTest {
 
     assertThrows(
         PedidoNoEncontradoException.class, () -> caso.ejecutar(comando(UUID.randomUUID())));
+    assertTrue(correos.enviados().isEmpty());
   }
 
   @Test
@@ -124,5 +132,48 @@ class DespacharPedidoTest {
     assertThrows(
         TransicionDeEstadoInvalidaException.class, () -> caso.ejecutar(comando(pedido.id())));
     assertTrue(envios.guardados().isEmpty());
+    // Ni envío huérfano, ni correo huérfano: avisar de un despacho que no ocurrió es peor que no
+    // avisar, porque el comprador se queda esperando un paquete que nadie entregó a nadie.
+    assertTrue(correos.enviados().isEmpty());
+  }
+
+  @Test
+  void avisaAlCompradorConLaTransportadoraLaGuiaYElEnlaceASuPedido() {
+    DespacharPedido caso = crear();
+    Pedido pedido = pedidoEnPreparacion();
+
+    caso.ejecutar(comando(pedido.id()));
+
+    assertEquals(1, correos.enviados().size());
+    EnviadorDeCorreoFalso.CorreoEnviado enviado = correos.enviados().get(0);
+    assertEquals(pedido.correo(), enviado.destinatario());
+    // La llave y sus datos, no la prosa: que la frase nombre la transportadora con sus tildes se
+    // afirma donde vive el texto, en TextosDeCorreoMessageSourceTest.
+    assertEquals(
+        "["
+            + TextoDeCorreo.PEDIDO_DESPACHO_ASUNTO.clave()
+            + "|"
+            + pedido.numeroPedido().valor()
+            + "]",
+        enviado.asunto());
+    assertTrue(
+        enviado.cuerpoHtml().startsWith("[" + TextoDeCorreo.PEDIDO_DESPACHO_CUERPO.clave() + "|"));
+    assertTrue(enviado.cuerpoHtml().contains("|Servientrega|SE123456|"));
+  }
+
+  @Test
+  void elEnlaceDelCorreoLlevaElIdYElCorreoCodificados() {
+    DespacharPedido caso = crear();
+    Pedido pedido = pedidoEnPreparacion();
+
+    caso.ejecutar(comando(pedido.id()));
+
+    String cuerpo = correos.enviados().get(0).cuerpoHtml();
+    // La pantalla de estado no pide sesión: se abre con estos dos datos y ningunos más. La arroba
+    // va codificada — sin eso, el enlace se rompe en los clientes de correo que lo reescriben.
+    assertTrue(
+        cuerpo.contains(
+            URL_ESTADO + "?pedidoId=" + pedido.id() + "&correo=cliente%40tecnosport.co"),
+        cuerpo);
   }
 }

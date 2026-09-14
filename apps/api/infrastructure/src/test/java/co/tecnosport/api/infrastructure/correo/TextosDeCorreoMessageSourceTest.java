@@ -25,7 +25,7 @@ class TextosDeCorreoMessageSourceTest {
   }
 
   /**
-   * Los veinticuatro textos, en los dos idiomas. Es la prueba que hace que {@code
+   * Los veintiséis textos, en los dos idiomas. Es la prueba que hace que {@code
    * correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
    */
   @Test
@@ -143,5 +143,63 @@ class TextosDeCorreoMessageSourceTest {
 
     assertTrue(es.contains("Verifica tu correo"), es);
     assertTrue(en.contains("Verify your email"), en);
+  }
+
+  /**
+   * El correo del despacho, que es lo que hace verdadero el párrafo del numeral 8 de los términos
+   * ("te enviaremos la empresa de transporte y el número de guía"). Si esta prueba cae, el texto
+   * publicado promete algo que el correo no dice, y la publicidad obliga.
+   */
+  @Test
+  void elCorreoDeDespachoNombraLaTransportadoraLaGuiaYElEnlace() {
+    String cuerpo =
+        textos()
+            .texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO,
+                "TS-2026-000001",
+                "Servientrega",
+                "SE123456",
+                "https://tecnosport.co/es/checkout/estado?pedidoId=1&correo=a%40b.co");
+
+    assertTrue(cuerpo.contains("Servientrega"), cuerpo);
+    assertTrue(cuerpo.contains("SE123456"), cuerpo);
+    assertTrue(cuerpo.contains("número de guía"), cuerpo);
+    assertTrue(cuerpo.contains("https://tecnosport.co/es/checkout/estado"), cuerpo);
+  }
+
+  /**
+   * Lo que el correo <b>no</b> puede decir. Este sistema no consume eventos de la transportadora ni
+   * enlaza a su rastreo: prometerlo en el correo sería la misma promesa vacía que tuvo retenido el
+   * párrafo del numeral 8 durante toda la fase, con otro signo.
+   */
+  @Test
+  void elCorreoDeDespachoNoPrometeRastreoDeEventos() {
+    String cuerpo =
+        textos()
+            .texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO,
+                "TS-2026-000001",
+                "Servientrega",
+                "SE123456",
+                "https://tecnosport.co/es/checkout/estado");
+
+    assertFalse(cuerpo.contains("rastre"), cuerpo);
+    assertFalse(cuerpo.contains("evento"), cuerpo);
+  }
+
+  /** Y el del despacho también está traducido, no es el castellano repetido. */
+  @Test
+  void elCorreoDeDespachoExisteEnIngles() {
+    ResourceBundleMessageSource fuente = new ResourceBundleMessageSource();
+    fuente.setBasename("correos");
+    fuente.setDefaultEncoding("UTF-8");
+    fuente.setFallbackToSystemLocale(false);
+
+    Object[] datos = {"TS-2026-000001", "Servientrega", "SE123456", "https://tecnosport.co/x"};
+    String en =
+        fuente.getMessage(TextoDeCorreo.PEDIDO_DESPACHO_CUERPO.clave(), datos, Locale.of("en"));
+
+    assertTrue(en.contains("tracking number"), en);
+    assertTrue(en.contains("Servientrega"), en);
   }
 }
