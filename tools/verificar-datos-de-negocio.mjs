@@ -11,11 +11,14 @@
 // La fuente de verdad es el bloque `pie` de es.json: son los datos que la Ley 1480 obliga a publicar
 // y los que el pie enseña. Cualquier otra aparición tiene que coincidir.
 //
+// Desde el 14 de septiembre de 2026 comprueba además que el texto legal no prometa que el precio
+// incluye el envío mientras el sistema lo cotiza aparte: la regla 4, al final.
+//
 // Y la versión de los legales, que es el caso más grave de los tres: si `legales.comun.version` se
 // separa de POLITICA_DATOS_VERSION, cada fila de `autorizacion_datos` apunta a una versión del texto
 // que nunca se publicó, y ese registro existe precisamente para poder demostrar qué aceptó quien
 // compró.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -139,6 +142,51 @@ const env = readFileSync(join(RAIZ, ".env.example"), "utf8");
 const enEnv = env.match(/^POLITICA_DATOS_VERSION=(.+)$/m)?.[1]?.trim();
 if (enEnv !== version) {
   problemas.push(`.env.example: POLITICA_DATOS_VERSION es ${enEnv}, y el texto publicado es ${version}`);
+}
+
+// --- 4. Si el sistema cotiza el flete, el texto legal no puede prometer que el precio lo incluye.
+//
+// Pasó, y duró tres días publicado: el checkout empezó a cobrar el envío por separado el 11 de
+// septiembre de 2026 y los términos siguieron diciendo "el precio publicado incluye además el costo
+// del envío: no hay cobros adicionales al final del proceso" hasta el 14. Un cobro adicional frente
+// a un documento propio que promete que no habrá ninguno es prueba escrita en contra.
+//
+// Esto es un contraste de frases, no una lectura del sentido: alguien puede prometer lo mismo con
+// otras palabras y este guardián no lo verá. Dispara en el caso que ya ocurrió, que es más de lo que
+// había — `npm run marcadores` nació igual, porque ninguna prueba mira el contenido de un texto
+// legal.
+const COTIZA_EL_ENVIO = existsSync(
+  join(RAIZ, "apps/api/application/src/main/java/co/tecnosport/api/application/envio/CotizarEnvio.java"),
+);
+
+// El `no` de "no incluye el costo del envío" es la frase correcta de hoy, y la que había antes era
+// la misma sin el `no`. Sin la mirada atrás, el guardián fallaría contra el texto que vino a exigir.
+const PROMESAS_DE_ENVIO_INCLUIDO = [
+  { patron: /(?<!\bno )incluye\b[^.]{0,40}\bcosto del env[ií]o/gi, que: "que el precio incluye el envío" },
+  { patron: /(?<!\bnot )includ(?:e|es)\b[^.]{0,40}\bshipping/gi, que: "que el precio incluye el envío, en inglés" },
+  { patron: /no hay cobros adicionales/gi, que: "que no hay cobros adicionales" },
+  { patron: /no additional charges/gi, que: "que no hay cobros adicionales, en inglés" },
+  { patron: /env[ií]os? gratis/gi, que: "envío gratis" },
+  { patron: /free shipping/gi, que: "envío gratis, en inglés" },
+];
+
+if (COTIZA_EL_ENVIO) {
+  for (const ruta of [
+    join(TEXTOS, "scopes/legales/es.json"),
+    join(TEXTOS, "scopes/legales/en.json"),
+  ]) {
+    readFileSync(ruta, "utf8")
+      .split("\n")
+      .forEach((linea, indice) => {
+        for (const { patron, que } of PROMESAS_DE_ENVIO_INCLUIDO) {
+          for (const encontrado of linea.match(patron) ?? []) {
+            problemas.push(
+              `${relative(RAIZ, ruta)}:${indice + 1}  el texto legal promete ${que} ("${encontrado}"), y el sistema cotiza el flete aparte (CotizarEnvio)`,
+            );
+          }
+        }
+      });
+  }
 }
 
 if (problemas.length > 0) {

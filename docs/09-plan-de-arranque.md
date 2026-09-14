@@ -3511,8 +3511,48 @@ Orden de construcción, un caso de uso a la vez:
    - **`package_content` es texto libre** y describe qué va dentro. Hay que
      decidir qué se escribe ahí: el nombre del producto, la categoría, o algo
      genérico. No es un detalle: es lo que lee quien revisa el paquete.
-8. **Textos legales**, en el mismo commit que enciende la cotización, con la
-   fecha de versión nueva.
+8. ~~**Textos legales**, en el mismo commit que enciende la cotización, con la
+   fecha de versión nueva.~~ **Hecho el 14 de septiembre de 2026.** Las cláusulas
+   de `docs/12-legales-de-envio.md`, sección 3, en español e inglés: precio sin
+   flete con el desglose antes de pagar (T&C 4), el total con envío y solo efectivo
+   en contraentrega (T&C 7), el numeral de envío reescrito entero (T&C 8), el
+   reintegro que incluye el flete de ida (T&C 9), y en la política de datos las
+   finalidades, Skydropx como encargado y la transferencia internacional.
+
+   **Y el enunciado de este paso se incumplió, que es el hallazgo.** "En el mismo
+   commit que enciende la cotización" quería decir el 11 de septiembre, cuando el
+   paso 5 dejó el checkout cobrando el flete aparte. El texto llegó tres días
+   después: durante esos tres días los términos publicados prometían que el precio
+   incluía el envío y que no había cobros adicionales, mientras el checkout cobraba
+   uno. Nadie lo vio porque **la regla vivía escrita en un documento y nada la hacía
+   cumplir** — es el mismo patrón del plugin de capas de la regla dura #1. Por eso
+   el cierre incluye un guardián: la regla 4 de `tools/verificar-datos-de-negocio.mjs`
+   falla si existe `CotizarEnvio` y el texto legal sigue prometiendo el envío
+   incluido. Se comprobó reinyectando la frase vieja: dispara en las cuatro
+   apariciones, dos por idioma.
+
+   Cuatro cosas más que aparecieron al construirlo:
+
+   - **Un párrafo del borrador no se publicó, porque el sistema no lo cumple.**
+     Prometía el correo con la transportadora y el número de guía, y un enlace de
+     seguimiento. No hay correo de despacho —`TextoDeCorreo` tiene siete y ninguno
+     lo es— y la pantalla de estado del pedido no pinta transportadora ni guía,
+     aunque el endpoint de seguimiento ya las devuelva. Entra cuando el paso 7
+     emita la primera guía, en el commit que suba otra vez la fecha de versión.
+     **La comprobación no la hizo ninguna herramienta**: salió de leer el párrafo
+     y preguntarse si el sistema lo cumple, que es lo que la skill de vacíos
+     legales hace y ningún guardián sustituye.
+   - **El borrador de `docs/12` §3 había envejecido.** Traía
+     `[[PLAZO DE ENTREGA REAL]]` en el numeral 8 y perdía la dirección del punto de
+     recogida; las dos se habían decidido el 10 de septiembre, después de
+     redactarlo. Pegarlo tal cual habría publicado un marcador y borrado un dato ya
+     cerrado. Un borrador no es el texto publicado.
+   - **Había una contradicción de fechas ya publicada.** El encabezado compartido
+     decía "vigente desde el 10 de septiembre" y las tres secciones de vigencia
+     —términos, privacidad y cookies— seguían en el 7, desde el cambio anterior. Se
+     homologaron las tres a la versión nueva.
+   - **Las ocho claves del checkout ya existían** desde el paso 5, así que este paso
+     fue solo los documentos legales. El plan las listaba en los dos sitios.
 
 **Los tres hallazgos que la auditoría legal dejó por escrito** y que no se pueden
 perder de vista al construir:

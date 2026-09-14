@@ -84,6 +84,32 @@ así que ninguna cláusula nueva necesita un campo que nadie renderice. Esa
 comprobación no es de estilo: un párrafo escrito en el JSON que la plantilla no
 pinta, jurídicamente no está.
 
+**Un párrafo del borrador no se publicó, porque el sistema no lo cumple.** El numeral 8
+de abajo promete que "cuando despachemos tu pedido te enviaremos la empresa de transporte
+y el número de guía, y podrás consultar el estado del envío desde el enlace de seguimiento
+que te llega por correo". **Nada de eso existe hoy:** `TextoDeCorreo` tiene siete correos
+—retracto, cancelación, plazo vencido, atención y los dos de cuenta— y ninguno es de
+despacho; y la pantalla de estado del pedido (`features/checkout/presentation/estado`) no
+pinta transportadora, guía ni eventos, aunque
+`GET /api/v1/pedidos/{id}/seguimiento` ya los devuelva. Publicarlo habría creado
+exactamente el problema que este documento vino a cerrar, con otro signo: "la publicidad
+obliga". El párrafo entra **cuando el paso 7 emita la primera guía y exista el correo de
+despacho**, no antes — y ese es el commit donde vuelve a subir la fecha de versión.
+
+**Publicado el 14 de septiembre de 2026, y adaptado en dos puntos del numeral 8.** Los
+borradores de abajo se redactaron el 8 de septiembre y envejecieron antes de usarse, así
+que pegarlos tal cual habría retrocedido dos decisiones ya tomadas. Primero: el borrador
+del numeral 8 todavía trae `[[PLAZO DE ENTREGA REAL]]` dentro del párrafo del plazo, y
+ese marcador se cerró el 10 de septiembre decidiendo **no** prometer plazo propio —
+publicarlo habría reintroducido un marcador a la vista y tumbado `npm run marcadores`.
+Se conservó la redacción vigente (el término legal de 30 días, declarado como legal) y se
+le sumó solo la frase nueva: que la fecha estimada del transportador es una estimación
+suya. Segundo: el borrador dice "recoger en nuestro punto de Medellín" sin dirección, y el
+texto vigente ya traía la de Cra. 26C # 38B-31 con la coordinación por WhatsApp o correo,
+cerrada también el 10 de septiembre. Se conservó. **Un borrador de un documento de
+trabajo no es el texto publicado**, y la diferencia entre los dos es exactamente lo que
+se decidió en el medio.
+
 **Los marcadores `[[ ]]` están traducidos**, y hay que resolver los dos lados a la
 vez: `[[PLAZO DE ENTREGA REAL]]` es `[[ACTUAL DELIVERY TIME]]` en inglés,
 `[[TRANSPORTADORA]]` es `[[COURIER]]`, `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` es
@@ -324,13 +350,36 @@ que el documento publicado promete y contra lo que la ley exige.
 ### Nivel 1 — bloquean el encendido de la cotización
 
 **1. El texto publicado quedará falso el día que se cobre el flete.**
-*Incoherencia de texto, no bug.* `apps/web/src/assets/i18n/scopes/legales/es.json:186`
-(y su par en `en.json`) dice que el precio incluye el envío y que "no hay cobros
-adicionales al final del proceso". Un cobro adicional frente a un documento propio
-que promete que no habrá ninguno es la prueba escrita en contra que la SIC lee sin
-discutir. **Cierre:** las cláusulas de la sección 3, en el mismo commit, más
-`legales.comun.version`, `legales.comun.vigencia` y `POLITICA_DATOS_VERSION`
-actualizadas — las tres van acopladas al texto y se mueven juntas.
+~~*Incoherencia de texto, no bug.*~~ **Cerrado el 14 de septiembre de 2026, y quedó
+falso tres días.** `apps/web/src/assets/i18n/scopes/legales/es.json:186` (y su par en
+`en.json`) decía que el precio incluye el envío y que "no hay cobros adicionales al
+final del proceso". Un cobro adicional frente a un documento propio que promete que
+no habrá ninguno es la prueba escrita en contra que la SIC lee sin discutir.
+
+**Lo que enseñó el cierre, y no estaba previsto:** la regla de este documento
+—publicar las cláusulas *en el mismo commit* que encienda la cotización— **no se
+cumplió**. El checkout empezó a cobrar el flete aparte el 11 de septiembre, al cerrar
+el paso 5, y el texto no se movió hasta el 14. No fue un descuido de criterio sino de
+mecánica: la regla vivía escrita en un documento y nada la hacía cumplir. Por eso el
+cierre no fueron solo las cláusulas, sino **la regla 4 de
+`tools/verificar-datos-de-negocio.mjs`**: si existe `CotizarEnvio`, el texto legal no
+puede prometer que el precio incluye el envío. Es un contraste de frases y no una
+lectura del sentido —alguien puede prometer lo mismo con otras palabras y no lo verá—,
+pero dispara en el caso que ya ocurrió. Se comprobó reinyectando la frase vieja a
+propósito: falla en las cuatro apariciones, dos por idioma.
+
+**Y apareció una contradicción de fechas que ya estaba publicada.** El encabezado de
+los tres documentos pinta una versión compartida (`legales.comun.version`), pero cada
+documento tenía además su propia sección de vigencia, y esas tres se quedaron en el 7
+de septiembre cuando el encabezado pasó al 10. Quien abría la política de cookies leía
+dos fechas distintas en la misma página. Se homologaron las tres al 14 de septiembre,
+que es lo coherente con un encabezado compartido: los tres documentos son un conjunto
+versionado junto, y el numeral 17 de los términos ya dice que a cada compra le aplica
+la versión vigente ese día.
+
+**Cierre aplicado:** las cláusulas de la sección 3, `legales.comun.version`,
+`legales.comun.vigencia`, las tres secciones de vigencia y `POLITICA_DATOS_VERSION`
+—en `application.yml` y en `.env.example`—, todo en el mismo commit.
 
 **2. El resumen del checkout no muestra ni el costo de envío ni el total a pagar.**
 ~~Pendiente.~~ **Cerrado el 13 de septiembre de 2026, y en dos pantallas y no en
