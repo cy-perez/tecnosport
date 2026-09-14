@@ -18,7 +18,7 @@ class PoliticaContraentregaTest {
    */
   private static final CriteriosContraentrega CRITERIOS =
       new CriteriosContraentrega(
-          true, Dinero.deCop(1), Dinero.deCop(1_000_000), Set.of(LineaCatalogo.CELULARES));
+          true, Dinero.deCop(1), Dinero.deCop(1_000_000), Set.of(LineaCatalogo.TECNOLOGIA));
 
   private static final CriteriosContraentrega CON_PISO =
       new CriteriosContraentrega(true, Dinero.deCop(2_000), Dinero.deCop(2_000_000), Set.of());
@@ -73,7 +73,7 @@ class PoliticaContraentregaTest {
         PoliticaContraentrega.disponible(
             CRITERIOS,
             Dinero.deCop(200_000),
-            Set.of(LineaCatalogo.ROPA_Y_CALZADO, LineaCatalogo.CELULARES),
+            Set.of(LineaCatalogo.ROPA_Y_CALZADO, LineaCatalogo.TECNOLOGIA),
             true,
             false));
   }

@@ -31,20 +31,31 @@ class RepositorioCategoriasJpaTest {
   @Autowired private RepositorioCategoriasJpa repositorio;
   @Autowired private CategoriaJpaRepository categorias;
 
+  /**
+   * Afirma el <b>orden</b> y la <b>presencia</b>, no el contenido exacto de la tabla. Usaba {@code
+   * containsExactly} con las dos filas que ella misma crea, lo que daba por hecho que la tabla
+   * arranca vacía — y dejó de ser cierto cuando {@code V38__linea_tecnologia.sql} pasó a sembrar
+   * las diez categorías tecnológicas, que son dato real del negocio y no siembra de desarrollo.
+   *
+   * <p>Una prueba de repositorio no debería depender de que nadie más haya escrito en la tabla: lo
+   * que tiene que demostrar es que {@code listarTodas} devuelve lo que hay, ordenado por nombre.
+   */
   @Test
   void listarTodasDevuelveLasCategoriasOrdenadasPorNombre() {
     categorias.save(
         new CategoriaJpaEntity(
-            UUID.randomUUID(), "Celulares", "celulares-tc1", "CELULARES", Instant.now()));
+            UUID.randomUUID(), "Zzz última", "zzz-ultima-tc1", "TECNOLOGIA", Instant.now()));
     categorias.save(
-        new CategoriaJpaEntity(UUID.randomUUID(), "Bolsos", "bolsos-tc1", "BOLSOS", Instant.now()));
+        new CategoriaJpaEntity(
+            UUID.randomUUID(), "Aaa primera", "aaa-primera-tc1", "BOLSOS", Instant.now()));
 
     List<Categoria> resultado = repositorio.listarTodas();
 
-    assertThat(resultado).extracting(Categoria::nombre).containsExactly("Bolsos", "Celulares");
+    assertThat(resultado).extracting(Categoria::nombre).contains("Aaa primera", "Zzz última");
+    assertThat(resultado).extracting(Categoria::nombre).isSorted();
     assertThat(resultado)
         .extracting(Categoria::linea)
-        .contains(LineaCatalogo.BOLSOS, LineaCatalogo.CELULARES);
+        .contains(LineaCatalogo.BOLSOS, LineaCatalogo.TECNOLOGIA);
   }
 
   @Test

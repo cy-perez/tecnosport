@@ -45,9 +45,9 @@ describe('filtroDesdeQueryParams', () => {
 
 describe('queryParamsDesdeFiltro', () => {
   it('solo incluye los campos presentes del filtro', () => {
-    const params = queryParamsDesdeFiltro({ linea: 'CELULARES', precioMax: 500000 });
+    const params = queryParamsDesdeFiltro({ linea: 'TECNOLOGIA', precioMax: 500000 });
 
-    expect(params).toEqual({ linea: 'CELULARES', precioMax: 500000 });
+    expect(params).toEqual({ linea: 'TECNOLOGIA', precioMax: 500000 });
   });
 
   it('un filtro vacío produce un objeto de params vacío', () => {

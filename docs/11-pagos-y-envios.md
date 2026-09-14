@@ -247,13 +247,13 @@ lo que el mensajero carga en efectivo es el total, no el artículo más caro. Si
 día el negocio quiere la regla estrictamente por artículo, hay que llevarla al dominio
 como una regla sobre las líneas, no como un tope sobre la suma.
 
-**Las líneas de catálogo que vienen.** Hoy `LineaCatalogo` tiene tres valores
-—`ROPA_Y_CALZADO`, `BOLSOS`, `CELULARES`— y lo tecnológico se va a ampliar: relojes,
-audífonos, cargadores, cables de cargador, power banks, consolas, parlantes,
-computadores, tablets y proyectores. Cuando entren, **la regla de contraentrega no
-cambia**: sigue siendo el techo por precio, y no hay que acordarse de agregar cada
-línea nueva a ninguna lista de exclusión. Esa es la ventaja de que la regla viva en el
-monto y no en la categoría, y la razón de dejarlo escrito aquí.
+**Y esto ya se probó con el catálogo real, no en teoría.** El 14 de septiembre de
+2026, el mismo día, lo tecnológico se amplió a relojes, audífonos, cargadores, cables
+de cargador, power banks, consolas, parlantes, computadores, tablets y proyectores.
+Entraron como **categorías** de la línea `TECNOLOGIA` (antes `CELULARES`), y **la
+regla de contraentrega no se tocó**: sigue siendo el techo por precio. Con la regla en
+una lista de categorías habrían sido diez entradas nuevas que alguien tenía que
+acordarse de escribir, y olvidar una era cuestión de tiempo.
 - **Historial del comprador.** Si un correo o un teléfono ya rechazó pedidos en la
   entrega, no se le ofrece más. Se registra, no se olvida.
 

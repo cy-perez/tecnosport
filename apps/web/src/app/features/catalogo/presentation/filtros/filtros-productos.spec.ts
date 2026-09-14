@@ -26,7 +26,7 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
       { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'CELULARES' },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
     ];
   }
 }

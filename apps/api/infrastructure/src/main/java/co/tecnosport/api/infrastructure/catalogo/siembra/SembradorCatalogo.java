@@ -139,7 +139,12 @@ public class SembradorCatalogo implements ApplicationRunner {
     CategoriaJpaEntity calzadoDeportivo =
         guardarCategoria("Calzado deportivo", "calzado-deportivo", "ROPA_Y_CALZADO", ahora);
     CategoriaJpaEntity bolsos = guardarCategoria("Bolsos", "bolsos", "BOLSOS", ahora);
-    CategoriaJpaEntity celulares = guardarCategoria("Celulares", "celulares", "CELULARES", ahora);
+    // "Celulares" es la única categoría tecnológica que se siembra, porque es la única con un
+    // producto de ejemplo detrás. Las otras diez —relojes, audífonos, cargadores…— viven en
+    // V38__linea_tecnologia.sql y no aquí: son dato real del negocio, y este sembrador solo corre
+    // con la tabla de productos vacía, así que nada que se ponga aquí llega a una base que ya
+    // tiene datos. Se comprobó poniéndolas aquí primero, y no aparecieron en ninguna parte.
+    CategoriaJpaEntity celulares = guardarCategoria("Celulares", "celulares", "TECNOLOGIA", ahora);
 
     AtributoJpaEntity tallaRopa =
         guardarAtributo("Talla", "TEXTO", List.of("S", "M", "L", "XL"), ahora);

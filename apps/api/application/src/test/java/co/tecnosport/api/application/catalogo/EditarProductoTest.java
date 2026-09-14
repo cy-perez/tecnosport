@@ -31,7 +31,7 @@ class EditarProductoTest {
     repositorioProductos.conProductos(producto);
     Marca nuevaMarca = Marca.crear("Under Trail");
     Categoria nuevaCategoria =
-        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.CELULARES);
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA);
     repositorioMarcas.conMarcas(marcaOriginal, nuevaMarca);
     repositorioCategorias.conCategorias(categoriaOriginal, nuevaCategoria);
 
