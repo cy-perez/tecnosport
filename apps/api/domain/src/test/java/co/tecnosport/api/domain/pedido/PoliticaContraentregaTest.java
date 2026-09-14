@@ -99,15 +99,18 @@ class PoliticaContraentregaTest {
   }
 
   /**
-   * El total incluye el flete, así que un pedido barato con envío puede cruzar el piso que la
-   * mercancía sola no cruzaba. Es a propósito: la transportadora cobra el total en la puerta, no el
-   * subtotal.
+   * El techo, con el piso puesto: los dos extremos del mismo rango, en la misma prueba.
+   *
+   * <p>Aquí hubo una prueba llamada {@code elRangoSeMideContraElTotalConElFleteDentro} y era una
+   * mentira cómoda: esta función recibe <b>un solo</b> {@code Dinero} ya sumado, así que no puede
+   * demostrar que lo que le llega sea el total y no el subtotal — pasar el subtotal por error la
+   * dejaba igual de verde. Esa regla vive en {@code MetodosDePagoDisponibles}, que es quien suma
+   * {@code carrito.total()} y el costo de la tarifa, y es ahí donde se prueba. Una prueba con
+   * nombre de garantía que no garantiza nada es peor que no tenerla: la próxima revisión la ve en
+   * la lista y da el tema por cubierto. Es el mismo patrón del plugin de capas de la regla dura #1.
    */
   @Test
-  void elRangoSeMideContraElTotalConElFleteDentro() {
-    assertTrue(
-        PoliticaContraentrega.disponible(
-            CON_PISO, Dinero.deCop(2_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+  void elTotalPorEncimaDelMaximoNoCalificaAunqueSupereElMinimo() {
     assertFalse(
         PoliticaContraentrega.disponible(
             CON_PISO, Dinero.deCop(2_000_001), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));

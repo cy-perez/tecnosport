@@ -165,6 +165,20 @@ async function renderConPedidoEnMemoria(
   });
 }
 
+/**
+ * La cifra que corresponde a un rotulo del desglose: en un `<dl>`, el valor de un `<dt>` es el
+ * `<dd>` inmediatamente siguiente. Ata rotulo y numero, que es lo unico que prueba que la etiqueta
+ * no miente — que es el defecto que esta pantalla tuvo.
+ */
+function cifraDe(rotulo: string): string {
+  const dt = screen.getByText(rotulo);
+  const dd = dt.nextElementSibling;
+  if (!dd || dd.tagName !== 'DD') {
+    throw new Error(`"${rotulo}" no tiene un <dd> detras; el desglose cambio de forma.`);
+  }
+  return dd.textContent ?? '';
+}
+
 describe('EstadoPage', () => {
   it('con el pedido ya en memoria, lo muestra sin consultar al servidor', async () => {
     const pedidos = new RepositorioPedidosFalso();
@@ -311,13 +325,15 @@ describe('EstadoPage', () => {
       correo: 'cliente@tecnosport.co',
     });
 
-    const subtotal = await screen.findByText('Subtotal');
-    const fila = subtotal.parentElement!;
-    expect(fila.textContent).toContain('300.000');
-    expect(fila.textContent).toContain('Costo de envío');
-    expect(fila.textContent).toContain('14.500');
-    expect(fila.textContent).toContain('Total a pagar');
-    expect(fila.textContent).toContain('314.500');
+    // Cada rotulo con SU cifra, y no los seis textos sueltos dentro del <dl>. La version anterior
+    // de esta prueba tomaba `subtotal.parentElement`, que es el <dl> entero: las seis afirmaciones
+    // se cumplian con los numeros en cualquier orden, asi que intercambiar subtotal y costoEnvio
+    // en la plantilla la dejaba verde. Y el defecto que este commit arregla era exactamente ese —
+    // un rotulo correcto sobre la cifra equivocada, sostenido meses porque las dos coincidian.
+    await screen.findByText('Subtotal');
+    expect(cifraDe('Subtotal')).toContain('300.000');
+    expect(cifraDe('Costo de envío')).toContain('14.500');
+    expect(cifraDe('Total a pagar')).toContain('314.500');
   });
 
   // El retiro en punto no paga flete, y los pedidos anteriores a la Fase 7 lo llevaban dentro del

@@ -187,6 +187,38 @@ class TextosDeCorreoMessageSourceTest {
     assertFalse(cuerpo.contains("evento"), cuerpo);
   }
 
+  /**
+   * El enlace del despacho, renderizado de verdad y con su cadena de consulta. Importa porque el
+   * puerto <b>escapa los argumentos para HTML por contrato</b>, así que el {@code &} que separa
+   * {@code pedidoId} de {@code correo} sale como {@code &amp;} dentro del {@code href}. Eso es
+   * correcto en HTML y es lo que se quiere — pero ninguna prueba lo miraba: la de aplicación usa un
+   * doble que no escapa, y la de arriba solo afirma sobre la raíz de la URL, sin parámetros.
+   *
+   * <p>Si esto se rompiera, el comprador no podría abrir su pedido desde el correo, que es
+   * exactamente lo que el numeral 8 de los términos acaba de prometer.
+   */
+  @Test
+  void elEnlaceDelDespachoSobreviveAlEscapadoDeHtml() {
+    String enlace =
+        "https://tecnosport.co/es/checkout/estado?pedidoId=01a0&correo=ana%40ejemplo.co";
+
+    String cuerpo =
+        textos()
+            .texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO,
+                "TS-2026-000001",
+                "Servientrega",
+                "SE123456",
+                enlace);
+
+    // El ampersand va escapado, que es lo correcto dentro de un atributo HTML...
+    assertTrue(cuerpo.contains("pedidoId=01a0&amp;correo=ana%40ejemplo.co"), cuerpo);
+    // ...y no doblemente escapado, que sí rompería el enlace.
+    assertFalse(cuerpo.contains("&amp;amp;"), cuerpo);
+    // Y la arroba codificada sigue codificada: si se escapara el %, el correo llegaría mal.
+    assertTrue(cuerpo.contains("%40"), cuerpo);
+  }
+
   /** Y el del despacho también está traducido, no es el castellano repetido. */
   @Test
   void elCorreoDeDespachoExisteEnIngles() {

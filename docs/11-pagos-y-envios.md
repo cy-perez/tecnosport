@@ -208,12 +208,26 @@ Es el método con más riesgo operativo del sistema, y el diseño lo refleja.
   contraentrega si al menos una de las tarifas cotizadas admite recaudo. Ya no hay
   tabla propia de cobertura cargada a mano: mantenerla era mantener a mano una
   copia peor de un dato que el proveedor ya da.
-- **Monto máximo.** Configurable en `CONTRAENTREGA_MONTO_MAXIMO`. Un celular de
-  cuatro millones contra entrega es una pérdida esperando ocurrir. Se conserva
-  aunque el proveedor tenga el suyo: un límite ajeno puede cambiar sin avisar, y
-  el negocio puede querer un techo más bajo.
-- **Categorías excluidas.** Configurable. La recomendación de arranque es excluir
-  celulares por encima del monto máximo y aceptar el resto.
+- **Rango del monto.** Configurable en `CONTRAENTREGA_MONTO_MINIMO` y
+  `CONTRAENTREGA_MONTO_MAXIMO`, y **se comparan contra el total del pedido, con el
+  flete dentro** (`adr/0023`): es lo que el mensajero cobra en la puerta, no la
+  mercancía sola. El techo existe porque un celular de cuatro millones contra
+  entrega es una pérdida esperando ocurrir; **el piso existe porque la
+  transportadora no recauda por debajo de cierto valor**, y ofrecerlo ahí sería
+  prometer un medio de pago que nadie puede ejecutar. Los dos valores del 14 de
+  septiembre de 2026 —COP 2.000 y COP 2.000.000— son los que **reporta la ayuda
+  pública de Skydropx**, no un contrato firmado: el marcador de abajo sigue
+  abierto. El negocio puede querer un techo más bajo que el del proveedor, y por
+  eso el valor es propio y no se lee de la plataforma.
+- **Categorías excluidas.** Configurable en `CONTRAENTREGA_CATEGORIAS_EXCLUIDAS`, y
+  desde el 14 de septiembre de 2026 trae **`CELULARES`** por omisión. No es solo
+  la recomendación de arranque que esta línea traía: mientras el techo estuvo en
+  100.000 ningún celular del catálogo pasaba y el tope hacía de lista de exclusión
+  sin que nadie lo hubiera decidido. Al subirlo a 2.000.000 los dos celulares
+  sembrados (1.299.900 y 1.499.900) quedaron elegibles, así que **esta lista pasó
+  de recomendación a única barrera**. Ojo: la lista excluye líneas de catálogo
+  enteras, no sabe de precios — lo tecnológico por encima de COP 2.000.000 lo frena
+  el techo, y una línea tecnológica nueva hay que agregarla a mano aquí.
 - **Historial del comprador.** Si un correo o un teléfono ya rechazó pedidos en la
   entrega, no se le ofrece más. Se registra, no se olvida.
 
@@ -268,8 +282,18 @@ devuelve todavía: un pendiente explícito para cuando se retome el panel
 administrativo.
 
 `[[ CONFIRMAR EN EL CONTRATO CON SKYDROPX: límites mínimo y máximo del recaudo
-—la ayuda pública reporta COP 2.000 y COP 2.000.000—, porcentaje de comisión,
-seguro obligatorio sobre el valor declarado y plazo de dispersión del dinero. ]]`
+—la ayuda pública reporta COP 2.000 y COP 2.000.000, y **esas son las cifras que
+el sistema ya está usando** desde el 14 de septiembre de 2026, sin contrato que las
+respalde: si el contrato real trae un tope menor, las guías se rechazarán al
+emitirlas con el pedido ya confirmado y el inventario reservado—, seguro
+obligatorio sobre el valor declarado y plazo de dispersión del dinero. ]]`
+
+El **porcentaje de comisión sale de esta lista** (14 de septiembre de 2026): no es
+un dato que bloquee código. La cifra real la pone la transportadora en cada
+liquidación y se teclea al conciliar (`ConciliarRecaudoComando.comisionRecaudo`),
+que es lo correcto — un porcentaje fijo en configuración sería una suposición sobre
+algo que varía envío a envío. Sigue siendo un dato de contrato que conviene conocer,
+pero para saber si el negocio pierde plata, no para poder desplegar.
 
 ## Transferencia manual
 

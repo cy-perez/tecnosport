@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -159,6 +160,34 @@ class DespacharPedidoTest {
     assertTrue(
         enviado.cuerpoHtml().startsWith("[" + TextoDeCorreo.PEDIDO_DESPACHO_CUERPO.clave() + "|"));
     assertTrue(enviado.cuerpoHtml().contains("|Servientrega|SE123456|"));
+  }
+
+  /**
+   * La afirmacion en negativo, y es la que de verdad protege algo. {@link DespacharPedido} es la
+   * unica clase del sistema que tiene las dos cifras a la vez en el mismo metodo: {@code
+   * comando.costoEnvio()} es lo que la transportadora nos cobra —lo teclea un administrador en el
+   * panel— y {@code pedido.costoEnvio()} es lo que pago el comprador. Hoy el correo lleva el
+   * segundo y ninguno mas.
+   *
+   * <p>Sin esta prueba, agregar un quinto argumento con el costo real pasaba todo lo demas: el
+   * {@code contains} de la prueba de arriba, la de rastreo —que solo mira "rastre" y "evento"— y la
+   * comprobacion de arranque de los textos, porque {@code RELLENO} ya tiene cuatro. El margen del
+   * negocio habria acabado en la bandeja de entrada del comprador, en un correo que se reenvia y se
+   * guarda para siempre.
+   */
+  @Test
+  void elCorreoDeDespachoNoLlevaElCostoRealDelFlete() {
+    DespacharPedido caso = crear();
+    Pedido pedido = pedidoEnPreparacion();
+
+    caso.ejecutar(comando(pedido.id()));
+
+    EnviadorDeCorreoFalso.CorreoEnviado enviado = correos.enviados().get(0);
+    // 15.000 es el costo que el comando registra para la transportadora. No puede salir ni en el
+    // asunto ni en el cuerpo, con ningun formato.
+    assertFalse(enviado.cuerpoHtml().contains("15000"), enviado.cuerpoHtml());
+    assertFalse(enviado.cuerpoHtml().contains("15.000"), enviado.cuerpoHtml());
+    assertFalse(enviado.asunto().contains("15000"), enviado.asunto());
   }
 
   @Test

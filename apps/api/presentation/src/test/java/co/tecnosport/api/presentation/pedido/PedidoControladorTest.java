@@ -557,14 +557,28 @@ class PedidoControladorTest {
    * seguimiento devolvia el {@code Envio} completo, con lo que la transportadora nos cobra y la
    * comision del recaudo, a cualquiera con un id de pedido y el correo correcto.
    *
-   * <p><b>El guardian cambio de forma cuando el seguimiento empezo a desglosar lo cobrado, y
-   * conviene decir por que no se debilito.</b> Afirmaba {@code !cuerpo.contains("costoEnvio")}
-   * sobre el texto crudo, y esa cadena hoy aparece de forma legitima: es el precio congelado que el
-   * comprador pago ({@code Pedido.costoEnvio()}), que es su factura. Bajar la afirmacion a "que no
-   * venga con el valor equivocado" habria dejado pasar cualquier campo nuevo. En su lugar se fija
-   * <b>el juego exacto de llaves</b> del bloque {@code envio} — el unico sitio por donde se fue la
-   * fuga—, asi que cualquier campo que alguien agregue ahi tumba esta prueba, se llame como se
-   * llame. Y se afirma ademas el valor: 0, el del pedido, y no los 12.000 de la transportadora.
+   * <p><b>El guardian cambio de forma cuando el seguimiento empezo a desglosar lo cobrado.</b>
+   * Afirmaba {@code !cuerpo.contains("costoEnvio")} sobre el texto crudo, y esa cadena hoy aparece
+   * de forma legitima: es el precio congelado que el comprador pago ({@code Pedido.costoEnvio()}),
+   * que es su factura.
+   *
+   * <p><b>El primer reemplazo se quedo corto, y conviene dejar escrito por que.</b> Fijaba el juego
+   * de llaves del bloque {@code envio} —que es mas fuerte que antes para ese bloque, y ahi si se
+   * gano— pero perdia lo que la afirmacion vieja tenia de bueno: cubria <b>todo</b> el payload. La
+   * diferencia importa porque {@link MapeadorSeguimiento} no escribe todo a mano, pese a lo que
+   * dice su propio javadoc: copia objetos anidados enteros de la respuesta del panel ({@code
+   * lineas}, {@code contacto}, {@code direccion}, {@code datosTransferencia}). Un campo nuevo en
+   * {@code LineaPedidoRespuesta} —un flete prorrateado por linea, por ejemplo— saldria al comprador
+   * y ninguna prueba caeria. Con la afirmacion vieja caia.
+   *
+   * <p>Por eso ahora se fijan <b>los dos</b> juegos de llaves: el de la raiz y el del bloque {@code
+   * envio}. Cualquier campo que aparezca en cualquiera de los dos niveles tumba esta prueba, se
+   * llame como se llame y lo escriba quien lo escriba. Y se afirma ademas el valor: 0, el del
+   * pedido, y no los 12.000 de la transportadora.
+   *
+   * <p>La leccion general, que vale mas que el arreglo: <b>cuando un guardian estorba se reformula
+   * sobre lo que de verdad protege, y hay que comprobar que la formulacion nueva cubre todo lo que
+   * cubria la vieja</b> — no solo el caso que motivo el cambio.
    */
   @Test
   void elSeguimientoNoExponeElCostoRealDelFleteNiLaComisionDeRecaudo() throws Exception {
@@ -589,6 +603,12 @@ class PedidoControladorTest {
             .andExpect(jsonPath("$.envio.guia").value("GUIA-99"))
             .andExpect(jsonPath("$.envio.despachadoEn").exists())
             .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(3)))
+            // El juego de llaves de la raiz: los diecisiete campos de PedidoSeguimientoRespuesta.
+            .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
+            // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia
+            // entero del panel. Un campo nuevo ahi sale bajo $.lineas[0] y la cuenta de la raiz
+            // ni se entera — comprobado agregandolo a proposito.
+            .andExpect(jsonPath("$.lineas[0].*", org.hamcrest.Matchers.hasSize(8)))
             // Y el costo de envio del pedido es el precio congelado, no el costo real del flete.
             // Este pedido es de retiro en punto, asi que su precio de envio es 0; si alguien
             // mapeara aqui `Envio.costoEnvio`, saldrian 12.000 y esta linea lo dice.
@@ -599,6 +619,13 @@ class PedidoControladorTest {
             .getResponse()
             .getContentAsString();
 
+    // La red que no depende de ningun nombre de campo, y es la mas importante de este metodo: el
+    // costo real del flete son 12.000 en este escenario, y esa cifra no puede aparecer en NINGUNA
+    // parte del cuerpo. Da igual como se llame el campo que la filtre, en que nivel este anidado o
+    // quien lo haya agregado — si el numero sale, la fuga esta abierta. Las cuentas de llaves de
+    // arriba dicen DONDE, esta dice QUE. Vale la pena porque el mapeador copia objetos enteros del
+    // panel y las cuentas solo cubren los niveles que alguien se acordo de contar.
+    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("12000"), cuerpo);
     // Sobre el texto crudo y no sobre un jsonPath: lo que hay que afirmar es que esos nombres no
     // aparecen en ninguna parte de la respuesta, no que un campo concreto venga nulo.
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("comisionRecaudo"));
