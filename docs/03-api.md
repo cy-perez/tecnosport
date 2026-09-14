@@ -146,7 +146,7 @@ flete ni la comisión de recaudo: eso es margen (`docs/11-pagos-y-envios.md`).
 |---|---|
 | `categoria` | slug de la categoría |
 | `marca` | id de la marca |
-| `linea` | `ROPA_Y_CALZADO`, `BOLSOS` o `CELULARES` |
+| `linea` | `ROPA_Y_CALZADO`, `BOLSOS` o `TECNOLOGIA` |
 | `precioMin`, `precioMax` | rango sobre el precio "desde" del producto (el menor precio entre sus variantes activas, el precio vive en la variante) |
 | `texto` | búsqueda libre por nombre, por similitud (`pg_trgm`), no exige substring exacto |
 | `orden` | `RELEVANCIA` (predeterminado; sin `texto` cae a `MAS_RECIENTES`), `PRECIO_ASC`, `PRECIO_DESC`, `MAS_RECIENTES` |
