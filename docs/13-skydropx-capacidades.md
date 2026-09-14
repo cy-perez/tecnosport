@@ -363,6 +363,19 @@ recortadas, no reescritas— viven como fixtures en
   - Cada bulto pide **`package_type` y `package_content`**: qué tipo de empaque
     es y qué va dentro, en texto.
 
+  **Lo que se decidió el 14 de septiembre de 2026** para los tres datos que esto
+  dejó abiertos (el detalle y el porqué, en `docs/09-plan-de-arranque.md`, paso 7):
+
+  | Campo | Qué se manda |
+  |---|---|
+  | `address_to.reference` | El `indicaciones` del pedido, que sigue siendo opcional; si viene vacío, `Sin indicaciones adicionales` |
+  | `address_from.email` | `contacto@tecnosport.co`, ya implementado como `ORIGEN_CORREO` |
+  | `package_content` | Genérico por línea: "Ropa y calzado deportivo", "Bolsos y morrales", "Equipo de telefonía móvil" — coincide con el contenido real para sostener una reclamación, sin anunciar en la etiqueta que dentro va un celular |
+
+  `package_type` sigue sin decidirse porque **no es un dato de negocio sino un
+  valor del catálogo de Skydropx**, y su lista de valores válidos no se ha podido
+  leer sin emitir una guía.
+
 - ⛔ **No se pudo emitir ninguna guía: la cuenta no tiene créditos.** El intento
   con el cuerpo completo respondió
   `422 No tienes los créditos suficientes para este envío. Agrega créditos y
@@ -444,6 +457,29 @@ Con eso `VerificadorFirmaEnvioPendiente` ya puede dejar de rechazar todo:
 constante, prefijo `HMAC ` recortado. La prueba contra un evento real sigue
 siendo obligatoria antes de producción —el cuerpo se recibe como `String` y la
 codificación de los bytes importa—, pero ya no hay nada que inventar.
+
+**Implementado el 14 de septiembre de 2026** en `VerificadorFirmaEnvioHmac`, y
+dos cosas que aparecieron al escribirlo:
+
+- **El secreto no existía en ninguna parte.** `PropiedadesWebhookEnvio` solo
+  llevaba el nombre de la cabecera; faltaba `SKYDROPX_SECRETO_WEBHOOK`, que
+  `docs/07-infra-gcp.md` ya listaba y nadie había conectado. Va con marcador de
+  desarrollo, como las credenciales: mientras valga el marcador, **el verificador
+  sigue rechazando todos los eventos** — la diferencia es que ahora falta un
+  secreto del panel y no un algoritmo, y eso es una variable de entorno.
+- **La codificación del cuerpo era un fallo esperando.** Llegaba como
+  `@RequestBody String`, y con `application/json` sin `charset` la decodificación
+  la elige el convertidor de Spring: si no fuera UTF-8, volver a codificar esa
+  cadena para el HMAC daría bytes distintos de los firmados en cuanto el evento
+  trajera una tilde. El controlador recibe ahora `byte[]` y decodifica UTF-8
+  explícitamente. Es el mismo género del `getWriter()` en ISO-8859-1 que ya
+  mordió en la Fase 4 (`apps/api/CLAUDE.md`).
+
+**El valor esperado de la prueba sale del RFC 4231**, que publica vectores de
+HMAC-SHA-512 —caso 2: clave `Jefe`, datos `what do ya want for nothing?`—, y no
+de calcularlo con el mismo `Mac` que usa el adaptador: así las dos partes no se
+equivocan juntas. Comprobado cambiando el algoritmo a SHA-256 a propósito:
+cuatro de las once pruebas fallan.
 
 #### DHL — resuelta, sin preguntar
 

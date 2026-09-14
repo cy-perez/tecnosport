@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
+import co.tecnosport.api.infrastructure.envio.VerificadorFirmaEnvioHmac;
 import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
@@ -96,9 +97,27 @@ public class ConfiguracionEnvio {
   private static final Duration INTERVALO_SONDEO = Duration.ofMillis(500);
 
   /**
-   * El webhook queda cableado y sin efecto: sus dos puertos fallan cerrado mientras no se puedan
-   * medir contra un evento real (docs/13-skydropx-capacidades.md, sección 6). Se registran igual
-   * para que el día que se confirmen sea cambiar una implementación y no montar el cableado.
+   * La firma del webhook, con el algoritmo confirmado en la documentación oficial el 14 de
+   * septiembre de 2026 (docs/13-skydropx-capacidades.md, sección 6.1).
+   *
+   * <p>Se cablea aquí, como {@link SkydropxClient}, y no con {@code @Component}: necesita el
+   * secreto, y un adaptador que se anota a sí mismo tendría que ir a buscarlo.
+   *
+   * <p>Que el bean exista no significa que verifique: mientras {@code SKYDROPX_SECRETO_WEBHOOK} sea
+   * el marcador de desarrollo, la firma nunca cuadra y todo evento se descarta. Lo que cambió es el
+   * motivo — antes faltaba el algoritmo, ahora falta el secreto del panel, y eso es una variable de
+   * entorno y no un despliegue.
+   */
+  @Bean
+  public VerificadorFirmaEnvio verificadorFirmaEnvio(PropiedadesWebhookEnvio propiedades) {
+    return new VerificadorFirmaEnvioHmac(propiedades.secreto());
+  }
+
+  /**
+   * De los tres puertos del seguimiento ya solo dos fallan cerrado: leer el evento y consultar el
+   * rastreo, que siguen sin poderse medir contra un evento real (docs/13-skydropx-capacidades.md,
+   * sección 6). Se registran igual para que el día que se confirmen sea cambiar una implementación
+   * y no montar el cableado.
    */
   @Bean
   public ConciliarEnvios conciliarEnvios(

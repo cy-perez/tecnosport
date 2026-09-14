@@ -31,6 +31,15 @@ comprobarlo contra un evento real cuando la cuenta pueda emitir una guía. No se
 codifica de memoria: es el mismo error que ya costó una sesión con el vector de
 firma de Wompi.
 
+**Implementado ese mismo día** en `VerificadorFirmaEnvioHmac`, con el algoritmo
+probado contra los vectores del RFC 4231 y no contra sí mismo. Dos consecuencias
+que este ADR no había previsto: hizo falta conectar `SKYDROPX_SECRETO_WEBHOOK`
+—que `docs/07-infra-gcp.md` listaba y nadie había cableado—, y el controlador pasó
+a recibir el cuerpo como `byte[]`, porque un `String` deja la codificación en
+manos del convertidor de Spring y el HMAC es sobre bytes. Mientras el secreto sea
+el marcador de desarrollo, el endpoint sigue descartando todo: lo que falta ya no
+es saber cómo verificar, sino con qué.
+
 **Idempotente por identificador de evento**, y si Skydropx no manda uno propio,
 por el hash de la firma — el mismo truco que resolvió el webhook de Wompi. Un
 reintento del mismo evento tiene que ser inofensivo.

@@ -3485,6 +3485,32 @@ Orden de construcción, un caso de uso a la vez:
      lista vacía. Los tres explican qué falta y qué pasaría si alguien los
      escribiera de memoria.
 
+   **La firma salió de esa lista el 14 de septiembre de 2026.**
+   `VerificadorFirmaEnvioHmac` reemplaza al adaptador que rechazaba todo, con el
+   algoritmo que la documentación oficial confirmó ese mismo día. Quedan dos
+   pendientes, y los dos por el mismo motivo: lo que les falta es la **forma** del
+   cuerpo, y esa no la dice ninguna especificación — hay que ver un evento.
+
+   Tres cosas que aparecieron al construirlo:
+
+   - **El secreto no existía.** `docs/07-infra-gcp.md` ya listaba
+     `SKYDROPX_SECRETO_WEBHOOK` y nadie lo había conectado: `PropiedadesWebhookEnvio`
+     solo tenía el nombre de la cabecera. Va con marcador de desarrollo, así que
+     **el webhook sigue sin verificar nada** — pero ahora lo que falta es un
+     secreto del panel, que es una variable de entorno, y no un algoritmo, que era
+     un despliegue de código.
+   - **El cuerpo llegaba como `String`, y eso era un fallo esperando.** Con
+     `application/json` sin `charset`, la decodificación la elige el convertidor de
+     Spring; si no fuera UTF-8, recodificar esa cadena para el HMAC daría bytes
+     distintos de los firmados en cuanto el evento trajera una tilde — el nombre de
+     una ciudad basta. El controlador recibe `byte[]` y decodifica UTF-8 a la
+     vista. Mismo género que el `getWriter()` en ISO-8859-1 de la Fase 4.
+   - **El valor esperado de la prueba no lo calcula la prueba.** Sale del **RFC
+     4231**, que publica vectores de HMAC-SHA-512; calcularlo con el mismo `Mac`
+     del adaptador habría dejado pasar un algoritmo equivocado, porque las dos
+     partes se equivocarían igual. Comprobado poniendo SHA-256 a propósito: cuatro
+     de las once pruebas fallan.
+
    **Lo que sigue esperando al saldo** es emitir la guía, y confirmar la firma y
    la forma del evento contra uno real. El día que lleguen los créditos, el paso
    7 es cambiar tres implementaciones, no montar el cableado.
@@ -3502,15 +3528,29 @@ Orden de construcción, un caso de uso a la vez:
    Lo que sí quedó resuelto sin ellos —la firma del webhook, por documentación
    oficial— habilita implementar `VerificadorFirmaEnvio` mientras se espera.
 
-   Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:
+   ~~Dos cosas que ese hallazgo deja pendientes de decidir cuando se retome:~~
+   **Las tres se decidieron el 14 de septiembre de 2026**, para que el día que
+   lleguen los créditos no haya que pensarlas:
 
-   - **`reference` no se pide hoy en el checkout.** El campo `indicaciones` que
-     ya existe puede servir, pero es opcional y la guía lo exige.
-   - **El origen no tiene correo configurado.** Haría falta un `ORIGEN_CORREO`
-     junto a las otras siete variables de `ORIGEN_*`.
-   - **`package_content` es texto libre** y describe qué va dentro. Hay que
-     decidir qué se escribe ahí: el nombre del producto, la categoría, o algo
-     genérico. No es un detalle: es lo que lee quien revisa el paquete.
+   - **`reference`: se reusa `indicaciones`, y sigue siendo opcional.** Ya existe,
+     ya se guarda y es literalmente lo que el campo pide —cómo encontrar el
+     sitio—. Cuando el comprador no escribe nada viaja `Sin indicaciones
+     adicionales`. Se evaluó hacerlo obligatorio y se descartó: una casilla
+     exigida en el paso que más se abandona se rellena con un punto, y eso le da
+     al mensajero menos que una opcional que algunos sí llenan.
+   - **`ORIGEN_CORREO`: `contacto@tecnosport.co`**, el correo público del negocio,
+     ya implementado como la octava variable de `ORIGEN_*`. No el remitente
+     transaccional: lo que escriba la transportadora por una recolección o una
+     devolución tiene que leerlo una persona, y `no-responder@` se lo habría
+     tragado en silencio.
+   - **`package_content`: genérico por línea de catálogo.** `ROPA_Y_CALZADO` →
+     "Ropa y calzado deportivo", `BOLSOS` → "Bolsos y morrales", `CELULARES` →
+     "Equipo de telefonía móvil". Es lo que equilibra las dos cosas que este campo
+     decide a la vez: **el contenido declarado tiene que coincidir con el real**
+     para que una reclamación por pérdida no se caiga, y **la etiqueta la lee
+     cualquiera que cargue la caja** — escribir la marca y el modelo del celular
+     ahí es anunciar lo que hay dentro. El nombre del producto se descartó por
+     eso, y el texto fijo por lo primero.
 8. ~~**Textos legales**, en el mismo commit que enciende la cotización, con la
    fecha de versión nueva.~~ **Hecho el 14 de septiembre de 2026.** Las cláusulas
    de `docs/12-legales-de-envio.md`, sección 3, en español e inglés: precio sin

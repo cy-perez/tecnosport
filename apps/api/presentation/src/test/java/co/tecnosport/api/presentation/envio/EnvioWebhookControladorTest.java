@@ -11,6 +11,7 @@ import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,28 @@ class EnvioWebhookControladorTest {
     assertEquals(crudo, verificador.ultimoCuerpo());
   }
 
+  /**
+   * Y llega decodificado en UTF-8, venga o no el {@code charset} en el {@code Content-Type}. Es la
+   * razón de que el controlador reciba {@code byte[]}: con una cadena, la decodificación la
+   * elegiría el convertidor de Spring, y unos bytes recodificados con otra codificación no son los
+   * que Skydropx firmó. Una ciudad con tilde basta para romperlo, y el fallo no se vería en el
+   * código.
+   */
+  @Test
+  void elCuerpoConTildesLlegaEnUtf8SinCharsetEnElContentType() throws Exception {
+    String crudo = "{\"ciudad\":\"Medellín\",\"estado\":\"in_transit\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/webhook")
+                .header("authorization", "HMAC x")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(crudo.getBytes(StandardCharsets.UTF_8)))
+        .andExpect(status().isOk());
+
+    assertEquals(crudo, verificador.ultimoCuerpo());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -147,10 +170,14 @@ class EnvioWebhookControladorTest {
       return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicar);
     }
 
-    /** El nombre de la cabecera es configuración; aquí se fija el mismo que usa la prueba. */
+    /**
+     * El nombre de la cabecera es configuración; aquí se fija el mismo que usa la prueba. El
+     * secreto no se usa: este controlador no verifica nada, solo le pasa el cuerpo y la firma al
+     * verificador, que aquí es un doble.
+     */
     @Bean
     PropiedadesWebhookEnvio propiedadesWebhook() {
-      return new PropiedadesWebhookEnvio("authorization");
+      return new PropiedadesWebhookEnvio("authorization", "irrelevante-para-esta-prueba");
     }
 
     @Bean
