@@ -55,6 +55,11 @@ public class MapeadorSeguimiento {
         completa.direccion(),
         completa.metodoPago(),
         completa.estado(),
+        // A mano desde el dominio, como todo lo demas de este mapeador: el desglose que el
+        // articulo 50 exige antes de pagar tiene que seguir siendo legible despues de comprar, y
+        // hasta ahora la pantalla de estado pintaba el total bajo la etiqueta "Subtotal".
+        aRespuesta(pedido.subtotal()),
+        aRespuesta(pedido.costoEnvio()),
         completa.total(),
         completa.creadoEn(),
         completa.datosTransferencia(),

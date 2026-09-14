@@ -556,6 +556,15 @@ class PedidoControladorTest {
    * El hallazgo 3 de docs/12-legales-de-envio.md, con su prueba. Era un defecto en produccion: el
    * seguimiento devolvia el {@code Envio} completo, con lo que la transportadora nos cobra y la
    * comision del recaudo, a cualquiera con un id de pedido y el correo correcto.
+   *
+   * <p><b>El guardian cambio de forma cuando el seguimiento empezo a desglosar lo cobrado, y
+   * conviene decir por que no se debilito.</b> Afirmaba {@code !cuerpo.contains("costoEnvio")}
+   * sobre el texto crudo, y esa cadena hoy aparece de forma legitima: es el precio congelado que el
+   * comprador pago ({@code Pedido.costoEnvio()}), que es su factura. Bajar la afirmacion a "que no
+   * venga con el valor equivocado" habria dejado pasar cualquier campo nuevo. En su lugar se fija
+   * <b>el juego exacto de llaves</b> del bloque {@code envio} — el unico sitio por donde se fue la
+   * fuga—, asi que cualquier campo que alguien agregue ahi tumba esta prueba, se llame como se
+   * llame. Y se afirma ademas el valor: 0, el del pedido, y no los 12.000 de la transportadora.
    */
   @Test
   void elSeguimientoNoExponeElCostoRealDelFleteNiLaComisionDeRecaudo() throws Exception {
@@ -574,19 +583,80 @@ class PedidoControladorTest {
                 get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
                     .param("correo", "cliente@tecnosport.co"))
             .andExpect(status().isOk())
+            // El bloque del envio lleva estos tres campos y ni uno mas. `hasKey` sobre el mapa
+            // entero y no tres `exists`: lo que hay que impedir es el campo que nadie previo.
+            .andExpect(jsonPath("$.envio.transportadora").value("Interrapidisimo"))
+            .andExpect(jsonPath("$.envio.guia").value("GUIA-99"))
+            .andExpect(jsonPath("$.envio.despachadoEn").exists())
+            .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(3)))
+            // Y el costo de envio del pedido es el precio congelado, no el costo real del flete.
+            // Este pedido es de retiro en punto, asi que su precio de envio es 0; si alguien
+            // mapeara aqui `Envio.costoEnvio`, saldrian 12.000 y esta linea lo dice.
+            .andExpect(jsonPath("$.costoEnvio.valor").value(0))
+            .andExpect(jsonPath("$.subtotal.valor").value(50_000))
+            .andExpect(jsonPath("$.total.valor").value(50_000))
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     // Sobre el texto crudo y no sobre un jsonPath: lo que hay que afirmar es que esos nombres no
     // aparecen en ninguna parte de la respuesta, no que un campo concreto venga nulo.
-    org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("costoEnvio"));
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("comisionRecaudo"));
     // Las dos cifras que el panel necesita para decidir un reintegro tampoco salen: cuanto entro
     // por el pedido y cuanto ya se devolvio son datos de operacion, no del comprador. Se afirma
     // aqui porque MapeadorRespuestasPedido las agrego y MapeadorSeguimiento comparte su origen.
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("dineroRecibido"));
     org.junit.jupiter.api.Assertions.assertFalse(cuerpo.contains("yaDevuelto"));
+  }
+
+  /**
+   * El desglose que el articulo 50 exige antes de pagar tiene que seguir siendo legible despues de
+   * comprar. Hasta aqui la respuesta del seguimiento solo traia el total, y la pantalla de estado
+   * lo pintaba bajo la etiqueta "Subtotal" — falso desde que el flete se cobra aparte.
+   */
+  @Test
+  void elSeguimientoDesglosaSubtotalYEnvioYElTotalEsLaSuma() throws Exception {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 7),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    java.util.UUID.randomUUID(),
+                    java.util.UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    java.util.UUID.randomUUID())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            new co.tecnosport.api.domain.pedido.Direccion(
+                "05", "Antioquia", "05001", "Medellin", "Cra. 26C #38B-31", null),
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            new co.tecnosport.api.domain.envio.TarifaEnvio(
+                "tar-1",
+                "Servientrega",
+                "Estandar",
+                Dinero.deCop(14_500),
+                3,
+                true,
+                Instant.now().plusSeconds(3600)));
+    pedidos.guardar(pedido);
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subtotal.valor").value(50_000))
+        .andExpect(jsonPath("$.costoEnvio.valor").value(14_500))
+        .andExpect(jsonPath("$.total.valor").value(64_500))
+        .andExpect(jsonPath("$.subtotal.moneda").value("COP"));
   }
 
   @Test

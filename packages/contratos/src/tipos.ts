@@ -1498,6 +1498,8 @@ export interface components {
             direccion?: components["schemas"]["DireccionRespuesta"];
             metodoPago?: string;
             estado?: string;
+            subtotal?: components["schemas"]["DineroRespuesta"];
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
             total?: components["schemas"]["DineroRespuesta"];
             /** Format: date-time */
             creadoEn?: string;
