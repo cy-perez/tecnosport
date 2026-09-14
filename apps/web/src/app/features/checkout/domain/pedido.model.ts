@@ -104,10 +104,24 @@ export interface RetractoPublico {
 }
 
 /**
+ * El envío tal como lo ve quien compró: por dónde va el paquete y con qué número. **No lleva el
+ * costo**, y esa ausencia es la parte importante — lo que la transportadora nos cobra es el margen
+ * del negocio (`EnvioPublicoRespuesta` en el backend, hallazgo 3 de `docs/12-legales-de-envio.md`).
+ * Lo que el comprador pagó de flete vive en `Pedido.costoEnvio`, que es otra cifra.
+ */
+export interface EnvioPublico {
+  readonly transportadora: string;
+  readonly guia: string;
+  readonly despachadoEn: string;
+}
+
+/**
  * Lo que devuelve `GET /pedidos/{id}/seguimiento`. Tipo propio y no `Pedido` con un campo más: el
  * backend separó las dos respuestas justamente porque compartirlas fue lo que dejó salir el costo
  * real del flete, y repetir aquí la mezcla desharía esa separación desde el otro lado.
  */
 export interface Seguimiento extends Pedido {
+  /** `null` mientras el pedido no se haya despachado. */
+  readonly envio: EnvioPublico | null;
   readonly retractos: readonly RetractoPublico[];
 }

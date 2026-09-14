@@ -44,7 +44,8 @@
     "total_pendiente": "Falta el costo de envío",
     "nombre": "Nombre de quien recibe",
     "telefono": "Teléfono de contacto",
-    "telefono_ayuda": "La transportadora o el mensajero te llaman a este número antes de entregar."
+    "telefono_ayuda": "La transportadora o el mensajero te llaman a este número antes de entregar.",
+    "iva_incluido": "Todos los valores incluyen IVA, incluido el costo de envío."
   },
   "metodoPago": {
     "titulo": "Método de pago",
@@ -104,6 +105,12 @@
         "reembolsada": "Reintegramos tu dinero.",
         "rechazada": "No pudimos aceptar la solicitud. Escríbenos y lo revisamos."
       }
+    },
+    "envio": {
+      "titulo": "Tu envío",
+      "transportadora": "Empresa de transporte",
+      "guia": "Número de guía",
+      "despachado_en": "Despachado el"
     }
   },
   "transferencia": {

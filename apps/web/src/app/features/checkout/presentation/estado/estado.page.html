@@ -35,12 +35,38 @@
       }
     </div>
 
-    <div
-      class="mt-24 flex items-baseline justify-between border-t-2 border-ts-borde pt-16 text-lg font-medio"
+    <!--
+      El desglose, y aquí no era un hueco sino un defecto vivo: esta pantalla etiquetaba
+      "Subtotal" sobre una cifra que ya traía el flete dentro. Daba igual mientras el envío iba
+      incluido en el precio; desde que se cobra aparte decía algo falso, en el único sitio donde
+      el comprador vuelve a mirar lo que pagó. El artículo 50 de la Ley 1480 de 2011 exige el
+      desglose antes de pagar, y después de pagar sigue siendo su factura.
+    -->
+    <dl
+      class="mt-24 grid grid-cols-[1fr_auto] gap-x-16 gap-y-8 border-t-2 border-ts-borde pt-16 [&_dd]:m-0"
     >
-      <span>{{ 'checkout.resumen.subtotal' | transloco }}</span>
-      <ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" />
-    </div>
+      <dt>{{ 'checkout.resumen.subtotal' | transloco }}</dt>
+      <dd><ts-precio [valor]="p.subtotal.valor" [moneda]="p.subtotal.moneda" /></dd>
+
+      <!-- Sin flete cobrado no se pinta la línea: el retiro en punto no paga envío, y los pedidos
+           anteriores a la Fase 7 lo llevaban dentro del precio. Un "$ 0" ahí no informa nada y en
+           el segundo caso además mentiría. -->
+      @if (p.costoEnvio.valor > 0) {
+        <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
+        <dd><ts-precio [valor]="p.costoEnvio.valor" [moneda]="p.costoEnvio.moneda" /></dd>
+      }
+
+      <dt class="text-lg font-medio">{{ 'checkout.resumen.total' | transloco }}</dt>
+      <dd class="text-lg font-medio">
+        <ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" />
+      </dd>
+    </dl>
+    <!-- Una sola línea para todo el desglose y no una nota colgada del flete: los precios de este
+         sitio incluyen IVA, y el costo de envío que cobramos también viene con IVA incluido.
+         Señalarlo solo en la línea del envío daría a entender que las demás no lo llevan. -->
+    <p class="m-0 mt-8 text-sm text-ts-texto-suave">
+      {{ 'checkout.resumen.iva_incluido' | transloco }}
+    </p>
 
     <dl
       class="my-24 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
@@ -78,6 +104,27 @@
         <dd>{{ direccion.direccion }}, {{ direccion.ciudad }}, {{ direccion.departamento }}</dd>
       }
     </dl>
+
+    <!-- Solo cuando hay envío: mientras el pedido no se despache no hay transportadora ni guía
+         que mostrar, y una sección vacía es peor que ninguna. Es la otra mitad de lo que el correo
+         de despacho anuncia, y lo que hace verdadero el numeral 8 de los términos. -->
+    @if (envio(); as e) {
+      <h2 class="mt-24 mb-8 font-display text-lg">
+        {{ 'checkout.estado.envio.titulo' | transloco }}
+      </h2>
+      <dl
+        class="my-16 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
+      >
+        <dt>{{ 'checkout.estado.envio.transportadora' | transloco }}</dt>
+        <dd>{{ e.transportadora }}</dd>
+
+        <dt>{{ 'checkout.estado.envio.guia' | transloco }}</dt>
+        <dd>{{ e.guia }}</dd>
+
+        <dt>{{ 'checkout.estado.envio.despachado_en' | transloco }}</dt>
+        <dd>{{ e.despachadoEn | date: 'longDate' }}</dd>
+      </dl>
+    }
 
     @if (retractos().length > 0) {
       <h2 class="mt-24 mb-8 font-display text-lg">
