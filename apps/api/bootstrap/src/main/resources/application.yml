@@ -143,6 +143,10 @@ tecnosport:
     # Opcional a propósito: en Colombia no se usa de forma fiable y muchas transportadoras lo
     # ignoran. Exigirlo impediría arrancar por un dato que a nadie le sirve.
     codigo-postal: ${ORIGEN_CODIGO_POSTAL:}
+    # No viaja en la cotización: lo exige la guía, que pide email en las dos direcciones. Es el
+    # correo público del negocio —el mismo del pie y de los textos legales— y no el remitente
+    # transaccional, porque lo que escriba la transportadora tiene que leerlo una persona.
+    correo: ${ORIGEN_CORREO:contacto@tecnosport.co}
   transferencia-manual:
     # Dato de negocio real, no inventado (regla dura #5): estos placeholders nunca sirven para
     # transferir de verdad. Se sobrescriben con la cuenta real por variable de entorno.

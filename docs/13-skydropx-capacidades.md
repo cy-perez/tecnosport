@@ -363,6 +363,19 @@ recortadas, no reescritas— viven como fixtures en
   - Cada bulto pide **`package_type` y `package_content`**: qué tipo de empaque
     es y qué va dentro, en texto.
 
+  **Lo que se decidió el 14 de septiembre de 2026** para los tres datos que esto
+  dejó abiertos (el detalle y el porqué, en `docs/09-plan-de-arranque.md`, paso 7):
+
+  | Campo | Qué se manda |
+  |---|---|
+  | `address_to.reference` | El `indicaciones` del pedido, que sigue siendo opcional; si viene vacío, `Sin indicaciones adicionales` |
+  | `address_from.email` | `contacto@tecnosport.co`, ya implementado como `ORIGEN_CORREO` |
+  | `package_content` | Genérico por línea: "Ropa y calzado deportivo", "Bolsos y morrales", "Equipo de telefonía móvil" — coincide con el contenido real para sostener una reclamación, sin anunciar en la etiqueta que dentro va un celular |
+
+  `package_type` sigue sin decidirse porque **no es un dato de negocio sino un
+  valor del catálogo de Skydropx**, y su lista de valores válidos no se ha podido
+  leer sin emitir una guía.
+
 - ⛔ **No se pudo emitir ninguna guía: la cuenta no tiene créditos.** El intento
   con el cuerpo completo respondió
   `422 No tienes los créditos suficientes para este envío. Agrega créditos y

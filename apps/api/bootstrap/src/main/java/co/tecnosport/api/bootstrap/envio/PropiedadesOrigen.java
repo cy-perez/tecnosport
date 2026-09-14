@@ -12,6 +12,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>{@code codigoPostal} es el único opcional: en Colombia no se usa de forma fiable en todas las
  * direcciones, y exigirlo impediría arrancar por un dato que muchas transportadoras ignoran.
  *
+ * <p>{@code correo} <strong>no viaja en la cotización</strong>: lo exige la emisión de la guía, que
+ * pide {@code email} obligatorio en las dos direcciones (docs/13-skydropx-capacidades.md, §6). Está
+ * aquí desde ya porque es el dato de negocio que faltaba, decidido el 14 de septiembre de 2026, y
+ * es el correo público del negocio a propósito: si la transportadora escribe por una recolección o
+ * una devolución, tiene que llegarle a una persona. El remitente transaccional ({@code
+ * no-responder@}) habría tragado ese aviso en silencio.
+ *
  * <p>{@code departamento} y {@code ciudad} son los <em>nombres</em>, y son obligatorios porque
  * Skydropx los exige: sin ellos la cotización responde {@code 422 area_level1/area_level2 no puede
  * estar en blanco} (verificado contra el sandbox el 11 de septiembre de 2026). Duplican lo que el
@@ -27,7 +34,8 @@ public record PropiedadesOrigen(
     String departamento,
     String ciudad,
     String ciudadDane,
-    String codigoPostal) {
+    String codigoPostal,
+    String correo) {
 
   public PropiedadesOrigen {
     exigir(nombre, "tecnosport.origen.nombre");
@@ -36,6 +44,7 @@ public record PropiedadesOrigen(
     exigir(departamento, "tecnosport.origen.departamento");
     exigir(ciudad, "tecnosport.origen.ciudad");
     exigir(ciudadDane, "tecnosport.origen.ciudad-dane");
+    exigir(correo, "tecnosport.origen.correo");
   }
 
   private static void exigir(String valor, String propiedad) {

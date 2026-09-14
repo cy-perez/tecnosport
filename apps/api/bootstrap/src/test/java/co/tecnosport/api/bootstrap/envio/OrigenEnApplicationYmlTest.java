@@ -57,11 +57,25 @@ class OrigenEnApplicationYmlTest {
   }
 
   /**
-   * Las siete propiedades existen con marcador de variable de entorno. Si alguien borra una, la
+   * El correo de origen lo exige la guía —{@code email} obligatorio en las dos direcciones— y es el
+   * público del negocio, no el remitente transaccional: un aviso de la transportadora sobre una
+   * recolección o una devolución tiene que llegarle a una persona. Decidido el 14 de septiembre de
+   * 2026.
+   */
+  @Test
+  void elCorreoDeOrigenEsElPublicoDelNegocio() throws IOException {
+    String correo = String.valueOf(applicationYml().getProperty("tecnosport.origen.correo"));
+
+    assertTrue(correo.contains("contacto@tecnosport.co"), correo);
+    assertTrue(!correo.contains("no-responder"), correo);
+  }
+
+  /**
+   * Las ocho propiedades existen con marcador de variable de entorno. Si alguien borra una, la
    * aplicación deja de arrancar en producción y no aquí — mejor que falle aquí.
    */
   @Test
-  void lasSietePropiedadesDeOrigenEstanDeclaradas() throws IOException {
+  void lasOchoPropiedadesDeOrigenEstanDeclaradas() throws IOException {
     PropertySource<?> yml = applicationYml();
 
     for (String propiedad :
@@ -69,6 +83,7 @@ class OrigenEnApplicationYmlTest {
             "nombre",
             "telefono",
             "direccion",
+            "correo",
             "departamento",
             "ciudad",
             "ciudad-dane",
