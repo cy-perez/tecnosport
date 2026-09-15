@@ -1,0 +1,246 @@
+# Revisión de la lista
+
+- Fecha de la lista: 2026-09-12
+- Productos para publicar: 119
+- Descartados: 0
+- Duplicados fusionados: 10
+- Productos con algún supuesto aplicado: 13
+- Líneas sin clasificar: 0
+
+## Productos para publicar
+- **Infinix GT 50 Pro** — celulares — 1.960.000 COP
+  - ⚠️ no se reconoció la capacidad
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+  - ⚠️ posible duplicado: el mismo modelo aparece con y sin capacidad
+- **Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB** — celulares — 950.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB** — celulares — 1.830.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB** — celulares — 1.980.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi POCO X8 Pro 5G 8GB RAM 256GB** — celulares — 1.250.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Xiaomi POCO X8 Pro 5G 12GB RAM 512GB** — celulares — 1.400.000 COP
+  - · asumido: la sección Xiaomi abrevia la serie X: se leyó como POCO
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Infinix Note 60 Pro Edición Especial** — celulares — 1.380.000 COP
+  - ⚠️ no se reconoció la capacidad
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Infinix Hot 70 4G 4GB RAM 256GB** — celulares — 565.000 COP
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 4G 6GB RAM 128GB** — celulares — 575.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+  - ⚠️ aparece repetido con precios distintos (575.000 y 595.000): se tomó el menor
+- **Xiaomi Redmi Note 15 4G 8GB RAM 256GB** — celulares — 685.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Apple iPhone 16 128GB** — celulares — 2.300.000 COP
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Apple iPhone 16E 128GB** — celulares — 1.500.000 COP
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Apple iPhone 15 Pro Max 256GB** — celulares — 2.900.000 COP
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Samsung Galaxy S25 Ultra 256GB** — celulares — 2.700.000 COP
+  - ⚠️ línea sin viñeta: verificar que sea un producto
+- **Infinix Smart 20 4G 4GB RAM 128GB** — celulares — 480.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Smart 20 4G 4GB RAM 64GB** — celulares — 370.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Hot 70 Pro 5G 6GB RAM 256GB** — celulares — 970.000 COP
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Hot 60 Pro 4G 8GB RAM 256GB** — celulares — 700.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Note 60 8GB RAM 256GB** — celulares — 1.055.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Note 60 Pro 5G 8GB RAM 256GB** — celulares — 1.320.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix Note 60 Pro Especial 5G 8GB RAM 256GB** — celulares — 1.380.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Infinix GT 50 Pro 5G 12GB RAM 256GB** — celulares — 1.960.000 COP
+  - ⚠️ posible duplicado: el mismo modelo aparece con y sin capacidad
+- **Samsung Galaxy A07 4G 4GB RAM 64GB** — celulares — 300.000 COP
+- **Samsung Galaxy A07 4G 4GB RAM 128GB** — celulares — 345.000 COP
+- **Samsung Galaxy A07 4G 6GB RAM 128GB** — celulares — 360.000 COP
+- **Samsung Galaxy A17 4G 4GB RAM 128GB** — celulares — 430.000 COP
+- **Samsung Galaxy A17 4G 8GB RAM 256GB** — celulares — 630.000 COP
+- **Samsung Galaxy A17 5G 8GB RAM 256GB** — celulares — 700.000 COP
+- **Samsung Galaxy A37 5G 6GB RAM 128GB** — celulares — 885.000 COP
+- **Samsung Galaxy A37 5G 8GB RAM 256GB** — celulares — 995.000 COP
+- **Samsung Galaxy A56 5G 8GB RAM 256GB** — celulares — 1.230.000 COP
+- **Samsung Galaxy A57 5G 12GB RAM 512GB** — celulares — 1.750.000 COP
+- **Motorola Moto G05 4G 4GB RAM 256GB** — celulares — 390.000 COP
+- **Motorola Moto G06 4G 4GB RAM 256GB** — celulares — 405.000 COP
+- **Motorola Moto G17 4G 4GB RAM 256GB 1 SIM** — celulares — 505.000 COP
+- **Motorola Moto G17 4G 4GB RAM 256GB Dual SIM** — celulares — 535.000 COP
+- **Motorola Moto G67 4G 8GB RAM 256GB** — celulares — 730.000 COP
+- **Motorola Moto G17 Power 4G 4GB RAM 256GB 1 SIM** — celulares — 550.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Motorola Edge 50 Fusion 5G 8GB RAM 256GB SIM / eSIM** — celulares — 735.000 COP
+- **Motorola Edge 50 Fusion 5G 8GB RAM 512GB SIM / eSIM** — celulares — 920.000 COP
+- **Itel A100C 4G 3GB RAM 64GB** — celulares — 270.000 COP
+  - ⚠️ la lista suma RAM virtual (3GB+5GB): publicar la RAM física y mencionar la extendida aparte
+- **Itel A200 4G 3GB RAM 64GB** — celulares — 305.000 COP
+  - ⚠️ la lista suma RAM virtual (3GB+5GB): publicar la RAM física y mencionar la extendida aparte
+- **Itel A200 4G 3GB RAM 128GB** — celulares — 335.000 COP
+  - ⚠️ la lista suma RAM virtual (3GB+5GB): publicar la RAM física y mencionar la extendida aparte
+- **Honor Play 10 4G 3GB RAM 64GB** — celulares — 310.000 COP
+- **Honor Play 10 4G 4GB RAM 128GB** — celulares — 360.000 COP
+- **Honor X5D 4G 4GB RAM 128GB** — celulares — 380.000 COP
+- **Honor X5C 4G 4GB RAM 64GB** — celulares — 270.000 COP
+- **Honor X5C Plus 4GB RAM 256GB** — celulares — 465.000 COP
+- **Honor X7D 4G 6GB RAM 256GB** — celulares — 650.000 COP
+- **Honor X9D 8GB RAM 256GB** — celulares — 960.000 COP
+- **Xiaomi Redmi A7 Pro 4G 4GB RAM 64GB** — celulares — 310.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi A7 Pro 4G 4GB RAM 128GB** — celulares — 355.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 15C 4G 4GB RAM 128GB** — celulares — 400.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 15C 4G 4GB RAM 256GB** — celulares — 435.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 15C 4G 8GB RAM 256GB** — celulares — 505.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 15 4G 8GB RAM 256GB** — celulares — 610.000 COP
+- **Xiaomi Redmi 17 4G 4GB RAM 128GB** — celulares — 495.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 17 4G 4GB RAM 256GB** — celulares — 575.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi 17 4G 6GB RAM 256GB** — celulares — 670.000 COP
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 17 5G 6GB RAM 256GB** — celulares — 805.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+- **Xiaomi Redmi Note 15 4G 8GB RAM 512GB** — celulares — 720.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 15 Pro 4G 8GB RAM 256GB** — celulares — 860.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 15 Pro 5G 8GB RAM 256GB** — celulares — 970.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 15 Pro 5G 8GB RAM 512GB** — celulares — 1.050.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi Redmi Note 15 Pro+ Plus 8GB RAM 256GB** — celulares — 1.310.000 COP
+  - · asumido: la sección Xiaomi abrevia 'NOTE': se leyó como Redmi Note
+- **Xiaomi POCO C71 4G 3GB RAM 64GB** — celulares — 310.000 COP
+- **Xiaomi POCO C71 4G 4GB RAM 128GB** — celulares — 365.000 COP
+- **Xiaomi POCO F8 Ultra 5G 12GB RAM 256GB** — celulares — 2.250.000 COP
+- **Xiaomi POCO F8 Pro 5G 12GB RAM 256GB** — celulares — 1.850.000 COP
+- **Xiaomi POCO F8 Pro 5G 12GB RAM 512GB** — celulares — 2.050.000 COP
+- **Tecno Spark Go 3 4G 4GB RAM 64GB** — celulares — 340.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Tecno Spark Go 3 4G 4GB RAM 128GB** — celulares — 380.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **Tecno Spark 50 5G 8GB RAM 256GB** — celulares — 805.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+16GB): publicar la RAM física y mencionar la extendida aparte
+- **Tecno Pova Slim 5G 8GB RAM 256GB** — celulares — 890.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Tecno Pova Curve 2 5G 8GB RAM 256GB** — celulares — 910.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **Tecno Camon 50 Ultra 5G 8GB RAM 256GB** — celulares — 1.150.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE A31 Plus 4G 2GB RAM 32GB** — celulares — 175.000 COP
+- **ZTE A35E 4G 2GB RAM 64GB** — celulares — 275.000 COP
+  - ⚠️ la lista suma RAM virtual (2GB+4GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE A56 4G 4GB RAM 128GB** — celulares — 335.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE A56 Pro 4G 4GB RAM 128GB** — celulares — 350.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+8GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE V80 Max 1 SIM 4G 4GB RAM 256GB** — celulares — 415.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+10GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE V80 Pro 4G 8GB RAM 256GB** — celulares — 600.000 COP
+  - ⚠️ la lista suma RAM virtual (8GB+12GB): publicar la RAM física y mencionar la extendida aparte
+- **ZTE Nubia Music 2 4G 4GB RAM 256GB** — celulares — 360.000 COP
+- **ZTE Nubia Air 4G 8GB RAM 256GB** — celulares — 730.000 COP
+- **Nokia 6300** — celulares — 160.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Alcatel 1041** — celulares — 86.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Alcatel 1S 2GB RAM 32GB** — celulares — 160.000 COP
+- **Fly Fy-100** — celulares — 75.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Fly Fy-200** — celulares — 65.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Fly Fy-300** — celulares — 95.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Fly Fy-400** — celulares — 95.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Fly Fy-500** — celulares — 100.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Corn Flip K** — celulares — 95.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Corn Power K Pro** — celulares — 85.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Corn Power K** — celulares — 95.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Corn Economica** — celulares — 60.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Corn GT 50** — celulares — 75.000 COP
+  - ⚠️ no se reconoció la capacidad
+- **Realme Note 70 4G 8GB RAM 256GB** — celulares — 520.000 COP
+- **Krono Z2 7" 4G 4GB RAM 32GB** — tablets — 260.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Krono Kids Play 7" WiFi 4GB RAM 64GB** — tablets — 270.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Krono Net X2 SIM Agenda 10" 4G 4GB RAM 64GB** — tablets — 330.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Krono Net X2 Forro Kids 10" 4G 4GB RAM 64GB** — tablets — 340.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Krono Net G Lápiz Táctil 4G 6GB RAM 128GB** — tablets — 430.000 COP
+  - ⚠️ la lista suma RAM virtual (6GB+6GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **BMAX 10" WiFi 4GB RAM 64GB** — tablets — 335.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Tecno Megapad WiFi 4GB RAM 256GB** — tablets — 530.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Samsung A11 7" WiFi 8GB RAM 128GB** — tablets — 465.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Samsung A11+ Plus 11" WiFi 6GB RAM 128GB** — tablets — 735.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Samsung A11+ Plus 11" WiFi 8GB RAM 256GB** — tablets — 770.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Honor X8B 11" WiFi 4GB RAM 128GB** — tablets — 565.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Xiaomi Pad 2 9.7" 4GB RAM 128GB** — tablets — 585.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Xiaomi Pad 2 Bundle 11" 4GB RAM 128GB** — tablets — 620.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Xiaomi Pad 2 11" 4G 4GB RAM 128GB** — tablets — 660.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Xiaomi Pad 2 11" WiFi 8GB RAM 256GB** — tablets — 715.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Xiaomi Pad 2 Pro 11" WiFi 8GB RAM 256GB** — tablets — 935.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Infinix XPAD 30E 11" 4G 4GB RAM 128GB** — tablets — 565.000 COP
+  - ⚠️ la lista suma RAM virtual (4GB+4GB): publicar la RAM física y mencionar la extendida aparte
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Lenovo Tab Plus 11" WiFi 8GB RAM 256GB** — tablets — 950.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **Lenovo Tab One 7" 4G 4GB RAM 128GB Incluye Mouse** — tablets — 530.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **TCL Tab 11 FE 11" WiFi 4GB RAM 128GB** — tablets — 595.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+- **TCL Pad Lugh 10" WiFi 4GB RAM 128GB** — tablets — 420.000 COP
+  - ⚠️ tablets: confirmar la línea comercial completa (ej. Galaxy Tab A11)
+
+## Descartados
+
+## Duplicados fusionados
+- L22: Infinix GT 50 Pro → Infinix GT 50 Pro
+- L26: Xiaomi Redmi Note 15 Pro 12GB RAM 512GB → Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB
+- L42: Infinix Hot 70 4G 4GB RAM 256GB → Infinix Hot 70 4G 4GB RAM 256GB
+- L103: Xiaomi Redmi Note 15 4G 6GB RAM 128GB → Xiaomi Redmi Note 15 4G 6GB RAM 128GB
+- L104: Xiaomi Redmi Note 15 4G 8GB RAM 256GB → Xiaomi Redmi Note 15 4G 8GB RAM 256GB
+- L107: Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB → Xiaomi Redmi Note 15 Pro 4G 12GB RAM 512GB
+- L113: Xiaomi POCO X8 Pro 5G 8GB RAM 256GB → Xiaomi POCO X8 Pro 5G 8GB RAM 256GB
+- L114: Xiaomi POCO X8 Pro 5G 12GB RAM 512GB → Xiaomi POCO X8 Pro 5G 12GB RAM 512GB
+- L115: Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB → Xiaomi POCO X8 Pro Max 5G 12GB RAM 256GB
+- L116: Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB → Xiaomi POCO X8 Pro Max 5G 12GB RAM 512GB

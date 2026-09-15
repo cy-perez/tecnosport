@@ -4,6 +4,7 @@ node_modules/
 # Entorno
 .env.local
 .env.*.local
+.env
 
 # Backend (Gradle)
 apps/api/.gradle/
@@ -43,3 +44,9 @@ tecno-sport-marca/
 apps/web/test-results/
 apps/web/playwright-report/
 apps/web/lighthouse/
+
+# Icecat
+catalogo/icecat/*.gz
+catalogo/icecat/indice.csv
+catalogo/fotos/crudas/
+catalogo/entregables/
