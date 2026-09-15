@@ -53,3 +53,7 @@ catalogo/entregables/
 catalogo/lista*.txt
 catalogo/productos*.json
 catalogo/revision*.md
+catalogo/icecat/fichas/
+catalogo/icecat/coincidencias.csv
+catalogo/icecat/fotos.csv
+catalogo/imagenes/
