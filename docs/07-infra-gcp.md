@@ -230,6 +230,52 @@ la imagen (`docs/05-i18n.md`). Verificado en el mismo escenario que lo destapó:
 distintos, la ficha vuelve a servirse traducida en los dos idiomas y no se registra ni un respaldo
 por HTTP.
 
+### La tienda "vacía" al abrir: el service worker, no el despliegue
+
+Reportado el 14 de septiembre de 2026: al abrir `/es` en dev la portada salía sin productos, como
+si el catálogo estuviera vacío, y al cabo de un rato aparecían. Parecía cosa del despliegue y no
+lo era. Se reconstruyó con los registros de Cloud Run cruzando las peticiones de la web y de la
+API con el arranque de la JVM, y había **dos caminos**, según si el visitante ya tenía el service
+worker instalado:
+
+- **Primera visita.** `/es` llega al SSR, que espera a que la API despierte antes de servir un
+  byte. Pestaña en blanco y después la página completa: `/es` tardaba entre 15 y 25 s.
+- **Visita repetida.** El service worker, con la estrategia de navegación por omisión
+  (`performance`), respondía la navegación **desde su caché con `index.csr.html`**: un cascarón
+  con `<app-root>` vacío. `/es` ni siquiera aparecía en el registro del servidor. Angular
+  arrancaba en el navegador, pintaba encabezado y pie, y el enrutador se quedaba esperando el
+  `resolve` de la ruta, que pedía el catálogo por el proxy; esa petición era la que despertaba la
+  API ("Starting new instance" un segundo después de recibirla, "Started TecnosportApiApplication
+  in 9-12 s") y tardaba entre 13 y 20 s. Ese es el rato de tienda vacía.
+
+Y aun sin service worker el navegador **volvía a pedir el catálogo al hidratar**: el estado de
+TanStack Query no viajaba con la página, así que el `resolve` corría otra vez en el cliente y
+bloqueaba la ruta hasta que la API respondía.
+
+Lo que se cambió, y que no toca componentes:
+
+- `navigationRequestStrategy: "freshness"` en `apps/web/ngsw-config.json`. Las navegaciones van
+  a la red y reciben el HTML del SSR con los productos; la caché del service worker queda como
+  respaldo sin conexión, que es para lo único que un cascarón sirve.
+- La caché de consultas viaja del servidor al navegador en el `TransferState`
+  (`core/consultas/transferencia-estado-consultas.ts`): `dehydrate` al serializar la página,
+  `hydrate` antes de la primera navegación. El `resolve` del cliente encuentra la consulta fresca
+  y no sale a la red. Exigió un `QueryClient` por aplicación en vez del objeto de módulo que
+  compartían todos los renders del mismo proceso de Node. Verificado contra el servidor construido
+  apuntando a la API de dev: el `ng-state` de la portada trae la consulta del catálogo en
+  `success`, 13,7 KB antes de comprimir.
+
+Lo que **no** se cambió, a propósito: el arranque en frío de la API. En dev se queda tal cual
+(decisión del 14 de septiembre de 2026): ni instancia mínima ni un trabajo que la mantenga
+despierta. Producción ya tiene decidido `min-instances = 1` más arriba en este documento. Con los
+dos cambios, la primera visita después de un rato de inactividad sigue esperando a la JVM, pero
+espera con la pestaña cargando —el navegador lo enseña— y no con una tienda que parece vacía.
+
+Cómo saber por dónde entró una visita, la próxima vez: si `/es` no aparece en el registro de
+peticiones de `tecnosport-web` y sí aparecen sus `/api/v1/...`, la sirvió el service worker desde
+caché. Y el arranque de la JVM se lee en el `stdout` de `tecnosport-api`, en la línea "Started
+TecnosportApiApplication in N seconds".
+
 ### Despliegue del ambiente de desarrollo
 
 `.github/workflows/desplegar-dev.yml`. Construye las dos imágenes, las sube a Artifact Registry y
