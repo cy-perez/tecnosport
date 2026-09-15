@@ -23,9 +23,9 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Regla | Valor |
 |---|---|
 | Precios | `$1.850` = **1.850.000 COP**; `$1.960.000` se toma tal cual (6 dígitos o más) |
-| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas y accesorios, computadores, proyectores, parlantes |
+| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
-| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
+| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -95,6 +95,36 @@ lista:
     sobre la premisa: si la línea dice `🖤💙`, esos dos son los que hay.
     Cuando llegue una devolución por un color que no era, se revisa esta regla.
 
+14. **Los accesorios sueltos no se publican.** El control de consola, el pencil
+    táctil y el rastreador tipo tag quedan por fuera: se venden solos, con margen
+    bajo y rotación lenta, y obligan a investigar un precio de mercado por cada
+    uno para muy poca venta. La consola y la tablet sí entran; lo que se vende
+    aparte, no. El pencil y el tag ya caían en `variedad`; el control tenía
+    categoría propia y por eso se sacó `accesorios_consola` de
+    `CATEGORIAS_INCLUIDAS`. La categoría se deja viva en el parser a propósito,
+    para que el control aparezca en la hoja de descartados con su motivo y no se
+    pierda en `sin_clasificar`. Si algún día se quieren vender, se vuelve a meter
+    `accesorios_consola` en `CATEGORIAS_INCLUIDAS` y se saca `variedad` de la
+    viñeta del pencil y la del tag.
+
+15. **Ningún producto se publica sin revisar si el fabricante tiene un retiro
+    del mercado vigente sobre esa referencia.** Se comprueba en el aviso de
+    seguridad del fabricante —Xiaomi lo publica en
+    `mi.com/co/support/safety-notice/`, y las demás marcas tienen su
+    equivalente— antes de redactar la ficha.
+    No es una precaución teórica: la lista del 12/09/2026 traía
+    `20.000mAh 33w $100`, que es la **Xiaomi 33W Power Bank 20000mAh (Integrated
+    Cable), modelo PB2030MI**, con retiro vigente por riesgo de
+    sobrecalentamiento de la batería e incendio en el lote fabricado entre
+    agosto y septiembre de 2024. Xiaomi identifica las unidades afectadas por
+    número de serie.
+    Un mayorista es justo donde aparece el inventario viejo, así que el riesgo
+    es real. Cuando haya un aviso, el producto **no entra** hasta que el
+    proveedor confirme modelo, lote y números de serie, y se verifiquen uno por
+    uno. Queda en la hoja de descartados con el motivo y el enlace al aviso.
+    Esta regla vale aunque el producto tenga buen margen: no se negocia un
+    riesgo de incendio contra un punto de rentabilidad.
+
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
 `DESCARTAR_COMPUTADOR_SIN_REFERENCIA` o `MARCAS_EXCLUIDAS` al inicio
@@ -158,15 +188,30 @@ Detalle de cómo está armada una lista: `referencias/formato-de-listas.md`.
 
 ### 4. Investigar cada producto
 
+Antes de empezar, mira qué marcas trae la lista y **pide los permisos de sitio
+que vas a necesitar en la extensión del navegador**. Un dominio sin autorizar
+corta el lote entero a mitad de camino. La lista de los que hicieron falta la
+última vez está en `referencias/fichas-tecnicas.md`.
+
 Para cada producto incluido, en una sola pasada de búsquedas:
 
 - **Nombre comercial oficial** — confirma la referencia real antes de titular.
   Las listas abrevian ("SAMSUNG BAND FIT 3" es la Galaxy Fit3, "WACH 8" es Galaxy
-  Watch 8). Normas del título: `referencias/titulos.md`.
+  Watch 8) y a veces cambian de línea ("XIAOMI BUDS 6 PLAY" son **Redmi**).
+  Normas del título y tabla de correcciones ya confirmadas:
+  `referencias/titulos.md`.
 - **Precio promedio del mercado colombiano** — método, fuentes válidas y qué hacer
-  con los precios atípicos: `referencias/precios.md`.
-- **Ficha técnica y descripción** — estructura obligatoria y tono:
-  `referencias/descripciones.md`.
+  con los precios atípicos: `referencias/precios.md`. Dos cosas que deciden la
+  calidad del número: el retail de vitrina manda sobre el marketplace, y Alkosto
+  solo se consulta por navegador.
+- **Aviso de retiro del fabricante** — regla 15. Es una consulta por marca, no
+  por producto, y se hace antes de redactar.
+- **Ficha técnica y descripción** — estructura y tono en
+  `referencias/descripciones.md`; **de dónde salen los datos** en
+  `referencias/fichas-tecnicas.md`. Para Xiaomi, que suele ser la marca más
+  grande de estas listas, el sitio oficial `mi.com/co` resolvió por sí solo 39
+  de 98 productos: trae ficha completa en español, paleta oficial de colores y
+  las configuraciones de memoria que el fabricante vende de verdad.
 - **Colores reales** — traduce los emojis y confírmalos contra la paleta oficial
   del modelo: `referencias/colores.md`. Si la línea no trae emojis, se asumen
   disponibles todos los colores de la ficha oficial (regla 13) y se deja dicho
@@ -253,8 +298,33 @@ No hay que volver a hacerlo a mano en cada lista:
   como parte del nombre.
 - **RAM virtual** (`8+8`): se publica solo la física y queda la nota de que el
   proveedor sumaba la virtual.
+- **Submarcas de Xiaomi**: las referencias que el proveedor escribe bajo
+  "XIAOMI" pero el fabricante publica como Redmi (`WATCH 5 ACTIVE`,
+  `BUDS 6 PLAY`, `PAD 2`…) se corrigen solas con `SUBMARCA_XIAOMI` y dejan la
+  nota en `supuestos`. La tabla completa está en `referencias/titulos.md`.
 
 ## Cosas que se rompen si no se cuidan
+
+**Un precio de marketplace no es el precio de mercado.** Éxito, Olímpica y
+Jumbo venden en el mismo sitio su inventario propio y el de terceros, y los
+terceros tiran el precio por debajo de la vitrina. Tomar ese número hunde
+categorías enteras: en la lista del 12/09/2026 los parlantes JBL daban mediana
+**−1 %** con precios de marketplace y **+14 %** contra la vitrina de Alkosto; el
+Charge 6 solo pasó de −20 % a +14 %. La vitrina manda, el marketplace es el
+último recurso y los dos niveles nunca se promedian juntos. Detalle y receta de
+Alkosto en `referencias/precios.md`.
+
+**Si el retail ya vende la generación siguiente, el precio va a quedar bajo
+costo.** No es mala suerte: el proveedor está saliendo de inventario viejo.
+Pasó con el JBL Grip, el Xtreme 4, el PartyBox 320 y el Motorola Edge 50 Fusion
+en la misma lista. Cuando la vitrina no tenga la referencia pero sí la
+siguiente, anótalo: cambia la decisión del negocio, no solo el número.
+
+**La sección "XIAOMI" no es toda Xiaomi.** Varias referencias son de la línea
+Redmi y el fabricante las publica con otro nombre y otra ficha. El parser
+corrige las conocidas con `SUBMARCA_XIAOMI`, pero la tabla es explícita a
+propósito —las Smart Band, el Watch S4 y las power bank sí son Xiaomi—, así que
+una referencia nueva se verifica contra el catálogo oficial antes de titular.
 
 **El precio del sitio no tiene por qué ser el promedio.** El promedio es el
 referente para saber cuánto margen hay. Si se publica exactamente en el promedio
@@ -305,8 +375,9 @@ scripts/icecat_local.py           trae fichas e imágenes de Open Icecat
 scripts/normalizar_imagenes.py    fotos crudas → 2000×2000 + variantes webp
 scripts/construir_entregables.py  productos.json → ZIP + Excel
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
-referencias/titulos.md            fórmula de títulos por categoría
+referencias/titulos.md            fórmula de títulos y nombres ya confirmados
 referencias/descripciones.md      estructura de la descripción y metadatos
+referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
 referencias/colores.md            emojis → colores publicables
 referencias/imagenes.md           estándar de fotos y origen de las imágenes

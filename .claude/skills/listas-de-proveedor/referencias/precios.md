@@ -16,6 +16,80 @@ No sirven: publicaciones de usados o reacondicionados, importadores informales,
 precios de otro país convertidos, preventas, precios "desde" de combos con plan,
 ni listados sin stock.
 
+### La vitrina no es el marketplace, y mezclarlos falsea la categoría entera
+
+Éxito, Olímpica y Jumbo venden en el mismo sitio dos cosas distintas: su
+**inventario propio** —la vitrina, con garantía de la tienda— y los productos de
+**vendedores del marketplace**, que son terceros. Los del marketplace tiran el
+precio muy por debajo de la vitrina.
+
+Usar un precio de marketplace como "precio de mercado" hace que el producto
+parezca sin margen cuando sí lo tiene. En la lista del 12/09/2026 eso hundió los
+parlantes JBL completos: con precios de marketplace la categoría daba **mediana
+−1 %**, y contra la vitrina de Alkosto daba **+14 %**. El JBL Charge 6 pasó de
+−20 % a +14 % sin que cambiara nada del producto.
+
+La regla:
+
+1. Si hay **retail de vitrina**, ese precio manda. Punto.
+2. El marketplace se usa **solo** cuando ninguna vitrina tiene la referencia, y
+   el producto queda marcado diciendo de dónde salió el número.
+3. Los dos niveles **nunca se promedian juntos**.
+
+`asignar_precios.py` ya aplica esta preferencia y escribe el nivel
+(`inventario propio` o `marketplace`) en cada fuente. Lo que hay que cuidar es
+que el corpus tenga vitrina de verdad, y ahí está el problema del punto
+siguiente.
+
+## Qué tienda se consulta cómo
+
+| Tienda | Cómo se consulta |
+|---|---|
+| Éxito, Olímpica, Jumbo | `scripts/precios.py` — exponen su catálogo VTEX sin credenciales |
+| **Alkosto** | Solo por navegador: no es VTEX y su buscador pinta los resultados desde el cliente |
+| Ktronix, Falabella, Samsung | Requieren autorizar el dominio en la extensión del navegador |
+
+Las tres de `precios.py` son cómodas porque responden JSON, pero **las tres
+traen sobre todo marketplace** en tecnología. Por eso una corrida que solo use
+`precios.py` termina con precios flojos: en la lista real, 51 de 83 precios
+salieron de vendedores del marketplace. Alkosto en el navegador corrigió eso.
+
+### Receta de Alkosto
+
+La búsqueda es una URL directa, y los resultados se leen del DOM ya pintado:
+
+```
+https://www.alkosto.com/search?text=<consulta+con+espacios+en+mas>
+```
+
+```js
+// título y precios de cada tarjeta; el primer precio es el vigente
+for (const a of document.querySelectorAll('a[href*="/p/"]')) { … }
+```
+
+Hay que esperar a que rendericen (unos 3 o 4 segundos): recién cargada, la
+página solo trae la navegación. Alkosto muestra **precio vigente y precio
+antes**; el de mercado es el vigente, porque es lo que paga hoy un cliente, y el
+de lista se anota al lado.
+
+**No extraigas las llaves de API embebidas del sitio para consultar su buscador
+por detrás.** Aunque estén a la vista en el HTML, usarlas es entrar por una
+puerta que la tienda no abrió. Se navega el sitio como lo navega una persona.
+
+## Señal de alarma: generación saliente
+
+Si el retail masivo **no tiene la referencia pero sí tiene la siguiente**, el
+proveedor está ofreciendo modelo saliente. Casi siempre eso viene con precio de
+proveedor por encima de lo que el mercado ya paga.
+
+Pasó con cuatro productos en la misma lista: el JBL Grip, el JBL Xtreme 4, el
+JBL PartyBox 320 y el Motorola Edge 50 Fusion. Alkosto ya solo vendía el
+Xtreme 5 y los Edge 60 y 70 Fusion. Los cuatro quedaron por debajo del costo.
+
+Cuando lo detectes, no basta con dejar el precio de marketplace y seguir:
+anótalo diciendo que la vitrina ya cambió de generación, porque cambia la
+decisión del negocio.
+
 ## Método
 
 1. Busca el título ya confirmado más "precio Colombia". Para variantes de
