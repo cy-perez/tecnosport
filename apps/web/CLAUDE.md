@@ -171,6 +171,21 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   `application/buscar-productos.consulta.ts` como plantilla
   (`opcionesBusqueda` compartida entre `usarBusquedaProductos` y
   `precargarProductos`).
+- **La caché que llenó el SSR viaja al navegador**, en el `TransferState`
+  (`core/consultas/transferencia-estado-consultas.ts`): `dehydrate` al
+  serializar la página, `hydrate` antes de la primera navegación. Por eso el
+  `resolve` de arriba no vuelve a pedir nada al hidratar: encuentra la consulta
+  fresca dentro de su `staleTime`. Solo viajan las consultas en `success`; una
+  que falló en el servidor la vuelve a pedir el cliente. Y el `QueryClient` es
+  **uno por aplicación** —el token `CLIENTE_DE_CONSULTAS`, con fábrica—, nunca
+  `new QueryClient()` suelto en `app.config.ts`: ese objeto lo compartían todos
+  los renders del mismo proceso de Node.
+- **El service worker no sirve el cascarón en las navegaciones.**
+  `navigationRequestStrategy: "freshness"` en `ngsw-config.json`: una navegación
+  va a la red y recibe el HTML del SSR; la caché solo responde sin conexión. Con
+  la estrategia por omisión, la segunda visita recibía `index.csr.html` vacío y
+  la tienda parecía sin productos hasta que la API respondía —encontrado en el
+  ambiente desplegado, ver `docs/07-infra-gcp.md`.
 - **`prefetchQuery`/`prefetchInfiniteQuery` están `@deprecated`** en favor de
   `query()`/`infiniteQuery()`, pero se usan a propósito: son los únicos que
   tragan errores (`.then(noop).catch(noop)`), así que un backend caído no

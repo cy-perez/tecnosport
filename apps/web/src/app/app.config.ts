@@ -9,11 +9,15 @@ import {
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
-import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
+import { provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { provideTransloco } from '@jsverse/transloco';
 import { routes } from './app.routes';
 import { REPOSITORIO_SESION } from './core/autenticacion/repositorio-sesion.puerto';
 import { SesionHttpRepositorio } from './core/autenticacion/sesion-http.repositorio';
+import {
+  CLIENTE_DE_CONSULTAS,
+  provideEstadoDeConsultasDesdeElServidor,
+} from './core/consultas/transferencia-estado-consultas';
 import { ALMACEN_CARRITO_ID } from './features/carrito/domain/almacen-carrito-id.puerto';
 import { ALMACEN_SNAPSHOT_LINEAS } from './features/carrito/domain/almacen-snapshot-lineas.puerto';
 import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carrito.puerto';
@@ -40,10 +44,12 @@ export const appConfig: ApplicationConfig = {
     provideEnvironmentInitializer(() => inject(MetadatosSeo).escuchar()),
     provideClientHydration(),
     provideHttpClient(withFetch()),
-    // Sin hidratación SSR del estado de la consulta todavía: la rejilla
-    // funciona igual, solo repite el fetch una vez al hidratar. Optimización
-    // pendiente que no toca componentes cuando se agregue.
-    provideTanStackQuery(new QueryClient()),
+    // Un cliente por aplicación (token con fábrica, no `new QueryClient()` aquí: ese objeto lo
+    // compartían todos los renders del servidor), y la caché que llenó el SSR viaja al navegador
+    // en el TransferState. Así el `resolve` de la ruta no vuelve a pedir el catálogo al hidratar
+    // — ver core/consultas/transferencia-estado-consultas.ts y docs/07-infra-gcp.md.
+    provideTanStackQuery(CLIENTE_DE_CONSULTAS),
+    provideEstadoDeConsultasDesdeElServidor(),
     // A diferencia de los puertos de catalogo (provistos por catalogo.routes.ts, solo dentro de
     // esa ruta): el carrito lo necesita el encabezado, que se renderiza siempre, no solo dentro
     // de /carrito — ver application/carrito.store.ts.

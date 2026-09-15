@@ -1,0 +1,207 @@
+# Revisión de la lista
+
+- Fecha de la lista: 2026-09-12
+- Productos para publicar: 53
+- Descartados: 80
+- Duplicados fusionados: 0
+- Productos con algún supuesto aplicado: 0
+- Líneas sin clasificar: 0
+
+## Productos para publicar
+- **Apple iPhone 17 Pro Max 1TB eSIM** — celulares — sin precio COP
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 17 Pro Max 512GB eSIM** — celulares — sin precio COP
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 17 Pro Max 256GB eSIM** — celulares — sin precio COP
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 17 Pro 512GB eSIM** — celulares — sin precio COP
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 17 Pro 256GB eSIM** — celulares — sin precio COP
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 17 256GB eSIM** — celulares — sin precio COP — colores: Blanco
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple iPhone 16e 128GB eSIM** — celulares — sin precio COP — colores: Negro
+  - ⚠️ la lista no trae precio de proveedor
+- **Apple Watch Ultra 3 49mm** — relojes — 2.700.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy S25 Ultra 12GB RAM 512GB** — celulares — sin precio COP — colores: Azul claro, Gris
+  - ⚠️ la lista no trae precio de proveedor
+- **Samsung Galaxy S25 Ultra 12GB RAM 256GB** — celulares — sin precio COP — colores: Negro, Morado
+  - ⚠️ la lista no trae precio de proveedor
+- **Samsung Galaxy S26 Ultra 12GB RAM 256GB** — celulares — sin precio COP — colores: Morado
+  - ⚠️ la lista no trae precio de proveedor
+- **Samsung Band Fit 3** — relojes — 125.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Honor 2i** — relojes — 130.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Honor 5i** — relojes — 155.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Band 10** — relojes — 160.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Band 11 Active** — relojes — 105.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Smart Band 10 Pro** — relojes — 245.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Watch 5 Active** — relojes — 125.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Watch 5 Lite** — relojes — 175.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Watch S4 41mm** — relojes — 510.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Watch 8 Classic 46mm** — relojes — 1.050.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Galaxy Watch 8 40mm** — relojes — 900.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Infinix Buds** — audifonos — 70.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Buds 6 Play** — audifonos — 45.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Buds 6 Active** — audifonos — 65.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Buds 8 Active** — audifonos — 70.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Endurance Pace** — audifonos — 210.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Diadema Tune 730** — audifonos — 210.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Honor Choice X7E** — audifonos — 75.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Buds Core** — audifonos — 130.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Buds 4** — audifonos — 600.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Cubo Beclad para Samsung** — cargadores — 40.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Cubo 25W** — cargadores — 60.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Cargador 25W** — cargadores — 100.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Samsung Cargador 45W** — cargadores — 140.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Apple Cubo iPhone 20W** — cargadores — 90.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Apple Cubo iPhone 40W** — cargadores — 190.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Cubo 33W** — cargadores — 60.000 COP
+  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Cable USB-C a Lightning** — cables — 45.000 COP
+  - ⚠️ cable: falta longitud, potencia soportada y si es original o compatible; son los tres datos por los que se devuelve un cable
+- **Cable USB-C a USB-C** — cables — 50.000 COP
+  - ⚠️ cable: falta longitud, potencia soportada y si es original o compatible; son los tres datos por los que se devuelve un cable
+- **Xiaomi Power Bank 10.000 mAh 165W** — power_bank — 155.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Xiaomi Power Bank 20.000 mAh 33W** — power_bank — 100.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Sony Control** — accesorios_consola — 300.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Nintendo Switch 2 Mario Kart** — consolas — 2.150.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Sony PlayStation 5 1TB** — consolas — 2.550.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Proyector L1** — proyectores — 750.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Portátil HP 14" Athlon 7120U 8GB RAM 512GB SSD** — computadores — 1.150.000 COP
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+- **Portátil Asus 15.6" Ryzen 5 7520U 8GB RAM 512GB SSD** — computadores — 1.600.000 COP
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+- **Portátil Asus Ryzen 5 7520U 8GB RAM 512GB SSD incluye bolso** — computadores — 1.700.000 COP
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+- **Portátil Asus 15.6" Intel i5 1334U 12GB RAM 512GB SSD** — computadores — 1.850.000 COP
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+- **Todo en Uno Ryzen 3 7320U 8GB RAM 512GB SSD** — computadores — 1.750.000 COP
+  - ⚠️ computador sin marca en la lista: confirmarla antes de publicar
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+- **Todo en Uno Ryzen 5 7520U 8GB RAM 512GB SSD** — computadores — 1.950.000 COP
+  - ⚠️ computador sin marca en la lista: confirmarla antes de publicar
+  - ⚠️ confirmar referencia exacta del equipo con el proveedor
+
+## Descartados
+- 17 256 *ACTIVO* 🩵🖤 — condición no publicable: nuevo_activado
+- 16 128  *ACTIVO* 🖤💙 💚⚪ — condición no publicable: nuevo_activado
+- 15 128 *ACTIVO* 🩵🖤 — condición no publicable: nuevo_activado
+- 13 128 *ACTIVO* 🖤 — condición no publicable: nuevo_activado
+- 15 PM 256 *ESIM* 🔵⚫ — condición no publicable: con_caja
+- 16 PRO MAX *ESIM* 256 $2.780 — condición no publicable: usado
+- 16 PRO 256 *ESIM* $2.550 — condición no publicable: usado
+- 16 128 *ESIM* $1.980 — condición no publicable: usado
+- 15 PRO MAX 256 $2.280 — condición no publicable: usado
+- 15 PRO 256 *ESIM* $2.050 — condición no publicable: usado
+- 15 128 *ESIM* $1.470 — condición no publicable: usado
+- 14 PRO MAX 256 *ESIM* $1.950 — condición no publicable: usado
+- 14 PRO MAX 128 *ESIM*  $1.850 — condición no publicable: usado
+- 14 PRO 256 $1.800 — condición no publicable: usado
+- 14 256 $1.250 — condición no publicable: usado
+- 14 128 $1.140 — condición no publicable: usado
+- 13 PM 128 $1.650 — condición no publicable: usado
+- 13 256  $1.250 — condición no publicable: usado
+- 13 128 $1.070 — condición no publicable: usado
+- 12 128 $900 — condición no publicable: usado
+- TV FLY 24" $350 — categoría no publicable: televisores
+- TV FLY 32"$450 — categoría no publicable: televisores
+- TV FLY 40" $620 — categoría no publicable: televisores
+- TV FLY 43" $750 — categoría no publicable: televisores
+- TV FLY 50" $1.000 — categoría no publicable: televisores
+- TV FLY 55" $1.250 — categoría no publicable: televisores
+- TV FLY 65" $1.700 — categoría no publicable: televisores
+- TV CORN 40" $620 — categoría no publicable: televisores
+- TV CORN 32"$450 — categoría no publicable: televisores
+- TV CORN 43" $750 — categoría no publicable: televisores
+- TV CORN 50" $1.000 — categoría no publicable: televisores
+- TV CORN 65" $1.700 — categoría no publicable: televisores
+- JBL GO 5 $190 — categoría no publicable: parlantes
+- JBL GRIP $290 — categoría no publicable: parlantes
+- JBL FLIP 7 $450 — categoría no publicable: parlantes
+- JBL CHARGE 6 $650 — categoría no publicable: parlantes
+- JBL BARRA DE SONIDO CINEMA SB 180 $750 — categoría no publicable: parlantes
+- JBL BARRA DE SONIDO CINEMA SB580 $1.100 — categoría no publicable: parlantes
+- JBL PARTY BOX ENCORE 2 $1.000 — categoría no publicable: parlantes
+- JBL ON THE GO ESSENTIAL + MIC $1.200 — categoría no publicable: parlantes
+- JBL EXTREME 4 $1.100 — categoría no publicable: parlantes
+- JBL EXTREME 5 $1.200 — categoría no publicable: parlantes
+- JBL BOOMBOX 4 $1.700 — categoría no publicable: parlantes
+- JBL PARTYBOX 320 $1.900 — categoría no publicable: parlantes
+- BOSE S1 PRO + $2.750 — categoría no publicable: parlantes
+- TENDA C6 1200  $75 — categoría no publicable: routers
+- TENDA AC8 120 $95 — categoría no publicable: routers
+- TP-LINK AX12 $125 — categoría no publicable: routers
+- MERCURY AC 1200 $90 — categoría no publicable: routers
+- MODEM PORTÁTIL DE SIM $130 — categoría no publicable: routers
+- REPETIDOR DE WIFI MERCURY MW300 $60 — categoría no publicable: routers
+- REPETIDOR DE WIFI MERCURY AC1200 $80 — categoría no publicable: routers
+- AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/110V $ — categoría no publicable: variedad
+- AIRE ACONDICIONADO CORN TIPO D CONVENCIONAL 12.000BTU/220V $ — categoría no publicable: variedad
+- XIAOMI TAG $55 — categoría no publicable: variedad
+- LAVADORA MABE 11KG $550 — categoría no publicable: variedad
+- 🏽PENCIL TÁCTIL XIAOMI $140 — categoría no publicable: variedad
+- SCOOTER CORN ECO RIDER $900 — categoría no publicable: variedad
+- SCOOTER XIAOMI 4 LITE 2 GEN $1.050 — categoría no publicable: variedad
+- SCOOTER XIAOMI 6 LITE $1.300 — categoría no publicable: variedad
+- SCOOTER XIAOMI 6 $1.650 — categoría no publicable: variedad
+- SCOOTER XIAOMI 5 PLUS + SILLA $2.500 — categoría no publicable: variedad
+- SCOOTER DT10 DUAL MOTOR $2.950 — categoría no publicable: variedad
+- SCOOTER DT10 SINGLE MOTOR $2.550 — categoría no publicable: variedad
+- SCOOTER M9 $2.750 — categoría no publicable: variedad
+- *CAJÓN MONEDERO METÁLICO* $160 — categoría no publicable: variedad
+- JALTECH CABLE  REF40213 $100 — categoría no publicable: lectores
+- SAT CABLE $100 — categoría no publicable: lectores
+- POS SAT $190 — categoría no publicable: impresoras
+- POS JALTECH $190 — categoría no publicable: impresoras
+- EPSON L3210 $655 — categoría no publicable: impresoras
+- EPSON 3351 $795 — categoría no publicable: impresoras
+- EPSON 5590 $1.150 — categoría no publicable: impresoras
+- CANON G2170 $550 — categoría no publicable: impresoras
+- CANON G3170 $650 — categoría no publicable: impresoras
+- EPSON 544 $40 — categoría no publicable: tintas
+- EPSON 524 70 ML $80 — categoría no publicable: tintas
+- EPSON 524 127ML $100 — categoría no publicable: tintas
+- CANON 11$50 NEGRO — categoría no publicable: tintas
+- CANON 11$45 COLORES — categoría no publicable: tintas
