@@ -16,8 +16,11 @@
 lista de lo que la *cuenta* de Wompi tiene activado, que no es lo mismo que lo
 que el código sabe procesar. `MetodosDePagoDisponibles` parte de ahí y
 `CrearPedido` lo exige otra vez antes de crear el pedido — el servidor no se fía
-de que el cliente haya consultado la lista (regla dura #7). Hasta la Fase 3 no
-existía esa distinción: se ofrecía el enum entero.
+de que el cliente haya consultado la lista (regla dura #7)— y responde `409
+METODO_DE_PAGO_NO_HABILITADO`, que no es el `CONTRAENTREGA_NO_DISPONIBLE`: uno es
+"para ningún pedido", el otro "para este". Desde la Fase 3 y hasta el 14 de
+septiembre de 2026 no existía esa distinción: se ofrecía el enum entero. Ver
+`ADR-0029`.
 
 ### Addi
 
@@ -68,12 +71,17 @@ valor queda y no se ofrece.
   eligió en nuestro checkout: Wompi pinta su propia lista y el comprador vuelve
   a elegir allí. Así que `pedido.metodo_pago` es una intención, no un hecho.
   `pago.medio_reportado_pasarela` guarda el `payment_method_type` que Wompi
-  reporta —crudo, tal como él lo nombra— por webhook o por conciliación, lo que
-  llegue primero. No pisa el método elegido: machacarlo borraría la única prueba
+  reporta —crudo, tal como él lo nombra— por webhook o por conciliación, y se
+  queda con lo último que la pasarela dijo; un evento que no lo trae no borra lo
+  que ya se sabía. No pisa el método elegido: machacarlo borraría la única prueba
   de que el sitio ofreció una cosa y cobró otra. `MediosDeWompi` traduce los
   valores que este sitio ofrece y devuelve nulo para el resto — "no sé traducir
   esto" no es "esto no coincide", y quien pregunte tiene que distinguirlos antes
   de afirmar una discrepancia.
+  **Hoy nadie compara los dos.** Se guarda la evidencia; ninguna pantalla ni
+  ningún informe la lee todavía y `MediosDeWompi` no tiene un solo llamador en
+  producción. Es deuda declarada, no un olvido: comparar sin haber decidido qué
+  hacer con la discrepancia sería una alerta sin dueño.
 - Ambiente de pruebas hasta que los recorridos completos pasen. Las llaves de
   producción entran solo por Secret Manager.
 

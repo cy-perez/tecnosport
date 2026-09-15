@@ -2992,8 +2992,9 @@ prefieras"), y el acuse de retracto también — prometía el estándar viejo.
 
 **PSE no hacía falta construirlo.** Se revisó porque parecía pendiente y ya
 estaba: `MetodoPago.PSE` existe desde la Fase 3, `MetodosDePagoDisponibles`
-devuelve `EnumSet.allOf` y el checkout lo lista con su etiqueta. Wompi resuelve el
-flujo en su Web Checkout.
+devolvía entonces `EnumSet.allOf` —desde el 14 de septiembre parte de lo que la
+cuenta de Wompi tiene activado, `ADR-0029`— y el checkout lo lista con su
+etiqueta. Wompi resuelve el flujo en su Web Checkout.
 
 ### Lo que queda abierto
 
@@ -3700,11 +3701,18 @@ del día, no fingir una fecha futura que todavía no está vigente.
 
 #### Los datos pendientes: tres entraron, dos no eran datos
 
-- **IVA sobre el flete: ya viene incluido.** El valor que devuelve la cotización se
-  cobra tal cual, así que ningún cálculo cambia. Lo que cambió es el texto: el
-  desglose dice que todos los valores incluyen IVA, **el del envío también**. Una
-  sola línea para todo el desglose y no una nota colgada del flete — señalarlo solo
-  ahí daría a entender que las demás líneas no lo llevan.
+- **IVA sobre el flete: ~~ya viene incluido~~ — reabierto ese mismo día, con otra
+  respuesta.** Se cerró creyendo que la cotización traía el IVA dentro y el desglose
+  llegó a decir que todos los valores lo incluían, "el del envío también". Al
+  verificar la cifra resultó falsa: el `rate.total` es el precio de un servicio de
+  transporte **excluido** de IVA, así que no trae impuesto dentro. Y son dos
+  preguntas, no una: el transporte comprado suelto está excluido, pero el flete que el
+  vendedor le recobra al comprador dentro de una venta gravada integra la base
+  gravable por el **artículo 447 del Estatuto Tributario**, confirmado por el
+  **Concepto DIAN 4945 de 2025**. La frase del desglose se estrechó a "los precios de
+  los productos incluyen IVA", y la consecuencia es de plata: si aplica, el 19% del
+  flete sale hoy del margen en cada pedido a domicilio. Queda como `TODO` para el
+  contador en `docs/02-modelo-datos.md` y en la sección 4 de `docs/12`.
 - **Los topes del recaudo: COP 2.000 y COP 2.000.000**, el par que reporta la ayuda
   pública de Skydropx. El máximo estuvo en 100.000 toda la fase, con una nota que
   decía textualmente que era un marcador de desarrollo — una cifra provisional con la
@@ -3794,6 +3802,69 @@ idioma.
 
 **De paso, `docs/03-api.md`** seguía documentando el filtro `linea` con los tres
 valores viejos. Misma deriva, mismo día, y esa no la atrapa ningún compilador.
+
+### Addi sale del checkout, y el método elegido resultó ser una intención (2026-09-14)
+
+Empezó como un dato de negocio y terminó en una migración. **Addi estudia la
+activación con el sitio ya en línea**, así que no puede estar el día del
+lanzamiento; la tarea era quitarlo del checkout. Tres cosas aparecieron al
+hacerlo, cada una más honda que la anterior.
+
+**No había interruptor.** `MetodosDePagoDisponibles` devolvía `EnumSet.allOf` y
+le quitaba contraentrega cuando no aplicaba: ofrecía **todo lo que el código sabía
+procesar**, estuviera o no activado en la cuenta de Wompi. Son dos preguntas
+distintas —¿ofrece el negocio ese método hoy? y ¿le sirve a este pedido?— y solo
+existía la segunda. La primera vive ahora en `WOMPI_METODOS_HABILITADOS`, que es
+lo que la *cuenta* tiene activado: el día que Wompi active Addi entra por variable
+de entorno, sin tocar código, y hay que devolver la frase de los términos que se
+quitó con esto. Quitar `ADDI` del enum habría sido la salida rápida, y habría
+dejado el mismo agujero para el siguiente método que Wompi apague. Un nombre que
+no exista en la lista impide arrancar: un despliegue mal escrito tiene que fallar
+al arrancar y no al primer checkout.
+
+**Y `CrearPedido` tampoco preguntaba.** Solo revalidaba contraentrega, así que un
+cliente que posteara un método apagado creaba el pedido igual y el comprador
+acababa en un Web Checkout donde ese método no aparece. Ahora exige la lista antes
+de nada —no cuesta una llamada de red— y responde `409
+METODO_DE_PAGO_NO_HABILITADO`, distinto del `CONTRAENTREGA_NO_DISPONIBLE`: uno es
+"para ningún pedido", el otro "para este". El `switch` que decidía qué métodos
+pasan por la pasarela vivía privado en `CrearIntentoDePago`; subió a
+`MetodoPago.seProcesaPorPasarela()` cuando un segundo sitio necesitó la misma
+pregunta, sin `default`, para que un método nuevo no compile hasta decidir de qué
+lado cae.
+
+**Lo que esto habría roto sin que nada reventara.** La URL del Web Checkout
+hospedado **no le manda a Wompi el método elegido**: Wompi pinta su propia lista y
+el comprador vuelve a elegir allí. Un comprador elegía Addi en nuestro checkout,
+pagaba con tarjeta en el de Wompi, y el pedido quedaba grabado diciendo Addi. Es
+decir: `pedido.metodo_pago` era una intención y nada la contrastaba nunca contra lo
+cobrado. `V39` agrega `pago.medio_reportado_pasarela`, el `payment_method_type` que
+Wompi reporta por webhook o por conciliación — `PasarelaDePagos.consultarTransaccion`
+devolvía solo el estado y ahora devuelve `TransaccionDePasarela`, estado y medio.
+Crudo, tal como Wompi lo nombra, para que un valor que hoy no se sepa traducir no
+se pierda en el mapeo; y **sin pisar el método elegido**, porque machacarlo
+borraría la única prueba de que el sitio ofreció una cosa y cobró otra.
+
+**El tercer hallazgo desmintió la tabla de `docs/11`.** Decía que Addi lo provee
+Wompi, y la documentación pública de Wompi consultada ese día (regla dura #9) no lo
+lista: lo que Wompi tiene en esa familia es `BANCOLOMBIA_BNPL` y `SU_PLUS`. Addi es
+un proveedor aparte con su propia integración, así que `MetodoPago.ADDI` marcado
+como método de pasarela es un modelo que miente mientras nadie lo toque. Queda como
+`TODO` de negocio en `docs/11`: integrarlo directo cuando lo aprueben, o quitarlo y
+ofrecer el BNPL de Bancolombia, que sí entra por la configuración que ya existe.
+
+**Lo que no se hizo, a sabiendas.** `MediosDeWompi` traduce el medio reportado al
+enum y está probado, pero **nadie lo llama en producción**: se guarda la evidencia
+y ninguna pantalla la lee ni la compara. Comparar sin haber decidido qué hacer con
+la discrepancia sería una alerta sin dueño. Y `esMetodoPagoWompi` en el front sigue
+siendo un espejo escrito a mano del `switch` del backend, con `ADDI` dentro: es
+correcto mientras el servidor no lo ofrezca, y es el tipo de copia que el contrato
+generado no cubre.
+
+**El texto legal cambió el mismo día que la versión**, otra vez: el numeral 6 de
+los términos dejó de nombrar a Addi y dice ahora que los medios disponibles son los
+que se muestran al pagar. Misma limitación del esquema de versiones que la
+publicación anterior, mismo criterio. Todo esto quedó en `ADR-0029`.
 
 ## Cómo conversar con Claude Code en este proyecto
 

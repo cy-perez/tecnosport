@@ -301,6 +301,10 @@ WOMPI_LLAVE_PUBLICA     (no hay llave privada: esta integración no la usa — e
                          ampliar el alcance de PCI)
 WOMPI_SECRETO_EVENTOS, WOMPI_SECRETO_INTEGRIDAD, WOMPI_AMBIENTE
 WOMPI_CONCILIACION_INTERVALO_MINUTOS, WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS
+WOMPI_METODOS_HABILITADOS (lo que la CUENTA de Wompi tiene activado, no lo que el código sabe
+                         procesar: separado por comas y solo métodos de pasarela. Un nombre que
+                         no exista impide arrancar. Addi queda fuera hasta que Wompi lo active,
+                         y el día que entre hay que devolver la frase de los términos — `ADR-0029`)
 
 TRANSFERENCIA_BANCO, TRANSFERENCIA_TIPO_CUENTA, TRANSFERENCIA_NUMERO_CUENTA,
 TRANSFERENCIA_TITULAR
