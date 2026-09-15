@@ -23,9 +23,9 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Regla | Valor |
 |---|---|
 | Precios | `$1.850` = **1.850.000 COP**; `$1.960.000` se toma tal cual (6 dígitos o más) |
-| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas y accesorios, computadores, proyectores |
+| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas y accesorios, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
-| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, lo que quede sin precio, los celulares por debajo de 500.000 COP y los computadores sin marca o sin referencia |
+| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -72,9 +72,33 @@ lista:
     referencia en la lista", y si el proveedor la manda en la próxima lista,
     entra en esa.
 
+12. **Krono, BMAX, itel, ZTE, Infinix y Tecno no se analizan, en ninguna
+    categoría.** Ninguna tienda colombiana de primera mano —Alkosto, Ktronix,
+    Éxito, Olímpica, Panamericana— trabaja esas marcas, así que no hay precio
+    de mercado admisible contra el cual calcular margen, y un margen sin fuente
+    no se puede defender ante el negocio. Están en `MARCAS_EXCLUIDAS` y la
+    regla se aplica por marca, sin mirar la categoría: si la lista trae unos
+    audífonos Infinix o un cargador Tecno, también quedan fuera.
+    La regla nació acotada a celulares, se amplió a tablets y terminó cubriendo
+    todo el surtido el mismo día, al confirmarse que el problema no era la
+    categoría sino que el retail no vende la marca. Es una decisión de dónde
+    poner el esfuerzo, no un juicio sobre el producto: si algún día una de
+    estas marcas entra a Alkosto o a Éxito, se saca de la lista y vuelve a
+    entrar al análisis.
+13. **Los colores se publican asumiendo que el proveedor tiene todos los de la
+    ficha.** Las listas casi nunca marcan color —en una lista real de 121
+    productos solo 2 líneas traían emojis de color—, y esperar a que el
+    proveedor confirme bloquea la publicación entera. La premisa es que están
+    disponibles todos los colores que trae la ficha oficial del producto, y así
+    queda anotado en cada ficha para que quien carga el inventario sepa de
+    dónde salieron. Los emojis de la lista, cuando los hay, siguen mandando
+    sobre la premisa: si la línea dice `🖤💙`, esos dos son los que hay.
+    Cuando llegue una devolución por un color que no era, se revisa esta regla.
+
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
-`CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO` o
-`DESCARTAR_COMPUTADOR_SIN_REFERENCIA` al inicio de `scripts/parsear_lista.py`.
+`CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
+`DESCARTAR_COMPUTADOR_SIN_REFERENCIA` o `MARCAS_EXCLUIDAS` al inicio
+de `scripts/parsear_lista.py`.
 
 ## Dónde está corriendo esta skill
 
@@ -144,7 +168,9 @@ Para cada producto incluido, en una sola pasada de búsquedas:
 - **Ficha técnica y descripción** — estructura obligatoria y tono:
   `referencias/descripciones.md`.
 - **Colores reales** — traduce los emojis y confírmalos contra la paleta oficial
-  del modelo: `referencias/colores.md`.
+  del modelo: `referencias/colores.md`. Si la línea no trae emojis, se asumen
+  disponibles todos los colores de la ficha oficial (regla 13) y se deja dicho
+  en el producto de dónde salió la lista de colores.
 
 Escribe los resultados de vuelta en `productos.json` (`precio_mercado_cop`,
 `fuentes_precio`, `descripcion`, `meta_titulo`, `meta_descripcion`,

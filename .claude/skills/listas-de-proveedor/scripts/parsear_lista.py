@@ -44,6 +44,7 @@ CATEGORIAS_INCLUIDAS = {
     "accesorios_consola",
     "computadores",
     "proyectores",
+    "parlantes",
 }
 
 # Solo se publica el equipo sellado sin activar.
@@ -52,6 +53,18 @@ CONDICIONES_PUBLICABLES = {"nuevo"}
 # Un celular por debajo de este precio de proveedor no entra al análisis.
 # Los demás productos (relojes, audífonos, cargadores...) no tienen mínimo.
 PRECIO_MINIMO_CELULAR_COP = 500_000
+
+# Marcas que no se analizan, en NINGUNA categoría (decisión del negocio,
+# 15/09/2026). El retail colombiano de primera mano —Alkosto, Ktronix, Éxito,
+# Olímpica, Panamericana— no las vende, así que no hay precio de mercado
+# admisible con el cual calcular margen, y un margen sin fuente no se puede
+# defender ante el negocio.
+# La regla nació acotada a celulares, se amplió a tablets y terminó cubriendo
+# todo el surtido de la marca el mismo día: el problema no era la categoría
+# sino que el retail no trabaja esas marcas.
+MARCAS_EXCLUIDAS = {
+    "krono", "bmax", "itel", "zte", "infinix", "tecno",
+}
 
 # Un producto que después de fusionar repetidos sigue sin precio se descarta:
 # sin costo no hay margen que calcular ni precio que publicar.
@@ -858,6 +871,10 @@ def filtrar_por_precio(productos, descartados):
             descartados.append({**p, "motivo": "computador sin " + " ni ".join(p["sin_datos"]) + " en la lista"})
         elif p["categoria"] == "celulares" and precio is not None and precio < PRECIO_MINIMO_CELULAR_COP:
             descartados.append({**p, "motivo": f"celular por debajo del mínimo de {minimo} COP"})
+        elif (p.get("marca") or "").strip().lower() in MARCAS_EXCLUIDAS:
+            descartados.append({**p, "motivo":
+                                f"marca excluida ({p['marca']}): sin precio de "
+                                f"mercado admisible en Colombia"})
         else:
             salida.append(p)
     return salida

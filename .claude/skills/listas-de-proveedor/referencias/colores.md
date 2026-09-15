@@ -34,6 +34,22 @@ paleta tiene dos tonos que caen en la misma familia y no hay cómo distinguirlos
 —dos azules, por ejemplo— no adivines: deja los dos como opción y pregúntale al
 proveedor cuál está mandando. Publicar el tono equivocado es una devolución.
 
+## Cuando la lista no trae ningún color
+
+Es lo normal: en una lista real de 121 productos solo 2 líneas traían emojis.
+La premisa del negocio (15/09/2026) es **asumir disponibles todos los colores de
+la ficha oficial del producto**, en vez de dejar el producto sin variantes o
+esperar una respuesta del proveedor que bloquea la publicación.
+
+Dos condiciones para que la premisa no se convierta en una mentira:
+
+- **Los emojis mandan sobre la premisa.** Si la línea dice `🖤💙`, el producto
+  tiene dos variantes y no las seis de la paleta. La premisa solo cubre el vacío.
+- **Queda dicho de dónde salió.** En `supuestos` del producto se anota que los
+  colores vienen de la ficha y no de la lista, para que quien carga el
+  inventario sepa que esas cantidades hay que confirmarlas antes de prometer
+  entrega.
+
 ## Cómo queda en el sitio
 
 Un modelo con cuatro colores es **un producto con cuatro variantes**, no cuatro
