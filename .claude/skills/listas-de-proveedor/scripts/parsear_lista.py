@@ -33,6 +33,13 @@ DIGITOS_PRECIO_COMPLETO = 6
 
 # Los cables quedaron por fuera (decisión del negocio, 14/09/2026): la lista nunca
 # trae longitud, potencia ni marca, y sin eso no se publican.
+# Los accesorios sueltos también quedaron por fuera (decisión del negocio,
+# 15/09/2026): el control de consola, el pencil táctil y el rastreador tipo tag.
+# La consola y la tablet sí entran; el accesorio que se vende aparte, no.
+# El pencil y el tag ya caían en "variedad"; el control tenía su propia categoría
+# y por eso hubo que sacar "accesorios_consola" de aquí. Se deja la categoría viva
+# en ENCABEZADOS y en VINETAS_CATEGORIA a propósito: así el control cae en
+# descartados con su motivo a la vista, y no en "sin clasificar".
 CATEGORIAS_INCLUIDAS = {
     "celulares",
     "tablets",
@@ -41,7 +48,6 @@ CATEGORIAS_INCLUIDAS = {
     "cargadores",
     "power_bank",
     "consolas",
-    "accesorios_consola",
     "computadores",
     "proyectores",
     "parlantes",
@@ -205,6 +211,25 @@ ALIAS = [
     (r"\bSWITCH\b", "Nintendo", "Switch"),
     (r"\bPS5\b", "Sony", "PlayStation 5"),
     (r"\bPS4\b", "Sony", "PlayStation 4"),
+]
+
+# El proveedor encabeza toda la sección con "XIAOMI", pero varias de esas
+# referencias son de la línea Redmi y el fabricante las publica así: el nombre
+# comercial, la ficha y la garantía son de Redmi. Publicarlas como Xiaomi manda
+# al cliente a buscar una ficha que no existe.
+#
+# La tabla es explícita a propósito. Generalizar sería peor: en el mismo
+# catálogo, las Smart Band, el Watch S4, los Buds 6 a secas y las power bank sí
+# son Xiaomi. Cada línea se verificó contra mi.com/co el 15/09/2026; si mañana
+# cambia, se corrige aquí.
+SUBMARCA_XIAOMI = [
+    (r"^Watch 5 (Active|Lite)\b", r"Redmi Watch 5 \1", True),
+    (r"^Buds 6 (Play|Active)\b", r"Redmi Buds 6 \1", True),
+    (r"^Buds 8\b", "Redmi Buds 8", True),
+    (r"^Pad 2\b", "Redmi Pad 2", True),
+    # Xiaomi publica las bandas como "Smart Band"; la lista a veces omite
+    # "Smart". Esta sí se queda en la línea Xiaomi.
+    (r"^Band (\d+)", r"Smart Band \1", False),
 ]
 
 CASING = {
@@ -573,10 +598,33 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             prod["modelo"] = "Galaxy " + prod["modelo"]
         prod["revisar"].append("confirmar nombre comercial oficial del modelo")
 
+    aplicar_submarca(prod)
     armar_titulo(prod)
     if prod["condicion"] == "nuevo_activado":
         prod["revisar"].append("equipo con la garantía ya activada")
     return prod
+
+
+def aplicar_submarca(prod):
+    """Corrige el nombre comercial cuando la sección y el fabricante no coinciden.
+
+    Solo toca lo que está en SUBMARCA_XIAOMI y deja el rastro en `supuestos`,
+    que es donde va lo asumido: no bloquea la publicación, pero explica por qué
+    el título dice Redmi si la lista decía Xiaomi.
+    """
+    if (prod.get("marca") or "") != "Xiaomi":
+        return
+    modelo = prod.get("modelo") or ""
+    for patron, nuevo, es_redmi in SUBMARCA_XIAOMI:
+        if re.match(patron, modelo):
+            prod["modelo"] = re.sub(patron, nuevo, modelo)
+            prod["supuestos"].append(
+                "el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta "
+                "referencia en la línea Redmi: el título usa el nombre comercial real"
+                if es_redmi else
+                "Xiaomi publica esta banda como «Smart Band»; la lista omitía «Smart»"
+            )
+            return
 
 
 def armar_titulo(prod):

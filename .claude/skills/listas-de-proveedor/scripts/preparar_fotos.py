@@ -39,7 +39,9 @@ crudas/<id>/origen.json con la fuente y la licencia de cada imagen, que es el
 respaldo de por qué esa foto se puede publicar.
 
 Después, en el entorno de la skill:
-    python3 normalizar_imagenes.py crudas/ --salida imagenes/
+    python3 filtrar_fotos.py crudas/        # quita pictogramas y fotos recortadas
+
+y el retoque lo hace la skill `fotos-estudio-degradado`.
 """
 
 import csv
@@ -135,20 +137,41 @@ LEEME = """FOTOS DE PRODUCTO — tres pasos
        python descargar.py
    Deja las imágenes en crudas/<id-del-producto>/ y anota el origen de cada una.
 
-3. Sube la carpeta crudas/ y normalízala al estándar de publicación:
-       python3 normalizar_imagenes.py crudas/ --salida imagenes/
+3. Sube la carpeta crudas/. Ahí se filtra lo que no sirve y se retoca:
+       python3 filtrar_fotos.py crudas/
 
-   Quedan en 2000x2000 con fondo blanco, más las variantes de 1200, 800 y 400 px.
+   Quita los pictogramas y las fotos donde el producto sale cortado, y deja lo
+   descartado en descartadas/ con el motivo. El retoque al estándar de estudio
+   —fondo degradado, 2000x2000 y variantes— lo hace la skill
+   `fotos-estudio-degradado`.
 """
 
 
-def cubiertos_por_icecat(ruta):
-    """Ids que ya tienen enlaces traídos del catálogo abierto."""
-    ruta = Path(ruta)
-    if not ruta.exists():
-        return set()
-    with ruta.open(encoding="utf-8-sig") as f:
-        return {fila["id_producto"] for fila in csv.DictReader(f) if fila.get("url")}
+def fotos_ya_conseguidas(csv_icecat, dir_crudas):
+    """Cuántas fotos utilizables tiene ya cada producto.
+
+    Lo que manda es `crudas/`, porque es lo que queda **después** de que
+    `filtrar_fotos.py` botó los pictogramas y las tomas donde el producto sale
+    cortado. El CSV de Icecat solo dice qué se listó, no qué sobrevivió: dar por
+    resuelto un producto porque Icecat le encontró cuatro enlaces es cómo se
+    terminan publicando fichas con una foto y tres pictogramas.
+    """
+    cuenta = {}
+    ruta = Path(csv_icecat)
+    if ruta.exists():
+        with ruta.open(encoding="utf-8-sig") as f:
+            for fila in csv.DictReader(f):
+                if fila.get("url"):
+                    cuenta[fila["id_producto"]] = cuenta.get(fila["id_producto"], 0) + 1
+
+    crudas = Path(dir_crudas)
+    if crudas.is_dir():
+        for carpeta in crudas.iterdir():
+            if carpeta.is_dir():
+                cuenta[carpeta.name] = sum(
+                    1 for p in carpeta.iterdir()
+                    if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"))
+    return cuenta
 
 
 def pedido_proveedor(productos, fecha):
@@ -181,6 +204,10 @@ def pedido_proveedor(productos, fecha):
             if marca_p and nombre.upper().startswith(marca_p.upper()):
                 nombre = nombre[len(marca_p):].strip()
             linea = f"  - {nombre}" + (f" ({colores})" if colores else "")
+            if p.get("_tiene"):
+                # Pedir cuatro cuando ya hay dos buenas hace que el proveedor
+                # mande de nuevo lo que ya tenemos, o que no mande nada.
+                linea += f"   [ya tenemos {p['_tiene']}: faltan {p['_faltan']}]"
             if not marca_p and p.get("texto_origen"):
                 linea += f"   [en la lista aparece como: {p['texto_origen'].strip()[:50]}]"
             cuerpo.append(linea)
@@ -201,14 +228,16 @@ def main():
     datos = json.loads(Path(args.productos).read_text(encoding="utf-8"))
     salida = Path(args.salida)
     salida.mkdir(parents=True, exist_ok=True)
-    ya_resueltos = cubiertos_por_icecat(args.cubiertos)
+    conseguidas = fotos_ya_conseguidas(args.cubiertos, salida / "crudas")
 
     pendientes, filas = [], []
     for p in datos["productos"]:
-        if p["id"] in ya_resueltos:
+        tiene = conseguidas.get(p["id"], 0)
+        if tiene >= FOTOS_POR_PRODUCTO:
             continue
         if args.solo_sin_fotos and (salida / "crudas" / p["id"]).is_dir():
             continue
+        p = {**p, "_faltan": FOTOS_POR_PRODUCTO - tiene, "_tiene": tiene}
         pendientes.append(p)
         for n, encuadre in enumerate(ENCUADRES[:FOTOS_POR_PRODUCTO], start=1):
             filas.append({
@@ -230,9 +259,13 @@ def main():
     ruta_pedido = salida / "pedido-al-proveedor.txt"
     ruta_pedido.write_text(pedido_proveedor(pendientes, fecha), encoding="utf-8")
 
-    print(f"{len(ya_resueltos)} productos ya resueltos por el catálogo abierto")
+    completos = sum(1 for n in conseguidas.values() if n >= FOTOS_POR_PRODUCTO)
+    a_medias = [p for p in pendientes if p.get("_tiene")]
+    print(f"{completos} productos ya tienen sus {FOTOS_POR_PRODUCTO} fotos")
     print(f"{len(pendientes)} quedan para pedirle al proveedor "
           f"({len(filas)} fotos en total)")
+    if a_medias:
+        print(f"   de esos, {len(a_medias)} ya tienen alguna y solo les faltan unas pocas")
     print(f"-> {ruta_pedido}  (para enviarle tal cual)")
     print(f"-> {ruta_csv}     (por si manda enlaces en vez de archivos)")
     print(f"-> {salida / 'descargar.py'}")

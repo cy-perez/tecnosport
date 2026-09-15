@@ -61,7 +61,14 @@ def ficha_txt(p: dict) -> str:
     if p.get("fuentes_precio"):
         L += ["", "FUENTES DEL PRECIO DE MERCADO", "-" * 60]
         for f in p["fuentes_precio"]:
-            L.append(f"- {f.get('tienda', '?')}: {f.get('precio', '?')} — {f.get('url', '')}")
+            # el parser y asignar_precios.py escriben precio_cop y enlace; se
+            # aceptan también precio y url, que es como lo escribe una persona
+            # cuando completa una fuente a mano
+            precio = f.get("precio_cop") or f.get("precio")
+            enlace = f.get("enlace") or f.get("url") or ""
+            nivel = f" ({f['nivel']})" if f.get("nivel") else ""
+            monto = f"{precio:,}".replace(",", ".") if precio else "?"
+            L.append(f"- {f.get('tienda', '?')}{nivel}: {monto} — {enlace}")
     return "\n".join(L) + "\n"
 
 

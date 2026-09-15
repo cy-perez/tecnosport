@@ -67,6 +67,48 @@ PAUSA = 0.25          # segundos entre peticiones; el límite es 100 por IP
 MIN_PUNTAJE = 0.3
 FOTOS_POR_PRODUCTO = 4
 
+# Icecat no sirve solo fotos: en la misma lista mezcla pictogramas de
+# característica ("no incluye cargador", "10-45 W USB PD"), que son dibujos en
+# blanco y negro de 178x200 px. Antes se colaban porque se tomaban las cuatro
+# primeras sin mirar el tipo, y desplazaban a las fotos de verdad: en una
+# corrida real 17 de las fotos entregadas eran pictogramas.
+#
+# El orden de esta lista es el de preferencia. Lo que no esté aquí se descarta.
+TIPOS_FOTO = [
+    "ProductImage", "ProductImageFront-Center", "ProductImageFront-Right",
+    "ProductImageRear", "ProductDetailImage",
+    # De aquí para abajo solo sirven para completar las cuatro: las anotadas
+    # llevan textos encima, la de empaque muestra la caja y la de estilo de
+    # vida suele traer el producto cortado o en la mano de alguien.
+    "ProductPackagingImage", "ProductImageAnnotated", "LifestyleImage",
+]
+TIPOS_DESCARTADOS = {"FeatureLogo"}
+# Cuántas candidatas se listan por producto. Se listan de más a propósito:
+# `filtrar_fotos.py` descarta las recortadas y necesita de dónde escoger.
+CANDIDATAS_POR_PRODUCTO = 12
+
+
+def fotos_utiles(fotos):
+    """Descarta los recursos que no son fotos y ordena por calidad de encuadre.
+
+    Devuelve (candidatas, descartadas). El orden de `TIPOS_FOTO` manda; dentro
+    de un mismo tipo se respeta el orden de Icecat, que pone primero la
+    principal.
+    """
+    candidatas, descartadas = [], []
+    for foto in fotos:
+        tipo = foto.get("tipo") or ""
+        # El pictograma también se reconoce por la ruta, porque hay fichas
+        # donde el tipo viene vacío y la URL sí lo delata.
+        es_logo = tipo in TIPOS_DESCARTADOS or "/feature_logo/" in foto.get("url", "")
+        if es_logo or tipo not in TIPOS_FOTO:
+            descartadas.append((foto, tipo or "sin tipo"))
+        else:
+            candidatas.append(foto)
+    candidatas.sort(key=lambda f: (TIPOS_FOTO.index(f["tipo"]),
+                                   not f.get("principal"), f.get("orden", 99)))
+    return candidatas[:CANDIDATAS_POR_PRODUCTO], descartadas
+
 
 # --------------------------------------------------------------------------
 
@@ -564,14 +606,17 @@ def cmd_traer(args):
 
         (dir_icecat / f"{c['id_producto']}.json").write_text(
             json.dumps(ficha, ensure_ascii=False, indent=2), encoding="utf-8")
-        for n, foto in enumerate(ficha["fotos"][:FOTOS_POR_PRODUCTO], start=1):
+        candidatas, descartadas = fotos_utiles(ficha["fotos"])
+        for n, foto in enumerate(candidatas, start=1):
             filas_fotos.append({
                 "id_producto": c["id_producto"], "titulo": c["titulo"], "n_foto": n,
                 "encuadre": foto["tipo"] or "", "url": foto["url"],
                 "fuente": "Open Icecat", "licencia": "Open Icecat Content License",
             })
         ok += 1
-        print(f"  ok: {c['id_producto']} ({len(ficha['fotos'])} fotos)")
+        sobra = f", {len(descartadas)} pictogramas descartados" if descartadas else ""
+        print(f"  ok: {c['id_producto']} ({len(candidatas)} candidatas de "
+              f"{len(ficha['fotos'])}{sobra})")
 
     ruta_fotos = Path(args.salida_fotos)
     ruta_fotos.parent.mkdir(parents=True, exist_ok=True)

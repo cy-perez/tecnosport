@@ -2,44 +2,76 @@
 
 ## Especificación
 
+Lo produce la skill `fotos-estudio-degradado`; aquí queda anotado para saber qué
+esperar.
+
 | Qué | Valor |
 |---|---|
-| Cantidad | 4 por producto |
-| Maestra | 2000 × 2000 px, cuadrada (1:1), sRGB, sin EXIF |
-| Formato | el mismo del original: JPEG sale JPEG, PNG con alfa sale PNG |
-| Variantes | 1200, 800 y 400 px, en el mismo formato de la maestra |
-| Fondo | **el de la foto original**, no se toca |
-| Encuadre | producto centrado ocupando ~85% del lienzo |
-| Nombre | `<id-del-producto>-01.jpg` … `-04.jpg` |
+| Cantidad | hasta 4 por producto, y ninguna de relleno |
+| Maestra | 2000 × 2000 px, cuadrada (1:1), sRGB, sin EXIF, JPEG q92 |
+| Variantes | 480, 800, 1200, 1600 y 2000 px, en AVIF con JPEG de respaldo |
+| Fondo | degradado gris del catálogo, **idéntico en todos los productos** |
+| Encuadre | producto centrado ocupando el 85 % del lienzo |
+| Nombre | `<id-del-producto>-01` … `-04`, con la extensión del formato |
+| Carpetas | `imagenes/<id>/<ancho>/<nombre>.<ext>` |
 
 El cuadrado 1:1 evita que la grilla del catálogo se descuadre y es lo que piden
 también Mercado Libre e Instagram Shopping, así que la misma foto sirve en los
 tres lados.
 
-## Optimizar no es editar
+El fondo compartido es lo que hace que el catálogo se vea de una sola tienda y
+no de cinco proveedores distintos. Por eso no se ajusta foto por foto: cambiarlo
+es una decisión para todo el catálogo, y se toma en la otra skill.
 
-`normalizar_imagenes.py` **no modifica la imagen**: no recorta el fondo, no lo
-fuerza a blanco, no agrega sombra y no cambia el formato del archivo. Solo lleva
-la foto al cuadro maestro, la pasa a sRGB y le quita los metadatos EXIF.
+## Esta skill escoge las fotos; no las retoca
 
-La razón es concreta: la foto que entrega el fabricante ya viene aprobada por la
-marca, y montarla sobre un blanco puro deja un halo visible cuando el fondo
-original no era blanco —que es lo normal en Icecat, cuyas fotos traen degradados
-y sombras suaves—. Por eso, cuando hay que rellenar para completar el cuadrado,
-el color se toma del borde de la propia imagen (la mediana del marco de 1 px) en
-vez de inventarlo. Si la imagen trae transparencia, el relleno también es
-transparente y el PNG la conserva.
+El reparto de trabajo es deliberado:
 
-Las variantes responsive se rigen por lo mismo. Antes salían siempre en WebP;
-ahora heredan el formato de la maestra, así que un PNG con transparencia
-conserva el alfa en los tres tamaños en vez de perderlo por el camino. El costo
-es que sobre fuentes JPEG las variantes pesan algo más que su equivalente WebP;
-si algún día el peso de la página lo pide, la salida es **agregar** un juego
-WebP junto al original, no reemplazarlo.
+| Quién | Qué hace |
+|---|---|
+| esta skill (`filtrar_fotos.py`) | decide **qué foto sirve** y descarta el resto |
+| `fotos-estudio-degradado` | decide **cómo se ve** y produce maestras y variantes |
+| esta skill (`organizar_imagenes.py`) | acomoda el resultado por producto |
 
-Quitar fondos, dejar blanco puro y agregar sombra sigue siendo posible, pero es
-otra decisión y vive en la skill `fotos-de-producto`. Separarlas importa: una se
-puede correr sobre todo el lote sin mirar, la otra no.
+El estilo del catálogo lo define un solo lugar. Si cada skill recortara y
+encuadrara a su manera, el catálogo dejaría de verse parejo, que es justo lo que
+un cliente nota sin saber nombrarlo.
+
+### Qué se descarta y por qué
+
+**Lo que no es una foto.** El catálogo de un fabricante mezcla, en la misma
+lista de imágenes, pictogramas de característica ("no incluye cargador",
+"10–45 W USB PD"), logos y etiquetas de eficiencia energética. Se reconocen por
+el **modo del archivo**: una foto llega en color verdadero (RGB o RGBA) y los
+pictogramas llegan en escala de grises con alfa (LA) o en paleta (P). En Icecat
+además vienen marcados como `FeatureLogo`, así que `icecat_local.py` los
+descarta antes de descargarlos; el filtro por píxeles queda para los paquetes
+del proveedor, que llegan sin metadatos.
+
+**Las fotos con el producto cortado.** Se mide qué fracción de cada borde toca
+el producto. Una foto bien encuadrada da 0,00 en los cuatro lados; una recortada
+pasa de 0,20 por el lado donde se sale. Son tomas de detalle o de estilo de
+vida: perfectas en la página del fabricante, inservibles en una ficha donde el
+cliente quiere ver el equipo completo.
+
+Nada se borra: lo descartado va a `descartadas/<id>/` con un `motivos.json`. Una
+foto rechazada por error tiene que poder recuperarse, y el motivo tiene que
+poder discutirse.
+
+### Lo que se marca pero no se descarta
+
+La resolución. El estándar de estudio encuadra el producto a 1700 px y muchas
+fotos de Icecat no llegan —en una corrida real, 84 de 122—. No se descartan
+porque en varias marcas no hay nada mejor disponible, y una foto pequeña es
+mejor que ninguna; el retoque las marcará por ampliación y la salida real es
+pedirle al proveedor una mejor.
+
+### Mejor tres fotos buenas que cuatro con relleno
+
+Si tras filtrar quedan menos de cuatro, el script lo dice y esas fotos entran al
+pedido al proveedor. Completar el cupo con un pictograma o con un recorte donde
+no se ve el equipo es peor que mostrar menos: la ficha pierde credibilidad justo
+donde el cliente está decidiendo.
 
 ## Orden de las cuatro fotos
 
@@ -204,8 +236,8 @@ frontal por color). Está pensado para enviarse tal cual por WhatsApp o correo.
 Los productos que la lista no permitió identificar salen con el texto original
 del mensaje al lado, para que el proveedor sepa de cuál se está hablando.
 
-Cuando lleguen las fotos, van a `crudas/<id-del-producto>/` y se normalizan igual
-que las de Icecat. Si el proveedor manda enlaces en vez de archivos, se pegan en
+Cuando lleguen las fotos, van a `crudas/<id-del-producto>/` y pasan por el mismo
+filtro que las de Icecat. Si el proveedor manda enlaces en vez de archivos, se pegan en
 `fotos/urls.csv` y los baja el mismo `descargar.py`.
 
 ## Cómo se descargan
@@ -224,10 +256,12 @@ Deja `fotos/urls.csv` con una fila por producto y encuadre, `fotos/descargar.py`
 imágenes caen en `crudas/<id>/` junto con un `origen.json` que guarda de dónde
 salió cada una.
 
-De vuelta en la skill, `scripts/normalizar_imagenes.py` las lleva al estándar.
+De vuelta en la skill, `scripts/filtrar_fotos.py` descarta lo que no sirve y el
+retoque lo hace `fotos-estudio-degradado`.
 
 Si un producto queda sin fotos, su carpeta en el ZIP incluye un
 `FOTOS-PENDIENTES.md` que dice cuántas faltan.
 
-Para recortar fondos, dejar el blanco parejo y agregar sombra de contacto, usa la
-skill `fotos-de-producto`: ya hace ese trabajo por lotes y con control de peso.
+El retoque —fondo degradado, encuadre al 85 %, resplandor, maestra y variantes—
+lo hace la skill `fotos-estudio-degradado`, que es la que define el estilo de
+todas las imágenes del ecommerce.
