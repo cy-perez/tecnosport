@@ -50,3 +50,6 @@ catalogo/icecat/*.gz
 catalogo/icecat/indice.csv
 catalogo/fotos/crudas/
 catalogo/entregables/
+catalogo/lista*.txt
+catalogo/productos*.json
+catalogo/revision*.md

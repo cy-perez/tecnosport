@@ -31,13 +31,14 @@ VS16 = "\ufe0f"
 MULTIPLICADOR_PRECIO = 1000
 DIGITOS_PRECIO_COMPLETO = 6
 
+# Los cables quedaron por fuera (decisión del negocio, 14/09/2026): la lista nunca
+# trae longitud, potencia ni marca, y sin eso no se publican.
 CATEGORIAS_INCLUIDAS = {
     "celulares",
     "tablets",
     "relojes",
     "audifonos",
     "cargadores",
-    "cables",
     "power_bank",
     "consolas",
     "accesorios_consola",
@@ -47,6 +48,22 @@ CATEGORIAS_INCLUIDAS = {
 
 # Solo se publica el equipo sellado sin activar.
 CONDICIONES_PUBLICABLES = {"nuevo"}
+
+# Un celular por debajo de este precio de proveedor no entra al análisis.
+# Los demás productos (relojes, audífonos, cargadores...) no tienen mínimo.
+PRECIO_MINIMO_CELULAR_COP = 500_000
+
+# Un producto que después de fusionar repetidos sigue sin precio se descarta:
+# sin costo no hay margen que calcular ni precio que publicar.
+DESCARTAR_SIN_PRECIO = True
+
+# Un computador entra solo si la lista trae marca y una referencia (línea o
+# código de modelo: "Vivobook 15 X1504", "14-em0001la"). Procesador, RAM, disco y
+# pulgadas describen decenas de equipos distintos; con eso solo no se publica.
+DESCARTAR_COMPUTADOR_SIN_REFERENCIA = True
+
+# Cuando el mismo producto aparece con precios distintos se toma el menor.
+# Queda anotado en `supuestos`, no en `revisar`: ya está decidido.
 
 # --------------------------------------------------------------------------
 # Mapas de reconocimiento
@@ -159,6 +176,8 @@ TYPOS = {
     "LAPTO ": "LAPTOP ", "WACH": "WATCH", "CHOISE": "CHOICE", "TERA": "TB",
     " PM ": " PRO MAX ", "AUDIFONO": "AUDÍFONO", "ACCESSORIOS": "ACCESORIOS",
     "BUNDLEE": "BUNDLE", "MAUSE": "MOUSE", "FUSIÓN": "FUSION",
+    # El aviso de llegada dice "edición especial" y la lista "ESPECIAL": es el mismo equipo.
+    "EDICIÓN ESPECIAL": "ESPECIAL", "EDICION ESPECIAL": "ESPECIAL",
 }
 
 CONECTORES = [
@@ -373,6 +392,7 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         "precio_mercado_cop": None, "fuentes_precio": [], "titulo": None,
         "descripcion": None, "imagenes": [], "texto_origen": original.strip(),
         "seccion": seccion, "linea": linea, "revisar": [], "supuestos": [],
+        "autenticidad": None, "compatible_con": None, "referencia": None, "sin_datos": [],
     }
     if precio_ambiguo:
         prod["revisar"].append("precio de 5 dígitos: confirmar si es acotado o completo")
@@ -381,7 +401,10 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
     for mk in MARCAS:
         if re.search(rf"\b{re.escape(mk)}\b", texto_plano):
             if re.search(rf"\(\s*{re.escape(mk)}\s*\)", texto_plano) and categoria in ("cargadores", "cables"):
+                # "CUBO BECLAD (SAMSUNG)": la marca es Beclad y el paréntesis
+                # dice con qué es compatible. Va en la descripción, no en el título.
                 prod["atributos"].append(f"para {mk.title()}")
+                prod["compatible_con"] = CASING.get(mk.title(), mk.title())
                 texto_plano = re.sub(rf"\(\s*{re.escape(mk)}\s*\)", " ", texto_plano)
             else:
                 prod["marca"] = CASING.get(mk.title(), mk.title())
@@ -448,7 +471,7 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
 
     elif categoria == "computadores":
         es_aio = "TODO EN UNO" in resto or "AIO" in resto
-        cpu = re.search(r"\b(RYZEN\s*\d\s*\w+|ATHLON\s*\w+|CORE\s*I\d[\w-]*|INTEL\s*I\d\s*\w+|CELERON\s*\w+)\b", resto, re.I)
+        cpu = re.search(r"\b(RYZEN\s*\d\s*\w+|ATHLON\s*\w+|CORE\s*I\d[\w-]*|INTEL\s*I\d\s*\w+|I\d[\s-]?\d{4,5}\w*|CELERON\s*\w+)\b", resto, re.I)
         if cpu:
             prod["atributos"].append(titulo_bonito(cpu.group(1)))
             resto = resto.replace(cpu.group(1), " ")
@@ -465,9 +488,14 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         prod["modelo"] = ("Todo en Uno" if es_aio else "Portátil") + (f" {sobra}" if sobra else "")
         if "BOLSO" in texto_plano:
             prod["atributos"].append("incluye bolso")
-        if not prod["marca"]:
-            prod["revisar"].append("computador sin marca en la lista: confirmarla antes de publicar")
-        prod["revisar"].append("confirmar referencia exacta del equipo con el proveedor")
+        # Lo que sobra tras quitar CPU, memoria, disco y pulgadas es la referencia
+        # (línea o código de modelo). Si no sobra nada, la lista no la trae.
+        prod["referencia"] = sobra or None
+        faltan = [d for d, hay in (("marca", prod["marca"]), ("referencia", sobra)) if not hay]
+        if faltan:
+            prod["sin_datos"] = faltan
+        else:
+            prod["revisar"].append("confirmar la referencia del equipo contra la ficha del fabricante")
 
     elif categoria == "cables":
         extremos = []
@@ -511,10 +539,20 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
             if w:
                 prod["atributos"].append(f"{w.group(1)}W")
                 resto = resto[:w.start()] + " " + resto[w.end():]
-            prod["revisar"].append(
-                "cargadores: confirmar si es original de la marca o compatible; "
-                "publicarlo mal es riesgo de reclamo por publicidad engañosa"
-            )
+            if "ORIGINAL" in normalizar(seccion).upper():
+                # La sección "CARGADORES ORIGINAL" es la palabra del proveedor:
+                # se toma como original de la marca sin volver a preguntar.
+                prod["autenticidad"] = "original"
+                if prod["compatible_con"]:
+                    prod["supuestos"].append(
+                        f"la sección dice ORIGINAL y el paréntesis dice ({prod['compatible_con']}): "
+                        f"es un {prod['marca'] or 'cargador'} original, compatible con {prod['compatible_con']}"
+                    )
+            else:
+                prod["revisar"].append(
+                    "cargadores: la sección no dice ORIGINAL; confirmar si es original de la marca "
+                    "o compatible, publicarlo mal es riesgo de reclamo por publicidad engañosa"
+                )
         if categoria in ("consolas", "accesorios_consola"):
             resto = re.sub(r"\b1\s*T\b", "1TB", resto)
         prod["modelo"] = titulo_bonito(re.sub(r"\(\s*\)", " ", resto)) or None
@@ -523,8 +561,6 @@ def construir_producto(texto, categoria, marca, condicion, seccion, linea):
         prod["revisar"].append("confirmar nombre comercial oficial del modelo")
 
     armar_titulo(prod)
-    if prod["precio_proveedor_cop"] is None:
-        prod["revisar"].append("la lista no trae precio de proveedor")
     if prod["condicion"] == "nuevo_activado":
         prod["revisar"].append("equipo con la garantía ya activada")
     return prod
@@ -554,8 +590,16 @@ def clave_dedupe(prod):
     for sub in SUBMARCAS:
         modelo = modelo.replace(sub, " ")
     modelo = re.sub(r"[^A-Z0-9]", "", modelo)
-    extra = re.sub(r"[^A-Z0-9]", "", "".join(prod["atributos"]).upper())
+    extra = re.sub(r"[^A-Z0-9]", "", "".join(a for a in prod["atributos"] if not es_atributo_sim(a)).upper())
     return f"{modelo}|{prod['almacenamiento'] or ''}|{extra}"
+
+
+def es_atributo_sim(atributo):
+    return "SIM" in atributo.upper()
+
+
+def atributos_sim(prod):
+    return {a.upper() for a in prod["atributos"] if es_atributo_sim(a)}
 
 
 # --------------------------------------------------------------------------
@@ -720,6 +764,7 @@ def parsear(texto: str):
 
     cerrar_pendiente()
     productos, duplicados = fusionar_duplicados(productos)
+    productos = filtrar_por_precio(productos, descartados)
     return {
         "fecha_lista": fecha,
         "categorias_incluidas": sorted(CATEGORIAS_INCLUIDAS),
@@ -735,6 +780,10 @@ def compatibles(a, b):
     for campo in ("red", "ram", "marca"):
         if a[campo] and b[campo] and a[campo] != b[campo]:
             return False
+    # "1 SIM" y "DUAL SIM" son dos referencias; pero el aviso de llegada que no
+    # menciona la SIM no contradice a la lista que sí la trae.
+    if atributos_sim(a) and atributos_sim(b) and atributos_sim(a) != atributos_sim(b):
+        return False
     return True
 
 
@@ -750,16 +799,19 @@ def fusionar_duplicados(productos):
             continue
         for campo in ("red", "ram", "ram_virtual", "marca"):
             base[campo] = base[campo] or p[campo]
-        for campo in ("supuestos", "revisar", "colores_familia"):
+        for a in p["atributos"]:
+            if a not in base["atributos"]:
+                base["atributos"].append(a)
+        for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
             base[campo] = list(dict.fromkeys(base[campo] + p[campo]))
         precios = [x for x in (base["precio_proveedor_cop"], p["precio_proveedor_cop"]) if x]
         if precios:
             base["precio_proveedor_cop"] = min(precios)
         if len(set(precios)) > 1:
-            base["revisar"].append(
+            base["supuestos"].append(
                 "aparece repetido con precios distintos ("
                 + " y ".join(f"{x:,}".replace(",", ".") for x in sorted(set(precios)))
-                + "): se tomó el menor")
+                + "): se tomó el menor, como está decidido")
         armar_titulo(base)
         fusionados.append({"titulo": p["titulo"], "linea": p["linea"], "fusionado_en": base["titulo"]})
 
@@ -770,10 +822,45 @@ def fusionar_duplicados(productos):
         base = clave_dedupe(p).split("|")[0]
         solo_modelo.setdefault(base, []).append(p)
     for base, grupo in solo_modelo.items():
-        if len(grupo) > 1 and any(not g["almacenamiento"] for g in grupo):
+        con_cap = [g for g in grupo if g["almacenamiento"]]
+        sin_cap = [g for g in grupo if not g["almacenamiento"]]
+        if not sin_cap or len(grupo) < 2:
+            continue
+        if len(con_cap) == 1 and all(
+            compatibles(con_cap[0], g) and g["precio_proveedor_cop"] in (None, con_cap[0]["precio_proveedor_cop"])
+            for g in sin_cap
+        ):
+            # Solo hay una variante con capacidad y el anuncio sin capacidad no la
+            # contradice ni en precio: no hay duda, es el mismo equipo.
+            destino = con_cap[0]
+            for g in sin_cap:
+                for campo in ("supuestos", "revisar", "colores_familia", "colores_emoji"):
+                    destino[campo] = list(dict.fromkeys(destino[campo] + g[campo]))
+                destino["supuestos"].append(
+                    f"el aviso «{g['texto_origen'][:50]}» no trae capacidad; se unió a la única variante de la lista")
+                fusionados.append({"titulo": g["titulo"], "linea": g["linea"], "fusionado_en": destino["titulo"]})
+                salida.remove(g)
+        else:
             for g in grupo:
                 g["revisar"].append("posible duplicado: el mismo modelo aparece con y sin capacidad")
     return salida, fusionados
+
+
+def filtrar_por_precio(productos, descartados):
+    """Se aplica después de fusionar: el aviso de llegada puede traer el precio que la lista no trae."""
+    salida = []
+    minimo = f"{PRECIO_MINIMO_CELULAR_COP:,}".replace(",", ".")
+    for p in productos:
+        precio = p["precio_proveedor_cop"]
+        if DESCARTAR_SIN_PRECIO and precio is None:
+            descartados.append({**p, "motivo": "sin precio de proveedor"})
+        elif p["categoria"] == "computadores" and DESCARTAR_COMPUTADOR_SIN_REFERENCIA and p["sin_datos"]:
+            descartados.append({**p, "motivo": "computador sin " + " ni ".join(p["sin_datos"]) + " en la lista"})
+        elif p["categoria"] == "celulares" and precio is not None and precio < PRECIO_MINIMO_CELULAR_COP:
+            descartados.append({**p, "motivo": f"celular por debajo del mínimo de {minimo} COP"})
+        else:
+            salida.append(p)
+    return salida
 
 
 def reporte(datos: dict) -> str:

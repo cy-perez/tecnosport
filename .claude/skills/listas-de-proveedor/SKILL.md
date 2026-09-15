@@ -23,11 +23,11 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Regla | Valor |
 |---|---|
 | Precios | `$1.850` = **1.850.000 COP**; `$1.960.000` se toma tal cual (6 dígitos o más) |
-| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, cables, power bank, consolas y accesorios, computadores, proyectores |
+| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas y accesorios, computadores, proyectores |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
-| Se descartan siempre | usados, "NUEVOS ACTIVOS" y "IPH CON CAJA" |
+| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, lo que quede sin precio, los celulares por debajo de 500.000 COP y los computadores sin marca o sin referencia |
 
-Estas tres ya están decididas por el negocio y no se vuelven a preguntar en cada
+Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
 
 1. **"NUEVOS ACTIVOS" no se publican.** Están sellados pero con la garantía del
@@ -35,16 +35,46 @@ lista:
    hoja de descartados con su motivo, por si algún día se decide venderlos aparte.
 2. **"IPH CON CAJA" se descarta.** En el argot es un equipo usado completo con su
    caja original.
-3. **Los cables entran**, junto con los cargadores.
-4. **Las tablets entran** como categoría propia.
-5. **Las abreviaturas de la sección Xiaomi se resuelven solas**: `NOTE 15` se lee
+3. **Lo que venga sin precio queda por fuera del análisis.** Se descarta después
+   de fusionar repetidos, porque el aviso de llegada a veces trae el precio que la
+   lista de gama alta omite. No se le pregunta al proveedor: si en la próxima lista
+   trae precio, entra en esa.
+4. **Los celulares por debajo de 500.000 COP de proveedor quedan por fuera.**
+   Ahí caen las "flechas" (Nokia, Alcatel, Fly, Corn) y la gama de entrada. El
+   mínimo es `PRECIO_MINIMO_CELULAR_COP` y solo aplica a celulares.
+5. **Los cables quedan por fuera.** La lista solo trae los extremos, y sin
+   longitud, potencia ni marca no se publica un cable. Los cargadores sí entran.
+6. **"ORIGINAL" en la sección es la palabra del proveedor.** Si el encabezado dice
+   `CARGADORES ORIGINAL` o `AUDIFONOS ORIGINALES`, los productos se toman como
+   originales de su marca y no se vuelve a preguntar. Cuando la línea trae otra
+   marca entre paréntesis —`CUBO BECLAD (SAMSUNG)`— la marca es la de afuera
+   (Beclad) y el paréntesis es compatibilidad: en la descripción va "compatible
+   con Samsung", nunca en el título. Solo se pregunta cuando la sección no dice
+   "original".
+7. **Si el mismo equipo aparece con dos precios, vale el menor.** Queda en
+   `supuestos` con los dos valores, para que se vea de dónde salió.
+8. **Las tablets entran** como categoría propia (iPad, Galaxy Tab, Redmi Pad).
+9. **Las abreviaturas de la sección Xiaomi se resuelven solas**: `NOTE 15` se lee
    como Redmi Note 15 y `X8 PRO` como POCO X8 Pro. Queda anotado en `supuestos`
    de cada producto, que es distinto de `revisar`: lo asumido no bloquea la
    publicación, solo deja el rastro de por qué el título dice lo que dice.
-4. **Las tablets se publican** como categoría propia (iPad y Galaxy Tab).
+10. **Los vacíos de la lista se preguntan siempre, y sin respuesta el producto
+    queda por fuera.** Un "Infinix Buds" sin modelo, un proyector sin fabricante,
+    un PS5 que no dice si es estándar o digital: se le preguntan a la persona en
+    el paso 3, en una sola lista para que se la mande al proveedor. Lo que no se
+    responda no se investiga ni se publica; queda en la hoja de descartados con
+    el dato que faltó.
+11. **Los computadores no se preguntan: sin marca o sin referencia en la lista,
+    quedan por fuera.** "LAPTOP ASUS RYZEN 5 7520U (8+512) 15.6"" describe
+    decenas de equipos distintos, y el parser no puede saber cuál es. Entra solo
+    la línea que trae marca y referencia ("ASUS VIVOBOOK 15 X1504", "HP
+    14-em0001la"); el resto va a descartados con el motivo "computador sin
+    referencia en la lista", y si el proveedor la manda en la próxima lista,
+    entra en esa.
 
-Si el negocio cambia de opinión, se ajusta `CATEGORIAS_INCLUIDAS` o
-`CONDICIONES_PUBLICABLES` al inicio de `scripts/parsear_lista.py`.
+Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
+`CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO` o
+`DESCARTAR_COMPUTADOR_SIN_REFERENCIA` al inicio de `scripts/parsear_lista.py`.
 
 ## Dónde está corriendo esta skill
 
@@ -92,6 +122,13 @@ descartaron y por qué, y la lista de alertas `revisar`. Pregunta solo lo que
 realmente bloquea —un modelo irreconocible, una marca ambigua— y no lo que puedes
 verificar tú mismo buscando. Si algo quedó en `sin_clasificar`, resuélvelo aquí:
 esas líneas son productos que se perderían en silencio.
+
+Los vacíos de la lista van en una sola lista para el proveedor: modelo del
+audífono, marca del proyector, edición de la consola. Se pregunta siempre; el
+producto que se queda sin respuesta se saca del análisis con el motivo "falta
+<dato>" en la hoja de descartados, no se publica a medias. La excepción son los
+computadores, que el parser ya descartó si no traen marca y referencia: se
+mencionan entre los descartados y no se preguntan.
 
 Detalle de cómo está armada una lista: `referencias/formato-de-listas.md`.
 
@@ -199,19 +236,21 @@ no hay ventaja frente a Alkosto o Mercado Libre, y si el proveedor subió, el
 margen puede ser negativo sin que nadie lo note. Muestra el número y deja la
 decisión de precio en manos del negocio.
 
-**"Original" y "compatible" no son lo mismo.** Varios cargadores y cables de las
-listas son compatibles, no originales de la marca. Publicar uno como el otro es
-publicidad engañosa frente a la Ley 1480 y termina en devoluciones. Cuando la
-lista no lo aclare, pregunta antes de publicar.
+**"Original" y "compatible" no son lo mismo.** Publicar uno como el otro es
+publicidad engañosa frente a la Ley 1480 y termina en devoluciones. La regla ya
+está tomada: la sección que dice "ORIGINAL" manda, y la marca entre paréntesis
+es compatibilidad y va en la descripción. Solo cuando la sección no lo diga se
+pregunta antes de publicar.
 
 **En las tablets, el mismo número significa dos cosas.** `IPAD AIR 11` puede ser
 la pantalla de 11 pulgadas o la generación. Confirma cuál antes de titular: es el
 error más caro de esta categoría porque cambia el producto entero.
 
-**A los cables les faltan tres datos.** La lista solo dice los extremos
-(`TIPO C - LIGHTNING`). Longitud, potencia soportada y marca hay que conseguirlos
-con el proveedor: son exactamente las tres razones por las que un cliente devuelve
-un cable.
+**A los cables les faltan tres datos, y por eso quedaron por fuera.** La lista
+solo dice los extremos (`TIPO C - LIGHTNING`). Longitud, potencia soportada y
+marca son exactamente las tres razones por las que un cliente devuelve un cable.
+Si algún día se quieren vender, se vuelve a meter `cables` en
+`CATEGORIAS_INCLUIDAS` y se le piden esos tres datos al proveedor.
 
 **La RAM virtual no es RAM.** En la gama media las listas escriben `(8+8+256)`:
 8 GB físicos, 8 GB "extendidos" tomados del almacenamiento, 256 GB de disco.
@@ -220,8 +259,10 @@ Va la RAM física en el título y la extendida como característica aparte.
 
 **Un mismo equipo llega varias veces.** El anuncio de "LLEGANDO", el mensaje de
 mercancía nueva y la lista larga del día traen los mismos modelos con distinta
-escritura. El script fusiona los que no se contradicen en red, RAM ni marca, y
-avisa cuando el precio no coincide entre mensajes.
+escritura. El script fusiona los que no se contradicen en red, RAM, marca ni tipo
+de SIM (un aviso que no menciona la SIM no contradice a la lista que sí), y une
+el anuncio sin capacidad con la lista cuando esta trae una sola variante al
+mismo precio. Si el precio no coincide, se queda el menor y lo anota.
 
 **4G y 5G son productos distintos.** `A17 4G (8+256)` a $630 y `A17 5G (8+256)` a
 $700 son dos referencias. La red va en el título, no en la descripción.
