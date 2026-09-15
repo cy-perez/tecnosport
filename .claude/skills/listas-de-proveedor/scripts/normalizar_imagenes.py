@@ -9,7 +9,7 @@ Espera una carpeta por producto (el nombre de la carpeta es el id del producto)
 y deja en la salida la misma estructura ya optimizada:
 
     imagenes/<id>/<id>-01.jpg      2000x2000, sRGB, sin EXIF
-    imagenes/<id>/<id>-01-800.webp variante responsive
+    imagenes/<id>/<id>-01-800.jpg  variante responsive, mismo formato
 
 Foto maestra: 2000 x 2000 px, cuadrada (1:1), en sRGB, sin metadatos EXIF y con
 el producto ocupando el 85% del cuadro.
@@ -17,7 +17,8 @@ el producto ocupando el 85% del cuadro.
 **No se toca la imagen.** Esto es una optimización, no una edición: no se
 recorta el fondo, no se fuerza a blanco, no se agrega sombra y no se cambia el
 formato del archivo. Un JPEG sale JPEG y un PNG con transparencia sale PNG con
-transparencia. Es deliberado: la foto del fabricante ya viene aprobada por la
+transparencia. La regla vale igual para las variantes responsive, que antes
+salían siempre en WebP: ahora heredan el formato del original, como la maestra. Es deliberado: la foto del fabricante ya viene aprobada por la
 marca, y reencuadrarla sobre un blanco inventado produce un halo cuando el
 fondo original no era blanco puro —que es lo normal en las fotos de Icecat, que
 traen degradados y sombras suaves—.
@@ -39,6 +40,8 @@ from PIL import Image, ImageCms, ImageOps
 LIENZO = 2000
 OCUPACION = 0.85          # el producto ocupa el 85% del cuadro
 VARIANTES = (1200, 800, 400)
+CALIDAD_MAESTRA = 88
+CALIDAD_VARIANTE = 82
 EXT = (".jpg", ".jpeg", ".png", ".webp")
 
 # Formato de salida por formato de entrada: se conserva el original.
@@ -102,6 +105,21 @@ def color_de_relleno(img):
                  for c in range(canales))
 
 
+def guardar(img, ruta: Path, formato: str, calidad: int):
+    """
+    Escribe sin `exif=` ni `icc_profile=`: la imagen sale limpia de metadatos
+    y en sRGB. Vale igual para la maestra y para las variantes, que se rigen
+    por la misma premisa y conservan el formato del original.
+    """
+    if formato == "JPEG":
+        img.save(ruta, "JPEG", quality=calidad, optimize=True, progressive=True)
+    elif formato == "PNG":
+        # PNG es sin pérdida: la calidad no aplica, solo el esfuerzo de compresión
+        img.save(ruta, "PNG", optimize=True)
+    else:
+        img.save(ruta, "WEBP", quality=calidad, method=6)
+
+
 def normalizar(ruta: Path, destino: Path, nombre: str):
     img = Image.open(ruta)
     formato = img.format or "JPEG"
@@ -131,18 +149,10 @@ def normalizar(ruta: Path, destino: Path, nombre: str):
 
     destino.mkdir(parents=True, exist_ok=True)
     maestra = destino / f"{nombre}{ext}"
-    # sin exif= ni icc_profile=: la maestra sale limpia de metadatos y en sRGB
-    if guardar_como == "JPEG":
-        lienzo.save(maestra, "JPEG", quality=88, optimize=True, progressive=True)
-    elif guardar_como == "PNG":
-        lienzo.save(maestra, "PNG", optimize=True)
-    else:
-        lienzo.save(maestra, "WEBP", quality=90, method=6)
-
+    guardar(lienzo, maestra, guardar_como, CALIDAD_MAESTRA)
     for ancho in VARIANTES:
-        lienzo.resize((ancho, ancho), Image.LANCZOS).save(
-            destino / f"{nombre}-{ancho}.webp", "WEBP", quality=82, method=6
-        )
+        guardar(lienzo.resize((ancho, ancho), Image.LANCZOS),
+                destino / f"{nombre}-{ancho}{ext}", guardar_como, CALIDAD_VARIANTE)
     return maestra
 
 

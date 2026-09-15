@@ -7,7 +7,7 @@
 | Cantidad | 4 por producto |
 | Maestra | 2000 × 2000 px, cuadrada (1:1), sRGB, sin EXIF |
 | Formato | el mismo del original: JPEG sale JPEG, PNG con alfa sale PNG |
-| Variantes | 1200, 800 y 400 px en WebP |
+| Variantes | 1200, 800 y 400 px, en el mismo formato de la maestra |
 | Fondo | **el de la foto original**, no se toca |
 | Encuadre | producto centrado ocupando ~85% del lienzo |
 | Nombre | `<id-del-producto>-01.jpg` … `-04.jpg` |
@@ -29,6 +29,13 @@ y sombras suaves—. Por eso, cuando hay que rellenar para completar el cuadrado
 el color se toma del borde de la propia imagen (la mediana del marco de 1 px) en
 vez de inventarlo. Si la imagen trae transparencia, el relleno también es
 transparente y el PNG la conserva.
+
+Las variantes responsive se rigen por lo mismo. Antes salían siempre en WebP;
+ahora heredan el formato de la maestra, así que un PNG con transparencia
+conserva el alfa en los tres tamaños en vez de perderlo por el camino. El costo
+es que sobre fuentes JPEG las variantes pesan algo más que su equivalente WebP;
+si algún día el peso de la página lo pide, la salida es **agregar** un juego
+WebP junto al original, no reemplazarlo.
 
 Quitar fondos, dejar blanco puro y agregar sombra sigue siendo posible, pero es
 otra decisión y vive en la skill `fotos-de-producto`. Separarlas importa: una se
