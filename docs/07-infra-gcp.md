@@ -210,7 +210,7 @@ ninguno dice en voz alta cuál es la causa:
 | `NG_ALLOWED_HOSTS` | **400 a cada petición** | `security.allowedHosts` de `angular.json` viaja dentro del bundle del servidor y hoy solo admite `tecnosport.co` y `www`. En un dominio `*.run.app`, `@angular/ssr` rechaza todo. Acepta comodín (`*.run.app`). No se pone un valor permisivo por omisión en la imagen porque la comprobación existe por una razón real (SSRF) |
 | `API_URL_PUBLICA` | **la petición se cuelga y nunca responde** | Sin ella, el SSR resuelve `baseUrl()` a `localhost:8080`, que dentro del contenedor **es el propio servidor web**: cada render se pide a sí mismo, y ese render vuelve a pedirse. Recursión, sin ningún error en el registro |
 | `APP_URL_PUBLICA` | canónicos y `hreflang` apuntando al puerto local | Ya estaba documentada; aquí se confirma que el contenedor la necesita |
-| `NG_TRUST_PROXY_HEADERS` | aviso en consola en cada petición | Detrás de Cloud Run todo llega con `x-forwarded-*`; sin declararlas, `@angular/ssr` las descarta y avisa |
+| `NG_TRUST_PROXY_HEADERS` | aviso en consola en cada petición | Detrás de Cloud Run todo llega con `forwarded` **y** con `x-forwarded-*`; la que no esté declarada, `@angular/ssr` la descarta y avisa. Van las dos formas: solo con las `x-forwarded-*` el render salía bien, pero cada visita dejaba dos líneas de aviso por la `forwarded` |
 
 ### El SSR se pedía sus propias traducciones, y ya no
 

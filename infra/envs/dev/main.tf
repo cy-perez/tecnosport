@@ -285,8 +285,11 @@ module "web" {
     APP_URL_PUBLICA = var.dominio_publico_web
     # Comodín y no el dominio exacto: la URL del servicio no se conoce hasta que existe, y sin
     # esta variable `@angular/ssr` responde 400 a todo. Queda acotado a run.app, que es donde vive.
-    NG_ALLOWED_HOSTS       = "*.run.app"
-    NG_TRUST_PROXY_HEADERS = "x-forwarded-proto,x-forwarded-host,x-forwarded-for"
+    NG_ALLOWED_HOSTS = "*.run.app"
+    # `forwarded` además de las `x-forwarded-*`: Cloud Run manda las dos formas, y una que no esté
+    # declarada la descarta `@angular/ssr` con un aviso en cada petición. El render no se resiente
+    # —las `x-forwarded-*` bastan— pero el registro de la web traía dos líneas de ruido por visita.
+    NG_TRUST_PROXY_HEADERS = "forwarded,x-forwarded-proto,x-forwarded-host,x-forwarded-for"
   }
 
   depends_on = [google_project_service.apis]
