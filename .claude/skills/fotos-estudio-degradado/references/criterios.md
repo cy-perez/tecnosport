@@ -7,10 +7,10 @@ cumple y 1 si algo falla. Los «✗» son fallos y los «·» son avisos.
 
 | Criterio | Cómo se comprueba |
 |---|---|
-| Nombres | `maestras/<nombre>.jpg` y `escritorio/<nombre>-<ancho>.<formato>` según la configuración guardada; ningún archivo ajeno en esas carpetas |
-| Maestra | 2000×2000, RGB de 8 bits, perfil sRGB, sin EXIF, XMP ni IPTC; avisos si no es progresiva, si no es 4:4:4 o si pesa más de 800 KB |
+| Nombres | `maestras/<nombre>.jpg` y `escritorio/<nombre>-<ancho>.<formato>` según la configuración guardada; por producto, `<producto>/maestra/<nombre>.jpg` y `<producto>/<ancho>/<nombre>.<formato>`; ningún archivo ajeno en esas carpetas |
+| Maestra | el lienzo del lote —o el del producto, que el reporte guarda foto a foto—, RGB de 8 bits, perfil sRGB, sin EXIF, XMP ni IPTC; avisos si no es progresiva, si no es 4:4:4 o si pesa más de 800 KB |
 | Web | cada archivo se decodifica y mide lo que dice su nombre; las JPEG sin metadatos; aviso si superan su peso objetivo |
-| Encuadre | lado mayor de 1700 ± 2 px y centro a ≤ 2 px, medidos de nuevo sobre la máscara guardada en `.trabajo/mascaras/` |
+| Encuadre | lado mayor al 85 % del lienzo de la foto (1700 ± 2 px en 2000) y centro a ≤ 2 px, medidos de nuevo sobre la máscara guardada en `.trabajo/mascaras/` |
 | Fondo | esquinas en #A5A5A5 ± 3 niveles |
 | Color | Δcroma ≤ 2: distancia media en el plano a*b* (Lab) entre la foto original y la maestra decodificada, dentro del producto |
 | Estados | ampliación ≥ 2× o producto cortado deben ser REPETIR; ampliación ≥ 1,5× no puede ser LISTA sin aprobación; ninguna REPETIR puede tener archivos en las carpetas de entrega |

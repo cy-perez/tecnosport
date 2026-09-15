@@ -49,7 +49,21 @@ SALIDA.zip                           maestras + escritorio + hojas + reporte.jso
 ```
 
 Con `--variantes`, `escritorio/` lleva además `<nombre>-<ancho>.avif` y
-`<nombre>-<ancho>.jpg` para 480, 800, 1200, 1600 y 2000 px. Las fotos REPETIR no
+`<nombre>-<ancho>.jpg` para 480, 800, 1200, 1600 y 2000 px.
+
+**Por producto** (`--por-producto`, y sola cuando las fotos vienen en subcarpetas,
+como `crudas/<producto>/`) la salida se agrupa y la carpeta dice el ancho, así que
+el nombre ya no lo repite:
+
+```
+SALIDA/
+└── <producto>/
+    ├── maestra/<nombre>.jpg      la maestra, al lienzo del producto
+    ├── 2000/<nombre>.avif        un subdirectorio por ancho
+    └── 1200/<nombre>.avif
+```
+
+`--plano` fuerza la salida de siempre aunque las fotos vengan en subcarpetas. Las fotos REPETIR no
 escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 `.trabajo/vistas/` para poder mostrarla y explicar el problema.
 
@@ -57,7 +71,7 @@ escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 
 | Aspecto | Valor por defecto (`config.json`) |
 |---|---|
-| Lienzo | 2000×2000 |
+| Lienzo | 2000×2000; con `--por-producto`, el mayor escalón de `lienzos_escala` que el material del producto alcance |
 | Encuadre | lado mayor de la caja del producto (alfa ≥ 10 %) al 85 % del lienzo: 1700 ± 2 px, centrado ± 2 px |
 | Fondo | plantilla `assets/fondo-2000x2000.png`: degradado radial #FFFFFF → #A5A5A5, blanco hasta el 26 % del radio y rampa lineal hasta la esquina, con tramado ±1 de semilla fija, idéntico en todo el catálogo |
 | Sombra | #000000 al 63 %, dilatación 6 px, desenfoque σ 58 px, desplazada 14 px hacia abajo, modo normal, siempre debajo del producto |
@@ -65,6 +79,7 @@ escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
 | Escala | ≥ 1,5× → REVISAR · ≥ 2× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
+| Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor |
 | Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay); con `--variantes`, JPEG q88 de respaldo |
 
 Los valores en píxeles están pensados para 2000 px y se escalan si cambia el lienzo.
@@ -132,7 +147,12 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/procesar.py" --avance SALIDA      # repetir
 ```
 
 Otras opciones: `--mapa nombres.csv`, `--variantes`, `--ajuste clave=valor`,
-`--config otro.json`, `--solo nombre1,nombre2` (todas en `--help`). En Windows las
+`--config otro.json`, `--solo nombre1,nombre2`, `--por-producto`, `--plano`,
+`--nuevas` (todas en `--help`).
+
+Para un árbol que se vuelve a llenar —`catalogo/fotos/crudas/`, que crece con cada
+lote de inventario— el par útil es `--por-producto --nuevas`: agrupa la salida por
+producto y salta lo ya procesado cuyo archivo de origen no ha cambiado. En Windows las
 rutas van entre comillas (`"C:\fotos\lote 1"`) y el segundo plano funciona igual.
 
 Una carpeta de salida acumula rondas: al reprocesar, el reporte se fusiona y las

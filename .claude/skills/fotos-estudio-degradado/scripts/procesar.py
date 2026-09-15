@@ -77,7 +77,9 @@ def slug(texto: str) -> str:
     return t or "foto"
 
 
-def recolectar(entradas: list[str], excluir: Path) -> list[Path]:
+def recolectar(entradas: list[str], excluir: Path) -> list[tuple[Path, str]]:
+    """Devuelve (ruta, grupo). El grupo es la subcarpeta de la entrada en que estaba la foto —el
+    producto, cuando se procesa un árbol como `crudas/`— y queda vacío para fotos sueltas."""
     rutas, vistos = [], set()
     for e in entradas:
         p = Path(e)
@@ -97,8 +99,56 @@ def recolectar(entradas: list[str], excluir: Path) -> list[Path]:
             if r in vistos or excluir == r or excluir in r.parents:
                 continue
             vistos.add(r)
-            rutas.append(x)
+            padres = x.relative_to(p).parts[:-1] if p.is_dir() else ()
+            rutas.append((x, slug(padres[-1]) if padres else ""))
     return rutas
+
+
+def estimar_lado_producto(ruta: Path) -> int | None:
+    """Lado mayor del contenido, antes de recortar: sirve para elegir el lienzo sin gastar el recorte.
+
+    Mide la caja de lo que no es fondo claro. Si el fondo no es claro —una foto sobre una mesa—
+    devuelve la imagen entera, que es la estimación conservadora: el lienzo sale mayor, no menor,
+    y la ampliación real la sigue reportando el aviso de escala tras el recorte.
+    """
+    try:
+        with Image.open(ruta) as im:
+            W0, H0 = im.size
+            if not W0 or not H0:
+                return None
+            g = im.convert("L")
+            if max(W0, H0) > 800:
+                k = 800 / max(W0, H0)
+                g = g.resize((max(1, round(W0 * k)), max(1, round(H0 * k))), Image.BILINEAR)
+            arr = np.asarray(g, np.int16)
+    except Exception:
+        return None
+    if arr.size == 0:
+        return None
+    factor = max(W0, H0) / max(arr.shape)
+    cont = arr < 247
+    if cont.sum() < 20:
+        return max(W0, H0)
+    ys, xs = np.nonzero(cont)
+    lado = max(int(ys.max() - ys.min()) + 1, int(xs.max() - xs.min()) + 1)
+    return max(1, int(round(lado * factor)))
+
+
+def elegir_lienzo(lados: list[int], cfg: dict) -> int:
+    """Mayor escalón de `lienzos_escala` que el producto alcanza sin pasar de `ampliacion_tolerada`.
+
+    Si no llega a ninguno devuelve el menor: un producto con poco material se publica al máximo
+    que ese material da, en vez de quedarse fuera del catálogo.
+    """
+    escala = sorted({int(x) for x in cfg.get("lienzos_escala") or []}, reverse=True)
+    if not escala:
+        return int(cfg["lienzo"][0])
+    mejor = max([x for x in lados if x], default=0)
+    ocupacion, tolerada = float(cfg["ocupacion"]), float(cfg.get("ampliacion_tolerada", 1.0))
+    for lado in escala:
+        if mejor * tolerada >= lado * ocupacion:
+            return lado
+    return escala[-1]
 
 
 def leer_mapa(ruta: str) -> dict[str, str]:
@@ -166,7 +216,18 @@ class Contexto:
         self.ideal = (ideal / 255.0).astype(np.float32)
         self.sombra_rgb = np.array(imagen.hex_a_rgb(cfg["sombra_color"]), np.float32) / 255.0
         self.trabajo = raiz / reporte.TRABAJO
+        self.grupo = ""          # producto en curso; vacío = salida plana
         self._rec = None
+
+    def carpeta_maestra(self) -> Path:
+        """<raiz>/<producto>/maestra en modo por producto; <raiz>/maestras en el plano."""
+        return self.raiz / self.grupo / "maestra" if self.grupo else self.raiz / self.cfg["carpeta_maestras"]
+
+    def ruta_web(self, nombre: str, ancho: int, fmt: str) -> Path:
+        """Por producto la carpeta dice el ancho y el archivo no lo repite."""
+        if self.grupo:
+            return self.raiz / self.grupo / str(ancho) / f"{nombre}.{fmt}"
+        return self.raiz / self.cfg["carpeta_web"] / f"{nombre}-{ancho}.{fmt}"
 
     @property
     def rec(self) -> imagen.Recortador:
@@ -438,7 +499,7 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         reg["vista_previa"] = ctx.rel(leida)
     else:
         # ---- 5.8 exportar
-        carpeta_m = ctx.raiz / cfg["carpeta_maestras"]
+        carpeta_m = ctx.carpeta_maestra()
         carpeta_m.mkdir(parents=True, exist_ok=True)
         leida = carpeta_m / f"{nombre}.jpg"
         kb = round(imagen.guardar_jpeg(img8, leida, cfg["jpeg_calidad"]) / 1024)
@@ -479,8 +540,6 @@ def donde_texto(datos: dict) -> str:
 def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray, alfa_l: np.ndarray,
                  sombra: np.ndarray, avisos: list[str]) -> list[dict]:
     cfg, W, H = ctx.cfg, ctx.ancho, ctx.alto
-    carpeta = ctx.raiz / cfg["carpeta_web"]
-    carpeta.mkdir(parents=True, exist_ok=True)
     # referencia para medir escalones: degradado ideal (sin tramado) con la misma sombra
     g = sombra[..., None]
     ref = ctx.ideal * (1 - g)
@@ -490,7 +549,10 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
     region = imagen.dilatar(producto, 24 * ctx.fpx) < 0.5
     web = []
     escalones: dict[str, list[tuple[int, float, int]]] = {}
-    for w in sorted({int(x) for x in cfg["anchos_variantes"] if int(x) <= W}, reverse=True):
+    anchos = {int(x) for x in cfg["anchos_variantes"] if int(x) <= W}
+    if ctx.grupo:
+        anchos.add(W)   # el lienzo del producto siempre se publica, aunque sea menor que los anchos pedidos
+    for w in sorted(anchos, reverse=True):
         h = round(w * H / W)
         if (w, h) == (W, H):
             v8, refw, regw = img8, ref, region
@@ -506,7 +568,8 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
             regw = imagen.region_reducida(lejos, w, h)
         for fmt in cfg["formatos_web"]:
             res = imagen.codificar_web(fmt, v8, v16, refw, regw, cfg, ctx.avif10 if fmt == "avif" else None)
-            ruta = carpeta / f"{nombre}-{w}.{fmt}"
+            ruta = ctx.ruta_web(nombre, w, fmt)
+            ruta.parent.mkdir(parents=True, exist_ok=True)
             ruta.write_bytes(res["datos"])
             kb = round(len(res["datos"]) / 1024)
             web.append({"ruta": ctx.rel(ruta), "ancho": w, "alto": h, "formato": fmt, "kb": kb,
@@ -516,7 +579,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
                 escalones.setdefault(fmt, []).append((w, res["banding"], res["calidad"]))
             limite = cfg["pesos_max_kb"].get(fmt, {}).get(str(w))
             if limite and kb > limite:
-                avisos.append(f"{ruta.name} pesa {kb} KB (objetivo ≤ {limite} KB).")
+                avisos.append(f"{ruta.name} de {w} px pesa {kb} KB (objetivo ≤ {limite} KB).")
     for fmt, fallos in escalones.items():  # un aviso por formato, no uno por archivo
         anchos = ", ".join(str(w) for w, _, _ in sorted(fallos, reverse=True))
         bajo, alto = min(b for _, b, _ in fallos), max(b for _, b, _ in fallos)
@@ -630,6 +693,13 @@ def main() -> int:
                    help="genera los anchos y formatos propuestos (AVIF + WebP de 480 a 2000 px)")
     p.add_argument("--solo", action="append", default=[], metavar="NOMBRES",
                    help="procesa sólo estos nombres (separados por coma); sin entradas, usa las rutas del reporte")
+    p.add_argument("--por-producto", dest="por_producto", action="store_true", default=None,
+                   help="salida <producto>/maestra y <producto>/<ancho>, con el lienzo que permita el "
+                        "material de cada producto; se activa sola si las fotos vienen en subcarpetas")
+    p.add_argument("--plano", dest="por_producto", action="store_false",
+                   help="fuerza la salida plana de siempre aunque las fotos vengan en subcarpetas")
+    p.add_argument("--nuevas", action="store_true",
+                   help="salta las fotos ya procesadas cuyo archivo de origen no ha cambiado")
     p.add_argument("--zip", action="store_true", help="empaqueta los entregables al terminar")
     p.add_argument("--segundo-plano", action="store_true", help="lanza el proceso desacoplado y sale")
     p.add_argument("--avance", metavar="SALIDA", help="muestra el avance de un proceso en segundo plano")
@@ -698,7 +768,7 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         if avif10 is None and not imagen.soporte_avif_pillow():
             errores.append("no hay codificador AVIF: instala avifenc (python avif10.py instalar) o actualiza Pillow")
     ignorados = [w for w in cfg["anchos_variantes"] if int(w) > int(cfg["lienzo"][0])]
-    if ignorados:
+    if ignorados and a.por_producto is False:
         print(f"[aviso] anchos mayores que el lienzo, se ignoran: {ignorados}")
     if errores:
         print("No se puede procesar:\n  - " + "\n  - ".join(errores))
@@ -708,19 +778,19 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     previo = reporte.cargar(raiz)
     previas = {f["nombre"]: f for f in previo.get("fotos", [])}
 
-    trabajos: list[tuple[Path, str]] = []
+    trabajos: list[tuple[Path, str, str]] = []
     if a.entradas:
         mapa = leer_mapa(a.mapa) if a.mapa else {}
         usados: set[str] = set()
-        for ruta in recolectar(a.entradas, raiz):
+        for ruta, grupo in recolectar(a.entradas, raiz):
             base = slug(mapa.get(ruta.name.lower()) or mapa.get(ruta.stem.lower()) or ruta.stem)
             nombre, n = base, 2
             while nombre in usados:
                 nombre, n = f"{base}-{n}", n + 1
             usados.add(nombre)
-            trabajos.append((ruta, nombre))
+            trabajos.append((ruta, nombre, grupo))
         if solo:
-            trabajos = [(r, n) for r, n in trabajos if n in solo]
+            trabajos = [(r, n, g) for r, n, g in trabajos if n in solo]
     else:
         for nombre in sorted(solo):
             f = previas.get(nombre)
@@ -728,14 +798,36 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
                 continue
             ruta = Path(f.get("ruta_origen", ""))
             if ruta.is_file():
-                trabajos.append((ruta, nombre))
+                trabajos.append((ruta, nombre, f.get("grupo", "")))
             else:
                 print(f"[aviso] {nombre}: ya no existe su foto original ({ruta})")
+    if a.nuevas and previas:
+        antes = len(trabajos)
+        pendientes = []
+        huellas: dict[tuple, str] = {}
+
+        def huella_para(lienzo) -> str:
+            # por producto cada foto se guardó con la huella de SU lienzo, no la del lote
+            clave = tuple(lienzo) if lienzo else ()
+            if clave not in huellas:
+                huellas[clave] = huella_config({**cfg, "lienzo": list(lienzo)} if lienzo else cfg)
+            return huellas[clave]
+
+        for t in trabajos:
+            f = previas.get(t[1])
+            if (f and f.get("huella_origen") and f.get("huella_origen") == imagen.huella_archivo(t[0])
+                    and f.get("huella_config") == huella_para(f.get("lienzo"))):
+                continue
+            pendientes.append(t)
+        saltadas = antes - len(pendientes)
+        if saltadas:
+            print(f"[info] --nuevas: {saltadas} foto(s) ya procesadas sin cambios, se saltan.")
+        trabajos = pendientes
     if solo:
-        faltan = solo - {n for _, n in trabajos}
+        faltan = solo - {n for _, n, _ in trabajos}
         if faltan:
             print(f"[aviso] sin foto para: {', '.join(sorted(faltan))}")
-    sin_heif = [r for r, _ in trabajos if r.suffix.lower() in (".heic", ".heif") and not imagen.HEIF_OK]
+    sin_heif = [r for r, _, _ in trabajos if r.suffix.lower() in (".heic", ".heif") and not imagen.HEIF_OK]
     if sin_heif:
         print("[aviso] hay fotos HEIC y falta pillow-heif (pip install pillow-heif); se omiten: "
               + ", ".join(r.name for r in sin_heif))
@@ -747,17 +839,45 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     huella = huella_config(cfg)
     cfg_prev = previo.get("configuracion")
     if cfg_prev:
-        distintas = [k for k in CLAVES_SALIDA if cfg_prev.get(k) != cfg.get(k)]
-        pendientes = set(previas) - {n for _, n in trabajos}
+        claves = [k for k in CLAVES_SALIDA if not (k == "lienzo" and (a.por_producto or cfg_prev.get("por_producto")))]
+        distintas = [k for k in claves if cfg_prev.get(k) != cfg.get(k)]
+        pendientes = set(previas) - {n for _, n, _ in trabajos}
         if distintas and pendientes:
             print(f"La configuración de salidas cambió ({', '.join(distintas)}) respecto a las {len(previas)} fotos que "
                   f"ya están en {raiz}.\nReprocesa todo el lote con la misma configuración o usa otra carpeta de salida.")
             return 2
 
-    ctx = Contexto(cfg, raiz, huella, avif10)
+    por_producto = bool(a.por_producto) or (a.por_producto is None and any(g for _, _, g in trabajos))
+    lienzo_de: dict[str, int] = {}
+    if por_producto:
+        lados: dict[str, list[int]] = {}
+        for ruta, _, grupo in trabajos:
+            lados.setdefault(grupo, []).append(estimar_lado_producto(ruta) or 0)
+        for grupo, ls in lados.items():
+            lienzo_de[grupo] = elegir_lienzo(ls, cfg)
+        reparto = {}
+        for grupo, lado in lienzo_de.items():
+            reparto[lado] = reparto.get(lado, 0) + 1
+        detalle = " · ".join(f"{n} a {lado}" for lado, n in sorted(reparto.items(), reverse=True))
+        print(f"Salida por producto: {len(lienzo_de)} producto(s), lienzo según su material ({detalle})")
+
+    contextos: dict[int, Contexto] = {}
+
+    def contexto_de(lado: int) -> Contexto:
+        if lado not in contextos:
+            c = dict(cfg)
+            c["lienzo"] = [lado, lado]
+            contextos[lado] = Contexto(c, raiz, huella_config(c), avif10)
+        return contextos[lado]
+
+    ctx = contexto_de(int(cfg["lienzo"][0]))
     ancho, alto = ctx.ancho, ctx.alto
-    print(f"Lienzo {ancho}×{alto} · producto al {round(100 * cfg['ocupacion'])} % · fondo {cfg['fondo_centro']} → "
-          f"{cfg['fondo_esquinas']} ({ctx.origen_fondo})")
+    if not por_producto:
+        print(f"Lienzo {ancho}×{alto} · producto al {round(100 * cfg['ocupacion'])} % · fondo {cfg['fondo_centro']} → "
+              f"{cfg['fondo_esquinas']} ({ctx.origen_fondo})")
+    else:
+        print(f"Producto al {round(100 * cfg['ocupacion'])} % · fondo {cfg['fondo_centro']} → "
+              f"{cfg['fondo_esquinas']} ({ctx.origen_fondo})")
     if not ctx.origen_fondo.startswith("assets"):
         print("[aviso] el fondo de assets no coincide con config.json; si el cambio es a propósito, "
               "regenéralo con fondo.py --generar para que todo el catálogo use el mismo")
@@ -772,18 +892,26 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
     reporte.escribir_json(avance, estado_avance)
     ronda = int(previo.get("rondas", 0)) + 1
     procesadas: list[str] = []
-    for i, (ruta, nombre) in enumerate(trabajos, 1):
-        print(f"[{i}/{len(trabajos)}] {ruta.name} → {nombre}", flush=True)
+    for i, (ruta, nombre, grupo) in enumerate(trabajos, 1):
+        activo = contexto_de(lienzo_de.get(grupo, int(cfg["lienzo"][0]))) if por_producto else ctx
+        activo.grupo = grupo if por_producto else ""
+        etiqueta = f"{grupo}/{nombre}" if activo.grupo else nombre
+        print(f"[{i}/{len(trabajos)}] {ruta.name} → {etiqueta}"
+              + (f"  [lienzo {activo.ancho}]" if por_producto else ""), flush=True)
         estado_avance["actual"] = ruta.name
         reporte.escribir_json(avance, estado_avance)
         previa = previas.get(nombre, {})
         try:
-            reg = procesar_foto(ctx, ruta, nombre, previa)
+            reg = procesar_foto(activo, ruta, nombre, previa)
         except Exception as e:  # una foto rota no detiene el lote
             if not isinstance(e, UnidentifiedImageError):
                 traceback.print_exc()
-            reg = registro_error(ctx, ruta, nombre, previa, e)
+            reg = registro_error(activo, ruta, nombre, previa, e)
         reg["ronda"] = ronda
+        if grupo:
+            reg["grupo"] = grupo
+        if por_producto:
+            reg["lienzo"] = [activo.ancho, activo.alto]
         # salidas viejas que ya no corresponden; una foto nueva reemplaza lo retenido
         nuevas = set(reporte.rutas_salida(reg))
         reporte.borrar_salidas(raiz, [r for r in reporte.rutas_salida(previa) if r not in nuevas])
@@ -805,11 +933,18 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
         estado_avance["segundos_por_foto"] = round((time.time() - inicio) / i, 1)
         reporte.escribir_json(avance, estado_avance)
 
+    cfg_rep = config_publica(cfg)
+    cfg_rep["por_producto"] = bool(por_producto)
+    if por_producto:
+        cfg_rep["lienzos_por_producto"] = {g: [l, l] for g, l in sorted(lienzo_de.items())}
     rep = {"skill": "fotos-estudio-degradado", "version": VERSION, "rondas": ronda,
-           "configuracion": config_publica(cfg), "huella_config": huella,
+           "configuracion": cfg_rep, "huella_config": huella,
            "entorno": entorno(ctx), "fondo": {"origen": ctx.origen_fondo, "huella_pixeles": ctx.huella_fondo},
            "fotos": list(previas.values())}
-    otras = sorted(f["nombre"] for f in rep["fotos"] if f.get("huella_config") not in (None, huella))
+    # por producto la huella cambia con el lienzo, que es justo lo que se quiere: no se avisa por eso
+    huellas_ok = {huella} | ({huella_config({**cfg, "lienzo": [l, l]}) for l in set(lienzo_de.values())}
+                             if por_producto else set())
+    otras = sorted(f["nombre"] for f in rep["fotos"] if f.get("huella_config") not in ({None} | huellas_ok))
     if otras:
         rep["advertencias_lote"] = [f"Procesadas con otros parámetros (el catálogo no queda uniforme): {', '.join(otras)}"]
     reporte.guardar(raiz, rep)

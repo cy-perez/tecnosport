@@ -158,13 +158,15 @@ def empaquetar(raiz: Path, rep: dict, destino: Path | None = None) -> Path:
     raiz = Path(raiz)
     cfg = rep.get("configuracion", {})
     carpetas = {cfg.get("carpeta_maestras", "maestras"), cfg.get("carpeta_web", "escritorio")}
+    # por producto el primer tramo es el producto, no una carpeta fija: entra todo salvo el trabajo interno
+    por_producto = bool(cfg.get("por_producto"))
     destino = Path(destino) if destino else raiz.parent / f"{raiz.name}.zip"
     with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
         for p in sorted(raiz.rglob("*")):
             if not p.is_file():
                 continue
             rel = p.relative_to(raiz)
-            if rel.parts[0] in carpetas:
+            if rel.parts[0] in carpetas or (por_producto and len(rel.parts) > 1 and rel.parts[0] != TRABAJO):
                 # JPEG, AVIF y WebP ya vienen comprimidos: se guardan sin recomprimir
                 z.write(p, rel.as_posix(), compress_type=zipfile.ZIP_STORED)
             elif len(rel.parts) == 1 and (p.name == NOMBRE or PATRON_HOJA.match(p.name)):

@@ -30,16 +30,26 @@ import imagen  # noqa: E402
 import reporte  # noqa: E402
 
 
-def rutas_esperadas(cfg: dict, nombre: str) -> dict:
-    ancho, alto = cfg["lienzo"]
+def lienzo_de(cfg: dict, f: dict) -> tuple[int, int]:
+    """Por producto cada foto trae su lienzo; en el modo plano es el del lote."""
+    l = f.get("lienzo") or cfg["lienzo"]
+    return int(l[0]), int(l[1])
+
+
+def rutas_esperadas(cfg: dict, f: dict) -> dict:
+    nombre = f["nombre"]
+    ancho, alto = lienzo_de(cfg, f)
+    grupo = f.get("grupo") if cfg.get("por_producto") else ""
+    anchos = {int(w) for w in cfg["anchos_variantes"] if int(w) <= ancho}
+    if grupo:
+        anchos.add(ancho)   # el lienzo del producto siempre se publica
     web = []
-    for w in cfg["anchos_variantes"]:
-        if int(w) > ancho:
-            continue
+    for w in sorted(anchos, reverse=True):
         for fmt in cfg["formatos_web"]:
-            web.append({"ruta": f"{cfg['carpeta_web']}/{nombre}-{int(w)}.{fmt}", "ancho": int(w),
-                        "alto": round(int(w) * alto / ancho), "formato": fmt})
-    return {"maestra": f"{cfg['carpeta_maestras']}/{nombre}.jpg", "web": web}
+            ruta = f"{grupo}/{w}/{nombre}.{fmt}" if grupo else f"{cfg['carpeta_web']}/{nombre}-{w}.{fmt}"
+            web.append({"ruta": ruta, "ancho": w, "alto": round(w * alto / ancho), "formato": fmt})
+    maestra = f"{grupo}/maestra/{nombre}.jpg" if grupo else f"{cfg['carpeta_maestras']}/{nombre}.jpg"
+    return {"maestra": maestra, "web": web}
 
 
 def marcadores_jpeg(datos: bytes) -> list[tuple[int, bytes]]:
@@ -71,9 +81,9 @@ def metadatos_jpeg(seg: list[tuple[int, bytes]], quien: str) -> list[str]:
     return fallos
 
 
-def revisar_maestra(ruta: Path, cfg: dict) -> tuple[list[str], list[str], dict]:
+def revisar_maestra(ruta: Path, cfg: dict, lienzo: tuple[int, int]) -> tuple[list[str], list[str], dict]:
     fallos, avisos, datos_m = [], [], {}
-    ancho, alto = cfg["lienzo"]
+    ancho, alto = lienzo
     datos = ruta.read_bytes()
     seg = marcadores_jpeg(datos)
     fallos += metadatos_jpeg(seg, "la maestra")
@@ -131,7 +141,7 @@ def verificar_foto(f: dict, raiz: Path, cfg: dict) -> dict:
         return {"ok": not fallos, "fallos": fallos, "avisos": avisos, "datos": datos}
     if estado == "REPETIR":
         fallos.append("está en REPETIR pero sus archivos siguen en las carpetas de entrega (usa marcar.py)")
-    esperadas = rutas_esperadas(cfg, f["nombre"])
+    esperadas = rutas_esperadas(cfg, f)
     registradas = {sal["maestra"]["ruta"]} | {w["ruta"] for w in sal.get("web", [])}
     todas = {esperadas["maestra"]} | {w["ruta"] for w in esperadas["web"]}
     if registradas != todas:
@@ -146,7 +156,7 @@ def verificar_foto(f: dict, raiz: Path, cfg: dict) -> dict:
             fallos.append(f"no existe {rel}")
     ruta_m = raiz / esperadas["maestra"]
     if ruta_m.is_file():
-        fm, am, dm = revisar_maestra(ruta_m, cfg)
+        fm, am, dm = revisar_maestra(ruta_m, cfg, lienzo_de(cfg, f))
         fallos += fm
         avisos += am
         datos.update(dm)
@@ -172,7 +182,7 @@ def verificar_foto(f: dict, raiz: Path, cfg: dict) -> dict:
         if limite and kb > limite:
             avisos.append(f"{Path(w['ruta']).name} pesa {kb:.0f} KB (objetivo ≤ {limite} KB)")
     caja = f.get("caja_producto") or {}
-    ancho, alto = cfg["lienzo"]
+    ancho, alto = lienzo_de(cfg, f)
     ruta_mascara = raiz / reporte.TRABAJO / "mascaras" / f"{f['nombre']}.png"
     if caja and ruta_mascara.is_file():  # se vuelve a medir sobre la máscara final guardada
         with Image.open(ruta_mascara) as im:
@@ -216,10 +226,14 @@ def archivos_ajenos(raiz: Path, cfg: dict, fotos: list[dict]) -> list[str]:
     esperados = set()
     for f in fotos:
         if f.get("salidas"):
-            e = rutas_esperadas(cfg, f["nombre"])
+            e = rutas_esperadas(cfg, f)
             esperados |= {e["maestra"]} | {w["ruta"] for w in e["web"]}
     ajenos = []
-    for carpeta in (cfg["carpeta_maestras"], cfg["carpeta_web"]):
+    if cfg.get("por_producto"):
+        carpetas = sorted({f.get("grupo") for f in fotos if f.get("grupo")})
+    else:
+        carpetas = [cfg["carpeta_maestras"], cfg["carpeta_web"]]
+    for carpeta in carpetas:
         d = raiz / carpeta
         if d.is_dir():
             for p in sorted(d.rglob("*")):
