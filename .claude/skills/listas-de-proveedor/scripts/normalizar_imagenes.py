@@ -1,49 +1,144 @@
 #!/usr/bin/env python3
 """
-Lleva las fotos de cada producto al estándar de publicación de TecnoSport.
+Lleva las fotos de cada producto al formato de foto maestra de TecnoSport.
 
 Uso:
     python3 normalizar_imagenes.py crudas/ --salida imagenes/
 
 Espera una carpeta por producto (el nombre de la carpeta es el id del producto)
-y deja en la salida la misma estructura ya normalizada:
+y deja en la salida la misma estructura ya optimizada:
 
-    imagenes/<id>/<id>-01.jpg      2000x2000, fondo blanco, JPEG calidad 88
+    imagenes/<id>/<id>-01.jpg      2000x2000, sRGB, sin EXIF
     imagenes/<id>/<id>-01-800.webp variante responsive
 
-Estándar: lienzo cuadrado, producto ocupando ~85% del lienzo, margen parejo,
-fondo blanco puro. Si la foto trae transparencia se compone sobre blanco.
-Para quitar fondos o agregar sombra usar la skill fotos-de-producto.
+Foto maestra: 2000 x 2000 px, cuadrada (1:1), en sRGB, sin metadatos EXIF y con
+el producto ocupando el 85% del cuadro.
+
+**No se toca la imagen.** Esto es una optimización, no una edición: no se
+recorta el fondo, no se fuerza a blanco, no se agrega sombra y no se cambia el
+formato del archivo. Un JPEG sale JPEG y un PNG con transparencia sale PNG con
+transparencia. Es deliberado: la foto del fabricante ya viene aprobada por la
+marca, y reencuadrarla sobre un blanco inventado produce un halo cuando el
+fondo original no era blanco puro —que es lo normal en las fotos de Icecat, que
+traen degradados y sombras suaves—.
+
+Para que el cuadrado no invente fondo, el relleno se toma del borde de la propia
+imagen: se mide el color del marco de 1 px y se rellena con ese color. Si la
+imagen trae transparencia, el relleno también es transparente.
+
+Para quitar fondos o agregar sombra de verdad, usar la skill `fotos-de-producto`,
+que es donde vive esa decisión.
 """
 
 import argparse
+import io
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageCms, ImageOps
 
 LIENZO = 2000
-OCUPACION = 0.85
+OCUPACION = 0.85          # el producto ocupa el 85% del cuadro
 VARIANTES = (1200, 800, 400)
 EXT = (".jpg", ".jpeg", ".png", ".webp")
+
+# Formato de salida por formato de entrada: se conserva el original.
+SALIDA = {
+    "JPEG": (".jpg", "JPEG"),
+    "MPO": (".jpg", "JPEG"),      # algunas camaras guardan JPEG como MPO
+    "PNG": (".png", "PNG"),
+    "WEBP": (".webp", "WEBP"),
+}
+
+
+def a_srgb(img):
+    """
+    Convierte al espacio sRGB. Si la imagen trae un perfil ICC distinto se
+    transforma de verdad; si no trae perfil, se asume que ya es sRGB, que es
+    lo que hace cualquier navegador.
+    """
+    perfil = img.info.get("icc_profile")
+    if not perfil:
+        return img
+    try:
+        origen = ImageCms.ImageCmsProfile(io.BytesIO(perfil))
+        destino = ImageCms.createProfile("sRGB")
+        modo = "RGBA" if img.mode in ("RGBA", "LA", "P") else "RGB"
+        return ImageCms.profileToProfile(img, origen, destino,
+                                         outputMode=modo) or img
+    except Exception:
+        # un perfil corrupto no puede tumbar el lote: se deja la imagen como esta
+        return img
+
+
+def color_de_relleno(img):
+    """
+    El color del marco de 1 px, para que el cuadrado se rellene con el mismo
+    fondo que ya tiene la foto en vez de con un blanco inventado.
+    Si el borde es transparente devuelve un color con alfa 0, para que el
+    relleno tampoco invente fondo.
+    """
+    tiene_alfa = img.mode in ("RGBA", "LA")
+    borde = []
+    an, al = img.size
+    paso_x = max(1, an // 64)
+    paso_y = max(1, al // 64)
+    for x in range(0, an, paso_x):
+        borde.append(img.getpixel((x, 0)))
+        borde.append(img.getpixel((x, al - 1)))
+    for y in range(0, al, paso_y):
+        borde.append(img.getpixel((0, y)))
+        borde.append(img.getpixel((an - 1, y)))
+    if not borde:
+        return (255, 255, 255, 0) if tiene_alfa else (255, 255, 255)
+
+    if tiene_alfa:
+        opacos = [p for p in borde if p[-1] > 8]
+        if not opacos:
+            return (255, 255, 255, 0)
+        borde = opacos
+    canales = len(borde[0])
+    # mediana por canal: resiste un pixel raro en una esquina mejor que el promedio
+    return tuple(sorted(p[c] for p in borde)[len(borde) // 2]
+                 for c in range(canales))
 
 
 def normalizar(ruta: Path, destino: Path, nombre: str):
     img = Image.open(ruta)
-    img = ImageOps.exif_transpose(img)
-    if img.mode in ("RGBA", "LA", "P"):
+    formato = img.format or "JPEG"
+    img = ImageOps.exif_transpose(img)          # aplica la rotacion y suelta el EXIF
+    img = a_srgb(img)
+
+    ext, guardar_como = SALIDA.get(formato, (".jpg", "JPEG"))
+    conserva_alfa = guardar_como in ("PNG", "WEBP") and img.mode in ("RGBA", "LA", "P")
+
+    if conserva_alfa:
         img = img.convert("RGBA")
-        fondo = Image.new("RGBA", img.size, (255, 255, 255, 255))
-        img = Image.alpha_composite(fondo, img)
-    img = img.convert("RGB")
+    elif img.mode != "RGB":
+        # JPEG no soporta alfa: solo aqui se compone, y sobre el color del borde
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGBA")
+            fondo = Image.new("RGBA", img.size, color_de_relleno(img))
+            img = Image.alpha_composite(fondo, img)
+        img = img.convert("RGB")
+
+    relleno = color_de_relleno(img)
 
     objetivo = int(LIENZO * OCUPACION)
     img.thumbnail((objetivo, objetivo), Image.LANCZOS)
-    lienzo = Image.new("RGB", (LIENZO, LIENZO), (255, 255, 255))
-    lienzo.paste(img, ((LIENZO - img.width) // 2, (LIENZO - img.height) // 2))
+    lienzo = Image.new(img.mode, (LIENZO, LIENZO), relleno)
+    caja = ((LIENZO - img.width) // 2, (LIENZO - img.height) // 2)
+    lienzo.paste(img, caja, img if conserva_alfa else None)
 
     destino.mkdir(parents=True, exist_ok=True)
-    maestra = destino / f"{nombre}.jpg"
-    lienzo.save(maestra, "JPEG", quality=88, optimize=True, progressive=True)
+    maestra = destino / f"{nombre}{ext}"
+    # sin exif= ni icc_profile=: la maestra sale limpia de metadatos y en sRGB
+    if guardar_como == "JPEG":
+        lienzo.save(maestra, "JPEG", quality=88, optimize=True, progressive=True)
+    elif guardar_como == "PNG":
+        lienzo.save(maestra, "PNG", optimize=True)
+    else:
+        lienzo.save(maestra, "WEBP", quality=90, method=6)
+
     for ancho in VARIANTES:
         lienzo.resize((ancho, ancho), Image.LANCZOS).save(
             destino / f"{nombre}-{ancho}.webp", "WEBP", quality=82, method=6
@@ -69,7 +164,7 @@ def main():
             total += 1
         if len(fotos) < 4:
             print(f"  {carpeta.name}: solo {len(fotos)} de 4 fotos")
-    print(f"{total} imágenes normalizadas en {salida}")
+    print(f"{total} imágenes optimizadas en {salida}")
 
 
 if __name__ == "__main__":

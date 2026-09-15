@@ -5,15 +5,34 @@
 | Qué | Valor |
 |---|---|
 | Cantidad | 4 por producto |
-| Maestra | 2000 × 2000 px, JPEG calidad 88, progresivo |
+| Maestra | 2000 × 2000 px, cuadrada (1:1), sRGB, sin EXIF |
+| Formato | el mismo del original: JPEG sale JPEG, PNG con alfa sale PNG |
 | Variantes | 1200, 800 y 400 px en WebP |
-| Fondo | blanco puro (#FFFFFF) |
+| Fondo | **el de la foto original**, no se toca |
 | Encuadre | producto centrado ocupando ~85% del lienzo |
 | Nombre | `<id-del-producto>-01.jpg` … `-04.jpg` |
 
 El cuadrado 1:1 evita que la grilla del catálogo se descuadre y es lo que piden
 también Mercado Libre e Instagram Shopping, así que la misma foto sirve en los
 tres lados.
+
+## Optimizar no es editar
+
+`normalizar_imagenes.py` **no modifica la imagen**: no recorta el fondo, no lo
+fuerza a blanco, no agrega sombra y no cambia el formato del archivo. Solo lleva
+la foto al cuadro maestro, la pasa a sRGB y le quita los metadatos EXIF.
+
+La razón es concreta: la foto que entrega el fabricante ya viene aprobada por la
+marca, y montarla sobre un blanco puro deja un halo visible cuando el fondo
+original no era blanco —que es lo normal en Icecat, cuyas fotos traen degradados
+y sombras suaves—. Por eso, cuando hay que rellenar para completar el cuadrado,
+el color se toma del borde de la propia imagen (la mediana del marco de 1 px) en
+vez de inventarlo. Si la imagen trae transparencia, el relleno también es
+transparente y el PNG la conserva.
+
+Quitar fondos, dejar blanco puro y agregar sombra sigue siendo posible, pero es
+otra decisión y vive en la skill `fotos-de-producto`. Separarlas importa: una se
+puede correr sobre todo el lote sin mirar, la otra no.
 
 ## Orden de las cuatro fotos
 
