@@ -236,10 +236,33 @@ python3 scripts/preparar_fotos.py productos.json --salida fotos/
 
 Eso genera `urls.csv`, un `descargar.py` sin dependencias y un instructivo. La
 persona pega los enlaces, corre el descargador en su equipo y sube la carpeta
-`crudas/`, que se normaliza con
-`python3 scripts/normalizar_imagenes.py crudas/ --salida imagenes/`.
+`crudas/`.
 
-Si ya tiene fotos del proveedor o propias, se salta directo a la normalización.
+**Lo descargado se filtra antes de retocar.** El catálogo de un fabricante no
+trae solo fotos, y las que trae no siempre sirven para una ficha:
+
+```bash
+python3 scripts/filtrar_fotos.py crudas/               # aplica
+python3 scripts/filtrar_fotos.py crudas/ --diagnostico # solo mide y explica
+```
+
+Descarta dos cosas y deja lo descartado en `descartadas/<id>/` con un
+`motivos.json`, para poder recuperar una foto rechazada por error:
+
+1. **Lo que no es una foto**: pictogramas de característica, logos y etiquetas
+   de eficiencia energética. Se reconocen por el modo del archivo —una foto
+   llega en color verdadero, un pictograma en escala de grises o en paleta—.
+   En una corrida real eran 18 de 146.
+2. **Las fotos donde el producto sale cortado**, midiendo cuánto producto toca
+   cada borde. Son tomas de detalle o de estilo de vida: legítimas en la página
+   del fabricante, inservibles en una ficha donde el cliente quiere ver el
+   equipo completo.
+
+Si un producto queda con menos de cuatro, el script lo dice y esas fotos entran
+al pedido al proveedor. **Quedarse con dos fotos buenas es mejor que completar
+cuatro con un pictograma.**
+
+Si la persona ya tiene fotos del proveedor o propias, se salta directo al filtro.
 
 Las fotos salen por dos vías y el flujo las separa desde el principio:
 
@@ -258,10 +281,55 @@ Newsroom y Samsung Mobile Press autorizan uso editorial o personal, no publicar 
 producto en una tienda. Lo que sirve es el paquete del proveedor, el portal de
 partners si la tienda es revendedor autorizado, o fotos propias.
 
-Para quitar fondos, dejar blanco puro y agregar sombra, usa la skill
-`fotos-de-producto`, que ya hace ese trabajo por lotes.
+### 6. Retocar con `fotos-estudio-degradado`
 
-### 6. Armar entregables
+**Esta skill no retoca imágenes.** Todas las fotos del ecommerce pasan por
+`fotos-estudio-degradado`, que es la que define el estilo del catálogo: fondo
+degradado gris, producto al 85 % de un lienzo de 2000×2000, resplandor, maestra
+JPEG y AVIF web. Que el estilo lo decida un solo lugar es justamente el punto: si
+cada skill recortara a su manera, el catálogo dejaría de verse parejo.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar.py" \
+    catalogo/fotos/crudas -o catalogo/fotos/estudio --variantes --segundo-plano
+```
+
+Tarda entre 5 y 20 segundos por foto, así que con un lote de catálogo va en
+segundo plano. Lee su `SKILL.md` antes: tiene su propio flujo de revisión, marca
+cada foto como LISTA, REVISAR o REPETIR, y hay que mirar las hojas de revisión
+antes de dar el lote por bueno.
+
+Dos avisos que salen seguido con fotos de Icecat:
+
+- **Resolución.** El estándar encuadra el producto a 1700 px. Muchas fotos de
+  Icecat son bastante más chicas —en una corrida real, 84 de 122—, así que van a
+  salir marcadas por ampliación. No es un fallo del retoque: es que esa foto no
+  da para más, y la salida es pedirle al proveedor una mejor.
+- **Producto cortado.** `filtrar_fotos.py` ya lo quitó antes, así que si vuelve
+  a aparecer aquí es que el encuadre quedó justo al límite.
+
+### 7. Acomodar las imágenes por producto
+
+```bash
+python3 scripts/organizar_imagenes.py catalogo/fotos/estudio \
+    --destino catalogo/fotos/imagenes
+```
+
+La otra skill entrega por formato y tamaño, que es lo cómodo para revisar un
+lote. El catálogo se carga por producto, así que esto reordena lo mismo sin
+volver a procesar un píxel:
+
+```
+imagenes/honor-2i/2000/honor-2i-01.jpg     <- la maestra
+imagenes/honor-2i/2000/honor-2i-01.avif
+imagenes/honor-2i/1600/honor-2i-01.avif + .jpg
+imagenes/honor-2i/1200/…   800/…   480/…
+```
+
+El nombre de la carpeta es el ancho real del archivo, así que un cargador de
+imágenes traduce a la ruta sin tablas de por medio.
+
+### 8. Armar entregables
 
 ```bash
 python3 scripts/construir_entregables.py productos.json --imagenes imagenes/ --salida entregables/
@@ -275,7 +343,7 @@ Produce:
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
 
-### 7. Entregar
+### 9. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
 productos listos, productos que quedaron con pendientes y cualquier caso donde el
@@ -372,7 +440,8 @@ colores es un producto con cuatro variantes.
 scripts/parsear_lista.py          lista.txt → productos.json + revision.md
 scripts/preparar_fotos.py         arma urls.csv + descargador para correr local
 scripts/icecat_local.py           trae fichas e imágenes de Open Icecat
-scripts/normalizar_imagenes.py    fotos crudas → 2000×2000 + variantes webp
+scripts/filtrar_fotos.py          quita pictogramas y fotos con el producto cortado
+scripts/organizar_imagenes.py     salida del retoque → una carpeta por producto
 scripts/construir_entregables.py  productos.json → ZIP + Excel
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
