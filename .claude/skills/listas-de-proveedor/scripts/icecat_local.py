@@ -60,8 +60,11 @@ PROVEEDORES_URL = f"{BASE}/export/freexml/refs/SuppliersList.xml.gz"
 FICHA_URL = BASE + "/export/freexml/{lang}/{icecat_id}.xml"
 XMLS3_URL = BASE + "/xml_s3/xml_server3.cgi"
 PAUSA = 0.25          # segundos entre peticiones; el límite es 100 por IP
-MIN_PUNTAJE = 0.62    # por debajo de esto no se propone candidato
-AUTO_CONFIRMA = 0.90  # por encima de esto se marca confirmado solo
+# El puntaje mide cuanto ruido sobra en el nombre de Icecat una vez que
+# todos los tokens del modelo ya coincidieron, asi que un valor bajo
+# sigue siendo una coincidencia valida: "X7d" dentro de "CHOICE
+# Earbuds X7e" puntua 0.33 y es correcta.
+MIN_PUNTAJE = 0.3
 FOTOS_POR_PRODUCTO = 4
 
 
@@ -193,36 +196,40 @@ def normalizar(texto):
     return " ".join(w for w in t.split() if w not in RUIDO)
 
 
-def capacidades(texto):
-    return set(re.findall(r"\d+(?:GB|TB)", normalizar(texto)))
+def puntaje(prod_tokens, modelo_icecat):
+    """
+    Cuanto se parece el modelo del producto al modelo que publica Icecat.
 
+    Se cambio el metodo el 15/09/2026. Antes se comparaba el texto completo
+    con SequenceMatcher y ademas se dividia el puntaje a la mitad cuando la
+    capacidad no aparecia en el campo `modelo` de Icecat. Pero Icecat casi
+    nunca la pone ahi: guarda "Flip 7", "moto g17" o un codigo de parte. El
+    castigo caia sobre casi todo el catalogo y de 121 productos reales solo
+    sobrevivieron 2, cuando el indice si tenia 38 de ellos.
 
-def puntaje(a, b):
-    na, nb = normalizar(a), normalizar(b)
-    if not na or not nb:
+    Ahora se exige que TODOS los tokens del modelo del producto esten en el
+    modelo de Icecat, y que los calificadores coincidan en los dos sentidos
+    para que un "Flip 7" no case con un "Flip 7 Pro". El puntaje mide cuanto
+    ruido sobra en el nombre de Icecat: 1.0 es un nombre identico.
+    """
+    tm = set(normalizar(modelo_icecat).split())
+    tp = [t for t in prod_tokens if t]
+    if not tm or not tp:
         return 0.0
-    base = SequenceMatcher(None, na, nb).ratio()
-    ta, tb = set(na.split()), set(nb.split())
-    comunes = len(ta & tb) / max(1, len(ta))
-    s = (base + comunes) / 2
+    if not all(t in tm for t in tp):
+        return 0.0
+    if (tm & CALIFICADORES) - set(tp):
+        return 0.0
+    return round(len(tp) / len(tm), 3)
 
-    # Una capacidad distinta es otro producto, no un parecido.
-    ca, cb = capacidades(a), capacidades(b)
-    if ca and cb and not (ca & cb):
-        s *= 0.45
-    # Pro, Max, Plus y compañía separan variantes que se escriben casi igual.
-    if (ta & CALIFICADORES) ^ (tb & CALIFICADORES):
-        s *= 0.7
-    return round(s, 3)
+
+def tokens_modelo(p):
+    """El modelo, no el titulo: el titulo trae RAM y capacidad que Icecat no usa."""
+    return [t for t in normalizar(p.get("modelo") or "").split() if t]
 
 
 def cargar_productos(ruta):
     return json.loads(Path(ruta).read_text(encoding="utf-8"))["productos"]
-
-
-def texto_producto(p):
-    partes = [p.get("modelo"), p.get("ram"), p.get("almacenamiento"), p.get("red")]
-    return " ".join(x for x in partes if x)
 
 
 # --------------------------------------------------------------------------
@@ -425,29 +432,33 @@ def cmd_buscar(args):
     indice = list(csv.DictReader(Path(args.indice).open(encoding="utf-8")))
     por_marca = {}
     for fila in indice:
-        por_marca.setdefault(fila["marca"].upper(), []).append(fila)
+        por_marca.setdefault(normalizar(fila["marca"]), []).append(fila)
 
     filas = []
     for p in cargar_productos(args.productos):
-        marca = (p.get("marca") or "").upper()
-        candidatos = por_marca.get(marca, [])
-        alm = (p.get("almacenamiento") or "").upper().replace(" ", "")
+        marca = normalizar(p.get("marca") or "")
+        tp = tokens_modelo(p)
         mejor, mejor_p = None, 0.0
-        for c in candidatos:
-            s = puntaje(texto_producto(p), c["modelo"])
-            # el almacenamiento es el dato que separa variantes del mismo modelo
-            if alm and alm not in normalizar(c["modelo"]).split():
-                s *= 0.5
-            if s > mejor_p:
-                mejor, mejor_p = c, round(s, 3)
+        for c in por_marca.get(marca, []):
+            s = puntaje(tp, c["modelo"])
+            if s <= 0:
+                continue
+            # a igual puntaje gana la entrada que si trae foto: sin foto la
+            # coincidencia no sirve para el paso 5
+            mejor_tiene_foto = bool(mejor and mejor["foto_principal"])
+            if s > mejor_p or (s == mejor_p and not mejor_tiene_foto
+                               and c["foto_principal"]):
+                mejor, mejor_p = c, s
+        hay = mejor is not None and mejor_p >= MIN_PUNTAJE
         filas.append({
             "id_producto": p["id"],
             "titulo": p["titulo"],
-            "icecat_id": mejor["icecat_id"] if mejor and mejor_p >= MIN_PUNTAJE else "",
-            "modelo_icecat": mejor["modelo"][:90] if mejor and mejor_p >= MIN_PUNTAJE else "",
-            "gtin": mejor["gtin"] if mejor and mejor_p >= MIN_PUNTAJE else "",
+            "icecat_id": mejor["icecat_id"] if hay else "",
+            "modelo_icecat": mejor["modelo"][:90] if hay else "",
+            "gtin": mejor["gtin"] if hay else "",
             "puntaje": mejor_p if mejor else 0.0,
-            "confirmado": "si" if mejor_p >= AUTO_CONFIRMA else "",
+            # se confirma solo lo que trae foto; lo demas lo revisa una persona
+            "confirmado": "si" if hay and mejor["foto_principal"] else "",
         })
 
     ruta = Path(args.coincidencias)
@@ -459,16 +470,12 @@ def cmd_buscar(args):
     con = sum(1 for f in filas if f["icecat_id"])
     autos = sum(1 for f in filas if f["confirmado"])
     print(f"{con} de {len(filas)} productos con candidato; "
-          f"{autos} confirmados automáticamente por puntaje alto")
+          f"{autos} confirmados por traer foto")
     print(f"-> {ruta}")
-    print("Revisa la columna modelo_icecat. Escribe 'si' en confirmado para los que")
-    print("estén bien, corrige el icecat_id de los dudosos y deja vacíos los que no.")
+    print("Revisa la columna modelo_icecat antes de traer: el indice mezcla")
+    print("variantes de red y de capacidad, y un A17 4G no es un A17 5G.")
     print("En icecat_id puedes pegar la URL completa de icecat.biz: se extrae el id sola.")
 
-
-# --------------------------------------------------------------------------
-# Paso 3: traer contenido
-# --------------------------------------------------------------------------
 
 def extraer_ficha(xml_texto):
     raiz = ET.fromstring(xml_texto)
