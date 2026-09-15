@@ -388,6 +388,57 @@ def mascara_dos_pasadas(rec: Recortador, rgb: np.ndarray) -> np.ndarray:
     return m
 
 
+def quitar_adornos(m: np.ndarray, rgb: np.ndarray, cfg: dict) -> tuple[np.ndarray, dict]:
+    """Quita de la máscara los elementos ajenos que el recorte conservó: los destellos de «Galaxy AI»
+    y adornos de render parecidos.
+
+    Un adorno es una isla que cumple las tres cosas a la vez: está separada del cuerpo principal, es
+    pequeña frente a él y su color no aparece en él. Una pieza legítima —el segundo audífono, el
+    estuche, la tapa— comparte el color del cuerpo, así que se conserva. Medido sobre el catálogo:
+    los destellos quedan a 36–72 de distancia en a*b* y ocupan el 0,04–0,41 % del cuerpo; las piezas
+    legítimas quedan a 0,3–2,4 y ocupan del 38 al 100 %.
+
+    No toca nada que se superponga al producto: eso abriría un hueco y es REPETIR, no un retoque.
+    """
+    datos = {"adornos_quitados": 0, "adornos": []}
+    if not cfg.get("adornos_quitar", True):
+        return m, datos
+    binaria = (m > 0.5).astype(np.uint8)
+    n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(binaria, connectivity=8)
+    if n <= 2:
+        return m, datos
+    areas = stats[1:, cv2.CC_STAT_AREA].astype(np.float64)
+    principal = int(np.argmax(areas)) + 1
+    area_principal = areas[principal - 1]
+    lab = cv2.cvtColor(np.clip(rgb * 255.0, 0, 255).astype(np.uint8), cv2.COLOR_RGB2LAB).astype(np.float32)
+
+    def cromaticidad(idx: int) -> tuple[float, float]:
+        sel = etiquetas == idx
+        return float(lab[..., 1][sel].mean()) - 128.0, float(lab[..., 2][sel].mean()) - 128.0
+
+    a_p, b_p = cromaticidad(principal)
+    dist_min = float(cfg.get("adorno_distancia_ab_min", 20.0))
+    area_max = float(cfg.get("adorno_area_max_fraccion", 0.15))
+    fuera = []
+    for i, area in enumerate(areas, start=1):
+        if i == principal or area > area_max * area_principal:
+            continue
+        a_i, b_i = cromaticidad(i)
+        d = math.hypot(a_i - a_p, b_i - b_p)
+        if d >= dist_min:
+            fuera.append((i, round(d, 1), round(100.0 * area / area_principal, 3)))
+    if not fuera:
+        return m, datos
+    quita = np.isin(etiquetas, [i for i, _, _ in fuera]).astype(np.uint8)
+    k = max(3, int(round(max(m.shape) * 0.004)) | 1)   # margen para el antialiasing del adorno
+    quita = cv2.dilate(quita, np.ones((k, k), np.uint8)) > 0
+    m = m.copy()
+    m[quita] = 0.0
+    datos["adornos_quitados"] = len(fuera)
+    datos["adornos"] = [{"distancia_ab": d, "area_pct": a} for _, d, a in fuera]
+    return m, datos
+
+
 def limpiar_islas(m: np.ndarray, fraccion_min: float, fraccion_aviso: float) -> tuple[np.ndarray, dict]:
     """Quita fragmentos menores que `fraccion_min` del área del producto y cuenta las piezas grandes."""
     binaria = (m > 0.5).astype(np.uint8)

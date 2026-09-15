@@ -308,9 +308,15 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
             m[y0:y1, x0:x1] = 0
         notas.append(f"Se excluyeron {len(reg['exclusiones'])} zona(s) marcada(s) a mano "
                      f"({100 * quitado / max(area, 1):.1f} % del recorte).")
+    m, adornos = imagen.quitar_adornos(m, rgb, cfg)
+    if adornos["adornos_quitados"]:
+        detalle = ", ".join(f"{x['area_pct']:.2f} %" for x in adornos["adornos"])
+        notas.append(f"Se quitaron {adornos['adornos_quitados']} elemento(s) ajenos al producto "
+                     f"({detalle} del cuerpo): están separados, son pequeños y su color no aparece en él "
+                     "(destellos de render y adornos parecidos). Confirma que no eran parte del producto.")
     m, islas = imagen.limpiar_islas(m, cfg["isla_min_fraccion"], cfg["isla_aviso_fraccion"])
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
-    recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas}
+    recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
     caja0 = imagen.caja(a, cfg["alfa_caja_min"])
     if caja0 is None:

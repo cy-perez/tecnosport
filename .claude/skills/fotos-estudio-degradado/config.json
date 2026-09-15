@@ -17,7 +17,8 @@
     "tono": "Niveles automáticos acotados sobre L*: nunca toca a* ni b*. activo=false desactiva toda corrección tonal.",
     "separacion": "Diferencia mínima de L* entre el borde del producto y el fondo con la sombra; si falla en más de separacion_sectores_max del contorno, la foto se marca REVISAR.",
     "contraste_original": "ΔE76 mínimo entre el borde del producto y el fondo de la foto original; si falla en más de contraste_original_sectores_max del contorno, el recorte es poco fiable ahí (blanco sobre blanco, negro sobre negro) y la foto se marca REVISAR.",
-    "notas_foto": "dominante_croma_min y luces_quemadas_pct sólo generan notas informativas."
+    "notas_foto": "dominante_croma_min y luces_quemadas_pct sólo generan notas informativas.",
+    "adornos": "Elementos ajenos que el recorte conserva —los destellos de «Galaxy AI» y adornos de render parecidos—. Se quita la isla que está separada del cuerpo principal, ocupa menos de adorno_area_max_fraccion y queda a adorno_distancia_ab_min o más en el plano a*b*: un color que no aparece en el cuerpo. Las piezas legítimas comparten color y se conservan. adornos_quitar=false lo desactiva."
   },
   "lienzo": [2000, 2000],
   "ocupacion": 0.85,
@@ -70,6 +71,9 @@
   "alfa_caja_min": 0.10,
   "borde_corte_fraccion": 0.005,
   "contraccion_borde_px": 1,
+  "adornos_quitar": true,
+  "adorno_distancia_ab_min": 20.0,
+  "adorno_area_max_fraccion": 0.15,
   "bordes_inciertos_max": 0.08,
   "separacion_min_l": 3.0,
   "separacion_sectores_max": 0.25,

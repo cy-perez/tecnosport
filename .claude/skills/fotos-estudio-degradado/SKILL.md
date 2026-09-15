@@ -76,6 +76,7 @@ escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 | Fondo | plantilla `assets/fondo-2000x2000.png`: degradado radial #FFFFFF → #A5A5A5, blanco hasta el 26 % del radio y rampa lineal hasta la esquina, con tramado ±1 de semilla fija, idéntico en todo el catálogo |
 | Sombra | #000000 al 63 %, dilatación 6 px, desenfoque σ 58 px, desplazada 14 px hacia abajo, modo normal, siempre debajo del producto |
 | Recorte | rembg `isnet-general-use` en dos pasadas; islas < 0,5 % descartadas con aviso; borde descontaminado y contraído 1 px |
+| Adornos | se quitan solos los elementos ajenos separados del cuerpo, pequeños (< 15 %) y de un color que no aparece en él (≥ 20 en a*b*): los destellos de «Galaxy AI» y adornos de render parecidos. Las piezas legítimas comparten el color del cuerpo y se conservan |
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
 | Escala | ≥ 1,5× → REVISAR · ≥ 2× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
@@ -180,7 +181,9 @@ y centro del producto. Busca:
   de asas y correas.
 - **Partes perdidas**: cordones, correas, asas, antenas, suelas claras sobre mesas claras.
 - **Elementos ajenos que el recorte conservó**: manos, ganchos, maniquíes, soportes,
-  cables, etiquetas colgantes. No se borran a mano (ver el paso 5).
+  cables, etiquetas colgantes. No se borran a mano (ver el paso 5). Los adornos de
+  color separados del producto —los destellos de «Galaxy AI»— ya se quitaron solos
+  y el reporte lo anota: confirma que no eran parte del producto.
 - **Silueta legible**: un producto claro puede fundirse con el centro del degradado.
 - **Nitidez y compresión**, sobre todo en fotos ampliadas o reenviadas por WhatsApp.
 
@@ -273,6 +276,13 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
   etiqueta colgante separada se quita con `--excluir`, pero encima del producto no
   se borran (sería alterar el producto y suele delatar una foto ajena): REPETIR, con
   la foto oficial del fabricante (Open Icecat) o una propia como alternativa.
+- **Adornos y texto de los renders de fabricante**: los destellos de «Galaxy AI» se
+  quitan solos porque están separados del producto, pero el **texto incrustado en la
+  pantalla** —«Galaxy S25 Ultra» sobre el propio equipo— no se toca: está encima del
+  producto y borrarlo sería alterarlo. Si ese texto no se puede publicar, la salida
+  es otra foto, no un retoque. El criterio distingue por color, así que un producto
+  con una pieza pequeña de un color que no aparece en su cuerpo podría perderla:
+  el reporte anota siempre qué se quitó, y `--ajuste adornos_quitar=false` lo apaga.
 - **WebP**: con pérdida deja anillos en este degradado (1,1–1,25 niveles medidos,
   aun a calidad 100); por eso el respaldo de AVIF es JPEG. Si un sistema exige
   WebP, `--ajuste 'formatos_web=["avif","webp"]'` lo genera y el reporte lo advierte.
