@@ -55,7 +55,7 @@ POST /api/v1/carritos/{id}/lineas
 PATCH /api/v1/carritos/{id}/lineas/{lineaId}
 DELETE /api/v1/carritos/{id}/lineas/{lineaId}
 POST /api/v1/envios/cotizacion              costo de envío y plazo para este carrito y destino
-POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos aplican a este carrito y destino
+POST /api/v1/pedidos/metodos-de-pago-disponibles   qué métodos ofrece el negocio hoy y aplican a este carrito y destino
 POST /api/v1/pedidos                        revalida precios, existencias y costo de envío, reserva
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
@@ -69,6 +69,15 @@ GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 sale de una tabla propia sino de la cotización (`ADR-0023`), así que la respuesta
 de `/metodos-de-pago-disponibles` es el único lugar donde el cliente se entera de
 si hay contraentrega para ese destino.
+
+`POST /api/v1/pedidos` **vuelve a hacer las dos preguntas** que ya respondió
+`/metodos-de-pago-disponibles`, porque no se fía de que el cliente las haya hecho
+(regla dura #7). Si el método existe pero el negocio no lo ofrece hoy —la cuenta
+de la pasarela no lo tiene activado, `WOMPI_METODOS_HABILITADOS`— responde `409`
+con `codigo: "METODO_DE_PAGO_NO_HABILITADO"`; si es contraentrega y no aplica a
+ese destino y ese monto, `409` con `codigo: "CONTRAENTREGA_NO_DISPONIBLE"`. Son
+`409` y no `400` porque la petición está bien formada y el método existe: lo que
+cambió es qué se acepta, y pudo cambiar entre las dos llamadas (`ADR-0029`).
 
 ### Cotización de envío
 
@@ -342,9 +351,10 @@ reintento por su cuenta.
 3. **Cotizar el envío y elegir la tarifa.** El costo de envío no se acepta del
    cliente en ninguna petición, y el identificador de tarifa del proveedor nunca
    sale del servidor.
-4. Decidir si un método de pago está disponible para ese destino y ese monto —
-   incluida la contraentrega, que desde `ADR-0023` depende de que la cotización
-   traiga una tarifa con recaudo.
+4. Decidir si un método de pago se ofrece. Son dos preguntas: si el negocio lo
+   ofrece hoy —lo que la cuenta de la pasarela tiene activado, `ADR-0029`— y si
+   aplica a ese destino y ese monto, incluida la contraentrega, que desde
+   `ADR-0023` depende de que la cotización traiga una tarifa con recaudo.
 5. Decidir si un pago está aprobado. La verdad es la consulta a la pasarela, no
    el parámetro que trae el navegador al volver.
 6. **Decidir si un envío se entregó.** La verdad es el webhook firmado del

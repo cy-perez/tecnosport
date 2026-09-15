@@ -219,7 +219,7 @@ panel. Ver `ADR-0018`.
 | `Inventario` | movimientos y reservas | El saldo no se edita: se agrega movimiento |
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
 | `Pedido` | líneas congeladas, contacto de quien recibe, dirección, tipo de entrega, tarifa de envío congelada, totales, método de pago, estado, historial | Raíz transaccional |
-| `Pago` | referencia, método, estado, eventos recibidos | Idempotente por referencia |
+| `Pago` | referencia, método elegido, medio reportado por la pasarela, estado, eventos recibidos | Idempotente por referencia. El método que el comprador eligió y el medio con que la pasarela cobró son dos hechos distintos y ninguno pisa al otro (`ADR-0029`) |
 | `Envio` | transportadora, servicio, guía, costo real, comisión y fecha de conciliación del recaudo, eventos de seguimiento | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`, `ADR-0022`) |
 | `EventoSeguimiento` | estado de la transportadora, descripción, momento del evento y de su recepción | Dentro de `Envio`. Se agrega, nunca se sobrescribe |
 | `Usuario` | correo, credencial, roles, verificación | |
