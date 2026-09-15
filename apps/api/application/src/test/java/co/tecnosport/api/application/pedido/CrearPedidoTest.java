@@ -46,6 +46,7 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -94,6 +95,13 @@ class CrearPedidoTest {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
   }
 
+  /**
+   * Los mismos que el valor por omisión de {@code application.yml}: Addi fuera hasta que Wompi lo
+   * active (docs/11-pagos-y-envios.md).
+   */
+  private static final Set<MetodoPago> HABILITADOS_EN_PASARELA =
+      EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
+
   private CrearPedido crear(CriteriosContraentrega criterios, boolean recaudaEnElDestino) {
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
@@ -105,7 +113,8 @@ class CrearPedidoTest {
     cotizador.recaudaEnElDestino(recaudaEnElDestino);
     CotizarEnvio cotizarEnvio = new CotizarEnvio(productos, cotizador, () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
-        new MetodosDePagoDisponibles(productos, cotizarEnvio, pedidos, criterios);
+        new MetodosDePagoDisponibles(
+            productos, cotizarEnvio, pedidos, criterios, HABILITADOS_EN_PASARELA);
     return new CrearPedido(
         productos,
         inventarios,
@@ -383,6 +392,34 @@ class CrearPedidoTest {
 
     assertEquals(EstadoPedido.CONFIRMADO_CONTRAENTREGA, pedido.estado());
     assertNull(ultimaReserva().expiraEn());
+  }
+
+  /**
+   * Regla dura #7: el servidor no se fía de que el cliente haya consultado la lista. Sin esta
+   * comprobación, un {@code POST} con {@code ADDI} creaba el pedido igual —solo contraentrega se
+   * revalidaba— y el comprador acababa en un Web Checkout donde Addi no aparece, pagando con
+   * tarjeta un pedido que dice Addi.
+   */
+  @Test
+  void seRechazaUnMetodoDePagoQueLaPasarelaNoTieneHabilitado() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        MetodoDePagoNoHabilitadoException.class, () -> caso.ejecutar(comando(MetodoPago.ADDI, 1)));
+  }
+
+  /** Y no reserva inventario al rechazarlo: la comprobación va antes de congelar las líneas. */
+  @Test
+  void unMetodoNoHabilitadoNoReservaInventario() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    assertThrows(
+        MetodoDePagoNoHabilitadoException.class, () -> caso.ejecutar(comando(MetodoPago.ADDI, 1)));
+
+    assertEquals(
+        5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));
   }
 
   /** Ninguna transportadora cobra en la puerta en ese destino (adr/0023). */

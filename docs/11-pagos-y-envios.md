@@ -8,9 +8,44 @@
 | PSE | Wompi | Al aprobar |
 | Nequi | Wompi | Al aprobar |
 | Bancolombia a la mano y botón Bancolombia | Wompi | Al aprobar |
-| Addi, pago a cuotas | Wompi | Al aprobar el crédito |
 | Transferencia manual | Ninguno | Al conciliar el comprobante |
 | **Contraentrega** | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
+
+**Qué se ofrece no lo decide esta tabla, lo decide
+`tecnosport.wompi.metodos.habilitados`** (`WOMPI_METODOS_HABILITADOS`). Es la
+lista de lo que la *cuenta* de Wompi tiene activado, que no es lo mismo que lo
+que el código sabe procesar. `MetodosDePagoDisponibles` parte de ahí y
+`CrearPedido` lo exige otra vez antes de crear el pedido — el servidor no se fía
+de que el cliente haya consultado la lista (regla dura #7). Hasta la Fase 3 no
+existía esa distinción: se ofrecía el enum entero.
+
+### Addi
+
+**No se ofrece, y hay dos motivos distintos que conviene no mezclar.**
+
+El de negocio (14 de septiembre de 2026): Addi estudia la activación con el
+sitio ya en línea, así que no puede estar el día del lanzamiento. Ofrecerlo
+antes sería prometer un medio de pago que no se puede honrar, y **sin que nada
+reventara**: la URL del Web Checkout hospedado no le manda a Wompi el método
+elegido —Wompi pinta su propia lista y el comprador vuelve a elegir allí— así
+que el comprador habría pagado con tarjeta un pedido grabado como Addi.
+
+El técnico, encontrado al revisar lo anterior: **esta tabla decía que Addi lo
+provee Wompi, y no es cierto.** La documentación pública de Wompi consultada el
+14 de septiembre de 2026 no lista Addi entre sus medios; lo que Wompi ofrece en
+esa familia es `BANCOLOMBIA_BNPL` ("Compra y Paga Después Bancolombia", cuatro
+cuotas) y `SU_PLUS`. Addi es un proveedor aparte, con su propia integración. Así
+que `MetodoPago.ADDI` sigue marcado como método de pasarela en el enum y
+`CrearIntentoDePago` lo enrutaría a Wompi, donde no existe. Hoy eso no puede
+pasar —la configuración no lo habilita y `CrearPedido` lo rechaza— pero el
+modelo está mintiendo mientras nadie lo toque.
+
+**TODO (dato de negocio, no lo inventes):** decidir qué se hace con
+`MetodoPago.ADDI`. Las dos salidas razonables son integrar Addi directamente
+cuando lo aprueben —y entonces deja de ser un método de pasarela— o quitar el
+valor del enum y ofrecer en su lugar el BNPL de Bancolombia, que sí llega por
+Wompi y por tanto por la configuración que ya existe. Mientras se decide, el
+valor queda y no se ofrece.
 
 ## Wompi
 
@@ -28,6 +63,17 @@
 - Un trabajo programado concilia los pagos que quedaron pendientes y nunca
   recibieron webhook. Los webhooks se pierden; el dinero no puede perderse con
   ellos.
+- **El método elegido y el medio cobrado son dos hechos distintos, y los dos se
+  guardan.** El Web Checkout hospedado no recibe el método que el comprador
+  eligió en nuestro checkout: Wompi pinta su propia lista y el comprador vuelve
+  a elegir allí. Así que `pedido.metodo_pago` es una intención, no un hecho.
+  `pago.medio_reportado_pasarela` guarda el `payment_method_type` que Wompi
+  reporta —crudo, tal como él lo nombra— por webhook o por conciliación, lo que
+  llegue primero. No pisa el método elegido: machacarlo borraría la única prueba
+  de que el sitio ofreció una cosa y cobró otra. `MediosDeWompi` traduce los
+  valores que este sitio ofrece y devuelve nulo para el resto — "no sé traducir
+  esto" no es "esto no coincide", y quien pregunte tiene que distinguirlos antes
+  de afirmar una discrepancia.
 - Ambiente de pruebas hasta que los recorridos completos pasen. Las llaves de
   producción entran solo por Secret Manager.
 

@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -129,8 +130,50 @@ class ProcesarEventoDePagoTest {
   }
 
   private ProcesarEventoDePagoComando comando(String estadoWompi) {
+    return comando(estadoWompi, null);
+  }
+
+  private ProcesarEventoDePagoComando comando(String estadoWompi, String medioWompi) {
     return new ProcesarEventoDePagoComando(
-        REFERENCIA.valor(), estadoWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, CHECKSUM);
+        REFERENCIA.valor(), estadoWompi, medioWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, CHECKSUM);
+  }
+
+  /**
+   * El hueco que esto cierra: la URL del Web Checkout hospedado no le manda a Wompi el método que
+   * el comprador eligió aquí, así que Wompi pinta su propia lista y el comprador vuelve a elegir.
+   * El pedido decía NEQUI y nada contrastaba eso contra lo que se cobró de verdad.
+   */
+  @Test
+  void elEventoGuardaConQueSeCobroDeVerdadSinTocarElMetodoElegido() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    pagoPendienteParaElPedido(pedido);
+
+    caso.ejecutar(comando("APPROVED", "CARD"));
+
+    Pago pago = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
+    assertEquals("CARD", pago.medioReportadoPorLaPasarela().orElseThrow());
+    assertEquals(MetodoPago.NEQUI, pago.metodoPago());
+  }
+
+  /**
+   * Un evento sin ese campo sigue cerrando el pago: el estado es lo que decide, el medio informa.
+   */
+  @Test
+  void unEventoSinElMedioNoImpideAplicarlo() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    pagoPendienteParaElPedido(pedido);
+
+    ResultadoEventoDePago resultado = caso.ejecutar(comando("APPROVED", null));
+
+    assertEquals(ResultadoEventoDePago.APLICADO, resultado);
+    assertTrue(
+        pagos
+            .buscarPorReferencia(REFERENCIA)
+            .orElseThrow()
+            .medioReportadoPorLaPasarela()
+            .isEmpty());
   }
 
   @Test

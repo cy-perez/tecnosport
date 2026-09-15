@@ -370,11 +370,22 @@ recortadas, no reescritas— viven como fixtures en
   |---|---|
   | `address_to.reference` | El `indicaciones` del pedido, que sigue siendo opcional; si viene vacío, `Sin indicaciones adicionales` |
   | `address_from.email` | `contacto@tecnosport.co`, ya implementado como `ORIGEN_CORREO` |
-  | `package_content` | Genérico por línea: "Ropa y calzado deportivo", "Bolsos y morrales", "Equipo de telefonía móvil" — coincide con el contenido real para sostener una reclamación, sin anunciar en la etiqueta que dentro va un celular |
+  | `package_content` | Genérico por línea de catálogo, **y el mapa vive en `ContenidoDeclarado` (`domain/envio`), no en esta tabla** — coincide con el contenido real para sostener una reclamación, sin anunciar en la etiqueta qué va dentro |
 
   `package_type` sigue sin decidirse porque **no es un dato de negocio sino un
   valor del catálogo de Skydropx**, y su lista de valores válidos no se ha podido
   leer sin emitir una guía.
+
+  **Por qué el mapa de `package_content` ya no se escribe aquí.** Esta tabla lo
+  tuvo, y decía `CELULARES` → "Equipo de telefonía móvil". Ese mismo 14 de
+  septiembre, `V38` renombró la línea a `TECNOLOGIA` y le colgó diez categorías
+  más; aplicado tal cual, **un proyector habría viajado declarado como telefonía
+  móvil**, que es justo lo que la decisión existía para evitar. Un documento no se
+  entera de un renombre. `ContenidoDeclarado` es un `switch` exhaustivo **sin
+  `default`**, así que una línea nueva no compila hasta que alguien decida qué
+  dice su etiqueta, y el atajo de agregar un `default` lo atrapa su prueba. El
+  relato completo está en `docs/09-plan-de-arranque.md`, "La decisión que
+  envejeció en un día".
 
 - ⛔ **No se pudo emitir ninguna guía: la cuenta no tiene créditos.** El intento
   con el cuerpo completo respondió

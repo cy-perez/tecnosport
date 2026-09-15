@@ -11,19 +11,25 @@ import java.util.Optional;
  * Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. Firma determinista, sin red;
  * {@code verificarFirmaEvento} responde válida salvo que se pida lo contrario con {@link
  * #conFirmaEventoInvalida()}; {@code consultarTransaccion} responde lo que se configure con {@link
- * #conEstadoDeTransaccion(String, String)}, o vacío si no se configuró nada para ese id.
+ * #conEstadoDeTransaccion(String, String)} o {@link #conTransaccion(String, String, String)}, o
+ * vacío si no se configuró nada para ese id.
  */
 final class PasarelaDePagosFalsa implements PasarelaDePagos {
 
   private boolean firmaEventoValida = true;
-  private final Map<String, String> estadosPorTransaccion = new HashMap<>();
+  private final Map<String, TransaccionDePasarela> transacciones = new HashMap<>();
 
   void conFirmaEventoInvalida() {
     this.firmaEventoValida = false;
   }
 
+  /** Sin medio: Wompi no siempre lo trae, y el estado tiene que bastar para conciliar. */
   void conEstadoDeTransaccion(String idTransaccionWompi, String estado) {
-    estadosPorTransaccion.put(idTransaccionWompi, estado);
+    transacciones.put(idTransaccionWompi, new TransaccionDePasarela(estado, null));
+  }
+
+  void conTransaccion(String idTransaccionWompi, String estado, String medio) {
+    transacciones.put(idTransaccionWompi, new TransaccionDePasarela(estado, medio));
   }
 
   @Override
@@ -38,7 +44,7 @@ final class PasarelaDePagosFalsa implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<String> consultarTransaccion(String idTransaccionWompi) {
-    return Optional.ofNullable(estadosPorTransaccion.get(idTransaccionWompi));
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
+    return Optional.ofNullable(transacciones.get(idTransaccionWompi));
   }
 }

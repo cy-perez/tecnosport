@@ -107,6 +107,7 @@ public class PagoControlador {
         new ProcesarEventoDePagoComando(
             LectorEventoWompi.referencia(cuerpo),
             LectorEventoWompi.estado(cuerpo),
+            LectorEventoWompi.medio(cuerpo),
             LectorEventoWompi.valoresDePropiedadesFirmadas(cuerpo),
             LectorEventoWompi.timestamp(cuerpo),
             LectorEventoWompi.checksum(cuerpo));

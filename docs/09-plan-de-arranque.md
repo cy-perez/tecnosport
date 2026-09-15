@@ -228,8 +228,8 @@ número nuevo.
 
 **Wompi cerrado, sin la conciliación programada** (2026-09-03): Web Checkout
 hospedado, no tokenización propia — decisión consciente para un solo
-desarrollador: Wompi resuelve por su cuenta PSE, el push de Nequi, el 3-D
-Secure de tarjeta y el crédito de Addi, a costa de que el cliente salga del
+desarrollador: Wompi resuelve por su cuenta PSE, el push de Nequi y el 3-D
+Secure de tarjeta, a costa de que el cliente salga del
 sitio unos segundos durante el pago (esa página no es nuestra, no rompe la
 regla de "nada de píxel suelto"). Si el volumen lo justifica más adelante,
 migrar a tokenización con Wompi.js queda localizado a `WompiClient` y al
@@ -501,7 +501,7 @@ tampoco se puede dar por resuelto:
   llaves).
 
 **Backend de la Fase 3 completo, fase todavía abierta.** El backend cobra
-por Wompi (tarjeta, PSE, Nequi, Bancolombia, Addi), por transferencia manual
+por Wompi (tarjeta, PSE, Nequi, Bancolombia), por transferencia manual
 con conciliación en el panel, o contraentrega de punta a punta —
 disponibilidad decidida por el servidor, verificación antes de despachar,
 despacho, entrega o rechazo con liberación de inventario, y recaudo
@@ -3543,14 +3543,13 @@ Orden de construcción, un caso de uso a la vez:
      transaccional: lo que escriba la transportadora por una recolección o una
      devolución tiene que leerlo una persona, y `no-responder@` se lo habría
      tragado en silencio.
-   - **`package_content`: genérico por línea de catálogo.** `ROPA_Y_CALZADO` →
-     "Ropa y calzado deportivo", `BOLSOS` → "Bolsos y morrales", `CELULARES` →
-     "Equipo de telefonía móvil". Es lo que equilibra las dos cosas que este campo
-     decide a la vez: **el contenido declarado tiene que coincidir con el real**
-     para que una reclamación por pérdida no se caiga, y **la etiqueta la lee
-     cualquiera que cargue la caja** — escribir la marca y el modelo del celular
-     ahí es anunciar lo que hay dentro. El nombre del producto se descartó por
-     eso, y el texto fijo por lo primero.
+   - **`package_content`: genérico por línea de catálogo.** Es lo que equilibra las
+     dos cosas que este campo decide a la vez: **el contenido declarado tiene que
+     coincidir con el real** para que una reclamación por pérdida no se caiga, y
+     **la etiqueta la lee cualquiera que cargue la caja** — escribir la marca y el
+     modelo del celular ahí es anunciar lo que hay dentro. El nombre del producto se
+     descartó por eso, y el texto fijo para todo el catálogo por lo primero. El mapa
+     vive en `ContenidoDeclarado` y no aquí, por lo que cuenta la nota de abajo.
 8. ~~**Textos legales**, en el mismo commit que enciende la cotización, con la
    fecha de versión nueva.~~ **Hecho el 14 de septiembre de 2026.** Las cláusulas
    de `docs/12-legales-de-envio.md`, sección 3, en español e inglés: precio sin
@@ -3736,6 +3735,65 @@ La lección de estos dos últimos vale más que los datos: **una lista de pendie
 oxida**, y dos de sus cinco filas no describían nada que faltara. Revisar qué bloquea
 de verdad, antes de salir a conseguir el dato, ahorró dos conversaciones que no hacían
 falta.
+
+### La decisión que envejeció en un día (2026-09-14)
+
+El paso 7 dejó tres decisiones tomadas "para que el día que lleguen los créditos no
+haya que pensarlas". Una de ellas se volvió falsa **esa misma tarde**, y el intervalo
+entre tomarla y romperla es el dato interesante: unas horas.
+
+**Qué pasó.** `package_content` se decidió mapeando `CELULARES` → "Equipo de
+telefonía móvil". Horas después, `V38` renombró esa línea a `TECNOLOGIA` y le colgó
+diez categorías más —relojes, audífonos, cargadores, cables, power banks, consolas,
+parlantes, computadores, tablets y proyectores—. Aplicada tal cual, **un proyector
+habría viajado declarado como telefonía móvil**, que es justo lo que la decisión dijo
+que no podía pasar: si el contenido declarado no coincide con el real, una
+reclamación por pérdida se cae. Nadie se equivocó al renombrar la línea; la decisión
+de envío no estaba en ningún sitio donde el renombre pudiera tropezarse con ella.
+
+**Es el patrón de siempre, por tercera vez.** El plugin de capas configurado y sin
+aplicar, los términos prometiendo el envío incluido tres días después de empezar a
+cobrarlo, y ahora esto: **una regla escrita en un documento no la hace cumplir
+nadie**. La diferencia es que aquí el guardián no hubo que inventarlo — era el
+compilador. Un `switch` exhaustivo sobre `LineaCatalogo` **no compila** cuando se
+agrega o se renombra una constante, así que la pregunta "¿y qué dice la etiqueta de
+esta línea?" se hace sola en el momento exacto en que hay que hacerla.
+
+**`ContenidoDeclarado`** (`domain/envio`) es ese `switch`, sin `default`. Vive en
+`envio` y no en `catalogo` a propósito: la etiqueta es una decisión de despacho, y
+colgarla del enum del catálogo acoplaría el catálogo a la transportadora.
+
+**El atajo que desactiva al compilador tiene su propia prueba.** Quien agregue un
+`default` para que compile deja la línea nueva declarada con la etiqueta de otra
+cosa, y eso compila perfecto. `ningunaLineaSeQuedaSinEtiquetaDecidida` recorre
+`LineaCatalogo.values()` contra un mapa escrito a mano y falla con el mensaje de qué
+hay que decidir. Comprobado metiendo una línea `HOGAR` y un `default` a propósito:
+falla una de las cuatro, y es esa.
+
+**`TECNOLOGIA` → "Electrónica y accesorios"**, y no "Equipo electrónico": un cable y
+un cargador no son equipo, y las once categorías tienen que caber en la misma frase
+sin que ninguna quede declarada de menos. Quien responde por el valor es
+`valorDeclarado` del bulto, que sí va exacto por unidad — genérico en el contenido y
+exacto en el valor es la combinación que sostiene una reclamación sin anunciar lo que
+hay dentro de la caja.
+
+**Lo que esto no hace todavía.** Nada la llama en producción: `package_content` es un
+campo de `POST /shipments`, o sea de la emisión de la guía, que sigue esperando los
+créditos. Se escribió igual porque lo que estaba en riesgo no era el campo sino la
+decisión, y **una decisión que solo vive en Markdown ya demostró durar menos de un
+día**. `Bulto` no se tocó: cada bulto es una unidad de una variante, así que
+`producto.categoria().linea()` la resuelve sin ambigüedad el día que exista el cuerpo
+de la emisión, y agregarle hoy un campo que nadie lee sería una prueba incapaz de
+fallar.
+
+**Sobre la regla dura #4**, porque es un texto que una persona lee: no va a
+`correos_*.properties`. Lo lee el mensajero colombiano que carga la caja, en español,
+sea cual sea el idioma que eligió el comprador. Traducirlo sería un error, no una
+mejora; los `properties` son para el texto que se le manda a quien compra, en su
+idioma.
+
+**De paso, `docs/03-api.md`** seguía documentando el filtro `linea` con los tres
+valores viejos. Misma deriva, mismo día, y esa no la atrapa ningún compilador.
 
 ## Cómo conversar con Claude Code en este proyecto
 

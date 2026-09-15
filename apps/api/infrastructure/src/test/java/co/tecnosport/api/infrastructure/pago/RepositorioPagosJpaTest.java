@@ -93,6 +93,44 @@ class RepositorioPagosJpaTest {
     assertThat(encontrado.eventos()).isEmpty();
   }
 
+  /**
+   * Un pago recién creado no sabe con qué se cobró, y eso tiene que sobrevivir la ida y vuelta a la
+   * base: {@code null} es "todavía no se sabe" y no se puede confundir con "coincide".
+   */
+  @Test
+  void unPagoSinMedioReportadoVuelveSinMedioReportado() {
+    UUID pedidoId = crearYGuardarPedido();
+    ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
+    Pago pago =
+        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+
+    repositorio.guardar(pago);
+
+    assertThat(
+            repositorio.buscarPorReferencia(referencia).orElseThrow().medioReportadoPorLaPasarela())
+        .isEmpty();
+  }
+
+  /**
+   * La columna de la V39. Guarda el valor crudo de Wompi, no traducido: uno que hoy no sepamos
+   * traducir tiene que quedar igual en vez de perderse en el mapeo.
+   */
+  @Test
+  void elMedioReportadoPorLaPasarelaSobreviveLaIdaYVuelta() {
+    UUID pedidoId = crearYGuardarPedido();
+    ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
+    Pago pago =
+        Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
+    pago.registrarMedioReportadoPorLaPasarela("BANCOLOMBIA_TRANSFER");
+
+    repositorio.guardar(pago);
+
+    Pago encontrado = repositorio.buscarPorReferencia(referencia).orElseThrow();
+    assertThat(encontrado.medioReportadoPorLaPasarela()).contains("BANCOLOMBIA_TRANSFER");
+    // El método elegido no se toca: son dos hechos distintos.
+    assertThat(encontrado.metodoPago()).isEqualTo(MetodoPago.NEQUI);
+  }
+
   @Test
   void guardarConEventosLosPersisteEnOrden() {
     UUID pedidoId = crearYGuardarPedido();

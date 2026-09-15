@@ -66,6 +66,7 @@ public final class ProcesarEventoDePago {
     return AplicadorDeResultadoDePago.aplicar(
         pagoEncontrado.get(),
         evento,
+        comando.medioWompi(),
         "webhook-wompi",
         repositorioPagos,
         repositorioPedidos,

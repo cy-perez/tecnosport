@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.pago;
 
 import co.tecnosport.api.application.pago.PasarelaDePagos;
+import co.tecnosport.api.application.pago.TransaccionDePasarela;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pago.ReferenciaPago;
 import java.util.List;
@@ -20,7 +21,7 @@ final class PasarelaDePagosDobleDePrueba implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<String> consultarTransaccion(String idTransaccionWompi) {
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
     return Optional.empty();
   }
 }

@@ -30,6 +30,7 @@ public final class Pago {
   private EstadoPago estado;
   private Instant actualizadoEn;
   private String idTransaccionWompi;
+  private String medioReportadoPorLaPasarela;
 
   public Pago(
       UUID id,
@@ -41,7 +42,8 @@ public final class Pago {
       List<EventoPago> eventos,
       Instant creadoEn,
       Instant actualizadoEn,
-      String idTransaccionWompi) {
+      String idTransaccionWompi,
+      String medioReportadoPorLaPasarela) {
     this.id = Objects.requireNonNull(id, "El id del pago no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     this.referencia =
@@ -54,6 +56,7 @@ public final class Pago {
     this.actualizadoEn =
         Objects.requireNonNull(actualizadoEn, "La fecha de actualización no puede ser nula.");
     this.idTransaccionWompi = idTransaccionWompi;
+    this.medioReportadoPorLaPasarela = normalizar(medioReportadoPorLaPasarela);
   }
 
   /** Nace {@code PENDIENTE}: crear el pago es crear el intento, antes de conocer su resultado. */
@@ -73,6 +76,7 @@ public final class Pago {
         List.of(),
         ahora,
         ahora,
+        null,
         null);
   }
 
@@ -114,6 +118,41 @@ public final class Pago {
 
   public Optional<String> idTransaccionWompi() {
     return Optional.ofNullable(idTransaccionWompi);
+  }
+
+  /**
+   * El medio con el que la pasarela dice que se cobró de verdad, tal como ella lo nombra ({@code
+   * CARD}, {@code NEQUI}, {@code PSE}...). Crudo a propósito: es la evidencia de lo que pasó, y un
+   * valor que hoy no sepamos traducir tiene que quedar guardado igual en vez de perderse en un
+   * mapeo.
+   *
+   * <p>Vacío mientras el pago no haya recibido ni un evento ni una conciliación que lo traiga.
+   */
+  public Optional<String> medioReportadoPorLaPasarela() {
+    return Optional.ofNullable(medioReportadoPorLaPasarela);
+  }
+
+  /**
+   * Lo reporta la pasarela, así que este agregado no lo discute: se queda con lo último que dijo.
+   * Un valor vacío o nulo —la pasarela no lo mandó en ese evento— no borra lo que ya se sabía.
+   *
+   * <p><b>No toca {@link #metodoPago()} y es deliberado.</b> Son dos hechos distintos: uno es lo
+   * que el comprador eligió en el checkout y quedó en su pedido, el otro es lo que la pasarela
+   * acabó cobrando. Machacar el primero con el segundo borraría la única prueba de que el sitio le
+   * ofreció algo distinto de lo que le cobró.
+   */
+  public void registrarMedioReportadoPorLaPasarela(String medio) {
+    String normalizado = normalizar(medio);
+    if (normalizado != null) {
+      medioReportadoPorLaPasarela = normalizado;
+    }
+  }
+
+  private static String normalizar(String medio) {
+    if (medio == null || medio.isBlank()) {
+      return null;
+    }
+    return medio.trim();
   }
 
   /**

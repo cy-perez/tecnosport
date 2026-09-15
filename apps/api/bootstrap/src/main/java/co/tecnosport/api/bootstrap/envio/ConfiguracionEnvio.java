@@ -15,6 +15,7 @@ import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
+import co.tecnosport.api.bootstrap.pago.PropiedadesMetodosDeWompi;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
@@ -173,13 +174,23 @@ public class ConfiguracionEnvio {
         categoriasExcluidas);
   }
 
+  /**
+   * {@link PropiedadesMetodosDeWompi} la activa {@code ConfiguracionWompi} —es suya— y aquí solo se
+   * inyecta el bean ya resuelto: el caso de uso vive en {@code application.envio} por la
+   * contraentrega, pero lo que la pasarela tenga activado no es asunto del envío.
+   */
   @Bean
   public MetodosDePagoDisponibles metodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
-      CriteriosContraentrega criteriosContraentrega) {
+      CriteriosContraentrega criteriosContraentrega,
+      PropiedadesMetodosDeWompi metodosDeWompi) {
     return new MetodosDePagoDisponibles(
-        repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
+        repositorioProductos,
+        cotizarEnvio,
+        repositorioPedidos,
+        criteriosContraentrega,
+        metodosDeWompi.comoMetodosDePago());
   }
 }

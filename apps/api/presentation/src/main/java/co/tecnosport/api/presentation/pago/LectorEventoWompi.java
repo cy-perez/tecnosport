@@ -26,6 +26,16 @@ final class LectorEventoWompi {
     return cuerpo.path("data").path("transaction").path("status").asString();
   }
 
+  /**
+   * Con qué se cobró de verdad. Wompi no recibe el método que el comprador eligió en nuestro
+   * checkout —el Web Checkout hospedado pinta su propia lista— así que este campo es la única
+   * fuente de ese hecho. Cadena vacía si el evento no lo trae: se navega el JSON crudo y {@code
+   * path} nunca revienta por un campo ausente.
+   */
+  static String medio(JsonNode cuerpo) {
+    return cuerpo.path("data").path("transaction").path("payment_method_type").asString();
+  }
+
   static long timestamp(JsonNode cuerpo) {
     return cuerpo.path("timestamp").asLong();
   }

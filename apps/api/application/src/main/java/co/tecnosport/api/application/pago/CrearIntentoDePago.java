@@ -66,10 +66,13 @@ public final class CrearIntentoDePago {
     return new IntentoDePago(referencia, pedido.total(), firma);
   }
 
+  /**
+   * Que el método se procese por la pasarela no significa que esté habilitado hoy: eso lo decide
+   * {@code MetodosDePagoDisponibles} con la configuración, y {@code CrearPedido} lo exige antes de
+   * que el pedido exista. Aquí solo se comprueba lo que no depende de la configuración — a un
+   * pedido de contraentrega o de transferencia manual no hay intento de pago que pedirle.
+   */
   private boolean seProcesaPorWompi(MetodoPago metodoPago) {
-    return switch (metodoPago) {
-      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI -> true;
-      case TRANSFERENCIA_MANUAL, CONTRAENTREGA -> false;
-    };
+    return metodoPago.seProcesaPorPasarela();
   }
 }

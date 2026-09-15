@@ -114,6 +114,24 @@ class ConciliarPagosPendientesTest {
         EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
+  /**
+   * El otro camino por el que se cierra un pago. El webhook se pierde y esta tarea acaba siendo la
+   * única que se entera de lo que pasó: si ella no guardara el medio, un pago conciliado quedaría
+   * para siempre sin saber con qué se cobró.
+   */
+  @Test
+  void laConciliacionTambienGuardaConQueSeCobroDeVerdad() {
+    ConciliarPagosPendientes caso = crear();
+    Pedido pedido = pedidoNuevo();
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conTransaccion("wompi-tx-1", "APPROVED", "CARD");
+
+    caso.ejecutar();
+
+    Pago conciliado = pagos.buscarPorReferencia(pago.referencia()).orElseThrow();
+    assertEquals("CARD", conciliado.medioReportadoPorLaPasarela().orElseThrow());
+  }
+
   @Test
   void unPagoMasNuevoQueElUmbralNoSeRevisa() {
     ConciliarPagosPendientes caso = crear();

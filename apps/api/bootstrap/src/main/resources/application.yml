@@ -77,6 +77,16 @@ tecnosport:
     secreto-integridad: ${WOMPI_SECRETO_INTEGRIDAD:test_integrity_placeholder}
     secreto-eventos: ${WOMPI_SECRETO_EVENTOS:test_events_placeholder}
     ambiente: ${WOMPI_AMBIENTE:sandbox}
+    metodos:
+      # Lo que la CUENTA de Wompi tiene activado hoy, que no es lo mismo que lo que el codigo sabe
+      # procesar. Separados por comas, de MetodoPago, y solo metodos que pasen por la pasarela.
+      #
+      # ADDI ESTA FUERA A PROPOSITO (decision del 14 de septiembre de 2026): Addi exige que el
+      # sitio ya este en linea para estudiar la activacion, asi que hasta entonces ofrecerlo seria
+      # prometer un medio de pago que no se puede honrar. El dia que lo activen se agrega ADDI
+      # aqui, y hay que devolver la frase de los terminos que se quito con esto
+      # (docs/11-pagos-y-envios.md).
+      habilitados: ${WOMPI_METODOS_HABILITADOS:TARJETA,PSE,NEQUI,BANCOLOMBIA}
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}

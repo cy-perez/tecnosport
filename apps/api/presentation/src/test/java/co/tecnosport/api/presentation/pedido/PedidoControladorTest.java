@@ -56,6 +56,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -750,7 +751,12 @@ class PedidoControladorTest {
         RepositorioPedidos repositorioPedidos,
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
-          repositorioProductos, cotizarEnvio, repositorioPedidos, criteriosContraentrega);
+          repositorioProductos,
+          cotizarEnvio,
+          repositorioPedidos,
+          criteriosContraentrega,
+          // Los mismos que el valor por omisión de application.yml: Addi fuera.
+          EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA));
     }
 
     @Bean

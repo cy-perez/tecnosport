@@ -62,21 +62,24 @@ public final class ConciliarPagosPendientes {
 
   private boolean conciliar(Pago pago, Instant ahora) {
     String idTransaccionWompi = pago.idTransaccionWompi().orElseThrow();
-    Optional<String> estadoWompi = pasarelaDePagos.consultarTransaccion(idTransaccionWompi);
-    if (estadoWompi.isEmpty()) {
+    Optional<TransaccionDePasarela> transaccion =
+        pasarelaDePagos.consultarTransaccion(idTransaccionWompi);
+    if (transaccion.isEmpty()) {
       return false;
     }
-    EstadoPago nuevoEstado = EstadosWompi.aEstadoPago(estadoWompi.get());
+    String estadoWompi = transaccion.get().estado();
+    EstadoPago nuevoEstado = EstadosWompi.aEstadoPago(estadoWompi);
     if (nuevoEstado == null) {
       return false;
     }
     EventoPago evento =
         new EventoPago(
-            "conciliacion:" + idTransaccionWompi + ":" + estadoWompi.get(), nuevoEstado, ahora);
+            "conciliacion:" + idTransaccionWompi + ":" + estadoWompi, nuevoEstado, ahora);
     ResultadoEventoDePago resultado =
         AplicadorDeResultadoDePago.aplicar(
             pago,
             evento,
+            transaccion.get().medio(),
             "conciliacion-wompi",
             repositorioPagos,
             repositorioPedidos,

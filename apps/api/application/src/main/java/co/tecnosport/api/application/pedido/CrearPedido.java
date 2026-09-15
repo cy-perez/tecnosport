@@ -146,6 +146,13 @@ public final class CrearPedido {
     // 409 después de que el sistema le acabara de decir que sí había contraentrega.
     TarifaEnvio tarifaEnvio = cotizarSiVaADomicilio(comando);
 
+    // Dos comprobaciones, no una. Esta no mira el pedido —¿ofrece el negocio ese método hoy?— y
+    // hasta ahora no existía: solo se revalidaba contraentrega, así que un cliente que posteara
+    // un método apagado en la pasarela creaba el pedido igual y el comprador acababa en un Web
+    // Checkout donde ese método no aparece. No cuesta una llamada de red.
+    if (!metodosDePagoDisponibles.habilitados().contains(comando.metodoPago())) {
+      throw new MetodoDePagoNoHabilitadoException(comando.metodoPago());
+    }
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
       exigirContraentregaDisponible(comando, tarifaEnvio);
     }

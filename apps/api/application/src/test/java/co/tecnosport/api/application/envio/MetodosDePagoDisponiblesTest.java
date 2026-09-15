@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.envio;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -22,6 +23,7 @@ import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -36,18 +38,34 @@ class MetodosDePagoDisponiblesTest {
   private static final CriteriosContraentrega CRITERIOS_PERMISIVOS =
       new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());
 
+  /**
+   * Lo que la cuenta de Wompi tiene activado hoy, igual que el valor por omisión de {@code
+   * application.yml}: Addi está fuera hasta que el sitio esté en línea (docs/11-pagos-y-envios.md).
+   */
+  private static final Set<MetodoPago> HABILITADOS_HOY =
+      EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
+
   private RepositorioProductosFalso productos;
   private CotizadorEnvioFalso cotizador;
   private RepositorioPedidosFalso pedidos;
   private Variante variante;
 
   private MetodosDePagoDisponibles crear(CriteriosContraentrega criterios) {
+    return crear(criterios, HABILITADOS_HOY);
+  }
+
+  private MetodosDePagoDisponibles crear(
+      CriteriosContraentrega criterios, Set<MetodoPago> habilitadosEnPasarela) {
     productos = new RepositorioProductosFalso();
     cotizador = new CotizadorEnvioFalso();
     pedidos = new RepositorioPedidosFalso();
     publicarProductoConVariante();
     return new MetodosDePagoDisponibles(
-        productos, new CotizarEnvio(productos, cotizador, () -> AHORA), pedidos, criterios);
+        productos,
+        new CotizarEnvio(productos, cotizador, () -> AHORA),
+        pedidos,
+        criterios,
+        habilitadosEnPasarela);
   }
 
   private void publicarProductoConVariante() {
@@ -95,8 +113,13 @@ class MetodosDePagoDisponiblesTest {
         direccion);
   }
 
+  /**
+   * Esta prueba se llamaba {@code todosLosMetodosDePagoEnLineaSiempreEstanDisponibles} y afirmaba
+   * el "siempre" incluyendo Addi. Era cierta sobre el código y falsa sobre el negocio: se ofrecía
+   * todo lo que el código sabía procesar, estuviera o no activado en la cuenta de Wompi.
+   */
   @Test
-  void todosLosMetodosDePagoEnLineaSiempreEstanDisponibles() {
+  void soloSeOfrecenLosMetodosDePasarelaQueLaCuentaTieneActivados() {
     MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
 
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
@@ -105,8 +128,65 @@ class MetodosDePagoDisponiblesTest {
     assertTrue(disponibles.contains(MetodoPago.PSE));
     assertTrue(disponibles.contains(MetodoPago.NEQUI));
     assertTrue(disponibles.contains(MetodoPago.BANCOLOMBIA));
-    assertTrue(disponibles.contains(MetodoPago.ADDI));
+    assertFalse(disponibles.contains(MetodoPago.ADDI));
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
+  }
+
+  /** El día que Wompi active Addi: una variable de entorno, sin tocar código. */
+  @Test
+  void unMetodoDePasarelaSeOfreceEnCuantoLaConfiguracionLoHabilita() {
+    Set<MetodoPago> conAddi = EnumSet.copyOf(HABILITADOS_HOY);
+    conAddi.add(MetodoPago.ADDI);
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, conAddi);
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertTrue(disponibles.contains(MetodoPago.ADDI));
+  }
+
+  /**
+   * La pasarela caída o sin ningún método activado no deja el checkout sin salida: transferencia
+   * manual no depende de ella, y contraentrega tampoco.
+   */
+  @Test
+  void sinNingunMetodoDePasarelaQuedanLosQueNoDependenDeElla() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, Set.of());
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertFalse(disponibles.contains(MetodoPago.TARJETA));
+    assertFalse(disponibles.contains(MetodoPago.ADDI));
+    assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
+  }
+
+  /**
+   * Contraentrega ya tiene su interruptor ({@code CONTRAENTREGA_HABILITADA}) y sus condiciones por
+   * pedido. Admitirla aquí daría un segundo interruptor para lo mismo, y dos interruptores para una
+   * bombilla terminan en desacuerdo.
+   */
+  @Test
+  void noSePuedeHabilitarDesdeLaPasarelaUnMetodoQueNoPasaPorElla() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> crear(CRITERIOS_PERMISIVOS, Set.of(MetodoPago.CONTRAENTREGA)));
+  }
+
+  /**
+   * {@code habilitados()} no mira el pedido y no cotiza: por eso {@code CrearPedido} lo puede
+   * exigir en cualquier pedido sin pagarle una llamada a Skydropx. Contraentrega aparece aquí
+   * aunque sus condiciones por pedido no se hayan mirado todavía — quien la acepte tiene que llamar
+   * a {@code ejecutar}, y eso es justo lo que hace {@code CrearPedido}.
+   */
+  @Test
+  void habilitadosNoDependeDelPedidoNiDeLaCotizacion() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.sinTarifas();
+
+    Set<MetodoPago> habilitados = caso.habilitados();
+
+    assertTrue(habilitados.contains(MetodoPago.TARJETA));
+    assertFalse(habilitados.contains(MetodoPago.ADDI));
+    assertTrue(habilitados.contains(MetodoPago.CONTRAENTREGA));
   }
 
   @Test

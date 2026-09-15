@@ -27,10 +27,14 @@ public interface PasarelaDePagos {
   boolean verificarFirmaEvento(List<String> valoresPropiedades, long timestamp, String checksum);
 
   /**
-   * Consulta el estado actual de una transacción por su id de Wompi (no por la referencia propia:
-   * la API de Wompi busca por su id — docs/11-pagos-y-envios.md, conciliación programada). {@code
-   * Optional.empty()} cuando la consulta falla (red, id inexistente) — la conciliación simplemente
-   * reintenta en la próxima corrida, no es un error de negocio.
+   * Consulta una transacción por su id de Wompi (no por la referencia propia: la API de Wompi busca
+   * por su id — docs/11-pagos-y-envios.md, conciliación programada). {@code Optional.empty()}
+   * cuando la consulta falla (red, id inexistente) — la conciliación simplemente reintenta en la
+   * próxima corrida, no es un error de negocio.
+   *
+   * <p>Devuelve el estado <b>y el medio con el que se cobró</b>. Devolvía solo el estado, y eso
+   * dejaba a la conciliación cerrando pedidos sin enterarse de que el comprador pagó con algo
+   * distinto de lo que había elegido en el checkout.
    */
-  Optional<String> consultarTransaccion(String idTransaccionWompi);
+  Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi);
 }
