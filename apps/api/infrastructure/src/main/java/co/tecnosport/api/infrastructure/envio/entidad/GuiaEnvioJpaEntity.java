@@ -29,6 +29,14 @@ public class GuiaEnvioJpaEntity {
   @Column(name = "costo_envio", nullable = false)
   private BigDecimal costoEnvio;
 
+  /**
+   * El rótulo que devolvió la plataforma. Nulo en las guías tecleadas a mano y también en algunas
+   * emitidas: dos guías de Servientrega por el mismo camino, una lo trajo y la otra no
+   * (docs/13-skydropx-capacidades.md §6.7).
+   */
+  @Column(name = "url_etiqueta")
+  private String urlEtiqueta;
+
   protected GuiaEnvioJpaEntity() {}
 
   public GuiaEnvioJpaEntity(
@@ -37,13 +45,15 @@ public class GuiaEnvioJpaEntity {
       String transportadora,
       String codigoTransportadora,
       String numero,
-      BigDecimal costoEnvio) {
+      BigDecimal costoEnvio,
+      String urlEtiqueta) {
     this.id = id;
     this.envioId = envioId;
     this.transportadora = transportadora;
     this.codigoTransportadora = codigoTransportadora;
     this.numero = numero;
     this.costoEnvio = costoEnvio;
+    this.urlEtiqueta = urlEtiqueta;
   }
 
   public UUID getId() {
@@ -68,5 +78,9 @@ public class GuiaEnvioJpaEntity {
 
   public BigDecimal getCostoEnvio() {
     return costoEnvio;
+  }
+
+  public String getUrlEtiqueta() {
+    return urlEtiqueta;
   }
 }

@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -86,6 +87,38 @@ class EnvioTest {
   void unaGuiaVaciaSeRechaza() {
     assertThrows(
         ExcepcionDeDominio.class, () -> GuiaEnvio.crear("Servientrega", "", Dinero.deCop(15_000)));
+  }
+
+  /**
+   * El rótulo no está garantizado: dos guías de Servientrega emitidas por el mismo camino, una
+   * trajo {@code label_url} y la otra no lo trajo nunca, ni con el envío ya entregado
+   * (docs/13-skydropx-capacidades.md §6.7). Una guía sin etiqueta es una guía válida.
+   */
+  @Test
+  void unaGuiaEmitidaPuedeVenirSinEtiqueta() {
+    GuiaEnvio conRotulo =
+        GuiaEnvio.emitida(
+            "Servientrega",
+            "servientrega",
+            "2269401762",
+            Dinero.deCop(8_200),
+            "https://sb-pro.skydropx.com/s/s?id=ABC");
+    GuiaEnvio sinRotulo =
+        GuiaEnvio.emitida("Servientrega", "servientrega", "2269401763", Dinero.deCop(8_200), null);
+
+    assertEquals("https://sb-pro.skydropx.com/s/s?id=ABC", conRotulo.urlEtiqueta().orElseThrow());
+    assertTrue(sinRotulo.urlEtiqueta().isEmpty());
+    assertTrue(sinRotulo.conciliable());
+  }
+
+  /** Una guía tecleada en el panel no tiene ni código ni rótulo: se emitió por fuera. */
+  @Test
+  void unaGuiaTecleadaAManoNoTraeRotuloNiCodigo() {
+    GuiaEnvio aMano = GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000));
+
+    assertTrue(aMano.urlEtiqueta().isEmpty());
+    assertTrue(aMano.codigoTransportadora().isEmpty());
+    assertFalse(aMano.conciliable());
   }
 
   @Test
