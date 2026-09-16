@@ -24,6 +24,11 @@ import java.util.Optional;
  * <p><strong>Lo que todavía falla cerrado es la firma</strong>, y por una variable de entorno:
  * mientras {@code SKYDROPX_SECRETO_WEBHOOK} sea el marcador de desarrollo, ningún evento pasa de la
  * primera puerta. El algoritmo está implementado y probado contra los vectores del RFC 4231.
+ *
+ * <p><strong>Y pasada la firma hay tres caminos, no dos</strong>: el aviso habla de un paquete, o
+ * habla de otra cosa de la plataforma —están suscritos todos los tipos de evento—, o no se
+ * entiende. Los dos últimos se descartan igual, pero no se cuentan igual: el porqué está en {@link
+ * LecturaDeEvento}.
  */
 public final class RecibirEventoDeEnvio {
 
@@ -47,18 +52,23 @@ public final class RecibirEventoDeEnvio {
     if (cuerpoCrudo == null || !verificadorFirma.esValida(cuerpoCrudo, firma)) {
       return ResultadoEventoDeEnvio.FIRMA_INVALIDA;
     }
-    Optional<String> numeroDeGuia = lector.guiaDelEvento(cuerpoCrudo);
-    if (numeroDeGuia.isEmpty()) {
-      return ResultadoEventoDeEnvio.NO_SE_PUDO_LEER;
-    }
+    // Sin `default` a propósito: una cuarta forma de lectura tiene que romper la compilación aquí,
+    // que es donde se decide qué se hace con ella.
+    return switch (lector.leer(cuerpoCrudo)) {
+      case LecturaDeEvento.DeUnaGuia(String numero) -> conciliarLaGuia(numero);
+      case LecturaDeEvento.DeOtroTipo ignorado -> ResultadoEventoDeEnvio.EVENTO_DE_OTRO_TIPO;
+      case LecturaDeEvento.Ilegible ignorado -> ResultadoEventoDeEnvio.NO_SE_PUDO_LEER;
+    };
+  }
 
-    Optional<Envio> envio = repositorioEnvios.buscarPorGuia(numeroDeGuia.get());
+  private ResultadoEventoDeEnvio conciliarLaGuia(String numeroDeGuia) {
+    Optional<Envio> envio = repositorioEnvios.buscarPorGuia(numeroDeGuia);
     if (envio.isEmpty()) {
       return ResultadoEventoDeEnvio.GUIA_DESCONOCIDA;
     }
     // El envío se encontró por este mismo número, así que la guía está; el Optional es del
     // repositorio y no de una duda.
-    Optional<GuiaEnvio> guia = envio.get().guiaDe(numeroDeGuia.get());
+    Optional<GuiaEnvio> guia = envio.get().guiaDe(numeroDeGuia);
     if (guia.isEmpty()) {
       return ResultadoEventoDeEnvio.GUIA_DESCONOCIDA;
     }

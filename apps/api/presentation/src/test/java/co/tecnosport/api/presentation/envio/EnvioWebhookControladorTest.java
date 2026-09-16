@@ -8,6 +8,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
+import co.tecnosport.api.application.envio.LecturaDeEvento;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
@@ -115,6 +116,23 @@ class EnvioWebhookControladorTest {
     assertEquals(crudo, verificador.ultimoCuerpo());
   }
 
+  /**
+   * El aviso de una cotización es el único que se puede provocar sin gastar saldo, y es con el que
+   * se va a estrenar {@code SKYDROPX_SECRETO_WEBHOOK}. Pasa por el mismo camino que todo: 200, sin
+   * excepción y sin efecto. Lo que lo distingue de un cuerpo roto vive en el registro, no en la
+   * respuesta — el proveedor recibe 200 en los ocho desenlaces (adr/0022).
+   */
+  @Test
+  void unEventoDeOtroTipoTambienResponde200() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/envios/webhook")
+                .header("authorization", "HMAC x")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"data\":{\"type\":\"quotation\"}}".getBytes(StandardCharsets.UTF_8)))
+        .andExpect(status().isOk());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -124,14 +142,18 @@ class EnvioWebhookControladorTest {
     }
 
     /**
-     * Un lector que no reconoce ningún cuerpo, que es lo que estas pruebas necesitan: aquí se
-     * comprueba el controlador —los bytes crudos, la cabecera configurable, el 200 siempre— y no
+     * Un lector que solo distingue dos cosas: el aviso de otro tipo —reconocible por la palabra
+     * {@code quotation}— y todo lo demás, que no reconoce. Es lo que estas pruebas necesitan: aquí
+     * se comprueba el controlador —los bytes crudos, la cabecera configurable, el 200 siempre— y no
      * qué pasa con el evento. Lo segundo lo prueban {@code LectorEventoDeEnvioSkydropxTest} y
      * {@code RecibirEventoDeEnvioTest}.
      */
     @Bean
     LectorEventoDeEnvio lectorEvento() {
-      return cuerpo -> java.util.Optional.empty();
+      return cuerpo ->
+          cuerpo != null && cuerpo.contains("quotation")
+              ? new LecturaDeEvento.DeOtroTipo("quotation")
+              : new LecturaDeEvento.Ilegible();
     }
 
     /**

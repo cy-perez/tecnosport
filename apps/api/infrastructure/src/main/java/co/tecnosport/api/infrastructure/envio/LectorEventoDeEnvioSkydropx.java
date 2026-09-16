@@ -1,7 +1,7 @@
 package co.tecnosport.api.infrastructure.envio;
 
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
-import java.util.Optional;
+import co.tecnosport.api.application.envio.LecturaDeEvento;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -31,33 +31,43 @@ import tools.jackson.databind.json.JsonMapper;
  * El rastreo es la única fuente del rastro.
  *
  * <p>Ninguna excepción sale de aquí: un cuerpo que no es JSON, o que lo es y no tiene esta forma,
- * es {@link Optional#empty()}. El endpoint responde 200 igual y lo deja escrito.
+ * es {@link LecturaDeEvento.Ilegible}. El endpoint responde 200 igual y lo deja escrito.
+ *
+ * <p><strong>Un evento de otro tipo no es ilegible</strong>, y se responde aparte: se entendió
+ * perfectamente y no habla de un paquete. Con todos los tipos suscritos, esos son la mayoría de los
+ * avisos que llegan — el porqué de la distinción está en {@link LecturaDeEvento}. Un {@code
+ * packages} sin número de guía sí es ilegible: ese sí venía dirigido a nosotros y llegó incompleto.
  */
 @Component
 final class LectorEventoDeEnvioSkydropx implements LectorEventoDeEnvio {
 
   private static final String TIPO_DE_PAQUETE = "packages";
+  private static final LecturaDeEvento ILEGIBLE = new LecturaDeEvento.Ilegible();
 
   private final JsonMapper json = JsonMapper.builder().build();
 
   @Override
-  public Optional<String> guiaDelEvento(String cuerpoCrudo) {
+  public LecturaDeEvento leer(String cuerpoCrudo) {
     if (cuerpoCrudo == null || cuerpoCrudo.isBlank()) {
-      return Optional.empty();
+      return ILEGIBLE;
     }
     JsonNode raiz;
     try {
       raiz = json.readTree(cuerpoCrudo);
     } catch (RuntimeException e) {
-      return Optional.empty();
+      return ILEGIBLE;
     }
 
     JsonNode datos = raiz.path("data");
-    if (!TIPO_DE_PAQUETE.equals(texto(datos.path("type")))) {
-      return Optional.empty();
+    String tipo = texto(datos.path("type"));
+    if (tipo.isBlank()) {
+      return ILEGIBLE;
+    }
+    if (!TIPO_DE_PAQUETE.equals(tipo)) {
+      return new LecturaDeEvento.DeOtroTipo(tipo);
     }
     String guia = texto(datos.path("attributes").path("tracking_number"));
-    return guia.isBlank() ? Optional.empty() : Optional.of(guia);
+    return guia.isBlank() ? ILEGIBLE : new LecturaDeEvento.DeUnaGuia(guia);
   }
 
   private static String texto(JsonNode nodo) {

@@ -13,7 +13,6 @@ import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -78,7 +77,7 @@ class RecibirEventoDeEnvioTest {
   }
 
   private static LectorEventoDeEnvio queLee(String guia) {
-    return cuerpo -> Optional.of(guia);
+    return cuerpo -> new LecturaDeEvento.DeUnaGuia(guia);
   }
 
   // ---------- la firma, primero ----------
@@ -90,7 +89,7 @@ class RecibirEventoDeEnvioTest {
             (cuerpo, firma) -> false,
             cuerpo -> {
               cuerpoQueLlegoAlLector = cuerpo;
-              return Optional.of("NN-1");
+              return new LecturaDeEvento.DeUnaGuia("NN-1");
             });
 
     ResultadoEventoDeEnvio resultado = caso.ejecutar("{\"lo que sea\":1}", "HMAC loquesea");
@@ -145,11 +144,29 @@ class RecibirEventoDeEnvioTest {
 
   @Test
   void unCuerpoQueNoSeSabeLeerSeDescartaDespuesDeLaFirma() {
-    RecibirEventoDeEnvio caso = conPuertas((cuerpo, firma) -> true, cuerpo -> Optional.empty());
+    RecibirEventoDeEnvio caso =
+        conPuertas((cuerpo, firma) -> true, cuerpo -> new LecturaDeEvento.Ilegible());
 
     assertEquals(
         ResultadoEventoDeEnvio.NO_SE_PUDO_LEER, caso.ejecutar("{\"forma\":\"desconocida\"}", "ok"));
     assertTrue(guiasConsultadas.isEmpty());
+  }
+
+  /**
+   * Un aviso de otra cosa de la plataforma —están suscritos todos los tipos— no es un cuerpo roto:
+   * se entendió, y no habla de un paquete. Se separa de {@link
+   * ResultadoEventoDeEnvio#NO_SE_PUDO_LEER} porque si no, cada evento normal se registra como una
+   * falla y el día que se estrena el secreto del webhook no hay forma de leer en el registro que la
+   * firma cuadró.
+   */
+  @Test
+  void unEventoDeOtroTipoNoEsUnCuerpoRotoYNoPreguntaNada() {
+    sembrarEnvioConGuia("NN-1", "ninetynineminutes");
+    RecibirEventoDeEnvio caso =
+        conPuertas((cuerpo, firma) -> true, cuerpo -> new LecturaDeEvento.DeOtroTipo("quotation"));
+
+    assertEquals(ResultadoEventoDeEnvio.EVENTO_DE_OTRO_TIPO, caso.ejecutar("{\"data\":{}}", "ok"));
+    assertTrue(guiasConsultadas.isEmpty(), "Un evento ajeno no gasta cuota del proveedor.");
   }
 
   @Test
