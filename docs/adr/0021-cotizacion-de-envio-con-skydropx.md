@@ -46,6 +46,8 @@ transportadoras es un paso más de checkout, una decisión más para quien solo
 quiere comprar una camiseta, y una tarifa más que habría que blindar contra
 manipulación del cliente. Si más adelante el negocio quiere ofrecer "más rápido
 por más plata", se reabre esta decisión: el puerto ya devuelve la lista completa.
+**Matizado el 16 de septiembre**: la más económica puede ser una que no recoja
+por API; ver la corrección al final.
 
 **El costo de envío se congela en el pedido**, igual que el precio y el nombre de
 cada línea (`docs/02-modelo-datos.md`, "Congelado del pedido"). Se guarda la
@@ -115,3 +117,56 @@ ahora se compara contra el flete cobrado y el margen del pedido se puede leer.
 cobra al comprador. `TODO: ¿el costo de envío cobrado lleva IVA? Consultar con el
 contador.` Hasta que se resuelva, el flete se maneja como un valor en `Dinero`
 sin desglose y el IVA de las líneas no cambia.
+
+## Corrección del 16 de septiembre de 2026, medida contra el sandbox
+
+Tres sesiones de sondas contra la cuenta de pruebas
+(`docs/13-skydropx-capacidades.md`, §6) tocaron cuatro cosas que este ADR daba
+por sabidas. Ninguna lo contradice de frente; las cuatro le quitan una certeza.
+
+**1. "La más económica" dejó de ser una regla incondicional.** Cada tarifa
+declara si la transportadora recoge por API en el campo `pickup`: es `true` en
+Coordinadora, Servientrega e Inter Rapidísimo, y `false` en 99 minutes y Envía,
+que solo recogen por soporte. Y 99 minutes es de las que más cotizan. Mientras el
+despacho siga siendo "alguien lleva los paquetes al punto", la regla de arriba se
+sostiene entera. El día que se elija recolección programada —decisión abierta #1
+de `docs/13`—, la regla pasa a ser **la más barata de las que recogen**, que no
+es la más barata, y el margen del pedido lo paga. No se cambia hoy porque la
+decisión no está tomada, pero el servidor que elige tarifa tiene que poder
+filtrar por ese campo, no solo ordenar por precio.
+
+**2. La dirección necesita barrio, y este ADR no lo pidió.** El barrio viaja a
+Skydropx como `area_level3`, y **solo se hereda desde la cotización**: el cuerpo
+de emisión no lo declara y lo descarta en silencio. Sin barrio en el origen,
+programar la recolección responde `422 Shipper address2 not valid: null`. Hoy
+`Direccion`, el record del dominio, tiene departamento, ciudad, dirección e
+indicaciones con sus códigos DANE, y **no tiene barrio**: agregarlo toca el
+record, el formulario del checkout, los DTO de presentación y los textos de
+Transloco en los dos idiomas. Está medido para la dirección de origen. Para el
+destino no hay medición —la entrega nunca se ejerció— aunque las transportadoras
+colombianas suelen pedirlo. `TODO: ¿el destino exige barrio para entregar, o solo
+el origen para recoger? Se resuelve con la primera guía que se emita con el campo
+puesto.`
+
+**3. El valor declarado va dentro de cada bulto, y tiene un mínimo que nadie ha
+decidido.** `declared_amount` es un campo de cada `parcel`, no de la cotización;
+el mapeador lo mandaba fuera y con otro nombre, y por eso durante días pareció
+que Servientrega, Envía y Coordinadora no cotizaban Colombia. Corregido y con
+prueba. Lo que queda no es técnico: el sandbox **exige un mínimo de 10.000 COP
+por bulto**, así que un pedido de una funda de 8.000 tendría que declarar más de
+lo que vale, y lo declarado es lo que la transportadora indemniza si se pierde.
+`TODO: ¿qué valor se declara cuando la mercancía vale menos del mínimo de 10.000
+por bulto? Es una decisión de negocio, no una constante de programación.`
+
+**4. Entre pedir la guía y tener la guía hay minutos, y puede no haberla.** La
+emisión responde `202` sin número de guía y el envío queda en un estado no
+terminal —`in_progress`, `pending` o `creation_waiting`— durante minutos: la
+medición del 16 de septiembre tardó 2 min 22 s en llegar a `success`. Y puede
+terminar en `error` con el saldo reembolsado: pasó tres veces en una noche, por
+fallas de las transportadoras y no del cuerpo enviado. Este ADR solo congela la
+tarifa; **la frase que hay que corregir vive en `ADR-0022`** —"`DespacharPedido`
+deja de recibir la guía escrita a mano: la pide a Skydropx y la guarda"—, porque
+no hay nada que guardar todavía. Se anota aquí porque es la cotización congelada
+la que se estaría dando por consumada: **un pedido no se marca despachado con la
+respuesta de creación**, y hace falta una rama para el `error` que lo devuelva a
+la cola en vez de dejarlo con una guía que no existe.
