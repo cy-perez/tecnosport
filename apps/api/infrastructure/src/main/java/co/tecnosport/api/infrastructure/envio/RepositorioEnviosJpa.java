@@ -83,7 +83,12 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
     for (GuiaEnvio guia : envio.guias()) {
       guias.saveAndFlush(
           new GuiaEnvioJpaEntity(
-              guia.id(), envio.id(), guia.transportadora(), guia.numero(), guia.costo().valor()));
+              guia.id(),
+              envio.id(),
+              guia.transportadora(),
+              guia.codigoTransportadora().orElse(null),
+              guia.numero(),
+              guia.costo().valor()));
       for (EventoSeguimiento evento : guia.eventos()) {
         insertarSiNoEsta(guia.id(), evento);
       }
@@ -143,6 +148,7 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
     return new GuiaEnvio(
         entidad.getId(),
         entidad.getTransportadora(),
+        entidad.getCodigoTransportadora(),
         entidad.getNumero(),
         Dinero.deCop(entidad.getCostoEnvio()),
         eventos.findByGuiaIdOrderByOcurrioEnAsc(entidad.getId()).stream()

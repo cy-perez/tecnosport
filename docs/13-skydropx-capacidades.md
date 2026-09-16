@@ -1672,6 +1672,77 @@ pidieron el 14 de septiembre y siguen sin respuesta, así que el tramo de recole
 queda bloqueado por saldo, no por conocimiento — que es un sitio mucho mejor del que
 estaba ayer.
 
+### 6.8 El rastreo, medido y escrito (2026-09-16, séptima parte)
+
+`§6.3` capturó el ciclo de seguimiento de la guía `873837506712` y dio por hecho que
+con eso `ConsultorDeSeguimiento` se podía escribir. Casi: faltaba una pregunta que
+nadie se había hecho, y la respuesta cambia el modelo. **Leer el rastreo no cuesta
+saldo**, así que las cuatro variantes se probaron gratis con `tools/sonda-rastreo.mjs`.
+
+#### `carrier_name` es obligatorio, y es el código de la plataforma
+
+| Variante | Respuesta |
+|---|---|
+| `?tracking_number=873837506712&carrier_name=servientrega` | **200**, cuatro eventos |
+| sin `carrier_name` | `404 "No se encontró eventos de rastreo para ese número de guía."` |
+| `carrier_name=Servientrega` (el nombre visible) | `404`, el mismo |
+| `/shipments/tracking/{guia}/{carrier}` en la ruta | `404 Not Found` |
+
+Dos cosas de ahí:
+
+- ❌ **La forma de la ruta que anotaba `ADR-0022` no existe.** Es con parámetros de
+  consulta, como ya decía `§6.1`. La sección 1 de este documento estaba equivocada.
+- ⚠️ **El código no se deriva del nombre.** Los seis de la cuenta, leídos de
+  `GET /shipments/carrier_services`: `coordinadora`, `dhl`, `envia`,
+  `interrapidisimo`, `ninetynineminutes`, `servientrega`. Cuatro se normalizarían
+  solos; **"99 minutes" → `ninetynineminutes` no lo adivina nadie**, y "Envía Paquete
+  Terrestre" es el servicio, no la transportadora.
+
+**Y eso chocaba con el modelo**: `GuiaEnvio.transportadora` es texto libre que teclea
+una persona en el panel. Consultar con eso devuelve 404 siempre, y el 404 —lo de
+abajo— es indistinguible de "todavía no hay eventos": la conciliación habría
+registrado "sin novedad" para despachos que nadie estaba mirando. `GuiaEnvio` gana
+`codigoTransportadora`, opcional, que llenará el adaptador de emisión; las guías
+tecleadas a mano se saltan y **se cuentan** en el resultado de la corrida. La razón
+de que sea opcional y no obligatorio es de fondo: una guía escrita a mano puede no
+existir en Skydropx, porque quien despacha pudo emitirla en la web de la
+transportadora. Lo que decide si se puede conciliar no es quién la lleva, es si la
+emitimos nosotros.
+
+#### Un 404 es "todavía no hay eventos", no un fallo
+
+De las cuatro guías emitidas, **solo la que se creó con `auto_advance` tiene rastro**.
+Las otras tres —incluida `2269401749`, la guía viva del 16— responden 404. Una guía
+recién emitida está exactamente en ese caso, así que el 404 va a ser lo habitual y el
+adaptador lo trata como lista vacía sin ruido.
+
+#### Y un detalle que desarma la opción que se había descartado
+
+`description` y `event_description` **no son el mismo texto**: el segundo es el
+primero en minúsculas ("Paquete en tránsito - guadalajara"). Importa porque al
+diseñar el lector del webhook se evaluó derivar la llave de idempotencia de ese campo
+para que los dos caminos convergieran; con los textos divergiendo entre endpoints, esa
+salida era peor de lo que parecía. El evento se identifica por el `id` del rastreo,
+que es un UUID y viene siempre.
+
+#### Y la contradicción del retorno no era una contradicción
+
+`§6.1` y `§6.4` decían cosas opuestas sobre la devolución: una que las suscripciones
+siguen disparando el estado operativo real y no `in_return`, otra que `status` se queda
+en `in_return` todo el trayecto. Releída la documentación entera, **las dos frases están
+ahí y hablan de cosas distintas**: lo que se dispara con el estado operativo es la
+*suscripción* —por eso no hay que migrar nada para seguir recibiendo eventos durante un
+retorno—, y lo que se queda en `in_return` es el `status` del *cuerpo*, con el
+movimiento real en `returned_status`. El ejemplo de la documentación lo confirma:
+`status: "in_return"`, `returned: true`, `returned_status: "in_transit"`.
+
+Importaba porque `EN_DEVOLUCION` dispara `RechazarEnEntrega`, que libera inventario.
+Con `adr/0032` deja de importar por otro motivo: el estado no se lee del aviso.
+
+Con eso, los tres puertos que `§6` dejó fallando cerrado **dejaron de estarlo**. El
+lector del webhook se escribió el mismo día con los ejemplos de la documentación
+(`adr/0032`), y lo único que sigue cerrado es la firma, esperando el secreto del panel.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Tres tramos no dependen de ninguna respuesta pendiente:

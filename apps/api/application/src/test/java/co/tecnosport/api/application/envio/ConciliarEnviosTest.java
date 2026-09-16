@@ -48,7 +48,8 @@ class ConciliarEnviosTest {
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
             new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
             () -> AHORA);
-    return new ConciliarEnvios(envios, consultor, aplicar, () -> AHORA, ANTIGUEDAD, MAXIMO);
+    return new ConciliarEnvios(
+        envios, new ConciliarGuia(consultor, aplicar), () -> AHORA, ANTIGUEDAD, MAXIMO);
   }
 
   /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */
@@ -65,14 +66,25 @@ class ConciliarEnviosTest {
     Envio envio =
         Envio.crear(
             UUID.randomUUID(),
-            List.of(GuiaEnvio.crear("99 minutes", guia, Dinero.deCop(10_540))),
+            List.of(GuiaEnvio.crear("99 minutes", "ninetynineminutes", guia, Dinero.deCop(10_540))),
+            AHORA.minusSeconds(86_400));
+    envios.guardar(envio);
+    return envio;
+  }
+
+  /** Una guía de las que teclea una persona en el panel: sin el código, no se puede consultar. */
+  private Envio sembrarEnvioCalladoSinCodigo(String guia) {
+    Envio envio =
+        Envio.crear(
+            UUID.randomUUID(),
+            List.of(GuiaEnvio.crear("Servientrega", guia, Dinero.deCop(8_200))),
             AHORA.minusSeconds(86_400));
     envios.guardar(envio);
     return envio;
   }
 
   private ConsultorDeSeguimiento queDevuelve(AplicarEventoDeEnvioComando... eventos) {
-    return (transportadora, guia) -> {
+    return (codigoTransportadora, guia) -> {
       guiasConsultadas.add(guia);
       return List.of(eventos);
     };
@@ -94,7 +106,7 @@ class ConciliarEnviosTest {
 
     ResultadoConciliacionEnvios resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoConciliacionEnvios(0, 0, 0), resultado);
+    assertEquals(new ResultadoConciliacionEnvios(0, 0, 0, 0), resultado);
     assertEquals(List.of(), guiasConsultadas);
   }
 
@@ -105,7 +117,7 @@ class ConciliarEnviosTest {
 
     ResultadoConciliacionEnvios resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoConciliacionEnvios(1, 1, 0), resultado);
+    assertEquals(new ResultadoConciliacionEnvios(1, 1, 0, 0), resultado);
     assertEquals(List.of("NN-1"), guiasConsultadas);
     assertEquals(1, eventosDe("NN-1").size());
   }
@@ -119,7 +131,7 @@ class ConciliarEnviosTest {
     sembrarEnvioCallado("NN-1");
     ConciliarEnvios caso = conConsultor(queDevuelve());
 
-    assertEquals(new ResultadoConciliacionEnvios(1, 0, 1), caso.ejecutar());
+    assertEquals(new ResultadoConciliacionEnvios(1, 0, 1, 0), caso.ejecutar());
   }
 
   /**
@@ -134,7 +146,7 @@ class ConciliarEnviosTest {
     ResultadoConciliacionEnvios segunda =
         conConsultor(queDevuelve(evento("NN-1", "ev-2"))).ejecutar();
 
-    assertEquals(new ResultadoConciliacionEnvios(0, 0, 0), segunda);
+    assertEquals(new ResultadoConciliacionEnvios(0, 0, 0, 0), segunda);
     assertEquals(List.of("NN-1"), guiasConsultadas);
   }
 
@@ -159,7 +171,7 @@ class ConciliarEnviosTest {
     ResultadoConciliacionEnvios resultado =
         conConsultor(queDevuelve(evento("NN-1", "ev-viejo"))).ejecutar();
 
-    assertEquals(new ResultadoConciliacionEnvios(1, 0, 1), resultado);
+    assertEquals(new ResultadoConciliacionEnvios(1, 0, 1, 0), resultado);
     assertEquals(1, eventosDe("NN-1").size());
   }
 
@@ -169,14 +181,32 @@ class ConciliarEnviosTest {
     sembrarEnvioCallado("NN-2");
     ConciliarEnvios caso =
         conConsultor(
-            (transportadora, guia) -> {
+            (codigoTransportadora, guia) -> {
               guiasConsultadas.add(guia);
               return "NN-1".equals(guia) ? List.of(evento("NN-1", "ev-1")) : List.of();
             });
 
     ResultadoConciliacionEnvios resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoConciliacionEnvios(2, 1, 1), resultado);
+    assertEquals(new ResultadoConciliacionEnvios(2, 1, 1, 0), resultado);
     assertEquals(2, guiasConsultadas.size());
+  }
+
+  /**
+   * Una guía sin código de transportadora no se consulta, y eso <strong>se cuenta</strong>. Es la
+   * diferencia entre "preguntamos y no había nada" y "no había a quién preguntarle": la plataforma
+   * responde 404 con el nombre visible igual que con una guía sin eventos todavía, así que
+   * preguntar de todos modos convertiría un despacho sin vigilar en uno "sin novedad".
+   */
+  @Test
+  void unaGuiaSinCodigoDeTransportadoraNoSeConsultaYSeCuenta() {
+    sembrarEnvioCalladoSinCodigo("SE-1");
+    ConciliarEnvios caso = conConsultor(queDevuelve(evento("SE-1", "ev-1")));
+
+    ResultadoConciliacionEnvios resultado = caso.ejecutar();
+
+    assertEquals(new ResultadoConciliacionEnvios(1, 0, 1, 1), resultado);
+    assertEquals(List.of(), guiasConsultadas);
+    assertEquals(0, eventosDe("SE-1").size());
   }
 }

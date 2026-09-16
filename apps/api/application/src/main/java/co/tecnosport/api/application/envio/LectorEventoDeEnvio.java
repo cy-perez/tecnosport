@@ -3,18 +3,23 @@ package co.tecnosport.api.application.envio;
 import java.util.Optional;
 
 /**
- * Traduce el cuerpo del webhook al vocabulario del dominio.
+ * Saca del cuerpo del webhook <strong>de qué guía habla</strong>, y nada más.
  *
- * <p>Puerto y no un lector estático —a diferencia del de Wompi, que sí es estático— porque
- * <strong>la forma del evento de Skydropx no está confirmada</strong>: no se ha podido emitir una
- * guía, así que nadie ha visto todavía un evento real. Escribir los nombres de campo de memoria
- * produciría un lector que pasa sus propias pruebas contra un JSON inventado y falla el día del
- * primer despacho.
+ * <p>Que devuelva la guía y no el evento es la decisión de adr/0032, y no es una simplificación: el
+ * cuerpo del webhook <em>no trae con qué construir un evento</em>. Trae {@code status}, {@code
+ * tracking_number}, la URL del rótulo y el estado de retorno —está documentado y medido—, pero
+ * ningún identificador de evento y ninguna fecha. El identificador es lo que hace idempotente el
+ * rastro y de la fecha cuelgan plazos legales; fabricar cualquiera de los dos habría metido el
+ * mismo movimiento dos veces, una por cada camino, con llaves distintas.
+ *
+ * <p>Así que el webhook avisa y {@link ConciliarGuia} pregunta. Lo único que hay que leer aquí es
+ * el número de guía — y descartar los eventos que no son de un paquete: por la misma suscripción
+ * llegan los de órdenes, cotizaciones, tarifas, cargos extra y recolecciones.
  *
  * <p>{@link Optional#empty()} significa "esto no lo sé leer", que es una respuesta y no un error:
  * el webhook lo descarta, responde 200 y lo registra.
  */
 public interface LectorEventoDeEnvio {
 
-  Optional<AplicarEventoDeEnvioComando> leer(String cuerpoCrudo);
+  Optional<String> guiaDelEvento(String cuerpoCrudo);
 }

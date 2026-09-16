@@ -3506,9 +3506,13 @@ Orden de construcción, un caso de uso a la vez:
 
    **La firma salió de esa lista el 14 de septiembre de 2026.**
    `VerificadorFirmaEnvioHmac` reemplaza al adaptador que rechazaba todo, con el
-   algoritmo que la documentación oficial confirmó ese mismo día. Quedan dos
+   algoritmo que la documentación oficial confirmó ese mismo día. ~~Quedan dos
    pendientes, y los dos por el mismo motivo: lo que les falta es la **forma** del
-   cuerpo, y esa no la dice ninguna especificación — hay que ver un evento.
+   cuerpo, y esa no la dice ninguna especificación — hay que ver un evento.~~
+   **Los dos salieron el 16 de septiembre**, y la premisa de esa frase era falsa por
+   partida doble: la forma del rastreo se midió con una guía emitida y la del webhook
+   la dice la documentación oficial, con ejemplos. Ver "El seguimiento, conectado" al
+   final de esta fase.
 
    Tres cosas que aparecieron al construirlo:
 
@@ -3989,6 +3993,63 @@ nadie puede llegar. Queda documentada, con una advertencia que sí es de código
 para el día que se haga: la lista de oficinas de Inter Rapidísimo incluye oficinas
 de ciudades vecinas, así que la elegida hay que cotejarla contra el DANE del
 pedido antes de aceptarla.
+
+### El seguimiento, conectado (2026-09-16)
+
+De los tres puertos que la Fase 7 dejó fallando cerrado —firma, rastreo y lector del
+webhook— **ya no queda ninguno esperando conocimiento**. La firma se resolvió el 14
+con documentación; los otros dos, hoy. Lo que falta para que el webhook aplique algo
+es una variable de entorno, `SKYDROPX_SECRETO_WEBHOOK`, y una URL pública a la que
+Skydropx pueda golpear.
+
+**El consultor de rastreo, y una pregunta que nadie se había hecho.** Leer el rastreo
+no cuesta saldo, así que antes de escribir el mapeador se midieron cuatro variantes
+del endpoint con `tools/sonda-rastreo.mjs` (`docs/13` §6.8). Dos hallazgos:
+
+- **`carrier_name` es obligatorio y va en código**, no con el nombre visible. Y el
+  código no se deriva del nombre: "99 minutes" es `ninetynineminutes`. Eso chocaba de
+  frente con el modelo, porque `GuiaEnvio.transportadora` es **texto libre que teclea
+  una persona en el panel**. Escrito sin medir, el consultor habría devuelto 404 para
+  toda guía existente.
+- **Un 404 es "todavía no hay eventos", no un fallo.** De las cuatro guías emitidas,
+  solo la que se creó con `auto_advance` tiene rastro.
+
+Los dos juntos son el peligro: un 404 por código equivocado y un 404 por guía sin
+mover son el mismo 404, así que la conciliación habría registrado "sin novedad" sobre
+despachos que nadie estaba vigilando. `GuiaEnvio` gana `codigoTransportadora`
+—opcional, porque una guía tecleada a mano puede no existir en Skydropx— y las guías
+sin él se saltan y **se cuentan** en el registro de la tarea. Lo que decide si un
+despacho se puede conciliar no es quién lo lleva: es si la guía la emitimos nosotros.
+
+**El webhook resultó no traer el evento** (`ADR-0032`). El cuerpo no tiene
+identificador de evento ni fecha —tiene `data.id`, que es el del paquete—, y esos dos
+datos sostienen la idempotencia del rastro y los plazos legales. Si cada camino se
+fabricaba su llave, el mismo movimiento entraba dos veces y el comprador leía
+"Entregado" dos veces. Así que el webhook pasa a avisar: saca el número de guía, y
+`ConciliarGuia` —el **mismo** objeto que usa la tarea programada— consulta el rastreo
+y aplica. Los dos caminos dejaron de parecerse: son el mismo código con distinto
+disparador.
+
+**Tres cosas que vale la pena no volver a aprender:**
+
+- **La medición barata se hace antes, no después.** El código del consultor estaba
+  diseñado en la cabeza cuando la sonda lo desmintió, y la sonda costó diez minutos y
+  cero pesos. La regla dura #9 vale también para lo que parece obvio: que el endpoint
+  aceptara el nombre de la transportadora tal como lo guardamos era una suposición,
+  no un dato.
+- **Una salida descartada por diseño resultó peor de lo que se creía.** Antes de
+  `ADR-0032` se evaluó derivar la llave de idempotencia del contenido del evento, y se
+  descartó porque perdería eventos repetidos. Midiendo apareció la otra mitad:
+  `description` y `event_description` **no son el mismo texto** entre el rastreo y el
+  webhook. La convergencia que prometía esa salida no existía.
+- **Dos frases de la documentación que parecían contradecirse no lo hacían.** Sobre el
+  retorno, `docs/13` traía anotado en §6.1 que las suscripciones disparan el estado
+  operativo real y en §6.4 que `status` se queda en `in_return`. Las dos están en la
+  documentación y hablan de cosas distintas —el disparador y el cuerpo—. Estaba
+  anotado como contradicción desde el día 14 y nadie había vuelto a leerlo entero.
+
+Lo que queda del paso 7 es **la emisión de la guía**, que es lo que llena el código de
+transportadora y convierte el despacho a mano en un despacho del sistema.
 
 ## Cómo conversar con Claude Code en este proyecto
 
