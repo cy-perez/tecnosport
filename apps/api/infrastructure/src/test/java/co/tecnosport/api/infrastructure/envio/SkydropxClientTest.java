@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import com.sun.net.httpserver.HttpExchange;
@@ -118,6 +120,30 @@ class SkydropxClientTest {
     }
   }
 
+  /**
+   * Habla un idioma inventado a propósito: {@code {"eventos":[...]}}. Si aquí se usara el mapeador
+   * real, esta prueba diría que el cliente entiende a Skydropx cuando lo único que demuestra es que
+   * el servidor de prueba y el cliente se entienden entre ellos. El mapeo real se prueba contra la
+   * respuesta capturada, en {@link MapeadorSeguimientoSkydropxV1Test}.
+   */
+  private static final class MapeadorDeSeguimientoDePrueba implements MapeadorSeguimientoSkydropx {
+    @Override
+    public List<AplicarEventoDeEnvioComando> eventos(JsonNode respuesta, String guia) {
+      List<AplicarEventoDeEnvioComando> eventos = new ArrayList<>();
+      for (JsonNode nodo : respuesta.path("eventos")) {
+        eventos.add(
+            new AplicarEventoDeEnvioComando(
+                guia,
+                EstadoEnvio.EN_TRANSITO,
+                nodo.path("texto").asString(),
+                AHORA,
+                nodo.path("id").asString(),
+                "skydropx"));
+      }
+      return List.copyOf(eventos);
+    }
+  }
+
   private final AtomicInteger peticionesDeToken = new AtomicInteger();
   private final AtomicInteger sondeos = new AtomicInteger();
   private final List<Duration> pausas = new ArrayList<>();
@@ -167,6 +193,7 @@ class SkydropxClientTest {
         Duration.ofMillis(500),
         reloj,
         mapeador,
+        new MapeadorDeSeguimientoDePrueba(),
         new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
         pausas::add,
         HttpClient.newHttpClient());
@@ -361,5 +388,103 @@ class SkydropxClientTest {
     public Optional<List<TarifaEnvio>> tarifasSiCompleto(JsonNode respuesta, Instant ahora) {
       throw new IllegalStateException("No se llega aquí.");
     }
+  }
+
+  // --- rastreo ------------------------------------------------------------------------------
+
+  private final List<String> consultasDeRastreo = new ArrayList<>();
+
+  private SkydropxClient clienteDeRastreo(int estado, String cuerpo) throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v1/shipments/tracking",
+        intercambio -> {
+          consultasDeRastreo.add(intercambio.getRequestURI().getQuery());
+          responder(intercambio, estado, cuerpo);
+        });
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * Los dos parámetros van en la consulta y no en la ruta, y el de la transportadora es su
+   * <strong>código</strong>. Medido el 16 de septiembre de 2026: la forma de la ruta que anotaba
+   * adr/0022 responde 404, y con el nombre visible también.
+   */
+  @Test
+  void consultaElRastreoConLaGuiaYElCodigoEnLaConsulta() throws IOException {
+    SkydropxClient cliente =
+        clienteDeRastreo(200, "{\"eventos\":[{\"id\":\"ev-1\",\"texto\":\"en ruta\"}]}");
+
+    List<AplicarEventoDeEnvioComando> eventos = cliente.consultar("servientrega", "873837506712");
+
+    assertEquals(
+        List.of("tracking_number=873837506712&carrier_name=servientrega"), consultasDeRastreo);
+    assertEquals(1, eventos.size());
+    assertEquals("873837506712", eventos.get(0).guia());
+  }
+
+  /**
+   * Un 404 es la respuesta normal de una guía que todavía no se ha movido, no un fallo: medido
+   * sobre las cuatro guías emitidas, las tres sin movimiento responden justo eso. Tratarlo como
+   * error dejaría la tarea de conciliación registrando problemas todas las noches.
+   */
+  @Test
+  void unRastreoSinEventosTodaviaEsListaVaciaYNoUnFallo() throws IOException {
+    SkydropxClient cliente =
+        clienteDeRastreo(
+            404, "{\"error\":\"No se encontró eventos de rastreo para ese número de guía.\"}");
+
+    assertTrue(cliente.consultar("servientrega", "2269401749").isEmpty());
+  }
+
+  /** Igual que la cotización: el proveedor caído es "sin novedad", nunca una excepción. */
+  @Test
+  void unErrorDelProveedorEsSinNovedad() throws IOException {
+    SkydropxClient cliente = clienteDeRastreo(500, "{}");
+
+    assertTrue(cliente.consultar("servientrega", "873837506712").isEmpty());
+  }
+
+  @Test
+  void unCuerpoIlegibleNoLanza() throws IOException {
+    SkydropxClient cliente = clienteDeRastreo(200, "esto no es json");
+
+    assertTrue(cliente.consultar("servientrega", "873837506712").isEmpty());
+  }
+
+  /**
+   * El token es de la cuenta y se comparte: dos consultas seguidas piden uno solo. Es la razón de
+   * que cotizar y rastrear vivan en el mismo cliente y no en dos.
+   */
+  @Test
+  void dosConsultasReutilizanElMismoToken() throws IOException {
+    SkydropxClient cliente = clienteDeRastreo(200, "{\"eventos\":[]}");
+
+    cliente.consultar("servientrega", "873837506712");
+    cliente.consultar("coordinadora", "CO-1");
+
+    assertEquals(1, peticionesDeToken.get());
+    assertEquals(2, consultasDeRastreo.size());
   }
 }

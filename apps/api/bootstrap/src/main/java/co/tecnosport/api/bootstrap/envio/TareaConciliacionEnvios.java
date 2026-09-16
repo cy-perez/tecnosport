@@ -46,9 +46,11 @@ public class TareaConciliacionEnvios {
     ResultadoConciliacionEnvios resultado =
         transaccion.execute(estado -> conciliarEnvios.ejecutar());
     log.info(
-        "Conciliación de envíos: {} revisados, {} con eventos nuevos, {} sin novedad",
+        "Conciliación de envíos: {} revisados, {} con eventos nuevos, {} sin novedad,"
+            + " {} guías sin código de transportadora",
         resultado.revisados(),
         resultado.conEventosNuevos(),
-        resultado.sinNovedad());
+        resultado.sinNovedad(),
+        resultado.guiasSinCodigo());
   }
 }

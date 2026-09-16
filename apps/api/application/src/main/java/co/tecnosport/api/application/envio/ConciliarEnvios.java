@@ -27,6 +27,12 @@ import java.util.Objects;
  * tercero—. Con un tope, ese costo tiene techo y lo que no quepa espera a la vuelta siguiente, que
  * es en minutos. Sin tope, un respaldo tras una caída del webhook vaciaría el pool.
  *
+ * <p><strong>Las guías que no sabemos consultar se saltan y se cuentan.</strong> La plataforma
+ * exige el código con el que ella conoce a la transportadora, y de una guía tecleada en el panel no
+ * lo tenemos — puede que ni siquiera sea suya. Preguntar con el nombre visible devuelve un 404
+ * idéntico al de una guía sin eventos todavía, así que se registraría como "sin novedad" algo que
+ * en realidad nadie miró.
+ *
  * <p><strong>Un proveedor caído no puede tumbar el lote.</strong> Una consulta que falla devuelve
  * lista vacía y ese envío queda para la próxima corrida; los demás se revisan igual. Es el mismo
  * criterio de {@code ConciliarPagosPendientes}: el mecanismo es idempotente, así que reintentar es
@@ -66,6 +72,7 @@ public final class ConciliarEnvios {
 
     int consultadas = 0;
     int conEventosNuevos = 0;
+    int sinCodigo = 0;
     for (Envio envio : callados) {
       boolean alguno = false;
       for (GuiaEnvio guia : envio.guias()) {
@@ -78,6 +85,14 @@ public final class ConciliarEnvios {
         if (guia.terminada()) {
           continue;
         }
+        // Sin el código de la transportadora no hay a quién preguntarle: la plataforma responde
+        // 404 con el nombre visible, y ese 404 es indistinguible del de una guía sin eventos
+        // todavía. Preguntar igual convertiría "no sabemos" en "sin novedad", que es peor que no
+        // preguntar. Se cuenta para que se vea en el registro de la tarea.
+        if (!guia.conciliable()) {
+          sinCodigo++;
+          continue;
+        }
         consultadas++;
         alguno = conciliar(guia) || alguno;
       }
@@ -86,12 +101,12 @@ public final class ConciliarEnvios {
       }
     }
     return new ResultadoConciliacionEnvios(
-        callados.size(), conEventosNuevos, callados.size() - conEventosNuevos);
+        callados.size(), conEventosNuevos, callados.size() - conEventosNuevos, sinCodigo);
   }
 
   private boolean conciliar(GuiaEnvio guia) {
     List<AplicarEventoDeEnvioComando> eventos =
-        consultor.consultar(guia.transportadora(), guia.numero());
+        consultor.consultar(guia.codigoTransportadora().orElseThrow(), guia.numero());
     boolean alguno = false;
     for (AplicarEventoDeEnvioComando evento : eventos) {
       ResultadoEventoDeEnvio resultado = aplicar.ejecutar(evento);

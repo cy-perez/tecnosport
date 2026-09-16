@@ -1,6 +1,8 @@
 package co.tecnosport.api.infrastructure.envio;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
+import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
@@ -20,7 +22,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Cliente de Skydropx para la cotización de envío (adr/0021). Implementa {@link CotizadorEnvio}.
+ * Cliente de Skydropx: cotiza envíos (adr/0021) y consulta el rastreo de una guía (adr/0022).
+ *
+ * <p><strong>Las dos cosas en la misma clase, y no es por comodidad.</strong> El token en caché y
+ * el limitador de dos peticiones por segundo son de la <em>cuenta</em>, no de un caso de uso: dos
+ * instancias serían dos tokens y dos limitadores contra un único límite, y el segundo no sabría del
+ * primero. El día que aparezca un tercer tramo —la emisión de la guía— va aquí por lo mismo.
  *
  * <p><strong>Lo verificado</strong> (docs/13-skydropx-capacidades.md): OAuth 2.0 con credenciales
  * de cliente contra {@code POST /api/v1/oauth/token}, token de 2 horas, límite de 2 peticiones por
@@ -38,7 +45,7 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>El token se renueva con margen y no justo al vencer: una cotización que arranca con el token
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
-public final class SkydropxClient implements CotizadorEnvio {
+public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento {
 
   private static final Duration TIMEOUT_HTTP = Duration.ofSeconds(10);
 
@@ -60,6 +67,7 @@ public final class SkydropxClient implements CotizadorEnvio {
   private final Duration intervaloDeSondeo;
   private final Reloj reloj;
   private final MapeadorCotizacionSkydropx mapeador;
+  private final MapeadorSeguimientoSkydropx mapeadorSeguimiento;
   private final LimitadorDePeticiones limitador;
   private final LimitadorDePeticiones.Pausador pausador;
   private final HttpClient httpClient;
@@ -87,6 +95,7 @@ public final class SkydropxClient implements CotizadorEnvio {
         intervaloDeSondeo,
         reloj,
         new MapeadorCotizacionSkydropxV1(),
+        new MapeadorSeguimientoSkydropxV1(),
         LimitadorDePeticiones.deSegundo(PETICIONES_POR_SEGUNDO),
         Thread::sleep,
         HttpClient.newHttpClient());
@@ -103,6 +112,7 @@ public final class SkydropxClient implements CotizadorEnvio {
       Duration intervaloDeSondeo,
       Reloj reloj,
       MapeadorCotizacionSkydropx mapeador,
+      MapeadorSeguimientoSkydropx mapeadorSeguimiento,
       LimitadorDePeticiones limitador,
       LimitadorDePeticiones.Pausador pausador,
       HttpClient httpClient) {
@@ -119,6 +129,7 @@ public final class SkydropxClient implements CotizadorEnvio {
     this.intervaloDeSondeo = Objects.requireNonNull(intervaloDeSondeo);
     this.reloj = Objects.requireNonNull(reloj);
     this.mapeador = Objects.requireNonNull(mapeador);
+    this.mapeadorSeguimiento = Objects.requireNonNull(mapeadorSeguimiento);
     this.limitador = Objects.requireNonNull(limitador);
     this.pausador = Objects.requireNonNull(pausador);
     this.httpClient = Objects.requireNonNull(httpClient);
@@ -206,6 +217,58 @@ public final class SkydropxClient implements CotizadorEnvio {
       }
     }
     return List.of();
+  }
+
+  /**
+   * El rastreo de una guía. Falla cerrado igual que la cotización, y por el mismo motivo de fondo:
+   * quien llama es la tarea de conciliación, y un proveedor caído no puede tumbar el lote entero
+   * (adr/0022). Lista vacía significa "no sé nada nuevo".
+   *
+   * <p><strong>Un 404 es una respuesta normal, no un fallo.</strong> Medido el 16 de septiembre de
+   * 2026 sobre las cuatro guías emitidas: las tres que nunca se movieron responden {@code 404 "No
+   * se encontró eventos de rastreo para ese número de guía"}. Una guía recién emitida está
+   * exactamente en ese caso, así que esto va a ser lo habitual y no lo excepcional.
+   *
+   * <p><strong>El código de la transportadora es obligatorio y es el de la plataforma</strong>
+   * —{@code servientrega}, {@code ninetynineminutes}—, no el nombre que se le muestra a nadie. Con
+   * el nombre visible la respuesta es 404, igual que sin el parámetro, así que una guía de la que
+   * no conocemos el código no se puede consultar: lo filtra {@code ConciliarEnvios} antes de llamar
+   * aquí.
+   */
+  @Override
+  public List<AplicarEventoDeEnvioComando> consultar(String codigoTransportadora, String guia) {
+    Objects.requireNonNull(
+        codigoTransportadora, "El código de la transportadora no puede ser nulo.");
+    Objects.requireNonNull(guia, "La guía no puede ser nula.");
+    try {
+      return consultarOFallarCerrado(codigoTransportadora, guia);
+    } catch (IOException | RuntimeException e) {
+      return List.of();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return List.of();
+    }
+  }
+
+  private List<AplicarEventoDeEnvioComando> consultarOFallarCerrado(
+      String codigoTransportadora, String guia) throws IOException, InterruptedException {
+    String token = token();
+    if (token == null) {
+      return List.of();
+    }
+
+    // Con parámetros de consulta y no en la ruta: la forma de la ruta —que anotaba adr/0022—
+    // responde 404 Not Found. Comprobadas las dos el 16 de septiembre de 2026.
+    String ruta =
+        "/api/v1/shipments/tracking?tracking_number="
+            + URLEncoder.encode(guia, StandardCharsets.UTF_8)
+            + "&carrier_name="
+            + URLEncoder.encode(codigoTransportadora, StandardCharsets.UTF_8);
+    HttpResponse<String> respuesta = enviar(peticion(ruta, token).GET().build());
+    if (respuesta.statusCode() / 100 != 2) {
+      return List.of();
+    }
+    return mapeadorSeguimiento.eventos(json.readTree(respuesta.body()), guia);
   }
 
   /**

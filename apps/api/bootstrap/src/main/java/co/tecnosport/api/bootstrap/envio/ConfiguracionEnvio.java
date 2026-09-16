@@ -26,6 +26,7 @@ import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,10 +47,11 @@ import org.springframework.context.annotation.Profile;
 public class ConfiguracionEnvio {
 
   /**
-   * El cotizador real. Hoy falla cerrado —el mapeo con Skydropx no está confirmado— y eso para el
-   * checkout significa "solo recogida en el punto", que es lo que adr/0021 decidió para cuando no
-   * hay tarifa. Se registra igual, y no se deja el puerto sin implementación, porque el día que se
-   * confirme el mapeo no hay que tocar el cableado.
+   * El cliente de Skydropx, que sirve dos puertos: cotiza (adr/0021) y consulta el rastreo de una
+   * guía (adr/0022). <strong>Un solo bean para los dos</strong>, y el porqué está en la clase: el
+   * token en caché y el límite de dos peticiones por segundo son de la cuenta, no de un caso de
+   * uso. Se declara con el tipo concreto para que el contenedor pueda inyectarlo por cualquiera de
+   * las dos interfaces.
    *
    * <p>{@code @Profile("!e2e")} y no {@code @ConditionalOnMissingBean}: los recorridos de
    * Playwright sustituyen este bean por {@link CotizadorEnvioSembrado}, y de las dos formas de
@@ -59,7 +61,7 @@ public class ConfiguracionEnvio {
    */
   @Bean
   @Profile("!e2e")
-  public CotizadorEnvio cotizadorEnvio(
+  public SkydropxClient skydropxClient(
       PropiedadesSkydropx skydropx, PropiedadesOrigen origen, Reloj reloj) {
     return new SkydropxClient(
         URI.create(skydropx.urlBase()),
@@ -92,6 +94,18 @@ public class ConfiguracionEnvio {
   }
 
   /**
+   * El consultor bajo {@code e2e}, que no consulta nada. Existe solo porque bajo ese perfil no hay
+   * {@link SkydropxClient} del que colgarlo, y sin él el contexto no arranca. Devolver lista vacía
+   * es lo correcto para un recorrido de Playwright: ahí no hay guía emitida en ninguna parte, y la
+   * conciliación tiene que poder correr sin encontrar nada.
+   */
+  @Bean
+  @Profile("e2e")
+  public ConsultorDeSeguimiento consultorDeSeguimientoSembrado() {
+    return (codigoTransportadora, guia) -> List.of();
+  }
+
+  /**
    * Entre sondeo y sondeo. Por debajo del medio segundo no tiene sentido: el limitador de 2
    * peticiones por segundo lo frenaría igual, y el hilo esperaría en otro sitio.
    */
@@ -115,10 +129,9 @@ public class ConfiguracionEnvio {
   }
 
   /**
-   * De los tres puertos del seguimiento ya solo dos fallan cerrado: leer el evento y consultar el
-   * rastreo, que siguen sin poderse medir contra un evento real (docs/13-skydropx-capacidades.md,
-   * sección 6). Se registran igual para que el día que se confirmen sea cambiar una implementación
-   * y no montar el cableado.
+   * De los tres puertos del seguimiento ya solo uno falla cerrado: leer el cuerpo del webhook. La
+   * firma se resolvió el 14 de septiembre de 2026 y el rastreo el 16, midiendo con {@code
+   * tools/sonda-rastreo.mjs} sobre una guía emitida (docs/13-skydropx-capacidades.md §6.3).
    */
   @Bean
   public ConciliarEnvios conciliarEnvios(

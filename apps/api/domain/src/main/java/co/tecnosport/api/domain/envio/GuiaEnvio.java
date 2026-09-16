@@ -27,6 +27,7 @@ public final class GuiaEnvio {
 
   private final UUID id;
   private final String transportadora;
+  private final String codigoTransportadora;
   private final String numero;
   private final Dinero costo;
   private final List<EventoSeguimiento> eventos;
@@ -34,6 +35,7 @@ public final class GuiaEnvio {
   public GuiaEnvio(
       UUID id,
       String transportadora,
+      String codigoTransportadora,
       String numero,
       Dinero costo,
       List<EventoSeguimiento> eventos) {
@@ -42,6 +44,10 @@ public final class GuiaEnvio {
       throw new ExcepcionDeDominio("La transportadora no puede estar vacía.");
     }
     this.transportadora = transportadora;
+    this.codigoTransportadora =
+        codigoTransportadora == null || codigoTransportadora.isBlank()
+            ? null
+            : codigoTransportadora.trim();
     if (numero == null || numero.isBlank()) {
       throw new ExcepcionDeDominio("La guía no puede estar vacía.");
     }
@@ -50,8 +56,25 @@ public final class GuiaEnvio {
     this.eventos = new ArrayList<>(Objects.requireNonNullElse(eventos, List.of()));
   }
 
+  /**
+   * Una guía que alguien tecleó en el panel: sabemos con qué transportadora va porque lo escribió
+   * una persona, y no con qué código la conoce la plataforma. No se puede consultar su rastreo.
+   */
   public static GuiaEnvio crear(String transportadora, String numero, Dinero costo) {
-    return new GuiaEnvio(GeneradorIdentificador.nuevo(), transportadora, numero, costo, List.of());
+    return new GuiaEnvio(
+        GeneradorIdentificador.nuevo(), transportadora, null, numero, costo, List.of());
+  }
+
+  /** Una guía emitida por la plataforma, que sí sabe con qué código consultarla. */
+  public static GuiaEnvio crear(
+      String transportadora, String codigoTransportadora, String numero, Dinero costo) {
+    return new GuiaEnvio(
+        GeneradorIdentificador.nuevo(),
+        transportadora,
+        codigoTransportadora,
+        numero,
+        costo,
+        List.of());
   }
 
   /**
@@ -108,6 +131,30 @@ public final class GuiaEnvio {
 
   public String transportadora() {
     return transportadora;
+  }
+
+  /**
+   * El nombre con el que la plataforma conoce a la transportadora, que no es el que se le muestra a
+   * nadie: {@code ninetynineminutes} para "99 minutes", {@code servientrega} para "Servientrega".
+   * Medido contra la cuenta el 16 de septiembre de 2026 — el rastreo exige ese código y responde
+   * 404 con el nombre visible, así que no se puede derivar de {@link #transportadora()}.
+   *
+   * <p>Vacío cuando la guía la tecleó una persona en el panel. No es un dato que falte por
+   * descuido: una guía escrita a mano <strong>puede no existir en la plataforma</strong>, porque
+   * quien despacha pudo emitirla en la web de la transportadora. Lo que decide si se puede
+   * conciliar no es quién la lleva, es si la emitimos nosotros.
+   */
+  public Optional<String> codigoTransportadora() {
+    return Optional.ofNullable(codigoTransportadora);
+  }
+
+  /**
+   * ¿Se le puede preguntar a la plataforma por esta guía? Solo si sabemos con qué código la conoce.
+   * La conciliación salta las demás y lo cuenta, en vez de preguntar con un código inventado y
+   * recibir un 404 que parecería "sin novedad".
+   */
+  public boolean conciliable() {
+    return codigoTransportadora != null;
   }
 
   public String numero() {

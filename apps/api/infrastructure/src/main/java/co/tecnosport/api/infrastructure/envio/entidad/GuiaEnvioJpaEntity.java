@@ -19,6 +19,10 @@ public class GuiaEnvioJpaEntity {
   @Column(nullable = false)
   private String transportadora;
 
+  /** El nombre de la transportadora en Skydropx, no el visible. Vacío en las guías a mano. */
+  @Column(name = "codigo_transportadora")
+  private String codigoTransportadora;
+
   @Column(nullable = false)
   private String numero;
 
@@ -28,10 +32,16 @@ public class GuiaEnvioJpaEntity {
   protected GuiaEnvioJpaEntity() {}
 
   public GuiaEnvioJpaEntity(
-      UUID id, UUID envioId, String transportadora, String numero, BigDecimal costoEnvio) {
+      UUID id,
+      UUID envioId,
+      String transportadora,
+      String codigoTransportadora,
+      String numero,
+      BigDecimal costoEnvio) {
     this.id = id;
     this.envioId = envioId;
     this.transportadora = transportadora;
+    this.codigoTransportadora = codigoTransportadora;
     this.numero = numero;
     this.costoEnvio = costoEnvio;
   }
@@ -46,6 +56,10 @@ public class GuiaEnvioJpaEntity {
 
   public String getTransportadora() {
     return transportadora;
+  }
+
+  public String getCodigoTransportadora() {
+    return codigoTransportadora;
   }
 
   public String getNumero() {

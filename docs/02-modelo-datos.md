@@ -221,7 +221,7 @@ panel. Ver `ADR-0018`.
 | `Pedido` | líneas congeladas, contacto de quien recibe, dirección, tipo de entrega, tarifa de envío congelada, totales, método de pago, estado, historial | Raíz transaccional |
 | `Pago` | referencia, método elegido, medio reportado por la pasarela, estado, eventos recibidos | Idempotente por referencia. El método que el comprador eligió y el medio con que la pasarela cobró son dos hechos distintos y ninguno pisa al otro (`ADR-0029`) |
 | `Envio` | sus guías, comisión y fecha de conciliación del recaudo | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`, `ADR-0022`). El costo real es la suma de sus guías |
-| `GuiaEnvio` | transportadora, número de guía, costo real de ese paquete, eventos de seguimiento | Dentro de `Envio`, y **varias**: ninguna transportadora colombiana admite multipaquete (`ADR-0031`) |
+| `GuiaEnvio` | transportadora y su código en la plataforma, número de guía, costo real de ese paquete, eventos de seguimiento | Dentro de `Envio`, y **varias**: ninguna transportadora colombiana admite multipaquete (`ADR-0031`) |
 | `EventoSeguimiento` | estado de la transportadora, descripción, momento del evento y de su recepción | Dentro de `GuiaEnvio`. Se agrega, nunca se sobrescribe |
 | `Usuario` | correo, credencial, roles, verificación | |
 | `SesionRefresco` | familia, rotación, revocación | Un eslabón de la rotación por fila (Fase 4) |
@@ -387,7 +387,7 @@ envio
   id, pedido_id, comision_recaudo, recaudo_conciliado_en, creado_en
 
 guia_envio
-  id, envio_id, transportadora, numero, costo_envio
+  id, envio_id, transportadora, codigo_transportadora, numero, costo_envio
 
 evento_seguimiento
   id, guia_id, estado_proveedor, descripcion,
@@ -404,6 +404,14 @@ evento_seguimiento
 - **`estado_proveedor` se guarda tal cual llega**, sin traducir a un enum propio.
   Solo tres de los doce estados mueven el pedido (`ADR-0022`); mapear los otros
   nueve a un vocabulario nuestro sería inventar estados que el dominio no usa.
+- **`codigo_transportadora` es el nombre de la transportadora en Skydropx**
+  (`servientrega`, `ninetynineminutes`), no el que se muestra. El rastreo lo exige y
+  responde 404 con el nombre visible, así que no se puede derivar del otro
+  (`docs/13-skydropx-capacidades.md` §6.8). **Es opcional**: una guía tecleada en el
+  panel puede ni siquiera existir en la plataforma —quien despacha pudo emitirla en
+  la web de la transportadora—, así que lo que decide si se puede conciliar no es
+  quién la lleva, es si la emitimos nosotros. Las que no lo tienen se saltan en la
+  conciliación y se cuentan aparte.
 - **`guia_envio.costo_envio` es interno.** Es lo que la transportadora cobra por ese
   paquete, y su suma frente al `costo_envio` cobrado al comprador es el margen del
   pedido. Ningún endpoint público lo devuelve.

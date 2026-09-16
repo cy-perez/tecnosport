@@ -376,4 +376,31 @@ class RepositorioEnviosJpaTest {
     assertThat(encontrado.comisionRecaudo()).contains(Dinero.deCop(5_000));
     assertThat(encontrado.recaudoConciliadoEn()).contains(conciliadoEn);
   }
+
+  /**
+   * El código de la transportadora va y vuelve, y su ausencia también. Son los dos casos reales:
+   * una guía emitida por la plataforma lo trae, y una tecleada en el panel no — y de esa segunda
+   * depende que la conciliación sepa que no tiene a quién preguntarle (adr/0022).
+   */
+  @Test
+  void elCodigoDeTransportadoraVaYVuelveYPuedeFaltar() {
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(
+                GuiaEnvio.crear("Servientrega", "servientrega", "SE-1", Dinero.deCop(8_200)),
+                GuiaEnvio.crear("Coordinadora", "CO-2", Dinero.deCop(5_991))),
+            despacho);
+
+    repositorio.guardar(envio);
+
+    Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
+    assertThat(encontrado.guiaDe("SE-1").orElseThrow().codigoTransportadora())
+        .contains("servientrega");
+    assertThat(encontrado.guiaDe("SE-1").orElseThrow().conciliable()).isTrue();
+    assertThat(encontrado.guiaDe("CO-2").orElseThrow().codigoTransportadora()).isEmpty();
+    assertThat(encontrado.guiaDe("CO-2").orElseThrow().conciliable()).isFalse();
+  }
 }
