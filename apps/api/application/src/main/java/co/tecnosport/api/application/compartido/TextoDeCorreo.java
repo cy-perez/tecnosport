@@ -27,6 +27,7 @@ public enum TextoDeCorreo {
   PEDIDO_CANCELACION_CIERRE("pedido.cancelacion.cierre"),
   PEDIDO_DESPACHO_ASUNTO("pedido.despacho.asunto"),
   PEDIDO_DESPACHO_CUERPO("pedido.despacho.cuerpo"),
+  PEDIDO_DESPACHO_CUERPO_VARIAS("pedido.despacho.cuerpo_varias"),
   PEDIDO_PLAZO_VENCIDO_ASUNTO("pedido.plazo_vencido.asunto"),
   PEDIDO_PLAZO_VENCIDO_CUERPO("pedido.plazo_vencido.cuerpo"),
   PEDIDO_PLAZO_VENCIDO_EN_CAMINO("pedido.plazo_vencido.en_camino"),

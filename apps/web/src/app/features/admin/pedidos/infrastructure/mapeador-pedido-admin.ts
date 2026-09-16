@@ -106,8 +106,11 @@ function aDatosTransferencia(dto: DatosTransferenciaDto): DatosTransferencia {
 
 function aEnvio(dto: EnvioDto): EnvioAdmin {
   return {
-    transportadora: dto.transportadora ?? '',
-    guia: dto.guia ?? '',
+    guias: (dto.guias ?? []).map((guia) => ({
+      transportadora: guia.transportadora ?? '',
+      guia: guia.guia ?? '',
+      costo: { valor: guia.costo?.valor ?? 0, moneda: guia.costo?.moneda ?? 'COP' },
+    })),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     despachadoEn: dto.despachadoEn ?? '',
     comisionRecaudo: dto.comisionRecaudo

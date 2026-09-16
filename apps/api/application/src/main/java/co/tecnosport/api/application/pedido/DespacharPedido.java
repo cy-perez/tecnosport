@@ -6,17 +6,23 @@ import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * Despacha un pedido en {@code EN_PREPARACION} (docs/11-pagos-y-envios.md): transportadora y guía.
- * La transición se aplica primero — un {@code Envio} nunca queda huérfano de un despacho que en
- * realidad falló porque el pedido no estaba en {@code EN_PREPARACION} (un contraentrega sin
+ * Despacha un pedido en {@code EN_PREPARACION} (docs/11-pagos-y-envios.md): sus guías.
+ *
+ * <p><strong>Guías, en plural</strong> (adr/0031): ninguna transportadora colombiana admite
+ * multipaquete, así que un pedido de dos variantes sale en dos paquetes, cada uno con su número y
+ * su cobro. La transición se aplica primero — un {@code Envio} nunca queda huérfano de un despacho
+ * que en realidad falló porque el pedido no estaba en {@code EN_PREPARACION} (un contraentrega sin
  * verificar todavía, o un segundo intento de despachar el mismo pedido).
  *
  * <p><b>Y se lo cuenta al comprador</b>, que hasta ahora era la mitad que faltaba: el despacho
@@ -25,8 +31,8 @@ import java.util.Objects;
  * (docs/12-legales-de-envio.md §3), porque la publicidad obliga y no se promete lo que no se hace.
  *
  * <p>El correo <b>no</b> promete rastreo de eventos ni enlaza al sitio de la transportadora: este
- * sistema no consume esos eventos. Da los tres datos que sí tiene —transportadora, guía y el enlace
- * a la pantalla de estado— y ni uno más.
+ * sistema no consume esos eventos. Da los datos que sí tiene —transportadora, guía y el enlace a la
+ * pantalla de estado— y ni uno más.
  */
 public final class DespacharPedido {
 
@@ -62,15 +68,27 @@ public final class DespacharPedido {
     pedido.transicionar(
         EstadoPedido.DESPACHADO,
         comando.actor(),
-        "despachado con " + comando.transportadora(),
+        "despachado con " + transportadoras(comando),
         ahora);
     Envio envio =
         Envio.crear(
-            pedido.id(), comando.transportadora(), comando.guia(), comando.costoEnvio(), ahora);
+            pedido.id(),
+            comando.guias().stream()
+                .map(guia -> GuiaEnvio.crear(guia.transportadora(), guia.guia(), guia.costoEnvio()))
+                .toList(),
+            ahora);
     repositorioPedidos.guardar(pedido);
     repositorioEnvios.guardar(envio);
     avisarAlComprador(pedido, comando);
     return pedido;
+  }
+
+  /** Sin repetir: dos guías de la misma transportadora dicen su nombre una vez en el historial. */
+  private static String transportadoras(DespacharPedidoComando comando) {
+    return comando.guias().stream()
+        .map(GuiaDespachada::transportadora)
+        .distinct()
+        .collect(Collectors.joining(", "));
   }
 
   /**
@@ -79,15 +97,39 @@ public final class DespacharPedido {
    * EnviadorDeCorreo}, que deja escrito lo que hoy de verdad ocurre en los dos sentidos).
    */
   private void avisarAlComprador(Pedido pedido, DespacharPedidoComando comando) {
+    List<GuiaDespachada> guias = comando.guias();
+    String cuerpo =
+        guias.size() == 1
+            ? textos.texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO,
+                pedido.numeroPedido().valor(),
+                guias.getFirst().transportadora(),
+                guias.getFirst().guia(),
+                enlaceDeEstado(pedido))
+            : textos.texto(
+                TextoDeCorreo.PEDIDO_DESPACHO_CUERPO_VARIAS,
+                pedido.numeroPedido().valor(),
+                String.valueOf(guias.size()),
+                listadoDeGuias(guias),
+                enlaceDeEstado(pedido));
     enviadorDeCorreo.enviar(
         pedido.correo(),
         textos.texto(TextoDeCorreo.PEDIDO_DESPACHO_ASUNTO, pedido.numeroPedido().valor()),
-        textos.texto(
-            TextoDeCorreo.PEDIDO_DESPACHO_CUERPO,
-            pedido.numeroPedido().valor(),
-            comando.transportadora(),
-            comando.guia(),
-            enlaceDeEstado(pedido)));
+        cuerpo);
+  }
+
+  /**
+   * Texto plano y no una lista de HTML: los argumentos se escapan en el puerto —lo que protege de
+   * que un nombre escrito en el panel se cuele como marcado— y un {@code <li>} llegaría a la
+   * bandeja como letra, no como viñeta.
+   *
+   * <p>Que el correo diga cuántos paquetes son no es un adorno: quien recibe uno de dos y no lo
+   * sabe, cree que le faltó media compra y escribe a atención.
+   */
+  private static String listadoDeGuias(List<GuiaDespachada> guias) {
+    return guias.stream()
+        .map(guia -> guia.transportadora() + " " + guia.guia())
+        .collect(Collectors.joining(", "));
   }
 
   /**

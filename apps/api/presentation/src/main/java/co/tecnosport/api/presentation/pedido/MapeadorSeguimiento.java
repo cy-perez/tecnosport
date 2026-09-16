@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.EnvioPublicoRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.GuiaPublicaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.HistorialPedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.RetractoPublicoRespuesta;
@@ -75,7 +76,11 @@ public class MapeadorSeguimiento {
   }
 
   private EnvioPublicoRespuesta aRespuesta(Envio envio) {
-    return new EnvioPublicoRespuesta(envio.transportadora(), envio.guia(), envio.despachadoEn());
+    return new EnvioPublicoRespuesta(
+        envio.guias().stream()
+            .map(guia -> new GuiaPublicaRespuesta(guia.transportadora(), guia.numero()))
+            .toList(),
+        envio.despachadoEn());
   }
 
   /**

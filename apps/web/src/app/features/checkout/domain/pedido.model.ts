@@ -109,9 +109,15 @@ export interface RetractoPublico {
  * del negocio (`EnvioPublicoRespuesta` en el backend, hallazgo 3 de `docs/12-legales-de-envio.md`).
  * Lo que el comprador pagó de flete vive en `Pedido.costoEnvio`, que es otra cifra.
  */
-export interface EnvioPublico {
+export interface GuiaPublica {
   readonly transportadora: string;
   readonly guia: string;
+}
+
+export interface EnvioPublico {
+  /** Varias cuando el pedido salió en varios paquetes (`adr/0031`): van por separado y pueden
+   * llegar en días distintos, así que quien compró tiene que verlas todas. */
+  readonly guias: readonly GuiaPublica[];
   readonly despachadoEn: string;
 }
 

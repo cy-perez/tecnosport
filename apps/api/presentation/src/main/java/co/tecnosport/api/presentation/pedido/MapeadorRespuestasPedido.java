@@ -17,6 +17,7 @@ import co.tecnosport.api.presentation.pedido.dto.ContactoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DatosTransferenciaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.DireccionRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.EnvioRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.GuiaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.HistorialPedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.LineaPedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
@@ -92,8 +93,12 @@ public class MapeadorRespuestasPedido {
 
   private EnvioRespuesta aRespuesta(Envio envio) {
     return new EnvioRespuesta(
-        envio.transportadora(),
-        envio.guia(),
+        envio.guias().stream()
+            .map(
+                guia ->
+                    new GuiaRespuesta(
+                        guia.transportadora(), guia.numero(), aRespuesta(guia.costo())))
+            .toList(),
         aRespuesta(envio.costoEnvio()),
         envio.despachadoEn(),
         envio.comisionRecaudo().map(this::aRespuesta).orElse(null),

@@ -53,11 +53,20 @@ export interface DatosTransferencia {
   readonly referencia: string;
 }
 
-/** Solo existe una vez despachado el pedido (`docs/02-modelo-datos.md`).
- * `comisionRecaudo`/`recaudoConciliadoEn` quedan en `null` hasta conciliar el recaudo. */
-export interface EnvioAdmin {
+/** Una guía del despacho: un paquete, una transportadora y lo que ese paquete nos cuesta. */
+export interface GuiaAdmin {
   readonly transportadora: string;
   readonly guia: string;
+  readonly costo: Dinero;
+}
+
+/** Solo existe una vez despachado el pedido (`docs/02-modelo-datos.md`).
+ * `comisionRecaudo`/`recaudoConciliadoEn` quedan en `null` hasta conciliar el recaudo.
+ *
+ * `guias` va en plural desde `adr/0031`: ninguna transportadora colombiana admite multipaquete, así
+ * que un pedido de dos variantes sale en dos guías. `costoEnvio` es la suma de todas. */
+export interface EnvioAdmin {
+  readonly guias: readonly GuiaAdmin[];
   readonly costoEnvio: Dinero;
   readonly despachadoEn: string;
   readonly comisionRecaudo: Dinero | null;

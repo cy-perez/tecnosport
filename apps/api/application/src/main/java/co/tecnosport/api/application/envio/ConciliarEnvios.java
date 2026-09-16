@@ -2,6 +2,7 @@ package co.tecnosport.api.application.envio;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -13,14 +14,16 @@ import java.util.Objects;
  * {@link AplicarEventoDeEnvio}, literalmente el mismo objeto—, porque dos caminos con la misma
  * responsabilidad y código distinto se separan el día que alguien arregle uno solo.
  *
- * <p>Un envío se considera callado cuando lleva más de {@code antiguedadMinima} sin eventos nuevos.
- * Los que ya terminaron —entregados, devueltos, cancelados, destruidos— no se vuelven a consultar:
- * su historia se acabó y preguntar por ellos para siempre gastaría cuota de un proveedor que admite
- * dos peticiones por segundo.
+ * <p>Lo que se consulta es la <strong>guía</strong>, no el envío (adr/0031): un envío puede llevar
+ * varias y cada paquete se mueve solo. Una guía está callada cuando lleva más de {@code
+ * antiguedadMinima} sin eventos nuevos, y las que ya terminaron —entregadas, devueltas, canceladas,
+ * destruidas— no se vuelven a consultar: su historia se acabó y preguntar por ellas para siempre
+ * gastaría cuota de un proveedor que admite dos peticiones por segundo. Medirlo por envío daría por
+ * terminado el despacho en cuanto llegara la primera guía y dejaría la hermana sin conciliar.
  *
- * <p><strong>El lote está acotado.</strong> Cada envío se convierte en una llamada al proveedor,
- * que admite dos peticiones por segundo, y esta tarea corre dentro de una transacción —igual que
- * {@code TareaConciliacionWompi}, y con el mismo costo: una conexión retenida mientras responde un
+ * <p><strong>El lote está acotado.</strong> Cada guía se convierte en una llamada al proveedor, que
+ * admite dos peticiones por segundo, y esta tarea corre dentro de una transacción —igual que {@code
+ * TareaConciliacionWompi}, y con el mismo costo: una conexión retenida mientras responde un
  * tercero—. Con un tope, ese costo tiene techo y lo que no quepa espera a la vuelta siguiente, que
  * es en minutos. Sin tope, un respaldo tras una caída del webhook vaciaría el pool.
  *
@@ -61,9 +64,24 @@ public final class ConciliarEnvios {
     Instant corte = reloj.ahora().minus(antiguedadMinima);
     List<Envio> callados = repositorioEnvios.buscarSinEventosDesde(corte, maximoPorCorrida);
 
+    int consultadas = 0;
     int conEventosNuevos = 0;
     for (Envio envio : callados) {
-      if (conciliar(envio)) {
+      boolean alguno = false;
+      for (GuiaEnvio guia : envio.guias()) {
+        // El tope cuenta guías y no envíos, porque el límite del proveedor se gasta por llamada y
+        // un envío de tres bultos son tres. Lo que no quepa espera a la vuelta siguiente, que es
+        // en minutos.
+        if (consultadas >= maximoPorCorrida) {
+          break;
+        }
+        if (guia.terminada()) {
+          continue;
+        }
+        consultadas++;
+        alguno = conciliar(guia) || alguno;
+      }
+      if (alguno) {
         conEventosNuevos++;
       }
     }
@@ -71,9 +89,9 @@ public final class ConciliarEnvios {
         callados.size(), conEventosNuevos, callados.size() - conEventosNuevos);
   }
 
-  private boolean conciliar(Envio envio) {
+  private boolean conciliar(GuiaEnvio guia) {
     List<AplicarEventoDeEnvioComando> eventos =
-        consultor.consultar(envio.transportadora(), envio.guia());
+        consultor.consultar(guia.transportadora(), guia.numero());
     boolean alguno = false;
     for (AplicarEventoDeEnvioComando evento : eventos) {
       ResultadoEventoDeEnvio resultado = aplicar.ejecutar(evento);

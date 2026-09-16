@@ -354,8 +354,7 @@ describe('EstadoPage', () => {
     const pedidos = new RepositorioPedidosFalso({
       ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'TARJETA' }),
       envio: {
-        transportadora: 'Servientrega',
-        guia: 'SE123456',
+        guias: [{ transportadora: 'Servientrega', guia: 'SE123456' }],
         despachadoEn: '2026-09-14T15:00:00Z',
       },
       retractos: [],
@@ -369,6 +368,38 @@ describe('EstadoPage', () => {
     expect(await screen.findByText('Tu envío')).toBeTruthy();
     expect(screen.getByText('Servientrega')).toBeTruthy();
     expect(screen.getByText('SE123456')).toBeTruthy();
+    // Con un solo paquete no se le anuncia nada de paquetes: seria ruido.
+    expect(screen.queryByText(/viaja en/)).toBeNull();
+  });
+
+  /**
+   * Un pedido de dos variantes sale en dos guias (`adr/0031`), y quien recibe una de dos sin
+   * saberlo cree que le faltó media compra. Las dos guias y el aviso tienen que verse.
+   */
+  it('con dos guias muestra las dos y avisa que son dos paquetes', async () => {
+    const pedidos = new RepositorioPedidosFalso({
+      ...pedidoDePrueba({ estado: 'DESPACHADO', metodoPago: 'TARJETA' }),
+      envio: {
+        guias: [
+          { transportadora: 'Servientrega', guia: 'SE123456' },
+          { transportadora: 'Coordinadora', guia: 'CO987' },
+        ],
+        despachadoEn: '2026-09-14T15:00:00Z',
+      },
+      retractos: [],
+    });
+
+    await renderConProviders(pedidos, new RepositorioPagosFalso(), {
+      pedidoId: 'pedido-1',
+      correo: 'cliente@tecnosport.co',
+    });
+
+    expect(await screen.findByText('Tu envío')).toBeTruthy();
+    expect(screen.getByText('Servientrega')).toBeTruthy();
+    expect(screen.getByText('SE123456')).toBeTruthy();
+    expect(screen.getByText('Coordinadora')).toBeTruthy();
+    expect(screen.getByText('CO987')).toBeTruthy();
+    expect(screen.getByText(/viaja en 2 paquetes/)).toBeTruthy();
   });
 
   it('sin envio no pinta el bloque de envio', async () => {

@@ -2,7 +2,10 @@ import { inject } from '@angular/core';
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import { MotivoCancelacion, PedidoAdmin } from '../domain/pedido-admin.model';
-import { REPOSITORIO_PEDIDOS_ADMIN } from '../domain/repositorio-pedidos-admin.puerto';
+import {
+  GuiaDespachada,
+  REPOSITORIO_PEDIDOS_ADMIN,
+} from '../domain/repositorio-pedidos-admin.puerto';
 
 /**
  * Una mutación por acción del panel — todas invalidan el mismo prefijo de clave
@@ -29,11 +32,8 @@ export function usarAccionesPedidoAdmin() {
   const despachar = injectMutation(() => ({
     mutationFn: (variables: {
       pedidoId: string;
-      transportadora: string;
-      guia: string;
-      costoEnvio: number;
-    }): Promise<PedidoAdmin> =>
-      repositorio.despachar(variables.pedidoId, variables.transportadora, variables.guia, variables.costoEnvio),
+      guias: readonly GuiaDespachada[];
+    }): Promise<PedidoAdmin> => repositorio.despachar(variables.pedidoId, variables.guias),
     onSuccess: invalidarLista,
   }));
 

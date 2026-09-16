@@ -220,8 +220,9 @@ panel. Ver `ADR-0018`.
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
 | `Pedido` | líneas congeladas, contacto de quien recibe, dirección, tipo de entrega, tarifa de envío congelada, totales, método de pago, estado, historial | Raíz transaccional |
 | `Pago` | referencia, método elegido, medio reportado por la pasarela, estado, eventos recibidos | Idempotente por referencia. El método que el comprador eligió y el medio con que la pasarela cobró son dos hechos distintos y ninguno pisa al otro (`ADR-0029`) |
-| `Envio` | transportadora, servicio, guía, costo real, comisión y fecha de conciliación del recaudo, eventos de seguimiento | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`, `ADR-0022`) |
-| `EventoSeguimiento` | estado de la transportadora, descripción, momento del evento y de su recepción | Dentro de `Envio`. Se agrega, nunca se sobrescribe |
+| `Envio` | sus guías, comisión y fecha de conciliación del recaudo | Nace en el despacho; sin `estado` propio, lo lleva `Pedido.estado` (`ADR-0013`, `ADR-0022`). El costo real es la suma de sus guías |
+| `GuiaEnvio` | transportadora, número de guía, costo real de ese paquete, eventos de seguimiento | Dentro de `Envio`, y **varias**: ninguna transportadora colombiana admite multipaquete (`ADR-0031`) |
+| `EventoSeguimiento` | estado de la transportadora, descripción, momento del evento y de su recepción | Dentro de `GuiaEnvio`. Se agrega, nunca se sobrescribe |
 | `Usuario` | correo, credencial, roles, verificación | |
 | `SesionRefresco` | familia, rotación, revocación | Un eslabón de la rotación por fila (Fase 4) |
 | `TokenVerificacionCorreo` | token, vencimiento, un solo uso | Separado de `TokenRecuperacionClave` por sensibilidad (`ADR-0015`) |
@@ -383,11 +384,13 @@ Del despacho en adelante el rastro vive en `Envio`:
 
 ```
 envio
-  id, pedido_id, transportadora, servicio, guia, url_rastreo,
-  costo_envio_real, comision_recaudo, recaudo_conciliado_en, creado_en
+  id, pedido_id, comision_recaudo, recaudo_conciliado_en, creado_en
+
+guia_envio
+  id, envio_id, transportadora, numero, costo_envio
 
 evento_seguimiento
-  id, envio_id, estado_proveedor, descripcion,
+  id, guia_id, estado_proveedor, descripcion,
   ocurrido_en, recibido_en, id_evento_proveedor
 ```
 
@@ -401,9 +404,17 @@ evento_seguimiento
 - **`estado_proveedor` se guarda tal cual llega**, sin traducir a un enum propio.
   Solo tres de los doce estados mueven el pedido (`ADR-0022`); mapear los otros
   nueve a un vocabulario nuestro sería inventar estados que el dominio no usa.
-- **`costo_envio_real` es interno.** Es lo que la transportadora cobra, y frente al
-  `costo_envio` cobrado al comprador es el margen del pedido. Ningún endpoint
-  público lo devuelve.
+- **`guia_envio.costo_envio` es interno.** Es lo que la transportadora cobra por ese
+  paquete, y su suma frente al `costo_envio` cobrado al comprador es el margen del
+  pedido. Ningún endpoint público lo devuelve.
+- **Varias guías por envío, y el número es único en toda la tabla** (`ADR-0031`).
+  Lo segundo es lo que deja resolver un evento del webhook con el número y nada
+  más, sin preguntar la transportadora. Un pedido de dos variantes son dos guías
+  con dos cobros: en Colombia ninguna transportadora admite multipaquete, y con
+  dos bultos la cotización cobra el doble.
+- **El rastro cuelga de la guía, no del envío.** La transportadora reporta el
+  movimiento de un paquete; mezclar dos rastros le diría al comprador que le
+  entregaron algo que sigue en camino.
 
 ## Congelado del pedido
 

@@ -87,7 +87,8 @@
       "comision": "Comisión de recaudo",
       "historial": "Historial",
       "acciones": "Acciones",
-      "contacto": "Quien recibe"
+      "contacto": "Quien recibe",
+      "costo_total": "Costo total del despacho"
     },
     "acciones": {
       "sin_accion": "Sin acciones disponibles.",
@@ -98,6 +99,10 @@
       "transportadora": "Transportadora",
       "guia": "Guía",
       "costo_envio": "Costo de envío",
+      "guia_numero": "Guía {{numero}}",
+      "agregar_guia": "Agregar otra guía",
+      "quitar_guia": "Quitar",
+      "quitar_guia_accesible": "Quitar la guía {{numero}}",
       "despachar": "Despachar",
       "marcar_entregado": "Marcar entregado",
       "rechazar_en_entrega": "Rechazar en la entrega",

@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -66,7 +67,10 @@ class ConciliarRecaudoTest {
     pedido.transicionar(EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", AHORA);
     pedidos.guardar(pedido);
     envios.guardar(
-        Envio.crear(pedido.id(), "Servientrega", "SE123456", Dinero.deCop(15_000), AHORA));
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000))),
+            AHORA));
     return pedido;
   }
 

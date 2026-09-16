@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,13 +51,21 @@ class ConciliarEnviosTest {
     return new ConciliarEnvios(envios, consultor, aplicar, () -> AHORA, ANTIGUEDAD, MAXIMO);
   }
 
+  /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */
+  private List<EventoSeguimiento> eventosDe(String numeroGuia) {
+    return envios
+        .buscarPorGuia(numeroGuia)
+        .orElseThrow()
+        .guiaDe(numeroGuia)
+        .orElseThrow()
+        .eventos();
+  }
+
   private Envio sembrarEnvioCallado(String guia) {
     Envio envio =
         Envio.crear(
             UUID.randomUUID(),
-            "99 minutes",
-            guia,
-            Dinero.deCop(10_540),
+            List.of(GuiaEnvio.crear("99 minutes", guia, Dinero.deCop(10_540))),
             AHORA.minusSeconds(86_400));
     envios.guardar(envio);
     return envio;
@@ -98,7 +107,7 @@ class ConciliarEnviosTest {
 
     assertEquals(new ResultadoConciliacionEnvios(1, 1, 0), resultado);
     assertEquals(List.of("NN-1"), guiasConsultadas);
-    assertEquals(1, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(1, eventosDe("NN-1").size());
   }
 
   /**
@@ -137,6 +146,7 @@ class ConciliarEnviosTest {
   void unEventoQueYaEstabaNoCuentaComoNovedad() {
     Envio envio = sembrarEnvioCallado("NN-1");
     envio.registrarEvento(
+        "NN-1",
         new EventoSeguimiento(
             GeneradorIdentificador.nuevo(),
             EstadoEnvio.EN_TRANSITO,
@@ -150,7 +160,7 @@ class ConciliarEnviosTest {
         conConsultor(queDevuelve(evento("NN-1", "ev-viejo"))).ejecutar();
 
     assertEquals(new ResultadoConciliacionEnvios(1, 0, 1), resultado);
-    assertEquals(1, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(1, eventosDe("NN-1").size());
   }
 
   @Test

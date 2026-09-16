@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
@@ -99,8 +100,22 @@ class AplicarEventoDeEnvioTest {
     pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin", "alistado", DESPACHO);
     pedido.transicionar(EstadoPedido.DESPACHADO, "admin", "despachado", DESPACHO);
     pedidos.guardar(pedido);
-    envios.guardar(Envio.crear(pedido.id(), "99 minutes", "NN-1", Dinero.deCop(10_540), DESPACHO));
+    envios.guardar(
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("99 minutes", "NN-1", Dinero.deCop(10_540))),
+            DESPACHO));
     return pedido;
+  }
+
+  /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */
+  private List<EventoSeguimiento> eventosDe(String numeroGuia) {
+    return envios
+        .buscarPorGuia(numeroGuia)
+        .orElseThrow()
+        .guiaDe(numeroGuia)
+        .orElseThrow()
+        .eventos();
   }
 
   private AplicarEventoDeEnvioComando evento(EstadoEnvio estado, String idExterno) {
@@ -127,7 +142,7 @@ class AplicarEventoDeEnvioTest {
 
     assertEquals(ResultadoEventoDeEnvio.REGISTRADO, resultado);
     assertEquals(EstadoPedido.DESPACHADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
-    assertEquals(1, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(1, eventosDe("NN-1").size());
   }
 
   @Test
@@ -179,7 +194,7 @@ class AplicarEventoDeEnvioTest {
     ResultadoEventoDeEnvio segundo = caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
 
     assertEquals(ResultadoEventoDeEnvio.REPETIDO, segundo);
-    assertEquals(1, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(1, eventosDe("NN-1").size());
     assertEquals(EstadoPedido.ENTREGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
@@ -198,7 +213,7 @@ class AplicarEventoDeEnvioTest {
 
     assertEquals(ResultadoEventoDeEnvio.REGISTRADO, resultado);
     assertEquals(EstadoPedido.ENTREGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
-    assertEquals(1, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(1, eventosDe("NN-1").size());
   }
 
   /** Los cuatro que piden ojo humano se registran igual y no mueven nada. */
@@ -218,7 +233,7 @@ class AplicarEventoDeEnvioTest {
     }
 
     assertEquals(EstadoPedido.DESPACHADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
-    assertEquals(4, envios.buscarPorGuia("NN-1").orElseThrow().eventos().size());
+    assertEquals(4, eventosDe("NN-1").size());
   }
 
   @Test
@@ -230,7 +245,7 @@ class AplicarEventoDeEnvioTest {
         new AplicarEventoDeEnvioComando(
             "NN-1", EstadoEnvio.EN_TRANSITO, "en ruta", ocurrio, "ev-1", "skydropx"));
 
-    EventoSeguimiento guardado = envios.buscarPorGuia("NN-1").orElseThrow().eventos().get(0);
+    EventoSeguimiento guardado = eventosDe("NN-1").get(0);
     assertEquals(ocurrio, guardado.ocurrioEn());
     assertEquals(AHORA, guardado.recibidoEn());
   }

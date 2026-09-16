@@ -10,7 +10,10 @@ import {
   PedidoAdmin,
   PedidosPaginadosAdmin,
 } from '../domain/pedido-admin.model';
-import { RepositorioPedidosAdmin } from '../domain/repositorio-pedidos-admin.puerto';
+import {
+  GuiaDespachada,
+  RepositorioPedidosAdmin,
+} from '../domain/repositorio-pedidos-admin.puerto';
 import { aPedidoAdmin, aPedidosPaginadosAdmin } from './mapeador-pedido-admin';
 
 /** Todo bajo `/api/v1/admin/**` exige `Authorization: Bearer` — de ahí el cliente autenticado en
@@ -41,10 +44,10 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo verificar la contraentrega'));
   }
 
-  async despachar(pedidoId: string, transportadora: string, guia: string, costoEnvio: number): Promise<PedidoAdmin> {
+  async despachar(pedidoId: string, guias: readonly GuiaDespachada[]): Promise<PedidoAdmin> {
     const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/despacho', {
       params: { path: { id: pedidoId } },
-      body: { transportadora, guia, costoEnvio },
+      body: { guias: [...guias] },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo despachar el pedido'));
   }

@@ -23,6 +23,7 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.pedido.Direccion;
@@ -278,17 +279,17 @@ class AdminPedidosControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}
+                    {"guias":[{"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}]}
                     """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.estado").value("DESPACHADO"))
-        .andExpect(jsonPath("$.envio.transportadora").value("Servientrega"))
-        .andExpect(jsonPath("$.envio.guia").value("SE123456"))
+        .andExpect(jsonPath("$.envio.guias[0].transportadora").value("Servientrega"))
+        .andExpect(jsonPath("$.envio.guias[0].guia").value("SE123456"))
         .andExpect(jsonPath("$.envio.costoEnvio.valor").value(15000))
         .andExpect(jsonPath("$.historial[-1].estado").value("DESPACHADO"));
 
     assertEquals(1, envios.guardados().size());
-    assertEquals("Servientrega", envios.guardados().get(0).transportadora());
+    assertEquals("Servientrega", envios.guardados().get(0).guias().getFirst().transportadora());
   }
 
   @Test
@@ -302,7 +303,7 @@ class AdminPedidosControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}
+                    {"guias":[{"transportadora":"Servientrega","guia":"SE123456","costoEnvio":15000}]}
                     """))
         .andExpect(status().isUnprocessableContent());
   }
@@ -399,7 +400,10 @@ class AdminPedidosControladorTest {
         EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
     pedidos.guardar(pedido);
     envios.guardar(
-        Envio.crear(pedido.id(), "Servientrega", "SE123456", Dinero.deCop(15_000), Instant.now()));
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000))),
+            Instant.now()));
     autenticarComoAdmin();
 
     mockMvc

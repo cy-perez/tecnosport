@@ -3439,6 +3439,24 @@ Orden de construcción, un caso de uso a la vez:
    cobertura urbana. Se ensancha solo cuando las otras transportadoras
    respondan.
 
+   > **Medido de nuevo el 15 de septiembre de 2026** (`docs/13` §6.5), después de
+   > corregir el valor declarado: **la contraentrega ya no es solo Medellín**. Con
+   > recaudo sobreviven Envía Paquete (8.950) y Coordinadora (11.384) en Medellín,
+   > 99 minutes también (19.465), y **en Bogotá dos: Coordinadora 20.456 y Envía
+   > 16.050**. El servicio está activo en la cuenta —`on_delivery_amount` vuelve
+   > con monto— y lo que se recauda es el valor declarado, exactamente. Servientrega
+   > cotiza sin recaudo y se cae con él, que es la señal de cobertura funcionando.
+   >
+   > **Lo que esto le pide al código**: nada, porque `MetodosDePagoDisponibles` ya
+   > pregunta por una tarifa con recaudo y no por una tabla. La frase de arriba
+   > —"solo se ofrece en Medellín"— era verdad con el sandbox de entonces y ya no lo
+   > es; el mecanismo que la produce no cambió.
+   >
+   > **Lo que sí queda por decidir** (`ADR-0023`): se decidió recaudar
+   > `Pedido.total()`, flete incluido, y `recipient_pays_shipping` **no** suma el
+   > flete al monto. La única forma de cobrar el total en la puerta es declararlo
+   > como valor declarado, lo que también sube el seguro.
+
    **Verificado contra Skydropx de verdad**, no solo con dobles: con
    `CONTRAENTREGA_HABILITADA=true`, `/metodos-de-pago-disponibles` devuelve
    `CONTRAENTREGA` para Medellín y no la devuelve para Bogotá, sin ninguna
@@ -3865,6 +3883,112 @@ generado no cubre.
 los términos dejó de nombrar a Addi y dice ahora que los medios disponibles son los
 que se muestran al pagar. Misma limitación del esquema de versiones que la
 publicación anterior, mismo criterio. Todo esto quedó en `ADR-0029`.
+
+### Llegó el saldo, se emitió la primera guía, y apareció el segundo bloqueo (2026-09-15)
+
+Skydropx acreditó los créditos que se le pidieron el 14 —49.000 depositados a mano
+por el soporte, saldo en 50.000— y el negocio recibió de ellos una infografía con
+el procedimiento para enviar a oficina de la transportadora. Lo medido ese día está
+entero en `docs/13-skydropx-capacidades.md` §6.2; aquí queda lo que le cambia al
+plan.
+
+**Se emitió la primera guía del proyecto**, y existe de verdad: `3838859118` de
+99 minutes, con etiqueta PDF, pagada. Costó 19.465 y el saldo quedó en 30.535.
+
+**Y el camino de `ADR-0021` funciona**, aunque costó medio día creer lo
+contrario. `POST /shipments` con `quotation_id` más `rate_id` respondía siempre
+`422 declared_amount: "Valor declarado es obligatorio"`, con quince variantes del
+cuerpo probadas. La conclusión que se sacó —"el endpoint está bloqueado"— era
+falsa, y el error de método vale más que el hallazgo: **durante días la única
+tarifa viva del sandbox fue 99 minutes, así que se variaron todos los campos del
+cuerpo y nunca la transportadora**, que era la variable que importaba. Con una
+sola transportadora en la muestra, "el endpoint está roto" y "esta tarifa está
+rota" son indistinguibles.
+
+Al aparecer viva una tarifa de **Servientrega**, el mismo cuerpo respondió `202`.
+Confirmado cambiando solo la tarifa, y gratis, porque un 422 no cuesta saldo:
+Servientrega `202`, 99 minutes `422`. La segunda guía —`873837506712`, 12.050—
+salió por el camino bueno.
+
+`POST /rate/shipments` queda descartado igual: recotiza por su cuenta y agregó un
+recargo de recaudo de 8.925 que nadie pidió —10.540 contra 19.465 por el mismo
+envío, un 85 % más—.
+
+**Tercera parte del mismo día, y cambia el diagnóstico otra vez.** Leyendo la
+documentación entera se encontró que **`declared_amount` va dentro de cada
+`parcel`** y que el mapeador lo mandaba fuera y con otro nombre; con el campo en
+su sitio, las tres transportadoras que llevaban un mes mudas cotizan. El relato y
+la medición están en `docs/13-skydropx-capacidades.md` §6.4. Dos cosas que le
+cambian a este paso:
+
+- **La lección de método de arriba sigue siendo buena, pero se queda corta.** No
+  bastaba con variar la transportadora: el campo que importaba no estaba en
+  ninguna de las quince variantes, porque las quince eran variantes del nombre
+  y del sitio equivocados. Lo que destapó el error fue **leer la documentación
+  completa**, no probar más.
+- **El `422` de 99 minutes era el mismo bug. Confirmado el mismo día** (`docs/13`
+  §6.5): con la cotización corregida, la tarifa que quince veces respondió "Valor
+  declarado es obligatorio" emitió `202`. Guía `1543555745`, 9.897; el saldo quedó
+  en **8.588**. El envío heredaba del bulto un valor declarado que nunca se había
+  mandado. No hay nada que preguntarle a Skydropx.
+- **Y emitiendo se vio algo que el despacho tiene que respetar**: la respuesta
+  `202` trae `master_tracking_number` y `label_url` en `null`, con
+  `workflow_status: in_progress`. La guía y la etiqueta aparecen al releer el
+  envío, ya en `success`. **Guardar lo que devuelve la creación sería guardar una
+  guía vacía**: hay que releer el envío o esperar el webhook.
+- **Y peor: el `202` puede terminar en `error`.** Tres emisiones de esa noche
+  murieron minutos después, con `workflow_status: error`, `payment_status:
+  refunded` y un `500` de la transportadora en `error_detail` (`docs/13` §6.6).
+  **Un pedido no se marca despachado con la respuesta de creación**: hace falta
+  esperar el estado terminal y una rama para `error` que devuelva el pedido a la
+  cola. Es el `408` de `§6.2` al revés — allí la guía existía sin que lo
+  supiéramos; aquí creíamos tenerla y no existe.
+- **El tramo de recolección quedó ejercido a medias** (`docs/13` §6.6): el
+  endpoint valida el cuerpo —peso entero, envío en `success`, credenciales de la
+  transportadora— pero no se pudo programar ninguna porque esa noche ni
+  Coordinadora ni Servientrega lograron emitir. **Se retoma en horario hábil**, y
+  cuesta una sola guía.
+
+**Y con eso los tres adaptadores pendientes dejaron de estarlo.** La guía se creó
+con `auto_advance: true` y el sandbox la movió sola, un evento por minuto:
+`picked_up → in_transit → last_mile → delivered`. La forma de la respuesta de
+rastreo quedó medida, la del cuerpo del webhook está documentada, y los **doce
+estados de `ADR-0022` se confirmaron** en el enum del OpenAPI, uno a uno con
+`EstadoEnvio`. Lo que falta es escribirlos.
+
+**Tres cosas que solo se supieron emitiendo**, y una toca configuración:
+
+- **Un `408` de Skydropx no significa que no pasó nada.** El primer intento
+  respondió "Tiempo de espera excedido" y había creado la guía y cobrado los
+  19.465; se canceló y se reembolsó sola 72 segundos después. Reintentar a ciegas
+  sobre un timeout emite dos guías. Va con `sync_label_creation: false`.
+- **`ORIGEN_TELEFONO` está mal para emitir.** Vale `+573138816711`, que sirve para
+  cotizar y devuelve `400 phone no es válido` al crear el envío. Hay que mandarlo
+  sin indicativo. **No se tocó todavía** porque el adaptador de emisión no existe;
+  cuando se escriba, la conversión es suya, como la de gramos a kilos.
+- **`package_type` se cerró sin gastar nada**: es un código del catálogo
+  `GET /api/v1/shipments/packagings`, y el nuestro es `4G`, "Caja de cartón". El
+  paso 7 lo daba por ilegible sin emitir una guía.
+
+**Un hallazgo nuevo que hay que decidir antes de escribir el despacho: varios
+bultos son varias guías.** Cada tarifa trae `shipment_creation_type`, y medido con
+el mismo envío da `single` con un bulto y **`multishipment`** con dos o tres —una
+guía por bulto, con su número y su cobro—. `carrier_services` confirma por qué:
+`multi_packages_enabled: false` en los siete servicios de la cuenta. La decisión
+del 11 de septiembre —un `parcel` por variante— choca entonces con `Envio`, que
+guarda un `tracking_number` por pedido. Las salidas visibles son tres: un `Envio`
+por bulto, un `Envio` con varias guías, o consolidar en un bulto y perder las
+medidas reales.
+
+**La entrega en oficina, que era la novedad de la infografía, no se construye
+todavía.** La API está confirmada y es uniforme —`office_delivery` por tarifa,
+`GET /office_points`, `office_delivery_point_id` en el envío—, pero las seis
+tarifas del sandbox la declaran en `false` y las cuatro transportadoras que tienen
+oficinas son exactamente las cuatro que no cotizan. Sería una pantalla a la que
+nadie puede llegar. Queda documentada, con una advertencia que sí es de código
+para el día que se haga: la lista de oficinas de Inter Rapidísimo incluye oficinas
+de ciudades vecinas, así que la elegida hay que cotejarla contra el DANE del
+pedido antes de aceptarla.
 
 ## Cómo conversar con Claude Code en este proyecto
 

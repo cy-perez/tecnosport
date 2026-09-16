@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventoSeguimientoJpaRepository
     extends JpaRepository<EventoSeguimientoJpaEntity, UUID> {
 
-  List<EventoSeguimientoJpaEntity> findByEnvioIdOrderByOcurrioEnAsc(UUID envioId);
+  List<EventoSeguimientoJpaEntity> findByGuiaIdOrderByOcurrioEnAsc(UUID guiaId);
 }
