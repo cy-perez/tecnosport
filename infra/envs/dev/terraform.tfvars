@@ -19,9 +19,14 @@ db_usuario = "tecnosport"
 # del driver de JDBC: no va en DB_PARAMS. Queda `?sslmode=require`, que es el valor por omisión de
 # la variable, y es lo que Neon exige de verdad.
 
-# Los siete secretos ya tienen al menos una versión (verificado el 9 de septiembre de 2026), así
-# que los servicios pueden montarlos. Con esto en false, un secreto vacío haría que la revisión no
-# arranque y Cloud Run lo reportaría como un error interno que no menciona los secretos.
+# Los seis secretos que los servicios montan hoy ya tienen al menos una versión (verificado el 9 de
+# septiembre de 2026), así que pueden montarlos. Con esto en false, un secreto vacío haría que la
+# revisión no arranque y Cloud Run lo reportaría como un error interno que no menciona los secretos.
+#
+# Los tres de Skydropx existen como recipiente y **todavía no se montan**: el de `skydropx-secreto-
+# webhook` no puede tener valor hasta que el panel de Skydropx lo genere contra la URL de este
+# servicio. Entran al mapa del módulo cuando los tres tengan versión, y no antes — es exactamente
+# el error que este comentario describe.
 secretos_cargados = true
 
 # Llave pública de Wompi sandbox. No es secreta: el navegador la recibe en la respuesta del intento

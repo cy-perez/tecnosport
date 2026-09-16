@@ -413,6 +413,18 @@ fallar en la primera compra.
 Los secretos viven en Secret Manager y se montan como variables en Cloud Run.
 Ninguno en el repositorio, ni de sandbox, ni en un comentario.
 
+**El orden importa, y cuesta una revisión rota si se invierte**: el recipiente se
+crea con Terraform, el valor se carga aparte con `gcloud secrets versions add`, y
+solo entonces el secreto entra al mapa que el servicio monta. Cloud Run que monta
+el `latest` de un secreto sin ninguna versión no arranca, y lo reporta como un
+error interno que no menciona los secretos por ningún lado.
+
+`skydropx-secreto-webhook` es el caso donde eso no es una precaución sino una
+dependencia real: su valor lo genera el panel de Skydropx (Conexiones > Webhooks)
+contra una URL HTTPS que tiene que existir antes, y esa URL es el propio servicio
+de la API — `POST /api/v1/envios/webhook`. Primero el recipiente, después el panel,
+al final el montaje.
+
 ## Respaldos
 
 Copias automáticas diarias de Cloud SQL con 30 días de retención y recuperación a

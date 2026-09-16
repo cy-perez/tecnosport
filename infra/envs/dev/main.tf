@@ -164,6 +164,16 @@ locals {
     "admin-clave",
     "wompi-secreto-eventos",
     "wompi-secreto-integridad",
+    # Los tres de Skydropx. Sin ellos la API desplegada no cotiza —falla cerrado, que para el
+    # checkout es "solo recogida en el punto"— y el webhook rechaza todo evento, porque el valor
+    # por omisión del secreto es un marcador de desarrollo (docs/13-skydropx-capacidades.md §6.1).
+    #
+    # **El del webhook se crea vacío a propósito**: su valor lo genera el panel de Skydropx
+    # (Conexiones > Webhooks) contra una URL que tiene que existir antes, y la URL es este mismo
+    # servicio. El recipiente primero, el valor después, el montaje al final.
+    "skydropx-client-id",
+    "skydropx-client-secret",
+    "skydropx-secreto-webhook",
   ]
 }
 
@@ -187,8 +197,8 @@ resource "google_secret_manager_secret_iam_member" "api_lee_sus_secretos" {
 
 # **Solo `db-clave`, y solo porque el despliegue migra.** Si integración continua corre Flyway,
 # integración continua conoce la contraseña de la base: es inherente, no un descuido. Lo que sí es
-# una decisión es que sea ese secreto y no los siete — la cuenta de despliegue no tiene por qué
-# poder leer las llaves de Wompi ni el secreto del JWT.
+# una decisión es que sea ese secreto y no todos — la cuenta de despliegue no tiene por qué poder
+# leer las llaves de Wompi, el secreto del JWT ni las credenciales de Skydropx.
 #
 # La alternativa que no reparte la contraseña es un trabajo de Cloud Run que migre con la cuenta
 # de la API, que ya la lee. Cuesta un modo "solo migrar" que la aplicación no tiene, y es lo que
