@@ -153,11 +153,11 @@ class RecibirEventoDeEnvioTest {
   }
 
   /**
-   * Un aviso de otra cosa de la plataforma —están suscritos todos los tipos— no es un cuerpo roto:
-   * se entendió, y no habla de un paquete. Se separa de {@link
-   * ResultadoEventoDeEnvio#NO_SE_PUDO_LEER} porque si no, cada evento normal se registra como una
-   * falla y el día que se estrena el secreto del webhook no hay forma de leer en el registro que la
-   * firma cuadró.
+   * Un aviso de otra cosa de la plataforma no es un cuerpo roto: se entendió, y no habla de un
+   * paquete. Se separa de {@link ResultadoEventoDeEnvio#NO_SE_PUDO_LEER} para que el registro no
+   * avise de una falla cuando no la hubo. La suscripción de esta cuenta no manda ninguno hoy —once
+   * eventos, los once de paquetes—, y el filtro sigue siendo necesario igual: sin él, el
+   * identificador que traiga dentro un evento ajeno se leería como una guía.
    */
   @Test
   void unEventoDeOtroTipoNoEsUnCuerpoRotoYNoPreguntaNada() {

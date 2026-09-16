@@ -135,10 +135,11 @@ tecnosport:
       # la plataforma deja elegir el nombre de la cabecera en el panel, con Authorization por
       # omisión (docs/13-skydropx-capacidades.md, sección 6.1).
       cabecera-firma: ${SKYDROPX_CABECERA_FIRMA:authorization}
-      # El secreto con el que Skydropx firma el evento; se genera en el panel, en Conexiones >
-      # Webhooks, y todavía no lo tenemos. Marcador de desarrollo como las credenciales de arriba
-      # (regla dura #5): con este valor, toda firma se rechaza, que es lo correcto mientras no
-      # haya con qué verificar. Producción lo sobrescribe desde Secret Manager.
+      # El secreto con el que Skydropx firma el evento. Lo ponemos nosotros y se teclea igual en el
+      # panel (Conexiones > Webhooks): es una clave compartida, y se rota en los dos sitios o en
+      # ninguno. Dev lo tiene desde el 16 de septiembre de 2026 y el valor de aquí sigue siendo un
+      # marcador de desarrollo (regla dura #5): con él toda firma se rechaza, que es lo correcto
+      # mientras no haya con qué verificar. Los despliegues lo sobrescriben desde Secret Manager.
       secreto: ${SKYDROPX_SECRETO_WEBHOOK:secreto_pendiente_de_configurar}
     seguimiento:
       # Cada cuánto le pregunta la conciliación a la transportadora por los envíos callados, y

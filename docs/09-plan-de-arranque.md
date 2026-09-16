@@ -4051,6 +4051,41 @@ disparador.
 Lo que queda del paso 7 es **la emisión de la guía**, que es lo que llena el código de
 transportadora y convierte el despacho a mano en un despacho del sistema.
 
+### El webhook, con secreto y comprobado (2026-09-16)
+
+Lo que faltaba para que el webhook aplicara algo eran dos cosas de operación, no de
+código: una variable de entorno y una URL pública. Las dos quedaron, y la comprobación
+contra un evento real —que `docs/13` exigía antes de producción y daba por imposible sin
+emitir una guía— **salió gratis**: el panel manda eventos de prueba por tipo. Disparando
+`In_return` contra dev, el registro escribió "evento para una guía que no es nuestra", que
+es una línea de *después* de la puerta de la firma. Detalle completo en `docs/13` §6.9.
+
+**El secreto no lo genera Skydropx.** El panel pide una clave y la escribe uno: es
+compartida, vive igual en Secret Manager y en el panel, y se rota en los dos o en ninguno.
+Eso invirtió el orden que este plan tenía escrito.
+
+**Y tres intentos se perdieron por un byte**, que es la parte que vale para todo el repo:
+`openssl` en Windows termina en CRLF, pero la causa de fondo era otra — **`$TEMP` en Git
+Bash vale `/tmp`, y `gcloud` es un programa de Windows que resuelve esa ruta contra
+`C:	mp`**. `wc` medía un archivo y `gcloud` subía otro. Vale igual para `terraform` y
+`gradlew.bat`: a una herramienta de Windows se le pasan rutas de Windows.
+
+**Lo que la suscripción reveló, y contradice lo que se había escrito**: el panel ofrece
+once eventos y **los once son de paquetes**. No hay `quotation` ni `orders`, así que el
+desvío "evento de otro tipo" del lector es una defensa y no un camino que se recorra; el
+filtro por `data.type` sigue haciendo falta igual. Faltan además `destroyed` y `retained`
+—dos de los cuatro estados que piden ojo humano—, que sólo aparecerán cuando la
+conciliación pregunte, hasta seis horas después. Y aparece un `Error` que no es uno de los
+doce estados: si es el `workflow_status: error` de `docs/13` §6.6, **el paso de la emisión
+tiene ahí el aviso que necesitaba** para devolver a la cola una guía que murió.
+
+**Dos defectos vivos que salieron cotizando desde el ambiente desplegado** y no son de
+este paso: la primera cotización de un contenido nuevo se pasa de la ventana de sondeo y
+devuelve `409 ENVIO_SIN_COBERTURA` en un destino que sí tiene cobertura —el reintento la
+trae en 1,6 s por la deduplicación—, y una cotización que falla **no deja una sola línea
+en el registro**, así que "sin tarifas", "credenciales malas" y "el proveedor no responde"
+se ven idénticos desde afuera.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

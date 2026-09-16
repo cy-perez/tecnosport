@@ -14,9 +14,11 @@ import tools.jackson.databind.json.JsonMapper;
  * releída el 16 de septiembre de 2026, que trae ejemplos completos. Es JSON:API:
  *
  * <ul>
- *   <li><strong>{@code data.type} decide si el evento es nuestro.</strong> Por la misma suscripción
- *       llegan {@code orders}, {@code quotation}, {@code rate}, {@code extra_charges} y {@code
- *       pickups}; solo {@code packages} habla de un paquete en movimiento.
+ *   <li><strong>{@code data.type} decide si el evento es nuestro.</strong> La documentación
+ *       describe además {@code orders}, {@code quotation}, {@code rate}, {@code extra_charges} y
+ *       {@code pickups}; solo {@code packages} habla de un paquete en movimiento. El panel de esta
+ *       cuenta sólo deja suscribir los once de paquetes (docs/13 §6.9), así que hoy el filtro es
+ *       una defensa y no un desvío que se use.
  *   <li><strong>{@code data.id} es el identificador del paquete, no del envío ni del
  *       evento.</strong> Con varias guías por envío eso significa un evento por guía, y por eso el
  *       amarre es por el número de guía y no por ese id.
@@ -34,9 +36,9 @@ import tools.jackson.databind.json.JsonMapper;
  * es {@link LecturaDeEvento.Ilegible}. El endpoint responde 200 igual y lo deja escrito.
  *
  * <p><strong>Un evento de otro tipo no es ilegible</strong>, y se responde aparte: se entendió
- * perfectamente y no habla de un paquete. Con todos los tipos suscritos, esos son la mayoría de los
- * avisos que llegan — el porqué de la distinción está en {@link LecturaDeEvento}. Un {@code
- * packages} sin número de guía sí es ilegible: ese sí venía dirigido a nosotros y llegó incompleto.
+ * perfectamente y no habla de un paquete — el porqué de la distinción está en {@link
+ * LecturaDeEvento}. Un {@code packages} sin número de guía sí es ilegible: ese sí venía dirigido a
+ * nosotros y llegó incompleto.
  */
 @Component
 final class LectorEventoDeEnvioSkydropx implements LectorEventoDeEnvio {

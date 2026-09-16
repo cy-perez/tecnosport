@@ -13,11 +13,12 @@ import org.junit.jupiter.api.Test;
  * los dos campos que se leen dejaría de probar que el lector encuentra esos dos campos dentro de un
  * cuerpo real.
  *
- * <p>Falta lo único que no se puede tener todavía: un evento <em>de verdad</em>, de nuestra cuenta.
- * Llegará el día que se emita una guía con el webhook configurado en el panel, y entonces hay que
- * comprobar dos cosas contra él — que la firma cuadra y que el {@code tracking_number} está donde
- * dice la documentación—. Lo que la forma del cuerpo decide aquí es poco a propósito: el rastro lo
- * escribe el rastreo, no el aviso (adr/0032).
+ * <p><strong>Y el evento de verdad llegó el 16 de septiembre de 2026</strong>, sin emitir ninguna
+ * guía: el panel manda eventos de prueba por tipo, gratis, con un cuerpo real. Se comprobaron las
+ * dos cosas que faltaban —que la firma cuadra con el secreto del panel y que el {@code
+ * tracking_number} está donde dice la documentación— contra el ambiente de dev, y el cuerpo que
+ * mandó coincide con estos ejemplos. Lo que la forma del cuerpo decide aquí es poco a propósito: el
+ * rastro lo escribe el rastreo, no el aviso (adr/0032).
  */
 class LectorEventoDeEnvioSkydropxTest {
 

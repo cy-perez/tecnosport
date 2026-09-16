@@ -5,15 +5,16 @@ package co.tecnosport.api.application.envio;
  *
  * <p><strong>La tercera existe por lo que se ve en el registro.</strong> Antes esto era un {@code
  * Optional<String>} vacío, y ahí caían juntos un cuerpo corrupto y un evento perfectamente legítimo
- * que no habla de un paquete. No son lo mismo: por la misma suscripción llegan {@code orders},
- * {@code quotation}, {@code rate}, {@code extra_charges} y {@code pickups} —se suscribieron todos a
- * propósito— y cada uno escribía un aviso de "no se supo leer" que se lee como una falla. Con el
- * canal entero suscrito eso no es una rareza: es el caso común.
+ * que no habla de un paquete. No son lo mismo: la documentación de la plataforma describe eventos
+ * de {@code orders}, {@code quotation}, {@code rate}, {@code extra_charges} y {@code pickups}, y
+ * cualquiera de ellos escribía un aviso de "no se supo leer" que se lee como una falla.
  *
- * <p>Y hay un momento en que la diferencia decide algo: al configurar {@code
- * SKYDROPX_SECRETO_WEBHOOK} por primera vez, la única prueba barata de que el secreto quedó bien es
- * un evento de {@code quotation} —cotizar no cuesta saldo, emitir una guía sí—. Si ese evento se
- * registra igual que un cuerpo roto, la señal que hace falta leer no se distingue del ruido.
+ * <p><strong>Y cuánto de eso llega de verdad se midió el 16 de septiembre de 2026</strong>: el
+ * panel de la cuenta sólo deja suscribir once eventos y los once son de paquetes (docs/13 §6.9), de
+ * modo que hoy esto no dispara nunca. Se conserva igual, y no por si acaso: el filtro por {@code
+ * data.type} tiene que existir —sin él, un evento de otro tipo con un identificador dentro se
+ * leería como si fuera una guía— y lo único que esta tercera respuesta agrega es que el día que la
+ * plataforma mande uno, el registro diga qué era en vez de avisar de una falla que no hubo.
  *
  * <p>{@code Ilegible} es lo que queda para lo que de verdad no se entiende: lo que no es JSON, lo
  * que no trae {@code data.type}, y el paquete sin número de guía — que sí es nuestro y sí está mal.

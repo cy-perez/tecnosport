@@ -14,10 +14,10 @@ public enum ResultadoEventoDeEnvio {
 
   /**
    * La firma cuadró y el aviso es de otra cosa de la plataforma: una orden, una cotización, una
-   * tarifa, un cargo extra, una recolección. No es un fallo ni una rareza — están suscritos todos
-   * los tipos a propósito—, así que se separa de {@link #NO_SE_PUDO_LEER} para que el registro no
-   * avise de una falla en cada evento normal, y para que al estrenar el secreto del webhook la
-   * señal de "la firma cuadró" se pueda leer. El porqué entero está en {@link LecturaDeEvento}.
+   * tarifa, un cargo extra, una recolección. No es un fallo, así que se separa de {@link
+   * #NO_SE_PUDO_LEER} para que el registro no avise de una falla cuando no la hubo. Con la
+   * suscripción de hoy —once eventos, todos de paquetes— no se ha visto ninguno. El porqué entero
+   * está en {@link LecturaDeEvento}.
    */
   EVENTO_DE_OTRO_TIPO,
 

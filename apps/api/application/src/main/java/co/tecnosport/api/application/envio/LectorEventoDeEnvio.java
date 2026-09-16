@@ -11,8 +11,9 @@ package co.tecnosport.api.application.envio;
  * mismo movimiento dos veces, una por cada camino, con llaves distintas.
  *
  * <p>Así que el webhook avisa y {@link ConciliarGuia} pregunta. Lo único que hay que leer aquí es
- * el número de guía — y apartar los eventos que no son de un paquete: por la misma suscripción
- * llegan los de órdenes, cotizaciones, tarifas, cargos extra y recolecciones.
+ * el número de guía — y apartar los eventos que no son de un paquete: la documentación de la
+ * plataforma describe también los de órdenes, cotizaciones, tarifas, cargos extra y recolecciones,
+ * aunque el panel de esta cuenta sólo ofrezca los once de paquetes (docs/13 §6.9).
  *
  * <p><strong>Apartar no es descartar</strong>, y por eso la respuesta es {@link LecturaDeEvento} y
  * no un {@link java.util.Optional}: un evento de otro tipo es tan normal como uno de paquete, y

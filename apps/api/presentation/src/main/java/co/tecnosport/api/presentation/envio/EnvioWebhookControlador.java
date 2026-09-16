@@ -94,8 +94,7 @@ public class EnvioWebhookControlador {
               Aviso.advertencia("Evento de Skydropx con firma válida y cuerpo que no se supo leer");
           case EVENTO_DE_OTRO_TIPO ->
               Aviso.nota(
-                  "Evento de Skydropx que no habla de un paquete (orden, cotización, tarifa, cargo"
-                      + " extra o recolección); ignorado. La firma sí cuadró");
+                  "Evento de Skydropx que no habla de un paquete; ignorado. La firma sí cuadró");
           case GUIA_DESCONOCIDA ->
               Aviso.advertencia("Evento de Skydropx para una guía que no es nuestra");
           case SIN_CODIGO_DE_TRANSPORTADORA ->

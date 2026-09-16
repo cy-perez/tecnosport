@@ -1741,7 +1741,103 @@ Con `adr/0032` deja de importar por otro motivo: el estado no se lee del aviso.
 
 Con eso, los tres puertos que `§6` dejó fallando cerrado **dejaron de estarlo**. El
 lector del webhook se escribió el mismo día con los ejemplos de la documentación
-(`adr/0032`), y lo único que sigue cerrado es la firma, esperando el secreto del panel.
+(`adr/0032`), y lo único que seguía cerrado era la firma, esperando el secreto del
+panel — que llegó esa misma tarde: `§6.9`.
+
+### 6.9 El webhook, conectado y comprobado (2026-09-16, octava parte)
+
+El secreto del webhook dejó de ser un pendiente. Lo verificado, y lo que costó.
+
+#### El secreto no lo genera Skydropx: es una clave compartida que ponemos nosotros
+
+El panel pide "Clave secreta" y la escribe quien configura la suscripción. Eso cambia
+el orden que se había planeado —no hay nada que "copiar del panel"— y cambia la
+operación: **el mismo valor vive en Secret Manager y en el panel, y se rota en los dos
+o en ninguno.** Se generó con `secrets.token_hex(32)`, 64 caracteres hexadecimales.
+
+Hexadecimal a propósito: sin espacios ni caracteres que un panel pueda recortar o
+escapar al copiar.
+
+#### Tres intentos perdidos por un byte, y la causa no era la que parecía
+
+El valor subió mal tres veces seguidas. La primera fue un `
+`: **`openssl` en Windows
+termina la línea con CRLF**, y `tr -d '
+'` se lleva el salto y deja el retorno. Pero
+el arreglo no funcionó, y la razón era otra y más grande:
+
+> **`$TEMP` en Git Bash vale `/tmp`, y `gcloud` es un programa de Windows que no lo
+> entiende.** `wc` y `python` de MSYS miden un archivo; `gcloud` resuelve esa misma
+> ruta contra la unidad actual (`C:\tmp\...`) y sube **otro archivo**. Por eso el
+> archivo local medía 64 bytes y el secreto guardado 65, que es lo que no cuadraba.
+
+Lo que lo cerró fue usar una ruta de Windows explícita —`C:/Users/.../Temp/sk.bin`, con
+barras normales, que bash y gcloud resuelven igual— y escribir en binario (`'wb'`), sin
+pipes ni redirección de por medio. Vale para cualquier herramienta de Windows lanzada
+desde Git Bash: `gcloud`, `terraform`, `gradlew.bat`.
+
+Y una trampa de medición encima: **`gcloud secrets versions access` no escribe los bytes
+crudos en stdout** —lo dice su propia ayuda— y agrega un salto, así que `access | wc -c`
+siempre da uno de más y un secreto correcto se ve idéntico a uno con basura al final. La
+medición buena es `--out-file`.
+
+#### La suscripción de esta cuenta: once eventos, todos de paquetes
+
+Los que ofrece el panel: `Created`, `Exception`, `Picked_up`, `In_transit`, `Last_mile`,
+`Delivery_attempt`, `Delivered`, `Delivered_to_branch`, `In_return`, `Canceled` y `Error`.
+Se suscribieron los once. Tres cosas que esto le dice al código:
+
+- ⚠️ **No hay eventos de `quotation`, `orders`, `rate`, `extra_charges` ni `pickups`.** La
+  documentación los describe y el panel no los ofrece, así que el desvío "evento de otro
+  tipo" del lector es hoy una defensa y no un camino que se recorra. El filtro por
+  `data.type` sigue siendo necesario: sin él, el identificador que trae dentro un evento
+  ajeno se leería como una guía.
+- ⚠️ **Faltan dos de los doce estados: `destroyed` y `retained`.** No hay evento que los
+  empuje, así que sólo aparecen cuando la conciliación programada pregunte —hasta seis
+  horas después—. Y son dos de los cuatro que `adr/0022` marca como "piden ojo humano":
+  el paquete quieto y nadie enterado. La red por debajo existe; el aviso no.
+- ⚠️ **`Error` no es uno de los doce estados de seguimiento.** Es, casi seguro, el
+  `workflow_status: error` de §6.6 — la emisión que muere minutos después con la guía
+  reembolsada. Si lo es, el paso de la emisión tiene ahí el aviso que necesitaba para
+  devolver el pedido a la cola sin esperar a la conciliación. **Hay que confirmarlo
+  disparando ese evento de prueba y leyendo el cuerpo**, que es gratis.
+
+#### El botón de prueba del panel: un evento real, sin gastar saldo
+
+El panel manda eventos de prueba por tipo, con cuerpo real y firmados. Es la verificación
+que `§6` daba por imposible sin emitir una guía, y no cuesta nada.
+
+Disparando `In_return` contra dev, dos veces, la API respondió `200` —responde 200 siempre
+(`adr/0022`)— y el registro dejó la prueba de lo que importa:
+
+```
+WARN c.t.a.p.envio.EnvioWebhookControlador : Evento de Skydropx para una guía que no es nuestra
+```
+
+Esa línea se escribe **después** de la puerta de la firma: el HMAC-SHA512 sobre los bytes
+crudos cuadró con el secreto del panel, la cabecera `Authorization` con el prefijo `HMAC `
+se leyó bien, y el lector sacó del cuerpo la guía `2943368350` —de la cuenta de ellos, no
+nuestra—. La cabecera quedó en `Authorization`, el valor por omisión.
+
+✅ **Los nombres del panel coinciden con los códigos que mapea el rastreo**, `delivery_attempt`
+incluido. Se dudó de ese —una `t` de diferencia habría hecho que un intento de entrega se
+descartara en silencio al conciliar— y la diferencia estaba en cómo se transcribió la lista,
+no en la plataforma. Vale la anotación porque el modo de fallo es real: los códigos de un
+tercero se cotejan contra la fuente, no contra una lista copiada a mano.
+
+#### Lo que se vio de paso, cotizando desde el ambiente desplegado
+
+Con las credenciales montadas, dev cotiza de verdad: Medellín, un celular del catálogo
+sembrado, **Envía $7.850, un día estimado**. Dos defectos que aparecieron ahí y no son de
+este paso:
+
+- ⚠️ **La primera cotización de un contenido nuevo se pasa de la ventana de sondeo.** El
+  primer intento devolvió `409 ENVIO_SIN_COBERTURA` a los diez segundos y el repetido
+  —mismo cuerpo— `200` en 1,6 s, por la deduplicación por contenido de §6.2. Un comprador
+  puede leer "sin cobertura" en un destino que sí la tiene, y acertar reintentando.
+- ⚠️ **Una cotización que falla no deja una sola línea en el registro.** El `409` se ve
+  igual si no hay tarifas, si las credenciales están mal o si el proveedor no responde. En
+  este ambiente eso se distinguió midiendo el tiempo de respuesta, que no es forma.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
