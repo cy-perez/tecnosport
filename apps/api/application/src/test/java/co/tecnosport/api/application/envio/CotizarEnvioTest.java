@@ -114,6 +114,23 @@ class CotizarEnvioTest {
   }
 
   /**
+   * La diferencia que este arreglo existe para marcar: "no hay tarifa" y "no pudimos preguntar" no
+   * son lo mismo para quien compra. Al primero se le pide cambiar la direccion; al segundo, volver
+   * a intentar. Se midio el 16 de septiembre de 2026 (docs/13 6.9): la primera cotizacion de un
+   * contenido nuevo se paso de la ventana de sondeo y respondio "sin cobertura" para Medellin, que
+   * si tiene tres transportadoras.
+   */
+  @Test
+  void unFalloDelProveedorNoEsFaltaDeCobertura() {
+    for (ResultadoCotizacion.Motivo motivo : ResultadoCotizacion.Motivo.values()) {
+      cotizador.fallar(motivo);
+
+      assertThrows(
+          CotizacionNoDisponibleException.class, () -> caso.ejecutar(comando(1)), motivo.name());
+    }
+  }
+
+  /**
    * Skydropx deduplica cotizaciones por contenido y responde la misma —con su vencimiento original—
    * al mismo carrito y el mismo destino. Sin este filtro, el carrito de ayer cotiza hoy con una
    * tarifa muerta y el pedido se crea con un costo que ya no existe.
@@ -219,10 +236,16 @@ class CotizarEnvioTest {
   private static final class CotizadorEnvioFalso implements CotizadorEnvio {
 
     private List<TarifaEnvio> tarifas = List.of();
+    private ResultadoCotizacion.Motivo falla;
     private CotizacionEnvio ultima;
 
     void devolver(TarifaEnvio... tarifas) {
       this.tarifas = List.of(tarifas);
+    }
+
+    /** El proveedor no respondio, o la cotizacion no completo: no sabemos si hay cobertura. */
+    void fallar(ResultadoCotizacion.Motivo motivo) {
+      this.falla = motivo;
     }
 
     CotizacionEnvio ultima() {
@@ -230,9 +253,23 @@ class CotizarEnvioTest {
     }
 
     @Override
-    public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+    public ResultadoCotizacion cotizar(CotizacionEnvio cotizacion) {
       this.ultima = cotizacion;
-      return tarifas;
+      return respuesta(tarifas);
+    }
+
+    /**
+     * Lista vacia es "sin cobertura" y no un fallo: el proveedor respondio. Los fallos se piden
+     * aparte, con {@link #falla}, porque desde el 16 de septiembre de 2026 el puerto los distingue
+     * y al comprador se le dice otra cosa (docs/13 6.9).
+     */
+    private ResultadoCotizacion respuesta(List<TarifaEnvio> tarifas) {
+      if (falla != null) {
+        return new ResultadoCotizacion.NoSePudoCotizar(falla);
+      }
+      return tarifas.isEmpty()
+          ? new ResultadoCotizacion.SinCobertura()
+          : new ResultadoCotizacion.ConTarifas(tarifas);
     }
   }
 }

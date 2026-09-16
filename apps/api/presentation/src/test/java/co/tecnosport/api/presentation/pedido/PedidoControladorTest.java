@@ -16,6 +16,7 @@ import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
@@ -808,17 +809,19 @@ class PedidoControladorTest {
       return cotizacion -> {
         boolean recaudaAhi = CIUDAD_QUE_RECAUDA.equals(cotizacion.destino().codigoDaneCiudad());
         if (cotizacion.conRecaudo() && !recaudaAhi) {
-          return List.of();
+          // Respondio y no hay tarifa con recaudo ahi: es cobertura, no un fallo del proveedor.
+          return new ResultadoCotizacion.SinCobertura();
         }
-        return List.of(
-            new TarifaEnvio(
-                TARIFA.idTarifa(),
-                TARIFA.transportadora(),
-                TARIFA.servicio(),
-                TARIFA.costo(),
-                TARIFA.diasEstimados(),
-                cotizacion.conRecaudo(),
-                TARIFA.venceEn()));
+        return new ResultadoCotizacion.ConTarifas(
+            List.of(
+                new TarifaEnvio(
+                    TARIFA.idTarifa(),
+                    TARIFA.transportadora(),
+                    TARIFA.servicio(),
+                    TARIFA.costo(),
+                    TARIFA.diasEstimados(),
+                    cotizacion.conRecaudo(),
+                    TARIFA.venceEn())));
       };
     }
 

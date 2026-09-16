@@ -1,7 +1,6 @@
 package co.tecnosport.api.application.envio;
 
 import co.tecnosport.api.domain.envio.TarifaEnvio;
-import java.util.List;
 
 /**
  * El puerto de la cotización de envío (adr/0021, que lo retoma de adr/0004). La única
@@ -12,14 +11,16 @@ import java.util.List;
  * de negocio y vive en {@link TarifaEnvio#masEconomica}: si algún día se ofrece "más rápido por más
  * plata", el puerto ya trae lo necesario y no hay que tocarlo.
  *
- * <p><strong>Lista vacía significa "no hay envío a domicilio"</strong>, y agrupa a propósito los
- * tres casos que el checkout trata igual: el proveedor no respondió, el destino no tiene cobertura,
- * o ninguna transportadora devolvió tarifa. Ninguno autoriza inventar un flete de respaldo — se
- * ofrece la recogida en el punto y se explica. Es el criterio <em>fail-closed</em> de adr/0021:
- * cobrar un flete inventado es despachar a pérdida o cobrarle de más al comprador, y las dos son
- * peores que no vender.
+ * <p><strong>Devolvía una lista vacía para todo lo que saliera mal</strong>, agrupando a propósito
+ * el proveedor caído, el destino sin cobertura y la cotización que no completó. Desde el 16 de
+ * septiembre de 2026 devuelve {@link ResultadoCotizacion}, que los distingue: el porqué —y la
+ * medición que lo obligó— está ahí.
+ *
+ * <p>Lo que no cambia es el criterio <em>fail-closed</em> de adr/0021: ningún camino autoriza
+ * inventar un flete de respaldo. Cobrar uno inventado es despachar a pérdida o cobrarle de más al
+ * comprador, y las dos son peores que no vender.
  */
 public interface CotizadorEnvio {
 
-  List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion);
+  ResultadoCotizacion cotizar(CotizacionEnvio cotizacion);
 }

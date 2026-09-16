@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -164,6 +165,41 @@ class CotizacionEnvioControladorTest {
         .andExpect(jsonPath("$.codigo").value("ENVIO_SIN_COBERTURA"));
   }
 
+  /**
+   * Y cuando no se pudo cotizar, 503 y un codigo distinto. No es un conflicto con el estado del
+   * negocio: es un servicio del que dependemos que no respondio, y reintentar sirve — la consulta
+   * del checkout ya reintenta una vez, y la deduplicacion de Skydropx hace que el segundo intento
+   * traiga la cotizacion completa (docs/13 6.9).
+   */
+  @Test
+  void unFalloAlCotizarResponde503YNoElCodigoDeCobertura() throws Exception {
+    cotizador.fallar(ResultadoCotizacion.Motivo.SONDEO_AGOTADO);
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/cotizacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo()))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.codigo").value("COTIZACION_NO_DISPONIBLE"));
+  }
+
+  /**
+   * El proveedor caido va por el mismo camino: tampoco sabemos si esa ciudad se puede despachar.
+   */
+  @Test
+  void elProveedorCaidoTampocoSeAnunciaComoFaltaDeCobertura() throws Exception {
+    cotizador.fallar(ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE);
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/cotizacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo()))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.codigo").value("COTIZACION_NO_DISPONIBLE"));
+  }
+
   @Test
   void unaVarianteDesconocidaNoCotiza() throws Exception {
     String cuerpoConVarianteFantasma =
@@ -200,18 +236,33 @@ class CotizacionEnvioControladorTest {
   static final class CotizadorEnvioDobleDePrueba implements CotizadorEnvio {
 
     private List<TarifaEnvio> tarifas = List.of();
+    private ResultadoCotizacion.Motivo falla;
 
     void conTarifas(TarifaEnvio... tarifas) {
       this.tarifas = List.of(tarifas);
+      this.falla = null;
     }
 
     void sinTarifas() {
       this.tarifas = List.of();
+      this.falla = null;
+    }
+
+    /**
+     * No se pudo saber si hay cobertura: el checkout tiene que decir otra cosa, y con otro codigo.
+     */
+    void fallar(ResultadoCotizacion.Motivo motivo) {
+      this.falla = motivo;
     }
 
     @Override
-    public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
-      return tarifas;
+    public ResultadoCotizacion cotizar(CotizacionEnvio cotizacion) {
+      if (falla != null) {
+        return new ResultadoCotizacion.NoSePudoCotizar(falla);
+      }
+      return tarifas.isEmpty()
+          ? new ResultadoCotizacion.SinCobertura()
+          : new ResultadoCotizacion.ConTarifas(tarifas);
     }
   }
 }

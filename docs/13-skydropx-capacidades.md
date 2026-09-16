@@ -1896,6 +1896,32 @@ este paso:
   igual si no hay tarifas, si las credenciales están mal o si el proveedor no responde. En
   este ambiente eso se distinguió midiendo el tiempo de respuesta, que no es forma.
 
+**Los dos se arreglaron el mismo día.** El puerto `CotizadorEnvio` devuelve ahora
+`ResultadoCotizacion` —con tarifas, sin cobertura, o no se pudo cotizar con su motivo— y el
+endpoint responde **`503 COTIZACION_NO_DISPONIBLE`** cuando no se pudo preguntar, en vez del
+`409` de cobertura. Cada fallo deja además una línea en el registro con el motivo, sin
+direcciones ni credenciales dentro.
+
+**La sorpresa fue el frontend: ya estaba bien.** `resumen.page.ts` distinguía desde antes
+`sinCobertura()` de `errorCotizacion()`, con dos textos distintos y el comentario de por qué
+—"mandar a cambiar una dirección que estaba bien por una caída nuestra sería culpar al
+comprador"—. Lo que pasaba es que ese camino **nunca se alcanzaba**, porque el backend
+convertía las caídas en 409 y el repositorio las traducía a `null`. No hubo una línea que
+tocar en la vitrina: el defecto estaba entero del lado del servidor.
+
+**Verificado en el navegador** (`docs/06-testing.md`: hay cosas que solo se ven abriendo la
+pantalla), con el backend local apuntando a un puerto muerto para forzar el fallo:
+
+- A domicilio, con Medellín y dirección completa, el resumen pinta *"No pudimos calcular el
+  costo de envío en este momento. Vuelve a intentarlo en unos minutos, o elige recoger tu
+  pedido en nuestro punto de Medellín"* — y no el texto de cobertura.
+- **La recogida en el punto sigue elegible y completa el paso**: cambiando el tipo de entrega
+  el aviso desaparece, el total vuelve a ser el subtotal y "Continuar" lleva a método de pago.
+  Era la duda que dejaba abierta mandar el proveedor caído por el 503, y es lo que `adr/0021`
+  exige: sin tarifa se vende con recogida.
+- A domicilio y sin tarifa, "Continuar" **no pasa**. El botón sigue habilitado a propósito
+  —uno deshabilitado sale del orden de tabulación— y es `enviar()` quien no deja seguir.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Tres tramos no dependen de ninguna respuesta pendiente:
