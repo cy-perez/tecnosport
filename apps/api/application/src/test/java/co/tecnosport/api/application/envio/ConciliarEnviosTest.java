@@ -48,7 +48,8 @@ class ConciliarEnviosTest {
             new MarcarEntregado(pedidos, inventarios, () -> AHORA),
             new RechazarEnEntrega(pedidos, inventarios, () -> AHORA),
             () -> AHORA);
-    return new ConciliarEnvios(envios, consultor, aplicar, () -> AHORA, ANTIGUEDAD, MAXIMO);
+    return new ConciliarEnvios(
+        envios, new ConciliarGuia(consultor, aplicar), () -> AHORA, ANTIGUEDAD, MAXIMO);
   }
 
   /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */

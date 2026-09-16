@@ -85,6 +85,10 @@ public class EnvioWebhookControlador {
       case NO_SE_PUDO_LEER ->
           log.warn("Evento de Skydropx con firma válida y cuerpo que no se supo leer");
       case GUIA_DESCONOCIDA -> log.warn("Evento de Skydropx para una guía que no es nuestra");
+      case SIN_CODIGO_DE_TRANSPORTADORA ->
+          log.warn(
+              "Evento de Skydropx para una guía nuestra sin código de transportadora: no se pudo"
+                  + " consultar su rastreo. Pasa con las guías tecleadas a mano en el panel");
       case REPETIDO -> log.info("Evento de Skydropx repetido; ya estaba registrado");
       case REGISTRADO -> log.info("Evento de Skydropx registrado, sin efecto sobre el pedido");
       case REGISTRADO_Y_APLICADO -> log.info("Evento de Skydropx registrado y aplicado al pedido");

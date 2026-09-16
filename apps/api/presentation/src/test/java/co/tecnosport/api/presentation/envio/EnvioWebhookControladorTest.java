@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
+import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
@@ -122,7 +123,12 @@ class EnvioWebhookControladorTest {
       return new VerificadorFirmaDobleDePrueba();
     }
 
-    /** Como el de producción mientras la forma del evento no se pueda medir: no sabe leer nada. */
+    /**
+     * Un lector que no reconoce ningún cuerpo, que es lo que estas pruebas necesitan: aquí se
+     * comprueba el controlador —los bytes crudos, la cabecera configurable, el 200 siempre— y no
+     * qué pasa con el evento. Lo segundo lo prueban {@code LectorEventoDeEnvioSkydropxTest} y
+     * {@code RecibirEventoDeEnvioTest}.
+     */
     @Bean
     LectorEventoDeEnvio lectorEvento() {
       return cuerpo -> java.util.Optional.empty();
@@ -162,12 +168,19 @@ class EnvioWebhookControladorTest {
       return new RepositorioInventarioDobleDePrueba();
     }
 
+    /** El rastreo no se consulta en estas pruebas: el lector descarta antes de llegar ahí. */
+    @Bean
+    ConciliarGuia conciliarGuia(AplicarEventoDeEnvio aplicar) {
+      return new ConciliarGuia((codigoTransportadora, guia) -> java.util.List.of(), aplicar);
+    }
+
     @Bean
     RecibirEventoDeEnvio recibirEventoDeEnvio(
         VerificadorFirmaEnvio verificadorFirma,
         LectorEventoDeEnvio lector,
-        AplicarEventoDeEnvio aplicar) {
-      return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicar);
+        RepositorioEnviosDobleDePrueba envios,
+        ConciliarGuia conciliarGuia) {
+      return new RecibirEventoDeEnvio(verificadorFirma, lector, envios, conciliarGuia);
     }
 
     /**

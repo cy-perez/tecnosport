@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
+import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
@@ -129,21 +130,33 @@ public class ConfiguracionEnvio {
   }
 
   /**
-   * De los tres puertos del seguimiento ya solo uno falla cerrado: leer el cuerpo del webhook. La
-   * firma se resolvió el 14 de septiembre de 2026 y el rastreo el 16, midiendo con {@code
-   * tools/sonda-rastreo.mjs} sobre una guía emitida (docs/13-skydropx-capacidades.md §6.3).
+   * Lo que los dos caminos del seguimiento comparten (adr/0022, adr/0032): consultar el rastreo de
+   * una guía y aplicar lo que traiga. El webhook y la tarea programada usan este mismo objeto, y no
+   * dos parecidos, porque dos caminos con la misma responsabilidad y código distinto se separan el
+   * día que alguien arregle uno solo.
+   */
+  @Bean
+  public ConciliarGuia conciliarGuia(
+      ConsultorDeSeguimiento consultor, AplicarEventoDeEnvio aplicarEvento) {
+    return new ConciliarGuia(consultor, aplicarEvento);
+  }
+
+  /**
+   * De los tres puertos del seguimiento ya no falla cerrado ninguno por falta de conocimiento: la
+   * firma se resolvió el 14 de septiembre de 2026, el rastreo el 16 midiendo con {@code
+   * tools/sonda-rastreo.mjs} sobre una guía emitida, y el lector del webhook con los ejemplos de la
+   * documentación oficial (docs/13-skydropx-capacidades.md §6.8). Lo que falta para que el webhook
+   * aplique algo es el secreto del panel, que es una variable de entorno.
    */
   @Bean
   public ConciliarEnvios conciliarEnvios(
       RepositorioEnvios repositorioEnvios,
-      ConsultorDeSeguimiento consultor,
-      AplicarEventoDeEnvio aplicarEvento,
+      ConciliarGuia conciliarGuia,
       Reloj reloj,
       PropiedadesSeguimientoEnvios propiedades) {
     return new ConciliarEnvios(
         repositorioEnvios,
-        consultor,
-        aplicarEvento,
+        conciliarGuia,
         reloj,
         Duration.ofHours(propiedades.antiguedadMinimaHoras()),
         propiedades.maximoPorCorrida());
@@ -153,8 +166,9 @@ public class ConfiguracionEnvio {
   public RecibirEventoDeEnvio recibirEventoDeEnvio(
       VerificadorFirmaEnvio verificadorFirma,
       LectorEventoDeEnvio lector,
-      AplicarEventoDeEnvio aplicarEvento) {
-    return new RecibirEventoDeEnvio(verificadorFirma, lector, aplicarEvento);
+      RepositorioEnvios repositorioEnvios,
+      ConciliarGuia conciliarGuia) {
+    return new RecibirEventoDeEnvio(verificadorFirma, lector, repositorioEnvios, conciliarGuia);
   }
 
   @Bean
