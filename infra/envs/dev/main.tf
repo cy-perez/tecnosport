@@ -276,6 +276,12 @@ module "api" {
     ADMIN_CLAVE              = "admin-clave"
     WOMPI_SECRETO_EVENTOS    = "wompi-secreto-eventos"
     WOMPI_SECRETO_INTEGRIDAD = "wompi-secreto-integridad"
+    # Con estos tres montados, dev deja de fallar cerrado: cotiza contra el sandbox de verdad y el
+    # webhook puede verificar la firma de un evento. Los tres tienen versión cargada a mano — el del
+    # webhook, el mismo valor que quedó en el panel de Skydropx, porque la clave es compartida.
+    SKYDROPX_CLIENT_ID       = "skydropx-client-id"
+    SKYDROPX_CLIENT_SECRET   = "skydropx-client-secret"
+    SKYDROPX_SECRETO_WEBHOOK = "skydropx-secreto-webhook"
   } : {}
 
   depends_on = [google_project_service.apis]

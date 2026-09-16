@@ -23,10 +23,10 @@ db_usuario = "tecnosport"
 # septiembre de 2026), así que pueden montarlos. Con esto en false, un secreto vacío haría que la
 # revisión no arranque y Cloud Run lo reportaría como un error interno que no menciona los secretos.
 #
-# Los tres de Skydropx existen como recipiente y **todavía no se montan**: el de `skydropx-secreto-
-# webhook` no puede tener valor hasta que el panel de Skydropx lo genere contra la URL de este
-# servicio. Entran al mapa del módulo cuando los tres tengan versión, y no antes — es exactamente
-# el error que este comentario describe.
+# Los tres de Skydropx se cargaron el 16 de septiembre de 2026 y ya se montan. El del webhook no lo
+# genera la plataforma: la clave es **nuestra y compartida** —Skydropx firma con ella, la API
+# verifica con ella—, así que el valor del panel y el de este secreto son el mismo y se rotan
+# juntos.
 secretos_cargados = true
 
 # Llave pública de Wompi sandbox. No es secreta: el navegador la recibe en la respuesta del intento
