@@ -122,6 +122,22 @@ afirmaciones necesitan enmienda. Lo confirmado también se anota: **los doce
 estados son exactamente los doce del enum de Skydropx, en el mismo orden**, y
 `EstadoEnvio` coincide uno a uno.
 
+**Matiz del 16 de septiembre, con el webhook ya conectado**: esos doce son los del
+enum del *rastreo*. El canal del webhook tiene su propio vocabulario y trae uno
+más — `error`, medido en el cuerpo de un evento de prueba del panel, con
+`data.type: packages` y su número de guía (`docs/13-skydropx-capacidades.md`
+§6.9). No invalida lo de arriba: son dos listas y sólo se había mirado una. Lo que
+sí quedó por decidir se decidió el mismo día: `error` **entra al dominio como
+`FALLIDO`**, pide ojo humano —los estados quietos pasan de cuatro a cinco— y **no
+es terminal**, porque que el estado sea final no está medido y darlo por terminado
+haría que la conciliación dejara de preguntar por ese envío para siempre. Y el
+descarte de un estado desconocido dejó de ser mudo: antes se iba sin log ni
+contador, con lo que un envío fallido se leía como "sin novedad".
+
+Lo que sigue abierto es que un envío fallido **devuelva el pedido a la cola**: toca
+inventario y el grafo del pedido, y vive en el paso de la emisión, junto a la rama
+del `202` que muere.
+
 **1. `DespacharPedido` no puede pedir la guía y guardarla en el mismo paso.**
 `POST /shipments` responde `202` **sin número de guía**: el envío queda en un
 estado no terminal —`in_progress`, `pending` o `creation_waiting`— mientras la

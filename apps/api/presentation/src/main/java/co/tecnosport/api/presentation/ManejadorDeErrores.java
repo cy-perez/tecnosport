@@ -12,6 +12,7 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
@@ -209,6 +210,15 @@ public class ManejadorDeErrores {
   @ExceptionHandler(EnvioSinCoberturaException.class)
   public ProblemDetail envioSinCobertura(EnvioSinCoberturaException excepcion) {
     return problema(HttpStatus.CONFLICT, "Envío sin cobertura", excepcion);
+  }
+
+  // No se pudo cotizar, que no es lo mismo que no haber cobertura: uno le pide al comprador
+  // cambiar la dirección y el otro volver a intentar. 503 y no 409 porque no es un conflicto con
+  // el estado del negocio — es un servicio del que dependemos que no respondió, y reintentar sirve
+  // (docs/13 §6.9, docs/03-api.md).
+  @ExceptionHandler(CotizacionNoDisponibleException.class)
+  public ProblemDetail cotizacionNoDisponible(CotizacionNoDisponibleException excepcion) {
+    return problema(HttpStatus.SERVICE_UNAVAILABLE, "No se pudo cotizar el envío", excepcion);
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo

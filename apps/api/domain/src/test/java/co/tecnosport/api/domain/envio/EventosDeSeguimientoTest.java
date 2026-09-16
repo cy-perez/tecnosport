@@ -160,24 +160,36 @@ class EventosDeSeguimientoTest {
   }
 
   /**
-   * Los cuatro estados en que el paquete se queda quieto. Si nadie los mira, el comprador se entera
+   * Los cinco estados en que el paquete se queda quieto. Si nadie los mira, el comprador se entera
    * antes que el negocio (adr/0022).
    */
   @Test
-  void cuatroEstadosPidenOjoHumano() {
+  void cincoEstadosPidenOjoHumano() {
     assertTrue(EstadoEnvio.EXCEPCION.exigeRevisionManual());
     assertTrue(EstadoEnvio.RETENIDO.exigeRevisionManual());
     assertTrue(EstadoEnvio.CANCELADO.exigeRevisionManual());
     assertTrue(EstadoEnvio.DESTRUIDO.exigeRevisionManual());
+    assertTrue(EstadoEnvio.FALLIDO.exigeRevisionManual());
 
     assertFalse(EstadoEnvio.EN_TRANSITO.exigeRevisionManual());
     assertFalse(EstadoEnvio.ENTREGADO.exigeRevisionManual());
     assertFalse(EstadoEnvio.RECOGIDO.exigeRevisionManual());
   }
 
-  /** Los doce de la plataforma, ni uno más: el enum es el contrato con adr/0022. */
+  /**
+   * {@code FALLIDO} pide ojo humano y <strong>no</strong> es terminal, que es la combinación menos
+   * obvia del enum: parece una guía muerta, pero que el estado sea final es justo lo que no se ha
+   * medido. Darlo por terminado dejaría de preguntar por ese envío para siempre.
+   */
   @Test
-  void sonLosDoceEstadosDeLaPlataforma() {
-    assertEquals(12, EstadoEnvio.values().length);
+  void elEstadoFallidoNoCierraLaHistoriaDelPaquete() {
+    assertFalse(EstadoEnvio.FALLIDO.esTerminal());
+    assertFalse(EstadoEnvio.nombresTerminales().contains(EstadoEnvio.FALLIDO.name()));
+  }
+
+  /** Los trece de la plataforma, ni uno más: el enum es el contrato con adr/0022. */
+  @Test
+  void sonLosTreceEstadosDeLaPlataforma() {
+    assertEquals(13, EstadoEnvio.values().length);
   }
 }

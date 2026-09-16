@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.envio.siembra;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.time.Duration;
@@ -58,16 +59,17 @@ public final class CotizadorEnvioSembrado implements CotizadorEnvio {
    * merece su propia prueba, no un doble que se comporta de dos maneras.
    */
   @Override
-  public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+  public ResultadoCotizacion cotizar(CotizacionEnvio cotizacion) {
     Objects.requireNonNull(cotizacion, "La cotización no puede ser nula.");
-    return List.of(
-        new TarifaEnvio(
-            "tarifa-de-escenario",
-            "Transportadora de escenario",
-            "Estándar",
-            COSTO,
-            3,
-            true,
-            reloj.ahora().plus(VIGENCIA)));
+    return new ResultadoCotizacion.ConTarifas(
+        List.of(
+            new TarifaEnvio(
+                "tarifa-de-escenario",
+                "Transportadora de escenario",
+                "Estándar",
+                COSTO,
+                3,
+                true,
+                reloj.ahora().plus(VIGENCIA))));
   }
 }

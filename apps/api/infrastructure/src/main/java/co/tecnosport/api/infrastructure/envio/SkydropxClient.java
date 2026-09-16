@@ -5,6 +5,7 @@ import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -46,6 +49,8 @@ import tools.jackson.databind.json.JsonMapper;
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
 public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento {
+
+  private static final Logger log = LoggerFactory.getLogger(SkydropxClient.class);
 
   private static final Duration TIMEOUT_HTTP = Duration.ofSeconds(10);
 
@@ -146,23 +151,27 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
    * lo cubren las pruebas del mapeador, que sí ven la excepción.
    */
   @Override
-  public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+  public ResultadoCotizacion cotizar(CotizacionEnvio cotizacion) {
     Objects.requireNonNull(cotizacion, "La cotización no puede ser nula.");
     try {
       return cotizarOFallarCerrado(cotizacion);
     } catch (IOException | RuntimeException e) {
-      return List.of();
+      // El mensaje de la excepción y no la traza: esto es un proveedor caído o una respuesta con
+      // otra forma, no un fallo nuestro que haya que depurar por la pila.
+      return fallo(ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, e.toString());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      return List.of();
+      return fallo(ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, "hilo interrumpido");
     }
   }
 
-  private List<TarifaEnvio> cotizarOFallarCerrado(CotizacionEnvio cotizacion)
+  private ResultadoCotizacion cotizarOFallarCerrado(CotizacionEnvio cotizacion)
       throws IOException, InterruptedException {
     String token = token();
     if (token == null) {
-      return List.of();
+      return fallo(
+          ResultadoCotizacion.Motivo.SIN_CREDENCIALES,
+          "no se obtuvo token; revisar SKYDROPX_CLIENT_ID y SKYDROPX_CLIENT_SECRET");
     }
 
     String cuerpo = mapeador.cuerpoDeCotizacion(cotizacion, origen);
@@ -173,15 +182,33 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
                 .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
                 .build());
     if (creacion.statusCode() / 100 != 2) {
-      return List.of();
+      return fallo(
+          ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE,
+          "la creacion de la cotizacion respondio " + creacion.statusCode());
     }
 
     Optional<String> id = mapeador.idDeCotizacion(json.readTree(creacion.body()));
     if (id.isEmpty()) {
-      return List.of();
+      return fallo(
+          ResultadoCotizacion.Motivo.RESPUESTA_INESPERADA,
+          "la cotizacion creada llego sin identificador");
     }
 
     return sondear(id.get(), token);
+  }
+
+  /**
+   * El registro de un fallo de cotizacion, en un solo sitio. Va en {@code warn} y no en {@code
+   * error}: no hay nada roto de nuestro lado y el checkout sigue vendiendo con recogida en el
+   * punto, pero si esto sale seguido alguien tiene que mirarlo.
+   *
+   * <p><strong>Lo que no entra en el registro</strong>: la direccion de destino ni nada del
+   * comprador. Un fallo de cotizacion se diagnostica con el motivo y, cuando existe, con el
+   * identificador de la cotizacion en la plataforma.
+   */
+  private ResultadoCotizacion fallo(ResultadoCotizacion.Motivo motivo, String detalle) {
+    log.warn("No se pudo cotizar el envio ({}): {}", motivo, detalle);
+    return new ResultadoCotizacion.NoSePudoCotizar(motivo);
   }
 
   /**
@@ -192,7 +219,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
    *
    * <p>Agotado cualquiera de los dos, es cotización fallida. No se espera "un poco más".
    */
-  private List<TarifaEnvio> sondear(String idCotizacion, String token)
+  private ResultadoCotizacion sondear(String idCotizacion, String token)
       throws IOException, InterruptedException {
     Instant limite = reloj.ahora().plus(topeDeSondeo);
 
@@ -201,22 +228,39 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
         pausador.pausar(intervaloDeSondeo);
       }
       if (!reloj.ahora().isBefore(limite)) {
-        return List.of();
+        return sondeoAgotado(idCotizacion, "se agoto el tiempo");
       }
 
       HttpResponse<String> respuesta =
           enviar(peticion("/api/v1/quotations/" + idCotizacion, token).GET().build());
       if (respuesta.statusCode() / 100 != 2) {
-        return List.of();
+        return fallo(
+            ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE,
+            "el sondeo de la cotizacion " + idCotizacion + " respondio " + respuesta.statusCode());
       }
 
       Optional<List<TarifaEnvio>> tarifas =
           mapeador.tarifasSiCompleto(json.readTree(respuesta.body()), reloj.ahora());
       if (tarifas.isPresent()) {
-        return tarifas.get();
+        // Completo: aqui si sabemos que no hay cobertura, y es lo unico que lo sabe.
+        return tarifas.get().isEmpty()
+            ? new ResultadoCotizacion.SinCobertura()
+            : new ResultadoCotizacion.ConTarifas(tarifas.get());
       }
     }
-    return List.of();
+    return sondeoAgotado(idCotizacion, "se agotaron los " + intentosDeSondeo + " intentos");
+  }
+
+  /**
+   * La cotizacion <strong>sigue viva del otro lado</strong>: no completo dentro de nuestra ventana,
+   * que es una decision nuestra para no dejar al comprador mirando una pantalla quieta. Por eso se
+   * distingue del proveedor caido: al reintentar, la deduplicacion por contenido de Skydropx
+   * devuelve esta misma cotizacion, ya completa, en un par de segundos (docs/13 6.9).
+   */
+  private ResultadoCotizacion sondeoAgotado(String idCotizacion, String porque) {
+    return fallo(
+        ResultadoCotizacion.Motivo.SONDEO_AGOTADO,
+        "la cotizacion " + idCotizacion + " no completo: " + porque);
   }
 
   /**

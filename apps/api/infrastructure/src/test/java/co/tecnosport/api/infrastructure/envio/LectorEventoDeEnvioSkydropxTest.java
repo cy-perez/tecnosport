@@ -1,9 +1,8 @@
 package co.tecnosport.api.infrastructure.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Optional;
+import co.tecnosport.api.application.envio.LecturaDeEvento;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -14,11 +13,12 @@ import org.junit.jupiter.api.Test;
  * los dos campos que se leen dejaría de probar que el lector encuentra esos dos campos dentro de un
  * cuerpo real.
  *
- * <p>Falta lo único que no se puede tener todavía: un evento <em>de verdad</em>, de nuestra cuenta.
- * Llegará el día que se emita una guía con el webhook configurado en el panel, y entonces hay que
- * comprobar dos cosas contra él — que la firma cuadra y que el {@code tracking_number} está donde
- * dice la documentación—. Lo que la forma del cuerpo decide aquí es poco a propósito: el rastro lo
- * escribe el rastreo, no el aviso (adr/0032).
+ * <p><strong>Y el evento de verdad llegó el 16 de septiembre de 2026</strong>, sin emitir ninguna
+ * guía: el panel manda eventos de prueba por tipo, gratis, con un cuerpo real. Se comprobaron las
+ * dos cosas que faltaban —que la firma cuadra con el secreto del panel y que el {@code
+ * tracking_number} está donde dice la documentación— contra el ambiente de dev, y el cuerpo que
+ * mandó coincide con estos ejemplos. Lo que la forma del cuerpo decide aquí es poco a propósito: el
+ * rastro lo escribe el rastreo, no el aviso (adr/0032).
  */
 class LectorEventoDeEnvioSkydropxTest {
 
@@ -104,12 +104,12 @@ class LectorEventoDeEnvioSkydropxTest {
 
   @Test
   void leeLaGuiaDeUnEventoDePaqueteConOrden() {
-    assertEquals(Optional.of("794874381730"), lector.guiaDelEvento(CON_ORDEN));
+    assertEquals(new LecturaDeEvento.DeUnaGuia("794874381730"), lector.leer(CON_ORDEN));
   }
 
   @Test
   void leeLaGuiaDeUnEventoDePaqueteSinOrden() {
-    assertEquals(Optional.of("794874381730"), lector.guiaDelEvento(SIN_ORDEN));
+    assertEquals(new LecturaDeEvento.DeUnaGuia("794874381730"), lector.leer(SIN_ORDEN));
   }
 
   /**
@@ -120,16 +120,21 @@ class LectorEventoDeEnvioSkydropxTest {
    */
   @Test
   void leeLaGuiaDeUnEventoEnRetorno() {
-    assertEquals(Optional.of("2594564698"), lector.guiaDelEvento(EN_RETORNO));
+    assertEquals(new LecturaDeEvento.DeUnaGuia("2594564698"), lector.leer(EN_RETORNO));
   }
 
   /**
    * Por la misma suscripción llegan eventos de órdenes, cotizaciones, tarifas, cargos extra y
-   * recolecciones. Sin filtrar por {@code data.type}, un evento de orden con otro identificador
-   * dentro se leería como si fuera una guía.
+   * recolecciones — están suscritos todos los tipos a propósito—. Sin filtrar por {@code
+   * data.type}, un evento de orden con otro identificador dentro se leería como si fuera una guía.
+   *
+   * <p>Y se apartan <strong>diciendo de qué tipo son</strong>, no vaciando la respuesta: el de
+   * {@code pickups} de aquí trae hasta un {@code tracking_number} que no es una guía nuestra, y
+   * confundirlo con un cuerpo roto sería registrarlo como falla cada vez que la plataforma avisa
+   * algo normal.
    */
   @Test
-  void descartaLosEventosQueNoSonDeUnPaquete() {
+  void apartaLosEventosQueNoSonDeUnPaqueteDiciendoDeQueSon() {
     String orden =
         """
         {"data": {"id": "1f92595c", "type": "orders",
@@ -141,24 +146,51 @@ class LectorEventoDeEnvioSkydropxTest {
                   "attributes": {"status": "scheduled", "tracking_number": "NO-ES-GUIA"}}}
         """;
 
-    assertTrue(lector.guiaDelEvento(orden).isEmpty());
-    assertTrue(lector.guiaDelEvento(recoleccion).isEmpty());
+    assertEquals(new LecturaDeEvento.DeOtroTipo("orders"), lector.leer(orden));
+    assertEquals(new LecturaDeEvento.DeOtroTipo("pickups"), lector.leer(recoleccion));
   }
 
+  /**
+   * El evento con el que se estrena el secreto del webhook: cotizar no cuesta saldo y emitir una
+   * guía sí, así que este es el único aviso real que se puede provocar gratis. Tiene que llegar
+   * como "de otro tipo" y no como "no se supo leer", porque lo que hay que leer en el registro ese
+   * día es que la firma cuadró.
+   */
+  @Test
+  void elEventoDeCotizacionEsDeOtroTipoYNoUnCuerpoRoto() {
+    String cotizacion =
+        """
+        {"data": {"id": "e2ff0a1c-6a1f-4c3a-9a0e-2a7a1f0c9b55", "type": "quotation",
+                  "attributes": {"status": "completed"},
+                  "relationships": {"rates": {"data": []}}}}
+        """;
+
+    assertEquals(new LecturaDeEvento.DeOtroTipo("quotation"), lector.leer(cotizacion));
+  }
+
+  /** Este sí venía dirigido a nosotros, y llegó incompleto: es ilegible, no ajeno. */
   @Test
   void unPaqueteSinGuiaNoSeLee() {
     String sinGuia =
         "{\"data\":{\"id\":\"x\",\"type\":\"packages\",\"attributes\":{\"status\":\"delivered\"}}}";
 
-    assertTrue(lector.guiaDelEvento(sinGuia).isEmpty());
+    assertEquals(new LecturaDeEvento.Ilegible(), lector.leer(sinGuia));
   }
 
   /** Nada de lo que llegue puede lanzar: el endpoint responde 200 siempre (adr/0022). */
   @Test
   void loQueNoEsJsonNoLanza() {
-    assertTrue(lector.guiaDelEvento("no es json").isEmpty());
-    assertTrue(lector.guiaDelEvento("").isEmpty());
-    assertTrue(lector.guiaDelEvento(null).isEmpty());
-    assertTrue(lector.guiaDelEvento("[]").isEmpty());
+    assertEquals(new LecturaDeEvento.Ilegible(), lector.leer("no es json"));
+    assertEquals(new LecturaDeEvento.Ilegible(), lector.leer(""));
+    assertEquals(new LecturaDeEvento.Ilegible(), lector.leer(null));
+    assertEquals(new LecturaDeEvento.Ilegible(), lector.leer("[]"));
+  }
+
+  /** Un JSON sin {@code data.type} no es de otro tipo: no se sabe de qué es. */
+  @Test
+  void sinTipoEsIlegibleYNoDeOtroTipo() {
+    assertEquals(
+        new LecturaDeEvento.Ilegible(),
+        lector.leer("{\"data\":{\"attributes\":{\"tracking_number\":\"794874381730\"}}}"));
   }
 }

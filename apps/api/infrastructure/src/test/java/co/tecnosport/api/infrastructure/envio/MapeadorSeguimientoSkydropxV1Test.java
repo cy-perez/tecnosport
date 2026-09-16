@@ -4,11 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -176,14 +181,15 @@ class MapeadorSeguimientoSkydropxV1Test {
     assertTrue(eventos.stream().allMatch(evento -> GUIA.equals(evento.guia())));
   }
 
-  // ---------- los doce estados ----------
+  // ---------- los trece estados ----------
 
   /**
-   * Uno a uno contra el enum del OpenAPI (adr/0022, docs/13 §6.3). Se escriben los doce a mano: una
+   * Uno a uno contra el enum del OpenAPI (adr/0022, docs/13 §6.3), más {@code error}, que no está
+   * en ese enum y salió del canal del webhook (docs/13 §6.9). Se escriben los trece a mano: una
    * tabla que se comprueba con la misma tabla que traduce no comprueba nada.
    */
   @Test
-  void traduceLosDoceEstadosDeLaPlataforma() {
+  void traduceLosTreceEstadosDeLaPlataforma() {
     assertEquals(EstadoEnvio.CREADO, estadoDe("created"));
     assertEquals(EstadoEnvio.RECOGIDO, estadoDe("picked_up"));
     assertEquals(EstadoEnvio.EN_TRANSITO, estadoDe("in_transit"));
@@ -196,6 +202,7 @@ class MapeadorSeguimientoSkydropxV1Test {
     assertEquals(EstadoEnvio.CANCELADO, estadoDe("canceled"));
     assertEquals(EstadoEnvio.DESTRUIDO, estadoDe("destroyed"));
     assertEquals(EstadoEnvio.RETENIDO, estadoDe("retained"));
+    assertEquals(EstadoEnvio.FALLIDO, estadoDe("error"));
   }
 
   private EstadoEnvio estadoDe(String status) {
@@ -220,6 +227,74 @@ class MapeadorSeguimientoSkydropxV1Test {
                 unEvento("\"status\":\"teletransportado\",\"date\":\"2026-09-15T19:54:18-05:00\""),
                 GUIA)
             .isEmpty());
+  }
+
+  /**
+   * Y no se va callado, que es lo que lo hacía peligroso: una guía cuyos eventos se descartan todos
+   * devuelve lista vacía, y para {@code ConciliarGuia} eso es "sin novedad" — lo mismo que un envío
+   * que va perfecto. El registro tiene que nombrar el código, porque es el dato con el que se
+   * decide si hay que mapear un estado nuevo. {@code error} ya está mapeado como {@link
+   * EstadoEnvio#FALLIDO}, así que el del ejemplo es uno inventado: la prueba tiene que sobrevivir a
+   * que mañana se mapee otro.
+   */
+  @Test
+  void unEstadoDesconocidoSeRegistraConSuCodigoYSuGuia() {
+    List<ILoggingEvent> registro =
+        capturando(
+            () ->
+                mapeador.eventos(
+                    unEvento(
+                        "\"status\":\"teletransportado\",\"date\":\"2026-09-15T19:54:18-05:00\""),
+                    GUIA));
+
+    assertEquals(1, registro.size());
+    String mensaje = registro.get(0).getFormattedMessage();
+    assertTrue(mensaje.contains("teletransportado"), mensaje);
+    assertTrue(mensaje.contains(GUIA), mensaje);
+    assertTrue(mensaje.contains("1 de 1"), mensaje);
+  }
+
+  /** Un rastreo que se lee entero no escribe nada: el aviso tiene que significar algo. */
+  @Test
+  void unRastreoCompletoNoEscribeNadaEnElRegistro() {
+    assertTrue(capturando(() -> mapeador.eventos(json.readTree(RASTREO_REAL), GUIA)).isEmpty());
+  }
+
+  /**
+   * Los dos motivos de descarte se cuentan aparte: uno pide decidir qué significa un código nuevo y
+   * el otro, mirar si cambió la forma de la respuesta.
+   */
+  @Test
+  void elEventoIncompletoSeCuentaAparteDelEstadoDesconocido() {
+    JsonNode mezcla =
+        json.readTree(
+            """
+            {"data":[
+              {"id":"1","attributes":{"status":"ornitorrinco","date":"2026-09-15T19:54:18-05:00"}},
+              {"id":"2","attributes":{"status":"delivered"}},
+              {"id":"3","attributes":{"status":"delivered","date":"2026-09-15T19:56:21-05:00"}}
+            ]}
+            """);
+
+    List<ILoggingEvent> registro = capturando(() -> mapeador.eventos(mezcla, GUIA));
+
+    String mensaje = registro.get(0).getFormattedMessage();
+    assertTrue(mensaje.contains("2 de 3"), mensaje);
+    assertTrue(mensaje.contains("[ornitorrinco]"), mensaje);
+    assertTrue(mensaje.contains("identificador: 1"), mensaje);
+  }
+
+  private static List<ILoggingEvent> capturando(Supplier<?> accion) {
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    Logger logger = (Logger) LoggerFactory.getLogger(MapeadorSeguimientoSkydropxV1.class);
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      accion.get();
+      return List.copyOf(appender.list);
+    } finally {
+      logger.detachAppender(appender);
+    }
   }
 
   /** Sin fecha no hay evento: de ella cuelgan los plazos, y la de recepción no es la misma. */

@@ -75,23 +75,57 @@ public class EnvioWebhookControlador {
     return ResponseEntity.ok().build();
   }
 
+  /**
+   * El registro de cada desenlace, y <strong>en una expresión y no en una sentencia</strong>: un
+   * {@code switch} sentencia sobre un {@code enum} compila sin atender todos los casos —se comprobó
+   * quitando uno— y un desenlace nuevo se habría quedado mudo, que es peor que ruidoso. Como
+   * expresión sin {@code default}, agregar un valor a {@link ResultadoEventoDeEnvio} no compila
+   * hasta decidir qué se escribe cuando pasa.
+   */
   private void registrar(ResultadoEventoDeEnvio resultado) {
-    switch (resultado) {
-      case FIRMA_INVALIDA ->
-          log.warn(
-              "Evento de Skydropx descartado por firma inválida. Si se repite con eventos"
-                  + " legítimos, revisar SKYDROPX_SECRETO_WEBHOOK contra el panel"
-                  + " (Conexiones > Webhooks)");
-      case NO_SE_PUDO_LEER ->
-          log.warn("Evento de Skydropx con firma válida y cuerpo que no se supo leer");
-      case GUIA_DESCONOCIDA -> log.warn("Evento de Skydropx para una guía que no es nuestra");
-      case SIN_CODIGO_DE_TRANSPORTADORA ->
-          log.warn(
-              "Evento de Skydropx para una guía nuestra sin código de transportadora: no se pudo"
-                  + " consultar su rastreo. Pasa con las guías tecleadas a mano en el panel");
-      case REPETIDO -> log.info("Evento de Skydropx repetido; ya estaba registrado");
-      case REGISTRADO -> log.info("Evento de Skydropx registrado, sin efecto sobre el pedido");
-      case REGISTRADO_Y_APLICADO -> log.info("Evento de Skydropx registrado y aplicado al pedido");
+    Aviso aviso =
+        switch (resultado) {
+          case FIRMA_INVALIDA ->
+              Aviso.advertencia(
+                  "Evento de Skydropx descartado por firma inválida. Si se repite con eventos"
+                      + " legítimos, revisar SKYDROPX_SECRETO_WEBHOOK contra el panel"
+                      + " (Conexiones > Webhooks)");
+          case NO_SE_PUDO_LEER ->
+              Aviso.advertencia("Evento de Skydropx con firma válida y cuerpo que no se supo leer");
+          case EVENTO_DE_OTRO_TIPO ->
+              Aviso.nota(
+                  "Evento de Skydropx que no habla de un paquete; ignorado. La firma sí cuadró");
+          case GUIA_DESCONOCIDA ->
+              Aviso.advertencia("Evento de Skydropx para una guía que no es nuestra");
+          case SIN_CODIGO_DE_TRANSPORTADORA ->
+              Aviso.advertencia(
+                  "Evento de Skydropx para una guía nuestra sin código de transportadora: no se"
+                      + " pudo consultar su rastreo. Pasa con las guías tecleadas a mano en el"
+                      + " panel");
+          case REPETIDO -> Aviso.nota("Evento de Skydropx repetido; ya estaba registrado");
+          case REGISTRADO ->
+              Aviso.nota("Evento de Skydropx registrado, sin efecto sobre el pedido");
+          case REGISTRADO_Y_APLICADO ->
+              Aviso.nota("Evento de Skydropx registrado y aplicado al pedido");
+        };
+    if (aviso.esAdvertencia()) {
+      log.warn(aviso.mensaje());
+    } else {
+      log.info(aviso.mensaje());
+    }
+  }
+
+  /**
+   * Qué se escribe y con qué voz. Existe para que el nivel y el texto se decidan de una sola vez.
+   */
+  private record Aviso(boolean esAdvertencia, String mensaje) {
+
+    static Aviso advertencia(String mensaje) {
+      return new Aviso(true, mensaje);
+    }
+
+    static Aviso nota(String mensaje) {
+      return new Aviso(false, mensaje);
     }
   }
 }

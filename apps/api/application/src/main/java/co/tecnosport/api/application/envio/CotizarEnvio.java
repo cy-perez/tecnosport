@@ -47,12 +47,23 @@ public final class CotizarEnvio {
       throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
     }
 
-    List<TarifaEnvio> tarifas =
+    ResultadoCotizacion resultado =
         cotizador.cotizar(
             new CotizacionEnvio(destino, bultosDe(comando.lineas()), comando.conRecaudo()));
 
-    return TarifaEnvio.masEconomica(vigentes(tarifas))
-        .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));
+    // Sin `default`: una respuesta nueva del proveedor tiene que romper la compilación aquí, que es
+    // donde se decide qué se le dice al comprador.
+    return switch (resultado) {
+      case ResultadoCotizacion.ConTarifas(List<TarifaEnvio> tarifas) ->
+          TarifaEnvio.masEconomica(vigentes(tarifas))
+              // Todas vencidas es sin cobertura y no un fallo: el proveedor respondió, y lo que
+              // respondió no se puede ofrecer.
+              .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));
+      case ResultadoCotizacion.SinCobertura ignorado ->
+          throw new EnvioSinCoberturaException(destino.codigoDaneCiudad());
+      case ResultadoCotizacion.NoSePudoCotizar ignorado ->
+          throw new CotizacionNoDisponibleException();
+    };
   }
 
   /**

@@ -130,6 +130,21 @@ destino:
   `codigo: "ENVIO_SIN_COBERTURA"` y el checkout ofrece solo la recogida en el
   punto. Un `502` sería mentir sobre de quién es el problema; el destino
   simplemente no se puede despachar hoy.
+- **Y cuando no se pudo cotizar, es otra cosa: `503` con `codigo:
+  "COTIZACION_NO_DISPONIBLE"`.** No es lo mismo "a esta dirección hoy no llega
+  nadie" —que le pide al comprador cambiar la dirección— que "no pudimos
+  preguntar" —que le pide reintentar—. Hasta el 16 de septiembre de 2026 los dos
+  viajaban como `ENVIO_SIN_COBERTURA`, y eso mandaba a corregir direcciones que
+  estaban bien: medido, la primera cotización de un contenido nuevo se pasa de la
+  ventana de sondeo y el reintento la trae en 1,6 s, porque Skydropx deduplica por
+  contenido (`docs/13` §6.9).
+  Entran por aquí los cuatro motivos técnicos —sin credenciales, proveedor no
+  disponible, respuesta inesperada y sondeo agotado—, que se distinguen en el
+  registro y no en la respuesta: al comprador se le dice lo mismo en los cuatro y
+  publicar la forma en que falla un proveedor no le sirve a nadie.
+  **El cliente puede reintentar**, y el checkout ya lo hace una vez. Lo que no
+  cambia es el criterio *fail-closed*: sin tarifa no se inventa un flete, y la
+  recogida en el punto sigue disponible.
 - **La cotización se repite en el servidor al crear el pedido.** Lo que el cliente
   recibió es informativo; el costo que se cobra lo fija `POST /api/v1/pedidos`
   (regla dura #7). Si entre las dos llamadas la tarifa cambió, manda la del

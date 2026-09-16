@@ -1,12 +1,14 @@
 package co.tecnosport.api.infrastructure.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
@@ -232,7 +234,7 @@ class SkydropxClientTest {
     SkydropxClient cliente =
         clienteContra(token(7200), 200, "{\"id\":\"q1\"}", numero -> UNA_TARIFA);
 
-    List<TarifaEnvio> tarifas = cliente.cotizar(COTIZACION);
+    List<TarifaEnvio> tarifas = tarifasDe(cliente.cotizar(COTIZACION));
 
     assertEquals(1, tarifas.size());
     TarifaEnvio tarifa = tarifas.get(0);
@@ -255,9 +257,7 @@ class SkydropxClientTest {
             new MapeadorDePrueba(),
             4);
 
-    List<TarifaEnvio> tarifas = cliente.cotizar(COTIZACION);
-
-    assertTrue(tarifas.isEmpty());
+    assertEquals(ResultadoCotizacion.Motivo.SONDEO_AGOTADO, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(4, sondeos.get());
   }
 
@@ -279,9 +279,7 @@ class SkydropxClientTest {
             new MapeadorDePrueba(),
             100);
 
-    List<TarifaEnvio> tarifas = cliente.cotizar(COTIZACION);
-
-    assertTrue(tarifas.isEmpty());
+    assertEquals(ResultadoCotizacion.Motivo.SONDEO_AGOTADO, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(1, sondeos.get());
   }
 
@@ -291,7 +289,7 @@ class SkydropxClientTest {
         clienteContra(
             token(7200), 200, "{\"id\":\"q1\"}", numero -> "{\"is_completed\":true,\"rates\":[]}");
 
-    assertTrue(cliente.cotizar(COTIZACION).isEmpty());
+    assertInstanceOf(ResultadoCotizacion.SinCobertura.class, cliente.cotizar(COTIZACION));
     assertEquals(1, sondeos.get());
   }
 
@@ -338,7 +336,8 @@ class SkydropxClientTest {
   void unErrorAlCrearLaCotizacionDevuelveVacioSinSondear() throws IOException {
     SkydropxClient cliente = clienteContra(token(7200), 500, "{}", numero -> UNA_TARIFA);
 
-    assertTrue(cliente.cotizar(COTIZACION).isEmpty());
+    assertEquals(
+        ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(0, sondeos.get());
   }
 
@@ -346,7 +345,8 @@ class SkydropxClientTest {
   void unaCreacionSinIdDevuelveVacioSinSondear() throws IOException {
     SkydropxClient cliente = clienteContra(token(7200), 200, "{}", numero -> UNA_TARIFA);
 
-    assertTrue(cliente.cotizar(COTIZACION).isEmpty());
+    assertEquals(
+        ResultadoCotizacion.Motivo.RESPUESTA_INESPERADA, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(0, sondeos.get());
   }
 
@@ -367,7 +367,8 @@ class SkydropxClientTest {
             new MapeadorQueRevienta(),
             8);
 
-    assertTrue(cliente.cotizar(COTIZACION).isEmpty());
+    assertEquals(
+        ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(0, sondeos.get());
   }
 
@@ -431,6 +432,19 @@ class SkydropxClientTest {
    * <strong>código</strong>. Medido el 16 de septiembre de 2026: la forma de la ruta que anotaba
    * adr/0022 responde 404, y con el nombre visible también.
    */
+  /**
+   * Cada fallo dice cual fue, y por eso estas pruebas afirman el motivo y no "vino vacio": el
+   * sondeo agotado y el proveedor caido llevan al comprador a cosas distintas, y antes se veian
+   * iguales desde aqui y desde el registro (docs/13 6.9).
+   */
+  private static ResultadoCotizacion.Motivo motivoDe(ResultadoCotizacion resultado) {
+    return assertInstanceOf(ResultadoCotizacion.NoSePudoCotizar.class, resultado).motivo();
+  }
+
+  private static List<TarifaEnvio> tarifasDe(ResultadoCotizacion resultado) {
+    return assertInstanceOf(ResultadoCotizacion.ConTarifas.class, resultado).tarifas();
+  }
+
   @Test
   void consultaElRastreoConLaGuiaYElCodigoEnLaConsulta() throws IOException {
     SkydropxClient cliente =

@@ -4049,7 +4049,131 @@ disparador.
   anotado como contradicción desde el día 14 y nadie había vuelto a leerlo entero.
 
 Lo que queda del paso 7 es **la emisión de la guía**, que es lo que llena el código de
-transportadora y convierte el despacho a mano en un despacho del sistema.
+transportadora y convierte el despacho a mano en un despacho del sistema. Cómo se retoma
+está al final de esta fase, en "Traspaso".
+
+### El webhook, con secreto y comprobado (2026-09-16)
+
+Lo que faltaba para que el webhook aplicara algo eran dos cosas de operación, no de
+código: una variable de entorno y una URL pública. Las dos quedaron, y la comprobación
+contra un evento real —que `docs/13` exigía antes de producción y daba por imposible sin
+emitir una guía— **salió gratis**: el panel manda eventos de prueba por tipo. Disparando
+`In_return` contra dev, el registro escribió "evento para una guía que no es nuestra", que
+es una línea de *después* de la puerta de la firma. Detalle completo en `docs/13` §6.9.
+
+**El secreto no lo genera Skydropx.** El panel pide una clave y la escribe uno: es
+compartida, vive igual en Secret Manager y en el panel, y se rota en los dos o en ninguno.
+Eso invirtió el orden que este plan tenía escrito.
+
+**Y tres intentos se perdieron por un byte**, que es la parte que vale para todo el repo:
+`openssl` en Windows termina en CRLF, pero la causa de fondo era otra — **`$TEMP` en Git
+Bash vale `/tmp`, y `gcloud` es un programa de Windows que resuelve esa ruta contra
+`C:	mp`**. `wc` medía un archivo y `gcloud` subía otro. Vale igual para `terraform` y
+`gradlew.bat`: a una herramienta de Windows se le pasan rutas de Windows.
+
+**Lo que la suscripción reveló, y contradice lo que se había escrito**: el panel ofrece
+once eventos y **los once son de paquetes**. No hay `quotation` ni `orders`, así que el
+desvío "evento de otro tipo" del lector es una defensa y no un camino que se recorra; el
+filtro por `data.type` sigue haciendo falta igual. Faltan además `destroyed` y `retained`
+—dos de los cuatro estados que piden ojo humano—, que sólo aparecerán cuando la
+conciliación pregunte, hasta seis horas después. Y aparece un `Error` que no es uno de los
+doce estados: si es el `workflow_status: error` de `docs/13` §6.6, **el paso de la emisión
+tiene ahí el aviso que necesitaba** para devolver a la cola una guía que murió.
+
+**Dos defectos vivos que salieron cotizando desde el ambiente desplegado** y no son de
+este paso: la primera cotización de un contenido nuevo se pasa de la ventana de sondeo y
+devuelve `409 ENVIO_SIN_COBERTURA` en un destino que sí tiene cobertura —el reintento la
+trae en 1,6 s por la deduplicación—, y una cotización que falla **no deja una sola línea
+en el registro**, así que "sin tarifas", "credenciales malas" y "el proveedor no responde"
+se ven idénticos desde afuera.
+
+### Traspaso: cómo se retoma la emisión de la guía (2026-09-16)
+
+Es lo único que le falta a la Fase 7. Esta sección existe para que la sesión siguiente
+arranque sin releer los ocho apartados de `docs/13` §6.
+
+**Antes de nada, lee**: `docs/13-skydropx-capacidades.md` §6.2, §6.5, §6.6, §6.7 y §6.9,
+`adr/0021`, `adr/0022`, `adr/0031` y `adr/0032`.
+
+#### Lo que bloquea, y no es conocimiento
+
+**El saldo: quedan COP 388.** La emisión del 16 de septiembre costó 8.200 y dejó la cuenta
+ahí; la tarifa más barata vista es Coordinadora a 5.991. **No alcanza para una sola guía
+más.** Los créditos se pidieron a Skydropx el 14 de septiembre —con la evidencia de que su
+recarga por Mercado Pago falla del lado de ellos— y no hay API de recarga. Así que el paso se
+puede **escribir y probar entero** sin saldo, y no se puede **cerrar** sin él: el cierre son
+dos emisiones reales, una que viva y una que se pueda cancelar.
+
+Lo que sí es gratis, y conviene aprovechar: **un `422` no cuesta saldo**, el rastreo tampoco,
+y el panel manda eventos de prueba por tipo.
+
+#### Lo que ya está decidido y medido — no volver a investigarlo
+
+- **El cuerpo va envuelto en `shipment`**, con `quotation_id` y `rate_id` de la cotización que
+  ya se congeló en el pedido.
+- **`declared_amount` va dentro de cada `parcel`**, no fuera. Mandarlo fuera costó un mes de
+  tarifas mudas y quince variantes del cuerpo (§6.4).
+- **Las dos direcciones exigen `email` y `reference`.** `reference` reusa `indicaciones` y
+  viaja como `Sin indicaciones adicionales` cuando el comprador no escribe nada.
+- **Cada bulto exige `package_type` y `package_content`.** El primero es `4G` ("Caja de
+  cartón"), del catálogo `GET /api/v1/shipments/packagings`. El segundo sale de
+  `ContenidoDeclarado` (`domain/envio`), que ya existe, es un `switch` exhaustivo sobre
+  `LineaCatalogo` y **nadie llama todavía en producción**: es lo primero que el adaptador debe
+  enchufar.
+- **`ORIGEN_TELEFONO` hay que mandarlo sin indicativo.** Vale `+573138816711`, que sirve para
+  cotizar y devuelve `400 phone no es válido` al crear el envío. La conversión es del
+  adaptador de emisión, como la de gramos a kilos.
+- **`sync_label_creation: false`**, y **un `408` no significa que no pasó nada**: el primer
+  intento respondió "Tiempo de espera excedido" con la guía ya creada y cobrada. Reintentar a
+  ciegas emite dos guías.
+- **El `202` no trae guía.** `master_tracking_number` y `label_url` llegan en `null` con
+  `workflow_status: in_progress`; hay que releer el envío o esperar el webhook. Guardar lo que
+  devuelve la creación es guardar una guía vacía.
+- **Y el `202` puede morir**: `workflow_status: error`, `payment_status: refunded` y un `500`
+  de la transportadora minutos después. **Un pedido no se marca despachado con la respuesta de
+  creación.**
+- **Varios bultos son varias guías** (`multishipment`): ninguna transportadora de la cuenta
+  admite multipaquete. Ya está modelado (`adr/0031`).
+- **El barrio no se puede mandar en el envío**: viaja en la cotización y el envío lo hereda
+  (§6.7). La sonda `tools/sonda-recoleccion.mjs` está lista para comprobarlo de un tirón.
+
+#### Lo que el código ya tiene puesto para recibirlo
+
+`Envio` con varias `GuiaEnvio`, cada una con su `codigoTransportadora` —el campo que la
+emisión llena y sin el cual la conciliación se salta la guía—; `ConciliarGuia` con sus dos
+disparadores; el webhook **firmando de verdad** desde el 16 de septiembre; `EstadoEnvio.FALLIDO`
+para el `error` de la plataforma; y el evento `Error` **suscrito en el panel**, que es
+probablemente el aviso del `202` que muere — plausible y sin comprobar hasta que una emisión
+real vuelva a morir.
+
+#### Lo que hay que escribir
+
+Un puerto de emisión en `application/envio` con su adaptador en `infrastructure`, y el caso de
+uso que lo usa: emitir, **esperar el estado terminal** releyendo o por webhook, y ramificar —
+`success` guarda guías y etiqueta, `error` devuelve el pedido a la cola. El patrón de los
+pasos 2a y 7 ya se pagó dos veces: el protocolo se prueba entero con dobles y fixtures, y lo
+que depende de la cuenta se mide aparte.
+
+#### Decisiones abiertas, para no tomarlas de pasada
+
+1. **¿Qué le pasa al pedido cuando su guía muere?** `FALLIDO` hoy sólo se registra y pide ojo
+   humano. Devolver el pedido a la cola toca inventario y el grafo del pedido.
+2. **¿`FALLIDO` es terminal?** Hoy no, a propósito: que el estado sea final no está medido, y
+   darlo por terminado dejaría de preguntar por ese envío para siempre. Se decide viendo qué
+   manda el rastreo después de una muerte real.
+3. **La recolección** sigue ejercida a medias y cuesta una guía viva.
+4. **`exigeRevisionManual()` no lo llama nada en producción.** Cinco estados dejan el paquete
+   quieto y ninguna pantalla los marca: hoy un envío retenido, destruido o fallido se ve igual
+   que uno en tránsito. Es otra tarea, y es la que hace útil todo lo anterior.
+5. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no
+   cotizan. Sería una pantalla a la que nadie puede llegar.
+
+#### Y dos defectos vivos que no son de este paso
+
+Están anotados en `docs/13` §6.9 y arreglados el 16 de septiembre: el `409` que decía "sin
+cobertura" cuando no se pudo cotizar —ahora `503 COTIZACION_NO_DISPONIBLE`— y la cotización
+que fallaba sin dejar una línea en el registro. Si algo del checkout se comporta raro al
+retomar, empezar por ahí.
 
 ## Cómo conversar con Claude Code en este proyecto
 

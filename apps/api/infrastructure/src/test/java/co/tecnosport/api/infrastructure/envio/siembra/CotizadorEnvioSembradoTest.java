@@ -1,10 +1,12 @@
 package co.tecnosport.api.infrastructure.envio.siembra;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
@@ -36,7 +38,7 @@ class CotizadorEnvioSembradoTest {
 
   @Test
   void devuelve_una_tarifa_vigente() {
-    List<TarifaEnvio> tarifas = cotizador.cotizar(cotizacion(false));
+    List<TarifaEnvio> tarifas = tarifas(false);
 
     assertEquals(1, tarifas.size());
     assertTrue(tarifas.getFirst().estaVigente(AHORA));
@@ -48,7 +50,7 @@ class CotizadorEnvioSembradoTest {
    */
   @Test
   void el_costo_no_es_cero() {
-    assertTrue(cotizador.cotizar(cotizacion(false)).getFirst().costo().valor().signum() > 0);
+    assertTrue(tarifas(false).getFirst().costo().valor().signum() > 0);
   }
 
   /**
@@ -57,9 +59,14 @@ class CotizadorEnvioSembradoTest {
    */
   @Test
   void admite_contraentrega_tambien_cuando_se_pide_con_recaudo() {
-    assertTrue(cotizador.cotizar(cotizacion(true)).getFirst().admiteContraentrega());
-    assertEquals(
-        cotizador.cotizar(cotizacion(false)).getFirst().costo(),
-        cotizador.cotizar(cotizacion(true)).getFirst().costo());
+    assertTrue(tarifas(true).getFirst().admiteContraentrega());
+    assertEquals(tarifas(false).getFirst().costo(), tarifas(true).getFirst().costo());
+  }
+
+  /** El doble siempre responde con tarifas: si algun dia responde otra cosa, esto se cae aqui. */
+  private List<TarifaEnvio> tarifas(boolean conRecaudo) {
+    return assertInstanceOf(
+            ResultadoCotizacion.ConTarifas.class, cotizador.cotizar(cotizacion(conRecaudo)))
+        .tarifas();
   }
 }

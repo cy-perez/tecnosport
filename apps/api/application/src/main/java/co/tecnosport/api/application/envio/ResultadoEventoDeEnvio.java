@@ -1,7 +1,7 @@
 package co.tecnosport.api.application.envio;
 
 /**
- * Qué pasó con un evento de seguimiento. Siete desenlaces, y ninguno es un error: el webhook
+ * Qué pasó con un evento de seguimiento. Ocho desenlaces, y ninguno es un error: el webhook
  * responde 200 en todos (adr/0022), porque reintentar no arregla ninguno.
  */
 public enum ResultadoEventoDeEnvio {
@@ -11,6 +11,15 @@ public enum ResultadoEventoDeEnvio {
 
   /** La firma cuadró y el cuerpo no se supo leer. Se descarta y queda registrado en el log. */
   NO_SE_PUDO_LEER,
+
+  /**
+   * La firma cuadró y el aviso es de otra cosa de la plataforma: una orden, una cotización, una
+   * tarifa, un cargo extra, una recolección. No es un fallo, así que se separa de {@link
+   * #NO_SE_PUDO_LEER} para que el registro no avise de una falla cuando no la hubo. Con la
+   * suscripción de hoy —once eventos, todos de paquetes— no se ha visto ninguno. El porqué entero
+   * está en {@link LecturaDeEvento}.
+   */
+  EVENTO_DE_OTRO_TIPO,
 
   /**
    * No hay envío con esa guía. Un evento de un despacho que no es nuestro, o llegado antes de que

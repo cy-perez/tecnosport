@@ -13,6 +13,7 @@ import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.legal.RepositorioAutorizacionesFalso;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoVariante;
@@ -305,6 +306,7 @@ class CrearPedidoTest {
   private static final class CotizadorEnvioFalso implements CotizadorEnvio {
 
     private List<TarifaEnvio> tarifas = List.of();
+    private ResultadoCotizacion.Motivo falla;
     private boolean recauda = true;
     private int veces;
 
@@ -330,12 +332,31 @@ class CrearPedidoTest {
      * la cotización vuelve vacía — que es distinto de no tener envío.
      */
     @Override
-    public List<TarifaEnvio> cotizar(CotizacionEnvio cotizacion) {
+    public ResultadoCotizacion cotizar(CotizacionEnvio cotizacion) {
       veces++;
       if (cotizacion.conRecaudo() && !recauda) {
-        return List.of();
+        return respuesta(List.of());
       }
-      return tarifas.stream().map(t -> conRecaudo(t, cotizacion.conRecaudo())).toList();
+      return respuesta(tarifas.stream().map(t -> conRecaudo(t, cotizacion.conRecaudo())).toList());
+    }
+
+    /** El proveedor no respondio, o la cotizacion no completo: no sabemos si hay cobertura. */
+    void fallar(ResultadoCotizacion.Motivo motivo) {
+      this.falla = motivo;
+    }
+
+    /**
+     * Lista vacia es "sin cobertura" y no un fallo: el proveedor respondio. Los fallos se piden
+     * aparte, con {@link #falla}, porque desde el 16 de septiembre de 2026 el puerto los distingue
+     * y al comprador se le dice otra cosa (docs/13 6.9).
+     */
+    private ResultadoCotizacion respuesta(List<TarifaEnvio> tarifas) {
+      if (falla != null) {
+        return new ResultadoCotizacion.NoSePudoCotizar(falla);
+      }
+      return tarifas.isEmpty()
+          ? new ResultadoCotizacion.SinCobertura()
+          : new ResultadoCotizacion.ConTarifas(tarifas);
     }
 
     private static TarifaEnvio conRecaudo(TarifaEnvio tarifa, boolean admite) {
