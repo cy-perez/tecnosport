@@ -32,6 +32,16 @@ comerciales y de ayuda de `skydropx.com.co`, y un SDK no oficial de terceros. La
 páginas de ayuda (`ayuda.skydropx.com.co`, `clientes.skydropx.com`) responden 403
 a una petición automatizada: lo suyo se obtuvo por buscador y por eso va ⚠️.
 
+**Actualización del 15 de septiembre de 2026 (§6.4):** las dos fuentes que aquí se
+dan por inalcanzables sí se leen **con un navegador de verdad**, y traen cosas que
+ninguna otra tiene. La documentación de `sb-pro.skydropx.com/es-CO/api-docs` es una
+sola página que JavaScript arma entera —los cuarenta y cinco endpoints y las cuatro
+guías rápidas están en el DOM— y el centro de ayuda colombiano vive en
+`help.skydropx.com.co/subcategorias-cda/api`, donde el `403` es a `fetch`, no al
+navegador. Ojo con una trampa: pedirle un artículo con `fetch` desde la propia
+página devuelve una plantilla genérica, siempre la misma, sin el contenido del
+artículo. Hay que navegar a cada uno.
+
 ## 1. Inventario de la plataforma
 
 Lo que la API expone, agrupado por para qué sirve. ✅ en todo el bloque: la lista
@@ -81,7 +91,8 @@ pedido es nuestro y solo le pedimos a Skydropx la guía.
 | Elegir la tarifa | ✅ | La respuesta trae todas las tarifas; el criterio es nuestro |
 | Ver si la tarifa admite recaudo | ✅ | Cada tarifa trae `cash_on_delivery` |
 | Plazo estimado | ✅ | Cada tarifa trae `days` |
-| Campos exactos de la dirección | ❌ | No se obtuvo la estructura para Colombia |
+| Campos exactos de la dirección | ✅ | Medidos el 11 de septiembre (§6) y confirmados contra el OpenAPI el 15 (§6.4) |
+| Valor declarado | ✅ | `declared_amount` **dentro de cada `parcel`**, mínimo 10.000 y máximo 5.000.000 (§6.4) |
 
 Lo que confirma `ADR-0021`: la cotización **es asíncrona** —se crea y se sondea
 hasta `is_completed`—, las tarifas valen 24 horas, y la elección de la más
@@ -101,13 +112,21 @@ panel, ni en el plan de la fase.
 
 | Palanca | Estado | Qué permite |
 |---|---|---|
-| Consultar días disponibles | ✅ | `GET /pickups/coverage` antes de programar |
+| Consultar días disponibles | ⛔ | `GET /pickups/coverage` existe y **no respondió nunca** (§6.6) |
 | Programar una recolección | ✅ | Agrupa **varios envíos** en una sola recogida |
 | Reprogramar | ✅ | `POST /pickups/reschedule` |
 | Consultar el estado | ✅ | `GET /pickups/{id}` |
-| Cuerpo exacto de la petición | ⚠️ | **Dos fuentes se contradicen** (ver abajo) |
+| Cuerpo exacto de la petición | ✅ | Confirmado (§6.4) y ejercido contra el sandbox (§6.6): `total_weight` entero y el envío en `success` |
 | Si es obligatoria | ⚠️ | Una fuente dice que no, que la alternativa es dejar el paquete en oficina |
-| Qué transportadoras la soportan | ❌ | Se valida con el endpoint de cobertura, caso por caso |
+| Qué transportadoras la soportan | ✅ | Lo dice **`pickup`** en cada tarifa: `true` en Coordinadora, Servientrega e Inter Rapidísimo; `false` en 99 minutes y Envía, que recogen por soporte (§6.4, §6.6) |
+| Consultar fechas disponibles | ⛔ | `GET /pickups/coverage` respondió `422` con mensaje vacío en las cuatro guías probadas (§6.6) |
+
+> **Resuelto el 15 de septiembre (§6.4): gana la segunda, la del envío suelto.** La
+> documentación oficial declara `pickup { reference_shipment_id, packages, total_weight,
+> scheduled_from, scheduled_to }`, y `GET /pickups/coverage` exige un `shipment_id`, así
+> que la recolección va **después** de emitir la guía. Se deja el párrafo porque la
+> diferencia entre las dos formas —una recogida diaria para todo el día contra una
+> recogida por envío— sigue siendo la que manda en el diseño del panel.
 
 Las dos formas que se encontraron para el cuerpo de `POST /pickups` **no son
 compatibles entre sí**:
@@ -139,8 +158,8 @@ reprogramación una función real del panel, no un adorno.
 | Cancelar una guía | ✅ | `cancellations` |
 | Asegurar el envío | ✅ | `protect`, por envío |
 | Tipo de empaque | ✅ | Catálogo `packagings` |
-| Campos de contraentrega | ❌ | **La documentación no los muestra** |
-| Qué devuelve (rótulo, guía) | ❌ | No se obtuvo el esquema de respuesta |
+| Campos de contraentrega | ✅ | No hay ninguno que declare el monto: se pide en la cotización con dos booleanos y vuelve en `on_delivery_amount` / `on_delivery_status` (§6.4) |
+| Qué devuelve (rótulo, guía) | ✅ | `master_tracking_number` en el envío; `tracking_number` y `label_url` **por paquete**, en `included` (§6.4) |
 
 Dos endpoints que los ADR no usan y deberían:
 
@@ -156,9 +175,9 @@ Dos endpoints que los ADR no usan y deberían:
 | Palanca | Estado | Qué permite |
 |---|---|---|
 | Consultar por guía | ✅ | `GET /shipments/tracking/{guia}/{transportadora}` |
-| Webhook de eventos | ⚠️ | Existe; **la sección de la documentación no se pudo leer** |
-| Cabecera y algoritmo de firma | ⚠️ | Solo de un SDK de terceros (§6) |
-| Lista y nombre de los eventos | ❌ | Los doce de `ADR-0022` no se pudieron re-confirmar |
+| Webhook de eventos | ✅ | Sección leída el 14 (§6.1) y ejemplos de cuerpo confirmados el 15 (§6.2, §6.4). Ojo: `data.id` es el **paquete** |
+| Cabecera y algoritmo de firma | ✅ | `Authorization: HMAC <firma>`, HMAC-SHA512 sobre los bytes crudos, hex en minúsculas (§6.1) |
+| Lista y nombre de los eventos | ✅ | Los doce de `ADR-0022`, en el mismo orden, declarados en el enum del OpenAPI (§6.3) |
 
 La consulta por guía ✅ sostiene `TareaConciliacionEnvios` tal como `ADR-0022` la
 planteó, y es la parte que **sí** se puede construir sin resolver el webhook. No
@@ -189,6 +208,11 @@ Lo que cambia respecto de lo que suponía `ADR-0023`:
   ("Solicitar el servicio de pago contra entrega") que es requisito antes de que
   cualquier tarifa devuelva recaudo. Es un prerrequisito del negocio, anterior a
   todo el código.
+  **Matizado el 15 de septiembre (§6.5): en este sandbox ya está activo** —la
+  cotización con recaudo devuelve `on_delivery_amount` con monto—. El trámite
+  seguirá haciendo falta en producción; lo que ahora se sabe es **cómo
+  comprobarlo**: si `on_delivery_amount` vuelve `null` con el recaudo pedido, el
+  servicio no está habilitado en esa cuenta.
 - ⚠️ **Se elige qué se recauda:** solo el precio del producto, o el producto más
   el flete. Confirma la decisión de `ADR-0023` —recaudar `Pedido.total()`, flete
   incluido— y ahora se sabe que es una opción configurable y no la única forma.
@@ -212,9 +236,9 @@ sobre ese estado tiene que contar jueves, no días.
 
 | ADR | Qué sigue en pie | Qué hay que revisar |
 |---|---|---|
-| `0021` cotización | Todo: asíncrona, 24 h, tarifa elegida por el servidor, `fail-closed` | Falta decidir multipaquete; los campos de dirección siguen sin confirmar |
-| `0022` seguimiento | La conciliación programada, que se sostiene sola con el tracking por guía | **Le falta el tramo de recolección entero**; los doce estados y la firma no se pudieron re-confirmar |
-| `0023` contraentrega | La cobertura por tarifa y el recaudo del total | El servicio hay que **solicitarlo**; el retiro es semanal y con comisión; los límites siguen sin confirmar |
+| `0021` cotización | Todo: asíncrona, 24 h, tarifa elegida por el servidor, `fail-closed` | ~~Falta decidir multipaquete; los campos de dirección siguen sin confirmar~~ Resueltos los dos. Lo que queda es el mínimo de 10.000 por bulto y que la emisión se va por **v2** (§6.4) |
+| `0022` seguimiento | La conciliación programada, que se sostiene sola con el tracking por guía | **Le falta el tramo de recolección entero**, ahora con la API confirmada y una regla por transportadora (§6.4). ~~Los doce estados y la firma no se pudieron re-confirmar~~: confirmados (§6.1, §6.3) |
+| `0023` contraentrega | La cobertura por tarifa y el recaudo del total | El servicio hay que **solicitarlo** —y ahora se sabe reconocer cuándo no está activo: `on_delivery_amount` en `null` (§6.4)—; el retiro es semanal y con comisión; el máximo de 5.000.000 tiene fuente y la comisión sigue sin confirmar |
 
 Ninguno se contradice de frente. `0022` es el que queda corto, y no por estar
 equivocado sino por no haber mirado que entre emitir una guía y que el paquete se
@@ -225,6 +249,18 @@ mueva hay un paso con nombre propio.
 1. **Recolección programada o entrega en oficina.** Determina si la Fase 7 gana
    un agregado `Recoleccion`, una pantalla de panel y una cuarta tarea
    programada, o si el despacho termina en "alguien lleva los paquetes".
+   **Sigue abierta, pero ya no por falta de datos (§6.4):** el cuerpo está
+   confirmado, cada tarifa declara si admite recolección y de qué forma
+   (`pickup`, `pickup_automatic`, `pickup_ocurre`, `pickup_via_support`), y se
+   sabe que **99 minutos y Envía solo recogen por soporte**, mientras
+   Coordinadora, Inter Rapidísimo y Servientrega sí responden por API. Con
+   corte a las 12:00 y sin fines de semana.
+   **Ejercida contra el sandbox el 15 de septiembre (§6.6)**: el endpoint valida y
+   exige el envío en `success`; falta una guía viva para programar una de verdad.
+   Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
+   se puede ofrecer** (su endpoint no responde) y **99 minutos, la que más cotiza,
+   no recoge por API** — si el despacho elige siempre la más barata, va a acabar
+   pidiendo recolecciones por correo.
 2. ~~**Un bulto o varios.**~~ **Decidido el 11 de septiembre de 2026: un `parcel`
    por variante.** Es lo que el modelo ya sabe —cada variante tiene su `Paquete`
    con peso y medidas reales— y evita inventar las dimensiones de una caja
@@ -233,15 +269,27 @@ mueva hay un paso con nombre propio.
    **el total de lo que va en cada bulto**, no el mínimo ni el 2.500 por omisión,
    porque la transportadora responde hasta lo declarado.
 3. **Asegurar los envíos** (`protect`), y con qué criterio. Un celular no es una
-   camiseta.
+   camiseta. Con precio desde el 15 de septiembre (§6.4): cuesta un fijo más un
+   porcentaje del valor declarado.
 4. **Validar la dirección** con `verify_by_carriers` antes de cobrar, o no.
 5. **Entrega en oficina** como tercera forma de entrega, o no en esta fase. La API
    quedó confirmada el 15 de septiembre (§6.2) y **ninguna transportadora del
    sandbox la ofrece hoy**, así que la decisión sigue abierta sin poder probarse.
 6. **Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
    jueves. Es una decisión contable, no técnica.
-7. **Cancelar la guía** cuando se cancela un pedido ya despachado.
-8. **v1 o v2** en cotizaciones y envíos.
+7. **Cancelar la guía** cuando se cancela un pedido ya despachado. El endpoint y su
+   cuerpo quedaron confirmados el 15 de septiembre (§6.4); lo que falta decidir es
+   cuándo se dispara y quién lo autoriza.
+8. ~~**v1 o v2** en cotizaciones y envíos.~~ **Decidido el 15 de septiembre de 2026:
+   `POST /api/v2/shipments`** (§6.4). No es preferencia: v2 siempre devuelve un arreglo
+   de envíos, y en Colombia ninguna transportadora admite multipaquete, así que un pedido
+   de dos variantes son dos guías que v1 no puede devolver.
+9. **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias
+   guías, o consolidar en un bulto y perder las medidas reales. Es la decisión que hay que
+   tomar antes de escribir el despacho (§6.3, §6.4).
+10. **Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
+    cotización entera (§6.4). Elevarlo al mínimo asegurable, agruparlo, o dejar ese pedido
+    solo con recogida.
 
 ## 6. Lo que se cerró con la cuenta real
 
@@ -252,12 +300,19 @@ se investigó hasta el fondo que permite la cuenta** y el detalle está en §6.1
 repetir las pruebas no va a cambiar el resultado, porque el fallo está del lado
 de Skydropx y **la solicitud ya se les envió el 14 de septiembre de 2026**.
 
+> **Corregido el 15 de septiembre en §6.4, y es la lección más cara de la fase.**
+> Dos de las filas que esta tabla da por "bloqueadas por Skydropx" eran nuestras:
+> el valor declarado iba en el campo equivocado. La frase de arriba —"repetir las
+> pruebas no va a cambiar el resultado"— **es justo la que hay que desconfiar**:
+> lo que no cambia el resultado es repetir la misma prueba. Lo destapó variar algo
+> que nunca se había variado.
+
 | Tema | Estado | Qué falta y de quién depende |
 |---|---|---|
 | Firma del webhook | ✅ Resuelto con la documentación oficial | Implementar HMAC‑SHA512 sobre los bytes crudos, cabecera `Authorization: HMAC <firma>`; comprobar contra un evento real cuando haya guía. **Nuestro.** |
 | DHL en el panel | ✅ Resuelto: solo internacional | Nada. No aplica al negocio. |
-| Servientrega, Envía, Coordinadora sin tarifa | ⛔ Bloqueado por Skydropx | La API de cada transportadora rechaza lo que Skydropx le manda (valor declarado ausente o petición inválida). Solicitud enviada con identificadores de cotización. **De ellos.** **Re-medido el 15 de septiembre: idéntico, mensaje por mensaje** (§6.2). |
-| Inter Rapidísimo `to_f >= 25` | ⏳ Verificación de origen en curso | Plantilla `535bd77b-fce2-46f0-9354-56b9c42fba5f`, que el 15 de septiembre **pasó de `pending_to_send` a `process`**: la transportadora la está mirando. El `to_f` sigue igual. Volver a cotizar cuando el estado cambie otra vez. |
+| Servientrega, Envía, Coordinadora sin tarifa | ✅ **Resuelto el 15 de septiembre, y era nuestro** | No era de ellos: `declared_amount` va **dentro de cada `parcel`** y el mapeador lo mandaba fuera, con otro nombre. Con el campo en su sitio las tres cotizan (§6.4). **Retirar la solicitud enviada el 14 de septiembre.** |
+| Inter Rapidísimo `to_f >= 25` | ✅ **Resuelto el 15 de septiembre** | Tampoco era la verificación de origen: era el mismo valor declarado ausente. Con el campo bien puesto responde `no_coverage` (§6.4). La plantilla `535bd77b-fce2-46f0-9354-56b9c42fba5f` sigue en `process` y ya no bloquea nada. |
 | Créditos del sandbox | ✅ **Resuelto el 15 de septiembre de 2026** | Skydropx depositó **49.000 COP a mano** (`transaction_source: Skydropx`, etiqueta `USO_INTERNO`, comentario "para realizar peruebas"). Saldo: **50.000 COP**. Nunca funcionó la vía de autoservicio; la resolvió el soporte. |
 | Guía por `POST /shipments` | ✅ **Funciona. Emitida el 15 de septiembre** | Guía `873837506712` de Servientrega, por el camino que `ADR-0021` diseñó: `quotation_id` + `rate_id`. El `422 declared_amount` que parecía bloquearlo **es de la tarifa de 99 minutes**, no del endpoint (§6.3). |
 | `422 declared_amount` en tarifas de 99 minutes | ⚠️ Acotado, y esquivable | Con el mismo cuerpo, una tarifa de Servientrega da `202` y una de 99 minutes da `422`. Es de esa transportadora. **Nuestro**: no elegir esa tarifa, o preguntarles (§6.3). |
@@ -302,8 +357,12 @@ recortadas, no reescritas— viven como fixtures en
   seguro entre ellos: `amount` 18.356 contra `total` 19.616, con
   `extra_fees: [{code: "insurance", value: 1260}]`. Cobrar `amount` regalaría la
   diferencia en cada envío.
-- ✅ **`declared_value` va en cada `parcel` y por omisión queda en COP 2.500.**
-  `declared_amount` es obligatorio a nivel de cotización, aparte.
+- ~~✅ **`declared_value` va en cada `parcel` y por omisión queda en COP 2.500.**
+  `declared_amount` es obligatorio a nivel de cotización, aparte.~~
+  **Falso desde el 14 de septiembre, corregido el 15 (§6.4): el campo que se lee es
+  `declared_amount` y va dentro de cada `parcel`.** `declared_value` y el
+  `declared_amount` de cotización se ignoran los dos. Era cierto cuando se midió el 11;
+  dejó de serlo cuando Skydropx movió el campo.
 - ✅ **Seis transportadoras en el sandbox**: Inter Rapidísimo, Servientrega,
   Coordinadora, Envía (mercancía y paquete terrestre) y 99 minutes.
 - ✅ **Los montos vienen como cadena y los tipos alternan** entre una tarifa y la
@@ -342,6 +401,10 @@ recortadas, no reescritas— viven como fixtures en
 
   **Sobrevivir a una cotización con recaudo es la señal de cobertura**, y es de lo
   que depende `MetodosDePagoDisponibles` desde la Fase 7, paso 6.
+- ✅ **El nombre del campo del monto a recaudar: no existe, resuelto el 15 de
+  septiembre (§6.4).** El monto no se declara — sale calculado en
+  `on_delivery_amount` = valor declarado + flete si `recipient_pays_shipping`. Lo que
+  sigue, escrito el 11, describe bien la búsqueda y la conclusión a la que llegó:
 - ❌ **El nombre del campo del monto a recaudar.** Se probaron diez grafías
   —`on_delivery_amount`, `cash_on_delivery_amount`, `collection_amount`,
   `amount_to_collect`, `cod_amount`, `collect_amount`, `value_to_collect`,
@@ -1103,6 +1166,403 @@ varias guías, o consolidar en un solo bulto y perder las medidas reales—.
   `delivered`. Sí apareció en la de 99 minutes emitida por `rate/shipments`. No se
   sabe si es del simulador de `auto_advance` o de la transportadora.
 - **Inter Rapidísimo y su `to_f >= 25`**, con la plantilla de origen en `process`.
+
+### 6.4 La documentación leída entera, y el campo que faltaba (2026-09-15, tercera parte)
+
+Se recorrió con el navegador toda la documentación —las cuatro guías rápidas y los
+cuarenta y cinco endpoints de `sb-pro.skydropx.com/es-CO/api-docs`, que es la página
+que arma JavaScript y no llega en una descarga— y los artículos del centro de ayuda
+colombiano, `help.skydropx.com.co/subcategorias-cda/api`. El propósito era juntar lo
+que había que preguntarle a Skydropx. **Casi nada había que preguntarlo, y una de las
+preguntas era un error nuestro.**
+
+#### El valor declarado va dentro del bulto, y se llama `declared_amount`
+
+Lo dicen dos fuentes independientes:
+
+- El OpenAPI lo lista bajo `parcels[]`, junto a `length/width/height/weight`, marcado
+  `Required`. Se comprobó contra el DOM y no por la sangría del texto: `declared_amount`
+  cuelga al mismo nivel que `weight`, y `cash_on_delivery` y `requested_carriers` un
+  nivel más arriba.
+- El artículo *Cómo crear envíos con Inter Rapidísimo vía API*, con todas las letras:
+  "Recuerda incluir el campo `declared_amount` (valor declarado) en pesos colombianos
+  **dentro de cada paquete**".
+
+El mapeador mandaba `declared_value` en el bulto y `declared_amount` al nivel de la
+cotización. **Los dos se ignoran**, así que a la transportadora le llegaba cero.
+
+**Medido el 15 de septiembre con cinco cuerpos idénticos salvo por ese campo**
+(`tools/sonda-valor-declarado.mjs`; cotizar no consume saldo). Valor declarado 250.000,
+un bulto de 30×25×10 y 1 kg:
+
+| Transportadora | Como se mandaba (`declared_value` en el bulto) | Con `declared_amount` en el bulto |
+|---|---|---|
+| Servientrega Standard | `tariff_price_not_found` | **27.350** a Bogotá · **12.050** en Medellín |
+| Envía Paquete Terrestre | `tariff_price_not_found` | **16.050** a Bogotá · **8.950** en Medellín |
+| Coordinadora Standard | `not_applicable`: "La valoración de la guía es menor a la valoración mínima" | **20.456** a Bogotá · **11.384** en Medellín |
+| Inter Rapidísimo | `not_applicable`: `to_f debe ser mayor que o igual a 25` | `no_coverage` limpio |
+| 99 minutes Next day | 10.540 en Medellín, sin cobertura a Bogotá | 19.465 en Medellín, sin cobertura a Bogotá |
+| Envía Mercancía Terrestre | restricciones de bulto grande | iguales (`longer_side > 45`, `max_weight > 9`) |
+
+**La deduplicación por contenido, que era una trampa, sirvió de instrumento.** Tres
+cuerpos que solo diferían en esos campos —con `declared_amount` en el bulto, con los dos
+campos, y sin el `declared_amount` de cotización— devolvieron **el mismo `id` de
+cotización**. Si para Skydropx son el mismo cuerpo, los campos que los distinguen no los
+lee nadie. De ahí sale, sin ambigüedad, que `declared_value` y el `declared_amount` de la
+cotización sobran los dos.
+
+**Qué corrige esto, sección por sección:**
+
+- **§6, "Sigue sin confirmarse"**: donde dice que `declared_value` va en cada `parcel` y
+  que `declared_amount` es obligatorio a nivel de cotización, es al revés.
+- **§6.1**: la hipótesis era "entre el 11 y el 14 de septiembre el sandbox dejó de
+  reenviar el valor declarado". Iba bien encaminada —el valor no llegaba— pero el
+  diagnóstico apuntó al lado equivocado. **Y conviene decir que no fue un error de
+  siempre**: el 11 de septiembre Coordinadora cotizó 19.616 con `declared_value` en 2.500,
+  y la validación de `declared_amount ≥ 10000` **aparece el 14**. Lo que pasó, con toda
+  probabilidad, es que Skydropx movió el campo y nosotros no lo seguimos. Es el género de
+  cambio que hay que vigilar en un proveedor, no un descuido del primer día.
+- **§6.2 y §6.3**: el `to_f debe ser mayor que o igual a 25` de Inter Rapidísimo **no era
+  la verificación de origen pendiente**. Era el valor declarado ausente. Con el campo en
+  su sitio, Inter Rapidísimo contesta `no_coverage`, que es una respuesta honesta.
+- **§6.3**, "Descartado: el valor declarado no es lo que tumba a las transportadoras":
+  esa medición varió `declared_value`, un campo muerto. No descartó nada.
+
+**Consecuencias, y no son cosméticas:**
+
+1. **El mínimo de 10.000 se valida por bulto**, no por pedido: un bulto declarado en
+   8.000 devuelve `422 "El valor declarado debe ser mayor o igual a 10000"` y tumba la
+   cotización **entera**. Con un `parcel` por variante, un artículo barato dentro de un
+   pedido caro deja al pedido sin envío a domicilio. Es el dato de negocio que §6.1 dejó
+   abierto, ahora con su forma exacta.
+2. **La tarifa más económica cambia de dueño.** Dentro de Medellín, Envía a 8.950
+   desplaza a 99 minutes, que con el valor declarado real sube a 19.465. Y 99 minutes es
+   una de las dos transportadoras **sin recolección por API** (ver abajo): el criterio
+   "la más barata" ahora elige otra cosa, y elige mejor.
+3. **La solicitud que se le envió a Skydropx el 14 de septiembre por estas tres
+   transportadoras hay que retirarla.** La respuesta era nuestra.
+
+**Arreglado el 15 de septiembre** en `MapeadorCotizacionSkydropxV1`: el campo se mueve al
+bulto y se eliminan los dos muertos. Se fue con ellos
+`CotizacionEnvio.valorDeclaradoTotal()`, que existía solo para alimentar el campo de
+cotización. La prueba que importa es `noSeMandanLosCamposQueElProveedorIgnora`: el fallo
+original **no producía ningún error** —la cotización respondía `201` y las tarifas
+simplemente no venían—, así que sin un guardián explícito la regresión volvería a ser
+invisible.
+
+#### Recolección: el tramo que §2.2 dejó con dos cuerpos incompatibles
+
+✅ **Gana la forma "por envío"**, y la otra no existe:
+
+```
+POST /api/v1/pickups
+{ "pickup": { "reference_shipment_id", "packages", "total_weight",
+              "scheduled_from", "scheduled_to" } }
+```
+
+La documentación añade: "evita cancelaciones por duplicidad agrupando los paquetes con el
+mismo origen y fecha en una sola recolección". Y `GET /api/v1/pickups/coverage` exige
+`shipment_id`, así que **la recolección va después de emitir la guía**, no antes: eso fija
+el orden del despacho. Reprogramar tiene tope de **14 días**
+(`reschedule_remaining_days` en la respuesta).
+
+⚠️ **Y hay una regla operativa que ninguna API declara**, del artículo *Consideraciones
+para recolecciones vía API*:
+
+| Transportadora | Recolección |
+|---|---|
+| Coordinadora, Inter Rapidísimo, Servientrega | **Por API**: hay que llamar a `/pickups` desde la integración |
+| **99 minutos y Envía** | **Solo por soporte**, escribiéndole a Skydropx |
+
+Antes de las 12:00 se agenda el mismo día; después, el siguiente hábil. No hay
+recolección sábados, domingos ni festivos.
+
+✅ **Cada tarifa lo dice por su cuenta**, y eso sí se puede programar: `pickup`,
+`pickup_automatic`, `pickup_package_min`, `pickup_ocurre` (en origen o en sucursal) y
+`pickup_via_support`. La decisión abierta #1 ya no depende de preguntarle a nadie.
+
+#### Contraentrega: el campo que no existía porque no hacía falta
+
+❌ → ✅ **El nombre del campo del monto a recaudar.** No hay ninguno. En la petición de
+cotización solo existen dos booleanos —`cash_on_delivery` y `recipient_pays_shipping`—, y
+el monto sale calculado en la respuesta:
+
+- `on_delivery_amount`: "Monto total a cobrar al destinatario (**valor declarado** + costo
+  de envío si aplica)".
+- `on_delivery_status`: `pending` / `collected` / `failed` / `cancelled`, y el centro de
+  ayuda publica qué significan: cobrado, en proceso con la transportadora, no se pudo
+  entregar, guía anulada.
+
+Las diez grafías que se probaron el 11 de septiembre no fallaron por estar mal escritas:
+**ese dato no se declara**. Y hay una segunda lectura que explica el `null`: la
+documentación dice que `cash_on_delivery` "solo está disponible cuando la feature está
+habilitada para la cuenta", así que `on_delivery_amount: null` con recaudo pedido
+significa **servicio no activado** —el trámite de §3—, no campo inexistente.
+
+**`on_delivery_status` le cambia la vida a `RECAUDO_CONCILIADO`**: el estado del cobro se
+consulta por API, guía por guía, y no hay que deducirlo del extracto del jueves.
+
+Dos reglas de negocio del artículo *Cómo crear un envío contra entrega*: el recaudo es
+**solo en efectivo** y **el paquete se entrega sellado**, sin abrir antes de pagar
+(excepción: Inter Rapidísimo, con su política "Pago en Casa"). Las dos hay que decirlas en
+el checkout. Y confirma lo que ya suponía §6.1: **lo que la transportadora recauda es el
+valor declarado**, que es además la base del seguro obligatorio.
+
+#### Emisión, multienvío y v2
+
+✅ **Decisión #8 resuelta: v2.** La documentación de `POST /api/v2/shipments` lo dice
+directo: "a diferencia de V1, este endpoint **siempre retorna un arreglo de envíos**. Para
+envíos únicos o multipaquete, el arreglo contiene un elemento. Para tarifas multienvío,
+contiene un envío por paquete". Con `multi_packages_enabled: false` en los siete servicios
+de la cuenta, en Colombia todo pedido de dos variantes es multienvío: v1 no tiene forma de
+devolver eso.
+
+✅ **`shipment_creation_type` tiene tres valores, no dos**: `single` (un bulto),
+`multipackage` (un envío con varios paquetes) y `multishipment` (**un envío por paquete**).
+Y el artículo *Qué es Multienvíos* remata lo que eso significa: cada paquete es un envío
+independiente, **se cancela por separado y se rastrea por separado**.
+
+✅ **Dónde vive cada número**, que explica el `label_url` fantasma de §6.3: el envío trae
+`master_tracking_number`, y **cada paquete trae el suyo** —`tracking_number`,
+`tracking_url_provider`, `tracking_status`, `label_url` y `declared_amount`— en el
+`included` de la respuesta. La guía de Servientrega no venía sin etiqueta: se estaba
+mirando el nivel equivocado.
+
+✅ **`declared_amount` no es campo del cuerpo de `POST /shipments`**, ni en v1 ni en v2 —lo
+que §6.3 ya sospechaba—, y **`quotation_id` tampoco**: el único identificador documentado
+es `rate_id`. Mandarlo no estorba, pero no es lo que ata el envío a la cotización.
+
+⚠️ **`company` es obligatorio en las dos direcciones** al crear el envío, y no estaba en la
+lista de §6. `reference` en cambio solo es obligatorio en el origen.
+
+✅ **Cancelar** (decisión #7): `POST /shipments/{id}/cancellations` con
+`{reason, shipment_id}`; responde `status` y `success`, y `422 "El envío no se puede
+cancelar"` cuando ya no hay nada que hacer.
+
+✅ **Asegurar** (decisión #3): `protect` cobra **un fijo más un porcentaje** del valor
+declarado (`fixed_cost`, `percentage`, `total` en la respuesta) y devuelve `422` si el
+valor declarado se sale del rango. Ya se puede poner precio a la decisión.
+
+#### Webhooks: dos precisiones sobre lo de §6.1
+
+- ⚠️ **`data.id` es el identificador del *paquete*, no del envío**; el envío va en
+  `data.relationships.shipment.data.id`. Con multienvío eso significa **un evento por
+  guía**, y el lector tiene que amarrar por la relación, no por `data.id`.
+- ✅ **Existe un webhook de `quotation` con `status: completed`** que trae los `rates` en
+  `relationships`. Es una alternativa al sondeo de `is_completed` para los usos que no sean
+  el checkout —el checkout es síncrono y el sondeo se queda—, y conviene saber que está.
+- ✅ **`extra_charges` trae `real_weight`, `original_weight` y `discrepancy_weight`**: es la
+  reliquidación por peso mal declarado de §2.5, medible y con número.
+
+#### Defectos de la documentación de Skydropx, para no perder el tiempo
+
+- El artículo *Códigos de tipos de empaques (`package_type`)* apunta a un PDF de Google
+  Drive que **está roto** ("el archivo que has solicitado no existe"). La lista real se
+  pide por API: `GET /api/v1/shipments/packagings`, paginado, con `code` y `name` (el
+  ejemplo es `4G` = Box, `total_count: 5`). **`package_type` sigue sin decidirse**, pero ya
+  se sabe que la vía es esa y no buscar más documentación.
+- El artículo *Códigos de paqueterías (`requested_carriers`)* del centro de ayuda
+  **colombiano** publica la lista de **México** —Estafeta, Paquetexpress, verificación con
+  INE—. No sirve aquí: los códigos buenos salen de `GET /shipments/carrier_services`.
+- Los ejemplos del artículo de Inter Rapidísimo contradicen lo medido: escriben el teléfono
+  con indicativo (`573109876543`) y el campo de plantilla como `template_id` cuando el
+  OpenAPI dice `address_template_id`. **Gana lo medido.**
+- La entrega en oficina, en Colombia, **no se hace con `office_delivery`**: el artículo
+  *Cómo hacer el envío a una oficina* dice que se escribe "Reclame en oficina" en la
+  referencia y la dirección de la oficina en el destino, con listados por transportadora en
+  hojas de cálculo. Encaja con que `office_points` devuelva vacío (§6.2): el mecanismo de la
+  API existe y aquí nadie lo usa.
+
+#### Lo que sigue abierto después de todo esto
+
+- **Qué se hace con el bulto que declara menos de 10.000.** Elevarlo al mínimo, agrupar, u
+  ofrecer solo recogida. Dato de negocio, va al ADR. Está como `TODO` en el mapeador.
+- ~~**`package_type`**: pedir el catálogo a `GET /shipments/packagings` y elegir.~~
+  Catálogo leído (§6.5): 59 códigos de embalaje de la ONU, y el que aplica es `4G`,
+  caja de cartón. Queda como elección de operación, no como incógnita.
+- ~~**Por qué la tarifa de 99 minutes exige `declared_amount` al emitir** (§6.3).~~
+  Resuelto el mismo día (§6.5): era el mismo valor declarado mal puesto. Con la
+  cotización corregida, esa tarifa emite `202`.
+- **Cuánto esperar a una tarifa en `pending`** cuando la cotización ya volvió
+  `is_completed` (§6.5). Decisión de ADR con un tope en segundos.
+- **Cerrar la recolección** (§6.6): qué campo es "address2" y programar una de verdad.
+  Cuesta una emisión, y hay que hacerla **en horario hábil**.
+- **Si el valor declarado del pedido contraentrega incluye el flete** (§6.5).
+  `recipient_pays_shipping` no lo suma; declararlo sube también el seguro.
+- **El recargo de recaudo no pedido de `rate/shipments`** (§6.2). Sigue descartado el
+  endpoint, así que es curiosidad, no bloqueo.
+- **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias guías,
+  o consolidar. Sin decidir, y ahora con más información: cada guía se cancela y se rastrea
+  sola, y el envío tiene un `master_tracking_number` que las agrupa.
+
+### 6.5 Los dos pendientes que dejó §6.4, medidos (2026-09-15, cuarta parte)
+
+§6.4 cerró el valor declarado y dejó dos cosas dichas a medias: si la contraentrega
+está activa y dónde cubre, y si el `422` de 99 minutes al emitir era el mismo error.
+Las dos se midieron. **Las dos eran el mismo error.**
+
+#### La contraentrega está activa, y ya no es solo Medellín
+
+Sondas gratis (`tools/sonda-recaudo.mjs`), con el valor declarado ya en su sitio y
+250.000 de mercancía:
+
+- ✅ **El servicio está habilitado en la cuenta.** Pedida con `cash_on_delivery: true`,
+  la cotización responde `cash_on_delivery: true` y **`on_delivery_amount: "250000.0"`**.
+  Eso corrige lo que §3 daba por hecho —"hay que solicitar el servicio; no viene
+  activo"— al menos en este sandbox, y da la señal para distinguirlo: con el servicio
+  apagado, `on_delivery_amount` volvería `null`.
+- ✅ **El monto recaudado es el valor declarado**, exactamente. Confirma por medición lo
+  que decía el centro de ayuda.
+- ⚠️ **`recipient_pays_shipping: true` no cambia el monto**: `on_delivery_amount` sigue
+  siendo 250.000, no 250.000 más el flete. O el cálculo se hace al emitir, o el campo no
+  hace nada en la cotización. **Consecuencia para `ADR-0023`**, que decidió recaudar
+  `Pedido.total()` con flete incluido: eso no se consigue con ese booleano, se consigue
+  **declarando el total como valor declarado**. Que es coherente con todo lo demás —el
+  valor declarado es lo que se recauda y lo que se asegura— pero hay que decirlo y
+  decidirlo, porque declarar el flete como mercancía también sube el seguro.
+- ✅ **El recaudo no cobra recargo en la cotización**: la tarifa de 99 minutes vale 19.465
+  con recaudo y sin él. El sobrecosto de 8.925 de §6.2 es cosa de `rate/shipments`, no del
+  recaudo.
+
+**Cobertura medida**, que es lo que le faltaba al paso 6 del plan de arranque:
+
+| Destino | Sobreviven con recaudo | Se caen |
+|---|---|---|
+| Medellín | **Envía Paquete 8.950 · Coordinadora 11.384 · 99 minutes 19.465** | Servientrega (`tariff_price_not_found`), Inter Rapidísimo (`no_coverage`) |
+| Bogotá | **Envía Paquete 16.050 · Coordinadora 20.456** | Servientrega, 99 minutes (`no_coverage`) |
+
+O sea: **la contraentrega ya se puede ofrecer fuera de Medellín**, con dos
+transportadoras a Bogotá. Y Servientrega, que sí cotiza sin recaudo (12.050 y 27.350), se
+cae en cuanto se pide con recaudo: es la señal de cobertura de §6 funcionando como se
+esperaba, ahora sobre una muestra que no es de una sola transportadora.
+
+#### Una trampa nueva: `is_completed: true` no significa que todas contestaron
+
+Medido de casualidad y confirmado a propósito. Una cotización volvió `is_completed: true`
+con la tarifa de 99 minutes en **`pending`**; al releer esa misma cotización un minuto
+después, la tarifa estaba en `price_found_external` con precio.
+
+**`ADR-0021` sondea hasta `is_completed` y ahí se planta**, y `MapeadorCotizacionSkydropxV1`
+descarta toda tarifa sin `success: true`. Juntando las dos cosas, **una transportadora
+lenta se pierde en silencio**: esta vez la que faltaba era la más cara y no cambiaba nada,
+pero nada garantiza que la próxima no sea la más barata. La cotización no miente —la
+tarifa aparece después— y el checkout no la ve.
+
+No se arregla aquí. Es una decisión con dos filos: esperar a que no quede ninguna
+`pending` alarga el checkout contra un proveedor que ya es lento, y no esperar cobra de
+más. **Va al ADR**, con el tope de segundos que el checkout tolere.
+
+#### El `422` de 99 minutes era el mismo bug
+
+Probado con permiso, porque emitir cuesta: se cotizó con el valor declarado en el mínimo
+(10.000) y un sobre de 20×15×2 con 100 gramos, para que la tarifa fuera la más barata
+posible, y se emitió con la tarifa de 99 minutes —la misma que quince veces respondió
+`422 declared_amount: "Valor declarado es obligatorio"`—.
+
+**`202`.** Envío `d9911391-d2d3-4998-a64c-b7229b428e17`, guía **`1543555745`**, 9.897. El
+saldo pasó de 18.485 a **8.588**.
+
+Queda entonces que el envío hereda el valor declarado del bulto de la cotización, y que
+con la cotización mal armada el paquete salía sin él: 99 minutes lo exigía y Servientrega
+lo toleraba. **No hay nada que preguntarle a Skydropx sobre esto**, y el `TODO` de §6.3
+—"por qué la tarifa de 99 minutes exige `declared_amount`"— se cierra.
+
+Dos cosas más que solo se ven emitiendo, y que corrigen a §6.3:
+
+- ✅ **`label_url` sí aparece.** En la respuesta `202` vienen `master_tracking_number` y
+  `label_url` en `null`, con `workflow_status: in_progress`. Al releer el envío,
+  `workflow_status: success` y ya están los dos: guía `1543555745` y una URL de etiqueta
+  real. Lo de §6.3 —"`label_url` nunca apareció"— era leer demasiado pronto, no un fallo
+  de la transportadora. **El despacho no puede dar por buena la respuesta de creación: hay
+  que releer el envío o esperar el webhook.**
+- ✅ **`package_type: "4G"` se acepta y vuelve en el paquete**, junto a
+  `declared_amount: 10000.0`.
+
+#### `package_type`: el catálogo, por fin
+
+`GET /api/v1/shipments/packagings` responde **59 tipos en tres páginas**, y son los códigos
+de embalaje de la ONU, no una lista de Skydropx. Los que le sirven al negocio son dos:
+
+| Código | Nombre |
+|---|---|
+| **`4G`** | Caja de cartón |
+| `5H4` | Saco (bolsa) de película de plástico |
+
+El resto son bidones de acero, jaulas, cajas de madera contrachapada y envases compuestos.
+**Deja de ser una incógnita de la API y pasa a ser una elección de operación**: lo que
+TecnoSport despacha va en caja de cartón, salvo que alguien decida mandar algo en bolsa.
+
+### 6.6 La recolección, ejercida a medias (2026-09-15, quinta parte)
+
+`§2.2` la llamó "el tramo que ningún ADR contempla" y `§6.4` encontró su cuerpo en la
+documentación. Faltaba ejercerlo, y se intentó de punta a punta con
+`tools/sonda-recoleccion.mjs`: cotizar, emitir con una transportadora que recoja por
+API, pedir cobertura, programar y consultar.
+
+**No se cerró**, y el motivo no está en nuestro lado. Pero el endpoint contestó lo
+suficiente como para que quede poco por adivinar.
+
+#### Lo que `POST /pickups` validó de nuestro cuerpo
+
+Todo esto salió gratis: un `422` no cuesta saldo.
+
+| Respuesta | Qué enseña |
+|---|---|
+| `422 total_weight: ["debe ser un entero"]` | El peso total va en **kilos enteros**, aunque el OpenAPI lo declare `["number", "string"]`. Mandar `0.1` no pasa. Un sobre de 100 gramos se programa como 1 |
+| `422 base: ["Some carriers are missing credentials..."]` | Con la guía de 99 minutes. **Es la versión en API del "solo por soporte"** de `§6.4`: la cuenta no tiene credenciales de recolección de esa transportadora. El código puede distinguirlo sin codificar nombres |
+| `422 base: ["Shipper address2 not valid: null"]` | Con una guía de Servientrega cuya dirección de origen iba incompleta. **Falta un campo de la dirección del envío**, y los únicos que el envío guarda en `null` son `apartment_number` y `area_level3` |
+| `422 reference_shipment: ["El estado del envío no es exitoso"]` | **La recolección exige el envío en `success`.** El `202` de creación no basta |
+
+✅ Y por tarifa, la cotización ya dice quién recoge por API: `pickup` viene **`true` en
+Coordinadora, Servientrega e Inter Rapidísimo** y **`false` en 99 minutes y Envía**,
+que son exactamente las dos del "por soporte". Coincide con el centro de ayuda sin
+tener que leerlo. Ojo: `pickup_via_support` vuelve `false` en las seis, así que **el
+campo que discrimina es `pickup`**, no ese.
+
+⛔ **`GET /pickups/coverage` no sirvió ni una vez.** Cuatro guías distintas —una en
+error, dos en `success`, de tres transportadoras— y siempre
+`422 {"success": false, "message": null}`, con el mensaje vacío que su propia
+especificación promete llenar. No es obligatoria para programar, pero hoy no se puede
+usar para ofrecer fechas.
+
+#### Por qué no se cerró: las transportadoras, de noche, no emiten
+
+Tres emisiones, tres muertes **minutos después del `202`**, y las tres con el saldo
+devuelto entero:
+
+| Transportadora | `error_detail` |
+|---|---|
+| Coordinadora (2 intentos) | `500 ... llave duplicada viola restricción de unicidad «agw_remisiones_idx_codigo_remision» ... (codigo_remision)=(93202421647)` — **el mismo código de remisión para dos envíos distintos**: su contador está atascado |
+| Servientrega | `500 {"error":""} at LABEL_NUMBER` — un quinientos vacío |
+
+Servientrega había emitido bien esa misma mañana y 99 minutes una hora antes. Eran las
+22:30. **La intermitencia que `§6.3` anotó y subestimó tiene, con toda probabilidad,
+horario**: de noche los sistemas de las transportadoras no responden. Conviene
+programar las pruebas de emisión en horario hábil.
+
+**Saldo: intacto, 8.588.** Las tres fallidas se reembolsaron solas.
+
+#### La consecuencia grande, y no es de la recolección
+
+**Un `202` puede terminar en `workflow_status: error` varios minutos después**, con
+`payment_status: refunded` y el motivo en `error_detail`. Pasó tres veces en una noche.
+
+Eso le pone una condición al despacho que ningún ADR contempla: **un pedido no se marca
+despachado con la respuesta de creación**. Hay que esperar el estado terminal —releyendo
+el envío o por el webhook— y tener una rama para `error` que devuelva el pedido a la cola
+en vez de dejarlo con una guía que no existe y que nadie va a recoger. Es el mismo
+género del `408` de `§6.2`, pero al revés: allí el `408` había creado la guía; aquí el
+`202` no la creó.
+
+#### Lo que falta, y cuesta una sola emisión
+
+1. **Qué campo es "address2"**, entre `apartment_number` y `area_level3`. La guía que
+   los llevaba llenos nunca llegó a `success`, así que no se pudo volver a preguntar.
+2. **Programar de verdad** una recolección y leerla (`GET /pickups/{id}`), que es lo
+   único del tramo que sigue sin verse funcionar.
+
+Las dos se cierran con **una guía viva de Servientrega o Coordinadora**, emitida en
+horario hábil. Con 8.588 de saldo alcanza.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 

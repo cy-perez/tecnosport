@@ -133,11 +133,12 @@ class MapeadorCotizacionSkydropxV1Test {
   }
 
   /**
-   * Cada bulto declara lo suyo y la cotización declara la suma. Sin {@code declared_value} el valor
-   * queda en COP 2.500 por omisión, y sin {@code declared_amount} la respuesta es 422.
+   * Cada bulto declara lo suyo, y lo declara en {@code declared_amount}. Es el campo del que
+   * depende que la transportadora conteste: medido el 15 de septiembre de 2026, con él Servientrega
+   * cotiza 27.350 a Bogotá y sin él responde {@code tariff_price_not_found}.
    */
   @Test
-  void cadaBultoDeclaraSuValorYLaCotizacionDeclaraLaSuma() {
+  void cadaBultoDeclaraSuValorEnDeclaredAmount() {
     JsonNode quotation =
         quotationDe(
             cotizacionDe(
@@ -146,9 +147,25 @@ class MapeadorCotizacionSkydropxV1Test {
 
     JsonNode parcels = quotation.path("parcels");
     assertEquals(2, parcels.size());
-    assertEquals("150000", parcels.path(0).path("declared_value").asString());
-    assertEquals("1200000", parcels.path(1).path("declared_value").asString());
-    assertEquals("1350000", quotation.path("declared_amount").asString());
+    assertEquals("150000", parcels.path(0).path("declared_amount").asString());
+    assertEquals("1200000", parcels.path(1).path("declared_amount").asString());
+  }
+
+  /**
+   * Los dos campos que el proveedor ignora, y que estuvieron aquí un mes: {@code declared_value} en
+   * el bulto y {@code declared_amount} al nivel de la cotización. Se probó que sobran con la
+   * deduplicación por contenido del propio Skydropx —quitarlos devuelve la misma cotización, luego
+   * nadie los lee—, y mientras estuvieron puestos parecían el valor declarado sin serlo. Esta
+   * prueba existe para que no vuelvan: un mapeo que los mande otra vez cotiza igual de mal y ningún
+   * error lo delata.
+   */
+  @Test
+  void noSeMandanLosCamposQueElProveedorIgnora() {
+    JsonNode quotation =
+        quotationDe(cotizacionDe(new Bulto(new Paquete(180, 30, 25, 4), Dinero.deCop(150_000))));
+
+    assertTrue(quotation.path("declared_amount").isMissingNode());
+    assertTrue(quotation.path("parcels").path(0).path("declared_value").isMissingNode());
   }
 
   /** Un paquete por variante: dos variantes, dos parcels, no una caja inventada. */

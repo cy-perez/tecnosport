@@ -3439,6 +3439,24 @@ Orden de construcción, un caso de uso a la vez:
    cobertura urbana. Se ensancha solo cuando las otras transportadoras
    respondan.
 
+   > **Medido de nuevo el 15 de septiembre de 2026** (`docs/13` §6.5), después de
+   > corregir el valor declarado: **la contraentrega ya no es solo Medellín**. Con
+   > recaudo sobreviven Envía Paquete (8.950) y Coordinadora (11.384) en Medellín,
+   > 99 minutes también (19.465), y **en Bogotá dos: Coordinadora 20.456 y Envía
+   > 16.050**. El servicio está activo en la cuenta —`on_delivery_amount` vuelve
+   > con monto— y lo que se recauda es el valor declarado, exactamente. Servientrega
+   > cotiza sin recaudo y se cae con él, que es la señal de cobertura funcionando.
+   >
+   > **Lo que esto le pide al código**: nada, porque `MetodosDePagoDisponibles` ya
+   > pregunta por una tarifa con recaudo y no por una tabla. La frase de arriba
+   > —"solo se ofrece en Medellín"— era verdad con el sandbox de entonces y ya no lo
+   > es; el mecanismo que la produce no cambió.
+   >
+   > **Lo que sí queda por decidir** (`ADR-0023`): se decidió recaudar
+   > `Pedido.total()`, flete incluido, y `recipient_pays_shipping` **no** suma el
+   > flete al monto. La única forma de cobrar el total en la puerta es declararlo
+   > como valor declarado, lo que también sube el seguro.
+
    **Verificado contra Skydropx de verdad**, no solo con dobles: con
    `CONTRAENTREGA_HABILITADA=true`, `/metodos-de-pago-disponibles` devuelve
    `CONTRAENTREGA` para Medellín y no la devuelve para Bogotá, sin ninguna
@@ -3895,6 +3913,41 @@ salió por el camino bueno.
 `POST /rate/shipments` queda descartado igual: recotiza por su cuenta y agregó un
 recargo de recaudo de 8.925 que nadie pidió —10.540 contra 19.465 por el mismo
 envío, un 85 % más—.
+
+**Tercera parte del mismo día, y cambia el diagnóstico otra vez.** Leyendo la
+documentación entera se encontró que **`declared_amount` va dentro de cada
+`parcel`** y que el mapeador lo mandaba fuera y con otro nombre; con el campo en
+su sitio, las tres transportadoras que llevaban un mes mudas cotizan. El relato y
+la medición están en `docs/13-skydropx-capacidades.md` §6.4. Dos cosas que le
+cambian a este paso:
+
+- **La lección de método de arriba sigue siendo buena, pero se queda corta.** No
+  bastaba con variar la transportadora: el campo que importaba no estaba en
+  ninguna de las quince variantes, porque las quince eran variantes del nombre
+  y del sitio equivocados. Lo que destapó el error fue **leer la documentación
+  completa**, no probar más.
+- **El `422` de 99 minutes era el mismo bug. Confirmado el mismo día** (`docs/13`
+  §6.5): con la cotización corregida, la tarifa que quince veces respondió "Valor
+  declarado es obligatorio" emitió `202`. Guía `1543555745`, 9.897; el saldo quedó
+  en **8.588**. El envío heredaba del bulto un valor declarado que nunca se había
+  mandado. No hay nada que preguntarle a Skydropx.
+- **Y emitiendo se vio algo que el despacho tiene que respetar**: la respuesta
+  `202` trae `master_tracking_number` y `label_url` en `null`, con
+  `workflow_status: in_progress`. La guía y la etiqueta aparecen al releer el
+  envío, ya en `success`. **Guardar lo que devuelve la creación sería guardar una
+  guía vacía**: hay que releer el envío o esperar el webhook.
+- **Y peor: el `202` puede terminar en `error`.** Tres emisiones de esa noche
+  murieron minutos después, con `workflow_status: error`, `payment_status:
+  refunded` y un `500` de la transportadora en `error_detail` (`docs/13` §6.6).
+  **Un pedido no se marca despachado con la respuesta de creación**: hace falta
+  esperar el estado terminal y una rama para `error` que devuelva el pedido a la
+  cola. Es el `408` de `§6.2` al revés — allí la guía existía sin que lo
+  supiéramos; aquí creíamos tenerla y no existe.
+- **El tramo de recolección quedó ejercido a medias** (`docs/13` §6.6): el
+  endpoint valida el cuerpo —peso entero, envío en `success`, credenciales de la
+  transportadora— pero no se pudo programar ninguna porque esa noche ni
+  Coordinadora ni Servientrega lograron emitir. **Se retoma en horario hábil**, y
+  cuesta una sola guía.
 
 **Y con eso los tres adaptadores pendientes dejaron de estarlo.** La guía se creó
 con `auto_advance: true` y el sandbox la movió sola, un evento por minuto:

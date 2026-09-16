@@ -39,6 +39,22 @@ import tools.jackson.databind.node.ObjectNode;
  *   <li><strong>El flete es {@code total}, no {@code amount}.</strong> La diferencia son los {@code
  *       extra_fees} —el seguro, entre ellos—, y es plata que el negocio paga. Cobrar {@code amount}
  *       sería regalar la diferencia en cada envío.
+ *   <li><strong>El valor declarado va dentro de cada {@code parcel}, y se llama {@code
+ *       declared_amount}.</strong> Esta clase mandó durante días {@code declared_value} en el bulto
+ *       y {@code declared_amount} al nivel de la cotización, y <em>los dos se ignoran</em>: la
+ *       transportadora recibía cero. Eso —y no un fallo de Skydropx, como se creyó durante un mes—
+ *       es lo que dejaba a Servientrega, Envía y Coordinadora sin tarifa, con mensajes que apuntan
+ *       al mismo sitio ("Falta Valor_Declarado", "La valoración de la guía es menor a la valoración
+ *       mínima", {@code to_f debe ser mayor que o igual a 25}). Con el campo en su lugar las tres
+ *       cotizan. Lo delató la deduplicación por contenido del propio proveedor: tres cuerpos que
+ *       solo diferían en esos campos devolvieron el mismo {@code id} de cotización, o sea que para
+ *       Skydropx eran el mismo cuerpo. La medición está en {@code tools/sonda-valor-declarado.mjs}.
+ *   <li><strong>El mínimo de 10.000 se valida por bulto.</strong> Un bulto declarado en 8.000
+ *       devuelve {@code 422 "El valor declarado debe ser mayor o igual a 10000"} y tumba la
+ *       cotización entera, no solo ese bulto. Con un {@code parcel} por variante, un artículo
+ *       barato dentro de un pedido caro basta para dejarlo sin envío a domicilio. {@code TODO:
+ *       decidir qué se hace con el bulto que declara menos del mínimo asegurable —elevarlo,
+ *       agruparlo u ofrecer solo recogida—; es dato de negocio y va en el ADR.}
  *   <li><strong>Los montos vienen como cadena y los tipos bailan</strong> entre una tarifa y otra:
  *       {@code weight} llega como {@code "0.0"} en una y {@code 3} en la siguiente. Por eso todo se
  *       lee como texto y se convierte a {@link BigDecimal}, nunca con {@code asDouble} (regla dura
@@ -77,9 +93,6 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
       parcels.add(parcel(bulto));
     }
 
-    // Obligatorio aparte del valor de cada bulto: sin el la cotizacion responde 422.
-    quotation.put("declared_amount", cotizacion.valorDeclaradoTotal().valor());
-
     // Pedir la cotización con recaudo cambia quién responde: las transportadoras que no lo
     // admiten se caen con restricciones propias del recaudo. El monto a recaudar NO va aquí —
     // se probaron diez grafías y ninguna quedó reflejada; ese dato es de la guía, no de la
@@ -117,6 +130,10 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
     return nodo;
   }
 
+  /**
+   * {@code declared_amount} va <strong>dentro del bulto</strong>, y es el campo del que depende que
+   * la transportadora responda. Ver el porqué en el javadoc de la clase.
+   */
   private ObjectNode parcel(Bulto bulto) {
     Paquete paquete = bulto.paquete();
     ObjectNode nodo = json.createObjectNode();
@@ -124,7 +141,7 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
     nodo.put("width", paquete.anchoCm());
     nodo.put("height", paquete.altoCm());
     nodo.put("weight", enKilos(paquete.pesoGramos()));
-    nodo.put("declared_value", bulto.valorDeclarado().valor());
+    nodo.put("declared_amount", bulto.valorDeclarado().valor());
     return nodo;
   }
 

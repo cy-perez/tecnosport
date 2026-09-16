@@ -1,8 +1,6 @@
 package co.tecnosport.api.application.envio;
 
-import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Direccion;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,16 +32,5 @@ public record CotizacionEnvio(Direccion destino, List<Bulto> bultos, boolean con
     if (bultos.isEmpty()) {
       throw new IllegalArgumentException("Una cotización necesita al menos un bulto.");
     }
-  }
-
-  /**
-   * Lo que vale el envío entero. Skydropx lo exige a nivel de cotización además del valor de cada
-   * bulto, y que los dos cuadren es responsabilidad de quien arma la petición, no del proveedor.
-   */
-  public Dinero valorDeclaradoTotal() {
-    return Dinero.deCop(
-        bultos.stream()
-            .map(bulto -> bulto.valorDeclarado().valor())
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
   }
 }
