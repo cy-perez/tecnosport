@@ -87,7 +87,8 @@
       "comision": "Collection fee",
       "historial": "History",
       "acciones": "Actions",
-      "contacto": "Recipient"
+      "contacto": "Recipient",
+      "costo_total": "Total shipping cost"
     },
     "acciones": {
       "sin_accion": "No actions available.",
@@ -98,6 +99,10 @@
       "transportadora": "Carrier",
       "guia": "Tracking number",
       "costo_envio": "Shipping cost",
+      "guia_numero": "Tracking number {{numero}}",
+      "agregar_guia": "Add another tracking number",
+      "quitar_guia": "Remove",
+      "quitar_guia_accesible": "Remove tracking number {{numero}}",
       "despachar": "Ship",
       "marcar_entregado": "Mark delivered",
       "rechazar_en_entrega": "Reject on delivery",

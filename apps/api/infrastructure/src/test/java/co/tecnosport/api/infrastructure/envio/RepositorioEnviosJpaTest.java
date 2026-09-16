@@ -9,6 +9,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -16,6 +17,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.infrastructure.envio.entidad.EnvioJpaEntity;
+import co.tecnosport.api.infrastructure.envio.entidad.GuiaEnvioJpaEntity;
 import co.tecnosport.api.infrastructure.pedido.RepositorioPedidosJpa;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -43,6 +45,7 @@ class RepositorioEnviosJpaTest {
   @Autowired private RepositorioEnviosJpa repositorio;
   @Autowired private RepositorioPedidosJpa pedidos;
   @Autowired private EnvioJpaRepository envioJpaRepository;
+  @Autowired private GuiaEnvioJpaRepository guiaJpaRepository;
 
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -87,6 +90,15 @@ class RepositorioEnviosJpaTest {
         GeneradorIdentificador.nuevo(), estado, "en ruta", ocurrioEn, recibidoEn, idExterno);
   }
 
+  /** Los envíos de estas pruebas llevan una guía salvo donde se diga lo contrario. */
+  private static String unicaGuiaDe(Envio envio) {
+    return envio.guias().getFirst().numero();
+  }
+
+  private static List<EventoSeguimiento> eventosDe(Envio envio) {
+    return envio.guias().getFirst().eventos();
+  }
+
   private static EventoSeguimiento evento(EstadoEnvio estado, String idExterno, Instant ocurrioEn) {
     return new EventoSeguimiento(
         GeneradorIdentificador.nuevo(),
@@ -102,20 +114,102 @@ class RepositorioEnviosJpaTest {
   void losEventosVuelvenEnterosyEnOrden() {
     UUID pedidoId = sembrarPedidoContraentrega();
     Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
-    Envio envio = Envio.crear(pedidoId, "99 minutes", "NN-1", Dinero.deCop(10_540), despacho);
-    envio.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-3", despacho.plusSeconds(7200)));
-    envio.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", despacho));
-    envio.registrarEvento(evento(EstadoEnvio.EN_TRANSITO, "ev-2", despacho.plusSeconds(3600)));
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("99 minutes", "NN-1", Dinero.deCop(10_540))),
+            despacho);
+    envio.registrarEvento(
+        unicaGuiaDe(envio), evento(EstadoEnvio.ENTREGADO, "ev-3", despacho.plusSeconds(7200)));
+    envio.registrarEvento(unicaGuiaDe(envio), evento(EstadoEnvio.RECOGIDO, "ev-1", despacho));
+    envio.registrarEvento(
+        unicaGuiaDe(envio), evento(EstadoEnvio.EN_TRANSITO, "ev-2", despacho.plusSeconds(3600)));
 
     repositorio.guardar(envio);
 
     Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
-    assertThat(encontrado.eventos().stream().map(EventoSeguimiento::estado))
+    assertThat(eventosDe(encontrado).stream().map(EventoSeguimiento::estado))
         .containsExactly(EstadoEnvio.RECOGIDO, EstadoEnvio.EN_TRANSITO, EstadoEnvio.ENTREGADO);
     assertThat(encontrado.ultimoEstado()).contains(EstadoEnvio.ENTREGADO);
-    assertThat(encontrado.eventos().get(0).recibidoEn())
+    assertThat(eventosDe(encontrado).get(0).recibidoEn())
         .isEqualTo(despacho.plusSeconds(30))
-        .isNotEqualTo(encontrado.eventos().get(0).ocurrioEn());
+        .isNotEqualTo(eventosDe(encontrado).get(0).ocurrioEn());
+  }
+
+  /**
+   * El caso que estrena adr/0031: dos bultos son dos guías, cada una con su cobro y su rastro. Si
+   * los eventos volvieran mezclados, el comprador leería que le entregaron un paquete que sigue en
+   * camino.
+   */
+  @Test
+  void unEnvioDeDosGuiasVuelveConCadaRastroEnSuSitio() {
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(
+                GuiaEnvio.crear("Servientrega", "SE-1", Dinero.deCop(8_200)),
+                GuiaEnvio.crear("Coordinadora", "CO-2", Dinero.deCop(5_991))),
+            despacho);
+    envio.registrarEvento("SE-1", evento(EstadoEnvio.ENTREGADO, "ev-se", despacho));
+    envio.registrarEvento("CO-2", evento(EstadoEnvio.EN_TRANSITO, "ev-co", despacho));
+
+    repositorio.guardar(envio);
+
+    Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
+    assertThat(encontrado.guias()).hasSize(2);
+    assertThat(encontrado.costoEnvio()).isEqualTo(Dinero.deCop(14_191));
+    assertThat(encontrado.guiaDe("SE-1").orElseThrow().ultimoEstado())
+        .contains(EstadoEnvio.ENTREGADO);
+    assertThat(encontrado.guiaDe("CO-2").orElseThrow().ultimoEstado())
+        .contains(EstadoEnvio.EN_TRANSITO);
+    assertThat(encontrado.guiaDe("SE-1").orElseThrow().terminada()).isTrue();
+    assertThat(encontrado.guiaDe("CO-2").orElseThrow().terminada()).isFalse();
+  }
+
+  /**
+   * Cualquiera de las dos guías lleva al mismo envío: es como el webhook resuelve un evento, con el
+   * número y nada más.
+   */
+  @Test
+  void elEnvioSeEncuentraPorCualquieraDeSusGuias() {
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(
+                GuiaEnvio.crear("Servientrega", "SE-1", Dinero.deCop(8_200)),
+                GuiaEnvio.crear("Coordinadora", "CO-2", Dinero.deCop(5_991))),
+            Instant.parse("2026-09-10T14:00:00Z"));
+    repositorio.guardar(envio);
+
+    assertThat(repositorio.buscarPorGuia("SE-1").orElseThrow().id()).isEqualTo(envio.id());
+    assertThat(repositorio.buscarPorGuia("CO-2").orElseThrow().id()).isEqualTo(envio.id());
+    assertThat(repositorio.buscarPorGuia("NO-EXISTE")).isEmpty();
+  }
+
+  /**
+   * Con una guía entregada y otra viva, el envío sigue siendo de los que hay que preguntar. Medirlo
+   * sobre el envío entero lo daría por terminado y dejaría la segunda sin conciliar para siempre.
+   */
+  @Test
+  void unEnvioConUnaGuiaEntregadaYOtraVivaSigueEnLaConciliacion() {
+    Instant corte = Instant.parse("2026-09-12T00:00:00Z");
+    UUID pedidoId = sembrarPedidoContraentrega();
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(
+                GuiaEnvio.crear("Servientrega", "SE-1", Dinero.deCop(8_200)),
+                GuiaEnvio.crear("Coordinadora", "CO-2", Dinero.deCop(5_991))),
+            corte.minusSeconds(86_400));
+    envio.registrarEvento(
+        "SE-1", evento(EstadoEnvio.ENTREGADO, "ev-se", corte.minusSeconds(90_000)));
+    repositorio.guardar(envio);
+
+    assertThat(repositorio.buscarSinEventosDesde(corte, 25).stream().map(Envio::id))
+        .containsExactly(envio.id());
   }
 
   /**
@@ -126,18 +220,23 @@ class RepositorioEnviosJpaTest {
   void guardarDosVecesNoDuplicaNiPierdeEventos() {
     UUID pedidoId = sembrarPedidoContraentrega();
     Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
-    Envio envio = Envio.crear(pedidoId, "99 minutes", "NN-1", Dinero.deCop(10_540), despacho);
-    envio.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", despacho));
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("99 minutes", "NN-1", Dinero.deCop(10_540))),
+            despacho);
+    envio.registrarEvento(unicaGuiaDe(envio), evento(EstadoEnvio.RECOGIDO, "ev-1", despacho));
     repositorio.guardar(envio);
 
     Envio releido = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
-    releido.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-2", despacho.plusSeconds(3600)));
+    releido.registrarEvento(
+        unicaGuiaDe(releido), evento(EstadoEnvio.ENTREGADO, "ev-2", despacho.plusSeconds(3600)));
     repositorio.guardar(releido);
     repositorio.guardar(releido);
 
     Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
-    assertThat(encontrado.eventos()).hasSize(2);
-    assertThat(encontrado.eventos().stream().map(EventoSeguimiento::idExterno))
+    assertThat(eventosDe(encontrado)).hasSize(2);
+    assertThat(eventosDe(encontrado).stream().map(EventoSeguimiento::idExterno))
         .containsExactly("ev-1", "ev-2");
   }
 
@@ -153,9 +252,7 @@ class RepositorioEnviosJpaTest {
     Envio callado =
         Envio.crear(
             pedidoCallado,
-            "99 minutes",
-            "CALLADO",
-            Dinero.deCop(10_540),
+            List.of(GuiaEnvio.crear("99 minutes", "CALLADO", Dinero.deCop(10_540))),
             corte.minusSeconds(86_400));
     repositorio.guardar(callado);
 
@@ -163,11 +260,10 @@ class RepositorioEnviosJpaTest {
     Envio conEventoReciente =
         Envio.crear(
             pedidoReciente,
-            "99 minutes",
-            "RECIENTE",
-            Dinero.deCop(10_540),
+            List.of(GuiaEnvio.crear("99 minutes", "RECIENTE", Dinero.deCop(10_540))),
             corte.minusSeconds(86_400));
     conEventoReciente.registrarEvento(
+        unicaGuiaDe(conEventoReciente),
         evento(
             EstadoEnvio.EN_TRANSITO, "ev-reciente", corte.plusSeconds(60), corte.plusSeconds(60)));
     repositorio.guardar(conEventoReciente);
@@ -176,11 +272,10 @@ class RepositorioEnviosJpaTest {
     Envio yaEntregado =
         Envio.crear(
             pedidoEntregado,
-            "99 minutes",
-            "ENTREGADO",
-            Dinero.deCop(10_540),
+            List.of(GuiaEnvio.crear("99 minutes", "ENTREGADO", Dinero.deCop(10_540))),
             corte.minusSeconds(172_800));
     yaEntregado.registrarEvento(
+        unicaGuiaDe(yaEntregado),
         evento(
             EstadoEnvio.ENTREGADO,
             "ev-entregado",
@@ -191,9 +286,13 @@ class RepositorioEnviosJpaTest {
     UUID pedidoNuevo = sembrarPedidoContraentrega(4);
     repositorio.guardar(
         Envio.crear(
-            pedidoNuevo, "99 minutes", "NUEVO", Dinero.deCop(10_540), corte.plusSeconds(600)));
+            pedidoNuevo,
+            List.of(GuiaEnvio.crear("99 minutes", "NUEVO", Dinero.deCop(10_540))),
+            corte.plusSeconds(600)));
 
-    assertThat(repositorio.buscarSinEventosDesde(corte, 25).stream().map(Envio::guia))
+    assertThat(
+            repositorio.buscarSinEventosDesde(corte, 25).stream()
+                .map(RepositorioEnviosJpaTest::unicaGuiaDe))
         .containsExactly("CALLADO");
   }
 
@@ -209,9 +308,7 @@ class RepositorioEnviosJpaTest {
       repositorio.guardar(
           Envio.crear(
               pedidoId,
-              "99 minutes",
-              "CALLADO-" + i,
-              Dinero.deCop(10_540),
+              List.of(GuiaEnvio.crear("99 minutes", "CALLADO-" + i, Dinero.deCop(10_540))),
               corte.minusSeconds(86_400L * i)));
     }
 
@@ -223,22 +320,29 @@ class RepositorioEnviosJpaTest {
   void guardaUnEnvioConSusDatos() {
     UUID pedidoId = sembrarPedidoContraentrega();
     Envio envio =
-        Envio.crear(pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), Instant.now());
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000))),
+            Instant.now());
 
     repositorio.guardar(envio);
 
     EnvioJpaEntity encontrado = envioJpaRepository.findById(envio.id()).orElseThrow();
     assertThat(encontrado.getPedidoId()).isEqualTo(pedidoId);
-    assertThat(encontrado.getTransportadora()).isEqualTo("Servientrega");
-    assertThat(encontrado.getGuia()).isEqualTo("SE123456");
-    assertThat(encontrado.getCostoEnvio()).isEqualByComparingTo(new BigDecimal("15000.00"));
+    GuiaEnvioJpaEntity guia = guiaJpaRepository.findByNumero("SE123456").orElseThrow();
+    assertThat(guia.getEnvioId()).isEqualTo(envio.id());
+    assertThat(guia.getTransportadora()).isEqualTo("Servientrega");
+    assertThat(guia.getCostoEnvio()).isEqualByComparingTo(new BigDecimal("15000.00"));
   }
 
   @Test
   void buscarPorPedidoIdEncuentraElEnvioDelDespacho() {
     UUID pedidoId = sembrarPedidoContraentrega();
     Envio envio =
-        Envio.crear(pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), Instant.now());
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000))),
+            Instant.now());
     repositorio.guardar(envio);
 
     Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
@@ -258,7 +362,10 @@ class RepositorioEnviosJpaTest {
     UUID pedidoId = sembrarPedidoContraentrega();
     Instant despachadoEn = Instant.now();
     Envio envio =
-        Envio.crear(pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), despachadoEn);
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("Servientrega", "SE123456", Dinero.deCop(15_000))),
+            despachadoEn);
     repositorio.guardar(envio);
 
     Instant conciliadoEn = despachadoEn.plusSeconds(3600);

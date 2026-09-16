@@ -39,6 +39,7 @@ import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
@@ -588,7 +589,10 @@ class PedidoControladorTest {
     // envio en absoluto —un pedido recien confirmado todavia no tiene envio— y pasaba en verde
     // aunque el mapeador filtrara. Se comprobo metiendo la fuga a proposito.
     Envio envio =
-        Envio.crear(pedido.id(), "Interrapidisimo", "GUIA-99", Dinero.deCop(12_000), Instant.now());
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("Interrapidisimo", "GUIA-99", Dinero.deCop(12_000))),
+            Instant.now());
     envio.conciliarRecaudo(Dinero.deCop(3_500), Instant.now());
     envios.guardar(envio);
 
@@ -598,12 +602,16 @@ class PedidoControladorTest {
                 get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
                     .param("correo", "cliente@tecnosport.co"))
             .andExpect(status().isOk())
-            // El bloque del envio lleva estos tres campos y ni uno mas. `hasKey` sobre el mapa
-            // entero y no tres `exists`: lo que hay que impedir es el campo que nadie previo.
-            .andExpect(jsonPath("$.envio.transportadora").value("Interrapidisimo"))
-            .andExpect(jsonPath("$.envio.guia").value("GUIA-99"))
+            // El bloque del envio lleva estos dos campos y ni uno mas, y cada guia otros dos.
+            // La cuenta sobre el mapa entero y no un `exists` por campo: lo que hay que impedir
+            // es el campo que nadie previo. Desde adr/0031 hay que contar los dos niveles — el
+            // costo de cada guia es margen, y sin la cuenta de adentro se colaria sin que la de
+            // afuera se enterara.
+            .andExpect(jsonPath("$.envio.guias[0].transportadora").value("Interrapidisimo"))
+            .andExpect(jsonPath("$.envio.guias[0].guia").value("GUIA-99"))
+            .andExpect(jsonPath("$.envio.guias[0].*", org.hamcrest.Matchers.hasSize(2)))
             .andExpect(jsonPath("$.envio.despachadoEn").exists())
-            .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(3)))
+            .andExpect(jsonPath("$.envio.*", org.hamcrest.Matchers.hasSize(2)))
             // El juego de llaves de la raiz: los diecisiete campos de PedidoSeguimientoRespuesta.
             .andExpect(jsonPath("$.*", org.hamcrest.Matchers.hasSize(17)))
             // Y el de la linea, que es un objeto que este mapeador NO escribe a mano: lo copia

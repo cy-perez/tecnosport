@@ -3,8 +3,8 @@ package co.tecnosport.api.domain.envio;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -12,120 +12,93 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Transportadora, guía y costo real del despacho (docs/02-modelo-datos.md). Nace en el despacho, no
- * antes. El recaudo de contraentrega (comisión de la transportadora, fecha de conciliación) se
- * registra aparte, con {@link #conciliarRecaudo}: la comisión es un costo real, separado del flete,
- * para que el margen del pedido sea verdadero (docs/11-pagos-y-envios.md).
+ * El despacho de un pedido: sus guías y el costo real (docs/02-modelo-datos.md). Nace en el
+ * despacho, no antes. El recaudo de contraentrega (comisión de la transportadora, fecha de
+ * conciliación) se registra aparte, con {@link #conciliarRecaudo}: la comisión es un costo real,
+ * separado del flete, para que el margen del pedido sea verdadero (docs/11-pagos-y-envios.md).
+ *
+ * <p><strong>Un envío, varias guías</strong> (adr/0031). El envío es la unidad de dinero del pedido
+ * —la comisión de recaudo es una por pedido, no una por paquete— y la {@link GuiaEnvio} es la
+ * unidad de rastreo: cada paquete se mueve solo y trae su propio hilo de eventos. Nunca hay cero
+ * guías: un despacho sin guía no es un despacho.
  */
 public final class Envio {
 
   private final UUID id;
   private final UUID pedidoId;
-  private final String transportadora;
-  private final String guia;
-  private final Dinero costoEnvio;
+  private final List<GuiaEnvio> guias;
   private final Instant despachadoEn;
   private Dinero comisionRecaudo;
   private Instant recaudoConciliadoEn;
-  private final List<EventoSeguimiento> eventos;
 
   public Envio(
       UUID id,
       UUID pedidoId,
-      String transportadora,
-      String guia,
-      Dinero costoEnvio,
+      List<GuiaEnvio> guias,
       Instant despachadoEn,
       Dinero comisionRecaudo,
       Instant recaudoConciliadoEn) {
-    this(
-        id,
-        pedidoId,
-        transportadora,
-        guia,
-        costoEnvio,
-        despachadoEn,
-        comisionRecaudo,
-        recaudoConciliadoEn,
-        List.of());
-  }
-
-  /** El canónico: el mismo, más el rastro de eventos con el que lo reconstruye el repositorio. */
-  public Envio(
-      UUID id,
-      UUID pedidoId,
-      String transportadora,
-      String guia,
-      Dinero costoEnvio,
-      Instant despachadoEn,
-      Dinero comisionRecaudo,
-      Instant recaudoConciliadoEn,
-      List<EventoSeguimiento> eventos) {
-    this.eventos = new ArrayList<>(Objects.requireNonNullElse(eventos, List.of()));
     this.id = Objects.requireNonNull(id, "El id del envío no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
-    if (transportadora == null || transportadora.isBlank()) {
-      throw new ExcepcionDeDominio("La transportadora no puede estar vacía.");
+    if (guias == null || guias.isEmpty()) {
+      throw new ExcepcionDeDominio("Un envío tiene que llevar al menos una guía.");
     }
-    this.transportadora = transportadora;
-    if (guia == null || guia.isBlank()) {
-      throw new ExcepcionDeDominio("La guía no puede estar vacía.");
+    if (guias.stream().map(GuiaEnvio::numero).distinct().count() != guias.size()) {
+      throw new ExcepcionDeDominio("Un envío no puede repetir el número de una guía.");
     }
-    this.guia = guia;
-    this.costoEnvio = Objects.requireNonNull(costoEnvio, "El costo de envío no puede ser nulo.");
+    this.guias = List.copyOf(guias);
     this.despachadoEn =
         Objects.requireNonNull(despachadoEn, "La fecha de despacho no puede ser nula.");
     this.comisionRecaudo = comisionRecaudo;
     this.recaudoConciliadoEn = recaudoConciliadoEn;
   }
 
-  public static Envio crear(
-      UUID pedidoId, String transportadora, String guia, Dinero costoEnvio, Instant ahora) {
-    return new Envio(
-        GeneradorIdentificador.nuevo(),
-        pedidoId,
-        transportadora,
-        guia,
-        costoEnvio,
-        ahora,
-        null,
-        null);
+  public static Envio crear(UUID pedidoId, List<GuiaEnvio> guias, Instant ahora) {
+    return new Envio(GeneradorIdentificador.nuevo(), pedidoId, guias, ahora, null, null);
   }
 
   /**
-   * Registra un movimiento del paquete. <strong>Append-only</strong>: nada se sobrescribe y nada se
-   * borra (adr/0022).
+   * Registra un movimiento en la guía a la que pertenece. Devuelve si el evento era nuevo, que es
+   * de lo que depende que el caso de uso mueva o no el pedido.
    *
-   * <p>Idempotente por el identificador del evento en la plataforma, que es lo que hace inofensivo
-   * un reintento del webhook: el mismo evento dos veces se guarda una. Devuelve si el evento era
-   * nuevo, porque de eso depende que el caso de uso mueva o no el pedido — aplicar dos veces un
-   * {@code ENTREGADO} reabriría plazos legales que ya estaban corriendo.
-   *
-   * <p>No valida el orden. Las transportadoras mandan eventos desordenados y con retraso, y
-   * rechazar uno "viejo" sería perder justo el que faltaba para entender qué pasó.
+   * <p>Una guía que no es de este envío devuelve {@code false} en vez de lanzar, por lo mismo que
+   * una guía desconocida no es un error en {@code AplicarEventoDeEnvio}: el webhook responde 200
+   * igual, porque reintentarlo no lo va a arreglar.
    */
-  public boolean registrarEvento(EventoSeguimiento evento) {
+  public boolean registrarEvento(String numeroGuia, EventoSeguimiento evento) {
     Objects.requireNonNull(evento, "El evento no puede ser nulo.");
-    boolean yaEstaba = eventos.stream().anyMatch(e -> e.idExterno().equals(evento.idExterno()));
-    if (yaEstaba) {
-      return false;
-    }
-    eventos.add(evento);
-    return true;
+    return guiaDe(numeroGuia).map(guia -> guia.registrarEvento(evento)).orElse(false);
   }
 
-  /** En el orden en que ocurrieron, no en el que llegaron. */
-  public List<EventoSeguimiento> eventos() {
-    return eventos.stream().sorted(Comparator.comparing(EventoSeguimiento::ocurrioEn)).toList();
+  public List<GuiaEnvio> guias() {
+    return guias;
+  }
+
+  public Optional<GuiaEnvio> guiaDe(String numero) {
+    return guias.stream().filter(guia -> guia.numero().equals(numero)).findFirst();
   }
 
   /**
-   * El último estado conocido del paquete, o vacío si todavía no hay eventos — un envío recién
-   * despachado, o uno cuyo webhook no ha llegado.
+   * Lo que las transportadoras nos cobraron por este despacho: la suma de las guías. Con dos bultos
+   * son dos guías y dos cobros (adr/0031), y es contra esta suma que se lee el margen del pedido.
+   */
+  public Dinero costoEnvio() {
+    return Dinero.deCop(
+        guias.stream().map(guia -> guia.costo().valor()).reduce(BigDecimal.ZERO, BigDecimal::add));
+  }
+
+  /**
+   * El último estado conocido del despacho: el evento más reciente de cualquiera de sus guías, o
+   * vacío si ninguna se ha movido todavía.
+   *
+   * <p>Con varias guías no describe el pedido entero —una entregada y otra en tránsito dan {@code
+   * ENTREGADO}— y por eso no decide nada: quien necesite el detalle mira {@link
+   * GuiaEnvio#ultimoEstado()} guía por guía.
    */
   public Optional<EstadoEnvio> ultimoEstado() {
-    return eventos().stream()
-        .reduce((primero, siguiente) -> siguiente)
+    return guias.stream()
+        .flatMap(guia -> guia.eventos().stream())
+        .max(Comparator.comparing(EventoSeguimiento::ocurrioEn))
         .map(EventoSeguimiento::estado);
   }
 
@@ -146,18 +119,6 @@ public final class Envio {
 
   public UUID pedidoId() {
     return pedidoId;
-  }
-
-  public String transportadora() {
-    return transportadora;
-  }
-
-  public String guia() {
-    return guia;
-  }
-
-  public Dinero costoEnvio() {
-    return costoEnvio;
   }
 
   public Instant despachadoEn() {

@@ -213,8 +213,16 @@
                     <h2 class="mt-16 mb-8 text-base font-medio">
                       {{ 'admin.pedidos.detalle.envio' | transloco }}
                     </h2>
+                    <!-- Una linea por guia, y el costo total aparte: con varios paquetes, el
+                         costo del despacho es la suma y ninguna guia lo lleva entero. -->
+                    @for (guia of envio.guias; track guia.guia) {
+                      <p>
+                        {{ guia.transportadora }} — {{ guia.guia }} —
+                        <ts-precio [valor]="guia.costo.valor" [moneda]="guia.costo.moneda" />
+                      </p>
+                    }
                     <p>
-                      {{ envio.transportadora }} — {{ envio.guia }} —
+                      {{ 'admin.pedidos.detalle.costo_total' | transloco }}:
                       <ts-precio
                         [valor]="envio.costoEnvio.valor"
                         [moneda]="envio.costoEnvio.moneda"
@@ -279,22 +287,56 @@
                         [formGroup]="formularioDespacho(pedido.id)"
                         (submit)="$event.preventDefault(); despachar(pedido)"
                       >
-                        <ts-campo
-                          [idCampo]="'transportadora-' + pedido.id"
-                          [label]="'admin.pedidos.acciones.transportadora' | transloco"
-                          formControlName="transportadora"
-                        />
-                        <ts-campo
-                          [idCampo]="'guia-' + pedido.id"
-                          [label]="'admin.pedidos.acciones.guia' | transloco"
-                          formControlName="guia"
-                        />
-                        <ts-campo
-                          [idCampo]="'costo-envio-' + pedido.id"
-                          tipo="number"
-                          [label]="'admin.pedidos.acciones.costo_envio' | transloco"
-                          formControlName="costoEnvio"
-                        />
+                        <!-- Una guía por paquete: sin multipaquete en Colombia, un pedido de dos
+                             variantes sale en dos guías con dos cobros (adr/0031). -->
+                        <div formArrayName="guias">
+                          @for (grupo of guiasDe(pedido.id).controls; track $index) {
+                            <fieldset [formGroupName]="$index">
+                              <legend>
+                                {{
+                                  'admin.pedidos.acciones.guia_numero'
+                                    | transloco: { numero: $index + 1 }
+                                }}
+                              </legend>
+                              <ts-campo
+                                [idCampo]="'transportadora-' + pedido.id + '-' + $index"
+                                [label]="'admin.pedidos.acciones.transportadora' | transloco"
+                                formControlName="transportadora"
+                              />
+                              <ts-campo
+                                [idCampo]="'guia-' + pedido.id + '-' + $index"
+                                [label]="'admin.pedidos.acciones.guia' | transloco"
+                                formControlName="guia"
+                              />
+                              <ts-campo
+                                [idCampo]="'costo-envio-' + pedido.id + '-' + $index"
+                                tipo="number"
+                                [label]="'admin.pedidos.acciones.costo_envio' | transloco"
+                                formControlName="costoEnvio"
+                              />
+                              @if (guiasDe(pedido.id).length > 1) {
+                                <ts-boton
+                                  variante="peligro"
+                                  tipo="button"
+                                  [etiquetaAccesible]="
+                                    'admin.pedidos.acciones.quitar_guia_accesible'
+                                      | transloco: { numero: $index + 1 }
+                                  "
+                                  (click)="quitarGuia(pedido.id, $index)"
+                                >
+                                  {{ 'admin.pedidos.acciones.quitar_guia' | transloco }}
+                                </ts-boton>
+                              }
+                            </fieldset>
+                          }
+                        </div>
+                        <ts-boton
+                          variante="secundario"
+                          tipo="button"
+                          (click)="agregarGuia(pedido.id)"
+                        >
+                          {{ 'admin.pedidos.acciones.agregar_guia' | transloco }}
+                        </ts-boton>
                         <ts-boton tipo="submit" [cargando]="despachando(pedido.id)">
                           {{ 'admin.pedidos.acciones.despachar' | transloco }}
                         </ts-boton>

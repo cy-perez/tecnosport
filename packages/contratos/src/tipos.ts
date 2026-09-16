@@ -969,14 +969,18 @@ export interface components {
             indicaciones?: string;
         };
         EnvioRespuesta: {
-            transportadora?: string;
-            guia?: string;
+            guias?: components["schemas"]["GuiaRespuesta"][];
             costoEnvio?: components["schemas"]["DineroRespuesta"];
             /** Format: date-time */
             despachadoEn?: string;
             comisionRecaudo?: components["schemas"]["DineroRespuesta"];
             /** Format: date-time */
             recaudoConciliadoEn?: string;
+        };
+        GuiaRespuesta: {
+            transportadora?: string;
+            guia?: string;
+            costo?: components["schemas"]["DineroRespuesta"];
         };
         HistorialPedidoRespuesta: {
             estado?: string;
@@ -1380,6 +1384,9 @@ export interface components {
             comisionRecaudo?: number;
         };
         DespacharPedidoRequest: {
+            guias?: components["schemas"]["GuiaDespachadaRequest"][];
+        };
+        GuiaDespachadaRequest: {
             transportadora?: string;
             guia?: string;
             /** Format: int64 */
@@ -1482,10 +1489,13 @@ export interface components {
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
         };
         EnvioPublicoRespuesta: {
-            transportadora?: string;
-            guia?: string;
+            guias?: components["schemas"]["GuiaPublicaRespuesta"][];
             /** Format: date-time */
             despachadoEn?: string;
+        };
+        GuiaPublicaRespuesta: {
+            transportadora?: string;
+            guia?: string;
         };
         PedidoSeguimientoRespuesta: {
             /** Format: uuid */

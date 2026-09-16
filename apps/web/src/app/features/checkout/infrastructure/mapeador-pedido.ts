@@ -129,8 +129,10 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
 
 function aEnvioPublico(dto: EnvioPublicoDto): EnvioPublico {
   return {
-    transportadora: dto.transportadora ?? '',
-    guia: dto.guia ?? '',
+    guias: (dto.guias ?? []).map((guia) => ({
+      transportadora: guia.transportadora ?? '',
+      guia: guia.guia ?? '',
+    })),
     despachadoEn: dto.despachadoEn ?? '',
   };
 }

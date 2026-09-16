@@ -75,7 +75,9 @@ class DespacharPedidoTest {
 
   private DespacharPedidoComando comando(UUID pedidoId) {
     return new DespacharPedidoComando(
-        pedidoId, "Servientrega", "SE123456", Dinero.deCop(15_000), "admin:test");
+        pedidoId,
+        List.of(new GuiaDespachada("Servientrega", "SE123456", Dinero.deCop(15_000))),
+        "admin:test");
   }
 
   @Test
@@ -90,9 +92,35 @@ class DespacharPedidoTest {
     assertEquals(1, envios.guardados().size());
     Envio envio = envios.guardados().get(0);
     assertEquals(pedido.id(), envio.pedidoId());
-    assertEquals("Servientrega", envio.transportadora());
-    assertEquals("SE123456", envio.guia());
+    assertEquals(1, envio.guias().size());
+    assertEquals("Servientrega", envio.guias().getFirst().transportadora());
+    assertEquals("SE123456", envio.guias().getFirst().numero());
     assertEquals(Dinero.deCop(15_000), envio.costoEnvio());
+  }
+
+  /**
+   * El caso de adr/0031: dos variantes, dos paquetes, dos guías. El costo del despacho es la suma,
+   * y el historial nombra las dos transportadoras.
+   */
+  @Test
+  void despachaUnPedidoConDosGuias() {
+    DespacharPedido caso = crear();
+    Pedido pedido = pedidoEnPreparacion();
+
+    caso.ejecutar(
+        new DespacharPedidoComando(
+            pedido.id(),
+            List.of(
+                new GuiaDespachada("Servientrega", "SE123456", Dinero.deCop(8_200)),
+                new GuiaDespachada("Coordinadora", "CO987", Dinero.deCop(5_991))),
+            "admin:test"));
+
+    Envio envio = envios.guardados().get(0);
+    assertEquals(2, envio.guias().size());
+    assertEquals(Dinero.deCop(14_191), envio.costoEnvio());
+    assertTrue(
+        pedido.historial().getLast().motivo().contains("Servientrega, Coordinadora"),
+        "El historial tiene que decir con quién salió cada paquete.");
   }
 
   @Test

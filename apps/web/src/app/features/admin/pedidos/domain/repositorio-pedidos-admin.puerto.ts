@@ -14,7 +14,7 @@ export interface RepositorioPedidosAdmin {
 
   verificarContraentrega(pedidoId: string, motivo: string): Promise<PedidoAdmin>;
 
-  despachar(pedidoId: string, transportadora: string, guia: string, costoEnvio: number): Promise<PedidoAdmin>;
+  despachar(pedidoId: string, guias: readonly GuiaDespachada[]): Promise<PedidoAdmin>;
 
   marcarEntregado(pedidoId: string): Promise<PedidoAdmin>;
 
@@ -33,3 +33,10 @@ export interface RepositorioPedidosAdmin {
 }
 
 export const REPOSITORIO_PEDIDOS_ADMIN = new InjectionToken<RepositorioPedidosAdmin>('RepositorioPedidosAdmin');
+
+/** Una guía a despachar: lo que el panel manda por cada paquete (`adr/0031`). */
+export interface GuiaDespachada {
+  readonly transportadora: string;
+  readonly guia: string;
+  readonly costoEnvio: number;
+}

@@ -117,15 +117,32 @@
       <h2 class="mt-24 mb-8 font-display text-lg">
         {{ 'checkout.estado.envio.titulo' | transloco }}
       </h2>
+      <!-- Cuando son varios paquetes hay que decirlo antes de la lista: quien recibe uno de dos
+           y no lo sabe, cree que le faltó media compra (adr/0031). -->
+      @if (e.guias.length > 1) {
+        <p class="my-8">
+          {{ 'checkout.estado.envio.varios_paquetes' | transloco: { cuantos: e.guias.length } }}
+        </p>
+      }
+      @for (guia of e.guias; track guia.guia) {
+        <dl
+          class="my-16 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
+        >
+          @if (e.guias.length > 1) {
+            <dt>{{ 'checkout.estado.envio.paquete' | transloco }}</dt>
+            <dd>{{ $index + 1 }}</dd>
+          }
+
+          <dt>{{ 'checkout.estado.envio.transportadora' | transloco }}</dt>
+          <dd>{{ guia.transportadora }}</dd>
+
+          <dt>{{ 'checkout.estado.envio.guia' | transloco }}</dt>
+          <dd>{{ guia.guia }}</dd>
+        </dl>
+      }
       <dl
         class="my-16 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
       >
-        <dt>{{ 'checkout.estado.envio.transportadora' | transloco }}</dt>
-        <dd>{{ e.transportadora }}</dd>
-
-        <dt>{{ 'checkout.estado.envio.guia' | transloco }}</dt>
-        <dd>{{ e.guia }}</dd>
-
         <dt>{{ 'checkout.estado.envio.despachado_en' | transloco }}</dt>
         <dd>{{ e.despachadoEn | date: 'longDate' }}</dd>
       </dl>

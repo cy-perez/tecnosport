@@ -29,7 +29,7 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
 
   @Override
   public Optional<Envio> buscarPorGuia(String guia) {
-    return envios.stream().filter(e -> e.guia().equals(guia)).findFirst();
+    return envios.stream().filter(e -> e.guiaDe(guia).isPresent()).findFirst();
   }
 
   /** Mismo criterio que la consulta real: callado desde el corte y sin evento terminal. */
@@ -37,8 +37,14 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
   public List<Envio> buscarSinEventosDesde(Instant corte, int maximo) {
     return envios.stream()
         .filter(e -> e.despachadoEn().isBefore(corte))
-        .filter(e -> e.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte)))
-        .filter(e -> e.eventos().stream().noneMatch(ev -> ev.estado().esTerminal()))
+        .filter(
+            e ->
+                e.guias().stream()
+                    .anyMatch(
+                        guia ->
+                            guia.eventos().stream()
+                                    .noneMatch(ev -> !ev.recibidoEn().isBefore(corte))
+                                && !guia.terminada()))
         .limit(maximo)
         .toList();
   }

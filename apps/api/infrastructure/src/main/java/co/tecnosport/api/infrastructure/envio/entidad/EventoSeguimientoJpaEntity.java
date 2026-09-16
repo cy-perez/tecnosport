@@ -13,8 +13,8 @@ public class EventoSeguimientoJpaEntity {
 
   @Id private UUID id;
 
-  @Column(name = "envio_id", nullable = false)
-  private UUID envioId;
+  @Column(name = "guia_id", nullable = false)
+  private UUID guiaId;
 
   @Column(nullable = false)
   private String estado;
@@ -34,14 +34,14 @@ public class EventoSeguimientoJpaEntity {
 
   public EventoSeguimientoJpaEntity(
       UUID id,
-      UUID envioId,
+      UUID guiaId,
       String estado,
       String descripcion,
       Instant ocurrioEn,
       Instant recibidoEn,
       String idExterno) {
     this.id = id;
-    this.envioId = envioId;
+    this.guiaId = guiaId;
     this.estado = estado;
     this.descripcion = descripcion;
     this.ocurrioEn = ocurrioEn;
@@ -53,8 +53,8 @@ public class EventoSeguimientoJpaEntity {
     return id;
   }
 
-  public UUID getEnvioId() {
-    return envioId;
+  public UUID getGuiaId() {
+    return guiaId;
   }
 
   public String getEstado() {

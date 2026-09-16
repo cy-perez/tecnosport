@@ -13,6 +13,7 @@ import {
   PedidosPaginadosAdmin,
 } from '../../domain/pedido-admin.model';
 import {
+  GuiaDespachada,
   REPOSITORIO_PEDIDOS_ADMIN,
   RepositorioPedidosAdmin,
 } from '../../domain/repositorio-pedidos-admin.puerto';
@@ -128,6 +129,7 @@ function pedidoDePrueba(overrides: Partial<PedidoAdmin> = {}): PedidoAdmin {
 class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   llamadasListar = 0;
   llamadasConciliarTransferencia: string[] = [];
+  despachos: { pedidoId: string; guias: readonly GuiaDespachada[] }[] = [];
 
   constructor(
     private items: PedidoAdmin[],
@@ -153,7 +155,8 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     return this.items[0];
   }
 
-  async despachar(): Promise<PedidoAdmin> {
+  async despachar(pedidoId: string, guias: readonly GuiaDespachada[]): Promise<PedidoAdmin> {
+    this.despachos.push({ pedidoId, guias });
     return this.items[0];
   }
 
@@ -466,6 +469,50 @@ describe('ListaPedidosAdminPage', () => {
     expect(repositorio.cancelaciones[0].motivo).toBe('NO_DISPONIBILIDAD');
     expect(repositorio.cancelaciones[0].monto).toBe(50_000);
     expect(repositorio.cancelaciones[0].medio).toBe('WOMPI');
+  });
+
+  /**
+   * El caso de `adr/0031`: sin multipaquete en Colombia, un pedido de dos variantes sale en dos
+   * guias con dos cobros. El formulario tiene que dejar mandar las dos, y el costo de cada una va
+   * con su guia — no repartido a mano.
+   */
+  it('despacha con dos guias y manda las dos con su costo', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'EN_PREPARACION' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.input(await screen.findByLabelText('Transportadora'), {
+      target: { value: 'Servientrega' },
+    });
+    fireEvent.input(screen.getByLabelText('Guía'), { target: { value: 'SE123456' } });
+    fireEvent.input(screen.getByLabelText('Costo de envío'), { target: { value: '8200' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar otra guía' }));
+
+    const transportadoras = screen.getAllByLabelText('Transportadora');
+    fireEvent.input(transportadoras[1], { target: { value: 'Coordinadora' } });
+    fireEvent.input(screen.getAllByLabelText('Guía')[1], { target: { value: 'CO987' } });
+    fireEvent.input(screen.getAllByLabelText('Costo de envío')[1], { target: { value: '5991' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Despachar' }));
+
+    await vi.waitFor(() => expect(repositorio.despachos.length).toBe(1));
+    expect(repositorio.despachos[0].guias).toEqual([
+      { transportadora: 'Servientrega', guia: 'SE123456', costoEnvio: 8200 },
+      { transportadora: 'Coordinadora', guia: 'CO987', costoEnvio: 5991 },
+    ]);
+  });
+
+  /** Nunca cero guias: un despacho sin guia no es un despacho, y por eso no se ofrece quitarla. */
+  it('con una sola guia no se ofrece quitarla', async () => {
+    await renderLista([pedidoDePrueba({ estado: 'EN_PREPARACION' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+    await screen.findByLabelText('Transportadora');
+
+    expect(screen.queryByRole('button', { name: /Quitar la guía/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar otra guía' }));
+
+    expect(screen.getAllByRole('button', { name: /Quitar la guía/ }).length).toBe(2);
   });
 
   /**

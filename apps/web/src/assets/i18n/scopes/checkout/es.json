@@ -110,7 +110,9 @@
       "titulo": "Tu envío",
       "transportadora": "Empresa de transporte",
       "guia": "Número de guía",
-      "despachado_en": "Despachado el"
+      "despachado_en": "Despachado el",
+      "paquete": "Paquete",
+      "varios_paquetes": "Tu pedido viaja en {{cuantos}} paquetes. Van por separado y pueden llegar en días distintos."
     }
   },
   "transferencia": {

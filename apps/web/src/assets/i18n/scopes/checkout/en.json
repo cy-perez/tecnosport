@@ -110,7 +110,9 @@
       "titulo": "Your shipment",
       "transportadora": "Carrier",
       "guia": "Tracking number",
-      "despachado_en": "Shipped on"
+      "despachado_en": "Shipped on",
+      "paquete": "Package",
+      "varios_paquetes": "Your order ships in {{cuantos}} packages. They travel separately and may arrive on different days."
     }
   },
   "transferencia": {

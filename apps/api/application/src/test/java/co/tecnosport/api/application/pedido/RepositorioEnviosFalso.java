@@ -2,6 +2,7 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.domain.envio.Envio;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,21 +27,29 @@ final class RepositorioEnviosFalso implements RepositorioEnvios {
 
   @Override
   public Optional<Envio> buscarPorGuia(String guia) {
-    return envios.stream().filter(e -> e.guia().equals(guia)).findFirst();
+    return envios.stream().filter(e -> e.guiaDe(guia).isPresent()).findFirst();
   }
 
   List<Envio> guardados() {
     return List.copyOf(envios);
   }
 
-  /** Mismo criterio que la consulta real: callado desde el corte y sin evento terminal. */
+  /**
+   * Mismo criterio que la consulta real: basta <strong>una</strong> guía callada desde el corte y
+   * sin evento terminal (adr/0031). Medirlo sobre el envío entero daría el despacho por terminado
+   * en cuanto llegara el primer paquete.
+   */
   @Override
   public List<Envio> buscarSinEventosDesde(Instant corte, int maximo) {
     return envios.stream()
         .filter(e -> e.despachadoEn().isBefore(corte))
-        .filter(e -> e.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte)))
-        .filter(e -> e.eventos().stream().noneMatch(ev -> ev.estado().esTerminal()))
+        .filter(e -> e.guias().stream().anyMatch(guia -> estaCalladaYViva(guia, corte)))
         .limit(maximo)
         .toList();
+  }
+
+  private static boolean estaCalladaYViva(GuiaEnvio guia, Instant corte) {
+    return guia.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte))
+        && guia.eventos().stream().noneMatch(ev -> ev.estado().esTerminal());
   }
 }

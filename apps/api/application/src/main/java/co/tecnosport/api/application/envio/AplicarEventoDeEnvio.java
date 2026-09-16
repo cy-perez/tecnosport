@@ -64,8 +64,12 @@ public final class AplicarEventoDeEnvio {
 
     Envio envio = encontrado.get();
     Instant ahora = reloj.ahora();
+    // En la guía de la que habla el evento, no en el envío entero: un envío puede llevar varias y
+    // cada paquete se mueve solo (adr/0031). Es la misma con la que se encontró el envío, así que
+    // un `false` aquí solo puede ser un evento repetido.
     boolean esNuevo =
         envio.registrarEvento(
+            comando.guia(),
             new EventoSeguimiento(
                 GeneradorIdentificador.nuevo(),
                 comando.estado(),

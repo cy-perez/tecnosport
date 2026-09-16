@@ -17,13 +17,23 @@ import org.junit.jupiter.api.Test;
  * El rastro del paquete, que es lo que se lee el día de la reclamación (adr/0022). Lo que se prueba
  * aquí no es que se guarde: es que <strong>no se pierda ni se duplique</strong>, que son las dos
  * formas en que un registro append-only deja de servir.
+ *
+ * <p>El rastro es de la guía y no del envío (adr/0031): un pedido puede salir en dos paquetes y
+ * cada uno se mueve solo.
  */
 class EventosDeSeguimientoTest {
 
   private static final Instant DESPACHO = Instant.parse("2026-09-10T14:00:00Z");
 
-  private Envio envio() {
-    return Envio.crear(UUID.randomUUID(), "99 minutes", "GUIA-1", Dinero.deCop(10_540), DESPACHO);
+  private static GuiaEnvio guia() {
+    return GuiaEnvio.crear("99 minutes", "GUIA-1", Dinero.deCop(10_540));
+  }
+
+  private static Envio envioDeDosPaquetes() {
+    return Envio.crear(
+        UUID.randomUUID(),
+        List.of(guia(), GuiaEnvio.crear("Servientrega", "GUIA-2", Dinero.deCop(8_200))),
+        DESPACHO);
   }
 
   private static EventoSeguimiento evento(
@@ -34,20 +44,59 @@ class EventosDeSeguimientoTest {
 
   @Test
   void unEnvioRecienDespachadoNoTieneEventos() {
-    Envio envio = envio();
+    Envio envio = envioDeDosPaquetes();
 
-    assertTrue(envio.eventos().isEmpty());
+    assertTrue(envio.guias().stream().allMatch(guia -> guia.eventos().isEmpty()));
     assertTrue(envio.ultimoEstado().isEmpty());
   }
 
   @Test
   void registrarUnEventoLoDejaEnElRastro() {
-    Envio envio = envio();
+    GuiaEnvio guia = guia();
 
-    assertTrue(envio.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", DESPACHO, DESPACHO)));
+    assertTrue(guia.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", DESPACHO, DESPACHO)));
 
-    assertEquals(1, envio.eventos().size());
-    assertEquals(EstadoEnvio.RECOGIDO, envio.ultimoEstado().orElseThrow());
+    assertEquals(1, guia.eventos().size());
+    assertEquals(EstadoEnvio.RECOGIDO, guia.ultimoEstado().orElseThrow());
+  }
+
+  /**
+   * El caso que estrena adr/0031, y el que se rompe solo si alguien vuelve a colgar los eventos del
+   * envío: el movimiento de un paquete no puede aparecer en el rastro de su hermano, porque el
+   * comprador leería que le entregaron algo que sigue en camino.
+   */
+  @Test
+  void unEventoCaeEnSuGuiaYNoEnLaHermana() {
+    Envio envio = envioDeDosPaquetes();
+
+    assertTrue(
+        envio.registrarEvento("GUIA-2", evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO)));
+
+    assertTrue(envio.guiaDe("GUIA-1").orElseThrow().eventos().isEmpty());
+    assertEquals(1, envio.guiaDe("GUIA-2").orElseThrow().eventos().size());
+  }
+
+  /** Una guía que no es de este envío no lanza: el webhook responde 200 igual. */
+  @Test
+  void unEventoDeUnaGuiaAjenaNoSeRegistraYNoRevienta() {
+    Envio envio = envioDeDosPaquetes();
+
+    assertFalse(
+        envio.registrarEvento(
+            "NO-ES-MIA", evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO)));
+  }
+
+  /**
+   * La conciliación pregunta por guía, no por envío: con una entregada y otra en tránsito, dar el
+   * envío por terminado dejaría la segunda sin conciliar para siempre.
+   */
+  @Test
+  void unaGuiaEntregadaTerminaYLaHermanaSigueViva() {
+    Envio envio = envioDeDosPaquetes();
+    envio.registrarEvento("GUIA-2", evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO));
+
+    assertTrue(envio.guiaDe("GUIA-2").orElseThrow().terminada());
+    assertFalse(envio.guiaDe("GUIA-1").orElseThrow().terminada());
   }
 
   /**
@@ -57,15 +106,15 @@ class EventosDeSeguimientoTest {
    */
   @Test
   void elMismoEventoDosVecesSeGuardaUnaSola() {
-    Envio envio = envio();
-    envio.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO));
+    GuiaEnvio guia = guia();
+    guia.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO));
 
     boolean eraNuevo =
-        envio.registrarEvento(
+        guia.registrarEvento(
             evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, DESPACHO.plusSeconds(600)));
 
     assertFalse(eraNuevo, "Un reintento del mismo evento no puede contarse como nuevo.");
-    assertEquals(1, envio.eventos().size());
+    assertEquals(1, guia.eventos().size());
   }
 
   /**
@@ -75,17 +124,17 @@ class EventosDeSeguimientoTest {
    */
   @Test
   void losEventosSeLeenEnElOrdenEnQueOcurrieron() {
-    Envio envio = envio();
+    GuiaEnvio guia = guia();
     Instant hoy = DESPACHO.plusSeconds(86_400);
-    envio.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-3", hoy, hoy));
-    envio.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", DESPACHO, hoy));
-    envio.registrarEvento(evento(EstadoEnvio.EN_TRANSITO, "ev-2", DESPACHO.plusSeconds(3600), hoy));
+    guia.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-3", hoy, hoy));
+    guia.registrarEvento(evento(EstadoEnvio.RECOGIDO, "ev-1", DESPACHO, hoy));
+    guia.registrarEvento(evento(EstadoEnvio.EN_TRANSITO, "ev-2", DESPACHO.plusSeconds(3600), hoy));
 
-    List<EstadoEnvio> estados = envio.eventos().stream().map(EventoSeguimiento::estado).toList();
+    List<EstadoEnvio> estados = guia.eventos().stream().map(EventoSeguimiento::estado).toList();
 
     assertEquals(
         List.of(EstadoEnvio.RECOGIDO, EstadoEnvio.EN_TRANSITO, EstadoEnvio.ENTREGADO), estados);
-    assertEquals(EstadoEnvio.ENTREGADO, envio.ultimoEstado().orElseThrow());
+    assertEquals(EstadoEnvio.ENTREGADO, guia.ultimoEstado().orElseThrow());
   }
 
   /**
@@ -94,11 +143,11 @@ class EventosDeSeguimientoTest {
    */
   @Test
   void elEventoDistingueCuandoOcurrioDeCuandoLlego() {
-    Envio envio = envio();
+    GuiaEnvio guia = guia();
     Instant cincoDiasDespues = DESPACHO.plusSeconds(5 * 86_400);
-    envio.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, cincoDiasDespues));
+    guia.registrarEvento(evento(EstadoEnvio.ENTREGADO, "ev-1", DESPACHO, cincoDiasDespues));
 
-    EventoSeguimiento guardado = envio.eventos().get(0);
+    EventoSeguimiento guardado = guia.eventos().get(0);
 
     assertEquals(DESPACHO, guardado.ocurrioEn());
     assertEquals(cincoDiasDespues, guardado.recibidoEn());

@@ -8,6 +8,7 @@ import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConciliarTransferenciaComando;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
+import co.tecnosport.api.application.pedido.GuiaDespachada;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.ListarPedidosAdminComando;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
@@ -144,9 +145,14 @@ public class AdminPedidosControlador {
                 despacharPedido.ejecutar(
                     new DespacharPedidoComando(
                         id,
-                        cuerpo.transportadora(),
-                        cuerpo.guia(),
-                        Dinero.deCop(cuerpo.costoEnvio()),
+                        cuerpo.guias().stream()
+                            .map(
+                                guia ->
+                                    new GuiaDespachada(
+                                        guia.transportadora(),
+                                        guia.guia(),
+                                        Dinero.deCop(guia.costoEnvio())))
+                            .toList(),
                         actor)));
     return mapeador.aRespuesta(pedido);
   }

@@ -7,7 +7,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -74,10 +80,18 @@ interface FormularioMotivo {
   motivo: FormControl<string>;
 }
 
-interface FormularioDespacho {
+interface FormularioGuia {
   transportadora: FormControl<string>;
   guia: FormControl<string>;
   costoEnvio: FormControl<number | null>;
+}
+
+/**
+ * Un despacho son una o varias guías (`adr/0031`): ninguna transportadora colombiana admite
+ * multipaquete, así que un pedido de dos variantes sale en dos paquetes con dos cobros.
+ */
+interface FormularioDespacho {
+  guias: FormArray<FormGroup<FormularioGuia>>;
 }
 
 interface FormularioRecaudo {
@@ -223,17 +237,28 @@ export class ListaPedidosAdminPage {
   protected formularioDespacho(pedidoId: string): FormGroup<FormularioDespacho> {
     let form = this.formulariosDespacho.get(pedidoId);
     if (!form) {
-      form = new FormGroup({
-        transportadora: new FormControl('', {
-          nonNullable: true,
-          validators: [Validators.required],
-        }),
-        guia: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-        costoEnvio: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+      form = new FormGroup<FormularioDespacho>({
+        guias: new FormArray([grupoDeGuia()]),
       });
       this.formulariosDespacho.set(pedidoId, form);
     }
     return form;
+  }
+
+  protected guiasDe(pedidoId: string): FormArray<FormGroup<FormularioGuia>> {
+    return this.formularioDespacho(pedidoId).controls.guias;
+  }
+
+  protected agregarGuia(pedidoId: string): void {
+    this.guiasDe(pedidoId).push(grupoDeGuia());
+  }
+
+  /** Nunca se queda en cero: un despacho sin guía no es un despacho. */
+  protected quitarGuia(pedidoId: string, indice: number): void {
+    const guias = this.guiasDe(pedidoId);
+    if (guias.length > 1) {
+      guias.removeAt(indice);
+    }
   }
 
   protected formularioRecaudo(pedidoId: string): FormGroup<FormularioRecaudo> {
@@ -336,9 +361,11 @@ export class ListaPedidosAdminPage {
     await this.ejecutar(() =>
       this.acciones.despachar.mutateAsync({
         pedidoId: pedido.id,
-        transportadora: valores.transportadora,
-        guia: valores.guia,
-        costoEnvio: valores.costoEnvio ?? 0,
+        guias: valores.guias.map((guia) => ({
+          transportadora: guia.transportadora,
+          guia: guia.guia,
+          costoEnvio: guia.costoEnvio ?? 0,
+        })),
       }),
     );
   }
@@ -461,4 +488,12 @@ export class ListaPedidosAdminPage {
       timeZone: 'America/Bogota',
     }).format(new Date(iso));
   }
+}
+
+function grupoDeGuia(): FormGroup<FormularioGuia> {
+  return new FormGroup<FormularioGuia>({
+    transportadora: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    guia: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    costoEnvio: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+  });
 }

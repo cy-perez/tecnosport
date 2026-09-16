@@ -5,8 +5,10 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
+import co.tecnosport.api.domain.envio.GuiaEnvio;
 import co.tecnosport.api.infrastructure.envio.entidad.EnvioJpaEntity;
 import co.tecnosport.api.infrastructure.envio.entidad.EventoSeguimientoJpaEntity;
+import co.tecnosport.api.infrastructure.envio.entidad.GuiaEnvioJpaEntity;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
@@ -40,30 +42,34 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
   private static final String SQL_INSERTAR_EVENTO =
       """
       insert into evento_seguimiento (
-          id, envio_id, estado, descripcion, ocurrio_en, recibido_en, id_externo)
-      values (:id, :envioId, :estado, :descripcion, :ocurrioEn, :recibidoEn, :idExterno)
-      on conflict (envio_id, id_externo) do nothing
+          id, guia_id, estado, descripcion, ocurrio_en, recibido_en, id_externo)
+      values (:id, :guiaId, :estado, :descripcion, :ocurrioEn, :recibidoEn, :idExterno)
+      on conflict (guia_id, id_externo) do nothing
       """;
 
   private final EnvioJpaRepository repositorio;
+  private final GuiaEnvioJpaRepository guias;
   private final EventoSeguimientoJpaRepository eventos;
   private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioEnviosJpa(
       EnvioJpaRepository repositorio,
+      GuiaEnvioJpaRepository guias,
       EventoSeguimientoJpaRepository eventos,
       NamedParameterJdbcTemplate jdbc) {
     this.repositorio = Objects.requireNonNull(repositorio);
+    this.guias = Objects.requireNonNull(guias);
     this.eventos = Objects.requireNonNull(eventos);
     this.jdbc = Objects.requireNonNull(jdbc);
   }
 
   /**
    * {@code saveAndFlush} y no {@code save}, y no es cosmético: los eventos se insertan por JDBC
-   * directo —para poder usar {@code on conflict}— mientras el envío lo escribe Hibernate, que
-   * aplaza su {@code insert} hasta el volcado. Sin forzarlo, la sentencia de JDBC llega primero y
-   * revienta contra la clave foránea, porque para la base el envío todavía no existe. Mezclar los
-   * dos caminos de escritura en la misma transacción obliga a ordenarlos a mano.
+   * directo —para poder usar {@code on conflict}— mientras el envío y sus guías los escribe
+   * Hibernate, que aplaza sus {@code insert} hasta el volcado. Sin forzarlo, la sentencia de JDBC
+   * llega primero y revienta contra la clave foránea, porque para la base la guía todavía no
+   * existe. Mezclar los dos caminos de escritura en la misma transacción obliga a ordenarlos a
+   * mano.
    */
   @Override
   public void guardar(Envio envio) {
@@ -71,21 +77,23 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
         new EnvioJpaEntity(
             envio.id(),
             envio.pedidoId(),
-            envio.transportadora(),
-            envio.guia(),
-            envio.costoEnvio().valor(),
             envio.despachadoEn(),
             envio.comisionRecaudo().map(Dinero::valor).orElse(null),
             envio.recaudoConciliadoEn().orElse(null)));
-    for (EventoSeguimiento evento : envio.eventos()) {
-      insertarSiNoEsta(envio.id(), evento);
+    for (GuiaEnvio guia : envio.guias()) {
+      guias.saveAndFlush(
+          new GuiaEnvioJpaEntity(
+              guia.id(), envio.id(), guia.transportadora(), guia.numero(), guia.costo().valor()));
+      for (EventoSeguimiento evento : guia.eventos()) {
+        insertarSiNoEsta(guia.id(), evento);
+      }
     }
   }
 
-  private void insertarSiNoEsta(UUID envioId, EventoSeguimiento evento) {
+  private void insertarSiNoEsta(UUID guiaId, EventoSeguimiento evento) {
     Map<String, Object> parametros = new HashMap<>();
     parametros.put("id", evento.id());
-    parametros.put("envioId", envioId);
+    parametros.put("guiaId", guiaId);
     parametros.put("estado", evento.estado().name());
     parametros.put("descripcion", evento.descripcion());
     parametros.put("ocurrioEn", Timestamp.from(evento.ocurrioEn()));
@@ -99,9 +107,17 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
     return repositorio.findByPedidoId(pedidoId).map(this::aEnvio);
   }
 
+  /**
+   * Del número de guía al envío en dos saltos: la guía dice de quién es. El número es único en toda
+   * la tabla —lo impone {@code uq_guia_envio_numero}—, que es justo lo que este método da por
+   * cierto cuando resuelve un evento del webhook sin preguntar la transportadora.
+   */
   @Override
   public Optional<Envio> buscarPorGuia(String guia) {
-    return repositorio.findByGuia(guia).map(this::aEnvio);
+    return guias
+        .findByNumero(guia)
+        .flatMap(encontrada -> repositorio.findById(encontrada.getEnvioId()))
+        .map(this::aEnvio);
   }
 
   @Override
@@ -117,13 +133,19 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
     return new Envio(
         entidad.getId(),
         entidad.getPedidoId(),
-        entidad.getTransportadora(),
-        entidad.getGuia(),
-        Dinero.deCop(entidad.getCostoEnvio()),
+        guias.findByEnvioIdOrderByNumeroAsc(entidad.getId()).stream().map(this::aGuia).toList(),
         entidad.getDespachadoEn(),
         entidad.getComisionRecaudo() == null ? null : Dinero.deCop(entidad.getComisionRecaudo()),
-        entidad.getRecaudoConciliadoEn(),
-        eventos.findByEnvioIdOrderByOcurrioEnAsc(entidad.getId()).stream()
+        entidad.getRecaudoConciliadoEn());
+  }
+
+  private GuiaEnvio aGuia(GuiaEnvioJpaEntity entidad) {
+    return new GuiaEnvio(
+        entidad.getId(),
+        entidad.getTransportadora(),
+        entidad.getNumero(),
+        Dinero.deCop(entidad.getCostoEnvio()),
+        eventos.findByGuiaIdOrderByOcurrioEnAsc(entidad.getId()).stream()
             .map(this::aEvento)
             .toList());
   }

@@ -161,10 +161,12 @@ transportadora colombiana de la cuenta admite multipaquete
 cotización cambia a `shipment_creation_type: multishipment` y cobra el doble. Con
 la regla de "un bulto por variante", **un pedido de dos variantes son dos guías,
 cada una con su número, su cobro y su propio hilo de eventos**. Este ADR asume una
-guía por pedido de punta a punta. Las salidas visibles son tres —un `Envio` por
+guía por pedido de punta a punta. Las salidas visibles eran tres —un `Envio` por
 bulto, un `Envio` con varias guías, o consolidar en un solo bulto y perder las
-medidas reales— y **no se elige aquí**: es la decisión que hay que tomar antes de
-escribir el despacho.
+medidas reales—. **Resuelta el 16 de septiembre en `ADR-0031`**: un `Envio` con
+varias guías, con el rastro colgando de la guía y no del envío. Esa decisión
+reemplaza también lo que este ADR daba por hecho al hablar de "la guía" en
+singular.
 
 **5. La recolección sigue siendo el tramo que falta, pero ya no a ciegas.** Solo
 Coordinadora, Servientrega e Inter Rapidísimo recogen por API —lo dice el campo
