@@ -3,9 +3,14 @@
 // `docs/13` §2.2 lo dejó con dos cuerpos incompatibles y §6.4 resolvió cuál es el bueno leyendo
 // la documentación. Falta ejercerlo: cobertura → programar → consultar.
 //
+// Al 16 de septiembre sigue sin cerrarse, pero ya no por ignorancia: falta saldo. La emisión
+// de ese día salió bien (guía viva de Servientrega) y `POST /pickups` la rechazó por el barrio
+// ausente en el origen; el barrio se manda ahora por la cotización (§6.7). Comprobarlo cuesta
+// una emisión más y la cuenta quedó en 388.
+//
 // Solo tres transportadoras admiten recolección por API —Coordinadora, Inter Rapidísimo y
-// Servientrega—; 99 minutos y Envía la piden por soporte (docs/13 §6.4). Por eso emite con
-// Coordinadora, que además es la más barata de las tres.
+// Servientrega—; 99 minutos y Envía la piden por soporte (docs/13 §6.4). Por omisión emite con
+// la más barata de esas tres, que suele ser Coordinadora; CARRIER=<nombre> fuerza otra.
 //
 // **Emitir cuesta saldo y por eso hay que pedirlo con EMITIR=1.** Cobertura, programación y
 // consulta son gratis.
@@ -15,6 +20,8 @@
 //   EMITIR=1 node tools/sonda-recoleccion.mjs        emite y hace el ciclo entero
 //   ENVIO=<id> node tools/sonda-recoleccion.mjs      reusa un envío ya emitido
 //   VER_PICKUP=<id> node tools/sonda-recoleccion.mjs relee una recolección
+//   CARRIER=<nombre>, TOPE=<pesos>, FORZAR=1 (ventana inventada si no hay cobertura) y
+//   PLANTILLA=<id> (manda `address_template_id` en el origen) modulan lo anterior
 
 import { readFileSync, existsSync } from 'node:fs';
 
@@ -82,19 +89,24 @@ let envioId = process.env.ENVIO;
 
 if (!envioId) {
   const NONCE = Date.now().toString().slice(-6);
-  const ciudad = {
+  // El barrio viaja por la cotización, no por el envío: el `address_from` de
+  // `POST /shipments` no declara `area_level3` y lo descarta en silencio, mientras que de la
+  // cotización se heredan `country_code`, `postal_code` y `area_level1/2/3`. Sin barrio,
+  // `POST /pickups` responde `422 base: "Shipper address2 not valid: null"`.
+  const ciudad = (barrio) => ({
     country_code: 'CO',
     postal_code: '05001',
     area_level1: 'Antioquia',
     area_level2: 'Medellín',
-  };
+    area_level3: barrio,
+  });
   const cot = await llamar('/api/v1/quotations', {
     method: 'POST',
     headers: H,
     body: JSON.stringify({
       quotation: {
-        address_from: ciudad,
-        address_to: ciudad,
+        address_from: ciudad('La Milagrosa'),
+        address_to: ciudad('Boston'),
         parcels: [{ length: 20, width: 15, height: 2, weight: 0.1, declared_amount: 10000 }],
       },
     }),
@@ -154,14 +166,15 @@ if (!envioId) {
       shipment: {
         rate_id: tarifa.id,
         unique_shipment: true,
-        // `POST /pickups` sobre una guía con esta dirección incompleta responde
-        // `422 base: "Shipper address2 not valid: null"`. En el envío los únicos campos de
-        // dirección que quedaban vacíos eran `apartment_number` y `area_level3`: van llenos.
+        // Mandar el barrio aquí no sirve, y no cuesta un error sino un silencio: el esquema de
+        // `address_from` solo declara `address_template_id`, `street1`, `name`, `company`,
+        // `phone`, `email`, `reference`, `further_information` y `tax_id_number`. `area_level3`
+        // y `street_number` se descartan sin avisar y el envío queda con `area_level3: null`,
+        // que es justo lo que rompe la recolección.
         address_from: direccion({
+          ...(env.PLANTILLA ? { address_template_id: env.PLANTILLA } : {}),
           street1: 'Cra. 26C # 38B-31',
-          street_number: '38B-31',
           apartment_number: '401',
-          area_level3: 'La Milagrosa',
           name: 'TecnoSport',
           company: 'TecnoSport',
           phone: '3138816711',
@@ -195,14 +208,16 @@ if (!envioId) {
 // La respuesta 202 llega con workflow_status `in_progress` y sin guía: la transportadora
 // todavía no ha contestado. Pedir la cobertura de recolección antes de eso devuelve
 // `422 {"success": false, "message": null}`, que no dice nada.
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 40; i++) {
   const { cuerpo } = await llamar(`/api/v1/shipments/${envioId}`, { headers: H });
   const a = cuerpo.data?.attributes ?? {};
   console.log(
     `  envío: ${a.workflow_status} · guía ${JSON.stringify(a.master_tracking_number)}` +
       `${a.error_detail ? ' · error ' + JSON.stringify(a.error_detail) : ''}`,
   );
-  if (a.workflow_status !== 'in_progress' && a.workflow_status !== 'pending') break;
+  // `creation_waiting` es un tercer estado no terminal, y es el largo: la guía del 16 de
+  // septiembre estuvo dos minutos ahí antes de llegar a `success`. Veinte vueltas no le daban.
+  if (!['in_progress', 'pending', 'creation_waiting'].includes(a.workflow_status)) break;
   await dormir(5000);
 }
 

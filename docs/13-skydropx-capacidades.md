@@ -255,8 +255,10 @@ mueva hay un paso con nombre propio.
    sabe que **99 minutos y Envía solo recogen por soporte**, mientras
    Coordinadora, Inter Rapidísimo y Servientrega sí responden por API. Con
    corte a las 12:00 y sin fines de semana.
-   **Ejercida contra el sandbox el 15 de septiembre (§6.6)**: el endpoint valida y
-   exige el envío en `success`; falta una guía viva para programar una de verdad.
+   **Ejercida contra el sandbox el 15 y el 16 de septiembre (§6.6, §6.7)**: el endpoint
+   valida, exige el envío en `success` y exige el barrio del origen, que solo llega si se
+   mandó en la cotización. Con una guía viva pero sin barrio falla igual; falta una
+   emisión más, y el saldo no da.
    Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
    se puede ofrecer** (su endpoint no responde) y **99 minutos, la que más cotiza,
    no recoge por API** — si el despacho elige siempre la más barata, va a acabar
@@ -313,7 +315,7 @@ de Skydropx y **la solicitud ya se les envió el 14 de septiembre de 2026**.
 | DHL en el panel | ✅ Resuelto: solo internacional | Nada. No aplica al negocio. |
 | Servientrega, Envía, Coordinadora sin tarifa | ✅ **Resuelto el 15 de septiembre, y era nuestro** | No era de ellos: `declared_amount` va **dentro de cada `parcel`** y el mapeador lo mandaba fuera, con otro nombre. Con el campo en su sitio las tres cotizan (§6.4). **Retirar la solicitud enviada el 14 de septiembre.** |
 | Inter Rapidísimo `to_f >= 25` | ✅ **Resuelto el 15 de septiembre** | Tampoco era la verificación de origen: era el mismo valor declarado ausente. Con el campo bien puesto responde `no_coverage` (§6.4). La plantilla `535bd77b-fce2-46f0-9354-56b9c42fba5f` sigue en `process` y ya no bloquea nada. |
-| Créditos del sandbox | ✅ **Resuelto el 15 de septiembre de 2026** | Skydropx depositó **49.000 COP a mano** (`transaction_source: Skydropx`, etiqueta `USO_INTERNO`, comentario "para realizar peruebas"). Saldo: **50.000 COP**. Nunca funcionó la vía de autoservicio; la resolvió el soporte. |
+| Créditos del sandbox | ⚠️ **Se agotaron otra vez el 16 de septiembre** | Skydropx depositó **49.000 COP a mano** el 15 (`transaction_source: Skydropx`, etiqueta `USO_INTERNO`, comentario "para realizar peruebas"); nunca funcionó la vía de autoservicio. Las emisiones de prueba lo bajaron a **388 COP**, por debajo de la tarifa más barata con recolección por API (5.991). **Bloquea la recolección (§6.7).** |
 | Guía por `POST /shipments` | ✅ **Funciona. Emitida el 15 de septiembre** | Guía `873837506712` de Servientrega, por el camino que `ADR-0021` diseñó: `quotation_id` + `rate_id`. El `422 declared_amount` que parecía bloquearlo **es de la tarifa de 99 minutes**, no del endpoint (§6.3). |
 | `422 declared_amount` en tarifas de 99 minutes | ⚠️ Acotado, y esquivable | Con el mismo cuerpo, una tarifa de Servientrega da `202` y una de 99 minutes da `422`. Es de esa transportadora. **Nuestro**: no elegir esa tarifa, o preguntarles (§6.3). |
 | Guía por `POST /rate/shipments` | ⛔ No se usa | Emitió la guía `3838859118`, pero recotiza y agrega un recargo de recaudo de 8.925 que nadie pidió, un 85 % más caro (§6.2). Con `POST /shipments` funcionando, ya no hace falta. |
@@ -1563,6 +1565,103 @@ género del `408` de `§6.2`, pero al revés: allí el `408` había creado la gu
 
 Las dos se cierran con **una guía viva de Servientrega o Coordinadora**, emitida en
 horario hábil. Con 8.588 de saldo alcanza.
+
+> **Se hizo al día siguiente y no bastó (§6.7).** La guía vivió, la recolección volvió a
+> pedir el `address2`, y resultó que el campo que falta —el barrio— **no se puede mandar
+> en el envío**: viaja por la cotización. Lo que sí quedó cerrado es cuál es el campo.
+
+### 6.7 La guía viva, y el barrio que falta (2026-09-16, sexta parte)
+
+`§6.6` dejó dos pendientes y dijo que se cerraban "con una guía viva de Servientrega
+o Coordinadora, emitida en horario hábil. Con 8.588 de saldo alcanza". Se hizo, a las
+09:23 de un miércoles. **La guía vivió. La recolección no, y el saldo se acabó.**
+
+#### La emisión de día funciona, y tiene un estado más del que se creía
+
+| Momento | `workflow_status` | Guía |
+|---|---|---|
+| `202` de creación | `in_progress` | `null` |
+| ~40 s después | `creation_waiting` | `null` |
+| 2 min 22 s después | `success` | `2269401749` |
+
+**`creation_waiting` no aparece en la documentación de Skydropx ni se había visto en
+ninguna sonda.** La de recolección lo trataba como terminal —cortaba en cuanto el estado
+dejaba de ser `in_progress` o `pending`— y por eso el primer intento del día pareció otro
+fracaso de transportadora cuando lo que pasaba era que la sonda no había esperado. Ya
+está arreglado, junto con el tope del bucle: 40 vueltas, porque dos minutos no le caben a
+veinte.
+
+Eso refuerza lo que `§6.6` sacó de las tres muertes nocturnas, y le pone número: **la
+espera entre el `202` y el estado terminal dura minutos y pasa por tres estados no
+terminales** —`in_progress`, `pending`, `creation_waiting`—. El despacho no puede
+marcarse con la respuesta de creación.
+
+Y de paso, la intermitencia de `§6.6` queda confirmada por el otro lado: **de día, a la
+primera y sin reintentos.** Se emitió con Servientrega, forzada, porque era la que había
+emitido bien de día; Coordinadora estaba 2.209 más barata y probablemente habría servido,
+pero su contador de remisiones venía atascado esa noche y no era el día de averiguarlo.
+
+#### `Shipper address2` es el barrio, y por el envío no se puede mandar
+
+`POST /pickups` sobre la guía viva respondió otra vez
+`422 base: ["Shipper address2 not valid: null"]`. La hipótesis de `§6.6` —que faltaba
+`apartment_number` o `area_level3`— era la buena a medias: **el envío se emitió con los
+dos campos puestos y aun así falló**, porque uno de los dos nunca llegó.
+
+Lo que guardó el envío, releído:
+
+```
+apartment_number: "401"      ← se mandó y quedó
+area_level3:      null       ← se mandó "La Milagrosa" y se perdió
+street_number:    (ni existe en la respuesta)
+```
+
+De ahí sale el nombre por descarte: **`address2` no puede ser `apartment_number`**, que
+iba lleno cuando el error dijo `null`. Es `area_level3`, el barrio, que Servientrega
+exige para recoger y que el envío no tiene.
+
+Y el motivo de que se pierda está en el OpenAPI, no en un fallo: **`address_from` solo
+declara `address_template_id`, `street1`, `name`, `company`, `phone`, `email`,
+`reference`, `further_information` y `tax_id_number`.** Ni `area_level3`, ni
+`street_number`, ni `postal_code`, ni `area_level1/2`. Todo lo demás que se le mande **se
+descarta sin un error**: el `202` llega igual, la guía se emite igual, y el campo queda
+en `null`. Es la misma familia del `declared_amount` fuera de sitio de `§6.4` —un campo
+en el lugar equivocado que nadie rechaza— y la tercera vez que este proveedor cobra el
+silencio más caro que un `422`.
+
+La puerta del barrio es la otra, y ya estaba escrita en `§6.4` sin que se hubiera
+conectado con esto: de la cotización se heredan `country_code`, `postal_code` y
+**`area_level1/2/3`**. Nuestra cotización mandaba ciudad y departamento y nunca el
+barrio. `tools/sonda-recoleccion.mjs` ya lo manda —origen `La Milagrosa`, destino
+`Boston`—, y las seis tarifas siguen cotizando igual con el campo puesto.
+
+Dos caminos se descartaron, gratis, antes de llegar ahí:
+
+- **La plantilla de dirección por omisión no interviene.** Se marcó
+  `535bd77b-…` como `default: true` y `POST /pickups` falló idéntico: el `shipper` de
+  la recolección sale de la dirección del envío, no de la configuración de la cuenta.
+  Se devolvió a `false`.
+- **`verify_by_carriers` no sirve para esto.** Con `["servientrega","coordinadora"]`
+  responde `422 {"error": "CARRIER_VERIFICATION_NOT_ENABLED"}`. La verificación de
+  dirección existe para Inter Rapidísimo y nadie más; no hay forma de validar el origen
+  contra la transportadora sin emitir.
+
+⛔ Y `GET /pickups/coverage` volvió a responder `422 {"success": false, "message": null}`
+con una guía en `success` recién nacida. **Van cinco guías distintas y cinco veces lo
+mismo.** Ya no hay versión de "es que el envío no estaba listo" que lo sostenga.
+
+#### Qué queda, y por qué no se puede hacer hoy
+
+Queda **una sola comprobación**, y es la misma para los dos pendientes de `§6.6`: emitir
+con el barrio en la cotización, ver si el envío lo hereda en `area_level3`, y si lo
+hereda, programar la recolección y leerla. La sonda ya está lista para hacerlo de un
+tirón.
+
+**No alcanza el saldo.** La emisión de hoy costó 8.200 y dejó la cuenta en **388**; la
+tarifa más barata con recolección por API es Coordinadora a 5.991. Los créditos se
+pidieron el 14 de septiembre y siguen sin respuesta, así que el tramo de recolección
+queda bloqueado por saldo, no por conocimiento — que es un sitio mucho mejor del que
+estaba ayer.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
