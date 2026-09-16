@@ -181,14 +181,15 @@ class MapeadorSeguimientoSkydropxV1Test {
     assertTrue(eventos.stream().allMatch(evento -> GUIA.equals(evento.guia())));
   }
 
-  // ---------- los doce estados ----------
+  // ---------- los trece estados ----------
 
   /**
-   * Uno a uno contra el enum del OpenAPI (adr/0022, docs/13 §6.3). Se escriben los doce a mano: una
+   * Uno a uno contra el enum del OpenAPI (adr/0022, docs/13 §6.3), más {@code error}, que no está
+   * en ese enum y salió del canal del webhook (docs/13 §6.9). Se escriben los trece a mano: una
    * tabla que se comprueba con la misma tabla que traduce no comprueba nada.
    */
   @Test
-  void traduceLosDoceEstadosDeLaPlataforma() {
+  void traduceLosTreceEstadosDeLaPlataforma() {
     assertEquals(EstadoEnvio.CREADO, estadoDe("created"));
     assertEquals(EstadoEnvio.RECOGIDO, estadoDe("picked_up"));
     assertEquals(EstadoEnvio.EN_TRANSITO, estadoDe("in_transit"));
@@ -201,6 +202,7 @@ class MapeadorSeguimientoSkydropxV1Test {
     assertEquals(EstadoEnvio.CANCELADO, estadoDe("canceled"));
     assertEquals(EstadoEnvio.DESTRUIDO, estadoDe("destroyed"));
     assertEquals(EstadoEnvio.RETENIDO, estadoDe("retained"));
+    assertEquals(EstadoEnvio.FALLIDO, estadoDe("error"));
   }
 
   private EstadoEnvio estadoDe(String status) {
@@ -231,8 +233,9 @@ class MapeadorSeguimientoSkydropxV1Test {
    * Y no se va callado, que es lo que lo hacía peligroso: una guía cuyos eventos se descartan todos
    * devuelve lista vacía, y para {@code ConciliarGuia} eso es "sin novedad" — lo mismo que un envío
    * que va perfecto. El registro tiene que nombrar el código, porque es el dato con el que se
-   * decide si hay que mapear un estado nuevo. El caso real que espera decisión es {@code error}
-   * (docs/13 §6.9).
+   * decide si hay que mapear un estado nuevo. {@code error} ya está mapeado como {@link
+   * EstadoEnvio#FALLIDO}, así que el del ejemplo es uno inventado: la prueba tiene que sobrevivir a
+   * que mañana se mapee otro.
    */
   @Test
   void unEstadoDesconocidoSeRegistraConSuCodigoYSuGuia() {
@@ -240,11 +243,13 @@ class MapeadorSeguimientoSkydropxV1Test {
         capturando(
             () ->
                 mapeador.eventos(
-                    unEvento("\"status\":\"error\",\"date\":\"2026-09-15T19:54:18-05:00\""), GUIA));
+                    unEvento(
+                        "\"status\":\"teletransportado\",\"date\":\"2026-09-15T19:54:18-05:00\""),
+                    GUIA));
 
     assertEquals(1, registro.size());
     String mensaje = registro.get(0).getFormattedMessage();
-    assertTrue(mensaje.contains("error"), mensaje);
+    assertTrue(mensaje.contains("teletransportado"), mensaje);
     assertTrue(mensaje.contains(GUIA), mensaje);
     assertTrue(mensaje.contains("1 de 1"), mensaje);
   }
@@ -265,7 +270,7 @@ class MapeadorSeguimientoSkydropxV1Test {
         json.readTree(
             """
             {"data":[
-              {"id":"1","attributes":{"status":"error","date":"2026-09-15T19:54:18-05:00"}},
+              {"id":"1","attributes":{"status":"ornitorrinco","date":"2026-09-15T19:54:18-05:00"}},
               {"id":"2","attributes":{"status":"delivered"}},
               {"id":"3","attributes":{"status":"delivered","date":"2026-09-15T19:56:21-05:00"}}
             ]}
@@ -275,7 +280,7 @@ class MapeadorSeguimientoSkydropxV1Test {
 
     String mensaje = registro.get(0).getFormattedMessage();
     assertTrue(mensaje.contains("2 de 3"), mensaje);
-    assertTrue(mensaje.contains("[error]"), mensaje);
+    assertTrue(mensaje.contains("[ornitorrinco]"), mensaje);
     assertTrue(mensaje.contains("identificador: 1"), mensaje);
   }
 

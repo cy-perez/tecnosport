@@ -67,10 +67,17 @@ final class MapeadorSeguimientoSkydropxV1 implements MapeadorSeguimientoSkydropx
   static final String ACTOR = "skydropx";
 
   /**
-   * Los doce estados de la plataforma, confirmados uno a uno contra el enum del OpenAPI (adr/0022,
-   * docs/13 §6.3). Se traducen con una tabla explícita y no con {@code valueOf} sobre un nombre
-   * transformado: los nombres del dominio son nuestros y tienen que poder cambiar sin que eso
-   * reescriba en silencio lo que significa un evento de un tercero.
+   * Los trece estados de la plataforma. Doce salen del enum del OpenAPI del rastreo, confirmados
+   * uno a uno (adr/0022, docs/13 §6.3); {@code error} salió del canal del webhook, medido en el
+   * cuerpo de un evento de prueba del panel (docs/13 §6.9). Se traducen con una tabla explícita y
+   * no con {@code valueOf} sobre un nombre transformado: los nombres del dominio son nuestros y
+   * tienen que poder cambiar sin que eso reescriba en silencio lo que significa un evento de un
+   * tercero.
+   *
+   * <p><strong>Que {@code error} esté aquí no significa que se haya visto en el rastreo.</strong>
+   * Se mapea porque el precio de los dos errores no es el mismo: mapearlo de más no cuesta nada —si
+   * el rastreo nunca lo devuelve, esta entrada no se usa—, y no mapearlo deja un envío fallido
+   * leyéndose como "sin novedad", que es el punto ciego que se acaba de cerrar.
    */
   private static final Map<String, EstadoEnvio> ESTADOS =
       Map.ofEntries(
@@ -85,7 +92,8 @@ final class MapeadorSeguimientoSkydropxV1 implements MapeadorSeguimientoSkydropx
           Map.entry("in_return", EstadoEnvio.EN_DEVOLUCION),
           Map.entry("canceled", EstadoEnvio.CANCELADO),
           Map.entry("destroyed", EstadoEnvio.DESTRUIDO),
-          Map.entry("retained", EstadoEnvio.RETENIDO));
+          Map.entry("retained", EstadoEnvio.RETENIDO),
+          Map.entry("error", EstadoEnvio.FALLIDO));
 
   @Override
   public List<AplicarEventoDeEnvioComando> eventos(JsonNode respuesta, String guia) {

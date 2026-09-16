@@ -1862,8 +1862,21 @@ fecha o sin identificador, porque piden cosas distintas: uno, decidir qué signi
 otro, mirar si cambió la forma de la respuesta. La regla de no adivinar se conserva entera: el
 evento se sigue descartando.
 
-Lo que **no** se hizo, y queda para el paso de la emisión: decidir si `error` entra al dominio como
-estado —con semántica de "pide ojo humano", que es lo que es—. Y una limitación que conviene saber:
+**`error` entró al dominio el mismo día, como `FALLIDO`.** El nombre es nuestro —la tabla del
+mapeador traduce explícitamente— y `ERROR` en un dominio se lee como una excepción y no como lo que
+es: un paquete que no va a moverse. Pide ojo humano, con lo que los estados quietos pasan de cuatro
+a cinco, y **no es terminal**: parece una guía muerta, pero que el estado sea final es justo lo que
+no se ha medido, y darlo por terminado haría que la conciliación dejara de preguntar por ese envío
+para siempre. Seguir preguntando cuesta una llamada por vuelta, acotada por el tope del lote.
+
+⚠️ **Y al ponerlo apareció que nadie mira esos estados.** `EstadoEnvio.exigeRevisionManual()` no lo
+llama nada en producción: sólo las pruebas. La pregunta está bien planteada y no tiene quien la
+haga —el panel no marca esos envíos y la conciliación no los separa—, así que hoy un paquete
+retenido, destruido o fallido se ve igual que uno en tránsito. No es de este paso; queda escrito
+porque un método que sólo se prueba a sí mismo parece cubierto y no cubre nada.
+
+Lo que **no** se hizo, y queda para el paso de la emisión: que un envío fallido **devuelva el pedido
+a la cola**. Eso toca inventario y el grafo del pedido, y es la misma rama del `202` que muere. Y una limitación que conviene saber:
 el aviso vive en el registro y no en el resultado de la conciliación, porque contarlo ahí exige que
 el puerto `ConsultorDeSeguimiento` devuelva lo descartado además de lo aplicable. Cambiar ese
 contrato por un estado cuyo significado todavía no se ha decidido era ponerle el carro a los
