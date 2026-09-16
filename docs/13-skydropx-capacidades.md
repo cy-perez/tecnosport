@@ -1819,11 +1819,46 @@ crudos cuadró con el secreto del panel, la cabecera `Authorization` con el pref
 se leyó bien, y el lector sacó del cuerpo la guía `2943368350` —de la cuenta de ellos, no
 nuestra—. La cabecera quedó en `Authorization`, el valor por omisión.
 
-✅ **Los nombres del panel coinciden con los códigos que mapea el rastreo**, `delivery_attempt`
-incluido. Se dudó de ese —una `t` de diferencia habría hecho que un intento de entrega se
-descartara en silencio al conciliar— y la diferencia estaba en cómo se transcribió la lista,
-no en la plataforma. Vale la anotación porque el modo de fallo es real: los códigos de un
-tercero se cotejan contra la fuente, no contra una lista copiada a mano.
+✅ **Los nombres del panel coinciden con los códigos que mapea el rastreo**, medido en el
+cuerpo del evento de prueba: `"status": "delivery_attempt"`. Se dudó de ese —una `t` de
+diferencia habría hecho que un intento de entrega se descartara en silencio al conciliar— y
+la diferencia estaba en cómo se transcribió la lista, no en la plataforma. Vale la anotación
+porque el modo de fallo es real: los códigos de un tercero se cotejan contra la fuente, no
+contra una lista copiada a mano.
+
+#### `error` es un estado trece, y hoy se descarta en silencio
+
+El cuerpo del evento de prueba de `Error` resolvió la pregunta abierta, y no como se
+esperaba:
+
+```json
+"data": { "type": "packages",
+          "attributes": { "status": "error", "tracking_number": "4889168485",
+                          "returned": false, "returned_status": null } }
+```
+
+Es un evento **de paquete**, con guía, y su `status` es `error`. O sea que la plataforma usa
+al menos **trece** estados y no los doce que `adr/0022` fijó y que
+`MapeadorSeguimientoSkydropxV1` mapea uno a uno. `error` no está en esa tabla.
+
+⚠️ **La consecuencia no es que falte una entrada en un mapa.** Un estado desconocido se
+descarta *con su evento*, a propósito y bien —traducirlo al más parecido movería pedidos por
+una corazonada—, pero **se descarta sin dejar rastro**: no hay log ni contador. Si el rastreo
+devuelve eventos con `status: error`, `ConciliarGuia` no encuentra nada aplicable y responde
+"sin novedad", que es exactamente lo que respondería una guía que va perfecta. Un envío
+fallido y un envío tranquilo se ven iguales desde el registro y desde el panel.
+
+Lo que **no** está medido, y hay que decirlo: el cuerpo de arriba es un evento de prueba
+sintético del panel. Que un `workflow_status: error` de §6.6 —la emisión que muere minutos
+después y se reembolsa— dispare además este evento de paquete es **plausible y no
+comprobado**: encaja con que el panel lo liste entre los suscribibles, y se confirma el día
+que una emisión real vuelva a morir. Tampoco está medido si `GET /tracking` devuelve eventos
+con ese `status` o si `error` vive sólo en el canal del webhook.
+
+Dos cosas quedan para el paso de la emisión, entonces: decidir si `error` entra al dominio
+como estado —con semántica de "pide ojo humano", que es lo que es— y **hacer visible el
+descarte**, que es barato y no exige decidir nada: contar y registrar un estado desconocido
+conserva la regla de no adivinar y quita el punto ciego.
 
 #### Lo que se vio de paso, cotizando desde el ambiente desplegado
 
