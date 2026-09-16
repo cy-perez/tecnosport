@@ -1855,10 +1855,19 @@ comprobado**: encaja con que el panel lo liste entre los suscribibles, y se conf
 que una emisión real vuelva a morir. Tampoco está medido si `GET /tracking` devuelve eventos
 con ese `status` o si `error` vive sólo en el canal del webhook.
 
-Dos cosas quedan para el paso de la emisión, entonces: decidir si `error` entra al dominio
-como estado —con semántica de "pide ojo humano", que es lo que es— y **hacer visible el
-descarte**, que es barato y no exige decidir nada: contar y registrar un estado desconocido
-conserva la regla de no adivinar y quita el punto ciego.
+**El descarte dejó de ser mudo el mismo día.** `MapeadorSeguimientoSkydropxV1` escribe ahora una
+línea por rastreo con la guía, cuántos eventos se cayeron de cuántos y **qué códigos** no supo
+traducir —`[error]`, cuando aparezca—, separando los estados nuevos de los eventos que llegan sin
+fecha o sin identificador, porque piden cosas distintas: uno, decidir qué significa un código; el
+otro, mirar si cambió la forma de la respuesta. La regla de no adivinar se conserva entera: el
+evento se sigue descartando.
+
+Lo que **no** se hizo, y queda para el paso de la emisión: decidir si `error` entra al dominio como
+estado —con semántica de "pide ojo humano", que es lo que es—. Y una limitación que conviene saber:
+el aviso vive en el registro y no en el resultado de la conciliación, porque contarlo ahí exige que
+el puerto `ConsultorDeSeguimiento` devuelva lo descartado además de lo aplicable. Cambiar ese
+contrato por un estado cuyo significado todavía no se ha decidido era ponerle el carro a los
+caballos.
 
 #### Lo que se vio de paso, cotizando desde el ambiente desplegado
 
