@@ -1924,11 +1924,13 @@ pantalla), con el backend local apuntando a un puerto muerto para forzar el fall
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
-Tres tramos no dependen de ninguna respuesta pendiente:
+Esta sección se escribió cuando no había nada construido. **Los tres tramos que
+listaba —el paquete por variante, el cliente OAuth, la conciliación por guía— están
+hechos**, y con ellos la cotización, el checkout, la contraentrega, el seguimiento y
+el webhook firmado. Se conserva porque su criterio sigue sirviendo y porque el orden
+en que se hicieron las cosas explica por qué el código se ve como se ve.
 
-1. **El paquete por variante** (paso 1 de la Fase 7). Peso y dimensiones son
-   nuestros; ninguna incógnita de la API los toca.
-2. **El cliente OAuth con el token en caché** y el respeto de las 2 peticiones por
-   segundo. La autenticación es lo único ✅ de punta a punta.
-3. **La conciliación por guía**, que sostiene el seguimiento entero aunque el
-   webhook tarde.
+**Lo único que queda de la Fase 7 es la emisión de la guía**, y lo que la bloquea no
+es conocimiento: es el saldo, en COP 388. Cómo se retoma —qué está medido, qué hay
+que escribir y qué queda por decidir— está en `docs/09-plan-de-arranque.md`, sección
+"Traspaso", al final de la Fase 7.
