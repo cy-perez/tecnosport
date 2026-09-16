@@ -237,7 +237,7 @@ sobre ese estado tiene que contar jueves, no días.
 | ADR | Qué sigue en pie | Qué hay que revisar |
 |---|---|---|
 | `0021` cotización | Todo: asíncrona, 24 h, tarifa elegida por el servidor, `fail-closed` | ~~Falta decidir multipaquete; los campos de dirección siguen sin confirmar~~ Resueltos los dos. Lo que queda es el mínimo de 10.000 por bulto y que la emisión se va por **v2** (§6.4) |
-| `0022` seguimiento | La conciliación programada, que se sostiene sola con el tracking por guía | **Le falta el tramo de recolección entero**, ahora con la API confirmada y una regla por transportadora (§6.4). ~~Los doce estados y la firma no se pudieron re-confirmar~~: confirmados (§6.1, §6.3) |
+| `0022` seguimiento | La conciliación programada, que se sostiene sola con el tracking por guía | **Corregido el 16 de septiembre** con seis enmiendas: el `202` que no es despacho, la forma real del endpoint de conciliación, los eventos al revés y sin texto, las varias guías por pedido, la recolección y la firma aún sin evento real. ~~Los doce estados y la firma no se pudieron re-confirmar~~: los doce, confirmados (§6.1, §6.3) |
 | `0023` contraentrega | La cobertura por tarifa y el recaudo del total | El servicio hay que **solicitarlo** —y ahora se sabe reconocer cuándo no está activo: `on_delivery_amount` en `null` (§6.4)—; el retiro es semanal y con comisión; el máximo de 5.000.000 tiene fuente y la comisión sigue sin confirmar |
 
 Ninguno se contradice de frente. `0022` es el que queda corto, y no por estar
@@ -1167,6 +1167,8 @@ varias guías, o consolidar en un solo bulto y perder las medidas reales—.
 - **`label_url` nunca apareció** en la guía de Servientrega, ni con el envío en
   `delivered`. Sí apareció en la de 99 minutes emitida por `rate/shipments`. No se
   sabe si es del simulador de `auto_advance` o de la transportadora.
+  **Desmentido el 16 de septiembre (§6.7)**: la guía de Servientrega de ese día sí
+  lo trajo. Sigue sin saberse qué lo decide.
 - **Inter Rapidísimo y su `to_f >= 25`**, con la plantilla de origen en `process`.
 
 ### 6.4 La documentación leída entera, y el campo que faltaba (2026-09-15, tercera parte)
@@ -1600,6 +1602,13 @@ Y de paso, la intermitencia de `§6.6` queda confirmada por el otro lado: **de d
 primera y sin reintentos.** Se emitió con Servientrega, forzada, porque era la que había
 emitido bien de día; Coordinadora estaba 2.209 más barata y probablemente habría servido,
 pero su contador de remisiones venía atascado esa noche y no era el día de averiguarlo.
+
+Y un dato suelto que se llevó por delante un pendiente de `§6.3`: **esta guía sí
+trajo `label_url`** —`https://sb-pro.skydropx.com/s/s?id=…`—, cuando la del 15 no
+lo trajo nunca, ni con el envío en `delivered`. Las dos son de Servientrega y las
+dos por `POST /shipments`. Qué lo decide sigue sin saberse; lo que ya no se puede
+decir es que esa transportadora no lo devuelve. Quien escriba el despacho **no
+puede dar por hecho el rótulo**.
 
 #### `Shipper address2` es el barrio, y por el envío no se puede mandar
 
