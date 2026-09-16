@@ -190,3 +190,11 @@ tiene que imprimir— **apareció en la guía del 16 de septiembre** y no había
 aparecido en la del 15, ni siquiera con el envío en `delivered`. No se sabe qué
 lo decide. Un despacho que dé por hecho que el rótulo viene en la respuesta va a
 fallar algún día sin avisar.
+
+**Enmienda 7, del mismo día: el webhook no trae el evento.** Este ADR da por hecho
+que del webhook sale un `EventoSeguimiento` y de la conciliación otro igual. El
+cuerpo del webhook **no trae identificador de evento ni fecha**, que son los dos
+datos de los que dependen la idempotencia del rastro y los plazos legales. El
+mecanismo queda entonces al revés de como está escrito arriba: el webhook aporta el
+número de guía y dispara la consulta, y el rastreo es la única fuente del rastro.
+Está en `adr/0032`, con las alternativas que se descartaron.

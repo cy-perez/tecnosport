@@ -1725,8 +1725,23 @@ para que los dos caminos convergieran; con los textos divergiendo entre endpoint
 salida era peor de lo que parecía. El evento se identifica por el `id` del rastreo,
 que es un UUID y viene siempre.
 
-Con eso, de los tres puertos que `§6` dejó fallando cerrado queda **uno**: el lector
-del cuerpo del webhook.
+#### Y la contradicción del retorno no era una contradicción
+
+`§6.1` y `§6.4` decían cosas opuestas sobre la devolución: una que las suscripciones
+siguen disparando el estado operativo real y no `in_return`, otra que `status` se queda
+en `in_return` todo el trayecto. Releída la documentación entera, **las dos frases están
+ahí y hablan de cosas distintas**: lo que se dispara con el estado operativo es la
+*suscripción* —por eso no hay que migrar nada para seguir recibiendo eventos durante un
+retorno—, y lo que se queda en `in_return` es el `status` del *cuerpo*, con el
+movimiento real en `returned_status`. El ejemplo de la documentación lo confirma:
+`status: "in_return"`, `returned: true`, `returned_status: "in_transit"`.
+
+Importaba porque `EN_DEVOLUCION` dispara `RechazarEnEntrega`, que libera inventario.
+Con `adr/0032` deja de importar por otro motivo: el estado no se lee del aviso.
+
+Con eso, los tres puertos que `§6` dejó fallando cerrado **dejaron de estarlo**. El
+lector del webhook se escribió el mismo día con los ejemplos de la documentación
+(`adr/0032`), y lo único que sigue cerrado es la firma, esperando el secreto del panel.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
