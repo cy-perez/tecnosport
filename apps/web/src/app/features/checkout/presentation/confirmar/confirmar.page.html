@@ -72,13 +72,22 @@
                lado de un total ya sumado con ese mismo flete. Visto en el navegador: costo
                "calculando", total $ 99.440. Si hay cotización se muestra; si llega otra, se
                reemplaza. -->
-          @if (cotizacion.data(); as envio) {
+          @if (tarifa(); as envio) {
             <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
           } @else if (cotizacion.isFetching()) {
             <span aria-live="polite">{{ 'checkout.resumen.envio_calculando' | transloco }}</span>
           } @else if (sinCobertura()) {
             <span class="text-ts-error" role="alert">{{
               'checkout.resumen.envio_sin_cobertura' | transloco
+            }}</span>
+          } @else if (articulosNoAsegurables().length > 0) {
+            <!-- Nombra el artículo: la salida es quitarlo del carrito o recogerlo en el punto, y
+                 sin el nombre el comprador no sabe cuál de sus productos lo dejó sin envío. -->
+            <span class="text-ts-error" role="alert">{{
+              (articulosNoAsegurables().length === 1
+                ? 'checkout.resumen.articulo_no_asegurable'
+                : 'checkout.resumen.articulos_no_asegurables'
+              ) | transloco: { articulos: nombresNoAsegurables() }
             }}</span>
           } @else {
             <!-- Un `@else` solo, como estaba, le decía "no llegamos a esa dirección" también a

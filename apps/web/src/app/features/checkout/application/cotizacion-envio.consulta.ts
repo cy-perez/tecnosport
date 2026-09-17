@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { injectQuery } from '@tanstack/angular-query-experimental';
-import { CotizacionEnvio, CotizarEnvioComando } from '../domain/envio.model';
+import { CotizarEnvioComando, ResultadoCotizacion } from '../domain/envio.model';
 import { REPOSITORIO_ENVIOS } from '../domain/repositorio-envios.puerto';
 
 /**
@@ -29,7 +29,7 @@ export function usarCotizacionEnvio(criterios: () => CotizarEnvioComando | null)
         'cotizacion-envio',
         valor && { ciudad: valor.direccion.codigoDaneCiudad, lineas: valor.lineas },
       ] as const,
-      queryFn: (): Promise<CotizacionEnvio | null> =>
+      queryFn: (): Promise<ResultadoCotizacion> =>
         repositorio.cotizar(valor as CotizarEnvioComando),
       enabled: valor !== null,
       staleTime: 60_000,

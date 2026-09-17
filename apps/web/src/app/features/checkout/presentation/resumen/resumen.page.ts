@@ -304,7 +304,29 @@ export class ResumenPage {
     () =>
       this.criteriosCotizacion() !== null &&
       this.cotizacion.isSuccess() &&
-      this.cotizacion.data() === null,
+      this.cotizacion.data()?.tipo === 'SIN_COBERTURA',
+  );
+
+  /** La tarifa, cuando la hubo. Las otras dos respuestas no son tarifas y no se disfrazan de una. */
+  protected readonly tarifa = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'TARIFA' ? resultado.cotizacion : null;
+  });
+
+  /**
+   * Los artículos que no se pueden asegurar, y por eso no van a domicilio (`ADR-0036`). Es la otra
+   * forma de quedarse sin envío, y se cuenta aparte de `sinCobertura` porque aquella se arregla
+   * cambiando la dirección y esta no se arregla de ninguna manera: la salida es la recogida.
+   */
+  protected readonly articulosNoAsegurables = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'ARTICULO_NO_ASEGURABLE' ? resultado.articulos : [];
+  });
+
+  protected readonly nombresNoAsegurables = computed(() =>
+    this.articulosNoAsegurables()
+      .map((articulo) => articulo.nombre)
+      .join(', '),
   );
 
   /**
@@ -333,10 +355,10 @@ export class ResumenPage {
    * instante y ese estado intermedio casi no existe.
    */
   protected readonly totalConocido = computed(
-    () => !this.requiereDireccion() || this.cotizacion.data() != null,
+    () => !this.requiereDireccion() || this.tarifa() != null,
   );
 
-  protected readonly costoEnvio = computed(() => this.cotizacion.data()?.costoEnvio ?? 0);
+  protected readonly costoEnvio = computed(() => this.tarifa()?.costoEnvio ?? 0);
 
   protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
 
@@ -409,7 +431,7 @@ export class ResumenPage {
         this.ultimaCotizacion.set(null);
         return;
       }
-      const cotizada = this.cotizacion.data();
+      const cotizada = this.tarifa();
       if (cotizada) {
         this.ultimaCotizacion.set(cotizada);
       }

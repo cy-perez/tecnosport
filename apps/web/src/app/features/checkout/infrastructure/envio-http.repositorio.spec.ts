@@ -59,20 +59,62 @@ describe('EnvioHttpRepositorio.cotizar', () => {
     );
 
     await expect(repositorio.cotizar(COMANDO)).resolves.toEqual({
-      costoEnvio: 9540,
-      moneda: 'COP',
-      transportadora: '99 minutes',
-      diasEstimados: 2,
-      venceEn: '2026-09-12T12:00:00Z',
+      tipo: 'TARIFA',
+      cotizacion: {
+        costoEnvio: 9540,
+        moneda: 'COP',
+        transportadora: '99 minutes',
+        diasEstimados: 2,
+        venceEn: '2026-09-12T12:00:00Z',
+      },
     });
   });
 
-  it('traduce el 409 de sin cobertura a null, que no es un error', async () => {
+  it('traduce el 409 de sin cobertura a un resultado, que no es un error', async () => {
     const repositorio = conRespuesta(
       json({ status: 409, codigo: 'ENVIO_SIN_COBERTURA', detail: 'sin tarifa' }, 409),
     );
 
-    await expect(repositorio.cotizar(COMANDO)).resolves.toBeNull();
+    await expect(repositorio.cotizar(COMANDO)).resolves.toEqual({ tipo: 'SIN_COBERTURA' });
+  });
+
+  /**
+   * El otro 409 de negocio (`ADR-0036`), y lo que se prueba no es que no lance: es que **los
+   * artículos lleguen**. Sin ellos la pantalla solo puede decir "algo de tu carrito", que era el
+   * mensaje inútil que esta decisión vino a reemplazar.
+   */
+  it('traduce el 409 de artículo no asegurable con los artículos que vinieron', async () => {
+    const repositorio = conRespuesta(
+      json(
+        {
+          status: 409,
+          codigo: 'ARTICULO_NO_ASEGURABLE',
+          detail: 'supera el máximo',
+          articulos: [{ varianteId: 'v-1', nombre: 'Portátil para diseño' }],
+        },
+        409,
+      ),
+    );
+
+    await expect(repositorio.cotizar(COMANDO)).resolves.toEqual({
+      tipo: 'ARTICULO_NO_ASEGURABLE',
+      articulos: [{ varianteId: 'v-1', nombre: 'Portátil para diseño' }],
+    });
+  });
+
+  /**
+   * Y si el cuerpo no trae los artículos —o los trae con otra forma— la pantalla se queda sin
+   * nombres pero el comprador ve la frase. Un mensaje a medias es mejor que una excepción.
+   */
+  it('el artículo no asegurable sin artículos legibles no rompe', async () => {
+    const repositorio = conRespuesta(
+      json({ status: 409, codigo: 'ARTICULO_NO_ASEGURABLE', articulos: 'ninguno' }, 409),
+    );
+
+    await expect(repositorio.cotizar(COMANDO)).resolves.toEqual({
+      tipo: 'ARTICULO_NO_ASEGURABLE',
+      articulos: [],
+    });
   });
 
   /** Un 409 con otro código sigue siendo un error: solo el de cobertura es una respuesta. */
