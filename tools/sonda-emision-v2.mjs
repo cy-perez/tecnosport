@@ -10,6 +10,13 @@
 //      campo que `POST /pickups` exige como "Shipper address2".
 //   3. Si con el barrio heredado la recolección por fin se programa.
 //
+// Y una cuarta, del 17 de septiembre, que decide `ADR-0037`: **qué recauda la transportadora en
+// la puerta.** La cotización acepta `recipient_pays_shipping` y lo devuelve en `true`, y aun así
+// `on_delivery_amount` sigue siendo el valor declarado pelado, sin flete (docs/13 §6.5 y la
+// remedición de §6.15). Quedan dos lecturas —el flete se suma al emitir, o el campo no hace
+// nada— y solo se separan emitiendo con recaudo y releyendo el envío, que sí expone
+// `on_delivery_amount`. Para eso están RECAUDO y FLETE_AL_DESTINATARIO.
+//
 // `GET /api/v2/shipments/{id}` **no existe** —404 con HTML, medido el 16 de septiembre de 2026—,
 // así que releer es siempre por v1.
 //
@@ -23,6 +30,15 @@
 //   EMITIR=1 BULTOS=2 node tools/sonda-emision-v2.mjs  multienvío: dos bultos, dos guías
 //   EMITIR=1 RECOLECCION=1 node tools/sonda-emision-v2.mjs   además programa la recolección
 //   VER_ENVIO=<id> node tools/sonda-emision-v2.mjs     relee un envío ya creado
+//   RECAUDO=1 FLETE_AL_DESTINATARIO=1 DECLARADO=10000 EMITIR=1 node tools/sonda-emision-v2.mjs
+//                                                     cotiza y emite con contraentrega, para ver
+//                                                     si `on_delivery_amount` trae el flete
+//
+// Con RECAUDO=1 el filtro de `pickup` se levanta, y no por descuido: de las tarifas que
+// sobreviven a una cotización con recaudo, la única que además puede emitir en este sandbox es
+// Envía —Coordinadora tiene el contador de remisiones atascado y Servientrega se cae con
+// `tariff_price_not_found`—, y Envía recoge solo por soporte. Exigir `pickup: true` dejaría la
+// pregunta del recaudo sin ninguna tarifa con la que medirla.
 
 import { readFileSync, existsSync } from 'node:fs';
 
@@ -84,7 +100,11 @@ async function releer(id) {
       ` · carrier_name: ${a.carrier_name} · service_code: ${a.service_code}` +
       `\n    master_tracking_number: ${JSON.stringify(a.master_tracking_number)}` +
       ` · total: ${a.total} · dias: ${a.estimated_delivery_days}` +
-      ` · error_detail: ${JSON.stringify(a.error_detail)}`,
+      ` · error_detail: ${JSON.stringify(a.error_detail)}` +
+      // Lo que mide la cuarta pregunta. Un envío emitido sin recaudo los trae en `null`, que es
+      // cómo se comprobó que el campo existe y que el dato, cuando lo haya, es de fiar.
+      `\n    on_delivery_amount: ${JSON.stringify(a.on_delivery_amount)}` +
+      ` · on_delivery_status: ${JSON.stringify(a.on_delivery_status)}`,
   );
   for (const inc of cuerpo.included ?? []) {
     const p = inc.attributes ?? {};
@@ -119,7 +139,13 @@ console.log(`Saldo antes: ${recorta(saldoAntes.cuerpo)}`);
 const NONCE = Date.now().toString().slice(-6);
 const BARRIO_ORIGEN = 'La Milagrosa';
 const BARRIO_DESTINO = 'Boston';
-const PARCEL = { length: 20, width: 15, height: 5, weight: 0.5, declared_amount: 120000 };
+// DECLARADO baja el valor declarado para que una medición cueste menos: el piso del proveedor es
+// 10.000 por bulto (adr/0035) y con él la diferencia entre "recauda el declarado" y "recauda el
+// declarado más el flete" queda imposible de confundir.
+const DECLARADO = Number(env.DECLARADO || 120000);
+const PARCEL = { length: 20, width: 15, height: 5, weight: 0.5, declared_amount: DECLARADO };
+const CON_RECAUDO = env.RECAUDO === '1';
+const FLETE_AL_DESTINATARIO = env.FLETE_AL_DESTINATARIO === '1';
 
 const cotizacion = await llamar('/api/v1/quotations', {
   method: 'POST',
@@ -142,6 +168,10 @@ const cotizacion = await llamar('/api/v1/quotations', {
         street1: `Calle 50 # 40-20 ${NONCE}`,
       },
       parcels: Array.from({ length: BULTOS }, () => ({ ...PARCEL })),
+      // Los dos booleanos del recaudo, que es donde vive toda la contraentrega: el monto no se
+      // declara en ninguna parte, sale calculado en `on_delivery_amount` (docs/13 §6.4).
+      ...(CON_RECAUDO ? { cash_on_delivery: true } : {}),
+      ...(FLETE_AL_DESTINATARIO ? { recipient_pays_shipping: true } : {}),
     },
   }),
 });
@@ -162,6 +192,14 @@ for (const t of q.rates || []) {
       ` · pickup ${t.pickup} · ${t.shipment_creation_type}`,
   );
 }
+if (CON_RECAUDO) {
+  console.log(
+    `  recaudo → cash_on_delivery: ${q.cash_on_delivery}` +
+      ` · recipient_pays_shipping: ${q.recipient_pays_shipping}` +
+      ` · on_delivery_amount: ${JSON.stringify(q.on_delivery_amount)}` +
+      ` (declarado ${DECLARADO} × ${BULTOS} bulto(s))`,
+  );
+}
 
 // La más barata de las que además recogen por API: sin `pickup: true` la recolección no se puede
 // ejercer, y es la mitad de lo que esta emisión viene a comprobar.
@@ -173,12 +211,16 @@ for (const t of q.rates || []) {
 // esta salida la sonda se estrella contra ella una y otra vez. La emisión se reembolsa, pero
 // cuesta cinco minutos cada vez.
 const candidatas = (q.rates || [])
-  .filter((t) => t.success && t.pickup && t.total)
+  .filter((t) => t.success && (CON_RECAUDO || t.pickup) && t.total)
   .filter((t) => !env.TRANSPORTADORA || t.provider_name === env.TRANSPORTADORA)
   .sort((a, b) => Number(a.total) - Number(b.total));
 const tarifa = candidatas[0];
 if (!tarifa) {
-  console.log('\nNinguna tarifa con `pickup: true` cotizó. Sin ella no hay prueba; no se emite.');
+  console.log(
+    CON_RECAUDO
+      ? '\nNinguna tarifa sobrevivió a la cotización con recaudo. No hay con qué medir; no se emite.'
+      : '\nNinguna tarifa con `pickup: true` cotizó. Sin ella no hay prueba; no se emite.',
+  );
   process.exit(0);
 }
 if (Number(tarifa.total) > TOPE_POR_GUIA * BULTOS) {

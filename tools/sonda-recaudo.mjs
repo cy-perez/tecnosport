@@ -13,7 +13,19 @@
 //
 // Cotizar no consume saldo: esta sonda no emite ninguna guía.
 //
+// Y una tercera, que apareció el 17 de septiembre y es la que decide un ADR:
+//   3. ¿`recipient_pays_shipping` hace algo? La cotización lo **acepta y lo devuelve en
+//      `true``, y aun así `on_delivery_amount` sigue siendo el valor declarado pelado, sin
+//      flete. Quedan dos lecturas: o el flete se suma al emitir —el "si aplica" de la
+//      documentación— o el campo no hace nada. Distinguirlas cuesta una emisión, así que antes
+//      hay que saber si el objeto del envío expone siquiera esos campos: si no los expone,
+//      emitir tampoco contestaría y no hay por qué gastar el saldo. Eso es `VER_ENVIO`.
+//
+// Cotizar no consume saldo: esta sonda no emite ninguna guía.
+//
 // Uso:  node tools/sonda-recaudo.mjs        (NONCE=... reusa la caché de Skydropx)
+//       VER_ENVIO=<id> node tools/sonda-recaudo.mjs   busca los campos de contraentrega en un
+//                                                     envío ya emitido, sin gastar nada
 
 import { readFileSync, existsSync } from 'node:fs';
 
@@ -169,6 +181,36 @@ if (process.env.RELEER) {
     console.log(
       `  ${t.provider_name}/${t.provider_service_code} → ${t.status}` +
         ` · success ${t.success} · ${t.total ?? '—'}`,
+    );
+  }
+  process.exit(0);
+}
+
+// VER_ENVIO=<id>: relee un envío ya creado y reporta **toda** clave que hable de contraentrega,
+// a cualquier profundidad y también dentro de `included` —que es donde este proveedor guarda lo
+// que uno busca en `attributes` (docs/13 §6.14)—. Por v1: `GET /api/v2/shipments/{id}` no existe.
+if (process.env.VER_ENVIO) {
+  const { estado, cuerpo } = await llamar(`/api/v1/shipments/${process.env.VER_ENVIO}`, {
+    headers: { Authorization: `Bearer ${bearer}` },
+  });
+  console.log(`GET /api/v1/shipments/${process.env.VER_ENVIO} → ${estado}`);
+  const hallazgos = [];
+  (function recorrer(nodo, camino) {
+    if (nodo === null || typeof nodo !== 'object') return;
+    for (const [clave, valor] of Object.entries(nodo)) {
+      const aqui = camino ? `${camino}.${clave}` : clave;
+      if (/delivery|cash|cod|collect/i.test(clave)) {
+        hallazgos.push(`  ${aqui} = ${JSON.stringify(valor)}`);
+      }
+      recorrer(valor, aqui);
+    }
+  })(cuerpo, '');
+  if (hallazgos.length) {
+    console.log(`Campos de contraentrega en el envío (${hallazgos.length}):`);
+    for (const linea of hallazgos) console.log(linea);
+  } else {
+    console.log(
+      'El envío NO expone ningún campo de contraentrega. Emitir no contestaría la pregunta 3.',
     );
   }
   process.exit(0);
