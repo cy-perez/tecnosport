@@ -137,6 +137,15 @@ transportadoras (Servientrega, Coordinadora, Envía, TCC, Deprisa, Inter
 Rapidísimo y otras) con una sola integración. Es la estrategia 2 de las tres que
 `ADR-0004` había planteado.
 
+**Cuántas de esas cotizan de verdad es otra cosa, y conviene saberlo antes de
+prometer.** En la cuenta de pruebas cotizan cuatro —Servientrega, Coordinadora,
+Envía y 99 minutes—, Inter Rapidísimo responde `no_coverage`, y **Coordinadora,
+que es la más barata, no puede emitir**: su contador de remisiones está atascado y
+falla siempre, a cualquier hora (`docs/13` §6.10). Un selector por precio la elige
+sola, así que la emisión reintenta excluyendo las transportadoras que ya fallaron
+para ese pedido. El catálogo real de producción hay que volver a medirlo con las
+credenciales de producción; nada de esto es una lista fija.
+
 Vive detrás del puerto `CotizadorEnvio` en `application`, con `SkydropxClient` en
 `infrastructure`. El dominio no sabe que Skydropx existe, y cambiar de proveedor
 —o volver a una tabla de tarifas propia— es escribir otro adaptador.
@@ -151,17 +160,42 @@ Lo verificado de su API, y **no supuesto** (regla dura #9):
   `GET /api/v1/quotations/{id}` devuelve las tarifas que hayan llegado; hay que
   consultar hasta que `is_completed` sea verdadero. Las tarifas **valen 24
   horas**.
-- **El envío se crea con la cotización y la tarifa elegidas**:
-  `POST /api/v1/shipments` con `quotation_id` y `rate_id`, y de ahí sale la guía.
+- **El envío se crea con la tarifa elegida, y solo con ella**:
+  `POST /api/v2/shipments` con `rate_id`. **`quotation_id` no es un campo del
+  envío**, aunque lo diga cualquier resumen de la API (`docs/13` §6.4). Va por
+  **v2** porque v2 siempre devuelve un arreglo de envíos, y en Colombia ninguna
+  transportadora admite multipaquete: un pedido de dos variantes son dos guías
+  (`ADR-0031`). La relectura, en cambio, es por **v1** —
+  `GET /api/v1/shipments/{id}`—, porque `GET /api/v2/shipments/{id}` no existe.
+- **La creación no devuelve la guía.** Responde `202` con el envío aceptado y el
+  saldo ya cobrado; el número aparece minutos después y hay que ir a buscarlo, y
+  a veces lo que aparece es la muerte del envío con el saldo devuelto entero. Por
+  eso un pedido no se marca despachado con la respuesta de creación (`ADR-0033`).
 - **Seguimiento**: `GET /api/v1/shipments/tracking/{guia}/{transportadora}`, más
-  el webhook (`ADR-0022`).
-- **Recolección en la dirección del negocio**: `POST /api/v1/pickups`.
+  el webhook (`ADR-0022`). La transportadora va con el **código de la
+  plataforma**, no con su nombre visible —"99 minutes" es `ninetynineminutes`— y
+  ese código **no se deriva del nombre**: viene en la respuesta del envío, y por
+  eso se guarda al emitir. Una guía tecleada a mano en el panel no lo tiene y no
+  se puede conciliar (`docs/13` §6.8).
+- **Recolección en la dirección del negocio**: `POST /api/v1/pickups`. **No se
+  usa, y no por decisión nuestra**: el conector de la transportadora responde
+  `422 ECONNREFUSED at PICKUP` en los ocho intentos, repartidos en tres días y
+  tres horas distintas, mientras `GET /pickups/coverage` sí devuelve fechas reales
+  con el mismo envío (`docs/13` §6.11 y §6.14). El endpoint está vivo y valida —un
+  envío al que le falta el barrio del destino falla antes, en la dirección—, así que
+  lo caído es el conector de la transportadora y no la recolección entera. Hasta que eso cambie, **la recolección se
+  programa a mano en el panel de Skydropx** y el despacho termina en "alguien
+  lleva los paquetes".
 
-`TODO: confirmar el host base de la cuenta colombiana en el panel (Conexiones >
-API).` La documentación pública muestra `pro.skydropx.com` para producción y
-`sb-pro.skydropx.com` para pruebas, y según la fuente aparecen también
-`api-pro.skydropx.com` y `app.skydropx.com.co`. Va en `SKYDROPX_URL_BASE`, nunca
-incrustado.
+**El host de pruebas está confirmado: `sb-pro.skydropx.com`**, y no por lectura
+sino porque es el único de los candidatos que autentica con las credenciales del
+sandbox —`api-pro` y `pro` responden `invalid_client`—. Contra él se cotizó, se
+emitieron guías de verdad y se comprobó la firma del webhook.
+
+`TODO: confirmar el host de producción.` La documentación pública muestra
+`pro.skydropx.com` y el panel indica `api-pro.skydropx.com`; **no se puede
+comprobar sin credenciales de producción**, que es justo lo que falta. Va en
+`SKYDROPX_URL_BASE`, nunca incrustado.
 
 ### Cómo se cotiza
 
@@ -184,6 +218,22 @@ tiene cobertura o si ninguna transportadora cotiza, el checkout **no** inventa u
 valor ni aplica una tarifa de respaldo: ofrece solo la recogida en el punto y lo
 explica. Cobrar un flete inventado es despachar a pérdida o cobrarle de más al
 comprador, y las dos son peores que no vender.
+
+**El valor declarado tiene piso y techo, y los dos son de la plataforma.**
+Skydropx valida `declared_amount` **por bulto** en el rango
+[COP 10.000, COP 5.000.000] y rechaza la cotización **entera** si un solo bulto se
+sale, medido contra la cuenta por los dos extremos (`docs/13` §6.4 y §6.13). Los
+dos se aplican en `ArmadorDeBultos`, y no se aplican igual:
+
+- **Abajo se eleva al mínimo.** Un cable de 8.000 se declara en 10.000; no le
+  quita nada al comprador y la transportadora responde por más, no por menos
+  (`ADR-0035`). Se paga por unidad: tres cables declaran 30.000 contra 24.000
+  facturados.
+- **Arriba no se recorta.** Un artículo que vale más de 5.000.000 **no se
+  despacha a domicilio**, y el checkout lo dice nombrando el artículo: declararlo
+  en cinco millones dejaría el resto sin asegurar y esa diferencia la pondría el
+  negocio si el paquete se pierde (`ADR-0036`). El carrito que lo lleve cae a
+  recogida en el punto, entero: este sistema no tiene pedidos parciales.
 
 **Peso y dimensiones son obligatorios por variante.** Sin paquete no hay
 cotización. Una variante sin esos datos no se publica, y el catálogo ya sembrado
@@ -216,10 +266,16 @@ emite `openingHours` en los datos estructurados (`docs/09-plan-de-arranque.md`).
 
 ## Seguimiento del envío
 
-Los movimientos del paquete llegan por **webhook firmado** de Skydropx a
-`POST /api/v1/envios/webhook`, se verifican antes de aplicar nada y se guardan
-todos, en orden, como `EventoSeguimiento` de `Envio` — nada se sobrescribe
-(`ADR-0022`).
+Los movimientos del paquete se guardan todos, en orden, como `EventoSeguimiento`
+de `Envio` — nada se sobrescribe (`ADR-0022`).
+
+**El webhook avisa; no trae el evento** (`ADR-0032`). Llega firmado a
+`POST /api/v1/envios/webhook` y la firma se verifica antes de mirar nada, pero su
+cuerpo **no tiene identificador de evento ni fecha** —lo que trae es `data.id`,
+que es el del paquete—, y esos dos datos sostienen la idempotencia del rastro y
+los plazos legales. Así que el webhook saca el número de guía y `ConciliarGuia`
+—**el mismo objeto** que usa la tarea programada— consulta el rastreo y aplica.
+Los dos caminos no se parecen: son el mismo código con distinto disparador.
 
 **Solo tres estados de la plataforma mueven el pedido:**
 
@@ -230,10 +286,21 @@ todos, en orden, como `EventoSeguimiento` de `Envio` — nada se sobrescribe
 | `in_return` | `RECHAZADO_EN_ENTREGA`, libera inventario, registra el motivo |
 
 `created`, `in_transit`, `last_mile`, `delivery_attempt`, `delivered_to_branch`,
-`retained`, `exception`, `canceled` y `destroyed` se registran como eventos y no
-cambian el estado del pedido. Los cuatro últimos además levantan una alerta: son
-los casos en que el paquete se queda quieto y nadie se entera hasta que reclama
-el comprador.
+`retained`, `exception`, `canceled`, `destroyed` y `error` se registran como
+eventos y no cambian el estado del pedido. **Son trece estados y no doce**: el
+canal del webhook tiene su propio vocabulario y trae uno más que el del rastreo
+—`error`—, medido en un evento de prueba del panel (`docs/13` §6.9).
+
+**Los cinco últimos piden ojo humano, y desde el 17 de septiembre de 2026 alguien
+los mira.** `exception`, `retained`, `canceled`, `destroyed` y `error` dejan el
+paquete quieto sin hacer avanzar el pedido: si nadie los mira, el comprador se
+entera antes que el negocio. Salen en la **bandeja de revisión** del panel, junto
+con las dos situaciones de la emisión que comprometen saldo, y se vacía con un
+**acuse** que guarda quién miró y qué anotó (`ADR-0034`). El acuse no resuelve
+nada: solo deja escrito que alguien miró. Y no es una mordaza — una guía acusada
+**vuelve** a la bandeja si le llega un evento posterior al acuse, comparado contra
+nuestro reloj y nunca contra la fecha que pone la transportadora. Lo que lleve más
+de 24 horas sin mirar se avisa por correo.
 
 **El webhook no es la única verdad.** `TareaConciliacionEnvios` consulta el
 seguimiento de los envíos despachados sin evento reciente y aplica el resultado
@@ -339,6 +406,16 @@ confirmación cuando ya no puede cambiar de opinión.
    `RECHAZADO_EN_ENTREGA`, se libera el inventario y se registra el motivo.
 6. La plataforma reporta el dinero cobrado y dispersado, y pasa a
    `RECAUDO_CONCILIADO`.
+
+**El dinero no llega el día de la entrega, y eso cambia cómo se lee la espera.**
+Skydropx retira el recaudo de dos maneras: a **créditos de la plataforma**,
+inmediato y sin comisión pero solo gastable en envíos, o a **cuenta bancaria**,
+con comisión financiera y disponible **los jueves**. Un pedido entregado un
+viernes pasa casi una semana en `RECAUDO_PENDIENTE` sin que nada esté mal, así
+que cualquier alerta sobre ese estado tiene que contar jueves, no días. ⚠️ Es lo
+que reporta la ayuda pública de Skydropx, una sola fuente y no un contrato
+(`docs/13` §3); **dónde cae el recaudo sigue sin decidirse** y es una decisión
+contable, no técnica.
 
 **El recaudo pendiente es visible en el panel.** Un pedido entregado hace veinte
 días sin conciliar es plata en la calle, y el sistema tiene que gritarlo, no

@@ -42,9 +42,15 @@ public enum EstadoEnvio {
    *
    * <p><strong>Lo que significa exactamente no está medido.</strong> Que sea el aviso del {@code
    * workflow_status: error} de docs/13 §6.6 —la guía que se emite, muere minutos después y se
-   * reembolsa— es plausible y no está comprobado; se confirma el día que una emisión real vuelva a
-   * morir. Por eso entra pidiendo ojo humano y <strong>no</strong> como terminal: ver {@link
-   * #esTerminal()}.
+   * reembolsa— es plausible y no está comprobado. Por eso entra pidiendo ojo humano y
+   * <strong>no</strong> como terminal: ver {@link #esTerminal()}.
+   *
+   * <p><strong>Y por este canal no va a llegar.</strong> Las cuatro emisiones que murieron en la
+   * cuenta real se releyeron el 17 de septiembre de 2026 (docs/13 §6.12) y ninguna alcanzó a tener
+   * número de guía; como el rastreo se consulta por número, la conciliación no tiene a qué
+   * preguntarle. Solo podría llegar por webhook, y solo para una guía que ya tuviera número antes
+   * de morir, que es un caso que no se ha visto. O sea que dejarlo no terminal no cuesta las
+   * consultas que parecía costar: son cero.
    */
   FALLIDO;
 
