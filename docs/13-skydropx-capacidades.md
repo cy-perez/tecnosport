@@ -113,7 +113,7 @@ panel, ni en el plan de la fase.
 | Palanca | Estado | Qué permite |
 |---|---|---|
 | Consultar días disponibles | ✅ | `GET /pickups/coverage` responde `200` con fechas desde que el envío lleva barrio (§6.10, §6.11) |
-| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los cinco intentos, dos días y dos horas distintas: el conector de la transportadora está caído, no es la hora (§6.11) |
+| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los ocho intentos, tres días y tres horas distintas: el conector de la transportadora está caído, no es la hora (§6.11, §6.14). El endpoint sí responde y valida: con otro envío falla antes, en la dirección (§6.14) |
 | Reprogramar | ✅ | `POST /pickups/reschedule` |
 | Consultar el estado | ✅ | `GET /pickups/{id}` |
 | Cuerpo exacto de la petición | ✅ | Confirmado (§6.4) y ejercido contra el sandbox (§6.6): `total_weight` entero y el envío en `success` |
@@ -260,8 +260,8 @@ mueva hay un paso con nombre propio.
    §6.11)**: el endpoint valida, exige el envío en `success` y exige el barrio del origen,
    que solo llega si se mandó en la cotización.
    **Y con el barrio puesto, la decisión dejó de estar en nuestras manos**: `POST /pickups`
-   responde `422 ECONNREFUSED at PICKUP` en los cinco intentos, en dos días y dos horas
-   distintas, con dos envíos distintos. El conector de la transportadora está caído y no hay
+   responde `422 ECONNREFUSED at PICKUP` en los ocho intentos, en tres días y tres horas
+   distintas, con cuatro envíos distintos (§6.11, §6.14). El conector de la transportadora está caído y no hay
    fecha. **Hoy la recolección se programa a mano en el panel de Skydropx**, y esto no se
    puede cerrar construyendo.
    ~~Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
@@ -1640,7 +1640,7 @@ horario hábil. Con 8.588 de saldo alcanza.
 >
 > **Y el punto 2 no se cierra con saldo (§6.10, §6.11).** Con el barrio puesto, la
 > cobertura responde `200` con fechas y `POST /pickups` sigue respondiendo
-> `422 ECONNREFUSED at PICKUP` — cinco intentos, dos días, dos horas. Esta lista pedía una
+> `422 ECONNREFUSED at PICKUP` — ocho intentos, tres días, tres horas (§6.11, §6.14). Esta lista pedía una
 > emisión; lo que falta es que el proveedor levante su conector.
 
 ### 6.7 La guía viva, y el barrio que falta (2026-09-16, sexta parte)
@@ -2202,7 +2202,8 @@ Reintentado el 17 de septiembre a las **10:20 de un jueves**, en pleno horario h
 | `8bf880c9-…` | `2269401763` | **200**, fechas reales | `422` **ECONNREFUSED at PICKUP** |
 
 Van **cinco intentos**, en dos días distintos, a las 18:45 y a las 10:20, y con dos envíos
-distintos. La cobertura responde `200` con fechas de verdad —`2026-09-18` y `2026-09-21`— así que
+distintos. (**Tres más el 17 a las 16:06, con un envío nunca sondeado: §6.14.** Ahí se midió
+además que el endpoint sí responde y valida — lo caído es el conector, no la recolección entera.) La cobertura responde `200` con fechas de verdad —`2026-09-18` y `2026-09-21`— así que
 el envío es válido para Servientrega y nuestro cuerpo sigue validado entero; lo que no responde es
 el conector de la transportadora dentro de Skydropx.
 
@@ -2328,6 +2329,98 @@ Las salidas son tres y ninguna es gratis: recortar el declarado al tope y acepta
 transportadora responda por cinco millones de un aparato de ocho; no ofrecer domicilio para esos
 artículos, pero diciéndolo; o llevarlo a Skydropx y ver si el rango se amplía por contrato. La
 primera es la única que parece un ajuste de código, y es la que más arriesga.
+
+> **Decidido el mismo día en `ADR-0036`: la segunda.** Ese artículo no va a domicilio y el
+> checkout lo dice nombrándolo, en `ArmadorDeBultos`, que es por donde pasan los dos caminos.
+
+### 6.14 El conector sigue caído, y el barrio lo exige también el destino (2026-09-17, decimotercera parte)
+
+Se volvió a medir el único punto que `§6.11` dejó del lado del proveedor. Todo lo de esta sección
+salió **gratis**: reusando envíos ya emitidos con `ENVIO=<id>` y releyéndolos. Saldo antes y
+después, **10.088**.
+
+#### El conector: van ocho intentos, en tres días y tres horas
+
+Jueves 17 de septiembre, **16:06**, con `tools/sonda-recoleccion.mjs`:
+
+| Envío | Guía | `GET /pickups/coverage` | `POST /pickups` |
+|---|---|---|---|
+| `177d1939-…` | `2269401762` | **200**, fechas 18 y 21 de septiembre | `422` **ECONNREFUSED at PICKUP** |
+| `8bf880c9-…` | `2269401763` | **200**, las mismas | `422` **ECONNREFUSED at PICKUP** |
+| `da585a66-…` | `2269401764` | **200**, las mismas | `422` **ECONNREFUSED at PICKUP** |
+
+El tercero **nunca se había sondeado**, así que esto ya no es una conclusión sobre los dos envíos
+de siempre. Con los cinco de `§6.11` van **ocho intentos, tres días y tres horas distintas**
+—18:45, 10:20 y 16:06—, y el mensaje es idéntico carácter por carácter. La cobertura sigue
+respondiendo `200` con fechas de verdad, o sea que el envío es válido para Servientrega y nuestro
+cuerpo sigue validado entero.
+
+#### El endpoint está vivo, y eso no se sabía: el control de Envía
+
+`§6.11` dejó escrito "lo que está caído es el conector de ellos", pero sin nada que lo separara de
+"la recolección entera no responde". El control cuesta cero: pedir la recolección de un envío de
+**Envía**, que no recoge por API.
+
+Falló, **pero con otro error y en otra etapa**: `422 Recipient address2 not valid: null`, que es
+validación de la dirección — antes de hablar con ninguna transportadora. Así que el endpoint
+recibe, valida y discrimina; lo que no responde es el conector, un paso después. El
+`ECONNREFUSED at PICKUP` se lee ahora con el "at PICKUP" en serio: dice en qué etapa murió.
+
+#### El barrio: `POST /pickups` lo exige en las dos puntas
+
+El control de arriba destapó algo que nadie había preguntado. Releyendo el barrio guardado de cada
+envío —con `VER_ENVIO=<id>` de `tools/sonda-emision-v2.mjs`— contra lo que respondió la
+recolección:
+
+| Envío | Origen `area_level3` | Destino `area_level3` | `POST /pickups` |
+|---|---|---|---|
+| `197fef39-…` servientrega | `null` | `null` | `Shipper address2 not valid: null` |
+| `eb69a24f-…` servientrega | `null` | `null` | `Shipper address2 not valid: null` |
+| `90be4602-…` envia | `"La Milagrosa"` | **`null`** | `Recipient address2 not valid: null` |
+| `177d1939-…` servientrega | `"La Milagrosa"` | `"Boston"` | pasa la validación → `ECONNREFUSED` |
+
+**El error se mueve exactamente con el barrio que falta, y en ese orden: primero el origen,
+después el destino.** `§6.10` cerró el del origen y nadie miró el otro extremo, porque las guías
+que se sondearon después nacieron todas de la sonda, que manda barrio en las dos puntas.
+
+⚠️ **Lo que no queda atado**: la fila que aísla el destino es de Envía y las demás de Servientrega.
+La validación del origen se ve idéntica en las dos, el campo y el mensaje son el mismo salvo la
+palabra que nombra la punta, y el barrio es el único dato que cambia entre las filas — pero
+cerrarlo del todo exige una emisión de Servientrega sin barrio en destino, y eso cuesta 8.200 de
+los 10.088. **Se decidió no gastarlo**: la rendija no cambia ninguna decisión.
+
+**Y una lección de herramienta**: la relectura del envío **sí** devuelve las direcciones, en
+`included` y no en `attributes`. Un script escrito de cero para esto las buscó donde no están y
+las dio por ausentes; la sonda del propio repo ya sabía imprimirlas. Antes de escribir una sonda
+nueva, mirar si una de las que hay ya contesta la pregunta.
+
+#### La consecuencia, y es una decisión de producto abierta
+
+`Direccion.barrio` es **opcional** en el checkout (`§6.12`: se pide sin exigirlo). Un comprador que
+lo deje vacío produce un envío que, el día que el conector vuelva, **no se podrá recoger por API**:
+ese paquete hay que llevarlo a mano.
+
+Hoy no cambia nada, porque toda recolección es manual. La recomendación escrita, para que el día
+que se retome no haya que pensarla de nuevo: **dejarlo opcional**, porque exigirlo le cobra
+fricción a cada comprador de hoy por una capacidad que todavía no existe y que no depende de
+nosotros. Lo que sí queda fijado es la regla de ese día: **sin barrio de destino, esa guía se
+recoge a mano**. `TODO (decisión de negocio): exigir el barrio en el checkout, o aceptar esa regla.`
+
+#### El criterio de tarifa, remedido y sin cambios
+
+Cotizando otra vez, las banderas por tarifa siguen como las dejó `§6.4`:
+
+| Tarifa | Estado | Precio | `pickup` |
+|---|---|---|---|
+| coordinadora/standard | cotiza | **5.991** | `true` — pero **no puede emitir** (§6.10) |
+| envia/paquete_terrestre | cotiza | 7.850 | `false` |
+| servientrega/standard | cotiza | 8.200 | `true` |
+| ninetynineminutes/nextday | cotiza | 9.897 | `false` |
+| interrapidisimo/standard | `no_coverage` | — | `true` |
+
+La más barata no emite y la más barata de las que emiten no recoge por API. **Decidir si `pickup`
+debe pesar en el criterio sigue exigiendo una recolección que funcione para comparar**, y el punto
+anterior dice que no la hay.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 

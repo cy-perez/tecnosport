@@ -179,9 +179,11 @@ Lo verificado de su API, y **no supuesto** (regla dura #9):
   se puede conciliar (`docs/13` §6.8).
 - **Recolección en la dirección del negocio**: `POST /api/v1/pickups`. **No se
   usa, y no por decisión nuestra**: el conector de la transportadora responde
-  `422 ECONNREFUSED at PICKUP` en los cinco intentos, repartidos en dos días y
-  dos horas distintas, mientras `GET /pickups/coverage` sí devuelve fechas reales
-  con el mismo envío (`docs/13` §6.11). Hasta que eso cambie, **la recolección se
+  `422 ECONNREFUSED at PICKUP` en los ocho intentos, repartidos en tres días y
+  tres horas distintas, mientras `GET /pickups/coverage` sí devuelve fechas reales
+  con el mismo envío (`docs/13` §6.11 y §6.14). El endpoint está vivo y valida —un
+  envío al que le falta el barrio del destino falla antes, en la dirección—, así que
+  lo caído es el conector de la transportadora y no la recolección entera. Hasta que eso cambie, **la recolección se
   programa a mano en el panel de Skydropx** y el despacho termina en "alguien
   lleva los paquetes".
 

@@ -4157,7 +4157,8 @@ en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
 
 1. **La recolección**, bloqueada del lado de la transportadora. ~~Se cierra reintentando en horario
    hábil~~: **eso era falso**, medido el 17 de septiembre. Dos envíos más, las 10:20 de un jueves, y
-   el mismo `ECONNREFUSED`. Van cinco intentos en dos días y dos horas distintas; la cobertura sí
+   el mismo `ECONNREFUSED`. Van ocho intentos en tres días y tres horas distintas —tres más el 17
+   a las 16:06, uno de ellos con un envío nunca sondeado (`docs/13` §6.14)—; la cobertura sí
    responde `200` con fechas, así que nuestro cuerpo sigue validado y lo que está caído es el
    conector de ellos. Ver `docs/13` §6.11.
 2. ~~**El barrio del destino.**~~ **Cerrado el 17 de septiembre de 2026**: `Direccion` lo tiene, el
