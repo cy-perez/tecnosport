@@ -7,6 +7,7 @@ import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
@@ -22,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -81,6 +83,14 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
 
   /** Entre reintentos de emisión: un 409 dice "hay una creación en proceso", y hay que dejarla. */
   private static final Duration ESPERA_ENTRE_EMISIONES = Duration.ofSeconds(3);
+
+  /**
+   * Lo que se le dice a la transportadora al anular. No es un texto de interfaz —no lo lee ningun
+   * comprador, lo lee quien opera la cuenta de Skydropx— asi que no pasa por Transloco, y es fijo a
+   * proposito: el motivo de negocio vive en el historial del pedido, que es donde se puede
+   * consultar despues.
+   */
+  private static final String RAZON_DE_CANCELACION = "Pedido cancelado";
 
   private final URI urlBase;
   private final String clientId;
@@ -476,6 +486,58 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
       Thread.currentThread().interrupt();
       return new LecturaDeEnvioEmitido.NoSeSabe();
     }
+  }
+
+  /**
+   * Anula un envio ya creado. Por v1, como releer: la cancelacion nunca tuvo v2.
+   *
+   * <p>El cuerpo lleva {@code reason} y {@code shipment_id} (docs/13 §6.4). El id va las dos veces
+   * —en la ruta y en el cuerpo— porque asi lo pide la plataforma, no por redundancia nuestra.
+   *
+   * <p><strong>El 422 se cuenta como cancelada, y es la decision que importa aqui.</strong> La
+   * plataforma responde {@code 422 "El envio no se puede cancelar"} cuando ya no hay nada que
+   * hacer: porque ya se anulo, o porque la transportadora ya lo recogio. Desde aqui no se
+   * distinguen, y tratarlo como fallo llenaria la bandeja de revision de guias que nadie puede
+   * tocar. Lo que se pierde es real y se anota: una guia que ya iba en camino se contaria como
+   * anulada. Lo que se gana es que reintentar sea inofensivo.
+   */
+  @Override
+  public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    Objects.requireNonNull(idEnvioEnPlataforma, "El id del envío no puede ser nulo.");
+    try {
+      String token = token();
+      if (token == null) {
+        return noSePudoCancelar(idEnvioEnPlataforma, "no se obtuvo token");
+      }
+      String cuerpo =
+          json.writeValueAsString(
+              Map.of("reason", RAZON_DE_CANCELACION, "shipment_id", idEnvioEnPlataforma));
+      HttpResponse<String> respuesta =
+          enviar(
+              peticion(
+                      "/api/v1/shipments/"
+                          + URLEncoder.encode(idEnvioEnPlataforma, StandardCharsets.UTF_8)
+                          + "/cancellations",
+                      token)
+                  .header("Content-Type", "application/json")
+                  .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
+                  .build());
+      int estado = respuesta.statusCode();
+      if (estado / 100 == 2 || estado == 422) {
+        return new ResultadoCancelacion.Cancelada();
+      }
+      return noSePudoCancelar(idEnvioEnPlataforma, "la plataforma respondio " + estado);
+    } catch (IOException | RuntimeException e) {
+      return noSePudoCancelar(idEnvioEnPlataforma, e.toString());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return noSePudoCancelar(idEnvioEnPlataforma, "la espera se interrumpio");
+    }
+  }
+
+  private ResultadoCancelacion noSePudoCancelar(String idEnvioEnPlataforma, String detalle) {
+    log.error("No se pudo cancelar el envio {}: {}", idEnvioEnPlataforma, detalle);
+    return new ResultadoCancelacion.NoSePudo(detalle);
   }
 
   /**

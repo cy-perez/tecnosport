@@ -4,11 +4,12 @@ package co.tecnosport.api.application.envio;
  * El puerto de la emisión de la guía (adr/0033). La única implementación real es el cliente de
  * Skydropx, en {@code infrastructure}; aquí no aparece su nombre por ninguna parte.
  *
- * <p><strong>Dos métodos y no uno, porque crear no es emitir.</strong> {@link #emitir} pide los
- * envíos y la plataforma cobra ahí mismo, pero devuelve la guía en {@code null}: el número aparece
- * después, y hay que ir a buscarlo con {@link #consultar}. Un puerto de un solo método —"emíteme la
- * guía"— obligaría al adaptador a sondear por dentro y a bloquear a quien llame durante minutos, o
- * a mentir devolviendo una guía vacía. Ninguna de las dos es aceptable con dinero de por medio.
+ * <p><strong>Dos de sus tres métodos existen porque crear no es emitir.</strong> {@link #emitir}
+ * pide los envíos y la plataforma cobra ahí mismo, pero devuelve la guía en {@code null}: el número
+ * aparece después, y hay que ir a buscarlo con {@link #consultar}. Un puerto de un solo método
+ * —"emíteme la guía"— obligaría al adaptador a sondear por dentro y a bloquear a quien llame
+ * durante minutos, o a mentir devolviendo una guía vacía. Ninguna de las dos es aceptable con
+ * dinero de por medio.
  *
  * <p>A diferencia de {@link CotizadorEnvio}, este puerto <strong>no falla abierto</strong>. El
  * cotizador puede devolver "sin tarifas" y el checkout sigue vendiendo con recogida en el punto;
@@ -22,4 +23,16 @@ public interface EmisorDeGuias {
 
   /** Relee un envío que ya se aceptó, para ver si al fin tiene guía o si murió. */
   LecturaDeEnvioEmitido consultar(String idEnvioEnPlataforma);
+
+  /**
+   * Anula un envío ya creado. Se pide <strong>uno por uno</strong> y no por pedido: en multienvío
+   * cada bulto es un envío independiente de la plataforma, que se cancela y se rastrea por separado
+   * (docs/13-skydropx-capacidades.md §6.4). Un pedido de tres bultos son tres llamadas, y que una
+   * falle no dice nada de las otras dos.
+   *
+   * <p>Como {@link #consultar}, <strong>no falla abierto</strong>: si no se pudo preguntar, eso es
+   * {@link ResultadoCancelacion.NoSePudo} y no un silencio. Una guía que quedó viva tiene que poder
+   * contarse.
+   */
+  ResultadoCancelacion cancelar(String idEnvioEnPlataforma);
 }

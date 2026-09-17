@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pedido;
 
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import java.util.List;
@@ -30,5 +31,10 @@ public class EmisorDeGuiasDobleDePrueba implements EmisorDeGuias {
   @Override
   public LecturaDeEnvioEmitido consultar(String idEnvioEnPlataforma) {
     return new LecturaDeEnvioEmitido.Sigue();
+  }
+
+  @Override
+  public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    return new ResultadoCancelacion.Cancelada();
   }
 }
