@@ -21,6 +21,7 @@ import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.ResolverEmisionIndeterminada;
 import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
 import co.tecnosport.api.application.pedido.DespacharPedido;
@@ -332,5 +333,17 @@ public class ConfiguracionEnvio {
       RepositorioAcusesDeRevision repositorioAcuses,
       Reloj reloj) {
     return new AcusarRevisionDeEmision(repositorioEmisiones, repositorioAcuses, reloj);
+  }
+
+  /**
+   * La salida de una emisión indeterminada. Tampoco necesita {@code EnTransaccionPropia}: no llama
+   * a la plataforma ni gasta saldo — registra lo que una persona vio en el panel de la plataforma.
+   */
+  @Bean
+  public ResolverEmisionIndeterminada resolverEmisionIndeterminada(
+      RepositorioEmisiones repositorioEmisiones,
+      RepositorioAcusesDeRevision repositorioAcuses,
+      Reloj reloj) {
+    return new ResolverEmisionIndeterminada(repositorioEmisiones, repositorioAcuses, reloj);
   }
 }

@@ -1,7 +1,11 @@
 import { inject } from '@angular/core';
 import { QueryClient, injectMutation } from '@tanstack/angular-query-experimental';
 import { REPOSITORIO_REVISION_ENVIOS } from '../domain/repositorio-revision-envios.puerto';
-import { AcuseDeRevision } from '../domain/revision-envio.model';
+import {
+  AcuseDeRevision,
+  EmisionResuelta,
+  VeredictoDeEmision,
+} from '../domain/revision-envio.model';
 
 /**
  * Las dos acciones invalidan la bandeja entera: un acuse saca esa fila de la lista, y la lista es
@@ -28,5 +32,15 @@ export function usarAccionesRevision() {
     onSuccess: invalidar,
   }));
 
-  return { acusarGuia, acusarEmision };
+  const resolverEmision = injectMutation(() => ({
+    mutationFn: (variables: {
+      emisionId: string;
+      veredicto: VeredictoDeEmision;
+      enviosEnPlataforma: readonly string[];
+      nota: string | null;
+    }): Promise<EmisionResuelta> => repositorio.resolverEmision(variables),
+    onSuccess: invalidar,
+  }));
+
+  return { acusarGuia, acusarEmision, resolverEmision };
 }

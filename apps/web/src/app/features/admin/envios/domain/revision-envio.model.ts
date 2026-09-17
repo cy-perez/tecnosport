@@ -63,3 +63,24 @@ export interface AcuseDeRevision {
   readonly actor: string;
   readonly nota: string | null;
 }
+
+/**
+ * Lo que la persona vio en el panel de la plataforma. No es una opinion: es lo que habia.
+ *
+ * Son dos y no tres porque "no se" no es un veredicto — es dejar la emision como esta, que es lo
+ * que ya pasa si nadie hace nada. Para eso esta el acuse.
+ */
+export type VeredictoDeEmision = 'SIN_COBRO' | 'CON_ENVIO';
+
+/**
+ * Como quedo una emision recien resuelta. Los dos veredictos llevan a sitios distintos —`FALLIDA`
+ * libera el pedido, `EN_CURSO` deja a la tarea releyendo— y la pantalla tiene que poder decir cual
+ * de los dos paso.
+ */
+export interface EmisionResuelta {
+  readonly emisionId: string;
+  readonly estado: string;
+  readonly detalle: string | null;
+  readonly enviosEnPlataforma: readonly string[];
+  readonly resueltaEn: string | null;
+}

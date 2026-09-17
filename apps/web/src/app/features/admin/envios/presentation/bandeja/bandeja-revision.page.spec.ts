@@ -14,7 +14,9 @@ import {
   AcuseDeRevision,
   BandejaDeRevision,
   EmisionEnRevision,
+  EmisionResuelta,
   GuiaEnRevision,
+  VeredictoDeEmision,
 } from '../../domain/revision-envio.model';
 import { BandejaRevisionPage } from './bandeja-revision.page';
 
@@ -53,6 +55,12 @@ function emision(overrides: Partial<EmisionEnRevision> = {}): EmisionEnRevision 
 class RepositorioRevisionFalso implements RepositorioRevisionEnvios {
   guiasAcusadas: { numeroGuia: string; nota: string | null }[] = [];
   emisionesAcusadas: { emisionId: string; nota: string | null }[] = [];
+  resueltas: {
+    emisionId: string;
+    veredicto: VeredictoDeEmision;
+    enviosEnPlataforma: readonly string[];
+    nota: string | null;
+  }[] = [];
 
   constructor(private readonly bandeja: BandejaDeRevision = { guias: [], emisiones: [] }) {}
 
@@ -68,6 +76,22 @@ class RepositorioRevisionFalso implements RepositorioRevisionEnvios {
   async acusarEmision(emisionId: string, nota: string | null): Promise<AcuseDeRevision> {
     this.emisionesAcusadas.push({ emisionId, nota });
     return acuse('EMISION', emisionId, nota);
+  }
+
+  async resolverEmision(entrada: {
+    emisionId: string;
+    veredicto: VeredictoDeEmision;
+    enviosEnPlataforma: readonly string[];
+    nota: string | null;
+  }): Promise<EmisionResuelta> {
+    this.resueltas.push(entrada);
+    return {
+      emisionId: entrada.emisionId,
+      estado: entrada.veredicto === 'SIN_COBRO' ? 'FALLIDA' : 'EN_CURSO',
+      detalle: null,
+      enviosEnPlataforma: entrada.enviosEnPlataforma,
+      resueltaEn: '2026-09-17T16:00:00Z',
+    };
   }
 }
 
@@ -199,6 +223,66 @@ describe('BandejaRevisionPage', () => {
     await vi.waitFor(() =>
       expect(repositorio.emisionesAcusadas).toEqual([{ emisionId: 'e1', nota: null }]),
     );
+  });
+
+  /**
+   * El camino que desbloquea el pedido. Lo que se comprueba es que la pantalla mande el veredicto
+   * que la persona eligio, porque de ese veredicto depende si el pedido queda libre o si seguimos
+   * un envio ya pagado.
+   */
+  it('resolver sin cobro manda ese veredicto', async () => {
+    const { repositorio } = await renderBandeja({ emisiones: [emision()] });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.click(screen.getByRole('button', { name: 'No aparece: no hubo cobro' }));
+
+    await vi.waitFor(() =>
+      expect(repositorio.resueltas).toEqual([
+        {
+          emisionId: 'e1',
+          veredicto: 'SIN_COBRO',
+          enviosEnPlataforma: [],
+          nota: null,
+        },
+      ]),
+    );
+  });
+
+  /** Los identificadores se pegan como vengan del panel: separados por coma o por espacio. */
+  it('resolver con envio manda los identificadores que se pegaron', async () => {
+    const { repositorio } = await renderBandeja({ emisiones: [emision()] });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.input(screen.getByLabelText('Identificadores del envío'), {
+      target: { value: 'env-1, env-2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Sí aparece: seguir este envío' }));
+
+    await vi.waitFor(() =>
+      expect(repositorio.resueltas[0].enviosEnPlataforma).toEqual(['env-1', 'env-2']),
+    );
+  });
+
+  /**
+   * Decir que el envio esta sin decir cual no resuelve nada, y la pantalla lo dice antes de ir al
+   * servidor: es el unico camino en el que un error del operador cuesta una llamada inutil.
+   */
+  it('resolver con envio sin identificadores avisa y no llama al servidor', async () => {
+    const { repositorio } = await renderBandeja({ emisiones: [emision()] });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí aparece: seguir este envío' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(repositorio.resueltas).toEqual([]);
+  });
+
+  /** Una parcial no se resuelve por esta via: solo una indeterminada se cerro sin saber. */
+  it('una emision parcial no ofrece resolver', async () => {
+    await renderBandeja({ emisiones: [emision({ estado: 'PARCIAL' })] });
+
+    await screen.findByRole('button', { name: 'Marcar como revisada' });
+    expect(screen.queryByRole('button', { name: 'Resolver' })).toBeNull();
   });
 
   it('no tiene violaciones de accesibilidad con las dos listas llenas', async () => {

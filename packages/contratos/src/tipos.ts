@@ -660,6 +660,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolverEmision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/envios/revision/emisiones/{emisionId}/acuse": {
         parameters: {
             query?: never;
@@ -1494,6 +1510,19 @@ export interface components {
             revisadoEn?: string;
             actor?: string;
             nota?: string;
+        };
+        ResolverEmisionRequest: {
+            veredicto?: string;
+            enviosEnPlataforma?: string[];
+            nota?: string;
+        };
+        EmisionResueltaRespuesta: {
+            emisionId?: string;
+            estado?: string;
+            detalle?: string;
+            enviosEnPlataforma?: string[];
+            /** Format: date-time */
+            resueltaEn?: string;
         };
         RadicarSolicitudRequest: {
             tipo?: string;
@@ -2789,6 +2818,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    resolverEmision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                emisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverEmisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmisionResueltaRespuesta"];
                 };
             };
         };

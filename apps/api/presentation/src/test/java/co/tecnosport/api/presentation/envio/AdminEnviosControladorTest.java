@@ -12,6 +12,7 @@ import co.tecnosport.api.application.envio.ListarEnviosEnRevision;
 import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.ResolverEmisionIndeterminada;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -209,6 +210,85 @@ class AdminEnviosControladorTest {
         .andExpect(jsonPath("$.codigo").value("ACUSE_NO_APLICABLE"));
   }
 
+  /**
+   * El camino que desbloquea el pedido: la persona miró el panel, el envío no está, y la emisión
+   * deja de bloquear.
+   */
+  @Test
+  void resolverSinCobroDejaLaEmisionFallida() throws Exception {
+    Pedido pedido = sembrarPedido();
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-1", "admin:7", DESPACHO);
+    emision.indeterminada("la llamada no terminó", DESPACHO.plusSeconds(30));
+    emisiones.guardar(emision);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/envios/revision/emisiones/{id}/resolucion", emision.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"veredicto\":\"SIN_COBRO\",\"nota\":\"No aparece.\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("FALLIDA"))
+        .andExpect(
+            jsonPath("$.detalle").value(org.hamcrest.Matchers.containsString("no hubo cobro")));
+
+    mockMvc
+        .perform(get("/api/v1/admin/envios/revision"))
+        .andExpect(jsonPath("$.emisiones.length()").value(0));
+  }
+
+  /** El otro camino: el envío estaba, y vuelve a en curso con lo que la persona encontró. */
+  @Test
+  void resolverConEnvioDevuelveLaEmisionAEnCurso() throws Exception {
+    Pedido pedido = sembrarPedido();
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-1", "admin:7", DESPACHO);
+    emision.indeterminada("la llamada no terminó", DESPACHO.plusSeconds(30));
+    emisiones.guardar(emision);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/envios/revision/emisiones/{id}/resolucion", emision.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"veredicto\":\"CON_ENVIO\",\"enviosEnPlataforma\":[\"env-hallado\"]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("EN_CURSO"))
+        .andExpect(jsonPath("$.enviosEnPlataforma[0]").value("env-hallado"));
+  }
+
+  /** Decir que el envío está sin decir cuál no resuelve nada: 409, y la emisión se queda igual. */
+  @Test
+  void resolverConEnvioSinIdentificadoresEs409() throws Exception {
+    Pedido pedido = sembrarPedido();
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-1", "admin:7", DESPACHO);
+    emision.indeterminada("la llamada no terminó", DESPACHO.plusSeconds(30));
+    emisiones.guardar(emision);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/envios/revision/emisiones/{id}/resolucion", emision.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"veredicto\":\"CON_ENVIO\",\"enviosEnPlataforma\":[]}"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void unVeredictoQueNoExisteEs422() throws Exception {
+    Pedido pedido = sembrarPedido();
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-1", "admin:7", DESPACHO);
+    emision.indeterminada("la llamada no terminó", DESPACHO.plusSeconds(30));
+    emisiones.guardar(emision);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/envios/revision/emisiones/{id}/resolucion", emision.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"veredicto\":\"QUIZA\"}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -256,6 +336,12 @@ class AdminEnviosControladorTest {
     AcusarRevisionDeEmision acusarRevisionDeEmision(
         RepositorioEmisiones emisiones, RepositorioAcusesDeRevision acuses, Reloj reloj) {
       return new AcusarRevisionDeEmision(emisiones, acuses, reloj);
+    }
+
+    @Bean
+    ResolverEmisionIndeterminada resolverEmisionIndeterminada(
+        RepositorioEmisiones emisiones, RepositorioAcusesDeRevision acuses, Reloj reloj) {
+      return new ResolverEmisionIndeterminada(emisiones, acuses, reloj);
     }
 
     @Bean

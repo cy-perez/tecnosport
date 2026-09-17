@@ -2,6 +2,7 @@ import type { components } from '@tecnosport/contratos';
 import {
   AcuseDeRevision,
   BandejaDeRevision,
+  EmisionResuelta,
   EmisionEnRevision,
   EstadoEmisionEnRevision,
   EstadoEnvioEnRevision,
@@ -12,6 +13,7 @@ type BandejaDto = components['schemas']['BandejaDeRevisionRespuesta'];
 type GuiaDto = components['schemas']['GuiaEnRevisionRespuesta'];
 type EmisionDto = components['schemas']['EmisionEnRevisionRespuesta'];
 type AcuseDto = components['schemas']['AcuseDeRevisionRespuesta'];
+type EmisionResueltaDto = components['schemas']['EmisionResueltaRespuesta'];
 
 /**
  * DTO generado -> modelo propio, mismo criterio que `mapeador-atencion.ts`: los enums llegan como
@@ -63,5 +65,15 @@ export function aAcuseDeRevision(dto: AcuseDto): AcuseDeRevision {
     revisadoEn: dto.revisadoEn ?? '',
     actor: dto.actor ?? '',
     nota: dto.nota ?? null,
+  };
+}
+
+export function aEmisionResuelta(dto: EmisionResueltaDto): EmisionResuelta {
+  return {
+    emisionId: dto.emisionId ?? '',
+    estado: dto.estado ?? '',
+    detalle: dto.detalle ?? null,
+    enviosEnPlataforma: dto.enviosEnPlataforma ?? [],
+    resueltaEn: dto.resueltaEn ?? null,
   };
 }

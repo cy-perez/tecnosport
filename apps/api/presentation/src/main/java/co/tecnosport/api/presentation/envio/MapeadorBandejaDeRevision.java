@@ -4,10 +4,12 @@ import co.tecnosport.api.application.envio.BandejaDeRevision;
 import co.tecnosport.api.application.envio.EmisionEnRevision;
 import co.tecnosport.api.application.envio.GuiaEnRevision;
 import co.tecnosport.api.domain.envio.AcuseDeRevision;
+import co.tecnosport.api.domain.envio.EmisionDeGuia;
 import co.tecnosport.api.presentation.envio.dto.AcuseDeRevisionRespuesta;
 import co.tecnosport.api.presentation.envio.dto.BandejaDeRevisionRespuesta;
 import co.tecnosport.api.presentation.envio.dto.BandejaDeRevisionRespuesta.EmisionEnRevisionRespuesta;
 import co.tecnosport.api.presentation.envio.dto.BandejaDeRevisionRespuesta.GuiaEnRevisionRespuesta;
+import co.tecnosport.api.presentation.envio.dto.EmisionResueltaRespuesta;
 import java.util.Objects;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +49,21 @@ public class MapeadorBandejaDeRevision {
         emision.enviosEnPlataforma(),
         emision.solicitadaEn(),
         emision.actor());
+  }
+
+  /**
+   * Cómo quedó una emisión que alguien acaba de resolver. Los dos veredictos llevan a sitios
+   * distintos —{@code FALLIDA} libera el pedido, {@code EN_CURSO} deja a la tarea releyendo— y la
+   * pantalla tiene que poder decir cuál de los dos pasó.
+   */
+  public EmisionResueltaRespuesta aRespuesta(EmisionDeGuia emision) {
+    Objects.requireNonNull(emision);
+    return new EmisionResueltaRespuesta(
+        emision.id().toString(),
+        emision.estado().name(),
+        emision.detalle().orElse(null),
+        emision.enviosEnPlataforma(),
+        emision.resueltaEn().orElse(null));
   }
 
   public AcuseDeRevisionRespuesta aRespuesta(AcuseDeRevision acuse) {

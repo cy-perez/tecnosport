@@ -149,9 +149,55 @@
               </dd>
             </dl>
 
-            <ts-boton variante="secundario" (click)="alternar(emision.emisionId)">
-              {{ 'admin.revision_envios.acciones.abrir' | transloco }}
-            </ts-boton>
+            <div class="flex flex-wrap gap-8">
+              <ts-boton variante="secundario" (click)="alternar(emision.emisionId)">
+                {{ 'admin.revision_envios.acciones.abrir' | transloco }}
+              </ts-boton>
+              @if (esIndeterminada(emision)) {
+                <ts-boton variante="secundario" (click)="alternar('resolver:' + emision.emisionId)">
+                  {{ 'admin.revision_envios.resolucion.abrir' | transloco }}
+                </ts-boton>
+              }
+            </div>
+
+            @if (abierta() === 'resolver:' + emision.emisionId) {
+              <div class="mt-16">
+                <h4 class="mt-0 mb-8 text-base font-medio">
+                  {{ 'admin.revision_envios.resolucion.titulo' | transloco }}
+                </h4>
+                <p class="mt-0 mb-16 text-ts-texto-suave">
+                  {{ 'admin.revision_envios.resolucion.ayuda' | transloco }}
+                </p>
+
+                <form [formGroup]="formularioResolucion" (submit)="$event.preventDefault()">
+                  <ts-campo
+                    [idCampo]="'revision-envios-' + emision.emisionId"
+                    [label]="'admin.revision_envios.resolucion.identificadores' | transloco"
+                    [ayuda]="'admin.revision_envios.resolucion.identificadores_ayuda' | transloco"
+                    formControlName="envios"
+                  />
+                </form>
+
+                <div class="flex flex-wrap gap-8">
+                  <ts-boton
+                    [cargando]="acciones.resolverEmision.isPending()"
+                    (click)="resolver(emision, 'CON_ENVIO')"
+                  >
+                    {{ 'admin.revision_envios.resolucion.con_envio' | transloco }}
+                  </ts-boton>
+                  <ts-boton
+                    variante="secundario"
+                    [cargando]="acciones.resolverEmision.isPending()"
+                    (click)="resolver(emision, 'SIN_COBRO')"
+                  >
+                    {{ 'admin.revision_envios.resolucion.sin_cobro' | transloco }}
+                  </ts-boton>
+                </div>
+                <p class="mt-8 mb-0 text-ts-texto-suave">
+                  {{ 'admin.revision_envios.resolucion.advertencia' | transloco }}
+                </p>
+              </div>
+            }
 
             @if (abierta() === emision.emisionId) {
               <form

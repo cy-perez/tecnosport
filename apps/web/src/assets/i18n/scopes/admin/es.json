@@ -449,6 +449,17 @@
       "nota": "Qué encontraste",
       "nota_ayuda": "Opcional. Lo lee quien mire esto después.",
       "marcar": "Guardar la revisión"
+    },
+    "resolucion": {
+      "abrir": "Resolver",
+      "titulo": "¿Qué encontraste en el panel de la transportadora?",
+      "ayuda": "Busca el envío con el identificador de tarifa de arriba. Lo que respondas aquí decide si el pedido queda libre para emitir otra guía o si seguimos el envío que ya se pagó.",
+      "identificadores": "Identificadores del envío",
+      "identificadores_ayuda": "Solo si el envío sí aparece. Cópialos del panel; si son varios, sepáralos con coma o espacio.",
+      "con_envio": "Sí aparece: seguir este envío",
+      "sin_cobro": "No aparece: no hubo cobro",
+      "falta_identificador": "Para seguir el envío hace falta su identificador. Cópialo del panel de la transportadora.",
+      "advertencia": "Si el envío no aparece, el pedido queda libre para emitir otra guía. Si aparece y lo registras, retomamos su seguimiento y el despacho sale solo cuando la transportadora dé el número de guía."
     }
   }
 }

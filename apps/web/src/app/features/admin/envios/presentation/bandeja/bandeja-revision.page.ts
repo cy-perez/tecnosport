@@ -15,6 +15,7 @@ import {
   EstadoEmisionEnRevision,
   EstadoEnvioEnRevision,
   GuiaEnRevision,
+  VeredictoDeEmision,
 } from '../../domain/revision-envio.model';
 
 const CLAVE_ESTADO_ENVIO: Record<EstadoEnvioEnRevision, string> = {
@@ -75,6 +76,16 @@ export class BandejaRevisionPage {
     nota: new FormControl('', { nonNullable: true }),
   });
 
+  /**
+   * Los identificadores que la persona copio del panel de la plataforma, separados por coma o
+   * por espacio. Se parsea aqui y no se exige un formato: quien los copia esta leyendo otra
+   * pantalla, y rechazarle el pegado por un espacio de mas seria pedirle que teclee a mano un
+   * UUID.
+   */
+  protected readonly formularioResolucion = new FormGroup({
+    envios: new FormControl('', { nonNullable: true }),
+  });
+
   protected etiquetaEstadoEnvio(estado: EstadoEnvioEnRevision): string {
     return this.traducir()(CLAVE_ESTADO_ENVIO[estado]);
   }
@@ -90,6 +101,7 @@ export class BandejaRevisionPage {
   protected alternar(referencia: string): void {
     this.abierta.update((actual) => (actual === referencia ? null : referencia));
     this.formularioNota.reset({ nota: '' });
+    this.formularioResolucion.reset({ envios: '' });
   }
 
   protected async acusarGuia(guia: GuiaEnRevision): Promise<void> {
@@ -110,6 +122,40 @@ export class BandejaRevisionPage {
     );
   }
 
+  /**
+   * Resolver es distinto de acusar: acusar deja constancia, esto desbloquea el pedido. Solo aparece
+   * en las indeterminadas, que son las unicas de las que se puede decir que se cerraron sin saber.
+   */
+  protected esIndeterminada(emision: EmisionEnRevision): boolean {
+    return emision.estado === 'INDETERMINADA';
+  }
+
+  protected async resolver(
+    emision: EmisionEnRevision,
+    veredicto: VeredictoDeEmision,
+  ): Promise<void> {
+    const envios = this.enviosEscritos();
+    if (veredicto === 'CON_ENVIO' && envios.length === 0) {
+      this.error.set(this.traducir()('admin.revision_envios.resolucion.falta_identificador'));
+      return;
+    }
+    await this.ejecutar(() =>
+      this.acciones.resolverEmision.mutateAsync({
+        emisionId: emision.emisionId,
+        veredicto,
+        enviosEnPlataforma: envios,
+        nota: this.notaEscrita(),
+      }),
+    );
+  }
+
+  private enviosEscritos(): readonly string[] {
+    return this.formularioResolucion.controls.envios.value
+      .split(/[\s,]+/)
+      .map((valor) => valor.trim())
+      .filter((valor) => valor !== '');
+  }
+
   private notaEscrita(): string | null {
     const nota = this.formularioNota.controls.nota.value.trim();
     return nota === '' ? null : nota;
@@ -121,6 +167,7 @@ export class BandejaRevisionPage {
       await accion();
       this.abierta.set(null);
       this.formularioNota.reset({ nota: '' });
+      this.formularioResolucion.reset({ envios: '' });
     } catch (causa) {
       // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
       this.error.set(mensajeDeError(causa, this.transloco, 'admin.revision_envios.error'));

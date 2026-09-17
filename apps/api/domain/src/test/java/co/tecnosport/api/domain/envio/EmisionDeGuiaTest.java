@@ -218,4 +218,62 @@ class EmisionDeGuiaTest {
     assertFalse(EstadoEmision.FALLIDA.exigeOjoHumano());
     assertFalse(EstadoEmision.EMITIDA.exigeOjoHumano());
   }
+
+  /**
+   * La salida que le faltaba a una indeterminada. Sin ella el pedido se queda bloqueado para
+   * siempre: `resolver` le cierra la puerta a un programa a propósito, y no había ninguna otra.
+   */
+  @Test
+  void una_indeterminada_se_descarta_cuando_la_persona_no_encuentra_el_envio() {
+    EmisionDeGuia emision = solicitada();
+    emision.indeterminada("la llamada no terminó", AHORA);
+
+    emision.descartadaSinCobro("No aparece en el panel de la plataforma.", AHORA.plusSeconds(60));
+
+    assertEquals(EstadoEmision.FALLIDA, emision.estado());
+    assertFalse(emision.estado().abierta());
+    assertFalse(emision.estado().exigeOjoHumano());
+    assertEquals("No aparece en el panel de la plataforma.", emision.detalle().orElseThrow());
+  }
+
+  /**
+   * Y la otra mitad: el envío sí estaba, y lo que se perdió fueron sus identificadores. Vuelve a
+   * EN_CURSO para que el desenlace lo escriba la plataforma al releer, no lo que alguien tecleó.
+   */
+  @Test
+  void una_indeterminada_se_recupera_con_los_envios_que_alguien_encontro() {
+    EmisionDeGuia emision = solicitada();
+    emision.indeterminada("la llamada no terminó", AHORA);
+
+    emision.recuperada(List.of("env-encontrado"), AHORA.plusSeconds(60));
+
+    assertEquals(EstadoEmision.EN_CURSO, emision.estado());
+    assertEquals(List.of("env-encontrado"), emision.enviosEnPlataforma());
+    assertTrue(emision.estado().abierta());
+    assertTrue(emision.estado().enCurso());
+    // Deja de estar resuelta, porque no lo estaba.
+    assertTrue(emision.resueltaEn().isEmpty());
+  }
+
+  @Test
+  void recuperar_sin_identificadores_no_tiene_sentido_y_no_se_permite() {
+    EmisionDeGuia emision = solicitada();
+    emision.indeterminada("la llamada no terminó", AHORA);
+
+    assertThrows(ExcepcionDeDominio.class, () -> emision.recuperada(List.of(), AHORA));
+    assertEquals(EstadoEmision.INDETERMINADA, emision.estado());
+  }
+
+  /**
+   * Las dos salidas son solo de la indeterminada. Una emitida no se "descarta por no haber cobro"
+   * —hubo— y una fallida no se recupera: la plataforma ya dijo que no.
+   */
+  @Test
+  void las_dos_salidas_son_solo_de_la_indeterminada() {
+    EmisionDeGuia emitida = enCurso("env-1");
+    emitida.resolver(EstadoEmision.EMITIDA, null, AHORA);
+
+    assertThrows(ExcepcionDeDominio.class, () -> emitida.descartadaSinCobro("no", AHORA));
+    assertThrows(ExcepcionDeDominio.class, () -> emitida.recuperada(List.of("env-2"), AHORA));
+  }
 }

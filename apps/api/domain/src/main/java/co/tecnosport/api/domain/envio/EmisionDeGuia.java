@@ -129,6 +129,63 @@ public final class EmisionDeGuia {
   }
 
   /**
+   * Una persona miró el panel de la plataforma y <strong>el envío no está</strong>: nunca se creó,
+   * así que no hubo cobro y el pedido queda libre para emitir otra vez.
+   *
+   * <p>Existe porque {@link #resolver} le cierra la puerta a un programa a propósito —no se puede
+   * deducir si hubo cobro— y sin esta salida una {@link EstadoEmision#INDETERMINADA} bloquearía su
+   * pedido para siempre. Lo que la hace legítima no es que la llame un humano, sino <em>qué</em>
+   * afirma ese humano: que fue a mirar y no lo encontró. El caso de uso exige que quede escrito
+   * quién lo afirmó.
+   *
+   * <p>Va a {@link EstadoEmision#FALLIDA} y no a un estado nuevo porque es exactamente eso: un
+   * intento que no dejó nada. La diferencia con las demás fallidas —que a esta la cerró una persona
+   * y no la plataforma— vive en el detalle y en el acuse, no en el estado.
+   */
+  public void descartadaSinCobro(String detalle, Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (estado != EstadoEmision.INDETERMINADA) {
+      throw new ExcepcionDeDominio(
+          "Solo una emisión indeterminada se descarta por no haber cobro, no una en "
+              + estado
+              + ".");
+    }
+    this.estado = EstadoEmision.FALLIDA;
+    this.detalle = limpiar(detalle);
+    this.resueltaEn = ahora;
+  }
+
+  /**
+   * Una persona miró el panel y <strong>el envío sí está</strong>: trae sus identificadores, que es
+   * justo lo que la llamada perdió al morirse en la mitad.
+   *
+   * <p>Vuelve a {@link EstadoEmision#EN_CURSO} y no a {@code EMITIDA}, aunque en el panel ya se vea
+   * un número de guía: desde aquí la releen los mismos dos momentos de siempre, y que el desenlace
+   * lo escriba la plataforma —y no lo que alguien tecleó— es lo que impide que un número mal
+   * copiado termine impreso en una etiqueta y en un correo al comprador.
+   *
+   * <p>Limpia {@code resueltaEn}: la emisión deja de estar resuelta, porque no lo estaba. Es la
+   * única transición del agregado que reabre algo, y por eso exige venir de {@code INDETERMINADA},
+   * que es el único estado del que se puede decir que se cerró sin saber.
+   */
+  public void recuperada(List<String> envios, Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (envios == null || envios.isEmpty()) {
+      throw new ExcepcionDeDominio(
+          "Recuperar una emisión exige al menos un envío de la plataforma: sin identificador no hay"
+              + " nada que releer.");
+    }
+    if (estado != EstadoEmision.INDETERMINADA) {
+      throw new ExcepcionDeDominio(
+          "Solo una emisión indeterminada se recupera, no una en " + estado + ".");
+    }
+    this.enviosEnPlataforma = List.copyOf(envios);
+    this.estado = EstadoEmision.EN_CURSO;
+    this.detalle = null;
+    this.resueltaEn = null;
+  }
+
+  /**
    * Cierra el intento. El estado tiene que ser uno de los resueltos: una emisión no "se resuelve a
    * en curso", y aceptar {@link EstadoEmision#EN_CURSO} aquí dejaría el {@code resueltaEn} puesto
    * sobre algo que sigue abierto.

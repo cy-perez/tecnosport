@@ -449,6 +449,17 @@
       "nota": "What you found",
       "nota_ayuda": "Optional. Whoever looks at this next will read it.",
       "marcar": "Save the review"
+    },
+    "resolucion": {
+      "abrir": "Resolve",
+      "titulo": "What did you find in the carrier panel?",
+      "ayuda": "Look the shipment up with the rate identifier above. Your answer decides whether the order is free to buy another label or whether we keep tracking the one already paid for.",
+      "identificadores": "Shipment identifiers",
+      "identificadores_ayuda": "Only if the shipment does show up. Copy them from the panel; separate several with a comma or a space.",
+      "con_envio": "It is there: track this shipment",
+      "sin_cobro": "Not there: no charge was made",
+      "falta_identificador": "Tracking the shipment needs its identifier. Copy it from the carrier panel.",
+      "advertencia": "If the shipment is not there, the order is free to buy another label. If it is there and you record it, we resume tracking and dispatch happens on its own once the carrier gives the tracking number."
     }
   }
 }
