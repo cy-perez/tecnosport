@@ -23,6 +23,10 @@ public class EmisionDeGuiaJpaEntity {
   @Column(name = "id_tarifa", nullable = false)
   private String idTarifa;
 
+  /** Quién comprometió el saldo. Una línea de registro no es auditoría para algo que gasta. */
+  @Column(nullable = false)
+  private String actor;
+
   @Column(nullable = false)
   private String estado;
 
@@ -41,6 +45,7 @@ public class EmisionDeGuiaJpaEntity {
       UUID pedidoId,
       String transportadora,
       String idTarifa,
+      String actor,
       String estado,
       String detalle,
       Instant solicitadaEn,
@@ -49,6 +54,7 @@ public class EmisionDeGuiaJpaEntity {
     this.pedidoId = pedidoId;
     this.transportadora = transportadora;
     this.idTarifa = idTarifa;
+    this.actor = actor;
     this.estado = estado;
     this.detalle = detalle;
     this.solicitadaEn = solicitadaEn;
@@ -69,6 +75,10 @@ public class EmisionDeGuiaJpaEntity {
 
   public String getIdTarifa() {
     return idTarifa;
+  }
+
+  public String getActor() {
+    return actor;
   }
 
   public String getEstado() {

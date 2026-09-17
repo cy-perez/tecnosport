@@ -18,59 +18,94 @@ class EmisionDeGuiaTest {
   private static final UUID PEDIDO = GeneradorIdentificador.nuevo();
   private static final String TARIFA = "b9b9b9b9-0000-4000-8000-000000000001";
 
-  private static EmisionDeGuia enCurso(String... envios) {
-    return EmisionDeGuia.solicitada(PEDIDO, "Servientrega", TARIFA, List.of(envios), AHORA);
+  private static EmisionDeGuia solicitada() {
+    return EmisionDeGuia.solicitar(PEDIDO, "Servientrega", TARIFA, "admin:1", AHORA);
   }
 
-  @Test
-  void nace_en_curso_y_sin_fecha_de_resolucion() {
-    EmisionDeGuia emision = enCurso("8bf880c9");
-
-    assertEquals(EstadoEmision.EN_CURSO, emision.estado());
-    assertTrue(emision.estado().enCurso());
-    assertTrue(emision.resueltaEn().isEmpty());
-    assertTrue(emision.detalle().isEmpty());
-    assertEquals(List.of("8bf880c9"), emision.enviosEnPlataforma());
+  private static EmisionDeGuia enCurso(String... envios) {
+    EmisionDeGuia emision = solicitada();
+    emision.aceptada(List.of(envios), AHORA);
+    return emision;
   }
 
   /**
-   * Un {@code 202} sin envíos no es una emisión aceptada: no habría nada que releer y la emisión se
-   * quedaría en curso para siempre, gastando una consulta por vuelta contra un proveedor limitado a
-   * dos peticiones por segundo.
+   * La fila nace <strong>antes</strong> de la llamada, sin envíos y con la tarifa. Es el orden que
+   * hace que una guía pagada nunca quede sin nada que la nombre: el {@code idTarifa} es lo único
+   * que la recupera por idempotencia dentro de las 96 horas.
    */
   @Test
-  void no_se_acepta_una_emision_sin_envios() {
-    assertThrows(ExcepcionDeDominio.class, () -> enCurso());
+  void nace_solicitada_con_la_tarifa_y_sin_envios() {
+    EmisionDeGuia emision = solicitada();
+
+    assertEquals(EstadoEmision.SOLICITADA, emision.estado());
+    assertTrue(emision.estado().abierta());
+    assertFalse(emision.estado().enCurso());
+    assertEquals(TARIFA, emision.idTarifa());
+    assertEquals("admin:1", emision.actor());
+    assertTrue(emision.enviosEnPlataforma().isEmpty());
+    assertTrue(emision.resueltaEn().isEmpty());
+  }
+
+  @Test
+  void aceptarla_le_pone_los_envios_y_la_deja_en_curso() {
+    EmisionDeGuia emision = solicitada();
+
+    emision.aceptada(List.of("177d1939"), AHORA.plusSeconds(2));
+
+    assertEquals(EstadoEmision.EN_CURSO, emision.estado());
+    assertEquals(List.of("177d1939"), emision.enviosEnPlataforma());
+  }
+
+  /** Sin envíos no hay nada que releer: quedaría en curso para siempre. */
+  @Test
+  void no_se_acepta_sin_envios() {
+    EmisionDeGuia emision = solicitada();
+
+    assertThrows(ExcepcionDeDominio.class, () -> emision.aceptada(List.of(), AHORA));
+    assertEquals(EstadoEmision.SOLICITADA, emision.estado());
+  }
+
+  /** Aceptar dos veces sobrescribiría unos identificadores pagados con otros. */
+  @Test
+  void no_se_acepta_dos_veces() {
+    EmisionDeGuia emision = enCurso("177d1939");
+
+    assertThrows(ExcepcionDeDominio.class, () -> emision.aceptada(List.of("otro"), AHORA));
+    assertEquals(List.of("177d1939"), emision.enviosEnPlataforma());
   }
 
   @Test
   void no_se_acepta_una_emision_sin_tarifa() {
     assertThrows(
         ExcepcionDeDominio.class,
-        () -> EmisionDeGuia.solicitada(PEDIDO, "Servientrega", "  ", List.of("8bf880c9"), AHORA));
+        () -> EmisionDeGuia.solicitar(PEDIDO, "Servientrega", "  ", "admin:1", AHORA));
   }
 
-  /**
-   * El nombre visible se guarda aquí porque la respuesta del envío solo trae el código de la
-   * plataforma, y quien resuelve la emisión minutos después ya no tiene la tarifa a mano.
-   */
   @Test
   void no_se_acepta_una_emision_sin_transportadora() {
     assertThrows(
         ExcepcionDeDominio.class,
-        () -> EmisionDeGuia.solicitada(PEDIDO, " ", TARIFA, List.of("8bf880c9"), AHORA));
+        () -> EmisionDeGuia.solicitar(PEDIDO, " ", TARIFA, "admin:1", AHORA));
+  }
+
+  /** Para algo que gasta dinero, una línea de registro no es auditoría. */
+  @Test
+  void no_se_acepta_una_emision_sin_actor() {
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> EmisionDeGuia.solicitar(PEDIDO, "Servientrega", TARIFA, " ", AHORA));
   }
 
   @Test
   void resolverla_la_cierra_con_su_estado_y_su_fecha() {
-    EmisionDeGuia emision = enCurso("8bf880c9");
+    EmisionDeGuia emision = enCurso("177d1939");
 
     emision.resolver(EstadoEmision.EMITIDA, null, AHORA.plusSeconds(25));
 
     assertEquals(EstadoEmision.EMITIDA, emision.estado());
     assertTrue(emision.estado().resuelta());
+    assertFalse(emision.estado().abierta());
     assertEquals(AHORA.plusSeconds(25), emision.resueltaEn().orElseThrow());
-    assertTrue(emision.detalle().isEmpty());
   }
 
   @Test
@@ -81,6 +116,49 @@ class EmisionDeGuiaTest {
 
     assertEquals(EstadoEmision.FALLIDA, emision.estado());
     assertEquals("CARRIER_RESPONSE_ERROR", emision.detalle().orElseThrow());
+  }
+
+  /**
+   * La que se pidió y nunca llegó a aceptarse solo puede quedar fallida: sin identificadores no hay
+   * guía que dar por emitida ni por parcial.
+   */
+  @Test
+  void una_solicitud_que_nunca_se_acepto_solo_puede_quedar_fallida() {
+    EmisionDeGuia emision = solicitada();
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> emision.resolver(EstadoEmision.EMITIDA, null, AHORA));
+    emision.resolver(EstadoEmision.FALLIDA, "422 datos rechazados", AHORA);
+    assertEquals(EstadoEmision.FALLIDA, emision.estado());
+  }
+
+  /**
+   * "No sabemos si cobró" no es "falló": darlo por fallido invita a reintentarlo, y reintentar
+   * sobre un cobro que sí ocurrió paga dos veces. Cuenta como abierta y la resuelve una persona.
+   */
+  @Test
+  void una_llamada_sin_desenlace_queda_indeterminada_y_bloquea() {
+    EmisionDeGuia emision = solicitada();
+
+    emision.indeterminada("408 tiempo de espera excedido", AHORA.plusSeconds(40));
+
+    assertEquals(EstadoEmision.INDETERMINADA, emision.estado());
+    assertTrue(emision.estado().abierta());
+    assertFalse(emision.estado().resuelta());
+    assertTrue(emision.estado().exigeOjoHumano());
+    assertEquals("408 tiempo de espera excedido", emision.detalle().orElseThrow());
+  }
+
+  /** Ningún programa la cierra: puede haber un envío pagado del que no tenemos identificador. */
+  @Test
+  void una_indeterminada_no_la_resuelve_un_programa() {
+    EmisionDeGuia emision = solicitada();
+    emision.indeterminada("408", AHORA);
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> emision.resolver(EstadoEmision.FALLIDA, "ya está", AHORA.plusSeconds(60)));
+    assertEquals(EstadoEmision.INDETERMINADA, emision.estado());
   }
 
   /**
@@ -100,12 +178,14 @@ class EmisionDeGuiaTest {
   }
 
   @Test
-  void no_se_puede_resolver_como_en_curso() {
+  void no_se_puede_resolver_como_un_estado_abierto() {
     EmisionDeGuia emision = enCurso("8bf880c9");
 
-    assertThrows(
-        ExcepcionDeDominio.class,
-        () -> emision.resolver(EstadoEmision.EN_CURSO, null, AHORA.plusSeconds(5)));
+    for (EstadoEmision abierto :
+        List.of(EstadoEmision.SOLICITADA, EstadoEmision.EN_CURSO, EstadoEmision.INDETERMINADA)) {
+      assertThrows(
+          ExcepcionDeDominio.class, () -> emision.resolver(abierto, null, AHORA.plusSeconds(5)));
+    }
     assertTrue(emision.resueltaEn().isEmpty());
   }
 
@@ -120,10 +200,22 @@ class EmisionDeGuiaTest {
     assertEquals(List.of("8bf880c9", "da585a66"), emision.enviosEnPlataforma());
   }
 
+  /** Los tres estados en los que puede haber plata comprometida sin desenlace. */
   @Test
-  void parcial_es_resuelta_pero_no_es_fallida() {
+  void los_tres_estados_abiertos_son_los_que_bloquean() {
+    assertTrue(EstadoEmision.SOLICITADA.abierta());
+    assertTrue(EstadoEmision.EN_CURSO.abierta());
+    assertTrue(EstadoEmision.INDETERMINADA.abierta());
+    assertFalse(EstadoEmision.EMITIDA.abierta());
+    assertFalse(EstadoEmision.FALLIDA.abierta());
+    assertFalse(EstadoEmision.PARCIAL.abierta());
+  }
+
+  @Test
+  void parcial_es_resuelta_y_pide_ojo_humano() {
     assertTrue(EstadoEmision.PARCIAL.resuelta());
-    assertFalse(EstadoEmision.PARCIAL.enCurso());
-    assertFalse(EstadoEmision.EN_CURSO.resuelta());
+    assertTrue(EstadoEmision.PARCIAL.exigeOjoHumano());
+    assertFalse(EstadoEmision.FALLIDA.exigeOjoHumano());
+    assertFalse(EstadoEmision.EMITIDA.exigeOjoHumano());
   }
 }

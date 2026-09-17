@@ -1,12 +1,13 @@
 package co.tecnosport.api.application.envio;
 
-import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * El costo de envío para un carrito y un destino: una sola opción, la más económica, elegida por el
@@ -26,11 +27,6 @@ public final class CotizarEnvio {
   private final CotizadorEnvio cotizador;
   private final Reloj reloj;
 
-  public CotizarEnvio(
-      RepositorioProductos repositorioProductos, CotizadorEnvio cotizador, Reloj reloj) {
-    this(new ArmadorDeBultos(repositorioProductos), cotizador, reloj);
-  }
-
   public CotizarEnvio(ArmadorDeBultos armador, CotizadorEnvio cotizador, Reloj reloj) {
     this.armador = Objects.requireNonNull(armador, "El armador de bultos no puede ser nulo.");
     this.cotizador = Objects.requireNonNull(cotizador, "El cotizador no puede ser nulo.");
@@ -45,7 +41,9 @@ public final class CotizarEnvio {
       throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
     }
 
-    return deBultos(destino, armador.soloBultos(aEmpacar(comando)), comando.conRecaudo());
+    List<Bulto> bultos =
+        armador.armar(aEmpacar(comando)).stream().map(BultoDespachable::bulto).toList();
+    return deBultos(destino, bultos, comando.conRecaudo(), Set.of());
   }
 
   /**
@@ -53,8 +51,23 @@ public final class CotizarEnvio {
    * bultos una vez —necesita además el contenido de cada uno— y no puede permitirse armarlos dos
    * veces: dos lecturas del catálogo pueden ver estados distintos y devolver listas que ya no se
    * corresponden, y el emparejamiento de paquetes con bultos es por posición.
+   *
+   * <p>{@code transportadorasExcluidas} lleva, en minúsculas, las que ya se intentaron y no
+   * salieron para este pedido. No es una preferencia comercial: el fallo más caro que hemos medido
+   * es determinista —el contador de remisiones de Coordinadora está atascado y falla siempre— y esa
+   * es además la tarifa más barata de la cuenta, o sea la que {@link TarifaEnvio#masEconomica}
+   * elige sola. Sin excluirla, cada reintento repite el mismo fracaso.
    */
-  public TarifaEnvio deBultos(Direccion destino, List<Bulto> bultos, boolean conRecaudo) {
+  public TarifaEnvio deBultos(
+      Direccion destino,
+      List<Bulto> bultos,
+      boolean conRecaudo,
+      Set<String> transportadorasExcluidas) {
+    Objects.requireNonNull(destino, "El destino de la cotización es obligatorio.");
+    Objects.requireNonNull(transportadorasExcluidas, "Las excluidas no pueden ser nulas.");
+    if (bultos == null || bultos.isEmpty()) {
+      throw new IllegalArgumentException("Una cotización necesita al menos un bulto.");
+    }
     ResultadoCotizacion resultado =
         cotizador.cotizar(new CotizacionEnvio(destino, bultos, conRecaudo));
 
@@ -62,7 +75,7 @@ public final class CotizarEnvio {
     // donde se decide qué se le dice al comprador.
     return switch (resultado) {
       case ResultadoCotizacion.ConTarifas(List<TarifaEnvio> tarifas) ->
-          TarifaEnvio.masEconomica(vigentes(tarifas))
+          TarifaEnvio.masEconomica(elegibles(tarifas, transportadorasExcluidas))
               // Todas vencidas es sin cobertura y no un fallo: el proveedor respondió, y lo que
               // respondió no se puede ofrecer.
               .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));
@@ -79,9 +92,16 @@ public final class CotizarEnvio {
    * carrito y el mismo destino, así que la cotización de ayer puede volver hoy casi muerta. Ver
    * docs/13-skydropx-capacidades.md, sección 6.
    */
-  private List<TarifaEnvio> vigentes(List<TarifaEnvio> tarifas) {
+  private List<TarifaEnvio> elegibles(
+      List<TarifaEnvio> tarifas, Set<String> transportadorasExcluidas) {
     Instant ahora = reloj.ahora();
-    return tarifas.stream().filter(tarifa -> tarifa.estaVigente(ahora)).toList();
+    return tarifas.stream()
+        .filter(tarifa -> tarifa.estaVigente(ahora))
+        .filter(
+            tarifa ->
+                !transportadorasExcluidas.contains(
+                    tarifa.transportadora().toLowerCase(Locale.ROOT)))
+        .toList();
   }
 
   /**

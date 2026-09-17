@@ -1,11 +1,14 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.DespacharPedidoComando;
 import co.tecnosport.api.application.pedido.GuiaDespachada;
 import co.tecnosport.api.domain.envio.EmisionDeGuia;
 import co.tecnosport.api.domain.envio.EstadoEmision;
+import co.tecnosport.api.domain.pedido.TransicionDeEstadoInvalidaException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +35,16 @@ import java.util.stream.Collectors;
  * en curso dejan la emisión abierta igual, pero se cuentan aparte: si el registro solo dijera "en
  * curso", un proveedor caído durante horas se vería idéntico a una transportadora lenta.
  *
+ * <p><strong>Cada emisión va en su propia transacción y su propio {@code try}.</strong> No es
+ * higiene: {@code DespacharPedido} lanza si el pedido ya no está en {@code EN_PREPARACION}, y eso
+ * pasa en cuanto alguien usa el formulario de la guía a mano —que está en la misma pantalla, justo
+ * debajo del botón— o cancela el pedido. Con el lote entero en una transacción, esa excepción
+ * revertía la vuelta completa; y como las emisiones se leen de la más vieja a la más nueva, la
+ * ofensora volvía a ser la primera en la vuelta siguiente, y en la siguiente: una píldora que
+ * bloqueaba el despacho de todas las demás, cada minuto, para siempre, con una traza por único
+ * síntoma. Peor: el correo de despacho de las emisiones buenas ya había salido antes del rollback y
+ * se repetía en cada vuelta.
+ *
  * <p><strong>Y el fallo parcial no se resuelve solo.</strong> En multienvío cada envío vive su
  * propia vida, así que un pedido de dos bultos puede terminar con una guía viva y pagada y otra
  * muerta. Despachar media compra o reintentarla entera son decisiones con plata de por medio: la
@@ -40,9 +53,18 @@ import java.util.stream.Collectors;
  */
 public final class ResolverEmisionesEnCurso {
 
+  /**
+   * Cuánto se espera a que una emisión pedida registre su respuesta antes de darla por perdida. La
+   * llamada entera tiene tope de unos cuarenta segundos entre reintentos y timeouts; diez minutos
+   * son de sobra para que cualquier petición viva haya terminado, y cortos como para que una fila
+   * huérfana no bloquee el pedido media jornada.
+   */
+  private static final Duration ESPERA_MAXIMA_DE_RESPUESTA = Duration.ofMinutes(10);
+
   private final RepositorioEmisiones repositorioEmisiones;
   private final EmisorDeGuias emisor;
   private final DespacharPedido despacharPedido;
+  private final EnTransaccionPropia enTransaccionPropia;
   private final Reloj reloj;
   private final int maximoPorCorrida;
 
@@ -50,11 +72,13 @@ public final class ResolverEmisionesEnCurso {
       RepositorioEmisiones repositorioEmisiones,
       EmisorDeGuias emisor,
       DespacharPedido despacharPedido,
+      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       int maximoPorCorrida) {
     this.repositorioEmisiones = Objects.requireNonNull(repositorioEmisiones);
     this.emisor = Objects.requireNonNull(emisor);
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
+    this.enTransaccionPropia = Objects.requireNonNull(enTransaccionPropia);
     this.reloj = Objects.requireNonNull(reloj);
     if (maximoPorCorrida <= 0) {
       throw new IllegalArgumentException(
@@ -64,32 +88,71 @@ public final class ResolverEmisionesEnCurso {
   }
 
   public ResultadoResolucionEmisiones ejecutar() {
-    List<EmisionDeGuia> pendientes = repositorioEmisiones.buscarEnCurso(maximoPorCorrida);
-    int despachadas = 0;
-    int fallidas = 0;
-    int parciales = 0;
-    int siguenEnCurso = 0;
-    int sinRespuesta = 0;
-
-    for (EmisionDeGuia emision : pendientes) {
-      Lecturas lecturas = leer(emision);
-      if (lecturas.sinRespuesta() > 0) {
-        sinRespuesta++;
-        continue;
-      }
-      if (lecturas.siguen() > 0) {
-        siguenEnCurso++;
-        continue;
-      }
-      switch (resolver(emision, lecturas)) {
-        case EMITIDA -> despachadas++;
-        case PARCIAL -> parciales++;
-        case FALLIDA -> fallidas++;
-        case EN_CURSO -> siguenEnCurso++;
+    Contador contador = new Contador();
+    for (EmisionDeGuia emision : repositorioEmisiones.buscarEnCurso(maximoPorCorrida)) {
+      contador.revisadas++;
+      try {
+        resolverUna(emision, contador);
+      } catch (RuntimeException e) {
+        // Una emisión que no se deja resolver no puede llevarse por delante a las demás. Se cuenta
+        // y se deja para la vuelta siguiente; el motivo lo escribe quien registra, arriba.
+        contador.conError++;
+        contador.errores.add(emision.id() + ": " + e);
       }
     }
-    return new ResultadoResolucionEmisiones(
-        pendientes.size(), despachadas, fallidas, parciales, siguenEnCurso, sinRespuesta);
+    contador.abandonadas = abandonarSolicitudesSinRespuesta();
+    return contador.aResultado();
+  }
+
+  /**
+   * Las que se pidieron y nunca llegaron a aceptarse pasan a {@code INDETERMINADA} pasado el corte.
+   *
+   * <p>Una emisión se queda {@code SOLICITADA} cuando el proceso muere entre que se escribe la fila
+   * y que la plataforma responde. No se puede releer —no hay identificadores— ni dar por fallida
+   * —pudo cobrarse—, así que la única salida honesta es marcarla para que la mire una persona. Sin
+   * esto se quedaría abierta para siempre, bloqueando toda emisión nueva de ese pedido en silencio.
+   */
+  private int abandonarSolicitudesSinRespuesta() {
+    Instant corte = reloj.ahora().minus(ESPERA_MAXIMA_DE_RESPUESTA);
+    int abandonadas = 0;
+    for (EmisionDeGuia emision :
+        repositorioEmisiones.buscarSolicitadasAntesDe(corte, maximoPorCorrida)) {
+      try {
+        enTransaccionPropia.ejecutar(
+            () -> {
+              emision.indeterminada(
+                  "se pidió y el proceso no llegó a registrar la respuesta; puede haber un envío"
+                      + " creado y cobrado con la tarifa "
+                      + emision.idTarifa(),
+                  reloj.ahora());
+              repositorioEmisiones.guardar(emision);
+              return emision;
+            });
+        abandonadas++;
+      } catch (RuntimeException e) {
+        // Que una no se pueda marcar no puede impedir marcar las otras.
+      }
+    }
+    return abandonadas;
+  }
+
+  private void resolverUna(EmisionDeGuia emision, Contador contador) {
+    Lecturas lecturas = leer(emision);
+    if (lecturas.sinRespuesta() > 0) {
+      contador.sinRespuesta++;
+      return;
+    }
+    if (lecturas.siguen() > 0) {
+      contador.siguenEnCurso++;
+      return;
+    }
+    EstadoEmision desenlace = enTransaccionPropia.ejecutar(() -> resolver(emision, lecturas));
+    switch (desenlace) {
+      case EMITIDA -> contador.despachadas++;
+      case PARCIAL -> contador.parciales++;
+      case FALLIDA -> contador.fallidas++;
+      case SOLICITADA, EN_CURSO, INDETERMINADA -> contador.siguenEnCurso++;
+    }
   }
 
   /**
@@ -118,8 +181,24 @@ public final class ResolverEmisionesEnCurso {
   private EstadoEmision resolver(EmisionDeGuia emision, Lecturas lecturas) {
     Instant ahora = reloj.ahora();
     if (lecturas.fallos().isEmpty()) {
-      despacharPedido.ejecutar(
-          new DespacharPedidoComando(emision.pedidoId(), guias(emision, lecturas), actor(emision)));
+      try {
+        despacharPedido.ejecutar(
+            new DespacharPedidoComando(
+                emision.pedidoId(), guias(emision, lecturas), actor(emision)));
+      } catch (TransicionDeEstadoInvalidaException e) {
+        // El pedido se movió por otra vía mientras la guía nacía: alguien lo despachó a mano con el
+        // formulario que está justo debajo del botón, o lo canceló. Las guías existen y están
+        // pagadas, así que esto no es un fallo — es una parcial de la peor especie, y la mira una
+        // persona. Antes esto reventaba la tarea entera, cada minuto, para siempre.
+        emision.resolver(
+            EstadoEmision.PARCIAL,
+            "las guías se emitieron ("
+                + numerosDe(lecturas)
+                + ") pero el pedido ya no estaba en preparación: "
+                + e.getMessage(),
+            ahora);
+        return emision.estado();
+      }
       emision.resolver(EstadoEmision.EMITIDA, null, ahora);
     } else if (lecturas.emitidos().isEmpty()) {
       emision.resolver(EstadoEmision.FALLIDA, String.join(" · ", lecturas.fallos()), ahora);
@@ -149,14 +228,16 @@ public final class ResolverEmisionesEnCurso {
    * cancelarlas o usarlas sin ir a buscarlas a ciegas.
    */
   private static String detalleParcial(Lecturas lecturas) {
-    String vivas =
-        lecturas.emitidos().stream()
-            .map(LecturaDeEnvioEmitido.Emitido::numeroGuia)
-            .collect(Collectors.joining(", "));
     return "Guías emitidas y pagadas que quedaron sin despachar: "
-        + vivas
+        + numerosDe(lecturas)
         + ". Fallaron: "
         + String.join(" · ", lecturas.fallos());
+  }
+
+  private static String numerosDe(Lecturas lecturas) {
+    return lecturas.emitidos().stream()
+        .map(LecturaDeEnvioEmitido.Emitido::numeroGuia)
+        .collect(Collectors.joining(", "));
   }
 
   /**
@@ -166,6 +247,32 @@ public final class ResolverEmisionesEnCurso {
    */
   private static String actor(EmisionDeGuia emision) {
     return "sistema:emision:" + emision.id();
+  }
+
+  /** Mutable y privado: son seis contadores de un bucle, no un concepto del dominio. */
+  private static final class Contador {
+    private int revisadas;
+    private int despachadas;
+    private int fallidas;
+    private int parciales;
+    private int siguenEnCurso;
+    private int sinRespuesta;
+    private int conError;
+    private int abandonadas;
+    private final List<String> errores = new ArrayList<>();
+
+    private ResultadoResolucionEmisiones aResultado() {
+      return new ResultadoResolucionEmisiones(
+          revisadas,
+          despachadas,
+          fallidas,
+          parciales,
+          siguenEnCurso,
+          sinRespuesta,
+          conError,
+          abandonadas,
+          List.copyOf(errores));
+    }
   }
 
   private record Lecturas(

@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.envio;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -24,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -74,18 +74,79 @@ class RepositorioEmisionesJpaTest {
     return pedido.id();
   }
 
+  /** El camino normal: se pide, la plataforma acepta, y la fila queda con sus identificadores. */
+  private static EmisionDeGuia enCurso(
+      UUID pedidoId, String transportadora, String idTarifa, String... envios) {
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedidoId, transportadora, idTarifa, "admin:test", AHORA);
+    emision.aceptada(List.of(envios), AHORA);
+    return emision;
+  }
+
+  /**
+   * La fila existe antes de que la plataforma cobre, sin identificadores todavía. Es lo que impide
+   * que un reinicio entre el cobro y la respuesta deje una guía pagada sin nada que la nombre.
+   */
+  @Test
+  void unaSolicitudSeGuardaSinEnviosYBloqueaIgual() {
+    UUID pedidoId = sembrarPedido(20);
+    repositorio.guardar(
+        EmisionDeGuia.solicitar(pedidoId, "Servientrega", "rate", "admin:test", AHORA));
+
+    EmisionDeGuia leida = repositorio.buscarAbiertaDePedido(pedidoId).orElseThrow();
+
+    assertThat(leida.estado()).isEqualTo(EstadoEmision.SOLICITADA);
+    assertThat(leida.enviosEnPlataforma()).isEmpty();
+    assertThat(leida.idTarifa()).isEqualTo("rate");
+    assertThat(leida.actor()).isEqualTo("admin:test");
+  }
+
+  /** Una indeterminada tampoco deja emitir: pudo cobrarse y nadie lo sabe todavía. */
+  @Test
+  void unaIndeterminadaSigueBloqueando() {
+    UUID pedidoId = sembrarPedido(21);
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedidoId, "Servientrega", "rate", "admin:test", AHORA);
+    repositorio.guardar(emision);
+    emision.indeterminada("408", AHORA.plusSeconds(40));
+    repositorio.guardar(emision);
+
+    assertThat(repositorio.buscarAbiertaDePedido(pedidoId).orElseThrow().estado())
+        .isEqualTo(EstadoEmision.INDETERMINADA);
+    assertThatThrownBy(() -> repositorio.guardar(enCurso(pedidoId, "Envía", "rate-2", "otro")))
+        .isInstanceOf(EmisionYaEnCursoException.class);
+  }
+
+  /** Las que nunca registraron respuesta: el proceso murió en la mitad. */
+  @Test
+  void lasSolicitudesViejasSeEncuentranParaAbandonarlas() {
+    UUID viejo = sembrarPedido(22);
+    UUID reciente = sembrarPedido(23);
+    repositorio.guardar(
+        EmisionDeGuia.solicitar(viejo, "Servientrega", "rate-viejo", "admin:test", AHORA));
+    repositorio.guardar(
+        EmisionDeGuia.solicitar(
+            reciente, "Servientrega", "rate-nuevo", "admin:test", AHORA.plusSeconds(3_600)));
+
+    List<EmisionDeGuia> encontradas =
+        repositorio.buscarSolicitadasAntesDe(AHORA.plusSeconds(600), 10);
+
+    assertThat(encontradas).hasSize(1);
+    assertThat(encontradas.getFirst().idTarifa()).isEqualTo("rate-viejo");
+  }
+
   @Test
   void laEmisionVuelveEnteraConSusEnviosEnOrden() {
     UUID pedidoId = sembrarPedido(1);
     repositorio.guardar(
-        EmisionDeGuia.solicitada(
+        enCurso(
             pedidoId,
             "Servientrega",
             "rate-de-hoy",
-            List.of("8bf880c9-5334-49bf-a006-036b3759d8e3", "da585a66-1f49-4f40-93e2-ecb58b239566"),
-            AHORA));
+            "8bf880c9-5334-49bf-a006-036b3759d8e3",
+            "da585a66-1f49-4f40-93e2-ecb58b239566"));
 
-    EmisionDeGuia leida = repositorio.buscarEnCursoDePedido(pedidoId).orElseThrow();
+    EmisionDeGuia leida = repositorio.buscarAbiertaDePedido(pedidoId).orElseThrow();
 
     assertThat(leida.transportadora()).isEqualTo("Servientrega");
     assertThat(leida.idTarifa()).isEqualTo("rate-de-hoy");
@@ -101,14 +162,13 @@ class RepositorioEmisionesJpaTest {
   @Test
   void resolverlaGuardaElEstadoElDetalleYLaFecha() {
     UUID pedidoId = sembrarPedido(2);
-    EmisionDeGuia emision =
-        EmisionDeGuia.solicitada(pedidoId, "Coordinadora", "rate", List.of("e47c61d3"), AHORA);
+    EmisionDeGuia emision = enCurso(pedidoId, "Coordinadora", "rate", "e47c61d3");
     repositorio.guardar(emision);
 
     emision.resolver(EstadoEmision.FALLIDA, "CARRIER_RESPONSE_ERROR", AHORA.plusSeconds(260));
     repositorio.guardar(emision);
 
-    assertThat(repositorio.buscarEnCursoDePedido(pedidoId)).isEmpty();
+    assertThat(repositorio.buscarAbiertaDePedido(pedidoId)).isEmpty();
     assertThat(repositorio.buscarEnCurso(10)).isEmpty();
   }
 
@@ -120,9 +180,7 @@ class RepositorioEmisionesJpaTest {
   @Test
   void resolverlaNoTocaLosEnviosDeLaPlataforma() {
     UUID pedidoId = sembrarPedido(3);
-    EmisionDeGuia emision =
-        EmisionDeGuia.solicitada(
-            pedidoId, "Servientrega", "rate", List.of("8bf880c9", "da585a66"), AHORA);
+    EmisionDeGuia emision = enCurso(pedidoId, "Servientrega", "rate", "8bf880c9", "da585a66");
     repositorio.guardar(emision);
 
     emision.resolver(EstadoEmision.PARCIAL, "una viva, una muerta", AHORA.plusSeconds(30));
@@ -150,50 +208,46 @@ class RepositorioEmisionesJpaTest {
   @Test
   void unPedidoNoPuedeTenerDosEmisionesAbiertas() {
     UUID pedidoId = sembrarPedido(4);
-    repositorio.guardar(
-        EmisionDeGuia.solicitada(pedidoId, "Servientrega", "rate-1", List.of("uno"), AHORA));
+    repositorio.guardar(enCurso(pedidoId, "Servientrega", "rate-1", "uno"));
 
-    // Revienta en el `saveAndFlush` del repositorio, no en un volcado posterior: la restricción es
-    // de la base y salta en cuanto la fila intenta entrar.
+    // Y la violación de unicidad NO sale cruda: el repositorio la traduce, porque una excepción de
+    // JPA que se escapa de infrastructure termina en un 500 generico que no explica nada.
     assertThatThrownBy(
-            () ->
-                repositorio.guardar(
-                    EmisionDeGuia.solicitada(
-                        pedidoId, "Servientrega", "rate-2", List.of("dos"), AHORA)))
-        .isInstanceOf(DataIntegrityViolationException.class);
+            () -> repositorio.guardar(enCurso(pedidoId, "Servientrega", "rate-2", "dos")))
+        .isInstanceOf(EmisionYaEnCursoException.class);
   }
 
   /** Un fallo se reintenta: la plataforma reembolsa el intento muerto. */
   @Test
   void unPedidoSiPuedeAcumularVariasResueltas() {
     UUID pedidoId = sembrarPedido(5);
-    EmisionDeGuia primera =
-        EmisionDeGuia.solicitada(pedidoId, "Coordinadora", "rate-1", List.of("uno"), AHORA);
+    EmisionDeGuia primera = enCurso(pedidoId, "Coordinadora", "rate-1", "uno");
     repositorio.guardar(primera);
     primera.resolver(EstadoEmision.FALLIDA, "murió", AHORA.plusSeconds(260));
     repositorio.guardar(primera);
 
-    EmisionDeGuia segunda =
-        EmisionDeGuia.solicitada(
-            pedidoId, "Servientrega", "rate-2", List.of("dos"), AHORA.plusSeconds(300));
+    EmisionDeGuia segunda = enCurso(pedidoId, "Servientrega", "rate-2", "dos");
     repositorio.guardar(segunda);
     entityManager.flush();
 
-    assertThat(repositorio.buscarEnCursoDePedido(pedidoId).orElseThrow().idTarifa())
+    assertThat(repositorio.buscarAbiertaDePedido(pedidoId).orElseThrow().idTarifa())
         .isEqualTo("rate-2");
+    assertThat(repositorio.buscarDePedido(pedidoId)).hasSize(2);
   }
 
   /** De la más vieja a la más nueva, y acotado: cada envío es una llamada al proveedor. */
   @Test
   void lasEnCursoVuelvenDeLaMasViejaALaMasNuevaYAcotadas() {
     for (int i = 1; i <= 4; i++) {
-      repositorio.guardar(
-          EmisionDeGuia.solicitada(
+      EmisionDeGuia emision =
+          EmisionDeGuia.solicitar(
               sembrarPedido(10 + i),
               "Servientrega",
               "rate-" + i,
-              List.of("envio-" + i),
-              AHORA.plusSeconds(i * 60L)));
+              "admin:test",
+              AHORA.plusSeconds(i * 60L));
+      emision.aceptada(List.of("envio-" + i), AHORA.plusSeconds(i * 60L));
+      repositorio.guardar(emision);
     }
 
     List<EmisionDeGuia> lote = repositorio.buscarEnCurso(3);

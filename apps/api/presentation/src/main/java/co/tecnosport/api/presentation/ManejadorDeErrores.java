@@ -17,6 +17,7 @@ import co.tecnosport.api.application.envio.EmisionNoAplicableException;
 import co.tecnosport.api.application.envio.EmisionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
+import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
@@ -246,6 +247,16 @@ public class ManejadorDeErrores {
   // que es donde de verdad esta el motivo (docs/13 §6.10).
   @ExceptionHandler(EmisionRechazadaException.class)
   public ProblemDetail emisionRechazada(EmisionRechazadaException excepcion) {
+    // Sin credenciales no es culpa de la transportadora: es un despliegue mal configurado, y
+    // decirle a quien despacha que la transportadora dijo que no lo manda a llamar a Skydropx a
+    // preguntar por algo nuestro. Los cuatro motivos existen porque piden cosas distintas de quien
+    // opera; agruparlos todos en un 502 tiraba esa distinción justo donde se nota.
+    if (excepcion.motivo() == ResultadoEmision.Motivo.SIN_CREDENCIALES) {
+      return problema(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "La integración de envíos no está configurada",
+          excepcion);
+    }
     return problema(HttpStatus.BAD_GATEWAY, "La transportadora rechazó la emisión", excepcion);
   }
 

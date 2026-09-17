@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
@@ -228,7 +229,7 @@ class CotizacionEnvioControladorTest {
 
     @Bean
     CotizarEnvio cotizarEnvio(RepositorioProductos productos, CotizadorEnvio cotizador) {
-      return new CotizarEnvio(productos, cotizador, () -> AHORA);
+      return new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA);
     }
   }
 

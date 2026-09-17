@@ -22,6 +22,17 @@ import tools.jackson.databind.node.ObjectNode;
  * tres guías —una que murió y dos que vivieron, una de ellas multienvío—. Nada de lo que hay aquí
  * se dedujo de la documentación; lo medido está en docs/13-skydropx-capacidades.md §6.10.
  *
+ * <p><strong>Sin interfaz delante</strong>, al revés que {@link MapeadorCotizacionSkydropx}. Ahí la
+ * frontera se gana el sitio porque hay dos dobles que la usan para probar el protocolo sin el
+ * mapeo; aquí nunca hubo más implementación que esta, ni en producción ni en las pruebas, y una
+ * clase con una sola implementación interna no es un puerto: es una clase
+ * (docs/01-arquitectura.md). Si algún día hace falta el doble, se extrae entonces.
+ *
+ * <p><strong>Crea por v2 y relee por v1</strong>, y no es una inconsistencia: {@code POST
+ * /api/v2/shipments} devuelve siempre un arreglo de envíos —lo que hace falta porque en Colombia
+ * todo pedido de dos bultos es multienvío— y {@code GET /api/v2/shipments/&#123;id&#125;} no
+ * existe, responde 404 con el HTML del sitio.
+ *
  * <p>Lo que costó descubrir, y por qué el código se ve así:
  *
  * <ul>
@@ -55,7 +66,7 @@ import tools.jackson.databind.node.ObjectNode;
  *       {@link BigDecimal}, nunca con {@code asDouble} (regla dura #6).
  * </ul>
  */
-final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
+final class MapeadorEmisionSkydropxV2 {
 
   private static final Logger log = LoggerFactory.getLogger(MapeadorEmisionSkydropxV2.class);
 
@@ -89,8 +100,7 @@ final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
 
   private final JsonMapper json = JsonMapper.builder().build();
 
-  @Override
-  public String cuerpoDeEmision(SolicitudDeEmision solicitud, OrigenDespacho origen) {
+  String cuerpoDeEmision(SolicitudDeEmision solicitud, OrigenDespacho origen) {
     ObjectNode raiz = json.createObjectNode();
     ObjectNode shipment = raiz.putObject("shipment");
     shipment.put("rate_id", solicitud.idTarifa());
@@ -117,7 +127,7 @@ final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
     nodo.put("street1", origen.direccion());
     nodo.put("name", origen.nombre());
     nodo.put("company", origen.nombre());
-    nodo.put("phone", origen.telefonoSinIndicativo());
+    nodo.put("phone", sinIndicativo(origen.telefono()));
     nodo.put("email", origen.correo());
     nodo.put("reference", origen.referencia());
     return nodo;
@@ -141,9 +151,16 @@ final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
   }
 
   /**
-   * Lo mismo que {@link OrigenDespacho#telefonoSinIndicativo()}, para el teléfono del comprador.
-   * {@code Contacto} lo guarda con el {@code +} del prefijo si vino, y admite números de fuera: si
-   * no empieza por 57, se manda tal cual en dígitos y que la plataforma decida.
+   * El teléfono como lo quiere la emisión. {@code +573138816711} cotiza bien y devuelve {@code 400
+   * phone no es válido} al crear el envío, en los dos extremos (§6.2).
+   *
+   * <p>Vive aquí y no en {@code OrigenDespacho} porque no es un dato del negocio sino una manía de
+   * este endpoint: la cotización manda el número entero y le sirve. Un record de configuración no
+   * tiene por qué conocer los caprichos de una ruta concreta — y estuvo el método duplicado,
+   * carácter por carácter, en los dos sitios.
+   *
+   * <p>{@code Contacto} lo guarda con el {@code +} del prefijo si vino, y admite números de fuera:
+   * si no empieza por 57, se manda tal cual en dígitos y que la plataforma decida.
    */
   private static String sinIndicativo(String telefono) {
     String soloDigitos = telefono.replaceAll("[^0-9]", "");
@@ -152,8 +169,7 @@ final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
         : soloDigitos;
   }
 
-  @Override
-  public List<String> enviosCreados(JsonNode respuestaDeCreacion) {
+  List<String> enviosCreados(JsonNode respuestaDeCreacion) {
     JsonNode datos = respuestaDeCreacion.path("data");
     List<String> ids = new ArrayList<>();
     // v2 devuelve siempre un arreglo. Se acepta también el objeto de v1 por si algún día la
@@ -167,8 +183,7 @@ final class MapeadorEmisionSkydropxV2 implements MapeadorEmisionSkydropx {
     return List.copyOf(ids);
   }
 
-  @Override
-  public LecturaDeEnvioEmitido lectura(JsonNode respuestaDeLectura) {
+  LecturaDeEnvioEmitido lectura(JsonNode respuestaDeLectura) {
     JsonNode envio = respuestaDeLectura.path("data");
     JsonNode atributos = envio.path("attributes");
     String estado = texto(atributos.path("workflow_status"));

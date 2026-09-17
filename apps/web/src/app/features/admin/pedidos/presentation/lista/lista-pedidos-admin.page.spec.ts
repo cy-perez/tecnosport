@@ -170,7 +170,6 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
       estado: 'EN_CURSO',
       transportadora: 'Servientrega',
       cuantosEnvios: 1,
-      detalle: null,
     };
   }
 

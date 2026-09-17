@@ -178,9 +178,12 @@ public class AdminPedidosControlador {
   @ResponseStatus(HttpStatus.ACCEPTED)
   public EmisionDeGuiaRespuesta emitirGuia(@PathVariable UUID id) {
     String actor = "admin:" + actorId();
-    EmisionDeGuia emision =
-        transaccion.execute(
-            estado -> emitirGuiaDePedido.ejecutar(new EmitirGuiaDePedidoComando(id, actor)));
+    // Sin `transaccion.execute`, y es deliberado: dentro hay una recotización que sondea y una
+    // emisión que reintenta —unos veinte segundos en el peor caso— con una llamada que cobra en la
+    // mitad. Sostener una conexión y las filas del pedido todo ese rato no aporta atomicidad
+    // ninguna, porque el cobro del tercero no se revierte; el caso de uso abre las transacciones
+    // que necesita, donde las necesita (adr/0033).
+    EmisionDeGuia emision = emitirGuiaDePedido.ejecutar(new EmitirGuiaDePedidoComando(id, actor));
     // En `info` y con los identificadores de la plataforma dentro: es el unico rastro de que se
     // comprometio saldo, y si algo se rompe despues es por aqui por donde se empieza a buscar.
     log.info(

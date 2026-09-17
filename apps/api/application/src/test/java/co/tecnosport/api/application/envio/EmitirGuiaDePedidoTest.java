@@ -1,10 +1,12 @@
 package co.tecnosport.api.application.envio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropiaFalsa;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
@@ -47,6 +49,7 @@ class EmitirGuiaDePedidoTest {
   private RepositorioEmisionesFalso emisiones;
   private CotizadorFalso cotizador;
   private EmisorDeGuiasFalso emisor;
+  private EnTransaccionPropiaFalsa transacciones;
   private EmitirGuiaDePedido caso;
   private Variante celular;
 
@@ -57,6 +60,7 @@ class EmitirGuiaDePedidoTest {
     emisiones = new RepositorioEmisionesFalso();
     cotizador = new CotizadorFalso();
     emisor = new EmisorDeGuiasFalso();
+    transacciones = new EnTransaccionPropiaFalsa();
 
     Producto producto =
         Producto.crear(
@@ -87,6 +91,7 @@ class EmitirGuiaDePedidoTest {
             armador,
             new CotizarEnvio(armador, cotizador, () -> AHORA),
             emisor,
+            transacciones,
             () -> AHORA);
   }
 
@@ -116,7 +121,9 @@ class EmitirGuiaDePedidoTest {
                     new Sku("TS-CEL-1"),
                     "Celular de prueba",
                     cantidad,
-                    Dinero.deCop(120_000),
+                    // Distinto del catálogo a propósito: es lo que el comprador pagó, y es lo que
+                    // tiene que viajar como valor declarado.
+                    Dinero.deCop(99_000),
                     new BigDecimal("0.19"),
                     null,
                     GeneradorIdentificador.nuevo())),
@@ -133,6 +140,18 @@ class EmitirGuiaDePedidoTest {
             new Contacto("Comprador de prueba", "3001234567"));
     pedidos.guardar(pedido);
     return pedido;
+  }
+
+  /** La segunda transportadora, para poder comprobar que el reintento cambia de una a otra. */
+  private static TarifaEnvio otraTarifa() {
+    return new TarifaEnvio(
+        "rate-alternativa",
+        "Envía",
+        "Terrestre",
+        Dinero.deCop(9_900),
+        3,
+        false,
+        AHORA.plusSeconds(86_400));
   }
 
   private static TarifaEnvio tarifaDeHoy() {
@@ -274,12 +293,16 @@ class EmitirGuiaDePedidoTest {
   }
 
   /**
-   * Una emisión que ya se resolvió no bloquea: un fallo se reintenta, y la plataforma reembolsó.
+   * Una emisión resuelta no bloquea —un fallo se reintenta y la plataforma reembolsó—, pero el
+   * reintento <strong>no repite transportadora</strong>. El fallo más caro que se ha medido es
+   * determinista: el contador de remisiones de Coordinadora está atascado y falla siempre, y es la
+   * tarifa más barata, o sea la que el selector elige sola. Sin excluirla, cada reintento repetiría
+   * el mismo fracaso.
    */
   @Test
-  void una_emision_fallida_deja_volver_a_intentarlo() {
+  void el_reintento_no_vuelve_a_elegir_la_transportadora_que_fallo() {
     Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
-    cotizador.devolver(tarifaDeHoy());
+    cotizador.devolver(tarifaDeHoy(), otraTarifa());
     emisor.responde(new ResultadoEmision.Aceptada(List.of("e47c61d3")));
     caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"))
         .resolver(EstadoEmision.FALLIDA, "CARRIER_RESPONSE_ERROR", AHORA.plusSeconds(260));
@@ -288,6 +311,38 @@ class EmitirGuiaDePedidoTest {
     caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
 
     assertEquals(2, emisiones.todas().size());
+    assertEquals("Servientrega", emisiones.todas().get(0).transportadora());
+    assertEquals("Envía", emisiones.todas().get(1).transportadora());
+  }
+
+  /** Si la única que queda es la que ya falló, no hay con qué emitir y se dice así. */
+  @Test
+  void si_no_queda_transportadora_sin_intentar_no_hay_cobertura() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("e47c61d3")));
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"))
+        .resolver(EstadoEmision.FALLIDA, "CARRIER_RESPONSE_ERROR", AHORA.plusSeconds(260));
+
+    assertThrows(
+        EnvioSinCoberturaException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+  }
+
+  /**
+   * El valor declarado es el <strong>precio congelado del pedido</strong>, no el del catálogo: es
+   * el monto que la transportadora paga si pierde el paquete, y tiene que coincidir con la factura
+   * contra la que se reclama. Aquí el catálogo vale 120.000 y la línea del pedido, 99.000.
+   */
+  @Test
+  void el_valor_declarado_es_el_que_pago_el_comprador() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+
+    assertEquals(Dinero.deCop(99_000), cotizador.ultima().bultos().getFirst().valorDeclarado());
   }
 
   @Test
@@ -310,9 +365,13 @@ class EmitirGuiaDePedidoTest {
     assertTrue(emisor.solicitudes().isEmpty());
   }
 
-  /** Un rechazo no cuesta saldo y no deja emisión: no hay nada que releer ni que reembolsar. */
+  /**
+   * Un rechazo <strong>deja fila</strong>. Antes no la dejaba, y esa prueba fijaba como deseado lo
+   * que era el defecto: sin fila no queda escrito el {@code idTarifa}, que es lo único que recupera
+   * un envío que la plataforma pudo haber creado.
+   */
   @Test
-  void un_rechazo_de_la_plataforma_no_deja_emision_guardada() {
+  void un_rechazo_de_la_plataforma_deja_la_emision_anotada_como_fallida() {
     Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
     cotizador.devolver(tarifaDeHoy());
     emisor.responde(
@@ -325,7 +384,79 @@ class EmitirGuiaDePedidoTest {
             () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
 
     assertEquals(ResultadoEmision.Motivo.DATOS_RECHAZADOS, error.motivo());
-    assertTrue(emisiones.todas().isEmpty());
+    EmisionDeGuia anotada = emisiones.todas().getFirst();
+    assertEquals(EstadoEmision.FALLIDA, anotada.estado());
+    assertEquals("rate-de-hoy", anotada.idTarifa());
+    assertFalse(anotada.estado().abierta());
+  }
+
+  /**
+   * El caso caro: el proveedor no contestó y <strong>pudo haber cobrado igual</strong> —el {@code
+   * 408} medido creó la guía y descontó 19.465—. No se da por fallida, porque reintentar sobre eso
+   * paga dos veces; queda indeterminada, bloqueando, con la tarifa escrita para poder recuperarla.
+   */
+  @Test
+  void si_el_proveedor_no_contesto_la_emision_queda_indeterminada_y_bloquea() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(
+        new ResultadoEmision.Rechazada(
+            ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, "se agotaron los intentos"));
+
+    assertThrows(
+        EmisionRechazadaException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+
+    EmisionDeGuia anotada = emisiones.todas().getFirst();
+    assertEquals(EstadoEmision.INDETERMINADA, anotada.estado());
+    assertEquals("rate-de-hoy", anotada.idTarifa());
+    assertTrue(anotada.estado().abierta());
+    // Y por eso el pedido no admite otra: la siguiente pagaría encima de algo que pudo cobrarse.
+    assertThrows(
+        EmisionYaEnCursoException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+  }
+
+  /**
+   * La fila se escribe antes de la llamada y el desenlace después: dos transacciones propias, no
+   * una. Si fueran la misma, entre el cobro y la respuesta no habría nada escrito.
+   */
+  @Test
+  void la_emision_se_guarda_antes_de_llamar_y_otra_vez_despues() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(
+        new ResultadoEmision.Rechazada(
+            ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, "se cayó la llamada"));
+
+    assertThrows(
+        EmisionRechazadaException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+
+    assertEquals(2, transacciones.veces());
+  }
+
+  /**
+   * La caché de idempotencia de Skydropx devuelve los mismos envíos para la misma tarifa durante 96
+   * horas, y la cotización se deduplica por contenido. Un reintento puede recibir de vuelta los
+   * envíos muertos del intento anterior: eso no es una emisión nueva, y tratarlo como tal chocaba
+   * contra la unicidad y reventaba con un 500.
+   */
+  @Test
+  void un_eco_de_la_cache_no_se_toma_por_una_emision_nueva() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy(), otraTarifa());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"))
+        .resolver(EstadoEmision.FALLIDA, "murió", AHORA.plusSeconds(260));
+
+    // El proveedor devuelve el mismo envío de la vez anterior.
+    assertThrows(
+        EmisionRechazadaException.class,
+        () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
+
+    assertEquals(2, emisiones.todas().size());
+    assertEquals(EstadoEmision.FALLIDA, emisiones.todas().get(1).estado());
   }
 
   /** Sin tarifa no se emite, y el pedido se queda donde estaba. */

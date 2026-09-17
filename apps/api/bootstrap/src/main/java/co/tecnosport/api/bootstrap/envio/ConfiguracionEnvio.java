@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
@@ -207,6 +208,10 @@ public class ConfiguracionEnvio {
     return new CotizarEnvio(armadorDeBultos, cotizadorEnvio, reloj);
   }
 
+  // `emitirGuiaDePedido` y `resolverEmisionesEnCurso` reciben `EnTransaccionPropia` porque las dos
+  // escriben a los lados de una llamada que cobra: la fila tiene que estar confirmada antes, y el
+  // desenlace tiene que sobrevivir a la excepción que sale después (adr/0033).
+
   @Bean
   public EmitirGuiaDePedido emitirGuiaDePedido(
       RepositorioPedidos repositorioPedidos,
@@ -214,6 +219,7 @@ public class ConfiguracionEnvio {
       ArmadorDeBultos armadorDeBultos,
       CotizarEnvio cotizarEnvio,
       EmisorDeGuias emisorDeGuias,
+      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj) {
     return new EmitirGuiaDePedido(
         repositorioPedidos,
@@ -221,6 +227,7 @@ public class ConfiguracionEnvio {
         armadorDeBultos,
         cotizarEnvio,
         emisorDeGuias,
+        enTransaccionPropia,
         reloj);
   }
 
@@ -234,12 +241,14 @@ public class ConfiguracionEnvio {
       RepositorioEmisiones repositorioEmisiones,
       EmisorDeGuias emisorDeGuias,
       DespacharPedido despacharPedido,
+      EnTransaccionPropia enTransaccionPropia,
       Reloj reloj,
       PropiedadesSeguimientoEnvios propiedades) {
     return new ResolverEmisionesEnCurso(
         repositorioEmisiones,
         emisorDeGuias,
         despacharPedido,
+        enTransaccionPropia,
         reloj,
         propiedades.maximoPorCorrida());
   }

@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.ContenidoDeclarado;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +27,11 @@ import java.util.UUID;
  * cambiara el orden el contenido de una caja iría declarado en otra, y nada fallaría: la guía se
  * emite igual.
  *
- * <p>Lee del catálogo y no de la línea congelada del pedido a propósito. El peso y las medidas son
- * del producto físico, no del precio: si se corrigen porque estaban mal medidos, el despacho tiene
- * que usar los buenos. Lo que sí queda congelado es lo que el comprador pagó, y eso vive en {@code
- * LineaPedido}.
+ * <p>El peso y las medidas se leen del catálogo y no de la línea congelada del pedido, a propósito:
+ * son del producto físico, no del precio, y si se corrigen porque estaban mal medidos el despacho
+ * tiene que usar los buenos. <strong>El valor declarado es al revés</strong> y por eso entra por
+ * {@link LineaAEmpacar}: es el monto que la transportadora paga si pierde el paquete, tiene que
+ * coincidir con la factura, y esa dice lo que el comprador pagó — no lo que el producto cuesta hoy.
  */
 public final class ArmadorDeBultos {
 
@@ -52,17 +54,15 @@ public final class ArmadorDeBultos {
       Producto producto = producto(linea.varianteId());
       Variante variante = variante(producto, linea.varianteId());
       String contenido = ContenidoDeclarado.de(producto.categoria().linea());
+      // El del pedido cuando lo hay —es el que el comprador pagó y contra el que se reclama—, y el
+      // del catálogo cuando todavía no hay pedido, que es el caso del checkout.
+      Dinero valorDeclarado =
+          Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio);
       for (int unidad = 0; unidad < linea.cantidad(); unidad++) {
-        bultos.add(
-            new BultoDespachable(new Bulto(variante.paquete(), variante.precio()), contenido));
+        bultos.add(new BultoDespachable(new Bulto(variante.paquete(), valorDeclarado), contenido));
       }
     }
     return List.copyOf(bultos);
-  }
-
-  /** Solo los bultos, que es lo único que mira la cotización. */
-  public List<Bulto> soloBultos(List<LineaAEmpacar> lineas) {
-    return armar(lineas).stream().map(BultoDespachable::bulto).toList();
   }
 
   private Producto producto(UUID varianteId) {

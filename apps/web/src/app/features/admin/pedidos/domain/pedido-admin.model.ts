@@ -66,19 +66,24 @@ export interface GuiaAdmin {
 }
 
 /** En qué va el intento de que la transportadora emita las guías de un pedido (`adr/0033`). */
-export type EstadoEmision = 'EN_CURSO' | 'EMITIDA' | 'FALLIDA' | 'PARCIAL';
+export type EstadoEmision =
+  'SOLICITADA' | 'EN_CURSO' | 'INDETERMINADA' | 'EMITIDA' | 'FALLIDA' | 'PARCIAL';
 
 /** Lo que el panel sabe de una emisión recién pedida.
  *
  * No trae guías porque todavía no las hay: la plataforma cobra al crear y el número aparece minutos
  * después. Lo que sí dice es con qué transportadora salió y cuántos paquetes son, que es lo que
- * explica por qué un pedido de dos variantes va a traer dos guías y dos cobros. */
+ * explica por qué un pedido de dos variantes va a traer dos guías y dos cobros.
+ *
+ * No trae `detalle` a propósito. El servidor lo guarda —es lo que lee quien tiene que ir a buscar
+ * una guía pagada—, pero está escrito en español dentro de la capa de aplicación y sin pasar por
+ * Transloco: cablearlo hasta aquí es dejar preparado que alguien lo pinte y publique texto de
+ * interfaz que nunca se tradujo. El día que haga falta mostrarlo, va con su llave. */
 export interface EmisionDeGuiaAdmin {
   readonly id: string;
   readonly estado: EstadoEmision;
   readonly transportadora: string;
   readonly cuantosEnvios: number;
-  readonly detalle: string | null;
 }
 
 /** Solo existe una vez despachado el pedido (`docs/02-modelo-datos.md`).

@@ -62,7 +62,7 @@ class MetodosDePagoDisponiblesTest {
     publicarProductoConVariante();
     return new MetodosDePagoDisponibles(
         productos,
-        new CotizarEnvio(productos, cotizador, () -> AHORA),
+        new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA),
         pedidos,
         criterios,
         habilitadosEnPasarela);

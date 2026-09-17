@@ -152,6 +152,5 @@ export function aEmisionDeGuia(dto: EmisionDeGuiaDto): EmisionDeGuiaAdmin {
     estado: (dto.estado ?? 'EN_CURSO') as EstadoEmision,
     transportadora: dto.transportadora ?? '',
     cuantosEnvios: dto.cuantosEnvios ?? 0,
-    detalle: dto.detalle ?? null,
   };
 }

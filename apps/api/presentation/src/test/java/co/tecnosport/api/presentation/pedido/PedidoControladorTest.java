@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
@@ -828,7 +829,7 @@ class PedidoControladorTest {
     @Bean
     CotizarEnvio cotizarEnvio(
         RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
-      return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+      return new CotizarEnvio(new ArmadorDeBultos(repositorioProductos), cotizadorEnvio, reloj);
     }
 
     @Bean

@@ -1,39 +1,74 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.domain.envio.EmisionDeGuia;
+import co.tecnosport.api.domain.envio.EstadoEmision;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 public class RepositorioEmisionesDobleDePrueba implements RepositorioEmisiones {
 
   private final Map<UUID, EmisionDeGuia> emisiones = new LinkedHashMap<>();
 
+  /** Como la base: si el pedido ya tiene otra abierta, esta no entra. */
   @Override
   public void guardar(EmisionDeGuia emision) {
+    emisiones.values().stream()
+        .filter(otra -> !otra.id().equals(emision.id()))
+        .filter(otra -> otra.pedidoId().equals(emision.pedidoId()))
+        .filter(otra -> otra.estado().abierta())
+        .findFirst()
+        .ifPresent(
+            abierta -> {
+              if (emision.estado().abierta()) {
+                throw new EmisionYaEnCursoException(
+                    emision.pedidoId(), abierta.id(), abierta.estado());
+              }
+            });
     emisiones.put(emision.id(), emision);
   }
 
   @Override
-  public Optional<EmisionDeGuia> buscarEnCursoDePedido(UUID pedidoId) {
+  public Optional<EmisionDeGuia> buscarAbiertaDePedido(UUID pedidoId) {
     return emisiones.values().stream()
         .filter(emision -> emision.pedidoId().equals(pedidoId))
-        .filter(emision -> emision.estado().enCurso())
+        .filter(emision -> emision.estado().abierta())
         .findFirst();
   }
 
   @Override
-  public List<EmisionDeGuia> buscarEnCurso(int maximo) {
+  public List<EmisionDeGuia> buscarDePedido(UUID pedidoId) {
     return emisiones.values().stream()
-        .filter(emision -> emision.estado().enCurso())
+        .filter(emision -> emision.pedidoId().equals(pedidoId))
         .sorted(Comparator.comparing(EmisionDeGuia::solicitadaEn))
+        .toList();
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarEnCurso(int maximo) {
+    return porEstado(EstadoEmision.EN_CURSO).limit(maximo).toList();
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarSolicitadasAntesDe(Instant corte, int maximo) {
+    return porEstado(EstadoEmision.SOLICITADA)
+        .filter(emision -> emision.solicitadaEn().isBefore(corte))
         .limit(maximo)
         .toList();
+  }
+
+  private Stream<EmisionDeGuia> porEstado(EstadoEmision estado) {
+    return emisiones.values().stream()
+        .filter(emision -> emision.estado() == estado)
+        .sorted(Comparator.comparing(EmisionDeGuia::solicitadaEn));
   }
 
   public List<EmisionDeGuia> todas() {

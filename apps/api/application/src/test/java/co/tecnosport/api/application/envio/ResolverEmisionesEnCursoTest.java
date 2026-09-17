@@ -3,6 +3,7 @@ package co.tecnosport.api.application.envio;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.EnTransaccionPropiaFalsa;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
@@ -60,6 +61,7 @@ class ResolverEmisionesEnCursoTest {
                 new TextosDeCorreoFalso(),
                 new RelojFalso(AHORA),
                 "https://tecnosport.co/es/checkout/estado"),
+            new EnTransaccionPropiaFalsa(),
             new RelojFalso(AHORA),
             20);
   }
@@ -93,8 +95,8 @@ class ResolverEmisionesEnCursoTest {
 
   private EmisionDeGuia emisionDe(Pedido pedido, String... envios) {
     EmisionDeGuia emision =
-        EmisionDeGuia.solicitada(
-            pedido.id(), "Servientrega", "rate-de-hoy", List.of(envios), AHORA);
+        EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "rate-de-hoy", "admin:test", AHORA);
+    emision.aceptada(List.of(envios), AHORA);
     emisiones.guardar(emision);
     return emision;
   }
@@ -115,7 +117,7 @@ class ResolverEmisionesEnCursoTest {
 
     ResultadoResolucionEmisiones resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoResolucionEmisiones(1, 1, 0, 0, 0, 0), resultado);
+    assertEquals(new ResultadoResolucionEmisiones(1, 1, 0, 0, 0, 0, 0, 0, List.of()), resultado);
     assertEquals(EstadoEmision.EMITIDA, emision.estado());
     assertEquals(EstadoPedido.DESPACHADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
 
@@ -162,7 +164,7 @@ class ResolverEmisionesEnCursoTest {
 
     ResultadoResolucionEmisiones resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 0, 1, 0), resultado);
+    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 0, 1, 0, 0, 0, List.of()), resultado);
     assertEquals(EstadoEmision.EN_CURSO, emision.estado());
     assertTrue(envios.buscarPorPedidoId(pedido.id()).isEmpty());
     assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
@@ -182,7 +184,7 @@ class ResolverEmisionesEnCursoTest {
 
     ResultadoResolucionEmisiones resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoResolucionEmisiones(1, 0, 1, 0, 0, 0), resultado);
+    assertEquals(new ResultadoResolucionEmisiones(1, 0, 1, 0, 0, 0, 0, 0, List.of()), resultado);
     assertEquals(EstadoEmision.FALLIDA, emision.estado());
     assertTrue(emision.detalle().orElseThrow().contains("CARRIER_RESPONSE_ERROR"));
     assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
@@ -204,7 +206,7 @@ class ResolverEmisionesEnCursoTest {
 
     ResultadoResolucionEmisiones resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 1, 0, 0), resultado);
+    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 1, 0, 0, 0, 0, List.of()), resultado);
     assertEquals(EstadoEmision.PARCIAL, emision.estado());
     assertTrue(emision.detalle().orElseThrow().contains("2269401763"));
     assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
@@ -224,7 +226,7 @@ class ResolverEmisionesEnCursoTest {
 
     ResultadoResolucionEmisiones resultado = caso.ejecutar();
 
-    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 0, 0, 1), resultado);
+    assertEquals(new ResultadoResolucionEmisiones(1, 0, 0, 0, 0, 1, 0, 0, List.of()), resultado);
     assertEquals(EstadoEmision.EN_CURSO, emision.estado());
     assertEquals(EstadoPedido.EN_PREPARACION, pedido.estado());
   }
@@ -235,7 +237,8 @@ class ResolverEmisionesEnCursoTest {
     Pedido pedido = pedidoEnPreparacion();
     emisionDe(pedido, "177d1939").resolver(EstadoEmision.FALLIDA, "ya estaba", AHORA);
 
-    assertEquals(new ResultadoResolucionEmisiones(0, 0, 0, 0, 0, 0), caso.ejecutar());
+    assertEquals(
+        new ResultadoResolucionEmisiones(0, 0, 0, 0, 0, 0, 0, 0, List.of()), caso.ejecutar());
   }
 
   /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */

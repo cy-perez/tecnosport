@@ -486,7 +486,9 @@ class AdminPedidosControladorTest {
         .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
         .andExpect(status().isBadGateway());
 
-    assertTrue(emisiones.todas().isEmpty());
+    // Y deja fila: sin ella se pierde la tarifa, que es lo unico que recupera un envio que la
+    // plataforma pudo haber creado antes de decir que no.
+    assertEquals(1, emisiones.todas().size());
   }
 
   @Test
@@ -714,6 +716,9 @@ class AdminPedidosControladorTest {
           armador,
           new CotizarEnvio(armador, cotizadorEnvio, Instant::now),
           emisorDeGuias,
+          // Sin transacciones que separar en un @WebMvcTest: lo que aquí se prueba es el cableado
+          // HTTP, y el orden de las escrituras alrededor del cobro se prueba en su caso de uso.
+          new EnTransaccionPropiaDobleDePrueba(),
           Instant::now);
     }
 

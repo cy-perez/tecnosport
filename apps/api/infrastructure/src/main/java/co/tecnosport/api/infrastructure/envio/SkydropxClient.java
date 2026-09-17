@@ -20,6 +20,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,7 +92,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
   private final Reloj reloj;
   private final MapeadorCotizacionSkydropx mapeador;
   private final MapeadorSeguimientoSkydropx mapeadorSeguimiento;
-  private final MapeadorEmisionSkydropx mapeadorEmision;
+  private final MapeadorEmisionSkydropxV2 mapeadorEmision;
   private final LimitadorDePeticiones limitador;
   private final LimitadorDePeticiones.Pausador pausador;
   private final HttpClient httpClient;
@@ -138,7 +139,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
       Reloj reloj,
       MapeadorCotizacionSkydropx mapeador,
       MapeadorSeguimientoSkydropx mapeadorSeguimiento,
-      MapeadorEmisionSkydropx mapeadorEmision,
+      MapeadorEmisionSkydropxV2 mapeadorEmision,
       LimitadorDePeticiones limitador,
       LimitadorDePeticiones.Pausador pausador,
       HttpClient httpClient) {
@@ -411,19 +412,21 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
             "la creacion del envio respondio " + estado);
       }
       if (estado / 100 == 4) {
-        // El cuerpo entero: cuando la tarifa no resuelve, el 422 no habla de la tarifa sino de los
-        // campos que el envio habria heredado de la cotizacion. La respuesta esta ahi, no en un
-        // motivo que nos inventemos.
+        // Los nombres de los campos que la plataforma rechazo, sin sus valores: cuando la tarifa no
+        // resuelve, el 422 enumera los campos que el envio habria heredado de la cotizacion, y eso
+        // es lo que hace falta para diagnosticar. Los valores no: son el telefono, el nombre y la
+        // direccion del comprador, y docs/08-seguridad-legal.md dice que en el registro no van
+        // datos personales. El camino de cotizacion ya lo cuidaba y este no lo hacia.
         return rechazo(
-            ResultadoEmision.Motivo.DATOS_RECHAZADOS, estado + " " + recortar(respuesta.body()));
+            ResultadoEmision.Motivo.DATOS_RECHAZADOS,
+            estado + " campos rechazados: " + camposRechazados(respuesta.body()));
       }
 
       List<String> envios = mapeadorEmision.enviosCreados(json.readTree(respuesta.body()));
       if (envios.isEmpty()) {
         return rechazo(
             ResultadoEmision.Motivo.RESPUESTA_INESPERADA,
-            "la plataforma acepto la emision y no devolvio ningun envio: "
-                + recortar(respuesta.body()));
+            "la plataforma acepto la emision y no devolvio ningun envio");
       }
       return new ResultadoEmision.Aceptada(envios);
     }
@@ -492,11 +495,28 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
         + " buscarlo en el panel de Skydropx antes de volver a emitir";
   }
 
-  private static String recortar(String cuerpo) {
-    if (cuerpo == null) {
-      return "";
+  /**
+   * Los nombres de los campos que vienen dentro de {@code errors}, y nada mas. Si la respuesta no
+   * tiene esa forma se dice que no la tiene, en vez de volcar el cuerpo: un cuerpo inesperado es
+   * justo donde puede venir cualquier cosa, incluido lo que mandamos.
+   */
+  private String camposRechazados(String cuerpo) {
+    if (cuerpo == null || cuerpo.isBlank()) {
+      return "(respuesta vacia)";
     }
-    return cuerpo.length() <= 600 ? cuerpo : cuerpo.substring(0, 600) + "...";
+    try {
+      JsonNode errores = json.readTree(cuerpo).path("errors");
+      if (errores.isObject()) {
+        List<String> nombres = new ArrayList<>();
+        errores.propertyNames().forEach(nombres::add);
+        if (!nombres.isEmpty()) {
+          return String.join(", ", nombres);
+        }
+      }
+    } catch (RuntimeException e) {
+      // Cae al mensaje generico de abajo.
+    }
+    return "(la respuesta no trae `errors`; no se vuelca por si lleva datos del comprador)";
   }
 
   /**
