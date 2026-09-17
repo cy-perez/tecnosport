@@ -46,7 +46,9 @@ class CotizarEnvioTest {
     cotizador = new CotizadorEnvioFalso();
     caso =
         new CotizarEnvio(
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000)), cotizador, () -> AHORA);
+            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            cotizador,
+            () -> AHORA);
 
     Producto producto =
         Producto.crear(

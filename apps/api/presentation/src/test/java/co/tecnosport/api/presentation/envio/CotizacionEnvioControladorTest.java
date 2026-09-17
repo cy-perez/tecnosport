@@ -89,6 +89,10 @@ class CotizacionEnvioControladorTest {
   }
 
   private String cuerpo() {
+    return cuerpoCon(varianteId);
+  }
+
+  private String cuerpoCon(UUID variante) {
     return """
         {
           "lineas": [ { "varianteId": "%s", "cantidad": 2 } ],
@@ -102,7 +106,7 @@ class CotizacionEnvioControladorTest {
           }
         }
         """
-        .formatted(varianteId);
+        .formatted(variante);
   }
 
   @Test
@@ -164,6 +168,62 @@ class CotizacionEnvioControladorTest {
                 .content(cuerpo()))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.codigo").value("ENVIO_SIN_COBERTURA"));
+  }
+
+  /**
+   * Un artículo que vale más de lo que la transportadora asegura responde 409 con su propio código
+   * y, sobre todo, <strong>nombrando el artículo</strong>: el checkout tiene que poder decir cuál
+   * de las cosas del carrito cambió la entrega sin leerle la prosa al `detail` (adr/0036).
+   */
+  @Test
+  void unArticuloQueSuperaElMaximoAsegurableResponde409ConSuArticulo() throws Exception {
+    UUID varianteCara = catalogoConVarianteCara();
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/cotizacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoCon(varianteCara)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("ARTICULO_NO_ASEGURABLE"))
+        .andExpect(jsonPath("$.articulos[0].varianteId").value(varianteCara.toString()))
+        .andExpect(jsonPath("$.articulos[0].nombre").value("Portátil para diseño"));
+  }
+
+  /** Un producto de 8.000.000, por encima del máximo asegurable de la cuenta. */
+  private UUID catalogoConVarianteCara() {
+    Producto caro =
+        Producto.crear(
+            "Portátil para diseño",
+            new Slug("portatil-para-diseno"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Computadores", new Slug("computadores"), LineaCatalogo.TECNOLOGIA));
+    caro.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn.tecnosport.co/img.jpg",
+            "https://cdn.tecnosport.co/img.webp",
+            800,
+            600,
+            1000,
+            new HashContenido("%064x".formatted(2)),
+            "alt es",
+            "alt en"));
+    Variante variante =
+        Variante.crear(
+            new Sku("TS-PC-M4-16"),
+            Dinero.deCop(8_000_000),
+            new BigDecimal("0.19"),
+            3,
+            null,
+            new Paquete(2200, 40, 30, 5),
+            List.of());
+    caro.agregarVariante(variante);
+    caro.publicar();
+    productos.conProductos(caro);
+    return variante.id();
   }
 
   /**
@@ -230,7 +290,9 @@ class CotizacionEnvioControladorTest {
     @Bean
     CotizarEnvio cotizarEnvio(RepositorioProductos productos, CotizadorEnvio cotizador) {
       return new CotizarEnvio(
-          new ArmadorDeBultos(productos, Dinero.deCop(10_000)), cotizador, () -> AHORA);
+          new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+          cotizador,
+          () -> AHORA);
     }
   }
 

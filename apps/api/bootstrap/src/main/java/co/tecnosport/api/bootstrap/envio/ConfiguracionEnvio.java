@@ -221,14 +221,16 @@ public class ConfiguracionEnvio {
    * armar los bultos <strong>en el mismo orden</strong>: la plataforma empareja los paquetes del
    * envío con los bultos de la cotización por posición.
    *
-   * <p>Aquí es donde el mínimo asegurable de Skydropx deja de llamarse Skydropx: entra como pesos y
-   * {@code application} lo aplica sin saber quién lo exige ({@code adr/0035}).
+   * <p>Aquí es donde el rango asegurable de Skydropx deja de llamarse Skydropx: entra como pesos y
+   * {@code application} lo aplica sin saber quién lo exige ({@code adr/0035}, {@code adr/0036}).
    */
   @Bean
   public ArmadorDeBultos armadorDeBultos(
       RepositorioProductos repositorioProductos, PropiedadesSkydropx propiedades) {
     return new ArmadorDeBultos(
-        repositorioProductos, Dinero.deCop(propiedades.valorDeclaradoMinimo()));
+        repositorioProductos,
+        Dinero.deCop(propiedades.valorDeclaradoMinimo()),
+        Dinero.deCop(propiedades.valorDeclaradoMaximo()));
   }
 
   @Bean

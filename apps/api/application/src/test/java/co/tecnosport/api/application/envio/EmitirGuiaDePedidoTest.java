@@ -83,7 +83,8 @@ class EmitirGuiaDePedidoTest {
     // despacha es el paquete de la variante, no la vitrina.
     productos.conProductos(producto);
 
-    ArmadorDeBultos armador = new ArmadorDeBultos(productos, Dinero.deCop(10_000));
+    ArmadorDeBultos armador =
+        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
     caso =
         new EmitirGuiaDePedido(
             pedidos,

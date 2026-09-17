@@ -63,7 +63,9 @@ class MetodosDePagoDisponiblesTest {
     return new MetodosDePagoDisponibles(
         productos,
         new CotizarEnvio(
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000)), cotizador, () -> AHORA),
+            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            cotizador,
+            () -> AHORA),
         pedidos,
         criterios,
         habilitadosEnPasarela);
@@ -104,6 +106,41 @@ class MetodosDePagoDisponiblesTest {
     producto.agregarVariante(variante);
     producto.publicar();
     productos.conProductos(producto);
+  }
+
+  /** Reemplaza el catálogo por un producto de 8.000.000: por encima del máximo asegurable. */
+  private void publicarProductoCaro() {
+    Producto caro =
+        Producto.crear(
+            "Portátil para diseño",
+            new Slug("portatil-para-diseno"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Computadores", new Slug("computadores"), LineaCatalogo.TECNOLOGIA));
+    caro.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn.tecnosport.co/img.jpg",
+            "https://cdn.tecnosport.co/img.webp",
+            800,
+            600,
+            1000,
+            new HashContenido("%064x".formatted(2)),
+            "alt es",
+            "alt en"));
+    variante =
+        Variante.crear(
+            new Sku("TS-PC-M4-16"),
+            Dinero.deCop(8_000_000),
+            new BigDecimal("0.19"),
+            3,
+            null,
+            new Paquete(2200, 40, 30, 5),
+            List.of());
+    caro.agregarVariante(variante);
+    caro.publicar();
+    productos.conProductos(caro);
   }
 
   private MetodosDePagoDisponiblesComando comando(TipoEntrega tipoEntrega, Direccion direccion) {
@@ -199,6 +236,24 @@ class MetodosDePagoDisponiblesTest {
         caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
 
     assertTrue(disponibles.contains(MetodoPago.CONTRAENTREGA));
+  }
+
+  /**
+   * Un artículo que supera el máximo asegurable no puede tumbar esta consulta. Es el punto donde
+   * {@code adr/0036} se rompería en silencio: el comprador vería el checkout caído en vez de la
+   * recogida en el punto, que es justo la salida que esa decisión le deja.
+   */
+  @Test
+  void unArticuloNoAsegurableDejaLaConsultaSinEnvioPeroNoLaTumba() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.conTarifaQueRecauda();
+    publicarProductoCaro();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+    assertFalse(disponibles.isEmpty());
   }
 
   @Test
