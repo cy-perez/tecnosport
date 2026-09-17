@@ -441,7 +441,8 @@
     },
     "estados_emision": {
       "indeterminada": "No response, possible charge",
-      "parcial": "Partial, with unused labels"
+      "parcial": "Partial, with unused labels",
+      "sin_anular": "Label not voided, may still be live"
     },
     "acciones": {
       "abrir": "Mark as reviewed",

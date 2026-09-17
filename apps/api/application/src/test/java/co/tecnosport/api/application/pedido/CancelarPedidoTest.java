@@ -8,11 +8,14 @@ import co.tecnosport.api.application.compartido.RelojFalso;
 import co.tecnosport.api.application.compartido.RepositorioReintegrosFalso;
 import co.tecnosport.api.application.compartido.RepositorioSolicitudesReversionFalso;
 import co.tecnosport.api.application.compartido.TextosDeCorreoFalso;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.EmisionDeGuia;
+import co.tecnosport.api.domain.envio.EstadoEmision;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
@@ -46,6 +49,8 @@ class CancelarPedidoTest {
   private final RepositorioSolicitudesReversionFalso reversionesParaElTope =
       new RepositorioSolicitudesReversionFalso();
   private final EnviadorDeCorreoFalso correos = new EnviadorDeCorreoFalso();
+  private final RepositorioEmisionesFalso emisiones = new RepositorioEmisionesFalso();
+  private final EmisorDeGuiasFalso emisor = new EmisorDeGuiasFalso();
 
   private UUID varianteId;
   private UUID idReserva;
@@ -55,6 +60,8 @@ class CancelarPedidoTest {
         pedidos,
         inventarios,
         reintegros,
+        emisiones,
+        emisor,
         new TopeDeReintegro(reintegros, reversionesParaElTope),
         correos,
         new TextosDeCorreoFalso(),
@@ -292,5 +299,130 @@ class CancelarPedidoTest {
                         null,
                         null,
                         "admin:1")));
+  }
+
+  // --- la guía del pedido cancelado -------------------------------------------------------------
+
+  /**
+   * Una emisión por pedido y un envío por bulto: dos bultos son dos envíos, y se piden por separado
+   * porque la plataforma los cancela por separado.
+   */
+  private EmisionDeGuia emisionEmitidaDe(Pedido pedido, String... envios) {
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "tarifa-1", "admin:1", AHORA);
+    emision.aceptada(List.of(envios), AHORA);
+    emision.resolver(EstadoEmision.EMITIDA, null, AHORA);
+    emisiones.guardar(emision);
+    return emision;
+  }
+
+  private void cancelar(Pedido pedido) {
+    casoDeUso()
+        .ejecutar(
+            new CancelarPedidoComando(
+                pedido.id(),
+                MotivoCancelacion.NO_DISPONIBILIDAD,
+                BigDecimal.valueOf(50_000),
+                MedioReintegro.WOMPI,
+                "DEV-1",
+                "admin:1"));
+  }
+
+  @Test
+  void cancelarUnPedidoConGuiaEmitidaLaAnulaEnLaPlataforma() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1", "envio-2");
+
+    cancelar(pedido);
+
+    assertEquals(List.of("envio-1", "envio-2"), emisor.cancelados(), "un envío, una llamada");
+    assertEquals(EstadoEmision.ANULADA, emision.estado());
+  }
+
+  /**
+   * La regla que ordena todo lo demás. Si la plataforma no anula, el comprador igual recupera su
+   * plata: dejar el pedido sin cancelar por un proveedor caído convertiría un problema nuestro en
+   * uno suyo.
+   */
+  @Test
+  void siLaPlataformaNoAnulaElPedidoSeCancelaIgualYLaEmisionPideOjoHumano() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1");
+    emisor.alCancelarResponde(new ResultadoCancelacion.NoSePudo("la plataforma respondio 500"));
+
+    cancelar(pedido);
+
+    assertEquals(EstadoPedido.CANCELADO, pedido.estado(), "el pedido se cancela igual");
+    assertEquals(1, reintegros.guardados().size(), "y el dinero vuelve igual");
+    assertEquals(5, inventarioDeLaLinea().saldoTotal(), "y el inventario también");
+    assertEquals(EstadoEmision.SIN_ANULAR, emision.estado());
+    assertTrue(emision.estado().exigeOjoHumano(), "sale en la bandeja de revisión");
+    assertTrue(
+        emision.detalle().orElseThrow().contains("envio-1"),
+        "el detalle nombra el envío que hay que anular a mano");
+  }
+
+  /**
+   * Con un envío anulado y otro en duda, la emisión entera pide ojo humano. El que quedó vivo es el
+   * que cuesta, y contarla como anulada porque la mayoría salió bien esconde justo eso.
+   */
+  @Test
+  void bastaConQueUnEnvioQuedeEnDudaParaQueLaEmisionNoCuenteComoAnulada() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    EmisionDeGuia emision = emisionEmitidaDe(pedido, "envio-1", "envio-2");
+    emisor.alCancelarResponde(new ResultadoCancelacion.NoSePudo("sin respuesta"));
+
+    cancelar(pedido);
+
+    assertEquals(EstadoEmision.SIN_ANULAR, emision.estado());
+  }
+
+  /**
+   * Una emisión fallida ya fue reembolsada por la plataforma y no tiene nada vivo. Pedir su
+   * anulación sería gastar una llamada contra un proveedor limitado a dos peticiones por segundo
+   * para que responda que no hay nada.
+   */
+  @Test
+  void unaEmisionFallidaNoSeIntentaAnular() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "tarifa-1", "admin:1", AHORA);
+    emision.resolver(EstadoEmision.FALLIDA, "la transportadora no la acepto", AHORA);
+    emisiones.guardar(emision);
+
+    cancelar(pedido);
+
+    assertTrue(emisor.cancelados().isEmpty());
+    assertEquals(EstadoEmision.FALLIDA, emision.estado());
+  }
+
+  /**
+   * Una emisión sin identificadores no se puede anular por API, y aun así puede tener algo vivo: la
+   * petición pudo salir. Darla por limpia es justo el silencio que deja una guía cobrable suelta.
+   */
+  @Test
+  void unaEmisionSinIdentificadoresVaALaBandejaEnVezDeDarsePorLimpia() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "tarifa-1", "admin:1", AHORA);
+    emisiones.guardar(emision);
+
+    cancelar(pedido);
+
+    assertTrue(emisor.cancelados().isEmpty(), "no hay a quién pedírselo");
+    assertEquals(EstadoEmision.SIN_ANULAR, emision.estado());
+    assertTrue(
+        emision.detalle().orElseThrow().contains("tarifa-1"),
+        "el detalle lleva la tarifa, que es con lo que se busca en el panel");
+  }
+
+  /** Lo más común: un pedido que nunca llegó a pedir guía no llama a la plataforma. */
+  @Test
+  void unPedidoSinEmisionNoLlamaALaPlataforma() {
+    Pedido pedido = pedidoEn(EstadoPedido.PAGADO, MetodoPago.NEQUI);
+
+    cancelar(pedido);
+
+    assertTrue(emisor.cancelados().isEmpty());
   }
 }

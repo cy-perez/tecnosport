@@ -90,8 +90,16 @@ class AcuseDeRevisionTest {
     assertFalse(EstadoEnvio.nombresQueExigenRevisionManual().contains("ENTREGADO"));
   }
 
+  /**
+   * Eran dos y son tres desde que cancelar un pedido anula sus guías. El conjunto se afirma entero
+   * y no por contención a propósito: lo que esta prueba cuida es que un estado nuevo que pida ojo
+   * humano no aparezca en la bandeja sin que nadie lo haya decidido, y también que ninguno
+   * desaparezca de ella por descuido. Que haya que tocarla al añadir uno es el punto.
+   */
   @Test
-  void los_nombres_de_emision_que_exigen_ojo_humano_son_dos() {
-    assertEquals(Set.of("INDETERMINADA", "PARCIAL"), EstadoEmision.nombresQueExigenOjoHumano());
+  void los_nombres_de_emision_que_exigen_ojo_humano_son_tres() {
+    assertEquals(
+        Set.of("INDETERMINADA", "PARCIAL", "SIN_ANULAR"),
+        EstadoEmision.nombresQueExigenOjoHumano());
   }
 }

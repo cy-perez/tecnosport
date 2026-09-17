@@ -276,4 +276,86 @@ class EmisionDeGuiaTest {
     assertThrows(ExcepcionDeDominio.class, () -> emitida.descartadaSinCobro("no", AHORA));
     assertThrows(ExcepcionDeDominio.class, () -> emitida.recuperada(List.of("env-2"), AHORA));
   }
+
+  // --- la anulación que sigue a cancelar el pedido ----------------------------------------------
+
+  @Test
+  void anular_deja_la_emision_anulada_y_con_fecha() {
+    EmisionDeGuia emitida = enCurso("env-1");
+    emitida.resolver(EstadoEmision.EMITIDA, null, AHORA);
+
+    emitida.anulada(AHORA);
+
+    assertEquals(EstadoEmision.ANULADA, emitida.estado());
+    assertEquals(AHORA, emitida.resueltaEn().orElseThrow());
+    assertFalse(emitida.estado().exigeOjoHumano());
+  }
+
+  /**
+   * Se puede anular desde cualquier punto de la vida de la emisión menos la fallida, porque
+   * cancelar un pedido puede alcanzarla en cualquiera: recién solicitada, en curso, emitida o
+   * parcial.
+   */
+  @Test
+  void una_emision_en_curso_tambien_se_puede_anular() {
+    EmisionDeGuia emision = enCurso("env-1");
+
+    emision.anulada(AHORA);
+
+    assertEquals(EstadoEmision.ANULADA, emision.estado());
+  }
+
+  /** La fallida no: la plataforma ya reembolsó y no hay nada vivo que anular. */
+  @Test
+  void una_emision_fallida_no_tiene_nada_que_anular() {
+    EmisionDeGuia fallida = solicitada();
+    fallida.resolver(EstadoEmision.FALLIDA, "la transportadora no la acepto", AHORA);
+
+    assertThrows(ExcepcionDeDominio.class, () -> fallida.anulada(AHORA));
+    assertThrows(ExcepcionDeDominio.class, () -> fallida.sinAnular("lo que sea", AHORA));
+  }
+
+  @Test
+  void sin_anular_pide_ojo_humano_y_guarda_el_detalle() {
+    EmisionDeGuia emitida = enCurso("env-1");
+    emitida.resolver(EstadoEmision.EMITIDA, null, AHORA);
+
+    emitida.sinAnular("env-1: la plataforma respondio 500", AHORA);
+
+    assertEquals(EstadoEmision.SIN_ANULAR, emitida.estado());
+    assertTrue(emitida.estado().exigeOjoHumano());
+    assertEquals("env-1: la plataforma respondio 500", emitida.detalle().orElseThrow());
+  }
+
+  /**
+   * La idempotencia es asimétrica a propósito: un reintento que consigue anular corrige al que no
+   * pudo, y el camino contrario inventaría una guía viva que ya no existe.
+   */
+  @Test
+  void un_reintento_que_anula_corrige_al_que_no_pudo_pero_no_al_reves() {
+    EmisionDeGuia emision = enCurso("env-1");
+    emision.resolver(EstadoEmision.EMITIDA, null, AHORA);
+    emision.sinAnular("sin respuesta", AHORA);
+
+    emision.anulada(AHORA);
+    assertEquals(EstadoEmision.ANULADA, emision.estado());
+
+    emision.sinAnular("sin respuesta otra vez", AHORA);
+    assertEquals(EstadoEmision.ANULADA, emision.estado(), "no degrada lo ya anulado");
+  }
+
+  /**
+   * Anular no es resolver, y el dominio lo separa: {@code resolver} exige partir de una emisión
+   * abierta y aquí se parte de una ya resuelta. Si ANULADA contara como estado de resolución, un
+   * {@code resolver} podría convertir una guía emitida en anulada sin haber llamado a nadie.
+   */
+  @Test
+  void resolver_no_acepta_los_estados_de_anulacion() {
+    EmisionDeGuia emision = enCurso("env-1");
+
+    assertThrows(
+        ExcepcionDeDominio.class, () -> emision.resolver(EstadoEmision.ANULADA, null, AHORA));
+    assertThrows(
+        ExcepcionDeDominio.class, () -> emision.resolver(EstadoEmision.SIN_ANULAR, null, AHORA));
+  }
 }
