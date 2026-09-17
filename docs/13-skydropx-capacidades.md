@@ -153,7 +153,7 @@ reprogramación una función real del panel, no un adorno.
 
 | Palanca | Estado | Qué permite |
 |---|---|---|
-| Crear la guía desde una tarifa | ✅ | `quotation_id` + `rate_id` |
+| Crear la guía desde una tarifa | ✅ | **Solo `rate_id`**, por `POST /api/v2/shipments`. ~~`quotation_id` + `rate_id`~~: `quotation_id` **no es un campo del envío** (§6.4), y v2 es la que devuelve un arreglo de envíos, que es lo que exige el multienvío (§6.10) |
 | Crear sin cotizar antes | ✅ | `rate-shipments`, útil para reexpedir |
 | Cancelar una guía | ✅ | `cancellations` |
 | Asegurar el envío | ✅ | `protect`, por envío |
@@ -174,7 +174,8 @@ Dos endpoints que los ADR no usan y deberían:
 
 | Palanca | Estado | Qué permite |
 |---|---|---|
-| Consultar por guía | ✅ | `GET /shipments/tracking/{guia}/{transportadora}` |
+| Consultar por guía | ✅ | `GET /shipments/tracking/{guia}/{transportadora}`, donde la transportadora es el **código de la plataforma** y no su nombre visible —"99 minutes" es `ninetynineminutes`—, y el código no se deriva del nombre: viene en la respuesta del envío (§6.8) |
+| Distinguir "sin eventos" de "guía que no existe" | ⚠️ | No se puede: los dos son `404`. Una guía tecleada a mano, sin código de transportadora, se salta y **se cuenta** en el registro de la tarea, en vez de contarse como "sin novedad" (§6.8) |
 | Webhook de eventos | ✅ | Sección leída el 14 (§6.1) y ejemplos de cuerpo confirmados el 15 (§6.2, §6.4). Ojo: `data.id` es el **paquete** |
 | Cabecera y algoritmo de firma | ✅ | `Authorization: HMAC <firma>`, HMAC-SHA512 sobre los bytes crudos, hex en minúsculas (§6.1) |
 | Lista y nombre de los eventos | ✅ | Los doce de `ADR-0022`, en el mismo orden, declarados en el enum del OpenAPI (§6.3) |
@@ -255,14 +256,21 @@ mueva hay un paso con nombre propio.
    sabe que **99 minutos y Envía solo recogen por soporte**, mientras
    Coordinadora, Inter Rapidísimo y Servientrega sí responden por API. Con
    corte a las 12:00 y sin fines de semana.
-   **Ejercida contra el sandbox el 15 y el 16 de septiembre (§6.6, §6.7)**: el endpoint
-   valida, exige el envío en `success` y exige el barrio del origen, que solo llega si se
-   mandó en la cotización. Con una guía viva pero sin barrio falla igual; falta una
-   emisión más, y el saldo no da.
-   Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
-   se puede ofrecer** (su endpoint no responde) y **99 minutos, la que más cotiza,
-   no recoge por API** — si el despacho elige siempre la más barata, va a acabar
-   pidiendo recolecciones por correo.
+   **Ejercida contra el sandbox el 15, el 16 y el 17 de septiembre (§6.6, §6.7, §6.10,
+   §6.11)**: el endpoint valida, exige el envío en `success` y exige el barrio del origen,
+   que solo llega si se mandó en la cotización.
+   **Y con el barrio puesto, la decisión dejó de estar en nuestras manos**: `POST /pickups`
+   responde `422 ECONNREFUSED at PICKUP` en los cinco intentos, en dos días y dos horas
+   distintas, con dos envíos distintos. El conector de la transportadora está caído y no hay
+   fecha. **Hoy la recolección se programa a mano en el panel de Skydropx**, y esto no se
+   puede cerrar construyendo.
+   ~~Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
+   se puede ofrecer** (su endpoint no responde)~~ **La cobertura sí se puede ofrecer**:
+   `GET /pickups/coverage` responde `200` con fechas reales desde que el envío lleva barrio
+   (§6.10). Lo que se mantiene es que **99 minutos y Envía no recogen por API** — y Envía es
+   la más barata de las que **sí emiten** en esta cuenta, o sea la que el selector por precio
+   acaba eligiendo. Si el despacho elige siempre la más barata, va a acabar pidiendo las
+   recolecciones por fuera de la API.
 2. ~~**Un bulto o varios.**~~ **Decidido el 11 de septiembre de 2026: un `parcel`
    por variante.** Es lo que el modelo ya sabe —cada variante tiene su `Paquete`
    con peso y medidas reales— y evita inventar las dimensiones de una caja
@@ -275,8 +283,15 @@ mueva hay un paso con nombre propio.
    porcentaje del valor declarado.
 4. **Validar la dirección** con `verify_by_carriers` antes de cobrar, o no.
 5. **Entrega en oficina** como tercera forma de entrega, o no en esta fase. La API
-   quedó confirmada el 15 de septiembre (§6.2) y **ninguna transportadora del
-   sandbox la ofrece hoy**, así que la decisión sigue abierta sin poder probarse.
+   quedó confirmada el 15 de septiembre (§6.2) y ~~ninguna transportadora del sandbox la
+   ofrece hoy, así que la decisión sigue abierta sin poder probarse~~ **se volvió a medir el
+   17 con las tarifas vivas (§6.12)**: las cuatro que cotizan declaran
+   `office_delivery: false` y su catálogo de puntos responde `200` con cero puntos. Ya no es
+   una suposición sobre tarifas muertas, y con eso **la decisión se puede tomar: no se
+   construye**, porque sería una pantalla a la que nadie puede llegar. Queda escrita una
+   advertencia para el día que alguna transportadora la ofrezca: la lista de oficinas de
+   Inter Rapidísimo incluye oficinas de ciudades vecinas, así que la elegida hay que
+   cotejarla contra el DANE del pedido antes de aceptarla.
 6. **Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
    jueves. Es una decisión contable, no técnica.
 7. **Cancelar la guía** cuando se cancela un pedido ya despachado. El endpoint y su
@@ -422,7 +437,7 @@ recortadas, no reescritas— viven como fixtures en
   seguro siguen sin confirmar, y la cifra de COP 2.000 / COP 2.000.000 que cita
   `ADR-0023` sigue sin aparecer en ninguna fuente.
 - ✅ **La forma de `POST /shipments`, medida el 12 de septiembre de 2026.** El
-  cuerpo va envuelto en `shipment` y lleva `quotation_id`, `rate_id`,
+  cuerpo va envuelto en `shipment` y lleva ~~`quotation_id`,~~ `rate_id`,
   `address_from`, `address_to` y `parcels`. Lo dijo el propio 422 al mandarle
   solo los dos identificadores, y trae **dos exigencias que no estaban en
   ninguna parte**:
@@ -434,6 +449,11 @@ recortadas, no reescritas— viven como fixtures en
   - Cada bulto pide **`package_type` y `package_content`**: qué tipo de empaque
     es y qué va dentro, en texto.
 
+  > **`quotation_id` no va, y este párrafo es el origen del error**: lo desmintió el
+  > OpenAPI en §6.4 y lo confirmó la emisión real en §6.10. Se coló porque aquel `422`
+  > enumeraba los campos que el envío **hereda** de la cotización, no los que hay que
+  > mandarle. Un mensaje de error es una pista sobre qué falta, no un esquema.
+
   **Lo que se decidió el 14 de septiembre de 2026** para los tres datos que esto
   dejó abiertos (el detalle y el porqué, en `docs/09-plan-de-arranque.md`, paso 7):
 
@@ -443,9 +463,12 @@ recortadas, no reescritas— viven como fixtures en
   | `address_from.email` | `contacto@tecnosport.co`, ya implementado como `ORIGEN_CORREO` |
   | `package_content` | Genérico por línea de catálogo, **y el mapa vive en `ContenidoDeclarado` (`domain/envio`), no en esta tabla** — coincide con el contenido real para sostener una reclamación, sin anunciar en la etiqueta qué va dentro |
 
-  `package_type` sigue sin decidirse porque **no es un dato de negocio sino un
+  ~~`package_type` sigue sin decidirse porque **no es un dato de negocio sino un
   valor del catálogo de Skydropx**, y su lista de valores válidos no se ha podido
-  leer sin emitir una guía.
+  leer sin emitir una guía.~~ **El catálogo se leyó el 15 de septiembre sin emitir
+  nada (§6.5)**: son 59 códigos de embalaje de la ONU y el que aplica es **`4G`,
+  caja de cartón**. Sigue sin ser un dato de negocio; es una elección de operación,
+  y ya está tomada.
 
   **Por qué el mapa de `package_content` ya no se escribe aquí.** Esta tabla lo
   tuvo, y decía `CELULARES` → "Equipo de telefonía móvil". Ese mismo 14 de
@@ -1386,10 +1409,13 @@ valor declarado se sale del rango. Ya se puede poner precio a la decisión.
 - ~~**Qué se hace con el bulto que declara menos de 10.000.**~~ **Cerrado el 17 de septiembre
   de 2026 con `ADR-0035`: se eleva al mínimo.** Agrupar obligaba a inventar las dimensiones de
   una caja combinada; ofrecer solo recogida castigaba un pedido de 400.000 por un cable de 8.000.
-  El `TODO` del mapeador murió con la decisión. **Lo que abrió**: el rango tiene otro extremo
+  El `TODO` del mapeador murió con la decisión. ~~**Lo que abrió**: el rango tiene otro extremo
   —el panel lo acota entre 10.000 y 5.000.000 (§6.5)— y arriba nadie ha medido si la API lo
-  valida. Recortar no sería simétrico a elevar: declarar un celular de seis millones en cinco
-  deja el resto sin asegurar.
+  valida.~~ **Medido el mismo día (§6.13): la API valida un techo de 5.000.000 exactos, con un
+  `422` simétrico al del mínimo y también por bulto.** Recortar no es simétrico a elevar
+  —declarar un celular de ocho millones en cinco deja el resto sin asegurar y esa diferencia la
+  pone el negocio—, así que se decidió lo contrario: ese artículo **no va a domicilio y el
+  checkout lo dice nombrándolo** (`ADR-0036`).
 - ~~**`package_type`**: pedir el catálogo a `GET /shipments/packagings` y elegir.~~
   Catálogo leído (§6.5): 59 códigos de embalaje de la ONU, y el que aplica es `4G`,
   caja de cartón. Queda como elección de operación, no como incógnita.
@@ -1398,15 +1424,20 @@ valor declarado se sale del rango. Ya se puede poner precio a la decisión.
   cotización corregida, esa tarifa emite `202`.
 - **Cuánto esperar a una tarifa en `pending`** cuando la cotización ya volvió
   `is_completed` (§6.5). Decisión de ADR con un tope en segundos.
-- **Cerrar la recolección** (§6.6): qué campo es "address2" y programar una de verdad.
-  Cuesta una emisión, y hay que hacerla **en horario hábil**.
+- ~~**Cerrar la recolección** (§6.6): qué campo es "address2" y programar una de verdad.
+  Cuesta una emisión, y hay que hacerla **en horario hábil**.~~ **Las dos mitades se
+  resolvieron y ninguna era de la hora**: "address2" es el **barrio**, y viaja por la
+  cotización, no por el envío (§6.7, §6.10); programar una de verdad **no depende de
+  nosotros**, porque el conector responde `ECONNREFUSED` también en horario hábil (§6.11).
 - **Si el valor declarado del pedido contraentrega incluye el flete** (§6.5).
   `recipient_pays_shipping` no lo suma; declararlo sube también el seguro.
 - **El recargo de recaudo no pedido de `rate/shipments`** (§6.2). Sigue descartado el
   endpoint, así que es curiosidad, no bloqueo.
-- **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias guías,
-  o consolidar. Sin decidir, y ahora con más información: cada guía se cancela y se rastrea
-  sola, y el envío tiene un `master_tracking_number` que las agrupa.
+- ~~**El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias guías,
+  o consolidar. Sin decidir~~ **Decidido en `ADR-0031`: un `Envio` con varias `GuiaEnvio`**,
+  cada una con su transportadora, su costo y su propio rastro de eventos. Lo que lo decidió es
+  que cada guía se recoge, se entrega y se cobra sola — el costo vive en la guía y no en el
+  envío, porque repartirlo a mano sería inventarlo.
 
 ### 6.5 Los dos pendientes que dejó §6.4, medidos (2026-09-15, cuarta parte)
 
@@ -1538,7 +1569,12 @@ error, dos en `success`, de tres transportadoras— y siempre
 especificación promete llenar. No es obligatoria para programar, pero hoy no se puede
 usar para ofrecer fechas.
 
-#### Por qué no se cerró: las transportadoras, de noche, no emiten
+> **Corregido el 17 de septiembre (§6.10, §6.11): el `422` era nuestro.** Las cuatro
+> guías se habían emitido **sin barrio**, y el barrio viaja por la cotización. Con
+> `area_level3` puesto, `GET /pickups/coverage` responde `200` con fechas reales. La
+> cobertura sí se puede ofrecer; lo que no responde es `POST /pickups`.
+
+#### ~~Por qué no se cerró: las transportadoras, de noche, no emiten~~ Por qué no se cerró, y la causa que se escribió aquí era falsa
 
 Tres emisiones, tres muertes **minutos después del `202`**, y las tres con el saldo
 devuelto entero:
@@ -1549,9 +1585,25 @@ devuelto entero:
 | Servientrega | `500 {"error":""} at LABEL_NUMBER` — un quinientos vacío |
 
 Servientrega había emitido bien esa misma mañana y 99 minutes una hora antes. Eran las
-22:30. **La intermitencia que `§6.3` anotó y subestimó tiene, con toda probabilidad,
-horario**: de noche los sistemas de las transportadoras no responden. Conviene
-programar las pruebas de emisión en horario hábil.
+22:30. ~~**La intermitencia que `§6.3` anotó y subestimó tiene, con toda probabilidad,
+horario**: de noche los sistemas de las transportadoras no responden. Conviene programar
+las pruebas de emisión en horario hábil.~~
+
+> **Falso, y costó dos sesiones creerlo. Desmentido el 16 y el 17 de septiembre
+> (§6.10, §6.11).** Las dos muertes de esta tabla tienen cada una su causa, y ninguna es
+> la hora:
+>
+> - **Coordinadora**: su contador de remisiones está atascado y devuelve el mismo
+>   `codigo_remision` a las 22:30 y a las 18:35. Es **determinista** — en este sandbox no
+>   puede emitir nunca, y es además la tarifa más barata de la cuenta, o sea la que un
+>   selector por precio elige sola (§6.10).
+> - **Servientrega**: emitió bien en horario hábil. Lo que no responde es su conector de
+>   **recolección**, `ECONNREFUSED at PICKUP`, también a las 10:20 de un jueves (§6.11).
+>
+> La lección vale más que el dato, y por eso se deja la frase tachada en vez de borrarla:
+> ***"falló de noche" no es una causa, es una coincidencia con una sola observación
+> detrás.*** Este documento la escribió dos veces —aquí y en la recolección— y las dos
+> veces mandó a la sesión siguiente a "reintentar en horario hábil", que no arregla nada.
 
 **Saldo: intacto, 8.588.** Las tres fallidas se reembolsaron solas.
 
@@ -1562,10 +1614,15 @@ programar las pruebas de emisión en horario hábil.
 
 Eso le pone una condición al despacho que ningún ADR contempla: **un pedido no se marca
 despachado con la respuesta de creación**. Hay que esperar el estado terminal —releyendo
-el envío o por el webhook— y tener una rama para `error` que devuelva el pedido a la cola
+el envío o por el webhook— ~~y tener una rama para `error` que devuelva el pedido a la cola~~
 en vez de dejarlo con una guía que no existe y que nadie va a recoger. Es el mismo
 género del `408` de `§6.2`, pero al revés: allí el `408` había creado la guía; aquí el
 `202` no la creó.
+
+> **La condición se cumplió en `ADR-0033`, y la "cola" resultó no existir.** El pedido no
+> sale de `EN_PREPARACION` hasta que la guía viva, así que una emisión que muere **nunca
+> movió nada**: no hay cola a la que devolverlo ni inventario que tocar. Lo que parecía el
+> trozo caro de este paso desapareció al poner la transición donde iba.
 
 #### Lo que falta, y cuesta una sola emisión
 
@@ -1580,6 +1637,11 @@ horario hábil. Con 8.588 de saldo alcanza.
 > **Se hizo al día siguiente y no bastó (§6.7).** La guía vivió, la recolección volvió a
 > pedir el `address2`, y resultó que el campo que falta —el barrio— **no se puede mandar
 > en el envío**: viaja por la cotización. Lo que sí quedó cerrado es cuál es el campo.
+>
+> **Y el punto 2 no se cierra con saldo (§6.10, §6.11).** Con el barrio puesto, la
+> cobertura responde `200` con fechas y `POST /pickups` sigue respondiendo
+> `422 ECONNREFUSED at PICKUP` — cinco intentos, dos días, dos horas. Esta lista pedía una
+> emisión; lo que falta es que el proveedor levante su conector.
 
 ### 6.7 La guía viva, y el barrio que falta (2026-09-16, sexta parte)
 
@@ -1607,10 +1669,17 @@ espera entre el `202` y el estado terminal dura minutos y pasa por tres estados 
 terminales** —`in_progress`, `pending`, `creation_waiting`—. El despacho no puede
 marcarse con la respuesta de creación.
 
-Y de paso, la intermitencia de `§6.6` queda confirmada por el otro lado: **de día, a la
-primera y sin reintentos.** Se emitió con Servientrega, forzada, porque era la que había
+~~Y de paso, la intermitencia de `§6.6` queda confirmada por el otro lado: **de día, a la
+primera y sin reintentos.**~~ Se emitió con Servientrega, forzada, porque era la que había
 emitido bien de día; Coordinadora estaba 2.209 más barata y probablemente habría servido,
 pero su contador de remisiones venía atascado esa noche y no era el día de averiguarlo.
+
+> **Esa lectura era la trampa, y aquí se ve entera.** Una emisión de día que sale bien no
+> confirma ninguna intermitencia horaria: confirma que esa emisión salió bien. La sospecha
+> sobre el contador de Coordinadora ya estaba escrita en este mismo párrafo —"venía
+> atascado"— y aun así la conclusión que se llevó la sesión siguiente fue la de la hora.
+> **Se midió el 16 y el 17 (§6.10, §6.11): Coordinadora falla siempre y el conector de
+> recolección está caído también a las 10:20 de un jueves.**
 
 Y un dato suelto que se llevó por delante un pendiente de `§6.3`: **esta guía sí
 trajo `label_url`** —`https://sb-pro.skydropx.com/s/s?id=…`—, cuando la del 15 no
@@ -1835,7 +1904,7 @@ la diferencia estaba en cómo se transcribió la lista, no en la plataforma. Val
 porque el modo de fallo es real: los códigos de un tercero se cotejan contra la fuente, no
 contra una lista copiada a mano.
 
-#### `error` es un estado trece, y hoy se descarta en silencio
+#### `error` es un estado trece, y ~~hoy~~ se descartaba en silencio
 
 El cuerpo del evento de prueba de `Error` resolvió la pregunta abierta, y no como se
 esperaba:
@@ -1860,9 +1929,17 @@ fallido y un envío tranquilo se ven iguales desde el registro y desde el panel.
 Lo que **no** está medido, y hay que decirlo: el cuerpo de arriba es un evento de prueba
 sintético del panel. Que un `workflow_status: error` de §6.6 —la emisión que muere minutos
 después y se reembolsa— dispare además este evento de paquete es **plausible y no
-comprobado**: encaja con que el panel lo liste entre los suscribibles, y se confirma el día
-que una emisión real vuelva a morir. Tampoco está medido si `GET /tracking` devuelve eventos
+comprobado**: encaja con que el panel lo liste entre los suscribibles, y ~~se confirma el día
+que una emisión real vuelva a morir~~. Tampoco está medido si `GET /tracking` devuelve eventos
 con ese `status` o si `error` vive sólo en el canal del webhook.
+
+> **Respondido el 17 de septiembre (§6.12), releyendo las cuatro emisiones que ya habían
+> muerto en esta cuenta: ninguna llegó a tener número de guía.** Y el rastreo se consulta por
+> número, así que `error` **no puede llegar nunca por el canal de la conciliación** — no hay a
+> qué preguntarle. Sólo podría llegar por webhook, y sólo para una guía que ya tuviera número
+> antes de morir, que es un caso que no se ha visto. Consecuencia para el código: ninguna, y
+> eso era lo que había que comprobar. `FALLIDO` se queda como no terminal y esa elección
+> resultó costar cero.
 
 **El descarte dejó de ser mudo el mismo día.** `MapeadorSeguimientoSkydropxV1` escribe ahora una
 línea por rastreo con la guía, cuántos eventos se cayeron de cuántos y **qué códigos** no supo
@@ -1884,8 +1961,19 @@ haga —el panel no marca esos envíos y la conciliación no los separa—, así
 retenido, destruido o fallido se ve igual que uno en tránsito. No es de este paso; queda escrito
 porque un método que sólo se prueba a sí mismo parece cubierto y no cubre nada.
 
-Lo que **no** se hizo, y queda para el paso de la emisión: que un envío fallido **devuelva el pedido
-a la cola**. Eso toca inventario y el grafo del pedido, y es la misma rama del `202` que muere. Y una limitación que conviene saber:
+> **Cerrado el 17 de septiembre de 2026 con `ADR-0034`**: los cinco estados de envío y las dos
+> situaciones de emisión salen en la **bandeja de revisión** del panel, que se vacía con un acuse
+> con actor y nota, y a la que una guía acusada **vuelve** si le llega un evento posterior al
+> acuse. El aviso de este párrafo es lo que lo encontró, así que sirvió; pero estuvo dos fases
+> escrito, y la lección se queda: **un predicado con pruebas verdes y sin llamadas en producción
+> pasa cualquier revisión** — la cobertura lo cuenta como cubierto y ArchUnit no tiene nada que
+> decir.
+
+~~Lo que **no** se hizo, y queda para el paso de la emisión: que un envío fallido **devuelva el pedido
+a la cola**. Eso toca inventario y el grafo del pedido, y es la misma rama del `202` que muere.~~
+**La cola no existe (`ADR-0033`)**: el pedido no sale de `EN_PREPARACION` hasta que la guía viva, así
+que una emisión que muere no movió nada y no hay nada que devolver ni inventario que tocar. Y una
+limitación que conviene saber:
 el aviso vive en el registro y no en el resultado de la conciliación, porque contarlo ahí exige que
 el puerto `ConsultorDeSeguimiento` devuelva lo descartado además de lo aplicable. Cambiar ese
 contrato por un estado cuyo significado todavía no se ha decidido era ponerle el carro a los

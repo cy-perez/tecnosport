@@ -115,11 +115,15 @@ tecnosport:
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   skydropx:
-    # El host de la cuenta colombiana NO está confirmado (docs/13-skydropx-capacidades.md, §6):
-    # la documentación pública muestra pro.skydropx.com y sb-pro.skydropx.com, y según la fuente
-    # aparecen también api-pro.skydropx.com y app.skydropx.com. Este valor por omisión apunta al
-    # de pruebas y no sirve para cotizar de verdad — hoy no importa, porque el mapeo tampoco está
-    # confirmado y el cliente falla cerrado.
+    # El host de PRUEBAS sí está confirmado, y este es: sb-pro.skydropx.com es el único de los
+    # candidatos que autentica con las credenciales del sandbox — api-pro y pro responden
+    # invalid_client. Contra él se cotiza, se emitieron guías reales y se verificó la firma del
+    # webhook (docs/13-skydropx-capacidades.md §6.10).
+    #
+    # Lo que sigue sin confirmar es el de PRODUCCIÓN: la documentación pública muestra
+    # pro.skydropx.com y el panel indica api-pro.skydropx.com, y eso no se puede comprobar sin
+    # credenciales de producción, que es lo que falta. Por eso esto es configuración y no una
+    # constante con dos ambientes como en WompiClient: ahí los dos hosts están documentados.
     url-base: ${SKYDROPX_URL_BASE:https://sb-pro.skydropx.com}
     # Credenciales de desarrollo que no autentican contra nada (regla dura #5). Producción las
     # sobrescribe desde Secret Manager.
