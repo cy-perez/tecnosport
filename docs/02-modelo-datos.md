@@ -466,6 +466,11 @@ envio_en_plataforma
   hubo cobro; la segunda porque en multienvío unas guías pueden vivir y otras morir,
   y quedan guías pagadas que alguien tiene que cancelar o usar. Ningún programa las
   cierra.
+- **La `INDETERMINADA` tiene dos salidas, y las dos las abre una persona que miró el
+  panel de la plataforma** (`ADR-0034`): si el envío no está, queda `FALLIDA` y el
+  pedido vuelve a poder emitir; si está, vuelve a `EN_CURSO` con los identificadores
+  que esa persona encontró y la tarea de siempre la relee. Es la única transición del
+  agregado que **reabre** algo, y por eso limpia `resuelta_en`: no estaba resuelta.
 - **`actor` está en la fila y no solo en el registro.** Es quien comprometió el saldo,
   y para algo que gasta dinero una línea de log no es auditoría.
 - **`envio_en_plataforma` es tabla aparte y lleva `posicion`** porque en multienvío hay
@@ -503,7 +508,26 @@ acuse_revision
   desaparece de la vista sin que nadie la haya visto.
 - **El acuse no resuelve nada.** Una emisión `INDETERMINADA` acusada sigue abierta y
   sigue bloqueando una emisión nueva de ese pedido. Decidir que no hubo cobro y
-  pasarla a `FALLIDA` mueve plata: es otra decisión, con su propia puerta.
+  pasarla a `FALLIDA` mueve plata: es otra decisión, con su propia puerta —la de
+  abajo—.
+
+De qué se avisó, que **no es lo mismo que quién miró**:
+
+```
+aviso_revision
+  tipo, referencia, avisado_en
+```
+
+- **Tabla aparte de `acuse_revision`, y esa es toda la decisión.** Un acuse es una
+  persona afirmando que miró, y saca la fila de la bandeja; un aviso es el sistema
+  diciendo que avisó, y no la saca. Guardarlos juntos haría que avisar contara como
+  revisar, que es justo al revés de lo que hace falta.
+- **`avisado_en` es del último aviso, no del primero**: una novedad posterior vuelve
+  a armarlo, con el mismo criterio que devuelve una guía a la bandeja. Un paquete que
+  empeora no puede pasar callado porque ya se avisó de su estado anterior.
+- Se reclama con una sola escritura condicional (`on conflict … do update … where`),
+  mismo motivo que `reclamarAvisoDePlazo`: con más de una instancia, leer y después
+  escribir manda el correo dos veces.
 
 ## Congelado del pedido
 

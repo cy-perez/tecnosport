@@ -252,6 +252,7 @@ POST /api/v1/admin/retractos/{id}/reembolso         deja la constancia del diner
 GET /api/v1/admin/envios/revision                   lo que pide ojo humano: guías quietas y emisiones sin desenlace
 POST /api/v1/admin/envios/revision/guias/{numero}/acuse      deja constancia de que alguien miró esa guía
 POST /api/v1/admin/envios/revision/emisiones/{id}/acuse      lo mismo para una emisión con saldo comprometido
+POST /api/v1/admin/envios/revision/emisiones/{id}/resolucion lo que la persona vio en el panel: desbloquea el pedido
 
 POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
@@ -276,10 +277,16 @@ encuentra el envío.
 
 **El acuse no resuelve nada.** Deja escrito quién miró, cuándo y qué concluyó, y
 con eso la fila sale de la bandeja; si a una guía le llega un evento posterior al
-acuse, vuelve sola. Una emisión `INDETERMINADA` acusada **sigue abierta** y sigue
-bloqueando una emisión nueva de ese pedido: decidir que no hubo cobro y pasarla a
-`FALLIDA` mueve plata y todavía no tiene endpoint. Acusar algo que no está pidiendo
-revisión responde 409, para que no quede escrito un problema que nunca existió.
+acuse, vuelve sola. Acusar algo que no está pidiendo revisión responde 409, para que
+no quede escrito un problema que nunca existió.
+
+**Resolver sí**, y por eso es otra ruta. Solo aplica a una emisión `INDETERMINADA`,
+y el cuerpo lleva lo que la persona vio en el panel de la plataforma: `veredicto`
+`SIN_COBRO` —el envío no está, la emisión queda `FALLIDA` y el pedido vuelve a poder
+emitir— o `CON_ENVIO` con `enviosEnPlataforma`, que la devuelve a `EN_CURSO` para que
+la tarea de siempre la relea. Decir `CON_ENVIO` sin identificadores responde 409: no
+recupera nada. El servidor **no** reenvía la emisión a la plataforma para averiguarlo
+por su cuenta; el porqué está en `ADR-0034`.
 
 **El retracto lo radica el negocio, no el comprador**, y por eso sus rutas están
 bajo `/admin`: el canal que los términos publicados prometen es el correo y

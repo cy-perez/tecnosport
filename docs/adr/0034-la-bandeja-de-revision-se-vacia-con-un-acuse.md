@@ -71,8 +71,9 @@ tablas, que es exactamente el tipo de cosa que hay que poder probar sin base de 
 Acusar una emisión `INDETERMINADA` no la pasa a `FALLIDA` y no desbloquea el pedido: sigue abierta y
 sigue impidiendo una emisión nueva, que es justo lo que evita pagar dos veces por lo mismo.
 
-Decidir que no hubo cobro es mover plata, y necesita su propia puerta con su propia comprobación
-contra la plataforma. Quien tenga prisa despacha a mano, que es la salida que ya existe en esa misma
+Decidir que no hubo cobro es mover plata, y tiene **su propia puerta**: la decisión 5. Que sean dos
+acciones y no una es el punto — mirar y dejar constancia no puede ser lo mismo que afirmar qué pasó
+con un cobro. Quien tenga prisa despacha a mano, que es la salida que ya existe en esa misma
 pantalla.
 
 **La pantalla lo dice con esas palabras**, no solo el código: quien marca la fila se puede ir
@@ -82,16 +83,64 @@ Acusar algo que no está pidiendo revisión responde 409. Se rechaza en vez de g
 un acuse sobre algo sano deja escrito que ahí hubo un problema que nunca existió, y eso ensucia el
 rastro que la tabla existe para dar.
 
+### 5. Una emisión indeterminada la resuelve quien miró el panel, y el sistema no adivina
+
+Acusar una `INDETERMINADA` la sacaba de la bandeja y dejaba el pedido bloqueado igual: el índice
+único de emisiones abiertas impide una emisión nueva, y con razón —encima de una que pudo cobrar
+sería pagar dos veces—.
+
+**Se consideró resolverlo solo** y se descartó. La idea era reenviar `POST /shipments` con el mismo
+`idTarifa` y dejar que la caché de idempotencia de la plataforma —`unique_shipment`, 96 horas por
+`rate_id`— devolviera el envío si ya existía. Dos motivos para no hacerlo:
+
+- Esa caché está **documentada por el proveedor y no medida por nosotros**
+  (`docs/13-skydropx-capacidades.md` §6.2). Este proveedor ya cobró cuatro veces el precio de
+  creerle a su documentación, y la quinta fue el mismo día de este ADR: `§6.11`.
+- Fuera de esa ventana el reenvío **crearía un segundo envío pagado**, que es exactamente el
+  desastre que `adr/0033` existe para evitar.
+
+Quien resuelve está mirando el panel de la plataforma: **ve** si el envío está. Registrar lo que vio
+no necesita ninguna suposición. Dos salidas, las dos solo desde `INDETERMINADA`:
+
+| Lo que vio | Estado | Efecto |
+|---|---|---|
+| El envío no está | `FALLIDA` | El pedido queda libre para emitir otra guía |
+| El envío está, y es este | `EN_CURSO` | La tarea de resolución de siempre lo relee y despacha |
+
+Vuelve a `EN_CURSO` y no a `EMITIDA`, aunque en el panel ya se vea un número de guía: que el
+desenlace lo escriba la plataforma al releer —y no lo que alguien tecleó— es lo que impide que un
+número mal copiado acabe impreso en una etiqueta y en un correo al comprador.
+
+### 6. Hay un vigilante, porque que la pantalla exista no hace que alguien la abra
+
+Un aviso al negocio cuando algo lleva más de **veinticuatro horas** en la bandeja sin que nadie lo
+toque. El umbral es un dato de negocio, no una constante técnica: el comprador de un pedido
+despachado espera movimiento diario, y enterarse después que él es justo lo que la bandeja vino a
+evitar.
+
+**Avisar no es revisar**, y por eso el aviso vive en su propia tabla y no como un acuse: un acuse
+del sistema vaciaría la bandeja sin que nadie hubiera mirado nada, que es el defecto que este ADR
+entero vino a corregir. Lo que está quieto sigue quieto y sigue en la bandeja.
+
+El reclamo del aviso es una sola escritura condicional y atómica, mismo criterio que
+`RepositorioPedidos.reclamarAvisoDePlazo`, y se vuelve a armar con una novedad posterior —con la
+misma regla de la decisión 3—: un paquete que empeora no puede pasar callado porque ya se avisó de
+su estado anterior.
+
 ## Consecuencias
 
 - Los dos predicados tienen por fin quien los llame. El javadoc que decía que nadie los mira se
   corrigió en el mismo commit que dejó de ser cierto.
-- Una tabla nueva, `acuse_revision`, append-only y con dos columnas de referencia excluyentes por
-  restricción de la base para no perder la llave foránea.
 - `GuiaEnvio.ultimoEvento()` se añadió al dominio: la bandeja necesita el evento entero —la
   descripción y las dos fechas—, no solo su estado.
-- **Queda abierto**: resolver una `INDETERMINADA` sigue sin endpoint. Es lo siguiente, y mueve
-  plata.
-- **Queda abierto**: nadie vigila la bandeja. Que exista la pantalla no hace que alguien la abra;
-  un aviso cuando algo lleva demasiado tiempo sin acusar es otra decisión, del tamaño del vigilante
-  del plazo de entrega (`adr/0028`).
+- **Dos tablas nuevas, y ninguna compartida**: `acuse_revision` dice quién miró —append-only, con
+  dos columnas de referencia excluyentes por restricción de la base para no perder la llave
+  foránea— y `aviso_revision` dice de qué se avisó. Se parecen y no son lo mismo: juntarlas haría
+  que avisar contara como revisar.
+- `EmisionDeGuia` gana la única transición que **reabre** algo: `recuperada` la devuelve de
+  `INDETERMINADA` a `EN_CURSO` y limpia su `resueltaEn`, porque no estaba resuelta.
+- **Queda abierto**: nada mide cuánto tarda el negocio en atender lo que la bandeja muestra. El
+  aviso dice que algo lleva un día esperando; no dice si el correo sirvió de algo. Se sabrá cuando
+  haya casos reales.
+- **Queda abierto y no es nuestro**: la recolección por API sigue caída del lado de la
+  transportadora (`docs/13` §6.11), así que un paquete detenido se sigue resolviendo por teléfono.

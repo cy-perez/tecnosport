@@ -112,14 +112,14 @@ panel, ni en el plan de la fase.
 
 | Palanca | Estado | Qué permite |
 |---|---|---|
-| Consultar días disponibles | ⛔ | `GET /pickups/coverage` existe y **no respondió nunca** (§6.6) |
-| Programar una recolección | ✅ | Agrupa **varios envíos** en una sola recogida |
+| Consultar días disponibles | ✅ | `GET /pickups/coverage` responde `200` con fechas desde que el envío lleva barrio (§6.10, §6.11) |
+| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los cinco intentos, dos días y dos horas distintas: el conector de la transportadora está caído, no es la hora (§6.11) |
 | Reprogramar | ✅ | `POST /pickups/reschedule` |
 | Consultar el estado | ✅ | `GET /pickups/{id}` |
 | Cuerpo exacto de la petición | ✅ | Confirmado (§6.4) y ejercido contra el sandbox (§6.6): `total_weight` entero y el envío en `success` |
 | Si es obligatoria | ⚠️ | Una fuente dice que no, que la alternativa es dejar el paquete en oficina |
 | Qué transportadoras la soportan | ✅ | Lo dice **`pickup`** en cada tarifa: `true` en Coordinadora, Servientrega e Inter Rapidísimo; `false` en 99 minutes y Envía, que recogen por soporte (§6.4, §6.6) |
-| Consultar fechas disponibles | ⛔ | `GET /pickups/coverage` respondió `422` con mensaje vacío en las cuatro guías probadas (§6.6) |
+| Consultar fechas disponibles | ✅ | Era el mismo `coverage` de arriba: respondía `422` con mensaje vacío porque **las guías se habían emitido sin barrio**, no por un defecto suyo (§6.10) |
 
 > **Resuelto el 15 de septiembre (§6.4): gana la segunda, la del envío suelto.** La
 > documentación oficial declara `pickup { reference_shipment_id, packages, total_weight,
@@ -2090,6 +2090,38 @@ migración y quitó la transacción envolvente del endpoint, así que el primero
 código que quedó. Guía `034054505968`, dos vueltas de la tarea, y las dos columnas nuevas —el actor
 y el estado `SOLICITADA` previo al cobro— verificadas en la base.
 
+### 6.11 La recolección no falla por la hora: el conector está caído (2026-09-17, décima parte)
+
+`§6.10` dejó la recolección como lo único abierto del lado del proveedor, con una explicación y un
+remedio: *"es un error de ellos y de la hora, no de forma… se cierra reintentando en horario
+hábil"*. **La explicación era falsa y el remedio no funciona.**
+
+Reintentado el 17 de septiembre a las **10:20 de un jueves**, en pleno horario hábil, con la sonda
+`tools/sonda-recoleccion.mjs` y reusando envíos ya emitidos —o sea sin gastar un peso—:
+
+| Envío | Guía | `GET /pickups/coverage` | `POST /pickups` |
+|---|---|---|---|
+| `177d1939-…` | `2269401762` | **200**, fechas reales | `422` **ECONNREFUSED at PICKUP** |
+| `8bf880c9-…` | `2269401763` | **200**, fechas reales | `422` **ECONNREFUSED at PICKUP** |
+
+Van **cinco intentos**, en dos días distintos, a las 18:45 y a las 10:20, y con dos envíos
+distintos. La cobertura responde `200` con fechas de verdad —`2026-09-18` y `2026-09-21`— así que
+el envío es válido para Servientrega y nuestro cuerpo sigue validado entero; lo que no responde es
+el conector de la transportadora dentro de Skydropx.
+
+**Es el mismo patrón que Coordinadora.** `§6.6` atribuyó a la hora las muertes nocturnas de
+Coordinadora y `§6.10` lo desmintió: su contador de remisiones está atascado. Aquí pasó igual, y
+conviene dejar escrita la lección en vez del hecho: *"falló de noche"* no es una causa, es una
+coincidencia con una sola observación detrás. Las dos veces costó una sesión entera creerle.
+
+Consecuencias, y ninguna es de código:
+
+- **La recolección se programa a mano por el panel de Skydropx**, como ya decía `§6.10`, y ahora
+  sin fecha estimada de que deje de ser así: no depende de nosotros.
+- **El criterio de elección de tarifa se queda como está**, solo por precio. Decidir si `pickup`
+  debe pesar exige una recolección que funcione para comparar, y no la hay.
+- La sonda queda ejercitable sin costo con `ENVIO=<id>`, que es como se midió esto.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que
@@ -2101,5 +2133,6 @@ en que se hicieron las cosas explica por qué el código se ve como se ve.
 **Lo único que quedaba de la Fase 7 era la emisión de la guía**, bloqueada por el
 saldo en COP 388. El 16 de septiembre de 2026 Skydropx recargó el sandbox y se midió
 todo lo que faltaba: ver `§6.10`. Lo que quedó sin ejercer es de ellos —el conector de
-recolección de Servientrega— y lo que quedó pendiente de producto es el barrio en el
-checkout, que `Direccion` todavía no tiene.
+recolección de Servientrega, medido otras dos veces el 17 de septiembre en horario hábil y caído
+igual: `§6.11`— y lo que quedó pendiente de producto es el barrio en el checkout, que `Direccion`
+todavía no tiene.

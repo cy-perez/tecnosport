@@ -4155,9 +4155,11 @@ en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
 
 #### Lo que sigue abierto, y ya no es de esta fase
 
-1. **La recolección**, bloqueada del lado de la transportadora: el conector de Servientrega respondió
-   `ECONNREFUSED` tres veces seguidas a las 18:45. Nuestro cuerpo está validado entero. Se cierra
-   reintentando en horario hábil, y no cuesta saldo.
+1. **La recolección**, bloqueada del lado de la transportadora. ~~Se cierra reintentando en horario
+   hábil~~: **eso era falso**, medido el 17 de septiembre. Dos envíos más, las 10:20 de un jueves, y
+   el mismo `ECONNREFUSED`. Van cinco intentos en dos días y dos horas distintas; la cobertura sí
+   responde `200` con fechas, así que nuestro cuerpo sigue validado y lo que está caído es el
+   conector de ellos. Ver `docs/13` §6.11.
 2. **El barrio del destino.** `Direccion` no lo tiene y el checkout no lo pide. Para la recolección
    basta el del origen; el del destino mejoraría la entrega y es un cambio de checkout, base de
    datos y formulario.
@@ -4166,8 +4168,9 @@ en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
 4. **¿`FALLIDO` es terminal?** Sin medir: la emisión que murió no llegó a producir eventos de
    rastreo.
 5. **El criterio de elección de tarifa.** `TarifaEnvio.masEconomica` no mira `pickup`, y la más
-   barata de la cuenta —Envía— no recoge por API. El día que la recolección se conecte hay que
-   decidir si el criterio sigue siendo solo el precio.
+   barata de la cuenta —Envía— no recoge por API. Sigue abierto y ahora se sabe por qué no se puede
+   cerrar: decidir si `pickup` debe pesar exige una recolección que funcione para comparar, y el
+   punto 1 dice que no la hay.
 6. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no cotizan.
 
 ## La bandeja de revisión de envíos (2026-09-17)
@@ -4222,10 +4225,47 @@ Una cosa la encontró solo mirar la pantalla: el texto de ayuda de la nota decí
 esta *guía* después", y estaba también bajo una emisión. Ninguna prueba mira si un texto tiene
 sentido donde se pinta.
 
+### Los tres pendientes que dejó, cerrados el mismo día
+
+#### 1. La salida de una emisión indeterminada, que es la que desbloquea el pedido
+
+Acusarla la sacaba de la bandeja y dejaba el pedido bloqueado igual. La decisión que importa es la
+que **no** se tomó: se consideró resolverlo solo, reenviando la emisión con el mismo `idTarifa` para
+que la caché de idempotencia de la plataforma —96 horas por `rate_id`— devolviera el envío si
+existía. Se descartó porque esa caché está **documentada por ellos y no medida por nosotros**, y
+porque fuera de esa ventana el reenvío crearía un segundo envío pagado.
+
+Quien resuelve está mirando el panel de Skydropx: **ve** si el envío está. Registrar lo que vio no
+necesita ninguna suposición. Si no está, la emisión queda `FALLIDA` y el pedido vuelve a poder
+emitir; si está, vuelve a `EN_CURSO` con los identificadores que encontró y la tarea de siempre la
+relee. Detalle en `adr/0034`, decisión 5.
+
+#### 2. El vigilante, porque que la pantalla exista no hace que alguien la abra
+
+Un correo al negocio cuando algo lleva más de veinticuatro horas en la bandeja sin que nadie lo
+toque. El umbral es un dato de negocio y se decidió así: el comprador de un pedido despachado espera
+movimiento diario.
+
+Lo que costó pensar fue dónde guardar el aviso. En `acuse_revision` habría sido lo cómodo, y habría
+sido el error: **un acuse del sistema vaciaría la bandeja sin que nadie hubiera mirado nada**, que es
+exactamente el defecto que toda esta parte vino a corregir. Tabla aparte, y avisar no cuenta como
+revisar.
+
+#### 3. La recolección: la hipótesis del documento era falsa
+
+Este mismo documento decía que se cerraba "reintentando en horario hábil". Se reintentó a las 10:20
+de un jueves, con dos envíos distintos, gratis —reusando guías ya emitidas—, y falló igual.
+
+Van cinco intentos en dos días y dos horas distintas. Y es la **segunda vez** que este proyecto
+atribuye a la hora un fallo de proveedor que no era de la hora: la primera fue Coordinadora, que
+resultó tener el contador de remisiones atascado. La lección no es sobre Servientrega: *"falló de
+noche"* no es una causa, es una coincidencia con una sola observación detrás, y las dos veces costó
+una sesión entera creerle.
+
 ### Lo que sigue abierto
 
-Nadie vigila la bandeja. Que exista la pantalla no hace que alguien la abra: un aviso cuando algo
-lleva demasiado tiempo sin acusar es otra decisión, del tamaño del vigilante del plazo de entrega.
+Nada mide cuánto tarda el negocio en atender lo que la bandeja muestra. El aviso dice que algo lleva
+un día esperando; no dice si el correo sirvió de algo. Se sabrá con casos reales.
 
 ## Cómo conversar con Claude Code en este proyecto
 
