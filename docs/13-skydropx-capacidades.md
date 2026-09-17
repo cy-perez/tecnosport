@@ -294,9 +294,28 @@ mueva hay un paso con nombre propio.
    cotejarla contra el DANE del pedido antes de aceptarla.
 6. **Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
    jueves. Es una decisión contable, no técnica.
-7. **Cancelar la guía** cuando se cancela un pedido ya despachado. El endpoint y su
-   cuerpo quedaron confirmados el 15 de septiembre (§6.4); lo que falta decidir es
-   cuándo se dispara y quién lo autoriza.
+7. ~~**Cancelar la guía** cuando se cancela un pedido ya despachado.~~ **Decidido el 17 de
+   septiembre de 2026.** El endpoint y su cuerpo quedaron confirmados el 15 (§6.4); lo que
+   faltaba —cuándo se dispara y quién lo autoriza— se cerró mirando el grafo de estados y no
+   la API. **`EstadoPedido` no permite `DESPACHADO → CANCELADO`**: de `DESPACHADO` solo salen
+   `ENTREGADO` y `RECHAZADO_EN_ENTREGA`. O sea que el enunciado de esta decisión describía un
+   camino que el dominio niega, y por eso llevaba tres sesiones sin poder cerrarse.
+
+   Lo alcanzable hoy es otra cosa, y es un agujero de verdad: la guía se emite estando
+   `EN_PREPARACION`, `EN_PREPARACION → CANCELADO` **sí** es una transición válida, y
+   `CancelarPedido` no toca `Envio` ni `EmisionDeGuia` en ninguna línea. Cancelar desde el
+   panel un pedido con la guía ya emitida deja **una guía viva y cobrable**, y el paquete
+   puede recogerse igual. Ahí se dispara la cancelación —dentro de `CancelarPedido`— y la
+   autoriza quien ya autoriza cancelar: no hace falta un permiso nuevo para deshacer algo que
+   se acaba de hacer.
+
+   **El grafo no se toca.** Un paquete que ya salió tiene dos salidas modeladas
+   —`RECHAZADO_EN_ENTREGA` y `DEVUELTO`— y abrir `DESPACHADO → CANCELADO` crearía un estado
+   terminal para algo que sigue moviéndose. Y **cancelar la guía no puede tumbar la
+   cancelación del pedido**: si la plataforma no responde, el pedido se cancela igual, el
+   dinero se devuelve igual, y la guía que quedó viva va a la bandeja de revisión. Un
+   comprador sin reintegro porque un proveedor no contestó es peor que una guía huérfana que
+   alguien anula a mano.
 8. ~~**v1 o v2** en cotizaciones y envíos.~~ **Decidido el 15 de septiembre de 2026:
    `POST /api/v2/shipments`** (§6.4). No es preferencia: v2 siempre devuelve un arreglo
    de envíos, y en Colombia ninguna transportadora admite multipaquete, así que un pedido
@@ -2404,7 +2423,10 @@ Hoy no cambia nada, porque toda recolección es manual. La recomendación escrit
 que se retome no haya que pensarla de nuevo: **dejarlo opcional**, porque exigirlo le cobra
 fricción a cada comprador de hoy por una capacidad que todavía no existe y que no depende de
 nosotros. Lo que sí queda fijado es la regla de ese día: **sin barrio de destino, esa guía se
-recoge a mano**. `TODO (decisión de negocio): exigir el barrio en el checkout, o aceptar esa regla.`
+recoge a mano**. ~~`TODO (decisión de negocio): exigir el barrio en el checkout, o aceptar esa
+regla.`~~ **Decidido el 17 de septiembre de 2026: se acepta la regla y el barrio sigue siendo
+opcional**, escrito en la segunda corrección de `ADR-0021`. Exigirlo le cobraría fricción a cada
+comprador de hoy por una capacidad que no existe todavía y que no depende de nosotros.
 
 #### El criterio de tarifa, remedido y sin cambios
 

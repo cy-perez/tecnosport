@@ -186,6 +186,12 @@ Lo verificado de su API, y **no supuesto** (regla dura #9):
   lo caído es el conector de la transportadora y no la recolección entera. Hasta que eso cambie, **la recolección se
   programa a mano en el panel de Skydropx** y el despacho termina en "alguien
   lleva los paquetes".
+- **El barrio del destino decide si esa guía se podrá recoger.** `Direccion.barrio`
+  es opcional en el checkout y así se queda (`ADR-0021`, segunda corrección):
+  exigirlo le cobraría fricción a cada comprador de hoy por una capacidad que
+  todavía no existe. La contrapartida queda escrita para el día que el conector
+  vuelva: **una guía sin barrio de destino se recoge a mano**, aunque todas las
+  demás se programen por API.
 
 **El host de pruebas está confirmado: `sb-pro.skydropx.com`**, y no por lectura
 sino porque es el único de los candidatos que autentica con las credenciales del
