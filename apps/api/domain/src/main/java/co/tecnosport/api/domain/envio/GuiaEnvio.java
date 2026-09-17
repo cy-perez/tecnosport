@@ -127,9 +127,20 @@ public final class GuiaEnvio {
    * emitida, o una cuyo webhook no ha llegado.
    */
   public Optional<EstadoEnvio> ultimoEstado() {
-    return eventos().stream()
-        .reduce((primero, siguiente) -> siguiente)
-        .map(EventoSeguimiento::estado);
+    return ultimoEvento().map(EventoSeguimiento::estado);
+  }
+
+  /**
+   * El último movimiento entero, no solo su estado. Lo pide la bandeja de revisión: para decidir si
+   * una guía quieta sigue pidiendo ojo humano hace falta <em>cuándo nos enteramos</em> —{@link
+   * EventoSeguimiento#recibidoEn()}, que es nuestro reloj— y para mostrarla hace falta lo que la
+   * transportadora dijo.
+   *
+   * <p>"Último" es por {@code ocurrioEn}, igual que {@link #ultimoEstado()} y por la misma razón:
+   * las transportadoras mandan eventos desordenados, y el orden de llegada no es el de los hechos.
+   */
+  public Optional<EventoSeguimiento> ultimoEvento() {
+    return eventos().stream().reduce((primero, siguiente) -> siguiente);
   }
 
   /**
