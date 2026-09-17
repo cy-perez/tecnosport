@@ -18,6 +18,13 @@ de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos`,
 `RecaudoContraentrega`, `EmisorFacturaElectronica`, `AlmacenDeImagenes`,
 `EnviadorDeCorreo`, `Reloj`. La transacción se abre aquí.
 
+Con una excepción, y tiene nombre: `EnTransaccionPropia`. La usa la emisión de la
+guía, que escribe una fila, llama a un tercero **que cobra**, y escribe otra vez
+(`ADR-0033`). Ahí la atomicidad ya no existe —ninguna transacción de base de datos
+revierte un cobro de Skydropx—, así que agrupar las dos escrituras solo consigue que
+la primera no esté confirmada cuando el dinero se va. Si un caso de uso quiere esto
+sin tener un tercero cobrando en la mitad, lo que quiere es otra cosa.
+
 **infrastructure** — Las implementaciones de esos puertos. Entidades JPA
 **separadas** de las del dominio, con mapeador explícito. Cliente de Wompi.
 Adaptador de Cloud Storage. Migraciones. Configuración de seguridad.
@@ -178,3 +185,14 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   `FiltroLimiteIntentos`. Llamar siempre
   `response.setCharacterEncoding("UTF-8")` antes de `getWriter()` en
   cualquier filtro que escriba JSON a mano.
+- **Después de que un `flush` falle, la sesión de Hibernate no sirve para nada
+  más.** Cualquier consulta sobre ella vuelve a reventar, así que un `catch
+  (DataIntegrityViolationException)` que intente averiguar *cuál* fila chocó
+  —para dar un error decente en vez de un 500— falla en el `catch`. Encontrado
+  el 17 de septiembre de 2026 traduciendo la violación del índice único de
+  `emision_de_guia`: dos pruebas de Testcontainers fallaban con la excepción
+  correcta lanzada desde el sitio equivocado. La forma que funciona es al revés:
+  **consultar antes** (que además atrapa el caso normal) y, en el `catch`, traducir
+  con lo que ya se tenga en la mano, sin tocar la base. La carrera de verdad —dos
+  peticiones que leen "no hay ninguna" a la vez— no necesita saber cuál ganó: lo
+  que importa es que la segunda no entró.

@@ -44,7 +44,7 @@ class CotizarEnvioTest {
   void prepararCatalogo() {
     productos = new RepositorioProductosFalso();
     cotizador = new CotizadorEnvioFalso();
-    caso = new CotizarEnvio(productos, cotizador, () -> AHORA);
+    caso = new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA);
 
     Producto producto =
         Producto.crear(

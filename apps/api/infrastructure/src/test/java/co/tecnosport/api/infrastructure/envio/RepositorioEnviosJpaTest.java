@@ -390,7 +390,12 @@ class RepositorioEnviosJpaTest {
         Envio.crear(
             pedidoId,
             List.of(
-                GuiaEnvio.crear("Servientrega", "servientrega", "SE-1", Dinero.deCop(8_200)),
+                GuiaEnvio.emitida(
+                    "Servientrega",
+                    "servientrega",
+                    "SE-1",
+                    Dinero.deCop(8_200),
+                    "https://sb-pro.skydropx.com/s/s?id=ABC"),
                 GuiaEnvio.crear("Coordinadora", "CO-2", Dinero.deCop(5_991))),
             despacho);
 

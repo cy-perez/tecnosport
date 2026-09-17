@@ -1922,6 +1922,174 @@ pantalla), con el backend local apuntando a un puerto muerto para forzar el fall
 - A domicilio y sin tarifa, "Continuar" **no pasa**. El botón sigue habilitado a propósito
   —uno deshabilitado sale del orden de tabulación— y es `enviar()` quien no deja seguir.
 
+### 6.10 El saldo volvió, y tres cosas que dábamos por ciertas eran nuestras (2026-09-16, novena parte)
+
+Skydropx recargó el sandbox: **COP 50.388**. Con eso se emitieron tres guías y se cerró lo que
+`§6.6` y `§6.7` habían dejado bloqueado "por saldo, no por conocimiento". Resultó que parte sí
+era conocimiento, y que **tres fallos que estaban anotados como del proveedor eran nuestros**.
+Es la cuarta vez que este proveedor cobra el silencio más caro que un `422`.
+
+Todo lo de esta sección se midió con `tools/sonda-emision-v2.mjs`.
+
+#### El barrio: era `area_level3`, viaja por la cotización, y arregla dos cosas
+
+`§6.7` dejó escrito que "Shipper address2" es `area_level3`, que el envío no lo puede mandar y
+que la puerta es la cotización. **Confirmado, y funciona**: cotizando con
+`area_level3: "La Milagrosa"` en el origen y `"Boston"` en el destino, el envío emitido los
+hereda íntegros —se leen en las dos direcciones del `included`— sin que el cuerpo de
+`POST /shipments` los mencione.
+
+Con el barrio puesto:
+
+- ✅ **`POST /pickups` deja de responder `Shipper address2 not valid: null`.** Nuestro cuerpo de
+  recolección queda **validado entero**. Lo que falla ahora es el conector de la transportadora
+  —`422 base: ["External carrier API service error: Carrier response is empty or timed out,
+  status: CONNECTION_ERROR: ECONNREFUSED at PICKUP"]`, tres intentos seguidos a las 18:45—, que
+  es un error de ellos y de la hora, no de forma.
+- ✅ **`GET /pickups/coverage` responde `200` por primera vez**, y trae fechas de verdad:
+  `{"success": true, "carrier": "SERVIENTREGA", "service": "STANDARD", "pickupDates":
+  [{"date": "2026-09-17", "startHour": "09:00", "endHour": "18:00"}, {"date": "2026-09-18", …}]}`.
+
+Eso **corrige `§6.6` y `§6.7`**, que lo dieron por roto del lado de Skydropx con todas las
+letras: *"cuatro guías distintas y siempre `422 {"success": false, "message": null}`"*, *"van
+cinco guías y cinco veces lo mismo; ya no hay versión de 'es que el envío no estaba listo' que lo
+sostenga"*. La había, y era la nuestra: **las cinco guías se habían emitido sin barrio**. El
+mensaje vacío que su especificación promete llenar sigue siendo un defecto de ellos; la causa
+era de este lado.
+
+⚠️ **Y deja una tarea que no es de la emisión**: `Direccion` no tiene barrio. Para que la
+recolección funcione en producción hay que pedirlo en el checkout y mandarlo en la cotización.
+Hasta entonces la recolección se programa a mano por el panel de Skydropx.
+
+#### Coordinadora no puede emitir en este sandbox, y no es la hora
+
+`§6.6` atribuyó las tres muertes nocturnas del 15 de septiembre a que "de noche los sistemas de
+las transportadoras no responden", y `§6.7` lo dio por confirmado al emitir de día con
+Servientrega. **Para Coordinadora es falso.** A las 18:35 de un miércoles, en pleno horario
+hábil, la emisión murió con:
+
+```
+CARRIER_RESPONSE_ERROR · llave duplicada viola restricción de unicidad
+«agw_remisiones_idx_codigo_remision» · Ya existe la llave (codigo_remision)=(93202421647)
+```
+
+**El mismo número de remisión que el 15 a las 22:30.** Su contador está atascado en ese valor de
+forma permanente, así que Coordinadora devuelve el mismo `codigo_remision` para todo envío y
+ninguno pasa. No es intermitencia: es determinista. Y es la tarifa **más barata** de la cuenta
+—6.663 contra 8.200 de Servientrega—, o sea justo la que `TarifaEnvio.masEconomica` elige sola.
+Cualquier prueba de emisión que no fuerce la transportadora se estrella contra ella.
+
+Lo que sí se sostiene de `§6.6`: **el saldo volvió entero** (`payment_status: refunded`), y una
+emisión fallida cuesta tiempo, no plata.
+
+#### `POST /api/v2/shipments` devuelve un arreglo, y era verdad
+
+`§6.4` resolvió "decisión #8: v2" leyendo la documentación, y nadie lo había ejercido nunca:
+todo lo medido hasta hoy salió de v1. Ejercido:
+
+- ✅ El cuerpo es **el mismo** que v1 —`shipment` con `rate_id`, `unique_shipment`,
+  `sync_label_creation`, las dos direcciones y `packages`—. Con `rate_id` inválido los dos
+  responden el **mismo** `422`, campo por campo.
+- ✅ La respuesta es `202` con **`data` como arreglo**, e `included` al nivel superior con los
+  paquetes y las direcciones de todos los envíos, amarrados por
+  `relationships.shipment.data.id`.
+- ⛔ **`GET /api/v2/shipments/{id}` no existe**: responde `404` con el HTML del sitio. Releer es
+  siempre por v1, que devuelve `data` como objeto. O sea que **la integración usa las dos
+  versiones a propósito**: v2 para crear, v1 para releer.
+
+#### El multienvío, con dos guías de verdad
+
+Dos bultos, tarifa `multishipment` de Servientrega por 16.400. La respuesta trajo **dos envíos**,
+y el dato que importa para `adr/0031`:
+
+| | Envío | Guía | `total` |
+|---|---|---|---|
+| 1 | `8bf880c9-…` | `2269401763` | **8.200** |
+| 2 | `da585a66-…` | `2269401764` | **8.200** |
+| | tarifa | — | 16.400 |
+
+**Cada envío trae su propio costo, no el de la tarifa.** El total de la tarifa es la suma. Es
+exactamente lo que `GuiaEnvio.costo` guarda y lo que `Envio.costoEnvio()` reconstruye sumando, así
+que el modelo de `adr/0031` sale de la medición intacto. Cada guía trae además su propia
+`label_url` y su propio `tracking_number`.
+
+⚠️ **Y abre un caso que ningún ADR contempla: el fallo parcial.** Los dos envíos son
+independientes y el de Coordinadora demuestra que uno puede morir solo. Un pedido de dos bultos
+puede terminar con una guía viva, pagada, y otra muerta. Ver `adr/0033`.
+
+#### Lo que la emisión devuelve, y no había que adivinar
+
+Releyendo por v1 un envío en `success`, todo lo que el despacho necesita viene en la respuesta:
+
+| Dato | Dónde | Ejemplo |
+|---|---|---|
+| Código de la transportadora | `data.attributes.carrier_name` | `servientrega` |
+| Guía | `data.attributes.master_tracking_number` y el `tracking_number` del paquete | `2269401762` |
+| Costo real de **esa** guía | `data.attributes.total` | `"8200.0"` |
+| Etiqueta | `label_url` del paquete | `https://sb-pro.skydropx.com/s/s?id=…` |
+| Motivo del fallo | `data.attributes.error_detail` | `{error_code, error_message, error_message_detail}` |
+
+**`carrier_name` es el dato que `§6.8` dio por perdido.** Ahí quedó escrito que el código de la
+transportadora no se puede derivar del nombre visible y que `GuiaEnvio.codigoTransportadora`
+quedaba vacío para las guías tecleadas a mano. Para las que emitimos nosotros **no hay que
+derivarlo**: lo devuelve la plataforma, con el mismo vocabulario que exige el rastreo.
+
+#### Los tres estados no terminales, y cuánto duran de verdad
+
+`§6.7` midió 2 min 22 s y tres estados no terminales (`in_progress`, `pending`,
+`creation_waiting`). Hoy:
+
+| Emisión | Tiempo hasta terminal |
+|---|---|
+| Servientrega, 1 bulto | ~45 s (`success`) |
+| Servientrega, 2 bultos | ~25 s (`success` los dos) |
+| Coordinadora | **más de 4 minutos** en `in_progress`, y después `error` |
+
+O sea que la ventana no tiene tope conocido y el camino que más tarda es el que fracasa. Sondear
+dentro de la petición del panel no es una opción: la espera es asíncrona o no es.
+
+#### Y la integración, cerrada de punta a punta desde el panel
+
+Con el código escrito, el recorrido completo se hizo en el navegador contra el sandbox real: pedido
+creado por el checkout —cotizado en vivo en **7.850 con Envía**—, conciliado, y la guía pedida desde
+el botón del panel.
+
+```
+20:32:57  Emision solicitada para el pedido … : Envia con 1 envio(s) [22419823-…]
+20:33:42  Resolución de emisiones: 1 revisadas, 1 despachadas, 0 fallidas, 0 parciales
+```
+
+Cuarenta y cinco segundos entre el clic y el despacho, sin que nadie esperara mirando la pantalla.
+Lo que quedó guardado:
+
+| Campo | Valor |
+|---|---|
+| `transportadora` | `Envia` (el nombre visible, de la tarifa) |
+| `codigo_transportadora` | `envia` (el de la plataforma, de la respuesta del envío) |
+| `numero` | `034054505967` |
+| `costo_envio` | `7850.00` |
+| `url_etiqueta` | `https://sb-pro.skydropx.com/s/s?id=…` |
+
+**`codigo_transportadora` es el dato que cierra el círculo de `§6.8`.** Ahí quedó escrito que el
+código no se puede derivar del nombre y que las guías se saltarían en la conciliación por no tenerlo.
+Las que emitimos nosotros nacen con él, así que la conciliación de `adr/0022` por fin tiene guías que
+conciliar.
+
+✅ **Y Envía emite.** Nunca se había probado —todas las emisiones anteriores fueron de 99 minutes,
+Servientrega o Coordinadora— y es la más barata de las que quedan vivas después de descartar a
+Coordinadora. Es además la que el selector elige solo, porque `TarifaEnvio.masEconomica` no mira la
+recolección: `pickup` viene `false` en Envía, así que el día que la recolección por API se conecte
+habrá que decidir si el criterio sigue siendo solo el precio.
+
+**Saldo al cierre: COP 10.088**, de los 50.388 que entraron. Se gastaron 8.200 (Servientrega, una
+guía), 16.400 (Servientrega, multienvío de dos) y 7.850 dos veces (Envía, el recorrido de punta a
+punta antes y después de la revisión adversarial); los 6.663 de Coordinadora volvieron enteros.
+
+El segundo recorrido no era un lujo: la revisión cambió el orden de las escrituras, añadió una
+migración y quitó la transacción envolvente del endpoint, así que el primero ya no probaba el
+código que quedó. Guía `034054505968`, dos vueltas de la tarea, y las dos columnas nuevas —el actor
+y el estado `SOLICITADA` previo al cobro— verificadas en la base.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que
@@ -1930,7 +2098,8 @@ hechos**, y con ellos la cotización, el checkout, la contraentrega, el seguimie
 el webhook firmado. Se conserva porque su criterio sigue sirviendo y porque el orden
 en que se hicieron las cosas explica por qué el código se ve como se ve.
 
-**Lo único que queda de la Fase 7 es la emisión de la guía**, y lo que la bloquea no
-es conocimiento: es el saldo, en COP 388. Cómo se retoma —qué está medido, qué hay
-que escribir y qué queda por decidir— está en `docs/09-plan-de-arranque.md`, sección
-"Traspaso", al final de la Fase 7.
+**Lo único que quedaba de la Fase 7 era la emisión de la guía**, bloqueada por el
+saldo en COP 388. El 16 de septiembre de 2026 Skydropx recargó el sandbox y se midió
+todo lo que faltaba: ver `§6.10`. Lo que quedó sin ejercer es de ellos —el conector de
+recolección de Servientrega— y lo que quedó pendiente de producto es el barrio en el
+checkout, que `Direccion` todavía no tiene.

@@ -5,6 +5,7 @@ import { desempaquetar } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
+  EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
   MotivoCancelacion,
   PedidoAdmin,
@@ -14,7 +15,7 @@ import {
   GuiaDespachada,
   RepositorioPedidosAdmin,
 } from '../domain/repositorio-pedidos-admin.puerto';
-import { aPedidoAdmin, aPedidosPaginadosAdmin } from './mapeador-pedido-admin';
+import { aEmisionDeGuia, aPedidoAdmin, aPedidosPaginadosAdmin } from './mapeador-pedido-admin';
 
 /** Todo bajo `/api/v1/admin/**` exige `Authorization: Bearer` — de ahí el cliente autenticado en
  * vez del `crearClienteContratos` a secas que usan los repositorios públicos. */
@@ -24,23 +25,31 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
 
   async listar(filtro: FiltroPedidosAdmin): Promise<PedidosPaginadosAdmin> {
     const respuesta = await this.cliente.GET('/api/v1/admin/pedidos', {
-      params: { query: { pagina: filtro.pagina, tamano: filtro.tamano, estado: filtro.estado ?? undefined } },
+      params: {
+        query: { pagina: filtro.pagina, tamano: filtro.tamano, estado: filtro.estado ?? undefined },
+      },
     });
     return aPedidosPaginadosAdmin(desempaquetar(respuesta, 'no se pudo listar los pedidos'));
   }
 
   async conciliarTransferencia(pedidoId: string): Promise<PedidoAdmin> {
-    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/conciliar-transferencia', {
-      params: { path: { id: pedidoId } },
-    });
+    const respuesta = await this.cliente.POST(
+      '/api/v1/admin/pedidos/{id}/conciliar-transferencia',
+      {
+        params: { path: { id: pedidoId } },
+      },
+    );
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar la transferencia'));
   }
 
   async verificarContraentrega(pedidoId: string, motivo: string): Promise<PedidoAdmin> {
-    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/verificar-contraentrega', {
-      params: { path: { id: pedidoId } },
-      body: { motivo },
-    });
+    const respuesta = await this.cliente.POST(
+      '/api/v1/admin/pedidos/{id}/verificar-contraentrega',
+      {
+        params: { path: { id: pedidoId } },
+        body: { motivo },
+      },
+    );
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo verificar la contraentrega'));
   }
 
@@ -50,6 +59,13 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
       body: { guias: [...guias] },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo despachar el pedido'));
+  }
+
+  async emitirGuia(pedidoId: string): Promise<EmisionDeGuiaAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/emitir-guia', {
+      params: { path: { id: pedidoId } },
+    });
+    return aEmisionDeGuia(desempaquetar(respuesta, 'no se pudo emitir la guía'));
   }
 
   async marcarEntregado(pedidoId: string): Promise<PedidoAdmin> {

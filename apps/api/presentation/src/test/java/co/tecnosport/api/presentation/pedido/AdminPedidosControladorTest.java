@@ -1,12 +1,24 @@
 package co.tecnosport.api.presentation.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.envio.ArmadorDeBultos;
+import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.EmisorDeGuias;
+import co.tecnosport.api.application.envio.EmitirGuiaDePedido;
+import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.ResultadoCotizacion;
+import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
@@ -19,13 +31,23 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
+import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.EstadoVariante;
+import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
+import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
+import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -66,6 +88,9 @@ class AdminPedidosControladorTest {
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private RepositorioEnviosDobleDePrueba envios;
   @Autowired private RepositorioInventarioDobleDePrueba inventarios;
+  @Autowired private RepositorioEmisionesDobleDePrueba emisiones;
+  @Autowired private EmisorDeGuiasDobleDePrueba emisor;
+  @Autowired private RepositorioProductosDobleDePrueba productos;
 
   private static final Direccion DIRECCION_MEDELLIN =
       new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
@@ -292,6 +317,180 @@ class AdminPedidosControladorTest {
     assertEquals("Servientrega", envios.guardados().get(0).guias().getFirst().transportadora());
   }
 
+  /**
+   * Siembra en el catálogo la variante que ya lleva el pedido, que es lo que la emisión necesita
+   * para armar los bultos: el peso, las medidas y la línea salen del producto, nunca de la línea
+   * congelada. Se copia el identificador porque el pedido ya nació con él.
+   */
+  private void sembrarCatalogoDe(Pedido pedido) {
+    Producto producto =
+        Producto.crear(
+            "Camiseta running Dry-Fit",
+            new Slug("camiseta-running-dry-fit"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear(
+                "Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO));
+    producto.agregarVariante(
+        new Variante(
+            pedido.lineas().getFirst().varianteId(),
+            new Sku("TS-CAM-AZ-M"),
+            Dinero.deCop(50_000),
+            new BigDecimal("0.19"),
+            5,
+            null,
+            new Paquete(180, 30, 25, 4),
+            EstadoVariante.ACTIVA,
+            List.of(),
+            null));
+    productos.conProductos(producto);
+  }
+
+  /**
+   * Con {@link Contacto}, que los demás pedidos de esta clase no llevan y aquí es obligatorio: sin
+   * nombre ni teléfono de quien recibe no hay guía que emitir, y la emisión lo rechaza con un 409
+   * antes de tocar a la plataforma.
+   */
+  private Pedido pedidoListoParaEmitir() {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(1, "stock inicial de prueba", Instant.now());
+    MovimientoInventario reserva = inventario.reservar(1, null, Instant.now());
+    inventarios.conInventario(inventario);
+
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    varianteId,
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(50_000),
+                    new BigDecimal("0.19"),
+                    "https://cdn.tecnosport.co/img.webp",
+                    reserva.id())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.CONTRAENTREGA,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            null,
+            new Contacto("Comprador de prueba", "3001234567"));
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedidos.guardar(pedido);
+    sembrarCatalogoDe(pedido);
+    autenticarComoAdmin();
+    return pedido;
+  }
+
+  /** Un pedido sin a quién entregarle no llega a la plataforma: se rechaza antes. */
+  @Test
+  void emitirLaGuiaDeUnPedidoSinContactoDevuelve409() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedidos.guardar(pedido);
+    sembrarCatalogoDe(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+        .andExpect(status().isConflict());
+
+    assertTrue(emisiones.todas().isEmpty());
+  }
+
+  /**
+   * 202 y no 200: lo que se acepta es la solicitud, no el despacho. La plataforma cobra al crear y
+   * devuelve la guía en {@code null}, así que el pedido tiene que seguir en {@code EN_PREPARACION}
+   * hasta que la tarea programada traiga los números.
+   */
+  @Test
+  void emitirLaGuiaAceptaLaSolicitudYNoDespachaTodavia() throws Exception {
+    Pedido pedido = pedidoListoParaEmitir();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.estado").value("EN_CURSO"))
+        .andExpect(jsonPath("$.transportadora").value("Servientrega"))
+        .andExpect(jsonPath("$.cuantosEnvios").value(1))
+        .andExpect(jsonPath("$.resueltaEn").doesNotExist());
+
+    assertEquals(1, emisiones.todas().size());
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+    assertTrue(envios.guardados().isEmpty());
+  }
+
+  /** Los identificadores de la plataforma no salen al panel: no le dicen nada a quien despacha. */
+  @Test
+  void laRespuestaDeLaEmisionNoExponeLosIdentificadoresDeLaPlataforma() throws Exception {
+    Pedido pedido = pedidoListoParaEmitir();
+
+    String cuerpo =
+        mockMvc
+            .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertFalse(cuerpo.contains("177d1939"));
+  }
+
+  /**
+   * La puerta que cuesta plata: la plataforma cobra al crear, así que dos solicitudes son dos
+   * cobros por el mismo pedido.
+   */
+  @Test
+  void emitirDosVecesElMismoPedidoDevuelve409() throws Exception {
+    Pedido pedido = pedidoListoParaEmitir();
+    mockMvc.perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()));
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+        .andExpect(status().isConflict());
+
+    assertEquals(1, emisiones.todas().size());
+  }
+
+  @Test
+  void emitirLaGuiaDeUnPedidoSinVerificarDevuelve409() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    sembrarCatalogoDe(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+        .andExpect(status().isConflict());
+
+    assertTrue(emisiones.todas().isEmpty());
+  }
+
+  /**
+   * 502 y no 503: la petición llegó y la contestaron diciendo que no, que es distinto de un
+   * proveedor que no responde.
+   */
+  @Test
+  void siLaPlataformaRechazaLaEmisionElPanelRecibe502() throws Exception {
+    Pedido pedido = pedidoListoParaEmitir();
+    emisor.responde(
+        new ResultadoEmision.Rechazada(
+            ResultadoEmision.Motivo.DATOS_RECHAZADOS, "422 area_level1 no puede estar en blanco"));
+
+    mockMvc
+        .perform(post("/api/v1/admin/pedidos/{id}/emitir-guia", pedido.id()))
+        .andExpect(status().isBadGateway());
+
+    // Y deja fila: sin ella se pierde la tarifa, que es lo unico que recupera un envio que la
+    // plataforma pudo haber creado antes de decir que no.
+    assertEquals(1, emisiones.todas().size());
+  }
+
   @Test
   void despacharUnPedidoSinVerificarDevuelve422() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
@@ -467,6 +666,60 @@ class AdminPedidosControladorTest {
           (texto, argumentos) -> texto.clave(),
           Instant::now,
           "https://tecnosport.co/es/checkout/estado");
+    }
+
+    @Bean
+    RepositorioEmisionesDobleDePrueba repositorioEmisiones() {
+      return new RepositorioEmisionesDobleDePrueba();
+    }
+
+    @Bean
+    EmisorDeGuiasDobleDePrueba emisorDeGuias() {
+      return new EmisorDeGuiasDobleDePrueba();
+    }
+
+    @Bean
+    RepositorioProductosDobleDePrueba repositorioProductosParaEmision() {
+      return new RepositorioProductosDobleDePrueba();
+    }
+
+    /**
+     * Devuelve siempre la misma tarifa. Lo que estas pruebas comprueban es el cableado HTTP del
+     * endpoint; que emitir recotice y elija bien se prueba en {@code EmitirGuiaDePedidoTest}.
+     */
+    @Bean
+    CotizadorEnvio cotizadorEnvio() {
+      return (CotizacionEnvio cotizacion) ->
+          new ResultadoCotizacion.ConTarifas(
+              List.of(
+                  new TarifaEnvio(
+                      "rate-de-hoy",
+                      "Servientrega",
+                      "Standard",
+                      Dinero.deCop(8_200),
+                      2,
+                      true,
+                      Instant.now().plusSeconds(86_400))));
+    }
+
+    @Bean
+    EmitirGuiaDePedido emitirGuiaDePedido(
+        RepositorioPedidos repositorioPedidos,
+        RepositorioEmisiones repositorioEmisiones,
+        RepositorioProductos repositorioProductos,
+        CotizadorEnvio cotizadorEnvio,
+        EmisorDeGuias emisorDeGuias) {
+      ArmadorDeBultos armador = new ArmadorDeBultos(repositorioProductos);
+      return new EmitirGuiaDePedido(
+          repositorioPedidos,
+          repositorioEmisiones,
+          armador,
+          new CotizarEnvio(armador, cotizadorEnvio, Instant::now),
+          emisorDeGuias,
+          // Sin transacciones que separar en un @WebMvcTest: lo que aquí se prueba es el cableado
+          // HTTP, y el orden de las escrituras alrededor del cobro se prueba en su caso de uso.
+          new EnTransaccionPropiaDobleDePrueba(),
+          Instant::now);
     }
 
     @Bean

@@ -57,7 +57,10 @@ class SkydropxClientTest {
           "Antioquia",
           "Medellín",
           "05001",
-          null);
+          null,
+          "La Milagrosa",
+          "Apartamento 401",
+          "contacto@tecnosport.co");
 
   private static final CotizacionEnvio COTIZACION =
       new CotizacionEnvio(
@@ -196,6 +199,7 @@ class SkydropxClientTest {
         reloj,
         mapeador,
         new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
         new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
         pausas::add,
         HttpClient.newHttpClient());
@@ -422,6 +426,7 @@ class SkydropxClientTest {
         reloj,
         new MapeadorDePrueba(),
         new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
         new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
         pausas::add,
         HttpClient.newHttpClient());

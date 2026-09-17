@@ -219,6 +219,19 @@
                       <p>
                         {{ guia.transportadora }} — {{ guia.guia }} —
                         <ts-precio [valor]="guia.costo.valor" [moneda]="guia.costo.moneda" />
+                        <!-- Solo cuando la plataforma lo devolvio: no esta garantizado ni siquiera
+                             entre dos guias de la misma transportadora, y una guia tecleada a mano
+                             se imprimio por fuera. -->
+                        @if (guia.urlEtiqueta; as etiqueta) {
+                          —
+                          <a
+                            class="anillo-foco text-ts-primario"
+                            [href]="etiqueta"
+                            target="_blank"
+                            rel="noopener"
+                            >{{ 'admin.pedidos.detalle.imprimir_etiqueta' | transloco }}</a
+                          >
+                        }
                       </p>
                     }
                     <p>
@@ -283,6 +296,34 @@
                       </form>
                     }
                     @case ('EN_PREPARACION') {
+                      <!-- La vía normal: la transportadora emite la guía y el sistema despacha solo
+                           cuando el número existe. El formulario de abajo se queda para la guía que
+                           se emitió por fuera, que sigue siendo posible. -->
+                      @if (pedido.tipoEntrega === 'ENVIO_A_DOMICILIO') {
+                        <ts-boton
+                          [cargando]="emitiendoGuia(pedido.id)"
+                          (click)="emitirGuia(pedido.id)"
+                        >
+                          {{ 'admin.pedidos.acciones.emitir_guia' | transloco }}
+                        </ts-boton>
+                        @if (emisionDe(pedido.id); as emision) {
+                          <!-- `role="status"` y no una alerta: es un acuse, no un problema. Un
+                               lector de pantalla lo anuncia sin interrumpir lo que esté leyendo. -->
+                          <p class="mt-8 text-ts-texto-suave" role="status">
+                            {{
+                              'admin.pedidos.acciones.emision_en_curso'
+                                | transloco
+                                  : {
+                                      transportadora: emision.transportadora,
+                                      paquetes: emision.cuantosEnvios,
+                                    }
+                            }}
+                          </p>
+                        }
+                        <h3 class="mt-16 mb-8 text-base font-medio">
+                          {{ 'admin.pedidos.acciones.guia_por_fuera' | transloco }}
+                        </h3>
+                      }
                       <form
                         [formGroup]="formularioDespacho(pedido.id)"
                         (submit)="$event.preventDefault(); despachar(pedido)"

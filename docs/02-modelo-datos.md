@@ -377,8 +377,13 @@ Reglas:
   campo que lo diga— y prometerla sin dato sería ofrecer un pago que después no
   existe. Ver `docs/13-skydropx-capacidades.md`, sección 6.
 - **`tarifa_vence_en` no bloquea el pago.** Guarda cuándo caducan las 24 horas de
-  validez de la tarifa, para que al despachar se sepa si hay que cotizar de nuevo.
-  Un pedido no cambia de total porque la tarifa venció (`docs/11-pagos-y-envios.md`).
+  validez de la tarifa. Un pedido no cambia de total porque la tarifa venció
+  (`docs/11-pagos-y-envios.md`).
+  **Y al despachar no se consulta**: la emisión recotiza siempre (`ADR-0033`). El
+  camino "usar la congelada si todavía vive" se recorrería de vez en cuando —entre
+  el pago y el despacho suele pasar más de un día— y se rompería callado. Lo que
+  este campo sigue explicando es por qué el número que pagó el comprador y el que
+  paga el negocio pueden no coincidir.
 
 Del despacho en adelante el rastro vive en `Envio`:
 
@@ -387,7 +392,8 @@ envio
   id, pedido_id, comision_recaudo, recaudo_conciliado_en, creado_en
 
 guia_envio
-  id, envio_id, transportadora, codigo_transportadora, numero, costo_envio
+  id, envio_id, transportadora, codigo_transportadora, numero, costo_envio,
+  url_etiqueta
 
 evento_seguimiento
   id, guia_id, estado_proveedor, descripcion,
@@ -412,6 +418,12 @@ evento_seguimiento
   la web de la transportadora—, así que lo que decide si se puede conciliar no es
   quién la lleva, es si la emitimos nosotros. Las que no lo tienen se saltan en la
   conciliación y se cuentan aparte.
+- **`url_etiqueta` es opcional y no por descuido.** Es el rótulo que se imprime y se
+  pega a la caja. Las guías tecleadas en el panel no lo tienen —se imprimieron por
+  fuera— y de las que emitimos nosotros tampoco está garantizado: dos guías de
+  Servientrega por el mismo camino, una lo trajo y la otra no lo trajo nunca, ni con
+  el envío ya entregado (`docs/13-skydropx-capacidades.md` §6.7). Quien despacha no
+  puede darlo por hecho.
 - **`guia_envio.costo_envio` es interno.** Es lo que la transportadora cobra por ese
   paquete, y su suma frente al `costo_envio` cobrado al comprador es el margen del
   pedido. Ningún endpoint público lo devuelve.
@@ -423,6 +435,46 @@ evento_seguimiento
 - **El rastro cuelga de la guía, no del envío.** La transportadora reporta el
   movimiento de un paquete; mezclar dos rastros le diría al comprador que le
   entregaron algo que sigue en camino.
+
+### La emisión de la guía
+
+Entre pedirle las guías a la plataforma y tenerlas hay minutos, y en ese intervalo
+**ya se cobró**. Eso es lo que estas dos tablas guardan (`ADR-0033`):
+
+```
+emision_de_guia
+  id, pedido_id, transportadora, id_tarifa, actor,
+  estado, detalle, solicitada_en, resuelta_en
+
+envio_en_plataforma
+  emision_id, posicion, id_externo
+```
+
+- **La fila nace antes de la llamada, no después.** Ese es el punto entero: si se
+  escribiera al recibir la respuesta, un reinicio del servicio entre el cobro y la
+  respuesta dejaría una guía pagada que nadie sabe que existe.
+- **`id_tarifa` es la llave de recuperación.** Skydropx cachea la creación por
+  `rate_id` durante 96 horas (`unique_shipment`), así que repetir la petición con esa
+  misma tarifa devuelve el envío que ya se pagó en vez de crear otro. Sin este campo
+  escrito, esa ventana no sirve de nada.
+- **Seis estados, y tres cuentan como abierta**: `SOLICITADA` (se va a pedir),
+  `EN_CURSO` (cobró, falta la guía) e `INDETERMINADA` (la llamada no terminó y pudo
+  cobrar igual). Un **índice único parcial** sobre esos tres impide que un pedido
+  tenga dos emisiones abiertas: la segunda sería otro cobro por lo mismo, y entre
+  leer y escribir cabe un segundo clic en el panel.
+- **`INDETERMINADA` y `PARCIAL` piden una persona.** La primera porque no se sabe si
+  hubo cobro; la segunda porque en multienvío unas guías pueden vivir y otras morir,
+  y quedan guías pagadas que alguien tiene que cancelar o usar. Ningún programa las
+  cierra.
+- **`actor` está en la fila y no solo en el registro.** Es quien comprometió el saldo,
+  y para algo que gasta dinero una línea de log no es auditoría.
+- **`envio_en_plataforma` es tabla aparte y lleva `posicion`** porque en multienvío hay
+  un envío por bulto y el orden es el de los bultos: es lo que permite decir cuál guía
+  corresponde a cuál paquete cuando haya que mirar un fallo parcial. `id_externo` es
+  único en toda la tabla.
+- **Esto no es el `Envio`.** El envío nace cuando ya hay guías; aquí todavía no las
+  hay. Y el pedido no se mueve de `EN_PREPARACION` hasta que las haya, que es lo que
+  hace que una emisión fallida no tenga nada que devolver a ninguna cola.
 
 ## Congelado del pedido
 

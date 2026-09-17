@@ -66,7 +66,9 @@ class ConciliarEnviosTest {
     Envio envio =
         Envio.crear(
             UUID.randomUUID(),
-            List.of(GuiaEnvio.crear("99 minutes", "ninetynineminutes", guia, Dinero.deCop(10_540))),
+            List.of(
+                GuiaEnvio.emitida(
+                    "99 minutes", "ninetynineminutes", guia, Dinero.deCop(10_540), null)),
             AHORA.minusSeconds(86_400));
     envios.guardar(envio);
     return envio;

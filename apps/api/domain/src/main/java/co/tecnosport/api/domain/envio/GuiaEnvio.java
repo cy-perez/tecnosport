@@ -30,6 +30,7 @@ public final class GuiaEnvio {
   private final String codigoTransportadora;
   private final String numero;
   private final Dinero costo;
+  private final String urlEtiqueta;
   private final List<EventoSeguimiento> eventos;
 
   public GuiaEnvio(
@@ -38,6 +39,7 @@ public final class GuiaEnvio {
       String codigoTransportadora,
       String numero,
       Dinero costo,
+      String urlEtiqueta,
       List<EventoSeguimiento> eventos) {
     this.id = Objects.requireNonNull(id, "El id de la guía no puede ser nulo.");
     if (transportadora == null || transportadora.isBlank()) {
@@ -53,27 +55,43 @@ public final class GuiaEnvio {
     }
     this.numero = numero;
     this.costo = Objects.requireNonNull(costo, "El costo de la guía no puede ser nulo.");
+    this.urlEtiqueta = urlEtiqueta == null || urlEtiqueta.isBlank() ? null : urlEtiqueta.trim();
     this.eventos = new ArrayList<>(Objects.requireNonNullElse(eventos, List.of()));
   }
 
   /**
    * Una guía que alguien tecleó en el panel: sabemos con qué transportadora va porque lo escribió
-   * una persona, y no con qué código la conoce la plataforma. No se puede consultar su rastreo.
+   * una persona, y no con qué código la conoce la plataforma. No se puede consultar su rastreo, y
+   * su rótulo lo imprimió quien la emitió por fuera.
    */
   public static GuiaEnvio crear(String transportadora, String numero, Dinero costo) {
     return new GuiaEnvio(
-        GeneradorIdentificador.nuevo(), transportadora, null, numero, costo, List.of());
+        GeneradorIdentificador.nuevo(), transportadora, null, numero, costo, null, List.of());
   }
 
-  /** Una guía emitida por la plataforma, que sí sabe con qué código consultarla. */
-  public static GuiaEnvio crear(
-      String transportadora, String codigoTransportadora, String numero, Dinero costo) {
+  /**
+   * Una guía emitida por la plataforma, que sí sabe con qué código consultarla y de la que suele
+   * haber rótulo.
+   *
+   * <p>{@code urlEtiqueta} admite nulo <strong>a propósito</strong>: la etiqueta no está
+   * garantizada. Dos guías de Servientrega emitidas por el mismo camino, una trajo {@code
+   * label_url} y la otra no la trajo nunca, ni con el envío ya entregado
+   * (docs/13-skydropx-capacidades.md §6.7). Qué lo decide sigue sin saberse, así que quien despache
+   * no puede dar por hecho el rótulo.
+   */
+  public static GuiaEnvio emitida(
+      String transportadora,
+      String codigoTransportadora,
+      String numero,
+      Dinero costo,
+      String urlEtiqueta) {
     return new GuiaEnvio(
         GeneradorIdentificador.nuevo(),
         transportadora,
         codigoTransportadora,
         numero,
         costo,
+        urlEtiqueta,
         List.of());
   }
 
@@ -163,5 +181,14 @@ public final class GuiaEnvio {
 
   public Dinero costo() {
     return costo;
+  }
+
+  /**
+   * El rótulo que se pega a la caja, cuando la plataforma lo devolvió. Vacío en las guías tecleadas
+   * a mano —que se imprimieron por fuera— y también en algunas emitidas por nosotros: ver {@link
+   * #emitida}.
+   */
+  public Optional<String> urlEtiqueta() {
+    return Optional.ofNullable(urlEtiqueta);
   }
 }

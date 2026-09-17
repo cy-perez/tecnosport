@@ -152,6 +152,13 @@ tecnosport:
       # de una transacción. Veinticinco a dos peticiones por segundo son unos trece segundos en el
       # peor caso; lo que no quepa espera a la vuelta siguiente.
       maximo-por-corrida: ${SKYDROPX_SEGUIMIENTO_MAXIMO_POR_CORRIDA:25}
+    emision:
+      # Mucho más seguido que el seguimiento, y con razón: el seguimiento vigila cosas que pasan en
+      # días, y esto espera una respuesta que llega en segundos o minutos con un pedido pagado
+      # esperándola. Medido: 25 s el caso bueno, más de 4 min el que terminó en error
+      # (docs/13-skydropx-capacidades.md §6.10). Solo hay algo que revisar cuando alguien acaba de
+      # pulsar el botón, así que el costo de la frecuencia es cero la mayor parte del tiempo.
+      intervalo-segundos: ${SKYDROPX_EMISION_INTERVALO_SEGUNDOS:60}
   origen:
     # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
     # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).
@@ -173,6 +180,15 @@ tecnosport:
     # Opcional a propósito: en Colombia no se usa de forma fiable y muchas transportadoras lo
     # ignoran. Exigirlo impediría arrancar por un dato que a nadie le sirve.
     codigo-postal: ${ORIGEN_CODIGO_POSTAL:}
+    # El barrio, y no es un adorno: viaja como area_level3 en la cotización, el envío lo hereda de
+    # ahí, y sin él POST /pickups responde "Shipper address2 not valid" y GET /pickups/coverage
+    # devuelve un 422 con el mensaje vacío. Dos sesiones dieron eso por roto del lado de Skydropx
+    # y era esto (docs/13-skydropx-capacidades.md §6.10). Ya estaba dentro de `direccion` como
+    # texto; la plataforma lo quiere en su propio campo.
+    barrio: ${ORIGEN_BARRIO:La Milagrosa}
+    # `reference` es obligatorio en la dirección de origen al emitir, y se imprime en la guía: es
+    # lo que lee el mensajero que viene a recoger. Dato de negocio, decidido el 16/09/2026.
+    referencia: ${ORIGEN_REFERENCIA:Apartamento 401}
     # No viaja en la cotización: lo exige la guía, que pide email en las dos direcciones. Es el
     # correo público del negocio —el mismo del pie y de los textos legales— y no el remitente
     # transaccional, porque lo que escriba la transportadora tiene que leerlo una persona.

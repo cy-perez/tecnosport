@@ -5,7 +5,11 @@ import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
+import co.tecnosport.api.application.envio.EmisorDeGuias;
+import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
+import co.tecnosport.api.application.envio.ResultadoEmision;
+import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +20,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,12 +30,14 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Cliente de Skydropx: cotiza envíos (adr/0021) y consulta el rastreo de una guía (adr/0022).
+ * Cliente de Skydropx: cotiza envíos (adr/0021), emite guías (adr/0033) y consulta el rastreo
+ * (adr/0022).
  *
- * <p><strong>Las dos cosas en la misma clase, y no es por comodidad.</strong> El token en caché y
- * el limitador de dos peticiones por segundo son de la <em>cuenta</em>, no de un caso de uso: dos
+ * <p><strong>Los tres en la misma clase, y no es por comodidad.</strong> El token en caché y el
+ * limitador de dos peticiones por segundo son de la <em>cuenta</em>, no de un caso de uso: dos
  * instancias serían dos tokens y dos limitadores contra un único límite, y el segundo no sabría del
- * primero. El día que aparezca un tercer tramo —la emisión de la guía— va aquí por lo mismo.
+ * primero. El tercer tramo —la emisión— llegó el 16 de septiembre de 2026 y entró aquí por lo
+ * mismo, que era lo que este javadoc ya decía.
  *
  * <p><strong>Lo verificado</strong> (docs/13-skydropx-capacidades.md): OAuth 2.0 con credenciales
  * de cliente contra {@code POST /api/v1/oauth/token}, token de 2 horas, límite de 2 peticiones por
@@ -48,7 +55,7 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>El token se renueva con margen y no justo al vencer: una cotización que arranca con el token
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
-public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento {
+public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias {
 
   private static final Logger log = LoggerFactory.getLogger(SkydropxClient.class);
 
@@ -63,6 +70,18 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
   /** Verificado: la API acepta hasta 2 peticiones por segundo. */
   private static final int PETICIONES_POR_SEGUNDO = 2;
 
+  /**
+   * Cuántas veces se repite la creación de un envío cuando la llamada se cae a medias. Es seguro
+   * <strong>solo</strong> porque el cuerpo lleva {@code unique_shipment: true}: la plataforma
+   * cachea la respuesta por {@code rate_id} durante 96 horas y un reintento con la misma tarifa
+   * devuelve los mismos envíos en vez de crear otros. Sin esa llave, reintentar un {@code 408}
+   * emite dos guías y cobra dos veces — pasó, y salió gratis de milagro (docs/13 §6.2).
+   */
+  private static final int INTENTOS_DE_EMISION = 3;
+
+  /** Entre reintentos de emisión: un 409 dice "hay una creación en proceso", y hay que dejarla. */
+  private static final Duration ESPERA_ENTRE_EMISIONES = Duration.ofSeconds(3);
+
   private final URI urlBase;
   private final String clientId;
   private final String clientSecret;
@@ -73,6 +92,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
   private final Reloj reloj;
   private final MapeadorCotizacionSkydropx mapeador;
   private final MapeadorSeguimientoSkydropx mapeadorSeguimiento;
+  private final MapeadorEmisionSkydropxV2 mapeadorEmision;
   private final LimitadorDePeticiones limitador;
   private final LimitadorDePeticiones.Pausador pausador;
   private final HttpClient httpClient;
@@ -101,6 +121,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
         reloj,
         new MapeadorCotizacionSkydropxV1(),
         new MapeadorSeguimientoSkydropxV1(),
+        new MapeadorEmisionSkydropxV2(),
         LimitadorDePeticiones.deSegundo(PETICIONES_POR_SEGUNDO),
         Thread::sleep,
         HttpClient.newHttpClient());
@@ -118,6 +139,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
       Reloj reloj,
       MapeadorCotizacionSkydropx mapeador,
       MapeadorSeguimientoSkydropx mapeadorSeguimiento,
+      MapeadorEmisionSkydropxV2 mapeadorEmision,
       LimitadorDePeticiones limitador,
       LimitadorDePeticiones.Pausador pausador,
       HttpClient httpClient) {
@@ -135,6 +157,7 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
     this.reloj = Objects.requireNonNull(reloj);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.mapeadorSeguimiento = Objects.requireNonNull(mapeadorSeguimiento);
+    this.mapeadorEmision = Objects.requireNonNull(mapeadorEmision);
     this.limitador = Objects.requireNonNull(limitador);
     this.pausador = Objects.requireNonNull(pausador);
     this.httpClient = Objects.requireNonNull(httpClient);
@@ -313,6 +336,187 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
       return List.of();
     }
     return mapeadorSeguimiento.eventos(json.readTree(respuesta.body()), guia);
+  }
+
+  /**
+   * Pide las guías. <strong>Que responda {@code Aceptada} significa que la plataforma
+   * cobró</strong>, no que haya guía: el {@code 202} llega con {@code payment_status: paid} y
+   * {@code master_tracking_number: null}.
+   *
+   * <p><strong>Aquí sí se reintenta, y es lo contrario de lo que parece prudente.</strong> Un
+   * {@code 408} de Skydropx no significa que no pasó nada: la primera emisión del proyecto
+   * respondió "tiempo de espera excedido" con la guía ya creada y 19.465 descontados del saldo
+   * (docs/13 §6.2). Con {@code unique_shipment: true} en el cuerpo, repetir la llamada con la misma
+   * tarifa devuelve <em>esos mismos</em> envíos —la plataforma los cachea 96 horas por {@code
+   * rate_id}—, así que insistir es cómo se recuperan los identificadores de una guía que ya se
+   * pagó. Rendirse al primer corte es lo que la perdería.
+   *
+   * <p>Y por eso, cuando se agotan los intentos, el detalle lo dice con todas sus letras: puede
+   * haber una guía viva del otro lado. No es una hipótesis — es el caso medido.
+   */
+  @Override
+  public ResultadoEmision emitir(SolicitudDeEmision solicitud) {
+    Objects.requireNonNull(solicitud, "La solicitud de emisión no puede ser nula.");
+    try {
+      return emitirConReintentos(solicitud);
+    } catch (IOException | RuntimeException e) {
+      return rechazo(
+          ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, quizaQuedoCreada(e.toString()));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return rechazo(
+          ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, quizaQuedoCreada("hilo interrumpido"));
+    }
+  }
+
+  private ResultadoEmision emitirConReintentos(SolicitudDeEmision solicitud)
+      throws IOException, InterruptedException {
+    String token = token();
+    if (token == null) {
+      return rechazo(
+          ResultadoEmision.Motivo.SIN_CREDENCIALES,
+          "no se obtuvo token; revisar SKYDROPX_CLIENT_ID y SKYDROPX_CLIENT_SECRET");
+    }
+
+    String cuerpo = mapeadorEmision.cuerpoDeEmision(solicitud, origen);
+    IOException ultimoCorte = null;
+    for (int intento = 0; intento < INTENTOS_DE_EMISION; intento++) {
+      if (intento > 0) {
+        pausador.pausar(ESPERA_ENTRE_EMISIONES);
+      }
+      HttpResponse<String> respuesta;
+      try {
+        respuesta =
+            enviar(
+                peticion("/api/v2/shipments", token)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
+                    .build());
+      } catch (IOException corte) {
+        // La peticion se cayo, y el envio pudo haberse creado igual. `unique_shipment` hace que
+        // volver a preguntar con la misma tarifa sea recuperar, no duplicar.
+        ultimoCorte = corte;
+        continue;
+      }
+
+      int estado = respuesta.statusCode();
+      // 408: la creacion siguio del otro lado. 409: `unique_shipment` avisa de que hay una en
+      // proceso con esta misma tarifa. Los dos se resuelven insistiendo, nunca cambiando el cuerpo.
+      if (estado == 408 || estado == 409) {
+        ultimoCorte = null;
+        continue;
+      }
+      if (estado / 100 == 5) {
+        return rechazo(
+            ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE,
+            "la creacion del envio respondio " + estado);
+      }
+      if (estado / 100 == 4) {
+        // Los nombres de los campos que la plataforma rechazo, sin sus valores: cuando la tarifa no
+        // resuelve, el 422 enumera los campos que el envio habria heredado de la cotizacion, y eso
+        // es lo que hace falta para diagnosticar. Los valores no: son el telefono, el nombre y la
+        // direccion del comprador, y docs/08-seguridad-legal.md dice que en el registro no van
+        // datos personales. El camino de cotizacion ya lo cuidaba y este no lo hacia.
+        return rechazo(
+            ResultadoEmision.Motivo.DATOS_RECHAZADOS,
+            estado + " campos rechazados: " + camposRechazados(respuesta.body()));
+      }
+
+      List<String> envios = mapeadorEmision.enviosCreados(json.readTree(respuesta.body()));
+      if (envios.isEmpty()) {
+        return rechazo(
+            ResultadoEmision.Motivo.RESPUESTA_INESPERADA,
+            "la plataforma acepto la emision y no devolvio ningun envio");
+      }
+      return new ResultadoEmision.Aceptada(envios);
+    }
+    return rechazo(
+        ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE,
+        quizaQuedoCreada(
+            ultimoCorte == null
+                ? "se agotaron los " + INTENTOS_DE_EMISION + " intentos con 408/409"
+                : ultimoCorte.toString()));
+  }
+
+  /**
+   * Relee un envío ya aceptado. Falla cerrado como todo lo demás, pero con una diferencia que
+   * importa: "no se pudo preguntar" es un caso propio del puerto y no se disfraza de "sigue en
+   * curso". Concluir sobre algo que nadie contestó es lo que cerraría una emisión a ciegas.
+   */
+  @Override
+  public LecturaDeEnvioEmitido consultar(String idEnvioEnPlataforma) {
+    Objects.requireNonNull(idEnvioEnPlataforma, "El id del envío no puede ser nulo.");
+    try {
+      String token = token();
+      if (token == null) {
+        return new LecturaDeEnvioEmitido.NoSeSabe();
+      }
+      // Por v1: `GET /api/v2/shipments/{id}` no existe —404 con el HTML del sitio, medido el 16 de
+      // septiembre de 2026—. Crear va por v2 y releer por v1, a proposito (docs/13 §6.10).
+      HttpResponse<String> respuesta =
+          enviar(
+              peticion(
+                      "/api/v1/shipments/"
+                          + URLEncoder.encode(idEnvioEnPlataforma, StandardCharsets.UTF_8),
+                      token)
+                  .GET()
+                  .build());
+      if (respuesta.statusCode() / 100 != 2) {
+        log.warn(
+            "No se pudo releer el envio {}: respondio {}",
+            idEnvioEnPlataforma,
+            respuesta.statusCode());
+        return new LecturaDeEnvioEmitido.NoSeSabe();
+      }
+      return mapeadorEmision.lectura(json.readTree(respuesta.body()));
+    } catch (IOException | RuntimeException e) {
+      log.warn("No se pudo releer el envio {}: {}", idEnvioEnPlataforma, e.toString());
+      return new LecturaDeEnvioEmitido.NoSeSabe();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return new LecturaDeEnvioEmitido.NoSeSabe();
+    }
+  }
+
+  /**
+   * El rechazo de una emision, en un solo sitio. Va en {@code error} y no en {@code warn} —al reves
+   * que el de la cotizacion—: una cotizacion que falla deja al comprador con la recogida en el
+   * punto, pero un despacho que no sale deja un pedido pagado sin mover, y eso lo mira alguien hoy.
+   */
+  private ResultadoEmision rechazo(ResultadoEmision.Motivo motivo, String detalle) {
+    log.error("No se pudo emitir la guia ({}): {}", motivo, detalle);
+    return new ResultadoEmision.Rechazada(motivo, detalle);
+  }
+
+  private static String quizaQuedoCreada(String causa) {
+    return causa
+        + " - el envio PUEDE haber quedado creado y cobrado: reintentar la emision con la misma"
+        + " tarifa lo recupera por idempotencia durante 96 horas, y pasado ese plazo hay que"
+        + " buscarlo en el panel de Skydropx antes de volver a emitir";
+  }
+
+  /**
+   * Los nombres de los campos que vienen dentro de {@code errors}, y nada mas. Si la respuesta no
+   * tiene esa forma se dice que no la tiene, en vez de volcar el cuerpo: un cuerpo inesperado es
+   * justo donde puede venir cualquier cosa, incluido lo que mandamos.
+   */
+  private String camposRechazados(String cuerpo) {
+    if (cuerpo == null || cuerpo.isBlank()) {
+      return "(respuesta vacia)";
+    }
+    try {
+      JsonNode errores = json.readTree(cuerpo).path("errors");
+      if (errores.isObject()) {
+        List<String> nombres = new ArrayList<>();
+        errores.propertyNames().forEach(nombres::add);
+        if (!nombres.isEmpty()) {
+          return String.join(", ", nombres);
+        }
+      }
+    } catch (RuntimeException e) {
+      // Cae al mensaje generico de abajo.
+    }
+    return "(la respuesta no trae `errors`; no se vuelca por si lleva datos del comprador)";
   }
 
   /**

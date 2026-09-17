@@ -4048,9 +4048,9 @@ disparador.
   documentación y hablan de cosas distintas —el disparador y el cuerpo—. Estaba
   anotado como contradicción desde el día 14 y nadie había vuelto a leerlo entero.
 
-Lo que queda del paso 7 es **la emisión de la guía**, que es lo que llena el código de
-transportadora y convierte el despacho a mano en un despacho del sistema. Cómo se retoma
-está al final de esta fase, en "Traspaso".
+Lo que quedaba del paso 7 era **la emisión de la guía**, que es lo que llena el código de
+transportadora y convierte el despacho a mano en un despacho del sistema. Se cerró el mismo
+día: ver "La emisión de la guía, cerrada", al final de esta fase.
 
 ### El webhook, con secreto y comprobado (2026-09-16)
 
@@ -4087,93 +4087,92 @@ trae en 1,6 s por la deduplicación—, y una cotización que falla **no deja un
 en el registro**, así que "sin tarifas", "credenciales malas" y "el proveedor no responde"
 se ven idénticos desde afuera.
 
-### Traspaso: cómo se retoma la emisión de la guía (2026-09-16)
+### La emisión de la guía, cerrada (2026-09-16)
 
-Es lo único que le falta a la Fase 7. Esta sección existe para que la sesión siguiente
-arranque sin releer los ocho apartados de `docs/13` §6.
+Skydropx recargó el sandbox —COP 50.388— y con eso se cerró lo único que le faltaba a la Fase 7. El
+detalle de lo medido está en `docs/13-skydropx-capacidades.md` §6.10 y las decisiones en `adr/0033`;
+aquí queda lo que cambia respecto de lo que este plan daba por sentado.
 
-**Antes de nada, lee**: `docs/13-skydropx-capacidades.md` §6.2, §6.5, §6.6, §6.7 y §6.9,
-`adr/0021`, `adr/0022`, `adr/0031` y `adr/0032`.
+#### Lo que el traspaso planteaba mal, y por qué
 
-#### Lo que bloquea, y no es conocimiento
+Este plan dejó escrito, como decisión abierta número uno: *"¿Qué le pasa al pedido cuando su guía
+muere? Devolver el pedido a la cola toca inventario y el grafo del pedido."* **La pregunta se
+disuelve**: el pedido no sale de `EN_PREPARACION` hasta que la guía viva, así que una emisión que
+muere nunca movió nada y no hay cola a la que devolver. Lo que parecía el trozo caro del paso
+—tocar inventario y el grafo del pedido— desapareció al poner la transición donde iba.
 
-**El saldo: quedan COP 388.** La emisión del 16 de septiembre costó 8.200 y dejó la cuenta
-ahí; la tarifa más barata vista es Coordinadora a 5.991. **No alcanza para una sola guía
-más.** Los créditos se pidieron a Skydropx el 14 de septiembre —con la evidencia de que su
-recarga por Mercado Pago falla del lado de ellos— y no hay API de recarga. Así que el paso se
-puede **escribir y probar entero** sin saldo, y no se puede **cerrar** sin él: el cierre son
-dos emisiones reales, una que viva y una que se pueda cancelar.
+La segunda: el traspaso decía *"el cuerpo va envuelto en `shipment`, con `quotation_id` y
+`rate_id`"*. `quotation_id` no existe como campo del envío, y ya lo decía `§6.4`. Solo `rate_id`.
 
-Lo que sí es gratis, y conviene aprovechar: **un `422` no cuesta saldo**, el rastreo tampoco,
-y el panel manda eventos de prueba por tipo.
+#### Tres fallos que llevaban dos sesiones anotados como del proveedor, y eran nuestros
 
-#### Lo que ya está decidido y medido — no volver a investigarlo
+Esto es lo que más vale del día, y el patrón se repite:
 
-- **El cuerpo va envuelto en `shipment`**, con `quotation_id` y `rate_id` de la cotización que
-  ya se congeló en el pedido.
-- **`declared_amount` va dentro de cada `parcel`**, no fuera. Mandarlo fuera costó un mes de
-  tarifas mudas y quince variantes del cuerpo (§6.4).
-- **Las dos direcciones exigen `email` y `reference`.** `reference` reusa `indicaciones` y
-  viaja como `Sin indicaciones adicionales` cuando el comprador no escribe nada.
-- **Cada bulto exige `package_type` y `package_content`.** El primero es `4G` ("Caja de
-  cartón"), del catálogo `GET /api/v1/shipments/packagings`. El segundo sale de
-  `ContenidoDeclarado` (`domain/envio`), que ya existe, es un `switch` exhaustivo sobre
-  `LineaCatalogo` y **nadie llama todavía en producción**: es lo primero que el adaptador debe
-  enchufar.
-- **`ORIGEN_TELEFONO` hay que mandarlo sin indicativo.** Vale `+573138816711`, que sirve para
-  cotizar y devuelve `400 phone no es válido` al crear el envío. La conversión es del
-  adaptador de emisión, como la de gramos a kilos.
-- **`sync_label_creation: false`**, y **un `408` no significa que no pasó nada**: el primer
-  intento respondió "Tiempo de espera excedido" con la guía ya creada y cobrada. Reintentar a
-  ciegas emite dos guías.
-- **El `202` no trae guía.** `master_tracking_number` y `label_url` llegan en `null` con
-  `workflow_status: in_progress`; hay que releer el envío o esperar el webhook. Guardar lo que
-  devuelve la creación es guardar una guía vacía.
-- **Y el `202` puede morir**: `workflow_status: error`, `payment_status: refunded` y un `500`
-  de la transportadora minutos después. **Un pedido no se marca despachado con la respuesta de
-  creación.**
-- **Varios bultos son varias guías** (`multishipment`): ninguna transportadora de la cuenta
-  admite multipaquete. Ya está modelado (`adr/0031`).
-- **El barrio no se puede mandar en el envío**: viaja en la cotización y el envío lo hereda
-  (§6.7). La sonda `tools/sonda-recoleccion.mjs` está lista para comprobarlo de un tirón.
+- **`POST /pickups` y `GET /pickups/coverage`** fallaban porque las cinco guías se habían emitido sin
+  barrio. Con `area_level3` en la cotización, el envío lo hereda y la cobertura responde `200` con
+  fechas. `§6.6` y `§6.7` lo habían dado por roto del lado de ellos con todas las letras.
+- **Coordinadora no falla "de noche"**: su contador de remisiones está atascado y devuelve el mismo
+  `codigo_remision` a las 22:30 y a las 18:35. Es la tarifa más barata de la cuenta, o sea la que el
+  selector elige solo.
 
-#### Lo que el código ya tiene puesto para recibirlo
+Las tres veces, el proveedor **no dio error**: aceptó el campo mal puesto, o el que faltaba, y
+siguió. Es la cuarta vez que este proveedor cobra el silencio más caro que un `422`, y es el motivo
+de que el mapeador de emisión tenga una prueba que afirma qué campos **no** se mandan.
 
-`Envio` con varias `GuiaEnvio`, cada una con su `codigoTransportadora` —el campo que la
-emisión llena y sin el cual la conciliación se salta la guía—; `ConciliarGuia` con sus dos
-disparadores; el webhook **firmando de verdad** desde el 16 de septiembre; `EstadoEnvio.FALLIDO`
-para el `error` de la plataforma; y el evento `Error` **suscrito en el panel**, que es
-probablemente el aviso del `202` que muere — plausible y sin comprobar hasta que una emisión
-real vuelva a morir.
+#### Lo que quedó construido
 
-#### Lo que hay que escribir
+`EmisionDeGuia` con su tabla, el puerto `EmisorDeGuias` con sus dos momentos —pedir y releer—, el
+caso de uso que emite, la tarea que resuelve y despacha, el adaptador contra v2/v1, el endpoint
+`POST /admin/pedidos/{id}/emitir-guia` y el botón del panel con el enlace a la etiqueta.
 
-Un puerto de emisión en `application/envio` con su adaptador en `infrastructure`, y el caso de
-uso que lo usa: emitir, **esperar el estado terminal** releyendo o por webhook, y ramificar —
-`success` guarda guías y etiqueta, `error` devuelve el pedido a la cola. El patrón de los
-pasos 2a y 7 ya se pagó dos veces: el protocolo se prueba entero con dobles y fixtures, y lo
-que depende de la cuenta se mide aparte.
+Verificado de punta a punta en el navegador contra el sandbox real: guía `034054505967` de Envía,
+7.850, cuarenta y cinco segundos entre el clic y el pedido en `DESPACHADO`.
 
-#### Decisiones abiertas, para no tomarlas de pasada
+#### La revisión adversarial encontró ocho defectos, y cuatro tocaban dinero
 
-1. **¿Qué le pasa al pedido cuando su guía muere?** `FALLIDO` hoy sólo se registra y pide ojo
-   humano. Devolver el pedido a la cola toca inventario y el grafo del pedido.
-2. **¿`FALLIDO` es terminal?** Hoy no, a propósito: que el estado sea final no está medido, y
-   darlo por terminado dejaría de preguntar por ese envío para siempre. Se decide viendo qué
-   manda el rastreo después de una muerte real.
-3. **La recolección** sigue ejercida a medias y cuesta una guía viva.
-4. **`exigeRevisionManual()` no lo llama nada en producción.** Cinco estados dejan el paquete
-   quieto y ninguna pantalla los marca: hoy un envío retenido, destruido o fallido se ve igual
-   que uno en tránsito. Es otra tarea, y es la que hace útil todo lo anterior.
-5. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no
-   cotizan. Sería una pantalla a la que nadie puede llegar.
+Se pidió al terminar, como manda este documento, y no fue un trámite. Lo que
+encontró, y el patrón que comparten los cuatro caros:
 
-#### Y dos defectos vivos que no son de este paso
+- **La fila de la emisión se escribía después de cobrar**, mientras el ADR prometía
+  con todas las letras que eso no pasaba. Había además **una prueba que fijaba el
+  defecto como comportamiento deseado** —"un rechazo no deja emisión"—, que es la
+  forma más eficaz de que un error sobreviva a la siguiente revisión.
+- **El mensaje de error decía que reintentar con la misma tarifa recuperaría el
+  envío**, y no guardaba la tarifa en ninguna parte.
+- **El reintento volvía a elegir la transportadora que falla siempre**, y como la
+  cotización se deduplica por contenido y la creación se cachea por tarifa, recibía
+  de vuelta los envíos muertos y moría en un 500.
+- **La tarea podía atascarse para siempre**, cada minuto, reenviando el correo de
+  despacho, si alguien usaba el formulario manual que está en la misma pantalla.
 
-Están anotados en `docs/13` §6.9 y arreglados el 16 de septiembre: el `409` que decía "sin
-cobertura" cuando no se pudo cotizar —ahora `503 COTIZACION_NO_DISPONIBLE`— y la cotización
-que fallaba sin dejar una línea en el registro. Si algo del checkout se comporta raro al
-retomar, empezar por ahí.
+El patrón: **todos eran promesas del diseño que el código no cumplía**, no cosas que
+faltaran por escribir. Un ADR que afirma una garantía es una afirmación que hay que
+comprobar, no un resumen de lo que se hizo.
+
+Se arreglaron los ocho, y el recorrido de punta a punta **se repitió** —guía
+`034054505968`— porque el primero probaba el código de antes y ya no valía. Detalle
+en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
+
+#### Lo que sigue abierto, y ya no es de esta fase
+
+1. **La recolección**, bloqueada del lado de la transportadora: el conector de Servientrega respondió
+   `ECONNREFUSED` tres veces seguidas a las 18:45. Nuestro cuerpo está validado entero. Se cierra
+   reintentando en horario hábil, y no cuesta saldo.
+2. **El barrio del destino.** `Direccion` no lo tiene y el checkout no lo pide. Para la recolección
+   basta el del origen; el del destino mejoraría la entrega y es un cambio de checkout, base de
+   datos y formulario.
+3. **Nadie mira los estados que piden ojo humano, y ahora son más.** `exigeRevisionManual()` no lo
+   llama nada en producción: cinco estados de envío dejan el paquete quieto y ninguna pantalla los
+   marca. A eso se suman los dos de la emisión —`INDETERMINADA`, que puede ser una guía pagada de la
+   que no tenemos identificador, y `PARCIAL`, que son guías pagadas sin usar—: existen, se guardan,
+   y solo aparecen en un `warn` del registro. Es la tarea que hace útil todo lo anterior, y es la
+   que sigue.
+4. **¿`FALLIDO` es terminal?** Sin medir: la emisión que murió no llegó a producir eventos de
+   rastreo.
+5. **El criterio de elección de tarifa.** `TarifaEnvio.masEconomica` no mira `pickup`, y la más
+   barata de la cuenta —Envía— no recoge por API. El día que la recolección se conecte hay que
+   decidir si el criterio sigue siendo solo el precio.
+6. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no cotizan.
 
 ## Cómo conversar con Claude Code en este proyecto
 

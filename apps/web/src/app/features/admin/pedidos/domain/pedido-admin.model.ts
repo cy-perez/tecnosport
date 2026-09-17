@@ -53,11 +53,37 @@ export interface DatosTransferencia {
   readonly referencia: string;
 }
 
-/** Una guía del despacho: un paquete, una transportadora y lo que ese paquete nos cuesta. */
+/** Una guía del despacho: un paquete, una transportadora y lo que ese paquete nos cuesta.
+ *
+ * `urlEtiqueta` es el rótulo que hay que imprimir, y viene vacío más a menudo de lo que parece: una
+ * guía tecleada a mano se imprimió por fuera, y de las emitidas por nosotros tampoco está
+ * garantizado. La pantalla tiene que saber vivir sin él. */
 export interface GuiaAdmin {
   readonly transportadora: string;
   readonly guia: string;
   readonly costo: Dinero;
+  readonly urlEtiqueta: string | null;
+}
+
+/** En qué va el intento de que la transportadora emita las guías de un pedido (`adr/0033`). */
+export type EstadoEmision =
+  'SOLICITADA' | 'EN_CURSO' | 'INDETERMINADA' | 'EMITIDA' | 'FALLIDA' | 'PARCIAL';
+
+/** Lo que el panel sabe de una emisión recién pedida.
+ *
+ * No trae guías porque todavía no las hay: la plataforma cobra al crear y el número aparece minutos
+ * después. Lo que sí dice es con qué transportadora salió y cuántos paquetes son, que es lo que
+ * explica por qué un pedido de dos variantes va a traer dos guías y dos cobros.
+ *
+ * No trae `detalle` a propósito. El servidor lo guarda —es lo que lee quien tiene que ir a buscar
+ * una guía pagada—, pero está escrito en español dentro de la capa de aplicación y sin pasar por
+ * Transloco: cablearlo hasta aquí es dejar preparado que alguien lo pinte y publique texto de
+ * interfaz que nunca se tradujo. El día que haga falta mostrarlo, va con su llave. */
+export interface EmisionDeGuiaAdmin {
+  readonly id: string;
+  readonly estado: EstadoEmision;
+  readonly transportadora: string;
+  readonly cuantosEnvios: number;
 }
 
 /** Solo existe una vez despachado el pedido (`docs/02-modelo-datos.md`).

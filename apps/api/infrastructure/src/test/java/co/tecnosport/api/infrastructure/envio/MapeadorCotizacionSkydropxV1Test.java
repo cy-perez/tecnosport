@@ -43,7 +43,10 @@ class MapeadorCotizacionSkydropxV1Test {
           "Antioquia",
           "Medellín",
           "05001",
-          null);
+          null,
+          "La Milagrosa",
+          "Apartamento 401",
+          "contacto@tecnosport.co");
 
   private static final Direccion BOGOTA =
       new Direccion("11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", "Apto. 502");

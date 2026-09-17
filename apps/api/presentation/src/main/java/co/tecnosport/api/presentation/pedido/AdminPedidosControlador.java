@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.pedido;
 
+import co.tecnosport.api.application.envio.EmitirGuiaDePedido;
+import co.tecnosport.api.application.envio.EmitirGuiaDePedidoComando;
 import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.CancelarPedidoComando;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
@@ -20,6 +22,7 @@ import co.tecnosport.api.application.pedido.ResultadoEntrega;
 import co.tecnosport.api.application.pedido.VerificarContraentrega;
 import co.tecnosport.api.application.pedido.VerificarContraentregaComando;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.envio.EmisionDeGuia;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MotivoCancelacion;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -27,6 +30,7 @@ import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.presentation.pedido.dto.CancelarPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.ConciliarRecaudoRequest;
 import co.tecnosport.api.presentation.pedido.dto.DespacharPedidoRequest;
+import co.tecnosport.api.presentation.pedido.dto.EmisionDeGuiaRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidosPaginadosRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.RechazarEnEntregaRequest;
@@ -35,6 +39,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -44,6 +49,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -68,6 +74,7 @@ public class AdminPedidosControlador {
   private final ConciliarTransferencia conciliarTransferencia;
   private final VerificarContraentrega verificarContraentrega;
   private final DespacharPedido despacharPedido;
+  private final EmitirGuiaDePedido emitirGuiaDePedido;
   private final MarcarEntregado marcarEntregado;
   private final CancelarPedido cancelarPedido;
   private final RechazarEnEntrega rechazarEnEntrega;
@@ -80,6 +87,7 @@ public class AdminPedidosControlador {
       ConciliarTransferencia conciliarTransferencia,
       VerificarContraentrega verificarContraentrega,
       DespacharPedido despacharPedido,
+      EmitirGuiaDePedido emitirGuiaDePedido,
       MarcarEntregado marcarEntregado,
       CancelarPedido cancelarPedido,
       RechazarEnEntrega rechazarEnEntrega,
@@ -90,6 +98,7 @@ public class AdminPedidosControlador {
     this.conciliarTransferencia = Objects.requireNonNull(conciliarTransferencia);
     this.verificarContraentrega = Objects.requireNonNull(verificarContraentrega);
     this.despacharPedido = Objects.requireNonNull(despacharPedido);
+    this.emitirGuiaDePedido = Objects.requireNonNull(emitirGuiaDePedido);
     this.marcarEntregado = Objects.requireNonNull(marcarEntregado);
     this.cancelarPedido = Objects.requireNonNull(cancelarPedido);
     this.rechazarEnEntrega = Objects.requireNonNull(rechazarEnEntrega);
@@ -155,6 +164,36 @@ public class AdminPedidosControlador {
                             .toList(),
                         actor)));
     return mapeador.aRespuesta(pedido);
+  }
+
+  /**
+   * Pide las guías a la transportadora. <strong>No despacha</strong>: la plataforma cobra al crear
+   * y devuelve la guía en {@code null}, así que esto responde en cuanto hay envíos creados y el
+   * pedido se queda en {@code EN_PREPARACION} hasta que la tarea programada traiga los números —
+   * entre veinticinco segundos y varios minutos (docs/13-skydropx-capacidades.md §6.10).
+   *
+   * <p>Devuelve 202 y no 200 por lo mismo: lo que se acepta es la solicitud, no el despacho.
+   */
+  @PostMapping("/{id}/emitir-guia")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public EmisionDeGuiaRespuesta emitirGuia(@PathVariable UUID id) {
+    String actor = "admin:" + actorId();
+    // Sin `transaccion.execute`, y es deliberado: dentro hay una recotización que sondea y una
+    // emisión que reintenta —unos veinte segundos en el peor caso— con una llamada que cobra en la
+    // mitad. Sostener una conexión y las filas del pedido todo ese rato no aporta atomicidad
+    // ninguna, porque el cobro del tercero no se revierte; el caso de uso abre las transacciones
+    // que necesita, donde las necesita (adr/0033).
+    EmisionDeGuia emision = emitirGuiaDePedido.ejecutar(new EmitirGuiaDePedidoComando(id, actor));
+    // En `info` y con los identificadores de la plataforma dentro: es el unico rastro de que se
+    // comprometio saldo, y si algo se rompe despues es por aqui por donde se empieza a buscar.
+    log.info(
+        "Emision solicitada para el pedido {} por {}: {} con {} envio(s) {}",
+        id,
+        actor,
+        emision.transportadora(),
+        emision.enviosEnPlataforma().size(),
+        emision.enviosEnPlataforma());
+    return EmisionDeGuiaRespuesta.de(emision);
   }
 
   @PostMapping("/{id}/entrega")

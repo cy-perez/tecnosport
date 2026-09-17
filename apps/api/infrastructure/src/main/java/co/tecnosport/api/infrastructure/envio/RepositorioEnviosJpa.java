@@ -88,7 +88,8 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
               guia.transportadora(),
               guia.codigoTransportadora().orElse(null),
               guia.numero(),
-              guia.costo().valor()));
+              guia.costo().valor(),
+              guia.urlEtiqueta().orElse(null)));
       for (EventoSeguimiento evento : guia.eventos()) {
         insertarSiNoEsta(guia.id(), evento);
       }
@@ -151,6 +152,7 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
         entidad.getCodigoTransportadora(),
         entidad.getNumero(),
         Dinero.deCop(entidad.getCostoEnvio()),
+        entidad.getUrlEtiqueta(),
         eventos.findByGuiaIdOrderByOcurrioEnAsc(entidad.getId()).stream()
             .map(this::aEvento)
             .toList());

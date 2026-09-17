@@ -88,7 +88,8 @@
       "historial": "History",
       "acciones": "Actions",
       "contacto": "Recipient",
-      "costo_total": "Total shipping cost"
+      "costo_total": "Total shipping cost",
+      "imprimir_etiqueta": "Print label"
     },
     "acciones": {
       "sin_accion": "No actions available.",
@@ -104,6 +105,9 @@
       "quitar_guia": "Remove",
       "quitar_guia_accesible": "Remove tracking number {{numero}}",
       "despachar": "Ship",
+      "emitir_guia": "Create label with the carrier",
+      "emision_en_curso": "We asked {{transportadora}} for {{paquetes}} label(s). There is no tracking number yet: the order only moves to shipped once the carrier answers, in a few minutes.",
+      "guia_por_fuera": "Or record a tracking number created elsewhere",
       "marcar_entregado": "Mark delivered",
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",

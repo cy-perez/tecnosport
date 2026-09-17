@@ -564,6 +564,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pedidos/{id}/emitir-guia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["emitirGuia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{id}/despacho": {
         parameters: {
             query?: never;
@@ -981,6 +997,7 @@ export interface components {
             transportadora?: string;
             guia?: string;
             costo?: components["schemas"]["DineroRespuesta"];
+            urlEtiqueta?: string;
         };
         HistorialPedidoRespuesta: {
             estado?: string;
@@ -1382,6 +1399,19 @@ export interface components {
         ConciliarRecaudoRequest: {
             /** Format: int64 */
             comisionRecaudo?: number;
+        };
+        EmisionDeGuiaRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            estado?: string;
+            transportadora?: string;
+            /** Format: int32 */
+            cuantosEnvios?: number;
+            detalle?: string;
+            /** Format: date-time */
+            solicitadaEn?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
         };
         DespacharPedidoRequest: {
             guias?: components["schemas"]["GuiaDespachadaRequest"][];
@@ -2519,6 +2549,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    emitirGuia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmisionDeGuiaRespuesta"];
                 };
             };
         };

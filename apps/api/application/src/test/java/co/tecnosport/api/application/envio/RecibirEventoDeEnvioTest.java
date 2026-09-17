@@ -72,7 +72,7 @@ class RecibirEventoDeEnvioTest {
     envios.guardar(
         Envio.crear(
             UUID.randomUUID(),
-            List.of(GuiaEnvio.crear("99 minutes", codigo, numero, Dinero.deCop(10_540))),
+            List.of(GuiaEnvio.emitida("99 minutes", codigo, numero, Dinero.deCop(10_540), null)),
             DESPACHO));
   }
 

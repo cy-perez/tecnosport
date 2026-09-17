@@ -8,6 +8,7 @@ import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
+  EmisionDeGuiaAdmin,
   MotivoCancelacion,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -158,6 +159,18 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
   async despachar(pedidoId: string, guias: readonly GuiaDespachada[]): Promise<PedidoAdmin> {
     this.despachos.push({ pedidoId, guias });
     return this.items[0];
+  }
+
+  emisiones: string[] = [];
+
+  async emitirGuia(pedidoId: string): Promise<EmisionDeGuiaAdmin> {
+    this.emisiones.push(pedidoId);
+    return {
+      id: 'emision-1',
+      estado: 'EN_CURSO',
+      transportadora: 'Servientrega',
+      cuantosEnvios: 1,
+    };
   }
 
   async marcarEntregado(): Promise<PedidoAdmin> {
@@ -409,6 +422,73 @@ describe('ListaPedidosAdminPage', () => {
 
     expect(await screen.findByText(/31 de agosto de 2026/)).toBeTruthy();
     expect(screen.queryByText(/1 de septiembre de 2026/)).toBeNull();
+  });
+
+  /**
+   * El botón pide la guía y **no despacha**: lo que vuelve es una emisión en curso. El aviso tiene
+   * que decirlo, porque si no quien despacha se queda esperando un número que no va a aparecer en
+   * esta pantalla.
+   */
+  it('emitir la guía avisa de que el número todavía no existe', async () => {
+    const { repositorio } = await renderLista([
+      pedidoDePrueba({ estado: 'EN_PREPARACION', tipoEntrega: 'ENVIO_A_DOMICILIO' }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Emitir guía con la transportadora' }),
+    );
+
+    expect(await screen.findByText(/Se le pidió la guía a Servientrega/)).toBeTruthy();
+    expect(repositorio.emisiones).toEqual([pedidoDePrueba().id]);
+  });
+
+  /** El retiro en punto no tiene a dónde despachar, así que no se le ofrece emitir nada. */
+  it('un retiro en punto no ofrece emitir guía', async () => {
+    await renderLista([
+      pedidoDePrueba({ estado: 'EN_PREPARACION', tipoEntrega: 'RETIRO_EN_PUNTO' }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    expect(await screen.findByRole('button', { name: 'Despachar' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Emitir guía con la transportadora' })).toBeNull();
+  });
+
+  /**
+   * El rótulo no está garantizado: una guía tecleada a mano se imprimió por fuera, y de las
+   * emitidas por nosotros tampoco siempre vuelve. La fila tiene que pintarse igual.
+   */
+  it('el enlace a la etiqueta solo sale cuando la guía trae rótulo', async () => {
+    await renderLista([
+      pedidoDePrueba({
+        estado: 'DESPACHADO',
+        envio: {
+          guias: [
+            {
+              transportadora: 'Servientrega',
+              guia: '2269401762',
+              costo: { valor: 8200, moneda: 'COP' },
+              urlEtiqueta: 'https://sb-pro.skydropx.com/s/s?id=ABC',
+            },
+            {
+              transportadora: 'Servientrega',
+              guia: '2269401763',
+              costo: { valor: 8200, moneda: 'COP' },
+              urlEtiqueta: null,
+            },
+          ],
+          costoEnvio: { valor: 16400, moneda: 'COP' },
+          despachadoEn: '2026-09-16T23:41:59Z',
+          comisionRecaudo: null,
+          recaudoConciliadoEn: null,
+        },
+      }),
+    ]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    const enlaces = await screen.findAllByRole('link', { name: 'Imprimir etiqueta' });
+    expect(enlaces).toHaveLength(1);
+    expect(enlaces[0].getAttribute('href')).toBe('https://sb-pro.skydropx.com/s/s?id=ABC');
   });
 
   /**

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentosFalso;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
@@ -112,7 +113,8 @@ class CrearPedidoTest {
     cotizador = new CotizadorEnvioFalso();
     cotizador.conTarifas(TARIFA);
     cotizador.recaudaEnElDestino(recaudaEnElDestino);
-    CotizarEnvio cotizarEnvio = new CotizarEnvio(productos, cotizador, () -> AHORA);
+    CotizarEnvio cotizarEnvio =
+        new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
         new MetodosDePagoDisponibles(
             productos, cotizarEnvio, pedidos, criterios, HABILITADOS_EN_PASARELA);

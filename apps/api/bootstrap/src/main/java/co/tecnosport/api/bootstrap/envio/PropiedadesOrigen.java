@@ -19,6 +19,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * una devolución, tiene que llegarle a una persona. El remitente transaccional ({@code
  * no-responder@}) habría tragado ese aviso en silencio.
  *
+ * <p>{@code barrio} es el campo del que depende que la recolección se pueda programar. Viaja como
+ * {@code area_level3} de la cotización y el envío lo hereda de ahí; sin él, {@code POST /pickups}
+ * responde "Shipper address2 not valid" y {@code GET /pickups/coverage} devuelve un 422 con el
+ * mensaje vacío (docs/13-skydropx-capacidades.md §6.10). Está dentro de {@code direccion} como
+ * texto desde siempre, y aparte porque la plataforma lo quiere en su propio campo.
+ *
+ * <p>{@code referencia} la exige la emisión —{@code reference} es obligatorio en el origen— y se
+ * imprime en la guía: la lee el mensajero que viene a recoger.
+ *
  * <p>{@code departamento} y {@code ciudad} son los <em>nombres</em>, y son obligatorios porque
  * Skydropx los exige: sin ellos la cotización responde {@code 422 area_level1/area_level2 no puede
  * estar en blanco} (verificado contra el sandbox el 11 de septiembre de 2026). Duplican lo que el
@@ -35,6 +44,8 @@ public record PropiedadesOrigen(
     String ciudad,
     String ciudadDane,
     String codigoPostal,
+    String barrio,
+    String referencia,
     String correo) {
 
   public PropiedadesOrigen {
@@ -44,6 +55,8 @@ public record PropiedadesOrigen(
     exigir(departamento, "tecnosport.origen.departamento");
     exigir(ciudad, "tecnosport.origen.ciudad");
     exigir(ciudadDane, "tecnosport.origen.ciudad-dane");
+    exigir(barrio, "tecnosport.origen.barrio");
+    exigir(referencia, "tecnosport.origen.referencia");
     exigir(correo, "tecnosport.origen.correo");
   }
 

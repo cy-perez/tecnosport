@@ -97,7 +97,10 @@ public class MapeadorRespuestasPedido {
             .map(
                 guia ->
                     new GuiaRespuesta(
-                        guia.transportadora(), guia.numero(), aRespuesta(guia.costo())))
+                        guia.transportadora(),
+                        guia.numero(),
+                        aRespuesta(guia.costo()),
+                        guia.urlEtiqueta().orElse(null)))
             .toList(),
         aRespuesta(envio.costoEnvio()),
         envio.despachadoEn(),

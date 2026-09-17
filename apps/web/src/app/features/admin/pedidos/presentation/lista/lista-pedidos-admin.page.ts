@@ -7,13 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -33,6 +27,7 @@ import { usarAccionesPedidoAdmin } from '../../application/acciones-pedido-admin
 import { usarListarPedidosAdmin } from '../../application/listar-pedidos-admin.consulta';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
+  EmisionDeGuiaAdmin,
   ESTADOS_QUE_ADMITEN_CANCELACION,
   EstadoPedido,
   FiltroPedidosAdmin,
@@ -182,13 +177,18 @@ export class ListaPedidosAdminPage {
   protected readonly pedidoExpandidoId = signal<string | null>(null);
   protected readonly errorAccion = signal<string | null>(null);
 
+  /** La última emisión pedida en esta pantalla, para avisar que la guía todavía no existe. Se
+   * pierde al recargar y está bien: el estado de verdad lo tiene el servidor, y lo que esto muestra
+   * es el acuse de un clic que se acaba de dar. */
+  protected readonly emisionPedida = signal<{
+    pedidoId: string;
+    emision: EmisionDeGuiaAdmin;
+  } | null>(null);
+
   private readonly formulariosMotivo = new Map<string, FormGroup<FormularioMotivo>>();
   private readonly formulariosDespacho = new Map<string, FormGroup<FormularioDespacho>>();
   private readonly formulariosRecaudo = new Map<string, FormGroup<FormularioRecaudo>>();
-  private readonly formulariosCancelacion = new Map<
-    string,
-    FormGroup<FormularioCancelacion>
-  >();
+  private readonly formulariosCancelacion = new Map<string, FormGroup<FormularioCancelacion>>();
 
   constructor() {
     effect(() => {
@@ -367,6 +367,31 @@ export class ListaPedidosAdminPage {
           costoEnvio: guia.costoEnvio ?? 0,
         })),
       }),
+    );
+  }
+
+  /**
+   * Le pide las guías a la transportadora. No despacha: lo que vuelve es una emisión en curso, y el
+   * pedido sigue en preparación hasta que la tarea del servidor traiga los números. El aviso que se
+   * pinta después dice justo eso, para que nadie se quede mirando la pantalla esperando la guía.
+   */
+  protected async emitirGuia(pedidoId: string): Promise<void> {
+    this.emisionPedida.set(null);
+    await this.ejecutar(async () => {
+      const emision = await this.acciones.emitirGuia.mutateAsync(pedidoId);
+      this.emisionPedida.set({ pedidoId, emision });
+    });
+  }
+
+  /** El aviso de "ya se pidió" solo se pinta sobre el pedido al que corresponde. */
+  protected emisionDe(pedidoId: string): EmisionDeGuiaAdmin | null {
+    const pedida = this.emisionPedida();
+    return pedida?.pedidoId === pedidoId ? pedida.emision : null;
+  }
+
+  protected emitiendoGuia(pedidoId: string): boolean {
+    return (
+      this.acciones.emitirGuia.isPending() && this.acciones.emitirGuia.variables() === pedidoId
     );
   }
 

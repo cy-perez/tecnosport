@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
+  EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
   MotivoCancelacion,
   PedidoAdmin,
@@ -15,6 +16,12 @@ export interface RepositorioPedidosAdmin {
   verificarContraentrega(pedidoId: string, motivo: string): Promise<PedidoAdmin>;
 
   despachar(pedidoId: string, guias: readonly GuiaDespachada[]): Promise<PedidoAdmin>;
+
+  /** Le pide las guías a la transportadora. **No despacha**: devuelve la emisión en curso y el
+   * pedido sigue en preparación hasta que la plataforma entregue los números, que tarda de
+   * segundos a minutos. Por eso no devuelve un `PedidoAdmin`: no hay nada nuevo que contar de él
+   * todavía. */
+  emitirGuia(pedidoId: string): Promise<EmisionDeGuiaAdmin>;
 
   marcarEntregado(pedidoId: string): Promise<PedidoAdmin>;
 
@@ -32,7 +39,9 @@ export interface RepositorioPedidosAdmin {
   }): Promise<PedidoAdmin>;
 }
 
-export const REPOSITORIO_PEDIDOS_ADMIN = new InjectionToken<RepositorioPedidosAdmin>('RepositorioPedidosAdmin');
+export const REPOSITORIO_PEDIDOS_ADMIN = new InjectionToken<RepositorioPedidosAdmin>(
+  'RepositorioPedidosAdmin',
+);
 
 /** Una guía a despachar: lo que el panel manda por cada paquete (`adr/0031`). */
 export interface GuiaDespachada {

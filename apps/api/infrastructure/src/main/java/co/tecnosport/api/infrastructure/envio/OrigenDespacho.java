@@ -21,7 +21,10 @@ public record OrigenDespacho(
     String departamento,
     String ciudad,
     String ciudadDane,
-    String codigoPostal) {
+    String codigoPostal,
+    String barrio,
+    String referencia,
+    String correo) {
 
   public OrigenDespacho {
     exigir(nombre, "El nombre del origen de despacho");
@@ -30,6 +33,9 @@ public record OrigenDespacho(
     exigir(departamento, "El departamento del origen de despacho");
     exigir(ciudad, "La ciudad del origen de despacho");
     exigir(ciudadDane, "El código DANE de la ciudad del origen de despacho");
+    exigir(barrio, "El barrio del origen de despacho");
+    exigir(referencia, "La referencia del origen de despacho");
+    exigir(correo, "El correo del origen de despacho");
     codigoPostal = codigoPostal == null || codigoPostal.isBlank() ? null : codigoPostal.trim();
   }
 

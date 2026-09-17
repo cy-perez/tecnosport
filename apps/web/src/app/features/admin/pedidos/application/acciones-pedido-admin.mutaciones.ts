@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
-import { MotivoCancelacion, PedidoAdmin } from '../domain/pedido-admin.model';
+import { EmisionDeGuiaAdmin, MotivoCancelacion, PedidoAdmin } from '../domain/pedido-admin.model';
 import {
   GuiaDespachada,
   REPOSITORIO_PEDIDOS_ADMIN,
@@ -19,7 +19,8 @@ export function usarAccionesPedidoAdmin() {
   const invalidarLista = () => queryClient.invalidateQueries({ queryKey: ['admin', 'pedidos'] });
 
   const conciliarTransferencia = injectMutation(() => ({
-    mutationFn: (pedidoId: string): Promise<PedidoAdmin> => repositorio.conciliarTransferencia(pedidoId),
+    mutationFn: (pedidoId: string): Promise<PedidoAdmin> =>
+      repositorio.conciliarTransferencia(pedidoId),
     onSuccess: invalidarLista,
   }));
 
@@ -34,6 +35,13 @@ export function usarAccionesPedidoAdmin() {
       pedidoId: string;
       guias: readonly GuiaDespachada[];
     }): Promise<PedidoAdmin> => repositorio.despachar(variables.pedidoId, variables.guias),
+    onSuccess: invalidarLista,
+  }));
+
+  /** Invalida la lista igual que las demás aunque el pedido no se mueva: lo que cambia es que
+   * ahora hay una emisión abierta, y el botón tiene que dejar de ofrecerse. */
+  const emitirGuia = injectMutation(() => ({
+    mutationFn: (pedidoId: string): Promise<EmisionDeGuiaAdmin> => repositorio.emitirGuia(pedidoId),
     onSuccess: invalidarLista,
   }));
 
@@ -69,6 +77,7 @@ export function usarAccionesPedidoAdmin() {
     conciliarTransferencia,
     verificarContraentrega,
     despachar,
+    emitirGuia,
     marcarEntregado,
     rechazarEnEntrega,
     conciliarRecaudo,
