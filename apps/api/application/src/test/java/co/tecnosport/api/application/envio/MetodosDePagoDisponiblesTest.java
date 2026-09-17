@@ -60,12 +60,12 @@ class MetodosDePagoDisponiblesTest {
     cotizador = new CotizadorEnvioFalso();
     pedidos = new RepositorioPedidosFalso();
     publicarProductoConVariante();
+    ArmadorDeBultos armador =
+        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
     return new MetodosDePagoDisponibles(
         productos,
-        new CotizarEnvio(
-            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
-            cotizador,
-            () -> AHORA),
+        armador,
+        new CotizarEnvio(armador, cotizador, () -> AHORA),
         pedidos,
         criterios,
         habilitadosEnPasarela);
@@ -144,11 +144,51 @@ class MetodosDePagoDisponiblesTest {
   }
 
   private MetodosDePagoDisponiblesComando comando(TipoEntrega tipoEntrega, Direccion direccion) {
+    return comando(tipoEntrega, direccion, 1);
+  }
+
+  private MetodosDePagoDisponiblesComando comando(
+      TipoEntrega tipoEntrega, Direccion direccion, int cantidad) {
     return new MetodosDePagoDisponiblesComando(
-        List.of(new MetodosDePagoDisponiblesComando.LineaComando(variante.id(), 1)),
+        List.of(new MetodosDePagoDisponiblesComando.LineaComando(variante.id(), cantidad)),
         "cliente@tecnosport.co",
         tipoEntrega,
         direccion);
+  }
+
+  /** Reemplaza el catálogo por un cable de 8.000: por debajo del mínimo asegurable. */
+  private void publicarProductoBarato() {
+    Producto barato =
+        Producto.crear(
+            "Cable USB-C",
+            new Slug("cable-usb-c"),
+            "Descripción",
+            Marca.crear("TecnoSport"),
+            Categoria.crear("Cables", new Slug("cables"), LineaCatalogo.TECNOLOGIA));
+    barato.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn.tecnosport.co/img.jpg",
+            "https://cdn.tecnosport.co/img.webp",
+            800,
+            600,
+            1000,
+            new HashContenido("%064x".formatted(3)),
+            "alt es",
+            "alt en"));
+    variante =
+        Variante.crear(
+            new Sku("TS-CAB-USBC"),
+            Dinero.deCop(8_000),
+            new BigDecimal("0.19"),
+            20,
+            null,
+            new Paquete(90, 12, 10, 3),
+            List.of());
+    barato.agregarVariante(variante);
+    barato.publicar();
+    productos.conProductos(barato);
   }
 
   /**
@@ -448,5 +488,38 @@ class MetodosDePagoDisponiblesTest {
           ? new ResultadoCotizacion.SinCobertura()
           : new ResultadoCotizacion.ConTarifas(tarifas);
     }
+  }
+
+  /**
+   * La regla de {@code adr/0037} vista desde el checkout. En contraentrega la transportadora cobra
+   * la suma de lo declarado y la plataforma exige un mínimo por bulto, así que diez cables de 8.000
+   * declaran 100.000 contra los 94.900 que el pedido cobra —80.000 de mercancía más 14.900 de
+   * flete—. No hay forma de declarar menos, así que ese carrito pierde la contraentrega en vez de
+   * cobrar 5.100 de más en la puerta.
+   */
+  @Test
+  void unCarritoQueDeclararaMasDeLoQueCobraPierdeLaContraentrega() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    publicarProductoBarato();
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN, 10));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+    assertTrue(disponibles.contains(MetodoPago.TARJETA), "los demás métodos siguen ahí");
+  }
+
+  /** Y el mismo cable, en cantidad razonable, sí la conserva: el flete cubre de sobra el piso. */
+  @Test
+  void elMismoCarritoConPocasUnidadesSiConservaLaContraentrega() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    publicarProductoBarato();
+    cotizador.conTarifaQueRecauda();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN, 1));
+
+    assertTrue(disponibles.contains(MetodoPago.CONTRAENTREGA));
   }
 }

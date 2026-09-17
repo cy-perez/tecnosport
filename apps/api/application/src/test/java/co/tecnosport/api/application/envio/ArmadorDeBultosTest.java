@@ -211,4 +211,114 @@ class ArmadorDeBultosTest {
     productos.conProductos(catalogo.toArray(new Producto[0]));
     return variante;
   }
+
+  // --- el recaudo de la contraentrega (adr/0037) ------------------------------------------------
+
+  private static List<Dinero> declarados(List<BultoDespachable> bultos) {
+    return bultos.stream().map(bulto -> bulto.bulto().valorDeclarado()).toList();
+  }
+
+  private static Dinero suma(List<BultoDespachable> bultos) {
+    return Dinero.deCop(
+        declarados(bultos).stream().map(Dinero::valor).reduce(BigDecimal.ZERO, BigDecimal::add));
+  }
+
+  /**
+   * Lo que la prueba cuida no es el reparto: es que la transportadora cobre en la puerta
+   * exactamente lo que el pedido dice. La plataforma no tiene campo para ese monto y lo calcula
+   * sumando lo declarado, así que la suma <em>es</em> el recaudo.
+   */
+  @Test
+  void la_suma_declarada_es_exactamente_lo_que_se_recauda() {
+    Variante camiseta = catalogoCon(Dinero.deCop(50_000));
+
+    List<BultoDespachable> bultos =
+        armador.armarParaRecaudo(List.of(linea(camiseta, 1)), Dinero.deCop(58_200));
+
+    assertEquals(Dinero.deCop(58_200), suma(bultos));
+  }
+
+  @Test
+  void el_flete_se_reparte_proporcional_al_valor_de_cada_bulto() {
+    Variante camiseta = catalogoCon(Dinero.deCop(30_000));
+    Variante celular = catalogoCon(Dinero.deCop(90_000));
+
+    List<BultoDespachable> bultos =
+        armador.armarParaRecaudo(
+            List.of(linea(camiseta, 1), linea(celular, 1)), Dinero.deCop(128_000));
+
+    // 8.000 de flete sobre 120.000 declarados: una cuarta parte al de 30.000 y tres al de 90.000.
+    assertEquals(List.of(Dinero.deCop(32_000), Dinero.deCop(96_000)), declarados(bultos));
+  }
+
+  /**
+   * El residuo de las divisiones enteras va al bulto de mayor valor. Sin él la suma quedaría unos
+   * pesos por debajo y la transportadora cobraría de menos en cada pedido: poco, y siempre.
+   */
+  @Test
+  void el_residuo_de_la_division_no_se_pierde() {
+    Variante camiseta = catalogoCon(Dinero.deCop(30_000));
+    Variante celular = catalogoCon(Dinero.deCop(90_000));
+
+    List<BultoDespachable> bultos =
+        armador.armarParaRecaudo(
+            List.of(linea(camiseta, 1), linea(celular, 1)), Dinero.deCop(127_851));
+
+    assertEquals(Dinero.deCop(127_851), suma(bultos), "la suma cuadra al peso");
+    assertEquals(Dinero.deCop(31_962), declarados(bultos).get(0));
+    assertEquals(Dinero.deCop(95_889), declarados(bultos).get(1), "el residuo va al mayor");
+  }
+
+  /**
+   * El caso que obliga a no ofrecer contraentrega: el piso del {@code adr/0035} ya infló la suma
+   * por encima de lo que el pedido cobra. Diez cables de 8.000 declaran 100.000 contra 80.000 de
+   * mercancía, y ningún flete nacional cierra esos 20.000.
+   */
+  @Test
+  void si_el_piso_ya_supera_el_total_ese_carrito_no_lleva_contraentrega() {
+    Variante cable = catalogoCon(Dinero.deCop(8_000));
+
+    RecaudoNoCuadraException error =
+        assertThrows(
+            RecaudoNoCuadraException.class,
+            () -> armador.armarParaRecaudo(List.of(linea(cable, 10)), Dinero.deCop(88_000)));
+
+    assertEquals(Dinero.deCop(100_000), error.declarado());
+    assertEquals(Dinero.deCop(88_000), error.aRecaudar());
+  }
+
+  /** Justo en el filo: declarar exactamente lo que se cobra sí cuadra, no hay nada que repartir. */
+  @Test
+  void declarar_exactamente_el_total_cuadra() {
+    Variante cable = catalogoCon(Dinero.deCop(8_000));
+
+    List<BultoDespachable> bultos =
+        armador.armarParaRecaudo(List.of(linea(cable, 2)), Dinero.deCop(20_000));
+
+    assertEquals(List.of(MINIMO, MINIMO), declarados(bultos));
+  }
+
+  /**
+   * El techo se valida DESPUÉS de repartir el flete, porque el flete es parte de lo declarado y por
+   * tanto de lo que la plataforma valida. Consecuencia buscada y anotada en el ADR: el mismo
+   * artículo puede ser asegurable pagando en línea y no pagando contraentrega.
+   */
+  @Test
+  void un_articulo_al_filo_del_techo_se_pasa_solo_en_contraentrega() {
+    Variante celular = catalogoCon(Dinero.deCop(4_999_000));
+
+    assertEquals(1, armador.armar(List.of(linea(celular, 1))).size(), "en línea sí va");
+    assertThrows(
+        ArticuloNoAsegurableException.class,
+        () -> armador.armarParaRecaudo(List.of(linea(celular, 1)), Dinero.deCop(5_007_000)));
+  }
+
+  /** Un pedido pagado en línea no cambia: el declarado sigue siendo el de la mercancía. */
+  @Test
+  void el_camino_en_linea_no_reparte_nada() {
+    Variante camiseta = catalogoCon(Dinero.deCop(50_000));
+
+    assertEquals(
+        List.of(Dinero.deCop(50_000)), declarados(armador.armar(List.of(linea(camiseta, 1)))));
+  }
 }

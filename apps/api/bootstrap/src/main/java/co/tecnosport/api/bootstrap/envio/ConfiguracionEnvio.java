@@ -305,12 +305,14 @@ public class ConfiguracionEnvio {
   @Bean
   public MetodosDePagoDisponibles metodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
+      ArmadorDeBultos armadorDeBultos,
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
       PropiedadesMetodosDeWompi metodosDeWompi) {
     return new MetodosDePagoDisponibles(
         repositorioProductos,
+        armadorDeBultos,
         cotizarEnvio,
         repositorioPedidos,
         criteriosContraentrega,
