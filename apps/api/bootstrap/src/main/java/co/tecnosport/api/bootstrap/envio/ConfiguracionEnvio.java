@@ -220,10 +220,15 @@ public class ConfiguracionEnvio {
    * Cómo se empaca un pedido, en un solo sitio. Lo usan la cotización y la emisión, y tienen que
    * armar los bultos <strong>en el mismo orden</strong>: la plataforma empareja los paquetes del
    * envío con los bultos de la cotización por posición.
+   *
+   * <p>Aquí es donde el mínimo asegurable de Skydropx deja de llamarse Skydropx: entra como pesos y
+   * {@code application} lo aplica sin saber quién lo exige ({@code adr/0035}).
    */
   @Bean
-  public ArmadorDeBultos armadorDeBultos(RepositorioProductos repositorioProductos) {
-    return new ArmadorDeBultos(repositorioProductos);
+  public ArmadorDeBultos armadorDeBultos(
+      RepositorioProductos repositorioProductos, PropiedadesSkydropx propiedades) {
+    return new ArmadorDeBultos(
+        repositorioProductos, Dinero.deCop(propiedades.valorDeclaradoMinimo()));
   }
 
   @Bean

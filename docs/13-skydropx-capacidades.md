@@ -289,9 +289,10 @@ mueva hay un paso con nombre propio.
 9. **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias
    guías, o consolidar en un bulto y perder las medidas reales. Es la decisión que hay que
    tomar antes de escribir el despacho (§6.3, §6.4).
-10. **Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
-    cotización entera (§6.4). Elevarlo al mínimo asegurable, agruparlo, o dejar ese pedido
-    solo con recogida.
+10. ~~**Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
+    cotización entera (§6.4).~~ **Decidido el 17 de septiembre de 2026 (`ADR-0035`): se eleva
+    al mínimo asegurable**, en `ArmadorDeBultos` y no en el mapeador, para que el bulto que
+    circula por `application` diga lo que de verdad se declara.
 
 ## 6. Lo que se cerró con la cuenta real
 
@@ -1382,8 +1383,13 @@ valor declarado se sale del rango. Ya se puede poner precio a la decisión.
 
 #### Lo que sigue abierto después de todo esto
 
-- **Qué se hace con el bulto que declara menos de 10.000.** Elevarlo al mínimo, agrupar, u
-  ofrecer solo recogida. Dato de negocio, va al ADR. Está como `TODO` en el mapeador.
+- ~~**Qué se hace con el bulto que declara menos de 10.000.**~~ **Cerrado el 17 de septiembre
+  de 2026 con `ADR-0035`: se eleva al mínimo.** Agrupar obligaba a inventar las dimensiones de
+  una caja combinada; ofrecer solo recogida castigaba un pedido de 400.000 por un cable de 8.000.
+  El `TODO` del mapeador murió con la decisión. **Lo que abrió**: el rango tiene otro extremo
+  —el panel lo acota entre 10.000 y 5.000.000 (§6.5)— y arriba nadie ha medido si la API lo
+  valida. Recortar no sería simétrico a elevar: declarar un celular de seis millones en cinco
+  deja el resto sin asegurar.
 - ~~**`package_type`**: pedir el catálogo a `GET /shipments/packagings` y elegir.~~
   Catálogo leído (§6.5): 59 códigos de embalaje de la ONU, y el que aplica es `4G`,
   caja de cartón. Queda como elección de operación, no como incógnita.
@@ -2184,6 +2190,56 @@ omite en vez de viajar en nulo, que es la forma en que este campo ya rompió una
 
 Verificado contra la API real: `POST /api/v1/envios/cotizacion` con `"barrio": "Boston"` responde
 tarifa de Envía por 7.850.
+
+### 6.13 El techo del valor declarado, medido (2026-09-17, duodécima parte)
+
+Con `tools/sonda-techo-declarado.mjs`, que solo cotiza. El piso lo cerró `ADR-0035` con un `422`
+medido; el techo solo tenía como fuente el formulario del panel, que no prueba que la API valide lo
+mismo. Medellín → Bogotá, un celular de 20×15×8 y 500 g, moviendo únicamente el declarado:
+
+| Declarado | Respuesta |
+|---|---|
+| 1.000.000 | ✅ cotiza |
+| 4.999.999 | ✅ cotiza |
+| **5.000.000** | ✅ cotiza |
+| **5.000.001** | ⛔ `422 declared_amount: "El valor declarado debe ser menor o igual a 5000000"` |
+| 6.000.000 | ⛔ el mismo `422` |
+| 20.000.000 | ⛔ el mismo `422` |
+| 3.000.000 **× dos bultos** (6.000.000 en total) | ✅ cotiza, las tres tarifas de siempre |
+
+**El panel decía la verdad y el rango es cerrado por los dos extremos: [10.000, 5.000.000].** El
+mensaje es simétrico al del mínimo, sale del mismo sitio —la validación de entrada, antes de que
+ninguna transportadora vea nada— y por lo tanto tumba la cotización **entera**.
+
+**Y es por bulto, igual que el mínimo.** Dos bultos de 3.000.000 suman seis millones y cotizan sin
+una queja. Lo que no se puede es que un solo bulto pase de cinco, y un celular no se parte en dos.
+
+#### Lo que apareció sin buscarlo: el declarado sí mueve el precio, pero solo en una
+
+Entre el escalón de 1.000.000 y el de 4.999.999, con todo lo demás idéntico:
+
+| Tarifa | Declarado 1.000.000 | Declarado 4.999.999 |
+|---|---|---|
+| servientrega/standard | 27.350 | **27.350** |
+| envia/paquete_terrestre | 14.350 | **14.350** |
+| coordinadora/standard | 20.827 | **54.427** |
+
+Servientrega y Envía no se inmutan; Coordinadora cobra 33.600 más por cuatro millones más de
+declarado, que es un 0,84 % — **coherente** con un seguro proporcional, aunque la sonda no puede
+afirmar que ese sea el concepto. `ADR-0035` dejó anotado que elevar al mínimo "cuesta plata, cuánto
+no se sabe": ahora se sabe que en dos de las tres tarifas vivas no cuesta nada, y en la tercera
+elevar 2.000 pesos cuesta del orden de **diecisiete**.
+
+#### Lo que esto abre, y es una decisión de negocio con plata encima
+
+Un artículo de más de 5.000.000 —un celular de gama alta, un computador— **no se puede cotizar
+hoy**, y el comprador recibe "no se pudo cotizar, intenta más tarde". O sea que el sistema ya
+decidió no venderlo a domicilio; lo único que no hace es decirlo.
+
+Las salidas son tres y ninguna es gratis: recortar el declarado al tope y aceptar que la
+transportadora responda por cinco millones de un aparato de ocho; no ofrecer domicilio para esos
+artículos, pero diciéndolo; o llevarlo a Skydropx y ver si el rango se amplía por contrato. La
+primera es la única que parece un ajuste de código, y es la que más arriesga.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 

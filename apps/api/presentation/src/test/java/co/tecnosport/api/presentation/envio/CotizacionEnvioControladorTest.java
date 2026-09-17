@@ -229,7 +229,8 @@ class CotizacionEnvioControladorTest {
 
     @Bean
     CotizarEnvio cotizarEnvio(RepositorioProductos productos, CotizadorEnvio cotizador) {
-      return new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA);
+      return new CotizarEnvio(
+          new ArmadorDeBultos(productos, Dinero.deCop(10_000)), cotizador, () -> AHORA);
     }
   }
 

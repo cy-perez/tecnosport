@@ -52,9 +52,10 @@ import tools.jackson.databind.node.ObjectNode;
  *   <li><strong>El mínimo de 10.000 se valida por bulto.</strong> Un bulto declarado en 8.000
  *       devuelve {@code 422 "El valor declarado debe ser mayor o igual a 10000"} y tumba la
  *       cotización entera, no solo ese bulto. Con un {@code parcel} por variante, un artículo
- *       barato dentro de un pedido caro basta para dejarlo sin envío a domicilio. {@code TODO:
- *       decidir qué se hace con el bulto que declara menos del mínimo asegurable —elevarlo,
- *       agruparlo u ofrecer solo recogida—; es dato de negocio y va en el ADR.}
+ *       barato dentro de un pedido caro bastaba para dejarlo sin envío a domicilio. <strong>Se
+ *       eleva al mínimo</strong> desde {@code adr/0035}, y no aquí sino en {@code ArmadorDeBultos}:
+ *       un bulto que dice 8.000 mientras se declaran 10.000 es la clase de mentira silenciosa que
+ *       este proveedor ya cobró cuatro veces.
  *   <li><strong>Los montos vienen como cadena y los tipos bailan</strong> entre una tarifa y otra:
  *       {@code weight} llega como {@code "0.0"} en una y {@code 3} en la siguiente. Por eso todo se
  *       lee como texto y se convierte a {@link BigDecimal}, nunca con {@code asDouble} (regla dura

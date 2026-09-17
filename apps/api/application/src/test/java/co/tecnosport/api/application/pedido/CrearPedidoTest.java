@@ -114,7 +114,8 @@ class CrearPedidoTest {
     cotizador.conTarifas(TARIFA);
     cotizador.recaudaEnElDestino(recaudaEnElDestino);
     CotizarEnvio cotizarEnvio =
-        new CotizarEnvio(new ArmadorDeBultos(productos), cotizador, () -> AHORA);
+        new CotizarEnvio(
+            new ArmadorDeBultos(productos, Dinero.deCop(10_000)), cotizador, () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
         new MetodosDePagoDisponibles(
             productos, cotizarEnvio, pedidos, criterios, HABILITADOS_EN_PASARELA);

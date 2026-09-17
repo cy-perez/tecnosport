@@ -4304,6 +4304,48 @@ este campo rompió la recolección durante dos sesiones.
 deja que un sitio nuevo se olvide del barrio sin que nada lo note, que es la misma forma de trampa
 silenciosa que las clases de Tailwind que no existen.
 
+## El piso del valor declarado (2026-09-17)
+
+`ADR-0035`. No estaba en la lista de pendientes de la Fase 7 porque no era un pendiente: era un
+`TODO` dentro de un Javadoc del mapeador, y llevaba ahí desde el 14 de septiembre esperando una
+decisión de negocio que nadie volvió a mirar.
+
+**Lo que hacía.** Skydropx valida un mínimo de 10.000 por bulto y rechaza la cotización entera si
+uno solo queda por debajo. Un cable de 8.000 dentro de un pedido de 400.000 dejaba al comprador sin
+envío a domicilio, con el mensaje "no se pudo cotizar, intenta más tarde" — y el reintento tampoco
+iba a funcionar, porque el proveedor deduplica las cotizaciones por contenido. Del lado nuestro el
+registro decía "proveedor no disponible", que era falso: el proveedor respondió, y respondió que
+nuestro cuerpo estaba mal.
+
+Hoy no se ha visto en la calle **solo porque el catálogo de producción no está cargado**. Con
+accesorios reales es cuestión de tiempo, y el síntoma habría sido el peor: ventas que no ocurren,
+sin un error que las explique.
+
+**Dónde se arregló, y por qué no en el sitio obvio.** El mapeador es el único que escribe
+`declared_amount`, así que ahí habría sido una línea. Se hizo en `ArmadorDeBultos`: elevar en el
+borde dejaría a `Bulto.valorDeclarado` diciendo 8.000 mientras se declaran 10.000, y un objeto que
+miente hacia adentro es exactamente lo que esta integración lleva cuatro veces pagando caro. De paso
+cubre los dos caminos —la emisión recotiza por el mismo armador— sin duplicar la regla.
+
+**Lo que la implementación destapó, y es lo que conviene recordar:** el bulto es por unidad, así que
+el piso se paga por unidad. Tres cables de 8.000 declaran 30.000 contra 24.000 facturados. No nos da
+nada —una reclamación se paga contra la factura— y es el precio de cumplir el mínimo, pero está
+escrito en el ADR y con una prueba propia para que cambiarlo tenga que ser deliberado.
+
+### Lo que queda abierto, y nació aquí
+
+- **El otro extremo del rango, ya medido el mismo día** (`docs/13` §6.13). La API valida un techo de
+  **5.000.000 exactos**, con un `422` simétrico al del mínimo y **por bulto**: 5.000.000 cotiza,
+  5.000.001 no, y dos bultos de tres millones cotizan sin problema. O sea que **un celular de gama
+  alta no se puede cotizar hoy** y el comprador ve "intenta más tarde": el sistema ya decidió no
+  venderlo a domicilio, y lo único que no hace es decirlo. La decisión sigue abierta porque recortar
+  al tope no es simétrico a elevar al piso — deja sin asegurar la diferencia, y esa es plata del
+  negocio si el paquete se pierde.
+- **El `422` sigue disfrazado de caída.** El piso quita la causa conocida, no la clase de fallo:
+  cualquier rechazo del proveedor se sigue contando como "no disponible" y le sigue pidiendo al
+  comprador que reintente algo que no va a funcionar. Separar "no responde" de "rechazó nuestro
+  cuerpo" es lo único de los dos que se arregla del lado nuestro.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

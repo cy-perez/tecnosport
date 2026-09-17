@@ -130,6 +130,14 @@ tecnosport:
     # tolera mirando un resumen de pedido sin total.
     cotizacion-timeout-segundos: ${SKYDROPX_COTIZACION_TIMEOUT_SEGUNDOS:10}
     cotizacion-intentos: ${SKYDROPX_COTIZACION_INTENTOS:8}
+    # El minimo asegurable POR BULTO que exige la plataforma, medido contra la cuenta: un bulto
+    # declarado por debajo responde 422 y tumba la cotizacion ENTERA, no ese bulto
+    # (docs/13-skydropx-capacidades.md §6.4). Los bultos que quedan por debajo se elevan hasta aqui
+    # en vez de dejar sin envio a domicilio al carrito que lleve un cable barato (adr/0035).
+    #
+    # No es un dato de negocio nuestro que se pueda elegir: es la validacion de ellos. Se toca
+    # cuando ellos la cambien, y entonces se vuelve a medir antes de tocarla.
+    valor-declarado-minimo: ${SKYDROPX_VALOR_DECLARADO_MINIMO:10000}
     webhook:
       # Dónde viene la firma del evento. Sigue siendo variable, pero ya no porque no se supiera:
       # la plataforma deja elegir el nombre de la cabecera en el panel, con Authorization por
