@@ -63,6 +63,20 @@ final class RepositorioEmisionesFalso implements RepositorioEmisiones {
         .toList();
   }
 
+  @Override
+  public Optional<EmisionDeGuia> buscarPorId(UUID id) {
+    return Optional.ofNullable(emisiones.get(id));
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
+    return emisiones.values().stream()
+        .filter(emision -> emision.estado().exigeOjoHumano())
+        .sorted(Comparator.comparing(EmisionDeGuia::solicitadaEn))
+        .limit(maximo)
+        .toList();
+  }
+
   private java.util.stream.Stream<EmisionDeGuia> porEstado(EstadoEmision estado) {
     return emisiones.values().stream()
         .filter(emision -> emision.estado() == estado)

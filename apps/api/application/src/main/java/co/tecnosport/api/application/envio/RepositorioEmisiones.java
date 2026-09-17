@@ -50,4 +50,17 @@ public interface RepositorioEmisiones {
    * alguien pueda ir a mirar si hubo cobro.
    */
   List<EmisionDeGuia> buscarSolicitadasAntesDe(Instant corte, int maximo);
+
+  /** Una emisión concreta, para quien la señala desde la bandeja. */
+  Optional<EmisionDeGuia> buscarPorId(UUID id);
+
+  /**
+   * Las que tienen plata comprometida y nadie ha desenredado —{@code INDETERMINADA} y {@code
+   * PARCIAL}—, de la más vieja a la más nueva.
+   *
+   * <p>Ninguna de las dos se resuelve sola: la plataforma no va a decir nada nuevo de ellas. Si
+   * nadie las mira se quedan así para siempre, con guías pagadas sin usar o con un cobro del que no
+   * sabemos si ocurrió, y por eso son la mitad de la bandeja de revisión.
+   */
+  List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo);
 }

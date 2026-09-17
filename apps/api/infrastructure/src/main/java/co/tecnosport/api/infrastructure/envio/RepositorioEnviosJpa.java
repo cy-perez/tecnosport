@@ -135,6 +135,15 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
         .toList();
   }
 
+  @Override
+  public List<Envio> buscarConGuiasEnRevision(int maximo) {
+    return repositorio
+        .buscarConGuiasEnRevision(EstadoEnvio.nombresQueExigenRevisionManual(), Limit.of(maximo))
+        .stream()
+        .map(this::aEnvio)
+        .toList();
+  }
+
   private Envio aEnvio(EnvioJpaEntity entidad) {
     return new Envio(
         entidad.getId(),

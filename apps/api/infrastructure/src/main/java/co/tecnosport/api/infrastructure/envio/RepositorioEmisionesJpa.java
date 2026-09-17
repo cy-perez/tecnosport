@@ -146,6 +146,21 @@ public class RepositorioEmisionesJpa implements RepositorioEmisiones {
         .toList();
   }
 
+  @Override
+  public Optional<EmisionDeGuia> buscarPorId(UUID id) {
+    return emisiones.findById(id).map(this::aDominio);
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
+    return emisiones
+        .findByEstadoInOrderBySolicitadaEnAsc(
+            List.copyOf(EstadoEmision.nombresQueExigenOjoHumano()), Limit.of(maximo))
+        .stream()
+        .map(this::aDominio)
+        .toList();
+  }
+
   private EmisionDeGuia aDominio(EmisionDeGuiaJpaEntity entidad) {
     return new EmisionDeGuia(
         entidad.getId(),

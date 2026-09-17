@@ -408,4 +408,73 @@ class RepositorioEnviosJpaTest {
     assertThat(encontrado.guiaDe("CO-2").orElseThrow().codigoTransportadora()).isEmpty();
     assertThat(encontrado.guiaDe("CO-2").orElseThrow().conciliable()).isFalse();
   }
+
+  /**
+   * La consulta que alimenta la bandeja de revisión. Lo que se comprueba es que mire el
+   * <em>último</em> movimiento y no cualquiera: una guía que tuvo una excepción y después siguió su
+   * camino no puede seguir pidiendo atención, y una que está quieta ahora sí, aunque su primer
+   * evento fuera normal.
+   */
+  @Test
+  void laBandejaTraeLoQuesigueQuietoYNoLoQueYaSiguio() {
+    Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
+
+    UUID quieto = sembrarPedidoContraentrega(101);
+    Envio conExcepcion =
+        Envio.crear(
+            quieto, List.of(GuiaEnvio.crear("Servientrega", "Q-1", Dinero.deCop(8_200))), despacho);
+    conExcepcion.registrarEvento("Q-1", evento(EstadoEnvio.EN_TRANSITO, "q-1", despacho));
+    conExcepcion.registrarEvento(
+        "Q-1", evento(EstadoEnvio.RETENIDO, "q-2", despacho.plusSeconds(3600)));
+    repositorio.guardar(conExcepcion);
+
+    UUID siguio = sembrarPedidoContraentrega(102);
+    Envio recuperado =
+        Envio.crear(
+            siguio, List.of(GuiaEnvio.crear("Servientrega", "R-1", Dinero.deCop(8_200))), despacho);
+    recuperado.registrarEvento("R-1", evento(EstadoEnvio.EXCEPCION, "r-1", despacho));
+    recuperado.registrarEvento(
+        "R-1", evento(EstadoEnvio.EN_TRANSITO, "r-2", despacho.plusSeconds(3600)));
+    repositorio.guardar(recuperado);
+
+    List<Envio> candidatos = repositorio.buscarConGuiasEnRevision(50);
+
+    assertThat(candidatos.stream().map(Envio::pedidoId)).containsExactly(quieto);
+  }
+
+  /** Un envío sin ningún evento no está quieto: está recién despachado. */
+  @Test
+  void unEnvioSinEventosNoEntraEnLaBandeja() {
+    UUID pedidoId = sembrarPedidoContraentrega(103);
+    repositorio.guardar(
+        Envio.crear(
+            pedidoId,
+            List.of(GuiaEnvio.crear("Servientrega", "S-1", Dinero.deCop(8_200))),
+            Instant.parse("2026-09-10T14:00:00Z")));
+
+    assertThat(repositorio.buscarConGuiasEnRevision(50)).isEmpty();
+  }
+
+  /**
+   * Con dos guías, basta una quieta. Medirlo sobre el envío entero escondería el paquete retenido
+   * detrás del que sí llegó, que es el mismo error que adr/0031 ya corrigió en la conciliación.
+   */
+  @Test
+  void unEnvioConUnaGuiaEntregadaYOtraRetenidaEntraEnLaBandeja() {
+    Instant despacho = Instant.parse("2026-09-10T14:00:00Z");
+    UUID pedidoId = sembrarPedidoContraentrega(104);
+    Envio envio =
+        Envio.crear(
+            pedidoId,
+            List.of(
+                GuiaEnvio.crear("Servientrega", "SE-9", Dinero.deCop(8_200)),
+                GuiaEnvio.crear("Coordinadora", "CO-9", Dinero.deCop(5_991))),
+            despacho);
+    envio.registrarEvento("SE-9", evento(EstadoEnvio.ENTREGADO, "ev-se", despacho));
+    envio.registrarEvento("CO-9", evento(EstadoEnvio.RETENIDO, "ev-co", despacho));
+    repositorio.guardar(envio);
+
+    assertThat(repositorio.buscarConGuiasEnRevision(50).stream().map(Envio::pedidoId))
+        .containsExactly(pedidoId);
+  }
 }

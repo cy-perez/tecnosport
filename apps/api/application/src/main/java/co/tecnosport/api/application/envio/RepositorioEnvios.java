@@ -30,4 +30,20 @@ public interface RepositorioEnvios {
    * limitado a dos peticiones por segundo.
    */
   List<Envio> buscarSinEventosDesde(Instant corte, int maximo);
+
+  /**
+   * Los envíos que tienen alguna guía cuyo último movimiento la dejó quieta: excepción, retención,
+   * cancelación, destrucción o fallo. Son los candidatos de la bandeja de revisión.
+   *
+   * <p><strong>El filtro es grueso a propósito y no decide nada.</strong> Puede traer algún envío
+   * de más —dos eventos de la misma guía con el mismo instante hacen que "el último" no sea uno
+   * solo desde el punto de vista de una consulta— y quién pide de verdad ojo humano lo dice {@code
+   * GuiaEnvio.ultimoEstado()} al leer el agregado. Escribir aquí la regla entera daría dos
+   * definiciones de "último estado" capaces de divergir, y de esas dos solo una tiene pruebas.
+   *
+   * <p>{@code maximo} acota el lote por lo mismo que en {@link #buscarSinEventosDesde}: una caída
+   * larga del webhook puede dejar muchos paquetes quietos a la vez, y una pantalla no puede traerse
+   * la tabla entera.
+   */
+  List<Envio> buscarConGuiasEnRevision(int maximo);
 }
