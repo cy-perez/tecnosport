@@ -237,7 +237,8 @@ POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firm
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
-POST /api/v1/admin/pedidos/{id}/despacho                    emite la guía con Skydropx
+POST /api/v1/admin/pedidos/{id}/emitir-guia                 le pide las guías a Skydropx; 202, no despacha todavía
+POST /api/v1/admin/pedidos/{id}/despacho                    registra una guía emitida por fuera y despacha
 POST /api/v1/admin/pedidos/{id}/entrega                     marca entregado
 POST /api/v1/admin/pedidos/{id}/rechazo-entrega             libera inventario, registra motivo
 POST /api/v1/admin/pedidos/{id}/recaudo                     concilia contraentrega
@@ -344,6 +345,13 @@ consulta transacciones por su propio id, no por la referencia que genera este
 backend: sin ese id, la conciliación programada (`docs/11-pagos-y-envios.md`)
 no tiene cómo revisar un pago que nunca recibió webhook.
 
+**`emitir-guia` responde `202` y no `200`, y no mueve el pedido.** Lo que se acepta
+es la solicitud, no el despacho: Skydropx cobra al crear el envío y devuelve la guía
+en `null`, así que el pedido se queda en `EN_PREPARACION` y pasa a `DESPACHADO` cuando
+una tarea programada trae los números — entre veinticinco segundos y varios minutos
+(`adr/0033`). El cuerpo de la respuesta es la emisión en curso: con qué transportadora
+salió y cuántos paquetes son, nunca los identificadores de la plataforma.
+
 **Excepción a la cabecera `Idempotency-Key`:** las acciones que transicionan
 un pedido *ya existente* a partir de su estado actual —`conciliar-transferencia`,
 `verificar-contraentrega`, `despacho`, `entrega`, `rechazo-entrega`,
@@ -353,7 +361,12 @@ aunque muevan dinero o inventario. Su idempotencia sale gratis de la propia
 máquina de estados de `Pedido`: un segundo `POST` sobre un pedido que ya
 transicionó cae en un estado que `EstadoPedido` no admite como destino y la
 petición se rechaza con 422, sin duplicar nada ni necesitar una llave
-aparte. La diferencia con `POST /api/v1/pedidos` y `POST
+aparte.
+
+`emitir-guia` **no entra en ese argumento**, y por eso se protege aparte: no
+transiciona el pedido, así que la máquina de estados no la frena y dos clics serían
+dos cobros. Lo que la frena es un índice único parcial que impide dos emisiones
+abiertas para el mismo pedido, y responde `409` a la segunda. La diferencia con `POST /api/v1/pedidos` y `POST
 /api/v1/pagos/intentos`, que sí exigen la cabecera: esos dos *crean* un
 recurso nuevo cada vez que se llaman — sin un estado previo que la
 transición pueda rechazar, no hay forma de que el propio dominio detecte un

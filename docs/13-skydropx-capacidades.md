@@ -2048,6 +2048,43 @@ derivarlo**: lo devuelve la plataforma, con el mismo vocabulario que exige el ra
 O sea que la ventana no tiene tope conocido y el camino que más tarda es el que fracasa. Sondear
 dentro de la petición del panel no es una opción: la espera es asíncrona o no es.
 
+#### Y la integración, cerrada de punta a punta desde el panel
+
+Con el código escrito, el recorrido completo se hizo en el navegador contra el sandbox real: pedido
+creado por el checkout —cotizado en vivo en **7.850 con Envía**—, conciliado, y la guía pedida desde
+el botón del panel.
+
+```
+20:32:57  Emision solicitada para el pedido … : Envia con 1 envio(s) [22419823-…]
+20:33:42  Resolución de emisiones: 1 revisadas, 1 despachadas, 0 fallidas, 0 parciales
+```
+
+Cuarenta y cinco segundos entre el clic y el despacho, sin que nadie esperara mirando la pantalla.
+Lo que quedó guardado:
+
+| Campo | Valor |
+|---|---|
+| `transportadora` | `Envia` (el nombre visible, de la tarifa) |
+| `codigo_transportadora` | `envia` (el de la plataforma, de la respuesta del envío) |
+| `numero` | `034054505967` |
+| `costo_envio` | `7850.00` |
+| `url_etiqueta` | `https://sb-pro.skydropx.com/s/s?id=…` |
+
+**`codigo_transportadora` es el dato que cierra el círculo de `§6.8`.** Ahí quedó escrito que el
+código no se puede derivar del nombre y que las guías se saltarían en la conciliación por no tenerlo.
+Las que emitimos nosotros nacen con él, así que la conciliación de `adr/0022` por fin tiene guías que
+conciliar.
+
+✅ **Y Envía emite.** Nunca se había probado —todas las emisiones anteriores fueron de 99 minutes,
+Servientrega o Coordinadora— y es la más barata de las que quedan vivas después de descartar a
+Coordinadora. Es además la que el selector elige solo, porque `TarifaEnvio.masEconomica` no mira la
+recolección: `pickup` viene `false` en Envía, así que el día que la recolección por API se conecte
+habrá que decidir si el criterio sigue siendo solo el precio.
+
+**Saldo al cierre: COP 17.938**, de los 50.388 que entraron. Se gastaron 8.200 (Servientrega, una
+guía), 16.400 (Servientrega, multienvío de dos) y 7.850 (Envía, el recorrido de punta a punta); los
+6.663 de Coordinadora volvieron enteros.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que
