@@ -74,4 +74,18 @@ public class RepositorioEmisionesDobleDePrueba implements RepositorioEmisiones {
   public List<EmisionDeGuia> todas() {
     return List.copyOf(emisiones.values());
   }
+
+  @Override
+  public Optional<EmisionDeGuia> buscarPorId(UUID id) {
+    return Optional.ofNullable(emisiones.get(id));
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
+    return emisiones.values().stream()
+        .filter(emision -> emision.estado().exigeOjoHumano())
+        .sorted(Comparator.comparing(EmisionDeGuia::solicitadaEn))
+        .limit(maximo)
+        .toList();
+  }
 }

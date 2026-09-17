@@ -3,6 +3,8 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.envio.AcusarRevisionDeEmision;
+import co.tecnosport.api.application.envio.AcusarRevisionDeGuia;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
@@ -13,8 +15,10 @@ import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.EmitirGuiaDePedido;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
+import co.tecnosport.api.application.envio.ListarEnviosEnRevision;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
+import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
@@ -297,5 +301,36 @@ public class ConfiguracionEnvio {
         repositorioPedidos,
         criteriosContraentrega,
         metodosDeWompi.comoMetodosDePago());
+  }
+
+  /**
+   * La bandeja de revisión y sus dos acuses. Son de solo lectura y de solo rastro: ninguno mueve
+   * dinero ni estado, y por eso ninguno necesita {@code EnTransaccionPropia} como sí la necesita la
+   * emisión.
+   */
+  @Bean
+  public ListarEnviosEnRevision listarEnviosEnRevision(
+      RepositorioEnvios repositorioEnvios,
+      RepositorioEmisiones repositorioEmisiones,
+      RepositorioAcusesDeRevision repositorioAcuses,
+      RepositorioPedidos repositorioPedidos) {
+    return new ListarEnviosEnRevision(
+        repositorioEnvios, repositorioEmisiones, repositorioAcuses, repositorioPedidos);
+  }
+
+  @Bean
+  public AcusarRevisionDeGuia acusarRevisionDeGuia(
+      RepositorioEnvios repositorioEnvios,
+      RepositorioAcusesDeRevision repositorioAcuses,
+      Reloj reloj) {
+    return new AcusarRevisionDeGuia(repositorioEnvios, repositorioAcuses, reloj);
+  }
+
+  @Bean
+  public AcusarRevisionDeEmision acusarRevisionDeEmision(
+      RepositorioEmisiones repositorioEmisiones,
+      RepositorioAcusesDeRevision repositorioAcuses,
+      Reloj reloj) {
+    return new AcusarRevisionDeEmision(repositorioEmisiones, repositorioAcuses, reloj);
   }
 }

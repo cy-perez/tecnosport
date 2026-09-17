@@ -48,4 +48,20 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
         .limit(maximo)
         .toList();
   }
+
+  /** Filtro grueso, igual que la consulta real: el ultimo estado de alguna guia pide ojo humano. */
+  @Override
+  public List<Envio> buscarConGuiasEnRevision(int maximo) {
+    return envios.stream()
+        .filter(
+            e ->
+                e.guias().stream()
+                    .anyMatch(
+                        guia ->
+                            guia.ultimoEstado()
+                                .filter(estado -> estado.exigeRevisionManual())
+                                .isPresent()))
+        .limit(maximo)
+        .toList();
+  }
 }
