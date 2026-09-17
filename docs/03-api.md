@@ -366,7 +366,22 @@ aparte.
 `emitir-guia` **no entra en ese argumento**, y por eso se protege aparte: no
 transiciona el pedido, así que la máquina de estados no la frena y dos clics serían
 dos cobros. Lo que la frena es un índice único parcial que impide dos emisiones
-abiertas para el mismo pedido, y responde `409` a la segunda. La diferencia con `POST /api/v1/pedidos` y `POST
+abiertas para el mismo pedido, y responde `409` a la segunda. La fila que lo sostiene
+**se escribe antes de llamar a la plataforma**, así que el segundo clic choca cuando
+todavía no hay nada que pagar (`ADR-0033`).
+
+Sus códigos de error, y por qué no son el mismo:
+
+| Código | Cuándo |
+|---|---|
+| `409 EMISION_NO_APLICABLE` | El pedido es de retiro en punto, no está en `EN_PREPARACION`, o le falta dirección o contacto |
+| `409 EMISION_YA_EN_CURSO` | Ya hay una abierta. El mensaje distingue la que se resuelve sola en minutos de la **indeterminada**, que no se resuelve nunca sola: pudo crearse y cobrarse una guía, y hay que mirarlo en el panel de la transportadora antes de volver a emitir |
+| `502` | La transportadora rechazó la emisión |
+| `500` | Faltan nuestras credenciales. No es culpa de la transportadora y decirlo así mandaría a quien despacha a llamarlos por algo nuestro |
+
+Y una nota de operación: mientras hay una emisión abierta, **el despacho a mano sigue
+disponible**. Es la salida de quien está apurado, y la única cuando una emisión queda
+indeterminada. La diferencia con `POST /api/v1/pedidos` y `POST
 /api/v1/pagos/intentos`, que sí exigen la cabecera: esos dos *crean* un
 recurso nuevo cada vez que se llaman — sin un estado previo que la
 transición pueda rechazar, no hay forma de que el propio dominio detecte un

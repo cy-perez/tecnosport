@@ -4128,6 +4128,31 @@ caso de uso que emite, la tarea que resuelve y despacha, el adaptador contra v2/
 Verificado de punta a punta en el navegador contra el sandbox real: guía `034054505967` de Envía,
 7.850, cuarenta y cinco segundos entre el clic y el pedido en `DESPACHADO`.
 
+#### La revisión adversarial encontró ocho defectos, y cuatro tocaban dinero
+
+Se pidió al terminar, como manda este documento, y no fue un trámite. Lo que
+encontró, y el patrón que comparten los cuatro caros:
+
+- **La fila de la emisión se escribía después de cobrar**, mientras el ADR prometía
+  con todas las letras que eso no pasaba. Había además **una prueba que fijaba el
+  defecto como comportamiento deseado** —"un rechazo no deja emisión"—, que es la
+  forma más eficaz de que un error sobreviva a la siguiente revisión.
+- **El mensaje de error decía que reintentar con la misma tarifa recuperaría el
+  envío**, y no guardaba la tarifa en ninguna parte.
+- **El reintento volvía a elegir la transportadora que falla siempre**, y como la
+  cotización se deduplica por contenido y la creación se cachea por tarifa, recibía
+  de vuelta los envíos muertos y moría en un 500.
+- **La tarea podía atascarse para siempre**, cada minuto, reenviando el correo de
+  despacho, si alguien usaba el formulario manual que está en la misma pantalla.
+
+El patrón: **todos eran promesas del diseño que el código no cumplía**, no cosas que
+faltaran por escribir. Un ADR que afirma una garantía es una afirmación que hay que
+comprobar, no un resumen de lo que se hizo.
+
+Se arreglaron los ocho, y el recorrido de punta a punta **se repitió** —guía
+`034054505968`— porque el primero probaba el código de antes y ya no valía. Detalle
+en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
+
 #### Lo que sigue abierto, y ya no es de esta fase
 
 1. **La recolección**, bloqueada del lado de la transportadora: el conector de Servientrega respondió
@@ -4136,9 +4161,12 @@ Verificado de punta a punta en el navegador contra el sandbox real: guía `03405
 2. **El barrio del destino.** `Direccion` no lo tiene y el checkout no lo pide. Para la recolección
    basta el del origen; el del destino mejoraría la entrega y es un cambio de checkout, base de
    datos y formulario.
-3. **`exigeRevisionManual()` sigue sin que nadie lo llame.** Cinco estados dejan el paquete quieto y
-   ninguna pantalla los marca — hoy un envío retenido, destruido o fallido se ve igual que uno en
-   tránsito. Es la tarea que hace útil todo lo anterior, y es la que sigue.
+3. **Nadie mira los estados que piden ojo humano, y ahora son más.** `exigeRevisionManual()` no lo
+   llama nada en producción: cinco estados de envío dejan el paquete quieto y ninguna pantalla los
+   marca. A eso se suman los dos de la emisión —`INDETERMINADA`, que puede ser una guía pagada de la
+   que no tenemos identificador, y `PARCIAL`, que son guías pagadas sin usar—: existen, se guardan,
+   y solo aparecen en un `warn` del registro. Es la tarea que hace útil todo lo anterior, y es la
+   que sigue.
 4. **¿`FALLIDO` es terminal?** Sin medir: la emisión que murió no llegó a producir eventos de
    rastreo.
 5. **El criterio de elección de tarifa.** `TarifaEnvio.masEconomica` no mira `pickup`, y la más
