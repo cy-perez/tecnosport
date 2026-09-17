@@ -4334,10 +4334,13 @@ escrito en el ADR y con una prueba propia para que cambiarlo tenga que ser delib
 
 ### Lo que queda abierto, y nació aquí
 
-- **El otro extremo del rango.** El panel acota el valor declarado entre 10.000 y **5.000.000**
-  (`docs/13` §6.5). Arriba nadie ha medido si la API lo valida, y recortar no sería simétrico a
-  elevar: declarar un celular de seis millones en cinco deja el resto sin asegurar. Es una decisión
-  con plata encima y necesita medirse antes de tomarse.
+- **El otro extremo del rango, ya medido el mismo día** (`docs/13` §6.13). La API valida un techo de
+  **5.000.000 exactos**, con un `422` simétrico al del mínimo y **por bulto**: 5.000.000 cotiza,
+  5.000.001 no, y dos bultos de tres millones cotizan sin problema. O sea que **un celular de gama
+  alta no se puede cotizar hoy** y el comprador ve "intenta más tarde": el sistema ya decidió no
+  venderlo a domicilio, y lo único que no hace es decirlo. La decisión sigue abierta porque recortar
+  al tope no es simétrico a elevar al piso — deja sin asegurar la diferencia, y esa es plata del
+  negocio si el paquete se pierde.
 - **El `422` sigue disfrazado de caída.** El piso quita la causa conocida, no la clase de fallo:
   cualquier rechazo del proveedor se sigue contando como "no disponible" y le sigue pidiendo al
   comprador que reintente algo que no va a funcionar. Separar "no responde" de "rechazó nuestro

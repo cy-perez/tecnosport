@@ -77,10 +77,11 @@ que `application` aplica la regla sin saber quién la exige.
   facturados. No nos da nada —una reclamación por pérdida se paga contra la factura, no contra el
   declarado— y es el precio de cumplir el mínimo. Queda escrito para que nadie lo descubra leyendo
   una guía.
-- **El seguro se cobra sobre el declarado, así que elevar cuesta plata.** Cuánto, no se sabe: el
-  proveedor no publica el porcentaje y este ADR no se lo inventa. Es observable sin adivinarlo,
-  porque el flete real llega en `total` y `adr/0033` ya guarda por separado lo cobrado al comprador
-  y lo que costó la guía.
+- **El seguro se cobra sobre el declarado, así que elevar cuesta plata.** ~~Cuánto, no se sabe: el
+  proveedor no publica el porcentaje y este ADR no se lo inventa.~~ **Acotado el mismo día**, ver el
+  final de este documento: dos de las tres tarifas vivas no se mueven con el declarado y la tercera
+  cobra un 0,84 %. Sigue siendo observable sin adivinarlo, porque el flete real llega en `total` y
+  `adr/0033` ya guarda por separado lo cobrado al comprador y lo que costó la guía.
 - **La cotización y la emisión declaran lo mismo**, y no porque alguien las mantenga sincronizadas.
 - **El declarado no se persiste**: se vuelve a calcular al recotizar en la emisión. Si algún día hay
   que probar qué se declaró en un envío viejo, hoy no se puede.
@@ -100,9 +101,17 @@ declarado **entre 10.000 y 5.000.000** (`docs/13` §6.5), así que el mismo defe
 arriba: una variante de más de cinco millones tumbaría la cotización igual. No se implementa por dos
 razones, y la segunda pesa más que la primera:
 
-1. **La evidencia no es la misma.** El mínimo lo dice un `422` medido; el máximo lo dice un campo de
-   un formulario web. Nadie ha comprobado que la API lo valide.
+1. ~~**La evidencia no es la misma.** El mínimo lo dice un `422` medido; el máximo lo dice un campo
+   de un formulario web. Nadie ha comprobado que la API lo valide.~~ **Medido el mismo día, un rato
+   después** (`docs/13` §6.13): la API lo valida, el número es exactamente 5.000.000, el mensaje es
+   simétrico al del mínimo y —como el mínimo— es **por bulto**. Esta razón ya no sostiene nada.
 2. **Recortar no es simétrico a elevar.** Elevar un bulto barato no le quita nada a nadie. Bajar un
    celular de 6.000.000 a 5.000.000 declararía por menos de lo que vale, y si se pierde, la
    transportadora responde por el tope y el millón restante lo pone el negocio. Eso es una decisión
-   de negocio con plata encima, no un ajuste de borde, y necesita medirse antes de decidirse.
+   de negocio con plata encima, no un ajuste de borde. **Sigue en pie, y ahora es lo único que
+   queda**: el dato ya está, falta la decisión.
+
+**Lo que la medición del techo también respondió, y este ADR daba por desconocido:** el declarado
+mueve el precio en **una** de las tres tarifas vivas. Servientrega y Envía cobran lo mismo con un
+millón que con cinco; Coordinadora cobra un 0,84 % más, así que elevar un bulto de 8.000 a 10.000
+cuesta del orden de diecisiete pesos con ella y cero con las otras dos.
