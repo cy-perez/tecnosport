@@ -12,7 +12,10 @@
     "excepcion_de_dominio": "La operación no cumple una regla del negocio y el servidor no dice cuál. Vuelve a mirar los datos.",
     "sesion_de_refresco_invalida": "Tu sesión expiró. Vuelve a iniciar sesión: reintentar no va a servir.",
     "credenciales_invalidas": "Correo o clave incorrectos.",
-    "limite_de_intentos_excedido": "Demasiados intentos seguidos. Espera unos minutos antes de volver a intentarlo."
+    "limite_de_intentos_excedido": "Demasiados intentos seguidos. Espera unos minutos antes de volver a intentarlo.",
+    "guia_no_encontrada": "No existe ninguna guía con ese número.",
+    "emision_no_encontrada": "Esa emisión ya no está.",
+    "acuse_no_aplicable": "Eso no está pidiendo revisión."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -29,7 +32,8 @@
     "cerrar_sesion": "Cerrar sesión",
     "ir_a_pedidos": "Pedidos",
     "ir_a_productos": "Productos",
-    "ir_a_atencion": "PQR"
+    "ir_a_atencion": "PQR",
+    "ir_a_envios": "Revisión de envíos"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -402,6 +406,49 @@
       "resolver": "Resolver reversión",
       "monto_del_emisor": "Cuánto revirtió el emisor",
       "monto_del_emisor_ayuda": "La cifra que el emisor devolvió al comprador. No sale de nuestra caja, pero cuenta contra lo que este pedido todavía puede devolver."
+    }
+  },
+  "revision_envios": {
+    "titulo": "Revisión de envíos",
+    "ayuda": "Lo que se quedó quieto y necesita que alguien haga algo: guías que dejaron de moverse y emisiones con saldo comprometido. Marcar una como revisada deja constancia de quién la miró; no resuelve nada por sí sola.",
+    "cargando": "Cargando la bandeja…",
+    "vacia": "No hay nada que revisar. Ninguna guía detenida y ninguna emisión sin desenlace.",
+    "error": "No se pudo completar la acción.",
+    "guias": {
+      "titulo": "Guías detenidas",
+      "ayuda": "El último movimiento de estas guías las dejó quietas. Si nadie las mira, el comprador se entera antes que el negocio.",
+      "de_pedido": "Pedido {{pedido}} · {{transportadora}}",
+      "ocurrio_en": "Según la transportadora",
+      "recibido_en": "Nos enteramos el {{fecha}}",
+      "ya_revisada": "Ya se había revisado el {{fecha}}, y después llegó este movimiento."
+    },
+    "emisiones": {
+      "titulo": "Emisiones sin desenlace",
+      "ayuda": "Hay saldo comprometido y solo una persona puede decidir qué pasó. Se miran en el panel de la transportadora con el identificador de tarifa.",
+      "tarifa": "Identificador de tarifa",
+      "tarifa_ayuda": "Con este identificador se busca el envío en el panel de la plataforma.",
+      "envios": "Envíos creados en la plataforma",
+      "solicitada_en": "Se pidió el",
+      "pedida_por": "La pidió {{actor}}",
+      "no_resuelve": "Marcarla como revisada no la resuelve: el pedido sigue bloqueado para una emisión nueva hasta que alguien decida qué pasó con el cobro."
+    },
+    "estados_envio": {
+      "excepcion": "Con novedad",
+      "retenido": "Retenido",
+      "cancelado": "Cancelado",
+      "destruido": "Destruido",
+      "fallido": "Fallido"
+    },
+    "estados_emision": {
+      "indeterminada": "Sin respuesta, posible cobro",
+      "parcial": "Parcial, con guías sin usar"
+    },
+    "acciones": {
+      "abrir": "Marcar como revisada",
+      "ayuda": "Queda registrado quién la revisó y cuándo. Si llega un movimiento nuevo después, la guía vuelve a esta bandeja.",
+      "nota": "Qué encontraste",
+      "nota_ayuda": "Opcional. Lo lee quien mire esto después.",
+      "marcar": "Guardar la revisión"
     }
   }
 }

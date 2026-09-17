@@ -1,0 +1,181 @@
+<section class="mx-auto my-32 max-w-contenido px-16">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-8 font-display text-2xl">{{ 'admin.revision_envios.titulo' | transloco }}</h1>
+  <p class="mt-0 mb-24 text-ts-texto-suave">{{ 'admin.revision_envios.ayuda' | transloco }}</p>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="mb-16 text-ts-error">{{ mensaje }}</p>
+  }
+
+  @if (consulta.isPending()) {
+    <p role="status" class="text-ts-texto-suave">
+      {{ 'admin.revision_envios.cargando' | transloco }}
+    </p>
+  } @else if (vacia()) {
+    <p role="status" class="text-ts-texto-suave">{{ 'admin.revision_envios.vacia' | transloco }}</p>
+  } @else {
+    @if (guias().length > 0) {
+      <h2 class="mt-0 mb-8 text-base font-medio">
+        {{ 'admin.revision_envios.guias.titulo' | transloco }}
+      </h2>
+      <p class="mt-0 mb-16 text-ts-texto-suave">
+        {{ 'admin.revision_envios.guias.ayuda' | transloco }}
+      </p>
+
+      <ul class="m-0 mb-32 list-none p-0">
+        @for (guia of guias(); track guia.guiaId) {
+          <li class="mb-16 border-b border-ts-borde pb-16">
+            <h3 class="m-0 mb-4 text-base font-medio">
+              {{ guia.numeroGuia }} · {{ etiquetaEstadoEnvio(guia.estado) }}
+            </h3>
+            <p class="m-0 mb-4 text-ts-texto-suave">
+              {{
+                'admin.revision_envios.guias.de_pedido'
+                  | transloco: { pedido: guia.numeroPedido, transportadora: guia.transportadora }
+              }}
+            </p>
+
+            @if (guia.descripcion) {
+              <p class="m-0 mb-8">{{ guia.descripcion }}</p>
+            }
+
+            <dl class="m-0 mb-8">
+              <dt class="text-ts-texto-suave">
+                {{ 'admin.revision_envios.guias.ocurrio_en' | transloco }}
+              </dt>
+              <dd class="m-0 mb-8">
+                {{ guia.ocurrioEn | date: 'medium' }}
+                <span class="block text-ts-texto-suave">
+                  {{
+                    'admin.revision_envios.guias.recibido_en'
+                      | transloco: { fecha: guia.recibidoEn | date: 'medium' }
+                  }}
+                </span>
+              </dd>
+            </dl>
+
+            @if (guia.revisadaEn) {
+              <p class="m-0 mb-8 text-ts-texto-suave">
+                {{
+                  'admin.revision_envios.guias.ya_revisada'
+                    | transloco: { fecha: guia.revisadaEn | date: 'medium' }
+                }}
+              </p>
+            }
+
+            <ts-boton variante="secundario" (click)="alternar(guia.guiaId)">
+              {{ 'admin.revision_envios.acciones.abrir' | transloco }}
+            </ts-boton>
+
+            @if (abierta() === guia.guiaId) {
+              <form
+                class="mt-16"
+                [formGroup]="formularioNota"
+                (submit)="$event.preventDefault(); acusarGuia(guia)"
+              >
+                <p class="mt-0 mb-8 text-ts-texto-suave">
+                  {{ 'admin.revision_envios.acciones.ayuda' | transloco }}
+                </p>
+                <ts-campo
+                  [idCampo]="'revision-nota-' + guia.guiaId"
+                  [label]="'admin.revision_envios.acciones.nota' | transloco"
+                  [ayuda]="'admin.revision_envios.acciones.nota_ayuda' | transloco"
+                  formControlName="nota"
+                />
+                <ts-boton tipo="submit" [cargando]="acciones.acusarGuia.isPending()">
+                  {{ 'admin.revision_envios.acciones.marcar' | transloco }}
+                </ts-boton>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (emisiones().length > 0) {
+      <h2 class="mt-0 mb-8 text-base font-medio">
+        {{ 'admin.revision_envios.emisiones.titulo' | transloco }}
+      </h2>
+      <p class="mt-0 mb-16 text-ts-texto-suave">
+        {{ 'admin.revision_envios.emisiones.ayuda' | transloco }}
+      </p>
+
+      <ul class="m-0 list-none p-0">
+        @for (emision of emisiones(); track emision.emisionId) {
+          <li class="mb-16 border-b border-ts-borde pb-16">
+            <h3 class="m-0 mb-4 text-base font-medio">
+              {{ emision.numeroPedido }} · {{ etiquetaEstadoEmision(emision.estado) }}
+            </h3>
+            <p class="m-0 mb-4 text-ts-texto-suave">{{ emision.transportadora }}</p>
+
+            @if (emision.detalle) {
+              <p class="m-0 mb-8">{{ emision.detalle }}</p>
+            }
+
+            <dl class="m-0 mb-8">
+              <dt class="text-ts-texto-suave">
+                {{ 'admin.revision_envios.emisiones.tarifa' | transloco }}
+              </dt>
+              <dd class="m-0 mb-8">
+                <code>{{ emision.idTarifa }}</code>
+                <span class="block text-ts-texto-suave">
+                  {{ 'admin.revision_envios.emisiones.tarifa_ayuda' | transloco }}
+                </span>
+              </dd>
+
+              @if (emision.enviosEnPlataforma.length > 0) {
+                <dt class="text-ts-texto-suave">
+                  {{ 'admin.revision_envios.emisiones.envios' | transloco }}
+                </dt>
+                <dd class="m-0 mb-8">
+                  @for (envio of emision.enviosEnPlataforma; track envio) {
+                    <code class="mr-8">{{ envio }}</code>
+                  }
+                </dd>
+              }
+
+              <dt class="text-ts-texto-suave">
+                {{ 'admin.revision_envios.emisiones.solicitada_en' | transloco }}
+              </dt>
+              <dd class="m-0 mb-8">
+                {{ emision.solicitadaEn | date: 'medium' }}
+                <span class="block text-ts-texto-suave">
+                  {{
+                    'admin.revision_envios.emisiones.pedida_por'
+                      | transloco: { actor: emision.actor }
+                  }}
+                </span>
+              </dd>
+            </dl>
+
+            <ts-boton variante="secundario" (click)="alternar(emision.emisionId)">
+              {{ 'admin.revision_envios.acciones.abrir' | transloco }}
+            </ts-boton>
+
+            @if (abierta() === emision.emisionId) {
+              <form
+                class="mt-16"
+                [formGroup]="formularioNota"
+                (submit)="$event.preventDefault(); acusarEmision(emision)"
+              >
+                <p class="mt-0 mb-8 text-ts-texto-suave">
+                  {{ 'admin.revision_envios.emisiones.no_resuelve' | transloco }}
+                </p>
+                <ts-campo
+                  [idCampo]="'revision-nota-' + emision.emisionId"
+                  [label]="'admin.revision_envios.acciones.nota' | transloco"
+                  [ayuda]="'admin.revision_envios.acciones.nota_ayuda' | transloco"
+                  formControlName="nota"
+                />
+                <ts-boton tipo="submit" [cargando]="acciones.acusarEmision.isPending()">
+                  {{ 'admin.revision_envios.acciones.marcar' | transloco }}
+                </ts-boton>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
