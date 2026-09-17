@@ -4161,18 +4161,71 @@ en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
 2. **El barrio del destino.** `Direccion` no lo tiene y el checkout no lo pide. Para la recolección
    basta el del origen; el del destino mejoraría la entrega y es un cambio de checkout, base de
    datos y formulario.
-3. **Nadie mira los estados que piden ojo humano, y ahora son más.** `exigeRevisionManual()` no lo
-   llama nada en producción: cinco estados de envío dejan el paquete quieto y ninguna pantalla los
-   marca. A eso se suman los dos de la emisión —`INDETERMINADA`, que puede ser una guía pagada de la
-   que no tenemos identificador, y `PARCIAL`, que son guías pagadas sin usar—: existen, se guardan,
-   y solo aparecen en un `warn` del registro. Es la tarea que hace útil todo lo anterior, y es la
-   que sigue.
+3. ~~**Nadie mira los estados que piden ojo humano.**~~ **Cerrado el 17 de septiembre de 2026**:
+   la bandeja de revisión, más abajo.
 4. **¿`FALLIDO` es terminal?** Sin medir: la emisión que murió no llegó a producir eventos de
    rastreo.
 5. **El criterio de elección de tarifa.** `TarifaEnvio.masEconomica` no mira `pickup`, y la más
    barata de la cuenta —Envía— no recoge por API. El día que la recolección se conecte hay que
    decidir si el criterio sigue siendo solo el precio.
 6. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no cotizan.
+
+## La bandeja de revisión de envíos (2026-09-17)
+
+Era el punto 3 de lo que la Fase 7 dejó abierto, y el propio documento lo llamaba "la tarea que hace
+útil todo lo anterior". Detalle en `adr/0034`; aquí queda lo que enseñó.
+
+### El defecto no era que faltara una pantalla
+
+`EstadoEnvio.exigeRevisionManual()` y `EstadoEmision.exigeOjoHumano()` estaban escritos, probados y
+documentados. Lo que no tenían era **quien los llamara**: siete situaciones —cinco de envío, dos de
+emisión— se calculaban, se guardaban, y terminaban en un `warn` del registro.
+
+El javadoc de `exigeRevisionManual()` decía, desde que se escribió: *"a día de hoy nadie los mira…
+un método que sólo se prueba a sí mismo parece cubierto y no cubre nada"*. Estuvo dos fases ahí. La
+lección no es que el aviso sirviera de poco —sirvió, es lo que hizo encontrar esto— sino que **un
+predicado con pruebas verdes y sin llamadas en producción pasa cualquier revisión**: la cobertura lo
+cuenta como cubierto y ArchUnit no tiene nada que decir.
+
+### La decisión que cambió el diseño: el acuse
+
+La primera forma que se pensó era una bandeja derivada, una consulta pura sobre el estado. Se
+descartó al mirar los cinco estados de cerca: `CANCELADO` y `DESTRUIDO` **también son terminales**,
+así que de esas guías no llega otro evento nunca y se quedarían en la lista para siempre. A los
+pocos meses la bandeja sería un cementerio que nadie abre, o sea el `warn` del registro con más
+pasos.
+
+De ahí sale `acuse_revision`, y de ahí sale la regla que la hace honesta: **una guía acusada vuelve
+a la bandeja si le llega un evento posterior al acuse**. Sin eso, acusar sería una mordaza.
+
+Esa comparación es contra `recibidoEn` —nuestro reloj— y nunca contra `ocurrioEn`, que lo pone la
+transportadora. Es la misma distinción que `adr/0022` guardó en `EventoSeguimiento` con dos
+instantes en vez de uno, y es la primera vez que hace falta para decidir algo: un evento con desfase
+parecería anterior al acuse sin serlo, y el paquete desaparecería de la vista sin que nadie lo
+hubiera mirado.
+
+### Lo que se dejó fuera, a propósito
+
+**El acuse no resuelve.** Una emisión `INDETERMINADA` acusada sigue abierta y sigue bloqueando su
+pedido. Pasarla a `FALLIDA` es decidir que no hubo cobro, y eso es plata: necesita su propia puerta
+con su propia comprobación contra la plataforma. Es lo siguiente.
+
+### Verificado en el navegador, que es donde se ven dos cosas
+
+Contra el backend real, con un caso sembrado de cada tipo: el anillo de foco con teclado
+(`:focus-visible`, 2 px) y que las utilidades de Tailwind existan de verdad (`npm run clases`). El
+recorrido entero —acusar la emisión, verla salir de la lista, y comprobar en la base que quedó la
+fila con actor y nota **y que la emisión sigue en `INDETERMINADA`**— es lo que confirma que la
+promesa del párrafo anterior se cumple.
+
+Una cosa la encontró solo mirar la pantalla: el texto de ayuda de la nota decía "lo lee quien mire
+esta *guía* después", y estaba también bajo una emisión. Ninguna prueba mira si un texto tiene
+sentido donde se pinta.
+
+### Lo que sigue abierto
+
+Nadie vigila la bandeja. Que exista la pantalla no hace que alguien la abra: un aviso cuando algo
+lleva demasiado tiempo sin acusar es otra decisión, del tamaño del vigilante del plazo de entrega.
 
 ## Cómo conversar con Claude Code en este proyecto
 

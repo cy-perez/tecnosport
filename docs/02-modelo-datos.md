@@ -476,6 +476,35 @@ envio_en_plataforma
   hay. Y el pedido no se mueve de `EN_PREPARACION` hasta que las haya, que es lo que
   hace que una emisión fallida no tenga nada que devolver a ninguna cola.
 
+### El acuse de revisión
+
+Cinco estados de envío dejan el paquete quieto y dos de emisión dejan saldo
+comprometido. Verlos es una consulta; **poder dejar de verlos** necesita una tabla:
+
+```
+acuse_revision
+  id, tipo, guia_id, emision_id, revisado_en, actor, nota
+```
+
+- **Existe porque dos de esos cinco estados son terminales.** De una guía
+  `CANCELADO` o `DESTRUIDO` no llega otro evento nunca, así que una bandeja
+  calculada solo a partir del estado las acumularía para siempre y a los pocos
+  meses sería una lista que nadie abre.
+- **Dos columnas de referencia y no una suelta con un discriminador**, para que la
+  llave foránea siga existiendo. Una restricción `check` las hace excluyentes según
+  `tipo`: un acuse apunta a una guía o a una emisión, nunca a las dos ni a ninguna.
+- **Append-only, como `evento_seguimiento`.** Acusar dos veces la misma guía son dos
+  filas y dos momentos; ninguna pisa a la anterior. El día de la reclamación hay que
+  poder decir quién sabía qué, y cuándo.
+- **`revisado_en` es nuestro reloj.** Se compara contra `evento_seguimiento.recibido_en`
+  —cuándo nos enteramos— y nunca contra `ocurrio_en`, que lo pone la transportadora:
+  comparar dos relojes distintos haría que un evento con desfase pareciera anterior
+  al acuse sin serlo, y el precio de equivocarse es una guía en excepción que
+  desaparece de la vista sin que nadie la haya visto.
+- **El acuse no resuelve nada.** Una emisión `INDETERMINADA` acusada sigue abierta y
+  sigue bloqueando una emisión nueva de ese pedido. Decidir que no hubo cobro y
+  pasarla a `FALLIDA` mueve plata: es otra decisión, con su propia puerta.
+
 ## Congelado del pedido
 
 Al crear el pedido se copian nombre, SKU, precio unitario, tasa de IVA e imagen a
