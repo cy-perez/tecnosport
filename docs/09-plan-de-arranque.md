@@ -4160,18 +4160,22 @@ en `adr/0033`, sección "Lo que la primera versión de este ADR tenía mal".
    el mismo `ECONNREFUSED`. Van cinco intentos en dos días y dos horas distintas; la cobertura sí
    responde `200` con fechas, así que nuestro cuerpo sigue validado y lo que está caído es el
    conector de ellos. Ver `docs/13` §6.11.
-2. **El barrio del destino.** `Direccion` no lo tiene y el checkout no lo pide. Para la recolección
-   basta el del origen; el del destino mejoraría la entrega y es un cambio de checkout, base de
-   datos y formulario.
+2. ~~**El barrio del destino.**~~ **Cerrado el 17 de septiembre de 2026**: `Direccion` lo tiene, el
+   checkout lo pide sin exigirlo y la cotización lo manda como `area_level3` solo cuando viene.
 3. ~~**Nadie mira los estados que piden ojo humano.**~~ **Cerrado el 17 de septiembre de 2026**:
    la bandeja de revisión, más abajo.
-4. **¿`FALLIDO` es terminal?** Sin medir: la emisión que murió no llegó a producir eventos de
-   rastreo.
+4. ~~**¿`FALLIDO` es terminal?**~~ **Respondido el 17 de septiembre, y la respuesta disuelve la
+   pregunta**: los cuatro envíos muertos de la cuenta no tienen número de guía, así que ese estado
+   no puede llegar por el canal de la conciliación —no hay a qué preguntarle—. Se queda como no
+   terminal y el costo de esa elección es cero. Ver `docs/13` §6.12.
 5. **El criterio de elección de tarifa.** `TarifaEnvio.masEconomica` no mira `pickup`, y la más
    barata de la cuenta —Envía— no recoge por API. Sigue abierto y ahora se sabe por qué no se puede
    cerrar: decidir si `pickup` debe pesar exige una recolección que funcione para comparar, y el
    punto 1 dice que no la hay.
-6. **La entrega en oficina no se construye**: las tarifas que la declaran son las que no cotizan.
+6. **La entrega en oficina no se construye**, y el motivo cambió aunque la conclusión no: ~~las
+   tarifas que la declaran son las que no cotizan~~. Medido el 17 de septiembre con las tarifas
+   vivas, **las cuatro declaran `office_delivery: false` y su catálogo de puntos responde vacío**.
+   Ya no es una suposición sobre tarifas muertas. Ver `docs/13` §6.12.
 
 ## La bandeja de revisión de envíos (2026-09-17)
 
@@ -4266,6 +4270,39 @@ una sesión entera creerle.
 
 Nada mide cuánto tarda el negocio en atender lo que la bandeja muestra. El aviso dice que algo lleva
 un día esperando; no dice si el correo sirvió de algo. Se sabrá con casos reales.
+
+## Lo último de Skydropx que dependía de nosotros (2026-09-17)
+
+De los seis pendientes que dejó la Fase 7 quedan dos, y los dos son del proveedor: la recolección
+caída (punto 1) y el criterio de tarifa que no se puede decidir sin ella (punto 5).
+
+### Dos se cerraron mirando, no construyendo
+
+**`FALLIDO`** llevaba una fase esperando "a que una emisión real vuelva a morir". Ya habían muerto
+cuatro y estaban en la cuenta: bastaba releerlas. Ninguna tiene número de guía, y de ahí sale una
+respuesta mejor que la esperada — el estado no puede llegar por la conciliación, porque el rastreo se
+consulta por número y no hay ninguno. La decisión de dejarlo no terminal se queda, y ahora se sabe
+que no cuesta nada.
+
+**La entrega en oficina** estaba descartada por una premisa que había caducado el mismo día que se
+escribió: "las cuatro transportadoras con oficinas son las cuatro que no cotizan" se midió cuando
+cinco de seis tarifas fallaban **por un defecto nuestro**. Hoy cotizan cuatro, y las cuatro declaran
+que no hacen entrega en oficina. La conclusión sobrevive con mejor evidencia.
+
+La lección se repite por tercera vez en esta integración: **una conclusión correcta apoyada en una
+premisa falsa sigue siendo deuda**, porque nadie sabe cuál de las dos cosas está sosteniendo la
+decisión. Las tres veces —el valor declarado, Coordinadora de noche, y ahora las oficinas— lo que
+destapó el error fue volver a medir algo que el documento daba por cerrado.
+
+### Y uno se construyó
+
+**El barrio del destino**, opcional. Lo interesante no es el campo sino cómo se manda: la clave
+`area_level3` **se omite** cuando no hay barrio, en vez de viajar en nulo. Es exactamente así como
+este campo rompió la recolección durante dos sesiones.
+
+`Direccion.sinBarrio` existe con nombre y no como una sobrecarga de seis argumentos: una sobrecarga
+deja que un sitio nuevo se olvide del barrio sin que nada lo note, que es la misma forma de trampa
+silenciosa que las clases de Tailwind que no existen.
 
 ## Cómo conversar con Claude Code en este proyecto
 

@@ -227,7 +227,7 @@ panel. Ver `ADR-0018`.
 | `SesionRefresco` | familia, rotación, revocación | Un eslabón de la rotación por fila (Fase 4) |
 | `TokenVerificacionCorreo` | token, vencimiento, un solo uso | Separado de `TokenRecuperacionClave` por sensibilidad (`ADR-0015`) |
 | `TokenRecuperacionClave` | token, vencimiento, un solo uso | Consumirlo revoca todas las sesiones del usuario (`ADR-0015`) |
-| `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
+| `Direccion` | departamento, ciudad, dirección, barrio, indicaciones | Códigos DANE. El barrio y las indicaciones son opcionales: el barrio es el `area_level3` de la plataforma de envíos, y el checkout lo pide sin exigirlo |
 | `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses" |
 | `SetRotacion`, `ImagenProducto` | material visual | |
