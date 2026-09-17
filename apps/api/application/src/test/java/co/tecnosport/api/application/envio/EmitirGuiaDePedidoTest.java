@@ -317,14 +317,14 @@ class EmitirGuiaDePedidoTest {
     cotizador.devolver(tarifaDeHoy());
     emisor.responde(
         new ResultadoEmision.Rechazada(
-            ResultadoEmision.Motivo.TARIFA_RECHAZADA, "la tarifa ya no existe"));
+            ResultadoEmision.Motivo.DATOS_RECHAZADOS, "la tarifa ya no resuelve"));
 
     EmisionRechazadaException error =
         assertThrows(
             EmisionRechazadaException.class,
             () -> caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1")));
 
-    assertEquals(ResultadoEmision.Motivo.TARIFA_RECHAZADA, error.motivo());
+    assertEquals(ResultadoEmision.Motivo.DATOS_RECHAZADOS, error.motivo());
     assertTrue(emisiones.todas().isEmpty());
   }
 

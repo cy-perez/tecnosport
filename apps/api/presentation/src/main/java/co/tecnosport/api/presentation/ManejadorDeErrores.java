@@ -13,6 +13,9 @@ import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteExcep
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
+import co.tecnosport.api.application.envio.EmisionNoAplicableException;
+import co.tecnosport.api.application.envio.EmisionRechazadaException;
+import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
@@ -219,6 +222,31 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CotizacionNoDisponibleException.class)
   public ProblemDetail cotizacionNoDisponible(CotizacionNoDisponibleException excepcion) {
     return problema(HttpStatus.SERVICE_UNAVAILABLE, "No se pudo cotizar el envío", excepcion);
+  }
+
+  // El pedido no admite que se le emita una guia ahora: retiro en punto, o un estado que no es
+  // EN_PREPARACION. 409 porque es un conflicto con el estado del negocio y reintentar no lo
+  // arregla.
+  @ExceptionHandler(EmisionNoAplicableException.class)
+  public ProblemDetail emisionNoAplicable(EmisionNoAplicableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "No se puede emitir la guía", excepcion);
+  }
+
+  // Ya hay una emision abierta para este pedido. Es la puerta que cuesta plata: la plataforma cobra
+  // al crear, asi que dos solicitudes son dos cobros por lo mismo. 409 y el mensaje dice que hay
+  // que
+  // esperar, no reintentar.
+  @ExceptionHandler(EmisionYaEnCursoException.class)
+  public ProblemDetail emisionYaEnCurso(EmisionYaEnCursoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La emisión ya está en curso", excepcion);
+  }
+
+  // La plataforma rechazo la emision. 502 y no 503: la peticion llego y la contestaron diciendo que
+  // no, que es distinto de un proveedor que no responde. El detalle trae el cuerpo del proveedor,
+  // que es donde de verdad esta el motivo (docs/13 §6.10).
+  @ExceptionHandler(EmisionRechazadaException.class)
+  public ProblemDetail emisionRechazada(EmisionRechazadaException excepcion) {
+    return problema(HttpStatus.BAD_GATEWAY, "La transportadora rechazó la emisión", excepcion);
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo

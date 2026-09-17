@@ -40,15 +40,20 @@ public sealed interface ResultadoEmision {
   }
 
   /**
-   * Piden cosas distintas de quien opera, y por eso no se agrupan. {@code TARIFA_RECHAZADA} es la
-   * más probable en la práctica: las tarifas de Skydropx valen 24 horas y entre el pago y el
-   * despacho suele pasar más, así que emitir <em>siempre</em> recotiza — si aun así la rechaza, es
-   * que la cotización de hace un momento ya no sirve y hay que volver a empezar, no reintentar con
-   * la misma.
+   * Piden cosas distintas de quien opera, y por eso no se agrupan. Sin credenciales es un
+   * despliegue mal configurado; datos rechazados es algo del pedido o de la tarifa; el proveedor no
+   * disponible se reintenta; y una respuesta inesperada es la forma del proveedor cambiando bajo
+   * nuestros pies.
+   *
+   * <p><strong>No hay un motivo para "la tarifa venció"</strong>, y no es un olvido: la plataforma
+   * no lo dice así. Cuando la tarifa no resuelve, el {@code 422} no habla de la tarifa — enumera
+   * los campos que el envío <em>habría heredado</em> de la cotización, todos "no puede estar en
+   * blanco" (medido con un {@code rate_id} inexistente, docs/13-skydropx-capacidades.md §6.10).
+   * Desde fuera es indistinguible de una dirección incompleta, así que inventar el motivo sería
+   * adivinar; el cuerpo va entero en {@code detalle}, que es donde de verdad está la respuesta.
    */
   enum Motivo {
     SIN_CREDENCIALES,
-    TARIFA_RECHAZADA,
     DATOS_RECHAZADOS,
     PROVEEDOR_NO_DISPONIBLE,
     RESPUESTA_INESPERADA

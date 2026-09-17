@@ -103,12 +103,22 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
     return json.writeValueAsString(raiz);
   }
 
+  /**
+   * <strong>{@code area_level3} es el barrio, y es la única puerta que tiene.</strong> El envío lo
+   * hereda de la cotización; mandárselo al envío directo no da error, lo descarta en silencio. Sin
+   * él, la recolección no se puede ni consultar ni programar: {@code POST /pickups} responde {@code
+   * Shipper address2 not valid: null} y {@code GET /pickups/coverage} un {@code 422} con el mensaje
+   * vacío. Cinco guías y dos sesiones dieron eso por roto del lado de Skydropx, y era esto
+   * (docs/13-skydropx-capacidades.md §6.10). Con el campo puesto, las seis tarifas siguen cotizando
+   * igual y la cobertura responde {@code 200} con fechas.
+   */
   private ObjectNode direccionDeOrigen(OrigenDespacho origen) {
     ObjectNode nodo = json.createObjectNode();
     nodo.put("country_code", PAIS);
     nodo.put("postal_code", origen.ciudadDane());
     nodo.put("area_level1", origen.departamento());
     nodo.put("area_level2", origen.ciudad());
+    nodo.put("area_level3", origen.barrio());
     nodo.put("street1", origen.direccion());
     nodo.put("name", origen.nombre());
     nodo.put("phone", origen.telefono());
@@ -116,9 +126,15 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
   }
 
   /**
-   * Las indicaciones del comprador ("apto. 401", "portería") no viajan: no se confirmó en qué campo
-   * las espera Skydropx, y para cotizar no cambian nada — el precio sale del DANE. Cuando se emita
-   * la guía habrá que confirmarlo, y ahí sí importan para que el paquete llegue a la puerta.
+   * Las indicaciones del comprador ("apto. 401", "portería") no viajan aquí, y ahora se sabe dónde
+   * sí: en la emisión, como {@code reference} de la dirección de destino. Para cotizar no cambian
+   * nada — el precio sale del DANE.
+   *
+   * <p>El destino tampoco manda {@code area_level3}. No es una omisión del mapeador: {@code
+   * Direccion} no tiene barrio y el checkout no lo pide. Solo hace falta el del <em>origen</em>
+   * para que la recolección funcione —el campo que reclama la plataforma es "Shipper address2"—,
+   * así que el del destino queda como lo que es: una mejora de la dirección de entrega, no un
+   * bloqueo.
    */
   private ObjectNode direccionDeDestino(Direccion destino) {
     ObjectNode nodo = json.createObjectNode();

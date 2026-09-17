@@ -3,16 +3,22 @@ package co.tecnosport.api.bootstrap.envio;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
+import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.EmisorDeGuias;
+import co.tecnosport.api.application.envio.EmitirGuiaDePedido;
 import co.tecnosport.api.application.envio.LectorEventoDeEnvio;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
+import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
+import co.tecnosport.api.application.envio.ResolverEmisionesEnCurso;
 import co.tecnosport.api.application.envio.VerificadorFirmaEnvio;
+import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -75,7 +81,10 @@ public class ConfiguracionEnvio {
             origen.departamento(),
             origen.ciudad(),
             origen.ciudadDane(),
-            origen.codigoPostal()),
+            origen.codigoPostal(),
+            origen.barrio(),
+            origen.referencia(),
+            origen.correo()),
         Duration.ofSeconds(skydropx.cotizacionTimeoutSegundos()),
         skydropx.cotizacionIntentos(),
         INTERVALO_SONDEO,
@@ -182,10 +191,57 @@ public class ConfiguracionEnvio {
         repositorioEnvios, repositorioPedidos, marcarEntregado, rechazarEnEntrega, reloj);
   }
 
+  /**
+   * Cómo se empaca un pedido, en un solo sitio. Lo usan la cotización y la emisión, y tienen que
+   * armar los bultos <strong>en el mismo orden</strong>: la plataforma empareja los paquetes del
+   * envío con los bultos de la cotización por posición.
+   */
+  @Bean
+  public ArmadorDeBultos armadorDeBultos(RepositorioProductos repositorioProductos) {
+    return new ArmadorDeBultos(repositorioProductos);
+  }
+
   @Bean
   public CotizarEnvio cotizarEnvio(
-      RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
-    return new CotizarEnvio(repositorioProductos, cotizadorEnvio, reloj);
+      ArmadorDeBultos armadorDeBultos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
+    return new CotizarEnvio(armadorDeBultos, cotizadorEnvio, reloj);
+  }
+
+  @Bean
+  public EmitirGuiaDePedido emitirGuiaDePedido(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioEmisiones repositorioEmisiones,
+      ArmadorDeBultos armadorDeBultos,
+      CotizarEnvio cotizarEnvio,
+      EmisorDeGuias emisorDeGuias,
+      Reloj reloj) {
+    return new EmitirGuiaDePedido(
+        repositorioPedidos,
+        repositorioEmisiones,
+        armadorDeBultos,
+        cotizarEnvio,
+        emisorDeGuias,
+        reloj);
+  }
+
+  /**
+   * Reusa el tope del seguimiento a propósito: las dos tareas hacen lo mismo contra el mismo límite
+   * de dos peticiones por segundo, y tener dos números que significan lo mismo es tener dos números
+   * que se van a desincronizar.
+   */
+  @Bean
+  public ResolverEmisionesEnCurso resolverEmisionesEnCurso(
+      RepositorioEmisiones repositorioEmisiones,
+      EmisorDeGuias emisorDeGuias,
+      DespacharPedido despacharPedido,
+      Reloj reloj,
+      PropiedadesSeguimientoEnvios propiedades) {
+    return new ResolverEmisionesEnCurso(
+        repositorioEmisiones,
+        emisorDeGuias,
+        despacharPedido,
+        reloj,
+        propiedades.maximoPorCorrida());
   }
 
   @Bean
