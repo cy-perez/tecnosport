@@ -47,10 +47,19 @@ jobs:
         working-directory: apps/api
         run: |
           ./gradlew bootRun -Pperfiles=local,e2e > /tmp/api.log 2>&1 &
+          gradle_pid=$!
           for intento in $(seq 1 60); do
             if curl -sf http://localhost:8080/api/v1/salud > /dev/null; then
               echo "API arriba al intento $intento"
               exit 0
+            fi
+            # Un contexto de Spring que no refresca mata el proceso en segundos. Sin esta
+            # comprobación el paso agota igual los cinco minutos y reporta "no respondió",
+            # que es el síntoma y no la causa: la causa está en el registro, y ya estaba escrita.
+            if ! kill -0 "$gradle_pid" 2>/dev/null; then
+              echo "::error::La API murió durante el arranque, al intento $intento"
+              cat /tmp/api.log
+              exit 1
             fi
             sleep 5
           done
