@@ -40,6 +40,8 @@
     "envio_estimado": "Entrega estimada: {{dias}} días",
     "envio_calculando": "Calculando el costo de envío…",
     "envio_sin_cobertura": "No tenemos transporte hasta esta dirección. Puedes recoger tu pedido en nuestro punto de Medellín.",
+    "articulo_no_asegurable": "{{articulos}} solo está disponible para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar.",
+    "articulos_no_asegurables": "{{articulos}} solo están disponibles para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar.",
     "retiro_ahorro": "Te ahorras {{valor}} de envío",
     "envio_estimado_un_dia": "Entrega estimada: 1 día",
     "envio_no_calculado": "No pudimos calcular el costo de envío en este momento. Vuelve a intentarlo en unos minutos, o elige recoger tu pedido en nuestro punto de Medellín.",
@@ -71,6 +73,8 @@
     "enviando": "Confirmando…",
     "error": "No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo.",
     "sin_cobertura": "No tenemos transporte hasta esta dirección, así que no podemos crear este pedido. Vuelve atrás y elige recoger en nuestro punto de Medellín, o escribe otra dirección.",
+    "articulo_no_asegurable": "{{articulos}} solo está disponible para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar. Vuelve atrás y elige recoger en nuestro punto de Medellín, o quítalo del carrito.",
+    "articulos_no_asegurables": "{{articulos}} solo están disponibles para recogida en nuestro punto, porque su valor supera el máximo que la transportadora puede asegurar. Vuelve atrás y elige recoger en nuestro punto de Medellín, o quítalos del carrito.",
     "envio_no_calculado": "No pudimos calcular el costo de envío, así que no podemos crear este pedido todavía. Inténtalo de nuevo en unos minutos, o vuelve atrás y elige recoger en nuestro punto de Medellín."
   },
   "retornoWompi": {

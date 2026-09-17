@@ -19,7 +19,7 @@ import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
-import { CotizacionEnvio } from '../../domain/envio.model';
+import { CotizacionEnvio, ResultadoCotizacion } from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ConfirmarPage } from './confirmar.page';
 import { CarritoIdLocalStorageAlmacen } from '../../../carrito/infrastructure/carrito-id.almacen';
@@ -213,13 +213,25 @@ class RutaMuda {}
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioEnviosFalso implements RepositorioEnvios {
-  constructor(private readonly respuesta: CotizacionEnvio | null | Error = COTIZACION) {}
+  constructor(
+    private readonly respuesta: CotizacionEnvio | ResultadoCotizacion | null | Error = COTIZACION,
+  ) {}
 
-  async cotizar(): Promise<CotizacionEnvio | null> {
+  /**
+   * Acepta una tarifa suelta o un resultado entero. Lo primero es azúcar para los casos de
+   * siempre —`null` sigue siendo "sin cobertura", como cuando el puerto devolvía eso— y lo
+   * segundo es lo que necesita el caso del artículo no asegurable, que lleva datos consigo.
+   */
+  async cotizar(): Promise<ResultadoCotizacion> {
     if (this.respuesta instanceof Error) {
       throw this.respuesta;
     }
-    return this.respuesta;
+    if (this.respuesta === null) {
+      return { tipo: 'SIN_COBERTURA' };
+    }
+    return 'tipo' in this.respuesta
+      ? this.respuesta
+      : { tipo: 'TARIFA', cotizacion: this.respuesta };
   }
 }
 

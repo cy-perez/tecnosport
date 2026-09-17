@@ -138,6 +138,11 @@ tecnosport:
     # No es un dato de negocio nuestro que se pueda elegir: es la validacion de ellos. Se toca
     # cuando ellos la cambien, y entonces se vuelve a medir antes de tocarla.
     valor-declarado-minimo: ${SKYDROPX_VALOR_DECLARADO_MINIMO:10000}
+    # Y el otro extremo del mismo rango, medido igual (docs/13 §6.13): 5.000.000 cotiza, 5.000.001
+    # responde 422. Aqui NO se recorta: un articulo que vale mas que esto no va a domicilio y el
+    # checkout lo dice, porque declarar un celular de ocho millones en cinco dejaria tres sin
+    # asegurar y esa diferencia la pondria el negocio (adr/0036).
+    valor-declarado-maximo: ${SKYDROPX_VALOR_DECLARADO_MAXIMO:5000000}
     webhook:
       # Dónde viene la firma del evento. Sigue siendo variable, pero ya no porque no se supiera:
       # la plataforma deja elegir el nombre de la cabecera en el panel, con Authorization por

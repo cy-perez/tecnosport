@@ -130,6 +130,15 @@ destino:
   `codigo: "ENVIO_SIN_COBERTURA"` y el checkout ofrece solo la recogida en el
   punto. Un `502` sería mentir sobre de quién es el problema; el destino
   simplemente no se puede despachar hoy.
+- **Y hay un tercer caso que tampoco es un error: `409` con `codigo:
+  "ARTICULO_NO_ASEGURABLE"`.** Un artículo vale más de lo que la transportadora
+  asegura —el rango medido es [10.000, 5.000.000] por bulto, `docs/13` §6.13— y por
+  eso no va a domicilio. Se parece a `ENVIO_SIN_COBERTURA` en la consecuencia
+  (recogida en el punto) y se diferencia en lo único que le importa al que lo lee:
+  aquel se arregla cambiando la dirección y este no se arregla de ninguna manera.
+  La respuesta trae `articulos: [{ varianteId, nombre }]` **con todos** los que se
+  pasan del tope, para que el cliente pueda nombrarlos sin leerle la prosa al
+  `detail` y sin que el comprador tenga que descubrirlos de a uno (`ADR-0036`).
 - **Y cuando no se pudo cotizar, es otra cosa: `503` con `codigo:
   "COTIZACION_NO_DISPONIBLE"`.** No es lo mismo "a esta dirección hoy no llega
   nadie" —que le pide al comprador cambiar la dirección— que "no pudimos

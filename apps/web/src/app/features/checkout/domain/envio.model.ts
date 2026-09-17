@@ -27,6 +27,33 @@ export interface CotizacionEnvio {
   readonly venceEn: string;
 }
 
+/**
+ * Un artículo que no se puede despachar a domicilio porque vale más de lo que la transportadora
+ * asegura (`ADR-0036`). El nombre viene del servidor: es un nombre propio de producto, no un texto
+ * de interfaz, así que no pasa por Transloco — la frase que lo rodea sí.
+ */
+export interface ArticuloNoAsegurable {
+  readonly varianteId: string;
+  readonly nombre: string;
+}
+
+/**
+ * Las tres respuestas posibles de cotizar, y son tres y no dos a propósito. Antes esto era
+ * `CotizacionEnvio | null`, y ese `null` significaba "sin cobertura"; hoy hay una segunda forma de
+ * no tener envío a domicilio que **no se arregla cambiando la dirección**, así que la pantalla
+ * tiene que poder distinguirlas para no mandar a corregir algo que está bien.
+ *
+ * Es la misma forma que el backend tiene en su `ResultadoCotizacion`, y no por simetría: es que la
+ * pregunta "¿por qué no hay envío?" tiene las mismas respuestas de los dos lados.
+ */
+export type ResultadoCotizacion =
+  | { readonly tipo: 'TARIFA'; readonly cotizacion: CotizacionEnvio }
+  | { readonly tipo: 'SIN_COBERTURA' }
+  | {
+      readonly tipo: 'ARTICULO_NO_ASEGURABLE';
+      readonly articulos: readonly ArticuloNoAsegurable[];
+    };
+
 export interface CotizarEnvioComando {
   readonly lineas: readonly LineaComando[];
   readonly direccion: Direccion;

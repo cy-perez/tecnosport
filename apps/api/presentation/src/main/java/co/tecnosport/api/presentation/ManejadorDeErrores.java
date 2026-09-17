@@ -13,6 +13,7 @@ import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteExcep
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
+import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
 import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
 import co.tecnosport.api.application.envio.EmisionNoAplicableException;
 import co.tecnosport.api.application.envio.EmisionNoEncontradaException;
@@ -48,6 +49,7 @@ import co.tecnosport.api.domain.usuario.CorreoYaRegistradoException;
 import java.net.URI;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -217,6 +219,28 @@ public class ManejadorDeErrores {
   @ExceptionHandler(EnvioSinCoberturaException.class)
   public ProblemDetail envioSinCobertura(EnvioSinCoberturaException excepcion) {
     return problema(HttpStatus.CONFLICT, "Envío sin cobertura", excepcion);
+  }
+
+  // Un artículo vale más de lo que la transportadora asegura (adr/0036). 409 y no 422 por el mismo
+  // criterio que el de arriba: la solicitud está bien formada y el conflicto es con el estado del
+  // negocio. Se diferencia de ENVIO_SIN_COBERTURA en algo que al checkout le importa: aquel se
+  // arregla cambiando la dirección y este no se arregla de ninguna manera, así que el texto que ve
+  // el comprador no puede ser el mismo.
+  //
+  // Los artículos culpables van en una propiedad aparte y no solo dentro del mensaje: el cliente
+  // tiene que poder nombrarlos sin leerle la prosa a un `detail`.
+  @ExceptionHandler(ArticuloNoAsegurableException.class)
+  public ProblemDetail articuloNoAsegurable(ArticuloNoAsegurableException excepcion) {
+    ProblemDetail problema =
+        problema(HttpStatus.CONFLICT, "Artículo no asegurable para envío", excepcion);
+    problema.setProperty(
+        "articulos",
+        excepcion.articulos().stream()
+            .map(
+                articulo ->
+                    Map.of("varianteId", articulo.varianteId(), "nombre", articulo.nombre()))
+            .toList());
+    return problema;
   }
 
   // No se pudo cotizar, que no es lo mismo que no haber cobertura: uno le pide al comprador

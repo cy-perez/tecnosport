@@ -18,7 +18,11 @@ import { IntentoDePago } from '../../domain/intento-pago.model';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
-import { CotizacionEnvio, CotizarEnvioComando } from '../../domain/envio.model';
+import {
+  CotizacionEnvio,
+  CotizarEnvioComando,
+  ResultadoCotizacion,
+} from '../../domain/envio.model';
 import { REPOSITORIO_ENVIOS, RepositorioEnvios } from '../../domain/repositorio-envios.puerto';
 import { ResumenPage } from './resumen.page';
 import { esperarSinViolaciones } from '../../../../../testing/axe';
@@ -83,14 +87,21 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
 class RepositorioEnviosFalso implements RepositorioEnvios {
   llamadas = 0;
 
-  constructor(private readonly respuesta: CotizacionEnvio | null | Error = null) {}
+  constructor(
+    private readonly respuesta: CotizacionEnvio | ResultadoCotizacion | null | Error = null,
+  ) {}
 
-  async cotizar(): Promise<CotizacionEnvio | null> {
+  /**
+   * Acepta una tarifa suelta o un resultado entero. Lo primero es azúcar para los casos de
+   * siempre —`null` sigue siendo "sin cobertura", como cuando el puerto devolvía eso— y lo
+   * segundo es lo que necesita el caso del artículo no asegurable, que lleva datos consigo.
+   */
+  async cotizar(): Promise<ResultadoCotizacion> {
     this.llamadas += 1;
     if (this.respuesta instanceof Error) {
       throw this.respuesta;
     }
-    return this.respuesta;
+    return resultadoDe(this.respuesta);
   }
 }
 
@@ -100,26 +111,34 @@ class RepositorioEnviosFalso implements RepositorioEnvios {
  * cotización todavía en vuelo. Un doble que responde de inmediato nunca la ve.
  */
 class RepositorioEnviosDiferido implements RepositorioEnvios {
-  private responder!: (cotizacion: CotizacionEnvio | null) => void;
-  private readonly enVuelo = new Promise<CotizacionEnvio | null>((resolver) => {
+  private responder!: (resultado: ResultadoCotizacion) => void;
+  private readonly enVuelo = new Promise<ResultadoCotizacion>((resolver) => {
     this.responder = resolver;
   });
 
-  async cotizar(): Promise<CotizacionEnvio | null> {
+  async cotizar(): Promise<ResultadoCotizacion> {
     return this.enVuelo;
   }
 
   resolverCon(cotizacion: CotizacionEnvio | null): void {
-    this.responder(cotizacion);
+    this.responder(resultadoDe(cotizacion));
   }
 }
 
 class RepositorioEnviosPorCiudad implements RepositorioEnvios {
   constructor(private readonly porCiudad: Record<string, CotizacionEnvio | null>) {}
 
-  async cotizar(comando: CotizarEnvioComando): Promise<CotizacionEnvio | null> {
-    return this.porCiudad[comando.direccion.codigoDaneCiudad] ?? null;
+  async cotizar(comando: CotizarEnvioComando): Promise<ResultadoCotizacion> {
+    return resultadoDe(this.porCiudad[comando.direccion.codigoDaneCiudad] ?? null);
   }
+}
+
+/** `null` sigue queriendo decir "sin cobertura", que es lo que estos dobles decían antes. */
+function resultadoDe(respuesta: CotizacionEnvio | ResultadoCotizacion | null): ResultadoCotizacion {
+  if (respuesta === null) {
+    return { tipo: 'SIN_COBERTURA' };
+  }
+  return 'tipo' in respuesta ? respuesta : { tipo: 'TARIFA', cotizacion: respuesta };
 }
 
 const COTIZACION: CotizacionEnvio = {
@@ -233,6 +252,41 @@ describe('ResumenPage', () => {
     expect(screen.getByText('Total a pagar')).toBeTruthy();
     expect(screen.getAllByText(/309\.540/).length).toBeGreaterThan(0);
     expect(screen.getByText('Entrega estimada: 2 días')).toBeTruthy();
+  });
+
+  /**
+   * El artículo que vale más de lo asegurable tampoco deja continuar, y sobre todo: **se nombra**.
+   * Es la diferencia con "sin cobertura", donde la salida es corregir la dirección; aquí la salida
+   * es quitar ese producto o recogerlo en el punto, y sin el nombre el comprador no sabe cuál de
+   * los suyos es (`ADR-0036`).
+   */
+  it('un artículo no asegurable se nombra y no deja continuar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso({
+        tipo: 'ARTICULO_NO_ASEGURABLE',
+        articulos: [{ varianteId: 'variante-1', nombre: 'Portátil para diseño' }],
+      }),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    llenarContacto();
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(await screen.findByText(/Portátil para diseño/)).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('supera el máximo');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(checkout.datosEntrega()).toBeNull();
   });
 
   /**

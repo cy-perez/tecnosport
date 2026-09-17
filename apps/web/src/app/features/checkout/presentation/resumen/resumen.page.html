@@ -65,7 +65,7 @@
             <p class="m-0 text-ts-texto-suave" aria-live="polite">
               {{ 'checkout.resumen.envio_calculando' | transloco }}
             </p>
-          } @else if (cotizacion.data(); as envio) {
+          } @else if (tarifa(); as envio) {
             <div class="flex items-baseline justify-between">
               <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
               <dd class="m-0"><ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" /></dd>
@@ -89,6 +89,18 @@
           } @else if (sinCobertura()) {
             <p class="m-0 text-ts-error" role="alert">
               {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
+            </p>
+          } @else if (articulosNoAsegurables().length > 0) {
+            <!-- La tercera respuesta posible, y la única que no se arregla con nada: el artículo
+                 vale más de lo que la transportadora asegura. Se nombra, porque la salida es
+                 quitarlo o recogerlo en el punto. -->
+            <p class="m-0 text-ts-error" role="alert">
+              {{
+                (articulosNoAsegurables().length === 1
+                  ? 'checkout.resumen.articulo_no_asegurable'
+                  : 'checkout.resumen.articulos_no_asegurables'
+                ) | transloco: { articulos: nombresNoAsegurables() }
+              }}
             </p>
           } @else if (errorCotizacion()) {
             <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una

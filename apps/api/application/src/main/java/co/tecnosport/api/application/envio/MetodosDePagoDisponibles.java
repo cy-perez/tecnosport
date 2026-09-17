@@ -149,7 +149,10 @@ public final class MetodosDePagoDisponibles {
                       .toList(),
                   comando.direccion(),
                   true)));
-    } catch (EnvioSinCoberturaException e) {
+    } catch (EnvioSinCoberturaException | ArticuloNoAsegurableException e) {
+      // Las dos significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
+      // error que deba salir por aquí: quien pregunta por los medios de pago se quedaría sin
+      // respuesta y vería el checkout roto en vez de la recogida (adr/0036).
       return Optional.empty();
     }
   }

@@ -33,29 +33,50 @@ import java.util.UUID;
  * {@link LineaAEmpacar}: es el monto que la transportadora paga si pierde el paquete, tiene que
  * coincidir con la factura, y esa dice lo que el comprador pagó — no lo que el producto cuesta hoy.
  *
- * <p><strong>Con un piso</strong> ({@code adr/0035}): la plataforma de envíos exige un mínimo
- * asegurable por bulto y rechaza la cotización <em>entera</em> si uno solo queda por debajo, así
- * que un cable de 8.000 dentro de un pedido de 400.000 dejaba al comprador sin envío a domicilio y
- * sin un error que lo explicara. El mínimo llega de fuera, en pesos y sin nombre de proveedor:
- * quién lo exige es problema de {@code bootstrap}.
+ * <p><strong>Con un piso y un techo</strong>, y los dos extremos del mismo rango se tratan distinto
+ * a propósito:
+ *
+ * <ul>
+ *   <li><strong>El piso se eleva</strong> ({@code adr/0035}). La plataforma exige un mínimo
+ *       asegurable por bulto y rechaza la cotización <em>entera</em> si uno solo queda por debajo,
+ *       así que un cable de 8.000 dentro de un pedido de 400.000 dejaba al comprador sin envío a
+ *       domicilio y sin un error que lo explicara. Elevarlo no le quita nada a nadie.
+ *   <li><strong>El techo rechaza</strong> ({@code adr/0036}). Recortar el declarado de un celular
+ *       de 8.000.000 al tope de 5.000.000 haría que la transportadora responda hasta ahí si se
+ *       pierde, y los tres millones restantes los pondría el negocio. Eso no es un ajuste de borde,
+ *       así que ese artículo no va a domicilio y el checkout lo dice.
+ * </ul>
+ *
+ * <p>Los dos límites llegan de fuera, en pesos y sin nombre de proveedor: quién los exige es
+ * problema de {@code bootstrap}.
  */
 public final class ArmadorDeBultos {
 
   private final RepositorioProductos repositorioProductos;
   private final Dinero valorDeclaradoMinimo;
+  private final Dinero valorDeclaradoMaximo;
 
-  public ArmadorDeBultos(RepositorioProductos repositorioProductos, Dinero valorDeclaradoMinimo) {
+  public ArmadorDeBultos(
+      RepositorioProductos repositorioProductos,
+      Dinero valorDeclaradoMinimo,
+      Dinero valorDeclaradoMaximo) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
     this.valorDeclaradoMinimo =
         Objects.requireNonNull(
             valorDeclaradoMinimo, "El valor declarado mínimo no puede ser nulo.");
+    this.valorDeclaradoMaximo =
+        Objects.requireNonNull(
+            valorDeclaradoMaximo, "El valor declarado máximo no puede ser nulo.");
   }
 
   public List<BultoDespachable> armar(List<LineaAEmpacar> lineas) {
     Objects.requireNonNull(lineas, "Las líneas a empacar no pueden ser nulas.");
     List<BultoDespachable> bultos = new ArrayList<>();
+    // Se recogen todos los que se pasan del techo y se falla al final, no en el primero: quitar un
+    // artículo del carrito y volver a chocar con el siguiente es cómo se abandona un carrito.
+    List<ArticuloNoAsegurableException.Articulo> noAsegurables = new ArrayList<>();
     for (LineaAEmpacar linea : lineas) {
       if (linea.cantidad() <= 0) {
         throw new IllegalArgumentException(
@@ -66,11 +87,19 @@ public final class ArmadorDeBultos {
       String contenido = ContenidoDeclarado.de(producto.categoria().linea());
       // El del pedido cuando lo hay —es el que el comprador pagó y contra el que se reclama—, y el
       // del catálogo cuando todavía no hay pedido, que es el caso del checkout.
-      Dinero valorDeclarado =
-          alMenosElMinimo(Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio));
+      Dinero declarado = Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio);
+      if (superaElMaximo(declarado)) {
+        noAsegurables.add(
+            new ArticuloNoAsegurableException.Articulo(variante.id(), producto.nombre()));
+        continue;
+      }
+      Dinero valorDeclarado = alMenosElMinimo(declarado);
       for (int unidad = 0; unidad < linea.cantidad(); unidad++) {
         bultos.add(new BultoDespachable(new Bulto(variante.paquete(), valorDeclarado), contenido));
       }
+    }
+    if (!noAsegurables.isEmpty()) {
+      throw new ArticuloNoAsegurableException(noAsegurables);
     }
     return List.copyOf(bultos);
   }
@@ -85,6 +114,15 @@ public final class ArmadorDeBultos {
     return valorDeclarado.valor().compareTo(valorDeclaradoMinimo.valor()) < 0
         ? valorDeclaradoMinimo
         : valorDeclarado;
+  }
+
+  /**
+   * El techo se mira contra el valor <strong>de una unidad</strong>, que es lo que va en un bulto.
+   * Dos celulares de tres millones caben —son dos bultos de tres, y la plataforma valida por
+   * bulto—; uno de seis no, y no hay forma de partirlo (docs/13 §6.13).
+   */
+  private boolean superaElMaximo(Dinero valorDeclarado) {
+    return valorDeclarado.valor().compareTo(valorDeclaradoMaximo.valor()) > 0;
   }
 
   private Producto producto(UUID varianteId) {

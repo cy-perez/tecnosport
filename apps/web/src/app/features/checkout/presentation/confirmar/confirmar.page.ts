@@ -90,7 +90,13 @@ export class ConfirmarPage {
     return lineas.length === 0 ? null : { lineas, direccion: datos.direccion };
   });
 
-  protected readonly costoEnvio = computed(() => this.cotizacion.data()?.costoEnvio ?? 0);
+  /** La tarifa, cuando la hubo: las otras dos respuestas no son tarifas y no se disfrazan de una. */
+  protected readonly tarifa = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'TARIFA' ? resultado.cotizacion : null;
+  });
+
+  protected readonly costoEnvio = computed(() => this.tarifa()?.costoEnvio ?? 0);
 
   protected readonly total = computed(() => this.subtotal() + this.costoEnvio());
 
@@ -104,7 +110,26 @@ export class ConfirmarPage {
    * con una caída nuestra — mandándolo a corregir una dirección que estaba bien.
    */
   protected readonly sinCobertura = computed(
-    () => this.muestraEnvio() && this.cotizacion.isSuccess() && this.cotizacion.data() === null,
+    () =>
+      this.muestraEnvio() &&
+      this.cotizacion.isSuccess() &&
+      this.cotizacion.data()?.tipo === 'SIN_COBERTURA',
+  );
+
+  /**
+   * El tercer motivo, y el único que no se arregla haciendo nada: algo del carrito vale más de lo
+   * que la transportadora asegura (`ADR-0036`). La salida es la recogida en el punto, y para eso
+   * hay que volver — por eso se nombra el artículo, o el comprador no sabe cuál quitar.
+   */
+  protected readonly articulosNoAsegurables = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'ARTICULO_NO_ASEGURABLE' ? resultado.articulos : [];
+  });
+
+  protected readonly nombresNoAsegurables = computed(() =>
+    this.articulosNoAsegurables()
+      .map((articulo) => articulo.nombre)
+      .join(', '),
   );
 
   protected readonly errorCotizacion = computed(
@@ -117,13 +142,11 @@ export class ConfirmarPage {
    * artículo 50 de la Ley 1480 de 2011 no permite — y esta pantalla lo hacía,
    * porque `costoEnvio` cae a cero cuando no hay cotización.
    *
-   * `!= null` a propósito: TanStack devuelve `undefined` mientras no hay datos y
-   * `null` es aquí un dato ("nadie llega ahí"), así que `!== null` dejaba pasar
-   * el total falso mientras se cotizaba y cuando la consulta se caía.
+   * Se mira la **tarifa** y no el dato de la consulta: desde `ADR-0036` hay dos
+   * respuestas que llegan en `success` y no traen tarifa, y las dos dejarían
+   * pasar el total falso si aquí se preguntara solo si hay datos.
    */
-  protected readonly totalConocido = computed(
-    () => !this.muestraEnvio() || this.cotizacion.data() != null,
-  );
+  protected readonly totalConocido = computed(() => !this.muestraEnvio() || this.tarifa() != null);
 
   /**
    * Sin tarifa no hay pedido: el servidor responde 409 y hace bien. El resumen ya
@@ -136,6 +159,27 @@ export class ConfirmarPage {
    * que los criterios quedan listos y que TanStack arranca la petición.
    */
   protected readonly bloqueadoPorCobertura = computed(() => !this.totalConocido());
+
+  /**
+   * Los tres motivos por los que no se puede mandar el pedido, cada uno con su texto. El del
+   * artículo no asegurable además lo nombra: sin el nombre, "quita lo que no se puede enviar" es
+   * una adivinanza, y el comprador está mirando una lista de productos.
+   */
+  private claveYParametrosDelBloqueo(): [string, Record<string, unknown>?] {
+    if (this.sinCobertura()) {
+      return ['checkout.confirmar.sin_cobertura'];
+    }
+    const noAsegurables = this.articulosNoAsegurables();
+    if (noAsegurables.length > 0) {
+      return [
+        noAsegurables.length === 1
+          ? 'checkout.confirmar.articulo_no_asegurable'
+          : 'checkout.confirmar.articulos_no_asegurables',
+        { articulos: this.nombresNoAsegurables() },
+      ];
+    }
+    return ['checkout.confirmar.envio_no_calculado'];
+  }
 
   /** Si la consulta ya llegó a un desenlace; no `isFetching`, por la rendija de arriba. */
   protected readonly cotizacionResuelta = computed(
@@ -208,13 +252,8 @@ export class ConfirmarPage {
     // de algo que no es suyo y que reintentar no arregla. El texto ahora dice qué pasó y qué
     // puede hacer, que es volver y elegir la recogida en el punto.
     if (this.bloqueadoPorCobertura()) {
-      this.error.set(
-        this.transloco.translate(
-          this.sinCobertura()
-            ? 'checkout.confirmar.sin_cobertura'
-            : 'checkout.confirmar.envio_no_calculado',
-        ),
-      );
+      const [clave, parametros] = this.claveYParametrosDelBloqueo();
+      this.error.set(this.transloco.translate(clave, parametros));
       return;
     }
 
