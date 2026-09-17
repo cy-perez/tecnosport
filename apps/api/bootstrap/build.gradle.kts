@@ -27,6 +27,13 @@ dependencies {
     implementation("com.google.cloud:google-cloud-storage:2.71.0")
 
     testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+    // ContextoBajoPerfilE2eTest levanta la aplicación entera contra PostgreSQL real. Son las
+    // mismas cuatro de `infrastructure` y no entra ninguna librería nueva al proyecto: lo que
+    // cambia es que ahora también `bootstrap` necesita Docker para correr sus pruebas.
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
 }
 
 /**

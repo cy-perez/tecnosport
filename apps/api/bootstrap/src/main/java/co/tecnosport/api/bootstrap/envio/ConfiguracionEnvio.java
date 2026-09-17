@@ -31,6 +31,7 @@ import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
 import co.tecnosport.api.infrastructure.envio.VerificadorFirmaEnvioHmac;
 import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
+import co.tecnosport.api.infrastructure.envio.siembra.EmisorDeGuiasSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
@@ -114,6 +115,18 @@ public class ConfiguracionEnvio {
   @Profile("e2e")
   public ConsultorDeSeguimiento consultorDeSeguimientoSembrado() {
     return (codigoTransportadora, guia) -> List.of();
+  }
+
+  /**
+   * El emisor bajo {@code e2e}, que no emite nada, y por el mismo motivo que el consultor: sin
+   * {@link SkydropxClient} no hay quien sirva el puerto, y tres beans lo exigen sin mirar el perfil
+   * —{@code emitirGuiaDePedido}, {@code resolverEmisionesEnCurso} y la tarea que la llama—. Por qué
+   * rechaza en vez de devolver una guía de mentira está en {@link EmisorDeGuiasSembrado}.
+   */
+  @Bean
+  @Profile("e2e")
+  public EmisorDeGuias emisorDeGuiasSembrado() {
+    return new EmisorDeGuiasSembrado();
   }
 
   /**
