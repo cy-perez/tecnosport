@@ -12,11 +12,14 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
+import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
 import co.tecnosport.api.application.envio.EmisionNoAplicableException;
+import co.tecnosport.api.application.envio.EmisionNoEncontradaException;
 import co.tecnosport.api.application.envio.EmisionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionYaEnCursoException;
 import co.tecnosport.api.application.envio.EnvioSinCoberturaException;
+import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
@@ -231,6 +234,24 @@ public class ManejadorDeErrores {
   @ExceptionHandler(EmisionNoAplicableException.class)
   public ProblemDetail emisionNoAplicable(EmisionNoAplicableException excepcion) {
     return problema(HttpStatus.CONFLICT, "No se puede emitir la guía", excepcion);
+  }
+
+  // Se acuso algo que no estaba pidiendo revision: una emision sana, por ejemplo. 409 porque es un
+  // conflicto con el estado y reintentar no lo arregla. Se rechaza en vez de guardarlo igual porque
+  // un acuse sobre algo sano deja escrito que ahi hubo un problema que nunca existio.
+  @ExceptionHandler(AcuseNoAplicableException.class)
+  public ProblemDetail acuseNoAplicable(AcuseNoAplicableException excepcion) {
+    return problema(HttpStatus.CONFLICT, "No hay nada que revisar", excepcion);
+  }
+
+  @ExceptionHandler(GuiaNoEncontradaException.class)
+  public ProblemDetail guiaNoEncontrada(GuiaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Guía no encontrada", excepcion);
+  }
+
+  @ExceptionHandler(EmisionNoEncontradaException.class)
+  public ProblemDetail emisionNoEncontrada(EmisionNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Emisión no encontrada", excepcion);
   }
 
   // Ya hay una emision abierta para este pedido. Es la puerta que cuesta plata: la plataforma cobra

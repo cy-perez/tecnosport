@@ -56,7 +56,7 @@ class RepositorioPedidosJpaTest {
   @Autowired private RepositorioPedidosJpa repositorio;
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final NumeroPedido NUMERO = NumeroPedido.de(2026, 1);
 
@@ -503,5 +503,53 @@ class RepositorioPedidosJpaTest {
   @Test
   void sinEstadosLaConsultaNoVaALaBase() {
     assertThat(repositorio.buscarSinAvisoDePlazo(Set.of(), Instant.now())).isEmpty();
+  }
+
+  /**
+   * El barrio va y vuelve, y su ausencia también. Son los dos casos reales —el checkout lo pide sin
+   * exigirlo— y de que vuelva depende que la cotización lo mande como {@code area_level3}: si se
+   * perdiera al guardar, la guía se imprimiría sin barrio sin que nada fallara.
+   */
+  @Test
+  void elBarrioDelDestinoVaYVuelveYPuedeFaltar() {
+    Pedido conBarrio =
+        pedidoA(
+            new Direccion(
+                "05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul", "Boston"),
+            801);
+    Pedido sinBarrio = pedidoA(DIRECCION_MEDELLIN, 802);
+    repositorio.guardar(conBarrio);
+    repositorio.guardar(sinBarrio);
+
+    assertThat(
+            repositorio
+                .buscarPorId(conBarrio.id())
+                .orElseThrow()
+                .direccion()
+                .orElseThrow()
+                .barrio())
+        .isEqualTo("Boston");
+    assertThat(
+            repositorio
+                .buscarPorId(sinBarrio.id())
+                .orElseThrow()
+                .direccion()
+                .orElseThrow()
+                .barrioDeclarado())
+        .isEmpty();
+  }
+
+  /** El número de pedido es único en la base, así que dos pedidos exigen decir cuál es cuál. */
+  private Pedido pedidoA(Direccion destino, int secuencial) {
+    return Pedido.crear(
+        NumeroPedido.de(2026, secuencial),
+        null,
+        new CorreoElectronico("cliente@tecnosport.co"),
+        List.of(linea()),
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        destino,
+        MetodoPago.CONTRAENTREGA,
+        "cliente@tecnosport.co",
+        Instant.now());
   }
 }

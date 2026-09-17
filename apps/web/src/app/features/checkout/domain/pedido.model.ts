@@ -42,6 +42,11 @@ export interface Direccion {
   readonly ciudad: string;
   readonly direccion: string;
   readonly indicaciones: string | null;
+  /**
+   * El `area_level3` de la plataforma de envios. Opcional: mejora la direccion que se imprime
+   * en la guia y no condiciona el precio, que sale del codigo DANE.
+   */
+  readonly barrio: string | null;
 }
 
 export interface LineaPedido {

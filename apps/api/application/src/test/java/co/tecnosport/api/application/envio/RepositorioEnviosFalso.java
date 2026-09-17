@@ -47,6 +47,26 @@ final class RepositorioEnviosFalso implements RepositorioEnvios {
         .toList();
   }
 
+  /**
+   * Mismo filtro grueso que la consulta real, y con la misma renuncia: mira el último evento por
+   * {@code ocurrioEn} y no sabe nada de acuses. Si el doble filtrara por acuse, la regla que el
+   * caso de uso aplica estaría probada contra sí misma.
+   */
+  @Override
+  public List<Envio> buscarConGuiasEnRevision(int maximo) {
+    return envios.stream()
+        .filter(
+            e ->
+                e.guias().stream()
+                    .anyMatch(
+                        guia ->
+                            guia.ultimoEstado()
+                                .filter(estado -> estado.exigeRevisionManual())
+                                .isPresent()))
+        .limit(maximo)
+        .toList();
+  }
+
   private static boolean estaCalladaYViva(GuiaEnvio guia, Instant corte) {
     return guia.eventos().stream().noneMatch(ev -> !ev.recibidoEn().isBefore(corte))
         && guia.eventos().stream().noneMatch(ev -> ev.estado().esTerminal());

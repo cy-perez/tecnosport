@@ -18,6 +18,8 @@
     "ciudad": "Ciudad",
     "elegir": "Elegir…",
     "direccion": "Dirección",
+    "barrio": "Barrio (opcional)",
+    "barrio_ayuda": "Ayuda a que el mensajero encuentre la dirección.",
     "indicaciones": "Indicaciones adicionales (opcional)",
     "continuar": "Continuar",
     "errores": {

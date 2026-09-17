@@ -2,6 +2,7 @@ package co.tecnosport.api.domain.envio;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -52,10 +53,10 @@ public enum EstadoEnvio {
    * RETENIDO}, {@code CANCELADO}, {@code DESTRUIDO} y {@code FALLIDO} no mueven el pedido y tampoco
    * lo hacen avanzar: si nadie los mira, el comprador se entera antes que el negocio (adr/0022).
    *
-   * <p><strong>Y a día de hoy nadie los mira</strong>: este predicado no lo llama nada en
-   * producción, sólo las pruebas. La pregunta está bien planteada y no tiene quien la haga —el
-   * panel no marca estos envíos y la conciliación no los separa—. Queda anotado aquí porque un
-   * método que sólo se prueba a sí mismo parece cubierto y no cubre nada.
+   * <p><strong>Desde el 17 de septiembre de 2026 alguien los mira</strong>: los lee {@code
+   * ListarEnviosEnRevision} y salen en la bandeja del panel. Durante las dos fases anteriores este
+   * predicado no lo llamaba nada en producción —sólo sus pruebas— y eso es justo lo que lo hacía
+   * peligroso: un método que sólo se prueba a sí mismo parece cubierto y no cubre nada.
    */
   public boolean exigeRevisionManual() {
     return this == EXCEPCION
@@ -93,8 +94,22 @@ public enum EstadoEnvio {
    * existe.
    */
   public static Set<String> nombresTerminales() {
+    return nombresDe(EstadoEnvio::esTerminal);
+  }
+
+  /**
+   * Los que piden ojo humano, por nombre, y por el mismo motivo que {@link #nombresTerminales()}:
+   * la consulta que arma la bandeja de revisión filtra por estos cinco, y escribirlos ahí como
+   * literales dejaría que renombrar una constante compilara y pasara las pruebas del dominio
+   * mientras el filtro compara contra un valor que ya no existe.
+   */
+  public static Set<String> nombresQueExigenRevisionManual() {
+    return nombresDe(EstadoEnvio::exigeRevisionManual);
+  }
+
+  private static Set<String> nombresDe(Predicate<EstadoEnvio> criterio) {
     return EnumSet.allOf(EstadoEnvio.class).stream()
-        .filter(EstadoEnvio::esTerminal)
+        .filter(criterio)
         .map(Enum::name)
         .collect(Collectors.toUnmodifiableSet());
   }

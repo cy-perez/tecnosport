@@ -55,7 +55,8 @@ public class CotizacionEnvioControlador {
         d.codigoDaneCiudad(),
         d.ciudad(),
         d.direccion(),
-        d.indicaciones());
+        d.indicaciones(),
+        d.barrio());
   }
 
   private DineroRespuesta aDinero(Dinero dinero) {

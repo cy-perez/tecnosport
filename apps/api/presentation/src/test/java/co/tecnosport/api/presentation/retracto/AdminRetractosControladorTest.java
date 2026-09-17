@@ -89,7 +89,7 @@ class AdminRetractosControladorTest {
                 "https://cdn.tecnosport.co/img.webp",
                 reserva.id())),
         TipoEntrega.ENVIO_A_DOMICILIO,
-        new Direccion("05", "Antioquia", "05001", "Medellin", "Cra. 26C #38B-31", null),
+        Direccion.sinBarrio("05", "Antioquia", "05001", "Medellin", "Cra. 26C #38B-31", null),
         MetodoPago.CONTRAENTREGA,
         "cliente@tecnosport.co",
         ENTREGA.minusSeconds(86_400));

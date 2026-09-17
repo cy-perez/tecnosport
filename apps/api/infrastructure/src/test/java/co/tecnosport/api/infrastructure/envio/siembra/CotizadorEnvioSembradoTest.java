@@ -25,7 +25,7 @@ class CotizadorEnvioSembradoTest {
   private static final Instant AHORA = Instant.parse("2026-09-13T12:00:00Z");
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
 
   private final CotizadorEnvioSembrado cotizador = new CotizadorEnvioSembrado(() -> AHORA);
 

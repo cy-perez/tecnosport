@@ -42,7 +42,7 @@ class EmitirGuiaDePedidoTest {
   private static final Instant AHORA = Instant.parse("2026-09-16T23:41:59Z");
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", "Apto. 302");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", "Apto. 302");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioProductosFalso productos;

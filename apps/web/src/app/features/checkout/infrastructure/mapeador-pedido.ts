@@ -64,6 +64,7 @@ export function aDireccion(dto: DireccionDto): Direccion {
     ciudad: dto.ciudad ?? '',
     direccion: dto.direccion ?? '',
     indicaciones: dto.indicaciones ?? null,
+    barrio: dto.barrio ?? null,
   };
 }
 

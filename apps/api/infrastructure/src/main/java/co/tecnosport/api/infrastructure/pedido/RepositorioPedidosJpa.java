@@ -190,7 +190,8 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
                 entidad.getCodigoDaneCiudad(),
                 entidad.getCiudad(),
                 entidad.getDireccion(),
-                entidad.getIndicaciones());
+                entidad.getIndicaciones(),
+                entidad.getBarrio());
     return new Pedido(
         entidad.getId(),
         new NumeroPedido(entidad.getNumeroPedido()),
@@ -268,6 +269,7 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
         direccion == null ? null : direccion.ciudad(),
         direccion == null ? null : direccion.direccion(),
         direccion == null ? null : direccion.indicaciones(),
+        direccion == null ? null : direccion.barrio(),
         pedido.metodoPago().name(),
         pedido.estado().name(),
         pedido.creadoEn(),

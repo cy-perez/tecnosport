@@ -617,10 +617,46 @@ describe('ResumenPage', () => {
         ciudad: 'Medellín',
         direccion: 'Cra. 26C #38B-31',
         indicaciones: null,
+        barrio: null,
       },
       contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
       autorizaDatos: true,
     });
+  });
+
+  /**
+   * El barrio es el `area_level3` de la plataforma de envios y su unica puerta es la cotizacion: el
+   * cuerpo del envio no declara ese campo y lo descarta sin avisar. Si se quedara en el formulario,
+   * la guia se imprimiria sin barrio y nada fallaria.
+   */
+  it('el barrio escrito viaja con la direccion', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    llenarContacto();
+    fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: '05' } });
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: '05001' } });
+    fireEvent.input(screen.getByLabelText('Dirección'), { target: { value: 'Cra. 26C #38B-31' } });
+    fireEvent.input(screen.getByLabelText('Barrio (opcional)'), { target: { value: 'Boston' } });
+    fireEvent.click(
+      screen.getByLabelText(
+        'Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.',
+      ),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
+
+    expect(checkout.datosEntrega()?.direccion?.barrio).toBe('Boston');
   });
 
   // `docs/06-testing.md`: axe automatizado en las pantallas clave. Esta es la

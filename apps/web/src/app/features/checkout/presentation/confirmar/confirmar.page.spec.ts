@@ -169,6 +169,7 @@ const DATOS_ENTREGA_A_DOMICILIO: DatosEntrega = {
     ciudad: 'Medellín',
     direccion: 'Circular 4 # 70-20',
     indicaciones: null,
+    barrio: null,
   },
   contacto: { nombre: 'Ana Pérez', telefono: '3138816711' },
   autorizaDatos: true,

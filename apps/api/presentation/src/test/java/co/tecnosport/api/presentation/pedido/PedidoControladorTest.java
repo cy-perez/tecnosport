@@ -95,13 +95,13 @@ class PedidoControladorTest {
 
   private static final CrearPedidoRequest.DireccionRequest DIRECCION_MEDELLIN =
       new CrearPedidoRequest.DireccionRequest(
-          "05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+          "05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul", "Boston");
 
   // Sin cobertura en el doble de prueba (que solo cubre "05001"): sirve para probar el camino sin
   // contraentrega disponible.
   private static final CrearPedidoRequest.DireccionRequest DIRECCION_BOGOTA =
       new CrearPedidoRequest.DireccionRequest(
-          "11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null);
+          "11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null, null);
 
   private Variante publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
@@ -475,7 +475,7 @@ class PedidoControladorTest {
                     "https://cdn.tecnosport.co/img.webp",
                     java.util.UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
-            new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.NEQUI,
             "cliente@tecnosport.co",
             Instant.now());
@@ -671,7 +671,7 @@ class PedidoControladorTest {
                     "https://cdn.tecnosport.co/img.webp",
                     java.util.UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
-            new co.tecnosport.api.domain.pedido.Direccion(
+            co.tecnosport.api.domain.pedido.Direccion.sinBarrio(
                 "05", "Antioquia", "05001", "Medellin", "Cra. 26C #38B-31", null),
             MetodoPago.CONTRAENTREGA,
             "cliente@tecnosport.co",

@@ -45,7 +45,7 @@ class RepositorioEmisionesJpaTest {
   @Autowired private EntityManager entityManager;
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
   private static final Instant AHORA = Instant.parse("2026-09-16T23:41:59Z");
 
   private UUID sembrarPedido(int secuencial) {

@@ -64,7 +64,7 @@ class SkydropxClientTest {
 
   private static final CotizacionEnvio COTIZACION =
       new CotizacionEnvio(
-          new Direccion("11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null),
+          Direccion.sinBarrio("11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null),
           List.of(new Bulto(new Paquete(180, 30, 25, 4), Dinero.deCop(150_000))));
 
   private HttpServer servidor;

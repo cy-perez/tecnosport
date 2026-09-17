@@ -24,8 +24,12 @@ describe('TsSelectorMetodoPago', () => {
       inputs: { opciones, seleccionado: 'TARJETA', etiquetaGrupo: 'Método de pago' },
     });
 
-    expect(screen.getByRole('button', { name: 'Tarjeta' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Contraentrega' }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button', { name: 'Tarjeta' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Contraentrega' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
   });
 
   it('usa etiquetaGrupo como leyenda del grupo', async () => {

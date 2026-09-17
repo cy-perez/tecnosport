@@ -227,7 +227,7 @@ panel. Ver `ADR-0018`.
 | `SesionRefresco` | familia, rotación, revocación | Un eslabón de la rotación por fila (Fase 4) |
 | `TokenVerificacionCorreo` | token, vencimiento, un solo uso | Separado de `TokenRecuperacionClave` por sensibilidad (`ADR-0015`) |
 | `TokenRecuperacionClave` | token, vencimiento, un solo uso | Consumirlo revoca todas las sesiones del usuario (`ADR-0015`) |
-| `Direccion` | departamento, ciudad, dirección, indicaciones | Códigos DANE |
+| `Direccion` | departamento, ciudad, dirección, barrio, indicaciones | Códigos DANE. El barrio y las indicaciones son opcionales: el barrio es el `area_level3` de la plataforma de envíos, y el checkout lo pide sin exigirlo |
 | `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses" |
 | `SetRotacion`, `ImagenProducto` | material visual | |
@@ -466,6 +466,11 @@ envio_en_plataforma
   hubo cobro; la segunda porque en multienvío unas guías pueden vivir y otras morir,
   y quedan guías pagadas que alguien tiene que cancelar o usar. Ningún programa las
   cierra.
+- **La `INDETERMINADA` tiene dos salidas, y las dos las abre una persona que miró el
+  panel de la plataforma** (`ADR-0034`): si el envío no está, queda `FALLIDA` y el
+  pedido vuelve a poder emitir; si está, vuelve a `EN_CURSO` con los identificadores
+  que esa persona encontró y la tarea de siempre la relee. Es la única transición del
+  agregado que **reabre** algo, y por eso limpia `resuelta_en`: no estaba resuelta.
 - **`actor` está en la fila y no solo en el registro.** Es quien comprometió el saldo,
   y para algo que gasta dinero una línea de log no es auditoría.
 - **`envio_en_plataforma` es tabla aparte y lleva `posicion`** porque en multienvío hay
@@ -475,6 +480,54 @@ envio_en_plataforma
 - **Esto no es el `Envio`.** El envío nace cuando ya hay guías; aquí todavía no las
   hay. Y el pedido no se mueve de `EN_PREPARACION` hasta que las haya, que es lo que
   hace que una emisión fallida no tenga nada que devolver a ninguna cola.
+
+### El acuse de revisión
+
+Cinco estados de envío dejan el paquete quieto y dos de emisión dejan saldo
+comprometido. Verlos es una consulta; **poder dejar de verlos** necesita una tabla:
+
+```
+acuse_revision
+  id, tipo, guia_id, emision_id, revisado_en, actor, nota
+```
+
+- **Existe porque dos de esos cinco estados son terminales.** De una guía
+  `CANCELADO` o `DESTRUIDO` no llega otro evento nunca, así que una bandeja
+  calculada solo a partir del estado las acumularía para siempre y a los pocos
+  meses sería una lista que nadie abre.
+- **Dos columnas de referencia y no una suelta con un discriminador**, para que la
+  llave foránea siga existiendo. Una restricción `check` las hace excluyentes según
+  `tipo`: un acuse apunta a una guía o a una emisión, nunca a las dos ni a ninguna.
+- **Append-only, como `evento_seguimiento`.** Acusar dos veces la misma guía son dos
+  filas y dos momentos; ninguna pisa a la anterior. El día de la reclamación hay que
+  poder decir quién sabía qué, y cuándo.
+- **`revisado_en` es nuestro reloj.** Se compara contra `evento_seguimiento.recibido_en`
+  —cuándo nos enteramos— y nunca contra `ocurrio_en`, que lo pone la transportadora:
+  comparar dos relojes distintos haría que un evento con desfase pareciera anterior
+  al acuse sin serlo, y el precio de equivocarse es una guía en excepción que
+  desaparece de la vista sin que nadie la haya visto.
+- **El acuse no resuelve nada.** Una emisión `INDETERMINADA` acusada sigue abierta y
+  sigue bloqueando una emisión nueva de ese pedido. Decidir que no hubo cobro y
+  pasarla a `FALLIDA` mueve plata: es otra decisión, con su propia puerta —la de
+  abajo—.
+
+De qué se avisó, que **no es lo mismo que quién miró**:
+
+```
+aviso_revision
+  tipo, referencia, avisado_en
+```
+
+- **Tabla aparte de `acuse_revision`, y esa es toda la decisión.** Un acuse es una
+  persona afirmando que miró, y saca la fila de la bandeja; un aviso es el sistema
+  diciendo que avisó, y no la saca. Guardarlos juntos haría que avisar contara como
+  revisar, que es justo al revés de lo que hace falta.
+- **`avisado_en` es del último aviso, no del primero**: una novedad posterior vuelve
+  a armarlo, con el mismo criterio que devuelve una guía a la bandeja. Un paquete que
+  empeora no puede pasar callado porque ya se avisó de su estado anterior.
+- Se reclama con una sola escritura condicional (`on conflict … do update … where`),
+  mismo motivo que `reclamarAvisoDePlazo`: con más de una instancia, leer y después
+  escribir manda el correo dos veces.
 
 ## Congelado del pedido
 

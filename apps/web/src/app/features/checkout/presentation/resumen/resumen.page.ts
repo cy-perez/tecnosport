@@ -35,6 +35,7 @@ interface ValoresDireccion {
   codigoDaneCiudad: string;
   direccion: string;
   indicaciones: string;
+  barrio: string;
 }
 
 /**
@@ -123,6 +124,9 @@ export class ResumenPage {
       codigoDaneCiudad: new FormControl('', { nonNullable: true }),
       direccion: new FormControl('', { nonNullable: true }),
       indicaciones: new FormControl('', { nonNullable: true }),
+      // Sin validador: se pide y no se exige. Un campo obligatorio que alguien no sabe llenar
+      // se rellena con cualquier cosa, y eso impreso en una guia es peor que vacio.
+      barrio: new FormControl('', { nonNullable: true }),
     }),
     // requiredTrue, y arranca en false: la casilla nunca puede venir premarcada — sin acción del
     // titular no hay autorización válida (Ley 1581 de 2012).
@@ -496,6 +500,7 @@ export class ResumenPage {
       ciudad: ciudad?.nombre ?? '',
       direccion: valores.direccion,
       indicaciones: valores.indicaciones || null,
+      barrio: valores.barrio || null,
     };
   }
 }

@@ -23,7 +23,7 @@ class PedidoTest {
   private static final NumeroPedido NUMERO = NumeroPedido.de(2026, 1);
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private LineaPedido linea(BigDecimal precioUnitario, int cantidad) {
     return new LineaPedido(

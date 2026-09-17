@@ -28,6 +28,7 @@ describe('aPedido', () => {
         ciudad: 'Medellín',
         direccion: 'Cra. 26C #38B-31',
         indicaciones: 'Portería principal',
+        barrio: 'Boston',
       },
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
@@ -70,6 +71,7 @@ describe('aPedido', () => {
         ciudad: 'Medellín',
         direccion: 'Cra. 26C #38B-31',
         indicaciones: 'Portería principal',
+        barrio: 'Boston',
       },
       metodoPago: 'TRANSFERENCIA_MANUAL',
       estado: 'PAGO_PENDIENTE',
@@ -140,6 +142,7 @@ describe('aDireccion', () => {
       ciudad: '',
       direccion: '',
       indicaciones: null,
+      barrio: null,
     });
   });
 });

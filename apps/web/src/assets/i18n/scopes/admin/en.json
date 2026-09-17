@@ -12,7 +12,10 @@
     "excepcion_de_dominio": "The operation breaks a business rule and the server does not say which. Check the data again.",
     "sesion_de_refresco_invalida": "Your session expired. Sign in again: retrying will not help.",
     "credenciales_invalidas": "Wrong email or password.",
-    "limite_de_intentos_excedido": "Too many attempts in a row. Wait a few minutes before trying again."
+    "limite_de_intentos_excedido": "Too many attempts in a row. Wait a few minutes before trying again.",
+    "guia_no_encontrada": "There is no shipment with that tracking number.",
+    "emision_no_encontrada": "That label purchase no longer exists.",
+    "acuse_no_aplicable": "That is not awaiting review."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -29,7 +32,8 @@
     "cerrar_sesion": "Sign out",
     "ir_a_pedidos": "Orders",
     "ir_a_productos": "Products",
-    "ir_a_atencion": "Requests"
+    "ir_a_atencion": "Requests",
+    "ir_a_envios": "Shipment review"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -402,6 +406,60 @@
       "resolver": "Resolve reversal",
       "monto_del_emisor": "Amount the issuer reversed",
       "monto_del_emisor_ayuda": "The amount the issuer returned to the buyer. It does not come out of our own funds, but it counts against what this order can still refund."
+    }
+  },
+  "revision_envios": {
+    "titulo": "Shipment review",
+    "ayuda": "Whatever is stuck and needs someone to act: tracking numbers that stopped moving and label purchases with money committed. Marking one as reviewed records who looked at it; it does not resolve anything on its own.",
+    "cargando": "Loading the queue…",
+    "vacia": "Nothing to review. No stalled shipments and no unresolved label purchases.",
+    "error": "The action could not be completed.",
+    "guias": {
+      "titulo": "Stalled shipments",
+      "ayuda": "The last movement left these packages stuck. If nobody looks at them, the buyer finds out before the business does.",
+      "de_pedido": "Order {{pedido}} · {{transportadora}}",
+      "ocurrio_en": "According to the carrier",
+      "recibido_en": "We found out on {{fecha}}",
+      "ya_revisada": "Already reviewed on {{fecha}}, and this movement arrived afterwards."
+    },
+    "emisiones": {
+      "titulo": "Unresolved label purchases",
+      "ayuda": "Money is committed and only a person can decide what happened. Look them up in the carrier panel using the rate identifier.",
+      "tarifa": "Rate identifier",
+      "tarifa_ayuda": "Use this identifier to find the shipment in the platform panel.",
+      "envios": "Shipments created on the platform",
+      "solicitada_en": "Requested on",
+      "pedida_por": "Requested by {{actor}}",
+      "no_resuelve": "Marking it as reviewed does not resolve it: the order stays blocked for a new label purchase until someone decides what happened with the charge."
+    },
+    "estados_envio": {
+      "excepcion": "Exception",
+      "retenido": "Held",
+      "cancelado": "Cancelled",
+      "destruido": "Destroyed",
+      "fallido": "Failed"
+    },
+    "estados_emision": {
+      "indeterminada": "No response, possible charge",
+      "parcial": "Partial, with unused labels"
+    },
+    "acciones": {
+      "abrir": "Mark as reviewed",
+      "ayuda": "Who reviewed it and when is recorded. If a new movement arrives afterwards, the shipment comes back to this queue.",
+      "nota": "What you found",
+      "nota_ayuda": "Optional. Whoever looks at this next will read it.",
+      "marcar": "Save the review"
+    },
+    "resolucion": {
+      "abrir": "Resolve",
+      "titulo": "What did you find in the carrier panel?",
+      "ayuda": "Look the shipment up with the rate identifier above. Your answer decides whether the order is free to buy another label or whether we keep tracking the one already paid for.",
+      "identificadores": "Shipment identifiers",
+      "identificadores_ayuda": "Only if the shipment does show up. Copy them from the panel; separate several with a comma or a space.",
+      "con_envio": "It is there: track this shipment",
+      "sin_cobro": "Not there: no charge was made",
+      "falta_identificador": "Tracking the shipment needs its identifier. Copy it from the carrier panel.",
+      "advertencia": "If the shipment is not there, the order is free to buy another label. If it is there and you record it, we resume tracking and dispatch happens on its own once the carrier gives the tracking number."
     }
   }
 }

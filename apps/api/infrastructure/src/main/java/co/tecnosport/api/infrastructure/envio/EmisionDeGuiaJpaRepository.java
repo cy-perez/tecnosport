@@ -32,4 +32,11 @@ public interface EmisionDeGuiaJpaRepository extends JpaRepository<EmisionDeGuiaJ
   /** Las que se pidieron y nunca registraron respuesta: el proceso murió en la mitad. */
   List<EmisionDeGuiaJpaEntity> findByEstadoAndSolicitadaEnBeforeOrderBySolicitadaEnAsc(
       String estado, Instant corte, Limit limite);
+
+  /**
+   * Las que piden ojo humano, de la más vieja a la más nueva. Mismo orden y mismo motivo que las
+   * demás: ninguna se resuelve sola, así que la que lleva más tiempo esperando es la que más urge.
+   */
+  List<EmisionDeGuiaJpaEntity> findByEstadoInOrderBySolicitadaEnAsc(
+      Collection<String> estados, Limit limite);
 }

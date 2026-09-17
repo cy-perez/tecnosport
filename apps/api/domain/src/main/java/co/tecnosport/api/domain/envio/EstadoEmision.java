@@ -1,5 +1,9 @@
 package co.tecnosport.api.domain.envio;
 
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * En qué va el intento de emitir las guías de un pedido (adr/0033).
  *
@@ -86,5 +90,18 @@ public enum EstadoEmision {
    */
   public boolean exigeOjoHumano() {
     return this == INDETERMINADA || this == PARCIAL;
+  }
+
+  /**
+   * Los dos que piden ojo humano, por nombre, para la consulta que arma la bandeja de revisión.
+   * Mismo motivo que {@code EstadoEnvio.nombresTerminales()}: dentro de una consulta, un literal
+   * sobrevive al renombre de la constante y deja el filtro comparando contra algo que no existe.
+   * Aquí el precio de que eso pase es que una emisión con plata comprometida deje de aparecer.
+   */
+  public static Set<String> nombresQueExigenOjoHumano() {
+    return EnumSet.allOf(EstadoEmision.class).stream()
+        .filter(EstadoEmision::exigeOjoHumano)
+        .map(Enum::name)
+        .collect(Collectors.toUnmodifiableSet());
   }
 }

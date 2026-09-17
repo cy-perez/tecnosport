@@ -644,6 +644,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/envios/revision/guias/{numeroGuia}/acuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acusarGuia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolverEmision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/acuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acusarEmision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/atencion": {
         parameters: {
             query?: never;
@@ -916,6 +964,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/envios/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/sets-rotacion/{id}": {
         parameters: {
             query?: never;
@@ -953,6 +1017,7 @@ export interface components {
             ciudad?: string;
             direccion?: string;
             indicaciones?: string;
+            barrio?: string;
         };
         LineaRequest: {
             /** Format: uuid */
@@ -983,6 +1048,7 @@ export interface components {
             ciudad?: string;
             direccion?: string;
             indicaciones?: string;
+            barrio?: string;
         };
         EnvioRespuesta: {
             guias?: components["schemas"]["GuiaRespuesta"][];
@@ -1435,6 +1501,31 @@ export interface components {
             medio?: string;
             comprobante?: string;
         };
+        AcusarRevisionRequest: {
+            nota?: string;
+        };
+        AcuseDeRevisionRespuesta: {
+            id?: string;
+            tipo?: string;
+            referencia?: string;
+            /** Format: date-time */
+            revisadoEn?: string;
+            actor?: string;
+            nota?: string;
+        };
+        ResolverEmisionRequest: {
+            veredicto?: string;
+            enviosEnPlataforma?: string[];
+            nota?: string;
+        };
+        EmisionResueltaRespuesta: {
+            emisionId?: string;
+            estado?: string;
+            detalle?: string;
+            enviosEnPlataforma?: string[];
+            /** Format: date-time */
+            resueltaEn?: string;
+        };
         RadicarSolicitudRequest: {
             tipo?: string;
             correo?: string;
@@ -1606,6 +1697,38 @@ export interface components {
             totalPaginas?: number;
             /** Format: int64 */
             totalPedidos?: number;
+        };
+        BandejaDeRevisionRespuesta: {
+            guias?: components["schemas"]["GuiaEnRevisionRespuesta"][];
+            emisiones?: components["schemas"]["EmisionEnRevisionRespuesta"][];
+        };
+        EmisionEnRevisionRespuesta: {
+            emisionId?: string;
+            pedidoId?: string;
+            numeroPedido?: string;
+            transportadora?: string;
+            idTarifa?: string;
+            estado?: string;
+            detalle?: string;
+            enviosEnPlataforma?: string[];
+            /** Format: date-time */
+            solicitadaEn?: string;
+            actor?: string;
+        };
+        GuiaEnRevisionRespuesta: {
+            guiaId?: string;
+            numeroGuia?: string;
+            transportadora?: string;
+            pedidoId?: string;
+            numeroPedido?: string;
+            estado?: string;
+            descripcion?: string;
+            /** Format: date-time */
+            ocurrioEn?: string;
+            /** Format: date-time */
+            recibidoEn?: string;
+            /** Format: date-time */
+            revisadaEn?: string;
         };
     };
     responses: never;
@@ -2675,6 +2798,84 @@ export interface operations {
             };
         };
     };
+    acusarGuia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numeroGuia: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcusarRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    resolverEmision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                emisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverEmisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmisionResueltaRespuesta"];
+                };
+            };
+        };
+    };
+    acusarEmision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                emisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcusarRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
     listar_4: {
         parameters: {
             query?: {
@@ -3135,6 +3336,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                };
+            };
+        };
+    };
+    listar_9: {
+        parameters: {
+            query?: {
+                maximo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BandejaDeRevisionRespuesta"];
                 };
             };
         };

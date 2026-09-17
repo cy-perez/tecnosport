@@ -41,6 +41,8 @@ public class PedidoJpaEntity {
 
   private String indicaciones;
 
+  private String barrio;
+
   @Column(name = "metodo_pago", nullable = false)
   private String metodoPago;
 
@@ -105,6 +107,7 @@ public class PedidoJpaEntity {
       String ciudad,
       String direccion,
       String indicaciones,
+      String barrio,
       String metodoPago,
       String estado,
       Instant creadoEn,
@@ -131,6 +134,7 @@ public class PedidoJpaEntity {
     this.ciudad = ciudad;
     this.direccion = direccion;
     this.indicaciones = indicaciones;
+    this.barrio = barrio;
     this.metodoPago = metodoPago;
     this.estado = estado;
     this.creadoEn = creadoEn;
@@ -214,6 +218,11 @@ public class PedidoJpaEntity {
 
   public String getIndicaciones() {
     return indicaciones;
+  }
+
+  /** El {@code area_level3} de la plataforma de envíos. Opcional: ver {@code Direccion}. */
+  public String getBarrio() {
+    return barrio;
   }
 
   public String getMetodoPago() {

@@ -130,11 +130,13 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
    * sí: en la emisión, como {@code reference} de la dirección de destino. Para cotizar no cambian
    * nada — el precio sale del DANE.
    *
-   * <p>El destino tampoco manda {@code area_level3}. No es una omisión del mapeador: {@code
-   * Direccion} no tiene barrio y el checkout no lo pide. Solo hace falta el del <em>origen</em>
-   * para que la recolección funcione —el campo que reclama la plataforma es "Shipper address2"—,
-   * así que el del destino queda como lo que es: una mejora de la dirección de entrega, no un
-   * bloqueo.
+   * <p><strong>El destino manda {@code area_level3} solo cuando el comprador lo escribió</strong>,
+   * y la ausencia se omite en vez de mandarse en nulo. No es cosmético: es exactamente por un
+   * {@code area_level3} nulo que la plataforma respondía {@code "Shipper address2 not valid: null"}
+   * en el origen (docs/13 §6.10), así que mandar la clave vacía es peor que no mandarla. En el
+   * destino el barrio no condiciona el precio —eso sale del DANE— ni bloquea la cotización: mejora
+   * la dirección que se imprime en la guía, y el envío lo hereda de aquí porque el cuerpo de {@code
+   * POST /shipments} no declara ese campo y lo descarta sin avisar.
    */
   private ObjectNode direccionDeDestino(Direccion destino) {
     ObjectNode nodo = json.createObjectNode();
@@ -142,6 +144,7 @@ final class MapeadorCotizacionSkydropxV1 implements MapeadorCotizacionSkydropx {
     nodo.put("postal_code", destino.codigoDaneCiudad());
     nodo.put("area_level1", destino.departamento());
     nodo.put("area_level2", destino.ciudad());
+    destino.barrioDeclarado().ifPresent(barrio -> nodo.put("area_level3", barrio));
     nodo.put("street1", destino.direccion());
     return nodo;
   }

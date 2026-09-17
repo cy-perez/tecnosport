@@ -22,6 +22,8 @@ import { SENSOR_ORIENTACION } from '../captura360/domain/sensor-orientacion.puer
 import { CamaraNavegador } from '../captura360/infrastructure/camara-navegador';
 import { PantallaDespiertaNavegador } from '../captura360/infrastructure/pantalla-despierta-navegador';
 import { SensorOrientacionNavegador } from '../captura360/infrastructure/sensor-orientacion-navegador';
+import { REPOSITORIO_REVISION_ENVIOS } from './envios/domain/repositorio-revision-envios.puerto';
+import { RevisionEnviosHttpRepositorio } from './envios/infrastructure/revision-envios-http.repositorio';
 import { REPOSITORIO_GARANTIAS } from './garantias/domain/repositorio-garantias.puerto';
 import { GarantiasHttpRepositorio } from './garantias/infrastructure/garantias-http.repositorio';
 import { REPOSITORIO_PEDIDOS_ADMIN } from './pedidos/domain/repositorio-pedidos-admin.puerto';
@@ -88,6 +90,17 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./atencion/presentation/bandeja/bandeja-atencion.page').then(
             (m) => m.BandejaAtencionPage,
+          ),
+      },
+      {
+        path: 'envios',
+        canActivate: [adminGuard],
+        providers: [
+          { provide: REPOSITORIO_REVISION_ENVIOS, useClass: RevisionEnviosHttpRepositorio },
+        ],
+        loadComponent: () =>
+          import('./envios/presentation/bandeja/bandeja-revision.page').then(
+            (m) => m.BandejaRevisionPage,
           ),
       },
       {

@@ -93,7 +93,7 @@ class AdminPedidosControladorTest {
   @Autowired private RepositorioProductosDobleDePrueba productos;
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   @AfterEach
   void limpiarContextoDeSeguridad() {

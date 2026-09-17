@@ -33,7 +33,7 @@ class MetodosDePagoDisponiblesTest {
   private static final Instant AHORA = Instant.parse("2026-09-11T12:00:00Z");
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final CriteriosContraentrega CRITERIOS_PERMISIVOS =
       new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());

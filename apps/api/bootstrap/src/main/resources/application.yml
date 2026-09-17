@@ -159,6 +159,22 @@ tecnosport:
       # (docs/13-skydropx-capacidades.md §6.10). Solo hay algo que revisar cuando alguien acaba de
       # pulsar el botón, así que el costo de la frecuencia es cero la mayor parte del tiempo.
       intervalo-segundos: ${SKYDROPX_EMISION_INTERVALO_SEGUNDOS:60}
+  revision-envios:
+    # Dato de negocio, a diferencia del intervalo de al lado: cuanto tiempo puede quedarse algo en
+    # la bandeja de revision sin que nadie lo mire. Veinticuatro horas, porque el comprador de un
+    # pedido despachado espera movimiento diario y enterarse despues que el es justo lo que la
+    # bandeja vino a evitar.
+    horas-umbral: ${ENVIO_REVISION_HORAS_UMBRAL:24}
+    # Solo cada cuanto se mira. Seis horas contra un umbral de veinticuatro: lo bastante seguido
+    # para que el aviso no llegue con medio dia de retraso, y lo bastante espaciado para que una
+    # bandeja vacia no cueste nada.
+    intervalo-minutos: ${ENVIO_REVISION_INTERVALO_MINUTOS:360}
+    # Corto y menor que el intervalo, mismo motivo que el vigilante del plazo de entrega: si lo
+    # igualara, cada despliegue reiniciaria la cuenta y con despliegues diarios no correria nunca.
+    retraso-inicial-minutos: ${ENVIO_REVISION_RETRASO_INICIAL_MINUTOS:5}
+    # No es un secreto: es el correo del negocio que ya esta publicado en el pie del sitio y en
+    # los legales, asi que lleva valor por omision real (regla dura #5).
+    destinatario: ${ENVIO_REVISION_DESTINATARIO:contacto@tecnosport.co}
   origen:
     # La dirección de despacho del negocio, que es la misma del punto de recogida y ya está
     # decidida (docs/09-plan-de-arranque.md, cierre de datos pendientes del 10/09/2026).

@@ -61,7 +61,7 @@ class AvisarPlazosDeEntregaVencidosTest {
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(linea()),
             TipoEntrega.ENVIO_A_DOMICILIO,
-            new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             metodoPago,
             "cliente@tecnosport.co",
             CONFIRMADO);

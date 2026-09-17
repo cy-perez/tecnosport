@@ -18,6 +18,8 @@
     "ciudad": "City",
     "elegir": "Choose…",
     "direccion": "Address",
+    "barrio": "Neighborhood (optional)",
+    "barrio_ayuda": "Helps the courier find the address.",
     "indicaciones": "Additional instructions (optional)",
     "continuar": "Continue",
     "errores": {

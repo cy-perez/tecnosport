@@ -42,7 +42,7 @@ class AplicarEventoDeEnvioTest {
   private static final Instant DESPACHO = AHORA.minusSeconds(86_400);
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
 
   private RepositorioEnviosFalso envios;
   private RepositorioPedidosFalso pedidos;

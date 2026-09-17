@@ -249,12 +249,44 @@ POST /api/v1/admin/pedidos/{id}/retractos           radica un retracto ejercido 
 POST /api/v1/admin/retractos/{id}/recepcion         el producto volvió: pedido a DEVUELTO e inventario de vuelta
 POST /api/v1/admin/retractos/{id}/reembolso         deja la constancia del dinero devuelto y cierra la solicitud
 
+GET /api/v1/admin/envios/revision                   lo que pide ojo humano: guías quietas y emisiones sin desenlace
+POST /api/v1/admin/envios/revision/guias/{numero}/acuse      deja constancia de que alguien miró esa guía
+POST /api/v1/admin/envios/revision/emisiones/{id}/acuse      lo mismo para una emisión con saldo comprometido
+POST /api/v1/admin/envios/revision/emisiones/{id}/resolucion lo que la persona vio en el panel: desbloquea el pedido
+
 POST /api/v1/admin/sets-rotacion                    abre un set vacío en BORRADOR
 POST /api/v1/admin/sets-rotacion/{id}/subidas       N URL firmadas, una por fotograma
 POST /api/v1/admin/sets-rotacion/{id}/completar     verifica los objetos y pasa a COMPLETO
 POST /api/v1/admin/sets-rotacion/{id}/publicar      de COMPLETO a PUBLICADO: la ficha muestra el visor
 DELETE /api/v1/admin/sets-rotacion/{id}             borra el set y sus objetos del bucket
 ```
+
+**La bandeja de revisión junta dos cosas que se atienden distinto** y por eso
+viajan en dos listas, no mezcladas: guías cuyo último movimiento las dejó quietas
+—los cinco estados de `EstadoEnvio.exigeRevisionManual()`— y emisiones en
+`INDETERMINADA` o `PARCIAL`, donde hay saldo comprometido. Van en la misma
+respuesta porque para quien atiende son una sola pregunta: qué paquete necesita
+que alguien haga algo.
+
+De cada guía viajan **dos fechas**, `ocurrioEn` y `recibidoEn`, y no es
+redundancia: la segunda es la nuestra, y es contra la que el servidor compara el
+acuse. Un evento que *ocurrió* antes del acuse pero que llegó después sigue siendo
+algo que nadie ha visto. De cada emisión viaja el `idTarifa`, que es lo único con
+lo que se puede hacer algo: es la llave con la que el panel de la plataforma
+encuentra el envío.
+
+**El acuse no resuelve nada.** Deja escrito quién miró, cuándo y qué concluyó, y
+con eso la fila sale de la bandeja; si a una guía le llega un evento posterior al
+acuse, vuelve sola. Acusar algo que no está pidiendo revisión responde 409, para que
+no quede escrito un problema que nunca existió.
+
+**Resolver sí**, y por eso es otra ruta. Solo aplica a una emisión `INDETERMINADA`,
+y el cuerpo lleva lo que la persona vio en el panel de la plataforma: `veredicto`
+`SIN_COBRO` —el envío no está, la emisión queda `FALLIDA` y el pedido vuelve a poder
+emitir— o `CON_ENVIO` con `enviosEnPlataforma`, que la devuelve a `EN_CURSO` para que
+la tarea de siempre la relea. Decir `CON_ENVIO` sin identificadores responde 409: no
+recupera nada. El servidor **no** reenvía la emisión a la plataforma para averiguarlo
+por su cuenta; el porqué está en `ADR-0034`.
 
 **El retracto lo radica el negocio, no el comprador**, y por eso sus rutas están
 bajo `/admin`: el canal que los términos publicados prometen es el correo y

@@ -112,14 +112,14 @@ panel, ni en el plan de la fase.
 
 | Palanca | Estado | Qué permite |
 |---|---|---|
-| Consultar días disponibles | ⛔ | `GET /pickups/coverage` existe y **no respondió nunca** (§6.6) |
-| Programar una recolección | ✅ | Agrupa **varios envíos** en una sola recogida |
+| Consultar días disponibles | ✅ | `GET /pickups/coverage` responde `200` con fechas desde que el envío lleva barrio (§6.10, §6.11) |
+| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los cinco intentos, dos días y dos horas distintas: el conector de la transportadora está caído, no es la hora (§6.11) |
 | Reprogramar | ✅ | `POST /pickups/reschedule` |
 | Consultar el estado | ✅ | `GET /pickups/{id}` |
 | Cuerpo exacto de la petición | ✅ | Confirmado (§6.4) y ejercido contra el sandbox (§6.6): `total_weight` entero y el envío en `success` |
 | Si es obligatoria | ⚠️ | Una fuente dice que no, que la alternativa es dejar el paquete en oficina |
 | Qué transportadoras la soportan | ✅ | Lo dice **`pickup`** en cada tarifa: `true` en Coordinadora, Servientrega e Inter Rapidísimo; `false` en 99 minutes y Envía, que recogen por soporte (§6.4, §6.6) |
-| Consultar fechas disponibles | ⛔ | `GET /pickups/coverage` respondió `422` con mensaje vacío en las cuatro guías probadas (§6.6) |
+| Consultar fechas disponibles | ✅ | Era el mismo `coverage` de arriba: respondía `422` con mensaje vacío porque **las guías se habían emitido sin barrio**, no por un defecto suyo (§6.10) |
 
 > **Resuelto el 15 de septiembre (§6.4): gana la segunda, la del envío suelto.** La
 > documentación oficial declara `pickup { reference_shipment_id, packages, total_weight,
@@ -835,9 +835,12 @@ direcciones. Sin `rate_id` responde `400`. En las cinco tarifas que fallan el
 `false` no prueba nada —nunca llegaron a tarifar—, pero en 99 minutes sí: es un
 mensajero urbano de un día, no tiene red de sucursales.
 
-**Las cuatro transportadoras que tienen oficinas son exactamente las cuatro que
-no cotizan.** Mientras eso siga así, una tercera forma de entrega en el checkout
-sería una pantalla a la que nadie puede llegar.
+~~**Las cuatro transportadoras que tienen oficinas son exactamente las cuatro que
+no cotizan.**~~ **Corregido el 17 de septiembre en `§6.12`**: esa premisa era de
+cuando cinco de seis tarifas fallaban por un defecto nuestro. Con las tarifas vivas,
+las cuatro declaran `office_delivery: false` y su catálogo de puntos responde vacío.
+La conclusión no cambia —una tercera forma de entrega en el checkout sería una
+pantalla a la que nadie puede llegar— pero ahora se sabe por qué.
 
 #### La infografía: es del panel, no de la API
 
@@ -2090,6 +2093,98 @@ migración y quitó la transacción envolvente del endpoint, así que el primero
 código que quedó. Guía `034054505968`, dos vueltas de la tarea, y las dos columnas nuevas —el actor
 y el estado `SOLICITADA` previo al cobro— verificadas en la base.
 
+### 6.11 La recolección no falla por la hora: el conector está caído (2026-09-17, décima parte)
+
+`§6.10` dejó la recolección como lo único abierto del lado del proveedor, con una explicación y un
+remedio: *"es un error de ellos y de la hora, no de forma… se cierra reintentando en horario
+hábil"*. **La explicación era falsa y el remedio no funciona.**
+
+Reintentado el 17 de septiembre a las **10:20 de un jueves**, en pleno horario hábil, con la sonda
+`tools/sonda-recoleccion.mjs` y reusando envíos ya emitidos —o sea sin gastar un peso—:
+
+| Envío | Guía | `GET /pickups/coverage` | `POST /pickups` |
+|---|---|---|---|
+| `177d1939-…` | `2269401762` | **200**, fechas reales | `422` **ECONNREFUSED at PICKUP** |
+| `8bf880c9-…` | `2269401763` | **200**, fechas reales | `422` **ECONNREFUSED at PICKUP** |
+
+Van **cinco intentos**, en dos días distintos, a las 18:45 y a las 10:20, y con dos envíos
+distintos. La cobertura responde `200` con fechas de verdad —`2026-09-18` y `2026-09-21`— así que
+el envío es válido para Servientrega y nuestro cuerpo sigue validado entero; lo que no responde es
+el conector de la transportadora dentro de Skydropx.
+
+**Es el mismo patrón que Coordinadora.** `§6.6` atribuyó a la hora las muertes nocturnas de
+Coordinadora y `§6.10` lo desmintió: su contador de remisiones está atascado. Aquí pasó igual, y
+conviene dejar escrita la lección en vez del hecho: *"falló de noche"* no es una causa, es una
+coincidencia con una sola observación detrás. Las dos veces costó una sesión entera creerle.
+
+Consecuencias, y ninguna es de código:
+
+- **La recolección se programa a mano por el panel de Skydropx**, como ya decía `§6.10`, y ahora
+  sin fecha estimada de que deje de ser así: no depende de nosotros.
+- **El criterio de elección de tarifa se queda como está**, solo por precio. Decidir si `pickup`
+  debe pesar exige una recolección que funcione para comparar, y no la hay.
+- La sonda queda ejercitable sin costo con `ENVIO=<id>`, que es como se midió esto.
+
+### 6.12 Los tres pendientes que quedaban, medidos sin gastar un peso (2026-09-17, undécima parte)
+
+Con `tools/sonda-oficina-y-fallido.mjs`, que solo lee y cotiza.
+
+#### La entrega en oficina: la premisa había caducado, la conclusión no
+
+`§6.2` la dio por imposible con este argumento: *"las cuatro transportadoras que tienen oficinas son
+exactamente las cuatro que no cotizan"*. **Eso ya no es cierto**, y dejó de serlo el mismo día que se
+escribió: se midió con cinco de las seis tarifas fallando por el `declared_amount` mal puesto, que
+era nuestro y se corrigió en `§6.4`. Hoy cotizan cuatro.
+
+Vuelto a medir con las tarifas vivas:
+
+| Tarifa | Cotiza | `office_delivery` | `office_pickup` | `GET /office_points` |
+|---|---|---|---|---|
+| servientrega/standard | ✅ 8.200 | `false` | `false` | `200`, **total 0** |
+| coordinadora/standard | ✅ 5.991 | `false` | `false` | `200`, **total 0** |
+| envia/paquete_terrestre | ✅ 7.850 | `false` | `false` | `200`, **total 0** |
+| ninetynineminutes/nextday | ✅ 9.897 | `false` | `false` | `200`, **total 0** |
+| interrapidisimo/standard | ⛔ `no_coverage` | `false` | `false` | — |
+
+**La conclusión se sostiene con mejor evidencia que antes.** Ya no es "no se puede saber porque no
+cotizan": es que ninguna tarifa viva de esta cuenta ofrece oficina, y el catálogo de puntos responde
+vacío para las cuatro. `§6.2` también anotaba que `office_points` sin `rate_id` da `400`; con tarifa
+da `200` y cero puntos, que es una respuesta y no un bloqueo.
+
+Una tercera forma de entrega en el checkout seguiría siendo una pantalla a la que nadie puede
+llegar. Y ahora se sabe por qué, en vez de suponerlo.
+
+#### `FALLIDO`: no puede llegar por el canal de la conciliación
+
+`§6.9` dejó la pregunta abierta —"se confirma el día que una emisión real vuelva a morir"— y ya
+habían muerto cuatro. Releídas:
+
+| Envío | Transportadora | Guía | Pago |
+|---|---|---|---|
+| `87bc6955-…` | coordinadora | **null** | `refunded` |
+| `037712dc-…` | coordinadora | **null** | `refunded` |
+| `97735820-…` | servientrega | **null** | `refunded` |
+| `e47c61d3-…` | coordinadora | **null** | `refunded` |
+
+**Un envío que muere nunca llega a tener número de guía.** De ahí sale la respuesta, y no es la que
+la pregunta esperaba: el rastreo se consulta por número, así que `error` **no puede llegar nunca por
+el canal de la conciliación** — no hay a qué preguntarle. Solo podría llegar por webhook, y solo para
+una guía que ya tuviera número antes de morir, que es un caso que no se ha visto.
+
+Consecuencia para el código: **ninguna**, y eso es lo que había que comprobar. `EstadoEnvio.FALLIDO`
+se queda como no terminal. El costo de esa elección —seguir preguntando por un envío que no se
+moverá— resultó ser cero en el único camino que existe hoy, porque ese envío nunca entra a la
+conciliación.
+
+#### El barrio del destino, construido
+
+Era lo único de esta integración que dependía de nosotros. `Direccion` gana `barrio`, el checkout lo
+pide sin exigirlo, y la cotización lo manda como `area_level3` **solo cuando viene**: la clave se
+omite en vez de viajar en nulo, que es la forma en que este campo ya rompió una vez (`§6.10`).
+
+Verificado contra la API real: `POST /api/v1/envios/cotizacion` con `"barrio": "Boston"` responde
+tarifa de Envía por 7.850.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que
@@ -2101,5 +2196,6 @@ en que se hicieron las cosas explica por qué el código se ve como se ve.
 **Lo único que quedaba de la Fase 7 era la emisión de la guía**, bloqueada por el
 saldo en COP 388. El 16 de septiembre de 2026 Skydropx recargó el sandbox y se midió
 todo lo que faltaba: ver `§6.10`. Lo que quedó sin ejercer es de ellos —el conector de
-recolección de Servientrega— y lo que quedó pendiente de producto es el barrio en el
-checkout, que `Direccion` todavía no tiene.
+recolección de Servientrega, medido otras dos veces el 17 de septiembre en horario hábil y caído
+igual: `§6.11`— y el barrio del checkout, que era lo último
+pendiente de producto, **está construido** (`§6.12`).

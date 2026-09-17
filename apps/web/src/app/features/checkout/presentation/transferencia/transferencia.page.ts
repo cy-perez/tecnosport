@@ -5,7 +5,10 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
-import { CriteriosSeguimiento, usarSeguimientoPedido } from '../../application/seguimiento-pedido.consulta';
+import {
+  CriteriosSeguimiento,
+  usarSeguimientoPedido,
+} from '../../application/seguimiento-pedido.consulta';
 import { Pedido } from '../../domain/pedido.model';
 import { datosTransferenciaDelPedido } from '../../domain/reglas-pedido';
 
@@ -40,7 +43,9 @@ export class TransferenciaPage {
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
 
-  protected readonly pedido = computed<Pedido | null>(() => this.checkout.pedido() ?? this.consulta.data() ?? null);
+  protected readonly pedido = computed<Pedido | null>(
+    () => this.checkout.pedido() ?? this.consulta.data() ?? null,
+  );
 
   protected readonly datosTransferencia = computed(() => {
     const pedido = this.pedido();

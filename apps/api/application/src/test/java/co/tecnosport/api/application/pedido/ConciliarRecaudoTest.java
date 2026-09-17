@@ -28,7 +28,7 @@ class ConciliarRecaudoTest {
 
   private static final Instant AHORA = Instant.parse("2026-09-03T12:00:00Z");
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioEnviosFalso envios;
