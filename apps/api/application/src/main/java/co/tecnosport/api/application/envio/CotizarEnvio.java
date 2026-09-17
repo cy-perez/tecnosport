@@ -2,13 +2,9 @@ package co.tecnosport.api.application.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
-import co.tecnosport.api.domain.catalogo.Producto;
-import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.pedido.Direccion;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,15 +22,17 @@ import java.util.Objects;
  */
 public final class CotizarEnvio {
 
-  private final RepositorioProductos repositorioProductos;
+  private final ArmadorDeBultos armador;
   private final CotizadorEnvio cotizador;
   private final Reloj reloj;
 
   public CotizarEnvio(
       RepositorioProductos repositorioProductos, CotizadorEnvio cotizador, Reloj reloj) {
-    this.repositorioProductos =
-        Objects.requireNonNull(
-            repositorioProductos, "El repositorio de productos no puede ser nulo.");
+    this(new ArmadorDeBultos(repositorioProductos), cotizador, reloj);
+  }
+
+  public CotizarEnvio(ArmadorDeBultos armador, CotizadorEnvio cotizador, Reloj reloj) {
+    this.armador = Objects.requireNonNull(armador, "El armador de bultos no puede ser nulo.");
     this.cotizador = Objects.requireNonNull(cotizador, "El cotizador no puede ser nulo.");
     this.reloj = Objects.requireNonNull(reloj, "El reloj no puede ser nulo.");
   }
@@ -47,9 +45,18 @@ public final class CotizarEnvio {
       throw new IllegalArgumentException("Una cotización necesita al menos una línea.");
     }
 
+    return deBultos(destino, armador.soloBultos(aEmpacar(comando)), comando.conRecaudo());
+  }
+
+  /**
+   * La misma cotización, con los bultos ya armados. La usa la emisión de la guía, que arma los
+   * bultos una vez —necesita además el contenido de cada uno— y no puede permitirse armarlos dos
+   * veces: dos lecturas del catálogo pueden ver estados distintos y devolver listas que ya no se
+   * corresponden, y el emparejamiento de paquetes con bultos es por posición.
+   */
+  public TarifaEnvio deBultos(Direccion destino, List<Bulto> bultos, boolean conRecaudo) {
     ResultadoCotizacion resultado =
-        cotizador.cotizar(
-            new CotizacionEnvio(destino, bultosDe(comando.lineas()), comando.conRecaudo()));
+        cotizador.cotizar(new CotizacionEnvio(destino, bultos, conRecaudo));
 
     // Sin `default`: una respuesta nueva del proveedor tiene que romper la compilación aquí, que es
     // donde se decide qué se le dice al comprador.
@@ -78,34 +85,13 @@ public final class CotizarEnvio {
   }
 
   /**
-   * Un bulto por unidad, no por línea (decisión del 11 de septiembre de 2026): tres camisetas son
-   * tres paquetes con el peso y las medidas reales de la variante. Sumar el peso en un solo bulto
-   * obligaría a inventar las dimensiones de una caja combinada, y las dimensiones no son un detalle
-   * porque las transportadoras cobran peso volumétrico.
+   * Cómo se empaca vive en {@link ArmadorDeBultos} y no aquí, porque la emisión de la guía arma los
+   * mismos bultos y tiene que armarlos <strong>en el mismo orden</strong>: la plataforma empareja
+   * los paquetes del envío con los bultos de la cotización por posición.
    */
-  private List<Bulto> bultosDe(List<CotizarEnvioComando.LineaComando> lineas) {
-    List<Bulto> bultos = new ArrayList<>();
-    for (CotizarEnvioComando.LineaComando linea : lineas) {
-      if (linea.cantidad() <= 0) {
-        throw new IllegalArgumentException(
-            "La cantidad de una línea debe ser mayor que cero: " + linea.cantidad());
-      }
-      Variante variante = variante(linea);
-      for (int unidad = 0; unidad < linea.cantidad(); unidad++) {
-        bultos.add(new Bulto(variante.paquete(), variante.precio()));
-      }
-    }
-    return bultos;
-  }
-
-  private Variante variante(CotizarEnvioComando.LineaComando linea) {
-    Producto producto =
-        repositorioProductos
-            .buscarPorVarianteId(linea.varianteId())
-            .orElseThrow(() -> new VarianteNoEncontradaException(linea.varianteId()));
-    return producto.variantes().stream()
-        .filter(candidata -> candidata.id().equals(linea.varianteId()))
-        .findFirst()
-        .orElseThrow(() -> new VarianteNoEncontradaException(linea.varianteId()));
+  private static List<LineaAEmpacar> aEmpacar(CotizarEnvioComando comando) {
+    return comando.lineas().stream()
+        .map(linea -> new LineaAEmpacar(linea.varianteId(), linea.cantidad()))
+        .toList();
   }
 }

@@ -74,7 +74,16 @@ public final class DespacharPedido {
         Envio.crear(
             pedido.id(),
             comando.guias().stream()
-                .map(guia -> GuiaEnvio.crear(guia.transportadora(), guia.guia(), guia.costoEnvio()))
+                .map(
+                    guia ->
+                        guia.codigoTransportadora() == null
+                            ? GuiaEnvio.crear(guia.transportadora(), guia.guia(), guia.costoEnvio())
+                            : GuiaEnvio.emitida(
+                                guia.transportadora(),
+                                guia.codigoTransportadora(),
+                                guia.guia(),
+                                guia.costoEnvio(),
+                                guia.urlEtiqueta()))
                 .toList(),
             ahora);
     repositorioPedidos.guardar(pedido);
