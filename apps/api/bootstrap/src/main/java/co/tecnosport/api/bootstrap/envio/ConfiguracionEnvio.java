@@ -2,11 +2,14 @@ package co.tecnosport.api.bootstrap.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.EnTransaccionPropia;
+import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.AcusarRevisionDeEmision;
 import co.tecnosport.api.application.envio.AcusarRevisionDeGuia;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
+import co.tecnosport.api.application.envio.AvisarRevisionPendiente;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
@@ -19,6 +22,7 @@ import co.tecnosport.api.application.envio.ListarEnviosEnRevision;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
+import co.tecnosport.api.application.envio.RepositorioAvisosDeRevision;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.envio.ResolverEmisionIndeterminada;
@@ -30,6 +34,7 @@ import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.bootstrap.pago.PropiedadesMetodosDeWompi;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
@@ -55,6 +60,7 @@ import org.springframework.context.annotation.Profile;
   PropiedadesContraentrega.class,
   PropiedadesSkydropx.class,
   PropiedadesSeguimientoEnvios.class,
+  PropiedadesVigilanciaRevision.class,
   PropiedadesWebhookEnvio.class,
   PropiedadesOrigen.class
 })
@@ -345,5 +351,30 @@ public class ConfiguracionEnvio {
       RepositorioAcusesDeRevision repositorioAcuses,
       Reloj reloj) {
     return new ResolverEmisionIndeterminada(repositorioEmisiones, repositorioAcuses, reloj);
+  }
+
+  /**
+   * El vigilante de la bandeja. Reusa el caso de uso de la bandeja tal cual —no hay una segunda
+   * definición de "qué está pendiente"— y el mismo tope del lote que el seguimiento: si lo que hay
+   * que mirar no cabe ahí, el problema ya no es el correo.
+   */
+  @Bean
+  public AvisarRevisionPendiente avisarRevisionPendiente(
+      ListarEnviosEnRevision listarEnviosEnRevision,
+      RepositorioAvisosDeRevision repositorioAvisos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textosDeCorreo,
+      Reloj reloj,
+      PropiedadesVigilanciaRevision propiedades,
+      PropiedadesSeguimientoEnvios seguimiento) {
+    return new AvisarRevisionPendiente(
+        listarEnviosEnRevision,
+        repositorioAvisos,
+        enviadorDeCorreo,
+        textosDeCorreo,
+        reloj,
+        Duration.ofHours(propiedades.horasUmbral()),
+        new CorreoElectronico(propiedades.destinatario()),
+        seguimiento.maximoPorCorrida());
   }
 }

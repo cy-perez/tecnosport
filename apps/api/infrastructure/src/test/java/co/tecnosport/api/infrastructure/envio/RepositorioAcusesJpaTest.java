@@ -48,6 +48,7 @@ class RepositorioAcusesJpaTest {
       new PostgreSQLContainer(DockerImageName.parse("postgres:16"));
 
   @Autowired private RepositorioAcusesJpa acuses;
+  @Autowired private RepositorioAvisosJpa avisos;
   @Autowired private RepositorioEnviosJpa envios;
   @Autowired private RepositorioEmisionesJpa emisiones;
   @Autowired private RepositorioPedidosJpa pedidos;
@@ -155,5 +156,47 @@ class RepositorioAcusesJpaTest {
 
     assertThat(emisiones.buscarQueExigenOjoHumano(50).stream().map(EmisionDeGuia::id))
         .containsExactly(indeterminada.id());
+  }
+
+  /**
+   * El reclamo del aviso, que es lo que impide que el vigilante mande el mismo correo cada vuelta.
+   * Se prueba contra la base real porque lo que decide es una sentencia con {@code on conflict}: un
+   * doble puede imitar la condición, pero no que sea una sola escritura atómica.
+   */
+  @Test
+  void elAvisoSeReclamaUnaSolaVezPorNovedad() {
+    GuiaEnvio guia = sembrarGuia(206, "AV-1");
+    Instant novedad = AHORA.minusSeconds(3600);
+
+    assertThat(avisos.reclamarAviso(TipoDeRevision.GUIA, guia.id(), novedad, AHORA)).isTrue();
+    assertThat(avisos.reclamarAviso(TipoDeRevision.GUIA, guia.id(), novedad, AHORA.plusSeconds(60)))
+        .isFalse();
+  }
+
+  /**
+   * Y vuelve a armarse con una novedad posterior: un paquete que empeora no puede pasar callado
+   * solo porque ya se avisó de su estado anterior.
+   */
+  @Test
+  void unaNovedadPosteriorVuelveAArmarElAviso() {
+    GuiaEnvio guia = sembrarGuia(207, "AV-2");
+
+    assertThat(
+            avisos.reclamarAviso(TipoDeRevision.GUIA, guia.id(), AHORA.minusSeconds(7200), AHORA))
+        .isTrue();
+    assertThat(
+            avisos.reclamarAviso(
+                TipoDeRevision.GUIA, guia.id(), AHORA.plusSeconds(60), AHORA.plusSeconds(120)))
+        .isTrue();
+  }
+
+  /** Avisar de una guía no dice nada de una emisión con el mismo identificador. */
+  @Test
+  void elAvisoDeUnaGuiaNoTapaElDeUnaEmision() {
+    GuiaEnvio guia = sembrarGuia(208, "AV-3");
+    Instant novedad = AHORA.minusSeconds(3600);
+
+    assertThat(avisos.reclamarAviso(TipoDeRevision.GUIA, guia.id(), novedad, AHORA)).isTrue();
+    assertThat(avisos.reclamarAviso(TipoDeRevision.EMISION, guia.id(), novedad, AHORA)).isTrue();
   }
 }
