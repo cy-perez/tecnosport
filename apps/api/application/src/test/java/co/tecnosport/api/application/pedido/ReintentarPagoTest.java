@@ -30,7 +30,7 @@ class ReintentarPagoTest {
   private static final Instant AHORA = Instant.parse("2026-09-03T12:00:00Z");
   private static final Duration RESERVA_PAGO_EN_LINEA = Duration.ofMinutes(30);
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioInventarioFalso inventarios;

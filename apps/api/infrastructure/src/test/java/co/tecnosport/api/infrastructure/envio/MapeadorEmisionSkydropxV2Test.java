@@ -51,7 +51,8 @@ class MapeadorEmisionSkydropxV2Test {
   private static SolicitudDeEmision solicitud(String indicaciones, String... contenidos) {
     return new SolicitudDeEmision(
         "8b2c1d40-0000-4000-8000-000000000001",
-        new Direccion("05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", indicaciones),
+        Direccion.sinBarrio(
+            "05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", indicaciones),
         new Contacto("Comprador de prueba", "+573001234567"),
         new CorreoElectronico("comprador@example.com"),
         List.of(contenidos));

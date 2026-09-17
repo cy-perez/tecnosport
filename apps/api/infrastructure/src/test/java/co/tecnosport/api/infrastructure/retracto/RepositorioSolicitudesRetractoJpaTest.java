@@ -70,7 +70,7 @@ class RepositorioSolicitudesRetractoJpaTest {
                     "https://cdn.tecnosport.co/img.webp",
                     UUID.randomUUID())),
             TipoEntrega.ENVIO_A_DOMICILIO,
-            new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
+            Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null),
             MetodoPago.NEQUI,
             "cliente@tecnosport.co",
             ENTREGA);

@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 class ListarPedidosAdminTest {
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private RepositorioPedidosFalso pedidos;
 

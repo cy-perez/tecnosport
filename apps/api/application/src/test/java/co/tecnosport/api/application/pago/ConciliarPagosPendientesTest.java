@@ -30,7 +30,7 @@ class ConciliarPagosPendientesTest {
   private static final Duration ANTIGUEDAD_MINIMA = Duration.ofMinutes(15);
   private static final CorreoElectronico CORREO = new CorreoElectronico("cliente@tecnosport.co");
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;

@@ -56,7 +56,7 @@ class PagoControladorTest {
   private final ObjectMapper json = new ObjectMapper();
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   // El contexto de @WebMvcTest se comparte entre los métodos de esta clase (mismos beans, sin
   // reiniciarse): un secuencial fijo repetido entre pruebas dejaba un Pago de una prueba anterior

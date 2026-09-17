@@ -43,7 +43,7 @@ class ListarEnviosEnRevisionTest {
   private static final Instant AHORA = Instant.parse("2026-09-17T15:00:00Z");
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
 
   private RepositorioEnviosFalso envios;
   private RepositorioEmisionesFalso emisiones;

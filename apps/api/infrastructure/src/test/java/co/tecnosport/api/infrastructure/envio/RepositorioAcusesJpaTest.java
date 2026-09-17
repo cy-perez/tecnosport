@@ -56,7 +56,7 @@ class RepositorioAcusesJpaTest {
   private static final Instant AHORA = Instant.parse("2026-09-17T15:00:00Z");
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
 
   private UUID sembrarPedido(int secuencial) {
     Pedido pedido =

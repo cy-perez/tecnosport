@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
-import { OpcionMetodoPago, TsSelectorMetodoPago } from '../selector-metodo-pago/ts-selector-metodo-pago';
+import {
+  OpcionMetodoPago,
+  TsSelectorMetodoPago,
+} from '../selector-metodo-pago/ts-selector-metodo-pago';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
@@ -52,7 +55,10 @@ export class MetodoPagoPage {
     }
     return {
       correo: datos.correo,
-      lineas: datosCarrito.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
+      lineas: datosCarrito.lineas.map((linea) => ({
+        varianteId: linea.varianteId,
+        cantidad: linea.cantidad,
+      })),
       tipoEntrega: datos.tipoEntrega,
       direccion: datos.direccion,
     };

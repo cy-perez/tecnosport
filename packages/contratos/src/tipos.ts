@@ -1017,6 +1017,7 @@ export interface components {
             ciudad?: string;
             direccion?: string;
             indicaciones?: string;
+            barrio?: string;
         };
         LineaRequest: {
             /** Format: uuid */
@@ -1047,6 +1048,7 @@ export interface components {
             ciudad?: string;
             direccion?: string;
             indicaciones?: string;
+            barrio?: string;
         };
         EnvioRespuesta: {
             guias?: components["schemas"]["GuiaRespuesta"][];

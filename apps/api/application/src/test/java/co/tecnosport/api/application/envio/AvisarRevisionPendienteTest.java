@@ -45,7 +45,7 @@ class AvisarRevisionPendienteTest {
   private static final Duration UMBRAL = Duration.ofHours(24);
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
 
   private RepositorioEnviosFalso envios;
   private RepositorioEmisionesFalso emisiones;

@@ -35,7 +35,8 @@ export const checkoutRoutes: Routes = [
       {
         path: 'retorno-wompi',
         data: { seo: { clave: 'seo.checkout.retorno_wompi' } },
-        loadComponent: () => import('./retorno-wompi/retorno-wompi.page').then((m) => m.RetornoWompiPage),
+        loadComponent: () =>
+          import('./retorno-wompi/retorno-wompi.page').then((m) => m.RetornoWompiPage),
       },
       {
         path: 'estado',
@@ -45,7 +46,8 @@ export const checkoutRoutes: Routes = [
       {
         path: 'transferencia',
         data: { seo: { clave: 'seo.checkout.transferencia' } },
-        loadComponent: () => import('./transferencia/transferencia.page').then((m) => m.TransferenciaPage),
+        loadComponent: () =>
+          import('./transferencia/transferencia.page').then((m) => m.TransferenciaPage),
       },
     ],
   },

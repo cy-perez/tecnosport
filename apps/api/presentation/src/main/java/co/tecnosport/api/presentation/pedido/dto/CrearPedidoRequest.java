@@ -56,11 +56,17 @@ public record CrearPedidoRequest(
     }
   }
 
+  /**
+   * {@code barrio} e {@code indicaciones} son opcionales y el servidor no los exige. El barrio es
+   * el {@code area_level3} de la plataforma de envíos: mejora la entrega y no condiciona el precio,
+   * que sale del código DANE.
+   */
   public record DireccionRequest(
       String codigoDaneDepartamento,
       String departamento,
       String codigoDaneCiudad,
       String ciudad,
       String direccion,
-      String indicaciones) {}
+      String indicaciones,
+      String barrio) {}
 }

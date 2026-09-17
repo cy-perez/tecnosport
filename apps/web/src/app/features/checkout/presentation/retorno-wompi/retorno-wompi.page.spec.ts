@@ -49,7 +49,6 @@ class RepositorioPagosFalso implements RepositorioPagos {
 @Component({ selector: 'app-ruta-muda', template: '' })
 class RutaMuda {}
 
-
 async function renderConQuery(query: Record<string, string>, pagos: RepositorioPagos) {
   return render(RetornoWompiPage, {
     imports: [
@@ -77,7 +76,7 @@ describe('RetornoWompiPage', () => {
     const pagos = new RepositorioPagosFalso();
 
     await renderConQuery({}, pagos);
-    expect(await screen.findByText("No encontramos los datos de este pago.")).toBeTruthy();
+    expect(await screen.findByText('No encontramos los datos de este pago.')).toBeTruthy();
     expect(pagos.llamadas).toEqual([]);
   });
 
@@ -90,7 +89,12 @@ describe('RetornoWompiPage', () => {
     const navegar = vi.spyOn(Router.prototype, 'navigate');
 
     await renderConQuery(
-      { id: '01-1531231271-19365', referencia: 'TS-2026-000001-1', pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+      {
+        id: '01-1531231271-19365',
+        referencia: 'TS-2026-000001-1',
+        pedidoId: 'pedido-1',
+        correo: 'cliente@tecnosport.co',
+      },
       pagos,
     );
     await vi.waitFor(() => {
@@ -113,14 +117,21 @@ describe('RetornoWompiPage', () => {
     const navegar = vi.spyOn(Router.prototype, 'navigate');
 
     await renderConQuery(
-      { id: '01-1531231271-19365', referencia: 'TS-2026-000001-1', pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+      {
+        id: '01-1531231271-19365',
+        referencia: 'TS-2026-000001-1',
+        pedidoId: 'pedido-1',
+        correo: 'cliente@tecnosport.co',
+      },
       pagos,
     );
     await vi.waitFor(() => expect(navegar).toHaveBeenCalled());
 
     expect(navegar).toHaveBeenCalledWith(
       ['../estado'],
-      expect.objectContaining({ queryParams: { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' } }),
+      expect.objectContaining({
+        queryParams: { pedidoId: 'pedido-1', correo: 'cliente@tecnosport.co' },
+      }),
     );
     navegar.mockRestore();
   });

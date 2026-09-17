@@ -49,7 +49,11 @@ class MapeadorCotizacionSkydropxV1Test {
           "contacto@tecnosport.co");
 
   private static final Direccion BOGOTA =
-      new Direccion("11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", "Apto. 502");
+      Direccion.sinBarrio(
+          "11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", "Apto. 502");
+
+  private static final Bulto BULTO_PEQUENO =
+      new Bulto(new Paquete(20, 15, 2, 100), Dinero.deCop(50_000));
 
   private static CotizacionEnvio cotizacionDe(Bulto... bultos) {
     return new CotizacionEnvio(BOGOTA, List.of(bultos));
@@ -513,4 +517,62 @@ class MapeadorCotizacionSkydropxV1Test {
         ]
       }
       """;
+
+  // ---------- el barrio del destino ----------
+
+  /**
+   * El barrio del destino es el {@code area_level3}, y llega hasta la guía sin que el cuerpo del
+   * envío lo mencione: {@code POST /shipments} no declara ese campo y lo descarta sin avisar, así
+   * que la cotización es su única puerta (docs/13 §6.10).
+   */
+  @Test
+  void elBarrioDelDestinoViajaComoAreaLevel3() {
+    Direccion conBarrio =
+        new Direccion(
+            "11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", null, "Chapinero");
+
+    JsonNode quotation =
+        json.readTree(
+                mapeador.cuerpoDeCotizacion(
+                    new CotizacionEnvio(conBarrio, List.of(BULTO_PEQUENO)), ORIGEN))
+            .path("quotation");
+
+    assertEquals("Chapinero", quotation.path("address_to").path("area_level3").asString());
+  }
+
+  /**
+   * Sin barrio la clave <strong>no viaja</strong>, en vez de viajar en nulo. Es exactamente por un
+   * {@code area_level3} nulo que la plataforma respondía "Shipper address2 not valid: null" en el
+   * origen: mandar la clave vacía es peor que no mandarla.
+   */
+  @Test
+  void sinBarrioLaClaveNoSeManda() {
+    JsonNode quotation = quotationDe(cotizacionDe(BULTO_PEQUENO));
+
+    assertTrue(quotation.path("address_to").path("area_level3").isMissingNode());
+  }
+
+  /** Un barrio en blanco es lo mismo que no haberlo escrito: lo normaliza el dominio. */
+  @Test
+  void unBarrioEnBlancoEsLoMismoQueNoTenerlo() {
+    Direccion enBlanco =
+        new Direccion(
+            "11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", null, "   ");
+
+    JsonNode quotation =
+        json.readTree(
+                mapeador.cuerpoDeCotizacion(
+                    new CotizacionEnvio(enBlanco, List.of(BULTO_PEQUENO)), ORIGEN))
+            .path("quotation");
+
+    assertTrue(quotation.path("address_to").path("area_level3").isMissingNode());
+  }
+
+  /** El del origen sigue siendo obligatorio, y sin él la recolección no se programa. */
+  @Test
+  void elBarrioDelOrigenSigueViajandoSiempre() {
+    JsonNode quotation = quotationDe(cotizacionDe(BULTO_PEQUENO));
+
+    assertEquals("La Milagrosa", quotation.path("address_from").path("area_level3").asString());
+  }
 }

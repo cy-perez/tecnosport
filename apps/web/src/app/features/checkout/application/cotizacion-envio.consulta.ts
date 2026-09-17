@@ -29,7 +29,8 @@ export function usarCotizacionEnvio(criterios: () => CotizarEnvioComando | null)
         'cotizacion-envio',
         valor && { ciudad: valor.direccion.codigoDaneCiudad, lineas: valor.lineas },
       ] as const,
-      queryFn: (): Promise<CotizacionEnvio | null> => repositorio.cotizar(valor as CotizarEnvioComando),
+      queryFn: (): Promise<CotizacionEnvio | null> =>
+        repositorio.cotizar(valor as CotizarEnvioComando),
       enabled: valor !== null,
       staleTime: 60_000,
       // Un solo reintento, no los tres de la configuración por omisión. Desde que el checkout

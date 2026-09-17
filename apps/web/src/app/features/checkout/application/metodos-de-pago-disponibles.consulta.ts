@@ -12,7 +12,9 @@ import { REPOSITORIO_PEDIDOS } from '../domain/repositorio-pedidos.puerto';
  * mismo patrón que `usarBusquedaProductos`. `criterios()` en `null`
  * (formulario todavía incompleto) deshabilita la consulta.
  */
-export function usarMetodosDePagoDisponibles(criterios: () => MetodosDePagoDisponiblesComando | null) {
+export function usarMetodosDePagoDisponibles(
+  criterios: () => MetodosDePagoDisponiblesComando | null,
+) {
   const repositorio = inject(REPOSITORIO_PEDIDOS);
 
   return injectQuery(() => {

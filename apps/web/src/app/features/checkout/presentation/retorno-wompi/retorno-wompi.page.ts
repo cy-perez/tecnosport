@@ -58,6 +58,9 @@ export class RetornoWompiPage {
     } catch {
       // best-effort a propósito, ver el javadoc de la clase.
     }
-    void this.router.navigate(['../estado'], { relativeTo: this.route, queryParams: { pedidoId, correo } });
+    void this.router.navigate(['../estado'], {
+      relativeTo: this.route,
+      queryParams: { pedidoId, correo },
+    });
   }
 }

@@ -34,7 +34,7 @@ class ResolverEmisionesEnCursoTest {
 
   private static final Instant AHORA = Instant.parse("2026-09-16T23:45:00Z");
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Calle 50 # 40-20", null);
 
   private RepositorioPedidosFalso pedidos;
   private RepositorioEnviosFalso envios;

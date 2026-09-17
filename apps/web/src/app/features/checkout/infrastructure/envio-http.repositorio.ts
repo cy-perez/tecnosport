@@ -27,7 +27,10 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
   async cotizar(comando: CotizarEnvioComando): Promise<CotizacionEnvio | null> {
     const respuesta = await this.cliente.POST('/api/v1/envios/cotizacion', {
       body: {
-        lineas: comando.lineas.map((linea) => ({ varianteId: linea.varianteId, cantidad: linea.cantidad })),
+        lineas: comando.lineas.map((linea) => ({
+          varianteId: linea.varianteId,
+          cantidad: linea.cantidad,
+        })),
         direccion: {
           codigoDaneDepartamento: comando.direccion.codigoDaneDepartamento,
           departamento: comando.direccion.departamento,
@@ -35,6 +38,7 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
           ciudad: comando.direccion.ciudad,
           direccion: comando.direccion.direccion,
           indicaciones: comando.direccion.indicaciones ?? undefined,
+          barrio: comando.direccion.barrio ?? undefined,
         },
       },
     });

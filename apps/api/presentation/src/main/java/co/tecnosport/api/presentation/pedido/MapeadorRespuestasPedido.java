@@ -136,7 +136,8 @@ public class MapeadorRespuestasPedido {
         direccion.codigoDaneCiudad(),
         direccion.ciudad(),
         direccion.direccion(),
-        direccion.indicaciones());
+        direccion.indicaciones(),
+        direccion.barrio());
   }
 
   private DineroRespuesta aRespuesta(Dinero dinero) {

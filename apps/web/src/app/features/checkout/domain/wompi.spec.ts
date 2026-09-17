@@ -14,20 +14,26 @@ function intentoDePrueba(overrides: Partial<IntentoDePago> = {}): IntentoDePago 
 
 describe('urlWebCheckoutWompi', () => {
   it('apunta al Web Checkout hospedado de Wompi', () => {
-    const url = new URL(urlWebCheckoutWompi(intentoDePrueba(), 'https://tecnosport.co/es/checkout/retorno-wompi'));
+    const url = new URL(
+      urlWebCheckoutWompi(intentoDePrueba(), 'https://tecnosport.co/es/checkout/retorno-wompi'),
+    );
 
     expect(url.origin + url.pathname).toBe('https://checkout.wompi.co/p/');
   });
 
   it('multiplica el monto por 100, aunque el peso no se fraccione (ejemplo de Wompi: 10000 = $100 COP)', () => {
-    const url = new URL(urlWebCheckoutWompi(intentoDePrueba({ monto: { valor: 100, moneda: 'COP' } }), 'https://x'));
+    const url = new URL(
+      urlWebCheckoutWompi(intentoDePrueba({ monto: { valor: 100, moneda: 'COP' } }), 'https://x'),
+    );
 
     expect(url.searchParams.get('amount-in-cents')).toBe('10000');
   });
 
   it('lleva los cinco parámetros obligatorios de Wompi con sus nombres exactos', () => {
     const intento = intentoDePrueba();
-    const url = new URL(urlWebCheckoutWompi(intento, 'https://tecnosport.co/es/checkout/retorno-wompi'));
+    const url = new URL(
+      urlWebCheckoutWompi(intento, 'https://tecnosport.co/es/checkout/retorno-wompi'),
+    );
 
     expect(url.searchParams.get('public-key')).toBe('pub_test_xyz');
     expect(url.searchParams.get('currency')).toBe('COP');
@@ -37,8 +43,12 @@ describe('urlWebCheckoutWompi', () => {
   });
 
   it('pasa la URL de retorno tal cual, para volver con el id de transacción', () => {
-    const url = new URL(urlWebCheckoutWompi(intentoDePrueba(), 'https://tecnosport.co/es/checkout/retorno-wompi'));
+    const url = new URL(
+      urlWebCheckoutWompi(intentoDePrueba(), 'https://tecnosport.co/es/checkout/retorno-wompi'),
+    );
 
-    expect(url.searchParams.get('redirect-url')).toBe('https://tecnosport.co/es/checkout/retorno-wompi');
+    expect(url.searchParams.get('redirect-url')).toBe(
+      'https://tecnosport.co/es/checkout/retorno-wompi',
+    );
   });
 });

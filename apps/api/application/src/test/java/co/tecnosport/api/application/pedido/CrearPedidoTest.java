@@ -61,7 +61,7 @@ class CrearPedidoTest {
   private static final Duration RESERVA_TRANSFERENCIA = Duration.ofHours(24);
 
   private static final Direccion DIRECCION_MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
 
   private static final CriteriosContraentrega CRITERIOS_CONTRAENTREGA_PERMISIVOS =
       new CriteriosContraentrega(true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of());

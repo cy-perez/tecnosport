@@ -66,7 +66,7 @@ class AdminEnviosControladorTest {
   private static final Instant DESPACHO = Instant.parse("2026-09-10T14:00:00Z");
 
   private static final Direccion MEDELLIN =
-      new Direccion("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", null);
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioEnvios envios;

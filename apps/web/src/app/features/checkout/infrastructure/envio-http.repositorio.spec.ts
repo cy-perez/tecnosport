@@ -22,6 +22,7 @@ describe('EnvioHttpRepositorio.cotizar', () => {
       ciudad: 'Medellín',
       direccion: 'Circular 4 # 70-20',
       indicaciones: null,
+      barrio: null,
     },
   };
 
@@ -29,7 +30,10 @@ describe('EnvioHttpRepositorio.cotizar', () => {
   // origen. Mismo motivo que en `sesion-http.repositorio.spec.ts`.
   function conRespuesta(respuesta: Response): EnvioHttpRepositorio {
     vi.stubGlobal('window', undefined);
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta),
+    );
     return new EnvioHttpRepositorio();
   }
 

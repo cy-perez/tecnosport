@@ -77,7 +77,10 @@ export class CheckoutStore {
 
   private readonly mutacionRegistrarIdTransaccion = injectMutation(() => ({
     mutationFn: (variables: { referencia: string; idTransaccionWompi: string }) =>
-      this.repositorioPagos.registrarIdTransaccion(variables.referencia, variables.idTransaccionWompi),
+      this.repositorioPagos.registrarIdTransaccion(
+        variables.referencia,
+        variables.idTransaccionWompi,
+      ),
   }));
 
   readonly creando = computed(() => this.mutacionCrear.isPending());

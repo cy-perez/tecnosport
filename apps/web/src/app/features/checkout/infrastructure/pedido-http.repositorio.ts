@@ -18,6 +18,7 @@ function aDireccionRequest(direccion: Direccion | null) {
     ciudad: direccion.ciudad,
     direccion: direccion.direccion,
     indicaciones: direccion.indicaciones ?? undefined,
+    barrio: direccion.barrio ?? undefined,
   };
 }
 

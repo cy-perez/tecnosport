@@ -133,6 +133,7 @@ public class PedidoControlador {
         d.codigoDaneCiudad(),
         d.ciudad(),
         d.direccion(),
-        d.indicaciones());
+        d.indicaciones(),
+        d.barrio());
   }
 }

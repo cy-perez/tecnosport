@@ -30,7 +30,7 @@ class CotizarEnvioTest {
   private static final Instant AHORA = Instant.parse("2026-09-11T12:00:00Z");
 
   private static final Direccion BOGOTA =
-      new Direccion("11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", null);
+      Direccion.sinBarrio("11", "Bogotá, D.C.", "11001", "Bogotá, D.C.", "Calle 72 # 10-34", null);
 
   private static final Paquete PAQUETE_CAMISETA = new Paquete(180, 30, 25, 4);
   private static final Dinero PRECIO_CAMISETA = Dinero.deCop(50_000);
