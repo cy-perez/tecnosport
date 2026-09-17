@@ -2081,9 +2081,14 @@ Coordinadora. Es además la que el selector elige solo, porque `TarifaEnvio.masE
 recolección: `pickup` viene `false` en Envía, así que el día que la recolección por API se conecte
 habrá que decidir si el criterio sigue siendo solo el precio.
 
-**Saldo al cierre: COP 17.938**, de los 50.388 que entraron. Se gastaron 8.200 (Servientrega, una
-guía), 16.400 (Servientrega, multienvío de dos) y 7.850 (Envía, el recorrido de punta a punta); los
-6.663 de Coordinadora volvieron enteros.
+**Saldo al cierre: COP 10.088**, de los 50.388 que entraron. Se gastaron 8.200 (Servientrega, una
+guía), 16.400 (Servientrega, multienvío de dos) y 7.850 dos veces (Envía, el recorrido de punta a
+punta antes y después de la revisión adversarial); los 6.663 de Coordinadora volvieron enteros.
+
+El segundo recorrido no era un lujo: la revisión cambió el orden de las escrituras, añadió una
+migración y quitó la transacción envolvente del endpoint, así que el primero ya no probaba el
+código que quedó. Guía `034054505968`, dos vueltas de la tarea, y las dos columnas nuevas —el actor
+y el estado `SOLICITADA` previo al cobro— verificadas en la base.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
