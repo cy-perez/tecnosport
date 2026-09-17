@@ -289,9 +289,10 @@ mueva hay un paso con nombre propio.
 9. **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias
    guías, o consolidar en un bulto y perder las medidas reales. Es la decisión que hay que
    tomar antes de escribir el despacho (§6.3, §6.4).
-10. **Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
-    cotización entera (§6.4). Elevarlo al mínimo asegurable, agruparlo, o dejar ese pedido
-    solo con recogida.
+10. ~~**Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
+    cotización entera (§6.4).~~ **Decidido el 17 de septiembre de 2026 (`ADR-0035`): se eleva
+    al mínimo asegurable**, en `ArmadorDeBultos` y no en el mapeador, para que el bulto que
+    circula por `application` diga lo que de verdad se declara.
 
 ## 6. Lo que se cerró con la cuenta real
 
@@ -1382,8 +1383,13 @@ valor declarado se sale del rango. Ya se puede poner precio a la decisión.
 
 #### Lo que sigue abierto después de todo esto
 
-- **Qué se hace con el bulto que declara menos de 10.000.** Elevarlo al mínimo, agrupar, u
-  ofrecer solo recogida. Dato de negocio, va al ADR. Está como `TODO` en el mapeador.
+- ~~**Qué se hace con el bulto que declara menos de 10.000.**~~ **Cerrado el 17 de septiembre
+  de 2026 con `ADR-0035`: se eleva al mínimo.** Agrupar obligaba a inventar las dimensiones de
+  una caja combinada; ofrecer solo recogida castigaba un pedido de 400.000 por un cable de 8.000.
+  El `TODO` del mapeador murió con la decisión. **Lo que abrió**: el rango tiene otro extremo
+  —el panel lo acota entre 10.000 y 5.000.000 (§6.5)— y arriba nadie ha medido si la API lo
+  valida. Recortar no sería simétrico a elevar: declarar un celular de seis millones en cinco
+  deja el resto sin asegurar.
 - ~~**`package_type`**: pedir el catálogo a `GET /shipments/packagings` y elegir.~~
   Catálogo leído (§6.5): 59 códigos de embalaje de la ONU, y el que aplica es `4G`,
   caja de cartón. Queda como elección de operación, no como incógnita.

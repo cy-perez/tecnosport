@@ -32,15 +32,25 @@ import java.util.UUID;
  * tiene que usar los buenos. <strong>El valor declarado es al revés</strong> y por eso entra por
  * {@link LineaAEmpacar}: es el monto que la transportadora paga si pierde el paquete, tiene que
  * coincidir con la factura, y esa dice lo que el comprador pagó — no lo que el producto cuesta hoy.
+ *
+ * <p><strong>Con un piso</strong> ({@code adr/0035}): la plataforma de envíos exige un mínimo
+ * asegurable por bulto y rechaza la cotización <em>entera</em> si uno solo queda por debajo, así
+ * que un cable de 8.000 dentro de un pedido de 400.000 dejaba al comprador sin envío a domicilio y
+ * sin un error que lo explicara. El mínimo llega de fuera, en pesos y sin nombre de proveedor:
+ * quién lo exige es problema de {@code bootstrap}.
  */
 public final class ArmadorDeBultos {
 
   private final RepositorioProductos repositorioProductos;
+  private final Dinero valorDeclaradoMinimo;
 
-  public ArmadorDeBultos(RepositorioProductos repositorioProductos) {
+  public ArmadorDeBultos(RepositorioProductos repositorioProductos, Dinero valorDeclaradoMinimo) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
+    this.valorDeclaradoMinimo =
+        Objects.requireNonNull(
+            valorDeclaradoMinimo, "El valor declarado mínimo no puede ser nulo.");
   }
 
   public List<BultoDespachable> armar(List<LineaAEmpacar> lineas) {
@@ -57,12 +67,24 @@ public final class ArmadorDeBultos {
       // El del pedido cuando lo hay —es el que el comprador pagó y contra el que se reclama—, y el
       // del catálogo cuando todavía no hay pedido, que es el caso del checkout.
       Dinero valorDeclarado =
-          Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio);
+          alMenosElMinimo(Objects.requireNonNullElseGet(linea.valorDeclarado(), variante::precio));
       for (int unidad = 0; unidad < linea.cantidad(); unidad++) {
         bultos.add(new BultoDespachable(new Bulto(variante.paquete(), valorDeclarado), contenido));
       }
     }
     return List.copyOf(bultos);
+  }
+
+  /**
+   * El piso se aplica <strong>por bulto y no por pedido</strong>, porque así es como lo valida la
+   * plataforma. Con un bulto por unidad eso significa que tres artículos baratos declaran tres
+   * veces el mínimo, y el total declarado puede superar lo facturado: no nos da nada —la
+   * reclamación se paga contra la factura— y es el precio de cumplirlo ({@code adr/0035}).
+   */
+  private Dinero alMenosElMinimo(Dinero valorDeclarado) {
+    return valorDeclarado.valor().compareTo(valorDeclaradoMinimo.valor()) < 0
+        ? valorDeclaradoMinimo
+        : valorDeclarado;
   }
 
   private Producto producto(UUID varianteId) {

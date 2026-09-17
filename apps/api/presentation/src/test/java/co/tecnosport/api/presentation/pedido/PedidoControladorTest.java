@@ -829,7 +829,8 @@ class PedidoControladorTest {
     @Bean
     CotizarEnvio cotizarEnvio(
         RepositorioProductos repositorioProductos, CotizadorEnvio cotizadorEnvio, Reloj reloj) {
-      return new CotizarEnvio(new ArmadorDeBultos(repositorioProductos), cotizadorEnvio, reloj);
+      return new CotizarEnvio(
+          new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000)), cotizadorEnvio, reloj);
     }
 
     @Bean

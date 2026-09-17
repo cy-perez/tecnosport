@@ -14,6 +14,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <p>El tope y los intentos del sondeo son parámetros técnicos, no datos de negocio: la cotización
  * es asíncrona y hay que decidir cuánto se espera antes de darla por fallida.
+ *
+ * <p>{@code valorDeclaradoMinimo} está aquí y no con lo del envío porque <strong>el mínimo es de la
+ * plataforma</strong> —lo dice su {@code 422}, medido en docs/13 §6.4— y se iría con ella el día
+ * que cambiemos de proveedor. Quien lo aplica no la conoce: {@code ArmadorDeBultos} lo recibe como
+ * pesos y ya ({@code adr/0035}).
  */
 @ConfigurationProperties(prefix = "tecnosport.skydropx")
 public record PropiedadesSkydropx(
@@ -21,12 +26,17 @@ public record PropiedadesSkydropx(
     String clientId,
     String clientSecret,
     int cotizacionTimeoutSegundos,
-    int cotizacionIntentos) {
+    int cotizacionIntentos,
+    long valorDeclaradoMinimo) {
 
   public PropiedadesSkydropx {
     exigir(urlBase, "tecnosport.skydropx.url-base");
     exigir(clientId, "tecnosport.skydropx.client-id");
     exigir(clientSecret, "tecnosport.skydropx.client-secret");
+    if (valorDeclaradoMinimo <= 0) {
+      throw new IllegalStateException(
+          "tecnosport.skydropx.valor-declarado-minimo debe ser mayor que cero.");
+    }
     if (cotizacionTimeoutSegundos <= 0) {
       throw new IllegalStateException(
           "tecnosport.skydropx.cotizacion-timeout-segundos debe ser mayor que cero.");

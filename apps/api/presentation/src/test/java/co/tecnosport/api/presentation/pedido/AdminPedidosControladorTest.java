@@ -709,7 +709,7 @@ class AdminPedidosControladorTest {
         RepositorioProductos repositorioProductos,
         CotizadorEnvio cotizadorEnvio,
         EmisorDeGuias emisorDeGuias) {
-      ArmadorDeBultos armador = new ArmadorDeBultos(repositorioProductos);
+      ArmadorDeBultos armador = new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000));
       return new EmitirGuiaDePedido(
           repositorioPedidos,
           repositorioEmisiones,
