@@ -88,7 +88,8 @@
       "historial": "Historial",
       "acciones": "Acciones",
       "contacto": "Quien recibe",
-      "costo_total": "Costo total del despacho"
+      "costo_total": "Costo total del despacho",
+      "imprimir_etiqueta": "Imprimir etiqueta"
     },
     "acciones": {
       "sin_accion": "Sin acciones disponibles.",
@@ -104,6 +105,9 @@
       "quitar_guia": "Quitar",
       "quitar_guia_accesible": "Quitar la guía {{numero}}",
       "despachar": "Despachar",
+      "emitir_guia": "Emitir guía con la transportadora",
+      "emision_en_curso": "Se le pidió la guía a {{transportadora}} para {{paquetes}} paquete(s). Todavía no existe el número: el pedido pasa a despachado solo cuando la transportadora responda, en unos minutos.",
+      "guia_por_fuera": "O registrar una guía emitida por fuera",
       "marcar_entregado": "Marcar entregado",
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",

@@ -2,7 +2,9 @@ import type { components } from '@tecnosport/contratos';
 import {
   DatosTransferencia,
   Direccion,
+  EmisionDeGuiaAdmin,
   EnvioAdmin,
+  EstadoEmision,
   EstadoPedido,
   HistorialPedidoAdmin,
   LineaPedidoAdmin,
@@ -22,6 +24,7 @@ type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'
 type EnvioDto = components['schemas']['EnvioRespuesta'];
 type HistorialPedidoDto = components['schemas']['HistorialPedidoRespuesta'];
 type PlazoDeEntregaDto = components['schemas']['PlazoDeEntregaRespuesta'];
+type EmisionDeGuiaDto = components['schemas']['EmisionDeGuiaRespuesta'];
 
 /**
  * DTO generado -> modelo propio del panel. Mismo criterio que
@@ -110,6 +113,7 @@ function aEnvio(dto: EnvioDto): EnvioAdmin {
       transportadora: guia.transportadora ?? '',
       guia: guia.guia ?? '',
       costo: { valor: guia.costo?.valor ?? 0, moneda: guia.costo?.moneda ?? 'COP' },
+      urlEtiqueta: guia.urlEtiqueta ?? null,
     })),
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
     despachadoEn: dto.despachadoEn ?? '',
@@ -135,5 +139,19 @@ function aHistorial(dto: HistorialPedidoDto): HistorialPedidoAdmin {
     fecha: dto.fecha ?? '',
     actor: dto.actor ?? '',
     motivo: dto.motivo ?? '',
+  };
+}
+
+/**
+ * La emisión recién pedida. `estado` se afirma por el mismo criterio que el resto de enums de este
+ * mapeador: springdoc lo expone como `string` y el backend garantiza que es el nombre del enum.
+ */
+export function aEmisionDeGuia(dto: EmisionDeGuiaDto): EmisionDeGuiaAdmin {
+  return {
+    id: dto.id ?? '',
+    estado: (dto.estado ?? 'EN_CURSO') as EstadoEmision,
+    transportadora: dto.transportadora ?? '',
+    cuantosEnvios: dto.cuantosEnvios ?? 0,
+    detalle: dto.detalle ?? null,
   };
 }
