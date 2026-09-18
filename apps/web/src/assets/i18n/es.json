@@ -59,7 +59,24 @@
     "lineas": "Nuestras líneas",
     "novedades": "Novedades",
     "ver_todo": "Ver todo el catálogo",
-    "sin_novedades": "Todavía no hay productos publicados."
+    "sin_novedades": "Todavía no hay productos publicados.",
+    "hero": {
+      "eyebrow": "Tienda en Medellín",
+      "titular": "Todo lo que necesitas para moverte.",
+      "apoyo": "Ropa y calzado deportivo, bolsos y tecnología. El costo del envío se cotiza a tu ciudad al comprar, y pagas en línea o contraentrega donde esté disponible.",
+      "cta": {
+        "principal": "Ver el catálogo",
+        "secundario": "Ver tecnología"
+      },
+      "confianza": {
+        "envio": "Envío cotizado a tu ciudad",
+        "contraentrega": "Contraentrega donde esté disponible",
+        "garantia": "Garantía legal en todo"
+      },
+      "imagen": {
+        "alt": "Dos personas con bolsos, un portátil, un celular, una tablet, un parlante y audífonos sobre una mesa, en una terraza al atardecer"
+      }
+    }
   },
   "paginador": {
     "navegacion": "Paginación",

@@ -1,0 +1,68 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
+<section class="corte-hero alto-hero relative flex items-center bg-ts-marca text-ts-sobre-marca">
+  <div
+    class="mx-auto grid w-full max-w-contenido grid-cols-1 items-center gap-48 px-16 py-48 desde-tableta:grid-cols-2 desde-tableta:gap-64 desde-tableta:px-24 desde-tableta:py-96"
+  >
+    <div>
+      <p class="m-0 mb-24 flex items-center gap-12 font-mono text-xs tracking-descriptor uppercase">
+        <span class="inline-block h-4 w-24 bg-ts-acento" aria-hidden="true"></span>
+        {{ 'portada.hero.eyebrow' | transloco }}
+      </p>
+
+      <h1 class="m-0 mb-24 font-display text-3xl leading-titulares">
+        {{ 'portada.hero.titular' | transloco }}
+      </h1>
+
+      <p class="m-0 mb-32 max-w-lectura text-base leading-texto">
+        {{ 'portada.hero.apoyo' | transloco }}
+      </p>
+
+      <div class="mb-48 flex flex-wrap gap-12">
+        <a
+          class="anillo-foco-sobre-acento chaflan inline-flex min-h-tactil items-center justify-center bg-ts-acento px-32 font-medio text-ts-sobre-acento no-underline"
+          [routerLink]="['/', idioma(), 'productos']"
+        >
+          {{ 'portada.hero.cta.principal' | transloco }}
+        </a>
+        <a
+          class="anillo-foco-sobre-marca chaflan inline-flex min-h-tactil items-center justify-center border border-ts-sobre-marca px-32 font-medio text-ts-sobre-marca no-underline"
+          [routerLink]="['/', idioma(), 'productos']"
+          [queryParams]="{ linea: 'TECNOLOGIA' }"
+        >
+          {{ 'portada.hero.cta.secundario' | transloco }}
+        </a>
+      </div>
+
+      <ul
+        class="m-0 flex list-none flex-wrap gap-24 border-t border-ts-sobre-marca p-0 pt-24 text-sm"
+      >
+        <li class="flex items-center gap-8">
+          <ts-icono [icono]="iconoEnvio" clase="size-16" />
+          {{ 'portada.hero.confianza.envio' | transloco }}
+        </li>
+        <li class="flex items-center gap-8">
+          <ts-icono [icono]="iconoContraentrega" clase="size-16" />
+          {{ 'portada.hero.confianza.contraentrega' | transloco }}
+        </li>
+        <li class="flex items-center gap-8">
+          <ts-icono [icono]="iconoGarantia" clase="size-16" />
+          {{ 'portada.hero.confianza.garantia' | transloco }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- `priority` solo aquí: con la banda, el LCP de la portada deja de ser la primera tarjeta de
+         novedades y pasa a ser esta foto (apps/web/CLAUDE.md, NG02955). La rejilla de abajo ya no
+         prioriza ninguna. -->
+    <figure class="chaflan-hero m-0 overflow-hidden">
+      <img
+        ngSrc="/imagenes/portada/hero.webp"
+        [alt]="'portada.hero.imagen.alt' | transloco"
+        width="1200"
+        height="900"
+        priority
+        class="block h-full w-full object-cover"
+      />
+    </figure>
+  </div>
+</section>

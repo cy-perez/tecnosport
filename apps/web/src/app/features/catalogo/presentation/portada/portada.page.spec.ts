@@ -79,6 +79,40 @@ describe('PortadaPage', () => {
     );
   });
 
+  /**
+   * El titular de la banda es el h1 de la portada, y sale de Transloco. Importa porque el archivo
+   * que entregó diseño traía ese mismo titular <b>incrustado en los píxeles de la imagen</b>: ahí no
+   * lo traduce nadie, no lo lee un lector de pantalla y no es un encabezado para nada.
+   */
+  it('el titular de la banda es texto de verdad, no parte de la imagen', async () => {
+    await renderPortada();
+
+    const titulo = screen.getByRole('heading', { level: 1 });
+    expect(titulo.textContent?.trim()).toBe('Todo lo que necesitas para moverte.');
+  });
+
+  /** Y el segundo botón lleva a tecnología, que es la línea que existe: CELULARES dejó de serlo. */
+  it('la banda ofrece el catálogo completo y la línea de tecnología', async () => {
+    await renderPortada();
+
+    expect(screen.getByRole('link', { name: 'Ver tecnología' }).getAttribute('href')).toBe(
+      '/es/productos?linea=TECNOLOGIA',
+    );
+  });
+
+  /**
+   * La foto de la banda es la candidata a LCP, así que es la única con `priority` — y las cuatro
+   * novedades, que lo llevaban cuando la portada no tenía imagen de hero, lo pierden. Priorizar
+   * cinco imágenes es no priorizar ninguna.
+   */
+  it('solo la foto de la banda va priorizada', async () => {
+    const { container } = await renderPortada();
+
+    const conPrioridad = container.querySelectorAll('img[fetchpriority="high"]');
+    expect(conPrioridad).toHaveLength(1);
+    expect(conPrioridad[0].getAttribute('alt')).toContain('bolsos');
+  });
+
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {
     await renderPortada();
 

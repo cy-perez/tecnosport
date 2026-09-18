@@ -290,6 +290,12 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
     il = tip.get("interlineado") or {"titulares": 1.15, "texto": 1.55}
     L.append("  --interlineado-titulares: {};".format(il.get("titulares", 1.15)))
     L.append("  --interlineado-texto: {};".format(il.get("texto", 1.55)))
+    # El tracking y el ancho de linea los decidia tokens.json y no salian a tokens.css, asi que
+    # cada pantalla que los necesitaba escribia un literal o se quedaba sin ellos.
+    for k, v in (tip.get("tracking") or {}).items():
+        L.append("  --tracking-{}: {};".format(k.replace("_", "-"), v))
+    if tip.get("ancho_linea_ch"):
+        L.append("  --ancho-linea: {}ch;".format(tip["ancho_linea_ch"]))
     for k, v in escala(tip)["escala_px"].items():
         L.append("  --texto-{}: {}px;".format(k, v))
     for v in esp:
@@ -308,6 +314,8 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         if isinstance(v, int) and not isinstance(v, bool):
             nombre = k[:-3] if k.endswith("_px") else k
             L.append("  --header-{}: {}px;".format(nombre.replace("_", "-"), v))
+    for k, v in (extra.get("hero_px") or {}).items():
+        L.append("  --hero-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("anchos_px") or {}).items():
         L.append("  --ancho-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("anchos_min_px") or {}).items():
@@ -633,6 +641,7 @@ def main():
              "header": t.get("header") or {},
              "ancho_max_px": t.get("ancho_max_px", 1140),
              "anchos_px": t.get("anchos_px") or {},
+             "hero_px": t.get("hero_px") or {},
              "anchos_min_px": t.get("anchos_min_px") or {},
              "controles_px": t.get("controles_px") or {},
              "movimiento": t.get("movimiento") or {},

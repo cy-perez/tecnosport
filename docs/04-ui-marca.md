@@ -472,6 +472,78 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   tenga su primer consumidor.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 
+## La banda de portada
+
+Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
+entera. Vive en `features/catalogo/presentation/portada/hero/`.
+
+**Tres tokens nuevos, y ninguno es una excepción a la regla dura #2.** El kit que
+entregó diseño el 18 de septiembre de 2026 traía un `.scss` de componente con
+treinta y tantos literales —`13px`, `52px`, `clamp(40px, 5.4vw, 72px)`,
+`rgb(255 255 255 / 62%)`—. Lo que de verdad hacía falta eran tres longitudes, y
+esas entraron por donde entran las longitudes:
+
+| Token | Valor | Qué es |
+|---|---|---|
+| `--hero-corte` | 120 px | El corte a 45° de la esquina inferior derecha de la banda |
+| `--hero-alto-min` | 620 px | El alto mínimo, usado como `min(token, 82vh)` |
+| `--chaflan-hero` | 72 px | El chaflán del marco de la foto |
+
+Los tres salen de `tokens.json` (`hero_px` y `chaflan_px.hero`) y se usan desde
+tres utilidades de `tailwind.css`: `corte-hero`, `alto-hero` y `chaflan-hero`.
+No hay `.scss` de componente: `ADR-0020`.
+
+**El corte y el chaflán se encogen solos** con `min(token, 18vw)` y
+`min(token, 12vw)`. El kit lo resolvía con tres media queries; un `min()` hace lo
+mismo sin puntos de quiebre y sin escalones — en un teléfono de 390 px el corte
+baja a ~70 px en vez de comerse la esquina entera.
+
+### Dos cosas que solo se vieron en el navegador
+
+**1. `chaflan-hero` no podía componerse con `chaflan`.** La idea natural era
+`class="chaflan chaflan-hero"`, con la segunda cambiando solo `--ch`. No
+funciona: `.chaflan` vive en `tokens.css`, **fuera de toda capa**, y una
+declaración sin capa le gana a cualquier utilidad de Tailwind aunque el selector
+empate. El marco salía con el chaflán de un botón, `npm run clases` daba la clase
+por buena —existe— y no hacía nada. `chaflan-hero` repite el `clip-path` entero y
+se usa sola.
+
+**2. La banda va en `--color-marca`, no en `--color-primario`.** En tema oscuro
+`primario` **es el ámbar**: la banda entera se teñía y el botón de acento
+desaparecía dentro de ella. Es exactamente lo que este documento ya decía en
+"Modo oscuro" —las franjas grandes no se vuelven ámbar— y el pie ya usaba el par
+correcto, `bg-ts-marca` con `text-ts-sobre-marca`. Ninguna prueba lo habría
+dicho.
+
+### La foto
+
+1200×900, WebP con JPEG de respaldo, en `public/imagenes/portada/`. Es la única
+imagen de la portada con `priority`: al entrar ella, las cuatro tarjetas de
+novedades lo pierden — priorizar cinco imágenes es no priorizar ninguna.
+
+**Se recortó del archivo que entregó el negocio**, y el motivo vale para la
+próxima vez: el archivo era un banner terminado, con el titular, el subtítulo y un
+botón "COMPRAR AHORA" incrustados en los píxeles. Texto dentro de una imagen no se
+traduce, no lo lee un lector de pantalla, no escala en un teléfono y no es un
+encabezado para nada; el botón, además, parecía pulsable sin serlo. Se recortó la
+fotografía —la escena, sin la franja de texto— y el texto lo pone el HTML.
+
+### Lo que el texto puede decir
+
+Las afirmaciones del hero son publicidad y **obligan** (Ley 1480). Las cuatro que
+traía el kit se revisaron una por una contra lo que el sistema puede sostener:
+
+- ~~"Diez años surtiendo a Medellín"~~ y ~~"Precios de distribuidor"~~ no están en
+  ningún documento del proyecto. Fuera.
+- ~~"Envío a todo Colombia"~~ es falsa hoy: el checkout tiene
+  `ENVIO_SIN_COBERTURA` y ofrece la recogida cuando no hay transporte. Se cambió
+  por "Envío cotizado a tu ciudad", que es lo que de verdad hace.
+- ~~"Desde $189.900"~~ era un precio escrito en la plantilla. Fuera: envejece solo
+  y no hay endpoint que dé el mínimo del catálogo.
+
+Lo que queda —envío cotizado, contraentrega donde esté disponible, garantía
+legal— es lo mismo que prometen los términos publicados.
+
 ## Imágenes del catálogo
 
 - Producto, imagen principal: 1:1, 1000 x 1000 px, fondo claro uniforme.

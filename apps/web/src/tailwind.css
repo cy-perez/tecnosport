@@ -163,6 +163,16 @@
   --leading-titulares: var(--interlineado-titulares);
   --leading-texto: var(--interlineado-texto);
 
+  /* El kit los decidía en `tokens.json` y no salían a `tokens.css`, así que hasta
+     el 18 de septiembre de 2026 no existía forma de usarlos sin escribir un
+     literal. `descriptor` es el de los rótulos en mayúsculas y monoespaciada. */
+  --tracking-descriptor: var(--tracking-descriptor);
+  --tracking-titulares: var(--tracking-titulares-mayusculas);
+
+  /* El ancho de línea cómodo del kit, 68ch. Un párrafo más ancho se lee peor, y
+     antes cada pantalla lo capaba a ojo o no lo capaba. */
+  --container-lectura: var(--ancho-linea);
+
   --text-xs: var(--texto-xs);
   --text-sm: var(--texto-sm);
   --text-base: var(--texto-base);
@@ -371,4 +381,60 @@
     opacity: 0;
     transform: translateY(calc(var(--esp-8) * -1));
   }
+}
+
+/* LA BANDA DE PORTADA. Tres utilidades para la única pieza del sitio que ocupa
+   la pantalla entera, y las tres apuntan a un token: la regla dura #2 no admite
+   un píxel suelto, así que el corte, el alto y el chaflán del marco viven en
+   `tokens.json` (`hero_px`, `chaflan_px.hero`) y aquí solo se usan.
+
+   Por qué utilidades y no un `.scss` del componente: ADR-0020. Y por qué no un
+   valor arbitrario en la plantilla: un `clip-path` con cinco pares de
+   coordenadas dentro de un `[...]` de Tailwind es ilegible y se rompe al
+   tocarlo. */
+@utility corte-hero {
+  /* El corte a 45° de la esquina inferior derecha: la firma del isotipo usada
+     como estructura de la pieza, no como detalle de esquina.
+
+     El `min()` con un ancho relativo es lo que lo hace responsivo sin tres media
+     queries, que es como venía del kit. En un teléfono de 390 px, 120 px de
+     corte se comen la esquina entera; con `18vw` la diagonal baja a ~70 px y
+     sigue leyéndose como la misma firma. En escritorio manda el token. */
+  --corte: min(var(--hero-corte), 18vw);
+
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--corte)),
+    calc(100% - var(--corte)) 100%,
+    0 100%
+  );
+}
+
+@utility chaflan-hero {
+  /* El mismo corte que `.chaflan`, a la escala de una foto que ocupa media pantalla en vez de la de
+     un botón. Se repite el `clip-path` en vez de componerse con `.chaflan` cambiándole `--ch`, y no
+     es duplicación gratuita: `.chaflan` vive en `tokens.css`, **fuera de toda capa**, y una
+     declaración sin capa le gana a cualquier utilidad de Tailwind por mucho que el selector empate.
+     Componiéndolas, `--ch` volvía a `--chaflan-md` y el marco salía con el chaflán de un botón: la
+     clase existía, `npm run clases` la daba por buena, y no hacía nada. */
+  /* Mismo criterio que el corte: en un teléfono el chaflán de 72 px se come la
+     foto, así que por debajo de ~600 px de ancho manda la pantalla. */
+  --ch: min(var(--chaflan-hero), 12vw);
+  border-radius: 0;
+  clip-path: polygon(
+    var(--ch) 0,
+    100% 0,
+    100% calc(100% - var(--ch)),
+    calc(100% - var(--ch)) 100%,
+    0 100%,
+    0 var(--ch)
+  );
+}
+
+@utility alto-hero {
+  /* El `min()` es lo que importa: en una pantalla baja manda la pantalla, no el
+     token. `82vh` es una proporción de viewport y no un píxel, así que no es el
+     literal que la regla dura #2 prohíbe. */
+  min-block-size: min(var(--hero-alto-min), 82vh);
 }
