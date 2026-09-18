@@ -104,6 +104,32 @@ class AvisarPlazosDeEntregaVencidosTest {
     assertEquals(List.of(pedido.id()), pedidos.reclamos());
   }
 
+  /**
+   * El javadoc de {@code avisar} decía que un fallo dejaba la marca puesta y el correo sin salir,
+   * "que es el lado por el que se prefiere fallar". Esa preferencia se eligió sabiendo que el
+   * adaptador se tragaba los fallos de SMTP, o sea, sin alternativa: desde {@code adr/0044} hay
+   * una, y es reintentar. Un plazo incumplido hay que decírselo a quien compró.
+   */
+  @Test
+  void siElCorreoFallaDevuelveElReclamoYLaVueltaSiguienteReintenta() {
+    Pedido pedido = pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);
+    correos.hazQueFalle();
+    AvisarPlazosDeEntregaVencidos casoDeUso = casoDeUso(PASADO_EL_PLAZO);
+
+    ResultadoVigilanciaPlazos primera = casoDeUso.ejecutar();
+
+    assertEquals(new ResultadoVigilanciaPlazos(1, 0), primera);
+    assertTrue(correos.enviados().isEmpty());
+
+    // Y la vuelta siguiente lo vuelve a traer, que es lo que el reclamo devuelto hace posible.
+    correos.queVuelvaAFuncionar();
+    ResultadoVigilanciaPlazos segunda = casoDeUso.ejecutar();
+
+    assertEquals(new ResultadoVigilanciaPlazos(1, 1), segunda);
+    assertEquals(1, correos.enviados().size());
+    assertEquals(pedido.correo(), correos.enviados().get(0).destinatario());
+  }
+
   @Test
   void noVuelveAEscribirEnLaSiguienteVuelta() {
     pedidoEn(MetodoPago.NEQUI, EstadoPedido.PAGADO);

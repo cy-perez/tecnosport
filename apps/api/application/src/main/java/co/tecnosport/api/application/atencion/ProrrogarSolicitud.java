@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.atencion;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -62,10 +63,17 @@ public final class ProrrogarSolicitud {
   }
 
   private void avisar(SolicitudAtencion solicitud, String motivo) {
-    enviadorDeCorreo.enviar(
-        solicitud.correo(),
-        textos.texto(TextoDeCorreo.ATENCION_PRORROGA_ASUNTO, solicitud.numeroRadicado().valor()),
-        textos.texto(
-            TextoDeCorreo.ATENCION_PRORROGA_CUERPO, solicitud.numeroRadicado().valor(), motivo));
+    try {
+      enviadorDeCorreo.enviar(
+          solicitud.correo(),
+          textos.texto(TextoDeCorreo.ATENCION_PRORROGA_ASUNTO, solicitud.numeroRadicado().valor()),
+          textos.texto(
+              TextoDeCorreo.ATENCION_PRORROGA_CUERPO, solicitud.numeroRadicado().valor(), motivo));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 }

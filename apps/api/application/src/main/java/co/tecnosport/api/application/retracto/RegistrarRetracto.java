@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.retracto;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -77,18 +78,26 @@ public final class RegistrarRetracto {
   }
 
   /**
-   * El acuse va dentro de la misma transacción que abre el controlador. La intención era que un
-   * correo caído tampoco dejara la solicitud guardada —el acuse es parte de lo que demuestra que el
-   * trámite arrancó el día que dice— y <b>eso no es lo que pasa</b>: el adaptador de producción se
-   * traga el fallo y no lo relanza. Ver {@link
-   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}, que lo explica entero y dice cuál
-   * es la salida. Aquí queda dicho para que nadie vuelva a apoyarse en una garantía que no existe.
+   * El acuse va dentro de la misma transacción que abre el controlador, y un correo que no sale
+   * <b>no</b> deshace la solicitud. Durante cuatro fases este comentario prometía lo contrario —"si
+   * el correo falla, tampoco se guarda"— apoyándose en una garantía que el adaptador no daba: se
+   * tragaba el fallo. Ahora el adaptador lanza y la decisión se toma aquí, escrita, y es la
+   * contraria a la que aquel comentario prometía: <b>quien se retractó dentro de los cinco días
+   * hábiles se retractó</b>, y perder esa constancia porque el servidor de correo estuviera caído
+   * mueve la fecha del trámite, que es el dato que la Ley 1480 mide. Ver {@code adr/0044}.
    */
   private void enviarAcuse(Pedido pedido) {
-    enviadorDeCorreo.enviar(
-        pedido.correo(),
-        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_ASUNTO),
-        textos.texto(TextoDeCorreo.RETRACTO_ACUSE_CUERPO, pedido.numeroPedido().valor()));
+    try {
+      enviadorDeCorreo.enviar(
+          pedido.correo(),
+          textos.texto(TextoDeCorreo.RETRACTO_ACUSE_ASUNTO),
+          textos.texto(TextoDeCorreo.RETRACTO_ACUSE_CUERPO, pedido.numeroPedido().valor()));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 
   /**

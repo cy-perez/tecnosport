@@ -3,6 +3,7 @@ package co.tecnosport.api.application.envio;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
@@ -167,6 +168,29 @@ class AvisarRevisionPendienteTest {
     assertEquals(1, correos.enviados());
   }
 
+  /**
+   * Y si el correo no sale, los reclamos se devuelven. Sin esto la bandeja se quedaba llena, con
+   * las marcas puestas, y ese aviso no volvía a armarse nunca — lo contrario exacto de para lo que
+   * existe este vigilante. Ver {@code adr/0044}.
+   */
+  @Test
+  void si_el_correo_falla_devuelve_los_reclamos_y_la_vuelta_siguiente_reintenta() {
+    sembrarGuiaQuieta(9, "SE-9", AHORA.minus(Duration.ofHours(30)));
+    correos.hazQueFalle();
+
+    ResultadoVigilanciaRevision primera = caso.ejecutar();
+
+    assertEquals(1, primera.vencidas());
+    assertEquals(0, primera.avisadas(), "no se avisó de nada");
+    assertEquals(0, correos.enviados());
+
+    correos.queVuelvaAFuncionar();
+    ResultadoVigilanciaRevision segunda = caso.ejecutar();
+
+    assertEquals(1, segunda.avisadas(), "el reclamo devuelto deja que se reintente");
+    assertEquals(1, correos.enviados());
+  }
+
   /** Un correo con todo, y no uno por fila: diez correos seguidos se leen igual que ninguno. */
   @Test
   void manda_un_solo_correo_con_todo_lo_que_hay() {
@@ -229,8 +253,22 @@ class AvisarRevisionPendienteTest {
     private final List<String> destinatarios = new ArrayList<>();
     private final List<String> cuerpos = new ArrayList<>();
 
+    private boolean falla;
+
+    void hazQueFalle() {
+      this.falla = true;
+    }
+
+    void queVuelvaAFuncionar() {
+      this.falla = false;
+    }
+
     @Override
     public void enviar(CorreoElectronico destinatario, String asunto, String cuerpo) {
+      if (falla) {
+        throw new CorreoNoEnviadoException(
+            new IllegalStateException("el servidor de correo no respondió"));
+      }
       destinatarios.add(destinatario.valor());
       cuerpos.add(cuerpo);
     }

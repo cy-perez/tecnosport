@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
@@ -57,13 +58,21 @@ public final class AvisarSaldoBajo {
     if (actual.valor().compareTo(umbral.valor()) >= 0) {
       return ResultadoVigilanciaSaldo.suficiente(actual);
     }
-    enviadorDeCorreo.enviar(
-        destinatario,
-        textos.texto(TextoDeCorreo.ENVIO_SALDO_BAJO_ASUNTO, actual.valor().toPlainString()),
-        textos.texto(
-            TextoDeCorreo.ENVIO_SALDO_BAJO_CUERPO,
-            actual.valor().toPlainString(),
-            umbral.valor().toPlainString()));
+    try {
+      enviadorDeCorreo.enviar(
+          destinatario,
+          textos.texto(TextoDeCorreo.ENVIO_SALDO_BAJO_ASUNTO, actual.valor().toPlainString()),
+          textos.texto(
+              TextoDeCorreo.ENVIO_SALDO_BAJO_CUERPO,
+              actual.valor().toPlainString(),
+              umbral.valor().toPlainString()));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // No se relanza para que la tarea pueda registrar lo que sí sabe —el saldo real y que el
+      // aviso no salió— en vez de morir con un error genérico del planificador y perder el dato.
+      // Esta vigilancia no lleva memoria de lo ya avisado, así que el siguiente ciclo lo reintenta
+      // solo: aquí no hay reclamo que devolver.
+      return ResultadoVigilanciaSaldo.avisoFallido(actual);
+    }
     return ResultadoVigilanciaSaldo.avisado(actual);
   }
 }

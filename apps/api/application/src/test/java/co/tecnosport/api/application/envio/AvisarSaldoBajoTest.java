@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
@@ -79,6 +80,41 @@ class AvisarSaldoBajoTest {
   }
 
   /** Un saldo en cero sí es una alarma, y es el caso que de verdad ocurrió. */
+  /**
+   * El desenlace que faltaba. {@code avisado} está documentado como "si salió el correo" y devolvía
+   * {@code true} tanto si salía como si no, porque el adaptador se tragaba los fallos. Ahora hay un
+   * cuarto desenlace que lo dice, y la tarea lo registra en {@code error}: el despacho está a punto
+   * de detenerse y nadie lo va a leer en su bandeja. Ver {@code adr/0044}.
+   */
+  @Test
+  void si_el_correo_falla_lo_dice_en_vez_de_darse_por_avisado() {
+    correos.hazQueFalle();
+
+    ResultadoVigilanciaSaldo resultado =
+        casoDeUso(() -> Optional.of(Dinero.deCop(10_088))).ejecutar();
+
+    assertFalse(resultado.avisado(), "no se avisó, y no se dice que sí");
+    assertTrue(resultado.avisoFallido());
+    assertEquals(Dinero.deCop(10_088), resultado.saldo().orElseThrow(), "y el saldo sí se supo");
+    assertEquals(0, correos.enviados());
+  }
+
+  /**
+   * Esta vigilancia no lleva memoria de lo ya avisado, así que el ciclo siguiente lo reintenta
+   * solo: aquí no hay reclamo que devolver, y por eso no hay un {@code liberar} que probar.
+   */
+  @Test
+  void sin_memoria_el_ciclo_siguiente_reintenta_solo() {
+    correos.hazQueFalle();
+    AvisarSaldoBajo casoDeUso = casoDeUso(() -> Optional.of(Dinero.deCop(10_088)));
+    casoDeUso.ejecutar();
+
+    correos.queVuelvaAFuncionar();
+
+    assertTrue(casoDeUso.ejecutar().avisado());
+    assertEquals(1, correos.enviados());
+  }
+
   @Test
   void un_saldo_en_cero_avisa() {
     assertTrue(casoDeUso(() -> Optional.of(Dinero.deCop(0))).ejecutar().avisado());
@@ -89,8 +125,22 @@ class AvisarSaldoBajoTest {
 
     private final List<String> cuerpos = new ArrayList<>();
 
+    private boolean falla;
+
+    void hazQueFalle() {
+      this.falla = true;
+    }
+
+    void queVuelvaAFuncionar() {
+      this.falla = false;
+    }
+
     @Override
     public void enviar(CorreoElectronico destinatario, String asunto, String cuerpo) {
+      if (falla) {
+        throw new CorreoNoEnviadoException(
+            new IllegalStateException("el servidor de correo no respondió"));
+      }
       cuerpos.add(cuerpo);
     }
 

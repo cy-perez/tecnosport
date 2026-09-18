@@ -31,6 +31,12 @@ public class RepositorioAvisosJpa implements RepositorioAvisosDeRevision {
       where aviso_revision.avisado_en < :novedad
       """;
 
+  /** Ver {@code RepositorioAvisosDeRevision.liberarAviso}: se borra, no se restaura. */
+  private static final String SQL_LIBERAR =
+      """
+      delete from aviso_revision where tipo = :tipo and referencia = :referencia
+      """;
+
   private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioAvisosJpa(NamedParameterJdbcTemplate jdbc) {
@@ -51,5 +57,16 @@ public class RepositorioAvisosJpa implements RepositorioAvisosDeRevision {
     parametros.put("novedad", Timestamp.from(novedad));
     parametros.put("ahora", Timestamp.from(ahora));
     return jdbc.update(SQL_RECLAMAR, parametros) == 1;
+  }
+
+  @Override
+  public void liberarAviso(TipoDeRevision tipo, UUID referencia) {
+    Objects.requireNonNull(tipo, "El tipo de lo revisado no puede ser nulo.");
+    Objects.requireNonNull(referencia, "La referencia no puede ser nula.");
+
+    Map<String, Object> parametros = new HashMap<>();
+    parametros.put("tipo", tipo.name());
+    parametros.put("referencia", referencia);
+    jdbc.update(SQL_LIBERAR, parametros);
   }
 }

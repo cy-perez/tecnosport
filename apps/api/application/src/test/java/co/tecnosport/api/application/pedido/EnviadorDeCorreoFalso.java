@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import java.util.ArrayList;
@@ -39,10 +40,12 @@ final class EnviadorDeCorreoFalso implements EnviadorDeCorreo {
   public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
     if (fallaUnaVez) {
       fallaUnaVez = false;
-      throw new IllegalStateException("el servidor de correo no respondió");
+      throw new CorreoNoEnviadoException(
+          new IllegalStateException("el servidor de correo no respondió"));
     }
     if (falla) {
-      throw new IllegalStateException("el servidor de correo no respondió");
+      throw new CorreoNoEnviadoException(
+          new IllegalStateException("el servidor de correo no respondió"));
     }
     enviados.add(new CorreoEnviado(destinatario, asunto, cuerpoHtml));
   }

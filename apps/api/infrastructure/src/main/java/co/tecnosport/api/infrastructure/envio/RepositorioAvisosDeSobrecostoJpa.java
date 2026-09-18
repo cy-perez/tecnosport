@@ -30,6 +30,11 @@ public class RepositorioAvisosDeSobrecostoJpa implements RepositorioAvisosDeSobr
       on conflict (clave) do nothing
       """;
 
+  private static final String SQL_LIBERAR =
+      """
+      delete from aviso_sobrecosto where clave = :clave
+      """;
+
   private final NamedParameterJdbcTemplate jdbc;
 
   public RepositorioAvisosDeSobrecostoJpa(NamedParameterJdbcTemplate jdbc) {
@@ -45,5 +50,11 @@ public class RepositorioAvisosDeSobrecostoJpa implements RepositorioAvisosDeSobr
     parametros.put("clave", clave);
     parametros.put("ahora", Timestamp.from(ahora));
     return jdbc.update(SQL_RECLAMAR, parametros) == 1;
+  }
+
+  @Override
+  public void liberarAviso(String clave) {
+    Objects.requireNonNull(clave, "La clave del sobrecosto no puede ser nula.");
+    jdbc.update(SQL_LIBERAR, Map.of("clave", clave));
   }
 }

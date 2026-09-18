@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.atencion;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -70,12 +71,19 @@ public final class RadicarSolicitud {
    * registra en enero pertenece al año en que llegó, igual que su plazo.
    */
   private void enviarAcuse(SolicitudAtencion solicitud) {
-    enviadorDeCorreo.enviar(
-        solicitud.correo(),
-        textos.texto(TextoDeCorreo.ATENCION_ACUSE_ASUNTO, solicitud.numeroRadicado().valor()),
-        textos.texto(
-            TextoDeCorreo.ATENCION_ACUSE_CUERPO,
-            solicitud.numeroRadicado().valor(),
-            solicitud.asunto()));
+    try {
+      enviadorDeCorreo.enviar(
+          solicitud.correo(),
+          textos.texto(TextoDeCorreo.ATENCION_ACUSE_ASUNTO, solicitud.numeroRadicado().valor()),
+          textos.texto(
+              TextoDeCorreo.ATENCION_ACUSE_CUERPO,
+              solicitud.numeroRadicado().valor(),
+              solicitud.asunto()));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 }

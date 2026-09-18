@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.usuario;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
@@ -112,9 +113,21 @@ public final class RegistrarUsuario {
     repositorioTokens.guardar(token);
 
     String enlace = urlBaseVerificacion + "?token=" + token.id();
-    enviadorDeCorreo.enviar(
-        correo,
-        textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_ASUNTO),
-        textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_CUERPO, enlace));
+    try {
+      enviadorDeCorreo.enviar(
+          correo,
+          textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_ASUNTO),
+          textos.texto(TextoDeCorreo.USUARIO_VERIFICACION_CUERPO, enlace));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga a propósito: la cuenta, su autorización de datos y su token ya están guardados, y
+      // deshacer los tres porque el servidor de correo esté caído le devolvería a quien se registró
+      // un error por algo que ya le salió bien. El token de verificación vive lo que diga su
+      // vigencia, así que el correo se puede volver a pedir mientras tanto.
+      //
+      // Lo que esto deja abierto y hay que decir sin adornos: hoy no hay ningún "reenviar
+      // verificación", así que una cuenta creada el día que el SMTP falló se queda sin verificar
+      // hasta que su dueño lo pida por otro canal. Es la deuda de este catch, y la cierra el mismo
+      // mecanismo que la de los demás: una bandeja de salida (ver EnviadorDeCorreo).
+    }
   }
 }

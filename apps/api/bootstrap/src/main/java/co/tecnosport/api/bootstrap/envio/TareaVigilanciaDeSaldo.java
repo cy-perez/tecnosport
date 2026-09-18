@@ -15,11 +15,13 @@ import org.springframework.stereotype.Component;
  * <p>Sin transacción, como las otras tareas de envío: no escribe nada: pregunta y, si hace falta,
  * manda un correo. Un correo enviado no se deshace con un rollback.
  *
- * <p><strong>Los tres desenlaces se registran distinto, y el del medio es el que importa.</strong>
- * "Hay plata" no se registra —sería una línea cada doce horas diciendo que todo está bien—; "queda
- * poco" va en {@code warn} porque el despacho está a punto de detenerse; y "no se pudo preguntar"
- * va en {@code warn} también, aunque no sea una alarma de dinero: repetido durante un día significa
- * que esta vigilancia no está vigilando nada, y eso no puede verse igual que una cuenta con fondos.
+ * <p><strong>Los cuatro desenlaces se registran distinto.</strong> "Hay plata" no se registra
+ * —sería una línea cada doce horas diciendo que todo está bien—; "queda poco" va en {@code warn}
+ * porque el despacho está a punto de detenerse; "no se pudo preguntar" va en {@code warn} también,
+ * aunque no sea una alarma de dinero, porque repetido durante un día significa que esta vigilancia
+ * no está vigilando nada; y "queda poco y encima no se pudo avisar" va en {@code error}, que es el
+ * único de los cuatro que lo merece: el correo era toda la vigilancia, y esta línea es lo único que
+ * queda de ella.
  */
 @Component
 public class TareaVigilanciaDeSaldo {
@@ -40,6 +42,13 @@ public class TareaVigilanciaDeSaldo {
     ResultadoVigilanciaSaldo resultado = avisarSaldoBajo.ejecutar();
     if (resultado.saldo().isEmpty()) {
       log.warn("No se pudo consultar el saldo de la plataforma de envios.");
+      return;
+    }
+    if (resultado.avisoFallido()) {
+      log.error(
+          "Saldo de la plataforma de envios por debajo del umbral: {}, y el aviso no salio. Sin"
+              + " credito no se emite ninguna guia.",
+          resultado.saldo().orElseThrow().valor());
       return;
     }
     if (resultado.avisado()) {

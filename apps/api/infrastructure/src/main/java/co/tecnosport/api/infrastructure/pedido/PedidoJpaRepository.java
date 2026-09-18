@@ -57,4 +57,9 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
   @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query("update PedidoJpaEntity p set p.comprobanteEnviadoEn = null where p.id = :pedidoId")
   int liberarComprobante(@Param("pedidoId") UUID pedidoId);
+
+  /** Devuelve el reclamo de un aviso de plazo que no se pudo mandar. */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("update PedidoJpaEntity p set p.avisoPlazoEntregaEnviadoEn = null where p.id = :pedidoId")
+  int liberarAvisoDePlazo(@Param("pedidoId") UUID pedidoId);
 }

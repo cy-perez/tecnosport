@@ -115,6 +115,12 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     comprobados.remove(pedidoId);
   }
 
+  /** Lo mismo para el aviso de plazo, y por el mismo motivo. */
+  @Override
+  public void liberarAvisoDePlazo(UUID pedidoId) {
+    avisados.remove(pedidoId);
+  }
+
   /** Que otra instancia le gane el reclamo a ese pedido. */
   void queOtroGaneElReclamoDe(UUID pedidoId) {
     this.perdedorDelReclamo = pedidoId;

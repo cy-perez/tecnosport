@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.usuario;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
@@ -78,9 +79,22 @@ public final class SolicitarRecuperacion {
     repositorioTokens.guardar(token);
 
     String enlace = urlBaseRecuperacion + "?token=" + token.id();
-    enviadorDeCorreo.enviar(
-        correo,
-        textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_ASUNTO),
-        textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_CUERPO, enlace));
+    try {
+      enviadorDeCorreo.enviar(
+          correo,
+          textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_ASUNTO),
+          textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_CUERPO, enlace));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga a propósito, y es el único sitio donde tragarlo protege algo. Este caso de uso
+      // responde igual exista o no la cuenta; solo llega hasta aquí cuando sí existe, así que un
+      // fallo de SMTP que subiera hasta un 500 se vería exactamente en las cuentas reales y en
+      // ninguna otra. Eso es el oráculo de enumeración que todo el diseño de arriba evita
+      // (docs/08-seguridad-legal.md, OWASP), reintroducido por la puerta de atrás.
+      //
+      // El precio: quien pidió recuperar su clave no recibe el enlace y no se entera. Puede
+      // volver a pedirlo —el limitador de arriba deja varios intentos por ventana— y la constancia
+      // queda en el registro del adaptador, que es lo único que application puede ofrecer aquí:
+      // no tiene slf4j en el classpath.
+    }
   }
 }

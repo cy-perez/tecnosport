@@ -18,4 +18,12 @@ public interface RepositorioAvisosDeSobrecosto {
    * SobrecostoDeEnvio#clave()}.
    */
   boolean reclamarAviso(String clave, Instant ahora);
+
+  /**
+   * Devuelve un reclamo cuyo correo no salió, para que el siguiente ciclo lo vuelva a intentar.
+   * Aquí importa más que en la bandeja: este es el aviso de que la transportadora nos cobró de más,
+   * y con {@code do nothing} un reclamo perdido no se vuelve a ganar jamás — ese cobro quedaba sin
+   * avisar para siempre y solo aparecía en el extracto.
+   */
+  void liberarAviso(String clave);
 }

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.retracto;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -123,21 +124,33 @@ public final class RegistrarReintegro {
   }
 
   /**
-   * Mismo caso que el acuse de {@code RegistrarRetracto}, y aquí pesa más: este es el correo que le
-   * dice al comprador que su dinero salió. La garantía que este comentario prometía —si el correo
-   * falla, tampoco se guarda la constancia— <b>no existe</b>: el adaptador se traga el fallo. O sea
-   * que hoy puede quedar un reintegro registrado que el comprador nunca supo, y la única señal es
-   * el registro de error del adaptador. Ver {@link
+   * Mismo caso que el acuse de {@code RegistrarRetracto}, y es el que más incomoda: este es el
+   * correo que le dice al comprador que su dinero salió. Se traga igual, y por la misma razón
+   * llevada al extremo — <b>un reintegro registrado que nadie comunicó es malo; un reintegro
+   * ejecutado del que no queda constancia es peor</b>, porque el dinero ya se movió y la fila que
+   * lo demuestra sería la que se pierde. Ver {@code adr/0044}.
+   *
+   * <p>Esto deja vivo el sentido contrario, que el catch no arregla y ningún catch arregla: el
+   * correo sale <b>antes</b> del commit, así que un fallo al comprometer deja a quien compró
+   * leyendo "reintegramos el dinero de tu pedido" sin que exista el reintegro. Lo cierra una
+   * bandeja de salida, y está escrito en {@link
    * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
   private void enviarConstancia(Pedido pedido, Dinero monto) {
-    enviadorDeCorreo.enviar(
-        pedido.correo(),
-        textos.texto(TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
-        textos.texto(
-            TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
-            monto.valor().toPlainString(),
-            Dinero.MONEDA,
-            pedido.numeroPedido().valor()));
+    try {
+      enviadorDeCorreo.enviar(
+          pedido.correo(),
+          textos.texto(TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
+          textos.texto(
+              TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
+              monto.valor().toPlainString(),
+              Dinero.MONEDA,
+              pedido.numeroPedido().valor()));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 }

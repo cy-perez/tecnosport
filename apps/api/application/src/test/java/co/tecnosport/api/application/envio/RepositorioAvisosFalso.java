@@ -20,13 +20,26 @@ final class RepositorioAvisosFalso implements RepositorioAvisosDeRevision {
   @Override
   public boolean reclamarAviso(
       TipoDeRevision tipo, UUID referencia, Instant novedad, Instant ahora) {
-    String llave = tipo.name() + ":" + referencia;
+    String llave = llave(tipo, referencia);
     Instant anterior = avisados.get(llave);
     if (anterior != null && !anterior.isBefore(novedad)) {
       return false;
     }
     avisados.put(llave, ahora);
     return true;
+  }
+
+  /**
+   * Borra la marca, igual que el {@code delete} de la sentencia real. Restaurar el instante
+   * anterior sería un doble más listo que lo que imita: el adaptador tampoco puede.
+   */
+  @Override
+  public void liberarAviso(TipoDeRevision tipo, UUID referencia) {
+    avisados.remove(llave(tipo, referencia));
+  }
+
+  private static String llave(TipoDeRevision tipo, UUID referencia) {
+    return tipo.name() + ":" + referencia;
   }
 
   int avisados() {
