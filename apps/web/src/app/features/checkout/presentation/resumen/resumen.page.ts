@@ -330,6 +330,19 @@ export class ResumenPage {
   );
 
   /**
+   * La cuarta respuesta: la plataforma rechazó los datos de este envío. Se cuenta aparte de
+   * `errorCotizacion()` porque ahí el texto invita a volver a intentar y aquí eso sería mentira —
+   * Skydropx deduplica las cotizaciones por contenido, así que el reintento trae el mismo rechazo.
+   * Y aparte de `sinCobertura()` porque la dirección puede estar perfecta.
+   */
+  protected readonly cotizacionRechazada = computed(
+    () =>
+      this.criteriosCotizacion() !== null &&
+      this.cotizacion.isSuccess() &&
+      this.cotizacion.data()?.tipo === 'COTIZACION_RECHAZADA',
+  );
+
+  /**
    * "No se pudo preguntar", el otro lado de `sinCobertura`. Tenía que existir
    * aquí y no solo en el texto: sin él, una cotización caída no pintaba nada en
    * absoluto —ni costo ni motivo— y el total de abajo se quedaba en el subtotal,

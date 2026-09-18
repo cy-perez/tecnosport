@@ -161,7 +161,19 @@ export class ConfirmarPage {
   protected readonly bloqueadoPorCobertura = computed(() => !this.totalConocido());
 
   /**
-   * Los tres motivos por los que no se puede mandar el pedido, cada uno con su texto. El del
+   * La cuarta razón para quedarse sin domicilio: la plataforma rechazó los datos del envío. Aquí
+   * importa más que en el resumen, porque el texto de esta pantalla es el que dice qué hacer — y
+   * "vuelve a intentarlo en unos minutos" sería falso: el reintento trae el mismo rechazo.
+   */
+  protected readonly cotizacionRechazada = computed(
+    () =>
+      this.muestraEnvio() &&
+      this.cotizacion.isSuccess() &&
+      this.cotizacion.data()?.tipo === 'COTIZACION_RECHAZADA',
+  );
+
+  /**
+   * Los cuatro motivos por los que no se puede mandar el pedido, cada uno con su texto. El del
    * artículo no asegurable además lo nombra: sin el nombre, "quita lo que no se puede enviar" es
    * una adivinanza, y el comprador está mirando una lista de productos.
    */
@@ -177,6 +189,9 @@ export class ConfirmarPage {
           : 'checkout.confirmar.articulos_no_asegurables',
         { articulos: this.nombresNoAsegurables() },
       ];
+    }
+    if (this.cotizacionRechazada()) {
+      return ['checkout.confirmar.envio_rechazado'];
     }
     return ['checkout.confirmar.envio_no_calculado'];
   }

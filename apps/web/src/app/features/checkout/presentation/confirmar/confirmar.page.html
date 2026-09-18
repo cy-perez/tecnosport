@@ -89,6 +89,12 @@
                 : 'checkout.resumen.articulos_no_asegurables'
               ) | transloco: { articulos: nombresNoAsegurables() }
             }}</span>
+          } @else if (cotizacionRechazada()) {
+            <!-- Rechazo de la plataforma: no se dice "intenta de nuevo" porque el reintento trae el
+                 mismo rechazo — las cotizaciones se deduplican por contenido. -->
+            <span class="text-ts-error" role="alert">{{
+              'checkout.resumen.envio_rechazado' | transloco
+            }}</span>
           } @else {
             <!-- Un `@else` solo, como estaba, le decía "no llegamos a esa dirección" también a
                  quien se topó con una caída nuestra: lo mandaba a corregir una dirección que
