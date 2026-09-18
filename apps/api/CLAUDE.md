@@ -43,6 +43,17 @@ hay proveedor en el classpath ni un solo `@NotNull` en la capa—, así que lo q
 valida un DTO es su propio constructor compacto. Comprobado el 18 de septiembre
 de 2026.
 
+**Y quitar un `@NotNull` cambia el contrato publicado, aunque no valide nada.**
+springdoc deduce de él qué propiedades marca como `required` en el OpenAPI, así
+que al quitarlo el campo pasó a opcional y el cliente TypeScript generado dejó de
+exigirlo en tiempo de compilación — mientras el servidor seguía rechazando con 422
+el cuerpo que lo omitía. Lo atrapó el trabajo de contratos de la CI, que compara el
+OpenAPI vivo contra `packages/contratos/src/tipos.ts`. Un campo obligatorio de tipo
+referencia necesita, entonces, **dos cosas distintas**: el `Objects.requireNonNull`
+del constructor compacto, que es quien de verdad protege, y un
+`@Schema(requiredMode = REQUIRED)`, que no valida nada y solo hace que el contrato
+diga lo que el servidor exige.
+
 `presentation` no depende de `infrastructure`. Si un controlador necesita algo de
 infraestructura, falta un caso de uso.
 

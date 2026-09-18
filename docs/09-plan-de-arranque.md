@@ -4741,6 +4741,18 @@ La prueba de esa guarda afirma sobre el **código de error** y no solo sobre el 
 pasaba igual por la transición inválida del pedido: una prueba que se aprueba a sí misma. Detalle en
 `adr/0043`.
 
+**Y quitar el `@NotNull` decorativo tuvo un efecto que nadie vio venir**, porque no era de
+validación: springdoc deducía de él qué propiedades son `required` en el OpenAPI, así que el campo
+pasó a opcional en el contrato publicado y el cliente TypeScript generado dejó de exigirlo en tiempo
+de compilación — mientras el servidor seguía rechazando con 422 el cuerpo que lo omitiera. Lo atrapó
+**el trabajo de contratos de la integración continua**, que compara el OpenAPI vivo contra el cliente
+commiteado, y es la primera vez que ese guardián dispara sobre algo real.
+
+La corrección es un `@Schema(requiredMode = REQUIRED)`, que no valida nada y solo hace que el
+contrato diga lo que el servidor exige. O sea que un campo obligatorio de tipo referencia necesita
+**dos anotaciones con oficios distintos**: la guarda que protege y la que documenta. Y que este
+proyecto tenía un guardián menos decorativo de lo que parecía: el que compara el contrato.
+
 ## La revisión adversarial de los 122 commits (2026-09-18)
 
 La última pasada de los tres revisores fue el **10 de septiembre** (`3b612e5`). Desde entonces
