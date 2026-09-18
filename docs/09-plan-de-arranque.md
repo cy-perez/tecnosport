@@ -4347,6 +4347,131 @@ escrito en el ADR y con una prueba propia para que cambiarlo tenga que ser delib
   comprador que reintente algo que no va a funcionar. Separar "no responde" de "rechazó nuestro
   cuerpo" es lo único de los dos que se arregla del lado nuestro.
 
+## La guía que quedaba viva al cancelar (2026-09-17)
+
+`ADR-0038`, escrito el 18 de septiembre al cerrar la fase: la decisión se tomó, se implementó y se
+revisó sin documento, y el cierre la encontró viviendo solo en el código y en un mensaje de commit.
+
+**Era un agujero alcanzable desde el panel, no un caso raro.** La guía se emite estando el pedido
+`EN_PREPARACION`, `EN_PREPARACION → CANCELADO` es una transición válida, y `CancelarPedido` no tocaba
+`Envio` ni `EmisionDeGuia` en ninguna línea. Cancelar un pedido con la guía ya pedida dejaba una guía
+viva y cobrable de un pedido que ya no existe: un paquete que la transportadora recoge, entrega y
+factura sin que nadie lo note hasta el extracto.
+
+La regla que ordena el caso de uso: **anular no puede tumbar la cancelación.** Si la plataforma se
+niega o no contesta, el pedido queda cancelado igual, el inventario vuelve igual y el reintegro se
+registra igual. Un comprador sin su plata porque un proveedor no contestó es peor que una guía
+huérfana que alguien anula a mano.
+
+Y de ahí sale lo interesante: **`application` no tiene registro de logs por diseño, así que ese fallo
+no tiene dónde esconderse** — o se guarda como un hecho o se pierde. Se guarda, con dos estados
+nuevos de `EstadoEmision`: `ANULADA` y `SIN_ANULAR`. El segundo entra a la bandeja de revisión **sin
+que la bandeja aprenda nada nuevo**, porque esa pantalla pregunta por `exigeOjoHumano()` y no por una
+lista de nombres (`ADR-0034`). Es la primera vez que una decisión de esta fase se apoya en una
+anterior sin tocarla, que es la señal de que aquella quedó bien puesta.
+
+## Nadie se queda sin saldo sin enterarse (2026-09-17)
+
+`GET /api/v1/finance/credits` existía desde el 14 de septiembre y no lo usaba nadie. Mientras tanto
+la cuenta llegó a **COP 388**, y la forma de enterarse fue que la emisión de un pedido pagado no
+salió.
+
+`AvisarSaldoBajo` mira el saldo cada doce horas y avisa por debajo de 50.000 — el dato de negocio está
+razonado en `docs/07-infra-gcp.md`: es lo que alcanza para unas seis guías baratas o dos caras, y da
+margen para pedir una recarga que tarda días. Sin tabla y **sin memoria de lo ya avisado**, a
+diferencia del aviso de la bandeja: aquél habla de filas concretas que siguen ahí; este habla de un
+único número, y repetirlo mientras siga bajo *es* el mensaje.
+
+La distinción que sostiene el aviso: **"no se pudo preguntar" no manda ningún correo.** Un proveedor
+caído media hora no es una cuenta sin fondos, y confundirlos enseña a ignorar el aviso — que es la
+forma en que un vigilante se muere sin que nadie lo apague.
+
+## Un rechazo del proveedor no es una caída (2026-09-18)
+
+`ADR-0039`. El adaptador contaba **cualquier** respuesta que no fuera 2xx como proveedor no
+disponible, y eso era falso por dos lados: le echaba la culpa a quien sí había contestado, y le pedía
+al comprador reintentar algo que no puede funcionar, porque Skydropx deduplica las cotizaciones por
+contenido y la misma pregunta trae el mismo rechazo.
+
+Es la forma que tenía el valor declarado por debajo del mínimo antes de `ADR-0035`: **una venta que no
+ocurre y ningún error que la explique.** Aquel ADR quitó una causa; no quitó la clase de fallo.
+
+Ahora es `409 COTIZACION_RECHAZADA`, con el mismo criterio que sus dos hermanos de negocio: la
+solicitud está bien formada, el servicio está arriba, y reintentar no lo arregla. Las tres respuestas
+terminales se diferencian en lo único que le importa a quien las lee — **quién tiene que hacer algo**:
+la dirección la cambia el comprador, el artículo no asegurable no lo arregla nadie, y esto lo
+arreglamos nosotros. Por eso es el único de los cinco motivos que se registra en `error`, con los
+nombres de los campos rechazados y nunca sus valores.
+
+**Tres cosas que no eran obvias y quedaron dentro:**
+
+- **No todo `4xx` es nuestro cuerpo.** Un `401` es un despliegue con credenciales que no sirven y un
+  `429` es el límite de dos peticiones por segundo; los dos siguen siendo temporales. La emisión
+  tenía el defecto simétrico —metía *todo* `4xx` en datos rechazados— y mandaba a buscar un defecto
+  en un pedido que estaba bien. Se arregló el mismo mapeo en los dos caminos, porque es una sola
+  regla escrita dos veces de dos formas distintas.
+- **El sondeo no clasifica igual que la creación.** Ahí el cuerpo ya fue aceptado; lo único que puede
+  caducar entre los dos pasos es el token.
+- **`MetodosDePagoDisponibles` lo atrapa con sus dos hermanas.** Antes, un cuerpo rechazado tumbaba
+  esa consulta con un 503: el comprador no se quedaba sin contraentrega, se quedaba **sin lista de
+  medios de pago**, mirando un checkout roto.
+
+**Verificado en el navegador**, que es donde se ven las dos cosas que las pruebas no atrapan. Con un
+Skydropx de mentira devolviendo `422`, el recorrido completo —portada, producto, carrito, resumen—
+pinta "No podemos calcular el envío a domicilio de este pedido. Puedes recoger tu pedido en nuestro
+punto de Medellín", el total sigue diciendo "Falta el costo de envío" en vez de un subtotal
+disfrazado, y **`Continuar` no avanza**. En el registro de la API, una sola línea en `error` con
+`campos rechazados: declared_amount, parcels[0].weight`.
+
+## El sobrecosto deja de ser invisible (2026-09-18)
+
+Último tramo de la plataforma que nadie había mirado. `finance/extra-charges` es por donde la
+transportadora **reliquida un peso mal declarado**, semanas después de la entrega y contra el crédito
+de la cuenta: el pedido guarda el flete de la tarifa y el dinero que salió fue otro.
+
+**Primero se midió, y sin gastar un peso** (`docs/13` §6.16). La ruta con guion responde `200` con
+`{data, meta}` y el sobre coincide campo por campo con el esquema; la de guion bajo es un `404`. La
+cuenta **no tiene ningún cobro** —`total_count: 0` con cinco guías emitidas—, así que la forma de un
+ítem queda *documentada y no medida*, y así está escrito. Tres cosas de ese esquema cambiaron el
+diseño: `amount` es texto y sin moneda, `charge_type` es el nombre de la clase de Rails, y **no hay
+ningún identificador del cargo** — hay dos del envío y ninguno del cobro.
+
+De eso último sale la decisión que más costó: **la identidad para "de esto ya avisé" se compone**
+(envío, tipo, monto, fecha de detección) y lleva el monto a propósito. Si la transportadora
+reliquida por otra cifra, la clave cambia y se avisa otra vez; enterarse dos veces de algo de dinero
+es el error que se prefiere. El estado no entra, que es la otra cara: pasar de pendiente a pagado no
+es una novedad que nadie tenga que mirar.
+
+Y una que se decidió no tomando nada: **sin umbral.** Se avisa de todos los cobros porque son raros y
+cada uno sale del crédito en silencio; una cifra mínima sería un dato de negocio inventado. Lo que
+evita el ruido es la tabla, no un umbral.
+
+**Lo que no hace, a propósito:** entrar en el margen del pedido. Eso exige decidir si el sobrecosto
+vive en la guía o en el envío —el cargo es por envío, la discrepancia de peso por paquete— y un
+endpoint que lo devuelva, y va con el panel administrativo, donde ya espera la comisión de recaudo
+por lo mismo.
+
+**Y el guardián de los textos de correo hizo exactamente lo que su javadoc prometía.** El contexto no
+levantó porque la línea del cobro necesita seis argumentos y el relleno de la comprobación tenía
+cuatro: señaló la clave y el marcador sin rellenar **en el arranque**, en vez de dejar que un correo a
+medias llegara a alguien.
+
+**Comprobado además en una aplicación corriendo**, y no solo en pruebas: con el mismo Skydropx de
+mentira, la tarea programada disparó a los siete minutos, pidió `GET /api/v1/finance/extra-charges`,
+recibió un `404` y concluyó "no se pudo preguntar" sin escribirle a nadie. Es el camino entero
+—propiedades, bean, tarea, adaptador— ejercido de punta a punta.
+
+### Lo que queda abierto, y nace aquí
+
+- **Los tres campos de peso no están en este endpoint.** `real_weight`, `original_weight` y
+  `discrepancy_weight` los documenta el cuerpo del *webhook* (§6.4), no la respuesta de los cobros;
+  lo más probable es que vivan dentro de `metadata`, que el esquema no detalla. Se sabrá con el primer
+  cobro real: `VOLCAR=1 node tools/sonda-sobrecostos.mjs`. Hasta entonces el correo dice cuánto y de
+  qué guía, y no cuántos gramos de más — que es lo que haría falta para corregir la medida del
+  catálogo sin abrir el panel.
+- **El aviso no nombra el pedido**, solo la guía. Atarlo exige dos puertos más y pertenece al mismo
+  paso que el margen.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
