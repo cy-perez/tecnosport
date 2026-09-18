@@ -115,6 +115,11 @@
       "marcar_entregado": "Marcar entregado",
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",
+      "modalidad_recaudo": "Por dónde entró el dinero",
+      "modalidades_recaudo": {
+        "creditos": "Créditos de la plataforma (sin comisión)",
+        "banco": "Consignación bancaria (con comisión)"
+      },
       "conciliar_recaudo": "Conciliar recaudo"
     },
     "cancelacion": {

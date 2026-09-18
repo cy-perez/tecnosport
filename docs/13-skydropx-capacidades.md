@@ -300,8 +300,24 @@ mueva hay un paso con nombre propio.
    advertencia para el día que alguna transportadora la ofrezca: la lista de oficinas de
    Inter Rapidísimo incluye oficinas de ciudades vecinas, así que la elegida hay que
    cotejarla contra el DANE del pedido antes de aceptarla.
-6. **Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
-   jueves. Es una decisión contable, no técnica.
+6. ~~**Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
+   jueves. Es una decisión contable, no técnica.~~ **Decidido el 18 de septiembre de 2026
+   (`ADR-0043`), y la respuesta no es ninguna de las dos: la cuenta tiene las dos, y cada
+   envío registra por cuál entró.**
+
+   Lo que la pregunta daba por hecho era falso, y medirlo cambió la forma: **las dos
+   modalidades son maneras de retirar el saldo acumulado, no un campo del envío** (§3). El
+   cuerpo de la guía no lleva nada que diga dónde cae el dinero, así que una pantalla que
+   "eligiera" por envío sería una intención que nadie ejecuta — el mismo error que el método
+   de pago elegido por el comprador, que resultó ser una intención (`docs/09`, 2026-09-14).
+
+   Por eso la modalidad se pide **al conciliar**, que es cuando quien concilia la está viendo
+   en el panel. La única regla que el dominio comprueba es la que sí es suya: **los créditos
+   no cobran comisión**, así que una conciliación a créditos con un número encima se rechaza.
+
+   **No desbloquea la conciliación automática**: sigue faltando el vocabulario de
+   `on_delivery_status` (§6.17). Lo que gana es que, cuando ese dato aparezca, la comisión ya
+   no será el segundo bloqueo.
 7. ~~**Cancelar la guía** cuando se cancela un pedido ya despachado.~~ **Decidido el 17 de
    septiembre de 2026.** El endpoint y su cuerpo quedaron confirmados el 15 (§6.4); lo que
    faltaba —cuándo se dispara y quién lo autoriza— se cerró mirando el grafo de estados y no

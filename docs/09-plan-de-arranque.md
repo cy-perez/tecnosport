@@ -4532,6 +4532,13 @@ abierta. Con "créditos" la conciliación se automatiza entera porque la comisi�
 "banco", lo máximo que se puede automatizar es el aviso. **Decidir eso cambia qué se construye**, y
 por eso no se construyó a medias mientras tanto.
 
+**Cerrado el 18 de septiembre de 2026 (`ADR-0043`), y la respuesta era una tercera:** la cuenta
+tiene las dos modalidades, así que cada envío registra por cuál entró su recaudo. Lo que hubo que
+medir antes de construir es que **elegirlo por envío no se puede** —las dos modalidades son formas
+de retirar el saldo, no un campo de la guía—, así que la modalidad se pide al conciliar, que es
+cuando quien concilia la está viendo. La automatización sigue esperando el vocabulario de
+`on_delivery_status`; lo que ya no la bloquea es la comisión.
+
 ## Envía emite: lo que no se puede emitir es una contraentrega con Envía (2026-09-18)
 
 La única emisión que se gastó, y contestó limpio. Este documento y `docs/13` llevaban un día

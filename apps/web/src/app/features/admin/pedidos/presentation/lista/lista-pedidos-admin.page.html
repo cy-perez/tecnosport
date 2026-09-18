@@ -414,6 +414,12 @@
                         [formGroup]="formularioRecaudo(pedido.id)"
                         (submit)="$event.preventDefault(); conciliarRecaudo(pedido)"
                       >
+                        <ts-select
+                          [idCampo]="'modalidad-recaudo-' + pedido.id"
+                          [label]="'admin.pedidos.acciones.modalidad_recaudo' | transloco"
+                          [opciones]="opcionesModalidadRecaudo()"
+                          formControlName="modalidadRecaudo"
+                        />
                         <ts-campo
                           [idCampo]="'comision-' + pedido.id"
                           tipo="number"

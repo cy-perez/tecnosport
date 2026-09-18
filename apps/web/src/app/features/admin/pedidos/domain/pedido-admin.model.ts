@@ -179,6 +179,17 @@ export interface FiltroPedidosAdmin {
  */
 export type MotivoCancelacion = 'NO_DISPONIBILIDAD' | 'PLAZO_INCUMPLIDO';
 
+/**
+ * Por donde entro el dinero que la transportadora recaudo en la puerta: creditos de la plataforma
+ * (sin comision, inmediato) o consignacion bancaria (con comision, los jueves).
+ *
+ * No es una instruccion que el sitio le de a nadie: la eleccion se hace en el panel de la plataforma
+ * al retirar el saldo, y aqui se registra lo que ya paso. Ver `adr/0043`.
+ */
+export type ModalidadRecaudo = 'CREDITOS' | 'BANCO';
+
+export const MODALIDADES_RECAUDO: readonly ModalidadRecaudo[] = ['CREDITOS', 'BANCO'];
+
 export const MOTIVOS_CANCELACION: readonly MotivoCancelacion[] = [
   'NO_DISPONIBILIDAD',
   'PLAZO_INCUMPLIDO',

@@ -115,6 +115,11 @@
       "marcar_entregado": "Mark delivered",
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
+      "modalidad_recaudo": "Where the money came in",
+      "modalidades_recaudo": {
+        "creditos": "Platform credits (no fee)",
+        "banco": "Bank transfer (with fee)"
+      },
       "conciliar_recaudo": "Reconcile collection"
     },
     "cancelacion": {

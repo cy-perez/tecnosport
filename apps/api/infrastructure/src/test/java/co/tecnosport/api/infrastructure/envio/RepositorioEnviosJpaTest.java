@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
+import co.tecnosport.api.domain.envio.ModalidadRecaudo;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
@@ -369,12 +370,15 @@ class RepositorioEnviosJpaTest {
     repositorio.guardar(envio);
 
     Instant conciliadoEn = despachadoEn.plusSeconds(3600);
-    envio.conciliarRecaudo(Dinero.deCop(5_000), conciliadoEn);
+    envio.conciliarRecaudo(ModalidadRecaudo.BANCO, Dinero.deCop(5_000), conciliadoEn);
     repositorio.guardar(envio);
 
     Envio encontrado = repositorio.buscarPorPedidoId(pedidoId).orElseThrow();
     assertThat(encontrado.comisionRecaudo()).contains(Dinero.deCop(5_000));
     assertThat(encontrado.recaudoConciliadoEn()).contains(conciliadoEn);
+    // La modalidad va y vuelve: es la columna nueva de la V52, y sin ella la conciliación no diría
+    // por cuál de las dos vías entró el dinero.
+    assertThat(encontrado.modalidadRecaudo()).contains(ModalidadRecaudo.BANCO);
   }
 
   /**

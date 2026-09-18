@@ -7,6 +7,7 @@ import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
+  ModalidadRecaudo,
   MotivoCancelacion,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -83,10 +84,14 @@ export class PedidosAdminHttpRepositorio implements RepositorioPedidosAdmin {
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo registrar el rechazo en la entrega'));
   }
 
-  async conciliarRecaudo(pedidoId: string, comisionRecaudo: number): Promise<PedidoAdmin> {
+  async conciliarRecaudo(
+    pedidoId: string,
+    modalidadRecaudo: ModalidadRecaudo,
+    comisionRecaudo: number,
+  ): Promise<PedidoAdmin> {
     const respuesta = await this.cliente.POST('/api/v1/admin/pedidos/{id}/recaudo', {
       params: { path: { id: pedidoId } },
-      body: { comisionRecaudo },
+      body: { modalidadRecaudo, comisionRecaudo },
     });
     return aPedidoAdmin(desempaquetar(respuesta, 'no se pudo conciliar el recaudo'));
   }

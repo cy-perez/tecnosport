@@ -31,6 +31,8 @@ import {
   ESTADOS_QUE_ADMITEN_CANCELACION,
   EstadoPedido,
   FiltroPedidosAdmin,
+  MODALIDADES_RECAUDO,
+  ModalidadRecaudo,
   MOTIVOS_CANCELACION,
   MotivoCancelacion,
   PedidoAdmin,
@@ -90,6 +92,7 @@ interface FormularioDespacho {
 }
 
 interface FormularioRecaudo {
+  modalidadRecaudo: FormControl<ModalidadRecaudo>;
   comisionRecaudo: FormControl<number | null>;
 }
 
@@ -99,6 +102,11 @@ interface FormularioCancelacion {
   medio: FormControl<string>;
   comprobante: FormControl<string>;
 }
+
+const CLAVE_MODALIDAD_RECAUDO: Record<ModalidadRecaudo, string> = {
+  CREDITOS: 'admin.pedidos.acciones.modalidades_recaudo.creditos',
+  BANCO: 'admin.pedidos.acciones.modalidades_recaudo.banco',
+};
 
 const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
   NO_DISPONIBILIDAD: 'admin.pedidos.cancelacion.motivos.no_disponibilidad',
@@ -265,6 +273,10 @@ export class ListaPedidosAdminPage {
     let form = this.formulariosRecaudo.get(pedidoId);
     if (!form) {
       form = new FormGroup({
+        // Créditos por omisión porque es la modalidad sin comisión: si alguien envía sin mirar, el
+        // registro dice "no hubo comisión", que es lo que el formulario deja verdadero sin tocar
+        // nada. El servidor rechaza créditos con comisión encima.
+        modalidadRecaudo: new FormControl<ModalidadRecaudo>('CREDITOS', { nonNullable: true }),
         comisionRecaudo: new FormControl<number | null>(null, [
           Validators.required,
           Validators.min(0),
@@ -288,6 +300,13 @@ export class ListaPedidosAdminPage {
     }
     return form;
   }
+
+  protected readonly opcionesModalidadRecaudo = computed<OpcionSelect[]>(() =>
+    MODALIDADES_RECAUDO.map((modalidad) => ({
+      valor: modalidad,
+      etiqueta: this.traducir()(CLAVE_MODALIDAD_RECAUDO[modalidad]),
+    })),
+  );
 
   protected readonly opcionesMotivoCancelacion = computed<OpcionSelect[]>(() =>
     MOTIVOS_CANCELACION.map((motivo) => ({
@@ -424,6 +443,7 @@ export class ListaPedidosAdminPage {
     await this.ejecutar(() =>
       this.acciones.conciliarRecaudo.mutateAsync({
         pedidoId: pedido.id,
+        modalidadRecaudo: valores.modalidadRecaudo,
         comisionRecaudo: valores.comisionRecaudo ?? 0,
       }),
     );

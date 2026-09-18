@@ -29,8 +29,12 @@ sin tener un tercero cobrando en la mitad, lo que quiere es otra cosa.
 **separadas** de las del dominio, con mapeador explícito. Cliente de Wompi.
 Adaptador de Cloud Storage. Migraciones. Configuración de seguridad.
 
-**presentation** — Controladores REST, DTO de entrada y salida, Bean Validation,
+**presentation** — Controladores REST, DTO de entrada y salida,
 `@RestControllerAdvice`. Un DTO nunca es una entidad de dominio.
+**Ojo: aquí no hay Bean Validation.** Este documento decía que sí y era falso —no
+hay proveedor en el classpath ni un solo `@NotNull` en la capa—, así que lo que
+valida un DTO es su propio constructor compacto. Comprobado el 18 de septiembre
+de 2026.
 
 `presentation` no depende de `infrastructure`. Si un controlador necesita algo de
 infraestructura, falta un caso de uso.
@@ -169,6 +173,18 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   —el resultado es el seguro— pero **no se puede razonar sobre "el primitivo
   protege por omisión"**: si un campo tiene que ser opcional, hay que declararlo
   como envoltorio (`Boolean`) y decidir el valor a mano.
+  **Matizado el 18 de septiembre de 2026, y el matiz importa porque invierte la
+  conclusión para la mitad de los casos: eso vale para un primitivo.** Un
+  componente de **tipo referencia** que falte —un enum, un `String`, un
+  `Boolean`— **no revienta nada: llega en nulo**. Medido mandando un cuerpo sin
+  `modalidadRecaudo` a `POST /admin/pedidos/{id}/recaudo`: la petición pasó de
+  largo y murió más adelante por otra razón. O sea que "el record protege por
+  omisión" es falso justo donde más se usa, y un DTO con un campo obligatorio de
+  tipo referencia necesita su propia guarda —un `Objects.requireNonNull` en el
+  constructor compacto, que Jackson envuelve y sale como 422
+  `HTTP_MESSAGE_NOT_READABLE`— porque **aquí no hay Bean Validation**: no hay
+  proveedor en el classpath (lo dice `OptionalValidatorFactoryBean` al arrancar),
+  así que un `@NotNull` no haría nada.
 - **`@AuthenticationPrincipal` solo se resuelve cuando `@EnableWebSecurity`
   está activo en el contexto** (lo registra `WebMvcSecurityConfiguration`,
   que `@EnableWebSecurity` importa). Como eso vive en `bootstrap`

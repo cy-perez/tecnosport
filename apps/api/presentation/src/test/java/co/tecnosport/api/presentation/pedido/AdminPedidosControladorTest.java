@@ -589,6 +589,65 @@ class AdminPedidosControladorTest {
         .andExpect(jsonPath("$.items[0].id").value(pendiente.id().toString()));
   }
 
+  /**
+   * Un cuerpo sin la modalidad no se cuela como nula. No lo impide ninguna anotación —esta capa no
+   * tiene proveedor de Bean Validation— sino Jackson 3, que no rellena los componentes que falten
+   * de un {@code record}. La prueba existe porque la garantía viene de un detalle del serializador
+   * y no de algo escrito en el DTO.
+   */
+  @Test
+  void conciliarRecaudoSinModalidadNoSeAcepta() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedidos.guardar(pedido);
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/recaudo", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"comisionRecaudo":5000}
+                    """))
+        .andExpect(status().isUnprocessableContent())
+        // El código importa: sin él, la prueba pasaría igual por la transición inválida del pedido
+        // y no por la deserialización, que es lo que aquí se quiere demostrar.
+        .andExpect(jsonPath("$.codigo").value("HTTP_MESSAGE_NOT_READABLE"));
+  }
+
+  /**
+   * Los créditos de la plataforma no cobran comisión (docs/13 §3): una conciliación que diga las
+   * dos cosas está mal en una de ellas, y el dominio la rechaza antes de tocar el envío.
+   */
+  @Test
+  void conciliarACreditosConComisionDevuelve422() throws Exception {
+    Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
+    pedido.transicionar(EstadoPedido.EN_PREPARACION, "admin:test", "verificado", Instant.now());
+    pedido.transicionar(EstadoPedido.DESPACHADO, "admin:test", "despachado", Instant.now());
+    pedido.transicionar(EstadoPedido.ENTREGADO, "admin:test", "entregado", Instant.now());
+    pedido.transicionar(
+        EstadoPedido.RECAUDO_PENDIENTE, "admin:test", "recaudo pendiente", Instant.now());
+    pedidos.guardar(pedido);
+    envios.guardar(
+        Envio.crear(
+            pedido.id(),
+            List.of(GuiaEnvio.crear("Servientrega", "SE123457", Dinero.deCop(15_000))),
+            Instant.now()));
+    autenticarComoAdmin();
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/pedidos/{id}/recaudo", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"modalidadRecaudo":"CREDITOS","comisionRecaudo":5000}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+
+    assertTrue(envios.buscarPorPedidoId(pedido.id()).orElseThrow().recaudoConciliadoEn().isEmpty());
+  }
+
   @Test
   void conciliarRecaudoRegistraLaComisionEnElEnvio() throws Exception {
     Pedido pedido = pedidoConMetodo(MetodoPago.CONTRAENTREGA);
@@ -611,7 +670,7 @@ class AdminPedidosControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"comisionRecaudo":5000}
+                    {"modalidadRecaudo":"BANCO","comisionRecaudo":5000}
                     """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.estado").value("RECAUDO_CONCILIADO"))

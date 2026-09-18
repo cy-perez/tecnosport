@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.EventoSeguimiento;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
+import co.tecnosport.api.domain.envio.ModalidadRecaudo;
 import co.tecnosport.api.infrastructure.envio.entidad.EnvioJpaEntity;
 import co.tecnosport.api.infrastructure.envio.entidad.EventoSeguimientoJpaEntity;
 import co.tecnosport.api.infrastructure.envio.entidad.GuiaEnvioJpaEntity;
@@ -79,7 +80,8 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
             envio.pedidoId(),
             envio.despachadoEn(),
             envio.comisionRecaudo().map(Dinero::valor).orElse(null),
-            envio.recaudoConciliadoEn().orElse(null)));
+            envio.recaudoConciliadoEn().orElse(null),
+            envio.modalidadRecaudo().map(Enum::name).orElse(null)));
     for (GuiaEnvio guia : envio.guias()) {
       guias.saveAndFlush(
           new GuiaEnvioJpaEntity(
@@ -151,7 +153,10 @@ public class RepositorioEnviosJpa implements RepositorioEnvios {
         guias.findByEnvioIdOrderByNumeroAsc(entidad.getId()).stream().map(this::aGuia).toList(),
         entidad.getDespachadoEn(),
         entidad.getComisionRecaudo() == null ? null : Dinero.deCop(entidad.getComisionRecaudo()),
-        entidad.getRecaudoConciliadoEn());
+        entidad.getRecaudoConciliadoEn(),
+        entidad.getModalidadRecaudo() == null
+            ? null
+            : ModalidadRecaudo.valueOf(entidad.getModalidadRecaudo()));
   }
 
   private GuiaEnvio aGuia(GuiaEnvioJpaEntity entidad) {

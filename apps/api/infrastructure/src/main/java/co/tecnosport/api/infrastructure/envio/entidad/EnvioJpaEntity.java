@@ -26,6 +26,10 @@ public class EnvioJpaEntity {
   @Column(name = "recaudo_conciliado_en")
   private Instant recaudoConciliadoEn;
 
+  /** Texto y no un enum de JPA: el check de la V52 es el que acota los valores. */
+  @Column(name = "modalidad_recaudo")
+  private String modalidadRecaudo;
+
   protected EnvioJpaEntity() {}
 
   public EnvioJpaEntity(
@@ -33,12 +37,14 @@ public class EnvioJpaEntity {
       UUID pedidoId,
       Instant despachadoEn,
       BigDecimal comisionRecaudo,
-      Instant recaudoConciliadoEn) {
+      Instant recaudoConciliadoEn,
+      String modalidadRecaudo) {
     this.id = id;
     this.pedidoId = pedidoId;
     this.despachadoEn = despachadoEn;
     this.comisionRecaudo = comisionRecaudo;
     this.recaudoConciliadoEn = recaudoConciliadoEn;
+    this.modalidadRecaudo = modalidadRecaudo;
   }
 
   public UUID getId() {
@@ -59,5 +65,9 @@ public class EnvioJpaEntity {
 
   public Instant getRecaudoConciliadoEn() {
     return recaudoConciliadoEn;
+  }
+
+  public String getModalidadRecaudo() {
+    return modalidadRecaudo;
   }
 }
