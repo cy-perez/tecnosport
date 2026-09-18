@@ -232,6 +232,45 @@ class ResolverEmisionesEnCursoTest {
   }
 
   /** Una emisión que ya se resolvió no se vuelve a mirar. */
+  /**
+   * Una emisión que lleva más de un día en curso sin desenlace se da por estancada.
+   *
+   * <p>Antes no tenía ninguna salida por tiempo: se quedaba abierta para siempre, no salía en la
+   * bandeja —{@code exigeOjoHumano()} no cubre {@code EN_CURSO}— y bloqueaba toda emisión nueva de
+   * ese pedido en silencio, con saldo posiblemente comprometido. Lo levantó una revisión
+   * adversarial.
+   */
+  @Test
+  void una_emision_que_lleva_un_dia_en_curso_se_da_por_estancada() {
+    Pedido pedido = pedidoEnPreparacion();
+    Instant ayer = AHORA.minus(25, java.time.temporal.ChronoUnit.HOURS);
+    EmisionDeGuia vieja =
+        EmisionDeGuia.solicitar(pedido.id(), "Servientrega", "rate-viejo", "admin:test", ayer);
+    vieja.aceptada(List.of("8bf880c9"), ayer);
+    emisiones.guardar(vieja);
+    emisor.paraElEnvio("8bf880c9", new LecturaDeEnvioEmitido.Sigue());
+
+    ResultadoResolucionEmisiones resultado = caso.ejecutar();
+
+    assertEquals(1, resultado.abandonadas());
+    assertEquals(EstadoEmision.INDETERMINADA, vieja.estado());
+    // Y sigue bloqueando el pedido, que es lo correcto mientras pueda haber saldo comprometido.
+    assertTrue(emisiones.buscarAbiertaDePedido(pedido.id()).isPresent());
+  }
+
+  /** Y una recién pedida no: el sondeo todavía la está resolviendo de verdad. */
+  @Test
+  void una_emision_en_curso_reciente_no_se_da_por_estancada() {
+    Pedido pedido = pedidoEnPreparacion();
+    EmisionDeGuia emision = emisionDe(pedido, "8bf880c9");
+    emisor.paraElEnvio("8bf880c9", new LecturaDeEnvioEmitido.Sigue());
+
+    ResultadoResolucionEmisiones resultado = caso.ejecutar();
+
+    assertEquals(0, resultado.abandonadas());
+    assertEquals(EstadoEmision.EN_CURSO, emision.estado());
+  }
+
   @Test
   void no_relee_emisiones_ya_resueltas() {
     Pedido pedido = pedidoEnPreparacion();

@@ -112,6 +112,19 @@ public final class CancelarPedido {
 
     Instant ahora = reloj.ahora();
     pedido.transicionar(EstadoPedido.CANCELADO, comando.actor(), motivo(comando), ahora);
+
+    // Las guías se anulan ANTES de tocar el inventario, y el orden no es estético: devolver al
+    // inventario toma un bloqueo pesimista por variante, y anular una guía son N llamadas HTTP a
+    // Skydropx. Con el orden anterior, cancelar desde el panel un pedido de tres bultos de la
+    // variante más vendida sostenía sus filas bloqueadas durante toda la conversación con el
+    // proveedor: cualquier comprador que intentara confirmar un pedido con esa variante se quedaba
+    // esperando en el checkout. `CrearPedido` ya se cuidaba de esto —cotiza antes de reservar, y lo
+    // deja escrito— y aquí se hacía justo lo contrario. Lo levantó una revisión adversarial.
+    //
+    // La transición va primero igual, porque es la que valida: no tiene sentido anular las guías de
+    // un pedido que no se puede cancelar.
+    anularLasGuias(pedido, ahora);
+
     for (LineaPedido linea : pedido.lineas()) {
       devolverAlInventario(linea, comando.motivo(), ahora);
     }
@@ -119,7 +132,6 @@ public final class CancelarPedido {
     if (elDineroYaEntro) {
       registrarReintegro(pedido, comando, ahora);
     }
-    anularLasGuias(pedido, ahora);
     repositorioPedidos.guardar(pedido);
     avisar(pedido, comando, elDineroYaEntro);
     return pedido;

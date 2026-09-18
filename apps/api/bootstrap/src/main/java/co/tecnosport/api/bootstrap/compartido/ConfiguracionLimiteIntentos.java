@@ -61,6 +61,14 @@ public class ConfiguracionLimiteIntentos {
    * La cotización tiene su propio perfil porque su riesgo es distinto: no crea nada, pero cada
    * llamada gasta cuota de un proveedor externo que se paga y que admite dos peticiones por
    * segundo. El resto de endpoints públicos solo cuestan base de datos propia.
+   *
+   * <p><b>Son dos rutas, no una</b>, y la segunda faltaba: {@code
+   * /api/v1/pedidos/metodos-de-pago-disponibles} cotiza igual —con recaudo, así que crea una
+   * cotización y la sondea— y quedaba fuera de los tres filtros. El patrón {@code /api/v1/pedidos}
+   * de arriba es exacto y no cubre subrutas. Agotar las dos peticiones por segundo de la cuenta
+   * deja a los compradores reales con un checkout que solo ofrece recogida en el punto y sin
+   * contraentrega: la venta con envío se pierde entera mientras dure. Lo levantó una revisión
+   * adversarial.
    */
   @Bean
   public FilterRegistrationBean<FiltroLimiteIntentos> filtroLimiteIntentosCotizacion(
@@ -74,7 +82,8 @@ public class ConfiguracionLimiteIntentos {
                 reloj,
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
-    registro.addUrlPatterns("/api/v1/envios/cotizacion");
+    registro.addUrlPatterns(
+        "/api/v1/envios/cotizacion", "/api/v1/pedidos/metodos-de-pago-disponibles");
     return registro;
   }
 }

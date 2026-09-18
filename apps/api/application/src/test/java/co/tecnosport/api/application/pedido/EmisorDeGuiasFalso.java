@@ -17,6 +17,12 @@ final class EmisorDeGuiasFalso implements EmisorDeGuias {
 
   private final List<String> cancelados = new ArrayList<>();
   private ResultadoCancelacion respuesta = new ResultadoCancelacion.Cancelada();
+  private Runnable alCancelar = () -> {};
+
+  /** Para mirar el estado del resto del mundo justo mientras se habla con el proveedor. */
+  void mientrasCancelaHaz(Runnable observador) {
+    this.alCancelar = observador;
+  }
 
   void alCancelarResponde(ResultadoCancelacion respuesta) {
     this.respuesta = respuesta;
@@ -38,6 +44,7 @@ final class EmisorDeGuiasFalso implements EmisorDeGuias {
 
   @Override
   public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    alCancelar.run();
     cancelados.add(idEnvioEnPlataforma);
     return respuesta;
   }

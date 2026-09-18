@@ -4761,10 +4761,12 @@ commit `eaf483b`; aquí lo que enseña:
 - Tres comentarios decían "todavía sin construir" sobre cosas construidas hace dos fases, y uno de
   ellos afirmaba que la garantía del bloqueo pesimista estaba rota cuando no lo está.
 
-### Lo que queda abierto, y por qué no se tocó
+### Lo que quedó abierto al entregar la lista, y se cerró después
 
 **Seis hallazgos anteceden a esta rama, y los seis cambian comportamiento del dinero o del
-despacho.** Arreglarlos a ciegas el mismo día que se levantan es la forma de romper otra cosa:
+despacho.** Se entregaron primero como lista, sin tocarlos —arreglar a ciegas el mismo día que se
+levantan es la forma de romper otra cosa— y se cerraron después, en orden de gravedad, con la
+entrada de abajo:
 
 1. **`RepositorioEmisionesJpa.guardar` escribe en dos transacciones.** Si la instancia muere entre
    las dos, queda una fila `EN_CURSO` sin envíos — un estado que el agregado rechaza al reconstruir.
@@ -4806,6 +4808,66 @@ Conviene anotarlo, porque una lista de hallazgos sin esto parece que todo está 
   de campos, nunca valores.
 - **`V50` no cambia ningún cálculo**: `tasa_iva` no participa en ninguna multiplicación de todo el
   recorrido, ni en el backend ni en el frontend.
+
+### Los seis, cerrados (2026-09-18)
+
+Se arreglaron en orden de gravedad, cada uno con su prueba. Lo que enseñaron:
+
+**1. Una emisión se guardaba en dos transacciones.** `guardar` escribía la emisión y sus envíos por
+separado, así que una instancia que muriera en medio dejaba una fila `EN_CURSO` con cero envíos —un
+estado que el agregado rechaza al reconstruirse— y **esa sola fila detenía el despacho automático de
+todos los pedidos**, porque la consulta mapea antes de devolver y la excepción salía fuera del
+`try` por emisión. Ahora `guardar` es `@Transactional` —no contradice a `ADR-0033`: lo que aquel ADR
+saca de una transacción es el caso de uso, porque ninguna transacción revierte un cobro de Skydropx,
+y aquí no hay ningún tercero en la mitad— y las consultas de lista se saltan lo ilegible con un
+registro en `error` en vez de morir. Su prueba vive en una clase aparte **sin `@Transactional`**,
+porque con una transacción de prueba envolviéndolo todo no se puede observar qué queda comprometido.
+
+**2. Con varias guías, el primer paquete movía el pedido entero.** Entregar el primer bulto
+arrancaba los cinco días hábiles del retracto y el año de garantía sobre mercancía que el comprador
+todavía no tenía, y en contraentrega lo daba por cobrado. Ahora el pedido se mueve cuando **todas**
+las guías llegaron al mismo sitio. Y el caso mixto —una entregada y otra devuelta— **no mueve
+nada**: no es ni entregado ni rechazado, y el pedido tiene un solo estado para decirlo. Se queda en
+`DESPACHADO` a propósito, que es el lado por el que se prefiere fallar; resolverlo de verdad pide
+cumplimiento por línea, que es otro modelo y otra decisión.
+
+**3. Una emisión `EN_CURSO` no vencía nunca.** `SOLICITADA` tenía su corte de diez minutos y ésta no
+tenía ninguno: un sondeo que devolviera "sigue" para siempre la dejaba abierta, invisible —la
+bandeja mira `exigeOjoHumano()`, que no la cubre— y bloqueando su pedido en silencio. Ahora, pasado
+un día, pasa a `INDETERMINADA`, que es donde la bandeja sí la ve. Un día y no diez minutos porque
+aquí no hay nada perdido —el envío existe y se está consultando—: el mismo umbral y el mismo
+razonamiento que el vigilante de la bandeja, que quien compró espera movimiento diario.
+
+**4. `CancelarPedido` hablaba con Skydropx con los bloqueos de inventario ya tomados.** Cancelar un
+pedido de tres bultos de la variante más vendida dejaba esas filas bloqueadas durante toda la
+conversación con el proveedor, y cualquier comprador que intentara confirmar un pedido con esa
+variante se quedaba esperando en el checkout. Se pierde venta por una operación del panel.
+`CrearPedido` ya se cuidaba de esto —cotiza antes de reservar y lo deja escrito— y aquí se hacía lo
+contrario. Ahora las guías se anulan antes de tocar el inventario, con la transición todavía primero
+porque es la que valida. La prueba mira el contador de bloqueos **en el momento de hablar con el
+proveedor**, no al final.
+
+**5. Acusar una emisión la escondía para siempre.** Para una guía acusar es todo lo que se puede
+hacer, y un evento posterior la devuelve a la bandeja. Para una emisión no: una `INDETERMINADA`
+sigue abierta, **sigue impidiendo emitir la guía de ese pedido**, y existe una acción que sí la
+resuelve. Un acuse con la nota "lo reviso mañana" hacía desaparecer un pedido pagado, con saldo
+posiblemente comprometido, de la única pantalla y el único correo que lo nombraban. Ahora el acuse
+solo esconde lo que ya no bloquea. **La prueba que afirmaba lo contrario se reescribió**, y su
+comentario ya contenía la tensión: "acusarla deja rastro, no desbloquea el pedido".
+
+**6. El endpoint que cotiza sin límite.** `POST /pedidos/metodos-de-pago-disponibles` cotiza con
+recaudo —crea una cotización y la sondea— y quedaba fuera de los tres filtros de límite: el patrón
+`/api/v1/pedidos` es exacto y no cubre subrutas. Cien peticiones por minuto con `curl` agotan las dos
+por segundo de la cuenta, y a los compradores reales el checkout les ofrece solo recogida en el
+punto. Ya comparte perfil con la cotización, que existía exactamente por este motivo.
+
+**Lo que ninguno de los seis era: un descuido de escritura.** Los seis son huecos entre piezas que
+por separado están bien —una transacción que falta entre dos escrituras correctas, un estado de
+pedido que no alcanza para dos guías, un corte por tiempo que existe para un estado y no para su
+hermano, un orden de operaciones, un criterio de acuse copiado de un caso a otro que no era igual, y
+un patrón de ruta que no cubre subrutas—. Es el tipo de defecto que no aparece leyendo un commit:
+aparece leyendo dos piezas a la vez, que es justo lo que una revisión adversarial hace y lo que
+ninguna prueba verde iba a decir.
 
 ## Cómo conversar con Claude Code en este proyecto
 

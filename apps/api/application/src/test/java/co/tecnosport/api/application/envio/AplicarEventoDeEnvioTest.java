@@ -108,6 +108,22 @@ class AplicarEventoDeEnvioTest {
     return pedido;
   }
 
+  /**
+   * Lo mismo, con dos bultos: es el caso que `adr/0031` dice que es el normal con dos variantes.
+   */
+  private Pedido sembrarPedidoDespachadoConDosGuias() {
+    Pedido pedido = sembrarPedidoDespachado(MetodoPago.NEQUI);
+    envios.borrarDe(pedido.id());
+    envios.guardar(
+        Envio.crear(
+            pedido.id(),
+            List.of(
+                GuiaEnvio.crear("99 minutes", "NN-1", Dinero.deCop(10_540)),
+                GuiaEnvio.crear("Servientrega", "SE-2", Dinero.deCop(8_200))),
+            DESPACHO));
+    return pedido;
+  }
+
   /** Los eventos de una guía concreta: con varias por envío, preguntar por el envío no basta. */
   private List<EventoSeguimiento> eventosDe(String numeroGuia) {
     return envios
@@ -153,6 +169,53 @@ class AplicarEventoDeEnvioTest {
 
     assertEquals(ResultadoEventoDeEnvio.REGISTRADO_Y_APLICADO, resultado);
     assertEquals(EstadoPedido.ENTREGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * Con dos bultos, el primero entregado <b>no</b> mueve el pedido. Antes sí lo movía, y eso
+   * arrancaba los cinco días hábiles del retracto y el año de garantía sobre mercancía que el
+   * comprador todavía no tenía. Lo levantó una revisión adversarial.
+   */
+  @Test
+  void conDosGuiasLaPrimeraEntregaNoMueveElPedido() {
+    Pedido pedido = sembrarPedidoDespachadoConDosGuias();
+
+    ResultadoEventoDeEnvio resultado = caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
+
+    assertEquals(ResultadoEventoDeEnvio.REGISTRADO, resultado);
+    assertEquals(EstadoPedido.DESPACHADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Y la segunda sí: ahí la compra entera está en manos de quien la hizo. */
+  @Test
+  void conDosGuiasLaSegundaEntregaSiMueveElPedido() {
+    Pedido pedido = sembrarPedidoDespachadoConDosGuias();
+    caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
+
+    ResultadoEventoDeEnvio resultado =
+        caso.ejecutar(
+            new AplicarEventoDeEnvioComando(
+                "SE-2", EstadoEnvio.ENTREGADO, null, AHORA, "ev-2", "skydropx"));
+
+    assertEquals(ResultadoEventoDeEnvio.REGISTRADO_Y_APLICADO, resultado);
+    assertEquals(EstadoPedido.ENTREGADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * Y el caso mixto no mueve nada: una entregada y otra devuelta no es ni entregado ni rechazado, y
+   * el pedido tiene un solo estado para decirlo. Se queda en {@code DESPACHADO} a propósito — no
+   * arrancar plazos sobre lo que no llegó, y no liberar la reserva de lo que el comprador ya tiene.
+   */
+  @Test
+  void unaEntregadaYUnaDevueltaNoMuevenElPedido() {
+    Pedido pedido = sembrarPedidoDespachadoConDosGuias();
+    caso.ejecutar(evento(EstadoEnvio.ENTREGADO, "ev-1"));
+
+    caso.ejecutar(
+        new AplicarEventoDeEnvioComando(
+            "SE-2", EstadoEnvio.EN_DEVOLUCION, null, AHORA, "ev-2", "skydropx"));
+
+    assertEquals(EstadoPedido.DESPACHADO, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   /** En contraentrega la entrega encadena el recaudo pendiente: el dinero todavía no ha entrado. */

@@ -113,6 +113,25 @@ public final class Envio {
    * que sí es suya — <b>los créditos no cobran comisión</b>, así que una conciliación a créditos
    * con un número encima está mal en una de las dos cosas y no se guarda a medias.
    */
+  /**
+   * ¿Todas las guías de este envío llegaron a {@code destino}?
+   *
+   * <p>Existe porque el pedido tiene <b>un</b> estado y el envío puede tener <b>varias</b> guías
+   * (`adr/0031`: ninguna transportadora colombiana admite multipaquete, así que un pedido de dos
+   * variantes son dos guías que se mueven solas). Antes, el primer evento que llegara movía el
+   * pedido entero: con dos bultos, la entrega del primero arrancaba los cinco días hábiles del
+   * retracto y el año de garantía sobre mercancía que el comprador todavía no tenía, y en
+   * contraentrega daba por vendido y por cobrado un bulto en camino. Lo levantó una revisión
+   * adversarial.
+   *
+   * <p>Un envío sin ninguna guía devuelve {@code false}: no hay nada que haya llegado.
+   */
+  public boolean todasLasGuiasEn(EstadoEnvio destino) {
+    Objects.requireNonNull(destino, "El estado de destino no puede ser nulo.");
+    return !guias.isEmpty()
+        && guias.stream().allMatch(guia -> guia.ultimoEstado().filter(destino::equals).isPresent());
+  }
+
   public void conciliarRecaudo(
       ModalidadRecaudo modalidadRecaudo, Dinero comisionRecaudo, Instant ahora) {
     Objects.requireNonNull(modalidadRecaudo, "La modalidad de recaudo no puede ser nula.");

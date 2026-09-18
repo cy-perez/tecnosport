@@ -93,6 +93,17 @@ public final class AplicarEventoDeEnvio {
    * estado actual no es decoración: un pedido que un administrador ya marcó entregado a mano
    * recibiría después el {@code delivered} de la transportadora, y aplicarlo reventaría contra la
    * máquina de estados — o peor, reabriría plazos legales que ya estaban corriendo.
+   *
+   * <p><b>Y hace falta que <i>todas</i> las guías hayan llegado al mismo sitio</b>, no solo la que
+   * trae este evento. Ver {@code Envio.todasLasGuiasEn}.
+   *
+   * <p><b>Lo que queda sin resolver, y es un hueco del modelo, no un olvido:</b> un pedido de dos
+   * bultos donde uno se entrega y el otro se devuelve no es ni entregado ni rechazado, y el pedido
+   * tiene un solo estado para decirlo. Hoy ese pedido <b>no se mueve</b> —se queda en {@code
+   * DESPACHADO}— y la guía devuelta queda con su evento registrado para que alguien lo vea. Es el
+   * lado por el que se prefiere fallar: no arrancar plazos legales sobre mercancía que no llegó, y
+   * no liberar la reserva de un artículo que el comprador ya tiene en la mano. Resolverlo de verdad
+   * pide cumplimiento por línea, que es un cambio de modelo con su propia decisión.
    */
   private boolean aplicarAlPedido(Envio envio, AplicarEventoDeEnvioComando comando, Instant ahora) {
     Optional<Pedido> pedido = repositorioPedidos.buscarPorId(envio.pedidoId());
@@ -104,11 +115,21 @@ public final class AplicarEventoDeEnvio {
     if (comando.estado() == EstadoEnvio.RECOGIDO) {
       return confirmarDespacho(pedido.get(), comando, ahora);
     }
-    if (comando.estado() == EstadoEnvio.ENTREGADO && estado == EstadoPedido.DESPACHADO) {
+    // El pedido tiene un estado y el envío puede tener varias guías: hasta que no llegan todas, la
+    // compra no está entregada. Con el criterio anterior —el primer evento movía el pedido— un
+    // pedido de dos bultos arrancaba el retracto y la garantía con el primero, sobre mercancía que
+    // el comprador no tenía; y en contraentrega lo daba por cobrado. Lo levantó una revisión
+    // adversarial. El caso mixto —una entregada y otra devuelta— no se puede expresar en un solo
+    // estado de pedido y queda a propósito sin mover nada: ver el javadoc de abajo.
+    if (comando.estado() == EstadoEnvio.ENTREGADO
+        && estado == EstadoPedido.DESPACHADO
+        && envio.todasLasGuiasEn(EstadoEnvio.ENTREGADO)) {
       marcarEntregado.ejecutar(new MarcarEntregadoComando(envio.pedidoId(), comando.actor()));
       return true;
     }
-    if (comando.estado() == EstadoEnvio.EN_DEVOLUCION && estado == EstadoPedido.DESPACHADO) {
+    if (comando.estado() == EstadoEnvio.EN_DEVOLUCION
+        && estado == EstadoPedido.DESPACHADO
+        && envio.todasLasGuiasEn(EstadoEnvio.EN_DEVOLUCION)) {
       rechazarEnEntrega.ejecutar(
           new RechazarEnEntregaComando(
               envio.pedidoId(), motivoDeDevolucion(comando), comando.actor()));

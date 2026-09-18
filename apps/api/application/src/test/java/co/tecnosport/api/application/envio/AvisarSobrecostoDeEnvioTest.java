@@ -391,6 +391,11 @@ class AvisarSobrecostoDeEnvioTest {
     }
 
     @Override
+    public List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo) {
+      return List.of();
+    }
+
+    @Override
     public Optional<EmisionDeGuia> buscarPorId(UUID id) {
       throw new UnsupportedOperationException();
     }
