@@ -30,15 +30,24 @@
 //   EMITIR=1 BULTOS=2 node tools/sonda-emision-v2.mjs  multienvío: dos bultos, dos guías
 //   EMITIR=1 RECOLECCION=1 node tools/sonda-emision-v2.mjs   además programa la recolección
 //   VER_ENVIO=<id> node tools/sonda-emision-v2.mjs     relee un envío ya creado
+//   SIN_PICKUP=1 TRANSPORTADORA=envia EMITIR=1 node tools/sonda-emision-v2.mjs
+//                                                     emite con una transportadora que no recoge
+//                                                     por API, cuando la recolección no es lo que
+//                                                     se mide
 //   RECAUDO=1 FLETE_AL_DESTINATARIO=1 DECLARADO=10000 EMITIR=1 node tools/sonda-emision-v2.mjs
 //                                                     cotiza y emite con contraentrega, para ver
 //                                                     si `on_delivery_amount` trae el flete
 //
 // Con RECAUDO=1 el filtro de `pickup` se levanta, y no por descuido: de las tarifas que
-// sobreviven a una cotización con recaudo, la única que además puede emitir en este sandbox es
-// Envía —Coordinadora tiene el contador de remisiones atascado y Servientrega se cae con
-// `tariff_price_not_found`—, y Envía recoge solo por soporte. Exigir `pickup: true` dejaría la
-// pregunta del recaudo sin ninguna tarifa con la que medirla.
+// sobreviven a una cotización con recaudo, Coordinadora tiene el contador de remisiones atascado y
+// Servientrega se cae con `tariff_price_not_found`, así que solo quedan transportadoras que recogen
+// por soporte. Exigir `pickup: true` dejaría la pregunta del recaudo sin ninguna tarifa con la que
+// medirla.
+//
+// Este comentario decía que Envía "es la única que además puede emitir", y el 17 de septiembre eso
+// dejó de ser cierto **solo con recaudo**: con él responde `Usuario o Password incorrecto at
+// LABEL_NUMBER`, y sin él emite a la primera (medido el 18, docs/13 §6.17). O sea que con RECAUDO=1
+// la única que hoy emite de verdad es 99 minutes, a 9.897.
 
 import { readFileSync, existsSync } from 'node:fs';
 
@@ -210,8 +219,14 @@ if (CON_RECAUDO) {
 // número, `93202421647`—. Es la tarifa más barata y la que este selector elige solo, así que sin
 // esta salida la sonda se estrella contra ella una y otra vez. La emisión se reembolsa, pero
 // cuesta cinco minutos cada vez.
+//
+// SIN_PICKUP=1 levanta ese filtro cuando la recolección no es lo que se está midiendo. Nació el 18
+// de septiembre de 2026 para la pregunta que dejó abierta §6.15: si Envía dejó de emitir por sus
+// credenciales de etiqueta o solo cuando hay recaudo. Esa prueba es **Envía sin recaudo**, y Envía
+// recoge solo por soporte (`pickup: false`), así que sin esta salida el filtro la descarta y la
+// pregunta se queda sin poderse medir.
 const candidatas = (q.rates || [])
-  .filter((t) => t.success && (CON_RECAUDO || t.pickup) && t.total)
+  .filter((t) => t.success && (CON_RECAUDO || env.SIN_PICKUP === '1' || t.pickup) && t.total)
   .filter((t) => !env.TRANSPORTADORA || t.provider_name === env.TRANSPORTADORA)
   .sort((a, b) => Number(a.total) - Number(b.total));
 const tarifa = candidatas[0];
