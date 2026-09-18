@@ -167,7 +167,7 @@ describe('BandejaRevisionPage', () => {
   it('acusar una guia manda el numero y la nota escrita', async () => {
     const { repositorio } = await renderBandeja({ guias: [guia()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Marcar como revisada' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Marcar como revisada/ }));
     fireEvent.input(screen.getByLabelText('Qué encontraste'), {
       target: { value: 'Reclamé a la transportadora.' },
     });
@@ -184,7 +184,7 @@ describe('BandejaRevisionPage', () => {
   it('acusar sin nota manda nulo y no una cadena vacia', async () => {
     const { repositorio } = await renderBandeja({ guias: [guia()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Marcar como revisada' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Marcar como revisada/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar la revisión' }));
 
     await vi.waitFor(() =>
@@ -209,7 +209,7 @@ describe('BandejaRevisionPage', () => {
   it('dice que marcar la emision no la resuelve', async () => {
     await renderBandeja({ emisiones: [emision()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Marcar como revisada' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Marcar como revisada/ }));
 
     expect(screen.getByText(esAdmin.revision_envios.emisiones.no_resuelve)).toBeTruthy();
   });
@@ -217,7 +217,7 @@ describe('BandejaRevisionPage', () => {
   it('acusar una emision manda su identificador', async () => {
     const { repositorio } = await renderBandeja({ emisiones: [emision()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Marcar como revisada' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Marcar como revisada/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar la revisión' }));
 
     await vi.waitFor(() =>
@@ -230,10 +230,55 @@ describe('BandejaRevisionPage', () => {
    * que la persona eligio, porque de ese veredicto depende si el pedido queda libre o si seguimos
    * un envio ya pagado.
    */
+  /**
+   * El botón que abre una fila dice si está abierta y qué región abre. Sin eso, quien usa un lector
+   * de pantalla no puede saber si el formulario se desplegó: los tres botones de la lista decían lo
+   * mismo y ninguno anunciaba estado. Lo levantó la auditoría de accesibilidad.
+   */
+  it('el botón de una fila anuncia si está abierta y qué región controla', async () => {
+    await renderBandeja({ guias: [guia()] });
+
+    const boton = await screen.findByRole('button', { name: /Marcar como revisada/ });
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(boton);
+
+    const abierto = screen.getByRole('button', { name: /Cerrar la revisión/ });
+    expect(abierto.getAttribute('aria-expanded')).toBe('true');
+    const region = abierto.getAttribute('aria-controls');
+    expect(region).toBeTruthy();
+    expect(document.getElementById(region!)).toBeTruthy();
+  });
+
+  /** Y cada uno se distingue del de al lado por su fila, no solo por su posición. */
+  it('dos filas no comparten el mismo nombre accesible', async () => {
+    await renderBandeja({ guias: [guia(), guia({ guiaId: 'g2', numeroGuia: '034054505968' })] });
+
+    expect(await screen.findByRole('button', { name: /034054505967/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /034054505968/ })).toBeTruthy();
+  });
+
+  /**
+   * Resolver "con envío" sin identificadores tiene que decirlo <b>en el campo</b>. Antes el mensaje
+   * se escribía en la cabecera de la página, que puede quedar muchas pantallas por encima del campo
+   * que lo causó, y el campo no quedaba marcado como inválido.
+   */
+  it('resolver con envío y sin identificadores lo dice en el campo', async () => {
+    const { repositorio } = await renderBandeja({ emisiones: [emision()] });
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Resolver/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sí aparece: seguir este envío' }));
+
+    const campo = screen.getByLabelText('Identificadores del envío');
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(campo.getAttribute('aria-describedby')).toContain('-error');
+    expect(repositorio.resueltas).toHaveLength(0);
+  });
+
   it('resolver sin cobro manda ese veredicto', async () => {
     const { repositorio } = await renderBandeja({ emisiones: [emision()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Resolver/ }));
     fireEvent.click(screen.getByRole('button', { name: 'No aparece: no hubo cobro' }));
 
     await vi.waitFor(() =>
@@ -252,7 +297,7 @@ describe('BandejaRevisionPage', () => {
   it('resolver con envio manda los identificadores que se pegaron', async () => {
     const { repositorio } = await renderBandeja({ emisiones: [emision()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Resolver/ }));
     fireEvent.input(screen.getByLabelText('Identificadores del envío'), {
       target: { value: 'env-1, env-2' },
     });
@@ -270,7 +315,7 @@ describe('BandejaRevisionPage', () => {
   it('resolver con envio sin identificadores avisa y no llama al servidor', async () => {
     const { repositorio } = await renderBandeja({ emisiones: [emision()] });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Resolver' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Resolver/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Sí aparece: seguir este envío' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -281,8 +326,8 @@ describe('BandejaRevisionPage', () => {
   it('una emision parcial no ofrece resolver', async () => {
     await renderBandeja({ emisiones: [emision({ estado: 'PARCIAL' })] });
 
-    await screen.findByRole('button', { name: 'Marcar como revisada' });
-    expect(screen.queryByRole('button', { name: 'Resolver' })).toBeNull();
+    await screen.findByRole('button', { name: /Marcar como revisada/ });
+    expect(screen.queryByRole('button', { name: /^Resolver/ })).toBeNull();
   });
 
   it('no tiene violaciones de accesibilidad con las dos listas llenas', async () => {

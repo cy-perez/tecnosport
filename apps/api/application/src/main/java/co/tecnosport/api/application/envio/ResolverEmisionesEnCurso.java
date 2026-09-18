@@ -61,6 +61,21 @@ public final class ResolverEmisionesEnCurso {
    */
   private static final Duration ESPERA_MAXIMA_DE_RESPUESTA = Duration.ofMinutes(10);
 
+  /**
+   * Cuánto se espera a que una emisión <b>en curso</b> reciba su desenlace de la plataforma.
+   *
+   * <p>Un día, y no diez minutos como la de arriba, porque aquí no hay nada perdido: el envío
+   * existe y el sondeo lo está consultando de verdad. Lo que este corte atrapa es que la plataforma
+   * se quede sin resolverlo — y entonces hay un pedido pagado, con saldo comprometido, que no se
+   * despacha. Es el mismo umbral y el mismo razonamiento que el vigilante de la bandeja de
+   * revisión: quien compró un pedido despachado espera movimiento diario.
+   *
+   * <p>Sin esto, {@code EN_CURSO} no tenía ninguna salida por tiempo, no aparecía en la bandeja
+   * —{@code EstadoEmision.exigeOjoHumano()} no lo cubre— y su único rastro era un contador en un
+   * registro. Lo levantó una revisión adversarial.
+   */
+  private static final Duration ESPERA_MAXIMA_EN_CURSO = Duration.ofHours(24);
+
   private final RepositorioEmisiones repositorioEmisiones;
   private final EmisorDeGuias emisor;
   private final DespacharPedido despacharPedido;
@@ -100,7 +115,7 @@ public final class ResolverEmisionesEnCurso {
         contador.errores.add(emision.id() + ": " + e);
       }
     }
-    contador.abandonadas = abandonarSolicitudesSinRespuesta();
+    contador.abandonadas = abandonarSolicitudesSinRespuesta() + darPorEstancadasLasQueNoResuelven();
     return contador.aResultado();
   }
 
@@ -134,6 +149,36 @@ public final class ResolverEmisionesEnCurso {
       }
     }
     return abandonadas;
+  }
+
+  /**
+   * Las que llevan un día en curso sin desenlace pasan a {@code INDETERMINADA}, que es donde la
+   * bandeja de revisión sí las ve y donde siguen bloqueando una emisión nueva del mismo pedido.
+   *
+   * <p>No se dan por fallidas: el envío existe en la plataforma y puede estar cobrado. Lo que se
+   * dice es "esto necesita a una persona", que es lo único honesto.
+   */
+  private int darPorEstancadasLasQueNoResuelven() {
+    Instant corte = reloj.ahora().minus(ESPERA_MAXIMA_EN_CURSO);
+    int estancadas = 0;
+    for (EmisionDeGuia emision :
+        repositorioEmisiones.buscarEnCursoAntesDe(corte, maximoPorCorrida)) {
+      try {
+        enTransaccionPropia.ejecutar(
+            () -> {
+              emision.estancada(
+                  "lleva más de un día en curso y la plataforma no le dio desenlace; el envío"
+                      + " existe y puede estar cobrado, hay que mirarlo en el panel",
+                  reloj.ahora());
+              repositorioEmisiones.guardar(emision);
+              return emision;
+            });
+        estancadas++;
+      } catch (RuntimeException e) {
+        // Que una no se pueda marcar no puede impedir marcar las otras.
+      }
+    }
+    return estancadas;
   }
 
   private void resolverUna(EmisionDeGuia emision, Contador contador) {

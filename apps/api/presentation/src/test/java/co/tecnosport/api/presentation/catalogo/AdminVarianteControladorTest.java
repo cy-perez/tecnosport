@@ -58,7 +58,7 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-CAM-AZ-M","precio":89900,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-CAM-AZ-M","precio":89900,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":5,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,
                      "atributos":[{"atributoId":"%s","valor":"Azul marino","colorHex":"#1E3A8A"}]}
                     """
@@ -77,7 +77,7 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,"atributos":[]}
                     """
                         .formatted(UUID.randomUUID())))
@@ -96,11 +96,30 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-YA-EXISTE","precio":1000,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-YA-EXISTE","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,"atributos":[]}
                     """
                         .formatted(producto.id())))
         .andExpect(status().isConflict());
+  }
+
+  @Test
+  void crearConTasaDeIvaDistintaDeCeroDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/variantes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                     "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,"atributos":[]}
+                    """
+                        .formatted(producto.id())))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("TASA_IVA_NO_PERMITIDA"));
   }
 
   @Test
@@ -114,7 +133,7 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,"pesoGramos":180,"largoCm":30,"anchoCm":25,"altoCm":4,
                      "atributos":[{"atributoId":"%s","valor":"Azul","colorHex":null}]}
                     """
@@ -138,7 +157,7 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,"atributos":[]}
                     """
                         .formatted(producto.id())))
@@ -156,7 +175,7 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0.19,
+                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,
                      "pesoGramos":180,"largoCm":0,"anchoCm":25,"altoCm":4,"atributos":[]}
                     """
@@ -198,8 +217,9 @@ class AdminVarianteControladorTest {
         RepositorioAtributos repositorioAtributos,
         RepositorioInventario repositorioInventario,
         Reloj reloj) {
+      // false, como en produccion: el negocio no es responsable de IVA (adr/0041).
       return new AgregarVariante(
-          repositorioProductos, repositorioAtributos, repositorioInventario, reloj);
+          repositorioProductos, repositorioAtributos, repositorioInventario, reloj, false);
     }
 
     @Bean

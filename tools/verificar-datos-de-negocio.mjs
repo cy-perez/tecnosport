@@ -114,7 +114,17 @@ const reglas = [
   },
 ];
 
-for (const ruta of jsons(TEXTOS)) {
+// Los correos transaccionales entran en el barrido desde el 18 de septiembre de 2026: el
+// comprobante de compra identifica al vendedor —información obligatoria del proveedor, Ley 1480— y
+// con eso el NIT, el correo y el teléfono pasaron a vivir también fuera de los JSON del sitio. Una
+// copia que el guardián no mira es exactamente el agujero por el que el celular estuvo mal en
+// cuatro sitios durante una fase entera.
+const CORREOS = [
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/correos_es.properties"),
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/correos_en.properties"),
+];
+
+for (const ruta of [...jsons(TEXTOS), ...CORREOS]) {
   const contenido = readFileSync(ruta, "utf8");
   contenido.split("\n").forEach((linea, indice) => {
     for (const { nombre, patron, normaliza, canonico } of reglas) {
@@ -195,6 +205,57 @@ if (COTIZA_EL_ENVIO) {
           for (const encontrado of linea.match(patron) ?? []) {
             problemas.push(
               `${relative(RAIZ, ruta)}:${indice + 1}  el texto legal promete ${que} ("${encontrado}"), y el sistema cotiza el flete aparte (CotizarEnvio)`,
+            );
+          }
+        }
+      });
+  }
+}
+
+// --- 5. Si el negocio no es responsable de IVA, ningún texto publicado puede decir que lo cobra.
+//
+// Hermana de la regla 4, y por el mismo motivo: el sitio afirmaba "los precios de los productos
+// incluyen IVA" en el checkout y "todos los precios ... incluyen el IVA aplicable" en el numeral 4
+// de los términos, mientras el negocio es no responsable (adr/0041). Aquí la afirmación falsa pesa
+// más que en la regla 4: el literal a del art. 1.3.1.15.2 del Decreto 1625 de 2016 prohíbe a un no
+// responsable adicionar al precio suma alguna por concepto de IVA, y hacerlo lo obliga a cumplir
+// íntegramente el régimen de los responsables. O sea que el texto no describe un dato viejo, sino
+// una conducta que la norma prohíbe.
+//
+// La fuente de verdad es NEGOCIO_RESPONSABLE_IVA en application.yml, no una constante de aquí: el
+// día que pase a true, este guardián deja de disparar solo y los textos vuelven a poder decirlo.
+const enYmlIva = yml.match(/responsable-de-iva:\s*\$\{NEGOCIO_RESPONSABLE_IVA:([^}]+)\}/)?.[1]?.trim();
+const enEnvIva = env.match(/^NEGOCIO_RESPONSABLE_IVA=(.+)$/m)?.[1]?.trim();
+
+if (enYmlIva === undefined) {
+  problemas.push(
+    "application.yml: falta tecnosport.negocio.responsable-de-iva, que es de donde el backend saca si puede cobrar IVA",
+  );
+} else if (enEnvIva !== enYmlIva) {
+  problemas.push(
+    `.env.example: NEGOCIO_RESPONSABLE_IVA es ${enEnvIva}, y application.yml trae ${enYmlIva} por omisión`,
+  );
+}
+
+const AFIRMACIONES_DE_IVA = [
+  { patron: /incluyen?\b[^.]{0,40}\bIVA/gi, que: "que el precio incluye IVA" },
+  { patron: /\bIVA\b[^.]{0,20}\bincluido/gi, que: "IVA incluido" },
+  { patron: /includ(?:e|es|ing)\b[^.]{0,40}\bVAT/gi, que: "que el precio incluye IVA, en inglés" },
+  { patron: /\bVAT\b[^.]{0,20}\bincluded/gi, que: "IVA incluido, en inglés" },
+];
+
+if (enYmlIva === "false") {
+  // Los correos entran también, por lo mismo que en la regla 1: desde que el comprobante de compra
+  // existe, un texto que afirmara cobrar IVA puede vivir ahí y no solo en los JSON del sitio. El
+  // mismo commit que añadió CORREOS arriba se olvidó de esta regla; lo levantó una revisión.
+  for (const ruta of [...jsons(TEXTOS), ...CORREOS]) {
+    readFileSync(ruta, "utf8")
+      .split("\n")
+      .forEach((linea, indice) => {
+        for (const { patron, que } of AFIRMACIONES_DE_IVA) {
+          for (const encontrado of linea.match(patron) ?? []) {
+            problemas.push(
+              `${relative(RAIZ, ruta)}:${indice + 1}  el texto publicado afirma ${que} ("${encontrado}"), y NEGOCIO_RESPONSABLE_IVA es false: a un no responsable le está prohibido adicionar IVA al precio (adr/0041)`,
             );
           }
         }

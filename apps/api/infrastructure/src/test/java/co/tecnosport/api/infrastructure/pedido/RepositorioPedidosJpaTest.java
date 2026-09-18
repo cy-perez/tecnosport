@@ -552,4 +552,83 @@ class RepositorioPedidosJpaTest {
         "cliente@tecnosport.co",
         Instant.now());
   }
+
+  /**
+   * El reclamo del comprobante, contra Postgres de verdad.
+   *
+   * <p>Existe porque la prueba de aplicación usa un doble cuyo "reclamo atómico" es un {@code
+   * Set.add()} en memoria: pasa igual con el SQL borrado. Y ese {@code update ... where
+   * comprobante_enviado_en is null} es <b>lo único</b> que impide que dos instancias le manden dos
+   * comprobantes al mismo comprador. Lo levantó una revisión adversarial.
+   */
+  @Test
+  void soloElPrimerReclamoDelComprobanteGana() {
+    Pedido pedido = pedidoCreadoEn(710, Instant.now(), MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(pedido);
+    Instant primero = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+
+    assertThat(repositorio.reclamarComprobante(pedido.id(), primero)).isTrue();
+    assertThat(repositorio.reclamarComprobante(pedido.id(), primero.plusSeconds(3600))).isFalse();
+  }
+
+  /**
+   * Y devolver el reclamo lo vuelve a poner en la cola, que es lo que hace posible el reintento.
+   */
+  @Test
+  void liberarElComprobanteLoDevuelveALaConsulta() {
+    Pedido pedido = pedidoCreadoEn(711, Instant.now(), MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(pedido);
+    var enFirme = java.util.EnumSet.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA);
+
+    assertThat(repositorio.buscarSinComprobante(enFirme))
+        .extracting(Pedido::id)
+        .contains(pedido.id());
+
+    repositorio.reclamarComprobante(pedido.id(), Instant.now());
+    assertThat(repositorio.buscarSinComprobante(enFirme))
+        .extracting(Pedido::id)
+        .doesNotContain(pedido.id());
+
+    repositorio.liberarComprobante(pedido.id());
+    assertThat(repositorio.buscarSinComprobante(enFirme))
+        .extracting(Pedido::id)
+        .contains(pedido.id());
+    assertThat(repositorio.reclamarComprobante(pedido.id(), Instant.now())).isTrue();
+  }
+
+  /**
+   * La consulta filtra por estado: un pedido que todavía no es una compra no tiene qué comprobar.
+   */
+  @Test
+  void buscarSinComprobanteRespetaElEstado() {
+    Pedido enFirme = pedidoCreadoEn(712, Instant.now(), MetodoPago.CONTRAENTREGA);
+    Pedido pendiente = pedidoCreadoEn(713, Instant.now(), MetodoPago.NEQUI);
+    repositorio.guardar(enFirme);
+    repositorio.guardar(pendiente);
+
+    var resultado =
+        repositorio.buscarSinComprobante(
+            java.util.EnumSet.of(EstadoPedido.CONFIRMADO_CONTRAENTREGA));
+
+    assertThat(resultado)
+        .extracting(Pedido::id)
+        .contains(enFirme.id())
+        .doesNotContain(pendiente.id());
+  }
+
+  /**
+   * La razón por la que la columna es {@code updatable = false}, comprobada en su propio campo: una
+   * operación en vuelo que guarde el pedido con su copia vieja no puede borrar el reclamo, o el
+   * comprador recibiría dos comprobantes.
+   */
+  @Test
+  void guardarElPedidoNoPisaElReclamoDelComprobante() {
+    Pedido pedido = pedidoCreadoEn(714, Instant.now(), MetodoPago.CONTRAENTREGA);
+    repositorio.guardar(pedido);
+    repositorio.reclamarComprobante(pedido.id(), Instant.now());
+
+    repositorio.guardar(pedido);
+
+    assertThat(repositorio.reclamarComprobante(pedido.id(), Instant.now())).isFalse();
+  }
 }

@@ -29,3 +29,8 @@ export { Clock as iconoHorario } from 'lucide';
 export { Truck as iconoEnvio } from 'lucide';
 // Los nombres son los de Lucide 1.x. `AlertTriangle` y `CheckCircle` siguen existiendo como
 // alias de `TriangleAlert` y `CircleCheck`, pero el alias es el nombre viejo: se usa el actual.
+// Los pidió la banda de portada, donde las tres cosas que el sitio sí puede prometer —el envío
+// cotizado, la contraentrega donde está habilitada y la garantía legal— van con un ancla visual
+// cada una. Sin icono, las tres se leen como una lista de texto corrido y ninguna destaca.
+export { Banknote as iconoContraentrega } from 'lucide';
+export { ShieldCheck as iconoGarantia } from 'lucide';

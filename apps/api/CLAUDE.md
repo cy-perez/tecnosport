@@ -16,7 +16,14 @@ un `Pedido` no se confirma sin líneas, un `Inventario` no baja de cero.
 `ConfirmarPedido.ejecutar(ConfirmarPedidoComando)`. Aquí se declara el **puerto**
 de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos`,
 `RecaudoContraentrega`, `EmisorFacturaElectronica`, `AlmacenDeImagenes`,
-`EnviadorDeCorreo`, `Reloj`. La transacción se abre aquí.
+`EnviadorDeCorreo`, `Reloj`.
+
+**La transacción NO se abre aquí, y esta línea decía que sí.** La abre quien
+llama, con un `TransactionTemplate` en el controlador —`PedidoControlador` para
+crear el pedido, `AdminPedidosControlador` para las acciones del panel—, porque
+`application` es framework-free y `@Transactional` es Spring. Corregido el 18 de
+septiembre de 2026, cuando una revisión adversarial cruzó esta frase con el
+javadoc de `CrearPedido`, que decía lo contrario.
 
 Con una excepción, y tiene nombre: `EnTransaccionPropia`. La usa la emisión de la
 guía, que escribe una fila, llama a un tercero **que cobra**, y escribe otra vez
@@ -29,8 +36,23 @@ sin tener un tercero cobrando en la mitad, lo que quiere es otra cosa.
 **separadas** de las del dominio, con mapeador explícito. Cliente de Wompi.
 Adaptador de Cloud Storage. Migraciones. Configuración de seguridad.
 
-**presentation** — Controladores REST, DTO de entrada y salida, Bean Validation,
+**presentation** — Controladores REST, DTO de entrada y salida,
 `@RestControllerAdvice`. Un DTO nunca es una entidad de dominio.
+**Ojo: aquí no hay Bean Validation.** Este documento decía que sí y era falso —no
+hay proveedor en el classpath ni un solo `@NotNull` en la capa—, así que lo que
+valida un DTO es su propio constructor compacto. Comprobado el 18 de septiembre
+de 2026.
+
+**Y quitar un `@NotNull` cambia el contrato publicado, aunque no valide nada.**
+springdoc deduce de él qué propiedades marca como `required` en el OpenAPI, así
+que al quitarlo el campo pasó a opcional y el cliente TypeScript generado dejó de
+exigirlo en tiempo de compilación — mientras el servidor seguía rechazando con 422
+el cuerpo que lo omitía. Lo atrapó el trabajo de contratos de la CI, que compara el
+OpenAPI vivo contra `packages/contratos/src/tipos.ts`. Un campo obligatorio de tipo
+referencia necesita, entonces, **dos cosas distintas**: el `Objects.requireNonNull`
+del constructor compacto, que es quien de verdad protege, y un
+`@Schema(requiredMode = REQUIRED)`, que no valida nada y solo hace que el contrato
+diga lo que el servidor exige.
 
 `presentation` no depende de `infrastructure`. Si un controlador necesita algo de
 infraestructura, falta un caso de uso.
@@ -41,8 +63,15 @@ infraestructura, falta un caso de uso.
   moneda `COP`. El peso colombiano no se fracciona. En base de datos
   `numeric(14,2)` por seguridad, pero el dominio redondea a entero, una sola vez,
   al final, con `HALF_UP`. Prohibido `double` y `float`.
-- **Los precios almacenados y mostrados incluyen IVA.** Cada producto guarda su
-  `tasa_iva` para poder desglosar al facturar.
+- **Los precios almacenados y mostrados son el valor final, y hoy no llevan IVA
+  dentro.** El negocio es **no responsable** del impuesto sobre las ventas
+  (parágrafo 3 del art. 437 del Estatuto Tributario), así que `tasa_iva` vale
+  `0.00` en todas las variantes y `AgregarVariante` rechaza cualquier otra cosa
+  mientras `NEGOCIO_RESPONSABLE_IVA` siga en `false` — adicionar IVA al precio sin
+  ser responsable obliga a cumplir íntegramente el régimen de los responsables
+  (Decreto 1625 de 2016, art. 1.3.1.15.2, literal a). La columna se queda porque la
+  calidad de no responsable se pierde al cruzar los topes del parágrafo 3. Ver
+  `adr/0041`.
 - **Fechas:** `Instant` en persistencia y en la API, UTC, ISO-8601.
   `America/Bogota` solo al formatear para el usuario. Nunca `Date`.
 - **Identificadores:** UUID v7 generado en el dominio, no por la base. Los
@@ -162,6 +191,18 @@ Antes de agregar una dependencia nueva en este backend, asume que su versión
   —el resultado es el seguro— pero **no se puede razonar sobre "el primitivo
   protege por omisión"**: si un campo tiene que ser opcional, hay que declararlo
   como envoltorio (`Boolean`) y decidir el valor a mano.
+  **Matizado el 18 de septiembre de 2026, y el matiz importa porque invierte la
+  conclusión para la mitad de los casos: eso vale para un primitivo.** Un
+  componente de **tipo referencia** que falte —un enum, un `String`, un
+  `Boolean`— **no revienta nada: llega en nulo**. Medido mandando un cuerpo sin
+  `modalidadRecaudo` a `POST /admin/pedidos/{id}/recaudo`: la petición pasó de
+  largo y murió más adelante por otra razón. O sea que "el record protege por
+  omisión" es falso justo donde más se usa, y un DTO con un campo obligatorio de
+  tipo referencia necesita su propia guarda —un `Objects.requireNonNull` en el
+  constructor compacto, que Jackson envuelve y sale como 422
+  `HTTP_MESSAGE_NOT_READABLE`— porque **aquí no hay Bean Validation**: no hay
+  proveedor en el classpath (lo dice `OptionalValidatorFactoryBean` al arrancar),
+  así que un `@NotNull` no haría nada.
 - **`@AuthenticationPrincipal` solo se resuelve cuando `@EnableWebSecurity`
   está activo en el contexto** (lo registra `WebMvcSecurityConfiguration`,
   que `@EnableWebSecurity` importa). Como eso vive en `bootstrap`

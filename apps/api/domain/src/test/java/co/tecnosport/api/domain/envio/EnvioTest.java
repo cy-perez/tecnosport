@@ -126,10 +126,11 @@ class EnvioTest {
     Envio envio = conUnaGuia();
     Instant conciliadoEn = AHORA.plusSeconds(3600);
 
-    envio.conciliarRecaudo(Dinero.deCop(5_000), conciliadoEn);
+    envio.conciliarRecaudo(ModalidadRecaudo.BANCO, Dinero.deCop(5_000), conciliadoEn);
 
     assertEquals(Dinero.deCop(5_000), envio.comisionRecaudo().orElseThrow());
     assertEquals(conciliadoEn, envio.recaudoConciliadoEn().orElseThrow());
+    assertEquals(ModalidadRecaudo.BANCO, envio.modalidadRecaudo().orElseThrow());
   }
 
   @Test
@@ -138,14 +139,41 @@ class EnvioTest {
 
     assertTrue(envio.comisionRecaudo().isEmpty());
     assertTrue(envio.recaudoConciliadoEn().isEmpty());
+    assertTrue(envio.modalidadRecaudo().isEmpty());
   }
 
   @Test
   void unRecaudoYaConciliadoNoSePuedeConciliarDeNuevo() {
     Envio envio = conUnaGuia();
-    envio.conciliarRecaudo(Dinero.deCop(5_000), AHORA);
+    envio.conciliarRecaudo(ModalidadRecaudo.BANCO, Dinero.deCop(5_000), AHORA);
 
     assertThrows(
-        ExcepcionDeDominio.class, () -> envio.conciliarRecaudo(Dinero.deCop(5_000), AHORA));
+        ExcepcionDeDominio.class,
+        () -> envio.conciliarRecaudo(ModalidadRecaudo.BANCO, Dinero.deCop(5_000), AHORA));
+  }
+
+  /**
+   * Los créditos de la plataforma no cobran comisión (docs/13 §3), así que una conciliación a
+   * créditos con un número encima está mal en una de las dos cosas: o la modalidad o la cifra. No
+   * se guarda a medias.
+   */
+  @Test
+  void elRecaudoACreditosNoAdmiteComision() {
+    Envio envio = conUnaGuia();
+
+    assertThrows(
+        ExcepcionDeDominio.class,
+        () -> envio.conciliarRecaudo(ModalidadRecaudo.CREDITOS, Dinero.deCop(5_000), AHORA));
+    assertTrue(envio.recaudoConciliadoEn().isEmpty());
+  }
+
+  @Test
+  void elRecaudoACreditosSeConciliaConComisionCero() {
+    Envio envio = conUnaGuia();
+
+    envio.conciliarRecaudo(ModalidadRecaudo.CREDITOS, Dinero.deCop(0), AHORA);
+
+    assertEquals(ModalidadRecaudo.CREDITOS, envio.modalidadRecaudo().orElseThrow());
+    assertEquals(Dinero.deCop(0), envio.comisionRecaudo().orElseThrow());
   }
 }

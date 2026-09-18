@@ -238,8 +238,17 @@ class ListarEnviosEnRevisionTest {
     assertEquals(pedido.numeroPedido().valor(), enRevision.numeroPedido());
   }
 
+  /**
+   * Acusar una emisión que <b>sigue bloqueando</b> deja rastro y no la esconde.
+   *
+   * <p>Esta prueba afirmaba lo contrario hasta el 18 de septiembre de 2026, y con ella el defecto:
+   * un acuse con la nota "lo reviso mañana" hacía desaparecer de la única pantalla —y del único
+   * correo— un pedido pagado que no podía emitir guía, con saldo posiblemente comprometido. Para
+   * una guía acusar es todo lo que se puede hacer; para una emisión indeterminada existe una acción
+   * que sí la resuelve, y es esa la que la saca. Lo levantó una revisión adversarial.
+   */
   @Test
-  void un_acuse_saca_la_emision_de_la_bandeja_y_no_la_resuelve() {
+  void un_acuse_no_esconde_una_emision_que_sigue_bloqueando() {
     Pedido pedido = sembrarPedido();
     EmisionDeGuia emision =
         EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-1", "admin:7", DESPACHO);
@@ -248,14 +257,36 @@ class ListarEnviosEnRevisionTest {
 
     AcuseDeRevision acuse =
         acusarEmision.ejecutar(
-            new AcusarRevisionDeEmisionComando(emision.id(), "admin:7", "No hubo cobro."));
+            new AcusarRevisionDeEmisionComando(emision.id(), "admin:7", "Lo reviso mañana."));
 
-    assertTrue(bandeja.ejecutar(50).emisiones().isEmpty());
     assertEquals(emision.id(), acuse.referencia());
+    assertEquals(1, bandeja.ejecutar(50).emisiones().size());
     // Sigue abierta: acusarla deja rastro, no desbloquea el pedido. Eso es plata y es otra puerta.
     assertEquals(
         EstadoEmision.INDETERMINADA, emisiones.buscarPorId(emision.id()).orElseThrow().estado());
     assertTrue(emisiones.buscarPorId(emision.id()).orElseThrow().estado().abierta());
+  }
+
+  /**
+   * Y una que ya no bloquea sí se esconde con el acuse: ahí mirar y anotar es de verdad todo lo que
+   * hay que hacer, y dejarla en la lista la convertiría en un cementerio que nadie abre.
+   */
+  @Test
+  void un_acuse_si_esconde_una_emision_que_ya_no_bloquea() {
+    Pedido pedido = sembrarPedido();
+    EmisionDeGuia emision =
+        EmisionDeGuia.solicitar(pedido.id(), "Coordinadora", "tarifa-2", "admin:7", DESPACHO);
+    emision.aceptada(List.of("envio-1"), DESPACHO);
+    emision.sinAnular("una guía puede seguir viva", DESPACHO.plusSeconds(60));
+    emisiones.guardar(emision);
+
+    assertEquals(1, bandeja.ejecutar(50).emisiones().size());
+
+    acusarEmision.ejecutar(
+        new AcusarRevisionDeEmisionComando(emision.id(), "admin:7", "Anulada a mano en el panel."));
+
+    assertTrue(bandeja.ejecutar(50).emisiones().isEmpty());
+    assertFalse(emisiones.buscarPorId(emision.id()).orElseThrow().estado().abierta());
   }
 
   @Test

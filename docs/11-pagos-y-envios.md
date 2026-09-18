@@ -443,8 +443,16 @@ con comisión financiera y disponible **los jueves**. Un pedido entregado un
 viernes pasa casi una semana en `RECAUDO_PENDIENTE` sin que nada esté mal, así
 que cualquier alerta sobre ese estado tiene que contar jueves, no días. ⚠️ Es lo
 que reporta la ayuda pública de Skydropx, una sola fuente y no un contrato
-(`docs/13` §3); **dónde cae el recaudo sigue sin decidirse** y es una decisión
-contable, no técnica.
+(`docs/13` §3).
+
+**Dónde cae el recaudo se decidió el 18 de septiembre de 2026 (`adr/0043`), y la
+respuesta no es ninguna de las dos: la cuenta tiene las dos modalidades, y cada
+envío registra por cuál entró la suya.** Elegirlo por envío no se puede — las dos
+son formas de retirar el saldo acumulado, no un campo de la guía—, así que la
+modalidad se pide **al conciliar**, que es cuando quien concilia la está viendo
+en el panel de la plataforma. La única regla que el dominio comprueba es la suya:
+los créditos no cobran comisión, y una conciliación que diga las dos cosas se
+rechaza en el agregado y en la base.
 
 **El recaudo pendiente es visible en el panel.** Un pedido entregado hace veinte
 días sin conciliar es plata en la calle, y el sistema tiene que gritarlo, no

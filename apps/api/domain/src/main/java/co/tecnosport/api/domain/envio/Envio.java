@@ -30,6 +30,7 @@ public final class Envio {
   private final Instant despachadoEn;
   private Dinero comisionRecaudo;
   private Instant recaudoConciliadoEn;
+  private ModalidadRecaudo modalidadRecaudo;
 
   public Envio(
       UUID id,
@@ -37,7 +38,8 @@ public final class Envio {
       List<GuiaEnvio> guias,
       Instant despachadoEn,
       Dinero comisionRecaudo,
-      Instant recaudoConciliadoEn) {
+      Instant recaudoConciliadoEn,
+      ModalidadRecaudo modalidadRecaudo) {
     this.id = Objects.requireNonNull(id, "El id del envío no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
     if (guias == null || guias.isEmpty()) {
@@ -51,10 +53,11 @@ public final class Envio {
         Objects.requireNonNull(despachadoEn, "La fecha de despacho no puede ser nula.");
     this.comisionRecaudo = comisionRecaudo;
     this.recaudoConciliadoEn = recaudoConciliadoEn;
+    this.modalidadRecaudo = modalidadRecaudo;
   }
 
   public static Envio crear(UUID pedidoId, List<GuiaEnvio> guias, Instant ahora) {
-    return new Envio(GeneradorIdentificador.nuevo(), pedidoId, guias, ahora, null, null);
+    return new Envio(GeneradorIdentificador.nuevo(), pedidoId, guias, ahora, null, null, null);
   }
 
   /**
@@ -102,15 +105,54 @@ public final class Envio {
         .map(EventoSeguimiento::estado);
   }
 
-  /** Idempotente por diseño: un envío ya conciliado rechaza un segundo intento. */
-  public void conciliarRecaudo(Dinero comisionRecaudo, Instant ahora) {
+  /**
+   * Idempotente por diseño: un envío ya conciliado rechaza un segundo intento.
+   *
+   * <p>La modalidad no la elige el sistema: se registra la que quien concilia vio en el panel de la
+   * plataforma (ver {@link ModalidadRecaudo}). Lo único que el dominio comprueba es la consecuencia
+   * que sí es suya — <b>los créditos no cobran comisión</b>, así que una conciliación a créditos
+   * con un número encima está mal en una de las dos cosas y no se guarda a medias.
+   */
+  /**
+   * ¿Todas las guías de este envío llegaron a {@code destino}?
+   *
+   * <p>Existe porque el pedido tiene <b>un</b> estado y el envío puede tener <b>varias</b> guías
+   * (`adr/0031`: ninguna transportadora colombiana admite multipaquete, así que un pedido de dos
+   * variantes son dos guías que se mueven solas). Antes, el primer evento que llegara movía el
+   * pedido entero: con dos bultos, la entrega del primero arrancaba los cinco días hábiles del
+   * retracto y el año de garantía sobre mercancía que el comprador todavía no tenía, y en
+   * contraentrega daba por vendido y por cobrado un bulto en camino. Lo levantó una revisión
+   * adversarial.
+   *
+   * <p>Un envío sin ninguna guía devuelve {@code false}: no hay nada que haya llegado.
+   */
+  public boolean todasLasGuiasEn(EstadoEnvio destino) {
+    Objects.requireNonNull(destino, "El estado de destino no puede ser nulo.");
+    return !guias.isEmpty()
+        && guias.stream().allMatch(guia -> guia.ultimoEstado().filter(destino::equals).isPresent());
+  }
+
+  public void conciliarRecaudo(
+      ModalidadRecaudo modalidadRecaudo, Dinero comisionRecaudo, Instant ahora) {
+    Objects.requireNonNull(modalidadRecaudo, "La modalidad de recaudo no puede ser nula.");
     Objects.requireNonNull(comisionRecaudo, "La comisión de recaudo no puede ser nula.");
     Objects.requireNonNull(ahora, "La fecha de conciliación no puede ser nula.");
     if (recaudoConciliadoEn != null) {
       throw new ExcepcionDeDominio("El recaudo de este envío ya fue conciliado.");
     }
+    if (!modalidadRecaudo.admiteComision() && comisionRecaudo.valor().signum() != 0) {
+      throw new ExcepcionDeDominio(
+          "El recaudo a créditos no cobra comisión, y este declara "
+              + comisionRecaudo.valor()
+              + ".");
+    }
+    this.modalidadRecaudo = modalidadRecaudo;
     this.comisionRecaudo = comisionRecaudo;
     this.recaudoConciliadoEn = ahora;
+  }
+
+  public Optional<ModalidadRecaudo> modalidadRecaudo() {
+    return Optional.ofNullable(modalidadRecaudo);
   }
 
   public UUID id() {

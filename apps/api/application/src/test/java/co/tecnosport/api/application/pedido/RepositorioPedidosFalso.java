@@ -22,6 +22,7 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   private final Map<Integer, Long> secuenciasPorAnio = new HashMap<>();
   private final List<UUID> reclamos = new ArrayList<>();
   private final Set<UUID> avisados = new HashSet<>();
+  private final Set<UUID> comprobados = new HashSet<>();
   private UUID perdedorDelReclamo;
 
   @Override
@@ -87,6 +88,31 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
       return false;
     }
     return avisados.add(pedidoId);
+  }
+
+  @Override
+  public List<Pedido> buscarSinComprobante(Collection<EstadoPedido> estados) {
+    return pedidos.values().stream()
+        .filter(p -> estados.contains(p.estado()))
+        .filter(p -> !comprobados.contains(p.id()))
+        .sorted(Comparator.comparing(Pedido::creadoEn))
+        .toList();
+  }
+
+  /** El mismo reclamo de verdad del aviso de plazo, sobre su propia marca. */
+  @Override
+  public boolean reclamarComprobante(UUID pedidoId, Instant ahora) {
+    reclamos.add(pedidoId);
+    if (pedidoId.equals(perdedorDelReclamo)) {
+      return false;
+    }
+    return comprobados.add(pedidoId);
+  }
+
+  /** Devolver el reclamo, que es lo que permite que la vuelta siguiente lo reintente. */
+  @Override
+  public void liberarComprobante(UUID pedidoId) {
+    comprobados.remove(pedidoId);
   }
 
   /** Que otra instancia le gane el reclamo a ese pedido. */

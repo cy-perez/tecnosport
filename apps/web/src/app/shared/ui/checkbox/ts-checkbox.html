@@ -13,6 +13,8 @@
       type="checkbox"
       [checked]="marcado()"
       [disabled]="deshabilitado()"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="error() ? idCasilla() + '-error' : null"
       (change)="marcadoCambio.emit($any($event.target).checked)"
     />
     @if (marcado()) {
@@ -28,3 +30,8 @@
   </span>
   {{ etiqueta() }}
 </label>
+@if (error(); as textoDeError) {
+  <p class="m-0 mt-4 text-sm text-ts-error" [id]="idCasilla() + '-error'" role="alert">
+    {{ textoDeError }}
+  </p>
+}

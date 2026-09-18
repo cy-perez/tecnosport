@@ -44,6 +44,10 @@
   --peso-fuerte: 700;
   --interlineado-titulares: 1.08;
   --interlineado-texto: 1.55;
+  --tracking-titulares-mayusculas: 0.03em;
+  --tracking-descriptor: 0.16em;
+  --tracking-texto: 0;
+  --ancho-linea: 68ch;
   --texto-xs: 12px;
   --texto-sm: 14px;
   --texto-base: 16px;
@@ -69,6 +73,7 @@
   --chaflan-md: 12px;
   --chaflan-lg: 20px;
   --chaflan-xl: 34px;
+  --chaflan-hero: 72px;
   --sombra-sm: 0 1px 2px rgba(0,0,0,.06);
   --sombra-md: 0 4px 12px rgba(0,0,0,.08);
   --sombra-lg: 0 12px 32px rgba(0,0,0,.12);
@@ -79,6 +84,8 @@
   --header-alto-movil: 60px;
   --header-alto-logo: 34px;
   --header-alto-logo-movil: 30px;
+  --hero-corte: 120px;
+  --hero-alto-min: 620px;
   --ancho-formulario: 384px;
   --ancho-formulario-lg: 512px;
   --ancho-filtro: 320px;

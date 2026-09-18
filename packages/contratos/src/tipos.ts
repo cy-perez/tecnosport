@@ -1463,6 +1463,8 @@ export interface components {
             motivo?: string;
         };
         ConciliarRecaudoRequest: {
+            /** @enum {string} */
+            modalidadRecaudo: "CREDITOS" | "BANCO";
             /** Format: int64 */
             comisionRecaudo?: number;
         };

@@ -19,6 +19,7 @@ import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
+import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
 import co.tecnosport.api.application.pedido.ListarPedidosAdmin;
 import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
@@ -46,6 +47,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
   PropiedadesPedido.class,
   PropiedadesVigilanciaPlazoEntrega.class,
+  PropiedadesComprobantes.class,
   PropiedadesTransferenciaManual.class,
   PropiedadesLegal.class
 })
@@ -110,6 +112,21 @@ public class ConfiguracionPedido {
     return new DespacharPedido(
         repositorioPedidos,
         repositorioEnvios,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        propiedadesApp.urlPublica() + "/es/checkout/estado");
+  }
+
+  @Bean
+  public EnviarComprobantesDeCompra enviarComprobantesDeCompra(
+      RepositorioPedidos repositorioPedidos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesApp propiedadesApp) {
+    return new EnviarComprobantesDeCompra(
+        repositorioPedidos,
         enviadorDeCorreo,
         textos,
         reloj,

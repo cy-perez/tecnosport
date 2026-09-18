@@ -51,6 +51,14 @@ public interface RepositorioEmisiones {
    */
   List<EmisionDeGuia> buscarSolicitadasAntesDe(Instant corte, int maximo);
 
+  /**
+   * Las que llevan en curso desde antes del corte: la plataforma nunca les dio desenlace.
+   *
+   * <p>Hermana de {@link #buscarSolicitadasAntesDe} y por el mismo motivo — un estado abierto sin
+   * salida por tiempo se queda abierto para siempre, bloqueando su pedido en silencio.
+   */
+  List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo);
+
   /** Una emisión concreta, para quien la señala desde la bandeja. */
   Optional<EmisionDeGuia> buscarPorId(UUID id);
 

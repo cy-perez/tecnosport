@@ -1,11 +1,13 @@
 package co.tecnosport.api.infrastructure.correo;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.domain.compartido.Dinero;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -25,8 +27,9 @@ class TextosDeCorreoMessageSourceTest {
   }
 
   /**
-   * Los veintiséis textos, en los dos idiomas. Es la prueba que hace que {@code
-   * correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
+   * Todos los textos, en los dos idiomas. Sin decir cuántos: el número estuvo escrito y llevaba
+   * desde la Fase 6 diciendo veintiséis cuando ya eran cincuenta y dos. Es la prueba que hace que
+   * {@code correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
    */
   @Test
   void todosLosTextosExistenEnLosDosIdiomas() {
@@ -233,5 +236,74 @@ class TextosDeCorreoMessageSourceTest {
 
     assertTrue(en.contains("tracking number"), en);
     assertTrue(en.contains("Servientrega"), en);
+  }
+
+  /**
+   * Lo que el comprobante de compra tiene que decir y lo que no puede decir. El negocio es un no
+   * obligado a facturar (art. 1.6.1.4.3 del Decreto 1625 de 2016) y optar por facturar lo
+   * convertiría en obligado —parágrafo 1 del art. 8 de la Resolución DIAN 000165 de 2023—, así que
+   * un documento que se llamara factura sería exactamente lo que no se quiso construir.
+   */
+  @Test
+  void elComprobanteDiceQueNoEsUnaFactura() {
+    String cierre = textos().texto(TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE, "https://x.co");
+
+    assertTrue(cierre.contains("no es una factura de venta"), cierre);
+    assertTrue(cierre.contains("1.6.1.4.3"), cierre);
+    assertTrue(cierre.contains("garantía"), cierre);
+  }
+
+  /**
+   * Quién vendió, que es información obligatoria del proveedor (Ley 1480 de 2011). Si esto cambia
+   * sin cambiar el pie del sitio, {@code npm run datos-negocio} lo detiene: estas tres cifras viven
+   * en once copias y el teléfono ya estuvo mal en cuatro de ellas durante una fase entera.
+   */
+  @Test
+  void elComprobanteIdentificaAlVendedor() {
+    String vendedor = textos().texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR);
+
+    assertTrue(vendedor.contains("NIT 1054994043-9"), vendedor);
+    assertTrue(vendedor.contains("contacto@tecnosport.co"), vendedor);
+    assertTrue(vendedor.contains("Medellín"), vendedor);
+  }
+
+  /** Y el comprobante tampoco nombra ningún IVA, porque el negocio no es responsable de él. */
+  @Test
+  void elComprobanteNoCobraIva() {
+    String totales =
+        textos().texto(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES, "179.800", "7.850", "187.650");
+
+    assertFalse(totales.contains("IVA"), totales);
+    assertTrue(totales.contains("179.800"), totales);
+    assertTrue(totales.contains("7.850"), totales);
+  }
+
+  /** Y existe en inglés de verdad, como los demás. */
+  @Test
+  void elComprobanteExisteEnIngles() {
+    ResourceBundleMessageSource fuente = new ResourceBundleMessageSource();
+    fuente.setBasename("correos");
+    fuente.setDefaultEncoding("UTF-8");
+    fuente.setFallbackToSystemLocale(false);
+
+    String en =
+        fuente.getMessage(
+            TextoDeCorreo.PEDIDO_COMPROBANTE_CIERRE.clave(),
+            new Object[] {"https://x.co"},
+            Locale.of("en"));
+
+    assertTrue(en.contains("not a sales invoice"), en);
+  }
+
+  /**
+   * El importe, agrupado según el idioma que rige. Vive aquí y no en el caso de uso porque el
+   * agrupamiento de miles es parte del idioma: el paquete inglés dice "COP {0}" y con el separador
+   * fijo del castellano habría recibido 179.800, que en inglés se lee ciento setenta y nueve con
+   * ocho.
+   */
+  @Test
+  void elImporteSeAgrupaComoSeEscribeEnElIdiomaQueRige() {
+    assertEquals("179.800", textos().dinero(Dinero.deCop(179_800)));
+    assertEquals("0", textos().dinero(Dinero.deCop(0)));
   }
 }

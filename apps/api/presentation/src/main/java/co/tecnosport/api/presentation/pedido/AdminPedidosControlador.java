@@ -233,7 +233,10 @@ public class AdminPedidosControlador {
             estado ->
                 conciliarRecaudo.ejecutar(
                     new ConciliarRecaudoComando(
-                        id, Dinero.deCop(cuerpo.comisionRecaudo()), actor)));
+                        id,
+                        cuerpo.modalidadRecaudo(),
+                        Dinero.deCop(cuerpo.comisionRecaudo()),
+                        actor)));
     return mapeador.aRespuesta(pedido);
   }
 

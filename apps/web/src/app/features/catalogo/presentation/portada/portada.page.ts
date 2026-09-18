@@ -7,12 +7,13 @@ import { origenPublico } from '../../../../core/seo/origen-publico';
 import { usarDatosEstructurados } from '../../../../core/seo/usar-metadatos';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsTarjetaProducto } from '../tarjeta-producto/ts-tarjeta-producto';
+import { TsHero } from './hero/ts-hero';
 import { usarBusquedaProductos } from '../../application/buscar-productos.consulta';
 import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
 
 @Component({
   selector: 'app-portada',
-  imports: [TranslocoPipe, RouterLink, TsTarjetaProducto, TsEsqueleto],
+  imports: [TranslocoPipe, RouterLink, TsHero, TsTarjetaProducto, TsEsqueleto],
   templateUrl: './portada.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

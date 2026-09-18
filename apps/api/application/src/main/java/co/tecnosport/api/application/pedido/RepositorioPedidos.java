@@ -70,4 +70,33 @@ public interface RepositorioPedidos {
    * que no salió: un aviso perdido, que es el lado por el que se prefiere fallar.
    */
   boolean reclamarAvisoDePlazo(UUID pedidoId, Instant ahora);
+
+  /**
+   * Los pedidos que ya están en firme y a los que todavía no se les mandó el comprobante de su
+   * compra.
+   *
+   * <p>Sin acotar por fecha, a diferencia de {@link #buscarSinAvisoDePlazo}: aquí el filtro por la
+   * marca en nulo ya deja fuera todo lo que se mandó, y el pedido en firme al que le falta su
+   * comprobante puede ser de cualquier momento — incluidos los anteriores a que esto existiera, que
+   * tienen derecho a recibirlo aunque llegue tarde.
+   */
+  List<Pedido> buscarSinComprobante(Collection<EstadoPedido> estados);
+
+  /**
+   * Reclama el comprobante de un pedido: devuelve {@code true} solo si esta llamada fue la que puso
+   * la marca. Mismo mecanismo y mismas dos razones que {@link #reclamarAvisoDePlazo} — varias
+   * instancias leyendo las mismas filas, y una escritura por pedido para que un fallo en el
+   * vigésimo no revierta las diecinueve marcas cuyos correos ya salieron.
+   */
+  boolean reclamarComprobante(UUID pedidoId, Instant ahora);
+
+  /**
+   * Devuelve el reclamo de un comprobante que no se pudo mandar, para que la vuelta siguiente lo
+   * reintente.
+   *
+   * <p>Sin esto, un fallo al enviar dejaba la marca puesta y ese comprador se quedaba sin su
+   * comprobante <b>para siempre</b>, porque la consulta ya no lo trae. No cubre el fallo silencioso
+   * —el adaptador de correo de producción se traga los de SMTP— pero sí todo lo que sí lanza.
+   */
+  void liberarComprobante(UUID pedidoId);
 }

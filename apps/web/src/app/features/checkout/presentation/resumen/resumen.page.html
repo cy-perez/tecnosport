@@ -60,66 +60,84 @@
           <dd class="m-0"><ts-precio [valor]="subtotal()" moneda="COP" /></dd>
         </div>
 
+        <!--
+          Todo lo del envío vive dentro de su propio <dd>, y no como <p> sueltos dentro del <dl>
+          como estaba hasta el 18 de septiembre de 2026. Dos motivos, y el segundo pesa más:
+          un <dl> solo admite <dt>, <dd> y <div> de agrupación —siete <p> hijos directos eran HTML
+          inválido—, y sobre todo la relación etiqueta-valor que anuncia un lector de pantalla se
+          rompía justo en el desglose de precio que el artículo 50 de la Ley 1480 obliga a mostrar.
+          Lo levantó la auditoría de accesibilidad.
+
+          De paso la etiqueta "Costo de envío" ya no desaparece mientras se cotiza ni cuando la
+          cotización falla: el valor cambia, la fila se queda.
+        -->
         @if (requiereDireccion()) {
-          @if (cotizando()) {
-            <p class="m-0 text-ts-texto-suave" aria-live="polite">
-              {{ 'checkout.resumen.envio_calculando' | transloco }}
-            </p>
-          } @else if (tarifa(); as envio) {
-            <div class="flex items-baseline justify-between">
-              <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
-              <dd class="m-0"><ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" /></dd>
-            </div>
-            <!--
-              Cero días significa "sin estimado", no "llega hoy": hay tarifas que no declaran plazo
-              y no se les inventa uno. Y es un estimado de la transportadora, no el plazo que
-              prometen los términos — eso lo dice el documento legal, no esta línea.
-            -->
-            <!-- Un día y varios días son dos textos, no una interpolación: "1 días" es lo que sale
-                 de fingir que el plural es siempre. -->
-            @if (envio.diasEstimados === 1) {
-              <p class="m-0 text-sm text-ts-texto-suave">
-                {{ 'checkout.resumen.envio_estimado_un_dia' | transloco }}
-              </p>
-            } @else if (envio.diasEstimados > 1) {
-              <p class="m-0 text-sm text-ts-texto-suave">
-                {{ 'checkout.resumen.envio_estimado' | transloco: { dias: envio.diasEstimados } }}
-              </p>
-            }
-          } @else if (sinCobertura()) {
-            <p class="m-0 text-ts-error" role="alert">
-              {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
-            </p>
-          } @else if (articulosNoAsegurables().length > 0) {
-            <!-- La tercera respuesta posible, y la única que no se arregla con nada: el artículo
-                 vale más de lo que la transportadora asegura. Se nombra, porque la salida es
-                 quitarlo o recogerlo en el punto. -->
-            <p class="m-0 text-ts-error" role="alert">
-              {{
-                (articulosNoAsegurables().length === 1
-                  ? 'checkout.resumen.articulo_no_asegurable'
-                  : 'checkout.resumen.articulos_no_asegurables'
-                ) | transloco: { articulos: nombresNoAsegurables() }
-              }}
-            </p>
-          } @else if (cotizacionRechazada()) {
-            <!-- La cuarta, y la única que no dice "vuelve a intentarlo": la plataforma rechazó los
-                 datos del envío y el reintento trae el mismo rechazo, porque las cotizaciones se
-                 deduplican por contenido. La salida es la recogida, igual que arriba. -->
-            <p class="m-0 text-ts-error" role="alert">
-              {{ 'checkout.resumen.envio_rechazado' | transloco }}
-            </p>
-          } @else if (errorCotizacion()) {
-            <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una
-                 dirección que puede estar bien. Esto es una caída nuestra y se dice como tal. -->
-            <p class="m-0 text-ts-error" role="alert">
-              {{ 'checkout.resumen.envio_no_calculado' | transloco }}
-            </p>
-          }
+          <div class="flex items-baseline justify-between gap-16">
+            <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
+            <dd class="m-0 flex flex-col items-end gap-4 text-right">
+              @if (cotizando()) {
+                <span class="text-ts-texto-suave" aria-live="polite">
+                  {{ 'checkout.resumen.envio_calculando' | transloco }}
+                </span>
+              } @else if (tarifa(); as envio) {
+                <ts-precio [valor]="envio.costoEnvio" [moneda]="envio.moneda" />
+                <!--
+                  Cero días significa "sin estimado", no "llega hoy": hay tarifas que no declaran
+                  plazo y no se les inventa uno. Y es un estimado de la transportadora, no el plazo
+                  que prometen los términos — eso lo dice el documento legal, no esta línea.
+                -->
+                <!-- Un día y varios días son dos textos, no una interpolación: "1 días" es lo que
+                     sale de fingir que el plural es siempre. -->
+                @if (envio.diasEstimados === 1) {
+                  <span class="text-sm font-regular text-ts-texto-suave">
+                    {{ 'checkout.resumen.envio_estimado_un_dia' | transloco }}
+                  </span>
+                } @else if (envio.diasEstimados > 1) {
+                  <span class="text-sm font-regular text-ts-texto-suave">
+                    {{
+                      'checkout.resumen.envio_estimado' | transloco: { dias: envio.diasEstimados }
+                    }}
+                  </span>
+                }
+              } @else if (sinCobertura()) {
+                <span class="text-ts-error" role="alert">
+                  {{ 'checkout.resumen.envio_sin_cobertura' | transloco }}
+                </span>
+              } @else if (articulosNoAsegurables().length > 0) {
+                <!-- La tercera respuesta posible, y la única que no se arregla con nada: el
+                     artículo vale más de lo que la transportadora asegura. Se nombra, porque la
+                     salida es quitarlo o recogerlo en el punto. -->
+                <span class="text-ts-error" role="alert">
+                  {{
+                    (articulosNoAsegurables().length === 1
+                      ? 'checkout.resumen.articulo_no_asegurable'
+                      : 'checkout.resumen.articulos_no_asegurables'
+                    ) | transloco: { articulos: nombresNoAsegurables() }
+                  }}
+                </span>
+              } @else if (cotizacionRechazada()) {
+                <!-- La cuarta, y la única que no dice "vuelve a intentarlo": la plataforma rechazó
+                     los datos del envío y el reintento trae el mismo rechazo, porque las
+                     cotizaciones se deduplican por contenido. La salida es la recogida. -->
+                <span class="text-ts-error" role="alert">
+                  {{ 'checkout.resumen.envio_rechazado' | transloco }}
+                </span>
+              } @else if (errorCotizacion()) {
+                <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una
+                     dirección que puede estar bien. Esto es una caída nuestra y se dice como tal. -->
+                <span class="text-ts-error" role="alert">
+                  {{ 'checkout.resumen.envio_no_calculado' | transloco }}
+                </span>
+              }
+            </dd>
+          </div>
         } @else if (ahorroPorRecoger(); as ahorro) {
-          <p class="m-0 text-sm text-ts-texto-suave">
-            {{ 'checkout.resumen.retiro_ahorro' | transloco: { valor: ahorro } }}
-          </p>
+          <div class="flex items-baseline justify-between gap-16">
+            <dt>{{ 'checkout.resumen.costo_envio' | transloco }}</dt>
+            <dd class="m-0 text-right text-sm text-ts-texto-suave">
+              {{ 'checkout.resumen.retiro_ahorro' | transloco: { valor: ahorro } }}
+            </dd>
+          </div>
         }
 
         <!-- Sin flete no hay total. Mostrar el subtotal bajo la etiqueta "Total a pagar" sería
@@ -241,6 +259,7 @@
             idCasilla="resumen-autoriza-datos"
             [etiqueta]="'checkout.resumen.autoriza_datos' | transloco"
             [marcado]="form.controls.autorizaDatos.value"
+            [error]="errorAutorizacion()"
             (marcadoCambio)="form.controls.autorizaDatos.setValue($event)"
           />
           <a
@@ -248,9 +267,6 @@
             [routerLink]="['/', idioma(), 'legales', 'privacidad']"
             >{{ 'checkout.resumen.ver_politica' | transloco }}</a
           >
-          @if (errorAutorizacion()) {
-            <p class="m-0 text-sm text-ts-error" role="alert">{{ errorAutorizacion() }}</p>
-          }
         </div>
 
         <!-- Habilitado aunque no haya cobertura: un botón deshabilitado sale del orden de

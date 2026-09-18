@@ -9,6 +9,7 @@ import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import { MedioReintegro } from '../../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
+  ModalidadRecaudo,
   MotivoCancelacion,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -181,7 +182,15 @@ class RepositorioPedidosAdminFalso implements RepositorioPedidosAdmin {
     return this.items[0];
   }
 
-  async conciliarRecaudo(): Promise<PedidoAdmin> {
+  recaudos: { pedidoId: string; modalidadRecaudo: ModalidadRecaudo; comisionRecaudo: number }[] =
+    [];
+
+  async conciliarRecaudo(
+    pedidoId: string,
+    modalidadRecaudo: ModalidadRecaudo,
+    comisionRecaudo: number,
+  ): Promise<PedidoAdmin> {
+    this.recaudos.push({ pedidoId, modalidadRecaudo, comisionRecaudo });
     return this.items[0];
   }
 
@@ -621,6 +630,66 @@ describe('ListaPedidosAdminPage', () => {
   });
 
   /** Despues de despachar ya existen los caminos que corresponden: no se ofrece cancelar. */
+  /**
+   * Por omisión, créditos: es la modalidad sin comisión, así que quien envíe sin mirar deja
+   * registrado "no hubo comisión", que es lo que el formulario en blanco deja verdadero.
+   */
+  it('concilia el recaudo a créditos por omisión', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'RECAUDO_PENDIENTE' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    // No se toca el campo de comisión: con créditos queda deshabilitado en cero, porque la opción
+    // dice "sin comisión" y pedir un cero obligatorio ahí era una contradicción en pantalla.
+    expect((await screen.findByLabelText('Comisión de recaudo')).hasAttribute('disabled')).toBe(
+      true,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Conciliar recaudo' }));
+
+    await vi.waitFor(() => expect(repositorio.recaudos.length).toBe(1));
+    expect(repositorio.recaudos[0]).toEqual({
+      pedidoId: 'p1',
+      modalidadRecaudo: 'CREDITOS',
+      comisionRecaudo: 0,
+    });
+  });
+
+  /**
+   * Conciliar por banco sin escribir la comisión tiene que decir por qué no pasa nada. Antes el
+   * botón no hacía absolutamente nada y el motivo no se decía en ningún sitio.
+   */
+  it('conciliar por banco sin comisión dice qué falta', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'RECAUDO_PENDIENTE' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.change(await screen.findByLabelText('Por dónde entró el dinero'), {
+      target: { value: 'BANCO' },
+    });
+    fireEvent.input(screen.getByLabelText('Comisión de recaudo'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Conciliar recaudo' }));
+
+    expect(await screen.findByText(/Escribe la comisión que cobró el banco/)).toBeTruthy();
+    expect(repositorio.recaudos).toHaveLength(0);
+  });
+
+  /** Y con consignación bancaria viaja la comisión que cobró el banco. */
+  it('concilia el recaudo por banco con su comisión', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'RECAUDO_PENDIENTE' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.change(await screen.findByLabelText('Por dónde entró el dinero'), {
+      target: { value: 'BANCO' },
+    });
+    fireEvent.input(screen.getByLabelText('Comisión de recaudo'), { target: { value: '5000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Conciliar recaudo' }));
+
+    await vi.waitFor(() => expect(repositorio.recaudos.length).toBe(1));
+    expect(repositorio.recaudos[0]).toEqual({
+      pedidoId: 'p1',
+      modalidadRecaudo: 'BANCO',
+      comisionRecaudo: 5000,
+    });
+  });
+
   it('un pedido despachado no ofrece cancelacion', async () => {
     await renderLista([pedidoDePrueba({ estado: 'DESPACHADO' })]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));

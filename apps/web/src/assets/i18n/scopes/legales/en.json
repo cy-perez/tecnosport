@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-14",
-    "vigencia": "In force since 14 September 2026.",
+    "version": "2026-09-18",
+    "vigencia": "In force since 18 September 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -132,7 +132,7 @@
       {
         "titulo": "13. Retention",
         "parrafos": [
-          "We keep your order and invoicing data for as long as Colombian accounting and tax obligations require, and the data needed to handle warranties for as long as the product's warranty term runs. Abandoned shopping carts are deleted automatically after thirty (30) days without activity. Once those periods end, data is deleted or anonymised."
+          "We keep your order and payment data for as long as Colombian accounting and tax obligations require, and the data needed to handle warranties for as long as the product's warranty term runs. Abandoned shopping carts are deleted automatically after thirty (30) days without activity. Once those periods end, data is deleted or anonymised."
         ]
       },
       {
@@ -144,13 +144,13 @@
       {
         "titulo": "15. Withdrawal and deletion",
         "parrafos": [
-          "You may withdraw your authorisation at any time. Deletion does not apply where there is a legal or contractual duty to keep the data: for example, information about an already invoiced purchase must be kept for the period imposed by tax law, even if you withdraw your authorisation for other purposes."
+          "You may withdraw your authorisation at any time. Deletion does not apply where there is a legal or contractual duty to keep the data: for example, information about an already paid purchase must be kept for the period imposed by tax law, even if you withdraw your authorisation for other purposes."
         ]
       },
       {
         "titulo": "16. Term",
         "parrafos": [
-          "This policy is in force from 14 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
+          "This policy is in force from 18 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
         ]
       }
     ]
@@ -183,7 +183,7 @@
         "titulo": "4. Products, images, and prices",
         "parrafos": [
           "Product photographs are our own and correspond to the unit we sell. Images and rotation viewers are to-scale representations of the actual product; colour may vary slightly depending on your screen.",
-          "All prices are shown in Colombian pesos (COP) and include applicable VAT. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay. If you choose to pick up your order at our Medellín location, you pay no shipping cost.",
+          "All prices are shown in Colombian pesos (COP) and are the final price of each product: Tecno Sport is not a VAT (IVA) taxpayer in Colombia, so no tax is added to the published price. The price of each product does not include the shipping cost: that amount depends on the destination city and on the size and weight of your order, and is calculated at the time of purchase. Before you pay, we show you the full breakdown: the price of each product, the subtotal, the shipping cost listed separately, and the total you will pay. If you choose to pick up your order at our Medellín location, you pay no shipping cost.",
           "If an obvious system or typing error shows a product at a manifestly wrong price, we will tell you before shipping and you may either confirm the purchase at the correct price or cancel it at no cost.",
           "Check the use and care restrictions on each product page; for footwear and sportswear, use other than intended may affect the warranty."
         ]
@@ -197,7 +197,8 @@
       {
         "titulo": "6. Payment methods",
         "parrafos": [
-          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform."
+          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform.",
+          "For every purchase we email you a receipt, to the address you gave us, with the detail of what you bought, what you paid, and how we deliver it. Keep it: it is the proof of your purchase and what you need to claim the warranty. That receipt is not a sales invoice: Tecno Sport is not a VAT (IVA) taxpayer and is not required to issue invoices, under article 1.6.1.4.3 of Decree 1625 of 2016."
         ]
       },
       {
@@ -290,7 +291,7 @@
       {
         "titulo": "19. Term",
         "parrafos": [
-          "Version in force since 14 September 2026."
+          "Version in force since 18 September 2026."
         ]
       }
     ]
@@ -333,7 +334,7 @@
       {
         "titulo": "5. Term",
         "parrafos": [
-          "Version in force since 14 September 2026."
+          "Version in force since 18 September 2026."
         ]
       }
     ]

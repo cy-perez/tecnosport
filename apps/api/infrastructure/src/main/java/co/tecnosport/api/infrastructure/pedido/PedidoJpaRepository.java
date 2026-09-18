@@ -39,4 +39,22 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
       where p.id = :pedidoId and p.avisoPlazoEntregaEnviadoEn is null
       """)
   int reclamarAvisoDePlazo(@Param("pedidoId") UUID pedidoId, @Param("ahora") Instant ahora);
+
+  List<PedidoJpaEntity> findByEstadoInAndComprobanteEnviadoEnIsNull(Collection<String> estados);
+
+  /** El mismo reclamo condicional del aviso de plazo, y por las mismas dos razones. */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query(
+      """
+      update PedidoJpaEntity p set p.comprobanteEnviadoEn = :ahora
+      where p.id = :pedidoId and p.comprobanteEnviadoEn is null
+      """)
+  int reclamarComprobante(@Param("pedidoId") UUID pedidoId, @Param("ahora") Instant ahora);
+
+  /**
+   * Devuelve el reclamo de un comprobante que no se pudo mandar. Ver {@code liberarComprobante}.
+   */
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
+  @Query("update PedidoJpaEntity p set p.comprobanteEnviadoEn = null where p.id = :pedidoId")
+  int liberarComprobante(@Param("pedidoId") UUID pedidoId);
 }

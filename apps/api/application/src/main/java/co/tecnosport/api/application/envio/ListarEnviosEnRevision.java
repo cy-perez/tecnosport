@@ -121,6 +121,24 @@ public final class ListarEnviosEnRevision {
     return revisadaEn != null && !revisadaEn.isBefore(evento.recibidoEn());
   }
 
+  /**
+   * ¿El acuse puede esconder esta emisión?
+   *
+   * <p><b>Solo si ya no bloquea nada.</b> Para una guía, acusar es todo lo que se puede hacer: no
+   * hay ninguna acción que la resuelva, así que el acuse la oculta y un evento posterior la
+   * devuelve. Para una emisión no es igual — una {@code INDETERMINADA} <b>sigue abierta y sigue
+   * impidiendo emitir la guía de ese pedido</b>, y existe una acción que sí la resuelve ({@code
+   * ResolverEmisionIndeterminada}). Dejar que el acuse la escondiera convertía un "la miro mañana"
+   * en un pedido pagado, con saldo posiblemente comprometido, que desaparecía de la única pantalla
+   * y del único correo que lo nombraban. Lo levantó una revisión adversarial.
+   *
+   * <p>Las que no bloquean —{@code PARCIAL} y {@code SIN_ANULAR}— sí se esconden con el acuse: ahí
+   * mirar y anotar es de verdad todo lo que hay que hacer.
+   */
+  private static boolean laEsconde(Map<UUID, Instant> revisadas, EmisionDeGuia emision) {
+    return revisadas.containsKey(emision.id()) && !emision.estado().abierta();
+  }
+
   private List<EmisionEnRevision> emisionesSinDesenredar(int maximo) {
     List<EmisionDeGuia> candidatas = emisiones.buscarQueExigenOjoHumano(maximo);
     Map<UUID, Instant> revisadas =
@@ -128,7 +146,7 @@ public final class ListarEnviosEnRevision {
             TipoDeRevision.EMISION, candidatas.stream().map(EmisionDeGuia::id).toList());
 
     return candidatas.stream()
-        .filter(emision -> !revisadas.containsKey(emision.id()))
+        .filter(emision -> !laEsconde(revisadas, emision))
         .map(
             emision ->
                 new EmisionEnRevision(

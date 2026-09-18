@@ -45,11 +45,11 @@
                 {{ 'admin.revision_envios.guias.ocurrio_en' | transloco }}
               </dt>
               <dd class="m-0 mb-8">
-                {{ guia.ocurrioEn | date: 'medium' }}
+                {{ fechaConHora(guia.ocurrioEn) }}
                 <span class="block text-ts-texto-suave">
                   {{
                     'admin.revision_envios.guias.recibido_en'
-                      | transloco: { fecha: guia.recibidoEn | date: 'medium' }
+                      | transloco: { fecha: fechaConHora(guia.recibidoEn) }
                   }}
                 </span>
               </dd>
@@ -59,18 +59,35 @@
               <p class="m-0 mb-8 text-ts-texto-suave">
                 {{
                   'admin.revision_envios.guias.ya_revisada'
-                    | transloco: { fecha: guia.revisadaEn | date: 'medium' }
+                    | transloco: { fecha: fechaConHora(guia.revisadaEn) }
                 }}
               </p>
             }
 
-            <ts-boton variante="secundario" (click)="alternar(guia.guiaId)">
-              {{ 'admin.revision_envios.acciones.abrir' | transloco }}
+            <ts-boton
+              variante="secundario"
+              [expandido]="abierta() === guia.guiaId"
+              [controla]="'acuse-guia-' + guia.guiaId"
+              [etiquetaAccesible]="
+                (abierta() === guia.guiaId
+                  ? 'admin.revision_envios.acciones.cerrar_guia'
+                  : 'admin.revision_envios.acciones.abrir_guia'
+                ) | transloco: { guia: guia.numeroGuia }
+              "
+              (click)="alternar(guia.guiaId)"
+            >
+              {{
+                (abierta() === guia.guiaId
+                  ? 'admin.revision_envios.acciones.cerrar'
+                  : 'admin.revision_envios.acciones.abrir'
+                ) | transloco
+              }}
             </ts-boton>
 
             @if (abierta() === guia.guiaId) {
               <form
                 class="mt-16"
+                [id]="'acuse-guia-' + guia.guiaId"
                 [formGroup]="formularioNota"
                 (submit)="$event.preventDefault(); acusarGuia(guia)"
               >
@@ -139,7 +156,7 @@
                 {{ 'admin.revision_envios.emisiones.solicitada_en' | transloco }}
               </dt>
               <dd class="m-0 mb-8">
-                {{ emision.solicitadaEn | date: 'medium' }}
+                {{ fechaConHora(emision.solicitadaEn) }}
                 <span class="block text-ts-texto-suave">
                   {{
                     'admin.revision_envios.emisiones.pedida_por'
@@ -150,18 +167,43 @@
             </dl>
 
             <div class="flex flex-wrap gap-8">
-              <ts-boton variante="secundario" (click)="alternar(emision.emisionId)">
-                {{ 'admin.revision_envios.acciones.abrir' | transloco }}
+              <ts-boton
+                variante="secundario"
+                [expandido]="abierta() === emision.emisionId"
+                [controla]="'acuse-emision-' + emision.emisionId"
+                [etiquetaAccesible]="
+                  (abierta() === emision.emisionId
+                    ? 'admin.revision_envios.acciones.cerrar_emision'
+                    : 'admin.revision_envios.acciones.abrir_emision'
+                  ) | transloco: { pedido: emision.numeroPedido }
+                "
+                (click)="alternar(emision.emisionId)"
+              >
+                {{
+                  (abierta() === emision.emisionId
+                    ? 'admin.revision_envios.acciones.cerrar'
+                    : 'admin.revision_envios.acciones.abrir'
+                  ) | transloco
+                }}
               </ts-boton>
               @if (esIndeterminada(emision)) {
-                <ts-boton variante="secundario" (click)="alternar('resolver:' + emision.emisionId)">
+                <ts-boton
+                  variante="secundario"
+                  [expandido]="abierta() === 'resolver:' + emision.emisionId"
+                  [controla]="'resolver-' + emision.emisionId"
+                  [etiquetaAccesible]="
+                    'admin.revision_envios.resolucion.abrir_accesible'
+                      | transloco: { pedido: emision.numeroPedido }
+                  "
+                  (click)="alternar('resolver:' + emision.emisionId)"
+                >
                   {{ 'admin.revision_envios.resolucion.abrir' | transloco }}
                 </ts-boton>
               }
             </div>
 
             @if (abierta() === 'resolver:' + emision.emisionId) {
-              <div class="mt-16">
+              <div class="mt-16" [id]="'resolver-' + emision.emisionId">
                 <h4 class="mt-0 mb-8 text-base font-medio">
                   {{ 'admin.revision_envios.resolucion.titulo' | transloco }}
                 </h4>
@@ -174,6 +216,7 @@
                     [idCampo]="'revision-envios-' + emision.emisionId"
                     [label]="'admin.revision_envios.resolucion.identificadores' | transloco"
                     [ayuda]="'admin.revision_envios.resolucion.identificadores_ayuda' | transloco"
+                    [error]="errorIdentificadores()"
                     formControlName="envios"
                   />
                 </form>
@@ -202,6 +245,7 @@
             @if (abierta() === emision.emisionId) {
               <form
                 class="mt-16"
+                [id]="'acuse-emision-' + emision.emisionId"
                 [formGroup]="formularioNota"
                 (submit)="$event.preventDefault(); acusarEmision(emision)"
               >

@@ -107,7 +107,9 @@ No es opcional y hay que resolverlo antes de abrir.
 
 **Comercio electrónico, Ley 1480 de 2011**
 
-- **Precios con IVA incluido**, visibles antes de pagar.
+- **El precio anunciado es el total a pagar por el producto** (art. 26), visible
+  antes de pagar. Hoy sin IVA dentro, porque el negocio no es responsable de él
+  (`adr/0041`).
 - **Resumen del pedido antes de finalizar la transacción**, con el precio
   individual de cada producto, el precio total, **los costos de envío informados
   de forma adecuada y separada**, y la suma total a pagar. Es el **artículo 50**,
@@ -115,6 +117,14 @@ No es opcional y hay que resolverlo antes de abrir.
   `adr/0021`: el envío se informa aparte porque la norma pide informarlo aparte.
 - Información del proveedor antes de la compra: nombre, NIT, dirección, teléfono
   y correo.
+- **Comprobante de la compra al correo registrado**, con el detalle de lo
+  comprado, lo pagado y quién vendió. Es el soporte con el que quien compró
+  reclama la garantía, y **no es una factura**: el negocio es una persona natural
+  no responsable de IVA, así que está entre los no obligados a facturar (art.
+  1.6.1.4.3 del Decreto 1625 de 2016) y optar por hacerlo lo convertiría en
+  obligado de forma permanente (Resolución DIAN 000165 de 2023, art. 8 par. 1).
+  Confirmado por el negocio el 18 de septiembre de 2026 como el documento de la
+  venta. Ver `adr/0042`.
 - **Derecho de retracto: 5 días hábiles** desde la entrega en compras a distancia.
   Debe estar explicado y ser ejercible.
 - **Reversión del pago** cuando aplique, dentro de los plazos legales.

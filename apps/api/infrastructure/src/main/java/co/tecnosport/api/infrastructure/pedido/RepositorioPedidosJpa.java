@@ -170,6 +170,41 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  public List<Pedido> buscarSinComprobante(Collection<EstadoPedido> estados) {
+    Objects.requireNonNull(estados, "Los estados no pueden ser nulos.");
+    if (estados.isEmpty()) {
+      return List.of();
+    }
+    return pedidos
+        .findByEstadoInAndComprobanteEnviadoEnIsNull(
+            estados.stream().map(EstadoPedido::name).toList())
+        .stream()
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())))
+        .toList();
+  }
+
+  /** La misma excepción al "sin transacción propia" que {@link #reclamarAvisoDePlazo}, e igual. */
+  @Override
+  @Transactional
+  public boolean reclamarComprobante(UUID pedidoId, Instant ahora) {
+    Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
+    Objects.requireNonNull(ahora, "La fecha del comprobante no puede ser nula.");
+    return pedidos.reclamarComprobante(pedidoId, ahora) == 1;
+  }
+
+  @Override
+  @Transactional
+  public void liberarComprobante(UUID pedidoId) {
+    Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
+    pedidos.liberarComprobante(pedidoId);
+  }
+
+  @Override
   public NumeroPedido siguienteNumero(int anio) {
     Long secuencial =
         jdbc.queryForObject(

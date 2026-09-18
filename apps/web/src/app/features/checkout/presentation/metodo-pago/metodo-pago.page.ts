@@ -106,7 +106,6 @@ export class MetodoPagoPage {
     if (!this.checkout.metodoPago()) {
       return;
     }
-    // Creación del pedido y redirección a Wompi es el paso 4c, todavía sin construir.
     void this.router.navigate(['../confirmar'], { relativeTo: this.route });
   }
 }

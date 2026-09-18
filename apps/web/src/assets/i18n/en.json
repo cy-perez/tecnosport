@@ -59,7 +59,24 @@
     "lineas": "Our lines",
     "novedades": "New arrivals",
     "ver_todo": "See the full catalog",
-    "sin_novedades": "No published products yet."
+    "sin_novedades": "No published products yet.",
+    "hero": {
+      "eyebrow": "A shop in Medellín",
+      "titular": "Everything you need to keep moving.",
+      "apoyo": "Sportswear and footwear, bags and tech. Shipping is quoted for your city at checkout, and you pay online or cash on delivery where it is available.",
+      "cta": {
+        "principal": "Browse the catalog",
+        "secundario": "Browse tech"
+      },
+      "confianza": {
+        "envio": "Shipping quoted for your city",
+        "contraentrega": "Cash on delivery where available",
+        "garantia": "Statutory warranty on everything"
+      },
+      "imagen": {
+        "alt": "Two people with bags, a laptop, a phone, a tablet, a speaker and headphones on a table, on a rooftop at sunset"
+      }
+    }
   },
   "paginador": {
     "navegacion": "Pagination",

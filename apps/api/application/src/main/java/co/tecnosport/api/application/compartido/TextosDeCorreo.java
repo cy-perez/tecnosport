@@ -1,5 +1,7 @@
 package co.tecnosport.api.application.compartido;
 
+import co.tecnosport.api.domain.compartido.Dinero;
+
 /**
  * Resuelve un {@link TextoDeCorreo} al texto que se manda, con sus datos dentro.
  *
@@ -16,4 +18,16 @@ package co.tecnosport.api.application.compartido;
 public interface TextosDeCorreo {
 
   String texto(TextoDeCorreo texto, Object... argumentos);
+
+  /**
+   * Un importe escrito como se escribe en el idioma en el que se va a pintar el correo.
+   *
+   * <p>Vive aquí y no en el caso de uso por lo mismo que los textos: <b>el agrupamiento de miles es
+   * parte del idioma</b>. Nació dentro de {@code EnviarComprobantesDeCompra}, con un {@code
+   * DecimalFormat} de separador fijo, y su propio javadoc confesaba el problema —"esto no sabe en
+   * cuál idioma se va a pintar"—: el paquete inglés dice {@code COP {0}} y habría recibido {@code
+   * 179.800}, que en inglés se lee como ciento setenta y nueve con ocho. Lo levantó una revisión
+   * adversarial.
+   */
+  String dinero(Dinero valor);
 }

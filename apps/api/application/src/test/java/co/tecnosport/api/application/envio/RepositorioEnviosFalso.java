@@ -29,6 +29,11 @@ final class RepositorioEnviosFalso implements RepositorioEnvios {
     return envios.stream().filter(e -> e.guiaDe(guia).isPresent()).findFirst();
   }
 
+  /** Para sembrar de nuevo el envío de un pedido: lo usa el caso de las dos guías. */
+  void borrarDe(UUID pedidoId) {
+    envios.removeIf(e -> e.pedidoId().equals(pedidoId));
+  }
+
   List<Envio> guardados() {
     return List.copyOf(envios);
   }

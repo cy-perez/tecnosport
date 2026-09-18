@@ -46,7 +46,9 @@ import java.util.UUID;
  * <p>Sin {@code @Transactional} a propósito, igual que {@code RepositorioInventarioJpa}: el bloqueo
  * pesimista de cada {@code buscarPorVarianteId} solo protege la última unidad si todo el ciclo
  * reservar-más-crear-el-pedido corre dentro de una única transacción abierta por quien llame a
- * {@code ejecutar} — eso le toca a la capa de presentación, todavía sin construir.
+ * {@code ejecutar}. <b>La abre {@code PedidoControlador}</b>, con un {@code TransactionTemplate}.
+ * Esta frase decía "todavía sin construir" desde la Fase 3 y llevaba dos fases sobreviviendo a su
+ * propia construcción: quien la leyera concluiría que la garantía del bloqueo sigue rota.
  *
  * <p>La idempotencia por {@code Idempotency-Key} de docs/03-api.md tampoco vive aquí: es un asunto
  * de la petición HTTP, no del caso de uso.

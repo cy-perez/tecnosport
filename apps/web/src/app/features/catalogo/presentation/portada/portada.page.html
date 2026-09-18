@@ -1,19 +1,7 @@
-<section class="mx-auto max-w-contenido px-16 pt-24 pb-48">
-  <!-- TODO(negocio): copia definitiva del hero y su imagen 4:3 de 1200x900
-       (docs/04-ui-marca.md). Los textos de abajo son descriptivos, sacados de
-       docs/00-producto.md, no una propuesta de marca. -->
-  <div class="chaflan flex flex-col items-start gap-16 bg-ts-superficie-alt px-32 py-48">
-    <h1 class="m-0 font-display text-2xl">{{ 'portada.titulo' | transloco }}</h1>
-    <p class="m-0 text-ts-texto-suave">{{ 'portada.lema' | transloco }}</p>
-    <a
-      class="anillo-foco-sobre-acento chaflan bg-ts-acento px-24 py-12 text-ts-sobre-acento no-underline"
-      [routerLink]="['/', idioma(), 'productos']"
-    >
-      {{ 'portada.ver_catalogo' | transloco }}
-    </a>
-  </div>
+<ts-hero [idioma]="idioma()" />
 
-  <h2 class="mt-48 mb-16 font-display text-lg">{{ 'portada.lineas' | transloco }}</h2>
+<section class="mx-auto max-w-contenido px-16 pt-48 pb-48">
+  <h2 class="m-0 mb-16 font-display text-lg">{{ 'portada.lineas' | transloco }}</h2>
   <nav
     class="grid grid-cols-[repeat(auto-fit,minmax(var(--ancho-min-eje),1fr))] gap-16"
     [attr.aria-label]="'portada.lineas' | transloco"
@@ -48,14 +36,14 @@
          tocar "Ver el catálogo" el mismo producto aparecía a dos columnas. Una
          tienda enseña dos por fila en el teléfono; el catálogo ya lo hacía. -->
     <div class="grid grid-cols-2 gap-16 desde-movil:grid-cols-3 desde-tableta:grid-cols-4">
-      <!-- Toda la franja va prioritaria, no solo la primera: la portada no
-           tiene <img> de hero (el suyo es un bloque de CSS), así que el LCP es
-           una de estas cuatro, y las cuatro se pintan del mismo tamaño y a la
-           misma altura. Cuál gana lo decide el orden de decodificado, no la
-           posición: medido en el navegador, gana la segunda. Son cuatro
-           imágenes fijas y todas sobre el pliegue. -->
+      <!-- Ninguna va prioritaria desde el 18 de septiembre de 2026, y es un
+           cambio, no un olvido. La franja entera iba con `prioritaria` porque
+           la portada no tenía <img> de hero —el suyo era un bloque de CSS— y el
+           LCP era una de estas cuatro. Ahora el hero trae una fotografía, que
+           es la candidata de verdad y la única con `priority`: priorizar cinco
+           imágenes es no priorizar ninguna (apps/web/CLAUDE.md, NG02955). -->
       @for (producto of novedades(); track producto.slug) {
-        <ts-tarjeta-producto [producto]="producto" [prioritaria]="true" />
+        <ts-tarjeta-producto [producto]="producto" [prioritaria]="false" />
       }
     </div>
   }

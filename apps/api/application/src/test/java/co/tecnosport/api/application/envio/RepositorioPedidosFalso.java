@@ -93,6 +93,19 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     return avisados.add(pedidoId);
   }
 
+  @Override
+  public List<Pedido> buscarSinComprobante(Collection<EstadoPedido> estados) {
+    return List.of();
+  }
+
+  @Override
+  public boolean reclamarComprobante(UUID pedidoId, Instant ahora) {
+    return false;
+  }
+
+  @Override
+  public void liberarComprobante(UUID pedidoId) {}
+
   /** Que otra instancia le gane el reclamo a ese pedido. */
   void queOtroGaneElReclamoDe(UUID pedidoId) {
     this.perdedorDelReclamo = pedidoId;

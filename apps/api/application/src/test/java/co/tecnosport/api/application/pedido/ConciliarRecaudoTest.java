@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
+import co.tecnosport.api.domain.envio.ModalidadRecaudo;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -80,7 +81,9 @@ class ConciliarRecaudoTest {
     Pedido pedido = pedidoConRecaudoPendiente();
 
     Pedido conciliado =
-        caso.ejecutar(new ConciliarRecaudoComando(pedido.id(), Dinero.deCop(5_000), "admin:test"));
+        caso.ejecutar(
+            new ConciliarRecaudoComando(
+                pedido.id(), ModalidadRecaudo.BANCO, Dinero.deCop(5_000), "admin:test"));
 
     assertEquals(EstadoPedido.RECAUDO_CONCILIADO, conciliado.estado());
     Envio envio = envios.buscarPorPedidoId(pedido.id()).orElseThrow();
@@ -96,7 +99,8 @@ class ConciliarRecaudoTest {
         PedidoNoEncontradoException.class,
         () ->
             caso.ejecutar(
-                new ConciliarRecaudoComando(UUID.randomUUID(), Dinero.deCop(5_000), "admin:test")));
+                new ConciliarRecaudoComando(
+                    UUID.randomUUID(), ModalidadRecaudo.BANCO, Dinero.deCop(5_000), "admin:test")));
   }
 
   @Test
@@ -129,7 +133,8 @@ class ConciliarRecaudoTest {
         TransicionDeEstadoInvalidaException.class,
         () ->
             caso.ejecutar(
-                new ConciliarRecaudoComando(pedido.id(), Dinero.deCop(5_000), "admin:test")));
+                new ConciliarRecaudoComando(
+                    pedido.id(), ModalidadRecaudo.BANCO, Dinero.deCop(5_000), "admin:test")));
   }
 
   @Test
@@ -166,6 +171,7 @@ class ConciliarRecaudoTest {
         EnvioNoEncontradoException.class,
         () ->
             caso.ejecutar(
-                new ConciliarRecaudoComando(pedido.id(), Dinero.deCop(5_000), "admin:test")));
+                new ConciliarRecaudoComando(
+                    pedido.id(), ModalidadRecaudo.BANCO, Dinero.deCop(5_000), "admin:test")));
   }
 }

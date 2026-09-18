@@ -7,17 +7,23 @@ import co.tecnosport.api.domain.envio.EstadoEmision;
 import co.tecnosport.api.infrastructure.envio.entidad.EmisionDeGuiaJpaEntity;
 import co.tecnosport.api.infrastructure.envio.entidad.EnvioEnPlataformaJpaEntity;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class RepositorioEmisionesJpa implements RepositorioEmisiones {
+
+  private static final Logger log = LoggerFactory.getLogger(RepositorioEmisionesJpa.class);
 
   /**
    * Los tres en los que puede haber plata comprometida sin desenlace, como nombres para la base.
@@ -48,7 +54,22 @@ public class RepositorioEmisionesJpa implements RepositorioEmisiones {
    * además de romper la regla de que ninguna excepción de JPA sale de {@code infrastructure}. Al
    * traducirla, quien llama recibe el mismo error que si la lectura previa la hubiera detectado.
    */
+  /**
+   * <strong>{@code @Transactional}, y es lo que impide una fila que el dominio no sabe
+   * leer.</strong> Este método escribe en dos tablas —la emisión y sus envíos en la plataforma— y
+   * sin transacción propia cada {@code saveAndFlush} se comprometía solo. Si la instancia moría
+   * entre los dos (Cloud Run reciclando, un despliegue, un OOM), quedaba una emisión {@code
+   * EN_CURSO} con cero envíos: un estado que {@link EmisionDeGuia} rechaza al reconstruirse, así
+   * que esa fila reventaba la consulta que la trajera. Y como la tarea de resolución mapea antes de
+   * devolver, <b>una sola fila mala detenía el despacho automático de todos los pedidos</b>. Lo
+   * levantó una revisión adversarial.
+   *
+   * <p>No contradice a {@code ADR-0033}: lo que ese ADR saca de una transacción es el <i>caso de
+   * uso</i>, porque ninguna transacción de base de datos revierte un cobro de Skydropx. Aquí no hay
+   * ningún tercero en la mitad — son dos escrituras nuestras que describen un solo hecho.
+   */
   @Override
+  @Transactional
   public void guardar(EmisionDeGuia emision) {
     exigirQueNoHayaOtraAbierta(emision);
     try {
@@ -122,28 +143,57 @@ public class RepositorioEmisionesJpa implements RepositorioEmisiones {
 
   @Override
   public List<EmisionDeGuia> buscarDePedido(UUID pedidoId) {
-    return emisiones.findByPedidoIdOrderBySolicitadaEnAsc(pedidoId).stream()
-        .map(this::aDominio)
-        .toList();
+    return sinLasIlegibles(emisiones.findByPedidoIdOrderBySolicitadaEnAsc(pedidoId));
   }
 
   @Override
   public List<EmisionDeGuia> buscarEnCurso(int maximo) {
-    return emisiones
-        .findByEstadoOrderBySolicitadaEnAsc(EstadoEmision.EN_CURSO.name(), Limit.of(maximo))
-        .stream()
-        .map(this::aDominio)
-        .toList();
+    return sinLasIlegibles(
+        emisiones.findByEstadoOrderBySolicitadaEnAsc(
+            EstadoEmision.EN_CURSO.name(), Limit.of(maximo)));
+  }
+
+  /**
+   * Las que el dominio no puede reconstruir se registran y se saltan, en vez de tumbar la consulta
+   * entera.
+   *
+   * <p>Segunda mitad de la defensa: el {@code @Transactional} de {@code guardar} impide crear filas
+   * así, pero una que ya exista no puede seguir deteniendo el despacho de todos los demás pedidos.
+   * Saltarla también es lo que manda {@code ADR-0038} para el camino de la cancelación: anular una
+   * guía no puede tumbar la cancelación del pedido ni el reintegro de quien compró.
+   *
+   * <p>Se registra en {@code error} con el identificador, y no en {@code warn}: es una fila que
+   * alguien tiene que mirar a mano, y hoy no sale en ninguna pantalla.
+   */
+  private List<EmisionDeGuia> sinLasIlegibles(List<EmisionDeGuiaJpaEntity> filas) {
+    List<EmisionDeGuia> leidas = new ArrayList<>(filas.size());
+    for (EmisionDeGuiaJpaEntity fila : filas) {
+      try {
+        leidas.add(aDominio(fila));
+      } catch (RuntimeException ilegible) {
+        log.error(
+            "Emisión {} del pedido {} no se puede reconstruir y se salta: {}. Hay que mirarla a"
+                + " mano: puede tener saldo comprometido en la plataforma.",
+            fila.getId(),
+            fila.getPedidoId(),
+            ilegible.getMessage());
+      }
+    }
+    return List.copyOf(leidas);
   }
 
   @Override
   public List<EmisionDeGuia> buscarSolicitadasAntesDe(Instant corte, int maximo) {
-    return emisiones
-        .findByEstadoAndSolicitadaEnBeforeOrderBySolicitadaEnAsc(
-            EstadoEmision.SOLICITADA.name(), corte, Limit.of(maximo))
-        .stream()
-        .map(this::aDominio)
-        .toList();
+    return sinLasIlegibles(
+        emisiones.findByEstadoAndSolicitadaEnBeforeOrderBySolicitadaEnAsc(
+            EstadoEmision.SOLICITADA.name(), corte, Limit.of(maximo)));
+  }
+
+  @Override
+  public List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo) {
+    return sinLasIlegibles(
+        emisiones.findByEstadoAndSolicitadaEnBeforeOrderBySolicitadaEnAsc(
+            EstadoEmision.EN_CURSO.name(), corte, Limit.of(maximo)));
   }
 
   @Override

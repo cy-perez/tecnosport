@@ -18,13 +18,29 @@ final class EnviadorDeCorreoFalso implements EnviadorDeCorreo {
 
   private final List<CorreoEnviado> enviados = new ArrayList<>();
   private boolean falla;
+  private boolean fallaUnaVez;
 
   void hazQueFalle() {
     this.falla = true;
   }
 
+  /** Que vuelva a funcionar, para comprobar que lo que falló se reintenta de verdad. */
+  void queVuelvaAFuncionar() {
+    this.falla = false;
+    this.fallaUnaVez = false;
+  }
+
+  /** Que falle solo el primero, para comprobar que un fallo no se lleva por delante al resto. */
+  void hazQueFalleUnaVez() {
+    this.fallaUnaVez = true;
+  }
+
   @Override
   public void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml) {
+    if (fallaUnaVez) {
+      fallaUnaVez = false;
+      throw new IllegalStateException("el servidor de correo no respondió");
+    }
     if (falla) {
       throw new IllegalStateException("el servidor de correo no respondió");
     }

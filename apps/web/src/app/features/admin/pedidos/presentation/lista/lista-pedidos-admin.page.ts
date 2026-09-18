@@ -7,7 +7,14 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -31,12 +38,15 @@ import {
   ESTADOS_QUE_ADMITEN_CANCELACION,
   EstadoPedido,
   FiltroPedidosAdmin,
+  MODALIDADES_RECAUDO,
+  ModalidadRecaudo,
   MOTIVOS_CANCELACION,
   MotivoCancelacion,
   PedidoAdmin,
 } from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia';
 
 const ESTADOS: readonly EstadoPedido[] = [
   'PAGO_PENDIENTE',
@@ -90,6 +100,7 @@ interface FormularioDespacho {
 }
 
 interface FormularioRecaudo {
+  modalidadRecaudo: FormControl<ModalidadRecaudo>;
   comisionRecaudo: FormControl<number | null>;
 }
 
@@ -99,6 +110,11 @@ interface FormularioCancelacion {
   medio: FormControl<string>;
   comprobante: FormControl<string>;
 }
+
+const CLAVE_MODALIDAD_RECAUDO: Record<ModalidadRecaudo, string> = {
+  CREDITOS: 'admin.pedidos.acciones.modalidades_recaudo.creditos',
+  BANCO: 'admin.pedidos.acciones.modalidades_recaudo.banco',
+};
 
 const CLAVE_MOTIVO_CANCELACION: Record<MotivoCancelacion, string> = {
   NO_DISPONIBILIDAD: 'admin.pedidos.cancelacion.motivos.no_disponibilidad',
@@ -265,11 +281,29 @@ export class ListaPedidosAdminPage {
     let form = this.formulariosRecaudo.get(pedidoId);
     if (!form) {
       form = new FormGroup({
-        comisionRecaudo: new FormControl<number | null>(null, [
+        // Créditos por omisión porque es la modalidad sin comisión: si alguien envía sin mirar, el
+        // registro dice "no hubo comisión", que es lo que el formulario deja verdadero sin tocar
+        // nada. El servidor rechaza créditos con comisión encima.
+        modalidadRecaudo: new FormControl<ModalidadRecaudo>('CREDITOS', { nonNullable: true }),
+        comisionRecaudo: new FormControl<number | null>(0, [
           Validators.required,
           Validators.min(0),
         ]),
       });
+      // El selector gobierna el campo: con créditos no hay comisión que escribir —la etiqueta de la
+      // opción lo dice— así que pedir un cero obligatorio en un campo que la opción declara
+      // inexistente era una contradicción en pantalla. Lo levantó la auditoría de accesibilidad.
+      const comision = form.controls.comisionRecaudo;
+      const gobernar = (modalidad: ModalidadRecaudo) => {
+        if (modalidad === 'CREDITOS') {
+          comision.setValue(0, { emitEvent: false });
+          comision.disable({ emitEvent: false });
+        } else {
+          comision.enable({ emitEvent: false });
+        }
+      };
+      gobernar(form.controls.modalidadRecaudo.value);
+      form.controls.modalidadRecaudo.valueChanges.subscribe(gobernar);
       this.formulariosRecaudo.set(pedidoId, form);
     }
     return form;
@@ -288,6 +322,13 @@ export class ListaPedidosAdminPage {
     }
     return form;
   }
+
+  protected readonly opcionesModalidadRecaudo = computed<OpcionSelect[]>(() =>
+    MODALIDADES_RECAUDO.map((modalidad) => ({
+      valor: modalidad,
+      etiqueta: this.traducir()(CLAVE_MODALIDAD_RECAUDO[modalidad]),
+    })),
+  );
 
   protected readonly opcionesMotivoCancelacion = computed<OpcionSelect[]>(() =>
     MOTIVOS_CANCELACION.map((motivo) => ({
@@ -424,6 +465,7 @@ export class ListaPedidosAdminPage {
     await this.ejecutar(() =>
       this.acciones.conciliarRecaudo.mutateAsync({
         pedidoId: pedido.id,
+        modalidadRecaudo: valores.modalidadRecaudo,
         comisionRecaudo: valores.comisionRecaudo ?? 0,
       }),
     );
@@ -474,6 +516,33 @@ export class ListaPedidosAdminPage {
     );
   }
 
+  /**
+   * El mensaje de un control que falta, para pasárselo a `[error]`.
+   *
+   * <p>Sin esto, los cuatro formularios de esta pantalla eran mudos: sus manejadores terminan en
+   * `markAllAsTouched(); return;`, y eso no pinta absolutamente nada si la plantilla no le pasa
+   * `[error]` a ningún control — tampoco pone `aria-invalid`. Pulsar el botón no hacía nada y el
+   * motivo no se decía en ningún sitio. Es la WCAG 3.3.1, identificación de errores, y lo levantó
+   * la auditoría de accesibilidad.
+   *
+   * <p>Un método y no un `computed` por control: los formularios se crean por fila en un `Map`, así
+   * que no hay una señal por control que observar. La plantilla lo vuelve a evaluar en cada
+   * detección de cambios, y la que importa la dispara el propio `(submit)`.
+   */
+  protected errorDe(control: AbstractControl | null | undefined, clave: string): string | null {
+    if (!control || !control.touched || control.valid) {
+      return null;
+    }
+    return this.traducir()(clave);
+  }
+
+  protected errorComisionRecaudo(pedidoId: string): string | null {
+    return this.errorDe(
+      this.formularioRecaudo(pedidoId).controls.comisionRecaudo,
+      'admin.pedidos.acciones.comision_recaudo_requerida',
+    );
+  }
+
   protected conciliandoRecaudo(pedidoId: string): boolean {
     return (
       this.acciones.conciliarRecaudo.isPending() &&
@@ -493,25 +562,14 @@ export class ListaPedidosAdminPage {
     if (!iso) {
       return '';
     }
-    const idioma = this.transloco.activeLang();
-    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'long',
-      timeZone: 'America/Bogota',
-    }).format(new Date(Date.parse(iso) - 1));
+    return ultimoDia(iso, this.transloco.activeLang());
   }
 
   protected formatearFecha(iso: string): string {
     if (!iso) {
       return '';
     }
-    const idioma = this.transloco.activeLang();
-    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: 'America/Bogota',
-    }).format(new Date(iso));
+    return fechaConHora(iso, this.transloco.activeLang());
   }
 }
 

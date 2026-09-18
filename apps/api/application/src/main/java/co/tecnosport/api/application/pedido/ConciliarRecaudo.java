@@ -11,10 +11,11 @@ import java.util.Objects;
 
 /**
  * Concilia el recaudo de un pedido {@code RECAUDO_PENDIENTE} (docs/11-pagos-y-envios.md): la
- * transportadora consignó, y su comisión se registra en el {@code Envio} del despacho. La
- * transición del pedido se aplica primero, igual que {@code DespacharPedido}: un segundo intento
- * sobre un pedido ya conciliado ({@code RECAUDO_CONCILIADO} es terminal) se bloquea antes de tocar
- * el envío de nuevo.
+ * transportadora entregó el dinero, y en el {@code Envio} del despacho se registran las dos cosas
+ * que describen esa entrega — por cuál de las dos vías entró y qué comisión cobró. La transición
+ * del pedido se aplica primero, igual que {@code DespacharPedido}: un segundo intento sobre un
+ * pedido ya conciliado ({@code RECAUDO_CONCILIADO} es terminal) se bloquea antes de tocar el envío
+ * de nuevo.
  */
 public final class ConciliarRecaudo {
 
@@ -42,7 +43,7 @@ public final class ConciliarRecaudo {
         repositorioEnvios
             .buscarPorPedidoId(pedido.id())
             .orElseThrow(() -> new EnvioNoEncontradoException(pedido.id()));
-    envio.conciliarRecaudo(comando.comisionRecaudo(), ahora);
+    envio.conciliarRecaudo(comando.modalidadRecaudo(), comando.comisionRecaudo(), ahora);
     repositorioPedidos.guardar(pedido);
     repositorioEnvios.guardar(envio);
     return pedido;

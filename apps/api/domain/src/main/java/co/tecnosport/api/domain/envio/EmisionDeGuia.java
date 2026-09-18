@@ -129,6 +129,30 @@ public final class EmisionDeGuia {
   }
 
   /**
+   * La emisión lleva demasiado tiempo en curso y la plataforma nunca le dio un desenlace.
+   *
+   * <p>Distinta de {@link #indeterminada}, aunque acaben en el mismo estado, y la diferencia
+   * importa al leer el detalle: allí no hay identificadores y no se puede releer nada; aquí <b>sí
+   * los hay</b> —el envío existe en la plataforma— y lo que pasa es que se quedó sin resolver. Las
+   * dos necesitan a una persona y las dos siguen bloqueando una emisión nueva de ese pedido, que es
+   * lo correcto mientras pueda haber saldo comprometido.
+   *
+   * <p>Existe porque {@code EN_CURSO} no tenía ninguna salida por tiempo: una emisión cuyo sondeo
+   * devolviera "sigue" para siempre se quedaba abierta, invisible —{@code exigeOjoHumano()} no la
+   * cubre— y bloqueando su pedido sin que nadie se enterara. Lo levantó una revisión adversarial.
+   */
+  public void estancada(String detalle, Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha no puede ser nula.");
+    if (estado != EstadoEmision.EN_CURSO) {
+      throw new ExcepcionDeDominio(
+          "Solo una emisión en curso se puede dar por estancada, no una en " + estado + ".");
+    }
+    this.estado = EstadoEmision.INDETERMINADA;
+    this.detalle = limpiar(detalle);
+    this.resueltaEn = ahora;
+  }
+
+  /**
    * Una persona miró el panel de la plataforma y <strong>el envío no está</strong>: nunca se creó,
    * así que no hubo cobro y el pedido queda libre para emitir otra vez.
    *

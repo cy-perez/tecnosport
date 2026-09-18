@@ -65,6 +65,11 @@ public class RepositorioEmisionesDobleDePrueba implements RepositorioEmisiones {
         .toList();
   }
 
+  @Override
+  public List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo) {
+    return List.of();
+  }
+
   private Stream<EmisionDeGuia> porEstado(EstadoEmision estado) {
     return emisiones.values().stream()
         .filter(emision -> emision.estado() == estado)

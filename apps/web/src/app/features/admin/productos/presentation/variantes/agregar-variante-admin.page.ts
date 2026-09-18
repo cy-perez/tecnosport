@@ -30,7 +30,16 @@ function grupoAtributo(): GrupoAtributo {
 
 @Component({
   selector: 'app-agregar-variante-admin',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect, TsSelectControl],
+  imports: [
+    TsPaginaFormulario,
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsMigas,
+    TsSelect,
+    TsSelectControl,
+  ],
   templateUrl: './agregar-variante-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -58,7 +67,11 @@ export class AgregarVarianteAdminPage {
     precio: new FormControl<number | null>(null, {
       validators: [Validators.required, Validators.min(0)],
     }),
-    tasaIva: new FormControl(0.19, {
+    // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
+    // Estatuto Tributario). El campo se queda —la calidad se pierde al cruzar los topes y ese día
+    // vuelve a hacer falta—, pero el servidor rechaza cualquier tasa distinta de cero mientras
+    // NEGOCIO_RESPONSABLE_IVA siga en false. Ver adr/0041.
+    tasaIva: new FormControl(0, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0)],
     }),
@@ -84,9 +97,28 @@ export class AgregarVarianteAdminPage {
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
-  protected readonly formularioInvalido = computed(() => {
-    this.valorFormulario();
-    return this.form.invalid;
+  /**
+   * El tope más bajo de las seis transportadoras de la cuenta, medido contra el sandbox
+   * (`docs/13` §6, "el peso va en kilos"): 8, 25, 60, 150, 200 y 500 kg. Por encima del primero ya
+   * hay tarifas que dejan de cotizar.
+   *
+   * <p>Avisa, no bloquea: puede haber un producto que de verdad pese eso, y el retiro en punto no
+   * necesita transportadora. Lo que de verdad atrapa es el error de unidad — 18 kg tecleados donde
+   * iban 1,8 —, que es el que se paga en cada flete.
+   *
+   * <p>Va como `[ayuda]` del propio campo y no como un `<p role="status">` aparte, que es como
+   * nació. Dos motivos, y los dos los levantó la auditoría de accesibilidad: una región viva creada
+   * por un `@if` **ya poblada** no tiene región que vigilar y varios lectores no la anuncian; y el
+   * aviso quedaba fuera del `aria-describedby` del campo, así que quien volvía a enfocar "Peso
+   * (gramos)" oía el número y nada más — justo la advertencia que explica por qué ese número está
+   * mal. Como ayuda queda atada al control, y de paso deja de haber una región viva que interrumpa
+   * al lector en mitad de una palabra mientras se teclea.
+   */
+  private static readonly TOPE_MAS_BAJO_GRAMOS = 8_000;
+
+  protected readonly pesoAlto = computed(() => {
+    const peso = this.valorFormulario().pesoGramos;
+    return peso != null && peso > AgregarVarianteAdminPage.TOPE_MAS_BAJO_GRAMOS;
   });
 
   protected readonly enviando = computed(() => this.mutacion.isPending());
@@ -114,6 +146,12 @@ export class AgregarVarianteAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Decir qué falta, no solo marcar. El botón dejó de ir deshabilitado —un `<button disabled>`
+      // sale del orden de tabulación, así que quien navega con teclado ni siquiera llega a
+      // enfocarlo para enterarse de por qué no pasa nada— y el corte vive aquí, igual que en el
+      // resumen del checkout. Son nueve campos obligatorios: sin este mensaje, pulsar "Crear
+      // variante" no producía absolutamente nada. Lo levantó la auditoría de accesibilidad.
+      this.error.set(this.transloco.translate('admin.productos.agregarVariante.faltanCampos'));
       return;
     }
     this.error.set(null);

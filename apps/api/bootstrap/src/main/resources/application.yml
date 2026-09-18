@@ -61,6 +61,13 @@ tecnosport:
       # Corto a proposito, y menor que el intervalo: si lo igualara, cada despliegue reiniciaria la
       # cuenta y con despliegues diarios la tarea no correria nunca.
       retraso-inicial-minutos: ${PLAZO_ENTREGA_VIGILANCIA_RETRASO_INICIAL_MINUTOS:5}
+    comprobantes:
+      # El comprobante de la compra, al correo de quien compró. Pocos minutos y no horas: llega
+      # mientras esa persona todavía está pendiente de lo que acaba de comprar. Que no sea
+      # instantáneo es a propósito — mandar correos no tiene por qué colgar del camino del dinero.
+      intervalo-minutos: ${PEDIDO_COMPROBANTES_INTERVALO_MINUTOS:2}
+      # Menor que el intervalo, como siempre: si lo igualara, cada despliegue reiniciaría la cuenta.
+      retraso-inicial-minutos: ${PEDIDO_COMPROBANTES_RETRASO_INICIAL_MINUTOS:1}
   gcs:
     # bucket-imagenes y url-publica no son secretos (docs/07-infra-gcp.md los documenta), por eso
     # sí llevan default real de dev — a diferencia de los placeholders de Wompi de abajo, que son
@@ -107,11 +114,14 @@ tecnosport:
     # negocio si quiere despachar contra entrega.
     monto-minimo: ${CONTRAENTREGA_MONTO_MINIMO:2000}
     monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:2000000}
-    # Lista separada por comas de LineaCatalogo (ROPA_Y_CALZADO, BOLSOS, CELULARES).
+    # Lista separada por comas de LineaCatalogo: ROPA_Y_CALZADO, BOLSOS, TECNOLOGIA. Esos son los
+    # tres valores del enum; CELULARES dejo de serlo el 14 de septiembre de 2026 y ponerlo aqui
+    # impide arrancar. El comentario lo siguio nombrando hasta el 18, que es justo el sitio donde
+    # alguien lo iba a leer bajo presion.
     #
     # Vacia a proposito: la regla del negocio es por PRECIO, no por linea, y la implementa
-    # monto-maximo. Excluir CELULARES entera bloquearia tambien los de 1.299.900 y 1.499.900, que
-    # el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
+    # monto-maximo. Excluir TECNOLOGIA entera bloquearia tambien los celulares de 1.299.900 y
+    # 1.499.900, que el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   skydropx:
@@ -283,12 +293,19 @@ tecnosport:
       # En horas, no en minutos: purgar carritos no es urgente, y barrer seguido una tabla que casi
       # nunca tiene nada que borrar solo gasta base de datos.
       intervalo-minutos: ${CARRITO_PURGA_INTERVALO_MINUTOS:360}
+  negocio:
+    # Hoy el negocio NO es responsable de IVA (par. 3 del art. 437 del Estatuto Tributario). Con
+    # `false`, el panel no deja dar de alta una variante con tasa distinta de cero: adicionar IVA al
+    # precio sin ser responsable obliga a cumplir íntegramente el régimen de los responsables
+    # (Decreto 1625 de 2016, art. 1.3.1.15.2, literal a). La calidad se pierde al cruzar los topes
+    # del par. 3, y ese día esta variable pasa a true junto con el texto publicado. Ver adr/0041.
+    responsable-de-iva: ${NEGOCIO_RESPONSABLE_IVA:false}
   legal:
     # Fecha de vigencia del texto publicado en /legales/privacidad. Va acoplada al texto, que vive
     # en los JSON de Transloco de este mismo repositorio: cambiar el texto y cambiar esta fecha son
     # el mismo commit. La variable existe para poder corregirla sin redesplegar, no para tener que
     # fijarla en cada entorno.
-    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-09-14}
+    politica-datos-version: ${POLITICA_DATOS_VERSION:2026-09-18}
   verificacion-correo:
     # Ningún doc especifica esta duración (solo la de recuperación, 30 min) — parámetro técnico,
     # no un dato de negocio.

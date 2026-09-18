@@ -3,6 +3,7 @@ import { MedioReintegro } from '../../retractos/domain/retracto.model';
 import {
   EmisionDeGuiaAdmin,
   FiltroPedidosAdmin,
+  ModalidadRecaudo,
   MotivoCancelacion,
   PedidoAdmin,
   PedidosPaginadosAdmin,
@@ -27,7 +28,11 @@ export interface RepositorioPedidosAdmin {
 
   rechazarEnEntrega(pedidoId: string, motivo: string): Promise<PedidoAdmin>;
 
-  conciliarRecaudo(pedidoId: string, comisionRecaudo: number): Promise<PedidoAdmin>;
+  conciliarRecaudo(
+    pedidoId: string,
+    modalidadRecaudo: ModalidadRecaudo,
+    comisionRecaudo: number,
+  ): Promise<PedidoAdmin>;
 
   /** `monto` y `medio` solo cuando el dinero ya habia entrado; el servidor rechaza si faltan. */
   cancelar(entrada: {

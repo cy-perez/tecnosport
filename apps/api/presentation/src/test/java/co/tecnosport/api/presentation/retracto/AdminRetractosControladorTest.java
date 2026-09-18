@@ -29,6 +29,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
+import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -312,7 +313,7 @@ class AdminRetractosControladorTest {
           pedidos,
           CalendarioHabil.sinFestivosCargados(),
           correos,
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           reloj);
     }
 
@@ -338,7 +339,7 @@ class AdminRetractosControladorTest {
           reintegros,
           new TopeDeReintegro(reintegros, new RepositorioSolicitudesReversionVacio()),
           correos,
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           reloj);
     }
 

@@ -328,6 +328,33 @@ class CancelarPedidoTest {
                 "admin:1"));
   }
 
+  /**
+   * Ningún bloqueo de inventario se sostiene mientras se habla con la plataforma.
+   *
+   * <p>En producción cada {@code buscarPorVarianteId} toma un bloqueo pesimista sobre la fila de
+   * esa variante, y anular guías son N llamadas HTTP a Skydropx dentro de la misma transacción. Con
+   * el orden anterior, cancelar desde el panel un pedido de la variante más vendida dejaba el
+   * checkout de cualquier otro comprador esperando a que el proveedor contestara. Lo levantó una
+   * revisión adversarial.
+   */
+  @Test
+  void anularLasGuiasNoSostieneNingunBloqueoDeInventario() {
+    Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);
+    emisionEmitidaDe(pedido, "envio-1", "envio-2");
+    int[] consultasAlHablarConElProveedor = {-1};
+    emisor.mientrasCancelaHaz(
+        () -> consultasAlHablarConElProveedor[0] = inventarios.consultasConBloqueo());
+
+    cancelar(pedido);
+
+    assertEquals(
+        0,
+        consultasAlHablarConElProveedor[0],
+        "se habló con la plataforma con bloqueos de inventario ya tomados");
+    // Y el inventario sí se devolvió: el orden cambió, no lo que hace.
+    assertTrue(inventarios.consultasConBloqueo() > 0);
+  }
+
   @Test
   void cancelarUnPedidoConGuiaEmitidaLaAnulaEnLaPlataforma() {
     Pedido pedido = pedidoEn(EstadoPedido.EN_PREPARACION, MetodoPago.NEQUI);

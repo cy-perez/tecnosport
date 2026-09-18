@@ -82,8 +82,11 @@ identifica al comprador, aunque sea solo por correo.
 
 ## Reglas de negocio que el código debe respetar
 
-- **Los precios se muestran con IVA incluido.** Lo exige el Estatuto del
-  Consumidor. La factura desglosa; la vitrina no.
+- **El precio que se muestra es el que se paga.** Lo exige el art. 26 de la Ley
+  1480: se informa "el precio de venta al público, incluidos todos los impuestos",
+  y el consumidor solo está obligado a pagar el precio anunciado. Hoy no hay
+  impuesto que incluir —el negocio es **no responsable de IVA** (`adr/0041`)—, así
+  que el precio publicado es el valor final del producto, sin nada que desglosar.
 - **Precio, existencia y costo de envío se recalculan en el servidor antes de
   cobrar.** Nunca se confía en lo que envía el navegador.
 - **El precio publicado es un precio base, sin flete.** El costo de envío se

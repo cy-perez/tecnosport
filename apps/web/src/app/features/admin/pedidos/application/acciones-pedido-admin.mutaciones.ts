@@ -1,7 +1,12 @@
 import { inject } from '@angular/core';
 import { injectMutation, QueryClient } from '@tanstack/angular-query-experimental';
 import { MedioReintegro } from '../../retractos/domain/retracto.model';
-import { EmisionDeGuiaAdmin, MotivoCancelacion, PedidoAdmin } from '../domain/pedido-admin.model';
+import {
+  EmisionDeGuiaAdmin,
+  ModalidadRecaudo,
+  MotivoCancelacion,
+  PedidoAdmin,
+} from '../domain/pedido-admin.model';
 import {
   GuiaDespachada,
   REPOSITORIO_PEDIDOS_ADMIN,
@@ -57,8 +62,16 @@ export function usarAccionesPedidoAdmin() {
   }));
 
   const conciliarRecaudo = injectMutation(() => ({
-    mutationFn: (variables: { pedidoId: string; comisionRecaudo: number }): Promise<PedidoAdmin> =>
-      repositorio.conciliarRecaudo(variables.pedidoId, variables.comisionRecaudo),
+    mutationFn: (variables: {
+      pedidoId: string;
+      modalidadRecaudo: ModalidadRecaudo;
+      comisionRecaudo: number;
+    }): Promise<PedidoAdmin> =>
+      repositorio.conciliarRecaudo(
+        variables.pedidoId,
+        variables.modalidadRecaudo,
+        variables.comisionRecaudo,
+      ),
     onSuccess: invalidarLista,
   }));
 

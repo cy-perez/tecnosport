@@ -42,6 +42,7 @@ import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.domain.envio.Envio;
 import co.tecnosport.api.domain.envio.GuiaEnvio;
+import co.tecnosport.api.domain.envio.ModalidadRecaudo;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
@@ -595,7 +596,7 @@ class PedidoControladorTest {
             pedido.id(),
             List.of(GuiaEnvio.crear("Interrapidisimo", "GUIA-99", Dinero.deCop(12_000))),
             Instant.now());
-    envio.conciliarRecaudo(Dinero.deCop(3_500), Instant.now());
+    envio.conciliarRecaudo(ModalidadRecaudo.BANCO, Dinero.deCop(3_500), Instant.now());
     envios.guardar(envio);
 
     String cuerpo =

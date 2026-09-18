@@ -103,6 +103,11 @@ class AvisarSaldoBajoTest {
   private static final class TextosFalsos implements TextosDeCorreo {
 
     @Override
+    public String dinero(co.tecnosport.api.domain.compartido.Dinero valor) {
+      return valor.valor().toPlainString();
+    }
+
+    @Override
     public String texto(TextoDeCorreo texto, Object... argumentos) {
       StringBuilder sb = new StringBuilder(texto.clave());
       for (Object argumento : argumentos) {

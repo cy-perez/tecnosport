@@ -64,6 +64,14 @@ final class RepositorioEmisionesFalso implements RepositorioEmisiones {
   }
 
   @Override
+  public List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo) {
+    return porEstado(EstadoEmision.EN_CURSO)
+        .filter(emision -> emision.solicitadaEn().isBefore(corte))
+        .limit(maximo)
+        .toList();
+  }
+
+  @Override
   public Optional<EmisionDeGuia> buscarPorId(UUID id) {
     return Optional.ofNullable(emisiones.get(id));
   }

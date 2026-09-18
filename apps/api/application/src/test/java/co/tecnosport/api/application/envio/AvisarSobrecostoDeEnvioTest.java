@@ -391,6 +391,11 @@ class AvisarSobrecostoDeEnvioTest {
     }
 
     @Override
+    public List<EmisionDeGuia> buscarEnCursoAntesDe(Instant corte, int maximo) {
+      return List.of();
+    }
+
+    @Override
     public Optional<EmisionDeGuia> buscarPorId(UUID id) {
       throw new UnsupportedOperationException();
     }
@@ -419,6 +424,11 @@ class AvisarSobrecostoDeEnvioTest {
    * sin que la lógica cambie.
    */
   private static final class TextosDeCorreoFalso implements TextosDeCorreo {
+
+    @Override
+    public String dinero(co.tecnosport.api.domain.compartido.Dinero valor) {
+      return valor.valor().toPlainString();
+    }
 
     @Override
     public String texto(TextoDeCorreo texto, Object... argumentos) {

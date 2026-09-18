@@ -4,9 +4,13 @@
 
 - Moneda única: COP. Objeto de valor `Dinero` con `BigDecimal` de escala 0. El
   peso colombiano no se fracciona en la práctica comercial.
-- **El precio almacenado y mostrado incluye IVA.** Cada producto guarda su
-  `tasa_iva` (`0.19` para casi todo el catálogo, `0.00` para lo excluido). El
-  desglose se calcula hacia atrás al facturar.
+- **El precio almacenado y mostrado es el valor final del producto.** Cada
+  variante guarda su `tasa_iva`, y hoy **vale `0.00` en todas**: el negocio es no
+  responsable del impuesto sobre las ventas (`adr/0041`), y a un no responsable le
+  está prohibido adicionar al precio suma alguna por ese concepto (Decreto 1625 de
+  2016, art. 1.3.1.15.2, literal a). La columna se queda porque la calidad se
+  pierde al cruzar los topes del parágrafo 3 del art. 437 del Estatuto Tributario;
+  el día que eso pase, el desglose vuelve a calcularse hacia atrás desde ella.
 - Todo cálculo intermedio en `BigDecimal`, con un solo redondeo al final,
   `HALF_UP`.
 - Prohibido `double`, `float` y `Double` en cualquier parte del recorrido.
@@ -128,9 +132,35 @@ La migración rellena **por SKU explícito** y solo después pone las columnas e
 relleno por defecto le habría puesto el mismo peso a una camiseta y a un par de
 tenis.
 
-`TODO: peso y dimensiones reales de las variantes del catálogo de producción,
-medidos con el producto empacado.` No se heredan de las filas sembradas ni se
-inventan: un peso inventado es un flete cobrado de menos, o un pedido que la
+### Cómo se mide un paquete, que era el pendiente de verdad
+
+Aquí hubo durante dos fases un `TODO` pidiendo "el peso y las dimensiones reales del catálogo de
+producción", y estaba mal planteado: el catálogo de producción no sale del sembrador, sale del
+panel, que exige las cuatro cifras desde la `V32`. No faltaba un dato: faltaba un **procedimiento**.
+Queda escrito el 18 de septiembre de 2026, y es corto a propósito.
+
+1. **Mide el producto ya empacado**, en la caja con la que va a salir — con su relleno, su bolsa y
+   su cinta. No el producto desnudo ni la caja del fabricante si no es la que se despacha.
+2. **Con báscula y cinta**, las dos del negocio. El peso en **gramos** y las tres medidas en
+   **centímetros** enteros, redondeando siempre **hacia arriba**: quedarse corto se paga en cada
+   flete, pasarse cuesta unos pesos en uno.
+3. **Quien carga el producto es quien mide**, en el momento de cargarlo. No después: una variante
+   sin paquete no se puede guardar, así que no hay forma de dejarlo "para luego" — y eso es
+   deliberado.
+4. **El panel avisa** si el peso pasa de 8 kg, que es el tope más bajo de las seis transportadoras
+   de la cuenta (medidos: 8, 25, 60, 150, 200 y 500 kg — `docs/13` §6). Avisa y no bloquea: lo que
+   ese aviso atrapa de verdad es el error de unidad, 18 kg tecleados donde iban 1,8.
+5. **Vuelve a medir cuando cambie el empaque**, no cuando cambie el producto: lo que cotiza la
+   transportadora es la caja.
+
+Por qué importa tanto para tan poca cosa: **cobran peso volumétrico** (un 30×25×10 de 1 kg real se
+cotizó como 3 kg, `docs/13` §6), así que una medida inflada sube el flete aunque el producto pese
+nada; y una corta la reliquida la transportadora después, contra el margen del negocio.
+
+Lo que no cambia: los valores del catálogo sembrado siguen siendo de demostración y no se heredan ni
+se inventan para producción.
+
+Un peso inventado es un flete cobrado de menos, o un pedido que la
 transportadora reliquida después. Eso último **ya se vigila** desde el 18 de septiembre de 2026:
 `AvisarSobrecostoDeEnvio` pregunta por `finance/extra-charges` y avisa de cada cobro extra, así que
 un peso mal medido deja de ser invisible — se entera el negocio por correo, aunque el margen del
@@ -395,7 +425,8 @@ Del despacho en adelante el rastro vive en `Envio`:
 
 ```
 envio
-  id, pedido_id, comision_recaudo, recaudo_conciliado_en, creado_en
+  id, pedido_id, comision_recaudo, recaudo_conciliado_en, modalidad_recaudo,
+  creado_en
 
 guia_envio
   id, envio_id, transportadora, codigo_transportadora, numero, costo_envio,

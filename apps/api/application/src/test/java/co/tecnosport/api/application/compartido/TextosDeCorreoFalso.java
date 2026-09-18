@@ -16,6 +16,15 @@ import java.util.stream.Collectors;
  */
 public final class TextosDeCorreoFalso implements TextosDeCorreo {
 
+  /**
+   * Sin agrupar: lo que la capa de aplicación tiene que demostrar es qué importe manda, no cómo se
+   * escribe. Cómo se escribe se prueba donde vive el idioma.
+   */
+  @Override
+  public String dinero(co.tecnosport.api.domain.compartido.Dinero valor) {
+    return valor.valor().toPlainString();
+  }
+
   @Override
   public String texto(TextoDeCorreo texto, Object... argumentos) {
     if (argumentos == null || argumentos.length == 0) {

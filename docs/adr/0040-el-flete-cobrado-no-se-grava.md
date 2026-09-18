@@ -107,7 +107,24 @@ historia encima, hay que arreglar hacia atrás pedidos que ya se cobraron.
   este documento, cada pedido a domicilio ya cobrado debe el 19% de su flete, y de los que estén
   cobrados para entonces no se podrá reconstruir el desglose.
 
+## Actualización del 18 de septiembre de 2026: la premisa se cayó el mismo día
+
+La pregunta que este documento dejó abierta en "Lo que esto NO arregla" se contestó horas después, y
+la respuesta es **el negocio no es responsable de IVA** (`adr/0041`).
+
+Eso no cambia la decisión —el flete se sigue cobrando tal cual, sin sumarle nada— pero **borra el
+razonamiento que la sostenía**: sin ser responsable no hay base gravable que integrar, así que el
+art. 447 y el Concepto DIAN 4945 de 2025 no aplican a esta venta, y el riesgo cuantificado más
+abajo (1.253 por pedido, el escenario C) no existe mientras la condición se mantenga.
+
+Léase el resto de este ADR con eso puesto: describe correctamente un problema que este negocio no
+tiene hoy, y que recupera el día que cruce los topes del parágrafo 3 del art. 437 y pase a ser
+responsable. Ese día vuelve a ser la decisión vigente, sin una línea que cambiarle.
+
 ## Lo que esto NO arregla
+
+~~**Nadie ha confirmado que el negocio sea responsable de IVA.**~~ **Contestado el 18 de septiembre
+de 2026: no lo es** (`adr/0041`). Lo que sigue describe bien por qué la pregunta importaba.
 
 **Nadie ha confirmado que el negocio sea responsable de IVA.** No está escrito en ningún documento
 del proyecto, y el sistema ya lo asume por todas partes: el catálogo sembrado lleva `tasa_iva = 0.19`

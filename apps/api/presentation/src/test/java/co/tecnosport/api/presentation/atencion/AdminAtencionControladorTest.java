@@ -14,6 +14,7 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.domain.atencion.PlazosDeAtencion;
 import co.tecnosport.api.domain.compartido.CalendarioHabil;
+import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -191,8 +192,7 @@ class AdminAtencionControladorTest {
     @Bean
     RadicarSolicitud radicarSolicitud(
         RepositorioSolicitudesAtencion repositorio, EnviadorDeCorreo correos, Reloj reloj) {
-      return new RadicarSolicitud(
-          repositorio, correos, (texto, argumentos) -> texto.clave(), reloj);
+      return new RadicarSolicitud(repositorio, correos, new TextosDeCorreoDobleDePrueba(), reloj);
     }
 
     @Bean
@@ -207,7 +207,7 @@ class AdminAtencionControladorTest {
         EnviadorDeCorreo correos,
         Reloj reloj) {
       return new ProrrogarSolicitud(
-          repositorio, PLAZOS, calendario, correos, (texto, argumentos) -> texto.clave(), reloj);
+          repositorio, PLAZOS, calendario, correos, new TextosDeCorreoDobleDePrueba(), reloj);
     }
 
     @Bean

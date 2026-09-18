@@ -4532,6 +4532,13 @@ abierta. Con "créditos" la conciliación se automatiza entera porque la comisi�
 "banco", lo máximo que se puede automatizar es el aviso. **Decidir eso cambia qué se construye**, y
 por eso no se construyó a medias mientras tanto.
 
+**Cerrado el 18 de septiembre de 2026 (`ADR-0043`), y la respuesta era una tercera:** la cuenta
+tiene las dos modalidades, así que cada envío registra por cuál entró su recaudo. Lo que hubo que
+medir antes de construir es que **elegirlo por envío no se puede** —las dos modalidades son formas
+de retirar el saldo, no un campo de la guía—, así que la modalidad se pide al conciliar, que es
+cuando quien concilia la está viendo. La automatización sigue esperando el vocabulario de
+`on_delivery_status`; lo que ya no la bloquea es la comisión.
+
 ## Envía emite: lo que no se puede emitir es una contraentrega con Envía (2026-09-18)
 
 La única emisión que se gastó, y contestó limpio. Este documento y `docs/13` llevaban un día
@@ -4602,6 +4609,362 @@ leer el artículo 447".
 confirmado que el negocio sea responsable de IVA.** No está escrito en ningún documento del
 proyecto, y el sistema ya lo asume en todas partes — catálogo sembrado al 0.19, `Variante`
 validando la tasa, y el sitio publicando que los precios la incluyen.
+
+## No responsable de IVA, y la frase que la norma prohíbe (2026-09-18)
+
+`ADR-0040` cerró el IVA del flete por la mañana y dejó escrita, en su sección "Lo que esto NO
+arregla", una pregunta más básica que nadie había hecho nunca: **¿el negocio es responsable de IVA?**
+No estaba en ningún documento del proyecto, y el sistema lo asumía en tres capas — el catálogo
+sembrado al 0.19, el panel proponiendo 0.19, y el sitio publicando en dos sitios que los precios lo
+incluyen.
+
+Preguntado el mismo día: **no lo es**, y es persona natural (el NIT del pie, `1054994043-9`, es una
+cédula; solo una persona natural puede ser no responsable, por el parágrafo 3 del art. 437 del
+Estatuto Tributario).
+
+### Lo que cambió el peso de la tarea
+
+La frase publicada no era un dato viejo. El **literal a del art. 1.3.1.15.2 del Decreto 1625 de
+2016** prohíbe a un no responsable *adicionar al precio suma alguna por concepto de IVA*, y añade que
+quien lo hace **queda obligado a cumplir íntegramente el régimen de los responsables**. O sea que
+equivocarse ahí no se corrige con un texto: se paga con un cambio de régimen tributario.
+
+Por eso la condición vive en `NEGOCIO_RESPONSABLE_IVA` y la guarda está en `AgregarVariante`, antes
+de tocar el repositorio, y no en un campo del formulario. Y por eso el sembrador ya no puede escribir
+otra tasa: **dejó de ser un parámetro de `guardarVariante`**.
+
+### Lo que la verificación dejó, que no era la respuesta
+
+Tres cosas que este proyecto tenía razonadas y sin escribir:
+
+- **El art. 26 de la Ley 1480 exige que el precio anunciado sea el total, no que se nombre el
+  impuesto.** Con un no responsable, el precio publicado ya cumple sin decir una palabra del IVA.
+- **Su segundo inciso es el que sostiene el modelo de precio base más flete** que la Fase 7 montó:
+  los costos adicionales por transporte "deberá ser informada adecuadamente, especificando el motivo
+  y el valor". Es exactamente lo que hace el checkout, y estaba sin escribir desde el 14 de
+  septiembre.
+- **No hay obligación de anunciarse.** El art. 506 del ET, que obligaba al antiguo régimen
+  simplificado a exhibir su inscripción, **está derogado** (Ley 1943 de 2018 y Ley 2010 de 2019). Que
+  los términos lo mencionen es una decisión de redacción: explica por qué no aparece ningún impuesto
+  donde el comprador colombiano espera verlo.
+
+### Y le corrigió la premisa a un ADR de esa misma mañana
+
+`ADR-0040` decidió que el flete no se grava razonando sobre el art. 447 y el Concepto DIAN 4945 de
+2025, y asumió un riesgo cuantificado. **Siendo no responsable no hay base gravable que integrar en
+ninguna línea**: la conclusión sobrevive y el razonamiento no. Cuarta vez en este proyecto, y la
+primera en que el ADR corregido tenía nueve horas de vida.
+
+## El comprobante que no es una factura (2026-09-18)
+
+El encargo fue "en cada compra expidamos una factura". El objetivo —que comprar dé confianza— estaba
+sin cubrir de verdad: **el sistema no le mandaba al comprador ni un renglón al comprar**. Los siete
+correos cubrían el retracto, la cancelación, el despacho, el plazo vencido, la PQR y la cuenta; de la
+compra misma, nada.
+
+Lo que no se podía hacer es la palabra. La **Resolución DIAN 000165 de 2023**, parágrafo 1 de su
+art. 8, dice que los no obligados a facturar *que opten por expedir factura* **se consideran para
+efectos tributarios obligados a facturar**. O sea que emitir una factura no es una funcionalidad: es
+una puerta de una sola dirección, con habilitación, numeración autorizada, validación previa y un
+proveedor tecnológico detrás. Se le llevó la bifurcación al negocio con las dos opciones y su costo,
+y eligió el comprobante.
+
+**Va como tarea programada y no colgado de cada camino**, y esa es la decisión de diseño que importa:
+un pedido queda en firme por cuatro caminos distintos —contraentrega verificada, webhook de pago,
+conciliación de pago y transferencia manual— y los cuatro tendrían que acordarse. Como tarea, la
+regla se enuncia una vez y sobre el estado: *todo pedido en firme tiene su comprobante*. De paso,
+mandar correos deja de colgar del camino del dinero.
+
+Y trajo una consecuencia que no era el objetivo: **el NIT, el correo y el teléfono del negocio pasan
+a vivir también fuera de los JSON del sitio**, porque el comprobante identifica al vendedor. Por eso
+`npm run datos-negocio` ahora barre también los dos `correos_*.properties` — una copia que el
+guardián no mira es exactamente el agujero por el que el celular estuvo mal en cuatro sitios durante
+una fase entera. Detalle en `adr/0042`.
+
+**Y la pregunta que quedaba abierta se cerró el mismo día:** *qué recibe quien compra como soporte de
+su compra* se había dejado para el contador, y la contestó el dueño del negocio — **el comprobante
+por correo es ese documento**, precisamente porque los productos se manejan como no responsable de
+IVA. No cambia una línea: es lo que la tarea ya hace y lo que el numeral 6 de los términos ya
+promete. Lo que cambia es que deja de ser una omisión con una nota al lado y pasa a ser una decisión
+con dueño y con fecha, que es la diferencia entre "no llegamos a decidirlo" y "se decidió esto, por
+esta norma".
+
+## Medir un paquete deja de ser un pendiente (2026-09-18)
+
+El `TODO` que llevaba dos fases pidiendo "el peso y las dimensiones reales del catálogo de
+producción" no se cerraba porque estaba mal planteado: el catálogo de producción no sale del
+sembrador, sale del panel, que exige las cuatro cifras desde la `V32`. **No faltaba un dato, faltaba
+un procedimiento**, y ahora está escrito en `docs/02`.
+
+El panel avisa cuando el peso pasa de 8 kg, que es el tope más bajo de las seis transportadoras de la
+cuenta —medidos 8, 25, 60, 150, 200 y 500 en `docs/13` §6—. Avisa y no bloquea: puede haber un
+producto que de verdad pese eso, y el retiro en punto no necesita transportadora. Lo que ese aviso
+atrapa de verdad es el error de unidad, 18 kg tecleados donde iban 1,8.
+
+**El `TODO` de la `V32` se queda donde está**: esa migración ya corrió y Flyway valida el checksum.
+
+Una cosa más, y es la de siempre: la primera versión del aviso usaba `text-ts-atencion`, que **no
+existe**. `npm run clases` lo dijo. Una clase inventada no falla, no hace nada.
+
+## El recaudo registra por dónde entró (2026-09-18)
+
+La decisión 6 de `docs/13` §5 llevaba cuatro días abierta, y la respuesta del negocio no era ninguna
+de las dos que la pregunta ofrecía: **la cuenta tiene las dos modalidades**, y la petición fue poder
+elegir envío por envío.
+
+**Esa petición no se puede cumplir, y medirlo antes de construir es lo que salvó la sesión.** Las dos
+modalidades son formas de retirar el saldo acumulado, no un campo del envío (`docs/13` §3): el cuerpo
+de la guía no lleva nada que diga dónde cae el dinero. Una pantalla que "eligiera" habría sido una
+intención registrada que ningún sistema ejecuta — **exactamente el mismo error que el método de pago
+elegido por el comprador**, que resultó ser una intención el 14 de septiembre.
+
+Lo que sí se puede es registrar por cuál entró, al conciliar, que es cuando quien concilia lo está
+viendo en el panel. Con eso la decisión 6 cierra, y la respuesta es "las dos, y cada envío dice cuál
+fue". La única regla que el dominio comprueba es la suya: **los créditos no cobran comisión**.
+
+### Dos guardianes que no guardaban nada
+
+Los dos aparecieron al escribir un campo obligatorio, y los dos son la forma que este proyecto ya
+conoce:
+
+1. **`@NotNull` no validaba nada.** No hay proveedor de Bean Validation en el classpath —lo dice
+   `OptionalValidatorFactoryBean` al arrancar— y no había ningún otro `@NotNull` en toda la capa de
+   presentación. `apps/api/CLAUDE.md` afirmaba que ahí se usa Bean Validation; era falso y quedó
+   corregido. **Esta lectura era correcta y estaba incompleta**, y lo demostró la CI unas horas
+   después: ver el párrafo siguiente.
+2. **Jackson tampoco protegía, y la nota que decía que sí estaba medida sobre otro caso.** "Jackson 3
+   no rellena los componentes que falten de un `record`" se midió en la Fase 6 sobre un `boolean`, y
+   con un primitivo es cierta. Un componente de **tipo referencia** llega en nulo tan tranquilo: se
+   comprobó mandando el cuerpo sin la clave, y pasó de largo hasta morir más adelante por otra razón.
+   Sin una guarda explícita, ese nulo llegaba al dominio y salía como un 500.
+
+La prueba de esa guarda afirma sobre el **código de error** y no solo sobre el estado, porque sin eso
+pasaba igual por la transición inválida del pedido: una prueba que se aprueba a sí misma. Detalle en
+`adr/0043`.
+
+**Y quitar el `@NotNull` decorativo tuvo un efecto que nadie vio venir**, porque no era de
+validación: springdoc deducía de él qué propiedades son `required` en el OpenAPI, así que el campo
+pasó a opcional en el contrato publicado y el cliente TypeScript generado dejó de exigirlo en tiempo
+de compilación — mientras el servidor seguía rechazando con 422 el cuerpo que lo omitiera. Lo atrapó
+**el trabajo de contratos de la integración continua**, que compara el OpenAPI vivo contra el cliente
+commiteado, y es la primera vez que ese guardián dispara sobre algo real.
+
+La corrección es un `@Schema(requiredMode = REQUIRED)`, que no valida nada y solo hace que el
+contrato diga lo que el servidor exige. O sea que un campo obligatorio de tipo referencia necesita
+**dos anotaciones con oficios distintos**: la guarda que protege y la que documenta. Y que este
+proyecto tenía un guardián menos decorativo de lo que parecía: el que compara el contrato.
+
+## La revisión adversarial de los 122 commits (2026-09-18)
+
+La última pasada de los tres revisores fue el **10 de septiembre** (`3b612e5`). Desde entonces
+habían entrado **122 commits sin documentación**, unos 540 archivos: toda la emisión de guías, la
+bandeja de revisión, el recaudo, los sobrecostos y lo de hoy. Tres pasadas en paralelo —dinero,
+capas y accesibilidad—, con el encargo de no arreglar nada y entregar la lista.
+
+### Lo que se arregló en la misma sesión
+
+Todo lo que esta rama había introducido, más lo barato que estaba a la vista. Lo escrito en el
+commit `eaf483b`; aquí lo que enseña:
+
+- **El comprobante podía perderse para siempre.** El reclamo se pone antes de mandar —es lo que
+  impide dos correos al mismo comprador— y un fallo dejaba la marca puesta con el correo sin salir.
+  Ahora un fallo que lanza devuelve el reclamo y se reintenta. El **silencioso** sigue abierto,
+  porque el adaptador se traga los de SMTP.
+- **El agrupamiento de miles es parte del idioma**, y estaba en el caso de uso con separador fijo.
+  El propio javadoc lo confesaba —"esto no sabe en cuál idioma se va a pintar"— y nadie lo leyó al
+  escribirlo.
+- **El mecanismo que impide el correo duplicado no tenía prueba contra Postgres.** La de aplicación
+  usa un doble cuyo reclamo atómico es un `Set.add()`: pasa igual con el SQL borrado. Es el mismo
+  patrón del plugin de capas que aceptaba la configuración sin aplicarla.
+- **`DatePipe` llevaba desde siempre pintando fechas en inglés**, sin `LOCALE_ID` y sin zona: un
+  comprador colombiano leía "September 18, 2026" en su propia pantalla de pedido, y el SSR y el
+  navegador no coincidían.
+- Tres comentarios decían "todavía sin construir" sobre cosas construidas hace dos fases, y uno de
+  ellos afirmaba que la garantía del bloqueo pesimista estaba rota cuando no lo está.
+
+### Lo que quedó abierto al entregar la lista, y se cerró después
+
+**Seis hallazgos anteceden a esta rama, y los seis cambian comportamiento del dinero o del
+despacho.** Se entregaron primero como lista, sin tocarlos —arreglar a ciegas el mismo día que se
+levantan es la forma de romper otra cosa— y se cerraron después, en orden de gravedad, con la
+entrada de abajo:
+
+1. **`RepositorioEmisionesJpa.guardar` escribe en dos transacciones.** Si la instancia muere entre
+   las dos, queda una fila `EN_CURSO` sin envíos — un estado que el agregado rechaza al reconstruir.
+   Y como la consulta mapea antes de devolver, esa fila **revienta la tarea de resolución entera**:
+   desde ese minuto ningún pedido pagado se despacha solo, y ese pedido tampoco se puede cancelar ni
+   reembolsar.
+2. **Con varias guías, un solo paquete mueve el pedido entero.** El primer `ENTREGADO` que llegue lo
+   marca todo: arrancan los cinco días del retracto y el año de garantía sobre mercancía que el
+   comprador todavía no tiene, y en contraentrega se da por cobrado un bulto en camino.
+3. **Una emisión `EN_CURSO` no vence nunca y no sale en la bandeja**: `exigeOjoHumano()` cubre
+   `INDETERMINADA`, `PARCIAL` y `SIN_ANULAR`, no ésta.
+4. **`CancelarPedido` sostiene bloqueos pesimistas de inventario mientras llama a Skydropx.** Si el
+   proveedor está lento, el checkout de esa variante se queda esperando.
+5. **Acusar una emisión la saca de la bandeja para siempre**, aunque siga bloqueando su pedido. Para
+   las guías el criterio es correcto —un evento posterior al acuse la devuelve—; para las emisiones
+   no hay nada que la traiga de vuelta.
+6. **`POST /pedidos/metodos-de-pago-disponibles` es público y sin límite, y cada llamada cotiza
+   contra Skydropx.** Agotar las 2 req/s de la cuenta deja el checkout ofreciendo solo recogida.
+
+Y del lado de la pantalla, uno que se repite en cuatro formularios del panel: **ninguno identifica
+sus errores**. `markAllAsTouched()` no pinta nada si la plantilla no pasa `[error]`, así que el
+botón no hace nada y el motivo no se dice. Se cerró el del recaudo, que es el que esta rama tocó —y
+los otros tres, más el resto de la auditoría, en la entrada de la banda de portada, más abajo.
+
+### Lo que la revisión confirmó que está bien
+
+Conviene anotarlo, porque una lista de hallazgos sin esto parece que todo está mal:
+
+- **Ningún `double` ni `float` para dinero** en ninguna capa, y ningún redondeo intermedio: el
+  reparto del flete entre bultos trunca por bulto y devuelve el residuo entero al de mayor valor, de
+  modo que la suma cuadra exactamente con el total.
+- **El servidor no confía en el cliente** para precio, existencia, flete, valor declarado ni estado
+  de pago. La única excepción es el costo de guía que teclea quien despacha, que es costo interno.
+- **No se puede emitir y cobrar dos veces el mismo pedido**: la fila se escribe antes de llamar, en
+  transacción propia, y el índice único parcial cubre los tres estados abiertos.
+- **`ConciliarRecaudo` no deja un pedido conciliado con el envío sin comisión** — aunque quien lo
+  garantiza es la transacción del controlador y no el orden de las líneas, que es lo que el javadoc
+  decía.
+- **La higiene de datos personales en los registros es deliberada y correcta**: se vuelcan nombres
+  de campos, nunca valores.
+- **`V50` no cambia ningún cálculo**: `tasa_iva` no participa en ninguna multiplicación de todo el
+  recorrido, ni en el backend ni en el frontend.
+
+### Los seis, cerrados (2026-09-18)
+
+Se arreglaron en orden de gravedad, cada uno con su prueba. Lo que enseñaron:
+
+**1. Una emisión se guardaba en dos transacciones.** `guardar` escribía la emisión y sus envíos por
+separado, así que una instancia que muriera en medio dejaba una fila `EN_CURSO` con cero envíos —un
+estado que el agregado rechaza al reconstruirse— y **esa sola fila detenía el despacho automático de
+todos los pedidos**, porque la consulta mapea antes de devolver y la excepción salía fuera del
+`try` por emisión. Ahora `guardar` es `@Transactional` —no contradice a `ADR-0033`: lo que aquel ADR
+saca de una transacción es el caso de uso, porque ninguna transacción revierte un cobro de Skydropx,
+y aquí no hay ningún tercero en la mitad— y las consultas de lista se saltan lo ilegible con un
+registro en `error` en vez de morir. Su prueba vive en una clase aparte **sin `@Transactional`**,
+porque con una transacción de prueba envolviéndolo todo no se puede observar qué queda comprometido.
+
+**2. Con varias guías, el primer paquete movía el pedido entero.** Entregar el primer bulto
+arrancaba los cinco días hábiles del retracto y el año de garantía sobre mercancía que el comprador
+todavía no tenía, y en contraentrega lo daba por cobrado. Ahora el pedido se mueve cuando **todas**
+las guías llegaron al mismo sitio. Y el caso mixto —una entregada y otra devuelta— **no mueve
+nada**: no es ni entregado ni rechazado, y el pedido tiene un solo estado para decirlo. Se queda en
+`DESPACHADO` a propósito, que es el lado por el que se prefiere fallar; resolverlo de verdad pide
+cumplimiento por línea, que es otro modelo y otra decisión.
+
+**3. Una emisión `EN_CURSO` no vencía nunca.** `SOLICITADA` tenía su corte de diez minutos y ésta no
+tenía ninguno: un sondeo que devolviera "sigue" para siempre la dejaba abierta, invisible —la
+bandeja mira `exigeOjoHumano()`, que no la cubre— y bloqueando su pedido en silencio. Ahora, pasado
+un día, pasa a `INDETERMINADA`, que es donde la bandeja sí la ve. Un día y no diez minutos porque
+aquí no hay nada perdido —el envío existe y se está consultando—: el mismo umbral y el mismo
+razonamiento que el vigilante de la bandeja, que quien compró espera movimiento diario.
+
+**4. `CancelarPedido` hablaba con Skydropx con los bloqueos de inventario ya tomados.** Cancelar un
+pedido de tres bultos de la variante más vendida dejaba esas filas bloqueadas durante toda la
+conversación con el proveedor, y cualquier comprador que intentara confirmar un pedido con esa
+variante se quedaba esperando en el checkout. Se pierde venta por una operación del panel.
+`CrearPedido` ya se cuidaba de esto —cotiza antes de reservar y lo deja escrito— y aquí se hacía lo
+contrario. Ahora las guías se anulan antes de tocar el inventario, con la transición todavía primero
+porque es la que valida. La prueba mira el contador de bloqueos **en el momento de hablar con el
+proveedor**, no al final.
+
+**5. Acusar una emisión la escondía para siempre.** Para una guía acusar es todo lo que se puede
+hacer, y un evento posterior la devuelve a la bandeja. Para una emisión no: una `INDETERMINADA`
+sigue abierta, **sigue impidiendo emitir la guía de ese pedido**, y existe una acción que sí la
+resuelve. Un acuse con la nota "lo reviso mañana" hacía desaparecer un pedido pagado, con saldo
+posiblemente comprometido, de la única pantalla y el único correo que lo nombraban. Ahora el acuse
+solo esconde lo que ya no bloquea. **La prueba que afirmaba lo contrario se reescribió**, y su
+comentario ya contenía la tensión: "acusarla deja rastro, no desbloquea el pedido".
+
+**6. El endpoint que cotiza sin límite.** `POST /pedidos/metodos-de-pago-disponibles` cotiza con
+recaudo —crea una cotización y la sondea— y quedaba fuera de los tres filtros de límite: el patrón
+`/api/v1/pedidos` es exacto y no cubre subrutas. Cien peticiones por minuto con `curl` agotan las dos
+por segundo de la cuenta, y a los compradores reales el checkout les ofrece solo recogida en el
+punto. Ya comparte perfil con la cotización, que existía exactamente por este motivo.
+
+**Lo que ninguno de los seis era: un descuido de escritura.** Los seis son huecos entre piezas que
+por separado están bien —una transacción que falta entre dos escrituras correctas, un estado de
+pedido que no alcanza para dos guías, un corte por tiempo que existe para un estado y no para su
+hermano, un orden de operaciones, un criterio de acuse copiado de un caso a otro que no era igual, y
+un patrón de ruta que no cubre subrutas—. Es el tipo de defecto que no aparece leyendo un commit:
+aparece leyendo dos piezas a la vez, que es justo lo que una revisión adversarial hace y lo que
+ninguna prueba verde iba a decir.
+
+## La portada tiene banda, y los formularios del panel dejan de ser mudos (2026-09-18)
+
+Dos encargos en el mismo bloque: plasmar el hero que entregó diseño, y cerrar los defectos de
+accesibilidad que la revisión adversarial había dejado en la lista.
+
+### El kit y la imagen se contradecían, y eso era la decisión
+
+El zip traía las dos cosas: un kit que pide **una fotografía 4:3** y pone el titular, el subtítulo y
+los botones en HTML, y una imagen que ya era **un banner terminado** con esos mismos tres elementos
+incrustados en los píxeles, botón "COMPRAR AHORA" incluido.
+
+Se llevó al negocio con las dos consecuencias delante —texto dentro de una imagen no se traduce, no
+lo lee un lector de pantalla, no escala en un teléfono, y un botón dibujado parece pulsable sin
+serlo— y eligió recortar la fotografía. El texto lo pone el HTML. Detalle en `docs/04`.
+
+### Lo que el kit pedía y no se podía hacer tal cual
+
+El `.scss` que venía llevaba treinta y tantos literales, dos capas decorativas hechas enteras de
+blancos con alfa, y un `ts-boton` "que todavía no existe" —existe hace fases—. Lo que de verdad
+hacía falta eran **tres longitudes**, y esas entraron por donde entran: `tokens.json`, con el
+generador emitiéndolas y tres utilidades en `tailwind.css`. Sin `.scss` de componente (`ADR-0020`) y
+sin un píxel suelto.
+
+**De paso se cerró un hueco viejo del kit**: `tracking` y `ancho_linea_ch` estaban decididos en
+`tokens.json` desde siempre y el generador **no los emitía**, así que no había forma de usarlos sin
+escribir un literal. Ahora salen como `--tracking-*` y `--ancho-linea`.
+
+### Tres cosas que solo se vieron abriendo el navegador
+
+Las tres pasaron `npm run clases`, las pruebas y el lint:
+
+1. **`chaflan-hero` compuesto con `chaflan` no hacía nada.** `.chaflan` vive en `tokens.css`, fuera
+   de toda capa, y una declaración sin capa le gana a cualquier utilidad de Tailwind aunque el
+   selector empate. El marco salía con el chaflán de un botón. La clase existía; no aplicaba.
+2. **La banda en `--color-primario` se volvía ámbar en tema oscuro**, y el botón de acento
+   desaparecía dentro de ella. `docs/04` ya lo decía —"las franjas grandes no se vuelven ámbar"— y el
+   pie ya usaba el par correcto. Es `--color-marca`.
+3. **El corte de 120 px se comía la esquina de un teléfono.** El kit lo resolvía con tres media
+   queries; un `min(token, 18vw)` hace lo mismo sin escalones.
+
+### Y el texto, que es publicidad y obliga
+
+Las cuatro afirmaciones del kit se revisaron contra lo que el sistema puede sostener. Dos no están en
+ningún documento del proyecto, una —"Envío a todo Colombia"— **es falsa hoy**, porque el checkout
+tiene `ENVIO_SIN_COBERTURA` y ofrece la recogida cuando no hay transporte, y la cuarta era un precio
+escrito en la plantilla. Lo que quedó publica lo mismo que prometen los términos.
+
+### Los formularios del panel eran mudos, los cuatro
+
+`markAllAsTouched()` no pinta nada si la plantilla no le pasa `[error]` a ningún control, y ninguno
+de los cuatro formularios de la lista de pedidos lo hacía: pulsar el botón no producía nada y el
+motivo no se decía en ningún sitio. Es la WCAG 3.3.1. Ahora los cuatro dicen qué falta, con un solo
+método —`errorDe(control, clave)`— porque los formularios se crean por fila en un `Map` y no hay una
+señal por control que observar.
+
+En el alta de variante, además, **el botón dejó de ir deshabilitado**: un `<button disabled>` sale
+del orden de tabulación, así que quien navega con teclado ni siquiera llegaba a enfocarlo para
+enterarse de por qué no pasaba nada, con nueve campos obligatorios. El corte vive en `enviar()`,
+igual que en el resumen del checkout, que ya lo tenía escrito.
+
+### Lo demás de la auditoría
+
+- **La bandeja de revisión** anuncia si una fila está abierta y qué región abre (`aria-expanded`,
+  `aria-controls`), cada botón se distingue del de al lado por su guía o su pedido —conteniendo la
+  etiqueta visible, que es la WCAG 2.5.3—, el error de identificadores dejó de vivir en la cabecera
+  de la página y **el foco vuelve al botón** de la fila que se acaba de cerrar, en vez de caer a
+  `<body>`.
+- **El `<dl>` de totales del checkout** era HTML inválido: siete `<p>` como hijos directos, justo en
+  el desglose de precio que el artículo 50 obliga a mostrar. Todo lo del envío vive ahora dentro de
+  su `<dd>`, y de paso la etiqueta "Costo de envío" ya no desaparece mientras se cotiza.
+- **`ts-checkbox` ganó `error`**, con `aria-invalid` y `aria-describedby` como sus hermanos. Faltaba
+  donde más pesa: la autorización de datos del checkout, que es de la Ley 1581.
+- **Las fechas** dejaron de salir en inglés (`DatePipe` sin `LOCALE_ID` cae a `en-US`) y con la zona
+  del entorno, que en SSR es UTC.
 
 ## Cómo conversar con Claude Code en este proyecto
 
