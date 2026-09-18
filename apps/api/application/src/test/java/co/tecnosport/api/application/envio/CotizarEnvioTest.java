@@ -127,11 +127,31 @@ class CotizarEnvioTest {
   @Test
   void unFalloDelProveedorNoEsFaltaDeCobertura() {
     for (ResultadoCotizacion.Motivo motivo : ResultadoCotizacion.Motivo.values()) {
+      // El quinto motivo no entra: no es "no pudimos preguntar" sino "preguntamos mal", y tiene su
+      // propia prueba justo debajo. Lo que sigue cubierto es que los otros cuatro no se confundan
+      // con la falta de cobertura.
+      if (motivo == ResultadoCotizacion.Motivo.DATOS_RECHAZADOS) {
+        continue;
+      }
       cotizador.fallar(motivo);
 
       assertThrows(
           CotizacionNoDisponibleException.class, () -> caso.ejecutar(comando(1)), motivo.name());
     }
+  }
+
+  /**
+   * Y la mitad que faltaba: el proveedor respondió, y respondió que nuestro cuerpo está mal.
+   * Pedirle a ese comprador que reintente es mandarlo a esperar algo que no va a pasar, porque
+   * Skydropx deduplica las cotizaciones por contenido y la misma pregunta trae el mismo rechazo. Es
+   * la forma que tenía el valor declarado por debajo del mínimo antes de adr/0035: una venta que no
+   * ocurre y ningún error que la explique.
+   */
+  @Test
+  void unCuerpoRechazadoNoLePideAlCompradorReintentar() {
+    cotizador.fallar(ResultadoCotizacion.Motivo.DATOS_RECHAZADOS);
+
+    assertThrows(CotizacionRechazadaException.class, () -> caso.ejecutar(comando(1)));
   }
 
   /**

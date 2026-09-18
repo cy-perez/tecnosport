@@ -10,10 +10,14 @@ import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
+import co.tecnosport.api.application.envio.ResultadoEmision;
+import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import co.tecnosport.api.domain.catalogo.Paquete;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.EstadoEnvio;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
+import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.Direccion;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -174,6 +178,24 @@ class SkydropxClientTest {
       MapeadorCotizacionSkydropx mapeador,
       int intentos)
       throws IOException {
+    return clienteContra(
+        cuerpoToken, estadoCreacion, cuerpoCreacion, sondeo, mapeador, intentos, 200);
+  }
+
+  /**
+   * {@code estadoSondeo} existe porque la creación y el sondeo no significan lo mismo cuando
+   * responden un 4xx: en la creación la plataforma juzga nuestro cuerpo, y en el sondeo ya lo
+   * aceptó. Sin poder responder distinto en los dos, esa diferencia no se puede probar.
+   */
+  private SkydropxClient clienteContra(
+      String cuerpoToken,
+      int estadoCreacion,
+      String cuerpoCreacion,
+      RespuestaDeSondeo sondeo,
+      MapeadorCotizacionSkydropx mapeador,
+      int intentos,
+      int estadoSondeo)
+      throws IOException {
     servidor = HttpServer.create(new InetSocketAddress(0), 0);
     servidor.createContext(
         "/api/v1/oauth/token",
@@ -187,7 +209,7 @@ class SkydropxClientTest {
           if ("POST".equals(intercambio.getRequestMethod())) {
             responder(intercambio, estadoCreacion, cuerpoCreacion);
           } else {
-            responder(intercambio, 200, sondeo.cuerpo(sondeos.incrementAndGet()));
+            responder(intercambio, estadoSondeo, sondeo.cuerpo(sondeos.incrementAndGet()));
           }
         });
     servidor.start();
@@ -347,6 +369,90 @@ class SkydropxClientTest {
     assertEquals(
         ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.cotizar(COTIZACION)));
     assertEquals(0, sondeos.get());
+  }
+
+  /**
+   * El defecto que esto arregla. La plataforma responde {@code 422} enumerando los campos que
+   * rechazó —esta es la forma medida, el mínimo del valor declarado de adr/0035— y hasta el 17 de
+   * septiembre de 2026 eso se contaba como proveedor caído. La diferencia no es cosmética: el
+   * comprador recibía "intenta de nuevo" y el reintento trae el mismo rechazo, porque Skydropx
+   * deduplica las cotizaciones por contenido (docs/13 §6.9).
+   */
+  @Test
+  void unCuerpoRechazadoNoEsUnProveedorCaido() throws IOException {
+    SkydropxClient cliente =
+        clienteContra(
+            token(7200),
+            422,
+            "{\"errors\":{\"declared_amount\":[\"debe ser mayor que o igual a 10000\"]}}",
+            numero -> UNA_TARIFA);
+
+    assertEquals(
+        ResultadoCotizacion.Motivo.DATOS_RECHAZADOS, motivoDe(cliente.cotizar(COTIZACION)));
+    assertEquals(0, sondeos.get());
+  }
+
+  /**
+   * Un {@code 401} también es un 4xx y no es nuestro cuerpo: es un despliegue con credenciales que
+   * no sirven. Quien lo mire tiene que ir a Secret Manager, no a buscarle un defecto al carrito.
+   */
+  @Test
+  void unTokenRechazadoAlCrearEsFaltaDeCredenciales() throws IOException {
+    SkydropxClient cliente = clienteContra(token(7200), 401, "{}", numero -> UNA_TARIFA);
+
+    assertEquals(
+        ResultadoCotizacion.Motivo.SIN_CREDENCIALES, motivoDe(cliente.cotizar(COTIZACION)));
+  }
+
+  /**
+   * Y un {@code 429} es el límite de dos peticiones por segundo de la cuenta, que sí se arregla
+   * reintentando: contarlo como cuerpo rechazado le cerraría el envío a domicilio a un comprador
+   * por algo que se resuelve solo.
+   */
+  @Test
+  void elLimiteDePeticionesSigueSiendoUnFalloTemporal() throws IOException {
+    SkydropxClient cliente = clienteContra(token(7200), 429, "{}", numero -> UNA_TARIFA);
+
+    assertEquals(
+        ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.cotizar(COTIZACION)));
+  }
+
+  /**
+   * En el sondeo el cuerpo <strong>ya fue aceptado</strong>, así que un 4xx de ahí no puede
+   * significar "nos rechazaron los datos". Es la mitad de la regla que se olvida fácil: el código
+   * de respuesta no dice de quién es el problema si no se sabe qué se estaba preguntando.
+   */
+  @Test
+  void unRechazoEnElSondeoNoSeCuentaComoCuerpoRechazado() throws IOException {
+    SkydropxClient cliente =
+        clienteContra(
+            token(7200),
+            200,
+            "{\"id\":\"q1\"}",
+            numero -> UNA_TARIFA,
+            new MapeadorDePrueba(),
+            8,
+            422);
+
+    assertEquals(
+        ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.cotizar(COTIZACION)));
+  }
+
+  /** Salvo el token: es lo único que puede quedar revocado entre la creación y el sondeo. */
+  @Test
+  void unTokenRevocadoEnElSondeoEsFaltaDeCredenciales() throws IOException {
+    SkydropxClient cliente =
+        clienteContra(
+            token(7200),
+            200,
+            "{\"id\":\"q1\"}",
+            numero -> UNA_TARIFA,
+            new MapeadorDePrueba(),
+            8,
+            401);
+
+    assertEquals(
+        ResultadoCotizacion.Motivo.SIN_CREDENCIALES, motivoDe(cliente.cotizar(COTIZACION)));
   }
 
   @Test
@@ -671,5 +777,81 @@ class SkydropxClientTest {
   @Test
   void unCuerpoSinBalanceNoDaSaldo() throws IOException {
     assertTrue(clienteDeSaldo(200, "{\"data\":{\"currency\":\"COP\"}}").saldo().isEmpty());
+  }
+
+  // --- emision de la guia -----------------------------------------------------------------------
+
+  private static final SolicitudDeEmision SOLICITUD =
+      new SolicitudDeEmision(
+          "8b2c1d40-0000-4000-8000-000000000001",
+          Direccion.sinBarrio("11", "Bogotá D.C.", "11001", "Bogotá", "Cra. 7 #12-34", null),
+          new Contacto("Comprador de prueba", "3001234567"),
+          new CorreoElectronico("comprador@example.com"),
+          List.of("Ropa deportiva"));
+
+  private SkydropxClient clienteDeEmision(int estado, String cuerpo) throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v2/shipments", intercambio -> responder(intercambio, estado, cuerpo));
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  private static ResultadoEmision.Motivo motivoDe(ResultadoEmision resultado) {
+    return assertInstanceOf(ResultadoEmision.Rechazada.class, resultado).motivo();
+  }
+
+  /**
+   * Lo que este camino ya hacía bien y no se toca: un {@code 422} de la creación del envío es el
+   * pedido o la tarifa, y va con los nombres de los campos rechazados.
+   */
+  @Test
+  void unCuerpoRechazadoAlEmitirSigueSiendoDatosRechazados() throws IOException {
+    SkydropxClient cliente =
+        clienteDeEmision(422, "{\"errors\":{\"rate_id\":[\"no puede estar en blanco\"]}}");
+
+    assertEquals(ResultadoEmision.Motivo.DATOS_RECHAZADOS, motivoDe(cliente.emitir(SOLICITUD)));
+  }
+
+  /**
+   * Y lo que hacía mal: este camino metía <em>todo</em> 4xx en datos rechazados, así que un token
+   * revocado mandaba a revisar un pedido que estaba bien. Es el mismo defecto que la cotización
+   * tenía al revés —ella llamaba caída a un rechazo— y se arreglan juntos porque es una sola regla.
+   */
+  @Test
+  void unTokenRechazadoAlEmitirNoEsUnPedidoMalArmado() throws IOException {
+    SkydropxClient cliente = clienteDeEmision(401, "{}");
+
+    assertEquals(ResultadoEmision.Motivo.SIN_CREDENCIALES, motivoDe(cliente.emitir(SOLICITUD)));
+  }
+
+  /** El límite de peticiones se insiste, no se diagnostica como pedido malo. */
+  @Test
+  void elLimiteDePeticionesAlEmitirEsProveedorNoDisponible() throws IOException {
+    SkydropxClient cliente = clienteDeEmision(429, "{}");
+
+    assertEquals(
+        ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, motivoDe(cliente.emitir(SOLICITUD)));
   }
 }

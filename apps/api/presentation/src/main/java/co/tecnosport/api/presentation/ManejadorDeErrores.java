@@ -15,6 +15,7 @@ import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoExceptio
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
 import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
+import co.tecnosport.api.application.envio.CotizacionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionNoAplicableException;
 import co.tecnosport.api.application.envio.EmisionNoEncontradaException;
 import co.tecnosport.api.application.envio.EmisionRechazadaException;
@@ -250,6 +251,17 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CotizacionNoDisponibleException.class)
   public ProblemDetail cotizacionNoDisponible(CotizacionNoDisponibleException excepcion) {
     return problema(HttpStatus.SERVICE_UNAVAILABLE, "No se pudo cotizar el envío", excepcion);
+  }
+
+  // Y el otro lado de esa moneda: el proveedor sí respondió, y rechazó nuestro cuerpo. 409 y no el
+  // 503 de arriba porque reintentar no lo arregla —Skydropx deduplica las cotizaciones por
+  // contenido, así que la misma pregunta trae el mismo rechazo— y prometerle al cliente que
+  // insistir
+  // sirve es peor que decirle que no hay domicilio. Mismo criterio que ENVIO_SIN_COBERTURA y
+  // ARTICULO_NO_ASEGURABLE: el checkout lo traduce a recogida en el punto (docs/03-api.md).
+  @ExceptionHandler(CotizacionRechazadaException.class)
+  public ProblemDetail cotizacionRechazada(CotizacionRechazadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El proveedor rechazó la cotización", excepcion);
   }
 
   // El pedido no admite que se le emita una guia ahora: retiro en punto, o un estado que no es
