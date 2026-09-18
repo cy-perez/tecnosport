@@ -127,8 +127,10 @@ tenis.
 `TODO: peso y dimensiones reales de las variantes del catálogo de producción,
 medidos con el producto empacado.` No se heredan de las filas sembradas ni se
 inventan: un peso inventado es un flete cobrado de menos, o un pedido que la
-transportadora reliquida después —y eso último se puede vigilar con
-`finance/extra-charges`, ver `docs/13-skydropx-capacidades.md`.
+transportadora reliquida después. Eso último **ya se vigila** desde el 18 de septiembre de 2026:
+`AvisarSobrecostoDeEnvio` pregunta por `finance/extra-charges` y avisa de cada cobro extra, así que
+un peso mal medido deja de ser invisible — se entera el negocio por correo, aunque el margen del
+pedido todavía no lo registre. Ver `docs/13-skydropx-capacidades.md` §6.16.
 
 **El catálogo de atributos es global, no tipado por categoría en el esquema**
 (confirmado al construir Track B, Fase 4): no existe ninguna columna ni tabla

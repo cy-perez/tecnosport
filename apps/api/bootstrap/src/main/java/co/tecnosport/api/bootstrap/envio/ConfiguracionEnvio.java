@@ -11,10 +11,12 @@ import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.AvisarRevisionPendiente;
 import co.tecnosport.api.application.envio.AvisarSaldoBajo;
+import co.tecnosport.api.application.envio.AvisarSobrecostoDeEnvio;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ConciliarGuia;
 import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
+import co.tecnosport.api.application.envio.ConsultorDeSobrecostos;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
@@ -25,6 +27,7 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.RecibirEventoDeEnvio;
 import co.tecnosport.api.application.envio.RepositorioAcusesDeRevision;
 import co.tecnosport.api.application.envio.RepositorioAvisosDeRevision;
+import co.tecnosport.api.application.envio.RepositorioAvisosDeSobrecosto;
 import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.envio.ResolverEmisionIndeterminada;
@@ -43,6 +46,7 @@ import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
 import co.tecnosport.api.infrastructure.envio.VerificadorFirmaEnvioHmac;
 import co.tecnosport.api.infrastructure.envio.siembra.ConsultorDeSaldoSembrado;
+import co.tecnosport.api.infrastructure.envio.siembra.ConsultorDeSobrecostosSembrado;
 import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.infrastructure.envio.siembra.EmisorDeGuiasSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
@@ -64,6 +68,7 @@ import org.springframework.context.annotation.Profile;
   PropiedadesSkydropx.class,
   PropiedadesSeguimientoEnvios.class,
   PropiedadesSaldoEnvios.class,
+  PropiedadesSobrecostosEnvios.class,
   PropiedadesVigilanciaRevision.class,
   PropiedadesWebhookEnvio.class,
   PropiedadesOrigen.class
@@ -142,6 +147,12 @@ public class ConfiguracionEnvio {
   @Profile("e2e")
   public ConsultorDeSaldo consultorDeSaldoSembrado() {
     return new ConsultorDeSaldoSembrado();
+  }
+
+  @Bean
+  @Profile("e2e")
+  public ConsultorDeSobrecostos consultorDeSobrecostosSembrado() {
+    return new ConsultorDeSobrecostosSembrado();
   }
 
   @Bean
@@ -412,6 +423,29 @@ public class ConfiguracionEnvio {
         enviadorDeCorreo,
         textosDeCorreo,
         Dinero.deCop(propiedades.umbralCop()),
+        new CorreoElectronico(propiedades.destinatario()));
+  }
+
+  /**
+   * El vigilante de los cobros extra. Le pregunta al mismo cliente que emite —es la misma cuenta y
+   * el mismo token— y escribe una marca por cobro avisado, que es la única memoria de que ese
+   * sobrecosto se conoció.
+   */
+  @Bean
+  public AvisarSobrecostoDeEnvio avisarSobrecostoDeEnvio(
+      ConsultorDeSobrecostos consultorDeSobrecostos,
+      RepositorioAvisosDeSobrecosto avisos,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textosDeCorreo,
+      Reloj reloj,
+      PropiedadesSobrecostosEnvios propiedades) {
+    return new AvisarSobrecostoDeEnvio(
+        consultorDeSobrecostos,
+        avisos,
+        enviadorDeCorreo,
+        textosDeCorreo,
+        reloj,
+        Duration.ofDays(propiedades.diasAtras()),
         new CorreoElectronico(propiedades.destinatario()));
   }
 }
