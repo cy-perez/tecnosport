@@ -50,6 +50,7 @@ public enum TextoDeCorreo {
   ENVIO_SOBRECOSTO_COBRO("envio.sobrecosto.cobro"),
   ENVIO_SOBRECOSTO_CIERRE("envio.sobrecosto.cierre"),
   ENVIO_SOBRECOSTO_SIN_GUIA("envio.sobrecosto.sin_guia"),
+  ENVIO_SOBRECOSTO_SIN_PEDIDO("envio.sobrecosto.sin_pedido"),
   ENVIO_SOBRECOSTO_SIN_FECHA("envio.sobrecosto.sin_fecha"),
   USUARIO_VERIFICACION_ASUNTO("usuario.verificacion.asunto"),
   USUARIO_VERIFICACION_CUERPO("usuario.verificacion.cuerpo"),

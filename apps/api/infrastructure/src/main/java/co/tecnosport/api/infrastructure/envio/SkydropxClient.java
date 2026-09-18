@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
@@ -124,6 +125,16 @@ public final class SkydropxClient
    * consultar despues.
    */
   private static final String RAZON_DE_CANCELACION = "Pedido cancelado";
+
+  /**
+   * Las dos mediciones que se hacen solas, cada una una vez por instancia y sin guardar estado: la
+   * forma de un cobro extra y la del recaudo de un envío. Las dos existen porque el dato que falta
+   * llega semanas después y sin avisar, y esperar a que alguien corra una sonda ese día no es un
+   * plan.
+   */
+  private final AtomicBoolean formaDelPrimerCobroRegistrada = new AtomicBoolean();
+
+  private final AtomicBoolean formaDelRecaudoRegistrada = new AtomicBoolean();
 
   private final URI urlBase;
   private final String clientId;
@@ -583,7 +594,9 @@ public final class SkydropxClient
             respuesta.statusCode());
         return new LecturaDeEnvioEmitido.NoSeSabe();
       }
-      return mapeadorEmision.lectura(json.readTree(respuesta.body()));
+      JsonNode cuerpo = json.readTree(respuesta.body());
+      registrarElRecaudoLaPrimeraVez(idEnvioEnPlataforma, cuerpo);
+      return mapeadorEmision.lectura(cuerpo);
     } catch (IOException | RuntimeException e) {
       log.warn("No se pudo releer el envio {}: {}", idEnvioEnPlataforma, e.toString());
       return new LecturaDeEnvioEmitido.NoSeSabe();
@@ -756,6 +769,7 @@ public final class SkydropxClient
    * SobrecostoDeEnvio}.
    */
   private Optional<SobrecostoDeEnvio> sobrecosto(JsonNode nodo) {
+    registrarLaFormaDelPrimerCobro(nodo);
     String envio = texto(nodo, "shipment_id");
     String monto = texto(nodo, "amount");
     String tipo = texto(nodo, "charge_type");
@@ -778,6 +792,87 @@ public final class SkydropxClient
       log.warn("Un cobro extra del envio {} no se pudo leer: {}", envio, e.toString());
       return Optional.empty();
     }
+  }
+
+  /**
+   * Mide el recaudo la primera vez que esta instancia relee un envío que lo lleva.
+   *
+   * <p>Es lo único que se pudo construir del tramo de la conciliación automática del recaudo, y la
+   * razón está medida: <strong>ni el OpenAPI ni el HTML de Skydropx documentan {@code
+   * on_delivery_status}</strong> —se buscaron los cuatro campos de contraentrega en las dos fuentes
+   * el 18 de septiembre de 2026 y no aparece ninguno—, y en esta cuenta ningún envío con recaudo
+   * llegó nunca a {@code success}: el único que se creó con recaudo murió al emitir y su {@code
+   * on_delivery_status} vino en {@code null}. O sea que su vocabulario no se puede medir contra
+   * nada, y mapear estados que nadie ha visto es la suposición que esta integración ya pagó cuatro
+   * veces (docs/13-skydropx-capacidades.md §6.15).
+   *
+   * <p><strong>Lo que esto consigue es que la medición ocurra sola.</strong> La emisión ya relee el
+   * envío mientras se resuelve, así que el primer pedido contraentrega que se despache —aquí o en
+   * producción— deja escrito qué dice el campo recién creada la guía. Sin esto, enterarse
+   * dependería de que alguien se acuerde de correr una sonda el día exacto.
+   *
+   * <p><strong>Solo los tres campos del recaudo, nunca el cuerpo entero.</strong> El envío lleva el
+   * nombre, el teléfono y la dirección de quien compró: volcarlo al registro para medir un campo de
+   * dinero sería meter datos personales en un sitio donde no hacen ninguna falta.
+   */
+  private void registrarElRecaudoLaPrimeraVez(String idEnvioEnPlataforma, JsonNode cuerpo) {
+    JsonNode atributos = cuerpo.path("data").path("attributes");
+    JsonNode monto = atributos.path("on_delivery_amount");
+    if (monto.isMissingNode() || monto.isNull()) {
+      return;
+    }
+    if (formaDelRecaudoRegistrada.getAndSet(true)) {
+      return;
+    }
+    log.warn(
+        "Primer envio con recaudo que relee esta instancia ({}): on_delivery_amount={},"
+            + " on_delivery_status={}, workflow_status={}. Es el dato que falta para conciliar el"
+            + " recaudo solo; ver docs/13-skydropx-capacidades.md 6.15.",
+        idEnvioEnPlataforma,
+        monto.asString(),
+        texto(atributos, "on_delivery_status"),
+        texto(atributos, "workflow_status"));
+  }
+
+  /**
+   * La forma de un cobro esta <strong>documentada y no medida</strong>. Cuando se construyo esto la
+   * cuenta no tenia ninguno ({@code total_count: 0} con cinco guias emitidas,
+   * docs/13-skydropx-capacidades.md 6.16), asi que el esquema del OpenAPI es la unica fuente y
+   * nadie ha visto un item de verdad. Lo que falta por saber tiene nombre: los tres campos de peso
+   * que documenta el cuerpo del webhook —{@code real_weight}, {@code original_weight}, {@code
+   * discrepancy_weight}— no estan en este endpoint, y lo mas probable es que vengan dentro de
+   * {@code metadata}, que el esquema describe como "puede estar vacio" y no detalla. Sin ellos el
+   * correo dice cuanto y de que guia, y no cuantos gramos de mas — que es justo lo que haria falta
+   * para corregir la medida del catalogo sin abrir el panel.
+   *
+   * <p><strong>Por eso el primer cobro que vea esta instancia se registra entero, una sola
+   * vez.</strong> El plan escrito era correr {@code VOLCAR=1 node tools/sonda-sobrecostos.mjs} el
+   * dia que apareciera el primero, y eso depende de que alguien se acuerde meses despues de una
+   * sonda, sabiendo que el cobro llega semanas despues de la entrega y sin avisar. Esto no depende
+   * de nadie.
+   *
+   * <p><strong>Se registran los nombres de los campos, nunca sus valores.</strong> Volcar el cobro
+   * entero seria lo comodo, y es justo lo que no se puede hacer: lo desconocido aqui es {@code
+   * metadata}, y escribir en el registro el contenido de algo cuya forma nadie ha visto es aceptar
+   * a ciegas lo que sea que la plataforma meta ahi. Los nombres contestan la pregunta que de verdad
+   * hay abierta —si los tres pesos viven ahi dentro— y no arrastran ningun dato de nadie. Con los
+   * nombres a la vista, leer los valores pasa a ser una decision deliberada y no el efecto
+   * secundario de un registro.
+   *
+   * <p>Va en {@code warn} y no en {@code info} a proposito: no es un fallo, pero si es algo que una
+   * persona tiene que mirar una vez y no puede perderse entre el ruido. Y es por instancia, no por
+   * vida del sistema: un reinicio lo vuelve a registrar, que es barato y no exige guardar estado
+   * para una medicion que se hace una sola vez.
+   */
+  private void registrarLaFormaDelPrimerCobro(JsonNode nodo) {
+    if (formaDelPrimerCobroRegistrada.getAndSet(true)) {
+      return;
+    }
+    log.warn(
+        "Primer cobro extra que ve esta instancia. Campos: {}. Campos de metadata: {}."
+            + " Ver docs/13-skydropx-capacidades.md 6.16.",
+        nodo.propertyNames(),
+        nodo.path("metadata").propertyNames());
   }
 
   private static String texto(JsonNode nodo, String campo) {
