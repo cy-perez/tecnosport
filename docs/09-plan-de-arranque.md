@@ -4681,6 +4681,14 @@ a vivir también fuera de los JSON del sitio**, porque el comprobante identifica
 guardián no mira es exactamente el agujero por el que el celular estuvo mal en cuatro sitios durante
 una fase entera. Detalle en `adr/0042`.
 
+**Y la pregunta que quedaba abierta se cerró el mismo día:** *qué recibe quien compra como soporte de
+su compra* se había dejado para el contador, y la contestó el dueño del negocio — **el comprobante
+por correo es ese documento**, precisamente porque los productos se manejan como no responsable de
+IVA. No cambia una línea: es lo que la tarea ya hace y lo que el numeral 6 de los términos ya
+promete. Lo que cambia es que deja de ser una omisión con una nota al lado y pasa a ser una decisión
+con dueño y con fecha, que es la diferencia entre "no llegamos a decidirlo" y "se decidió esto, por
+esta norma".
+
 ## Medir un paquete deja de ser un pendiente (2026-09-18)
 
 El `TODO` que llevaba dos fases pidiendo "el peso y las dimensiones reales del catálogo de

@@ -81,6 +81,26 @@ checkout; el comprobante es el soporte, no el acuse.
 - El numeral 6 de los términos publicados promete el comprobante y dice que no es una factura. Es
   una promesa que el sistema cumple desde el mismo commit.
 
+## Confirmado: el comprobante es el documento de la venta
+
+Cuando se escribió este ADR quedaba una pregunta abierta que no era de programación — *qué recibe
+quien compra como soporte de su compra* — y se dejó para el contador.
+
+**Contestada el 18 de septiembre de 2026 por el dueño del negocio: el comprobante por correo es ese
+documento**, precisamente porque los productos se manejan como no responsable de IVA. No hay un
+segundo documento detrás ni se está esperando a nada: lo que el sistema manda es lo que la venta
+entrega.
+
+No cambia una línea de código —es lo que la tarea ya hace y lo que el numeral 6 de los términos ya
+promete—, y esa es justamente la razón de escribirlo: pasa de ser una omisión con una nota al lado a
+ser una decisión con dueño y con fecha. La distinción vale para el día que alguien pregunte por qué
+no hay factura: la respuesta no es "no llegamos a decidirlo", es "se decidió esto, por esta norma".
+
+**Y no dice "confirmado por el contador", porque ninguno lo revisó.** Lo confirmó quien responde por
+el negocio, con las normas de este documento delante. Sigue en pie lo único que un contador tiene que
+mirar, que es otra cosa: si la condición de no responsable se cumple contra los topes del parágrafo 3
+del art. 437 (`adr/0041`).
+
 ## Una corrección a la `V51`, que no se puede hacer en la `V51`
 
 El comentario del índice parcial de esa migración dice que las filas con la marca en nulo "son pocas
@@ -109,9 +129,10 @@ bandeja de salida con reintentos. Sigue sin existir, y ahora tiene un motivo má
 es una obligación frente al comprador, no un aviso interno.
 
 **Y no cubre a quien pida una factura de verdad.** Si un comprador la necesita para deducir el
-gasto, la respuesta hoy es que no hay, y la razón está escrita arriba. El día que alguien la pida
-con insistencia, la decisión que hay que volver a tomar no es de producto: es la del parágrafo 1 del
-art. 8, con todo lo que arrastra.
+gasto, la respuesta hoy es que no hay, y la razón está escrita arriba. Es el límite conocido de la
+decisión confirmada, no un cabo suelto: el día que alguien la pida con insistencia, lo que hay que
+volver a tomar no es una decisión de producto, es la del parágrafo 1 del art. 8, con todo lo que
+arrastra.
 
 ## Qué lo reabre
 
