@@ -84,11 +84,12 @@ public class SembradorCatalogo implements ApplicationRunner {
    * las cuatro medidas desde la V32—, así que no hay ningún valor pendiente de averiguar para
    * poder desplegar. Lo que sí falta es un **procedimiento**, y ese es el pendiente de verdad:
    *
-   * TODO (procedimiento, no dato): definir quién mide y con qué al cargar un producto real —
-   * báscula y cinta disponibles, si se mide el producto empacado tal como sale o el empaque
-   * estándar de esa línea, y quién revisa el dato antes de publicar. La cotización se hace con esas
-   * cuatro cifras: medir de menos es cobrarle de menos al comprador y perder la diferencia en cada
-   * envío, y medir de más es ahuyentarlo con un flete que no corresponde.
+   * Ese procedimiento quedó escrito el 18 de septiembre de 2026 en docs/02-modelo-datos.md, "Cómo
+   * se mide un paquete": el producto ya empacado, en gramos y centímetros enteros redondeados hacia
+   * arriba, medido por quien lo carga y en el momento de cargarlo, con el panel avisando si el peso
+   * pasa del tope más bajo de las transportadoras. La cotización se hace con esas cuatro cifras:
+   * medir de menos es cobrarle de menos al comprador y perder la diferencia en cada envío, y medir
+   * de más es ahuyentarlo con un flete que no corresponde.
    */
   /**
    * El negocio es no responsable de IVA (parágrafo 3 del art. 437 del Estatuto Tributario), así que

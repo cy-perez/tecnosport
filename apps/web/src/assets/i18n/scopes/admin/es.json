@@ -194,6 +194,7 @@
       "existenciaInicial": "Existencia inicial",
       "paquete": "Paquete",
       "paqueteAyuda": "Mide el producto ya empacado. De aquí sale el costo de envío: un peso menor al real lo reliquida la transportadora después.",
+      "pesoAlto": "Ese peso pasa de 8 kg, y por encima de ahí algunas transportadoras dejan de cotizar: los topes medidos en la cuenta son 8, 25, 60, 150, 200 y 500 kg según cuál. Si el producto no pesa eso de verdad, revisa que lo hayas escrito en gramos.",
       "pesoGramos": "Peso (gramos)",
       "largoCm": "Largo (cm)",
       "anchoCm": "Ancho (cm)",

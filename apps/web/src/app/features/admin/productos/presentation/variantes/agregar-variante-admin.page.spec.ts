@@ -183,6 +183,23 @@ describe('AgregarVarianteAdminPage', () => {
     expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos', 'p1', 'editar']);
   });
 
+  it('avisa cuando el peso pasa del tope más bajo de las transportadoras', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+
+    // 18 kg donde iban 1,8: el error de unidad que se paga en cada flete.
+    fireEvent.input(screen.getByLabelText('Peso (gramos)'), { target: { value: '18000' } });
+
+    expect(await screen.findByText(/pasa de 8 kg/)).toBeTruthy();
+  });
+
+  it('con un peso normal no avisa nada', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+
+    fireEvent.input(screen.getByLabelText('Peso (gramos)'), { target: { value: '1800' } });
+
+    expect(screen.queryByText(/pasa de 8 kg/)).toBeNull();
+  });
+
   it('con un error del servidor, muestra el mensaje genérico', async () => {
     await renderPagina(new RepositorioProductosAdminFalso(true));
 

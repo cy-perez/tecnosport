@@ -102,6 +102,22 @@ export class AgregarVarianteAdminPage {
     return this.form.invalid;
   });
 
+  /**
+   * El tope más bajo de las seis transportadoras de la cuenta, medido contra el sandbox
+   * (`docs/13` §6, "el peso va en kilos"): 8, 25, 60, 150, 200 y 500 kg. Por encima del primero ya
+   * hay tarifas que dejan de cotizar.
+   *
+   * <p>Avisa, no bloquea: puede haber un producto que de verdad pese eso, y el retiro en punto no
+   * necesita transportadora. Lo que de verdad atrapa es el error de unidad — 18 kg tecleados donde
+   * iban 1,8 —, que es el que se paga en cada flete.
+   */
+  private static readonly TOPE_MAS_BAJO_GRAMOS = 8_000;
+
+  protected readonly pesoAlto = computed(() => {
+    const peso = this.valorFormulario().pesoGramos;
+    return peso != null && peso > AgregarVarianteAdminPage.TOPE_MAS_BAJO_GRAMOS;
+  });
+
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesAtributo = computed<OpcionSelect[]>(() =>

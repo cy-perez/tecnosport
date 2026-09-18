@@ -194,6 +194,7 @@
       "existenciaInicial": "Initial stock",
       "paquete": "Package",
       "paqueteAyuda": "Measure the product once packed. The shipping cost is calculated from this: if the weight is lower than the real one, the carrier will recalculate the charge later.",
+      "pesoAlto": "That weight is over 8 kg, and above that some carriers stop quoting: the ceilings measured on the account are 8, 25, 60, 150, 200 and 500 kg depending on the carrier. If the product does not really weigh that, check that you typed grams.",
       "pesoGramos": "Weight (grams)",
       "largoCm": "Length (cm)",
       "anchoCm": "Width (cm)",
