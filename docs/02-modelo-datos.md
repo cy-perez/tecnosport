@@ -425,7 +425,8 @@ Del despacho en adelante el rastro vive en `Envio`:
 
 ```
 envio
-  id, pedido_id, comision_recaudo, recaudo_conciliado_en, creado_en
+  id, pedido_id, comision_recaudo, recaudo_conciliado_en, modalidad_recaudo,
+  creado_en
 
 guia_envio
   id, envio_id, transportadora, codigo_transportadora, numero, costo_envio,

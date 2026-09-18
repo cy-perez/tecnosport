@@ -12,9 +12,15 @@ import java.util.Objects;
  *
  * <p><b>Sin {@code @NotNull}, y la guarda a mano no es una manía.</b> Este proyecto no tiene ningún
  * proveedor de Bean Validation en el classpath —se comprobó arrancando: {@code
- * OptionalValidatorFactoryBean} lo dice en el registro— y no hay ningún otro {@code @NotNull} en la
- * capa. La anotación habría sido un guardián que nunca dispara, que es justo lo que este proyecto
- * ya destapó con el plugin de capas.
+ * OptionalValidatorFactoryBean} lo dice en el registro— así que como validación la anotación no
+ * habría hecho nada.
+ *
+ * <p><b>Pero sí hacía algo, y se descubrió al quitarla:</b> springdoc deduce de ella qué
+ * propiedades marca como {@code required} en el OpenAPI. Al quitarla, el contrato publicado pasó a
+ * declarar este campo como opcional y el cliente TypeScript generado dejó de exigirlo en tiempo de
+ * compilación, mientras el servidor seguía rechazando con 422 el cuerpo que lo omitiera. O sea que
+ * "no valida" no es lo mismo que "no hace nada": lo destapó el trabajo de contratos de la
+ * integración continua, que compara el OpenAPI vivo contra el cliente commiteado.
  *
  * <p><b>Y Jackson tampoco protegía aquí</b>, contra lo que se creyó al escribir esto. La nota de
  * apps/api/CLAUDE.md —"Jackson 3 no rellena los componentes que falten de un {@code record}"— se

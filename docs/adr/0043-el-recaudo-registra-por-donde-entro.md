@@ -61,13 +61,16 @@ Lo que sí cambia es que **cuando ese dato aparezca, la automatización ya no tr
 comisión**: sabrá que a créditos vale cero, y el único caso que seguirá necesitando una persona es el
 del banco.
 
-## Dos hallazgos del camino, que valen más que el campo
+## Tres hallazgos del camino, que valen más que el campo
 
-**1. `@NotNull` no habría hecho nada.** La primera versión del DTO lo llevaba. Este proyecto **no
-tiene proveedor de Bean Validation en el classpath** —lo dice `OptionalValidatorFactoryBean` al
-arrancar— y no había ningún otro `@NotNull` en toda la capa de presentación, aunque
-`apps/api/CLAUDE.md` afirmara que ahí se usa Bean Validation. Otro guardián que nunca dispara, como
-el plugin de capas.
+**1. `@NotNull` no validaba nada — y aun así hacía algo.** La primera versión del DTO lo llevaba.
+Este proyecto **no tiene proveedor de Bean Validation en el classpath** —lo dice
+`OptionalValidatorFactoryBean` al arrancar— y no había ningún otro `@NotNull` en toda la capa de
+presentación, aunque `apps/api/CLAUDE.md` afirmara que ahí se usa Bean Validation. Como validación,
+otro guardián que nunca dispara, igual que el plugin de capas.
+
+**Esta primera lectura era correcta y estaba incompleta**, y así estuvo escrita aquí unas horas: ver
+el hallazgo 3.
 
 **2. Jackson tampoco protegía, y la nota que decía que sí estaba medida sobre otro caso.**
 `apps/api/CLAUDE.md` dice desde la Fase 6 que "Jackson 3 no rellena los componentes que falten de un
@@ -76,10 +79,26 @@ un `boolean`. Un componente de **tipo referencia** —este enum— llega en nulo
 comprobó mandando el cuerpo sin la clave: pasó de largo y murió más adelante por otra razón. Sin una
 guarda explícita, ese nulo habría llegado al dominio y salido como un 500.
 
+**3. Quitar el `@NotNull` cambió el contrato publicado, que era lo único que la anotación sí hacía.**
+springdoc deduce de ella qué propiedades marca como `required` en el OpenAPI. Al quitarla, el
+contrato pasó a declarar `modalidadRecaudo` como opcional y el cliente TypeScript generado dejó de
+exigirlo en tiempo de compilación — mientras el servidor seguía rechazando con 422 el cuerpo que lo
+omitiera: contrato y servidor diciendo cosas distintas.
+
+Lo atrapó **el trabajo de contratos de la integración continua**, que compara el OpenAPI vivo contra
+`packages/contratos/src/tipos.ts`, y es la primera vez que ese guardián dispara sobre algo real. La
+corrección no es devolver el `@NotNull`: es un `@Schema(requiredMode = REQUIRED)`, que tampoco valida
+y solo hace que el contrato diga lo que el servidor exige.
+
+O sea que un campo obligatorio de tipo referencia necesita **dos anotaciones con oficios distintos**:
+la guarda que protege y la que documenta. Y que "no valida" no es lo mismo que "no hace nada" — la
+lección de los hallazgos 1 y 2 se aplicó a sí misma una vuelta más tarde.
+
 La guarda es un `Objects.requireNonNull` en el constructor compacto del DTO, y sale como 422
 `HTTP_MESSAGE_NOT_READABLE` porque Jackson envuelve la excepción. Con su prueba, y la prueba afirma
 sobre el **código** y no solo sobre el estado: sin eso pasaba igual por la transición inválida del
 pedido, que es una prueba que se aprueba a sí misma.
 
-Los dos hallazgos comparten forma con lo que este proyecto lleva encontrando toda la Fase 7: **una
-conclusión correcta apoyada en una premisa que nadie había vuelto a medir.**
+Los tres comparten forma con lo que este proyecto lleva encontrando toda la Fase 7: **una conclusión
+correcta apoyada en una premisa que nadie había vuelto a medir.** El tercero es el más incómodo,
+porque la premisa sin medir la puso este mismo documento unas horas antes.

@@ -4727,10 +4727,11 @@ fue". La única regla que el dominio comprueba es la suya: **los créditos no co
 Los dos aparecieron al escribir un campo obligatorio, y los dos son la forma que este proyecto ya
 conoce:
 
-1. **`@NotNull` no habría hecho nada.** No hay proveedor de Bean Validation en el classpath —lo dice
+1. **`@NotNull` no validaba nada.** No hay proveedor de Bean Validation en el classpath —lo dice
    `OptionalValidatorFactoryBean` al arrancar— y no había ningún otro `@NotNull` en toda la capa de
    presentación. `apps/api/CLAUDE.md` afirmaba que ahí se usa Bean Validation; era falso y quedó
-   corregido.
+   corregido. **Esta lectura era correcta y estaba incompleta**, y lo demostró la CI unas horas
+   después: ver el párrafo siguiente.
 2. **Jackson tampoco protegía, y la nota que decía que sí estaba medida sobre otro caso.** "Jackson 3
    no rellena los componentes que falten de un `record`" se midió en la Fase 6 sobre un `boolean`, y
    con un primitivo es cierta. Un componente de **tipo referencia** llega en nulo tan tranquilo: se
