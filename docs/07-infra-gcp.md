@@ -384,6 +384,8 @@ ENVIO_REVISION_HORAS_UMBRAL, ENVIO_REVISION_INTERVALO_MINUTOS
 ENVIO_REVISION_RETRASO_INICIAL_MINUTOS, ENVIO_REVISION_DESTINATARIO
 ENVIO_SALDO_UMBRAL_COP, ENVIO_SALDO_INTERVALO_MINUTOS
 ENVIO_SALDO_RETRASO_INICIAL_MINUTOS, ENVIO_SALDO_DESTINATARIO
+ENVIO_SOBRECOSTOS_DIAS_ATRAS, ENVIO_SOBRECOSTOS_INTERVALO_MINUTOS
+ENVIO_SOBRECOSTOS_RETRASO_INICIAL_MINUTOS, ENVIO_SOBRECOSTOS_DESTINATARIO
 ORIGEN_NOMBRE, ORIGEN_TELEFONO, ORIGEN_DIRECCION, ORIGEN_CORREO,
 ORIGEN_DEPARTAMENTO, ORIGEN_CIUDAD, ORIGEN_CIUDAD_DANE, ORIGEN_CODIGO_POSTAL,
 ORIGEN_BARRIO, ORIGEN_REFERENCIA
@@ -421,6 +423,17 @@ Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
   recarga y para que llegue: entre pedirla y recibirla pasan días, y la recarga por
   Mercado Pago nunca funcionó. Bajarlo mucho deja el despacho sin margen; subirlo
   mucho deja el aviso encendido siempre, y un aviso encendido siempre no se lee.
+
+- **Las de `ENVIO_SOBRECOSTOS_*` no llevan ningún umbral, y la ausencia es la
+  decisión.** Se avisa de **todos** los cobros extra que la transportadora aplica
+  después de emitir: son raros, cada uno se descuenta del crédito en silencio, y no
+  hay una cifra por debajo de la cual convenga callar — ponerla sería inventar un
+  dato de negocio. Lo que evita el ruido no es un umbral sino la tabla
+  `aviso_sobrecosto`: cada cobro se avisa una sola vez. `DIAS_ATRAS` son 30 y es el
+  ancho de la ventana que se consulta, no un dato de negocio: la transportadora
+  reliquida semanas después de la entrega, y el orden en que la plataforma devuelve
+  los cobros no está documentado, así que preguntar por ventana es lo único que no se
+  apoya en un orden que nadie prometió.
 
 En Spring, `@ConfigurationProperties` tipadas y validadas al arrancar. Si falta
 una variable obligatoria, la aplicación no arranca; no arranca a medias para

@@ -45,14 +45,16 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
    * trata como escape y se come el marcador siguiente— y un {@code &#123;3&#125;} que nadie
    * rellena. Las dos dejan un {@code &#123;} en el resultado, que es lo que se busca después.
    *
-   * <p>Cuatro es el máximo de argumentos que usa hoy el texto más largo — el del despacho, que
-   * lleva número de pedido, transportadora, guía y enlace. Eran tres hasta que ese correo se
-   * escribió, y el propio javadoc lo había anticipado: si algún día hiciera falta un quinto, esta
-   * comprobación lo dice en el arranque en vez de dejarlo llegar al comprador. Quedarse corto no
-   * rompe el arranque por sí solo — deja un {@code &#123;3&#125;} sin rellenar, que es justo lo que
-   * la comprobación de abajo busca.
+   * <p>Seis es el máximo de argumentos que usa hoy el texto más largo — la línea de un cobro extra
+   * de la transportadora, que lleva monto, tipo de cargo, guía, transportadora, fecha de detección
+   * y el envío en la plataforma. Eran cuatro hasta el 18 de septiembre de 2026, y <b>esta
+   * comprobación hizo exactamente lo que su javadoc prometía</b>: el correo nuevo se escribió con
+   * seis marcadores y el contexto no levantó, señalando la clave y el {@code &#123;4&#125;} que
+   * quedaba sin rellenar, en vez de dejar que un correo a medias llegara a alguien. Quedarse corto
+   * no rompe el arranque por sí solo — deja un {@code &#123;&#125;} en el resultado, que es justo
+   * lo que la comprobación de abajo busca.
    */
-  private static final Object[] RELLENO = {"x", "x", "x", "x"};
+  private static final Object[] RELLENO = {"x", "x", "x", "x", "x", "x"};
 
   private final MessageSource mensajes;
 

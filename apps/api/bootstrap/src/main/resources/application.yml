@@ -192,6 +192,22 @@ tecnosport:
     retraso-inicial-minutos: ${ENVIO_SALDO_RETRASO_INICIAL_MINUTOS:5}
     # El mismo correo del negocio que el aviso de la bandeja, y por lo mismo: no es un secreto.
     destinatario: ${ENVIO_SALDO_DESTINATARIO:contacto@tecnosport.co}
+  sobrecostos-envios:
+    # Cuantos dias atras se pregunta. No es un dato de negocio: es el ancho de la ventana. Treinta
+    # porque la transportadora reliquida semanas despues de la entrega, y porque el orden en que la
+    # plataforma devuelve los cobros no esta documentado — preguntar por ventana es lo unico que no
+    # se apoya en un orden que nadie prometio. Releer la misma ventana no cuesta nada: de lo ya
+    # avisado no se avisa dos veces (tabla aviso_sobrecosto).
+    dias-atras: ${ENVIO_SOBRECOSTOS_DIAS_ATRAS:30}
+    # Un dia. El cargo aparece dias despues del despacho, asi que preguntar mas seguido no adelanta
+    # nada y gasta cuota de un proveedor limitado a dos peticiones por segundo. Es el vigilante menos
+    # urgente de los tres: nadie se queda sin despachar por esto — lo que se pierde es saber cuanto
+    # costo de verdad un pedido.
+    intervalo-minutos: ${ENVIO_SOBRECOSTOS_INTERVALO_MINUTOS:1440}
+    # Corto y menor que el intervalo, mismo motivo que los otros dos vigilantes.
+    retraso-inicial-minutos: ${ENVIO_SOBRECOSTOS_RETRASO_INICIAL_MINUTOS:7}
+    # El mismo correo del negocio que los otros dos avisos, y por lo mismo: no es un secreto.
+    destinatario: ${ENVIO_SOBRECOSTOS_DESTINATARIO:contacto@tecnosport.co}
   revision-envios:
     # Dato de negocio, a diferencia del intervalo de al lado: cuanto tiempo puede quedarse algo en
     # la bandeja de revision sin que nadie lo mire. Veinticuatro horas, porque el comprador de un

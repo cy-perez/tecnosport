@@ -194,10 +194,15 @@ antes de tener una sola respuesta de Skydropx sobre la firma.
   que el domicilio y ya aparece en `ADR-0022` como el estado
   `delivered_to_branch`, que hoy se registra y no hace nada. Sería una tercera
   forma de entrega, junto al domicilio y la recogida en nuestro punto.
-- **`finance/extra-charges`**: los cobros extra que la transportadora aplica
-  después. Es el mecanismo por el cual **un peso mal declarado se reliquida**, que
-  es justo el riesgo que `docs/02-modelo-datos.md` menciona al prohibir inventar
-  pesos. Con este endpoint el sobrecosto deja de ser invisible.
+- ~~**`finance/extra-charges`**: los cobros extra que la transportadora aplica
+  después.~~ **Construido el 18 de septiembre de 2026.** Es el mecanismo por el cual **un peso mal
+  declarado se reliquida**, que es justo el riesgo que `docs/02-modelo-datos.md` menciona al
+  prohibir inventar pesos, y hasta ese día el sobrecosto era invisible: se descuenta del crédito y el
+  flete que el pedido guarda sigue siendo el de la tarifa. Ahora una tarea pregunta cada 24 horas por
+  una ventana de 30 días y avisa de cada cobro **una sola vez** — el endpoint no devuelve ningún
+  identificador del cargo, así que la identidad se compone (§6.16). Lo que **no** hace todavía es
+  entrar en el margen del pedido: eso exige decidir si el sobrecosto vive en la guía o en el envío, y
+  va con el panel administrativo.
 - ~~**`finance/credits`**: el saldo.~~ **Construido el 17 de septiembre de 2026.** Si la
   cuenta se queda sin crédito no hay guías, y hasta ese día nadie se enteraría hasta que un
   despacho fallara — pasó, con la cuenta en COP 388. Ahora una tarea lo mira cada doce horas y
@@ -2498,6 +2503,55 @@ que el objeto del envío expusiera siquiera los campos de la pregunta. Si no los
 emitir no habría contestado nada y el saldo se habría ido igual. Ese chequeo vive en
 `VER_ENVIO=<id> node tools/sonda-recaudo.mjs`, que busca toda clave de contraentrega a cualquier
 profundidad, también dentro de `included`.
+
+### 6.16 Los cobros extra, medidos sin gastar un peso (2026-09-18, decimoquinta parte)
+
+`GET /api/v1/finance/extra-charges` es el único tramo de finanzas que la plataforma ofrecía y nadie
+había mirado. §2.5 lo listaba entre "lo que podemos personalizar y hoy no estamos usando" desde
+antes de la primera guía, con una frase que describía bien el riesgo: es el mecanismo por el que
+**un peso mal declarado se reliquida**, y eso es dinero que sale del crédito sin que el pedido se
+entere.
+
+**Lo medido, con `tools/sonda-sobrecostos.mjs`** (solo lee; no emite nada y no consume saldo):
+
+| Pregunta | Respuesta |
+|---|---|
+| `GET /api/v1/finance/extra-charges` | ✅ `200`. El sobre es `{ data: [], meta: {...} }` |
+| `meta` | ✅ `current_page`, `next_page`, `prev_page`, `total_pages`, `total_count`. Coincide **campo por campo** con lo que declara el esquema |
+| `GET /api/v1/finance/extra_charges` (guion bajo) | ❌ `404` con HTML. La grafía es con guion, como en el inventario de la API |
+| Cobros en la cuenta | **Cero.** `total_count: 0`, con cinco guías emitidas |
+| Saldo, de control | 10.088, igual que el 17 de septiembre |
+
+**Y la mitad que no se pudo medir, que es la que importa declarar**: con la lista vacía, la forma de
+un ítem no se comprobó contra nada. Sí la **declara el OpenAPI** (`/es-CO/api-docs.json`), y eso es
+una fuente y no una suposición: `package_id`, `shipment_id`, `status`, `carrier`, `service`,
+`tracking_number`, `label_date`, `detection_date`, `amount`, `charge_type` y `metadata`. Tres cosas
+de ahí cambiaron el diseño:
+
+- **`amount` viene como texto** (`"15.50"`) y **sin moneda**. Se lee con `BigDecimal` —regla dura
+  #6— y se toma como pesos porque el cargo se descuenta del crédito y el crédito está en COP, que es
+  lo único medido al respecto. La suposición queda escrita en `SobrecostoDeEnvio`, no en un comentario
+  perdido.
+- **No hay identificador del cargo.** Hay dos del envío (`shipment_id`, `package_id`) y ninguno del
+  cobro, así que la identidad para "de esto ya avisé" se compone: envío, tipo, monto y fecha de
+  detección (`SobrecostoDeEnvio.clave()`). Lleva el monto a propósito — una reliquidación por otra
+  cifra vuelve a avisar, porque enterarse dos veces de algo de dinero es el error que se prefiere.
+- **`charge_type` es el nombre de la clase de Rails**: el ejemplo es `ExtraCharge::Overweight`. Viaja
+  al correo tal cual, sin traducir, porque es la misma cadena que va a ver quien busque el cargo en el
+  panel.
+
+El endpoint además **filtra por `start_date`/`end_date` sobre la fecha de detección** y pagina con
+`page`/`per_page` (máximo 20). El vigilante pregunta por una ventana de treinta días y no "por
+todo": el orden en que devuelve los cobros **no está documentado**, así que pedir "los recientes"
+confiando en el orden sería apoyarse en algo que nadie prometió.
+
+**Lo que queda abierto, y nace aquí:** los campos de peso que el cuerpo del *webhook* documenta
+—`real_weight`, `original_weight`, `discrepancy_weight` (§6.4)— **no están en este endpoint**. Lo
+más probable es que vengan dentro de `metadata`, que el esquema describe como "metadatos adicionales,
+puede estar vacío" y no detalla. Se sabrá con el primer cobro real: `VOLCAR=1 node
+tools/sonda-sobrecostos.mjs` imprime el cuerpo entero. Hasta entonces el correo dice cuánto y de qué
+guía, y no cuántos gramos de más — que es lo que haría falta para corregir la medida del catálogo sin
+abrir el panel.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 

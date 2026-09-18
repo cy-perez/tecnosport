@@ -4,6 +4,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
+import co.tecnosport.api.application.envio.ConsultorDeSobrecostos;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
@@ -11,6 +12,7 @@ import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
 import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
+import co.tecnosport.api.application.envio.SobrecostoDeEnvio;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
@@ -24,6 +26,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +66,11 @@ import tools.jackson.databind.json.JsonMapper;
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
 public final class SkydropxClient
-    implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias, ConsultorDeSaldo {
+    implements CotizadorEnvio,
+        ConsultorDeSeguimiento,
+        EmisorDeGuias,
+        ConsultorDeSaldo,
+        ConsultorDeSobrecostos {
 
   private static final Logger log = LoggerFactory.getLogger(SkydropxClient.class);
 
@@ -87,6 +96,26 @@ public final class SkydropxClient
 
   /** Entre reintentos de emisión: un 409 dice "hay una creación en proceso", y hay que dejarla. */
   private static final Duration ESPERA_ENTRE_EMISIONES = Duration.ofSeconds(3);
+
+  /** El máximo que admite el endpoint de cobros extra, y también su valor por omisión. */
+  private static final int SOBRECOSTOS_POR_PAGINA = 20;
+
+  /**
+   * Tope de páginas de cobros extra por consulta: 20 páginas son 400 cobros en la ventana que se
+   * pregunta, más de lo que este negocio puede generar en un mes. Existe para que un {@code
+   * next_page} que no avance no deje a la tarea girando contra un proveedor limitado a dos
+   * peticiones por segundo.
+   */
+  private static final int MAXIMO_DE_PAGINAS_DE_SOBRECOSTOS = 20;
+
+  /**
+   * {@code start_date} filtra por fecha de detección y el ejemplo del esquema es {@code
+   * 2026-01-01}: un día, sin hora. Se manda en UTC — la ventana es de días, así que el desfase de
+   * seis horas con Bogotá no cambia qué cobros entran, y pedir medio día de más no cuesta nada
+   * porque de lo ya avisado no se avisa dos veces.
+   */
+  private static final DateTimeFormatter FECHA_DEL_FILTRO =
+      DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC);
 
   /**
    * Lo que se le dice a la transportadora al anular. No es un texto de interfaz —no lo lee ningun
@@ -649,6 +678,131 @@ public final class SkydropxClient
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return Optional.empty();
+    }
+  }
+
+  /**
+   * Los cobros extra de la cuenta, pagina por pagina. Medido contra la cuenta el 18 de septiembre
+   * de 2026: la ruta con guion responde {@code 200} con {@code data} y {@code meta}, y la de guion
+   * bajo un 404 con HTML. El sobre —{@code current_page}, {@code next_page}, {@code prev_page},
+   * {@code total_pages}, {@code total_count}— coincide campo por campo con lo que declara el
+   * esquema, y de ahi sale el resto de la forma: la cuenta de pruebas no tiene ningun cobro todavia
+   * (docs/13-skydropx-capacidades.md 6.16).
+   *
+   * <p><strong>Falla cerrado como un todo</strong>: si una pagina no contesta, no se devuelve la
+   * lista a medias. Media lista se leeria como "esto es todo lo que hay" y de lo que no vino nunca
+   * se avisaria, porque el reclamo de lo que si vino ya quedo hecho.
+   *
+   * <p>El tope de paginas existe por lo mismo que el del sondeo de la cotizacion: un {@code
+   * next_page} que no avanza dejaria a la tarea girando contra un proveedor limitado a dos
+   * peticiones por segundo.
+   */
+  @Override
+  public Optional<List<SobrecostoDeEnvio>> desde(Instant desde) {
+    Objects.requireNonNull(
+        desde, "La fecha desde la que se consultan los sobrecostos es obligatoria.");
+    try {
+      String token = token();
+      if (token == null) {
+        log.warn("No se pudieron consultar los sobrecostos: no se obtuvo token.");
+        return Optional.empty();
+      }
+      List<SobrecostoDeEnvio> cobros = new ArrayList<>();
+      for (int pagina = 1; pagina <= MAXIMO_DE_PAGINAS_DE_SOBRECOSTOS; pagina++) {
+        String ruta =
+            "/api/v1/finance/extra-charges?per_page="
+                + SOBRECOSTOS_POR_PAGINA
+                + "&page="
+                + pagina
+                + "&start_date="
+                + FECHA_DEL_FILTRO.format(desde);
+        HttpResponse<String> respuesta = enviar(peticion(ruta, token).GET().build());
+        if (respuesta.statusCode() / 100 != 2) {
+          log.warn(
+              "No se pudieron consultar los sobrecostos: la pagina {} respondio {}",
+              pagina,
+              respuesta.statusCode());
+          return Optional.empty();
+        }
+        JsonNode cuerpo = json.readTree(respuesta.body());
+        for (JsonNode nodo : cuerpo.path("data")) {
+          sobrecosto(nodo).ifPresent(cobros::add);
+        }
+        JsonNode siguiente = cuerpo.path("meta").path("next_page");
+        if (siguiente.isMissingNode() || siguiente.isNull()) {
+          return Optional.of(List.copyOf(cobros));
+        }
+      }
+      log.warn(
+          "Los sobrecostos siguen paginando despues de {} paginas: se corta y no se concluye.",
+          MAXIMO_DE_PAGINAS_DE_SOBRECOSTOS);
+      return Optional.empty();
+    } catch (IOException | RuntimeException e) {
+      log.warn("No se pudieron consultar los sobrecostos: {}", e.toString());
+      return Optional.empty();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Un cobro que no se entiende se descarta con un registro, y no tumba la lista entera: el resto
+   * de los cobros son buenos y avisar de cuatro de cinco es mejor que no avisar de ninguno.
+   *
+   * <p>{@code amount} viene como <strong>texto</strong> ({@code "15.50"}) y sin moneda. Se lee con
+   * {@link BigDecimal} —nunca {@code double}, regla dura #6— y se toma como pesos porque el credito
+   * de la cuenta esta en pesos, que es lo unico medido al respecto; el razonamiento vive en {@link
+   * SobrecostoDeEnvio}.
+   */
+  private Optional<SobrecostoDeEnvio> sobrecosto(JsonNode nodo) {
+    String envio = texto(nodo, "shipment_id");
+    String monto = texto(nodo, "amount");
+    String tipo = texto(nodo, "charge_type");
+    if (envio == null || monto == null || tipo == null) {
+      log.warn(
+          "Un cobro extra llego sin envio, monto o tipo y no se puede avisar: llaves {}",
+          nodo.propertyNames());
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(
+          new SobrecostoDeEnvio(
+              envio,
+              texto(nodo, "tracking_number"),
+              texto(nodo, "carrier"),
+              tipo,
+              Dinero.deCop(new BigDecimal(monto)),
+              instante(texto(nodo, "detection_date"))));
+    } catch (RuntimeException e) {
+      log.warn("Un cobro extra del envio {} no se pudo leer: {}", envio, e.toString());
+      return Optional.empty();
+    }
+  }
+
+  private static String texto(JsonNode nodo, String campo) {
+    JsonNode valor = nodo.path(campo);
+    if (valor.isMissingNode() || valor.isNull()) {
+      return null;
+    }
+    String bruto = valor.asString();
+    return bruto == null || bruto.isBlank() ? null : bruto.trim();
+  }
+
+  /**
+   * Las fechas del cobro traen desplazamiento ({@code 2026-02-26T16:30:35-06:00}), asi que se leen
+   * como {@link OffsetDateTime} y no como {@link Instant}: {@code Instant.parse} solo entiende la
+   * {@code Z}. Una fecha ilegible es un dato menos en el correo, no un cobro que se calla.
+   */
+  private Instant instante(String valor) {
+    if (valor == null) {
+      return null;
+    }
+    try {
+      return OffsetDateTime.parse(valor).toInstant();
+    } catch (RuntimeException e) {
+      log.warn("La fecha de un cobro extra no se pudo leer: {}", e.toString());
+      return null;
     }
   }
 

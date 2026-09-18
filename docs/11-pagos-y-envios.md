@@ -249,6 +249,21 @@ necesita relleno antes de encender la cotización.
 la comisión de recaudo. La diferencia con antes es que ahora hay un valor cobrado
 contra el que compararlo: el margen del pedido se puede leer, no estimar.
 
+**Y lo que la transportadora cobra después no se queda callado.** Un peso mal declarado se
+reliquida semanas más tarde contra el crédito de la cuenta: el flete que el pedido tiene guardado es
+el de la tarifa, y el que se pagó es otro. Desde el 18 de septiembre de 2026
+`AvisarSobrecostoDeEnvio` le pregunta a diario a `GET /api/v1/finance/extra-charges` por la ventana
+de los últimos treinta días y **avisa por correo de cada cobro una sola vez**, con su monto, su guía
+y su tipo. No hay umbral: son raros y cada uno sale del crédito en silencio, así que callar los
+pequeños sería elegir no enterarse.
+
+Lo que ese aviso **no** hace todavía es entrar en el margen del pedido, y es deliberado: el cargo
+viene por envío y la discrepancia de peso por paquete, así que decidir dónde vive —`GuiaEnvio` o
+`Envio`— y devolverlo por algún endpoint va con el panel administrativo, junto con la comisión de
+recaudo que ya está en la misma situación. El motivo más común del sobrecosto además no se arregla en
+el envío: se arregla midiendo bien la variante en el catálogo. Ver `docs/13-skydropx-capacidades.md`
+§6.16.
+
 ## Recogida en el punto
 
 En el dominio se llama `TipoEntrega.RETIRO_EN_PUNTO` y así se queda; "recogida en

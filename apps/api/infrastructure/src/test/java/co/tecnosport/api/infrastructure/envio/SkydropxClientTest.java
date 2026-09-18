@@ -11,6 +11,7 @@ import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
+import co.tecnosport.api.application.envio.SobrecostoDeEnvio;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
@@ -777,6 +778,174 @@ class SkydropxClientTest {
   @Test
   void unCuerpoSinBalanceNoDaSaldo() throws IOException {
     assertTrue(clienteDeSaldo(200, "{\"data\":{\"currency\":\"COP\"}}").saldo().isEmpty());
+  }
+
+  // --- cobros extra de la transportadora --------------------------------------------------------
+
+  /** Las consultas que llegaron al endpoint, para comprobar el filtro y la paginación. */
+  private final List<String> consultasDeSobrecostos = new ArrayList<>();
+
+  private SkydropxClient clienteDeSobrecostos(int estado, RespuestaDeSondeo porPagina)
+      throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v1/finance/extra-charges",
+        intercambio -> {
+          String consulta = intercambio.getRequestURI().getQuery();
+          consultasDeSobrecostos.add(consulta);
+          int pagina = Integer.parseInt(consulta.replaceAll(".*[?&]?page=(\\d+).*", "$1"));
+          responder(intercambio, estado, porPagina.cuerpo(pagina));
+        });
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * El sobre es el que respondió la cuenta real el 18 de septiembre de 2026 —{@code data} más
+   * {@code meta} con las cinco llaves de paginación— y los campos de dentro son los que declara el
+   * esquema del endpoint. La cuenta no tiene ningún cobro todavía, así que <strong>esta es la mitad
+   * documentada y no medida</strong>: lo que se prueba aquí es que el cliente lee esa forma, no que
+   * la plataforma la use. Ver docs/13-skydropx-capacidades.md §6.16.
+   */
+  private static final String UN_COBRO =
+      """
+      {"data":[
+        {"package_id":"pkg-1","shipment_id":"shp-1","status":"pending_payment",
+         "carrier":"servientrega","service":"Estándar","tracking_number":"873837506712",
+         "label_date":"2026-09-16T00:00:00-05:00","detection_date":"2026-09-17T16:30:35-05:00",
+         "amount":"8400.0","charge_type":"ExtraCharge::Overweight","metadata":{}}],
+       "meta":{"current_page":1,"next_page":null,"prev_page":null,"total_pages":1,"total_count":1}}
+      """;
+
+  @Test
+  void leeUnCobroExtraConSuMontoSuGuiaYSuFecha() throws IOException {
+    SkydropxClient cliente = clienteDeSobrecostos(200, pagina -> UN_COBRO);
+
+    List<SobrecostoDeEnvio> cobros = cliente.desde(AHORA.minus(Duration.ofDays(30))).orElseThrow();
+
+    assertEquals(1, cobros.size());
+    SobrecostoDeEnvio cobro = cobros.get(0);
+    assertEquals("shp-1", cobro.envioEnPlataforma());
+    assertEquals("873837506712", cobro.numeroDeGuia().orElseThrow());
+    assertEquals("servientrega", cobro.nombreDeTransportadora().orElseThrow());
+    assertEquals("ExtraCharge::Overweight", cobro.tipo());
+    assertEquals(Dinero.deCop(8_400), cobro.monto());
+    // Con desplazamiento -05:00, que es lo que manda el esquema: Instant.parse no lo entendería.
+    assertEquals(Instant.parse("2026-09-17T21:30:35Z"), cobro.detectado().orElseThrow());
+  }
+
+  /** El filtro va en la consulta, con la fecha en días y el tope de 20 por página que admite. */
+  @Test
+  void acotaLaConsultaPorFechaDeDeteccion() throws IOException {
+    SkydropxClient cliente = clienteDeSobrecostos(200, pagina -> UN_COBRO);
+
+    cliente.desde(Instant.parse("2026-08-19T12:00:00Z"));
+
+    assertEquals(List.of("per_page=20&page=1&start_date=2026-08-19"), consultasDeSobrecostos);
+  }
+
+  /** Dos páginas: se sigue el `next_page` de `meta` y no se adivina cuántas hay. */
+  @Test
+  void sigueLaPaginacionHastaQueNoHayaSiguiente() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSobrecostos(
+            200,
+            pagina ->
+                pagina == 1
+                    ? UN_COBRO.replace("\"next_page\":null", "\"next_page\":2")
+                    : UN_COBRO.replace("\"shipment_id\":\"shp-1\"", "\"shipment_id\":\"shp-2\""));
+
+    List<SobrecostoDeEnvio> cobros = cliente.desde(AHORA.minus(Duration.ofDays(30))).orElseThrow();
+
+    assertEquals(2, cobros.size());
+    assertEquals(2, consultasDeSobrecostos.size());
+    assertEquals("shp-2", cobros.get(1).envioEnPlataforma());
+  }
+
+  /**
+   * Una página que no contesta no devuelve media lista, y esto es lo que más importa de este
+   * adaptador: media lista se leería como "esto es todo lo que hay", el vigilante reclamaría el
+   * aviso de lo que sí vino, y de lo que faltó no se avisaría nunca — porque la próxima vuelta ya
+   * lo encontraría reclamado.
+   */
+  @Test
+  void unaPaginaQueFallaNoDevuelveMediaLista() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSobrecostos(
+            200,
+            pagina -> {
+              if (pagina == 1) {
+                return UN_COBRO.replace("\"next_page\":null", "\"next_page\":2");
+              }
+              throw new IllegalStateException("la segunda pagina se cae");
+            });
+
+    assertTrue(cliente.desde(AHORA.minus(Duration.ofDays(30))).isEmpty());
+  }
+
+  @Test
+  void unProveedorCaidoNoDaCobros() throws IOException {
+    SkydropxClient cliente = clienteDeSobrecostos(500, pagina -> "{}");
+
+    assertTrue(cliente.desde(AHORA.minus(Duration.ofDays(30))).isEmpty());
+  }
+
+  /**
+   * Un cobro ilegible se descarta y los demás sobreviven: avisar de uno de dos es mejor que no
+   * avisar de ninguno, y un cobro sin monto no se puede poner en un correo de todas formas.
+   */
+  @Test
+  void unCobroSinMontoSeDescartaYElRestoSobrevive() throws IOException {
+    String conUnoRoto =
+        """
+        {"data":[
+          {"shipment_id":"shp-roto","carrier":"envia","charge_type":"ExtraCharge::Overweight"},
+          {"shipment_id":"shp-2","carrier":"envia","tracking_number":"9",
+           "charge_type":"ExtraCharge::Overweight","amount":"3100.0"}],
+         "meta":{"current_page":1,"next_page":null,"prev_page":null,"total_pages":1,"total_count":2}}
+        """;
+    SkydropxClient cliente = clienteDeSobrecostos(200, pagina -> conUnoRoto);
+
+    List<SobrecostoDeEnvio> cobros = cliente.desde(AHORA.minus(Duration.ofDays(30))).orElseThrow();
+
+    assertEquals(1, cobros.size());
+    assertEquals("shp-2", cobros.get(0).envioEnPlataforma());
+    assertTrue(cobros.get(0).detectado().isEmpty());
+  }
+
+  /** Y una fecha que no se puede leer es un dato menos en el correo, no un cobro que se calla. */
+  @Test
+  void unaFechaIlegibleNoTumbaElCobro() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSobrecostos(
+            200, pagina -> UN_COBRO.replace("2026-09-17T16:30:35-05:00", "ayer por la tarde"));
+
+    List<SobrecostoDeEnvio> cobros = cliente.desde(AHORA.minus(Duration.ofDays(30))).orElseThrow();
+
+    assertEquals(1, cobros.size());
+    assertTrue(cobros.get(0).detectado().isEmpty());
+    assertEquals(Dinero.deCop(8_400), cobros.get(0).monto());
   }
 
   // --- emision de la guia -----------------------------------------------------------------------
