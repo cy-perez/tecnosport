@@ -17,6 +17,13 @@ const SIN_COBERTURA = 'ENVIO_SIN_COBERTURA';
 const ARTICULO_NO_ASEGURABLE = 'ARTICULO_NO_ASEGURABLE';
 
 /**
+ * Y el tercero: la plataforma rechazó los datos de este envío. Va con 409 y no con el 503 de "no se
+ * pudo cotizar" precisamente para que se pueda distinguir aquí — reintentar el 503 sirve, y
+ * reintentar esto no, porque Skydropx deduplica las cotizaciones por contenido.
+ */
+const COTIZACION_RECHAZADA = 'COTIZACION_RECHAZADA';
+
+/**
  * Los artículos culpables que viajan en el `ProblemDetail`, leídos con la misma desconfianza que
  * `codigoDe`: el cuerpo de un error no está tipado por el contrato, así que aquí no se da nada por
  * hecho. Si llegara vacío o con otra forma, la pantalla se queda sin nombres pero no se rompe — y
@@ -50,11 +57,12 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
    * entrega, y una dirección no va en una URL que queda escrita en los
    * registros del balanceador (`docs/03-api.md`).
    *
-   * Los dos 409 de negocio se traducen a un resultado y no se propagan como
+   * Los tres 409 de negocio se traducen a un resultado y no se propagan como
    * error: para quien compra no son fallas. Uno dice que a esa dirección hoy no
-   * llega nadie; el otro, que algo del carrito vale más de lo que la
-   * transportadora asegura (`ADR-0036`). Los dos terminan en la recogida y se
-   * dicen distinto, porque solo el primero se arregla cambiando la dirección.
+   * llega nadie; otro, que algo del carrito vale más de lo que la transportadora
+   * asegura (`ADR-0036`); el tercero, que la plataforma rechazó los datos del
+   * envío. Los tres terminan en la recogida y se dicen distinto, porque solo el
+   * primero se arregla cambiando la dirección.
    * Cualquier otro fallo sí se lanza — confundir "se cayó algo" con "no hay
    * cobertura" manda al comprador a cambiar una dirección que estaba bien.
    */
@@ -88,6 +96,9 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
       }
       if (error instanceof ErrorHttp && error.codigo === ARTICULO_NO_ASEGURABLE) {
         return { tipo: 'ARTICULO_NO_ASEGURABLE', articulos: articulosDe(respuesta.error) };
+      }
+      if (error instanceof ErrorHttp && error.codigo === COTIZACION_RECHAZADA) {
+        return { tipo: 'COTIZACION_RECHAZADA' };
       }
       throw error;
     }

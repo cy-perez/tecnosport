@@ -44,8 +44,9 @@ public sealed interface ResultadoCotizacion {
   record SinCobertura() implements ResultadoCotizacion {}
 
   /**
-   * No se pudo saber si hay cobertura. Es temporal por definición: la misma pregunta, repetida,
-   * puede responderse.
+   * No se pudo saber si hay cobertura. Cuatro de los cinco motivos son temporales —la misma
+   * pregunta, repetida, puede responderse—, y {@link Motivo#DATOS_RECHAZADOS} no: ahí el proveedor
+   * ya contestó, y contestó que el cuerpo está mal.
    */
   record NoSePudoCotizar(Motivo motivo) implements ResultadoCotizacion {
 
@@ -57,14 +58,27 @@ public sealed interface ResultadoCotizacion {
   }
 
   /**
-   * Para el registro, no para el comprador: a quien compra se le dice lo mismo en los cuatro —"no
-   * pudimos cotizar, intenta de nuevo"— y quien opera necesita saber cuál fue, porque piden cosas
-   * distintas. Sin credenciales es un despliegue mal configurado; el sondeo agotado es una
-   * cotización que sigue viva del otro lado; una respuesta inesperada es la forma del proveedor
+   * Cuatro de los cinco son para el registro y no para el comprador: a quien compra se le dice lo
+   * mismo —"no pudimos cotizar, intenta de nuevo"— y quien opera necesita saber cuál fue, porque
+   * piden cosas distintas. Sin credenciales es un despliegue mal configurado; el sondeo agotado es
+   * una cotización que sigue viva del otro lado; una respuesta inesperada es la forma del proveedor
    * cambiando bajo nuestros pies.
+   *
+   * <p><strong>{@link #DATOS_RECHAZADOS} es el que rompe esa regla</strong>, y es la razón de que
+   * exista: el proveedor respondió, y respondió que <em>nuestro</em> cuerpo está mal. Llamar a eso
+   * "no disponible" era falso por dos lados —culpaba al que sí contestó— y le pedía al comprador
+   * reintentar algo que no puede funcionar, porque Skydropx deduplica las cotizaciones por
+   * contenido y el reintento trae el mismo rechazo. Es la forma exacta que tenía el valor declarado
+   * por debajo del mínimo antes de adr/0035: una venta que no ocurre y ningún error que la
+   * explique.
+   *
+   * <p>No entra aquí todo lo que el proveedor conteste con un {@code 4xx}. Un {@code 401} es
+   * despliegue mal configurado y un {@code 429} es el límite de dos peticiones por segundo, que sí
+   * se arregla reintentando; el mapeo vive en el adaptador, que es quien ve el código.
    */
   enum Motivo {
     SIN_CREDENCIALES,
+    DATOS_RECHAZADOS,
     PROVEEDOR_NO_DISPONIBLE,
     RESPUESTA_INESPERADA,
     SONDEO_AGOTADO

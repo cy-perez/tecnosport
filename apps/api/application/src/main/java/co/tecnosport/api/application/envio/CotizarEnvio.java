@@ -81,8 +81,15 @@ public final class CotizarEnvio {
               .orElseThrow(() -> new EnvioSinCoberturaException(destino.codigoDaneCiudad()));
       case ResultadoCotizacion.SinCobertura ignorado ->
           throw new EnvioSinCoberturaException(destino.codigoDaneCiudad());
-      case ResultadoCotizacion.NoSePudoCotizar ignorado ->
-          throw new CotizacionNoDisponibleException();
+      // Y aquí tampoco hay `default`, por lo mismo: los cinco motivos no piden lo mismo del
+      // comprador. Cuatro se arreglan repitiendo la llamada; el rechazo de nuestro cuerpo no, y
+      // decirle "intenta de nuevo" es mandarlo a esperar algo que no va a pasar.
+      case ResultadoCotizacion.NoSePudoCotizar(ResultadoCotizacion.Motivo motivo) ->
+          throw switch (motivo) {
+            case DATOS_RECHAZADOS -> new CotizacionRechazadaException();
+            case SIN_CREDENCIALES, PROVEEDOR_NO_DISPONIBLE, RESPUESTA_INESPERADA, SONDEO_AGOTADO ->
+                new CotizacionNoDisponibleException();
+          };
     };
   }
 

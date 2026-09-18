@@ -290,6 +290,44 @@ describe('ResumenPage', () => {
   });
 
   /**
+   * La cuarta respuesta, y lo que se prueba es lo que el texto **no** dice: nada de "vuelve a
+   * intentarlo". El reintento trae el mismo rechazo, porque Skydropx deduplica las cotizaciones por
+   * contenido, y prometer lo contrario es dejar al comprador esperando algo que no va a pasar.
+   */
+  it('una cotización rechazada por el proveedor no invita a reintentar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso({ tipo: 'COTIZACION_RECHAZADA' }),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    llenarContacto();
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(
+      await screen.findByText(/No podemos calcular el envío a domicilio de este pedido/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Vuelve a intentarlo/)).toBeNull();
+    expect(screen.queryByText(/No tenemos transporte hasta esta dirección/)).toBeNull();
+
+    // Y tampoco un total que no es el total, por lo mismo que las otras tres.
+    const celdaTotal = screen.getByText('Total a pagar').parentElement;
+    expect(celdaTotal?.textContent).toContain('Falta el costo de envío');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
    * Sin cobertura no se puede continuar: el pedido respondería el mismo 409 dos pantallas
    * después. Se dice aquí, con la salida —recoger en el punto— en el mismo texto.
    *

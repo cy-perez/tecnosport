@@ -180,10 +180,18 @@ public final class MetodosDePagoDisponibles {
                       .toList(),
                   comando.direccion(),
                   true)));
-    } catch (EnvioSinCoberturaException | ArticuloNoAsegurableException e) {
-      // Las dos significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
+    } catch (EnvioSinCoberturaException
+        | ArticuloNoAsegurableException
+        | CotizacionRechazadaException e) {
+      // Las tres significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
       // error que deba salir por aquí: quien pregunta por los medios de pago se quedaría sin
       // respuesta y vería el checkout roto en vez de la recogida (adr/0036).
+      //
+      // La tercera se suma el 17 de septiembre de 2026 y es la que más falta hacía: un cuerpo que
+      // el proveedor rechaza tumbaba esta consulta entera con un 503, así que el comprador no se
+      // quedaba sin contraentrega — se quedaba sin lista de medios de pago. Lo que no se atrapa
+      // sigue siendo el "no pudimos preguntar": ahí no se sabe si hay contraentrega, y callarlo
+      // ofrecería un método que quizá no exista.
       return Optional.empty();
     }
   }

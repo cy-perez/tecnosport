@@ -219,9 +219,7 @@ public final class SkydropxClient
                 .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
                 .build());
     if (creacion.statusCode() / 100 != 2) {
-      return fallo(
-          ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE,
-          "la creacion de la cotizacion respondio " + creacion.statusCode());
+      return falloDeCreacion(creacion);
     }
 
     Optional<String> id = mapeador.idDeCotizacion(json.readTree(creacion.body()));
@@ -235,16 +233,68 @@ public final class SkydropxClient
   }
 
   /**
-   * El registro de un fallo de cotizacion, en un solo sitio. Va en {@code warn} y no en {@code
-   * error}: no hay nada roto de nuestro lado y el checkout sigue vendiendo con recogida en el
-   * punto, pero si esto sale seguido alguien tiene que mirarlo.
+   * La creacion de la cotizacion es el <strong>unico</strong> sitio donde la plataforma juzga
+   * nuestro cuerpo, asi que es el unico que puede concluir {@code DATOS_RECHAZADOS}. Hasta el 17 de
+   * septiembre de 2026 cualquier respuesta que no fuera 2xx se contaba como proveedor caido, y eso
+   * mandaba al comprador a reintentar un rechazo que la deduplicacion por contenido repite igual.
+   *
+   * <p>El cuerpo del rechazo no se vuelca: van los <em>nombres</em> de los campos, porque los
+   * valores son el telefono y la direccion de quien compra (docs/08-seguridad-legal.md). Es el
+   * mismo criterio que ya usaba la emision, y esta es la mitad que le faltaba.
+   */
+  private ResultadoCotizacion falloDeCreacion(HttpResponse<String> respuesta) {
+    int estado = respuesta.statusCode();
+    ResultadoCotizacion.Motivo motivo = motivoDe(estado);
+    String detalle = "la creacion de la cotizacion respondio " + estado;
+    return fallo(
+        motivo,
+        motivo == ResultadoCotizacion.Motivo.DATOS_RECHAZADOS
+            ? detalle + ", campos rechazados: " + camposRechazados(respuesta.body())
+            : detalle);
+  }
+
+  /**
+   * De que se queja cada codigo, y de esto depende lo que ve el comprador. No todo {@code 4xx} es
+   * "nuestro cuerpo esta mal": un {@code 401} es un despliegue con credenciales que no sirven, y un
+   * {@code 429} es el limite de dos peticiones por segundo, que si se arregla reintentando. Meter
+   * esos dos en {@code DATOS_RECHAZADOS} le cerraria el envio a domicilio a un comprador por algo
+   * que se resuelve solo.
+   *
+   * <p>Lo que no es 2xx ni 4xx ni 5xx —un redirect, por ejemplo— es una respuesta inesperada: la
+   * forma del proveedor cambiando bajo nuestros pies.
+   */
+  private static ResultadoCotizacion.Motivo motivoDe(int estado) {
+    if (estado == 401 || estado == 403) {
+      return ResultadoCotizacion.Motivo.SIN_CREDENCIALES;
+    }
+    if (estado == 408 || estado == 429 || estado / 100 == 5) {
+      return ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE;
+    }
+    return estado / 100 == 4
+        ? ResultadoCotizacion.Motivo.DATOS_RECHAZADOS
+        : ResultadoCotizacion.Motivo.RESPUESTA_INESPERADA;
+  }
+
+  /**
+   * El registro de un fallo de cotizacion, en un solo sitio. Los cuatro motivos temporales van en
+   * {@code warn}: no hay nada roto de nuestro lado y el checkout sigue vendiendo con recogida en el
+   * punto, pero si eso sale seguido alguien tiene que mirarlo.
+   *
+   * <p><strong>El rechazo del cuerpo va en {@code error}</strong>, y la diferencia de nivel es la
+   * decision: los otros cuatro son el mundo —un proveedor caido, un token mal configurado, una
+   * ventana de sondeo corta— y este es un defecto nuestro que se cobra en ventas que no ocurren.
+   * Enterarse de esto tarde es exactamente lo que costo el piso del valor declarado (adr/0035).
    *
    * <p><strong>Lo que no entra en el registro</strong>: la direccion de destino ni nada del
    * comprador. Un fallo de cotizacion se diagnostica con el motivo y, cuando existe, con el
    * identificador de la cotizacion en la plataforma.
    */
   private ResultadoCotizacion fallo(ResultadoCotizacion.Motivo motivo, String detalle) {
-    log.warn("No se pudo cotizar el envio ({}): {}", motivo, detalle);
+    if (motivo == ResultadoCotizacion.Motivo.DATOS_RECHAZADOS) {
+      log.error("Skydropx rechazo el cuerpo de la cotizacion: {}", detalle);
+    } else {
+      log.warn("No se pudo cotizar el envio ({}): {}", motivo, detalle);
+    }
     return new ResultadoCotizacion.NoSePudoCotizar(motivo);
   }
 
@@ -271,9 +321,15 @@ public final class SkydropxClient
       HttpResponse<String> respuesta =
           enviar(peticion("/api/v1/quotations/" + idCotizacion, token).GET().build());
       if (respuesta.statusCode() / 100 != 2) {
-        return fallo(
-            ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE,
-            "el sondeo de la cotizacion " + idCotizacion + " respondio " + respuesta.statusCode());
+        int estado = respuesta.statusCode();
+        // Aqui el cuerpo ya fue aceptado, asi que un 4xx no puede significar "nos rechazaron los
+        // datos" y no se usa `motivoDe`: lo unico que cambia de verdad entre la creacion y el
+        // sondeo es el token, que se pide una vez y puede quedar revocado en medio.
+        ResultadoCotizacion.Motivo motivo =
+            estado == 401 || estado == 403
+                ? ResultadoCotizacion.Motivo.SIN_CREDENCIALES
+                : ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE;
+        return fallo(motivo, "el sondeo de la cotizacion " + idCotizacion + " respondio " + estado);
       }
 
       Optional<List<TarifaEnvio>> tarifas =
@@ -424,6 +480,22 @@ public final class SkydropxClient
         return rechazo(
             ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE,
             "la creacion del envio respondio " + estado);
+      }
+      // Los dos codigos que este camino contaba como "datos rechazados" y no lo son. No se crea
+      // nada en ninguno de los dos, asi que tampoco lleva el aviso de "quiza quedo creada": un 401
+      // es un despliegue con credenciales que no sirven —y no hay pedido que revisar— y un 429 es
+      // el
+      // limite de peticiones, que se arregla insistiendo. Llamarlos datos rechazados mandaba a
+      // buscar un defecto en el pedido.
+      if (estado == 401 || estado == 403) {
+        return rechazo(
+            ResultadoEmision.Motivo.SIN_CREDENCIALES,
+            "la creacion del envio respondio " + estado + ": el token no sirve");
+      }
+      if (estado == 429) {
+        return rechazo(
+            ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE,
+            "la creacion del envio respondio 429: limite de peticiones de la cuenta");
       }
       if (estado / 100 == 4) {
         // Los nombres de los campos que la plataforma rechazo, sin sus valores: cuando la tarifa no

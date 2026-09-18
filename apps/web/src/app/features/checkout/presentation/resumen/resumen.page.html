@@ -102,6 +102,13 @@
                 ) | transloco: { articulos: nombresNoAsegurables() }
               }}
             </p>
+          } @else if (cotizacionRechazada()) {
+            <!-- La cuarta, y la única que no dice "vuelve a intentarlo": la plataforma rechazó los
+                 datos del envío y el reintento trae el mismo rechazo, porque las cotizaciones se
+                 deduplican por contenido. La salida es la recogida, igual que arriba. -->
+            <p class="m-0 text-ts-error" role="alert">
+              {{ 'checkout.resumen.envio_rechazado' | transloco }}
+            </p>
           } @else if (errorCotizacion()) {
             <!-- Otro texto, y a propósito: "no llegamos a esa dirección" manda a corregir una
                  dirección que puede estar bien. Esto es una caída nuestra y se dice como tal. -->

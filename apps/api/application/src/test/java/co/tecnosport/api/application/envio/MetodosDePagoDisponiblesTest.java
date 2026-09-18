@@ -296,6 +296,41 @@ class MetodosDePagoDisponiblesTest {
     assertFalse(disponibles.isEmpty());
   }
 
+  /**
+   * Un cuerpo que el proveedor rechaza tumbaba esta consulta entera con un 503, así que el
+   * comprador no se quedaba sin contraentrega: se quedaba sin lista de medios de pago, mirando un
+   * checkout roto. Es el mismo defecto que {@code adr/0036} ya había pagado con el artículo no
+   * asegurable, y por eso el rechazo se atrapa con sus dos hermanas.
+   */
+  @Test
+  void unCuerpoRechazadoDejaLaConsultaSinContraentregaPeroNoLaTumba() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.fallar(ResultadoCotizacion.Motivo.DATOS_RECHAZADOS);
+    publicarProductoConVariante();
+
+    Set<MetodoPago> disponibles =
+        caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN));
+
+    assertFalse(disponibles.contains(MetodoPago.CONTRAENTREGA));
+    assertFalse(disponibles.isEmpty());
+  }
+
+  /**
+   * Y lo que <strong>no</strong> se atrapa, que es la otra mitad de la decisión: cuando no se pudo
+   * preguntar no se sabe si hay contraentrega, y ofrecerla callando el fallo sería prometer un
+   * método de pago que puede no existir en ese destino.
+   */
+  @Test
+  void siNoSePudoPreguntarLaConsultaNoSeInventaLaRespuesta() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    cotizador.fallar(ResultadoCotizacion.Motivo.PROVEEDOR_NO_DISPONIBLE);
+    publicarProductoConVariante();
+
+    assertThrows(
+        CotizacionNoDisponibleException.class,
+        () -> caso.ejecutar(comando(TipoEntrega.ENVIO_A_DOMICILIO, DIRECCION_MEDELLIN)));
+  }
+
   @Test
   void contraentregaNoDisponibleEnRetiroEnPunto() {
     MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);

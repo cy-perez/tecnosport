@@ -117,6 +117,19 @@ describe('EnvioHttpRepositorio.cotizar', () => {
     });
   });
 
+  /**
+   * El tercer 409 de negocio: la plataforma rechazó los datos del envío. Lo que importa es que
+   * **no** se propague como error, porque el texto de un error invita a reintentar y el reintento
+   * trae el mismo rechazo — Skydropx deduplica las cotizaciones por contenido.
+   */
+  it('traduce el 409 de cotización rechazada a un resultado', async () => {
+    const repositorio = conRespuesta(
+      json({ status: 409, codigo: 'COTIZACION_RECHAZADA', detail: 'el proveedor rechazó' }, 409),
+    );
+
+    await expect(repositorio.cotizar(COMANDO)).resolves.toEqual({ tipo: 'COTIZACION_RECHAZADA' });
+  });
+
   /** Un 409 con otro código sigue siendo un error: solo el de cobertura es una respuesta. */
   it('otro 409 se propaga', async () => {
     const repositorio = conRespuesta(json({ status: 409, codigo: 'EXISTENCIA_INSUFICIENTE' }, 409));

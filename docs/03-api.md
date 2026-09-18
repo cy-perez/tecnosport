@@ -147,13 +147,33 @@ destino:
   estaban bien: medido, la primera cotización de un contenido nuevo se pasa de la
   ventana de sondeo y el reintento la trae en 1,6 s, porque Skydropx deduplica por
   contenido (`docs/13` §6.9).
-  Entran por aquí los cuatro motivos técnicos —sin credenciales, proveedor no
-  disponible, respuesta inesperada y sondeo agotado—, que se distinguen en el
-  registro y no en la respuesta: al comprador se le dice lo mismo en los cuatro y
-  publicar la forma en que falla un proveedor no le sirve a nadie.
+  Entran por aquí **cuatro** de los cinco motivos técnicos —sin credenciales,
+  proveedor no disponible, respuesta inesperada y sondeo agotado—, que se
+  distinguen en el registro y no en la respuesta: al comprador se le dice lo mismo
+  en los cuatro y publicar la forma en que falla un proveedor no le sirve a nadie.
   **El cliente puede reintentar**, y el checkout ya lo hace una vez. Lo que no
   cambia es el criterio *fail-closed*: sin tarifa no se inventa un flete, y la
   recogida en el punto sigue disponible.
+- **Y el quinto motivo no es un 503: `409` con `codigo:
+  "COTIZACION_RECHAZADA"`.** El proveedor respondió, y respondió que **nuestro
+  cuerpo está mal** — un peso imposible, un valor declarado fuera de rango, un
+  campo de la dirección que no le sirve. Reintentar **no** lo arregla: Skydropx
+  deduplica las cotizaciones por contenido, así que la misma pregunta trae el
+  mismo rechazo, y un `503` le prometería al cliente lo contrario. Se trata como
+  sus dos hermanos de negocio —el checkout ofrece la recogida en el punto— y se
+  diferencia de ellos en quién tiene que hacer algo: `ENVIO_SIN_COBERTURA` lo
+  arregla el comprador cambiando la dirección, `ARTICULO_NO_ASEGURABLE` no lo
+  arregla nadie, y esto **lo arreglamos nosotros**. Por eso es el único de los
+  cinco que se registra en `error` con los nombres de los campos que la plataforma
+  rechazó —nunca sus valores, que son el teléfono y la dirección de quien compra
+  (`docs/08-seguridad-legal.md`)—.
+  Hasta el 17 de septiembre de 2026 viajaba dentro de `COTIZACION_NO_DISPONIBLE`,
+  y el registro decía "proveedor no disponible" de un proveedor que había
+  contestado: es la misma venta perdida sin error que el piso del valor declarado
+  (`ADR-0035`), que era una de sus causas.
+  **No todo `4xx` de la plataforma llega aquí**: un `401` es un despliegue con
+  credenciales que no sirven y un `429` es el límite de dos peticiones por segundo,
+  y los dos siguen siendo `COTIZACION_NO_DISPONIBLE` porque reintentar sí sirve.
 - **La cotización se repite en el servidor al crear el pedido.** Lo que el cliente
   recibió es informativo; el costo que se cobra lo fija `POST /api/v1/pedidos`
   (regla dura #7). Si entre las dos llamadas la tarifa cambió, manda la del

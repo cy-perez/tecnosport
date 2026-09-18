@@ -526,6 +526,39 @@ describe('ConfirmarPage', () => {
   });
 
   /**
+   * Y el cuarto motivo, que caía en el `@else` de la caída y por eso decía "inténtalo de nuevo en
+   * unos minutos": el proveedor rechazó los datos del envío y el reintento trae el mismo rechazo.
+   * Aquí el texto es el que dice qué hacer, así que una invitación falsa cuesta más que en el
+   * resumen.
+   */
+  it('una cotización rechazada bloquea el pedido sin prometer que reintentar sirve', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const pedidos = new RepositorioPedidosFalso();
+
+    const { fixture } = await renderConDatos(
+      'TRANSFERENCIA_MANUAL',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      pedidos,
+      new RepositorioPagosFalso(),
+      DATOS_ENTREGA_A_DOMICILIO,
+      new RepositorioEnviosFalso({ tipo: 'COTIZACION_RECHAZADA' }),
+    );
+    await esperarCarritoCargado(fixture);
+    expect(await screen.findByText(/No podemos calcular el envío a domicilio/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(
+      await screen.findByText(
+        /No podemos enviar este pedido a domicilio[\s\S]*recoger en nuestro punto/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Inténtalo de nuevo en unos minutos/)).toBeNull();
+    expect(pedidos.llamadasCrear).toBe(0);
+  });
+
+  /**
    * El otro motivo por el que puede faltar la tarifa, y no se dice igual: una caída nuestra no es
    * "no llegamos a esa dirección". Esta pantalla los mezclaba en un solo `@else`.
    */

@@ -38,10 +38,11 @@ export interface ArticuloNoAsegurable {
 }
 
 /**
- * Las tres respuestas posibles de cotizar, y son tres y no dos a propósito. Antes esto era
- * `CotizacionEnvio | null`, y ese `null` significaba "sin cobertura"; hoy hay una segunda forma de
- * no tener envío a domicilio que **no se arregla cambiando la dirección**, así que la pantalla
- * tiene que poder distinguirlas para no mandar a corregir algo que está bien.
+ * Las cuatro respuestas posibles de cotizar, y son cuatro y no una a propósito. Antes esto era
+ * `CotizacionEnvio | null`, y ese `null` significaba "sin cobertura"; cada una de las que se le
+ * fueron sumando es una forma distinta de quedarse sin envío a domicilio, y la pantalla tiene que
+ * poder distinguirlas porque **piden cosas distintas de quien compra**: cambiar la dirección,
+ * quitar un artículo, o nada — recoger en el punto.
  *
  * Es la misma forma que el backend tiene en su `ResultadoCotizacion`, y no por simetría: es que la
  * pregunta "¿por qué no hay envío?" tiene las mismas respuestas de los dos lados.
@@ -52,7 +53,14 @@ export type ResultadoCotizacion =
   | {
       readonly tipo: 'ARTICULO_NO_ASEGURABLE';
       readonly articulos: readonly ArticuloNoAsegurable[];
-    };
+    }
+  /**
+   * La transportadora rechazó los datos de este envío, y **reintentar no sirve**: el servidor
+   * preguntó, la plataforma contestó que el cuerpo estaba mal, y la misma pregunta trae el mismo
+   * rechazo. No es `isError()` —eso es "no se pudo preguntar", y ahí insistir sí ayuda— ni
+   * `SIN_COBERTURA`, porque no se arregla cambiando la dirección. Lo que queda es la recogida.
+   */
+  | { readonly tipo: 'COTIZACION_RECHAZADA' };
 
 export interface CotizarEnvioComando {
   readonly lineas: readonly LineaComando[];

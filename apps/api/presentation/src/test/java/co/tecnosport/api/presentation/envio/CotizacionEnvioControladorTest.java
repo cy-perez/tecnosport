@@ -261,6 +261,25 @@ class CotizacionEnvioControladorTest {
         .andExpect(jsonPath("$.codigo").value("COTIZACION_NO_DISPONIBLE"));
   }
 
+  /**
+   * Y el rechazo del cuerpo no va por ahi: 409 y no 503, porque un 503 le promete al cliente que
+   * reintentar sirve y aqui no sirve — Skydropx deduplica las cotizaciones por contenido, asi que
+   * la misma pregunta trae el mismo rechazo. El checkout lo trata como sus dos hermanos de negocio
+   * y ofrece la recogida en el punto (docs/03-api.md).
+   */
+  @Test
+  void unCuerpoRechazadoPorElProveedorResponde409YNoUn503() throws Exception {
+    cotizador.fallar(ResultadoCotizacion.Motivo.DATOS_RECHAZADOS);
+
+    mockMvc
+        .perform(
+            post("/api/v1/envios/cotizacion")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpo()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("COTIZACION_RECHAZADA"));
+  }
+
   @Test
   void unaVarianteDesconocidaNoCotiza() throws Exception {
     String cuerpoConVarianteFantasma =
