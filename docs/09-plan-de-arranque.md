@@ -4733,6 +4733,80 @@ La prueba de esa guarda afirma sobre el **código de error** y no solo sobre el 
 pasaba igual por la transición inválida del pedido: una prueba que se aprueba a sí misma. Detalle en
 `adr/0043`.
 
+## La revisión adversarial de los 122 commits (2026-09-18)
+
+La última pasada de los tres revisores fue el **10 de septiembre** (`3b612e5`). Desde entonces
+habían entrado **122 commits sin documentación**, unos 540 archivos: toda la emisión de guías, la
+bandeja de revisión, el recaudo, los sobrecostos y lo de hoy. Tres pasadas en paralelo —dinero,
+capas y accesibilidad—, con el encargo de no arreglar nada y entregar la lista.
+
+### Lo que se arregló en la misma sesión
+
+Todo lo que esta rama había introducido, más lo barato que estaba a la vista. Lo escrito en el
+commit `eaf483b`; aquí lo que enseña:
+
+- **El comprobante podía perderse para siempre.** El reclamo se pone antes de mandar —es lo que
+  impide dos correos al mismo comprador— y un fallo dejaba la marca puesta con el correo sin salir.
+  Ahora un fallo que lanza devuelve el reclamo y se reintenta. El **silencioso** sigue abierto,
+  porque el adaptador se traga los de SMTP.
+- **El agrupamiento de miles es parte del idioma**, y estaba en el caso de uso con separador fijo.
+  El propio javadoc lo confesaba —"esto no sabe en cuál idioma se va a pintar"— y nadie lo leyó al
+  escribirlo.
+- **El mecanismo que impide el correo duplicado no tenía prueba contra Postgres.** La de aplicación
+  usa un doble cuyo reclamo atómico es un `Set.add()`: pasa igual con el SQL borrado. Es el mismo
+  patrón del plugin de capas que aceptaba la configuración sin aplicarla.
+- **`DatePipe` llevaba desde siempre pintando fechas en inglés**, sin `LOCALE_ID` y sin zona: un
+  comprador colombiano leía "September 18, 2026" en su propia pantalla de pedido, y el SSR y el
+  navegador no coincidían.
+- Tres comentarios decían "todavía sin construir" sobre cosas construidas hace dos fases, y uno de
+  ellos afirmaba que la garantía del bloqueo pesimista estaba rota cuando no lo está.
+
+### Lo que queda abierto, y por qué no se tocó
+
+**Seis hallazgos anteceden a esta rama, y los seis cambian comportamiento del dinero o del
+despacho.** Arreglarlos a ciegas el mismo día que se levantan es la forma de romper otra cosa:
+
+1. **`RepositorioEmisionesJpa.guardar` escribe en dos transacciones.** Si la instancia muere entre
+   las dos, queda una fila `EN_CURSO` sin envíos — un estado que el agregado rechaza al reconstruir.
+   Y como la consulta mapea antes de devolver, esa fila **revienta la tarea de resolución entera**:
+   desde ese minuto ningún pedido pagado se despacha solo, y ese pedido tampoco se puede cancelar ni
+   reembolsar.
+2. **Con varias guías, un solo paquete mueve el pedido entero.** El primer `ENTREGADO` que llegue lo
+   marca todo: arrancan los cinco días del retracto y el año de garantía sobre mercancía que el
+   comprador todavía no tiene, y en contraentrega se da por cobrado un bulto en camino.
+3. **Una emisión `EN_CURSO` no vence nunca y no sale en la bandeja**: `exigeOjoHumano()` cubre
+   `INDETERMINADA`, `PARCIAL` y `SIN_ANULAR`, no ésta.
+4. **`CancelarPedido` sostiene bloqueos pesimistas de inventario mientras llama a Skydropx.** Si el
+   proveedor está lento, el checkout de esa variante se queda esperando.
+5. **Acusar una emisión la saca de la bandeja para siempre**, aunque siga bloqueando su pedido. Para
+   las guías el criterio es correcto —un evento posterior al acuse la devuelve—; para las emisiones
+   no hay nada que la traiga de vuelta.
+6. **`POST /pedidos/metodos-de-pago-disponibles` es público y sin límite, y cada llamada cotiza
+   contra Skydropx.** Agotar las 2 req/s de la cuenta deja el checkout ofreciendo solo recogida.
+
+Y del lado de la pantalla, uno que se repite en cuatro formularios del panel: **ninguno identifica
+sus errores**. `markAllAsTouched()` no pinta nada si la plantilla no pasa `[error]`, así que el
+botón no hace nada y el motivo no se dice. Se cerró el del recaudo, que es el que esta rama tocó.
+
+### Lo que la revisión confirmó que está bien
+
+Conviene anotarlo, porque una lista de hallazgos sin esto parece que todo está mal:
+
+- **Ningún `double` ni `float` para dinero** en ninguna capa, y ningún redondeo intermedio: el
+  reparto del flete entre bultos trunca por bulto y devuelve el residuo entero al de mayor valor, de
+  modo que la suma cuadra exactamente con el total.
+- **El servidor no confía en el cliente** para precio, existencia, flete, valor declarado ni estado
+  de pago. La única excepción es el costo de guía que teclea quien despacha, que es costo interno.
+- **No se puede emitir y cobrar dos veces el mismo pedido**: la fila se escribe antes de llamar, en
+  transacción propia, y el índice único parcial cubre los tres estados abiertos.
+- **`ConciliarRecaudo` no deja un pedido conciliado con el envío sin comisión** — aunque quien lo
+  garantiza es la transacción del controlador y no el orden de las líneas, que es lo que el javadoc
+  decía.
+- **La higiene de datos personales en los registros es deliberada y correcta**: se vuelcan nombres
+  de campos, nunca valores.
+- **`V50` no cambia ningún cálculo**: `tasa_iva` no participa en ninguna multiplicación de todo el
+  recorrido, ni en el backend ni en el frontend.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
