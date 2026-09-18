@@ -11,6 +11,7 @@ import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException
 import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
+import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
@@ -175,6 +176,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(SkuYaEnUsoException.class)
   public ProblemDetail skuYaEnUso(SkuYaEnUsoException excepcion) {
     return problema(HttpStatus.CONFLICT, "SKU ya en uso", excepcion);
+  }
+
+  @ExceptionHandler(TasaIvaNoPermitidaException.class)
+  public ProblemDetail tasaIvaNoPermitida(TasaIvaNoPermitidaException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Tasa de IVA no permitida", excepcion);
   }
 
   // Extiende ExcepcionDeDominio (cae a 422 por defecto más abajo), pero "no existe esa línea" es

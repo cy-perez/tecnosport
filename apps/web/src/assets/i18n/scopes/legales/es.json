@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-14",
-    "vigencia": "Vigente desde el 14 de septiembre de 2026.",
+    "version": "2026-09-18",
+    "vigencia": "Vigente desde el 18 de septiembre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -132,7 +132,7 @@
       {
         "titulo": "13. Conservación",
         "parrafos": [
-          "Conservamos los datos de tu pedido y su facturación durante el tiempo que exigen las obligaciones contables y tributarias colombianas, y los datos necesarios para atender garantías mientras esté vigente el término de garantía del producto. Los carritos de compra abandonados se borran automáticamente a los treinta (30) días sin actividad. Cumplidos esos plazos, los datos se suprimen o se anonimizan."
+          "Conservamos los datos de tu pedido y de su pago durante el tiempo que exigen las obligaciones contables y tributarias colombianas, y los datos necesarios para atender garantías mientras esté vigente el término de garantía del producto. Los carritos de compra abandonados se borran automáticamente a los treinta (30) días sin actividad. Cumplidos esos plazos, los datos se suprimen o se anonimizan."
         ]
       },
       {
@@ -144,13 +144,13 @@
       {
         "titulo": "15. Revocatoria y supresión",
         "parrafos": [
-          "Puedes revocar la autorización en cualquier momento. La supresión no procede cuando exista un deber legal o contractual de conservar el dato: por ejemplo, la información de una compra ya facturada debe conservarse por el término que impone la ley tributaria, aunque revoques la autorización para otras finalidades."
+          "Puedes revocar la autorización en cualquier momento. La supresión no procede cuando exista un deber legal o contractual de conservar el dato: por ejemplo, la información de una compra ya pagada debe conservarse por el término que impone la ley tributaria, aunque revoques la autorización para otras finalidades."
         ]
       },
       {
         "titulo": "16. Vigencia",
         "parrafos": [
-          "Esta política rige desde el 14 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
+          "Esta política rige desde el 18 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
         ]
       }
     ]
@@ -183,7 +183,7 @@
         "titulo": "4. Productos, imágenes y precios",
         "parrafos": [
           "Las fotografías de los productos son propias y corresponden a la unidad que vendemos. Las imágenes y los visores de rotación son representaciones a escala del producto real; el color puede variar levemente según la pantalla con la que las mires.",
-          "Todos los precios se muestran en pesos colombianos (COP) e incluyen el IVA aplicable. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío.",
+          "Todos los precios se muestran en pesos colombianos (COP) y son el valor final de cada producto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA), así que al precio publicado no se le suma ningún impuesto. El precio de cada producto no incluye el costo del envío: ese valor depende de la ciudad de destino y del tamaño y peso de lo que compras, y se calcula al momento de tu compra. Antes de pagar te mostramos el detalle completo: el precio de cada producto, el subtotal, el costo del envío por separado y el total que vas a pagar. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío.",
           "Si por un error evidente de sistema o de digitación un producto aparece con un precio manifiestamente equivocado, te lo informaremos antes de despachar y podrás confirmar la compra al precio correcto o cancelarla sin costo.",
           "Consulta las restricciones de uso y cuidado en la ficha de cada producto; en calzado y ropa deportiva, el uso distinto del previsto puede afectar la garantía."
         ]
@@ -290,7 +290,7 @@
       {
         "titulo": "19. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 14 de septiembre de 2026."
+          "Versión vigente desde el 18 de septiembre de 2026."
         ]
       }
     ]
@@ -333,7 +333,7 @@
       {
         "titulo": "5. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 14 de septiembre de 2026."
+          "Versión vigente desde el 18 de septiembre de 2026."
         ]
       }
     ]

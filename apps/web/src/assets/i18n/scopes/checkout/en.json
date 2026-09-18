@@ -50,7 +50,7 @@
     "nombre": "Recipient name",
     "telefono": "Contact phone",
     "telefono_ayuda": "The carrier or courier calls this number before delivering.",
-    "iva_incluido": "Product prices include VAT."
+    "precio_final": "Each product's price is final: no tax is added to it."
   },
   "metodoPago": {
     "titulo": "Payment method",

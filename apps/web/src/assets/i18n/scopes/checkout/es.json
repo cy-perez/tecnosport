@@ -50,7 +50,7 @@
     "nombre": "Nombre de quien recibe",
     "telefono": "Teléfono de contacto",
     "telefono_ayuda": "La transportadora o el mensajero te llaman a este número antes de entregar.",
-    "iva_incluido": "Los precios de los productos incluyen IVA."
+    "precio_final": "El precio de cada producto es el valor final: no se le suma ningún impuesto."
   },
   "metodoPago": {
     "titulo": "Método de pago",

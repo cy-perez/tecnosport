@@ -202,6 +202,54 @@ if (COTIZA_EL_ENVIO) {
   }
 }
 
+// --- 5. Si el negocio no es responsable de IVA, ningún texto publicado puede decir que lo cobra.
+//
+// Hermana de la regla 4, y por el mismo motivo: el sitio afirmaba "los precios de los productos
+// incluyen IVA" en el checkout y "todos los precios ... incluyen el IVA aplicable" en el numeral 4
+// de los términos, mientras el negocio es no responsable (adr/0041). Aquí la afirmación falsa pesa
+// más que en la regla 4: el literal a del art. 1.3.1.15.2 del Decreto 1625 de 2016 prohíbe a un no
+// responsable adicionar al precio suma alguna por concepto de IVA, y hacerlo lo obliga a cumplir
+// íntegramente el régimen de los responsables. O sea que el texto no describe un dato viejo, sino
+// una conducta que la norma prohíbe.
+//
+// La fuente de verdad es NEGOCIO_RESPONSABLE_IVA en application.yml, no una constante de aquí: el
+// día que pase a true, este guardián deja de disparar solo y los textos vuelven a poder decirlo.
+const enYmlIva = yml.match(/responsable-de-iva:\s*\$\{NEGOCIO_RESPONSABLE_IVA:([^}]+)\}/)?.[1]?.trim();
+const enEnvIva = env.match(/^NEGOCIO_RESPONSABLE_IVA=(.+)$/m)?.[1]?.trim();
+
+if (enYmlIva === undefined) {
+  problemas.push(
+    "application.yml: falta tecnosport.negocio.responsable-de-iva, que es de donde el backend saca si puede cobrar IVA",
+  );
+} else if (enEnvIva !== enYmlIva) {
+  problemas.push(
+    `.env.example: NEGOCIO_RESPONSABLE_IVA es ${enEnvIva}, y application.yml trae ${enYmlIva} por omisión`,
+  );
+}
+
+const AFIRMACIONES_DE_IVA = [
+  { patron: /incluyen?\b[^.]{0,40}\bIVA/gi, que: "que el precio incluye IVA" },
+  { patron: /\bIVA\b[^.]{0,20}\bincluido/gi, que: "IVA incluido" },
+  { patron: /includ(?:e|es|ing)\b[^.]{0,40}\bVAT/gi, que: "que el precio incluye IVA, en inglés" },
+  { patron: /\bVAT\b[^.]{0,20}\bincluded/gi, que: "IVA incluido, en inglés" },
+];
+
+if (enYmlIva === "false") {
+  for (const ruta of jsons(TEXTOS)) {
+    readFileSync(ruta, "utf8")
+      .split("\n")
+      .forEach((linea, indice) => {
+        for (const { patron, que } of AFIRMACIONES_DE_IVA) {
+          for (const encontrado of linea.match(patron) ?? []) {
+            problemas.push(
+              `${relative(RAIZ, ruta)}:${indice + 1}  el texto publicado afirma ${que} ("${encontrado}"), y NEGOCIO_RESPONSABLE_IVA es false: a un no responsable le está prohibido adicionar IVA al precio (adr/0041)`,
+            );
+          }
+        }
+      });
+  }
+}
+
 if (problemas.length > 0) {
   console.error(`\n${problemas.length} dato(s) del negocio que no coinciden:\n`);
   for (const problema of problemas) {

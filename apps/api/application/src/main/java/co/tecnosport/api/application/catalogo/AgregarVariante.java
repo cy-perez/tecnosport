@@ -25,20 +25,29 @@ public final class AgregarVariante {
   private final RepositorioAtributos repositorioAtributos;
   private final RepositorioInventario repositorioInventario;
   private final Reloj reloj;
+  private final boolean negocioResponsableDeIva;
 
   public AgregarVariante(
       RepositorioProductos repositorioProductos,
       RepositorioAtributos repositorioAtributos,
       RepositorioInventario repositorioInventario,
-      Reloj reloj) {
+      Reloj reloj,
+      boolean negocioResponsableDeIva) {
     this.repositorioProductos = Objects.requireNonNull(repositorioProductos);
     this.repositorioAtributos = Objects.requireNonNull(repositorioAtributos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.reloj = Objects.requireNonNull(reloj);
+    this.negocioResponsableDeIva = negocioResponsableDeIva;
   }
 
   public Variante ejecutar(AgregarVarianteComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
+
+    // La guarda va primero, como en el registro: comprobarla al final dejaría un SKU consultado y
+    // un producto cargado para rechazar algo que se sabía desde la primera línea del comando.
+    if (!negocioResponsableDeIva && comando.tasaIva().signum() != 0) {
+      throw new TasaIvaNoPermitidaException(comando.tasaIva());
+    }
 
     Producto producto =
         repositorioProductos

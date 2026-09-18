@@ -61,16 +61,16 @@
         <ts-precio [valor]="p.total.valor" [moneda]="p.total.moneda" />
       </dd>
     </dl>
-    <!-- Habla solo de los productos, y la omisión del flete es deliberada. Esta línea llegó a
-         decir "todos los valores incluyen IVA, incluido el costo de envío", y era falsa sobre la
-         cifra que tiene al lado: lo que se cobra de flete es el `rate.total` de la transportadora,
-         que es el precio de un servicio excluido de IVA y no lleva impuesto dentro. Aparte, el
-         art. 447 del Estatuto Tributario y el Concepto DIAN 4945 de 2025 apuntan a que ese flete
-         sí integra la base gravable de la venta — o sea que habría que sumarle el 19% al cobrarlo.
-         Mientras el contador no lo confirme, el sitio afirma lo que sí es cierto y calla lo demás.
-         Ver docs/02-modelo-datos.md. -->
+    <!-- El negocio es no responsable de IVA (par. 3 del art. 437 del Estatuto Tributario), así
+         que no hay impuesto en ninguna línea: ni en el producto ni en el flete. Esta línea decía
+         "los precios de los productos incluyen IVA" y no era solo un dato viejo — el literal a del
+         art. 1.3.1.15.2 del Decreto 1625 de 2016 prohíbe adicionar al precio suma alguna por ese
+         concepto, y quien lo hace queda obligado a cumplir todo el régimen de los responsables.
+         Lo que la línea dice hoy es lo único que el comprador necesita saber: al precio publicado
+         no se le suma nada. El flete sí se cobra aparte y tiene su propia fila arriba.
+         Ver `adr/0041` y docs/02-modelo-datos.md. -->
     <p class="m-0 mt-8 text-sm text-ts-texto-suave">
-      {{ 'checkout.resumen.iva_incluido' | transloco }}
+      {{ 'checkout.resumen.precio_final' | transloco }}
     </p>
 
     <dl

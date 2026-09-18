@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,8 +27,12 @@ class AgregarVarianteTest {
   private final RepositorioAtributosFalso repositorioAtributos = new RepositorioAtributosFalso();
   private final RepositorioInventarioFalso repositorioInventario = new RepositorioInventarioFalso();
   private final RelojFalso reloj = new RelojFalso(Instant.parse("2026-01-01T00:00:00Z"));
+  // false: hoy el negocio no es responsable de IVA (adr/0041). Las variantes de estas pruebas
+  // declaran tasa cero porque es lo unico que el sistema acepta; los dos casos del regimen
+  // tienen su propia prueba al final.
   private final AgregarVariante agregarVariante =
-      new AgregarVariante(repositorioProductos, repositorioAtributos, repositorioInventario, reloj);
+      new AgregarVariante(
+          repositorioProductos, repositorioAtributos, repositorioInventario, reloj, false);
 
   private Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
@@ -50,7 +55,7 @@ class AgregarVarianteTest {
                 producto.id(),
                 "TS-CAM-AZ-M",
                 89_900,
-                new BigDecimal("0.19"),
+                BigDecimal.ZERO,
                 null,
                 5,
                 180,
@@ -83,7 +88,7 @@ class AgregarVarianteTest {
             producto.id(),
             "TS-CAM-AZ-M",
             89_900,
-            new BigDecimal("0.19"),
+            BigDecimal.ZERO,
             null,
             0,
             180,
@@ -107,7 +112,7 @@ class AgregarVarianteTest {
                     productoId,
                     "TS-1",
                     1000,
-                    new BigDecimal("0.19"),
+                    BigDecimal.ZERO,
                     null,
                     0,
                     180,
@@ -131,7 +136,7 @@ class AgregarVarianteTest {
                     producto.id(),
                     "TS-YA-EXISTE",
                     1000,
-                    new BigDecimal("0.19"),
+                    BigDecimal.ZERO,
                     null,
                     0,
                     180,
@@ -155,7 +160,7 @@ class AgregarVarianteTest {
                     producto.id(),
                     "TS-1",
                     1000,
-                    new BigDecimal("0.19"),
+                    BigDecimal.ZERO,
                     null,
                     0,
                     180,
@@ -163,5 +168,57 @@ class AgregarVarianteTest {
                     25,
                     4,
                     List.of(new ValorAtributoComando(atributoId, "Azul", null)))));
+  }
+
+  @Test
+  void rechazaUnaTasaDeIvaDistintaDeCeroSiElNegocioNoEsResponsable() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    assertThrows(
+        TasaIvaNoPermitidaException.class,
+        () ->
+            agregarVariante.ejecutar(
+                new AgregarVarianteComando(
+                    producto.id(),
+                    "TS-1",
+                    1000,
+                    new BigDecimal("0.19"),
+                    null,
+                    0,
+                    180,
+                    30,
+                    25,
+                    4,
+                    List.of())));
+
+    // La guarda va antes del repositorio: la variante no llego a guardarse ni a consultarse el SKU.
+    assertNull(repositorioProductos.ultimaVarianteAgregada);
+  }
+
+  @Test
+  void aceptaLaTasaDeIvaSiElNegocioSiEsResponsable() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    AgregarVariante conIva =
+        new AgregarVariante(
+            repositorioProductos, repositorioAtributos, repositorioInventario, reloj, true);
+
+    var variante =
+        conIva.ejecutar(
+            new AgregarVarianteComando(
+                producto.id(),
+                "TS-1",
+                1000,
+                new BigDecimal("0.19"),
+                null,
+                0,
+                180,
+                30,
+                25,
+                4,
+                List.of()));
+
+    assertEquals(new BigDecimal("0.19"), variante.tasaIva());
   }
 }

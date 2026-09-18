@@ -170,7 +170,7 @@ describe('AgregarVarianteAdminPage', () => {
         productoId: 'p1',
         sku: 'TS-CAM-AZ-M',
         precio: 89900,
-        tasaIva: 0.19,
+        tasaIva: 0,
         codigoBarras: null,
         existenciaInicial: 0,
         pesoGramos: 180,

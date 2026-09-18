@@ -4,9 +4,13 @@
 
 - Moneda única: COP. Objeto de valor `Dinero` con `BigDecimal` de escala 0. El
   peso colombiano no se fracciona en la práctica comercial.
-- **El precio almacenado y mostrado incluye IVA.** Cada producto guarda su
-  `tasa_iva` (`0.19` para casi todo el catálogo, `0.00` para lo excluido). El
-  desglose se calcula hacia atrás al facturar.
+- **El precio almacenado y mostrado es el valor final del producto.** Cada
+  variante guarda su `tasa_iva`, y hoy **vale `0.00` en todas**: el negocio es no
+  responsable del impuesto sobre las ventas (`adr/0041`), y a un no responsable le
+  está prohibido adicionar al precio suma alguna por ese concepto (Decreto 1625 de
+  2016, art. 1.3.1.15.2, literal a). La columna se queda porque la calidad se
+  pierde al cruzar los topes del parágrafo 3 del art. 437 del Estatuto Tributario;
+  el día que eso pase, el desglose vuelve a calcularse hacia atrás desde ella.
 - Todo cálculo intermedio en `BigDecimal`, con un solo redondeo al final,
   `HALF_UP`.
 - Prohibido `double`, `float` y `Double` en cualquier parte del recorrido.

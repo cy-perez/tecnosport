@@ -90,6 +90,15 @@ public class SembradorCatalogo implements ApplicationRunner {
    * cuatro cifras: medir de menos es cobrarle de menos al comprador y perder la diferencia en cada
    * envío, y medir de más es ahuyentarlo con un flete que no corresponde.
    */
+  /**
+   * El negocio es no responsable de IVA (parágrafo 3 del art. 437 del Estatuto Tributario), así que
+   * ninguna variante lleva impuesto. No es un parámetro de {@code guardarVariante} a propósito: el
+   * literal a del art. 1.3.1.15.2 del Decreto 1625 de 2016 prohíbe adicionar al precio suma alguna
+   * por concepto de IVA, y una siembra no tiene por qué poder escribir un 0.19 que el negocio no
+   * puede cobrar. Ver {@code adr/0041}.
+   */
+  private static final BigDecimal TASA_IVA = new BigDecimal("0.00");
+
   private static final Paquete PAQUETE_CAMISETA = new Paquete(180, 30, 25, 4);
   private static final Paquete PAQUETE_TENIS = new Paquete(900, 33, 22, 13);
   private static final Paquete PAQUETE_MORRAL = new Paquete(700, 45, 30, 20);
@@ -182,7 +191,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         camiseta,
         "TS-CAM-AZ-M",
         "89900",
-        "0.19",
         12,
         PAQUETE_CAMISETA,
         ahora,
@@ -194,7 +202,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         camiseta,
         "TS-CAM-NG-L",
         "89900",
-        "0.19",
         8,
         PAQUETE_CAMISETA,
         ahora,
@@ -216,7 +223,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         tenis,
         "UT-TEN-40",
         "349900",
-        "0.19",
         5,
         PAQUETE_TENIS,
         ahora,
@@ -228,7 +234,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         tenis,
         "UT-TEN-38.5",
         "349900",
-        "0.19",
         4,
         PAQUETE_TENIS,
         ahora,
@@ -250,7 +255,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         morral,
         "TS-MOR-NG-25",
         "159900",
-        "0.19",
         10,
         PAQUETE_MORRAL,
         ahora,
@@ -259,7 +263,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         morral,
         "TS-MOR-AZ-25",
         "159900",
-        "0.19",
         6,
         PAQUETE_MORRAL,
         ahora,
@@ -278,7 +281,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         celular,
         "TS-CEL-AUR-128",
         "1299900",
-        "0.19",
         3,
         PAQUETE_CELULAR,
         ahora,
@@ -291,7 +293,6 @@ public class SembradorCatalogo implements ApplicationRunner {
         celular,
         "TS-CEL-AUR-256",
         "1499900",
-        "0.19",
         2,
         PAQUETE_CELULAR,
         ahora,
@@ -366,7 +367,6 @@ public class SembradorCatalogo implements ApplicationRunner {
       ProductoJpaEntity producto,
       String sku,
       String precio,
-      String tasaIva,
       int existencia,
       Paquete paquete,
       Instant ahora,
@@ -378,7 +378,7 @@ public class SembradorCatalogo implements ApplicationRunner {
                 producto.getId(),
                 sku,
                 new BigDecimal(precio),
-                new BigDecimal(tasaIva),
+                TASA_IVA,
                 existencia,
                 null,
                 paquete.pesoGramos(),

@@ -30,7 +30,16 @@ function grupoAtributo(): GrupoAtributo {
 
 @Component({
   selector: 'app-agregar-variante-admin',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect, TsSelectControl],
+  imports: [
+    TsPaginaFormulario,
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsMigas,
+    TsSelect,
+    TsSelectControl,
+  ],
   templateUrl: './agregar-variante-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -58,7 +67,11 @@ export class AgregarVarianteAdminPage {
     precio: new FormControl<number | null>(null, {
       validators: [Validators.required, Validators.min(0)],
     }),
-    tasaIva: new FormControl(0.19, {
+    // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
+    // Estatuto Tributario). El campo se queda —la calidad se pierde al cruzar los topes y ese día
+    // vuelve a hacer falta—, pero el servidor rechaza cualquier tasa distinta de cero mientras
+    // NEGOCIO_RESPONSABLE_IVA siga en false. Ver adr/0041.
+    tasaIva: new FormControl(0, {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0)],
     }),

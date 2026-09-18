@@ -27,6 +27,7 @@ import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
 import co.tecnosport.api.infrastructure.catalogo.AlmacenDeImagenesGcs;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
@@ -41,7 +42,7 @@ import org.springframework.context.annotation.Configuration;
  * lo decide bootstrap".
  */
 @Configuration
-@EnableConfigurationProperties(PropiedadesGcs.class)
+@EnableConfigurationProperties({PropiedadesGcs.class, PropiedadesNegocio.class})
 public class ConfiguracionCatalogo {
 
   @Bean
@@ -131,9 +132,14 @@ public class ConfiguracionCatalogo {
       RepositorioProductos repositorioProductos,
       RepositorioAtributos repositorioAtributos,
       RepositorioInventario repositorioInventario,
-      Reloj reloj) {
+      Reloj reloj,
+      PropiedadesNegocio propiedadesNegocio) {
     return new AgregarVariante(
-        repositorioProductos, repositorioAtributos, repositorioInventario, reloj);
+        repositorioProductos,
+        repositorioAtributos,
+        repositorioInventario,
+        reloj,
+        propiedadesNegocio.responsableDeIva());
   }
 
   @Bean

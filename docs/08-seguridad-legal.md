@@ -107,7 +107,9 @@ No es opcional y hay que resolverlo antes de abrir.
 
 **Comercio electrónico, Ley 1480 de 2011**
 
-- **Precios con IVA incluido**, visibles antes de pagar.
+- **El precio anunciado es el total a pagar por el producto** (art. 26), visible
+  antes de pagar. Hoy sin IVA dentro, porque el negocio no es responsable de él
+  (`adr/0041`).
 - **Resumen del pedido antes de finalizar la transacción**, con el precio
   individual de cada producto, el precio total, **los costos de envío informados
   de forma adecuada y separada**, y la suma total a pagar. Es el **artículo 50**,

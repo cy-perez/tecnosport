@@ -41,8 +41,15 @@ infraestructura, falta un caso de uso.
   moneda `COP`. El peso colombiano no se fracciona. En base de datos
   `numeric(14,2)` por seguridad, pero el dominio redondea a entero, una sola vez,
   al final, con `HALF_UP`. Prohibido `double` y `float`.
-- **Los precios almacenados y mostrados incluyen IVA.** Cada producto guarda su
-  `tasa_iva` para poder desglosar al facturar.
+- **Los precios almacenados y mostrados son el valor final, y hoy no llevan IVA
+  dentro.** El negocio es **no responsable** del impuesto sobre las ventas
+  (parágrafo 3 del art. 437 del Estatuto Tributario), así que `tasa_iva` vale
+  `0.00` en todas las variantes y `AgregarVariante` rechaza cualquier otra cosa
+  mientras `NEGOCIO_RESPONSABLE_IVA` siga en `false` — adicionar IVA al precio sin
+  ser responsable obliga a cumplir íntegramente el régimen de los responsables
+  (Decreto 1625 de 2016, art. 1.3.1.15.2, literal a). La columna se queda porque la
+  calidad de no responsable se pierde al cruzar los topes del parágrafo 3. Ver
+  `adr/0041`.
 - **Fechas:** `Instant` en persistencia y en la API, UTC, ISO-8601.
   `America/Bogota` solo al formatear para el usuario. Nunca `Date`.
 - **Identificadores:** UUID v7 generado en el dominio, no por la base. Los
