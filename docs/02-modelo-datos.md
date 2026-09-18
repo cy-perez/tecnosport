@@ -16,9 +16,10 @@
 - **El costo de envío no se reparte entre las líneas.** Repartirlo obligaría a
   redondear N veces y a decidir qué pasa con el sobrante; es un cargo del pedido,
   no de la mercancía.
-- **El flete cobrado al comprador probablemente sí lleva IVA, y el sistema no lo
-  está calculando.** Verificado el 14 de septiembre de 2026, y el resultado sorprende
-  porque son dos preguntas y no una:
+- **El flete cobrado al comprador no lleva IVA** (`adr/0040`, 18 de septiembre de 2026).
+  Se decidió así por el negocio y **sin concepto de contador**, sabiendo que la lectura
+  de la norma apunta al otro lado. Lo verificado el 14 de septiembre sigue en pie, y
+  sorprende porque son dos preguntas y no una:
   - El **servicio de transporte de carga**, comprado suelto a la transportadora, está
     **excluido** de IVA. Eso es cierto y es lo que se encuentra al buscar.
   - Pero el **flete que el vendedor le recobra al comprador dentro de una venta
@@ -31,16 +32,19 @@
   - La distinción que sí exime es que **el comprador contrate el transporte por su
     cuenta** con un tercero ajeno a la venta. No es lo que hace este sitio.
 
-  **La consecuencia es de plata, no de redacción.** Hoy se le cobra al comprador el
+  **La consecuencia es de plata, no de redacción.** Se le cobra al comprador el
   `rate.total` de la cotización tal cual, que es el precio de un servicio excluido y por
-  lo tanto no trae IVA dentro. Si ese valor integra la base gravable, de cada flete hay
-  que declarar el 19% — y como no se le sumó al cobrar, sale del margen del negocio en
-  **cada pedido a domicilio**. `TODO: confirmar con el contador y, si aplica, sumar el
-  IVA al flete antes de cobrarlo.`
+  lo tanto no trae IVA dentro. Si ese valor integrara la base gravable, de cada flete
+  habría que declarar el 19% — y como no se le suma al cobrar, saldría del margen del
+  negocio en **cada pedido a domicilio**: entre 1.138 y 1.880 pesos, con las tarifas que
+  la cuenta cotiza hoy. **Ese riesgo se asume a sabiendas**, y el ADR escribe qué lo
+  reabre y a qué se volvería (sumarle el 19% al valor cotizado, nunca absorberlo).
 
-  Y hay un daño que no se puede reparar hacia atrás: `pedido.costo_envio` se guarda
-  **sin desglose**, así que de los pedidos ya cobrados no se puede separar cuánto era
-  base y cuánto impuesto para facturar. Si se confirma, el desglose hay que agregarlo.
+  Por eso `pedido.costo_envio` **se queda como una sola columna, y eso ya no es una
+  omisión**: bajo esta decisión el flete no tiene base ni impuesto que separar, así que
+  la columna dice la verdad completa. El día que se reabra, el desglose y su migración
+  son parte del trabajo — y cuanto más tarde llegue ese día, más pedidos cobrados habrá
+  sin poder reconstruir.
 
 ## Producto, variante y unidad
 

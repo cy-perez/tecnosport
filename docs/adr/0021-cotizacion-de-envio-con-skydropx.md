@@ -113,10 +113,13 @@ la cotización, no antes ni después (`docs/12-legales-de-envio.md`).
 El costo real que registra `Envio` desde `adr/0013` deja de ser un dato huérfano:
 ahora se compara contra el flete cobrado y el margen del pedido se puede leer.
 
-**Dato pendiente, no inventado:** el tratamiento del IVA sobre el flete que se le
+~~**Dato pendiente, no inventado:** el tratamiento del IVA sobre el flete que se le
 cobra al comprador. `TODO: ¿el costo de envío cobrado lleva IVA? Consultar con el
-contador.` Hasta que se resuelva, el flete se maneja como un valor en `Dinero`
-sin desglose y el IVA de las líneas no cambia.
+contador.`~~ **Cerrado el 18 de septiembre de 2026 por `adr/0040`: el flete cobrado
+no se grava.** El flete se sigue manejando como un valor en `Dinero` sin desglose y
+el IVA de las líneas no cambia — que era el comportamiento provisional y ahora es el
+decidido. Es una decisión de negocio sin concepto de contador, y `adr/0040` escribe
+qué la reabre.
 
 ## Corrección del 16 de septiembre de 2026, medida contra el sandbox
 
