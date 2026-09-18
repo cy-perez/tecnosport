@@ -4610,6 +4610,129 @@ confirmado que el negocio sea responsable de IVA.** No está escrito en ningún 
 proyecto, y el sistema ya lo asume en todas partes — catálogo sembrado al 0.19, `Variante`
 validando la tasa, y el sitio publicando que los precios la incluyen.
 
+## No responsable de IVA, y la frase que la norma prohíbe (2026-09-18)
+
+`ADR-0040` cerró el IVA del flete por la mañana y dejó escrita, en su sección "Lo que esto NO
+arregla", una pregunta más básica que nadie había hecho nunca: **¿el negocio es responsable de IVA?**
+No estaba en ningún documento del proyecto, y el sistema lo asumía en tres capas — el catálogo
+sembrado al 0.19, el panel proponiendo 0.19, y el sitio publicando en dos sitios que los precios lo
+incluyen.
+
+Preguntado el mismo día: **no lo es**, y es persona natural (el NIT del pie, `1054994043-9`, es una
+cédula; solo una persona natural puede ser no responsable, por el parágrafo 3 del art. 437 del
+Estatuto Tributario).
+
+### Lo que cambió el peso de la tarea
+
+La frase publicada no era un dato viejo. El **literal a del art. 1.3.1.15.2 del Decreto 1625 de
+2016** prohíbe a un no responsable *adicionar al precio suma alguna por concepto de IVA*, y añade que
+quien lo hace **queda obligado a cumplir íntegramente el régimen de los responsables**. O sea que
+equivocarse ahí no se corrige con un texto: se paga con un cambio de régimen tributario.
+
+Por eso la condición vive en `NEGOCIO_RESPONSABLE_IVA` y la guarda está en `AgregarVariante`, antes
+de tocar el repositorio, y no en un campo del formulario. Y por eso el sembrador ya no puede escribir
+otra tasa: **dejó de ser un parámetro de `guardarVariante`**.
+
+### Lo que la verificación dejó, que no era la respuesta
+
+Tres cosas que este proyecto tenía razonadas y sin escribir:
+
+- **El art. 26 de la Ley 1480 exige que el precio anunciado sea el total, no que se nombre el
+  impuesto.** Con un no responsable, el precio publicado ya cumple sin decir una palabra del IVA.
+- **Su segundo inciso es el que sostiene el modelo de precio base más flete** que la Fase 7 montó:
+  los costos adicionales por transporte "deberá ser informada adecuadamente, especificando el motivo
+  y el valor". Es exactamente lo que hace el checkout, y estaba sin escribir desde el 14 de
+  septiembre.
+- **No hay obligación de anunciarse.** El art. 506 del ET, que obligaba al antiguo régimen
+  simplificado a exhibir su inscripción, **está derogado** (Ley 1943 de 2018 y Ley 2010 de 2019). Que
+  los términos lo mencionen es una decisión de redacción: explica por qué no aparece ningún impuesto
+  donde el comprador colombiano espera verlo.
+
+### Y le corrigió la premisa a un ADR de esa misma mañana
+
+`ADR-0040` decidió que el flete no se grava razonando sobre el art. 447 y el Concepto DIAN 4945 de
+2025, y asumió un riesgo cuantificado. **Siendo no responsable no hay base gravable que integrar en
+ninguna línea**: la conclusión sobrevive y el razonamiento no. Cuarta vez en este proyecto, y la
+primera en que el ADR corregido tenía nueve horas de vida.
+
+## El comprobante que no es una factura (2026-09-18)
+
+El encargo fue "en cada compra expidamos una factura". El objetivo —que comprar dé confianza— estaba
+sin cubrir de verdad: **el sistema no le mandaba al comprador ni un renglón al comprar**. Los siete
+correos cubrían el retracto, la cancelación, el despacho, el plazo vencido, la PQR y la cuenta; de la
+compra misma, nada.
+
+Lo que no se podía hacer es la palabra. La **Resolución DIAN 000165 de 2023**, parágrafo 1 de su
+art. 8, dice que los no obligados a facturar *que opten por expedir factura* **se consideran para
+efectos tributarios obligados a facturar**. O sea que emitir una factura no es una funcionalidad: es
+una puerta de una sola dirección, con habilitación, numeración autorizada, validación previa y un
+proveedor tecnológico detrás. Se le llevó la bifurcación al negocio con las dos opciones y su costo,
+y eligió el comprobante.
+
+**Va como tarea programada y no colgado de cada camino**, y esa es la decisión de diseño que importa:
+un pedido queda en firme por cuatro caminos distintos —contraentrega verificada, webhook de pago,
+conciliación de pago y transferencia manual— y los cuatro tendrían que acordarse. Como tarea, la
+regla se enuncia una vez y sobre el estado: *todo pedido en firme tiene su comprobante*. De paso,
+mandar correos deja de colgar del camino del dinero.
+
+Y trajo una consecuencia que no era el objetivo: **el NIT, el correo y el teléfono del negocio pasan
+a vivir también fuera de los JSON del sitio**, porque el comprobante identifica al vendedor. Por eso
+`npm run datos-negocio` ahora barre también los dos `correos_*.properties` — una copia que el
+guardián no mira es exactamente el agujero por el que el celular estuvo mal en cuatro sitios durante
+una fase entera. Detalle en `adr/0042`.
+
+## Medir un paquete deja de ser un pendiente (2026-09-18)
+
+El `TODO` que llevaba dos fases pidiendo "el peso y las dimensiones reales del catálogo de
+producción" no se cerraba porque estaba mal planteado: el catálogo de producción no sale del
+sembrador, sale del panel, que exige las cuatro cifras desde la `V32`. **No faltaba un dato, faltaba
+un procedimiento**, y ahora está escrito en `docs/02`.
+
+El panel avisa cuando el peso pasa de 8 kg, que es el tope más bajo de las seis transportadoras de la
+cuenta —medidos 8, 25, 60, 150, 200 y 500 en `docs/13` §6—. Avisa y no bloquea: puede haber un
+producto que de verdad pese eso, y el retiro en punto no necesita transportadora. Lo que ese aviso
+atrapa de verdad es el error de unidad, 18 kg tecleados donde iban 1,8.
+
+**El `TODO` de la `V32` se queda donde está**: esa migración ya corrió y Flyway valida el checksum.
+
+Una cosa más, y es la de siempre: la primera versión del aviso usaba `text-ts-atencion`, que **no
+existe**. `npm run clases` lo dijo. Una clase inventada no falla, no hace nada.
+
+## El recaudo registra por dónde entró (2026-09-18)
+
+La decisión 6 de `docs/13` §5 llevaba cuatro días abierta, y la respuesta del negocio no era ninguna
+de las dos que la pregunta ofrecía: **la cuenta tiene las dos modalidades**, y la petición fue poder
+elegir envío por envío.
+
+**Esa petición no se puede cumplir, y medirlo antes de construir es lo que salvó la sesión.** Las dos
+modalidades son formas de retirar el saldo acumulado, no un campo del envío (`docs/13` §3): el cuerpo
+de la guía no lleva nada que diga dónde cae el dinero. Una pantalla que "eligiera" habría sido una
+intención registrada que ningún sistema ejecuta — **exactamente el mismo error que el método de pago
+elegido por el comprador**, que resultó ser una intención el 14 de septiembre.
+
+Lo que sí se puede es registrar por cuál entró, al conciliar, que es cuando quien concilia lo está
+viendo en el panel. Con eso la decisión 6 cierra, y la respuesta es "las dos, y cada envío dice cuál
+fue". La única regla que el dominio comprueba es la suya: **los créditos no cobran comisión**.
+
+### Dos guardianes que no guardaban nada
+
+Los dos aparecieron al escribir un campo obligatorio, y los dos son la forma que este proyecto ya
+conoce:
+
+1. **`@NotNull` no habría hecho nada.** No hay proveedor de Bean Validation en el classpath —lo dice
+   `OptionalValidatorFactoryBean` al arrancar— y no había ningún otro `@NotNull` en toda la capa de
+   presentación. `apps/api/CLAUDE.md` afirmaba que ahí se usa Bean Validation; era falso y quedó
+   corregido.
+2. **Jackson tampoco protegía, y la nota que decía que sí estaba medida sobre otro caso.** "Jackson 3
+   no rellena los componentes que falten de un `record`" se midió en la Fase 6 sobre un `boolean`, y
+   con un primitivo es cierta. Un componente de **tipo referencia** llega en nulo tan tranquilo: se
+   comprobó mandando el cuerpo sin la clave, y pasó de largo hasta morir más adelante por otra razón.
+   Sin una guarda explícita, ese nulo llegaba al dominio y salía como un 500.
+
+La prueba de esa guarda afirma sobre el **código de error** y no solo sobre el estado, porque sin eso
+pasaba igual por la transición inválida del pedido: una prueba que se aprueba a sí misma. Detalle en
+`adr/0043`.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
