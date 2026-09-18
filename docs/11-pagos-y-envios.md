@@ -253,9 +253,17 @@ contra el que compararlo: el margen del pedido se puede leer, no estimar.
 reliquida semanas más tarde contra el crédito de la cuenta: el flete que el pedido tiene guardado es
 el de la tarifa, y el que se pagó es otro. Desde el 18 de septiembre de 2026
 `AvisarSobrecostoDeEnvio` le pregunta a diario a `GET /api/v1/finance/extra-charges` por la ventana
-de los últimos treinta días y **avisa por correo de cada cobro una sola vez**, con su monto, su guía
-y su tipo. No hay umbral: son raros y cada uno sale del crédito en silencio, así que callar los
-pequeños sería elegir no enterarse.
+de los últimos treinta días y **avisa por correo de cada cobro una sola vez**, con su monto, su guía,
+su tipo y —desde el 18 de septiembre— **el número del pedido al que pertenece**. No hay umbral: son
+raros y cada uno sale del crédito en silencio, así que callar los pequeños sería elegir no
+enterarse.
+
+El pedido hace falta porque la plataforma no lo nombra: sus cobros traen `shipment_id` y
+`package_id`, los dos del envío, y ninguno del pedido. El camino es envío → emisión → pedido, y
+puede no llegar a ninguna parte —un cobro de una guía que alguien emitió por fuera y tecleó en el
+panel no tiene emisión nuestra—. En ese caso el correo dice "pedido: no identificado" y sale igual:
+cuando se busca el pedido, la marca de "ya avisé" ya está escrita, así que un fallo ahí dejaría ese
+cobro sin avisar **para siempre**.
 
 Lo que ese aviso **no** hace todavía es entrar en el margen del pedido, y es deliberado: el cargo
 viene por envío y la discrepancia de peso por paquete, así que decidir dónde vive —`GuiaEnvio` o
@@ -472,6 +480,23 @@ liquidación y se teclea al conciliar (`ConciliarRecaudoComando.comisionRecaudo`
 que es lo correcto — un porcentaje fijo en configuración sería una suposición sobre
 algo que varía envío a envío. Sigue siendo un dato de contrato que conviene conocer,
 pero para saber si el negocio pierde plata, no para poder desplegar.
+
+**Por qué la conciliación del recaudo se teclea y no se lee de la API.** El envio expone
+`on_delivery_amount` y `on_delivery_status`, así que la pregunta "¿ya recaudó la transportadora?"
+parece contestable sola. Se midió el 18 de septiembre de 2026 y hoy no lo es, por dos razones que
+conviene no volver a derivar (`docs/13-skydropx-capacidades.md` §6.17):
+
+1. **El vocabulario de `on_delivery_status` no lo publica nadie** —ni el OpenAPI ni el HTML lo
+   mencionan— y en la cuenta ningún envío con recaudo llegó nunca a `success`, así que nadie ha
+   visto un valor distinto de `null`. Mapear estados no vistos es adivinar.
+2. **El campo no trae la comisión**, que es justo lo que `ConciliarRecaudo` necesita. De dónde sale
+   depende de una decisión contable todavía abierta: con recaudo a créditos la comisión es cero y la
+   conciliación se automatiza entera; con recaudo a banco llega en la consignación de los jueves y
+   lo máximo automatizable es un aviso.
+
+Lo único construido mientras tanto es la medición: al releer un envio con recaudo, el adaptador
+registra una vez sus tres campos —y solo esos tres, porque el cuerpo lleva los datos personales de
+quien compró—. El primer despacho contraentrega contesta la pregunta sin que nadie vigile nada.
 
 ## Transferencia manual
 

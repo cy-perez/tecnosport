@@ -4472,6 +4472,91 @@ recibió un `404` y concluyó "no se pudo preguntar" sin escribirle a nadie. Es 
 - **El aviso no nombra el pedido**, solo la guía. Atarlo exige dos puertos más y pertenece al mismo
   paso que el margen.
 
+## El sobrecosto dice de qué pedido habla (2026-09-18)
+
+Era el primero de los dos pendientes que dejó abiertos el sobrecosto el mismo día que nació: el
+aviso nombraba la guía y el envío, y no la compra. Quien lo lee está buscando **qué producto tiene
+mal la medida**, y para eso necesita el pedido.
+
+**Costó menos de lo escrito, y por un detalle que ya estaba puesto.** `docs/09` decía "exige dos
+puertos más"; exigió uno y medio, porque `envio_en_plataforma.id_externo` **ya tenía índice único**
+desde `V43`. La búsqueda inversa envío → emisión → pedido no necesitó ninguna migración: un método
+nuevo en un puerto que ya existía, y `RepositorioPedidos` inyectado en el vigilante.
+
+**Lo que decidió la forma del código fue dónde estaba ya escrita la marca de "ya avisé".** Cuando el
+vigilante busca el pedido, el reclamo del cobro **ya se guardó**: si esa consulta reventara, ese
+cobro no se avisaría nunca más, ni en esa vuelta ni en ninguna. Por eso la búsqueda va dentro de un
+`catch` y el correo sale igual diciendo "pedido: no identificado" —y hay una prueba que lo fija, con
+un repositorio que revienta a propósito—. Un correo incompleto es mejor que un cobro de dinero del
+que nadie se entera jamás.
+
+Tres caminos, tres pruebas: el cobro atado a su pedido, el cobro de un envío que no emitimos
+nosotros —una guía tecleada en el panel no tiene emisión, y eso es normal, no un fallo— y la base
+caída.
+
+**Y el guardián de los textos de correo volvió a hacer exactamente lo que promete.** La línea del
+cobro pasó de seis argumentos a siete y el contexto no levantó, señalando el `{6}` sin rellenar en
+el arranque. Dos de dos, las dos veces por el mismo correo, que es el que más datos lleva.
+
+## Dos mediciones que ahora se hacen solas (2026-09-18)
+
+Los otros dos pendientes —la `metadata` de los cobros extra y el vocabulario de
+`on_delivery_status`— tenían el mismo plan escrito: "correr una sonda el día que aparezca el
+primero". Ese plan depende de que alguien se acuerde, meses después, de un dato que llega semanas
+tarde y sin avisar. **Ahora los dos se registran solos**, una vez por instancia, en el adaptador.
+
+**Lo que no se hizo, y es la parte que importa: no se volcaron los cuerpos enteros.** Del envío se
+registran los tres campos del recaudo y nada más, porque el cuerpo lleva el nombre, el teléfono y la
+dirección de quien compró. Del cobro extra se registran **los nombres** de los campos y los de
+`metadata`, nunca sus valores: lo desconocido es justo `metadata`, y escribir en un registro el
+contenido de algo cuya forma nadie ha visto es aceptar a ciegas lo que sea que la plataforma meta
+ahí. Los nombres contestan la pregunta abierta —si los tres pesos viven ahí dentro— sin arrastrar
+datos de nadie.
+
+## La conciliación automática del recaudo se paró antes de escribirse (2026-09-18)
+
+Y esta es la decisión del día, porque es la de no construir. El trabajo empezó midiendo, con una
+compuerta escrita de antemano: **si el vocabulario de `on_delivery_status` no aparece declarado en
+ninguna fuente, se para.** No apareció (`docs/13` §6.17): ni el OpenAPI ni el HTML mencionan ninguno
+de los cuatro campos de contraentrega, y en la cuenta **ningún envío con recaudo llegó nunca a
+`success`**, así que nadie ha visto un valor distinto de `null`.
+
+Mapear estados que no se han visto es exactamente la suposición que esta integración pagó cuatro
+veces. Lo construido es el gancho que hace la medición —arriba— y nada más.
+
+**Y hay un segundo bloqueo que no es técnico y que conviene no perder de vista:** `ConciliarRecaudo`
+exige la **comisión**, y el campo del envío no la trae. De dónde sale depende de la decisión 6 de
+`docs/13` §5 —créditos sin comisión, o banco con comisión los jueves—, que es contable y sigue
+abierta. Con "créditos" la conciliación se automatiza entera porque la comisión es cero; con
+"banco", lo máximo que se puede automatizar es el aviso. **Decidir eso cambia qué se construye**, y
+por eso no se construyó a medias mientras tanto.
+
+## Envía emite: lo que no se puede emitir es una contraentrega con Envía (2026-09-18)
+
+La única emisión que se gastó, y contestó limpio. Este documento y `docs/13` llevaban un día
+diciendo "Envía tampoco puede emitir". Es falso: con todo lo demás igual —misma cuenta, mismo
+servicio, mismo valor declarado— y **sin recaudo**, Envía emitió a la primera: `success`, guía
+`034054505970`, con rótulo. La única diferencia con el intento fallido del 17 es la contraentrega.
+
+**Sus credenciales de etiqueta no están rotas; lo que falla es el camino del recaudo.** Es la
+segunda de las dos lecturas que `§6.15` había dejado abiertas, y separarlas costó exactamente una
+emisión: 7.850. Saldo 10.088 → 2.238.
+
+La consecuencia comercial no se mueve —con recaudo solo emite 99 minutes, a 9.897 contra 5.991—,
+pero sí cambia qué se le pide a Skydropx: no "arreglen las credenciales de Envía", sino **"la
+contraentrega con Envía falla al pedir el número de guía"**. Una petición con la causa correcta se
+atiende; una con la causa equivocada se responde "a nosotros nos funciona".
+
+**Quinta vez que una conclusión correcta descansaba sobre una causa equivocada**, y tercera que lo
+destapa volver a medir algo que el documento daba por cerrado.
+
+## La recolección, noveno intento (2026-09-18)
+
+`ECONNREFUSED at PICKUP`, otra vez, idéntico carácter por carácter, con la cobertura respondiendo
+`200` con fechas reales. Nueve intentos, cuatro días. **Sin costo**: saldo 10.088 antes y después.
+No hay nada que decidir ni que construir de nuestro lado —y por lo tanto el criterio de tarifa, que
+necesita una recolección viva para compararse, sigue donde estaba.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

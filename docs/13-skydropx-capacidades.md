@@ -268,8 +268,8 @@ mueva hay un paso con nombre propio.
    §6.11)**: el endpoint valida, exige el envío en `success` y exige el barrio del origen,
    que solo llega si se mandó en la cotización.
    **Y con el barrio puesto, la decisión dejó de estar en nuestras manos**: `POST /pickups`
-   responde `422 ECONNREFUSED at PICKUP` en los ocho intentos, en tres días y tres horas
-   distintas, con cuatro envíos distintos (§6.11, §6.14). El conector de la transportadora está caído y no hay
+   responde `422 ECONNREFUSED at PICKUP` en los **nueve** intentos, en **cuatro días** y cuatro
+   horas distintas, con cuatro envíos distintos (§6.11, §6.14, §6.17). El conector de la transportadora está caído y no hay
    fecha. **Hoy la recolección se programa a mano en el panel de Skydropx**, y esto no se
    puede cerrar construyendo.
    ~~Dos cosas que la decisión ya puede dar por ciertas: **la cobertura de fechas no
@@ -328,9 +328,12 @@ mueva hay un paso con nombre propio.
    `POST /api/v2/shipments`** (§6.4). No es preferencia: v2 siempre devuelve un arreglo
    de envíos, y en Colombia ninguna transportadora admite multipaquete, así que un pedido
    de dos variantes son dos guías que v1 no puede devolver.
-9. **El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias
-   guías, o consolidar en un bulto y perder las medidas reales. Es la decisión que hay que
-   tomar antes de escribir el despacho (§6.3, §6.4).
+9. ~~**El modelo de `Envio` frente al multienvío**: un `Envio` por bulto, uno con varias
+   guías, o consolidar en un bulto y perder las medidas reales.~~ **Decidido el 16 de septiembre
+   de 2026 (`ADR-0031`): un envío, varias guías.** Cada guía lleva su paquete, su costo y su
+   propio rastro de eventos, porque ninguna transportadora colombiana admite multipaquete y cada
+   bulto se mueve solo. Esta línea llevaba dos días marcada como abierta con la decisión ya
+   tomada y escrita en un ADR (§6.3, §6.4).
 10. ~~**Qué se hace con el bulto que declara menos de 10.000**, que no cotiza y tumba la
     cotización entera (§6.4).~~ **Decidido el 17 de septiembre de 2026 (`ADR-0035`): se eleva
     al mínimo asegurable**, en `ArmadorDeBultos` y no en el mapeador, para que el bulto que
@@ -2477,7 +2480,9 @@ Dos cosas más que el mismo ejercicio dejó, y la segunda es cara:
   gastar nada, releyendo un envío viejo emitido sin recaudo: los dos campos están y vienen en
   `null`. O sea que el campo existe, que el `null` significa "sin recaudo" y no "sin campo", y que
   `on_delivery_status` sirve para conciliar guía por guía como prometió §6.4.
-- ⛔ **Envía tampoco puede emitir en este sandbox.** `workflow_status: error` con
+- ⛔ ~~**Envía tampoco puede emitir en este sandbox.**~~ **Lo que no se puede emitir es una
+  contraentrega con Envía** (corregido el 18 de septiembre, `§6.17`: sin recaudo emite a la
+  primera). Lo que se midió el 17 fue esto: `workflow_status: error` con
   `CARRIER_RESPONSE_ERROR` y el detalle: *"External carrier API service error: status code 400
   reason: **Usuario o Password incorrecto at LABEL_NUMBER**"*. Es la misma forma que el
   `ECONNREFUSED at PICKUP` de §6.11 —la etapa va al final del mensaje— y contradice lo que se daba
@@ -2485,7 +2490,11 @@ Dos cosas más que el mismo ejercicio dejó, y la segunda es cara:
   **no se gastó en separarlas**: o las credenciales de etiqueta de Envía se rompieron del lado de
   Skydropx después del 16, o el recaudo usa otro camino de credenciales. `TODO (barato, y solo si
   hace falta): emitir con Envía SIN recaudo. Si falla igual, se rompió del lado de ellos y no tiene
-  nada que ver con la contraentrega.`
+  nada que ver con la contraentrega.` ~~`TODO`~~ **Cerrado el 18 de septiembre (`§6.17`), emitiendo:
+  Envía emitió sin recaudo a la primera —`success`, guía `034054505970`, con rótulo— con todo lo
+  demás igual. Sus credenciales de etiqueta no están rotas: lo que falla es el camino del recaudo.
+  Esta sección decía "Envía tampoco puede emitir" y eso es falso; lo cierto es que no se puede
+  emitir una contraentrega con Envía.**
 
 **La consecuencia comercial es la que duele.** De las tres tarifas que sobreviven a una cotización
 con recaudo en Medellín, **las dos más baratas no pueden emitir**: Coordinadora por el contador de
@@ -2552,6 +2561,111 @@ puede estar vacío" y no detalla. Se sabrá con el primer cobro real: `VOLCAR=1 
 tools/sonda-sobrecostos.mjs` imprime el cuerpo entero. Hasta entonces el correo dice cuánto y de qué
 guía, y no cuántos gramos de más — que es lo que haría falta para corregir la medida del catálogo sin
 abrir el panel.
+
+### 6.17 Lo que falta para conciliar el recaudo solo no es código: es un dato que nadie publica (2026-09-18, decimosexta parte)
+
+Tres mediciones, las tres **gratis**: saldo 10.088 antes y 10.088 después.
+
+#### La recolección: noveno intento, cuarto día, mensaje idéntico
+
+Viernes 18 de septiembre, sobre el envio `177d1939-6269-4bbb-a08f-68e5ae754e73` de Servientrega
+—el mismo de `§6.14`, reusado con `ENVIO=<id>`—:
+
+| Paso | Respuesta |
+|---|---|
+| `GET /pickups/coverage` | ✅ `200`, `SERVIENTREGA/STANDARD`, fechas **18 y 21 de septiembre** |
+| `POST /pickups` | ⛔ `422` **`ECONNREFUSED at PICKUP`** |
+
+Van **nueve intentos en cuatro días** y el mensaje sigue siendo el mismo carácter por carácter. La
+cobertura responde con fechas de verdad, o sea que nuestro cuerpo sigue validado entero y el envio
+sigue siendo válido para la transportadora: lo único que no responde es el conector, un paso
+después. **Nada que decidir ni que construir de nuestro lado.**
+
+#### `on_delivery_status` no lo documenta ninguna de las dos fuentes
+
+La pregunta era si se puede conciliar el recaudo solo, releyendo el envío. La respuesta es que hoy
+no, y por primera vez la causa está medida y no supuesta:
+
+| Fuente | `on_delivery_status` | `on_delivery_amount` | `cash_on_delivery` | `recipient_pays_shipping` |
+|---|---|---|---|---|
+| `/es-CO/api-docs.json` (OpenAPI, 305 KB) | ausente | ausente | ausente | ausente |
+| `/es-CO/api-docs` (HTML, 414 K caracteres de texto) | ausente | ausente | ausente | ausente |
+
+Los campos **existen en la respuesta** —`§6.15` los leyó— y **no los declara nadie**. Es el caso
+contrario al de los cobros extra de `§6.16`, donde el OpenAPI declaraba el esquema entero: ahí había
+una fuente, aquí no hay ninguna.
+
+Y la cuenta tampoco puede contestar. De los quince envíos que tiene, **uno solo se creó con recaudo**
+—`5e4edbff-…`, el de `§6.15`— y murió al emitir: su `on_delivery_amount` dice `"10000.0"` y su
+`on_delivery_status` viene en `null`. O sea que **el vocabulario del campo no se puede medir contra
+esta cuenta**: ningún recaudo llegó nunca a cobrarse, así que nadie ha visto un valor distinto de
+`null`. Mapear estados que no se han visto es la suposición que esta integración ya pagó cuatro
+veces, y por eso **el tramo se paró antes de escribir el mapeo**.
+
+Hay una segunda cosa que falta y es aparte del vocabulario: **`ConciliarRecaudo` exige la comisión**,
+y el campo no la trae. De dónde sale la comisión depende de la decisión 6 de `§5` —créditos sin
+comisión, o banco con comisión los jueves—, que sigue abierta y es contable. Con "créditos" la
+conciliación se puede automatizar entera, porque la comisión es cero; con "banco" lo máximo que se
+puede automatizar es el aviso.
+
+#### Envía: los dos éxitos son del 16, así que `§6.15` sigue en pie
+
+Listando los envíos de la cuenta con fecha —una lectura, sin costo— aparecieron dos de **Envía en
+`success` con guía real** (`034054505967` y `034054505968`), que a primera vista contradecían
+`§6.15`. No la contradicen: los dos son del **16 de septiembre**, anteriores a la rotura, y los dos
+**sin recaudo** (`on_delivery_amount: null`). El único de Envía que falló es el del **17**, y es el
+único **con recaudo**.
+
+#### Y la emisión que las separa: **Envía sí emite. Lo que rompe es el recaudo**
+
+Se gastó, con permiso, y contestó limpio. `SIN_PICKUP=1 TRANSPORTADORA=envia DECLARADO=10000
+EMITIR=1 node tools/sonda-emision-v2.mjs`:
+
+| | 17 de septiembre, **con** recaudo | 18 de septiembre, **sin** recaudo |
+|---|---|---|
+| `workflow_status` | `error` | ✅ **`success`** |
+| Guía | ninguna | ✅ **`034054505970`** |
+| `error_detail` | *"status code 400 reason: Usuario o Password incorrecto at LABEL_NUMBER"* | `null` |
+| Rótulo | — | ✅ `label_url` presente |
+| Costo | 7.850, reembolsados | 7.850, **cobrados** |
+
+Misma cuenta, misma transportadora, mismo servicio (`paquete_terrestre`), mismo valor declarado.
+**La única diferencia es la contraentrega**, y es la que decide. Las credenciales de etiqueta de
+Envía no están rotas: lo que no funciona es el camino del recaudo, exactamente la segunda de las
+dos lecturas que `§6.15` dejó abiertas.
+
+Y de paso corrige a quién se le atribuye el fallo. Durante un día este documento dijo "Envía tampoco
+puede emitir", que es falso: **Envía emite, y lo que no se puede emitir en este sandbox es una
+contraentrega con Envía.** Es la quinta vez en esta integración que una conclusión correcta
+descansaba sobre una causa equivocada, y van tres veces que lo destapa volver a medir algo que el
+documento daba por cerrado.
+
+**La consecuencia comercial no cambia, y sigue siendo la que duele.** De las tres tarifas que
+sobreviven a una cotización con recaudo, Coordinadora no puede emitir por su contador de remisiones
+y Envía no puede emitir **por ser recaudo**. Queda **99 minutes a 9.897** contra los 5.991 de
+Coordinadora. Lo que cambia es qué habría que pedirle a Skydropx: no "arreglen las credenciales de
+Envía", sino **"la contraentrega con Envía falla al pedir el número de guía"**.
+
+**Costo: 7.850.** Saldo 10.088 → **2.238**, por debajo del umbral de 50.000, así que el vigilante de
+saldo bajo avisa —que es exactamente lo que tiene que hacer—.
+
+#### Lo que se construyó, ya que el mapeo no se podía
+
+Las dos mediciones que faltan —la del recaudo y la de `metadata` de los cobros extra— dependían de
+que alguien se acordara de correr una sonda el día exacto, meses después, sabiendo que el dato llega
+sin avisar. **Ahora ocurren solas**, en `SkydropxClient`:
+
+- Al releer un envio que lleva recaudo, la primera vez que pasa por una instancia se registra
+  `on_delivery_amount`, `on_delivery_status` y `workflow_status` —y **solo esos tres**: el cuerpo del
+  envio lleva el nombre, el teléfono y la dirección de quien compró, y volcarlo entero para medir un
+  campo de dinero sería meter datos personales donde no hacen falta.
+- Al leer el primer cobro extra, se registran **los nombres** de sus campos y los de `metadata`,
+  nunca sus valores: lo desconocido es justo `metadata`, y escribir en el registro el contenido de
+  algo cuya forma nadie ha visto es aceptar a ciegas lo que la plataforma meta ahí. Los nombres
+  contestan la pregunta abierta —si los tres pesos viven ahí dentro— sin arrastrar datos de nadie.
+
+Con el primer despacho contraentrega y el primer cobro real, las dos preguntas se contestan sin que
+nadie vigile nada.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
