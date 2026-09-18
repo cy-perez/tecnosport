@@ -116,6 +116,7 @@
       "rechazar_en_entrega": "Rechazar en la entrega",
       "comision_recaudo": "Comisión de recaudo",
       "modalidad_recaudo": "Por dónde entró el dinero",
+      "comision_recaudo_requerida": "Escribe la comisión que cobró el banco. Si no cobró ninguna, escribe 0.",
       "modalidades_recaudo": {
         "creditos": "Créditos de la plataforma (sin comisión)",
         "banco": "Consignación bancaria (con comisión)"

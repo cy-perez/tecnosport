@@ -424,6 +424,7 @@
                           [idCampo]="'comision-' + pedido.id"
                           tipo="number"
                           [label]="'admin.pedidos.acciones.comision_recaudo' | transloco"
+                          [error]="errorComisionRecaudo(pedido.id)"
                           formControlName="comisionRecaudo"
                         />
                         <ts-boton tipo="submit" [cargando]="conciliandoRecaudo(pedido.id)">

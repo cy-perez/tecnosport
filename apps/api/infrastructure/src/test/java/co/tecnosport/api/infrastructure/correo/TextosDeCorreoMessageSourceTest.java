@@ -1,11 +1,13 @@
 package co.tecnosport.api.infrastructure.correo;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
+import co.tecnosport.api.domain.compartido.Dinero;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -25,8 +27,9 @@ class TextosDeCorreoMessageSourceTest {
   }
 
   /**
-   * Los veintiséis textos, en los dos idiomas. Es la prueba que hace que {@code
-   * correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
+   * Todos los textos, en los dos idiomas. Sin decir cuántos: el número estuvo escrito y llevaba
+   * desde la Fase 6 diciendo veintiséis cuando ya eran cincuenta y dos. Es la prueba que hace que
+   * {@code correos_en.properties} no sea un archivo decorativo mientras nadie pueda pedir inglés.
    */
   @Test
   void todosLosTextosExistenEnLosDosIdiomas() {
@@ -290,5 +293,17 @@ class TextosDeCorreoMessageSourceTest {
             Locale.of("en"));
 
     assertTrue(en.contains("not a sales invoice"), en);
+  }
+
+  /**
+   * El importe, agrupado según el idioma que rige. Vive aquí y no en el caso de uso porque el
+   * agrupamiento de miles es parte del idioma: el paquete inglés dice "COP {0}" y con el separador
+   * fijo del castellano habría recibido 179.800, que en inglés se lee ciento setenta y nueve con
+   * ocho.
+   */
+  @Test
+  void elImporteSeAgrupaComoSeEscribeEnElIdiomaQueRige() {
+    assertEquals("179.800", textos().dinero(Dinero.deCop(179_800)));
+    assertEquals("0", textos().dinero(Dinero.deCop(0)));
   }
 }

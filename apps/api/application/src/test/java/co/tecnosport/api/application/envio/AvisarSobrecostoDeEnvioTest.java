@@ -421,6 +421,11 @@ class AvisarSobrecostoDeEnvioTest {
   private static final class TextosDeCorreoFalso implements TextosDeCorreo {
 
     @Override
+    public String dinero(co.tecnosport.api.domain.compartido.Dinero valor) {
+      return valor.valor().toPlainString();
+    }
+
+    @Override
     public String texto(TextoDeCorreo texto, Object... argumentos) {
       StringBuilder resultado = new StringBuilder(texto.clave());
       for (Object argumento : argumentos) {

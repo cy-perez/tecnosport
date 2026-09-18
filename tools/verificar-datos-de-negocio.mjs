@@ -245,7 +245,10 @@ const AFIRMACIONES_DE_IVA = [
 ];
 
 if (enYmlIva === "false") {
-  for (const ruta of jsons(TEXTOS)) {
+  // Los correos entran también, por lo mismo que en la regla 1: desde que el comprobante de compra
+  // existe, un texto que afirmara cobrar IVA puede vivir ahí y no solo en los JSON del sitio. El
+  // mismo commit que añadió CORREOS arriba se olvidó de esta regla; lo levantó una revisión.
+  for (const ruta of [...jsons(TEXTOS), ...CORREOS]) {
     readFileSync(ruta, "utf8")
       .split("\n")
       .forEach((linea, indice) => {

@@ -47,13 +47,9 @@
         idCampo="variante-peso-gramos"
         tipo="number"
         [label]="'admin.productos.agregarVariante.pesoGramos' | transloco"
+        [ayuda]="pesoAlto() ? ('admin.productos.agregarVariante.pesoAlto' | transloco) : null"
         formControlName="pesoGramos"
       />
-      @if (pesoAlto()) {
-        <p role="status" class="text-ts-aviso">
-          {{ 'admin.productos.agregarVariante.pesoAlto' | transloco }}
-        </p>
-      }
 
       <ts-campo
         idCampo="variante-largo-cm"

@@ -45,11 +45,11 @@
                 {{ 'admin.revision_envios.guias.ocurrio_en' | transloco }}
               </dt>
               <dd class="m-0 mb-8">
-                {{ guia.ocurrioEn | date: 'medium' }}
+                {{ fechaConHora(guia.ocurrioEn) }}
                 <span class="block text-ts-texto-suave">
                   {{
                     'admin.revision_envios.guias.recibido_en'
-                      | transloco: { fecha: guia.recibidoEn | date: 'medium' }
+                      | transloco: { fecha: fechaConHora(guia.recibidoEn) }
                   }}
                 </span>
               </dd>
@@ -59,7 +59,7 @@
               <p class="m-0 mb-8 text-ts-texto-suave">
                 {{
                   'admin.revision_envios.guias.ya_revisada'
-                    | transloco: { fecha: guia.revisadaEn | date: 'medium' }
+                    | transloco: { fecha: fechaConHora(guia.revisadaEn) }
                 }}
               </p>
             }
@@ -139,7 +139,7 @@
                 {{ 'admin.revision_envios.emisiones.solicitada_en' | transloco }}
               </dt>
               <dd class="m-0 mb-8">
-                {{ emision.solicitadaEn | date: 'medium' }}
+                {{ fechaConHora(emision.solicitadaEn) }}
                 <span class="block text-ts-texto-suave">
                   {{
                     'admin.revision_envios.emisiones.pedida_por'

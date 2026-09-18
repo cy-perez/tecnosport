@@ -37,7 +37,14 @@ public class TareaComprobantesDeCompra {
       timeUnit = TimeUnit.MINUTES)
   public void enviar() {
     ResultadoComprobantes resultado = enviarComprobantesDeCompra.ejecutar();
-    if (resultado.pendientes() > 0) {
+    if (resultado.fallidos() > 0) {
+      log.warn(
+          "Comprobantes de compra: {} pedidos en firme sin comprobante, {} enviados, {} fallaron y"
+              + " se reintentarán en la vuelta siguiente.",
+          resultado.pendientes(),
+          resultado.enviados(),
+          resultado.fallidos());
+    } else if (resultado.pendientes() > 0) {
       log.info(
           "Comprobantes de compra: {} pedidos en firme sin comprobante, {} enviados por esta"
               + " instancia.",

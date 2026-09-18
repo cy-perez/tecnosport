@@ -109,6 +109,12 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     return comprobados.add(pedidoId);
   }
 
+  /** Devolver el reclamo, que es lo que permite que la vuelta siguiente lo reintente. */
+  @Override
+  public void liberarComprobante(UUID pedidoId) {
+    comprobados.remove(pedidoId);
+  }
+
   /** Que otra instancia le gane el reclamo a ese pedido. */
   void queOtroGaneElReclamoDe(UUID pedidoId) {
     this.perdedorDelReclamo = pedidoId;

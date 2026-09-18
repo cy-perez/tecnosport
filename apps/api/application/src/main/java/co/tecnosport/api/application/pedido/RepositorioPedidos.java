@@ -89,4 +89,14 @@ public interface RepositorioPedidos {
    * vigésimo no revierta las diecinueve marcas cuyos correos ya salieron.
    */
   boolean reclamarComprobante(UUID pedidoId, Instant ahora);
+
+  /**
+   * Devuelve el reclamo de un comprobante que no se pudo mandar, para que la vuelta siguiente lo
+   * reintente.
+   *
+   * <p>Sin esto, un fallo al enviar dejaba la marca puesta y ese comprador se quedaba sin su
+   * comprobante <b>para siempre</b>, porque la consulta ya no lo trae. No cubre el fallo silencioso
+   * —el adaptador de correo de producción se traga los de SMTP— pero sí todo lo que sí lanza.
+   */
+  void liberarComprobante(UUID pedidoId);
 }

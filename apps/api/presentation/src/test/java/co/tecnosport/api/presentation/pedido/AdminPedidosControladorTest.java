@@ -56,6 +56,7 @@ import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import co.tecnosport.api.presentation.compartido.RepositorioSolicitudesReversionVacio;
+import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -722,7 +723,7 @@ class AdminPedidosControladorTest {
           repositorioPedidos,
           repositorioEnvios,
           (destinatario, asunto, cuerpo) -> {},
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           Instant::now,
           "https://tecnosport.co/es/checkout/estado");
     }
@@ -797,7 +798,7 @@ class AdminPedidosControladorTest {
           emisorDeGuias,
           new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
           (destinatario, asunto, cuerpo) -> {},
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           Instant::now);
     }
 

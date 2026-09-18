@@ -116,6 +116,7 @@
       "rechazar_en_entrega": "Reject on delivery",
       "comision_recaudo": "Collection fee",
       "modalidad_recaudo": "Where the money came in",
+      "comision_recaudo_requerida": "Enter the fee the bank charged. If it charged none, enter 0.",
       "modalidades_recaudo": {
         "creditos": "Platform credits (no fee)",
         "banco": "Bank transfer (with fee)"

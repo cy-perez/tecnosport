@@ -81,14 +81,32 @@ checkout; el comprobante es el soporte, no el acuse.
 - El numeral 6 de los términos publicados promete el comprobante y dice que no es una factura. Es
   una promesa que el sistema cumple desde el mismo commit.
 
+## Una corrección a la `V51`, que no se puede hacer en la `V51`
+
+El comentario del índice parcial de esa migración dice que las filas con la marca en nulo "son pocas
+y siempre recientes", **y es falso**: los pedidos que nunca llegan a estar en firme —`CREADO`,
+`PAGO_PENDIENTE`, `PAGO_FALLIDO`, `CANCELADO`— no reciben la marca jamás y se quedan en ese índice
+para siempre. Lo levantó una revisión adversarial el mismo día.
+
+No es un defecto de rendimiento: la consulta sigue siendo selectiva porque filtra por `estado`. Y la
+corrección queda aquí y no allá **porque esa migración ya corrió**, y Flyway valida el checksum: una
+frase mejor en un archivo aplicado es un despliegue detenido. Mismo criterio que el `TODO` de la
+`V32`.
+
 ## Lo que NO resuelve, y conviene tenerlo a la vista
 
-**Si el correo no sale, el comprador se queda sin su comprobante y nadie se entera.** No es un
-defecto nuevo de esta tarea: el adaptador de producción se traga los fallos de envío —está escrito
-en el javadoc de `EnviadorDeCorreo` desde que una revisión adversarial lo destapó— y aquí el reclamo
-se pone *antes* de mandar, así que un fallo deja la marca puesta y el correo sin salir. Se prefiere
-ese lado —perder un comprobante antes que mandar dos— pero la salida de verdad es la misma que aquel
-javadoc ya nombra: una bandeja de salida con reintentos. Sigue sin existir.
+**Si el correo no sale en silencio, el comprador se queda sin su comprobante y nadie se entera.** El
+reclamo se pone *antes* de mandar, porque es lo que impide que dos instancias manden dos correos. Un
+fallo **que lanza** ya no cuesta nada: la revisión adversarial del mismo día lo señaló y ahora se
+devuelve el reclamo y la vuelta siguiente lo reintenta, contándolo aparte en el registro. Lo que
+sigue sin cubrirse es el fallo **silencioso**: el adaptador de producción se traga los de SMTP sin
+relanzarlos —está escrito en el javadoc de `EnviadorDeCorreo` desde que otra revisión lo destapó—,
+así que ahí la marca queda puesta y el correo no salió.
+
+Eso significa que el número de "enviados" del registro dice *se intentó*, no *llegó*, y así queda
+escrito en `ResultadoComprobantes`. La salida de verdad es la misma que aquel javadoc ya nombra: una
+bandeja de salida con reintentos. Sigue sin existir, y ahora tiene un motivo más para existir —esto
+es una obligación frente al comprador, no un aviso interno.
 
 **Y no cubre a quien pida una factura de verdad.** Si un comprador la necesita para deducir el
 gasto, la respuesta hoy es que no hay, y la razón está escrita arriba. El día que alguien la pida

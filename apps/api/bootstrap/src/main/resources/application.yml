@@ -114,11 +114,14 @@ tecnosport:
     # negocio si quiere despachar contra entrega.
     monto-minimo: ${CONTRAENTREGA_MONTO_MINIMO:2000}
     monto-maximo: ${CONTRAENTREGA_MONTO_MAXIMO:2000000}
-    # Lista separada por comas de LineaCatalogo (ROPA_Y_CALZADO, BOLSOS, CELULARES).
+    # Lista separada por comas de LineaCatalogo: ROPA_Y_CALZADO, BOLSOS, TECNOLOGIA. Esos son los
+    # tres valores del enum; CELULARES dejo de serlo el 14 de septiembre de 2026 y ponerlo aqui
+    # impide arrancar. El comentario lo siguio nombrando hasta el 18, que es justo el sitio donde
+    # alguien lo iba a leer bajo presion.
     #
     # Vacia a proposito: la regla del negocio es por PRECIO, no por linea, y la implementa
-    # monto-maximo. Excluir CELULARES entera bloquearia tambien los de 1.299.900 y 1.499.900, que
-    # el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
+    # monto-maximo. Excluir TECNOLOGIA entera bloquearia tambien los celulares de 1.299.900 y
+    # 1.499.900, que el negocio si quiere despachar contra entrega. Esta lista queda para el dia que alguna linea
     # no deba ir contra entrega a ningun precio, que hoy no es el caso de ninguna.
     categorias-excluidas: ${CONTRAENTREGA_CATEGORIAS_EXCLUIDAS:}
   skydropx:

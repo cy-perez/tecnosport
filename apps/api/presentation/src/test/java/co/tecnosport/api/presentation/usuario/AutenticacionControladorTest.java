@@ -28,6 +28,7 @@ import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
 import co.tecnosport.api.domain.usuario.Usuario;
+import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
 import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
@@ -461,7 +462,7 @@ class AutenticacionControladorTest {
           repositorioTokensVerificacion,
           codificadorDeClaves,
           enviadorDeCorreo,
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           Instant::now,
           VIGENCIA_TOKEN_VERIFICACION,
           "http://localhost:4200/es/cuenta/verificar-correo",
@@ -494,7 +495,7 @@ class AutenticacionControladorTest {
           repositorioUsuarios,
           repositorioTokensRecuperacion,
           enviadorDeCorreo,
-          (texto, argumentos) -> texto.clave(),
+          new TextosDeCorreoDobleDePrueba(),
           Instant::now,
           VIGENCIA_TOKEN_RECUPERACION,
           "http://localhost:4200/es/cuenta/restablecer-clave",

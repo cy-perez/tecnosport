@@ -39,6 +39,7 @@ import {
 } from '../../domain/pedido-admin.model';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { fechaConHora, ultimoDia } from '../../../../../core/i18n/fecha-colombia';
 
 const ESTADOS: readonly EstadoPedido[] = [
   'PAGO_PENDIENTE',
@@ -277,11 +278,25 @@ export class ListaPedidosAdminPage {
         // registro dice "no hubo comisión", que es lo que el formulario deja verdadero sin tocar
         // nada. El servidor rechaza créditos con comisión encima.
         modalidadRecaudo: new FormControl<ModalidadRecaudo>('CREDITOS', { nonNullable: true }),
-        comisionRecaudo: new FormControl<number | null>(null, [
+        comisionRecaudo: new FormControl<number | null>(0, [
           Validators.required,
           Validators.min(0),
         ]),
       });
+      // El selector gobierna el campo: con créditos no hay comisión que escribir —la etiqueta de la
+      // opción lo dice— así que pedir un cero obligatorio en un campo que la opción declara
+      // inexistente era una contradicción en pantalla. Lo levantó la auditoría de accesibilidad.
+      const comision = form.controls.comisionRecaudo;
+      const gobernar = (modalidad: ModalidadRecaudo) => {
+        if (modalidad === 'CREDITOS') {
+          comision.setValue(0, { emitEvent: false });
+          comision.disable({ emitEvent: false });
+        } else {
+          comision.enable({ emitEvent: false });
+        }
+      };
+      gobernar(form.controls.modalidadRecaudo.value);
+      form.controls.modalidadRecaudo.valueChanges.subscribe(gobernar);
       this.formulariosRecaudo.set(pedidoId, form);
     }
     return form;
@@ -494,6 +509,21 @@ export class ListaPedidosAdminPage {
     );
   }
 
+  /**
+   * El mensaje del campo de comisión cuando falta. Sin esto, pulsar "Conciliar recaudo" con el campo
+   * vacío no hacía absolutamente nada y el motivo no se decía en ningún sitio: `markAllAsTouched()`
+   * no pinta nada si la plantilla no le pasa `[error]` a ningún control. Lo levantó la auditoría de
+   * accesibilidad, y vale para los cuatro formularios de esta pantalla; aquí se cierra el del
+   * recaudo, que es el que esta rama tocó.
+   */
+  protected errorComisionRecaudo(pedidoId: string): string | null {
+    const control = this.formularioRecaudo(pedidoId).controls.comisionRecaudo;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return this.traducir()('admin.pedidos.acciones.comision_recaudo_requerida');
+  }
+
   protected conciliandoRecaudo(pedidoId: string): boolean {
     return (
       this.acciones.conciliarRecaudo.isPending() &&
@@ -513,25 +543,14 @@ export class ListaPedidosAdminPage {
     if (!iso) {
       return '';
     }
-    const idioma = this.transloco.activeLang();
-    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'long',
-      timeZone: 'America/Bogota',
-    }).format(new Date(Date.parse(iso) - 1));
+    return ultimoDia(iso, this.transloco.activeLang());
   }
 
   protected formatearFecha(iso: string): string {
     if (!iso) {
       return '';
     }
-    const idioma = this.transloco.activeLang();
-    const locale = idioma === 'en' ? 'en-US' : 'es-CO';
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-      timeZone: 'America/Bogota',
-    }).format(new Date(iso));
+    return fechaConHora(iso, this.transloco.activeLang());
   }
 }
 

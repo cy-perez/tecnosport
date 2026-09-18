@@ -4,21 +4,17 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
-import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -97,16 +93,26 @@ public final class EnviarComprobantesDeCompra {
     List<Pedido> pendientes = repositorioPedidos.buscarSinComprobante(EN_FIRME);
 
     int enviados = 0;
+    int fallidos = 0;
     for (Pedido pedido : pendientes) {
       // Reclamar antes de escribir, y solo escribir si se ganó el reclamo: el que pierde es otra
       // instancia que ya le mandó el comprobante a este mismo comprador.
       if (!repositorioPedidos.reclamarComprobante(pedido.id(), ahora)) {
         continue;
       }
-      enviar(pedido);
-      enviados++;
+      try {
+        enviar(pedido);
+        enviados++;
+      } catch (RuntimeException fallo) {
+        // Devolver el reclamo y seguir con los demás. Sin esto, un fallo en el pedido veinte dejaba
+        // su marca puesta —o sea, ese comprador sin comprobante para siempre, porque la consulta ya
+        // no lo ve— y además abortaba el lote entero, castigando a los que venían detrás por un
+        // problema que no era suyo. Lo levantó una revisión adversarial.
+        repositorioPedidos.liberarComprobante(pedido.id());
+        fallidos++;
+      }
     }
-    return new ResultadoComprobantes(pendientes.size(), enviados);
+    return new ResultadoComprobantes(pendientes.size(), enviados, fallidos);
   }
 
   private void enviar(Pedido pedido) {
@@ -123,14 +129,14 @@ public final class EnviarComprobantesDeCompra {
               linea.cantidad(),
               linea.nombre(),
               linea.sku().valor(),
-              pesos(linea.subtotal())));
+              textos.dinero(linea.subtotal())));
     }
     cuerpo.append(
         textos.texto(
             TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES,
-            pesos(pedido.subtotal()),
-            pesos(pedido.costoEnvio()),
-            pesos(pedido.total())));
+            textos.dinero(pedido.subtotal()),
+            textos.dinero(pedido.costoEnvio()),
+            textos.dinero(pedido.total())));
     cuerpo.append(textos.texto(entrega(pedido)));
     cuerpo.append(textos.texto(pago(pedido)));
     cuerpo.append(textos.texto(TextoDeCorreo.PEDIDO_COMPROBANTE_VENDEDOR));
@@ -161,20 +167,6 @@ public final class EnviarComprobantesDeCompra {
       case TRANSFERENCIA_MANUAL -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA;
       case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_LINEA;
     };
-  }
-
-  /**
-   * Agrupado con puntos y sin decimales, que es como se escribe el peso en Colombia y como lo pinta
-   * el sitio. Con símbolos explícitos y no con los del {@link Locale} por omisión: la máquina donde
-   * corra el contenedor no decide cómo se lee el precio de una compra.
-   *
-   * <p>El símbolo de la moneda lo pone el texto y no este método, porque cambia con el idioma del
-   * paquete de mensajes y esto no sabe en cuál se va a pintar.
-   */
-  private static String pesos(Dinero valor) {
-    DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.ROOT);
-    simbolos.setGroupingSeparator('.');
-    return new DecimalFormat("#,##0", simbolos).format(valor.valor());
   }
 
   private String enlaceDeEstado(Pedido pedido) {

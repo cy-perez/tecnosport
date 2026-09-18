@@ -1,4 +1,4 @@
-import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -16,6 +16,7 @@ import {
 import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
 import { esMetodoPagoWompi, puedeReintentarPago } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
+import { fechaLarga } from '../../../../core/i18n/fecha-colombia';
 
 const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   PAGO_PENDIENTE: 'checkout.estado.estados.pago_pendiente',
@@ -44,7 +45,7 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
  */
 @Component({
   selector: 'app-estado',
-  imports: [DatePipe, NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
+  imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
   templateUrl: './estado.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -56,6 +57,15 @@ export class EstadoPage {
   private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
   protected readonly checkout = inject(CheckoutStore);
+
+  /**
+   * La fecha, en el idioma de quien lee y en hora de Colombia. No con `DatePipe`: sin `LOCALE_ID`
+   * registrado cae a `en-US` —un comprador en castellano leía «September 18, 2026»— y sin zona sale
+   * distinta en el servidor y en el navegador. Ver `core/i18n/fecha-colombia.ts`.
+   */
+  protected fechaLarga(iso: string): string {
+    return fechaLarga(iso, this.transloco.activeLang());
+  }
 
   protected readonly error = signal<string | null>(null);
 

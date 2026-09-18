@@ -110,6 +110,14 @@ export class AgregarVarianteAdminPage {
    * <p>Avisa, no bloquea: puede haber un producto que de verdad pese eso, y el retiro en punto no
    * necesita transportadora. Lo que de verdad atrapa es el error de unidad — 18 kg tecleados donde
    * iban 1,8 —, que es el que se paga en cada flete.
+   *
+   * <p>Va como `[ayuda]` del propio campo y no como un `<p role="status">` aparte, que es como
+   * nació. Dos motivos, y los dos los levantó la auditoría de accesibilidad: una región viva creada
+   * por un `@if` **ya poblada** no tiene región que vigilar y varios lectores no la anuncian; y el
+   * aviso quedaba fuera del `aria-describedby` del campo, así que quien volvía a enfocar "Peso
+   * (gramos)" oía el número y nada más — justo la advertencia que explica por qué ese número está
+   * mal. Como ayuda queda atada al control, y de paso deja de haber una región viva que interrumpa
+   * al lector en mitad de una palabra mientras se teclea.
    */
   private static readonly TOPE_MAS_BAJO_GRAMOS = 8_000;
 

@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -10,6 +9,7 @@ import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarAccionesRevision } from '../../application/acciones-revision.mutaciones';
 import { usarBandejaRevision } from '../../application/bandeja-revision.consulta';
+import { fechaConHora } from '../../../../../core/i18n/fecha-colombia';
 import {
   EmisionEnRevision,
   EstadoEmisionEnRevision,
@@ -47,12 +47,20 @@ const CLAVE_ESTADO_EMISION: Record<EstadoEmisionEnRevision, string> = {
  */
 @Component({
   selector: 'app-bandeja-revision-envios',
-  imports: [DatePipe, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas],
   templateUrl: './bandeja-revision.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BandejaRevisionPage {
   private readonly transloco = inject(TranslocoService);
+
+  /**
+   * Fecha y hora en el idioma de quien lee y en hora de Colombia. No con `DatePipe`: sin `LOCALE_ID`
+   * registrado cae a `en-US` y sin zona usa la del entorno. Ver `core/i18n/fecha-colombia.ts`.
+   */
+  protected fechaConHora(iso: string): string {
+    return fechaConHora(iso, this.transloco.activeLang());
+  }
   private readonly traducir = usarTraductor();
 
   protected readonly migas = usarMigasAdmin([{ clave: 'admin.revision_envios.titulo' }]);

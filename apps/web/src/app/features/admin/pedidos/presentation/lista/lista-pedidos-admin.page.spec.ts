@@ -638,9 +638,11 @@ describe('ListaPedidosAdminPage', () => {
     const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'RECAUDO_PENDIENTE' })]);
     fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
 
-    fireEvent.input(await screen.findByLabelText('Comisión de recaudo'), {
-      target: { value: '0' },
-    });
+    // No se toca el campo de comisión: con créditos queda deshabilitado en cero, porque la opción
+    // dice "sin comisión" y pedir un cero obligatorio ahí era una contradicción en pantalla.
+    expect((await screen.findByLabelText('Comisión de recaudo')).hasAttribute('disabled')).toBe(
+      true,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Conciliar recaudo' }));
 
     await vi.waitFor(() => expect(repositorio.recaudos.length).toBe(1));
@@ -649,6 +651,24 @@ describe('ListaPedidosAdminPage', () => {
       modalidadRecaudo: 'CREDITOS',
       comisionRecaudo: 0,
     });
+  });
+
+  /**
+   * Conciliar por banco sin escribir la comisión tiene que decir por qué no pasa nada. Antes el
+   * botón no hacía absolutamente nada y el motivo no se decía en ningún sitio.
+   */
+  it('conciliar por banco sin comisión dice qué falta', async () => {
+    const { repositorio } = await renderLista([pedidoDePrueba({ estado: 'RECAUDO_PENDIENTE' })]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver detalle' }));
+
+    fireEvent.change(await screen.findByLabelText('Por dónde entró el dinero'), {
+      target: { value: 'BANCO' },
+    });
+    fireEvent.input(screen.getByLabelText('Comisión de recaudo'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Conciliar recaudo' }));
+
+    expect(await screen.findByText(/Escribe la comisión que cobró el banco/)).toBeTruthy();
+    expect(repositorio.recaudos).toHaveLength(0);
   });
 
   /** Y con consignación bancaria viaja la comisión que cobró el banco. */

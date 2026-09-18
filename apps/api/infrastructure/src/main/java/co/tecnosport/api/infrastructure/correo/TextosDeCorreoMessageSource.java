@@ -2,6 +2,8 @@ package co.tecnosport.api.infrastructure.correo;
 
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.domain.compartido.Dinero;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -101,6 +103,17 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
   public String texto(TextoDeCorreo texto, Object... argumentos) {
     Objects.requireNonNull(texto, "El texto no puede ser nulo.");
     return mensajes.getMessage(texto.clave(), escapados(argumentos), IDIOMA_QUE_RIGE);
+  }
+
+  /**
+   * Agrupado según el idioma que rige, y sin decimales: el peso colombiano no se fracciona. El
+   * símbolo de la moneda lo pone el texto, no este método, porque cambia con el paquete de
+   * mensajes.
+   */
+  @Override
+  public String dinero(Dinero valor) {
+    Objects.requireNonNull(valor, "El importe no puede ser nulo.");
+    return NumberFormat.getIntegerInstance(IDIOMA_QUE_RIGE).format(valor.valor());
   }
 
   @Override

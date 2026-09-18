@@ -16,7 +16,14 @@ un `Pedido` no se confirma sin líneas, un `Inventario` no baja de cero.
 `ConfirmarPedido.ejecutar(ConfirmarPedidoComando)`. Aquí se declara el **puerto**
 de todo lo externo: `RepositorioPedidos`, `PasarelaDePagos`,
 `RecaudoContraentrega`, `EmisorFacturaElectronica`, `AlmacenDeImagenes`,
-`EnviadorDeCorreo`, `Reloj`. La transacción se abre aquí.
+`EnviadorDeCorreo`, `Reloj`.
+
+**La transacción NO se abre aquí, y esta línea decía que sí.** La abre quien
+llama, con un `TransactionTemplate` en el controlador —`PedidoControlador` para
+crear el pedido, `AdminPedidosControlador` para las acciones del panel—, porque
+`application` es framework-free y `@Transactional` es Spring. Corregido el 18 de
+septiembre de 2026, cuando una revisión adversarial cruzó esta frase con el
+javadoc de `CrearPedido`, que decía lo contrario.
 
 Con una excepción, y tiene nombre: `EnTransaccionPropia`. La usa la emisión de la
 guía, que escribe una fila, llama a un tercero **que cobra**, y escribe otra vez

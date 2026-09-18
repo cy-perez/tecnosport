@@ -515,7 +515,6 @@ export class ResumenPage {
       autorizaDatos: valores.autorizaDatos,
     });
 
-    // Método de pago es el paso 4b, todavía sin construir.
     void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 

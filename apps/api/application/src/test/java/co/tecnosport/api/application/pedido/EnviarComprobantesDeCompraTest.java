@@ -91,7 +91,7 @@ class EnviarComprobantesDeCompraTest {
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
-    assertEquals(new ResultadoComprobantes(1, 1), resultado);
+    assertEquals(new ResultadoComprobantes(1, 1, 0), resultado);
     assertEquals(pedido.correo(), correos.enviados().getFirst().destinatario());
     String cuerpo = cuerpoUnico();
     assertTrue(cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_CUERPO.clave()), cuerpo);
@@ -108,7 +108,7 @@ class EnviarComprobantesDeCompraTest {
     casoDeUso.ejecutar();
     ResultadoComprobantes segunda = casoDeUso.ejecutar();
 
-    assertEquals(new ResultadoComprobantes(0, 0), segunda);
+    assertEquals(new ResultadoComprobantes(0, 0, 0), segunda);
     assertEquals(1, correos.enviados().size());
   }
 
@@ -122,8 +122,45 @@ class EnviarComprobantesDeCompraTest {
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
-    assertEquals(new ResultadoComprobantes(1, 0), resultado);
+    assertEquals(new ResultadoComprobantes(1, 0, 0), resultado);
     assertTrue(correos.enviados().isEmpty());
+  }
+
+  /**
+   * Un envío que falla devuelve el reclamo, y la vuelta siguiente lo reintenta. Sin esto, la marca
+   * quedaba puesta y ese comprador se quedaba sin comprobante <b>para siempre</b>, porque la
+   * consulta ya no lo trae. Lo levantó una revisión adversarial.
+   */
+  @Test
+  void siElEnvioFallaDevuelveElReclamoYLoReintenta() {
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+    correos.hazQueFalle();
+    EnviarComprobantesDeCompra casoDeUso = casoDeUso();
+
+    ResultadoComprobantes primera = casoDeUso.ejecutar();
+
+    assertEquals(new ResultadoComprobantes(1, 0, 1), primera);
+    assertTrue(correos.enviados().isEmpty());
+
+    // Y la vuelta siguiente lo vuelve a traer, que es lo que el reclamo devuelto hace posible.
+    correos.queVuelvaAFuncionar();
+    ResultadoComprobantes segunda = casoDeUso.ejecutar();
+
+    assertEquals(new ResultadoComprobantes(1, 1, 0), segunda);
+    assertEquals(1, correos.enviados().size());
+  }
+
+  /** Y un fallo no se lleva por delante a los que venían detrás en el mismo lote. */
+  @Test
+  void unFalloNoAbortaElRestoDelLote() {
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+    pedidoEn(MetodoPago.CONTRAENTREGA, TipoEntrega.ENVIO_A_DOMICILIO);
+    correos.hazQueFalleUnaVez();
+
+    ResultadoComprobantes resultado = casoDeUso().ejecutar();
+
+    assertEquals(new ResultadoComprobantes(2, 1, 1), resultado);
+    assertEquals(1, correos.enviados().size());
   }
 
   /** Un pedido que todavía no es una compra no tiene nada que comprobar. */
@@ -133,7 +170,7 @@ class EnviarComprobantesDeCompraTest {
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
-    assertEquals(new ResultadoComprobantes(0, 0), resultado);
+    assertEquals(new ResultadoComprobantes(0, 0, 0), resultado);
     assertTrue(correos.enviados().isEmpty());
   }
 
@@ -144,7 +181,7 @@ class EnviarComprobantesDeCompraTest {
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
-    assertEquals(new ResultadoComprobantes(0, 0), resultado);
+    assertEquals(new ResultadoComprobantes(0, 0, 0), resultado);
     assertTrue(correos.enviados().isEmpty());
   }
 
@@ -163,7 +200,7 @@ class EnviarComprobantesDeCompraTest {
 
     ResultadoComprobantes resultado = casoDeUso().ejecutar();
 
-    assertEquals(new ResultadoComprobantes(1, 1), resultado);
+    assertEquals(new ResultadoComprobantes(1, 1, 0), resultado);
     assertTrue(cuerpoUnico().contains(TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_LINEA.clave()));
   }
 
@@ -175,10 +212,13 @@ class EnviarComprobantesDeCompraTest {
     casoDeUso().ejecutar();
 
     String cuerpo = cuerpoUnico();
-    // Dos unidades de 89.900: la línea lleva su propio subtotal, no el precio unitario.
-    assertTrue(cuerpo.contains("2|Camiseta running Dry-Fit|TS-CAM-AZ-M|179.800"), cuerpo);
+    // Dos unidades de 89.900: la línea lleva su propio subtotal, no el precio unitario. Sin
+    // agrupar,
+    // porque el doble no agrupa a propósito: cómo se escribe un importe es parte del idioma y se
+    // prueba donde vive el idioma, en TextosDeCorreoMessageSourceTest.
+    assertTrue(cuerpo.contains("2|Camiseta running Dry-Fit|TS-CAM-AZ-M|179800"), cuerpo);
     assertTrue(
-        cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179.800"), cuerpo);
+        cuerpo.contains(TextoDeCorreo.PEDIDO_COMPROBANTE_TOTALES.clave() + "|179800"), cuerpo);
   }
 
   /** Quien recoge en el punto no paga flete, y el comprobante no puede decir otra cosa. */

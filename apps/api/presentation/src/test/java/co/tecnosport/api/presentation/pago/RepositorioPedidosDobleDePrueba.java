@@ -65,4 +65,7 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
   public boolean reclamarComprobante(java.util.UUID pedidoId, java.time.Instant ahora) {
     return false;
   }
+
+  @Override
+  public void liberarComprobante(java.util.UUID pedidoId) {}
 }

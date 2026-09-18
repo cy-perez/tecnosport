@@ -144,7 +144,7 @@
         class="my-16 grid grid-cols-[auto_1fr] gap-x-16 gap-y-8 [&_dt]:text-ts-texto-suave [&_dd]:m-0"
       >
         <dt>{{ 'checkout.estado.envio.despachado_en' | transloco }}</dt>
-        <dd>{{ e.despachadoEn | date: 'longDate' }}</dd>
+        <dd>{{ fechaLarga(e.despachadoEn) }}</dd>
       </dl>
     }
 
@@ -161,7 +161,7 @@
             <dt class="text-ts-texto-suave">
               {{ 'checkout.estado.retracto.limite' | transloco }}
             </dt>
-            <dd class="m-0 mb-8">{{ limite | date: 'longDate' }}</dd>
+            <dd class="m-0 mb-8">{{ fechaLarga(limite) }}</dd>
           }
 
           @if (retracto.montoReembolsado; as monto) {
