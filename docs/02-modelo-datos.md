@@ -361,6 +361,13 @@ el hecho de que salió un correo— y de él depende que el vigilante no vuelva 
 escribir en cada vuelta. Vencer no cancela nada: quien decide terminar el
 contrato es quien compró (`ADR-0028`).
 
+**Y se devuelve a nulo si el correo no sale** (`liberarAvisoDePlazo`, igual que
+`comprobante_enviado_en` con `liberarComprobante`). La marca dice "salió un
+correo", no "lo intenté": dejarla puesta tras un fallo de SMTP la convertía en
+mentira y ese aviso no volvía a armarse nunca. Durante cuatro fases eso no se
+podía hacer porque el adaptador de correo se tragaba los fallos y no había
+excepción que atrapar — ver `ADR-0044`.
+
 ## Envío: cotización congelada y seguimiento
 
 El costo de envío se cotiza contra Skydropx antes de pagar y **se congela en el
@@ -565,6 +572,14 @@ aviso_revision
 - Se reclama con una sola escritura condicional (`on conflict … do update … where`),
   mismo motivo que `reclamarAvisoDePlazo`: con más de una instancia, leer y después
   escribir manda el correo dos veces.
+- **Y la fila se borra si el correo no sale** (`liberarAviso`), porque un correo lleva
+  todas las filas reclamadas en esa vuelta y no hay forma de que salga la mitad. Se
+  borra en vez de restaurar el instante anterior: ese instante ya se perdió al ganar el
+  reclamo, y no hace falta —`avisado_en` solo se lee dentro del propio reclamo, así que
+  una fila ausente y una vieja producen lo mismo, que es avisar en el siguiente ciclo—.
+  Lo mismo vale para `aviso_sobrecosto`, donde pesa más: ese se escribe con `do nothing`,
+  así que un reclamo que no se devuelve **no se vuelve a ganar jamás** y ese cobro de
+  dinero solo aparecería en el extracto. Ver `ADR-0044`.
 
 ## Congelado del pedido
 

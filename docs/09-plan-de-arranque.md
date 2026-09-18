@@ -4768,8 +4768,8 @@ commit `eaf483b`; aquí lo que enseña:
 
 - **El comprobante podía perderse para siempre.** El reclamo se pone antes de mandar —es lo que
   impide dos correos al mismo comprador— y un fallo dejaba la marca puesta con el correo sin salir.
-  Ahora un fallo que lanza devuelve el reclamo y se reintenta. El **silencioso** sigue abierto,
-  porque el adaptador se traga los de SMTP.
+  Ahora un fallo que lanza devuelve el reclamo y se reintenta. El **silencioso** quedaba abierto,
+  porque el adaptador se tragaba los de SMTP; se cerró el mismo día, más abajo.
 - **El agrupamiento de miles es parte del idioma**, y estaba en el caso de uso con separador fijo.
   El propio javadoc lo confesaba —"esto no sabe en cuál idioma se va a pintar"— y nadie lo leyó al
   escribirlo.
@@ -4965,6 +4965,87 @@ igual que en el resumen del checkout, que ya lo tenía escrito.
   donde más pesa: la autorización de datos del checkout, que es de la Ley 1581.
 - **Las fechas** dejaron de salir en inglés (`DatePipe` sin `LOCALE_ID` cae a `en-US`) y con la zona
   del entorno, que en SSR es UTC.
+
+## El correo que no sale deja de ser un silencio (2026-09-18)
+
+Era lo único que la revisión adversarial de los 122 commits dejó sin cerrar, y creció al abrirlo.
+Detalle en `adr/0044`; aquí lo que enseñó.
+
+### El defecto no estaba donde decía la nota
+
+La nota decía "el adaptador se traga los de SMTP", y eso es cierto y es media verdad. Lo que el
+adaptador hacía mal no era tragarse un fallo: era **tomar esa decisión por sus doce llamadores**. La
+razón por la que se tragaba estaba escrita y era buena —`SolicitarRecuperacion` responde 204 exista
+o no la cuenta, y un 500 solo cuando la cuenta sí existe es el oráculo de enumeración que ese diseño
+evita—, pero vale para **uno** de los doce. Los otros once heredaban una decisión que nadie tomó
+para ellos.
+
+El más grave: `EnviarComprobantesDeCompra` tenía escrito desde la revisión adversarial un `catch`
+que devuelve el reclamo y reintenta, y **ese `catch` no se ejecutaba nunca**. Un SMTP caído dejaba
+la marca puesta con el correo sin salir, y como la consulta ya no trae ese pedido, ese comprador se
+quedaba sin comprobante para siempre. Desde `adr/0042` eso no es un correo de cortesía: es el
+documento de la venta.
+
+### Lo que apareció al abrirlo: el mismo agujero en tres vigilantes más
+
+La bandeja de revisión, los sobrecostos de la transportadora y el plazo de entrega vencido reclaman
+antes de mandar y no devolvían el reclamo. Los tres javadoc lo llamaban **"el lado por el que se
+prefiere fallar"**, y los tres citaban como argumento que el adaptador se tragaba los fallos de
+todas formas. O sea: una preferencia que no tenía alternativa, escrita como si fuera una elección.
+Cuando la premisa se cae, la elección hay que volver a hacerla — y las tres veces sale al revés.
+
+En sobrecostos es el peor de los tres y por una razón de mecánica: su reclamo se escribe con `do
+nothing`, así que **uno que no se devuelve no se vuelve a ganar jamás**. Ese cobro de dinero solo
+aparecería en el extracto.
+
+Y una cuarta, más pequeña y de otro género: la vigilancia de saldo devolvía `avisado = true` tanto
+si el correo salía como si no, con el campo documentado como "si salió el correo". No era un fallo
+de reintento: era un resultado que mentía. Ahora tiene un cuarto desenlace y la tarea lo registra en
+`error`, que es el único de los cuatro que lo merece — el despacho está a punto de detenerse y nadie
+lo va a leer en su bandeja.
+
+### Lo que no se podía hacer, y ordenó la forma del código
+
+**`application` no tiene slf4j en el classpath.** Solo declara `:domain`, que es la regla dura #1, y
+por eso no hay un solo `Logger` en toda la capa. Así que un caso de uso que decide tragar la
+excepción **no puede dejar constancia de nada**. De ahí que el adaptador registre *además* de
+lanzar, que a primera vista parece duplicado: si no lo hiciera, los dos caminos que tragan por
+diseño volverían a ser un silencio exacto.
+
+### La decisión de negocio que el puerto llevaba meses dejando por tomar
+
+El javadoc del puerto decía, literal, que si el envío debería poder tumbar la transacción en los
+caminos del dinero "es una decisión de negocio, no de programación, y no está tomada". Se preguntó y
+se tomó: **la operación se guarda igual**. Lo que la sostiene no es una preferencia, son cuatro
+hechos — el dinero del reintegro ya se movió, cancelar ya anuló las guías en Skydropx y devolvió el
+inventario, despachar ya emitió y cobró la guía, y el retracto es una fecha que la Ley 1480 mide.
+Ninguna de esas cuatro cosas la revierte una transacción de base de datos.
+
+### Y dos lecciones sobre pruebas, que son las que de verdad valen
+
+**Una prueba fijaba el defecto, y estaba en verde.** `unFalloAlEnviarSeRegistraYNoPropaga` exigía
+`doesNotThrowAnyException()`. Lo que protegía era justo lo que había que cambiar. Una prueba puede
+fijar un error tan bien como fija un acierto, y ninguna métrica de cobertura distingue las dos.
+
+**Y los seis dobles de correo lanzaban `IllegalStateException`**, que el adaptador no lanza nunca.
+Las pruebas que afirmaban "un correo caído no deja la solicitud guardada a medias" comprobaban un
+escenario que producción no podía producir — y una, `siElCorreoFallaNoQuedaUnaSolicitudSinAcuse`,
+afirmaba lo contrario de lo que el sistema hacía y llevaba cuatro fases en verde. Es el mismo género
+del plugin de capas que aceptaba la configuración sin aplicarla y del doble cuyo reclamo atómico era
+un `Set.add()`: **el doble más barato es el que se parece lo bastante como para no probar nada.**
+
+Las seis pruebas nuevas se comprobaron quitando la corrección a propósito — las tres de los
+vigilantes fallan sin su `liberar`, la del adaptador falla si vuelve a tragar.
+
+### Lo que queda abierto, y nace aquí
+
+- **El correo sale dentro de la transacción y antes del commit.** Un fallo al comprometer deja a
+  quien compró leyendo "reintegramos el dinero de tu pedido" y al sistema sin constancia de ese
+  reintegro. Ningún `catch` arregla ese sentido: lo cierra una **bandeja de salida**, que es un
+  mecanismo entero —tabla, tarea, reintentos— y no se construyó aquí.
+- **No hay "reenviar verificación".** Una cuenta creada el día que el SMTP falló se queda sin
+  verificar hasta que su dueño lo pida por otro canal. Es la deuda concreta del `catch` de
+  `RegistrarUsuario`.
 
 ## Cómo conversar con Claude Code en este proyecto
 

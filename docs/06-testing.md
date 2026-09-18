@@ -30,6 +30,20 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
   Cuidado con el patrón general: **un doble que en realidad no se instala hace
   pasar la prueba por el camino normal**, que también pasa — es el peor tipo de
   prueba verde, porque parece cubrir justo lo que no cubre.
+- **Y su variante, que costó cuatro fases:** un doble que sí se instala pero
+  **falla distinto que la implementación real**. Los seis `EnviadorDeCorreoFalso`
+  lanzaban `IllegalStateException`; el adaptador de producción no lanzaba nada,
+  se tragaba el fallo. Así que las pruebas que afirmaban "un correo caído no deja
+  la solicitud guardada a medias" comprobaban un escenario que producción no
+  podía producir, y una de ellas afirmaba **lo contrario** de lo que el sistema
+  hacía — en verde todo el tiempo. Un doble tiene que fallar con el mismo tipo y
+  en los mismos casos que lo que imita; si no, lo que prueba es a sí mismo. Ver
+  `adr/0044`.
+- **Una prueba puede fijar un defecto tan bien como fija un acierto.**
+  `unFalloAlEnviarSeRegistraYNoPropaga` exigía `doesNotThrowAnyException()` y lo
+  que protegía era el error. La cobertura no distingue las dos cosas: al leer una
+  prueba verde hay que preguntarse si lo que afirma es lo que se quiere, no solo
+  si es lo que pasa.
 
 Una prueba que no falla ante ninguna mutación razonable se borra o se arregla;
 dejarla es peor que no tenerla, porque cubre el hueco en el informe de cobertura
