@@ -63,6 +63,21 @@ public class PedidoJpaEntity {
   private Instant avisoPlazoEntregaEnviadoEn;
 
   /**
+   * Cuándo se le mandó al comprador el comprobante de su compra. Mismas dos banderas y por el mismo
+   * motivo que el campo de arriba: la escribe únicamente el reclamo condicional de {@code
+   * PedidoJpaRepository.reclamarComprobante}.
+   *
+   * <p>Sin acceso de lectura a propósito, y aquí se separa del anterior: {@code Pedido} no lleva
+   * este dato porque <b>ninguna regla del dominio decide nada con él</b>. Es la marca de un efecto
+   * hacia afuera, igual que un reclamo, y meterlo en el agregado habría obligado a tocar sus cuatro
+   * constructores y todos sus constructores de prueba para que ninguna regla lo usara. Hibernate lo
+   * puebla por campo al leer, que es todo lo que las dos consultas necesitan.
+   */
+  @Column(name = "comprobante_enviado_en", insertable = false, updatable = false)
+  @SuppressWarnings("unused")
+  private Instant comprobanteEnviadoEn;
+
+  /**
    * Lo que el comprador paga de flete, congelado al confirmar. No confundir con {@code
    * EnvioJpaEntity.costoEnvio}, que es lo que el despacho le cuesta al negocio.
    */

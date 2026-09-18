@@ -197,7 +197,8 @@
       {
         "titulo": "6. Payment methods",
         "parrafos": [
-          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform."
+          "We accept credit and debit cards, PSE, Nequi, and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where enabled for your city and your order. The payment methods available for your order are the ones we show you at checkout: not all of them are enabled for every order. We do not store card data: that information is handled entirely on the gateway's platform.",
+          "For every purchase we email you a receipt, to the address you gave us, with the detail of what you bought, what you paid, and how we deliver it. Keep it: it is the proof of your purchase and what you need to claim the warranty. That receipt is not a sales invoice: Tecno Sport is not a VAT (IVA) taxpayer and is not required to issue invoices, under article 1.6.1.4.3 of Decree 1625 of 2016."
         ]
       },
       {

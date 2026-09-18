@@ -54,4 +54,15 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
   public boolean reclamarAvisoDePlazo(java.util.UUID pedidoId, java.time.Instant ahora) {
     return false;
   }
+
+  @Override
+  public java.util.List<co.tecnosport.api.domain.pedido.Pedido> buscarSinComprobante(
+      java.util.Collection<co.tecnosport.api.domain.pedido.EstadoPedido> estados) {
+    return java.util.List.of();
+  }
+
+  @Override
+  public boolean reclamarComprobante(java.util.UUID pedidoId, java.time.Instant ahora) {
+    return false;
+  }
 }

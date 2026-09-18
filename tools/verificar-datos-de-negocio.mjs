@@ -114,7 +114,17 @@ const reglas = [
   },
 ];
 
-for (const ruta of jsons(TEXTOS)) {
+// Los correos transaccionales entran en el barrido desde el 18 de septiembre de 2026: el
+// comprobante de compra identifica al vendedor —información obligatoria del proveedor, Ley 1480— y
+// con eso el NIT, el correo y el teléfono pasaron a vivir también fuera de los JSON del sitio. Una
+// copia que el guardián no mira es exactamente el agujero por el que el celular estuvo mal en
+// cuatro sitios durante una fase entera.
+const CORREOS = [
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/correos_es.properties"),
+  join(RAIZ, "apps/api/infrastructure/src/main/resources/correos_en.properties"),
+];
+
+for (const ruta of [...jsons(TEXTOS), ...CORREOS]) {
   const contenido = readFileSync(ruta, "utf8");
   contenido.split("\n").forEach((linea, indice) => {
     for (const { nombre, patron, normaliza, canonico } of reglas) {
