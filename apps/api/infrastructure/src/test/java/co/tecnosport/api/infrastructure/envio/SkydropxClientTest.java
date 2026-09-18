@@ -597,4 +597,79 @@ class SkydropxClientTest {
         "la plataforma respondio 500",
         assertInstanceOf(ResultadoCancelacion.NoSePudo.class, resultado).detalle());
   }
+
+  // --- saldo de la cuenta -----------------------------------------------------------------------
+
+  private SkydropxClient clienteDeSaldo(int estado, String cuerpo) throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v1/finance/credits", intercambio -> responder(intercambio, estado, cuerpo));
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * El cuerpo es el que respondió la cuenta real el 17 de septiembre de 2026, con el saldo
+   * <strong>dentro de {@code data}</strong>. Leerlo un nivel más arriba devolvería vacío sin ningún
+   * error, que es la forma en que este proveedor ya ha costado cuatro sesiones.
+   */
+  @Test
+  void leeElSaldoDeDentroDeData() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSaldo(200, "{\"data\":{\"balance\":10088,\"currency\":\"COP\"}}");
+
+    assertEquals(Optional.of(Dinero.deCop(10_088)), cliente.saldo());
+  }
+
+  /** Un saldo en cero es un dato, no una falla: es el estado en el que no se puede emitir. */
+  @Test
+  void unSaldoEnCeroSeLeeComoCero() throws IOException {
+    SkydropxClient cliente = clienteDeSaldo(200, "{\"data\":{\"balance\":0,\"currency\":\"COP\"}}");
+
+    assertEquals(Optional.of(Dinero.deCop(0)), cliente.saldo());
+  }
+
+  /**
+   * Otra moneda no se compara contra un umbral en pesos. Devolver el número pelado daría una
+   * respuesta tranquilizadora y falsa —10.088 dólares y 10.088 pesos no son lo mismo—, así que se
+   * dice que no se sabe, igual que cuando no contesta.
+   */
+  @Test
+  void otraMonedaSeTrataComoNoSaber() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSaldo(200, "{\"data\":{\"balance\":10088,\"currency\":\"USD\"}}");
+
+    assertTrue(cliente.saldo().isEmpty());
+  }
+
+  @Test
+  void unProveedorCaidoNoDaSaldo() throws IOException {
+    assertTrue(clienteDeSaldo(500, "{}").saldo().isEmpty());
+  }
+
+  @Test
+  void unCuerpoSinBalanceNoDaSaldo() throws IOException {
+    assertTrue(clienteDeSaldo(200, "{\"data\":{\"currency\":\"COP\"}}").saldo().isEmpty());
+  }
 }

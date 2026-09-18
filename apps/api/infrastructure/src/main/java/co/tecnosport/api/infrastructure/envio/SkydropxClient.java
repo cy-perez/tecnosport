@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.envio;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
+import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
@@ -11,8 +12,10 @@ import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -57,7 +60,8 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>El token se renueva con margen y no justo al vencer: una cotización que arranca con el token
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
-public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias {
+public final class SkydropxClient
+    implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias, ConsultorDeSaldo {
 
   private static final Logger log = LoggerFactory.getLogger(SkydropxClient.class);
 
@@ -532,6 +536,47 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return noSePudoCancelar(idEnvioEnPlataforma, "la espera se interrumpio");
+    }
+  }
+
+  /**
+   * El crédito de la cuenta. `GET /api/v1/finance/credits` responde
+   * `{"data":{"balance":10088,"currency":"COP"}}` — medido, y con el saldo **dentro de `data`**,
+   * que es donde este proveedor guarda lo que uno busca un nivel más arriba.
+   *
+   * <p>La moneda no se valida ni se convierte: la cuenta es colombiana y el saldo se compara contra
+   * un umbral en pesos. Si algún día respondiera otra moneda, comparar los números sin mirarla
+   * daría una respuesta tranquilizadora y falsa, así que se exige que sea COP y, si no, se dice que
+   * no se sabe: es lo mismo que hace cuando no contesta.
+   */
+  @Override
+  public Optional<Dinero> saldo() {
+    try {
+      String token = token();
+      if (token == null) {
+        log.warn("No se pudo consultar el saldo: no se obtuvo token.");
+        return Optional.empty();
+      }
+      HttpResponse<String> respuesta =
+          enviar(peticion("/api/v1/finance/credits", token).GET().build());
+      if (respuesta.statusCode() / 100 != 2) {
+        log.warn("No se pudo consultar el saldo: respondio {}", respuesta.statusCode());
+        return Optional.empty();
+      }
+      JsonNode datos = json.readTree(respuesta.body()).path("data");
+      JsonNode balance = datos.path("balance");
+      String moneda = datos.path("currency").asString();
+      if (balance.isMissingNode() || balance.isNull() || !"COP".equalsIgnoreCase(moneda)) {
+        log.warn("El saldo vino en una forma inesperada o en otra moneda: {}", moneda);
+        return Optional.empty();
+      }
+      return Optional.of(Dinero.deCop(new BigDecimal(balance.asString())));
+    } catch (IOException | RuntimeException e) {
+      log.warn("No se pudo consultar el saldo: {}", e.toString());
+      return Optional.empty();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return Optional.empty();
     }
   }
 

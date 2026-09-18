@@ -176,6 +176,22 @@ tecnosport:
       # (docs/13-skydropx-capacidades.md §6.10). Solo hay algo que revisar cuando alguien acaba de
       # pulsar el botón, así que el costo de la frecuencia es cero la mayor parte del tiempo.
       intervalo-segundos: ${SKYDROPX_EMISION_INTERVALO_SEGUNDOS:60}
+  saldo-envios:
+    # Dato de negocio decidido el 17 de septiembre de 2026: por debajo de esto hay que avisar.
+    # No es una cifra redonda por comoda — es lo que alcanza para unas seis guias baratas o dos
+    # caras (8.200 la mas barata que de verdad emite, 19.465 la mas cara, medidas contra la cuenta)
+    # y es el tamano de la recarga que Skydropx hizo el 16 de septiembre. Lo que este aviso tiene
+    # que conseguir es margen para pedir la recarga y para que llegue: entre pedirla y recibirla
+    # pasan dias, y la recarga por Mercado Pago nunca funciono.
+    umbral-cop: ${ENVIO_SALDO_UMBRAL_COP:50000}
+    # Solo cada cuanto se pregunta. Doce horas porque el saldo baja al emitir, emitir lo dispara una
+    # persona desde el panel, y la respuesta al aviso tarda mas de un dia: preguntar mas seguido no
+    # adelantaria nada y gastaria cuota de un proveedor limitado a dos peticiones por segundo.
+    intervalo-minutos: ${ENVIO_SALDO_INTERVALO_MINUTOS:720}
+    # Corto y menor que el intervalo, mismo motivo que los otros dos vigilantes.
+    retraso-inicial-minutos: ${ENVIO_SALDO_RETRASO_INICIAL_MINUTOS:5}
+    # El mismo correo del negocio que el aviso de la bandeja, y por lo mismo: no es un secreto.
+    destinatario: ${ENVIO_SALDO_DESTINATARIO:contacto@tecnosport.co}
   revision-envios:
     # Dato de negocio, a diferencia del intervalo de al lado: cuanto tiempo puede quedarse algo en
     # la bandeja de revision sin que nadie lo mire. Veinticuatro horas, porque el comprador de un
