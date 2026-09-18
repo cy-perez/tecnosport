@@ -198,8 +198,11 @@ antes de tener una sola respuesta de Skydropx sobre la firma.
   después. Es el mecanismo por el cual **un peso mal declarado se reliquida**, que
   es justo el riesgo que `docs/02-modelo-datos.md` menciona al prohibir inventar
   pesos. Con este endpoint el sobrecosto deja de ser invisible.
-- **`finance/credits`**: el saldo. Si la cuenta se queda sin crédito no hay guías,
-  y hoy nadie se enteraría hasta que un despacho falle.
+- ~~**`finance/credits`**: el saldo.~~ **Construido el 17 de septiembre de 2026.** Si la
+  cuenta se queda sin crédito no hay guías, y hasta ese día nadie se enteraría hasta que un
+  despacho fallara — pasó, con la cuenta en COP 388. Ahora una tarea lo mira cada doce horas y
+  avisa por debajo de 50.000, con una distinción que importa: `no se pudo preguntar` no manda
+  ningún correo, porque un proveedor caído media hora no es una cuenta sin fondos.
 
 ## 3. La contraentrega, como la plantea Skydropx
 
