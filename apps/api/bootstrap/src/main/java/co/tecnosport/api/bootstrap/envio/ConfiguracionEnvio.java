@@ -435,6 +435,8 @@ public class ConfiguracionEnvio {
   public AvisarSobrecostoDeEnvio avisarSobrecostoDeEnvio(
       ConsultorDeSobrecostos consultorDeSobrecostos,
       RepositorioAvisosDeSobrecosto avisos,
+      RepositorioEmisiones repositorioEmisiones,
+      RepositorioPedidos repositorioPedidos,
       EnviadorDeCorreo enviadorDeCorreo,
       TextosDeCorreo textosDeCorreo,
       Reloj reloj,
@@ -442,6 +444,8 @@ public class ConfiguracionEnvio {
     return new AvisarSobrecostoDeEnvio(
         consultorDeSobrecostos,
         avisos,
+        repositorioEmisiones,
+        repositorioPedidos,
         enviadorDeCorreo,
         textosDeCorreo,
         reloj,

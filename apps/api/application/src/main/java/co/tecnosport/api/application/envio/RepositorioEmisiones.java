@@ -55,6 +55,20 @@ public interface RepositorioEmisiones {
   Optional<EmisionDeGuia> buscarPorId(UUID id);
 
   /**
+   * La emisión que creó un envío concreto en la plataforma, si la conocemos.
+   *
+   * <p>Es {@link #buscarDePedido(UUID)} al revés, y existe por cómo habla la plataforma de dinero:
+   * los cobros extra se identifican por <strong>envío</strong> y nunca nombran el pedido. Sin esta
+   * búsqueda, el aviso de un sobrecosto dice "el envío 8c2eb7a4… costó 4.300 de más" y quien lo lee
+   * tiene que ir al panel a averiguar de qué compra hablaba.
+   *
+   * <p>Vacío es un caso normal y no un fallo: el cobro puede venir de una guía que alguien emitió
+   * por fuera y tecleó en el panel, que no tiene emisión nuestra. Quien pregunte tiene que poder
+   * seguir sin la respuesta — el dinero ya salió del crédito igual.
+   */
+  Optional<EmisionDeGuia> buscarPorEnvioEnPlataforma(String envioEnPlataforma);
+
+  /**
    * Las que tienen plata comprometida y nadie ha desenredado —{@code INDETERMINADA} y {@code
    * PARCIAL}—, de la más vieja a la más nueva.
    *

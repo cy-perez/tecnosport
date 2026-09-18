@@ -4,7 +4,9 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.pedido.Pedido;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +41,8 @@ public final class AvisarSobrecostoDeEnvio {
 
   private final ConsultorDeSobrecostos consultor;
   private final RepositorioAvisosDeSobrecosto avisos;
+  private final RepositorioEmisiones emisiones;
+  private final RepositorioPedidos pedidos;
   private final EnviadorDeCorreo enviadorDeCorreo;
   private final TextosDeCorreo textos;
   private final Reloj reloj;
@@ -48,6 +52,8 @@ public final class AvisarSobrecostoDeEnvio {
   public AvisarSobrecostoDeEnvio(
       ConsultorDeSobrecostos consultor,
       RepositorioAvisosDeSobrecosto avisos,
+      RepositorioEmisiones emisiones,
+      RepositorioPedidos pedidos,
       EnviadorDeCorreo enviadorDeCorreo,
       TextosDeCorreo textos,
       Reloj reloj,
@@ -55,6 +61,8 @@ public final class AvisarSobrecostoDeEnvio {
       CorreoElectronico destinatario) {
     this.consultor = Objects.requireNonNull(consultor);
     this.avisos = Objects.requireNonNull(avisos);
+    this.emisiones = Objects.requireNonNull(emisiones);
+    this.pedidos = Objects.requireNonNull(pedidos);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.textos = Objects.requireNonNull(textos);
     this.reloj = Objects.requireNonNull(reloj);
@@ -103,7 +111,32 @@ public final class AvisarSobrecostoDeEnvio {
             .detectado()
             .map(Instant::toString)
             .orElseGet(() -> textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_SIN_FECHA)),
-        cobro.envioEnPlataforma());
+        cobro.envioEnPlataforma(),
+        numeroDePedido(cobro));
+  }
+
+  /**
+   * De qué compra habla este cobro. La plataforma solo nombra el envío —sus cobros extra traen
+   * {@code shipment_id} y {@code package_id}, y ningún identificador de pedido—, así que el camino
+   * es envío → emisión → pedido y las dos puntas pueden faltar sin que eso sea un fallo: un cobro
+   * de una guía tecleada en el panel no tiene emisión nuestra.
+   *
+   * <p><strong>Y no puede tumbar el aviso, por una razón concreta.</strong> Cuando esto corre, la
+   * marca de "ya avisé" <em>ya está escrita</em>: si una consulta reventara aquí, ese cobro no se
+   * avisaría nunca más, ni en esta vuelta ni en ninguna. Prefiero un correo que diga "pedido no
+   * identificado" a un cobro de dinero del que nadie se entera jamás.
+   */
+  private String numeroDePedido(SobrecostoDeEnvio cobro) {
+    try {
+      return emisiones
+          .buscarPorEnvioEnPlataforma(cobro.envioEnPlataforma())
+          .flatMap(emision -> pedidos.buscarPorId(emision.pedidoId()))
+          .map(Pedido::numeroPedido)
+          .map(numero -> numero.valor())
+          .orElseGet(() -> textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_SIN_PEDIDO));
+    } catch (RuntimeException e) {
+      return textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_SIN_PEDIDO);
+    }
   }
 
   /**

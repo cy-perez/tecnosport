@@ -80,6 +80,17 @@ public class RepositorioEmisionesDobleDePrueba implements RepositorioEmisiones {
     return Optional.ofNullable(emisiones.get(id));
   }
 
+  /**
+   * Busca por el identificador que devolvió la plataforma, como el índice único de la base. Un
+   * envío desconocido devuelve vacío, que es el caso del cobro de una guía tecleada a mano.
+   */
+  @Override
+  public Optional<EmisionDeGuia> buscarPorEnvioEnPlataforma(String envioEnPlataforma) {
+    return emisiones.values().stream()
+        .filter(emision -> emision.enviosEnPlataforma().contains(envioEnPlataforma))
+        .findFirst();
+  }
+
   @Override
   public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
     return emisiones.values().stream()

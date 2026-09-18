@@ -9,6 +9,17 @@ import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.envio.EmisionDeGuia;
+import co.tecnosport.api.domain.envio.EstadoEmision;
+import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.LineaPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
+import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +46,13 @@ class AvisarSobrecostoDeEnvioTest {
   private static final Duration VENTANA = Duration.ofDays(30);
   private static final CorreoElectronico NEGOCIO = new CorreoElectronico("contacto@tecnosport.co");
 
+  private static final Direccion MEDELLIN =
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Circular 4 # 70-20", null);
+
   private ConsultorDeSobrecostosFalso consultor;
   private RepositorioAvisosDeSobrecostoFalso avisos;
+  private RepositorioEmisionesFalso emisiones;
+  private RepositorioPedidosFalso pedidos;
   private EnviadorDeCorreoFalso correo;
   private AvisarSobrecostoDeEnvio caso;
 
@@ -43,10 +60,66 @@ class AvisarSobrecostoDeEnvioTest {
   void preparar() {
     consultor = new ConsultorDeSobrecostosFalso();
     avisos = new RepositorioAvisosDeSobrecostoFalso();
+    emisiones = new RepositorioEmisionesFalso();
+    pedidos = new RepositorioPedidosFalso();
     correo = new EnviadorDeCorreoFalso();
-    caso =
-        new AvisarSobrecostoDeEnvio(
-            consultor, avisos, correo, new TextosDeCorreoFalso(), () -> AHORA, VENTANA, NEGOCIO);
+    caso = con(emisiones);
+  }
+
+  private AvisarSobrecostoDeEnvio con(RepositorioEmisiones repositorioEmisiones) {
+    return new AvisarSobrecostoDeEnvio(
+        consultor,
+        avisos,
+        repositorioEmisiones,
+        pedidos,
+        correo,
+        new TextosDeCorreoFalso(),
+        () -> AHORA,
+        VENTANA,
+        NEGOCIO);
+  }
+
+  /**
+   * Siembra el camino entero que ata un cobro a una compra: pedido, emisión resuelta y el
+   * identificador del envío que devolvió la plataforma. Es el único hilo que existe — los cobros
+   * extra traen {@code shipment_id} y nunca el pedido.
+   */
+  private Pedido sembrarPedidoConEnvio(int secuencial, String envioEnPlataforma) {
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, secuencial),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(
+                new LineaPedido(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    new Sku("TS-CAM-AZ-M"),
+                    "Camiseta running Dry-Fit",
+                    1,
+                    Dinero.deCop(89_900),
+                    new BigDecimal("0.19"),
+                    null,
+                    UUID.randomUUID())),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            MEDELLIN,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            AHORA.minus(Duration.ofDays(10)));
+    pedidos.guardar(pedido);
+    emisiones.guardar(
+        new EmisionDeGuia(
+            GeneradorIdentificador.nuevo(),
+            pedido.id(),
+            "Servientrega",
+            "tarifa-1",
+            "admin",
+            List.of(envioEnPlataforma),
+            AHORA.minus(Duration.ofDays(9)),
+            EstadoEmision.EMITIDA,
+            null,
+            AHORA.minus(Duration.ofDays(9))));
+    return pedido;
   }
 
   private static SobrecostoDeEnvio sobrecosto(long monto, String guia, Instant detectadoEn) {
@@ -185,6 +258,56 @@ class AvisarSobrecostoDeEnvioTest {
     assertEquals(AHORA.minus(VENTANA), consultor.pedidoDesde);
   }
 
+  /**
+   * Lo que este trabajo añade: el cobro dice de qué compra habla. La plataforma solo nombra el
+   * envío, y sin esto quien lee el correo tiene que ir al panel a averiguar a qué pedido
+   * corresponde — justo cuando lo que quiere es corregir la medida de un producto.
+   */
+  @Test
+  void elCobroNombraElPedidoCuandoSeReconoceElEnvio() {
+    sembrarPedidoConEnvio(42, "envio-1");
+    consultor.devolver(sobrecosto(8_400, "873837506712", AHORA.minusSeconds(3600)));
+
+    caso.ejecutar();
+
+    String cuerpo = correo.enviados.get(0).cuerpo();
+    assertTrue(cuerpo.contains("TS-2026-000042"), cuerpo);
+  }
+
+  /**
+   * Y el caso que no se puede atar: una guía que alguien emitió por fuera y tecleó en el panel no
+   * tiene emisión nuestra. Se avisa igual —el dinero ya salió del crédito— y se dice que no se
+   * identificó, en vez de inventar un número o callar el cobro.
+   */
+  @Test
+  void unCobroDeUnEnvioDesconocidoSeAvisaDiciendoQueNoSeIdentifico() {
+    consultor.devolver(sobrecosto(8_400, "873837506712", AHORA.minusSeconds(3600)));
+
+    ResultadoVigilanciaSobrecostos resultado = caso.ejecutar();
+
+    assertEquals(1, resultado.avisados());
+    String cuerpo = correo.enviados.get(0).cuerpo();
+    assertTrue(cuerpo.contains("envio.sobrecosto.sin_pedido"), cuerpo);
+    assertFalse(cuerpo.contains("null"), cuerpo);
+  }
+
+  /**
+   * La prueba que justifica el {@code catch}. Cuando se busca el pedido, la marca de "ya avisé" ya
+   * está escrita: si una consulta reventara aquí, ese cobro no se avisaría <strong>nunca
+   * más</strong>, ni en esta vuelta ni en ninguna. El correo tiene que salir igual.
+   */
+  @Test
+  void siLaBusquedaDelPedidoRevientaElCobroSeAvisaIgual() {
+    consultor.devolver(sobrecosto(8_400, "873837506712", AHORA.minusSeconds(3600)));
+
+    con(new RepositorioEmisionesQueRevienta()).ejecutar();
+
+    assertEquals(1, correo.enviados.size());
+    String cuerpo = correo.enviados.get(0).cuerpo();
+    assertTrue(cuerpo.contains("envio.sobrecosto.sin_pedido"), cuerpo);
+    assertTrue(cuerpo.contains("8400"), cuerpo);
+  }
+
   /** El correo sale después del reclamo, así que un cobro ya avisado no arma un correo vacío. */
   @Test
   void siNadaEsNuevoNoSaleUnCorreoConLaListaVacia() {
@@ -227,6 +350,54 @@ class AvisarSobrecostoDeEnvioTest {
     @Override
     public boolean reclamarAviso(String clave, Instant ahora) {
       return reclamadas.add(clave);
+    }
+  }
+
+  /**
+   * La base que se cayó en el peor momento. Solo revienta en la búsqueda que añadió el aviso del
+   * pedido: las demás no las llama este caso de uso, y dejarlas sin implementar es lo que hace
+   * evidente el día que alguna empiece a usarse.
+   */
+  private static final class RepositorioEmisionesQueRevienta implements RepositorioEmisiones {
+
+    @Override
+    public Optional<EmisionDeGuia> buscarPorEnvioEnPlataforma(String envioEnPlataforma) {
+      throw new IllegalStateException("la base no responde");
+    }
+
+    @Override
+    public void guardar(EmisionDeGuia emision) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Optional<EmisionDeGuia> buscarAbiertaDePedido(UUID pedidoId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<EmisionDeGuia> buscarDePedido(UUID pedidoId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<EmisionDeGuia> buscarEnCurso(int maximo) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<EmisionDeGuia> buscarSolicitadasAntesDe(Instant corte, int maximo) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Optional<EmisionDeGuia> buscarPorId(UUID id) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
+      throw new UnsupportedOperationException();
     }
   }
 

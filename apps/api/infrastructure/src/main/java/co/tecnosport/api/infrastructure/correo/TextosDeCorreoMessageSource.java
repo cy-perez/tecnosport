@@ -53,8 +53,12 @@ public class TextosDeCorreoMessageSource implements TextosDeCorreo, Initializing
    * quedaba sin rellenar, en vez de dejar que un correo a medias llegara a alguien. Quedarse corto
    * no rompe el arranque por sí solo — deja un {@code &#123;&#125;} en el resultado, que es justo
    * lo que la comprobación de abajo busca.
+   *
+   * <p>Y lo volvió a hacer el 18 de septiembre, cuando esa misma línea pasó a siete para nombrar el
+   * <b>pedido</b> al que pertenece el cobro: el arranque se cayó señalando el {@code &#123;6&#125;}
+   * sin rellenar. Dos de dos, y las dos veces por el mismo correo, que es el que más datos lleva.
    */
-  private static final Object[] RELLENO = {"x", "x", "x", "x", "x", "x"};
+  private static final Object[] RELLENO = {"x", "x", "x", "x", "x", "x", "x"};
 
   private final MessageSource mensajes;
 

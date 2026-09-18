@@ -151,6 +151,23 @@ public class RepositorioEmisionesJpa implements RepositorioEmisiones {
     return emisiones.findById(id).map(this::aDominio);
   }
 
+  /**
+   * Se sale temprano con el identificador vacío en vez de preguntarle a la base por una cadena en
+   * blanco: la respuesta de un cobro extra puede traer el envío sin valor, y una consulta que
+   * siempre devuelve vacío es ruido que después nadie sabe leer en un registro.
+   */
+  @Override
+  public Optional<EmisionDeGuia> buscarPorEnvioEnPlataforma(String envioEnPlataforma) {
+    if (envioEnPlataforma == null || envioEnPlataforma.isBlank()) {
+      return Optional.empty();
+    }
+    return enviosEnPlataforma
+        .findByIdExterno(envioEnPlataforma)
+        .map(EnvioEnPlataformaJpaEntity::getEmisionId)
+        .flatMap(emisiones::findById)
+        .map(this::aDominio);
+  }
+
   @Override
   public List<EmisionDeGuia> buscarQueExigenOjoHumano(int maximo) {
     return emisiones
