@@ -7,7 +7,14 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -510,18 +517,30 @@ export class ListaPedidosAdminPage {
   }
 
   /**
-   * El mensaje del campo de comisión cuando falta. Sin esto, pulsar "Conciliar recaudo" con el campo
-   * vacío no hacía absolutamente nada y el motivo no se decía en ningún sitio: `markAllAsTouched()`
-   * no pinta nada si la plantilla no le pasa `[error]` a ningún control. Lo levantó la auditoría de
-   * accesibilidad, y vale para los cuatro formularios de esta pantalla; aquí se cierra el del
-   * recaudo, que es el que esta rama tocó.
+   * El mensaje de un control que falta, para pasárselo a `[error]`.
+   *
+   * <p>Sin esto, los cuatro formularios de esta pantalla eran mudos: sus manejadores terminan en
+   * `markAllAsTouched(); return;`, y eso no pinta absolutamente nada si la plantilla no le pasa
+   * `[error]` a ningún control — tampoco pone `aria-invalid`. Pulsar el botón no hacía nada y el
+   * motivo no se decía en ningún sitio. Es la WCAG 3.3.1, identificación de errores, y lo levantó
+   * la auditoría de accesibilidad.
+   *
+   * <p>Un método y no un `computed` por control: los formularios se crean por fila en un `Map`, así
+   * que no hay una señal por control que observar. La plantilla lo vuelve a evaluar en cada
+   * detección de cambios, y la que importa la dispara el propio `(submit)`.
    */
-  protected errorComisionRecaudo(pedidoId: string): string | null {
-    const control = this.formularioRecaudo(pedidoId).controls.comisionRecaudo;
-    if (!control.touched || control.valid) {
+  protected errorDe(control: AbstractControl | null | undefined, clave: string): string | null {
+    if (!control || !control.touched || control.valid) {
       return null;
     }
-    return this.traducir()('admin.pedidos.acciones.comision_recaudo_requerida');
+    return this.traducir()(clave);
+  }
+
+  protected errorComisionRecaudo(pedidoId: string): string | null {
+    return this.errorDe(
+      this.formularioRecaudo(pedidoId).controls.comisionRecaudo,
+      'admin.pedidos.acciones.comision_recaudo_requerida',
+    );
   }
 
   protected conciliandoRecaudo(pedidoId: string): boolean {

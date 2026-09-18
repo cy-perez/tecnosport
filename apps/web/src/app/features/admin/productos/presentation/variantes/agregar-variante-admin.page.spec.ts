@@ -109,38 +109,51 @@ function llenarPaquete() {
 }
 
 describe('AgregarVarianteAdminPage', () => {
-  it('el botón crear arranca deshabilitado con el formulario vacío', async () => {
-    await renderPagina(new RepositorioProductosAdminFalso());
+  /**
+   * El botón se queda alcanzable aunque falten datos, y es `enviar()` quien no deja pasar.
+   *
+   * <p>Iba deshabilitado, y un `<button disabled>` sale del orden de tabulación: quien navega con
+   * teclado ni siquiera llegaba a enfocarlo para enterarse de por qué no pasaba nada, con nueve
+   * campos obligatorios y ninguno marcado. Es el mismo razonamiento que el resumen del checkout ya
+   * tenía escrito. Lo levantó la auditoría de accesibilidad.
+   */
+  it('el botón crear es alcanzable con el formulario vacío, y dice qué falta', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
 
-    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const boton = screen.getByRole('button', { name: 'Crear variante' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
+    expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
-  it('sin el paquete, el botón crear sigue deshabilitado aunque haya SKU y precio', async () => {
+  it('sin el paquete no se crea la variante, aunque haya SKU y precio', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
     await renderPagina(repositorio);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
-    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
     expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
-  it('con una dimensión en cero, el botón crear sigue deshabilitado', async () => {
-    await renderPagina(new RepositorioProductosAdminFalso());
+  it('con una dimensión en cero tampoco se crea', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
     llenarPaquete();
     fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
-    expect(screen.getByRole('button', { name: 'Crear variante' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
+    expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
   it('al elegir un atributo de tipo color, muestra el campo de color', async () => {

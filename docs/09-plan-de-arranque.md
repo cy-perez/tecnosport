@@ -4788,7 +4788,8 @@ entrada de abajo:
 
 Y del lado de la pantalla, uno que se repite en cuatro formularios del panel: **ninguno identifica
 sus errores**. `markAllAsTouched()` no pinta nada si la plantilla no pasa `[error]`, así que el
-botón no hace nada y el motivo no se dice. Se cerró el del recaudo, que es el que esta rama tocó.
+botón no hace nada y el motivo no se dice. Se cerró el del recaudo, que es el que esta rama tocó —y
+los otros tres, más el resto de la auditoría, en la entrada de la banda de portada, más abajo.
 
 ### Lo que la revisión confirmó que está bien
 
@@ -4868,6 +4869,81 @@ hermano, un orden de operaciones, un criterio de acuse copiado de un caso a otro
 un patrón de ruta que no cubre subrutas—. Es el tipo de defecto que no aparece leyendo un commit:
 aparece leyendo dos piezas a la vez, que es justo lo que una revisión adversarial hace y lo que
 ninguna prueba verde iba a decir.
+
+## La portada tiene banda, y los formularios del panel dejan de ser mudos (2026-09-18)
+
+Dos encargos en el mismo bloque: plasmar el hero que entregó diseño, y cerrar los defectos de
+accesibilidad que la revisión adversarial había dejado en la lista.
+
+### El kit y la imagen se contradecían, y eso era la decisión
+
+El zip traía las dos cosas: un kit que pide **una fotografía 4:3** y pone el titular, el subtítulo y
+los botones en HTML, y una imagen que ya era **un banner terminado** con esos mismos tres elementos
+incrustados en los píxeles, botón "COMPRAR AHORA" incluido.
+
+Se llevó al negocio con las dos consecuencias delante —texto dentro de una imagen no se traduce, no
+lo lee un lector de pantalla, no escala en un teléfono, y un botón dibujado parece pulsable sin
+serlo— y eligió recortar la fotografía. El texto lo pone el HTML. Detalle en `docs/04`.
+
+### Lo que el kit pedía y no se podía hacer tal cual
+
+El `.scss` que venía llevaba treinta y tantos literales, dos capas decorativas hechas enteras de
+blancos con alfa, y un `ts-boton` "que todavía no existe" —existe hace fases—. Lo que de verdad
+hacía falta eran **tres longitudes**, y esas entraron por donde entran: `tokens.json`, con el
+generador emitiéndolas y tres utilidades en `tailwind.css`. Sin `.scss` de componente (`ADR-0020`) y
+sin un píxel suelto.
+
+**De paso se cerró un hueco viejo del kit**: `tracking` y `ancho_linea_ch` estaban decididos en
+`tokens.json` desde siempre y el generador **no los emitía**, así que no había forma de usarlos sin
+escribir un literal. Ahora salen como `--tracking-*` y `--ancho-linea`.
+
+### Tres cosas que solo se vieron abriendo el navegador
+
+Las tres pasaron `npm run clases`, las pruebas y el lint:
+
+1. **`chaflan-hero` compuesto con `chaflan` no hacía nada.** `.chaflan` vive en `tokens.css`, fuera
+   de toda capa, y una declaración sin capa le gana a cualquier utilidad de Tailwind aunque el
+   selector empate. El marco salía con el chaflán de un botón. La clase existía; no aplicaba.
+2. **La banda en `--color-primario` se volvía ámbar en tema oscuro**, y el botón de acento
+   desaparecía dentro de ella. `docs/04` ya lo decía —"las franjas grandes no se vuelven ámbar"— y el
+   pie ya usaba el par correcto. Es `--color-marca`.
+3. **El corte de 120 px se comía la esquina de un teléfono.** El kit lo resolvía con tres media
+   queries; un `min(token, 18vw)` hace lo mismo sin escalones.
+
+### Y el texto, que es publicidad y obliga
+
+Las cuatro afirmaciones del kit se revisaron contra lo que el sistema puede sostener. Dos no están en
+ningún documento del proyecto, una —"Envío a todo Colombia"— **es falsa hoy**, porque el checkout
+tiene `ENVIO_SIN_COBERTURA` y ofrece la recogida cuando no hay transporte, y la cuarta era un precio
+escrito en la plantilla. Lo que quedó publica lo mismo que prometen los términos.
+
+### Los formularios del panel eran mudos, los cuatro
+
+`markAllAsTouched()` no pinta nada si la plantilla no le pasa `[error]` a ningún control, y ninguno
+de los cuatro formularios de la lista de pedidos lo hacía: pulsar el botón no producía nada y el
+motivo no se decía en ningún sitio. Es la WCAG 3.3.1. Ahora los cuatro dicen qué falta, con un solo
+método —`errorDe(control, clave)`— porque los formularios se crean por fila en un `Map` y no hay una
+señal por control que observar.
+
+En el alta de variante, además, **el botón dejó de ir deshabilitado**: un `<button disabled>` sale
+del orden de tabulación, así que quien navega con teclado ni siquiera llegaba a enfocarlo para
+enterarse de por qué no pasaba nada, con nueve campos obligatorios. El corte vive en `enviar()`,
+igual que en el resumen del checkout, que ya lo tenía escrito.
+
+### Lo demás de la auditoría
+
+- **La bandeja de revisión** anuncia si una fila está abierta y qué región abre (`aria-expanded`,
+  `aria-controls`), cada botón se distingue del de al lado por su guía o su pedido —conteniendo la
+  etiqueta visible, que es la WCAG 2.5.3—, el error de identificadores dejó de vivir en la cabecera
+  de la página y **el foco vuelve al botón** de la fila que se acaba de cerrar, en vez de caer a
+  `<body>`.
+- **El `<dl>` de totales del checkout** era HTML inválido: siete `<p>` como hijos directos, justo en
+  el desglose de precio que el artículo 50 obliga a mostrar. Todo lo del envío vive ahora dentro de
+  su `<dd>`, y de paso la etiqueta "Costo de envío" ya no desaparece mientras se cotiza.
+- **`ts-checkbox` ganó `error`**, con `aria-invalid` y `aria-describedby` como sus hermanos. Faltaba
+  donde más pesa: la autorización de datos del checkout, que es de la Ley 1581.
+- **Las fechas** dejaron de salir en inglés (`DatePipe` sin `LOCALE_ID` cae a `en-US`) y con la zona
+  del entorno, que en SSR es UTC.
 
 ## Cómo conversar con Claude Code en este proyecto
 

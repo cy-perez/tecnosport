@@ -97,11 +97,6 @@ export class AgregarVarianteAdminPage {
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
-  protected readonly formularioInvalido = computed(() => {
-    this.valorFormulario();
-    return this.form.invalid;
-  });
-
   /**
    * El tope más bajo de las seis transportadoras de la cuenta, medido contra el sandbox
    * (`docs/13` §6, "el peso va en kilos"): 8, 25, 60, 150, 200 y 500 kg. Por encima del primero ya
@@ -151,6 +146,12 @@ export class AgregarVarianteAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Decir qué falta, no solo marcar. El botón dejó de ir deshabilitado —un `<button disabled>`
+      // sale del orden de tabulación, así que quien navega con teclado ni siquiera llega a
+      // enfocarlo para enterarse de por qué no pasa nada— y el corte vive aquí, igual que en el
+      // resumen del checkout. Son nueve campos obligatorios: sin este mensaje, pulsar "Crear
+      // variante" no producía absolutamente nada. Lo levantó la auditoría de accesibilidad.
+      this.error.set(this.transloco.translate('admin.productos.agregarVariante.faltanCampos'));
       return;
     }
     this.error.set(null);

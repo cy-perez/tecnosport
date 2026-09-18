@@ -288,6 +288,12 @@
                         <ts-campo
                           [idCampo]="'motivo-verificar-' + pedido.id"
                           [label]="'admin.pedidos.acciones.motivo' | transloco"
+                          [error]="
+                            errorDe(
+                              formularioMotivo(pedido.id).controls.motivo,
+                              'admin.pedidos.acciones.motivo_requerido'
+                            )
+                          "
                           formControlName="motivo"
                         />
                         <ts-boton tipo="submit" [cargando]="verificandoContraentrega(pedido.id)">
@@ -342,17 +348,35 @@
                               <ts-campo
                                 [idCampo]="'transportadora-' + pedido.id + '-' + $index"
                                 [label]="'admin.pedidos.acciones.transportadora' | transloco"
+                                [error]="
+                                  errorDe(
+                                    grupo.controls.transportadora,
+                                    'admin.pedidos.acciones.transportadora_requerida'
+                                  )
+                                "
                                 formControlName="transportadora"
                               />
                               <ts-campo
                                 [idCampo]="'guia-' + pedido.id + '-' + $index"
                                 [label]="'admin.pedidos.acciones.guia' | transloco"
+                                [error]="
+                                  errorDe(
+                                    grupo.controls.guia,
+                                    'admin.pedidos.acciones.guia_requerida'
+                                  )
+                                "
                                 formControlName="guia"
                               />
                               <ts-campo
                                 [idCampo]="'costo-envio-' + pedido.id + '-' + $index"
                                 tipo="number"
                                 [label]="'admin.pedidos.acciones.costo_envio' | transloco"
+                                [error]="
+                                  errorDe(
+                                    grupo.controls.costoEnvio,
+                                    'admin.pedidos.acciones.costo_envio_requerido'
+                                  )
+                                "
                                 formControlName="costoEnvio"
                               />
                               @if (guiasDe(pedido.id).length > 1) {
@@ -398,6 +422,12 @@
                         <ts-campo
                           [idCampo]="'motivo-rechazo-' + pedido.id"
                           [label]="'admin.pedidos.acciones.motivo' | transloco"
+                          [error]="
+                            errorDe(
+                              formularioMotivo(pedido.id).controls.motivo,
+                              'admin.pedidos.acciones.motivo_requerido'
+                            )
+                          "
                           formControlName="motivo"
                         />
                         <ts-boton

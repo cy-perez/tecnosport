@@ -247,8 +247,11 @@ describe('ResumenPage', () => {
 
     await llenarDireccionEnMedellin();
 
-    expect(await screen.findByText('Costo de envío')).toBeTruthy();
-    expect(screen.getAllByText(/9\.540/).length).toBeGreaterThan(0);
+    // Se espera por el importe y no por la etiqueta: desde el 18 de septiembre de 2026 "Costo de
+    // envío" está en pantalla desde el primer momento —con "calculando" en su valor— así que
+    // esperarla ya no significa que la cotización llegó.
+    expect((await screen.findAllByText(/9\.540/)).length).toBeGreaterThan(0);
+    expect(screen.getByText('Costo de envío')).toBeTruthy();
     expect(screen.getByText('Total a pagar')).toBeTruthy();
     expect(screen.getAllByText(/309\.540/).length).toBeGreaterThan(0);
     expect(screen.getByText('Entrega estimada: 2 días')).toBeTruthy();
@@ -528,7 +531,7 @@ describe('ResumenPage', () => {
     await screen.findByText('Morral urbano');
 
     await llenarDireccionEnMedellin();
-    await screen.findByText('Costo de envío');
+    await screen.findAllByText(/9\.540/);
 
     fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
       target: { value: 'RETIRO_EN_PUNTO' },
@@ -786,6 +789,12 @@ describe('ResumenPage', () => {
     expect(
       await screen.findByText('Tienes que autorizar el tratamiento de datos para continuar.'),
     ).toBeTruthy();
+    // Y atado a la casilla, no solo pintado al lado: quien vuelve a enfocarla tiene que oír por qué
+    // está mal. Es una autorización de la Ley 1581 y el mensaje vivía suelto hasta el 18 de
+    // septiembre de 2026.
+    const casilla = screen.getByLabelText(/Autorizo el tratamiento/);
+    expect(casilla.getAttribute('aria-invalid')).toBe('true');
+    expect(casilla.getAttribute('aria-describedby')).toBe('resumen-autoriza-datos-error');
   });
 
   it('sin marcar la autorización de datos, no guarda el borrador', async () => {

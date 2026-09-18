@@ -121,7 +121,11 @@
         "creditos": "Platform credits (no fee)",
         "banco": "Bank transfer (with fee)"
       },
-      "conciliar_recaudo": "Reconcile collection"
+      "conciliar_recaudo": "Reconcile collection",
+      "motivo_requerido": "Enter the reason: it stays in the order history.",
+      "transportadora_requerida": "Enter the carrier for this shipment.",
+      "guia_requerida": "Enter the tracking number.",
+      "costo_envio_requerido": "Enter what this shipment cost. If you do not know yet, enter 0 and fix it later."
     },
     "cancelacion": {
       "titulo": "Cancel the order",
@@ -214,7 +218,10 @@
       "quitarAtributo": "Remove",
       "crear": "Create variant",
       "enviando": "Creating…",
-      "error": "Couldn't add the variant. Try again."
+      "error": "Couldn't add the variant. Try again.",
+      "faltanCampos": "Some required fields are missing. Check the highlighted fields and try again.",
+      "atributoNumero": "Attribute {{numero}}",
+      "quitarAtributoAccesible": "Remove attribute {{numero}}"
     },
     "capturar360": "Capture 360"
   },
@@ -456,7 +463,12 @@
       "ayuda": "Who reviewed it and when is recorded. If a new movement arrives afterwards, the shipment comes back to this queue.",
       "nota": "What you found",
       "nota_ayuda": "Optional. Whoever looks at this next will read it.",
-      "marcar": "Save the review"
+      "marcar": "Save the review",
+      "cerrar": "Close",
+      "abrir_guia": "Mark tracking number {{guia}} as reviewed",
+      "cerrar_guia": "Close the review of tracking number {{guia}}",
+      "abrir_emision": "Mark the label issue for order {{pedido}} as reviewed",
+      "cerrar_emision": "Close the review of order {{pedido}}"
     },
     "resolucion": {
       "abrir": "Resolve",
@@ -467,7 +479,8 @@
       "con_envio": "It is there: track this shipment",
       "sin_cobro": "Not there: no charge was made",
       "falta_identificador": "Tracking the shipment needs its identifier. Copy it from the carrier panel.",
-      "advertencia": "If the shipment is not there, the order is free to buy another label. If it is there and you record it, we resume tracking and dispatch happens on its own once the carrier gives the tracking number."
+      "advertencia": "If the shipment is not there, the order is free to buy another label. If it is there and you record it, we resume tracking and dispatch happens on its own once the carrier gives the tracking number.",
+      "abrir_accesible": "Resolve the label issue for order {{pedido}}"
     }
   }
 }

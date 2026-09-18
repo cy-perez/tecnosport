@@ -77,7 +77,15 @@
       <legend>{{ 'admin.productos.agregarVariante.atributos' | transloco }}</legend>
 
       @for (fila of form.controls.atributos.controls; track $index) {
-        <div class="flex flex-col gap-8 border-b border-ts-borde pb-16" [formGroupName]="$index">
+        <fieldset
+          class="flex flex-col gap-8 border-0 border-b border-ts-borde p-0 pb-16 [&>legend]:font-medio"
+          [formGroupName]="$index"
+        >
+          <legend>
+            {{
+              'admin.productos.agregarVariante.atributoNumero' | transloco: { numero: $index + 1 }
+            }}
+          </legend>
           <ts-select
             [idCampo]="'variante-atributo-' + $index"
             [label]="'admin.productos.agregarVariante.atributo' | transloco"
@@ -100,10 +108,17 @@
             />
           }
 
-          <ts-boton variante="secundario" (click)="quitarFilaAtributo($index)">
+          <ts-boton
+            variante="secundario"
+            [etiquetaAccesible]="
+              'admin.productos.agregarVariante.quitarAtributoAccesible'
+                | transloco: { numero: $index + 1 }
+            "
+            (click)="quitarFilaAtributo($index)"
+          >
             {{ 'admin.productos.agregarVariante.quitarAtributo' | transloco }}
           </ts-boton>
-        </div>
+        </fieldset>
       }
 
       <ts-boton variante="secundario" (click)="agregarFilaAtributo()">
@@ -118,7 +133,6 @@
     <ts-boton
       variante="primario"
       tipo="submit"
-      [deshabilitado]="formularioInvalido()"
       [cargando]="enviando()"
       [etiquetaCargando]="'admin.productos.agregarVariante.enviando' | transloco"
     >

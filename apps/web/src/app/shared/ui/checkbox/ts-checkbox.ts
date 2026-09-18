@@ -62,6 +62,17 @@ export class TsCheckbox {
   readonly etiqueta = input.required<string>();
   readonly marcado = input.required<boolean>();
   readonly deshabilitado = input(false);
+  /**
+   * El mensaje de error de la casilla, atado al `<input>` real.
+   *
+   * <p>Entró el 18 de septiembre de 2026 porque faltaba donde más pesa: la autorización de datos
+   * del checkout. El mensaje se pintaba como un `<p role="alert">` al lado —se anunciaba— pero no
+   * entraba en el `aria-describedby` del control ni le ponía `aria-invalid`, así que quien volvía a
+   * enfocar la casilla no oía por qué estaba mal. `ts-campo` y `ts-select` ya lo hacían; el
+   * componente hermano se había quedado atrás. Lo levantó la auditoría de accesibilidad, y aquí es
+   * una autorización de la Ley 1581.
+   */
+  readonly error = input<string | null>(null);
   /** Para las franjas de `--color-marca`, donde el anillo normal no se ve. */
   readonly sobreMarca = input(false);
 

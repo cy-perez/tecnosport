@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
@@ -69,7 +78,12 @@ export class BandejaRevisionPage {
   protected readonly acciones = usarAccionesRevision();
 
   protected readonly error = signal<string | null>(null);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly inyector = inject(Injector);
+
   protected readonly abierta = signal<string | null>(null);
+  /** Se enciende al intentar resolver con envio y sin identificadores; se apaga al cambiar de fila. */
+  private readonly faltanIdentificadores = signal(false);
 
   protected readonly guias = computed<readonly GuiaEnRevision[]>(
     () => this.consulta.data()?.guias ?? [],
@@ -111,6 +125,7 @@ export class BandejaRevisionPage {
     this.abierta.update((actual) => (actual === referencia ? null : referencia));
     this.formularioNota.reset({ nota: '' });
     this.formularioResolucion.reset({ envios: '' });
+    this.faltanIdentificadores.set(false);
   }
 
   protected async acusarGuia(guia: GuiaEnRevision): Promise<void> {
@@ -139,15 +154,30 @@ export class BandejaRevisionPage {
     return emision.estado === 'INDETERMINADA';
   }
 
+  /**
+   * Lo que le falta al campo de identificadores, atado al campo.
+   *
+   * <p>Antes, "falta identificador" se escribia en `error()`, que se pinta en la cabecera de la
+   * pagina: podia quedar muchas pantallas por encima del campo que lo causo, sin `aria-invalid` y
+   * sin mover el foco. Es la WCAG 3.3.1 y lo levanto la auditoria de accesibilidad.
+   */
+  protected errorIdentificadores(): string | null {
+    return this.faltanIdentificadores()
+      ? this.traducir()('admin.revision_envios.resolucion.falta_identificador')
+      : null;
+  }
+
   protected async resolver(
     emision: EmisionEnRevision,
     veredicto: VeredictoDeEmision,
   ): Promise<void> {
     const envios = this.enviosEscritos();
     if (veredicto === 'CON_ENVIO' && envios.length === 0) {
-      this.error.set(this.traducir()('admin.revision_envios.resolucion.falta_identificador'));
+      this.faltanIdentificadores.set(true);
+      this.formularioResolucion.controls.envios.markAsTouched();
       return;
     }
+    this.faltanIdentificadores.set(false);
     await this.ejecutar(() =>
       this.acciones.resolverEmision.mutateAsync({
         emisionId: emision.emisionId,
@@ -165,6 +195,36 @@ export class BandejaRevisionPage {
       .filter((valor) => valor !== '');
   }
 
+  /**
+   * Devuelve el foco al boton de la fila que se acaba de cerrar.
+   *
+   * <p>Cerrar el formulario destruye el boton que estaba enfocado, asi que el foco caia a `<body>` y
+   * quien navega con teclado volvia al principio del documento. Es la WCAG 2.4.3 y lo levanto la
+   * auditoria de accesibilidad.
+   *
+   * <p>Se busca dentro del host y por `aria-controls`, que ya identifica cada boton con la region
+   * que abre: asi no hace falta ni `document` ni un `id` nuevo en `ts-boton`. El `afterNextRender`
+   * es lo que espera a que Angular haya repintado la lista sin la fila abierta.
+   */
+  private devolverElFoco(region: string | null): void {
+    if (region === null) {
+      return;
+    }
+    const prefijo = region.startsWith('resolver:') ? 'resolver-' : null;
+    const referencia = prefijo === null ? region : region.slice('resolver:'.length);
+    afterNextRender(
+      () => {
+        const boton = this.host.nativeElement.querySelector<HTMLElement>(
+          prefijo === null
+            ? `[aria-controls$="${referencia}"]`
+            : `[aria-controls="${prefijo}${referencia}"]`,
+        );
+        boton?.focus();
+      },
+      { injector: this.inyector },
+    );
+  }
+
   private notaEscrita(): string | null {
     const nota = this.formularioNota.controls.nota.value.trim();
     return nota === '' ? null : nota;
@@ -172,11 +232,14 @@ export class BandejaRevisionPage {
 
   private async ejecutar(accion: () => Promise<unknown>): Promise<void> {
     this.error.set(null);
+    const region = this.abierta();
     try {
       await accion();
       this.abierta.set(null);
       this.formularioNota.reset({ nota: '' });
       this.formularioResolucion.reset({ envios: '' });
+      this.faltanIdentificadores.set(false);
+      this.devolverElFoco(region);
     } catch (causa) {
       // El codigo que manda el backend decide el mensaje; sin codigo, el generico de siempre.
       this.error.set(mensajeDeError(causa, this.transloco, 'admin.revision_envios.error'));

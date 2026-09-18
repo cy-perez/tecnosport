@@ -121,7 +121,11 @@
         "creditos": "Créditos de la plataforma (sin comisión)",
         "banco": "Consignación bancaria (con comisión)"
       },
-      "conciliar_recaudo": "Conciliar recaudo"
+      "conciliar_recaudo": "Conciliar recaudo",
+      "motivo_requerido": "Escribe el motivo: queda en el historial del pedido.",
+      "transportadora_requerida": "Escribe la transportadora de esta guía.",
+      "guia_requerida": "Escribe el número de guía.",
+      "costo_envio_requerido": "Escribe lo que costó este envío. Si todavía no lo sabes, escribe 0 y corrígelo después."
     },
     "cancelacion": {
       "titulo": "Cancelar el pedido",
@@ -214,7 +218,10 @@
       "quitarAtributo": "Quitar",
       "crear": "Crear variante",
       "enviando": "Creando…",
-      "error": "No se pudo agregar la variante. Intenta de nuevo."
+      "error": "No se pudo agregar la variante. Intenta de nuevo.",
+      "faltanCampos": "Faltan datos obligatorios. Revisa los campos marcados y vuelve a intentarlo.",
+      "atributoNumero": "Atributo {{numero}}",
+      "quitarAtributoAccesible": "Quitar el atributo {{numero}}"
     },
     "capturar360": "Capturar 360"
   },
@@ -456,7 +463,12 @@
       "ayuda": "Queda registrado quién la revisó y cuándo. Si llega un movimiento nuevo después, la guía vuelve a esta bandeja.",
       "nota": "Qué encontraste",
       "nota_ayuda": "Opcional. Lo lee quien mire esto después.",
-      "marcar": "Guardar la revisión"
+      "marcar": "Guardar la revisión",
+      "cerrar": "Cerrar",
+      "abrir_guia": "Marcar como revisada la guía {{guia}}",
+      "cerrar_guia": "Cerrar la revisión de la guía {{guia}}",
+      "abrir_emision": "Marcar como revisada la emisión del pedido {{pedido}}",
+      "cerrar_emision": "Cerrar la revisión del pedido {{pedido}}"
     },
     "resolucion": {
       "abrir": "Resolver",
@@ -467,7 +479,8 @@
       "con_envio": "Sí aparece: seguir este envío",
       "sin_cobro": "No aparece: no hubo cobro",
       "falta_identificador": "Para seguir el envío hace falta su identificador. Cópialo del panel de la transportadora.",
-      "advertencia": "Si el envío no aparece, el pedido queda libre para emitir otra guía. Si aparece y lo registras, retomamos su seguimiento y el despacho sale solo cuando la transportadora dé el número de guía."
+      "advertencia": "Si el envío no aparece, el pedido queda libre para emitir otra guía. Si aparece y lo registras, retomamos su seguimiento y el despacho sale solo cuando la transportadora dé el número de guía.",
+      "abrir_accesible": "Resolver la emisión del pedido {{pedido}}"
     }
   }
 }
