@@ -3642,7 +3642,8 @@ perder de vista al construir:
   `resumen.retiro_ahorro`, que dice cuánto se ahorra de verdad.
 
 **Datos de negocio pendientes que bloquean partes de la fase**, todos en la
-sección 4 de `docs/12-legales-de-envio.md`: el IVA del flete, los límites y la
+sección 4 de `docs/12-legales-de-envio.md`: ~~el IVA del flete~~ (decidido el 18 de
+septiembre de 2026, `adr/0040`), los límites y la
 comisión del recaudo, la entidad con la que se firma con Skydropx, y el peso y las
 dimensiones del catálogo sembrado.
 
@@ -4556,6 +4557,51 @@ destapa volver a medir algo que el documento daba por cerrado.
 `200` con fechas reales. Nueve intentos, cuatro días. **Sin costo**: saldo 10.088 antes y después.
 No hay nada que decidir ni que construir de nuestro lado —y por lo tanto el criterio de tarifa, que
 necesita una recolección viva para compararse, sigue donde estaba.
+
+## El IVA del flete, decidido contra la lectura de la norma (2026-09-18)
+
+`ADR-0040`. **El flete cobrado no se grava**: se cobra el valor cotizado tal cual, sin sumarle el
+19% y sin desglosarlo por dentro. Ningún cambio de código — es lo que el sistema ya hacía. Lo que
+cambia es que deja de ser una omisión y pasa a ser una decisión con dueño y con fecha.
+
+**Lo que hace distinta a esta entrada de todas las demás del documento: se decidió sabiendo que la
+norma apunta al otro lado.** El art. 447 del ET y el Concepto DIAN 4945 de 2025 dicen que el
+acarreo que el vendedor recobra integra la base gravable *"aunque se facturen o convengan por
+separado y aunque, considerados independientemente, no se encuentren sometidos a imposición"*. La
+decisión es de negocio, **sin concepto de contador**, y así queda escrita en los cinco sitios donde
+vivía el pendiente. No se escribe "confirmado por el contador" porque ninguno lo revisó, y una
+certeza que nadie produjo es peor que un pendiente honesto.
+
+### Lo que sí se ganó, que no es la respuesta
+
+Cuatro `TODO` y una fila de tabla llevaban cuatro días diciendo cosas distintas sobre el mismo
+asunto, y **dos de ellas ya eran falsas**: la fila de `docs/12` §4 seguía afirmando que el checkout
+dice "todos los valores incluyen IVA, el del envío también", frase que se había estrechado el mismo
+14 de septiembre (`96a7c69`) justo por ser falsa sobre la cifra que tenía al lado. Es el patrón de
+siempre en este proyecto —**una conclusión correcta apoyada en una premisa caducada**— y esta vez
+apareció dentro del documento que existe para evitarlo.
+
+### Las tres salidas, porque C no es una opción sino un sitio donde se cae
+
+Sobre un pedido de 250.000 con flete de 7.850: **A** (no se grava) deja el flete en cero para el
+negocio; **B** (se grava y se suma) también, y el comprador ve 1.492 más; **C** (se grava y se
+absorbe) pierde 1.253 por pedido **y no se ve por ningún lado**, porque `pedido.costo_envio` guarda
+un solo número. Si el impuesto aplica y nadie lo sumó, se está en C sin haberlo elegido — que es
+donde el sistema llevaba desde la Fase 7. **La decisión sirve sobre todo para eso**: para que el
+escenario que nadie elegiría deje de ser el que ocurre por omisión.
+
+### Por qué ahora, con la respuesta sin llegar
+
+Porque A es la única de las tres que no cuesta nada: es lo que el sistema ya hace. Y porque la
+ventana barata se cierra sola — hoy no hay un solo pedido real, y el día que esto se reabra con
+historia encima hay que arreglar hacia atrás pedidos ya cobrados, sin desglose con el que
+reconstruirlos. `adr/0040` escribe las tres cosas que lo reabren, y ninguna es "que alguien vuelva a
+leer el artículo 447".
+
+**Y queda una pregunta más básica sin respuesta, que el ADR nombra y no resuelve: nadie ha
+confirmado que el negocio sea responsable de IVA.** No está escrito en ningún documento del
+proyecto, y el sistema ya lo asume en todas partes — catálogo sembrado al 0.19, `Variante`
+validando la tasa, y el sitio publicando que los precios la incluyen.
 
 ## Cómo conversar con Claude Code en este proyecto
 
