@@ -144,9 +144,23 @@ indicaciones con sus códigos DANE, y **no tiene barrio**: agregarlo toca el
 record, el formulario del checkout, los DTO de presentación y los textos de
 Transloco en los dos idiomas. Está medido para la dirección de origen. Para el
 destino no hay medición —la entrega nunca se ejerció— aunque las transportadoras
-colombianas suelen pedirlo. `TODO: ¿el destino exige barrio para entregar, o solo
-el origen para recoger? Se resuelve con la primera guía que se emita con el campo
-puesto.`
+colombianas suelen pedirlo. ~~`TODO: ¿el destino exige barrio para entregar, o
+solo el origen para recoger?`~~ **Resuelto el 17 de septiembre de 2026
+(`docs/13` §6.14): lo exige en las dos puntas, y en ese orden.** Con los dos
+barrios vacíos, `POST /pickups` se queja del origen; con el origen puesto y el
+destino vacío, se queja del destino con el mismo mensaje cambiando la palabra que
+nombra la punta. El error se mueve exactamente con el barrio que falta. Queda una
+rendija honesta: la fila que aísla el destino es de Envía y las demás de
+Servientrega, y cerrarla del todo exigía una emisión que costaba 8.200 de los
+10.088 de saldo. No se gastó porque no cambia ninguna decisión.
+
+Lo que sí cambia una decisión es la consecuencia. `Direccion.barrio` ya existe y
+el checkout lo pide **sin exigirlo**, así que un comprador que lo deje vacío
+produce una guía que no se podrá recoger por API el día que el conector de la
+transportadora vuelva. **Se decide dejarlo opcional**: exigirlo le cobra fricción
+a cada comprador de hoy por una capacidad que todavía no existe y que no depende
+de nosotros. Y queda fijada la regla de ese día, para no volver a pensarla: **sin
+barrio de destino, esa guía se recoge a mano.**
 
 **3. El valor declarado va dentro de cada bulto, y tiene un mínimo que nadie ha
 decidido.** `declared_amount` es un campo de cada `parcel`, no de la cotización;
@@ -155,8 +169,15 @@ que Servientrega, Envía y Coordinadora no cotizaban Colombia. Corregido y con
 prueba. Lo que queda no es técnico: el sandbox **exige un mínimo de 10.000 COP
 por bulto**, así que un pedido de una funda de 8.000 tendría que declarar más de
 lo que vale, y lo declarado es lo que la transportadora indemniza si se pierde.
-`TODO: ¿qué valor se declara cuando la mercancía vale menos del mínimo de 10.000
-por bulto? Es una decisión de negocio, no una constante de programación.`
+~~`TODO: ¿qué valor se declara cuando la mercancía vale menos del mínimo de
+10.000 por bulto?`~~ **Decidido el 17 de septiembre de 2026 en `ADR-0035`: el
+bulto que declara menos se eleva al mínimo asegurable**, y se eleva en
+`ArmadorDeBultos` y no en el mapeador, para que el bulto que circula por
+`application` diga lo que de verdad se declara. Se declara entonces más que la
+factura cuando hay varias unidades baratas —tres cables de 8.000 son 30.000
+declarados contra 24.000 facturados—, que es el precio de cumplir el mínimo.
+`ADR-0036` decide el otro extremo del rango: lo que supera el techo no va a
+domicilio, y el checkout lo dice con el nombre del artículo.
 
 **4. Entre pedir la guía y tener la guía hay minutos, y puede no haberla.** La
 emisión responde `202` sin número de guía y el envío queda en un estado no
@@ -170,3 +191,25 @@ no hay nada que guardar todavía. Se anota aquí porque es la cotización congel
 la que se estaría dando por consumada: **un pedido no se marca despachado con la
 respuesta de creación**, y hace falta una rama para el `error` que lo devuelva a
 la cola en vez de dejarlo con una guía que no existe.
+
+**5. `is_completed: true` no significa que todas las transportadoras
+contestaron.** Medido de casualidad y confirmado a propósito (`docs/13` §6.5): una
+cotización volvió `is_completed: true` con la tarifa de 99 minutes en `pending`,
+y al releer esa misma cotización un minuto después la tarifa estaba en
+`price_found_external`, con precio. Este ADR sondea hasta `is_completed` y ahí se
+planta, y `MapeadorCotizacionSkydropxV1` descarta toda tarifa que no venga en
+`success`. Juntando las dos cosas, **una transportadora lenta se pierde en
+silencio**: esa vez la que faltaba era la más cara y no cambiaba nada, pero nada
+garantiza que la próxima no sea la más barata. La cotización no miente —la tarifa
+aparece después— y el checkout no la ve.
+
+El sondeo no se cambia aquí, y es a propósito, porque la decisión tiene dos filos.
+Esperar a que no quede ninguna tarifa en `pending` alarga el checkout contra un
+proveedor que ya es lento. No esperar cobra de más, y el comprador no tiene cómo
+enterarse de que se le ofreció la segunda mejor tarifa. Hoy son ocho intentos con
+un techo de diez segundos, elegido por lo que alguien tolera mirando un resumen de
+pedido sin total, no por lo que el proveedor tarda en contestar.
+
+`TODO (dato de negocio): cuántos segundos de más tolera el checkout con tal de no
+perder una tarifa que todavía no ha contestado. Es el único número que falta para
+cerrar esto, y no se inventa aquí.`

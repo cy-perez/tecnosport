@@ -294,9 +294,28 @@ mueva hay un paso con nombre propio.
    cotejarla contra el DANE del pedido antes de aceptarla.
 6. **Dónde cae el recaudo**: créditos sin comisión o banco con comisión los
    jueves. Es una decisión contable, no técnica.
-7. **Cancelar la guía** cuando se cancela un pedido ya despachado. El endpoint y su
-   cuerpo quedaron confirmados el 15 de septiembre (§6.4); lo que falta decidir es
-   cuándo se dispara y quién lo autoriza.
+7. ~~**Cancelar la guía** cuando se cancela un pedido ya despachado.~~ **Decidido el 17 de
+   septiembre de 2026.** El endpoint y su cuerpo quedaron confirmados el 15 (§6.4); lo que
+   faltaba —cuándo se dispara y quién lo autoriza— se cerró mirando el grafo de estados y no
+   la API. **`EstadoPedido` no permite `DESPACHADO → CANCELADO`**: de `DESPACHADO` solo salen
+   `ENTREGADO` y `RECHAZADO_EN_ENTREGA`. O sea que el enunciado de esta decisión describía un
+   camino que el dominio niega, y por eso llevaba tres sesiones sin poder cerrarse.
+
+   Lo alcanzable hoy es otra cosa, y es un agujero de verdad: la guía se emite estando
+   `EN_PREPARACION`, `EN_PREPARACION → CANCELADO` **sí** es una transición válida, y
+   `CancelarPedido` no toca `Envio` ni `EmisionDeGuia` en ninguna línea. Cancelar desde el
+   panel un pedido con la guía ya emitida deja **una guía viva y cobrable**, y el paquete
+   puede recogerse igual. Ahí se dispara la cancelación —dentro de `CancelarPedido`— y la
+   autoriza quien ya autoriza cancelar: no hace falta un permiso nuevo para deshacer algo que
+   se acaba de hacer.
+
+   **El grafo no se toca.** Un paquete que ya salió tiene dos salidas modeladas
+   —`RECHAZADO_EN_ENTREGA` y `DEVUELTO`— y abrir `DESPACHADO → CANCELADO` crearía un estado
+   terminal para algo que sigue moviéndose. Y **cancelar la guía no puede tumbar la
+   cancelación del pedido**: si la plataforma no responde, el pedido se cancela igual, el
+   dinero se devuelve igual, y la guía que quedó viva va a la bandeja de revisión. Un
+   comprador sin reintegro porque un proveedor no contestó es peor que una guía huérfana que
+   alguien anula a mano.
 8. ~~**v1 o v2** en cotizaciones y envíos.~~ **Decidido el 15 de septiembre de 2026:
    `POST /api/v2/shipments`** (§6.4). No es preferencia: v2 siempre devuelve un arreglo
    de envíos, y en Colombia ninguna transportadora admite multipaquete, así que un pedido
@@ -2404,7 +2423,10 @@ Hoy no cambia nada, porque toda recolección es manual. La recomendación escrit
 que se retome no haya que pensarla de nuevo: **dejarlo opcional**, porque exigirlo le cobra
 fricción a cada comprador de hoy por una capacidad que todavía no existe y que no depende de
 nosotros. Lo que sí queda fijado es la regla de ese día: **sin barrio de destino, esa guía se
-recoge a mano**. `TODO (decisión de negocio): exigir el barrio en el checkout, o aceptar esa regla.`
+recoge a mano**. ~~`TODO (decisión de negocio): exigir el barrio en el checkout, o aceptar esa
+regla.`~~ **Decidido el 17 de septiembre de 2026: se acepta la regla y el barrio sigue siendo
+opcional**, escrito en la segunda corrección de `ADR-0021`. Exigirlo le cobraría fricción a cada
+comprador de hoy por una capacidad que no existe todavía y que no depende de nosotros.
 
 #### El criterio de tarifa, remedido y sin cambios
 
@@ -2421,6 +2443,58 @@ Cotizando otra vez, las banderas por tarifa siguen como las dejó `§6.4`:
 La más barata no emite y la más barata de las que emiten no recoge por API. **Decidir si `pickup`
 debe pesar en el criterio sigue exigiendo una recolección que funcione para comparar**, y el punto
 anterior dice que no la hay.
+
+### 6.15 Lo que se recauda en la puerta es el valor declarado, y punto (2026-09-17, decimocuarta parte)
+
+La pregunta que quedaba para decidir `ADR-0037`: `recipient_pays_shipping` existe, ¿hace algo? La
+respuesta de §6.5 —"no cambia el monto en la cotización"— dejaba dos lecturas abiertas: o el flete
+se suma al emitir, que es el "si aplica" de la documentación, o el campo no hace nada.
+
+Medido en tres puntos, y los tres dicen lo mismo con el valor declarado en 10.000:
+
+| Dónde | `recipient_pays_shipping` | `on_delivery_amount` |
+|---|---|---|
+| Cotización sin la bandera | `false` | `"10000.0"` |
+| Cotización con la bandera | **`true`** (lo devuelve) | `"10000.0"` |
+| **Envío creado y pagado**, con la bandera | — | `"10000.0"` |
+
+**La plataforma acepta el campo y lo guarda, y el flete no aparece por ninguna parte.** No es que
+esté mal escrito ni mal puesto —el eco vuelve en `true`—, es que el "si aplica" no aplica en esta
+cuenta. Con eso, **la contraentrega recauda el valor declarado y solo el valor declarado**, y el
+flete no se puede delegar en la plataforma.
+
+Dos cosas más que el mismo ejercicio dejó, y la segunda es cara:
+
+- ✅ **El envío expone `on_delivery_amount` y `on_delivery_status`.** Se comprobó gratis antes de
+  gastar nada, releyendo un envío viejo emitido sin recaudo: los dos campos están y vienen en
+  `null`. O sea que el campo existe, que el `null` significa "sin recaudo" y no "sin campo", y que
+  `on_delivery_status` sirve para conciliar guía por guía como prometió §6.4.
+- ⛔ **Envía tampoco puede emitir en este sandbox.** `workflow_status: error` con
+  `CARRIER_RESPONSE_ERROR` y el detalle: *"External carrier API service error: status code 400
+  reason: **Usuario o Password incorrecto at LABEL_NUMBER**"*. Es la misma forma que el
+  `ECONNREFUSED at PICKUP` de §6.11 —la etapa va al final del mensaje— y contradice lo que se daba
+  por sabido desde el 16, que Envía era una de las tres que sí emiten. Quedan dos lecturas y
+  **no se gastó en separarlas**: o las credenciales de etiqueta de Envía se rompieron del lado de
+  Skydropx después del 16, o el recaudo usa otro camino de credenciales. `TODO (barato, y solo si
+  hace falta): emitir con Envía SIN recaudo. Si falla igual, se rompió del lado de ellos y no tiene
+  nada que ver con la contraentrega.`
+
+**La consecuencia comercial es la que duele.** De las tres tarifas que sobreviven a una cotización
+con recaudo en Medellín, **las dos más baratas no pueden emitir**: Coordinadora por el contador de
+remisiones atascado (§6.10) y Envía por esto. La única que queda es **99 minutes, a 9.897 contra los
+5.991 de Coordinadora**. Un contraentrega en este sandbox cuesta el 65 % más que el mismo envío
+pagado en línea, y no por la tarifa sino por quién puede emitirla.
+
+**Costo del ejercicio: cero.** El envío `5e4edbff-be5d-400d-8645-9c1b9a52cd9c` cobró 7.850 al
+crearse y los devolvió al fallar —`payment_status: refunded`—. Saldo antes 10.088, durante 2.238,
+después **10.088**. Confirma por cuarta vez que una emisión fallida cuesta tiempo y no plata, y
+que `202` / `paid` no es una guía.
+
+**Y una nota de método**, porque se repitió el patrón: antes de gastar el saldo se comprobó gratis
+que el objeto del envío expusiera siquiera los campos de la pregunta. Si no los hubiera expuesto,
+emitir no habría contestado nada y el saldo se habría ido igual. Ese chequeo vive en
+`VER_ENVIO=<id> node tools/sonda-recaudo.mjs`, que busca toda clave de contraentrega a cualquier
+profundidad, también dentro de `included`.
 
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
