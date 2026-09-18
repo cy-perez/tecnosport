@@ -6,7 +6,9 @@ import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.envio.CotizarEnvio;
+import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
+import co.tecnosport.api.application.envio.RepositorioEmisiones;
 import co.tecnosport.api.application.envio.RepositorioEnvios;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
@@ -119,6 +121,8 @@ public class ConfiguracionPedido {
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       RepositorioReintegros repositorioReintegros,
+      RepositorioEmisiones repositorioEmisiones,
+      EmisorDeGuias emisorDeGuias,
       TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
       TextosDeCorreo textos,
@@ -127,6 +131,8 @@ public class ConfiguracionPedido {
         repositorioPedidos,
         repositorioInventario,
         repositorioReintegros,
+        repositorioEmisiones,
+        emisorDeGuias,
         tope,
         enviadorDeCorreo,
         textos,

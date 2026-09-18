@@ -2,16 +2,20 @@ package co.tecnosport.api.infrastructure.envio;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
+import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -22,6 +26,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -55,7 +60,8 @@ import tools.jackson.databind.json.JsonMapper;
  * <p>El token se renueva con margen y no justo al vencer: una cotización que arranca con el token
  * al filo se quedaría a medias entre la creación y el primer sondeo.
  */
-public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias {
+public final class SkydropxClient
+    implements CotizadorEnvio, ConsultorDeSeguimiento, EmisorDeGuias, ConsultorDeSaldo {
 
   private static final Logger log = LoggerFactory.getLogger(SkydropxClient.class);
 
@@ -81,6 +87,14 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
 
   /** Entre reintentos de emisión: un 409 dice "hay una creación en proceso", y hay que dejarla. */
   private static final Duration ESPERA_ENTRE_EMISIONES = Duration.ofSeconds(3);
+
+  /**
+   * Lo que se le dice a la transportadora al anular. No es un texto de interfaz —no lo lee ningun
+   * comprador, lo lee quien opera la cuenta de Skydropx— asi que no pasa por Transloco, y es fijo a
+   * proposito: el motivo de negocio vive en el historial del pedido, que es donde se puede
+   * consultar despues.
+   */
+  private static final String RAZON_DE_CANCELACION = "Pedido cancelado";
 
   private final URI urlBase;
   private final String clientId;
@@ -476,6 +490,99 @@ public final class SkydropxClient implements CotizadorEnvio, ConsultorDeSeguimie
       Thread.currentThread().interrupt();
       return new LecturaDeEnvioEmitido.NoSeSabe();
     }
+  }
+
+  /**
+   * Anula un envio ya creado. Por v1, como releer: la cancelacion nunca tuvo v2.
+   *
+   * <p>El cuerpo lleva {@code reason} y {@code shipment_id} (docs/13 §6.4). El id va las dos veces
+   * —en la ruta y en el cuerpo— porque asi lo pide la plataforma, no por redundancia nuestra.
+   *
+   * <p><strong>El 422 se cuenta como cancelada, y es la decision que importa aqui.</strong> La
+   * plataforma responde {@code 422 "El envio no se puede cancelar"} cuando ya no hay nada que
+   * hacer: porque ya se anulo, o porque la transportadora ya lo recogio. Desde aqui no se
+   * distinguen, y tratarlo como fallo llenaria la bandeja de revision de guias que nadie puede
+   * tocar. Lo que se pierde es real y se anota: una guia que ya iba en camino se contaria como
+   * anulada. Lo que se gana es que reintentar sea inofensivo.
+   */
+  @Override
+  public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    Objects.requireNonNull(idEnvioEnPlataforma, "El id del envío no puede ser nulo.");
+    try {
+      String token = token();
+      if (token == null) {
+        return noSePudoCancelar(idEnvioEnPlataforma, "no se obtuvo token");
+      }
+      String cuerpo =
+          json.writeValueAsString(
+              Map.of("reason", RAZON_DE_CANCELACION, "shipment_id", idEnvioEnPlataforma));
+      HttpResponse<String> respuesta =
+          enviar(
+              peticion(
+                      "/api/v1/shipments/"
+                          + URLEncoder.encode(idEnvioEnPlataforma, StandardCharsets.UTF_8)
+                          + "/cancellations",
+                      token)
+                  .header("Content-Type", "application/json")
+                  .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
+                  .build());
+      int estado = respuesta.statusCode();
+      if (estado / 100 == 2 || estado == 422) {
+        return new ResultadoCancelacion.Cancelada();
+      }
+      return noSePudoCancelar(idEnvioEnPlataforma, "la plataforma respondio " + estado);
+    } catch (IOException | RuntimeException e) {
+      return noSePudoCancelar(idEnvioEnPlataforma, e.toString());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return noSePudoCancelar(idEnvioEnPlataforma, "la espera se interrumpio");
+    }
+  }
+
+  /**
+   * El crédito de la cuenta. `GET /api/v1/finance/credits` responde
+   * `{"data":{"balance":10088,"currency":"COP"}}` — medido, y con el saldo **dentro de `data`**,
+   * que es donde este proveedor guarda lo que uno busca un nivel más arriba.
+   *
+   * <p>La moneda no se valida ni se convierte: la cuenta es colombiana y el saldo se compara contra
+   * un umbral en pesos. Si algún día respondiera otra moneda, comparar los números sin mirarla
+   * daría una respuesta tranquilizadora y falsa, así que se exige que sea COP y, si no, se dice que
+   * no se sabe: es lo mismo que hace cuando no contesta.
+   */
+  @Override
+  public Optional<Dinero> saldo() {
+    try {
+      String token = token();
+      if (token == null) {
+        log.warn("No se pudo consultar el saldo: no se obtuvo token.");
+        return Optional.empty();
+      }
+      HttpResponse<String> respuesta =
+          enviar(peticion("/api/v1/finance/credits", token).GET().build());
+      if (respuesta.statusCode() / 100 != 2) {
+        log.warn("No se pudo consultar el saldo: respondio {}", respuesta.statusCode());
+        return Optional.empty();
+      }
+      JsonNode datos = json.readTree(respuesta.body()).path("data");
+      JsonNode balance = datos.path("balance");
+      String moneda = datos.path("currency").asString();
+      if (balance.isMissingNode() || balance.isNull() || !"COP".equalsIgnoreCase(moneda)) {
+        log.warn("El saldo vino en una forma inesperada o en otra moneda: {}", moneda);
+        return Optional.empty();
+      }
+      return Optional.of(Dinero.deCop(new BigDecimal(balance.asString())));
+    } catch (IOException | RuntimeException e) {
+      log.warn("No se pudo consultar el saldo: {}", e.toString());
+      return Optional.empty();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return Optional.empty();
+    }
+  }
+
+  private ResultadoCancelacion noSePudoCancelar(String idEnvioEnPlataforma, String detalle) {
+    log.error("No se pudo cancelar el envio {}: {}", idEnvioEnPlataforma, detalle);
+    return new ResultadoCancelacion.NoSePudo(detalle);
   }
 
   /**

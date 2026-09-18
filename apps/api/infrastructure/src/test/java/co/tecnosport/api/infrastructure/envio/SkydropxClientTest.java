@@ -8,6 +8,7 @@ import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvioComando;
 import co.tecnosport.api.application.envio.Bulto;
 import co.tecnosport.api.application.envio.CotizacionEnvio;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * De extremo a extremo contra un servidor HTTP de prueba ({@link HttpServer}, del JDK, sin
@@ -45,6 +47,8 @@ import tools.jackson.databind.JsonNode;
  * capturadas de la cuenta real, en {@code MapeadorCotizacionSkydropxV1Test}.
  */
 class SkydropxClientTest {
+
+  private static final JsonMapper JSON = JsonMapper.builder().build();
 
   private static final Instant AHORA = Instant.parse("2026-09-11T12:00:00Z");
   private static final Duration TOPE = Duration.ofSeconds(10);
@@ -505,5 +509,167 @@ class SkydropxClientTest {
 
     assertEquals(1, peticionesDeToken.get());
     assertEquals(2, consultasDeRastreo.size());
+  }
+
+  // --- cancelación de la guía ------------------------------------------------------------------
+
+  private final List<String> rutasDeCancelacion = new ArrayList<>();
+  private final List<String> cuerposDeCancelacion = new ArrayList<>();
+
+  private SkydropxClient clienteDeCancelacion(int estado, String cuerpo) throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v1/shipments/",
+        intercambio -> {
+          rutasDeCancelacion.add(intercambio.getRequestURI().getPath());
+          cuerposDeCancelacion.add(
+              new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+          responder(intercambio, estado, cuerpo);
+        });
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * El id va dos veces —en la ruta y en el cuerpo— porque así lo pide la plataforma
+   * (docs/13-skydropx-capacidades.md §6.4). Esta prueba existe justo para que nadie lo "limpie"
+   * creyendo que es una redundancia nuestra.
+   */
+  @Test
+  void cancelaConElIdEnLaRutaYTambienEnElCuerpo() throws IOException {
+    SkydropxClient cliente =
+        clienteDeCancelacion(200, "{\"success\":true,\"status\":\"cancelled\"}");
+
+    ResultadoCancelacion resultado = cliente.cancelar("177d1939-abc");
+
+    assertInstanceOf(ResultadoCancelacion.Cancelada.class, resultado);
+    assertEquals(List.of("/api/v1/shipments/177d1939-abc/cancellations"), rutasDeCancelacion);
+    JsonNode cuerpo = JSON.readTree(cuerposDeCancelacion.getFirst());
+    assertEquals("177d1939-abc", cuerpo.path("shipment_id").asString());
+    assertEquals("Pedido cancelado", cuerpo.path("reason").asString());
+  }
+
+  /**
+   * El 422 de la plataforma —"El envío no se puede cancelar"— significa que ya no hay nada que
+   * hacer: o se anuló antes, o la transportadora ya lo recogió. Contarlo como fallo llenaría la
+   * bandeja de revisión de guías intocables, y haría que reintentar nunca convergiera.
+   */
+  @Test
+  void un422CuentaComoCanceladaPorqueYaNoHayNadaQueHacer() throws IOException {
+    SkydropxClient cliente =
+        clienteDeCancelacion(422, "{\"error\":\"El envío no se puede cancelar\"}");
+
+    assertInstanceOf(ResultadoCancelacion.Cancelada.class, cliente.cancelar("177d1939-abc"));
+  }
+
+  /**
+   * Un proveedor caído no es una guía anulada. Aquí sí hace falta decir que no se pudo: al otro
+   * lado hay un paquete que puede moverse y un pedido que dice que no debería.
+   */
+  @Test
+  void unProveedorCaidoDiceQueNoSePudo() throws IOException {
+    SkydropxClient cliente = clienteDeCancelacion(500, "{}");
+
+    ResultadoCancelacion resultado = cliente.cancelar("177d1939-abc");
+
+    assertEquals(
+        "la plataforma respondio 500",
+        assertInstanceOf(ResultadoCancelacion.NoSePudo.class, resultado).detalle());
+  }
+
+  // --- saldo de la cuenta -----------------------------------------------------------------------
+
+  private SkydropxClient clienteDeSaldo(int estado, String cuerpo) throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext(
+        "/api/v1/oauth/token",
+        intercambio -> {
+          peticionesDeToken.incrementAndGet();
+          responder(intercambio, 200, token(7200));
+        });
+    servidor.createContext(
+        "/api/v1/finance/credits", intercambio -> responder(intercambio, estado, cuerpo));
+    servidor.start();
+
+    return new SkydropxClient(
+        URI.create("http://localhost:" + servidor.getAddress().getPort()),
+        "id-de-prueba",
+        "secreto-de-prueba",
+        ORIGEN,
+        TOPE,
+        8,
+        Duration.ofMillis(500),
+        reloj,
+        new MapeadorDePrueba(),
+        new MapeadorDeSeguimientoDePrueba(),
+        new MapeadorEmisionSkydropxV2(),
+        new LimitadorDePeticiones(Duration.ZERO, System::nanoTime, pausas::add),
+        pausas::add,
+        HttpClient.newHttpClient());
+  }
+
+  /**
+   * El cuerpo es el que respondió la cuenta real el 17 de septiembre de 2026, con el saldo
+   * <strong>dentro de {@code data}</strong>. Leerlo un nivel más arriba devolvería vacío sin ningún
+   * error, que es la forma en que este proveedor ya ha costado cuatro sesiones.
+   */
+  @Test
+  void leeElSaldoDeDentroDeData() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSaldo(200, "{\"data\":{\"balance\":10088,\"currency\":\"COP\"}}");
+
+    assertEquals(Optional.of(Dinero.deCop(10_088)), cliente.saldo());
+  }
+
+  /** Un saldo en cero es un dato, no una falla: es el estado en el que no se puede emitir. */
+  @Test
+  void unSaldoEnCeroSeLeeComoCero() throws IOException {
+    SkydropxClient cliente = clienteDeSaldo(200, "{\"data\":{\"balance\":0,\"currency\":\"COP\"}}");
+
+    assertEquals(Optional.of(Dinero.deCop(0)), cliente.saldo());
+  }
+
+  /**
+   * Otra moneda no se compara contra un umbral en pesos. Devolver el número pelado daría una
+   * respuesta tranquilizadora y falsa —10.088 dólares y 10.088 pesos no son lo mismo—, así que se
+   * dice que no se sabe, igual que cuando no contesta.
+   */
+  @Test
+  void otraMonedaSeTrataComoNoSaber() throws IOException {
+    SkydropxClient cliente =
+        clienteDeSaldo(200, "{\"data\":{\"balance\":10088,\"currency\":\"USD\"}}");
+
+    assertTrue(cliente.saldo().isEmpty());
+  }
+
+  @Test
+  void unProveedorCaidoNoDaSaldo() throws IOException {
+    assertTrue(clienteDeSaldo(500, "{}").saldo().isEmpty());
+  }
+
+  @Test
+  void unCuerpoSinBalanceNoDaSaldo() throws IOException {
+    assertTrue(clienteDeSaldo(200, "{\"data\":{\"currency\":\"COP\"}}").saldo().isEmpty());
   }
 }

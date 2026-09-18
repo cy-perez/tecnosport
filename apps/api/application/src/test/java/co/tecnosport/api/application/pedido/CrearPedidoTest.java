@@ -120,7 +120,12 @@ class CrearPedidoTest {
             () -> AHORA);
     MetodosDePagoDisponibles metodosDePagoDisponibles =
         new MetodosDePagoDisponibles(
-            productos, cotizarEnvio, pedidos, criterios, HABILITADOS_EN_PASARELA);
+            productos,
+            new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
+            cotizarEnvio,
+            pedidos,
+            criterios,
+            HABILITADOS_EN_PASARELA);
     return new CrearPedido(
         productos,
         inventarios,

@@ -43,6 +43,8 @@ public enum TextoDeCorreo {
   ENVIO_REVISION_PENDIENTE_GUIA("envio.revision_pendiente.guia"),
   ENVIO_REVISION_PENDIENTE_EMISION("envio.revision_pendiente.emision"),
   ENVIO_REVISION_PENDIENTE_CIERRE("envio.revision_pendiente.cierre"),
+  ENVIO_SALDO_BAJO_ASUNTO("envio.saldo_bajo.asunto"),
+  ENVIO_SALDO_BAJO_CUERPO("envio.saldo_bajo.cuerpo"),
   USUARIO_VERIFICACION_ASUNTO("usuario.verificacion.asunto"),
   USUARIO_VERIFICACION_CUERPO("usuario.verificacion.cuerpo"),
   USUARIO_RECUPERACION_ASUNTO("usuario.recuperacion.asunto"),

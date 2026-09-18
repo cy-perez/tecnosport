@@ -380,6 +380,10 @@ SKYDROPX_VALOR_DECLARADO_MINIMO, SKYDROPX_VALOR_DECLARADO_MAXIMO
 SKYDROPX_SEGUIMIENTO_INTERVALO_MINUTOS, SKYDROPX_SEGUIMIENTO_ANTIGUEDAD_MINIMA_HORAS
 SKYDROPX_SEGUIMIENTO_MAXIMO_POR_CORRIDA, SKYDROPX_CABECERA_FIRMA
 SKYDROPX_EMISION_INTERVALO_SEGUNDOS
+ENVIO_REVISION_HORAS_UMBRAL, ENVIO_REVISION_INTERVALO_MINUTOS
+ENVIO_REVISION_RETRASO_INICIAL_MINUTOS, ENVIO_REVISION_DESTINATARIO
+ENVIO_SALDO_UMBRAL_COP, ENVIO_SALDO_INTERVALO_MINUTOS
+ENVIO_SALDO_RETRASO_INICIAL_MINUTOS, ENVIO_SALDO_DESTINATARIO
 ORIGEN_NOMBRE, ORIGEN_TELEFONO, ORIGEN_DIRECCION, ORIGEN_CORREO,
 ORIGEN_DEPARTAMENTO, ORIGEN_CIUDAD, ORIGEN_CIUDAD_DANE, ORIGEN_CODIGO_POSTAL,
 ORIGEN_BARRIO, ORIGEN_REFERENCIA
@@ -408,6 +412,15 @@ Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
 - **`ORIGEN_*` es la dirección de despacho del negocio**, la que va como origen de
   cada cotización y de cada recolección. Es la misma del punto de recogida, y por
   eso no se duplica en el código: si el negocio se muda, se cambia una vez.
+
+- **`ENVIO_SALDO_UMBRAL_COP` es un dato de negocio, no un parámetro técnico.** Son
+  50.000, y no una cifra redonda por cómoda: es lo que alcanza para unas seis guías
+  baratas o dos caras —8.200 la más barata que de verdad emite, 19.465 la más cara,
+  medidas contra la cuenta— y el tamaño de la recarga que Skydropx hizo el 16 de
+  septiembre de 2026. Lo que el aviso tiene que conseguir es margen para pedir la
+  recarga y para que llegue: entre pedirla y recibirla pasan días, y la recarga por
+  Mercado Pago nunca funcionó. Bajarlo mucho deja el despacho sin margen; subirlo
+  mucho deja el aviso encendido siempre, y un aviso encendido siempre no se lee.
 
 En Spring, `@ConfigurationProperties` tipadas y validadas al arrancar. Si falta
 una variable obligatoria, la aplicación no arranca; no arranca a medias para

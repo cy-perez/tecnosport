@@ -762,6 +762,7 @@ class PedidoControladorTest {
         CriteriosContraentrega criteriosContraentrega) {
       return new MetodosDePagoDisponibles(
           repositorioProductos,
+          new ArmadorDeBultos(repositorioProductos, Dinero.deCop(10_000), Dinero.deCop(5_000_000)),
           cotizarEnvio,
           repositorioPedidos,
           criteriosContraentrega,

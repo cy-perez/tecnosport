@@ -6,7 +6,12 @@ export type EstadoEnvioEnRevision =
   'EXCEPCION' | 'RETENIDO' | 'CANCELADO' | 'DESTRUIDO' | 'FALLIDO';
 
 /** Los dos en los que hay plata comprometida sin desenlace. */
-export type EstadoEmisionEnRevision = 'INDETERMINADA' | 'PARCIAL';
+/**
+ * Los tres estados de emision que piden ojo humano. SIN_ANULAR llego con la cancelacion de la
+ * guia: el pedido se cancelo y al menos una guia pudo quedar viva, o sea un paquete que una
+ * transportadora puede recoger y cobrar de un pedido que ya no existe.
+ */
+export type EstadoEmisionEnRevision = 'INDETERMINADA' | 'PARCIAL' | 'SIN_ANULAR';
 
 /**
  * Una guia que dejo de moverse.

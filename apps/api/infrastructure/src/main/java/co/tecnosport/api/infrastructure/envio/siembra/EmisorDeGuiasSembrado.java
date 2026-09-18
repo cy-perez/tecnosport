@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.envio.siembra;
 
 import co.tecnosport.api.application.envio.EmisorDeGuias;
 import co.tecnosport.api.application.envio.LecturaDeEnvioEmitido;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.envio.SolicitudDeEmision;
 import java.util.Objects;
@@ -26,6 +27,12 @@ import java.util.Objects;
  * está detenido — sin credenciales del proveedor—, que es lo que un despliegue sin credenciales
  * haría. Es el mismo criterio del costo 12.345 del cotizador: el doble se delata solo.
  *
+ * <p><strong>{@code cancelar} sí responde que canceló</strong>, y rompe la simetría a propósito.
+ * Los otros dos se niegan porque decir que sí sería mentir sobre algo que cuesta plata; aquí es al
+ * revés. Bajo este perfil no se emitió ninguna guía, así que no hay ninguna viva: decir "no se
+ * pudo" mandaría a la bandeja de revisión un recorrido que cancela un pedido, y ese aviso sería el
+ * falso. Cancelar lo que no existe es exactamente lo que ocurrió.
+ *
  * <p>{@code consultar} devuelve {@link LecturaDeEnvioEmitido.NoSeSabe} por lo mismo. La tarea de
  * resolución corre cada minuto bajo este perfil igual que en producción; si no hay emisiones en
  * curso no llega a preguntar nada, y si alguna quedara sembrada, "no pudimos preguntar" es la única
@@ -48,5 +55,12 @@ public final class EmisorDeGuiasSembrado implements EmisorDeGuias {
     Objects.requireNonNull(
         idEnvioEnPlataforma, "El id del envío en la plataforma no puede ser nulo.");
     return new LecturaDeEnvioEmitido.NoSeSabe();
+  }
+
+  @Override
+  public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    Objects.requireNonNull(
+        idEnvioEnPlataforma, "El id del envío en la plataforma no puede ser nulo.");
+    return new ResultadoCancelacion.Cancelada();
   }
 }

@@ -51,6 +51,7 @@ import java.util.Set;
 public final class MetodosDePagoDisponibles {
 
   private final RepositorioProductos repositorioProductos;
+  private final ArmadorDeBultos armador;
   private final CotizarEnvio cotizarEnvio;
   private final RepositorioPedidos repositorioPedidos;
   private final CriteriosContraentrega criteriosContraentrega;
@@ -58,6 +59,7 @@ public final class MetodosDePagoDisponibles {
 
   public MetodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
+      ArmadorDeBultos armador,
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
@@ -65,6 +67,7 @@ public final class MetodosDePagoDisponibles {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
+    this.armador = Objects.requireNonNull(armador, "El armador de bultos no puede ser nulo.");
     this.cotizarEnvio = Objects.requireNonNull(cotizarEnvio, "El cotizador no puede ser nulo.");
     this.repositorioPedidos =
         Objects.requireNonNull(repositorioPedidos, "El repositorio de pedidos no puede ser nulo.");
@@ -120,16 +123,44 @@ public final class MetodosDePagoDisponibles {
       return false;
     }
     DatosCarrito carrito = resolverCarrito(comando.lineas());
+    Dinero aRecaudar = Dinero.deCop(carrito.total().valor().add(conRecaudo.get().costo().valor()));
+    if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
+      return false;
+    }
     boolean rechazoPrevio = repositorioPedidos.tieneRechazoEnEntrega(comando.correo());
     return PoliticaContraentrega.disponible(
         criteriosContraentrega,
         // Lo que el transportador recauda es el total, flete incluido (adr/0023), así que el tope
         // se compara contra eso y no contra la mercancía sola: el límite existe por cuánto
         // efectivo carga el mensajero, y el flete también lo carga.
-        Dinero.deCop(carrito.total().valor().add(conRecaudo.get().costo().valor())),
+        aRecaudar,
         carrito.categorias(),
         true,
         rechazoPrevio);
+  }
+
+  /**
+   * ¿Se puede declarar exactamente lo que este pedido cobra? En contraentrega la transportadora
+   * recauda la suma de los valores declarados y la plataforma exige un mínimo por bulto, así que un
+   * carrito de muchas unidades muy baratas declara más de lo que vale y cobraría de más en la
+   * puerta ({@code adr/0037}). Ese carrito no lleva contraentrega, y se entera aquí y no al emitir.
+   *
+   * <p>Se arman los bultos de verdad en vez de estimar la suma: el piso vive en {@link
+   * ArmadorDeBultos} y una segunda copia de esa regla aquí podría quedar desincronizada sin que
+   * nada avisara, que es justo lo que {@code adr/0035} evitó al ponerlo en un solo sitio.
+   */
+  private boolean elRecaudoCuadra(
+      List<MetodosDePagoDisponiblesComando.LineaComando> lineas, Dinero aRecaudar) {
+    try {
+      armador.armarParaRecaudo(
+          lineas.stream().map(l -> new LineaAEmpacar(l.varianteId(), l.cantidad(), null)).toList(),
+          aRecaudar);
+      return true;
+    } catch (RecaudoNoCuadraException | ArticuloNoAsegurableException e) {
+      // La segunda puede aparecer aquí y no antes: el techo se valida después de repartir el flete,
+      // así que un artículo al filo puede pasarse solo en contraentrega (adr/0037).
+      return false;
+    }
   }
 
   /**

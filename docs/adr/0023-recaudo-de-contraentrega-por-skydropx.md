@@ -39,6 +39,12 @@ proveedor puede cambiar sin avisarnos, y el negocio puede querer un techo más b
 que el del proveedor para celulares. `CONTRAENTREGA_MONTO_MAXIMO` sigue existiendo
 y sigue siendo un dato de negocio pendiente.
 
+> **Modificado por `adr/0037` el 17 de septiembre de 2026, en el cómo y no en el qué.** Lo que
+> sigue —recaudar el total, flete incluido— se mantiene. Lo que resultó falso es dar por hecho que
+> bastaba con decírselo a la plataforma: no hay ningún campo para el monto a recaudar, la plataforma
+> lo calcula sumando el valor declarado de los bultos, y `recipient_pays_shipping` está medido y no
+> suma el flete (`docs/13` §6.15). El total se cobra declarándolo.
+
 **El valor a recaudar es el total del pedido, flete incluido.** Con la cotización,
 el total ya no es solo mercancía: es líneas más envío, y es esa suma la que la
 transportadora cobra en la puerta. Sale de `Pedido.total()`, nunca del cliente.

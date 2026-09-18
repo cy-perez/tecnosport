@@ -441,7 +441,8 @@
     },
     "estados_emision": {
       "indeterminada": "Sin respuesta, posible cobro",
-      "parcial": "Parcial, con guías sin usar"
+      "parcial": "Parcial, con guías sin usar",
+      "sin_anular": "Guía sin anular, puede seguir viva"
     },
     "acciones": {
       "abrir": "Marcar como revisada",
