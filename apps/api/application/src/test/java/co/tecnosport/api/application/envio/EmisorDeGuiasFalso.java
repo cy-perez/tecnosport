@@ -14,6 +14,11 @@ final class EmisorDeGuiasFalso implements EmisorDeGuias {
       new ResultadoEmision.Rechazada(
           ResultadoEmision.Motivo.PROVEEDOR_NO_DISPONIBLE, "sin configurar en la prueba");
 
+  /** Los envíos que se pidió cancelar, en orden: es lo que afirman las pruebas de cancelación. */
+  private final List<String> cancelados = new ArrayList<>();
+
+  private ResultadoCancelacion respuestaDeCancelacion = new ResultadoCancelacion.Cancelada();
+
   void responde(ResultadoEmision respuesta) {
     this.respuesta = respuesta;
   }
@@ -30,6 +35,20 @@ final class EmisorDeGuiasFalso implements EmisorDeGuias {
   public ResultadoEmision emitir(SolicitudDeEmision solicitud) {
     solicitudes.add(solicitud);
     return respuesta;
+  }
+
+  void alCancelarResponde(ResultadoCancelacion respuesta) {
+    this.respuestaDeCancelacion = respuesta;
+  }
+
+  @Override
+  public ResultadoCancelacion cancelar(String idEnvioEnPlataforma) {
+    cancelados.add(idEnvioEnPlataforma);
+    return respuestaDeCancelacion;
+  }
+
+  List<String> cancelados() {
+    return List.copyOf(cancelados);
   }
 
   @Override

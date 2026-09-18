@@ -96,12 +96,20 @@ public final class EmitirGuiaDePedido {
                 () -> new EmisionNoAplicableException(pedido.id(), "el pedido no tiene contacto"));
 
     List<EmisionDeGuia> anteriores = repositorioEmisiones.buscarDePedido(pedido.id());
-    List<BultoDespachable> bultos = armador.armar(aEmpacar(pedido));
+    boolean conRecaudo = pedido.metodoPago() == MetodoPago.CONTRAENTREGA;
+    // En contraentrega el valor declarado es además lo que la transportadora cobra en la puerta, y
+    // la plataforma no tiene ningún campo donde declarar ese monto: lo calcula sumando lo declarado
+    // (adr/0037). Por eso el flete se reparte aquí, donde el costoEnvio del pedido ya está
+    // congelado, y no en la cotización del checkout, donde todavía se está calculando.
+    List<BultoDespachable> bultos =
+        conRecaudo
+            ? armador.armarParaRecaudo(aEmpacar(pedido), pedido.total())
+            : armador.armar(aEmpacar(pedido));
     TarifaEnvio tarifa =
         cotizarEnvio.deBultos(
             destino,
             bultos.stream().map(BultoDespachable::bulto).toList(),
-            pedido.metodoPago() == MetodoPago.CONTRAENTREGA,
+            conRecaudo,
             transportadorasQueYaFallaron(anteriores));
 
     // Confirmada antes de llamar: a partir de la línea siguiente puede haber plata gastada.

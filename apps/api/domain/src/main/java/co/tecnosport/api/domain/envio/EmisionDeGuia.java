@@ -217,6 +217,52 @@ public final class EmisionDeGuia {
     this.resueltaEn = ahora;
   }
 
+  /**
+   * Sus guías quedaron anuladas porque el pedido se canceló.
+   *
+   * <p>Se puede llamar desde cualquier estado salvo {@link EstadoEmision#FALLIDA}, y no es laxitud:
+   * cancelar un pedido puede alcanzar una emisión en cualquier punto de su vida —recién solicitada,
+   * en curso, emitida o parcial— y todas menos la fallida pueden tener algo vivo al otro lado. La
+   * fallida no: ahí la plataforma ya reembolsó y no hay nada que anular.
+   *
+   * <p><strong>Un segundo intento que funciona corrige al primero que no.</strong> Llamar a esto
+   * sobre una emisión {@link EstadoEmision#SIN_ANULAR} la deja {@link EstadoEmision#ANULADA}, que
+   * es lo que hace útil reintentar desde el panel. Al revés no: {@link #sinAnular} nunca degrada
+   * una anulación conseguida, porque eso inventaría una guía viva que no existe.
+   */
+  public void anulada(Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha de anulación no puede ser nula.");
+    if (estado == EstadoEmision.FALLIDA) {
+      throw new ExcepcionDeDominio(
+          "Una emisión fallida no tiene guías que anular: la plataforma ya reembolsó.");
+    }
+    this.estado = EstadoEmision.ANULADA;
+    this.detalle = null;
+    this.resueltaEn = ahora;
+  }
+
+  /**
+   * Se intentó anular sus guías y al menos una pudo quedar viva. {@code detalle} dice cuál fue el
+   * problema, y es lo único con lo que quien atiende puede buscar el envío en el panel.
+   *
+   * <p>No degrada una {@link EstadoEmision#ANULADA}: si un intento anterior ya consiguió anular,
+   * este no puede decir que quedó viva. Es la misma idempotencia asimétrica de {@link #anulada},
+   * mirada desde el otro lado.
+   */
+  public void sinAnular(String detalle, Instant ahora) {
+    Objects.requireNonNull(ahora, "La fecha del intento no puede ser nula.");
+    if (estado == EstadoEmision.FALLIDA) {
+      throw new ExcepcionDeDominio(
+          "Una emisión fallida no tiene guías que anular: la plataforma ya reembolsó.");
+    }
+    if (estado == EstadoEmision.ANULADA) {
+      return;
+    }
+    this.estado = EstadoEmision.SIN_ANULAR;
+    this.detalle = limpiar(detalle);
+    this.resueltaEn = ahora;
+  }
+
   public UUID id() {
     return id;
   }

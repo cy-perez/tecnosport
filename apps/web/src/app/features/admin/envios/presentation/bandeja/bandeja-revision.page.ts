@@ -29,6 +29,7 @@ const CLAVE_ESTADO_ENVIO: Record<EstadoEnvioEnRevision, string> = {
 const CLAVE_ESTADO_EMISION: Record<EstadoEmisionEnRevision, string> = {
   INDETERMINADA: 'admin.revision_envios.estados_emision.indeterminada',
   PARCIAL: 'admin.revision_envios.estados_emision.parcial',
+  SIN_ANULAR: 'admin.revision_envios.estados_emision.sin_anular',
 };
 
 /**

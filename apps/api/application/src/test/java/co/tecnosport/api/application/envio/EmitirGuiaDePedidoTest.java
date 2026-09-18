@@ -231,9 +231,11 @@ class EmitirGuiaDePedidoTest {
     assertEquals("Apto. 302", emisor.solicitudes().getFirst().indicaciones().orElseThrow());
   }
 
-  /** El recaudo cambia qué transportadoras responden, así que se pide igual que al crear. */
-  @Test
-  void un_pedido_contraentrega_recotiza_con_recaudo() {
+  /**
+   * Un pedido contraentrega de una unidad de 120.000 con flete de 8.200: total 128.200, que es lo
+   * que la transportadora tiene que cobrar en la puerta.
+   */
+  private Pedido pedidoContraentrega() {
     Pedido pedido =
         new Pedido(
             GeneradorIdentificador.nuevo(),
@@ -267,6 +269,13 @@ class EmitirGuiaDePedidoTest {
             tarifaDeHoy(),
             new Contacto("Comprador", "3001234567"));
     pedidos.guardar(pedido);
+    return pedido;
+  }
+
+  /** El recaudo cambia qué transportadoras responden, así que se pide igual que al crear. */
+  @Test
+  void un_pedido_contraentrega_recotiza_con_recaudo() {
+    Pedido pedido = pedidoContraentrega();
     cotizador.devolver(tarifaDeHoy());
     emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
 
@@ -503,5 +512,43 @@ class EmitirGuiaDePedidoTest {
           ? new ResultadoCotizacion.SinCobertura()
           : new ResultadoCotizacion.ConTarifas(tarifas);
     }
+  }
+
+  /**
+   * Lo que de verdad cobra la transportadora. No hay ningún campo donde declarar el monto a
+   * recaudar —la plataforma lo calcula sumando lo declarado (docs/13 §6.4)— y {@code
+   * recipient_pays_shipping} está medido y no suma el flete (§6.15), así que la única forma de
+   * cobrar el total del pedido es declararlo ({@code adr/0037}).
+   *
+   * <p>Antes de esto el declarado era la mercancía sola: 120.000 contra los 128.200 que el pedido
+   * cobra, o sea el flete regalado en cada contraentrega y sin que nada fallara.
+   */
+  @Test
+  void un_pedido_contraentrega_declara_el_total_para_que_se_recaude_entero() {
+    Pedido pedido = pedidoContraentrega();
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+
+    assertEquals(
+        pedido.total(),
+        Dinero.deCop(
+            cotizador.ultima().bultos().stream()
+                .map(bulto -> bulto.valorDeclarado().valor())
+                .reduce(BigDecimal.ZERO, BigDecimal::add)),
+        "la suma declarada es lo que se cobra en la puerta");
+  }
+
+  /** Y el pagado en línea no cambia: ahí el declarado solo asegura. */
+  @Test
+  void un_pedido_pagado_en_linea_sigue_declarando_solo_la_mercancia() {
+    Pedido pedido = pedido(EstadoPedido.EN_PREPARACION, TipoEntrega.ENVIO_A_DOMICILIO, 1);
+    cotizador.devolver(tarifaDeHoy());
+    emisor.responde(new ResultadoEmision.Aceptada(List.of("177d1939")));
+
+    caso.ejecutar(new EmitirGuiaDePedidoComando(pedido.id(), "admin:1"));
+
+    assertEquals(Dinero.deCop(99_000), cotizador.ultima().bultos().getFirst().valorDeclarado());
   }
 }

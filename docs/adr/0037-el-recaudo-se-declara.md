@@ -87,8 +87,13 @@ declarados de sus bultos es exactamente `Pedido.total()`.
 - **Una reclamación por pérdida de un contraentrega está declarada por encima de la factura de
   mercancía.** No da nada: se paga contra la factura. Igual que la inflación del piso de
   `ADR-0035`, es el precio de que el declarado tenga dos trabajos.
-- **La contraentrega deja de ofrecerse en carritos de muchas unidades muy baratas.** Es raro, es a
-  propósito, y el checkout tiene que poder decirlo sin culpar al comprador.
+- **La contraentrega deja de ofrecerse en carritos de muchas unidades muy baratas.** Es raro y es
+  a propósito. **El checkout no explica por qué**, y eso no es una omisión de esta decisión: no lo
+  explica para ninguna de las razones por las que hoy se retira la contraentrega —la ciudad sin
+  cobertura, el monto fuera de rango, la categoría excluida, un rechazo en entrega anterior—. La
+  lista de métodos simplemente llega sin ella. Queda anotado como lo que es: una deuda vieja que
+  este ADR hereda y no agrava. `TODO (producto): decidir si el checkout explica por qué no hay
+  contraentrega, para las cinco razones a la vez o para ninguna.`
 - **El mismo artículo puede ser asegurable pagando en línea y no pagando contraentrega**, si el
   flete repartido lo empuja sobre el techo. El checkout ya sabe decir cuál artículo es y con su
   nombre (`ADR-0036`), así que no hace falta un mensaje nuevo.

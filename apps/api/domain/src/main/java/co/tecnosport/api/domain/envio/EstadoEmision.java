@@ -63,7 +63,31 @@ public enum EstadoEmision {
    * humano y por eso no es {@link #FALLIDA}: llamarlo fallo escondería que hay guías que alguien
    * tiene que cancelar o usar.
    */
-  PARCIAL;
+  PARCIAL,
+
+  /**
+   * El pedido se canceló y sus guías quedaron anuladas en la plataforma. Es un final tranquilo: no
+   * hay nada vivo y nadie tiene que mirar nada.
+   *
+   * <p>Cuenta también el envío que la plataforma dijo que ya no se puede cancelar, porque desde
+   * aquí no se distingue "ya estaba anulado" de "la transportadora ya lo recogió"
+   * (docs/13-skydropx-capacidades.md §6.4). Lo que se pierde está escrito en {@code
+   * ResultadoCancelacion}: una guía que ya iba en camino se cuenta como anulada.
+   */
+  ANULADA,
+
+  /**
+   * El pedido se canceló y <strong>al menos una guía pudo quedar viva</strong>: o la plataforma se
+   * negó a anularla, o no contestó, o la emisión nunca llegó a devolver identificadores con los que
+   * pedirlo.
+   *
+   * <p>Es el único estado nuevo que pide ojo humano, y por eso existe separado de {@link #ANULADA}:
+   * una guía viva de un pedido que ya no existe es un paquete que una transportadora puede recoger
+   * y cobrar. Nadie se enteraría hasta la factura. Aparece en la bandeja de revisión por el mismo
+   * camino que {@link #INDETERMINADA} y {@link #PARCIAL}, sin que la bandeja tenga que aprender
+   * nada nuevo: pregunta por {@link #exigeOjoHumano()}, no por una lista de nombres.
+   */
+  SIN_ANULAR;
 
   /**
    * ¿Impide pedir otra emisión para el mismo pedido? Las tres en las que <strong>puede haber plata
@@ -85,11 +109,25 @@ public enum EstadoEmision {
   }
 
   /**
+   * ¿Se intentó anular sus guías porque el pedido se canceló? Los dos desenlaces de esa anulación,
+   * que son finales y no se reintentan solos.
+   *
+   * <p>No entran en {@link #resuelta()} a propósito: aquello responde "¿la plataforma va a decir
+   * algo más de esta emisión?" y lo usa {@code EmisionDeGuia.resolver}, que exige partir de una
+   * emisión abierta. Anular ocurre después, sobre una emisión ya resuelta, y meterlo ahí dejaría
+   * pasar un {@code resolver} que convierte una guía emitida en anulada sin haber llamado a nadie.
+   */
+  public boolean anulacionIntentada() {
+    return this == ANULADA || this == SIN_ANULAR;
+  }
+
+  /**
    * ¿Hay plata de por medio que un programa no puede desenredar? {@link #INDETERMINADA} porque no
-   * sabemos si se cobró, y {@link #PARCIAL} porque sabemos que sí y solo a medias.
+   * sabemos si se cobró, {@link #PARCIAL} porque sabemos que sí y solo a medias, y {@link
+   * #SIN_ANULAR} porque puede haber una guía viva que una transportadora cobre.
    */
   public boolean exigeOjoHumano() {
-    return this == INDETERMINADA || this == PARCIAL;
+    return this == INDETERMINADA || this == PARCIAL || this == SIN_ANULAR;
   }
 
   /**

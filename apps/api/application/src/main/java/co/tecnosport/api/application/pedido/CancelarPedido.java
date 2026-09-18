@@ -4,11 +4,16 @@ import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
+import co.tecnosport.api.application.envio.EmisorDeGuias;
+import co.tecnosport.api.application.envio.RepositorioEmisiones;
+import co.tecnosport.api.application.envio.ResultadoCancelacion;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
 import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.envio.EmisionDeGuia;
+import co.tecnosport.api.domain.envio.EstadoEmision;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.LineaPedido;
@@ -18,6 +23,8 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
 import co.tecnosport.api.domain.reintegro.Reintegro;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -44,12 +51,27 @@ import java.util.Objects;
  *
  * <p>El inventario vuelve por {@code Inventario.devolver}, que decide entre entrada y liberación
  * según cómo quedó la reserva: un pago aprobado ya la confirmó, un contraentrega la tiene abierta.
+ *
+ * <p><b>Y las guías se anulan, que es lo que faltaba.</b> La guía se emite estando {@code
+ * EN_PREPARACION} y {@code EN_PREPARACION -> CANCELADO} es una transición válida, así que este caso
+ * de uso podía dejar —y dejaba— una guía viva y cobrable de un pedido que ya no existe: un paquete
+ * que la transportadora recoge, entrega y factura sin que nadie lo note hasta el extracto. No hacía
+ * falta ningún camino raro para llegar ahí; bastaba con cancelar desde el panel un pedido cuya guía
+ * ya se había pedido.
+ *
+ * <p><b>Lo que no se hace, y es la regla que ordena todo lo demás: la anulación no puede tumbar la
+ * cancelación.</b> Si la plataforma se niega o no contesta, el pedido queda cancelado igual, el
+ * inventario vuelve igual y el reintegro se registra igual; la emisión queda {@link
+ * EstadoEmision#SIN_ANULAR} y aparece en la bandeja de revisión. Un comprador sin su plata porque
+ * un proveedor no contestó es peor que una guía huérfana que alguien anula a mano desde el panel.
  */
 public final class CancelarPedido {
 
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioInventario repositorioInventario;
   private final RepositorioReintegros repositorioReintegros;
+  private final RepositorioEmisiones repositorioEmisiones;
+  private final EmisorDeGuias emisorDeGuias;
   private final TopeDeReintegro tope;
   private final EnviadorDeCorreo enviadorDeCorreo;
   private final TextosDeCorreo textos;
@@ -59,6 +81,8 @@ public final class CancelarPedido {
       RepositorioPedidos repositorioPedidos,
       RepositorioInventario repositorioInventario,
       RepositorioReintegros repositorioReintegros,
+      RepositorioEmisiones repositorioEmisiones,
+      EmisorDeGuias emisorDeGuias,
       TopeDeReintegro tope,
       EnviadorDeCorreo enviadorDeCorreo,
       TextosDeCorreo textos,
@@ -66,6 +90,8 @@ public final class CancelarPedido {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
     this.repositorioInventario = Objects.requireNonNull(repositorioInventario);
     this.repositorioReintegros = Objects.requireNonNull(repositorioReintegros);
+    this.repositorioEmisiones = Objects.requireNonNull(repositorioEmisiones);
+    this.emisorDeGuias = Objects.requireNonNull(emisorDeGuias);
     this.tope = Objects.requireNonNull(tope);
     this.enviadorDeCorreo = Objects.requireNonNull(enviadorDeCorreo);
     this.textos = Objects.requireNonNull(textos);
@@ -93,6 +119,7 @@ public final class CancelarPedido {
     if (elDineroYaEntro) {
       registrarReintegro(pedido, comando, ahora);
     }
+    anularLasGuias(pedido, ahora);
     repositorioPedidos.guardar(pedido);
     avisar(pedido, comando, elDineroYaEntro);
     return pedido;
@@ -146,6 +173,62 @@ public final class CancelarPedido {
 
   private static String motivo(CancelarPedidoComando comando) {
     return "cancelado: " + comando.motivo();
+  }
+
+  /**
+   * Pide a la plataforma que anule lo que este pedido tenga vivo.
+   *
+   * <p>Una llamada <b>por envío</b> y no por emisión: en multienvío cada bulto es un envío
+   * independiente que se cancela por separado (docs/13-skydropx-capacidades.md §6.4), y que uno
+   * falle no dice nada de los otros. La emisión queda {@link EstadoEmision#ANULADA} solo si
+   * <em>todos</em> los suyos se anularon; con uno que quede en duda, la emisión entera pide ojo
+   * humano, porque el que quedó vivo es el que cuesta.
+   */
+  private void anularLasGuias(Pedido pedido, Instant ahora) {
+    for (EmisionDeGuia emision : repositorioEmisiones.buscarDePedido(pedido.id())) {
+      if (!hayAlgoQueAnular(emision)) {
+        continue;
+      }
+      // Sin identificadores no hay a quién pedírselo, y aun así puede haber algo vivo: una emisión
+      // SOLICITADA es una peticion que pudo salir, y una INDETERMINADA es una que pudo cobrar. Las
+      // dos van a la bandeja en vez de darse por limpias.
+      if (emision.enviosEnPlataforma().isEmpty()) {
+        emision.sinAnular(
+            "La emisión quedó en "
+                + emision.estado()
+                + " sin identificadores de envío, así que no hay qué pedirle a la plataforma."
+                + " Buscar en el panel con la tarifa "
+                + emision.idTarifa()
+                + " antes de dar el paquete por detenido.",
+            ahora);
+        repositorioEmisiones.guardar(emision);
+        continue;
+      }
+      List<String> enDuda = new ArrayList<>();
+      for (String envio : emision.enviosEnPlataforma()) {
+        if (emisorDeGuias.cancelar(envio) instanceof ResultadoCancelacion.NoSePudo fallo) {
+          enDuda.add(envio + ": " + fallo.detalle());
+        }
+      }
+      if (enDuda.isEmpty()) {
+        emision.anulada(ahora);
+      } else {
+        emision.sinAnular(
+            "Guías que pueden seguir vivas y hay que anular a mano en el panel — "
+                + String.join(" | ", enDuda),
+            ahora);
+      }
+      repositorioEmisiones.guardar(emision);
+    }
+  }
+
+  /**
+   * Una emisión fallida no tiene nada vivo —la plataforma ya reembolsó— y una ya anulada no tiene
+   * nada que volver a pedir. Todo lo demás sí: incluso una emisión recién solicitada puede tener
+   * una petición en vuelo del otro lado.
+   */
+  private static boolean hayAlgoQueAnular(EmisionDeGuia emision) {
+    return emision.estado() != EstadoEmision.FALLIDA && emision.estado() != EstadoEmision.ANULADA;
   }
 
   /**

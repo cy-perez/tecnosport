@@ -727,11 +727,15 @@ class AdminPedidosControladorTest {
     CancelarPedido cancelarPedido(
         RepositorioPedidos repositorioPedidos,
         RepositorioInventario repositorioInventario,
-        RepositorioReintegros repositorioReintegros) {
+        RepositorioReintegros repositorioReintegros,
+        RepositorioEmisiones repositorioEmisiones,
+        EmisorDeGuias emisorDeGuias) {
       return new CancelarPedido(
           repositorioPedidos,
           repositorioInventario,
           repositorioReintegros,
+          repositorioEmisiones,
+          emisorDeGuias,
           new TopeDeReintegro(repositorioReintegros, new RepositorioSolicitudesReversionVacio()),
           (destinatario, asunto, cuerpo) -> {},
           (texto, argumentos) -> texto.clave(),

@@ -10,8 +10,10 @@ import co.tecnosport.api.application.envio.AcusarRevisionDeGuia;
 import co.tecnosport.api.application.envio.AplicarEventoDeEnvio;
 import co.tecnosport.api.application.envio.ArmadorDeBultos;
 import co.tecnosport.api.application.envio.AvisarRevisionPendiente;
+import co.tecnosport.api.application.envio.AvisarSaldoBajo;
 import co.tecnosport.api.application.envio.ConciliarEnvios;
 import co.tecnosport.api.application.envio.ConciliarGuia;
+import co.tecnosport.api.application.envio.ConsultorDeSaldo;
 import co.tecnosport.api.application.envio.ConsultorDeSeguimiento;
 import co.tecnosport.api.application.envio.CotizadorEnvio;
 import co.tecnosport.api.application.envio.CotizarEnvio;
@@ -40,6 +42,7 @@ import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
 import co.tecnosport.api.infrastructure.envio.VerificadorFirmaEnvioHmac;
+import co.tecnosport.api.infrastructure.envio.siembra.ConsultorDeSaldoSembrado;
 import co.tecnosport.api.infrastructure.envio.siembra.CotizadorEnvioSembrado;
 import co.tecnosport.api.infrastructure.envio.siembra.EmisorDeGuiasSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
@@ -60,6 +63,7 @@ import org.springframework.context.annotation.Profile;
   PropiedadesContraentrega.class,
   PropiedadesSkydropx.class,
   PropiedadesSeguimientoEnvios.class,
+  PropiedadesSaldoEnvios.class,
   PropiedadesVigilanciaRevision.class,
   PropiedadesWebhookEnvio.class,
   PropiedadesOrigen.class
@@ -134,6 +138,12 @@ public class ConfiguracionEnvio {
    * —{@code emitirGuiaDePedido}, {@code resolverEmisionesEnCurso} y la tarea que la llama—. Por qué
    * rechaza en vez de devolver una guía de mentira está en {@link EmisorDeGuiasSembrado}.
    */
+  @Bean
+  @Profile("e2e")
+  public ConsultorDeSaldo consultorDeSaldoSembrado() {
+    return new ConsultorDeSaldoSembrado();
+  }
+
   @Bean
   @Profile("e2e")
   public EmisorDeGuias emisorDeGuiasSembrado() {
@@ -305,12 +315,14 @@ public class ConfiguracionEnvio {
   @Bean
   public MetodosDePagoDisponibles metodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
+      ArmadorDeBultos armadorDeBultos,
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
       PropiedadesMetodosDeWompi metodosDeWompi) {
     return new MetodosDePagoDisponibles(
         repositorioProductos,
+        armadorDeBultos,
         cotizarEnvio,
         repositorioPedidos,
         criteriosContraentrega,
@@ -383,5 +395,23 @@ public class ConfiguracionEnvio {
         Duration.ofHours(propiedades.horasUmbral()),
         new CorreoElectronico(propiedades.destinatario()),
         seguimiento.maximoPorCorrida());
+  }
+
+  /**
+   * El vigilante del crédito. Le pide el saldo al mismo cliente que emite —es la misma cuenta y el
+   * mismo token— y no guarda nada: solo compara contra el umbral y, si hace falta, escribe.
+   */
+  @Bean
+  public AvisarSaldoBajo avisarSaldoBajo(
+      ConsultorDeSaldo consultorDeSaldo,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textosDeCorreo,
+      PropiedadesSaldoEnvios propiedades) {
+    return new AvisarSaldoBajo(
+        consultorDeSaldo,
+        enviadorDeCorreo,
+        textosDeCorreo,
+        Dinero.deCop(propiedades.umbralCop()),
+        new CorreoElectronico(propiedades.destinatario()));
   }
 }
