@@ -1,6 +1,9 @@
 import { inject } from '@angular/core';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
-import { REPOSITORIO_CATEGORIAS, RepositorioCategorias } from '../domain/repositorio-categorias.puerto';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../domain/repositorio-marcas.puerto';
 
 /**
@@ -33,6 +36,26 @@ export function usarOpcionesFiltro() {
   const marcas = injectQuery(() => opcionesMarcas(repositorioMarcas));
 
   return { categorias, marcas };
+}
+
+/**
+ * Solo las categorías, para quien no necesita las marcas.
+ *
+ * La portada las usa para saber qué líneas tienen algo detrás, y pedirle también las marcas sería
+ * una petición de más en la pantalla más visitada del sitio y en cada arranque en frío. Comparte
+ * la llave y las opciones con `usarOpcionesFiltro`, así que las dos pantallas reaprovechan la
+ * misma entrada de caché.
+ */
+export function usarCategorias() {
+  const repositorio = inject(REPOSITORIO_CATEGORIAS);
+  return injectQuery(() => opcionesCategorias(repositorio));
+}
+
+export function precargarCategorias(): Promise<void> {
+  const repositorio = inject(REPOSITORIO_CATEGORIAS);
+  return inject(QueryClient)
+    .prefetchQuery(opcionesCategorias(repositorio))
+    .then(() => undefined);
 }
 
 /**
