@@ -21,22 +21,40 @@ se hubiera leído.
 
 ## 1. "Desgaste normal" como exclusión de la garantía
 
-**Dónde está.** `legales.terminos.secciones[10]`, en los dos idiomas:
+> **Resuelto en parte el 19 de septiembre de 2026.** La exclusión se quitó del
+> texto publicado y la lista se alineó con el art. 16. Lo que sigue abierto es la
+> reformulación en positivo, que es donde hace falta criterio profesional.
+
+**Qué decía.** `legales.terminos.secciones[10]`, en los dos idiomas:
 
 > La garantía no cubre el daño causado por uso indebido, modificación no
 > autorizada, desgaste normal ni fuerza mayor.
 
-**Qué hace el sistema.** Nada automático: la garantía se atiende por el flujo de
-`garantia` del panel, y quien decide si un caso entra o no entra es una persona.
-O sea que esta frase no es decorativa — es el criterio con el que se va a
-rechazar una reclamación real.
+**Qué dice ahora:**
 
-**Qué dice la norma.** El art. 16 de la Ley 1480 de 2011 enumera las causales de
-exoneración y son cuatro: fuerza mayor, caso fortuito, hecho de un tercero, y el
-uso indebido del bien o el incumplimiento de las instrucciones de instalación,
-uso o mantenimiento. **"Desgaste normal" no aparece**, ni ahí ni en los arts. 7 y
-8. Tres de las cuatro que el texto enumera sí están en la ley; la cuarta la
-añadimos nosotros.
+> La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del
+> hecho de un tercero, del uso indebido del producto —incluida la modificación no
+> autorizada— o del incumplimiento de las instrucciones de instalación, uso o
+> mantenimiento cuando el producto se entregó con manual en castellano. Son las
+> causales del artículo 16 de la Ley 1480 de 2011, y demostrar que el daño viene
+> de una de ellas nos corresponde a nosotros, no a ti.
+
+**Qué hace el sistema.** Nada automático, y eso se comprobó antes de tocar el
+texto: no hay ningún enum de motivos de rechazo ni ninguna regla que mencione el
+desgaste. `DesenlaceGarantia` solo conoce las tres salidas que concede la ley
+—reparar, reponer, reintegrar— y una reclamación negada se responde por el flujo
+de atención, con texto libre. O sea que **esta frase no es decorativa: es el
+único criterio escrito con el que una persona va a rechazar una reclamación
+real**, y cambiarla cambia de verdad lo que pasa.
+
+**Qué dice la norma, verificada.** El art. 16 de la Ley 1480 de 2011 enumera las
+causales de exoneración y son cuatro: fuerza mayor o caso fortuito, hecho de un
+tercero, uso indebido del bien por el consumidor, e incumplimiento de las
+instrucciones de instalación, uso o mantenimiento —esta última **solo si se
+entregó manual en castellano**—. "Desgaste normal" no aparece, ni ahí ni en los
+arts. 7 y 8. Y el mismo artículo pone la carga de la prueba del lado del
+obligado: le toca demostrar el nexo causal entre la causal que alega y el
+defecto.
 
 Y hay un agravante de método: la Ley 1480 es de orden público y se interpreta a
 favor del consumidor. Una exclusión más amplia que la legal no solo es ineficaz
@@ -44,22 +62,51 @@ favor del consumidor. Una exclusión más amplia que la legal no solo es inefica
 abusiva, lo que empeora la posición del negocio en toda la disputa, no solo en
 ese punto.
 
-**La tensión real, que es la que hay que resolver.** El desgaste normal sí
-importa comercialmente: una batería de celular que pierde capacidad con los
-ciclos, o unos tenis con la suela gastada al año, no son un defecto de calidad ni
-de idoneidad. La pregunta no es si se puede excluir —no se puede, con ese
-nombre—; es **cómo se dice lo que sí es cierto**: que la garantía cubre defectos,
-y que el deterioro esperable por el uso normal durante la vida útil del producto
-no es un defecto.
+### Lo que el cotejo destapó y no era la pregunta
 
-**Recomendación.** Quitar "desgaste normal" de la lista de exclusiones y, si el
-abogado lo avala, reformular en positivo dentro de la definición de qué cubre la
-garantía, sin presentarlo como una causal de exoneración. Las otras tres se
-quedan como están.
+La lista vieja no solo sobraba por un lado: **faltaba por dos**. Enumeraba
+"fuerza mayor" pero no el caso fortuito, y no mencionaba el hecho de un tercero,
+que son dos de las cuatro causales que la ley sí concede. O sea que el texto
+renunciaba a defensas legítimas mientras se inventaba una que no existe. Las dos
+cosas se arreglaron a la vez porque son la misma frase.
 
-**Lo que decide el abogado:** si esa reformulación en positivo es defendible o si
-lo prudente es sencillamente no decir nada sobre desgaste y resolver caso por
-caso.
+Se añadieron además dos precisiones que están en el artículo y no estaban en el
+texto: que la causal del manual **solo opera si el manual se entregó en
+castellano**, y que **la carga de la prueba es nuestra**. Ninguna de las dos es
+una concesión: las dos estaban ya en la ley y callarlas solo servía para que
+quien lee creyera otra cosa.
+
+### La tensión que queda, y es la que decide el abogado
+
+El desgaste normal sí importa comercialmente: una batería que pierde capacidad
+con los ciclos, o unos tenis con la suela gastada al año, no son un defecto de
+calidad ni de idoneidad. Quitar la palabra no vuelve falso ese hecho — lo deja
+sin decir.
+
+La pregunta no es si se puede excluir, que ya está contestada: no, con ese
+nombre. Es **cómo se dice lo que sí es cierto**, y hay dos salidas:
+
+1. **Reformular en positivo** dentro de la definición de qué cubre la garantía:
+   que el deterioro esperable por el uso normal durante la vida útil del producto
+   no constituye un defecto de calidad o idoneidad. Informa mejor, y arriesga que
+   se lea como la misma exclusión con otro nombre.
+2. **Callar** y resolver caso por caso, apoyándose en que la garantía cubre
+   defectos y el desgaste no lo es. Más seguro, menos informativo, y deja a quien
+   atiende el PQR sin criterio escrito.
+
+Hoy el texto está en la opción 2, porque es la que no requiere criterio
+profesional para sostenerse.
+
+**Lo que decide el abogado:** cuál de las dos, y si elige la primera, con qué
+redacción exacta. La decisión no es de estilo: la frontera entre "informar que el
+desgaste no es un defecto" y "excluir el desgaste" es justo donde se juega si la
+cláusula es abusiva.
+
+**Y una tercera, que el cotejo dejó planteada:** si conviene enumerar las cuatro
+causales de la ley —que es lo que se hizo— o si es preferible no enumerarlas y
+remitirse al artículo. Enumerar informa mejor, pero cada enumeración que se
+desvía del texto legal es una oportunidad de desviarse. Esta se pegó al artículo
+a propósito.
 
 ---
 
