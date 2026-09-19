@@ -10,8 +10,12 @@ nadie. Cada una lleva aquí lo mismo: **qué dice hoy el texto publicado, qué h
 el sistema, qué dice la norma verificada, y qué recomienda este proyecto.**
 
 Las normas se verificaron contra el texto vigente en el SISJUR de la Alcaldía de
-Bogotá el 19 de septiembre de 2026, no de memoria. Donde no hay cita es porque no
-se encontró norma que lo resuelva, y eso también es un dato.
+Bogotá el 19 de septiembre de 2026, no de memoria, y la lista de países con nivel
+adecuado de protección contra la compilación oficial de la Circular 5 de 2017 de
+la SIC. Donde no hay cita es porque no se encontró norma que lo resuelva, y eso
+también es un dato. Donde la fuente no se dejó leer —el Título V consolidado es un
+PDF escaneado— queda dicho en el punto que lo necesita, en vez de citarlo como si
+se hubiera leído.
 
 ---
 
@@ -137,18 +141,84 @@ número de pedido y —en el comprobante— el detalle de lo comprado y la direc
 de entrega. Desde `adr/0045` ese contenido también queda en reposo en la tabla
 `correo_pendiente` hasta treinta días, en nuestra propia base.
 
-**Qué falta, y no es una cuestión de norma.** Es un **dato de contrato**: en qué
-región procesa Resend y qué dice su DPA. Nadie lo ha mirado. La política ya cubre
-el caso diciendo "pueden estar fuera de Colombia", que es una afirmación
-prudente y probablemente cierta, pero **está escrita sin haberlo comprobado**, y
-este proyecto tiene la costumbre de no dejar pasar eso.
+### El dato, leído el 19 de septiembre de 2026
 
-**Recomendación.** Antes de la consulta con el abogado, alguien tiene que leer el
-contrato y la documentación de Resend y anotar aquí la región. Con el dato en la
-mano, la pregunta al abogado es corta: si la redacción genérica actual basta o si
-conviene nombrar el país. Sin el dato, no hay consulta que hacer.
+Era lo único que faltaba, y no era una cuestión de norma sino de contrato.
 
-**Pendiente de este lado, no del abogado.**
+**Resend procesa en Estados Unidos.** Su acuerdo de tratamiento de datos lo dice
+sin rodeos:
+
+> Customer acknowledges that Company's primary processing operations take place
+> in the United States, and that the transfer of Customer's Personal Data to the
+> United States is necessary for the provision of the Services to Customer.
+
+**Sus veintidós subencargados están todos en Estados Unidos**, según la lista que
+el propio contrato manda consultar, actualizada el 27 de agosto de 2026. Entre
+ellos AWS (alojamiento y envío), PlanetScale y Supabase (bases de datos), Vercel,
+Cloudflare, Datadog y Stripe. Y dos que conviene mirar con atención porque no son
+infraestructura: **Anthropic, PBC** («Artificial Intelligence») y **RunPod, Inc.**
+(«Self-hosted LLMs»). La lista no dice a qué datos alcanzan.
+
+**Los mecanismos de transferencia que Resend invoca no sirven aquí.** El contrato
+se apoya en las cláusulas contractuales tipo de la Unión Europea, la adenda del
+Reino Unido y el *EU-U.S. Data Privacy Framework*. Los tres son instrumentos
+europeos y británicos: ninguno dice nada sobre una transferencia desde Colombia.
+
+### Y con el dato en la mano, la pregunta cambió de forma
+
+El art. 26 de la Ley 1581 de 2012 prohíbe transferir datos a países que no
+ofrezcan un nivel adecuado de protección. Lo que no estaba mirado es que
+**Colombia publica la lista de los que sí**: el numeral 3.2 del Capítulo Tercero
+del Título V de la Circular Única de la SIC.
+
+**Estados Unidos de América está en esa lista**, verificado en la compilación
+oficial de la Circular 5 de 2017 y no de memoria:
+
+> garantizan un nivel adecuado de protección los siguientes países: Alemania;
+> Austria; Bélgica; Bulgaria; Chipre; Costa Rica; Croacia; Dinamarca; Eslovaquia;
+> Eslovenia; Estonia; España; **Estados Unidos de América**; Finlandia; Francia;
+> Grecia; Hungría; Irlanda; Islandia; Italia; Letonia; Lituania; Luxemburgo;
+> Malta; México; Noruega; Países Bajos; Perú; Polonia; Portugal; Reino Unido;
+> República Checa; República de Corea; Rumania; Serbia; Suecia; y los países que
+> han sido declarados con nivel adecuado de protección por la Comisión Europea.
+
+O sea que la transferencia a Resend **no necesita apoyarse en la autorización del
+titular** —la excepción del art. 26 literal a, que es donde uno esperaría que
+cayera— ni en una declaración de conformidad ante la Superintendencia. Cae en el
+supuesto general, que es el camino cómodo. El parágrafo 2 del mismo numeral
+describe qué tocaría hacer si el país no estuviera en la lista: verificar una
+excepción del art. 26, acreditar los estándares del 3.1, o pedir la declaración
+de conformidad. No es nuestro caso.
+
+**Lo que no pude verificar, y va dicho para que no se lea como más firme de lo que
+es.** La lista se leyó en la compilación oficial de la Circular 5 de 2017. La
+versión consolidada del Título V que publica la SIC es un PDF escaneado que no se
+deja leer, y existe además una Circular 2 de 2025 sobre transferencias
+internacionales cuyo alcance no se pudo cotejar. Una versión posterior a 2017
+añadió Australia y Japón **sin quitar a Estados Unidos**, así que todo apunta a
+que sigue vigente — pero quien firme la política debería confirmarlo contra el
+texto consolidado de hoy. Es exactamente el tipo de comprobación por la que se
+paga un abogado.
+
+**Recomendación.** Dejar la redacción genérica como está. Es cierta, y nombrar el
+país no lo exige ninguna norma: el art. 12 de la Ley 1581 pide identificar al
+responsable, y el art. 13 del Decreto 1377 enumera el contenido de la política
+sin incluir la geografía del encargado. Nombrar «Estados Unidos» es opcional y
+arrastra el mismo argumento en contra que nombrar a las transportadoras del punto
+2: un dato concreto que caduca solo es peor que una descripción correcta que no
+caduca.
+
+**Lo que decide el abogado:**
+
+1. Si con Estados Unidos en la lista de la SIC conviene nombrarlo en la política
+   —lo que la haría más transparente y más frágil a la vez— o mantener la
+   fórmula genérica.
+2. Si los dos subencargados de inteligencia artificial de Resend piden algo más
+   que la mención genérica. La pregunta previa es de hecho y no de derecho, y la
+   lista no la contesta: **a qué datos alcanzan**. Por los correos pasan nombre,
+   dirección de entrega y detalle de lo comprado.
+
+**Cerrado de este lado el 19 de septiembre de 2026.** Ya hay consulta que hacer.
 
 ---
 
@@ -208,8 +278,10 @@ formulación que no diga "todo".
 
 ## Antes de la consulta
 
-- [ ] Leer el contrato y la documentación de Resend y anotar la región de
-      procesamiento en el punto 3.
+- [x] ~~Leer el contrato y la documentación de Resend y anotar la región de
+      procesamiento en el punto 3.~~ Leído el 19 de septiembre de 2026:
+      **Estados Unidos**, y ese país está en la lista de nivel adecuado de la
+      SIC, así que la transferencia no depende de la autorización del titular.
 - [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
       septiembre de 2026: 93,0 % con envío a domicilio.
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
