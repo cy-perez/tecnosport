@@ -69,4 +69,7 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
 
   @Override
   public void liberarComprobante(java.util.UUID pedidoId) {}
+
+  @Override
+  public void liberarAvisoDePlazo(UUID pedidoId) {}
 }

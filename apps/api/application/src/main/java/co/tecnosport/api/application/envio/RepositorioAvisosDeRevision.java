@@ -20,4 +20,17 @@ public interface RepositorioAvisosDeRevision {
    * sería el único para siempre y un paquete que empeora pasaría callado.
    */
   boolean reclamarAviso(TipoDeRevision tipo, UUID referencia, Instant novedad, Instant ahora);
+
+  /**
+   * Devuelve un reclamo cuyo correo no salió, para que el siguiente ciclo lo vuelva a intentar. Sin
+   * esto, un SMTP caído dejaba la marca puesta y ese aviso no volvía a armarse nunca: la bandeja
+   * seguía llena y nadie se enteraba, que es exactamente lo contrario de lo que esta vigilancia
+   * existe para hacer.
+   *
+   * <p><strong>Borra la fila, no la restaura a como estaba.</strong> Cuando el reclamo se ganó
+   * re-armando uno anterior, el instante que había antes ya se perdió y no hay a qué volver — pero
+   * tampoco hace falta: {@code avisado_en} solo se lee dentro de {@link #reclamarAviso}, así que
+   * una fila ausente y una fila vieja producen lo mismo, que es avisar en el siguiente ciclo.
+   */
+  void liberarAviso(TipoDeRevision tipo, UUID referencia);
 }

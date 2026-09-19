@@ -89,6 +89,30 @@ class RegistrarUsuarioTest {
     assertTrue(correo.cuerpoHtml().contains(tokens.todos().get(0).id().toString()));
   }
 
+  /**
+   * La cuenta, su constancia de autorización y su token ya están guardados cuando se manda el
+   * correo: deshacer los tres porque el servidor de correo esté caído le devolvería un error a
+   * quien se registró por algo que ya le salió bien. Ver {@code adr/0044}.
+   *
+   * <p>Lo que esto deja abierto, y conviene que la prueba lo recuerde: hoy no existe un "reenviar
+   * verificación", así que esa cuenta se queda sin verificar hasta que su dueño lo pida por otro
+   * canal.
+   */
+  @Test
+  void unCorreoCaidoNoDeshaceLaCuentaReciénCreada() {
+    RegistrarUsuario caso = crear();
+    enviador.hazQueFalle();
+
+    caso.ejecutar(comando("cliente@tecnosport.co", "clave-segura"));
+
+    Usuario usuario =
+        usuarios.buscarPorCorreo(new CorreoElectronico("cliente@tecnosport.co")).orElseThrow();
+    assertFalse(usuario.correoVerificado());
+    assertEquals(1, tokens.todos().size(), "y el token sigue vivo para cuando se pueda reenviar");
+    assertEquals(1, autorizaciones.todas().size(), "la constancia de la Ley 1581 no se pierde");
+    assertEquals(0, enviador.enviados().size());
+  }
+
   @Test
   void registrarConCorreoYaExistenteLanzaCorreoYaRegistrado() {
     RegistrarUsuario caso = crear();

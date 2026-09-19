@@ -16,34 +16,41 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
  * artículos de la Ley 1480 con faltas de ortografía. Esto sigue separando "cómo se manda un correo"
  * de "qué correo hay que mandar", y ahora también de "qué dice".
  *
- * <p><b>Un envío que falla no cancela nada, y durante cuatro fases este proyecto creyó lo
- * contrario.</b> Cinco casos de uso llevan escrito que "si el correo falla, la operación tampoco se
- * guarda", y es falso: el único adaptador de producción, {@code EnviadorDeCorreoSpringMail},
- * registra el fallo y se lo traga sin relanzarlo. Lo hace por una razón buena y también escrita
- * —{@code SolicitarRecuperacion} responde 204 exista o no la cuenta, y un 500 solo cuando la cuenta
- * sí existe sería justo el oráculo de enumeración que ese diseño evita—, así que el defecto no es
- * el adaptador: es que la promesa se escribió en el otro extremo sin comprobar este.
+ * <p><b>Un envío que falla lanza {@link CorreoNoEnviadoException}, y quien llama decide qué hacer
+ * con ella.</b> Es el contrato, y hay que enunciarlo así de explícito porque durante cuatro fases
+ * fue al revés: el único adaptador de producción registraba el fallo y se lo tragaba, de modo que
+ * los doce llamadores tenían la decisión tomada por ellos y ninguno podía enterarse. Cinco casos de
+ * uso llevaban escrito que "si el correo falla, la operación tampoco se guarda" y era falso. Lo
+ * encontró una revisión adversarial; por qué ninguna prueba lo destapó es lo interesante: los
+ * dobles <b>sí</b> lanzan, así que las pruebas comprobaban un escenario que el adaptador de
+ * producción no podía producir. Hoy esas mismas pruebas valen, y valen para lo real.
  *
- * <p>Lo encontró una revisión adversarial, y conviene saber por qué ninguna prueba lo destapó: los
- * dobles de prueba <b>sí</b> lanzan ({@code EnviadorDeCorreoFalso.hazQueFalle()}), así que las
- * pruebas que afirman "un correo caído no deja la solicitud guardada a medias" comprueban un
- * escenario que el adaptador de producción no puede producir. Siguen valiendo para lo que fijan
- * —qué hace el caso de uso si el puerto lanza— pero no demuestran la garantía.
+ * <p>Las tres respuestas posibles, y las tres están en uso:
  *
- * <p>Lo que de verdad ocurre hoy, dicho sin adornos: si el correo no sale, la operación queda
- * comprometida igual y el comprador no se entera. En los caminos del dinero eso significa un
- * reintegro registrado que nadie le comunicó. La salida es una bandeja de salida —guardar el correo
- * en la misma transacción y mandarlo después, con reintentos—, que es un mecanismo entero y no una
- * línea; mientras no exista, el registro de error del adaptador es la única señal, y hay que
- * mirarlo. Decidir si además el envío debería poder tumbar la transacción en los caminos del dinero
- * es una decisión de negocio, no de programación, y no está tomada.
+ * <ol>
+ *   <li><b>Atraparla a propósito</b>, cuando relanzarla haría daño: {@code SolicitarRecuperacion}
+ *       responde 204 exista o no la cuenta, y un 500 solo cuando la cuenta sí existe es el oráculo
+ *       de enumeración que ese diseño evita; {@code RegistrarUsuario} ya creó la cuenta.
+ *   <li><b>Atraparla y devolver el reclamo</b>, en las tareas que marcan "ya avisé" antes de
+ *       mandar: así el siguiente ciclo lo reintenta. Es lo que hace {@code
+ *       EnviarComprobantesDeCompra} con el documento de la venta.
+ *   <li><b>Atraparla porque la operación pesa más que el aviso</b>, en los caminos del dinero: un
+ *       reintegro registrado que no se pudo comunicar es mejor que un reintegro sin constancia, y
+ *       deshacer un despacho con la guía ya emitida y cobrada no lo desemite. Decidido en {@code
+ *       adr/0044}, que es donde tenía que decidirse: es negocio, no programación.
+ * </ol>
  *
- * <p>El otro sentido, que tampoco estaba dicho: el envío ocurre <b>dentro</b> de la transacción de
- * quien llama y antes del commit, así que un fallo al comprometer deja al comprador con un correo
- * que dice "reintegramos el dinero de tu pedido" y al sistema sin ninguna constancia de ese
- * reintegro. La misma bandeja de salida lo cerraría.
+ * <p><b>Lo que sigue abierto, y no lo cierra este puerto:</b> el envío ocurre <b>dentro</b> de la
+ * transacción de quien llama y antes del commit, así que un fallo al comprometer deja al comprador
+ * con un correo que dice "reintegramos el dinero de tu pedido" y al sistema sin ninguna constancia
+ * de ese reintegro. Eso lo cierra una bandeja de salida —guardar el correo en la misma transacción
+ * y mandarlo después, con reintentos—, que es un mecanismo entero y no una línea.
  */
 public interface EnviadorDeCorreo {
 
+  /**
+   * @throws CorreoNoEnviadoException si el correo no salió. Nunca es opcional atenderla: si este
+   *     caso de uso no tiene nada que hacer con ella, eso también es una decisión y va escrita.
+   */
   void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml);
 }

@@ -66,6 +66,27 @@ class SolicitarRecuperacionTest {
     assertTrue(correo.cuerpoHtml().contains(tokens.todos().get(0).id().toString()));
   }
 
+  /**
+   * El único sitio del sistema donde tragarse un fallo de correo protege algo. Este caso de uso
+   * responde igual exista o no la cuenta, y solo llega a enviar cuando sí existe: si un SMTP caído
+   * subiera hasta un 500, ese 500 aparecería exactamente en las cuentas reales y en ninguna otra —
+   * el oráculo de enumeración que todo el diseño de arriba evita (OWASP,
+   * docs/08-seguridad-legal.md). Ver {@code adr/0044}.
+   */
+  @Test
+  void unCorreoCaidoNoDelataQueLaCuentaExiste() {
+    SolicitarRecuperacion caso = crear();
+    conUsuario("cliente@tecnosport.co");
+    enviador.hazQueFalle();
+
+    // Lo que se afirma es que no sale nada: mismo desenlace observable que con un correo que no
+    // tiene cuenta, que es justo lo que hace indistinguibles los dos casos.
+    caso.ejecutar(new SolicitarRecuperacionComando("cliente@tecnosport.co"));
+
+    assertEquals(1, tokens.todos().size(), "el token sí se creó");
+    assertEquals(0, enviador.enviados().size());
+  }
+
   @Test
   void conUnCorreoInexistenteNoHaceNada() {
     SolicitarRecuperacion caso = crear();

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -245,10 +246,11 @@ public final class CancelarPedido {
 
   /**
    * "Te lo comunicaremos de inmediato", dice el texto, y por eso el aviso va dentro de la misma
-   * transacción. Lo que este comentario prometía —que un correo caído tampoco dejara el pedido
-   * cancelado— <b>no ocurre</b>: el adaptador se traga el fallo, así que el pedido queda cancelado
-   * y el comprador puede no enterarse, que es justo el reclamo que esto venía a evitar. Ver {@link
-   * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
+   * transacción. Un correo que no sale <b>no</b> deshace la cancelación, y ahora es una decisión y
+   * no una consecuencia: para cuando se llega aquí ya se anularon las guías en Skydropx y ya se
+   * devolvió el inventario, y nada de eso lo revierte una transacción de base de datos. Un pedido
+   * "cancelado a medias" —guías muertas, existencias devueltas, estado sin cambiar— es un estado
+   * peor que el del comprador que se entera tarde. Ver {@code adr/0044}.
    */
   private void avisar(Pedido pedido, CancelarPedidoComando comando, boolean huboReintegro) {
     TextoDeCorreo explicacion =
@@ -259,11 +261,18 @@ public final class CancelarPedido {
         huboReintegro
             ? TextoDeCorreo.PEDIDO_CANCELACION_CON_REINTEGRO
             : TextoDeCorreo.PEDIDO_CANCELACION_SIN_COBRO;
-    enviadorDeCorreo.enviar(
-        pedido.correo(),
-        textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, pedido.numeroPedido().valor()),
-        textos.texto(explicacion)
-            + textos.texto(dinero)
-            + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_CIERRE));
+    try {
+      enviadorDeCorreo.enviar(
+          pedido.correo(),
+          textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_ASUNTO, pedido.numeroPedido().valor()),
+          textos.texto(explicacion)
+              + textos.texto(dinero)
+              + textos.texto(TextoDeCorreo.PEDIDO_CANCELACION_CIERRE));
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 }

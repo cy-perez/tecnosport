@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -93,7 +94,13 @@ public final class AvisarPlazosDeEntregaVencidos {
       if (!repositorioPedidos.reclamarAvisoDePlazo(pedido.id(), ahora)) {
         continue;
       }
-      avisar(pedido);
+      if (!avisar(pedido)) {
+        // Devolver el reclamo: la vuelta siguiente lo reintenta. Este vigilante existe porque un
+        // plazo incumplido obliga a decírselo a quien compró (art. 50 de la Ley 1480), y un aviso
+        // que no salió no se lo dijo a nadie.
+        repositorioPedidos.liberarAvisoDePlazo(pedido.id());
+        continue;
+      }
       avisados++;
     }
     return new ResultadoVigilanciaPlazos(candidatos.size(), avisados);
@@ -121,11 +128,16 @@ public final class AvisarPlazosDeEntregaVencidos {
    * vigilante.
    *
    * <p>El envío va después del reclamo, nunca antes: ver {@link
-   * RepositorioPedidos#reclamarAvisoDePlazo}. Un fallo aquí deja la marca puesta y el correo sin
-   * salir, que es el lado por el que se prefiere fallar — el adaptador de producción se traga los
-   * fallos de envío de todas formas ({@link EnviadorDeCorreo}).
+   * RepositorioPedidos#reclamarAvisoDePlazo}. Este javadoc decía que un fallo dejaba la marca
+   * puesta y el correo sin salir, "que es el lado por el que se prefiere fallar — el adaptador de
+   * producción se traga los fallos de envío de todas formas". Lo segundo dejó de ser cierto en
+   * {@code adr/0044}, y con ello lo primero deja de ser una preferencia: se devuelve el reclamo y
+   * se reintenta. Un plazo incumplido hay que decírselo a quien compró, y un aviso que no salió no
+   * se lo dijo a nadie.
+   *
+   * @return {@code true} si el correo salió
    */
-  private void avisar(Pedido pedido) {
+  private boolean avisar(Pedido pedido) {
     boolean yaDespachado = pedido.estado() == EstadoPedido.DESPACHADO;
     boolean huboCobro = pedido.dineroRecibido().valor().compareTo(BigDecimal.ZERO) > 0;
 
@@ -141,9 +153,14 @@ public final class AvisarPlazosDeEntregaVencidos {
     }
     cuerpo += textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_CIERRE);
 
-    enviadorDeCorreo.enviar(
-        pedido.correo(),
-        textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_ASUNTO, pedido.numeroPedido().valor()),
-        cuerpo);
+    try {
+      enviadorDeCorreo.enviar(
+          pedido.correo(),
+          textos.texto(TextoDeCorreo.PEDIDO_PLAZO_VENCIDO_ASUNTO, pedido.numeroPedido().valor()),
+          cuerpo);
+      return true;
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      return false;
+    }
   }
 }

@@ -95,8 +95,20 @@ public interface RepositorioPedidos {
    * reintente.
    *
    * <p>Sin esto, un fallo al enviar dejaba la marca puesta y ese comprador se quedaba sin su
-   * comprobante <b>para siempre</b>, porque la consulta ya no lo trae. No cubre el fallo silencioso
-   * —el adaptador de correo de producción se traga los de SMTP— pero sí todo lo que sí lanza.
+   * comprobante <b>para siempre</b>, porque la consulta ya no lo trae. <b>Y durante un día esto no
+   * cubrió nada</b>: el adaptador de correo se tragaba los fallos de SMTP, así que no había
+   * excepción que atrapar y este método no se llamaba nunca. Desde {@code adr/0044} el adaptador
+   * lanza, y esta es la red que de verdad sostiene el documento de la venta.
    */
   void liberarComprobante(UUID pedidoId);
+
+  /**
+   * Devuelve el reclamo de un aviso de plazo que no se pudo mandar, para que la vuelta siguiente lo
+   * reintente. Mismo mecanismo que {@link #liberarComprobante}.
+   *
+   * <p>No hay riesgo de repetirle el aviso a quien ya lo recibió: el reclamo es por pedido y se
+   * devuelve solo cuando el envío falló, así que se reintenta mientras el correo siga sin salir y
+   * se detiene en cuanto sale.
+   */
+  void liberarAvisoDePlazo(UUID pedidoId);
 }

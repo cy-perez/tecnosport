@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -105,6 +106,12 @@ public final class DespacharPedido {
    * un despacho que luego no se comprometió es una promesa sin respaldo (ver el javadoc de {@link
    * EnviadorDeCorreo}, que deja escrito lo que hoy de verdad ocurre en los dos sentidos).
    */
+  /**
+   * Un correo que no sale <b>no</b> deshace el despacho, y aquí el motivo se ve sin esforzarse: la
+   * guía ya está emitida y cobrada en Skydropx, y revertir la transacción no la desemite. Quedaría
+   * un paquete que la transportadora recoge y entrega, de un pedido que el sistema sigue creyendo
+   * en preparación. Ver {@code adr/0044}.
+   */
   private void avisarAlComprador(Pedido pedido, DespacharPedidoComando comando) {
     List<GuiaDespachada> guias = comando.guias();
     String cuerpo =
@@ -121,10 +128,17 @@ public final class DespacharPedido {
                 String.valueOf(guias.size()),
                 listadoDeGuias(guias),
                 enlaceDeEstado(pedido));
-    enviadorDeCorreo.enviar(
-        pedido.correo(),
-        textos.texto(TextoDeCorreo.PEDIDO_DESPACHO_ASUNTO, pedido.numeroPedido().valor()),
-        cuerpo);
+    try {
+      enviadorDeCorreo.enviar(
+          pedido.correo(),
+          textos.texto(TextoDeCorreo.PEDIDO_DESPACHO_ASUNTO, pedido.numeroPedido().valor()),
+          cuerpo);
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
+      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
+      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
+      // no tiene slf4j en el classpath.
+    }
   }
 
   /**

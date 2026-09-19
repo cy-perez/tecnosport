@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Avisa al negocio cuando algo lleva demasiado tiempo en la bandeja de revisión sin que nadie lo
@@ -72,10 +74,14 @@ public final class AvisarRevisionPendiente {
             .toList();
 
     List<String> lineas = new ArrayList<>();
+    // Los reclamos ganados, para devolverlos todos si el correo que los lleva no sale. Van juntos
+    // porque el correo es uno solo: no hay forma de que salga la mitad.
+    List<Reclamo> reclamados = new ArrayList<>();
     for (GuiaEnRevision guia : guiasVencidas) {
       // Reclamar antes de escribir el correo, y solo incluir lo que se ganó: el que pierde es otra
       // instancia que ya avisó de esto mismo.
       if (avisos.reclamarAviso(TipoDeRevision.GUIA, guia.guiaId(), guia.recibidoEn(), ahora)) {
+        reclamados.add(new Reclamo(TipoDeRevision.GUIA, guia.guiaId()));
         lineas.add(
             textos.texto(
                 TextoDeCorreo.ENVIO_REVISION_PENDIENTE_GUIA,
@@ -88,6 +94,7 @@ public final class AvisarRevisionPendiente {
     for (EmisionEnRevision emision : emisionesVencidas) {
       if (avisos.reclamarAviso(
           TipoDeRevision.EMISION, emision.emisionId(), emision.solicitadaEn(), ahora)) {
+        reclamados.add(new Reclamo(TipoDeRevision.EMISION, emision.emisionId()));
         lineas.add(
             textos.texto(
                 TextoDeCorreo.ENVIO_REVISION_PENDIENTE_EMISION,
@@ -102,28 +109,42 @@ public final class AvisarRevisionPendiente {
     if (lineas.isEmpty()) {
       return new ResultadoVigilanciaRevision(vencidas, 0);
     }
-    avisar(lineas);
+    if (!avisar(lineas)) {
+      reclamados.forEach(reclamo -> avisos.liberarAviso(reclamo.tipo(), reclamo.referencia()));
+      return new ResultadoVigilanciaRevision(vencidas, 0);
+    }
     return new ResultadoVigilanciaRevision(vencidas, lineas.size());
   }
 
+  /** Lo justo para devolver un reclamo: qué se reclamó y de qué. */
+  private record Reclamo(TipoDeRevision tipo, UUID referencia) {}
+
   /**
-   * El envío va después de los reclamos, nunca antes: mismo criterio que el vigilante del plazo de
-   * entrega. Un fallo aquí deja las marcas puestas y el correo sin salir, que es el lado por el que
-   * se prefiere fallar — lo que está quieto sigue en la bandeja, visible, y el adaptador de
-   * producción se traga los fallos de envío de todas formas.
+   * El envío va después de los reclamos, nunca antes, y por eso devuelve si salió: quien llama
+   * tiene que poder devolverlos. Este javadoc decía lo contrario —"un fallo aquí deja las marcas
+   * puestas… es el lado por el que se prefiere fallar"— y esa elección se hizo sabiendo que el
+   * adaptador se tragaba los fallos, o sea, sin más opción. Ahora la hay: una bandeja que nadie
+   * mira es justo lo que esta vigilancia existe para impedir, así que se reintenta.
    *
    * <p>Los estados viajan por su nombre del enum y no traducidos, al revés que en la pantalla: este
    * correo lo lee quien opera, y {@code RETENIDO} es la misma palabra que va a ver en el panel de
    * la transportadora y en el registro. Traducirlo aquí daría dos nombres para lo mismo.
+   *
+   * @return {@code true} si el correo salió
    */
-  private void avisar(List<String> lineas) {
+  private boolean avisar(List<String> lineas) {
     String cuerpo =
         textos.texto(TextoDeCorreo.ENVIO_REVISION_PENDIENTE_CUERPO, umbral.toHours(), lineas.size())
             + String.join("", lineas)
             + textos.texto(TextoDeCorreo.ENVIO_REVISION_PENDIENTE_CIERRE);
-    enviadorDeCorreo.enviar(
-        destinatario,
-        textos.texto(TextoDeCorreo.ENVIO_REVISION_PENDIENTE_ASUNTO, lineas.size()),
-        cuerpo);
+    try {
+      enviadorDeCorreo.enviar(
+          destinatario,
+          textos.texto(TextoDeCorreo.ENVIO_REVISION_PENDIENTE_ASUNTO, lineas.size()),
+          cuerpo);
+      return true;
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      return false;
+    }
   }
 }

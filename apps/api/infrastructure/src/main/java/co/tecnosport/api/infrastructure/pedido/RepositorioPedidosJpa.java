@@ -205,6 +205,13 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
   }
 
   @Override
+  @Transactional
+  public void liberarAvisoDePlazo(UUID pedidoId) {
+    Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
+    pedidos.liberarAvisoDePlazo(pedidoId);
+  }
+
+  @Override
   public NumeroPedido siguienteNumero(int anio) {
     Long secuencial =
         jdbc.queryForObject(

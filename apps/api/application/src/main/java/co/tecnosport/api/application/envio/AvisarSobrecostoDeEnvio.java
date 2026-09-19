@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.envio;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
@@ -79,10 +80,15 @@ public final class AvisarSobrecostoDeEnvio {
 
     List<SobrecostoDeEnvio> cobros = respuesta.get();
     List<String> lineas = new ArrayList<>();
+    // Los reclamos ganados, para devolverlos todos si el correo que los lleva no sale. Aquí pesa
+    // más que en la bandeja: con `do nothing`, un reclamo que no se devuelve no se vuelve a ganar
+    // nunca, y ese cobro solo aparecería en el extracto.
+    List<String> reclamadas = new ArrayList<>();
     for (SobrecostoDeEnvio cobro : cobros) {
       // Reclamar antes de escribir la línea, y solo incluir lo que se ganó: el que pierde es otra
       // vuelta —u otra instancia— que ya avisó de este mismo cobro.
       if (avisos.reclamarAviso(cobro.clave(), ahora)) {
+        reclamadas.add(cobro.clave());
         lineas.add(linea(cobro));
       }
     }
@@ -90,7 +96,10 @@ public final class AvisarSobrecostoDeEnvio {
     if (lineas.isEmpty()) {
       return ResultadoVigilanciaSobrecostos.sinNovedad(cobros.size());
     }
-    avisar(lineas);
+    if (!avisar(lineas)) {
+      reclamadas.forEach(avisos::liberarAviso);
+      return ResultadoVigilanciaSobrecostos.sinNovedad(cobros.size());
+    }
     return ResultadoVigilanciaSobrecostos.avisado(cobros.size(), lineas.size());
   }
 
@@ -140,17 +149,25 @@ public final class AvisarSobrecostoDeEnvio {
   }
 
   /**
-   * El correo sale después de los reclamos, nunca antes: mismo criterio que los otros dos
-   * vigilantes. Un fallo aquí deja las marcas puestas y el correo sin salir — se prefiere ese lado
-   * porque el dato no se pierde (sigue en la plataforma, y el saldo ya bajó) y porque el adaptador
-   * de producción se traga los fallos de envío de todas formas.
+   * El correo sale después de los reclamos, nunca antes, y por eso devuelve si salió: quien llama
+   * tiene que poder devolverlos. Este javadoc decía que un fallo dejaba las marcas puestas y que se
+   * prefería ese lado "porque el dato no se pierde"; era cierto a medias —el cobro sigue en la
+   * plataforma, sí, pero nadie lo va a mirar ahí, que es exactamente para lo que existe este aviso—
+   * y además se eligió sin alternativa, porque el adaptador se tragaba los fallos.
+   *
+   * @return {@code true} si el correo salió
    */
-  private void avisar(List<String> lineas) {
+  private boolean avisar(List<String> lineas) {
     String cuerpo =
         textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_CUERPO, lineas.size())
             + String.join("", lineas)
             + textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_CIERRE);
-    enviadorDeCorreo.enviar(
-        destinatario, textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_ASUNTO, lineas.size()), cuerpo);
+    try {
+      enviadorDeCorreo.enviar(
+          destinatario, textos.texto(TextoDeCorreo.ENVIO_SOBRECOSTO_ASUNTO, lineas.size()), cuerpo);
+      return true;
+    } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
+      return false;
+    }
   }
 }

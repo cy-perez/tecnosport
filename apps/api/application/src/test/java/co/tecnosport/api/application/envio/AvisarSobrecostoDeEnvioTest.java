@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.TextoDeCorreo;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
@@ -192,6 +193,31 @@ class AvisarSobrecostoDeEnvioTest {
   }
 
   /**
+   * Si el correo no sale, los reclamos se devuelven. <b>Aquí pesa más que en cualquier otro
+   * vigilante</b>: el reclamo de un sobrecosto se escribe con {@code do nothing}, así que uno que
+   * no se devuelve no se vuelve a ganar jamás — ese cobro de dinero no se avisaría nunca y solo
+   * aparecería en el extracto. Ver {@code adr/0044}.
+   */
+  @Test
+  void siElCorreoFallaDevuelveLosReclamosYLaVueltaSiguienteReintenta() {
+    consultor.devolver(sobrecosto(8_400, "873837506712", AHORA.minusSeconds(3600)));
+    correo.hazQueFalle();
+
+    ResultadoVigilanciaSobrecostos primera = caso.ejecutar();
+
+    assertTrue(primera.seSupo());
+    assertEquals(0, primera.avisados(), "no se avisó de nada");
+    assertEquals(0, correo.enviados.size());
+
+    correo.queVuelvaAFuncionar();
+    ResultadoVigilanciaSobrecostos segunda = caso.ejecutar();
+
+    assertEquals(1, segunda.avisados(), "el reclamo devuelto deja que se reintente");
+    assertEquals(1, correo.enviados.size());
+    assertTrue(correo.enviados.getFirst().cuerpo().contains("8400"));
+  }
+
+  /**
    * Y la otra cara: si la transportadora reliquida el mismo cargo por otra cifra, la clave cambia y
    * se vuelve a avisar. Enterarse dos veces de algo de dinero es el error que se prefiere.
    */
@@ -351,6 +377,11 @@ class AvisarSobrecostoDeEnvioTest {
     public boolean reclamarAviso(String clave, Instant ahora) {
       return reclamadas.add(clave);
     }
+
+    @Override
+    public void liberarAviso(String clave) {
+      reclamadas.remove(clave);
+    }
   }
 
   /**
@@ -412,8 +443,22 @@ class AvisarSobrecostoDeEnvioTest {
 
     private final List<Correo> enviados = new ArrayList<>();
 
+    private boolean falla;
+
+    void hazQueFalle() {
+      this.falla = true;
+    }
+
+    void queVuelvaAFuncionar() {
+      this.falla = false;
+    }
+
     @Override
     public void enviar(CorreoElectronico destinatario, String asunto, String cuerpo) {
+      if (falla) {
+        throw new CorreoNoEnviadoException(
+            new IllegalStateException("el servidor de correo no respondió"));
+      }
       enviados.add(new Correo(destinatario, asunto, cuerpo));
     }
   }

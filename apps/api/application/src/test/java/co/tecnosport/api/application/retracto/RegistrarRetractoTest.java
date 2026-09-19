@@ -164,15 +164,24 @@ class RegistrarRetractoTest {
         "el acuse va con el numero del pedido");
   }
 
+  /**
+   * Esta prueba afirmaba lo contrario —se llamaba {@code
+   * siElCorreoFallaNoQuedaUnaSolicitudSinAcuse} y exigía que la excepción subiera— y estuvo en
+   * verde cuatro fases comprobando algo que el adaptador de producción no podía producir: se
+   * tragaba los fallos de SMTP, así que en la calle la solicitud quedaba guardada siempre. Ahora el
+   * adaptador lanza y la decisión está tomada de verdad, en {@code adr/0044}, y es la que esta
+   * prueba fija: <b>quien se retractó dentro del plazo se retractó</b>, y la constancia no depende
+   * de que el correo salga.
+   */
   @Test
-  void siElCorreoFallaNoQuedaUnaSolicitudSinAcuse() {
+  void siElCorreoFallaLaSolicitudSeGuardaIgual() {
     Pedido pedido = pedidoEntregado();
     correos.hazQueFalle();
 
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
-                .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1")));
+    casoDeUso(enBogota(9, 14), CalendarioHabil.sinFestivosCargados())
+        .ejecutar(new RegistrarRetractoComando(pedido.id(), null, null, "admin:1"));
+
+    assertEquals(1, solicitudes.todas().size(), "la solicitud queda registrada");
+    assertTrue(correos.enviados().isEmpty(), "y el acuse no salió");
   }
 }

@@ -106,6 +106,9 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   @Override
   public void liberarComprobante(UUID pedidoId) {}
 
+  @Override
+  public void liberarAvisoDePlazo(UUID pedidoId) {}
+
   /** Que otra instancia le gane el reclamo a ese pedido. */
   void queOtroGaneElReclamoDe(UUID pedidoId) {
     this.perdedorDelReclamo = pedidoId;
