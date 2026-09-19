@@ -130,7 +130,13 @@ public final class AvisarRevisionPendiente {
    * correo lo lee quien opera, y {@code RETENIDO} es la misma palabra que va a ver en el panel de
    * la transportadora y en el registro. Traducirlo aquí daría dos nombres para lo mismo.
    *
-   * @return {@code true} si el correo salió
+   * <p>Desde {@code adr/0045} "salir" quiere decir <b>quedar encolado</b> en la bandeja de salida,
+   * y por eso el nombre de este valor se quedó corto a propósito en vez de mentir: lo que esta
+   * vuelta puede afirmar es que el correo está escrito y que alguien lo va a mandar, no que llegó.
+   * El reclamo se sigue devolviendo igual — si ni siquiera se pudo encolar, no hay nada que lo
+   * reintente.
+   *
+   * @return {@code true} si el correo quedó encolado
    */
   private boolean avisar(List<String> lineas) {
     String cuerpo =

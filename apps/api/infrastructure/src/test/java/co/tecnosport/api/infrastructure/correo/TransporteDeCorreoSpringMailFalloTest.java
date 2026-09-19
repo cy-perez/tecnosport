@@ -7,7 +7,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import co.tecnosport.api.application.compartido.CorreoNoEnviadoException;
-import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
+import co.tecnosport.api.application.compartido.TransporteDeCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
@@ -20,7 +20,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
 /**
- * Sin Testcontainers ni Mailpit: {@link EnviadorDeCorreoSpringMailTest} ya cubre el camino feliz
+ * Sin Testcontainers ni Mailpit: {@link TransporteDeCorreoSpringMailTest} ya cubre el camino feliz
  * contra un servidor SMTP real. Aquí solo hace falta un {@link JavaMailSender} que falle — un doble
  * de diez líneas, no Mockito (docs/06-testing.md).
  *
@@ -30,22 +30,23 @@ import org.springframework.mail.javamail.JavaMailSender;
  * decidiera por sus doce llamadores que un correo perdido no le importa a nadie. Una prueba puede
  * fijar un error tan bien como fija un acierto.
  */
-class EnviadorDeCorreoSpringMailFalloTest {
+class TransporteDeCorreoSpringMailFalloTest {
 
   @Test
   void unFalloAlEnviarSeRegistraYSePropagaSinExponerElCorreo() {
     ListAppender<ILoggingEvent> appender = new ListAppender<>();
-    Logger logger = (Logger) LoggerFactory.getLogger(EnviadorDeCorreoSpringMail.class);
+    Logger logger = (Logger) LoggerFactory.getLogger(TransporteDeCorreoSpringMail.class);
     appender.start();
     logger.addAppender(appender);
 
     try {
-      EnviadorDeCorreo enviador =
-          new EnviadorDeCorreoSpringMail(
+      TransporteDeCorreo enviador =
+          new TransporteDeCorreoSpringMail(
               new JavaMailSenderQueFalla(), new PropiedadesCorreo("no-responder@tecnosport.co"));
 
-      // Se propaga: es de lo que depende que EnviarComprobantesDeCompra pueda devolver el reclamo
-      // y reintentar. Sin esto, su catch está escrito y no se ejecuta nunca.
+      // Se propaga: es de lo que depende que DrenarBandejaDeSalida sepa que este correo no salió y
+      // lo reintente. Sin esto, la bandeja marcaría como enviado lo que se quedó en el camino, que
+      // es el mismo silencio de antes con una tabla delante.
       assertThatThrownBy(
               () ->
                   enviador.enviar(

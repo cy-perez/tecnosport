@@ -16,41 +16,42 @@ import co.tecnosport.api.domain.compartido.CorreoElectronico;
  * artículos de la Ley 1480 con faltas de ortografía. Esto sigue separando "cómo se manda un correo"
  * de "qué correo hay que mandar", y ahora también de "qué dice".
  *
- * <p><b>Un envío que falla lanza {@link CorreoNoEnviadoException}, y quien llama decide qué hacer
- * con ella.</b> Es el contrato, y hay que enunciarlo así de explícito porque durante cuatro fases
- * fue al revés: el único adaptador de producción registraba el fallo y se lo tragaba, de modo que
- * los doce llamadores tenían la decisión tomada por ellos y ninguno podía enterarse. Cinco casos de
- * uso llevaban escrito que "si el correo falla, la operación tampoco se guarda" y era falso. Lo
- * encontró una revisión adversarial; por qué ninguna prueba lo destapó es lo interesante: los
- * dobles <b>sí</b> lanzan, así que las pruebas comprobaban un escenario que el adaptador de
- * producción no podía producir. Hoy esas mismas pruebas valen, y valen para lo real.
+ * <p><b>Esto no manda un correo: lo encola</b> (adr/0045). El adaptador de producción escribe una
+ * fila en la bandeja de salida <b>uniéndose a la transacción de quien llama</b>, y {@link
+ * DrenarBandejaDeSalida} la manda después, con reintentos. Quien quiera mandar un correo de verdad,
+ * aquí y ahora, tiene que pedir {@link TransporteDeCorreo} por su nombre — y no debería quererlo.
  *
- * <p>Las tres respuestas posibles, y las tres están en uso:
+ * <p><b>Por qué esto es así, en una historia de tres pasos</b>, porque explica el estado del código
+ * que la rodea y evita que alguien "simplifique" hacia atrás:
  *
  * <ol>
- *   <li><b>Atraparla a propósito</b>, cuando relanzarla haría daño: {@code SolicitarRecuperacion}
- *       responde 204 exista o no la cuenta, y un 500 solo cuando la cuenta sí existe es el oráculo
- *       de enumeración que ese diseño evita; {@code RegistrarUsuario} ya creó la cuenta.
- *   <li><b>Atraparla y devolver el reclamo</b>, en las tareas que marcan "ya avisé" antes de
- *       mandar: así el siguiente ciclo lo reintenta. Es lo que hace {@code
- *       EnviarComprobantesDeCompra} con el documento de la venta.
- *   <li><b>Atraparla porque la operación pesa más que el aviso</b>, en los caminos del dinero: un
- *       reintegro registrado que no se pudo comunicar es mejor que un reintegro sin constancia, y
- *       deshacer un despacho con la guía ya emitida y cobrada no lo desemite. Decidido en {@code
- *       adr/0044}, que es donde tenía que decidirse: es negocio, no programación.
+ *   <li>Durante cuatro fases el único adaptador de producción registraba el fallo de SMTP y <b>se
+ *       lo tragaba</b>, de modo que los doce llamadores tenían la decisión tomada por ellos y
+ *       ninguno podía enterarse. Cinco casos de uso llevaban escrito que "si el correo falla, la
+ *       operación tampoco se guarda" y era falso.
+ *   <li>{@code adr/0044} lo puso a lanzar y devolvió la decisión a cada caso de uso. Correcto, y
+ *       sin embargo insuficiente: el correo seguía saliendo <b>dentro</b> de la transacción y antes
+ *       del commit, así que un fallo al comprometer dejaba a quien compró leyendo "reintegramos el
+ *       dinero de tu pedido" y al sistema sin constancia del reintegro. Ese sentido no lo arregla
+ *       ningún {@code catch}, y el propio ADR lo dejó anotado.
+ *   <li>{@code adr/0045} invierte el orden, y al hacerlo se lleva por delante la pregunta entera:
+ *       <b>si el correo se encola con la transacción, ya no hay ninguna decisión que tomar en el
+ *       sitio de la llamada</b>. Reintentar es de la bandeja.
  * </ol>
  *
- * <p><b>Lo que sigue abierto, y no lo cierra este puerto:</b> el envío ocurre <b>dentro</b> de la
- * transacción de quien llama y antes del commit, así que un fallo al comprometer deja al comprador
- * con un correo que dice "reintegramos el dinero de tu pedido" y al sistema sin ninguna constancia
- * de ese reintegro. Eso lo cierra una bandeja de salida —guardar el correo en la misma transacción
- * y mandarlo después, con reintentos—, que es un mecanismo entero y no una línea.
+ * <p><b>Los {@code catch} de los llamadores siguen ahí y ya no protegen lo que decían.</b> Están
+ * reescritos uno por uno, y lo que hoy atrapan es un fallo de base de datos al encolar — caso en el
+ * que la transacción de quien llama está condenada de todas formas. Se dejaron puestos porque
+ * quitarlos obligaría a que un error de escritura se propagara distinto en trece sitios; lo que no
+ * se dejó fue el comentario viejo, que afirmaba una protección inexistente.
  */
 public interface EnviadorDeCorreo {
 
   /**
-   * @throws CorreoNoEnviadoException si el correo no salió. Nunca es opcional atenderla: si este
-   *     caso de uso no tiene nada que hacer con ella, eso también es una decisión y va escrita.
+   * Deja el correo en la bandeja de salida.
+   *
+   * @throws CorreoNoEnviadoException si ni siquiera se pudo encolar, que en la práctica es un fallo
+   *     de base de datos. Un SMTP caído ya no llega hasta aquí.
    */
   void enviar(CorreoElectronico destinatario, String asunto, String cuerpoHtml);
 }

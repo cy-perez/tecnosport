@@ -135,7 +135,13 @@ public final class AvisarPlazosDeEntregaVencidos {
    * se reintenta. Un plazo incumplido hay que decírselo a quien compró, y un aviso que no salió no
    * se lo dijo a nadie.
    *
-   * @return {@code true} si el correo salió
+   * <p>Desde {@code adr/0045} "salir" quiere decir <b>quedar encolado</b> en la bandeja de salida,
+   * y por eso el nombre de este valor se quedó corto a propósito en vez de mentir: lo que esta
+   * vuelta puede afirmar es que el correo está escrito y que alguien lo va a mandar, no que llegó.
+   * El reclamo se sigue devolviendo igual — si ni siquiera se pudo encolar, no hay nada que lo
+   * reintente.
+   *
+   * @return {@code true} si el correo quedó encolado
    */
   private boolean avisar(Pedido pedido) {
     boolean yaDespachado = pedido.estado() == EstadoPedido.DESPACHADO;

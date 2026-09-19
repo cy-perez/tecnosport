@@ -2,7 +2,7 @@ package co.tecnosport.api.infrastructure.correo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
+import co.tecnosport.api.application.compartido.TransporteDeCorreo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import java.io.IOException;
 import java.net.URI;
@@ -31,12 +31,12 @@ import org.testcontainers.utility.DockerImageName;
  * <p>{@code JavaMailSender} lo autoconfigura Spring Boot solo desde {@code spring.mail.*}, sin
  * pasar por {@code ConfiguracionCorreo} — esa clase vive en {@code bootstrap}, que {@code
  * infrastructure} no puede ver ni en pruebas (ver {@code ConfiguracionDePruebasInfraestructura}).
- * Por eso {@link EnviadorDeCorreoSpringMail} se construye a mano aquí, igual que cualquier otro
+ * Por eso {@link TransporteDeCorreoSpringMail} se construye a mano aquí, igual que cualquier otro
  * adaptador de esta capa que no pasa por un {@code @Bean} de bootstrap en su propia prueba.
  */
 @SpringBootTest
 @Testcontainers
-class EnviadorDeCorreoSpringMailTest {
+class TransporteDeCorreoSpringMailTest {
 
   @Container @ServiceConnection
   static PostgreSQLContainer postgres =
@@ -56,8 +56,8 @@ class EnviadorDeCorreoSpringMailTest {
 
   @Test
   void unCorreoEnviadoLlegaAlServidorSmtp() throws IOException, InterruptedException {
-    EnviadorDeCorreo enviador =
-        new EnviadorDeCorreoSpringMail(
+    TransporteDeCorreo enviador =
+        new TransporteDeCorreoSpringMail(
             mailSender, new PropiedadesCorreo("no-responder@tecnosport.co"));
 
     enviador.enviar(

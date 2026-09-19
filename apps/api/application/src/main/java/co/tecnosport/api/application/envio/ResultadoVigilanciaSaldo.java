@@ -14,9 +14,14 @@ import java.util.Optional;
  * desenlace para decirlo: el saldo está bajo <b>y</b> el aviso no salió, que es el peor de los
  * cuatro — el despacho está a punto de detenerse y nadie va a leerlo en su bandeja.
  *
+ * <p><b>Y desde {@code adr/0045}, "salió" es "quedó encolado".</b> El cuarto desenlace no sobra por
+ * eso: sigue existiendo el caso de no poder ni encolar. Lo que ya no puede pasar es que un SMTP
+ * caído se lleve el aviso en silencio — de eso se encarga la bandeja, reintentando. Este vigilante,
+ * que no lleva memoria de lo ya avisado, tampoco necesita saberlo.
+ *
  * @param saldo vacío solo cuando la plataforma no contestó
- * @param avisado si salió el correo
- * @param avisoFallido si había que avisar y el correo no salió
+ * @param avisado si el correo quedó encolado
+ * @param avisoFallido si había que avisar y el correo no se pudo ni encolar
  */
 public record ResultadoVigilanciaSaldo(
     Optional<Dinero> saldo, boolean avisado, boolean avisoFallido) {
