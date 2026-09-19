@@ -3009,6 +3009,10 @@ dependía de nada del envío cotizado y era un incumplimiento vivo. Ver abajo.
 normal" como exclusión de garantía; si describir a un tercero por su categoría
 —en vez de nombrarlo— satisface el deber de información mientras ese tercero no
 reciba datos; y en qué región procesa Resend, que es dato de contrato.
+**Los tres pasaron a `docs/14-consultas-al-abogado.md` el 19 de septiembre de
+2026**, con la norma verificada y una recomendación cada uno — y al verificarla,
+dos cambiaron de forma. Enunciadas aquí como tres frases sueltas no se le podían
+entregar a nadie.
 
 ## La revisión adversarial de los tres bloques sin fase (2026-09-10)
 
@@ -5039,13 +5043,212 @@ vigilantes fallan sin su `liberar`, la del adaptador falla si vuelve a tragar.
 
 ### Lo que queda abierto, y nace aquí
 
-- **El correo sale dentro de la transacción y antes del commit.** Un fallo al comprometer deja a
+- ~~**El correo sale dentro de la transacción y antes del commit.** Un fallo al comprometer deja a
   quien compró leyendo "reintegramos el dinero de tu pedido" y al sistema sin constancia de ese
   reintegro. Ningún `catch` arregla ese sentido: lo cierra una **bandeja de salida**, que es un
-  mecanismo entero —tabla, tarea, reintentos— y no se construyó aquí.
-- **No hay "reenviar verificación".** Una cuenta creada el día que el SMTP falló se queda sin
+  mecanismo entero —tabla, tarea, reintentos— y no se construyó aquí.~~ **Cerrado el 19 de
+  septiembre de 2026** (`adr/0045`), al día siguiente: era lo único de este bloque que dejaba viva
+  una ventana en la que alguien lee el aviso de algo que no ocurrió.
+- ~~**No hay "reenviar verificación".** Una cuenta creada el día que el SMTP falló se queda sin
   verificar hasta que su dueño lo pida por otro canal. Es la deuda concreta del `catch` de
-  `RegistrarUsuario`.
+  `RegistrarUsuario`.~~ **Cerrado el 19 de septiembre de 2026**, y por los dos lados: la bandeja
+  reintenta, y además existe dónde pedir otro enlace cuando el que había caducó.
+
+## La bandeja de salida, y el Lighthouse que nadie había repetido (2026-09-19)
+
+Tres frentes en una rama: la deuda que nació el día anterior, la cobertura de envío que nunca se
+midió, y lo que quedaba de la Fase 6.
+
+### El correo se encola con la transacción que lo origina
+
+`adr/0044` cerró el silencio del adaptador y dejó anotado lo que no podía cerrar: el correo salía
+**dentro** de la transacción y antes del commit, así que un fallo al comprometer dejaba a quien
+compró leyendo "reintegramos el dinero de tu pedido" y al sistema sin constancia de ese reintegro.
+
+**Ningún `catch` arregla eso porque el problema no es el fallo del correo: es el orden.** Mandar
+primero y comprometer después crea una ventana en la que el mensaje ya salió y el hecho que anuncia
+todavía puede no ocurrir. Atrapar mejor la excepción no toca esa ventana. Detalle en `adr/0045`;
+aquí lo que enseñó.
+
+**Los trece llamadores no estaban todos en la misma situación, y eso acotó el trabajo.** Los seis
+que entran por un controlador mandan el correo dentro del `TransactionTemplate` — ahí estaba el
+agujero, y ahí se cierra: la fila y la escritura de negocio se comprometen juntas o ninguna. Los que
+entran por una tarea corren sin transacción a propósito y ya se cubrían con su `reclamar`/`liberar`;
+esos no ganan atomicidad, ganan reintentos. Sin esa distinción, el trabajo parecía el doble de
+grande de lo que era.
+
+**El reclamo y la programación del reintento son la misma sentencia**, y de ahí salen tres cosas a
+la vez: dos instancias no mandan el mismo correo, un proceso que muera con el correo en la mano ya
+dejó su reintento puesto, y **no hace falta un corte por tiempo que suelte los reclamos atascados**.
+Esa última es la que importa, y es una lección aprendida a golpes: un `reclamado_en` aparte habría
+necesitado su propio vencimiento, que es exactamente el defecto que `EmisionDeGuia` pagó con una
+fila `EN_CURSO` que no vencía nunca.
+
+**Lo que este diseño no puede hacer, y va escrito en tres sitios:** avisar por correo de que los
+correos no salen. La bandeja atascada es justo el estado en el que mandar un aviso es imposible. Los
+otros vigilantes del sistema avisan por correo porque su fallo no afecta al correo; este sí. Queda
+un registro en `error` y una alerta de Cloud Logging por montar, que es infraestructura.
+
+### Trece comentarios que dejaron de ser ciertos el mismo día que se escribieron
+
+Encolar prácticamente no puede fallar, así que los trece `catch` pasaron a atrapar un fallo de base
+de datos —caso en el que la transacción ya está condenada— y sus comentarios quedaron describiendo
+una protección inexistente. Se reescribieron los trece en el mismo commit, más tres `@return` que
+decían "si el correo salió" y hoy dicen "si quedó encolado", más el párrafo de
+`ResultadoComprobantes` que todavía afirmaba que el adaptador se tragaba los fallos de SMTP.
+
+No es limpieza cosmética. **Un comentario que dejó de ser cierto miente con más autoridad que el
+código**, porque nadie lo compila y porque quien lo lee asume que alguien lo verificó. Es el mismo
+género del plugin de capas que aceptaba la configuración sin aplicarla, del doble cuyo reclamo
+atómico era un `Set.add()` y de la prueba en verde que fijaba el defecto.
+
+### Y con la bandeja puesta, reenviar la verificación se volvió corto
+
+Era la otra deuda de `adr/0044`, escrita en el `catch` de `RegistrarUsuario`. Se cierra por los dos
+lados: un SMTP caído ya no pierde el correo, y además hay dónde pedir otro enlace cuando el que
+había caducó.
+
+`/api/v1/auth/verificacion` no protege a `/verificacion/reenviar`: un patrón de ruta exacto no
+cubre subrutas. Es literalmente el hallazgo #6 de la revisión adversarial de los 122 commits, el que
+dejó sin límite el endpoint que cotiza contra Skydropx.
+
+**Y aquí pasó algo que merece su propio párrafo, porque el borrador de esta entrada afirmaba lo
+contrario.** Decía que el guardián de las rutas del filtro había prevenido la repetición del
+defecto. Al releerlo para comprobarlo, no era cierto: la prueba comparaba los patrones registrados
+contra un conjunto escrito a mano, así que **falló porque la ruta nueva se registró, no porque el
+endpoint nuevo existiera**. Si me hubiera olvidado del filtro —que es el defecto de verdad— habría
+pasado en verde.
+
+Un guardián que solo detecta lo que sí se hizo no protege del olvido. Es el mismo género del plugin
+de capas que aceptaba la configuración sin aplicarla y del doble cuyo reclamo atómico era un
+`Set.add()`, y van tres. Ahora la prueba **sale del controlador**: lee los `@PostMapping` de
+`AutenticacionControlador` por reflexión y exige que cada ruta esté en el filtro o en una lista de
+exentas con su motivo escrito —`/refresco`, que lo llama todo visitante anónimo en cada arranque y
+cuyo límite por IP tumbaría una oficina entera detrás de un NAT, y `/cierre`, donde no hay nada que
+enumerar—. Un endpoint nuevo ya no tiene forma de nacer sin que alguien decida. Comprobado quitando
+la ruta del filtro: falla.
+
+Con una tercera prueba que vigila a la lista de exentas, porque una exención con un dedazo tapa un
+hueco que no existe y deja nacer sin límite a la ruta que algún día sí se llame así.
+
+De paso salió un texto equivocado en la pantalla de verificación: decía "regístrate de nuevo para
+recibir uno nuevo", y con una cuenta ya creada eso devuelve 409. Llevaba ahí desde la Fase 4.
+
+### Lighthouse, repetido tras diez días sin medir
+
+El arnés no se corría desde el 9 de septiembre, y entre medias entraron la banda de portada, los
+cuatro formularios del panel y las fechas localizadas. Lo que interesaba no era el rendimiento
+—sigue sin significar nada mientras las tarjetas traigan sus fotos de `picsum.photos`— sino las
+otras tres columnas, que no dependen de las imágenes:
+
+| | rendimiento | accesibilidad | buenas prácticas | SEO |
+|---|---|---|---|---|
+| portada | 57 (era 69–70) | **100** | **100** | **100** |
+| ficha | 64 (era 62) | **100** | **100** | **100** |
+| legales | 92 (era 70–71) | **100** | **100** | **100** |
+
+**Las tres columnas que importaban aguantaron en 100.** Ningún trabajo de los últimos diez días
+metió una regresión de accesibilidad, buenas prácticas ni SEO.
+
+**Y el rendimiento de la portada bajó doce puntos, con causa identificada:** la banda de portada
+trajo una fotografía de 130 kB que antes no existía —el hero era un bloque de CSS— y ahora es el
+elemento LCP. El FCP se fue a 5,1 s. La configuración es la correcta: `priority` está en el hero y
+la rejilla de novedades ya no prioriza ninguna tarjeta, que es lo que se decidió el 18 de
+septiembre. Lo que falta es medir esa foto contra el presupuesto de la pantalla, y **eso no se puede
+hacer con propiedad hasta que las tarjetas dejen de traer ocho peticiones a `picsum.photos`**.
+
+O sea que el pendiente de Lighthouse no se cierra aquí, y ahora se sabe exactamente de qué depende:
+de sacar el catálogo real a GCS. Lo que sí se cierra es la duda de si algo se había roto.
+
+### El expediente para el abogado
+
+Las consultas pendientes llevaban desde el 10 de septiembre enunciadas como tres preguntas sueltas
+dentro de una entrada de este mismo documento. Así no se le entregan a nadie. Ahora viven en
+`docs/14-consultas-al-abogado.md`, una por sección, cada una con qué dice el texto publicado, qué
+hace el sistema, qué dice la norma verificada y qué recomienda el proyecto.
+
+**Al verificar la norma, dos de las tres preguntas cambiaron de forma:**
+
+1. **"Desgaste normal" no es una causal de exoneración.** El art. 16 de la Ley 1480 enumera cuatro
+   —fuerza mayor, caso fortuito, hecho de un tercero, y uso indebido o incumplimiento de
+   instrucciones— y esa no está. Tres de las cuatro que los términos enumeran sí; la cuarta la
+   añadimos nosotros, y una exclusión más amplia que la legal no solo es ineficaz: en un expediente
+   de la SIC se lee como cláusula abusiva y empeora la posición en toda la disputa.
+2. **Nombrar a los terceros no lo exige ninguna norma.** El art. 12 de la Ley 1581 pide identificar
+   al **responsable**, no a los terceros; el art. 13 del Decreto 1377 enumera el contenido de la
+   política y tampoco los incluye. O sea que nombrar a Skydropx con NIT ya es más de lo que se pide,
+   y describir por categoría a las transportadoras que ella subcontrata cumple el mínimo. La
+   pregunta deja de ser "¿es legal?" y pasa a ser "¿conviene?", que es otra conversación — con el
+   argumento en contra de que una lista nombrada y desactualizada es *peor* que una descripción
+   correcta, porque pasa de genérica a falsa.
+
+La tercera —en qué región procesa Resend— resultó no ser una pregunta para el abogado todavía: es un
+dato de contrato que nadie ha mirado. Sin ese dato no hay consulta que hacer, y queda anotado como
+pendiente de este lado.
+
+Y nació una cuarta, de la medición de cobertura.
+
+### La cobertura de envío, medida por primera vez sobre el país entero
+
+`docs/12` y los términos publican *"Despachamos a todo el territorio nacional"*. Esa frase descansaba
+sobre una muestra de **dos ciudades**: Medellín y Bogotá (`docs/13` §6.5). Nadie había medido el
+resto, y el checkout tiene `ENVIO_SIN_COBERTURA` con caída a recogida — la pregunta no era si el
+mecanismo funciona, sino a cuánta gente le toca.
+
+`tools/sonda-cobertura.mjs` cotiza los **1122 municipios** de la lista DIVIPOLA, con y sin recaudo,
+contra la cuenta real. Dos cosas la hicieron posible y las dos ya estaban ahí: la lista completa
+vive en el repositorio desde el 4 de septiembre —`geografia-co.datos.ts`, la que alimenta el
+formulario del checkout, así que la sonda mide exactamente los destinos que se le ofrecen a quien
+compra— y **cotizar no gasta saldo**. Es reanudable a propósito: cuatro horas contra un proveedor
+lento se cortan, y volver a empezar desde cero es como se acaba no midiendo nunca.
+
+Mide dos coberturas distintas porque son dos, y confundirlas ya costó una vez: sobrevivir a una
+cotización **con recaudo** es la señal de contraentrega (`docs/13` §6).
+
+**El resultado: 1044 de 1122 municipios cotizan (93,0 %), y 1008 admiten contraentrega (89,8 %).**
+La frase de los términos se sostiene. Tabla completa en `docs/13` §6.18.
+
+Lo que el total escondía es más interesante que el total:
+
+- **Solo cuatro municipios del país no tienen quien los cubra** — Los Andes (Nariño) y tres de
+  Guainía. El `ENVIO_SIN_COBERTURA` del checkout llevaba desde la Fase 7 sin que nadie supiera si
+  llegaría a dispararse en producción: sí, y va a ser rarísimo.
+- **Los 74 que no cotizan no son falta de cobertura.** Los 74 responden lo mismo —`postal_code: "no
+  existe"`—, o sea que el catálogo de códigos DANE de Skydropx no tiene ese municipio. Y eso, por
+  primera vez en esta integración, **es accionable de nuestro lado**: es una lista concreta de 74
+  códigos para pedir que agreguen, no un conector caído esperando a que alguien lo arregle. Hay tres
+  en Antioquia y dos en Cundinamarca, así que no es solo geografía remota: es catálogo incompleto.
+- **Una sola tarifa quedó en `pending`** en 2244 cotizaciones. El defecto que `§6.5` mandó al ADR
+  —una transportadora lenta que el mapeador descarta sin ver— existe y pasa una vez de cada dos mil.
+  Con ese número la decisión se puede tomar, y es: no se alarga el checkout.
+
+### Y la primera corrida dio 62,8 %, que era mentira
+
+Esto merece quedarse escrito, porque el número llegó a estar impreso y a un paso de entrar en una
+decisión legal.
+
+La sonda autenticaba **una sola vez al arrancar**, y la corrida dura cuatro horas. A partir del
+municipio 597 todo respondió `401`: 377 municipios contados como "no se pudo medir" y un resumen que
+imprimió 62,8 % de cobertura. **Ese número no medía el país: medía a qué hora caducó el token.**
+
+**Lo delator estaba en la tabla por departamento**, no en el total: Santander 0/87, Valle del Cauca
+0/42, Tolima 0/47, Norte de Santander 0/40. Departamentos enteros en cero, en bloque y por orden
+alfabético. Ninguna geografía se comporta así. Los de verdad son 85/87, 40/42, 45/47 y 39/40.
+
+Y hay una ironía útil: **lo que hizo mirar la tabla por departamento fue la misma cautela que había
+llevado a no publicar un parcial** mientras la corrida iba — el sesgo del orden alfabético. La
+precaución escrita para una cosa sirvió para otra.
+
+Si ese 62,8 % se hubiera publicado, habría ido derecho al punto 4 de `docs/14` como el dato que
+decide si "Despachamos a todo el territorio nacional" se sostiene, y la respuesta habría sido "no"
+cuando es "sí". Una decisión legal tomada sobre la hora a la que caducó un token. Es la misma
+lección que este documento ya tenía escrita sobre el proxy de diagnóstico que estuvo roto: **una
+herramienta de diagnóstico también es una variable del experimento.**
+
+Arreglado con dos defensas y no una, porque la de tiempo sola vuelve a depender de adivinar la
+vigencia: renovación por reloj cada media hora, y además cualquier `401` fuerza reautenticación y un
+reintento. Y el reanudado dejó de dar por medido un fallo — sin eso los 377 se habrían quedado
+perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio país.
 
 ## Cómo conversar con Claude Code en este proyecto
 

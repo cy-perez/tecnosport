@@ -2683,6 +2683,220 @@ sin avisar. **Ahora ocurren solas**, en `SkydropxClient`:
 Con el primer despacho contraentrega y el primer cobro real, las dos preguntas se contestan sin que
 nadie vigile nada.
 
+### 6.18 La cobertura del país entero, medida por primera vez (2026-09-19, decimoséptima parte)
+
+Todo lo que este documento sabía de cobertura venía de **dos ciudades**: la tabla de `§6.5`, con
+Medellín y Bogotá. Sobre esa muestra, los términos y condiciones publican *"Despachamos a todo el
+territorio nacional"* y `docs/12` la da por buena.
+
+El checkout, mientras tanto, tiene `ENVIO_SIN_COBERTURA` y cae a la recogida en el punto con un
+texto que lo explica. **O sea que la pregunta nunca fue si el mecanismo funciona: es a cuánta gente
+le toca**, y eso no se había medido nunca.
+
+#### Por qué se pudo medir hoy y no antes
+
+Por dos cosas que ya estaban y que nadie había juntado:
+
+1. **La lista DIVIPOLA completa vive en el repositorio** desde el 4 de septiembre de 2026 —33
+   departamentos y 1122 municipios, en
+   `apps/web/src/app/features/checkout/domain/geografia-co.datos.ts`— porque es la que llena el
+   selector de ciudad del checkout. La sonda la lee de ahí y no de una copia: así mide exactamente
+   los destinos que se le ofrecen a quien compra, y el día que el DANE cambie la división
+   territorial las dos cosas cambian juntas.
+2. **Cotizar no gasta saldo.** Emitir cuesta; preguntar no. Es la misma propiedad que permitió medir
+   el piso y el techo del valor declarado sin gastar un peso (`§6.12`, `§6.13`).
+
+#### Cómo mide
+
+`tools/sonda-cobertura.mjs`, con el patrón de las once sondas anteriores. Por cada municipio, **dos
+cotizaciones**: una sin recaudo y otra con recaudo. No son la misma pregunta y confundirlas ya costó
+una vez — sobrevivir a una cotización con recaudo es la señal de cobertura de contraentrega (`§6`),
+y Servientrega es el caso de libro: cotiza sin recaudo y se cae en cuanto se le pide con él.
+
+Un solo artículo de peso y valor medianos —25×18×8 cm, 0,8 kg, 250.000 declarados: un celular con su
+caja, que es el grueso del catálogo— para que lo único que varíe entre una medición y la siguiente
+sea el destino.
+
+Tres cosas que la sonda distingue y que un conteo ingenuo mezclaría:
+
+- **"Sin cobertura" no es "no se pudo preguntar".** Un `422` es el proveedor contestando y
+  rechazando el cuerpo; un `5xx` o un tiempo agotado es no saber. Se cuentan aparte, que es la misma
+  distinción que `adr/0039` metió en el checkout.
+- **Las tarifas que quedan en `pending`** al cerrar la cotización se cuentan aparte. `§6.5` dejó
+  escrito que `is_completed: true` puede volver con una tarifa todavía sin resolver y que el
+  mapeador la descarta sin verla: a mil cotizaciones se sabrá si eso pasa a menudo o fue una
+  casualidad, y si la que se pierde puede ser la más barata.
+- **Es reanudable**, con el progreso escrito tras cada municipio. Cuatro horas contra un proveedor
+  que admite dos peticiones por segundo se cortan, y volver a empezar desde cero es como se acaba no
+  midiendo nunca.
+
+#### El resultado
+
+**1122 municipios, ninguno sin medir.**
+
+| | sin recaudo | con recaudo |
+|---|---|---|
+| **Cotiza** | **1044 (93,0 %)** | **1008 (89,8 %)** |
+| Nadie cubre ese destino | 4 (0,4 %) | 40 (3,6 %) |
+| El proveedor rechaza el código DANE | 74 (6,6 %) | 74 (6,6 %) |
+| No se pudo preguntar | 0 | 0 |
+
+**"Despachamos a todo el territorio nacional" se sostiene, con el matiz que el §8 de los términos ya
+trae.** Nueve de cada diez municipios del país cotizan, y en ocho de cada nueve de esos se puede
+además pagar contra entrega. La recomendación para `docs/14` punto 4 es acercar el matiz al primer
+párrafo, no reescribir la frase.
+
+#### Lo que el total esconde, y es lo interesante
+
+**Solo 4 municipios de Colombia no tienen quien los cubra**: Los Andes (Nariño) y tres de Guainía
+—San Felipe, Puerto Colombia y Cacahual—. Cuatro, sobre 1122. El `ENVIO_SIN_COBERTURA` del checkout
+existía desde la Fase 7 sin que nadie supiera si llegaría a dispararse alguna vez en producción: la
+respuesta es que sí, y que va a ser rarísimo.
+
+**Los 74 rechazos no son falta de cobertura, y esa es la conclusión que cambia algo.** Los 74
+responden lo mismo, literal:
+
+```
+422 {"errors":{"address_to":{"postal_code":["no existe"]}}}
+```
+
+No es que ninguna transportadora llegue: es que **el catálogo de códigos DANE de Skydropx no tiene
+ese municipio**. Para esos destinos el checkout ni siquiera puede preguntar, y quien compra desde
+ahí ve una cotización que falla. Se concentran donde uno esperaría —Chocó 13, Nariño 8, Amazonas 8,
+Vaupés 5— pero hay tres en Antioquia y dos en Cundinamarca, o sea que no es solo geografía remota:
+es un catálogo incompleto.
+
+**Y esto sí es accionable de este lado**, a diferencia de la cobertura real: es una lista concreta de
+74 códigos para pedirle a Skydropx que agregue, con el municipio y el departamento de cada uno. Es
+la primera petición a la plataforma que no depende de que un conector vuelva a funcionar.
+
+**La contraentrega pierde 40 municipios más que el envío normal**, y la mitad están concentrados en
+Santander (11), Meta (4), Cauca (3) y Guaviare (3). Es la señal de cobertura de recaudo funcionando
+como `§6` la describió, ahora sobre el país entero en vez de sobre dos ciudades.
+
+**Una sola tarifa quedó en `pending`** al cerrar su cotización, en 2244 cotizaciones. El defecto que
+`§6.5` levantó —`is_completed: true` con una tarifa sin resolver, que el mapeador descarta sin
+verla— existe, pero pasa una vez de cada dos mil. No justifica alargar el checkout contra un
+proveedor que ya es lento. **La decisión que `§6.5` mandó al ADR se puede tomar ahora y es: no se
+espera.**
+
+#### Los 74 códigos DANE para pedirle a Skydropx
+
+La petición, lista para mandarse. Cada uno responde `postal_code: "no existe"` a una cotización con
+el resto del cuerpo idéntico a uno que sí funciona, así que no hay nada que interpretar.
+
+<details>
+<summary>Los 74, por código</summary>
+
+| Código DANE | Departamento | Municipio |
+|---|---|---|
+| `05150` | Antioquia | Carolina |
+| `05674` | Antioquia | San Vicente Ferrer |
+| `05873` | Antioquia | Vigía del Fuerte |
+| `13030` | Bolívar | Altos del Rosario |
+| `13468` | Bolívar | Santa Cruz de Mompox |
+| `13647` | Bolívar | San Estanislao |
+| `13667` | Bolívar | San Martín de Loba |
+| `13683` | Bolívar | Santa Rosa |
+| `15401` | Boyacá | La Victoria |
+| `19418` | Cauca | López de Micay |
+| `19532` | Cauca | Patía |
+| `19548` | Cauca | Piendamó - Tunía |
+| `19693` | Cauca | San Sebastián |
+| `19760` | Cauca | Sotará - Paispamba |
+| `20013` | Cesar | Agustín Codazzi |
+| `20238` | Cesar | El Copey |
+| `23678` | Córdoba | San Carlos |
+| `25653` | Cundinamarca | San Cayetano |
+| `25843` | Cundinamarca | Villa de San Diego de Ubaté |
+| `27025` | Chocó | Alto Baudó |
+| `27050` | Chocó | Atrato |
+| `27099` | Chocó | Bojayá |
+| `27135` | Chocó | El Cantón del San Pablo |
+| `27150` | Chocó | Carmen del Darién |
+| `27250` | Chocó | El Litoral del San Juan |
+| `27425` | Chocó | Medio Atrato |
+| `27430` | Chocó | Medio Baudó |
+| `27450` | Chocó | Medio San Juan |
+| `27493` | Chocó | Nuevo Belén de Bajirá |
+| `27600` | Chocó | Río Quito |
+| `27660` | Chocó | San José del Palmar |
+| `27810` | Chocó | Unión Panamericana |
+| `47258` | Magdalena | El Piñón |
+| `47545` | Magdalena | Pijiño del Carmen |
+| `47660` | Magdalena | Sabanas de San Ángel |
+| `47960` | Magdalena | Zapayán |
+| `52019` | Nariño | Albán |
+| `52051` | Nariño | Arboleda |
+| `52203` | Nariño | Colón |
+| `52224` | Nariño | Cuaspud Carlosama |
+| `52427` | Nariño | Magüí |
+| `52696` | Nariño | Santa Bárbara |
+| `52699` | Nariño | Santacruz |
+| `52835` | Nariño | San Andrés de Tumaco |
+| `54344` | Norte de Santander | Hacarí |
+| `68370` | Santander | Jordán |
+| `68673` | Santander | San Benito |
+| `70523` | Sucre | Palmito |
+| `70702` | Sucre | San Juan de Betulia |
+| `70742` | Sucre | San Luis de Sincé |
+| `70820` | Sucre | Santiago de Tolú |
+| `70823` | Sucre | San José de Toluviejo |
+| `73055` | Tolima | Armero |
+| `73443` | Tolima | San Sebastián de Mariquita |
+| `76111` | Valle del Cauca | Guadalajara de Buga |
+| `76126` | Valle del Cauca | Calima |
+| `86865` | Putumayo | Valle del Guamuez |
+| `88564` | Archipiélago de San Andrés, Providencia y Santa Catalina | Providencia |
+| `91263` | Amazonas | El Encanto |
+| `91405` | Amazonas | La Chorrera |
+| `91407` | Amazonas | La Pedrera |
+| `91430` | Amazonas | La Victoria |
+| `91460` | Amazonas | Mirití - Paraná |
+| `91530` | Amazonas | Puerto Alegría |
+| `91536` | Amazonas | Puerto Arica |
+| `91798` | Amazonas | Tarapacá |
+| `94885` | Guainía | La Guadalupe |
+| `94887` | Guainía | Pana Pana |
+| `94888` | Guainía | Morichal |
+| `97161` | Vaupés | Carurú |
+| `97511` | Vaupés | Pacoa |
+| `97666` | Vaupés | Taraira |
+| `97777` | Vaupés | Papunahua |
+| `97889` | Vaupés | Yavaraté |
+
+</details>
+
+#### La primera corrida dio 62,8 % y era mentira
+
+Conviene que quede escrito, porque el número llegó a estar impreso y a punto de entrar en una
+decisión legal.
+
+La sonda autenticaba **una sola vez al arrancar** y la corrida dura cuatro horas. A partir del
+municipio 597 todo respondió `401`: **377 municipios contados como "no se pudo medir"**, y el
+resumen imprimió un 62,8 % de cobertura. Ese número no medía el país — medía a qué hora caducó el
+token.
+
+**Lo delator estaba en la tabla por departamento:** Santander 0/87, Valle del Cauca 0/42, Tolima
+0/47, Norte de Santander 0/40. Departamentos enteros en cero, en bloque y por orden alfabético.
+Ninguna geografía se comporta así. Comparar con la tabla de arriba —Santander 85/87, Valle 40/42,
+Tolima 45/47— da la medida del error.
+
+Si ese 62,8 % se hubiera publicado, habría ido derecho al punto 4 de `docs/14` como el dato que
+decide si *"Despachamos a todo el territorio nacional"* se sostiene, y la respuesta habría sido "no"
+cuando es "sí". **Una decisión legal tomada sobre la hora a la que caducó un token.**
+
+Es la misma lección que este proyecto ya tenía escrita sobre el proxy de diagnóstico que estuvo
+roto: **una herramienta de diagnóstico también es una variable del experimento.** Y la razón por la
+que esta entrada no publicó un parcial mientras la corrida iba —el sesgo del orden alfabético— es la
+que hizo mirar la tabla por departamento en vez de quedarse con el total.
+
+Arreglado con dos defensas y no una, porque la de tiempo sola vuelve a depender de adivinar la
+vigencia: el token se renueva por reloj cada media hora, y además cualquier `401` fuerza una
+reautenticación y un reintento. Y el reanudado dejó de dar por medido un fallo — sin eso, los 377 se
+habrían quedado perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio
+país.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que

@@ -35,7 +35,14 @@
     "exito_titulo": "Email verified",
     "exito_mensaje": "Your account is ready. You can now sign in.",
     "error_titulo": "Invalid link",
-    "error_mensaje": "The link is invalid or expired. Sign up again to get a new one."
+    "error_mensaje": "This link is not valid or has expired. Enter your email and we will send you a new one.",
+    "reenvio_instrucciones": "We will send a new link to your account email.",
+    "reenvio_correo": "Email address",
+    "reenvio_correo_error": "Enter a valid email address.",
+    "reenvio_enviar": "Send a new link",
+    "reenvio_enviando": "Sending the link…",
+    "reenvio_exito": "If that email has an unverified account, we have just sent it a new link. Check your inbox and your spam folder.",
+    "reenvio_error": "We could not send the link. Please try again in a moment."
   },
   "recuperarClave": {
     "titulo": "Recover password",

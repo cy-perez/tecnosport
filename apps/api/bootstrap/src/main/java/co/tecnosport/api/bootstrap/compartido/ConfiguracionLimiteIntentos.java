@@ -38,6 +38,10 @@ public class ConfiguracionLimiteIntentos {
         "/api/v1/auth/sesion",
         "/api/v1/auth/registro",
         "/api/v1/auth/verificacion",
+        // Explícita, y no cubierta por la de arriba: un patrón de ruta exacto no cubre subrutas.
+        // Es el mismo descuido que dejó `POST /pedidos/metodos-de-pago-disponibles` sin límite
+        // cotizando contra Skydropx, que levantó la revisión adversarial de los 122 commits.
+        "/api/v1/auth/verificacion/reenviar",
         "/api/v1/auth/recuperacion",
         "/api/v1/auth/recuperacion/confirmar");
     return registro;

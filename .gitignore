@@ -58,3 +58,7 @@ catalogo/icecat/coincidencias.csv
 catalogo/icecat/fotos.csv
 catalogo/imagenes/
 catalogo/*
+
+# La medición de cobertura de la sonda: es un dato medido, no fuente. Lo que se versiona es la
+# conclusión, en docs/13.
+cobertura-medida.json

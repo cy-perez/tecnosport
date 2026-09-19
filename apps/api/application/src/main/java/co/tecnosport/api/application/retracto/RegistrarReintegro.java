@@ -147,10 +147,13 @@ public final class RegistrarReintegro {
               Dinero.MONEDA,
               pedido.numeroPedido().valor()));
     } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
-      // Se traga: la operación pesa más que su aviso (adr/0044). Relanzar aquí revertiría la
-      // transacción del controlador, y con ella la constancia — que es justo lo que no puede
-      // faltar. La señal queda en el registro del adaptador; application no puede registrar nada,
-      // no tiene slf4j en el classpath.
+      // Se traga, y desde adr/0045 por una razón distinta de la que adr/0044 escribió aquí.
+      // Encolar el correo se une a la transacción de quien llama, así que ya no hay nada que
+      // proteger relanzando: si esta operación revierte, la fila del correo revierte con ella y
+      // no se manda nada — que es exactamente el caso que antes dejaba a alguien leyendo el aviso
+      // de algo que no llegó a ocurrir. Lo único que puede fallar al encolar es la base de datos,
+      // y entonces esta transacción ya está condenada: relanzar no añadiría nada y taparía el
+      // error real. Que el correo llegue es problema de la bandeja, que lo reintenta.
     }
   }
 }

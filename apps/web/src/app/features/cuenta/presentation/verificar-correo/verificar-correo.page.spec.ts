@@ -1,6 +1,6 @@
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { render, screen } from '@testing-library/angular';
+import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
@@ -11,6 +11,8 @@ import { VerificarCorreoPage } from './verificar-correo.page';
 
 class RepositorioCuentaFalso implements RepositorioCuenta {
   llamadasVerificar: string[] = [];
+  llamadasReenviar: string[] = [];
+  fallaElReenvio = false;
 
   /** El código con el que falla, no un booleano: la pantalla distingue el 4xx del enlace
    * gastado del 5xx del servidor caído, y con un `true` no se podían probar las dos ramas. */
@@ -23,6 +25,13 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
     this.llamadasVerificar.push(token);
     if (this.falla) {
       throw new ErrorHttp(this.falla, 'no se pudo verificar el correo');
+    }
+  }
+
+  async reenviarVerificacion(correo: string): Promise<void> {
+    this.llamadasReenviar.push(correo);
+    if (this.fallaElReenvio) {
+      throw new ErrorHttp(500, 'no se pudo reenviar');
     }
   }
 
@@ -55,6 +64,11 @@ async function renderPagina(repositorio: RepositorioCuenta, token: string | null
   });
 }
 
+function escribirYEnviar(correo: string) {
+  fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: correo } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace nuevo' }));
+}
+
 describe('VerificarCorreoPage', () => {
   it('con un token válido, verifica y muestra el mensaje de éxito', async () => {
     const repositorio = new RepositorioCuentaFalso();
@@ -82,6 +96,45 @@ describe('VerificarCorreoPage', () => {
     // Lo que importa no es solo que aparezca el mensaje nuevo: es que no le diga a quien
     // llega que pida otro enlace, porque el que tiene sigue siendo bueno.
     expect(screen.queryByText('Enlace no válido')).toBeNull();
+  });
+
+  it('desde el enlace vencido se puede pedir uno nuevo', async () => {
+    const repositorio = new RepositorioCuentaFalso(422);
+    await renderPagina(repositorio, 'token-vencido');
+    await screen.findByText('Enlace no válido');
+
+    escribirYEnviar('quien.compro@tecnosport.co');
+
+    await vi.waitFor(() => {
+      expect(repositorio.llamadasReenviar).toEqual(['quien.compro@tecnosport.co']);
+    });
+    // El acuse no dice si la cuenta existe: los tres desenlaces responden igual, y este texto
+    // es lo único que ve quien pide el enlace.
+    expect(await screen.findByText(/sin verificar/)).toBeTruthy();
+  });
+
+  it('con un correo inválido no llama al repositorio y dice qué falta', async () => {
+    const repositorio = new RepositorioCuentaFalso(422);
+    await renderPagina(repositorio, 'token-vencido');
+    await screen.findByText('Enlace no válido');
+
+    escribirYEnviar('esto-no-es-un-correo');
+
+    // El botón no va deshabilitado a propósito —un <button disabled> sale del orden de
+    // tabulación— así que lo que hay que comprobar es que pulsarlo dice el motivo.
+    expect(await screen.findByText('Escribe un correo electrónico válido.')).toBeTruthy();
+    expect(repositorio.llamadasReenviar).toEqual([]);
+  });
+
+  it('si el reenvío falla, lo dice en vez de fingir que salió', async () => {
+    const repositorio = new RepositorioCuentaFalso(422);
+    repositorio.fallaElReenvio = true;
+    await renderPagina(repositorio, 'token-vencido');
+    await screen.findByText('Enlace no válido');
+
+    escribirYEnviar('quien.compro@tecnosport.co');
+
+    expect(await screen.findByText(/No pudimos enviar el enlace/)).toBeTruthy();
   });
 
   it('sin token en la URL, muestra el mensaje de error sin llamar al repositorio', async () => {

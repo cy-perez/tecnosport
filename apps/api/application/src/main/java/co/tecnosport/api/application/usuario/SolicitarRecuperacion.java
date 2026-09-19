@@ -85,16 +85,16 @@ public final class SolicitarRecuperacion {
           textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_ASUNTO),
           textos.texto(TextoDeCorreo.USUARIO_RECUPERACION_CUERPO, enlace));
     } catch (CorreoNoEnviadoException registradoPorElAdaptador) {
-      // Se traga a propósito, y es el único sitio donde tragarlo protege algo. Este caso de uso
-      // responde igual exista o no la cuenta; solo llega hasta aquí cuando sí existe, así que un
-      // fallo de SMTP que subiera hasta un 500 se vería exactamente en las cuentas reales y en
-      // ninguna otra. Eso es el oráculo de enumeración que todo el diseño de arriba evita
+      // Se traga a propósito, y sigue siendo el sitio donde tragarlo protege algo. Este caso de
+      // uso responde igual exista o no la cuenta; solo llega hasta aquí cuando sí existe, así que
+      // un fallo que subiera hasta un 500 se vería exactamente en las cuentas reales y en ninguna
+      // otra. Eso es el oráculo de enumeración que todo el diseño de arriba evita
       // (docs/08-seguridad-legal.md, OWASP), reintroducido por la puerta de atrás.
       //
-      // El precio: quien pidió recuperar su clave no recibe el enlace y no se entera. Puede
-      // volver a pedirlo —el limitador de arriba deja varios intentos por ventana— y la constancia
-      // queda en el registro del adaptador, que es lo único que application puede ofrecer aquí:
-      // no tiene slf4j en el classpath.
+      // Lo que cambia con adr/0045 es el precio, y cambia a mejor. Antes, tragar significaba que
+      // quien pidió recuperar su clave no recibía el enlace y no se enteraba. Ahora esto solo
+      // encola: un SMTP caído ya no llega hasta aquí —lo reintenta la bandeja— y lo único que
+      // podría es un fallo de base de datos, que se lleva por delante la transacción entera.
     }
   }
 }

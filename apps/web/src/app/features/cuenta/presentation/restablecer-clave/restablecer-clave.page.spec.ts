@@ -31,8 +31,9 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
       throw new ErrorHttp(this.falla, 'no se pudo restablecer la clave');
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
+  async reenviarVerificacion(): Promise<void> {}
 }
-
 
 function rutaActivadaFalsa(token: string | null) {
   return {
@@ -97,7 +98,9 @@ describe('RestablecerClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(await screen.findByText('El enlace no es válido o ya venció. Pide uno nuevo.')).toBeTruthy();
+    expect(
+      await screen.findByText('El enlace no es válido o ya venció. Pide uno nuevo.'),
+    ).toBeTruthy();
   });
 
   it('con el servidor caído, no culpa al enlace', async () => {

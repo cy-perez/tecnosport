@@ -10,6 +10,7 @@ import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarSesion;
+import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
@@ -141,6 +142,35 @@ public class ConfiguracionUsuario {
       RepositorioUsuarios repositorioUsuarios,
       Reloj reloj) {
     return new VerificarCorreo(repositorioTokensVerificacion, repositorioUsuarios, reloj);
+  }
+
+  /**
+   * Comparte con {@code registrarUsuario} la vigencia del token y la ruta del enlace: es el mismo
+   * correo y el mismo destino, y tenerlos escritos dos veces sería la forma de que un día dejaran
+   * de coincidir.
+   */
+  @Bean
+  public ReenviarVerificacion reenviarVerificacion(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioTokensVerificacion repositorioTokensVerificacion,
+      EnviadorDeCorreo enviadorDeCorreo,
+      TextosDeCorreo textos,
+      Reloj reloj,
+      PropiedadesVerificacionCorreo propiedadesVerificacion,
+      PropiedadesApp propiedadesApp,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite) {
+    return new ReenviarVerificacion(
+        repositorioUsuarios,
+        repositorioTokensVerificacion,
+        enviadorDeCorreo,
+        textos,
+        reloj,
+        Duration.ofHours(propiedadesVerificacion.horasVencimiento()),
+        propiedadesApp.urlPublica() + "/es/cuenta/verificar-correo",
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
   }
 
   @Bean

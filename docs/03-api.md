@@ -241,7 +241,7 @@ El frontend no calcula ni adivina el orden. Si el set está incompleto, el campo
 
 ```
 POST /api/v1/auth/registro | /sesion | /refresco | /cierre
-POST /api/v1/auth/verificacion
+POST /api/v1/auth/verificacion | /verificacion/reenviar
 POST /api/v1/auth/recuperacion | /recuperacion/confirmar
 GET  /api/v1/cuenta/pedidos
 GET/POST/PATCH /api/v1/cuenta/direcciones
@@ -251,6 +251,13 @@ GET/POST/PATCH /api/v1/cuenta/direcciones
 `/auth/recuperacion/confirmar` (token + clave nueva) son dos pasos, no uno —
 `/auth/recuperacion` responde 204 siempre, exista o no una cuenta con ese
 correo (docs/08-seguridad-legal.md, OWASP: no se revela cuál de los dos fue).
+
+`/auth/verificacion/reenviar` (solo el correo) responde 204 con **tres**
+desenlaces indistinguibles: la cuenta no existe, existe sin verificar —y recibe
+un enlace nuevo—, o existe ya verificada y no recibe nada. El tercero importa
+tanto como el primero: un 4xx para "ya está verificada" diría el estado de una
+cuenta ajena. Lleva límite por IP y por cuenta, y el patrón de ruta está
+declarado aparte porque uno exacto no cubre subrutas.
 
 ## Endpoints de administración
 

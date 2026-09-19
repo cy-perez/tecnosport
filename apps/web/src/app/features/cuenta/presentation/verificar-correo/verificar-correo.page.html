@@ -20,6 +20,45 @@
         {{ 'cuenta.verificarCorreo.error_titulo' | transloco }}
       </h1>
       <p role="alert">{{ 'cuenta.verificarCorreo.error_mensaje' | transloco }}</p>
+
+      @if (reenviado()) {
+        <p class="mt-24" role="status">
+          {{ 'cuenta.verificarCorreo.reenvio_exito' | transloco }}
+        </p>
+      } @else {
+        <form
+          class="mt-24 flex flex-col gap-16 text-left"
+          [formGroup]="form"
+          (submit)="$event.preventDefault(); reenviar()"
+        >
+          <p class="m-0">{{ 'cuenta.verificarCorreo.reenvio_instrucciones' | transloco }}</p>
+
+          <ts-campo
+            idCampo="reenviar-verificacion-correo"
+            tipo="email"
+            [label]="'cuenta.verificarCorreo.reenvio_correo' | transloco"
+            [error]="
+              form.controls.correo.touched && form.controls.correo.invalid
+                ? ('cuenta.verificarCorreo.reenvio_correo_error' | transloco)
+                : null
+            "
+            formControlName="correo"
+          />
+
+          @if (errorReenvio()) {
+            <p class="m-0 text-ts-error" role="alert">{{ errorReenvio() }}</p>
+          }
+
+          <ts-boton
+            variante="primario"
+            tipo="submit"
+            [cargando]="reenviando()"
+            [etiquetaCargando]="'cuenta.verificarCorreo.reenvio_enviando' | transloco"
+          >
+            {{ 'cuenta.verificarCorreo.reenvio_enviar' | transloco }}
+          </ts-boton>
+        </form>
+      }
     }
   }
 </section>

@@ -267,6 +267,7 @@ panel. Ver `ADR-0018`.
 | `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
 | `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses" |
 | `SetRotacion`, `ImagenProducto` | material visual | |
+| `CorreoPendiente` | destinatario, asunto, cuerpo, intentos, próximo intento | No es del dominio: es la bandeja de salida (`ADR-0045`). La fila se escribe con la transacción de la operación que la origina, así que un correo de algo que revirtió no se manda. Lleva datos personales en reposo y se purga a los 30 días |
 
 ## Reglas de inventario
 

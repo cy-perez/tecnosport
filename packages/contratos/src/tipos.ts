@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/verificacion/reenviar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reenviarVerificacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
@@ -1174,6 +1190,9 @@ export interface components {
         VerificarCorreoRequest: {
             token?: string;
         };
+        ReenviarVerificacionRequest: {
+            correo?: string;
+        };
         IniciarSesionRequest: {
             correo?: string;
             clave?: string;
@@ -1962,6 +1981,28 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["VerificarCorreoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reenviarVerificacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReenviarVerificacionRequest"];
             };
         };
         responses: {

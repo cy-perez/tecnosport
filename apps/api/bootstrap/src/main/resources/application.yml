@@ -50,6 +50,23 @@ tecnosport:
   correo:
     # Dato de negocio real, no inventado (regla dura #5): dominio real del proyecto.
     remitente: ${CORREO_REMITENTE:no-responder@tecnosport.co}
+    bandeja:
+      # La bandeja de salida (adr/0045). Un minuto, que es lo mas corto razonable: lo que separa
+      # esto de un envio sincrono es exactamente esta espera, y quien acaba de registrarse esta
+      # mirando su bandeja de entrada. Mas corto no aporta —la tarea arranca de todas formas— y
+      # mas largo se nota.
+      intervalo-minutos: ${CORREO_BANDEJA_INTERVALO_MINUTOS:1}
+      # Cero y no "menor que el intervalo" como las otras tareas: aqui el arranque es justo cuando
+      # mas urge, porque si el servicio venia caido hay correos esperando desde antes.
+      retraso-inicial-minutos: ${CORREO_BANDEJA_RETRASO_INICIAL_MINUTOS:0}
+      # Dato con consecuencia legal, no un ajuste: el cuerpo de un correo lleva el nombre de quien
+      # compro, su pedido y a veces su direccion (docs/08-seguridad-legal.md). Treinta dias, el
+      # mismo criterio que la purga de carritos.
+      dias-retencion: ${CORREO_BANDEJA_DIAS_RETENCION:30}
+      # Cuantos se intentan por vuelta. Con el intervalo en un minuto, cien por vuelta son seis mil
+      # por hora: de sobra para cualquier pico que este negocio pueda producir, y acotado para que
+      # una vuelta no se quede una hora hablando con un SMTP lento.
+      tamano-del-lote: ${CORREO_BANDEJA_TAMANO_LOTE:100}
   pedido:
     minutos-reserva-inventario: ${MINUTOS_RESERVA_INVENTARIO:30}
     horas-vencimiento-transferencia: ${TRANSFERENCIA_HORAS_VENCIMIENTO:24}
