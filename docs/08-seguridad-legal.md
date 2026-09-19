@@ -220,6 +220,19 @@ incumplimiento del plazo de entrega**. Los cinco caminos que devuelven dinero
 comparten una sola constancia (`Reintegro`, con su motivo), así que "cuánto
 devolvimos el mes pasado" se responde sin sumar tablas a mano.
 
+**Las decisiones que necesitan abogado viven en `docs/14-consultas-al-abogado.md`**
+desde el 19 de septiembre de 2026, con la norma verificada y una recomendación
+cada una. Hasta entonces eran tres preguntas sueltas dentro de una entrada del
+plan de arranque, que es una forma de no entregárselas a nadie. La cuarta nació
+al medir la cobertura real de envío.
+
+**Datos personales en reposo que no estaban en esta lista:** desde `adr/0045` la
+tabla `correo_pendiente` guarda el cuerpo de cada correo transaccional hasta que
+sale, y el cuerpo lleva el nombre de quien compró, su pedido y a veces su
+dirección. Se purga a los treinta días — el mismo criterio que el carrito—, y la
+purga corre en la misma tarea que drena la bandeja, no en una aparte que alguien
+pueda apagar sin darse cuenta.
+
 **Una contradicción entre documentos publicados, pendiente de corregir en el
 texto:** los términos prometen quince días hábiles para "toda petición" y la
 política de datos promete diez para una consulta, y las dos frases apuntan al

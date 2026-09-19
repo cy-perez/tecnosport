@@ -18,6 +18,7 @@ Orden de lectura para quien llega nuevo al proyecto.
 | `11-pagos-y-envios.md` | Wompi, contraentrega, transferencia, envío cotizado con Skydropx y seguimiento |
 | `12-legales-de-envio.md` | Cláusulas del envío cotizado y auditoría de vacíos legales del envío |
 | `13-skydropx-capacidades.md` | Qué ofrece Skydropx, qué podemos personalizar y qué falta confirmar antes de codificar |
+| `14-consultas-al-abogado.md` | Las decisiones legales que el proyecto no puede tomar solo, preparadas para revisión profesional |
 | `adr/` | Decisiones tomadas, con fecha, alternativas y consecuencias |
 
 Cuando una decisión cambie, se actualiza el documento y se agrega un ADR. Un
