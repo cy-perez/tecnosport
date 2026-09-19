@@ -177,11 +177,13 @@ cierta puede ser engañosa por lo que calla. Y el art. 29 le da fuerza vinculant
 "las condiciones objetivas y específicas anunciadas en la publicidad obligan al
 anunciante, en los términos de dicha publicidad".
 
-**El dato que faltaba, y ya no falta.** Hasta ahora esa frase descansaba sobre
-una muestra de **dos ciudades** —Medellín y Bogotá, `docs/13` §6.5—. El 19 de
-septiembre de 2026 se midió la cobertura real cotizando los **1122 municipios**
-de la lista DIVIPOLA, con y sin recaudo, contra la cuenta real. El resultado está
-en `docs/13` §6.18 y el número concreto es lo que decide esta pregunta.
+**El dato que faltaba, y se está midiendo.** Hasta ahora esa frase descansaba
+sobre una muestra de **dos ciudades** —Medellín y Bogotá, `docs/13` §6.5—. El 19
+de septiembre de 2026 se puso a medir la cobertura real cotizando los **1122
+municipios** de la lista DIVIPOLA, con y sin recaudo, contra la cuenta real. El
+método y el estado están en `docs/13` §6.18; **el número concreto es lo que
+decide esta pregunta, y hasta que la corrida termine esta sección no se puede
+cerrar.**
 
 **Recomendación**, según lo que diga la medición:
 
@@ -202,7 +204,9 @@ en `docs/13` §6.18 y el número concreto es lo que decide esta pregunta.
 
 - [ ] Leer el contrato y la documentación de Resend y anotar la región de
       procesamiento en el punto 3.
-- [ ] Anotar en el punto 4 el porcentaje de cobertura que arroje `docs/13` §6.18.
+- [ ] Esperar a que termine la medición de cobertura y anotar en el punto 4 el
+      porcentaje que arroje `docs/13` §6.18. **Sin ese número, el punto 4 no está
+      listo para consulta.**
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
       con su fecha, no una transcripción.
 

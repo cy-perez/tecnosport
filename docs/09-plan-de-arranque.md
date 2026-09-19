@@ -5205,7 +5205,10 @@ lento se cortan, y volver a empezar desde cero es como se acaba no midiendo nunc
 Mide dos coberturas distintas porque son dos, y confundirlas ya costó una vez: sobrevivir a una
 cotización **con recaudo** es la señal de contraentrega (`docs/13` §6).
 
-El resultado, en `docs/13` §6.18.
+**El resultado no estaba listo al cerrar esta rama**: la corrida son unas cuatro horas y el método,
+el estado y el porqué de no publicar un parcial están en `docs/13` §6.18. El número decide si una
+frase de los términos se sostiene (`docs/14`, punto 4), y un porcentaje sacado de los departamentos
+del principio del alfabeto no sirve para decidir eso — sirve para decidirlo mal.
 
 ## Cómo conversar con Claude Code en este proyecto
 

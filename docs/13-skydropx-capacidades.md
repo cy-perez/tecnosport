@@ -2683,6 +2683,70 @@ sin avisar. **Ahora ocurren solas**, en `SkydropxClient`:
 Con el primer despacho contraentrega y el primer cobro real, las dos preguntas se contestan sin que
 nadie vigile nada.
 
+### 6.18 La cobertura del país entero, medida por primera vez (2026-09-19, decimoséptima parte)
+
+Todo lo que este documento sabía de cobertura venía de **dos ciudades**: la tabla de `§6.5`, con
+Medellín y Bogotá. Sobre esa muestra, los términos y condiciones publican *"Despachamos a todo el
+territorio nacional"* y `docs/12` la da por buena.
+
+El checkout, mientras tanto, tiene `ENVIO_SIN_COBERTURA` y cae a la recogida en el punto con un
+texto que lo explica. **O sea que la pregunta nunca fue si el mecanismo funciona: es a cuánta gente
+le toca**, y eso no se había medido nunca.
+
+#### Por qué se pudo medir hoy y no antes
+
+Por dos cosas que ya estaban y que nadie había juntado:
+
+1. **La lista DIVIPOLA completa vive en el repositorio** desde el 4 de septiembre de 2026 —33
+   departamentos y 1122 municipios, en
+   `apps/web/src/app/features/checkout/domain/geografia-co.datos.ts`— porque es la que llena el
+   selector de ciudad del checkout. La sonda la lee de ahí y no de una copia: así mide exactamente
+   los destinos que se le ofrecen a quien compra, y el día que el DANE cambie la división
+   territorial las dos cosas cambian juntas.
+2. **Cotizar no gasta saldo.** Emitir cuesta; preguntar no. Es la misma propiedad que permitió medir
+   el piso y el techo del valor declarado sin gastar un peso (`§6.12`, `§6.13`).
+
+#### Cómo mide
+
+`tools/sonda-cobertura.mjs`, con el patrón de las once sondas anteriores. Por cada municipio, **dos
+cotizaciones**: una sin recaudo y otra con recaudo. No son la misma pregunta y confundirlas ya costó
+una vez — sobrevivir a una cotización con recaudo es la señal de cobertura de contraentrega (`§6`),
+y Servientrega es el caso de libro: cotiza sin recaudo y se cae en cuanto se le pide con él.
+
+Un solo artículo de peso y valor medianos —25×18×8 cm, 0,8 kg, 250.000 declarados: un celular con su
+caja, que es el grueso del catálogo— para que lo único que varíe entre una medición y la siguiente
+sea el destino.
+
+Tres cosas que la sonda distingue y que un conteo ingenuo mezclaría:
+
+- **"Sin cobertura" no es "no se pudo preguntar".** Un `422` es el proveedor contestando y
+  rechazando el cuerpo; un `5xx` o un tiempo agotado es no saber. Se cuentan aparte, que es la misma
+  distinción que `adr/0039` metió en el checkout.
+- **Las tarifas que quedan en `pending`** al cerrar la cotización se cuentan aparte. `§6.5` dejó
+  escrito que `is_completed: true` puede volver con una tarifa todavía sin resolver y que el
+  mapeador la descarta sin verla: a mil cotizaciones se sabrá si eso pasa a menudo o fue una
+  casualidad, y si la que se pierde puede ser la más barata.
+- **Es reanudable**, con el progreso escrito tras cada municipio. Cuatro horas contra un proveedor
+  que admite dos peticiones por segundo se cortan, y volver a empezar desde cero es como se acaba no
+  midiendo nunca.
+
+#### El resultado
+
+**Medición en curso al cerrar esta entrada.** La corrida completa son unas cuatro horas, y este
+documento se actualiza con la tabla final —total, por departamento, y con y sin recaudo— cuando
+termine.
+
+**Deliberadamente no se publica aquí el porcentaje parcial.** La lista va en orden de código DANE, o
+sea por departamento, así que lo medido hasta ahora es una muestra sesgada geográficamente: dar un
+número ahora invita a anclarse en él, y este es justo el dato del que depende si una frase de los
+términos y condiciones se sostiene o hay que reescribirla (`docs/14`, punto 4). Un porcentaje
+provisional sobre los departamentos del principio del alfabeto no sirve para tomar esa decisión, y
+sí sirve para tomarla mal.
+
+Lo que sí se puede decir ya, porque no depende del total: **ningún municipio medido ha respondido
+"sin cobertura"**. Los pocos que no cotizan lo hacen por un `422` del proveedor, que es otra cosa y
+hay que mirar caso por caso.
+
 ## 7. Por dónde se puede empezar sin resolver nada de esto
 
 Esta sección se escribió cuando no había nada construido. **Los tres tramos que
