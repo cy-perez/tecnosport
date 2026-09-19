@@ -5349,7 +5349,15 @@ es la opción que se sostiene sola.
   completos de punta a punta, en vez de 103 a medias.
 - **Lighthouse** sigue sin poder medirse con propiedad mientras las tarjetas traigan sus fotos de
   `picsum.photos`. Depende de lo anterior.
-- **El panel no sabe crear marcas**, y el catálogo real no se puede cargar sin ellas.
+- ~~**El panel no sabe crear marcas**, y el catálogo real no se puede cargar sin ellas.~~
+  **Resuelto el mismo día con `V54__marcas_reales.sql`**: las doce marcas identificadas en la
+  lista del proveedor, por migración y no por endpoint nuevo. Se pudieron dar de alta las doce, y
+  no solo las del primer lote, porque el arreglo del filtro ya impide que una marca sin productos
+  publicados aparezca en la vitrina — el día antes, esta migración habría metido doce filtros
+  vacíos. De paso salió que `marca` se creó en V1 **sin índice único sobre el nombre**, así que la
+  base admitía dos "Xiaomi": el `on conflict do nothing` que la migración llevaba no protegía de
+  nada. El índice atrapó un duplicado de verdad el primer día, en una prueba de inventario que no
+  es `@Transactional` y dejaba una "Marca de prueba" por método. El enunciado viejo:
   `POST /api/v1/admin/productos` exige `marcaId` y `categoriaId` de registros que ya existan, y
   `CategoriaControlador` y `MarcaControlador` son de solo lectura: alimentan los filtros de la
   vitrina. **Las categorías ya están resueltas** — `V38__linea_tecnologia.sql` insertó las diez de
