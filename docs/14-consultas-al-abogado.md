@@ -177,26 +177,32 @@ cierta puede ser engañosa por lo que calla. Y el art. 29 le da fuerza vinculant
 "las condiciones objetivas y específicas anunciadas en la publicidad obligan al
 anunciante, en los términos de dicha publicidad".
 
-**El dato que faltaba, y se está midiendo.** Hasta ahora esa frase descansaba
-sobre una muestra de **dos ciudades** —Medellín y Bogotá, `docs/13` §6.5—. El 19
-de septiembre de 2026 se puso a medir la cobertura real cotizando los **1122
-municipios** de la lista DIVIPOLA, con y sin recaudo, contra la cuenta real. El
-método y el estado están en `docs/13` §6.18; **el número concreto es lo que
-decide esta pregunta, y hasta que la corrida termine esta sección no se puede
-cerrar.**
+**El dato que faltaba, y ya está medido.** Hasta ahora esa frase descansaba sobre
+una muestra de **dos ciudades** —Medellín y Bogotá, `docs/13` §6.5—. El 19 de
+septiembre de 2026 se cotizaron los **1122 municipios** de la lista DIVIPOLA, con
+y sin recaudo, contra la cuenta real (`docs/13` §6.18):
 
-**Recomendación**, según lo que diga la medición:
+| | sin recaudo | con recaudo |
+|---|---|---|
+| **Cotiza** | **1044 (93,0 %)** | **1008 (89,8 %)** |
+| Nadie cubre ese destino | 4 (0,4 %) | 40 (3,6 %) |
+| El proveedor rechaza el código DANE | 74 (6,6 %) | 74 (6,6 %) |
 
-- **Si la cobertura es casi total**, la frase se sostiene con el matiz que el §8
-  ya trae, y basta con acercarlo al primer párrafo para que no quede a dos
-  párrafos de distancia.
-- **Si hay un hueco material**, la frase hay que reescribirla. No con una lista de
-  municipios —caduca sola, igual que la de transportadoras— sino diciendo que la
-  cobertura depende del destino y que se confirma en el checkout antes de pagar,
-  que es exactamente lo que el sistema hace.
+**Solo cuatro municipios del país no tienen quien los cubra**: Los Andes (Nariño)
+y tres de Guainía. Los otros 74 que no cotizan no son falta de cobertura: el
+catálogo de Skydropx no tiene ese código DANE, y esa es una lista concreta para
+pedirle a la plataforma que la complete.
 
-**Lo que decide el abogado:** dónde está el umbral entre "cierto con matiz" y
-"insuficiente" para el art. 5.13, con el porcentaje medido delante.
+**Recomendación.** La frase se sostiene. Nueve de cada diez municipios cotizan, y
+el §8 ya trae el matiz del caso sin cobertura — lo único que conviene es
+**acercarlo al primer párrafo**, para que quien lea "a todo el territorio
+nacional" encuentre la excepción en la misma frase y no dos párrafos más abajo.
+No hace falta reescribir la afirmación ni publicar una lista de municipios, que
+además caducaría sola.
+
+**Lo que decide el abogado:** si con un 93 % medido y el matiz contiguo la
+afirmación deja de ser "insuficiente" para el art. 5.13, o si prefiere una
+formulación que no diga "todo".
 
 ---
 
@@ -204,9 +210,8 @@ cerrar.**
 
 - [ ] Leer el contrato y la documentación de Resend y anotar la región de
       procesamiento en el punto 3.
-- [ ] Esperar a que termine la medición de cobertura y anotar en el punto 4 el
-      porcentaje que arroje `docs/13` §6.18. **Sin ese número, el punto 4 no está
-      listo para consulta.**
+- [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
+      septiembre de 2026: 93,0 % con envío a domicilio.
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
       con su fecha, no una transcripción.
 

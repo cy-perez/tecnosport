@@ -5205,10 +5205,50 @@ lento se cortan, y volver a empezar desde cero es como se acaba no midiendo nunc
 Mide dos coberturas distintas porque son dos, y confundirlas ya costó una vez: sobrevivir a una
 cotización **con recaudo** es la señal de contraentrega (`docs/13` §6).
 
-**El resultado no estaba listo al cerrar esta rama**: la corrida son unas cuatro horas y el método,
-el estado y el porqué de no publicar un parcial están en `docs/13` §6.18. El número decide si una
-frase de los términos se sostiene (`docs/14`, punto 4), y un porcentaje sacado de los departamentos
-del principio del alfabeto no sirve para decidir eso — sirve para decidirlo mal.
+**El resultado: 1044 de 1122 municipios cotizan (93,0 %), y 1008 admiten contraentrega (89,8 %).**
+La frase de los términos se sostiene. Tabla completa en `docs/13` §6.18.
+
+Lo que el total escondía es más interesante que el total:
+
+- **Solo cuatro municipios del país no tienen quien los cubra** — Los Andes (Nariño) y tres de
+  Guainía. El `ENVIO_SIN_COBERTURA` del checkout llevaba desde la Fase 7 sin que nadie supiera si
+  llegaría a dispararse en producción: sí, y va a ser rarísimo.
+- **Los 74 que no cotizan no son falta de cobertura.** Los 74 responden lo mismo —`postal_code: "no
+  existe"`—, o sea que el catálogo de códigos DANE de Skydropx no tiene ese municipio. Y eso, por
+  primera vez en esta integración, **es accionable de nuestro lado**: es una lista concreta de 74
+  códigos para pedir que agreguen, no un conector caído esperando a que alguien lo arregle. Hay tres
+  en Antioquia y dos en Cundinamarca, así que no es solo geografía remota: es catálogo incompleto.
+- **Una sola tarifa quedó en `pending`** en 2244 cotizaciones. El defecto que `§6.5` mandó al ADR
+  —una transportadora lenta que el mapeador descarta sin ver— existe y pasa una vez de cada dos mil.
+  Con ese número la decisión se puede tomar, y es: no se alarga el checkout.
+
+### Y la primera corrida dio 62,8 %, que era mentira
+
+Esto merece quedarse escrito, porque el número llegó a estar impreso y a un paso de entrar en una
+decisión legal.
+
+La sonda autenticaba **una sola vez al arrancar**, y la corrida dura cuatro horas. A partir del
+municipio 597 todo respondió `401`: 377 municipios contados como "no se pudo medir" y un resumen que
+imprimió 62,8 % de cobertura. **Ese número no medía el país: medía a qué hora caducó el token.**
+
+**Lo delator estaba en la tabla por departamento**, no en el total: Santander 0/87, Valle del Cauca
+0/42, Tolima 0/47, Norte de Santander 0/40. Departamentos enteros en cero, en bloque y por orden
+alfabético. Ninguna geografía se comporta así. Los de verdad son 85/87, 40/42, 45/47 y 39/40.
+
+Y hay una ironía útil: **lo que hizo mirar la tabla por departamento fue la misma cautela que había
+llevado a no publicar un parcial** mientras la corrida iba — el sesgo del orden alfabético. La
+precaución escrita para una cosa sirvió para otra.
+
+Si ese 62,8 % se hubiera publicado, habría ido derecho al punto 4 de `docs/14` como el dato que
+decide si "Despachamos a todo el territorio nacional" se sostiene, y la respuesta habría sido "no"
+cuando es "sí". Una decisión legal tomada sobre la hora a la que caducó un token. Es la misma
+lección que este documento ya tenía escrita sobre el proxy de diagnóstico que estuvo roto: **una
+herramienta de diagnóstico también es una variable del experimento.**
+
+Arreglado con dos defensas y no una, porque la de tiempo sola vuelve a depender de adivinar la
+vigencia: renovación por reloj cada media hora, y además cualquier `401` fuerza reautenticación y un
+reintento. Y el reanudado dejó de dar por medido un fallo — sin eso los 377 se habrían quedado
+perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio país.
 
 ## Cómo conversar con Claude Code en este proyecto
 
