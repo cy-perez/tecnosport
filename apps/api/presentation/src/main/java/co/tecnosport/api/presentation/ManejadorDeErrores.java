@@ -44,6 +44,7 @@ import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
+import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
@@ -120,6 +121,13 @@ public class ManejadorDeErrores {
   public ProblemDetail setRotacionPublicadoExistente(
       SetRotacionPublicadoExistenteException excepcion) {
     return problema(HttpStatus.CONFLICT, "El producto ya tiene un set publicado", excepcion);
+  }
+
+  // Sin esto, intentar publicar un producto sin imagen saldria como 500: la invariante existe en el
+  // dominio desde la Fase 1 y nunca tuvo traduccion HTTP, porque nada la podia disparar.
+  @ExceptionHandler(ProductoSinImagenPrincipalException.class)
+  public ProblemDetail productoSinImagenPrincipal(ProductoSinImagenPrincipalException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto no tiene imagen principal", excepcion);
   }
 
   @ExceptionHandler(SolicitudRetractoNoEncontradaException.class)

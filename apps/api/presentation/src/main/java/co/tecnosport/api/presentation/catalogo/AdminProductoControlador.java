@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.EditarProductoComando;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
@@ -57,6 +58,7 @@ public class AdminProductoControlador {
   private final EditarProducto editarProducto;
   private final SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal;
   private final ConfirmarImagenPrincipal confirmarImagenPrincipal;
+  private final PublicarProducto publicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
 
   public AdminProductoControlador(
@@ -66,6 +68,7 @@ public class AdminProductoControlador {
       EditarProducto editarProducto,
       SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal,
       ConfirmarImagenPrincipal confirmarImagenPrincipal,
+      PublicarProducto publicarProducto,
       MapeadorRespuestasProductoAdmin mapeador) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
@@ -74,6 +77,7 @@ public class AdminProductoControlador {
     this.solicitarSubidaDeImagenPrincipal =
         Objects.requireNonNull(solicitarSubidaDeImagenPrincipal);
     this.confirmarImagenPrincipal = Objects.requireNonNull(confirmarImagenPrincipal);
+    this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
   }
 
@@ -108,6 +112,18 @@ public class AdminProductoControlador {
         editarProducto.ejecutar(
             new EditarProductoComando(
                 id, cuerpo.nombre(), cuerpo.descripcion(), cuerpo.marcaId(), cuerpo.categoriaId()));
+    return mapeador.aRespuesta(producto);
+  }
+
+  /**
+   * {@code POST} sobre un subrecurso y no un {@code PATCH} del estado: publicar no es editar un
+   * campo, es una transición con su propia regla —no hay publicación sin imagen principal— y su
+   * propio permiso conceptual. Mismo criterio que {@code /sets-rotacion/{id}/publicar}.
+   */
+  @PostMapping("/{id}/publicacion")
+  public ProductoAdminRespuesta publicar(@PathVariable("id") UUID id) {
+    Producto producto = publicarProducto.ejecutar(id);
+    log.info("Producto publicado: {}", id);
     return mapeador.aRespuesta(producto);
   }
 

@@ -218,6 +218,16 @@ estos catálogos crece mucho, esto necesitará paginar igual que `/productos`.
 esquema (docs/02-modelo-datos.md) — el panel admin lo usa para armar el
 selector de atributos al agregar una variante.
 
+**Publicar es un `POST` sobre un subrecurso, no un `PATCH` del estado.** No es editar un campo:
+es una transición con su propia regla —no hay publicación sin imagen principal, invariante del
+dominio desde la Fase 1— y responde `409` con `codigo: "PRODUCTO_SIN_IMAGEN_PRINCIPAL"` cuando no
+se cumple. Es idempotente: publicar lo ya publicado devuelve `200`, porque el resultado es el que
+se pedía y un `409` obligaría a consultar antes para no chocar.
+
+No hay endpoint para despublicar, y la ausencia es deliberada: retirar algo que ya se vendió toca
+los pedidos en curso, los enlaces compartidos y el sitemap indexado, y ninguna de esas tres cosas
+está decidida.
+
 **`/categorias` y `/marcas` no son "todas": son las que tienen al menos un
 producto `PUBLICADO`.** No es una optimización, es lo que el endpoint significa —
 alimenta el filtro de la vitrina, y un filtro que lleva a una rejilla vacía es una
@@ -287,6 +297,7 @@ GET /api/v1/admin/categorias                                 todas, incluidas la
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
 GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría
+POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage

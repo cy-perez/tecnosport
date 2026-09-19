@@ -15,6 +15,7 @@ import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
@@ -22,9 +23,12 @@ import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
 import java.util.Optional;
@@ -293,6 +297,24 @@ class AdminProductoControladorTest {
         .andExpect(status().isNotFound());
   }
 
+  /** Un borrador al que ya se le asignó la principal: el único estado desde el que se publica. */
+  private static Producto productoConImagen() {
+    Producto producto = productoEnBorrador();
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://x/0.jpg",
+            "https://x/0.webp",
+            800,
+            600,
+            1000,
+            new HashContenido("%064x".formatted(0)),
+            "alt es",
+            "alt en"));
+    return producto;
+  }
+
   private static Producto productoEnBorrador() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria = Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS);
@@ -300,6 +322,37 @@ class AdminProductoControladorTest {
         Producto.crear("Morral urbano", new Slug("morral-urbano"), "", marca, categoria);
     assert producto.estado() == EstadoProducto.BORRADOR;
     return producto;
+  }
+
+  /**
+   * El endpoint que faltaba. Sin él, un producto creado por el panel se quedaba en BORRADOR para
+   * siempre: {@code Producto.publicar()} existía desde la Fase 1 y solo lo llamaban las pruebas.
+   */
+  @Test
+  void publicarDejaElProductoPublicado() throws Exception {
+    Producto producto = productoConImagen();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(post("/api/v1/admin/productos/" + producto.id() + "/publicacion"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("PUBLICADO"));
+  }
+
+  /**
+   * Y la invariante del dominio sale como 409 y no como 500, que es lo que habría pasado hasta hoy:
+   * {@code ProductoSinImagenPrincipalException} nunca tuvo traducción HTTP porque nada podía
+   * dispararla.
+   */
+  @Test
+  void publicarSinImagenPrincipalResponde409() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(post("/api/v1/admin/productos/" + producto.id() + "/publicacion"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PRODUCTO_SIN_IMAGEN_PRINCIPAL"));
   }
 
   @TestConfiguration
@@ -361,6 +414,11 @@ class AdminProductoControladorTest {
     ConfirmarImagenPrincipal confirmarImagenPrincipal(
         RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
       return new ConfirmarImagenPrincipal(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    PublicarProducto publicarProducto(RepositorioProductos repositorioProductos) {
+      return new PublicarProducto(repositorioProductos);
     }
 
     @Bean
