@@ -5471,6 +5471,68 @@ tocaba nada de las líneas, porque las líneas nunca pasaron por el servidor.
 catálogo real siguen haciendo falta las marcas reales en la base, y el camino ya está marcado por
 `V38` y por su propio razonamiento: el dato real que toda instalación necesita es una migración.
 
+## El primer producto real, y las dos cosas que impedían que hubiera ninguno (2026-09-19)
+
+El procesamiento del catálogo terminó —96 productos con título, descripción, precio y metas— y al ir
+a cargar los primeros aparecieron dos bloqueos que nadie había visto, porque nadie había intentado
+cargar un producto real por el panel.
+
+### Un producto no se podía publicar
+
+`Producto.publicar()` **existía desde la Fase 1**, con su invariante y todo: no se publica sin
+imagen principal. Y **solo lo llamaban las pruebas.** Ningún caso de uso, ningún endpoint, ningún
+botón. Por el panel, un producto nacía en `BORRADOR` y se quedaba ahí para siempre.
+
+No se notó en cinco fases porque **el sembrador escribe el estado directo en la fila**, así que la
+tienda de desarrollo siempre se vio llena. La ficción tapaba el hueco de la cosa real.
+
+Es el mismo género que el plugin de capas que aceptaba la configuración sin aplicarla: una regla
+escrita, correcta, y fuera del alcance de todo lo que corre en producción. La diferencia es que
+aquella no protegía, y esta **impedía usar el panel para lo que se construyó**.
+
+De paso, `ProductoSinImagenPrincipalException` nunca tuvo traducción HTTP —habría salido como 500—
+porque nada podía dispararla. Un error de dominio sin mapear es una pista de que ese camino no lo
+recorre nadie.
+
+### Las medidas del paquete no son las del producto
+
+`docs/02` fija que las cuatro medidas son **del producto ya empacado**, medidas por quien lo carga.
+Al buscarlas en la web apareció una asimetría que conviene tener escrita porque se va a repetir con
+cada lista de proveedor:
+
+- **JBL publica medidas de empaque y peso bruto en su specsheet oficial.** Los cuatro parlantes
+  salieron completos: PartyBox Stage 320 en 384 × 728 × 437 mm y 18,9 kg brutos, Boombox 4 en
+  565 × 345 × 256 mm y 8,16 kg, Xtreme 4 en 325 × 218 × 173 mm y 3,27 kg, Go 5 en 125 × 90 × 58 mm
+  y 0,32 kg.
+- **Los fabricantes de celulares no publican nada de la caja.** Ni Motorola en su ficha oficial de
+  soporte, ni Samsung, ni los agregadores. Solo el equipo desnudo.
+
+Y el equipo desnudo **no sirve**: un celular pesa 190 g y su caja con cargador y cable pasa de 400.
+Cargar esa cifra sería cobrar de menos el flete en cada pedido, que es exactamente contra lo que
+`docs/02` advierte. Así que los celulares se quedan esperando báscula y metro, y no se les inventa
+un número.
+
+### Tener foto no es tener foto utilizable
+
+La tercera sorpresa, midiendo las maestras del estudio: de los 33 productos con foto, **27 tienen
+todas sus maestras a 1200 px o más y 6 no**. Y los que no son justo tres de los cuatro JBL cuyas
+medidas de caja sí estaban: Xtreme 4 y Boombox 4 en 600 px, PartyBox Stage 320 en **480**. La ficha
+pinta ~570 px CSS, que en una pantalla 2× son ~1140: a 480 se nota.
+
+O sea que las dos condiciones —medidas reales y foto utilizable— **se cumplen a la vez en un solo
+producto de los doce**. El JBL Go 5, con maestra de 2000 × 2000 y su specsheet completo.
+
+### Lo que sí quedó cargado, y qué demostró
+
+`JBL Go 5`, de punta a punta y por la misma API que usa el panel: producto, imagen subida a Cloud
+Storage con URL firmada, variante con sus cuatro medidas y el precio, y publicación. Nada de
+escribir en la base directamente — por ahí se saltarían las invariantes y el catálogo real entraría
+por una puerta que nadie más va a volver a usar.
+
+Y sirvió de comprobación cruzada de lo de esta mañana: **al publicarlo aparecieron "JBL" en el
+filtro de marcas y "Parlantes" en el de categorías**, que hasta ese segundo no estaban porque no
+tenían nada publicado detrás. Los dos arreglos del día, funcionando juntos contra una base real.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
