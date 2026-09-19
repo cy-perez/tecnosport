@@ -27,8 +27,9 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
   async restablecerClave(): Promise<void> {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
+  async reenviarVerificacion(): Promise<void> {}
 }
-
 
 async function renderPagina(repositorio: RepositorioCuenta) {
   return render(RecuperarClavePage, {
@@ -65,7 +66,9 @@ describe('RecuperarClavePage', () => {
 
     await llenarYEnviar();
 
-    await vi.waitFor(() => expect(repositorio.llamadasSolicitar).toEqual(['cliente@tecnosport.co']));
+    await vi.waitFor(() =>
+      expect(repositorio.llamadasSolicitar).toEqual(['cliente@tecnosport.co']),
+    );
     expect(await screen.findByText('Revisa tu correo')).toBeTruthy();
   });
 
@@ -74,6 +77,8 @@ describe('RecuperarClavePage', () => {
 
     await llenarYEnviar();
 
-    expect(await screen.findByText('No se pudo procesar la solicitud. Intenta de nuevo.')).toBeTruthy();
+    expect(
+      await screen.findByText('No se pudo procesar la solicitud. Intenta de nuevo.'),
+    ).toBeTruthy();
   });
 });

@@ -9,6 +9,12 @@ export interface RepositorioCuenta {
   registrar(correo: string, clave: string, autorizaDatos: boolean): Promise<void>;
   /** `POST /auth/verificacion`. */
   verificarCorreo(token: string): Promise<void>;
+  /**
+   * `POST /auth/verificacion/reenviar`: siempre resuelve, exista o no la cuenta y esté o no ya
+   * verificada — los tres desenlaces responden 204 a propósito, porque distinguirlos diría desde
+   * fuera qué correos tienen cuenta aquí (docs/08-seguridad-legal.md).
+   */
+  reenviarVerificacion(correo: string): Promise<void>;
   /** `POST /auth/recuperacion`: siempre resuelve, exista o no una cuenta con ese correo — ni el
    * frontend puede distinguir, ni debe (docs/08-seguridad-legal.md). */
   solicitarRecuperacion(correo: string): Promise<void>;

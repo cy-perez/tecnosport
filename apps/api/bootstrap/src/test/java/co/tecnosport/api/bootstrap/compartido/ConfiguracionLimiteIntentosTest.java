@@ -19,7 +19,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 class ConfiguracionLimiteIntentosTest {
 
   @Test
-  void elFiltroDeAuthCubreLasCincoRutasSensibles() {
+  void elFiltroDeAuthCubreLasSeisRutasSensibles() {
     ConfiguracionLimiteIntentos configuracion = new ConfiguracionLimiteIntentos();
     LimitadorDeIntentos limitadorDeIntentos = (clave, maximoIntentos, ventana, ahora) -> true;
     Reloj reloj = Instant::now;
@@ -33,6 +33,10 @@ class ConfiguracionLimiteIntentosTest {
             "/api/v1/auth/sesion",
             "/api/v1/auth/registro",
             "/api/v1/auth/verificacion",
+            // La sexta, y la razón de que esta prueba exista: un patrón exacto NO cubre subrutas,
+            // así que "/api/v1/auth/verificacion" no protege a "/verificacion/reenviar". Es el
+            // mismo descuido que dejó sin límite el endpoint que cotiza contra Skydropx.
+            "/api/v1/auth/verificacion/reenviar",
             "/api/v1/auth/recuperacion",
             "/api/v1/auth/recuperacion/confirmar"),
         Set.copyOf(registro.getUrlPatterns()));

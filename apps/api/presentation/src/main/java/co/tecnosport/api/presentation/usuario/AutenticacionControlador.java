@@ -6,6 +6,8 @@ import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacionComando;
 import co.tecnosport.api.application.usuario.IniciarSesion;
 import co.tecnosport.api.application.usuario.IniciarSesionComando;
+import co.tecnosport.api.application.usuario.ReenviarVerificacion;
+import co.tecnosport.api.application.usuario.ReenviarVerificacionComando;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RefrescarTokenComando;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
@@ -19,6 +21,7 @@ import co.tecnosport.api.application.usuario.VerificarCorreoComando;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
+import co.tecnosport.api.presentation.usuario.dto.ReenviarVerificacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
 import co.tecnosport.api.presentation.usuario.dto.SesionRespuesta;
 import co.tecnosport.api.presentation.usuario.dto.SolicitarRecuperacionRequest;
@@ -58,6 +61,7 @@ public class AutenticacionControlador {
 
   private final RegistrarUsuario registrarUsuario;
   private final VerificarCorreo verificarCorreo;
+  private final ReenviarVerificacion reenviarVerificacion;
   private final SolicitarRecuperacion solicitarRecuperacion;
   private final ConfirmarRecuperacion confirmarRecuperacion;
   private final IniciarSesion iniciarSesion;
@@ -68,6 +72,7 @@ public class AutenticacionControlador {
   public AutenticacionControlador(
       RegistrarUsuario registrarUsuario,
       VerificarCorreo verificarCorreo,
+      ReenviarVerificacion reenviarVerificacion,
       SolicitarRecuperacion solicitarRecuperacion,
       ConfirmarRecuperacion confirmarRecuperacion,
       IniciarSesion iniciarSesion,
@@ -76,6 +81,7 @@ public class AutenticacionControlador {
       PlatformTransactionManager transactionManager) {
     this.registrarUsuario = Objects.requireNonNull(registrarUsuario);
     this.verificarCorreo = Objects.requireNonNull(verificarCorreo);
+    this.reenviarVerificacion = Objects.requireNonNull(reenviarVerificacion);
     this.solicitarRecuperacion = Objects.requireNonNull(solicitarRecuperacion);
     this.confirmarRecuperacion = Objects.requireNonNull(confirmarRecuperacion);
     this.iniciarSesion = Objects.requireNonNull(iniciarSesion);
@@ -100,6 +106,19 @@ public class AutenticacionControlador {
   public ResponseEntity<Void> verificacion(@RequestBody VerificarCorreoRequest cuerpo) {
     transaccion.executeWithoutResult(
         estado -> verificarCorreo.ejecutar(new VerificarCorreoComando(cuerpo.token())));
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Siempre 204: exista la cuenta, no exista, o exista ya verificada. Los tres tienen que ser
+   * indistinguibles desde fuera por lo mismo que la recuperación de abajo, y aquí además el tercero
+   * importa — un 4xx solo para "ya está verificada" diría el estado de una cuenta ajena.
+   */
+  @PostMapping("/verificacion/reenviar")
+  public ResponseEntity<Void> reenviarVerificacion(
+      @RequestBody ReenviarVerificacionRequest cuerpo) {
+    transaccion.executeWithoutResult(
+        estado -> reenviarVerificacion.ejecutar(new ReenviarVerificacionComando(cuerpo.correo())));
     return ResponseEntity.noContent().build();
   }
 

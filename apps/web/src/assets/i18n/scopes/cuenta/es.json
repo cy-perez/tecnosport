@@ -35,7 +35,14 @@
     "exito_titulo": "Correo verificado",
     "exito_mensaje": "Tu cuenta ya está lista. Ya puedes iniciar sesión.",
     "error_titulo": "Enlace no válido",
-    "error_mensaje": "El enlace no es válido o ya venció. Regístrate de nuevo para recibir uno nuevo."
+    "error_mensaje": "El enlace no es válido o ya venció. Escribe tu correo y te mandamos uno nuevo.",
+    "reenvio_instrucciones": "Te mandamos un enlace nuevo al correo de tu cuenta.",
+    "reenvio_correo": "Correo electrónico",
+    "reenvio_correo_error": "Escribe un correo electrónico válido.",
+    "reenvio_enviar": "Enviar enlace nuevo",
+    "reenvio_enviando": "Enviando el enlace…",
+    "reenvio_exito": "Si ese correo tiene una cuenta sin verificar, le acabamos de enviar un enlace nuevo. Revisa tu bandeja de entrada y la carpeta de correo no deseado.",
+    "reenvio_error": "No pudimos enviar el enlace. Inténtalo de nuevo en un momento."
   },
   "recuperarClave": {
     "titulo": "Recuperar clave",

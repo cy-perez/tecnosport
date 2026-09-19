@@ -29,6 +29,17 @@ export class CuentaHttpRepositorio implements RepositorioCuenta {
     }
   }
 
+  async reenviarVerificacion(correo: string): Promise<void> {
+    const { response } = await this.cliente.POST('/api/v1/auth/verificacion/reenviar', {
+      body: { correo },
+    });
+    // El 204 no distingue entre los tres desenlaces, y eso es el contrato. Lo que sí hay que
+    // propagar es un servidor caído: quien pide el enlace tiene que saber que no se pidió.
+    if (!response.ok) {
+      throw new Error('No se pudo reenviar el correo de verificación.');
+    }
+  }
+
   async solicitarRecuperacion(correo: string): Promise<void> {
     // Siempre resuelve — el propio backend responde 204 exista o no una cuenta con ese correo, así
     // que no hay nada que distinguir ni propagar aquí.

@@ -40,6 +40,8 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
   async restablecerClave(): Promise<void> {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
+  async reenviarVerificacion(): Promise<void> {}
 }
 
 async function renderPagina(repositorio: RepositorioCuenta) {

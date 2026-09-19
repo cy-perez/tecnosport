@@ -14,6 +14,7 @@ import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
 import co.tecnosport.api.application.usuario.GeneradorDeTokens;
 import co.tecnosport.api.application.usuario.IniciarSesion;
+import co.tecnosport.api.application.usuario.ReenviarVerificacion;
 import co.tecnosport.api.application.usuario.RefrescarToken;
 import co.tecnosport.api.application.usuario.RegistrarUsuario;
 import co.tecnosport.api.application.usuario.RepositorioSesiones;
@@ -31,6 +32,7 @@ import co.tecnosport.api.domain.usuario.Usuario;
 import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
+import co.tecnosport.api.presentation.usuario.dto.ReenviarVerificacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.RegistrarUsuarioRequest;
 import co.tecnosport.api.presentation.usuario.dto.SolicitarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.VerificarCorreoRequest;
@@ -80,6 +82,14 @@ class AutenticacionControladorTest {
         Usuario.crear(
             new CorreoElectronico(correo), "hash:" + claveTextoPlano, Rol.ADMIN, Instant.now());
     usuario.verificarCorreo(Instant.now());
+    usuarios.conUsuario(usuario);
+    return usuario;
+  }
+
+  private Usuario conUsuarioSinVerificar(String correo, String claveTextoPlano) {
+    Usuario usuario =
+        Usuario.crear(
+            new CorreoElectronico(correo), "hash:" + claveTextoPlano, Rol.CLIENTE, Instant.now());
     usuarios.conUsuario(usuario);
     return usuario;
   }
@@ -320,6 +330,51 @@ class AutenticacionControladorTest {
         .andExpect(jsonPath("$.codigo").value("TOKEN_VERIFICACION_CORREO_INVALIDO"));
   }
 
+  /**
+   * Los tres desenlaces responden 204 y eso es el contrato, no una casualidad: si uno solo
+   * respondiera distinto, este endpoint diría desde fuera qué correos tienen cuenta aquí y cuáles
+   * están sin verificar (OWASP, docs/08-seguridad-legal.md).
+   */
+  @Test
+  void reenviarVerificacionConCuentaSinVerificarDevuelve204() throws Exception {
+    conUsuarioSinVerificar("sin-verificar-reenvio@tecnosport.co", "clave-correcta");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/verificacion/reenviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new ReenviarVerificacionRequest("sin-verificar-reenvio@tecnosport.co"))))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void reenviarVerificacionConCuentaYaVerificadaTambienDevuelve204() throws Exception {
+    conUsuarioAdmin("ya-verificada-reenvio@tecnosport.co", "clave-correcta");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/verificacion/reenviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new ReenviarVerificacionRequest("ya-verificada-reenvio@tecnosport.co"))))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void reenviarVerificacionConCorreoInexistenteTambienDevuelve204() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/verificacion/reenviar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new ReenviarVerificacionRequest("no-existe-reenvio@tecnosport.co"))))
+        .andExpect(status().isNoContent());
+  }
+
   @Test
   void recuperacionConCorreoExistenteDevuelve204() throws Exception {
     conUsuarioAdmin("admin-recuperacion@tecnosport.co", "clave-correcta");
@@ -483,6 +538,25 @@ class AutenticacionControladorTest {
         RepositorioTokensVerificacion repositorioTokensVerificacion,
         RepositorioUsuarios repositorioUsuarios) {
       return new VerificarCorreo(repositorioTokensVerificacion, repositorioUsuarios, Instant::now);
+    }
+
+    @Bean
+    ReenviarVerificacion reenviarVerificacion(
+        RepositorioUsuarios repositorioUsuarios,
+        RepositorioTokensVerificacion repositorioTokensVerificacion,
+        EnviadorDeCorreo enviadorDeCorreo,
+        LimitadorDeIntentos limitadorDeIntentos) {
+      return new ReenviarVerificacion(
+          repositorioUsuarios,
+          repositorioTokensVerificacion,
+          enviadorDeCorreo,
+          new TextosDeCorreoDobleDePrueba(),
+          Instant::now,
+          VIGENCIA_TOKEN_VERIFICACION,
+          "http://localhost:4200/es/cuenta/verificar-correo",
+          limitadorDeIntentos,
+          MAXIMO_INTENTOS_POR_CUENTA,
+          VENTANA_INTENTOS_POR_CUENTA);
     }
 
     @Bean
