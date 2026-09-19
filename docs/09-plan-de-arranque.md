@@ -5250,6 +5250,118 @@ vigencia: renovación por reloj cada media hora, y además cualquier `401` fuerz
 reintento. Y el reanudado dejó de dar por medido un fallo — sin eso los 377 se habrían quedado
 perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio país.
 
+## Los trámites que nadie había mandado, y una exclusión que la ley no concede (2026-09-19)
+
+El día anterior cerró la Fase 7 y dejó tres cosas que no eran código: un dato de contrato sin
+mirar, tres asuntos con un proveedor sin enviar, y un expediente para el abogado listo pero sin
+imprimir. Ninguna bloqueaba un despliegue, y por eso llevaban semanas ahí — **el trabajo que no
+bloquea nada es el que no se hace nunca**.
+
+### Resend procesa en Estados Unidos, y eso resultó ser una buena noticia
+
+El punto 3 de `docs/14` decía "alguien tiene que leer el contrato". Se leyó: el acuerdo de
+tratamiento dice que las operaciones principales ocurren en Estados Unidos, y los veintidós
+subencargados de la lista —actualizada el 27 de agosto— están todos allí.
+
+**Lo que no estaba mirado es que Colombia publica una lista de países con nivel adecuado**, en el
+numeral 3.2 del Capítulo Tercero del Título V de la Circular Única de la SIC. **Estados Unidos está
+en ella.** O sea que la transferencia no necesita apoyarse en la autorización del titular —la
+excepción del art. 26 literal a, que es donde uno esperaría que cayera— ni en una declaración de
+conformidad ante la Superintendencia.
+
+Eso cambia la pregunta al abogado de "¿es legal mandar esto fuera?" a "¿conviene nombrar el país?",
+que es la misma forma que ya había tomado la pregunta de las transportadoras. Y aparecieron dos
+subencargados que no son infraestructura —Anthropic y RunPod, los dos de inteligencia artificial—
+con una pregunta de hecho que la lista no contesta: a qué datos alcanzan.
+
+**Lo que no se pudo verificar va escrito como tal.** La lista se leyó en la compilación oficial de
+la Circular 5 de 2017; el Título V consolidado que publica la SIC es un PDF escaneado que no se
+deja leer, y existe una Circular 2 de 2025 sobre transferencias cuyo alcance no se pudo cotejar.
+Una versión posterior añadió Australia y Japón sin quitar a Estados Unidos, así que todo apunta a
+que sigue vigente. Pero **"todo apunta" no es "está verificado"**, y en este documento esas dos
+cosas no se escriben igual.
+
+### Tres asuntos con Skydropx, en un mensaje y con su adjunto
+
+Los 74 códigos DANE que su catálogo rechaza, el retiro de la solicitud del 14 de septiembre —que
+era nuestra y se resolvió el 15— y el conector de recolección de Servientrega. Llevaban en la tabla
+de estado de `docs/13` como cosas que había que mandar, que es distinto de cosas mandadas.
+
+Nace `docs/tramites/`: el mensaje redactado, su adjunto, y un sitio donde anotar la respuesta. El
+CSV de los 74 sale de la tabla del documento, no se teclea — y hubo que entrecomillar los campos
+porque un departamento trae una coma en el nombre.
+
+De paso salió una hipótesis que se les ofrece como pista: **21 de los 74 son municipios cuyo nombre
+oficial en DIVIPOLA es más largo que el de uso común** —Tumaco es "San Andrés de Tumaco", Buga es
+"Guadalajara de Buga", Mompox es "Santa Cruz de Mompox"—, que es justo lo que se caería de un
+catálogo armado cruzando nombres contra una lista vieja. No explica los 74, y va dicho así.
+
+### Las hojas para el abogado se generan, no se transcriben
+
+El expediente pedía llevar los textos "en su versión vigente y con su fecha, **no una
+transcripción**". Copiar de la pantalla es exactamente una transcripción, y con diecinueve
+secciones basta perder una para que la consulta se haga sobre algo que nadie publicó.
+
+`npm run legales-impresos` lee los mismos JSON de Transloco que pinta el sitio y los recorre en el
+orden de `documento-legal.page.html`. Revienta si la versión difiere entre idiomas, que es el único
+modo en que el papel podría decir una fecha y la pantalla otra. La salida no se versiona: una copia
+del texto legal dentro del repositorio acabaría desfasada del original y nadie sabría cuál rige.
+
+### Y "desgaste normal" salió de los términos
+
+Esta sí tocó texto publicado, y la decisión de hacerlo ahora en vez de esperar al abogado se tomó a
+sabiendas: sube la versión legal hoy y volverá a subir cuando él responda.
+
+El art. 16 de la Ley 1480 enumera cuatro causales de exoneración y el desgaste no está entre ellas.
+Una exclusión más amplia que la legal no solo es ineficaz —no se puede oponer— sino que en un
+expediente de la SIC se lee como cláusula abusiva, y eso contamina toda la disputa, no solo ese
+punto.
+
+**Lo interesante no fue quitar la palabra, sino lo que apareció al cotejar la frase entera contra
+el artículo: la lista sobraba por un lado y faltaba por dos.** Decía "fuerza mayor" pero no el caso
+fortuito, y no mencionaba el hecho de un tercero. O sea que el texto **renunciaba a dos defensas
+que la ley concede mientras se inventaba una que no existe**. Es el mismo género de error que el
+plugin de capas que aceptaba la configuración sin aplicarla: algo que parece estar cubriendo un
+flanco y está mirando a otro lado.
+
+Se añadieron además dos precisiones que están en el artículo y no estaban en el texto: que la
+causal del manual solo opera si el manual se entregó en castellano, y que **la carga de la prueba
+es nuestra**. Ninguna es una concesión — las dos ya estaban en la ley, y callarlas solo servía para
+que quien lee creyera otra cosa.
+
+**Antes de tocar el texto se comprobó qué hace el sistema con esas exclusiones, y la respuesta es
+lo que le da peso al cambio: nada.** No hay enum de motivos de rechazo ni regla que mencione el
+desgaste; `DesenlaceGarantia` solo conoce reparar, reponer y reintegrar, y una reclamación negada
+se responde por el flujo de atención con texto libre. Esa frase **es** el criterio con el que una
+persona rechaza una reclamación real. Cambiarla cambia lo que pasa.
+
+Lo que sigue abierto es la reformulación en positivo —decir que el deterioro esperable por el uso
+normal no es un defecto de calidad— y ahí sí hace falta criterio profesional: la frontera entre
+informarlo y excluirlo es justo donde se juega si la cláusula es abusiva. Hoy el texto calla, que
+es la opción que se sostiene sola.
+
+### Lo que este día deja pendiente
+
+- **El catálogo real.** `catalogo/productos.json` tiene 103 productos de la lista del 12 de
+  septiembre, pero es la salida del análisis y nada más: cero descripciones, cero precios de
+  mercado, cero colores, cero imágenes y 29 sin marca identificada. Y no hay ni una foto en el
+  repositorio. Decidido el alcance: **un subconjunto de 15 a 25 productos de las marcas fuertes**,
+  completos de punta a punta, en vez de 103 a medias.
+- **Lighthouse** sigue sin poder medirse con propiedad mientras las tarjetas traigan sus fotos de
+  `picsum.photos`. Depende de lo anterior.
+- **El panel no sabe crear marcas**, y el catálogo real no se puede cargar sin ellas.
+  `POST /api/v1/admin/productos` exige `marcaId` y `categoriaId` de registros que ya existan, y
+  `CategoriaControlador` y `MarcaControlador` son de solo lectura: alimentan los filtros de la
+  vitrina. **Las categorías ya están resueltas** — `V38__linea_tecnologia.sql` insertó las diez de
+  la línea de tecnología como migración, y dejó escrito el porqué: el sembrador solo corre con la
+  tabla de productos vacía, así que nada de lo que se ponga ahí llega a una base que ya tiene
+  datos. **Las marcas no.** Las únicas que existen son "TecnoSport" y "Under Trail", las dos
+  ficción declarada del sembrador; ninguna de las que el negocio de verdad vende —Xiaomi, Samsung,
+  Apple, JBL, Motorola, Honor— existe en ninguna base. El camino ya está marcado por V38, y por su
+  propio razonamiento: el dato real que toda instalación necesita es una migración.
+- **La Etapa 4, producción**, que esperaba a que la Fase 7 cerrara y ya puede empezar cuando haya
+  catálogo que desplegar.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
