@@ -47,8 +47,8 @@ frontend, así que no sigue la convención JSON del resto del contrato.
 ```
 GET  /api/v1/productos                      filtros, orden, cursor
 GET  /api/v1/productos/{slug}               incluye imágenes y set de rotación
-GET  /api/v1/categorias
-GET  /api/v1/marcas
+GET  /api/v1/categorias                     solo las que tienen algo publicado
+GET  /api/v1/marcas                         solo las que tienen algo publicado
 POST /api/v1/carritos
 GET  /api/v1/carritos/{id}
 POST /api/v1/carritos/{id}/lineas
@@ -210,13 +210,31 @@ La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
 `cursorSiguiente` es `null` cuando no hay más páginas.
 
 `GET /api/v1/categorias`, `GET /api/v1/marcas` y `GET /api/v1/atributos` no
-tienen parámetros —listas completas, sin paginar, porque son pocos
-registros— y devuelven la misma envoltura `{ "items": [...], "cursorSiguiente":
+tienen parámetros —sin paginar, porque son pocos registros— y devuelven la misma
+envoltura `{ "items": [...], "cursorSiguiente":
 null }` que el catálogo paginado, nunca un arreglo desnudo. Si alguno de
 estos catálogos crece mucho, esto necesitará paginar igual que `/productos`.
 `/atributos` es un catálogo global, sin asociación a categoría en el
 esquema (docs/02-modelo-datos.md) — el panel admin lo usa para armar el
 selector de atributos al agregar una variante.
+
+**`/categorias` y `/marcas` no son "todas": son las que tienen al menos un
+producto `PUBLICADO`.** No es una optimización, es lo que el endpoint significa —
+alimenta el filtro de la vitrina, y un filtro que lleva a una rejilla vacía es una
+promesa rota en dos clics. El criterio es *el mismo* que usa `/productos` para
+armar la rejilla (`p.estado = 'PUBLICADO'`), no uno parecido: si algún día la
+rejilla exigiera además variante activa, este tendría que moverse con ella.
+
+Hasta el 19 de septiembre de 2026 devolvían la tabla entera, y desde que
+`V38__linea_tecnologia.sql` dejó la línea de tecnología con once categorías, la
+vitrina ofrecía "Proyectores" y "Computadores" sin un solo producto detrás.
+
+El panel necesita lo contrario —la categoría vacía es justo la que hace falta
+para cargarle el primer producto—, y por eso existen `GET /api/v1/admin/marcas`
+y `GET /api/v1/admin/categorias`. Son dos preguntas distintas con dos audiencias
+distintas, y se separan en dos endpoints en vez de un parámetro: con un
+parámetro, el cliente elegiría qué ve y la vitrina quedaría a un carácter de
+volver a ofrecer filtros vacíos.
 
 Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
 ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
@@ -264,6 +282,8 @@ declarado aparte porque uno exacto no cubre subrutas.
 Rol `ADMIN`.
 
 ```
+GET /api/v1/admin/marcas                                     todas, incluidas las que no tienen productos
+GET /api/v1/admin/categorias                                 todas, incluidas las que no tienen productos
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
 GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría

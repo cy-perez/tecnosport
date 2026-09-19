@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
+import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import java.util.List;
@@ -22,6 +23,13 @@ public class RepositorioMarcasJpa implements RepositorioMarcas {
   @Override
   public List<Marca> listarTodas() {
     return marcaJpaRepository.findAll(Sort.by("nombre")).stream().map(this::aMarca).toList();
+  }
+
+  @Override
+  public List<Marca> listarConProductosPublicados() {
+    return marcaJpaRepository.findConProductosEnEstado(EstadoProducto.PUBLICADO.name()).stream()
+        .map(this::aMarca)
+        .toList();
   }
 
   @Override

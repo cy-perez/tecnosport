@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import co.tecnosport.api.application.catalogo.ListarCategorias;
+import co.tecnosport.api.application.catalogo.ListarCategoriasAdmin;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -21,41 +21,27 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(CategoriaControlador.class)
-@Import(CategoriaControladorTest.Configuracion.class)
-class CategoriaControladorTest {
+@WebMvcTest(AdminCategoriaControlador.class)
+@Import(AdminCategoriaControladorTest.Configuracion.class)
+class AdminCategoriaControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioCategoriasDobleDePrueba repositorio;
 
+  /** Sin esto no habría forma de cargar el primer proyector desde el panel. */
   @Test
-  void listadoDevuelveItemsYCursorSiguienteNulo() throws Exception {
-    repositorio.conCategoriasConProductosPublicados(
-        Categoria.crear("Bolsos", new Slug("bolsos"), LineaCatalogo.BOLSOS));
-
-    mockMvc
-        .perform(get("/api/v1/categorias"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items", hasSize(1)))
-        .andExpect(jsonPath("$.items[0].nombre").value("Bolsos"))
-        .andExpect(jsonPath("$.items[0].linea").value("BOLSOS"))
-        .andExpect(jsonPath("$.cursorSiguiente").isEmpty());
-  }
-
-  /**
-   * "Proyectores" existe desde {@code V38} y nunca tuvo un producto detrás. Por el filtro de la
-   * vitrina no puede salir.
-   */
-  @Test
-  void noDevuelveUnaCategoriaQueExistePeroNoTieneProductosPublicados() throws Exception {
+  void devuelveTambienLasCategoriasSinProductosPublicados() throws Exception {
     repositorio.conCategorias(
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA),
         Categoria.crear("Proyectores", new Slug("proyectores"), LineaCatalogo.TECNOLOGIA));
-    repositorio.conCategoriasConProductosPublicados();
+    repositorio.conCategoriasConProductosPublicados(
+        Categoria.crear("Celulares", new Slug("celulares"), LineaCatalogo.TECNOLOGIA));
 
     mockMvc
-        .perform(get("/api/v1/categorias"))
+        .perform(get("/api/v1/admin/categorias"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items", hasSize(0)));
+        .andExpect(jsonPath("$.items", hasSize(2)))
+        .andExpect(jsonPath("$.items[1].nombre").value("Proyectores"));
   }
 
   @TestConfiguration
@@ -67,8 +53,8 @@ class CategoriaControladorTest {
     }
 
     @Bean
-    ListarCategorias listarCategorias(RepositorioCategorias repositorio) {
-      return new ListarCategorias(repositorio);
+    ListarCategoriasAdmin listarCategoriasAdmin(RepositorioCategorias repositorio) {
+      return new ListarCategoriasAdmin(repositorio);
     }
 
     @Bean

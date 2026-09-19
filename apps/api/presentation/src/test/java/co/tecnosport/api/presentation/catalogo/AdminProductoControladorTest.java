@@ -388,6 +388,12 @@ class AdminProductoControladorTest {
       return marcas;
     }
 
+    /** Este controlador no lo usa; aquí solo cumple el contrato del puerto. */
+    @Override
+    public List<Marca> listarConProductosPublicados() {
+      return marcas;
+    }
+
     @Override
     public Optional<Marca> buscarPorId(UUID id) {
       return marcas.stream().filter(marca -> marca.id().equals(id)).findFirst();
@@ -404,6 +410,12 @@ class AdminProductoControladorTest {
 
     @Override
     public List<Categoria> listarTodas() {
+      return categorias;
+    }
+
+    /** Este controlador no lo usa; aquí solo cumple el contrato del puerto. */
+    @Override
+    public List<Categoria> listarConProductosPublicados() {
       return categorias;
     }
 

@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import co.tecnosport.api.application.catalogo.ListarMarcas;
+import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.domain.catalogo.Marca;
 import java.util.List;
@@ -19,38 +19,28 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(MarcaControlador.class)
-@Import(MarcaControladorTest.Configuracion.class)
-class MarcaControladorTest {
+@WebMvcTest(AdminMarcaControlador.class)
+@Import(AdminMarcaControladorTest.Configuracion.class)
+class AdminMarcaControladorTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioMarcasDobleDePrueba repositorio;
 
-  @Test
-  void listadoDevuelveItemsYCursorSiguienteNulo() throws Exception {
-    repositorio.conMarcasConProductosPublicados(Marca.crear("TecnoSport"));
-
-    mockMvc
-        .perform(get("/api/v1/marcas"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items", hasSize(1)))
-        .andExpect(jsonPath("$.items[0].nombre").value("TecnoSport"))
-        .andExpect(jsonPath("$.cursorSiguiente").isEmpty());
-  }
-
   /**
-   * El endpoint público es el filtro de la vitrina: una marca que existe pero no tiene nada
-   * publicado no puede salir por aquí, porque el filtro llevaría a una rejilla vacía.
+   * El espejo exacto de {@code MarcaControladorTest}: aquí la marca sin productos <b>sí</b> sale, y
+   * si algún día dejara de salir, dar de alta el primer producto de una marca nueva volvería a ser
+   * imposible desde el panel.
    */
   @Test
-  void noDevuelveUnaMarcaQueExistePeroNoTieneProductosPublicados() throws Exception {
-    repositorio.conMarcas(Marca.crear("Bose"));
-    repositorio.conMarcasConProductosPublicados();
+  void devuelveTambienLasMarcasSinProductosPublicados() throws Exception {
+    repositorio.conMarcas(Marca.crear("Xiaomi"), Marca.crear("Bose"));
+    repositorio.conMarcasConProductosPublicados(Marca.crear("Xiaomi"));
 
     mockMvc
-        .perform(get("/api/v1/marcas"))
+        .perform(get("/api/v1/admin/marcas"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items", hasSize(0)));
+        .andExpect(jsonPath("$.items", hasSize(2)))
+        .andExpect(jsonPath("$.items[1].nombre").value("Bose"));
   }
 
   @TestConfiguration
@@ -62,8 +52,8 @@ class MarcaControladorTest {
     }
 
     @Bean
-    ListarMarcas listarMarcas(RepositorioMarcas repositorio) {
-      return new ListarMarcas(repositorio);
+    ListarMarcasAdmin listarMarcasAdmin(RepositorioMarcas repositorio) {
+      return new ListarMarcasAdmin(repositorio);
     }
 
     @Bean

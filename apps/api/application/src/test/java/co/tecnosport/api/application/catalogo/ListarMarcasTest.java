@@ -9,14 +9,29 @@ import org.junit.jupiter.api.Test;
 class ListarMarcasTest {
 
   @Test
-  void devuelveTodasLasMarcasDelRepositorio() {
+  void ofreceSoloLasMarcasQueTienenAlgoPublicado() {
     RepositorioMarcasFalso repositorio = new RepositorioMarcasFalso();
-    Marca tecnosport = Marca.crear("TecnoSport");
-    Marca otra = Marca.crear("Otra marca");
-    repositorio.conMarcas(tecnosport, otra);
+    Marca conProductos = Marca.crear("Xiaomi");
+    Marca vacia = Marca.crear("Bose");
+    repositorio.conMarcas(conProductos, vacia);
+    repositorio.conMarcasConProductosPublicados(conProductos);
 
     List<Marca> resultado = new ListarMarcas(repositorio).ejecutar();
 
-    assertEquals(List.of(tecnosport, otra), resultado);
+    assertEquals(List.of(conProductos), resultado);
+  }
+
+  /**
+   * La prueba que de verdad protege: si alguien vuelve a poner {@code listarTodas()} aquí, esto
+   * falla. Sin ella, un doble que devolviera la misma lista por los dos métodos dejaría pasar el
+   * defecto que este caso de uso existe para evitar.
+   */
+  @Test
+  void noOfreceUnaMarcaSinProductosAunqueExista() {
+    RepositorioMarcasFalso repositorio = new RepositorioMarcasFalso();
+    repositorio.conMarcas(Marca.crear("Bose"));
+    repositorio.conMarcasConProductosPublicados();
+
+    assertEquals(List.of(), new ListarMarcas(repositorio).ejecutar());
   }
 }

@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,51 @@ class RepositorioCategoriasJpaTest {
 
   @Autowired private RepositorioCategoriasJpa repositorio;
   @Autowired private CategoriaJpaRepository categorias;
+  @Autowired private MarcaJpaRepository marcas;
+  @Autowired private ProductoJpaRepository productos;
+
+  private static final Instant AHORA = Instant.parse("2026-09-19T15:00:00Z");
+
+  /**
+   * Aquí sí se puede afirmar el contenido exacto, y esa es la diferencia con {@code listarTodas}:
+   * {@code V38} sembró diez categorías tecnológicas pero ninguna con un producto detrás, así que la
+   * lista filtrada arranca vacía y solo contiene lo que esta prueba publica.
+   */
+  @Test
+  void listarConProductosPublicadosIgnoraLasVaciasYLasQueSoloTienenBorradores() {
+    MarcaJpaEntity marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca TC", AHORA));
+    CategoriaJpaEntity conPublicado =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Con publicado", "con-publicado-cat", "TECNOLOGIA", AHORA));
+    CategoriaJpaEntity soloBorrador =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Solo borrador", "solo-borrador-cat", "TECNOLOGIA", AHORA));
+    categorias.save(
+        new CategoriaJpaEntity(UUID.randomUUID(), "Sin nada", "sin-nada-cat", "TECNOLOGIA", AHORA));
+
+    guardarProducto(marca.getId(), conPublicado.getId(), "PUBLICADO", "pub-cat");
+    guardarProducto(marca.getId(), soloBorrador.getId(), "BORRADOR", "bor-cat");
+
+    List<Categoria> resultado = repositorio.listarConProductosPublicados();
+
+    assertThat(resultado).extracting(Categoria::nombre).containsExactly("Con publicado");
+  }
+
+  private void guardarProducto(UUID marcaId, UUID categoriaId, String estado, String slug) {
+    productos.save(
+        new ProductoJpaEntity(
+            UUID.randomUUID(),
+            slug,
+            slug,
+            "Descripción",
+            marcaId,
+            categoriaId,
+            estado,
+            AHORA,
+            AHORA));
+  }
 
   /**
    * Afirma el <b>orden</b> y la <b>presencia</b>, no el contenido exacto de la tabla. Usaba {@code
