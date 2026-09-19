@@ -285,7 +285,10 @@ formulación que no diga "todo".
 - [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
       septiembre de 2026: 93,0 % con envío a domicilio.
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
-      con su fecha, no una transcripción.
+      con su fecha, no una transcripción. **Las hojas ya se generan solas**:
+      `npm run legales-impresos` las escribe en `docs/tramites/impresos/` leyendo
+      los mismos JSON que pinta el sitio, con la versión y la fecha en la cabecera
+      y en el nombre del archivo. Falta imprimirlas.
 
 Este expediente lo preparó el proyecto, no un abogado. Los cuatro puntos son
 decisiones de riesgo y las cuatro recomendaciones son un punto de partida para la

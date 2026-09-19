@@ -62,3 +62,8 @@ catalogo/*
 # La medición de cobertura de la sonda: es un dato medido, no fuente. Lo que se versiona es la
 # conclusión, en docs/13.
 cobertura-medida.json
+
+# Las hojas para imprimir de los textos legales: salida de tools/imprimir-legales.mjs. Lo que se
+# versiona es el texto, en los JSON de Transloco; una copia versionada acabaría desfasada del
+# original y nadie sabría cuál de las dos rige.
+docs/tramites/impresos/
