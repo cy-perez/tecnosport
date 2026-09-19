@@ -5417,6 +5417,46 @@ escrito dentro del doble y no en el commit.
 Las pruebas van por pares y en espejo: la de la vitrina exige que la marca vacía **no** salga, la
 del panel exige que **sí**. Una sola de las dos dejaría pasar la mitad de las regresiones posibles.
 
+### Y estaba en tres sitios, no en uno
+
+Arreglado el endpoint, quedaba comprobar cómo se pintaba el panel de filtros con una lista vacía —
+el estado exacto de una base de producción recién desplegada—. Al mirarlo apareció que **el defecto
+seguía entero un nivel más arriba, del lado del cliente, donde el servidor no podía verlo.**
+
+`LINEAS` es una constante del modelo con las tres líneas del negocio, y de ahí salían dos cosas:
+
+1. **El selector de "Línea" del filtro**, que ofrecía las tres siempre.
+2. **Las baldosas de la portada**, una por línea, cada una enlazando a `/productos?linea=...`.
+
+La segunda es la peor de las tres versiones del defecto: **dos de las tres baldosas de la primera
+pantalla del sitio** llevarían a una rejilla vacía el día que abramos solo con tecnología, que es
+justo lo que va a pasar. Un filtro escondido detrás de un botón se descubre; una baldosa de la
+portada se pincha.
+
+Las dos se deducen ahora de las categorías, que ya llegan filtradas por el servidor: **una línea sin
+categorías con productos publicados no tiene productos.** No hizo falta ningún endpoint nuevo — el
+dato ya estaba, y esa es una de las cosas que hizo barato el arreglo de arriba.
+
+Se recorre `LINEAS` y no el conjunto de líneas encontradas, para conservar el orden del negocio, que
+no es el alfabético.
+
+**La portada gana una consulta**, así que se precarga en su `resolve` como pide `ADR-0011` — y solo
+las categorías, con un `usarCategorias()` nuevo: pedirle también las marcas sería una petición de
+más en la pantalla más visitada del sitio y en cada arranque en frío. Comparte llave y opciones con
+`usarOpcionesFiltro`, así que las dos pantallas reaprovechan la misma entrada de caché.
+
+Y si no hay ninguna línea con productos, **no se pinta ni el encabezado**: un "Nuestras líneas" con
+nada debajo informa peor que no estar.
+
+De paso, las pruebas que leían las baldosas tuvieron que pasar a `findBy*`. Ya no salen de una
+constante disponible en el primer render, y `whenStable()` no espera a que TanStack Query resuelva
+— que es la trampa que `apps/web/CLAUDE.md` ya tenía escrita y que aquí se cobró tres pruebas de
+golpe.
+
+**La lección, que es la de siempre en este proyecto con otra ropa:** arreglar el defecto donde se
+ve no es arreglarlo. El endpoint era el sitio correcto para el filtro de categorías y marcas, y no
+tocaba nada de las líneas, porque las líneas nunca pasaron por el servidor.
+
 ### Lo que este arreglo no hace
 
 **El panel sigue sin saber crear marcas.** Estos dos endpoints son de lectura. Para cargar el
