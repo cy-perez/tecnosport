@@ -16,9 +16,10 @@
 //   node tools/sonda-cobertura.mjs --desde 400          retoma en el municipio 400
 //   node tools/sonda-cobertura.mjs --limite 50          corta a los 50 primeros
 //
-// Es reanudable a propósito: media hora contra un proveedor lento se corta, y volver a empezar
-// desde cero es como se acaba no midiendo nunca. El progreso se guarda en
-// `cobertura-medida.json` tras cada municipio, y una corrida nueva con --desde continúa ahí.
+// Es reanudable a propósito: cuatro horas contra un proveedor lento se cortan, y volver a empezar
+// desde cero es como se acaba no midiendo nunca. El progreso se guarda en `cobertura-medida.json`
+// tras cada municipio, y una corrida nueva continúa donde quedó. Lo que SÍ se vuelve a intentar es
+// lo que falló: un fallo no es una medición.
 //
 // Las credenciales las lee de .env.local / .env (SKYDROPX_URL_BASE, SKYDROPX_CLIENT_ID,
 // SKYDROPX_CLIENT_SECRET). No las imprime nunca.
@@ -78,7 +79,7 @@ async function llamar(ruta, opciones = {}) {
   return { estado: respuesta.status, cuerpo };
 }
 
-async function token() {
+async function autenticar() {
   const { estado, cuerpo } = await llamar('/api/v1/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -92,6 +93,32 @@ async function token() {
     throw new Error(`No autenticó (${estado}): ${JSON.stringify(cuerpo).slice(0, 200)}`);
   }
   return cuerpo.access_token;
+}
+
+/**
+ * El token caduca, y esta sonda corre cuatro horas.
+ *
+ * <p>La primera corrida completa lo aprendió de la peor manera: autenticaba una vez al arrancar y a
+ * partir del municipio 597 **todo** respondió `401`. Trescientos setenta y siete municipios
+ * quedaron contados como "no se pudo medir" y el resumen imprimió un 62,8 % de cobertura que no
+ * significaba nada — el número no medía el país, medía cuándo caducó el token. Es la misma lección
+ * que `docs/09` ya tenía escrita en otro contexto: **una herramienta de diagnóstico también es una
+ * variable del experimento.**
+ *
+ * <p>Dos defensas y no una, porque la de tiempo sola vuelve a depender de adivinar la vigencia:
+ * se renueva por reloj cada media hora, y además cualquier `401` fuerza una reautenticación y un
+ * reintento. Si el reintento también da `401`, eso sí es un fallo de verdad.
+ */
+const VIGENCIA_TOKEN_MS = 30 * 60 * 1000;
+let bearerActual = null;
+let bearerDesde = 0;
+
+async function bearer(forzarRenovacion = false) {
+  if (forzarRenovacion || !bearerActual || Date.now() - bearerDesde > VIGENCIA_TOKEN_MS) {
+    bearerActual = await autenticar();
+    bearerDesde = Date.now();
+  }
+  return bearerActual;
 }
 
 /**
@@ -174,13 +201,22 @@ function cuerpo(municipio, conRecaudo) {
   return { quotation };
 }
 
-async function cotizar(bearer, municipio, conRecaudo) {
-  const cabeceras = { 'Content-Type': 'application/json', Authorization: `Bearer ${bearer}` };
+async function cotizar(municipio, conRecaudo, yaReintento = false) {
+  const cabeceras = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${await bearer()}`,
+  };
   const creada = await llamar('/api/v1/quotations', {
     method: 'POST',
     headers: cabeceras,
     body: JSON.stringify(cuerpo(municipio, conRecaudo)),
   });
+  if (creada.estado === 401 && !yaReintento) {
+    // El token caducó en mitad de la corrida. Se renueva y se reintenta una vez; si vuelve a
+    // fallar, entonces sí es un fallo que hay que contar como tal.
+    await bearer(true);
+    return cotizar(municipio, conRecaudo, true);
+  }
   if (creada.estado >= 400) {
     // Un 422 no es lo mismo que una caída: el proveedor contestó y rechazó el cuerpo. La
     // distinción importa porque una es "aquí no hay cobertura" y la otra "no pudimos preguntar",
@@ -231,17 +267,20 @@ console.log(
     `Cotizar no gasta saldo. Estimado: ~${Math.round((aMedir.length * 4 * PAUSA_MS) / 60000)} min.\n`,
 );
 
-const bearer = await token();
 let hechos = 0;
 
 for (const municipio of aMedir) {
   const clave = municipio.codigo;
-  if (medidos[clave]) {
+  // Un fallo NO se da por medido: se vuelve a intentar en la corrida siguiente. Sin esto, los 377
+  // municipios que la primera corrida perdió por el token caducado se habrían quedado contados
+  // como "no se pudo medir" para siempre, y el resumen habría seguido imprimiendo un porcentaje
+  // sobre un país a medias.
+  if (medidos[clave] && medidos[clave].sinRecaudo.resultado !== 'fallo') {
     hechos++;
     continue;
   }
-  const sinRecaudo = await cotizar(bearer, municipio, false);
-  const conRecaudo = await cotizar(bearer, municipio, true);
+  const sinRecaudo = await cotizar(municipio, false);
+  const conRecaudo = await cotizar(municipio, true);
   medidos[clave] = {
     departamento: municipio.departamento,
     municipio: municipio.nombre,
