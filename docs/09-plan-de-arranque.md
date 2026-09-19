@@ -5362,6 +5362,67 @@ es la opción que se sostiene sola.
 - **La Etapa 4, producción**, que esperaba a que la Fase 7 cerrara y ya puede empezar cuando haya
   catálogo que desplegar.
 
+## El filtro que llevaba a una rejilla vacía (2026-09-19)
+
+Salió de buscar por dónde cargar las marcas del catálogo real, que es como salen casi todos: nadie
+lo estaba buscando.
+
+`ListarMarcas` y `ListarCategorias` devolvían `listarTodas()`, sin mirar si había algo publicado
+detrás. Con el catálogo sembrado no se notaba porque las dos marcas de ficción tienen productos —
+**pero desde el 14 de septiembre sí se notaba con las categorías**, y llevaba cinco días a la vista:
+`V38__linea_tecnologia.sql` dejó la línea de tecnología con once categorías, y la vitrina ofrecía
+"Proyectores" y "Computadores" con cero productos detrás.
+
+Medido contra la base real antes y después: **el filtro público pasó de once categorías a cuatro.**
+Las siete que sobraban llevaban a una rejilla vacía.
+
+**Lo que hace daño no es el filtro de más, es lo que le dice a quien compra.** Una categoría que
+existe en el filtro y devuelve cero resultados no se lee como "no vendemos eso": se lee como "se
+agotó". El sitio informa peor que si no ofreciera la categoría, y encima informa algo falso.
+
+### El criterio tiene que ser el mismo, no uno parecido
+
+La rejilla arma su página con `p.estado = 'PUBLICADO'` y nada más — la unión con variantes es un
+`left join` que solo sirve para el precio desde. Así que el filtro usa exactamente eso. Va escrito
+en el javadoc de los dos puertos porque es la clase de cosa que se desincroniza sola: **el día que
+la rejilla exija además variante activa, este criterio tiene que moverse con ella o el defecto
+vuelve entero**, y quien toque la rejilla no tiene por qué acordarse de que existe un filtro.
+
+### Y no se podía arreglar sin partir el endpoint en dos
+
+Aquí estaba lo interesante, y no se veía hasta intentarlo: **el formulario del panel se alimenta del
+mismo endpoint que el filtro de la vitrina.** Filtrarlo a secas habría dejado el desplegable de
+"crear producto" sin la única categoría que hace falta ahí — la vacía, la que todavía no tiene su
+primer producto. Habría cambiado un defecto cosmético por uno que impide trabajar.
+
+De ahí `GET /api/v1/admin/marcas` y `GET /api/v1/admin/categorias`, que devuelven todas y quedan
+protegidos por el patrón `/api/v1/admin/**` que ya existía en `ConfiguracionSeguridad` — comprobado:
+403 sin credenciales, sin escribir una línea de seguridad nueva.
+
+**Dos endpoints y no un parámetro**, que era la alternativa barata. Con un `?conProductos=` el
+cliente elegiría qué ve, y la vitrina quedaría a un carácter de volver a ofrecer filtros vacíos. Son
+dos preguntas distintas con dos audiencias distintas: "¿por qué puedo filtrar?" y "¿a qué puedo
+asignar este producto?".
+
+En el frontend no cambió ni una pantalla: los dos repositorios nuevos cumplen el mismo puerto y
+`admin.routes.ts` provee el suyo.
+
+### Los dobles guardan dos listas a propósito
+
+Si `listarConProductosPublicados()` devolviera lo mismo que `listarTodas()` en el doble, una prueba
+que confundiera los dos casos de uso pasaría igual y no protegería de nada. Es el mismo género del
+doble cuyo reclamo atómico era un `Set.add()` y fijaba el defecto en verde, y por eso el porqué está
+escrito dentro del doble y no en el commit.
+
+Las pruebas van por pares y en espejo: la de la vitrina exige que la marca vacía **no** salga, la
+del panel exige que **sí**. Una sola de las dos dejaría pasar la mitad de las regresiones posibles.
+
+### Lo que este arreglo no hace
+
+**El panel sigue sin saber crear marcas.** Estos dos endpoints son de lectura. Para cargar el
+catálogo real siguen haciendo falta las marcas reales en la base, y el camino ya está marcado por
+`V38` y por su propio razonamiento: el dato real que toda instalación necesita es una migración.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
