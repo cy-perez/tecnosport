@@ -224,6 +224,14 @@ dominio desde la Fase 1— y responde `409` con `codigo: "PRODUCTO_SIN_IMAGEN_PR
 se cumple. Es idempotente: publicar lo ya publicado devuelve `200`, porque el resultado es el que
 se pedía y un `409` obligaría a consultar antes para no chocar.
 
+**Lo que publicar exige y lo que no.** Exige **imagen principal** — es la invariante del dominio y
+la única. **No** exige una resolución mínima de esa imagen: se publica con la maestra que haya, y el
+listón de 1200 px del procesamiento de fotos es criterio de calidad, no regla del sistema
+(`docs/02`). Y exige, por el lado de la variante, **el peso y las tres medidas del paquete**, que
+`Paquete` valida mayores que cero: sin ellas no hay cotización de envío y la variante no se puede
+guardar (`adr/0021`, `V32`). Esas cuatro cifras pueden ser estimadas y corregirse después, pero no
+pueden faltar.
+
 No hay endpoint para despublicar, y la ausencia es deliberada: retirar algo que ya se vendió toca
 los pedidos en curso, los enlaces compartidos y el sitemap indexado, y ninguna de esas tres cosas
 está decidida.

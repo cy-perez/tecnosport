@@ -147,6 +147,17 @@ Queda escrito el 18 de septiembre de 2026, y es corto a propósito.
 3. **Quien carga el producto es quien mide**, en el momento de cargarlo. No después: una variante
    sin paquete no se puede guardar, así que no hay forma de dejarlo "para luego" — y eso es
    deliberado.
+
+   **Matizado el 19 de septiembre de 2026, al cargar el primer catálogo real.** Lo que no se puede
+   aplazar es que las cuatro cifras *existan*; lo que sí se puede es de dónde salen. Si no hay
+   báscula a mano, vale tomarlas de la **ficha oficial del fabricante** cuando publique el empaque
+   —JBL lo hace, "packaging dimensions" y "gross weight"— o de una **estimación razonada sobre una
+   caja comparable**, y corregirlas después con `PATCH` sobre la variante. Lo que **no** vale es
+   usar las medidas del producto desnudo: un celular pesa 190 g y su caja con cargador pasa de 400,
+   así que esa cifra no es una aproximación, es un error garantizado en la dirección cara.
+
+   Cuando la cifra sea estimada y no medida, **queda dicho en la descripción del ingreso**, para que
+   quien revise sepa cuáles hay que volver a pasar por la báscula.
 4. **El panel avisa** si el peso pasa de 8 kg, que es el tope más bajo de las seis transportadoras
    de la cuenta (medidos: 8, 25, 60, 150, 200 y 500 kg — `docs/13` §6). Avisa y no bloquea: lo que
    ese aviso atrapa de verdad es el error de unidad, 18 kg tecleados donde iban 1,8.
@@ -191,6 +202,19 @@ tipo: PRINCIPAL | GALERIA | ROTACION
 
 Reglas:
 
+- **No hay resolución mínima para publicar, y es deliberado** (19 de septiembre de
+  2026). Ni el dominio ni la API exigen un tamaño: se publica con la maestra que
+  haya en `catalogo/fotos/estudio/{producto}/maestra`, sea de 2000 px o de 480.
+  El listón de 1200 px que usa el retoque es un **criterio de calidad del
+  procesamiento**, no una regla del sistema, y confundir los dos dejaría el
+  catálogo sin publicar esperando fotos que quizá no lleguen nunca — de los 33
+  productos con foto del primer lote real, 6 no llegaban a 1200 y tres de ellos
+  eran los parlantes grandes, que son de los que más se venden.
+  La consecuencia de publicar una foto pequeña es que la ficha la pinta ampliada
+  y se nota: la ficha ocupa ~570 px CSS, que en una pantalla 2× son ~1140. Es un
+  costo visible y reversible —se reemplaza la imagen cuando llegue una mejor— y
+  esa es exactamente la diferencia con el peso del paquete, que no es reversible
+  porque el flete ya se cobró.
 - **El set de rotación pertenece a la variante cuando el color cambia el aspecto**
   (ropa, bolsos, celulares). Si la variante no tiene set propio, se usa el del
   producto. Esto evita fotografiar catorce colores el primer día sin cerrar la
