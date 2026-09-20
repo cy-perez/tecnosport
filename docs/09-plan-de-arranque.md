@@ -5533,6 +5533,86 @@ Y sirvió de comprobación cruzada de lo de esta mañana: **al publicarlo aparec
 filtro de marcas y "Parlantes" en el de categorías**, que hasta ese segundo no estaban porque no
 tenían nada publicado detrás. Los dos arreglos del día, funcionando juntos contra una base real.
 
+## Los doce primeros productos reales, y el requisito que había que levantar (2026-09-19)
+
+Cargar el primer catálogo destapó, uno tras otro, tres supuestos que el proyecto daba por buenos.
+El tercero costó un cambio de dominio.
+
+### El paquete obligatorio bloqueaba más de lo que protegía
+
+`ADR-0021` hizo obligatorias las cuatro medidas y la `V32` las llevó a `NOT NULL` negándose a
+rellenar por defecto — *"un flete cobrado de menos se paga; una migración que falla se arregla"*.
+El argumento es correcto y sigue en pie. Lo que escondía es un salto:
+
+> de **"no se puede cotizar"** no se sigue **"no se puede vender"**.
+
+Se puede vender para **recogida en el punto**, que este negocio ya tiene, ya ofrece en el checkout y
+ya usa como salida cuando ninguna transportadora cubre el destino.
+
+El salto se hizo visible al buscar las medidas: **JBL publica caja y peso bruto en su specsheet; los
+fabricantes de celulares no publican nada del empaque.** Ni Motorola en su ficha oficial, ni Samsung,
+ni los agregadores. Así que siete de los doce productos listos se quedaban fuera por un dato que no
+existe en ninguna fuente pública y que exige el producto en la mano.
+
+**Un requisito que bloquea la venta de un catálogo entero para proteger el flete de una parte de él
+está mal calibrado.** `ADR-0046` lo levanta.
+
+Lo que no se relaja, y es la mitad importante: el objeto de valor `Paquete` sigue exigiendo las
+cuatro cifras mayores que cero, y van **las cuatro o ninguna**. La diferencia entre "no lo sé
+todavía" y "mide cero" es justo la que hay que conservar — la segunda es la que cobra fletes de
+menos en silencio. Esa regla vive en tres capas (base, DTO, comando) porque una que solo vive en el
+DTO se salta por cualquier otra puerta.
+
+### El comportamiento calca al del artículo no asegurable, y eso no es pereza
+
+Ya existía un caso con la misma forma: un artículo que vale más de lo asegurable no va a domicilio y
+se ofrece para recogida (`ADR-0036`). El nuevo se enchufa en los mismos sitios — `ArmadorDeBultos`
+recoge a todos los culpables y los nombra, `MetodosDePagoDisponibles` los atrapa en las dos mismas
+capturas, y sale como `409 ARTICULO_SIN_MEDIDAS`.
+
+**Con los dos problemas a la vez manda el techo asegurable**, y el orden no es un capricho: de los
+dos motivos, ese es el que no se arregla nunca. Decirle "nos falta medirlo" a quien además tiene un
+artículo que jamás podrá viajar asegurado es darle una esperanza falsa.
+
+Y el texto que lee el comprador va aparte del de su hermana, aunque la acción que se le ofrece sea
+la misma: el de aquella explica un porqué —"su valor supera el máximo asegurable"— que aquí sería
+falso. **De las medidas no se le habla**: es un problema nuestro, no suyo.
+
+### El 500 que ninguna prueba vio
+
+Al cargar, las ocho variantes sin medir reventaron con un `500`. Dominio, caso de uso y controlador
+pasaban en verde: al cambiar los cuatro campos de la entidad JPA a `Integer` se me quedaron sus
+`@Column(nullable = false)`, así que **la base ya aceptaba el nulo —la `V55` lo permitía— y
+Hibernate lo rechazaba antes de llegar a ella.**
+
+Ninguna capa de arriba puede ver eso. Solo una prueba que escriba de verdad, y no había ninguna que
+guardara una variante sin paquete. Ahora hay dos, y la segunda existe para que la primera no pase
+por no leer nada.
+
+Es la misma lección de siempre con ropa nueva: **la prueba que falta es la del camino que nadie
+había recorrido todavía.**
+
+### Lo que quedó cargado
+
+Doce productos publicados en dev, por la misma API que usa el panel: producto, imagen a Cloud
+Storage con URL firmada, variante y publicación.
+
+| | |
+|---|---|
+| Con medidas, envío a domicilio | 4 JBL (Go 5, Xtreme 4, Boombox 4, PartyBox Stage 320) |
+| Sin medir, solo recogida | 8 (seis Motorola, dos Samsung, un Honor) |
+
+Comprobado de punta a punta: cotizar el Moto G17 sin medir responde `409` nombrando el artículo, y
+el JBL Go 5 medido llega hasta el proveedor.
+
+**Y dos cosas que quedan pendientes y conviene no perder de vista:**
+
+- **La existencia de los doce es 5, un número que me inventé.** Es lo único del lote que no sale de
+  ningún dato real, y hay que corregirlo en el panel con el conteo de verdad.
+- **Nada avisa de cuántos productos están sin medir.** Hoy se sabe consultando la base. Mientras no
+  exista ese vigilante, el riesgo es que "temporal" se vuelva permanente por olvido, que es
+  exactamente cómo acaban estas cosas.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
