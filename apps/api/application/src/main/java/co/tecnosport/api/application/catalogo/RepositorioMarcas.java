@@ -27,4 +27,16 @@ public interface RepositorioMarcas {
   List<Marca> listarConProductosPublicados();
 
   Optional<Marca> buscarPorId(UUID id);
+
+  /**
+   * <b>Sin distinguir mayúsculas</b>, igual que el índice único de la base ({@code V56}, sobre
+   * {@code lower(nombre)}).
+   *
+   * <p>Las dos comprobaciones tienen que existir y no sobra ninguna: esta es la que deja dar un
+   * {@code 409} que explica qué pasó, y el índice es el que de verdad protege — entre este {@code
+   * existe} y el {@code guardar} hay una ventana en la que otra petición puede colarse.
+   */
+  boolean existeConNombre(String nombre);
+
+  void guardar(Marca marca);
 }

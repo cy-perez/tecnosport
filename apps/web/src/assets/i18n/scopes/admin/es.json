@@ -37,7 +37,8 @@
     "sinMedir": {
       "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Sin peso ni dimensiones no se puede cotizar el envío: solo se entregan con recogida en el punto.",
       "enlace": "Ver y medir"
-    }
+    },
+    "ir_a_marcas": "Marcas"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -172,7 +173,8 @@
       "seleccionar": "Selecciona una opción",
       "crear": "Crear producto",
       "enviando": "Creando…",
-      "error": "No se pudo crear el producto. Intenta de nuevo."
+      "error": "No se pudo crear el producto. Intenta de nuevo.",
+      "faltaMarca": "¿No está la marca? Crearla (se pierde lo escrito aquí)"
     },
     "editar": {
       "titulo": "Editar producto",
@@ -507,5 +509,19 @@
       "advertencia": "Si el envío no aparece, el pedido queda libre para emitir otra guía. Si aparece y lo registras, retomamos su seguimiento y el despacho sale solo cuando la transportadora dé el número de guía.",
       "abrir_accesible": "Resolver la emisión del pedido {{pedido}}"
     }
+  },
+  "marcas": {
+    "titulo": "Marcas",
+    "explicacion": "Las marcas del catálogo. Una marca nueva se puede crear aquí y queda disponible de inmediato en el formulario de producto. No se pueden renombrar ni borrar: el nombre es lo que ve quien compra, en la ficha y en el filtro de la tienda.",
+    "nombre": "Nombre de la marca",
+    "crear": "Crear marca",
+    "enviando": "Creando…",
+    "creada": "Listo: {{nombre}} ya está en el catálogo y aparece en el formulario de producto.",
+    "yaExiste": "Ya hay una marca con ese nombre. Escribirlo con otras mayúsculas no la hace distinta.",
+    "faltaNombre": "Escribe el nombre de la marca.",
+    "error": "No se pudo crear la marca. Intenta de nuevo.",
+    "errorLista": "No se pudo cargar la lista de marcas.",
+    "ninguna": "Todavía no hay ninguna marca.",
+    "listaTitulo": "En el catálogo ({{total}})"
   }
 }

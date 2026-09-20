@@ -6,6 +6,7 @@ import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
+import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
@@ -109,6 +110,11 @@ public class ConfiguracionCatalogo {
   @Bean
   public ListarMarcasAdmin listarMarcasAdmin(RepositorioMarcas repositorioMarcas) {
     return new ListarMarcasAdmin(repositorioMarcas);
+  }
+
+  @Bean
+  public CrearMarca crearMarca(RepositorioMarcas repositorioMarcas) {
+    return new CrearMarca(repositorioMarcas);
   }
 
   @Bean

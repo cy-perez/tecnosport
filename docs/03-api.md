@@ -258,6 +258,22 @@ distintas, y se separan en dos endpoints en vez de un parámetro: con un
 parámetro, el cliente elegiría qué ve y la vitrina quedaría a un carácter de
 volver a ofrecer filtros vacíos.
 
+**Las marcas, además, se crean desde el panel** (`ADR-0047`, 20 de septiembre de
+2026). Las doce de `V54` siguen entrando por migración —eran el arranque, y una
+instalación nueva las necesita—, pero la marca trece llega en la lista del
+proveedor del lunes y no merece un despliegue. Las **categorías no**: son la
+taxonomía de la tienda, cambian casi nunca, y una nueva arrastra una decisión
+—¿línea propia o cuelga de tecnología?— que merece quedar escrita en su
+migración, como quedó la de `V38`.
+
+No hay `PATCH` ni `DELETE` de marca, y las dos ausencias son deliberadas:
+renombrar cambia lo que ve quien compra en la ficha y en el filtro, y borrar
+tiene que decidir antes qué pasa con los productos que cuelgan de esa marca.
+
+El `409` llega con `codigo: MARCA_YA_EXISTE`. Es `409` y no `422` porque el
+nombre que mandaron es válido: lo que lo rechaza es el estado del catálogo —
+mismo criterio que `SKU_YA_EN_USO`.
+
 Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
 ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
 servidor no expone lo que dio de baja.
@@ -305,6 +321,7 @@ Rol `ADMIN`.
 
 ```
 GET /api/v1/admin/marcas                                     todas, incluidas las que no tienen productos
+POST /api/v1/admin/marcas                                    crea una marca; 409 si el nombre ya existe, sin distinguir mayúsculas
 GET /api/v1/admin/categorias                                 todas, incluidas las que no tienen productos
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes

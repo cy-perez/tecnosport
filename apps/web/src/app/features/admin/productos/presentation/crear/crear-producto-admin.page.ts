@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
@@ -15,7 +15,17 @@ import { usarCrearProductoAdmin } from '../../application/crear-producto-admin.m
 
 @Component({
   selector: 'app-crear-producto-admin',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsSelect, TsSelectControl],
+  imports: [
+    TsPaginaFormulario,
+    ReactiveFormsModule,
+    RouterLink,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsMigas,
+    TsSelect,
+    TsSelectControl,
+  ],
   templateUrl: './crear-producto-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

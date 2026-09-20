@@ -5,7 +5,8 @@ import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categoria
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
 import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
 import { CategoriasAdminHttpRepositorio } from './productos/infrastructure/categorias-admin-http.repositorio';
-import { MarcasAdminHttpRepositorio } from './productos/infrastructure/marcas-admin-http.repositorio';
+import { MarcasAdminHttpRepositorio } from './marcas/infrastructure/marcas-admin-http.repositorio';
+import { REPOSITORIO_MARCAS_ADMIN } from './marcas/domain/repositorio-marcas-admin.puerto';
 import { adminGuard } from './admin.guard';
 import { REPOSITORIO_ATENCION } from './atencion/domain/repositorio-atencion.puerto';
 import { AtencionHttpRepositorio } from './atencion/infrastructure/atencion-http.repositorio';
@@ -108,6 +109,15 @@ export const adminRoutes: Routes = [
           import('./envios/presentation/bandeja/bandeja-revision.page').then(
             (m) => m.BandejaRevisionPage,
           ),
+      },
+      {
+        path: 'marcas',
+        canActivate: [adminGuard],
+        // Solo el puerto de admin: esta pantalla lista y crea. El de la vitrina lo siguen
+        // proveyendo las rutas del formulario de producto, que es donde hace falta leer marcas.
+        providers: [{ provide: REPOSITORIO_MARCAS_ADMIN, useClass: MarcasAdminHttpRepositorio }],
+        loadComponent: () =>
+          import('./marcas/presentation/marcas-admin.page').then((m) => m.MarcasAdminPage),
       },
       {
         path: 'productos',

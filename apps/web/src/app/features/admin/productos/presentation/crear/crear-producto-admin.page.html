@@ -26,6 +26,15 @@
       formControlName="marcaId"
     />
 
+    <!-- El momento en que se descubre que falta la marca es este, con el formulario a medio
+         llenar. El enlace lleva a la pantalla de marcas, y sale de aquí sin guardar: el costo está
+         escrito en marcas-admin.page.ts. -->
+    <p class="m-0">
+      <a class="anillo-foco text-ts-primario" routerLink="../../marcas">{{
+        'admin.productos.crear.faltaMarca' | transloco
+      }}</a>
+    </p>
+
     <ts-select
       idCampo="crear-producto-categoria"
       [label]="'admin.productos.crear.categoria' | transloco"

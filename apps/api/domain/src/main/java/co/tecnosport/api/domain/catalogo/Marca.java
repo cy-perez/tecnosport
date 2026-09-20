@@ -7,6 +7,16 @@ import java.util.UUID;
 
 public final class Marca {
 
+  /**
+   * El ancho de {@code marca.nombre} en la base (V1: {@code varchar(120)}).
+   *
+   * <p>Vive aquí y no solo en el DTO porque hasta hoy no vivía en ninguna parte: mientras las
+   * marcas entraban por migración nadie podía pasarse, pero con un formulario detrás un nombre de
+   * 121 caracteres llegaba entero hasta Hibernate y salía como {@code 500}. Es el mismo defecto que
+   * el paquete nulo del 19 de septiembre — una invariante que solo conocía la tabla.
+   */
+  public static final int LARGO_MAXIMO_NOMBRE = 120;
+
   private final UUID id;
   private final String nombre;
 
@@ -15,7 +25,16 @@ public final class Marca {
     if (nombre == null || nombre.isBlank()) {
       throw new ExcepcionDeDominio("El nombre de la marca no puede estar vacío.");
     }
-    this.nombre = nombre.trim();
+    String limpio = nombre.trim();
+    if (limpio.length() > LARGO_MAXIMO_NOMBRE) {
+      throw new ExcepcionDeDominio(
+          "El nombre de la marca no puede pasar de "
+              + LARGO_MAXIMO_NOMBRE
+              + " caracteres: '"
+              + limpio
+              + "'.");
+    }
+    this.nombre = limpio;
   }
 
   public static Marca crear(String nombre) {

@@ -5479,9 +5479,11 @@ tocaba nada de las líneas, porque las líneas nunca pasaron por el servidor.
 
 ### Lo que este arreglo no hace
 
-**El panel sigue sin saber crear marcas.** Estos dos endpoints son de lectura. Para cargar el
-catálogo real siguen haciendo falta las marcas reales en la base, y el camino ya está marcado por
-`V38` y por su propio razonamiento: el dato real que toda instalación necesita es una migración.
+~~**El panel sigue sin saber crear marcas.**~~ **Resuelto el 20 de septiembre de 2026.** Estos dos
+endpoints eran de lectura, y el camino parecía marcado por `V38` y su razonamiento —el dato real que
+toda instalación necesita es una migración—. Ese razonamiento sigue siendo cierto y aun así no
+cubría este caso: separa el dato real de la ficción del sembrador, pero no el dato de arranque del
+que crece. Ver "El panel aprende a crear marcas" al final de esta fase y `ADR-0047`.
 
 ## El primer producto real, y las dos cosas que impedían que hubiera ninguno (2026-09-19)
 
@@ -5723,6 +5725,98 @@ las medidas de su caja, y esas ocho se miden con báscula y metro.
 es un olvido: el `Inventario` es por movimientos, no un contador, así que ajustarlo necesita su
 propio caso de uso con su motivo registrado —y necesita el conteo real, que es un dato de negocio
 que este proyecto no puede inventar. Queda como la siguiente tarea de esta rama.
+
+## El panel aprende a crear marcas, y dos desplegables que estaban rotos (2026-09-20)
+
+El 19 de septiembre quedó escrito que el panel no sabía crear marcas, con el camino ya marcado
+hacia una migración. Al ir a hacerlo, lo primero fue comprobar si ese camino era el correcto — y la
+respuesta es que el razonamiento de `V38` y `V54` es cierto y no aplica aquí.
+
+### El razonamiento correcto que escondía un salto
+
+> El dato real que toda instalación necesita es una migración; el ejemplo para poder desarrollar es
+> una siembra.
+
+Eso separa **dato real** de **ficción del sembrador**, y por eso las doce marcas de `V54` no podían
+ir en `SembradorCatalogo`. Lo que no separa es **dato de arranque** de **dato que crece**.
+
+`V54` lo dice sin darse cuenta: *"no hay endpoint que cree marcas"*. Con esa frase, el precio de la
+marca trece es escribir SQL y desplegar. Y la marca trece no es hipotética: llega en la lista del
+proveedor del lunes, igual que llegaron estas doce.
+
+**Las categorías se quedan en migración**, y la diferencia no es caprichosa: una categoría nueva
+arrastra una decisión —¿línea propia o cuelga de tecnología?— que merece quedar escrita con su
+razonamiento, como quedó la de `V38`. Una marca nueva no decide nada: es el nombre del fabricante.
+Todo esto es `ADR-0047`.
+
+### Lo que se construyó
+
+`POST /api/v1/admin/marcas` —201 con la marca, 409 si el nombre ya existe— y la pantalla
+`/admin/marcas` con la lista y el formulario. **Ni renombrar ni borrar**: lo primero cambia lo que ve
+quien compra en la ficha y en el filtro, lo segundo tiene que decidir qué pasa con los productos que
+cuelgan de la marca, y ninguna de las dos hace falta para cargar catálogo.
+
+### El índice único de `V54` protegía la mitad
+
+`marca_nombre_unico` comparaba el nombre tal cual, y **mientras lo escribiera una persona de una
+sola vez eso bastaba**. Con un formulario detrás no: "xiaomi" el martes y "Xiaomi" el jueves son dos
+filas, y el daño es exactamente el que `V54` describe para el duplicado exacto — los productos
+repartidos entre las dos y el filtro de la vitrina ofreciendo media marca cada vez. La `V56` lo pasa
+a `lower(nombre)`.
+
+Sin `unaccent`, y conviene que se sepa que es una decisión y no un olvido: comparar "Sony" con
+"Sóny" exigiría esa extensión, que es una dependencia nueva del esquema.
+
+**Los dos guardianes se comprobaron rompiéndolos**, como manda la casa:
+
+- Con el índice sobre `nombre` en vez de `lower(nombre)`, fallan dos pruebas de infraestructura.
+- Con `save` en vez de `saveAndFlush` en el adaptador, falla la de la traducción — y ese es el
+  detalle que más fácil se pasa por alto: con `save`, el `INSERT` se queda pendiente hasta que
+  Hibernate vuelca al confirmar la transacción, que es **fuera** del `try`, así que el `catch` no
+  atrapa nada y la violación sale del módulo como `500`.
+
+### El defecto que apareció de camino: dos desplegables en 403
+
+Al ir a enlazar la pantalla nueva desde el formulario de producto se vio que sus adaptadores
+—`MarcasAdminHttpRepositorio` y `CategoriasAdminHttpRepositorio`— pedían `/api/v1/admin/**` con el
+cliente **sin token**, y esa ruta exige rol `ADMIN` en `ConfiguracionSeguridad`.
+
+Comprobado con `curl` antes de tocar nada: `403` sin token, `200` en el endpoint público. O sea que
+**los desplegables de marca y de categoría del formulario de producto estaban vacíos**, y los doce
+productos reales se cargaron por script contra la API, que es por lo que nadie se había topado con
+esto. Los dos pasan a `crearClienteAutenticado`.
+
+Es el mismo tipo de hallazgo de siempre: *ninguna prueba lo vio porque en las pruebas el adaptador
+es un doble, y el único sitio donde el token importa es el navegador.*
+
+### Cuatro cosas más que vale la pena dejar escritas
+
+- **El puerto del panel va aparte del de la vitrina.** `RepositorioMarcas` lo implementa también el
+  adaptador público, y una tienda nunca debe poder crear marcas: un puerto que su implementación
+  pública no puede cumplir se acaba cumpliendo con un método que lanza.
+- **El nombre repetido llega como resultado, no como excepción** (`YA_EXISTE`), igual que
+  `SIN_COBERTURA` en el checkout. La pantalla tiene que poder decir "ya hay una marca con ese
+  nombre" sin andar leyendo códigos HTTP.
+- **El dominio gana el largo máximo del nombre**, que hasta hoy solo conocía la columna
+  (`varchar(120)`). Mientras las marcas entraban por migración nadie podía pasarse; con un
+  formulario, 121 caracteres llegaban hasta Hibernate y salían como `500`. Es el mismo defecto que
+  el paquete nulo del día anterior, con otra ropa.
+- **La mutación invalida dos llaves de caché.** La de la pantalla y la `['catalogo','marcas']` del
+  formulario de producto: son dos entradas con el mismo dato dentro, y sin la segunda la marca
+  recién creada no sale en el desplegable hasta que aquella caduque — que era justamente el motivo
+  para crearla.
+
+### Comprobado en el navegador
+
+Contra el backend real y la base local con los doce productos: la lista sale con las catorce marcas
+que hay, crear una la confirma por su nombre y el conteo sube, repetirla en minúsculas responde "ya
+hay una marca con ese nombre", y el desplegable del formulario de producto —el que estaba en 403—
+llega lleno y con la nueva dentro. El anillo de foco del campo se comprobó con teclado:
+`:focus-visible` con contorno sólido de 2 px.
+
+**La marca que se creó era ficción declarada** —"Marca De Ficcion Para Borrar"— y se borró de la base
+con SQL al terminar, porque el sistema a propósito no permite borrarla desde el panel. Inventar una
+marca real habría sido inventar un dato de negocio.
 
 ## Cómo conversar con Claude Code en este proyecto
 
