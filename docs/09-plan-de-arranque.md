@@ -6106,6 +6106,89 @@ verdad una de las variantes reales habría sido inventar un dato de negocio.
   cifras las escribe una persona que contó la bodega, y no hay forma honesta de que las escriba
   nadie más.
 
+## La existencia sale del libro, y la vitrina dice la verdad (2026-09-20)
+
+`ADR-0049`, escrito esa misma mañana, dejó su propia continuación por nombre: la opción C, *"se
+borra la columna y la respuesta calcula el disponible leyendo el libro"*, descrita ahí como la
+correcta y aplazada por alcance. Esto es esa opción, en una rama propia.
+
+### Lo que hizo que fuera más barata de lo que el ADR temía
+
+Dos hallazgos, los dos de mirar antes de escribir:
+
+- **La vitrina nunca usó el número.** `hayExistencia`, `variantePorDefecto`, la etiqueta de stock y
+  el `availability` de schema.org lo comparaban con cero y nada más. O sea que el contrato público
+  podía salir de esto siendo un booleano, y no había que decidir qué hacer con un entero.
+- **`AgregarVariante` ya escribía la `ENTRADA` en el libro** desde el día que se creó. La columna no
+  guardaba ni un dato que el libro no tuviera, salvo en variantes escritas por fuera de ese camino.
+  Borrarla no perdía información: solo dejaba de haber dos versiones del mismo número.
+
+### Las dos decisiones que había que tomar primero
+
+**Booleano, no número.** Publicar el conteo exacto era darle el inventario a cualquiera que mirase
+la red para que ninguna pantalla lo usara. Y un número envejece peor que un sí/no: los dos quedan
+viejos entre el render y el clic, pero el número aparenta una precisión que no tiene. Lo que protege
+la venta sigue siendo que el servidor revalida al reservar, con bloqueo pesimista.
+
+**Se calcula al leer, y no se materializa.** Este es el argumento que conviene tener escrito porque
+alguien lo va a querer repetir: **el disponible depende de `ahora`**. Una reserva vence sola, y en
+ese instante la unidad vuelve a estar a la venta sin que nadie escriba nada. Una proyección en
+columna se quedaría vieja exactamente igual que la que se estaba borrando — por otro motivo, con el
+mismo resultado.
+
+### Lo que la migración hace, y lo que se niega a hacer
+
+`V59` le abre libro, con la cifra de la columna, a las variantes que no tenían ninguno: para ésas la
+columna era el único sitio donde estaba el dato.
+
+**No cuadra hacia arriba las que ya tienen libro diciendo menos.** Esa diferencia no es un dato
+perdido: es la venta que el libro registró y la columna no vio. Cuadrarla habría sido resucitar el
+error con una migración.
+
+Comprobado antes de correrla, sobre la base local: veinte variantes, todas con libro, dos con el
+libro por debajo de la columna. Y después, exactamente las mismas cifras del libro.
+
+### Tres cosas más que no podían quedarse
+
+- **El descuadre murió con la columna.** La pantalla pasa de tres cifras a dos y pierde la marca; ya
+  no hay dos números que puedan discrepar. El aviso del panel se reapunta a lo que sí le puede pasar
+  a un comprador: algo publicado sin una sola unidad en el libro. Era eso o quitar el aviso, y el
+  hueco que deja —nadie más vigila eso— es real.
+- **`AjustarExistencia` escribe en un solo sitio.** Copiar el conteo a la columna era todo el motivo
+  de que dependiera de dos puertos para escribir.
+- **`SembradorInventario` desaparece.** Abría el libro de cada variante leyendo su columna; sin
+  columna, el único que sabe cuántas unidades siembra es quien las siembra, así que el trabajo se
+  hizo dentro de `SembradorCatalogo`. Un sembrador que adivina la cantidad de otro es un sembrador
+  que la inventa.
+
+### La prueba que vale es la del dato real
+
+`TS-CEL-AUR-128` declaraba **3** en el catálogo con el libro en **0** —una `RESERVA` y su `SALIDA`
+lo habían vaciado— y la ficha decía "Disponible". Contra el backend real, después del cambio:
+`disponible: false`. Su hermana `TS-CEL-AUR-256`, con el libro en 1, sigue comprándose.
+
+Es el mismo par de variantes que el 20 de septiembre por la mañana aparecieron descuadradas en la
+pantalla nueva. Lo que aquel día se podía enseñar, este se puede arreglar.
+
+### Lo que esto **no** arregla
+
+- **El 5 inventado de los doce productos reales sigue ahí.** Se escribió también en el libro al
+  darlos de alta, así que borrar la columna no lo borra: solo deja de haber dos copias del invento.
+  Lo corrige un conteo de bodega, por la pantalla de existencias.
+- **La consulta sigue trayendo el histórico completo** de las variantes de la página. Acotado a una
+  página es pagable; el día que una variante acumule miles de movimientos, lo que hace falta es un
+  corte de saldo en el libro — no una columna en el catálogo.
+
+### Lo que queda pendiente de mirar en el navegador
+
+La extensión de Chrome no estaba conectada en esta sesión, así que quedaron sin comprobar a ojo las
+dos cosas que `docs/06-testing.md` dice que jsdom no atrapa, más el recorrido del panel:
+
+- Elegir la variante de 128 GB en la ficha y ver la etiqueta "Agotado" con el botón deshabilitado
+  contra el backend real. Lo cubre una prueba de Vitest y la respuesta de la API, pero no el ojo.
+- La pantalla `/admin/productos/existencias` con sus dos columnas, el aviso nuevo del panel y el
+  anillo de foco del formulario de conteo.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

@@ -347,7 +347,7 @@ POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICA
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET /api/v1/admin/variantes/sin-medir                        las activas sin paquete, con el total y cuántas ya están publicadas
 PATCH /api/v1/admin/variantes/{id}/paquete                   pone o corrige las cuatro medidas; 422 si alguna no es mayor que cero
-GET /api/v1/admin/variantes/existencias                      las activas con lo que declara el catálogo, lo que dice el libro y lo disponible
+GET /api/v1/admin/variantes/existencias                      las activas con lo que dice el libro y lo que queda disponible
 PATCH /api/v1/admin/variantes/{id}/existencia                registra un conteo físico como movimiento de AJUSTE; 422 sin motivo
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
@@ -387,11 +387,13 @@ por pedidos en vuelo, con `dejaReservasSinRespaldo: true`. No es un error de
 quien digita: son compras aceptadas que no se van a poder despachar, y eso lo
 tiene que ver una persona, no rechazarlo un formulario.
 
-El listado trae las tres cifras separadas a propósito. `existenciaDeclarada` es
-la columna del catálogo —la que ve quien compra— y `saldoTotal` es el libro de
-movimientos, que es la verdad. Que puedan diferir es un defecto conocido: la
-columna solo la mueven el alta de la variante y este ajuste, así que **cada venta
-las separa**. Por eso cada fila trae `descuadrada`, calculada en el servidor.
+El listado trae dos cifras separadas a propósito: `saldoTotal` es lo que hay
+según el libro y `disponible` es eso menos lo que retienen los pedidos en vuelo.
+Fueron tres hasta `adr/0050`, cuando se borró la columna `variante.existencia` y
+con ella el `descuadrada` que comparaba las dos — ya no hay dos números que
+puedan discrepar. Los conteos del aviso del panel (`totalSinExistencia`,
+`totalSinExistenciaEnPublicados`) cuentan ahora lo que sí puede ver un comprador:
+algo publicado sin una sola unidad.
 
 **La bandeja de revisión junta dos cosas que se atienden distinto** y por eso
 viajan en dos listas, no mezcladas: guías cuyo último movimiento las dejó quietas
