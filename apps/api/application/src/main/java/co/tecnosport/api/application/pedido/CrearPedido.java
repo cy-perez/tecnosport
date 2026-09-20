@@ -309,7 +309,11 @@ public final class CrearPedido {
     return switch (metodoPago) {
       case CONTRAENTREGA -> null;
       case TRANSFERENCIA_MANUAL -> duracionReservaTransferencia;
-      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI -> duracionReservaPagoEnLinea;
+      // Sistecrédito entra aquí y no en una duración propia: su transacción vive unos 15 minutos
+      // y la notificación de cierre puede tardar hasta 3 más (G-ALI-12), así que la reserva de
+      // pago en línea la cubre con margen. Si algún día ese margen se estrecha, es un valor de
+      // configuración, no un caso nuevo.
+      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI, SISTECREDITO -> duracionReservaPagoEnLinea;
     };
   }
 }

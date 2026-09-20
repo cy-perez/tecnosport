@@ -25,9 +25,15 @@ import java.util.Set;
  * monto" nunca lo delega el servidor al cliente (docs/03-api.md).
  *
  * <p>Son dos preguntas encadenadas y conviene no mezclarlas. La primera no mira el pedido:
- * <b>¿ofrece el negocio ese método hoy?</b> — la responde {@link #habilitados()} con lo que la
- * cuenta de la pasarela tiene activado ({@code tecnosport.wompi.metodos.habilitados}). La segunda
- * sí lo mira: <b>¿le sirve a este pedido?</b>, y hoy solo {@code CONTRAENTREGA} la tiene.
+ * <b>¿ofrece el negocio ese método hoy?</b> — la responde {@link #habilitados()} con lo que las
+ * cuentas de las pasarelas tienen activado ({@code tecnosport.wompi.metodos.habilitados} más {@code
+ * tecnosport.sistecredito.habilitado}, unidos en bootstrap). La segunda sí lo mira: <b>¿le sirve a
+ * este pedido?</b>, y hoy solo {@code CONTRAENTREGA} la tiene.
+ *
+ * <p>Llega aquí <b>la unión</b> de lo habilitado por los dos proveedores, no un mapa por proveedor:
+ * la comprobación de que cada método le corresponde a quien lo habilitó vive donde se lee la
+ * configuración de ese proveedor ({@code PropiedadesMetodosDeWompi}), que es donde se puede dar un
+ * mensaje de error útil. Aquí solo se exige que a alguien lo cobre una pasarela ({@code adr/0048}).
  *
  * <p>Hasta la Fase 3 la primera pregunta no existía: se devolvía el enum entero, así que el
  * checkout ofrecía cualquier método que el código supiera procesar, estuviera o no activado en la
@@ -78,9 +84,9 @@ public final class MetodosDePagoDisponibles {
         metodosDePasarelaHabilitados,
         "Los métodos habilitados en la pasarela no pueden ser nulos.");
     for (MetodoPago metodo : metodosDePasarelaHabilitados) {
-      if (!metodo.seProcesaPorPasarela()) {
+      if (!metodo.laCobraUnaPasarela()) {
         throw new IllegalArgumentException(
-            "El método " + metodo + " no lo procesa la pasarela: no se habilita desde aquí.");
+            "El método " + metodo + " no lo cobra ninguna pasarela: no se habilita desde aquí.");
       }
     }
     this.metodosDePasarelaHabilitados =
@@ -100,7 +106,7 @@ public final class MetodosDePagoDisponibles {
   public Set<MetodoPago> habilitados() {
     Set<MetodoPago> habilitados = EnumSet.allOf(MetodoPago.class);
     habilitados.removeIf(
-        metodo -> metodo.seProcesaPorPasarela() && !metodosDePasarelaHabilitados.contains(metodo));
+        metodo -> metodo.laCobraUnaPasarela() && !metodosDePasarelaHabilitados.contains(metodo));
     return habilitados;
   }
 

@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.pago;
 
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -19,11 +20,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <b>hay que devolver también la frase de los términos</b>, que se quitó junto con esto
  * (docs/11-pagos-y-envios.md).
  *
- * <p>Solo admite métodos que pasen por la pasarela: contraentrega y transferencia manual no las
+ * <p>Solo admite métodos que <b>cobre Wompi</b>: contraentrega y transferencia manual no las
  * habilita ni las apaga Wompi, y aceptarlas aquí daría un segundo interruptor para algo que ya
- * tiene el suyo ({@code CONTRAENTREGA_HABILITADA}). Un valor que no sea un método de pasarela
- * impide arrancar: un despliegue con la lista mal escrita tiene que fallar al arrancar y no al
- * primer checkout.
+ * tiene el suyo ({@code CONTRAENTREGA_HABILITADA}). Desde {@code adr/0048} tampoco admite {@code
+ * SISTECREDITO}, que es de otra pasarela y tiene su propio interruptor ({@code
+ * SISTECREDITO_HABILITADO}): sin esta comprobación, escribirlo aquí lo habría dejado ofrecido en el
+ * checkout y enrutado a Wompi. Un valor que no cobre Wompi impide arrancar: un despliegue con la
+ * lista mal escrita tiene que fallar al arrancar y no al primer checkout.
  */
 @ConfigurationProperties(prefix = "tecnosport.wompi.metodos")
 public record PropiedadesMetodosDeWompi(List<String> habilitados) {
@@ -44,11 +47,11 @@ public record PropiedadesMetodosDeWompi(List<String> habilitados) {
         continue;
       }
       MetodoPago metodo = interpretar(limpio);
-      if (!metodo.seProcesaPorPasarela()) {
+      if (metodo.pasarela() != ProveedorDePago.WOMPI) {
         throw new IllegalStateException(
             "tecnosport.wompi.metodos.habilitados no admite "
                 + limpio
-                + ": ese método no lo procesa la pasarela y tiene su propia configuración.");
+                + ": ese método no lo cobra Wompi y tiene su propia configuración.");
       }
       metodos.add(metodo);
     }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +71,22 @@ class MetodosDeWompiEnApplicationYmlTest {
     assertEquals(
         Set.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
         metodos);
-    assertTrue(metodos.stream().allMatch(MetodoPago::seProcesaPorPasarela));
+    assertTrue(metodos.stream().allMatch(m -> m.pasarela() == ProveedorDePago.WOMPI));
+  }
+
+  /**
+   * Sistecrédito lo cobra otra pasarela y tiene su propio interruptor. Escribirlo en esta lista
+   * habría dejado el método ofrecido en el checkout y enrutado a Wompi, que no lo conoce ({@code
+   * adr/0048}).
+   */
+  @Test
+  void sistecreditoNoSeHabilitaDesdeLaListaDeWompi() {
+    PropiedadesMetodosDeWompi propiedades =
+        new PropiedadesMetodosDeWompi(List.of("TARJETA", "SISTECREDITO"));
+
+    IllegalStateException error =
+        assertThrows(IllegalStateException.class, propiedades::comoMetodosDePago);
+    assertTrue(error.getMessage().contains("SISTECREDITO"));
   }
 
   /** Un nombre mal escrito impide arrancar, en vez de apagar un método en silencio. */

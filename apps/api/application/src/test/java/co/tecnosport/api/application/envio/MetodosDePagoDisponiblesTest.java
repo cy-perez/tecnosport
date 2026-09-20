@@ -210,6 +210,34 @@ class MetodosDePagoDisponiblesTest {
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
   }
 
+  /**
+   * La trampa que {@code adr/0048} avisa. Sistecrédito lo cobra otra pasarela, así que el filtro
+   * tiene que seguir quitándolo mientras su interruptor esté apagado. Si alguien reclasificara un
+   * método a "no lo cobra ninguna pasarela" —que para Addi suena razonable, porque Wompi no lo
+   * ofrece— dejaría de filtrarse y se ofrecería siempre. Esta prueba y la de Addi de arriba son las
+   * dos mitades del mismo guardián.
+   */
+  @Test
+  void sistecreditoNoSeOfreceMientrasSuInterruptorEsteApagado() {
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertFalse(disponibles.contains(MetodoPago.SISTECREDITO));
+  }
+
+  /** Y se ofrece en cuanto entra en la lista, sin tocar código. */
+  @Test
+  void sistecreditoSeOfreceCuandoSuInterruptorSeEnciende() {
+    Set<MetodoPago> conSistecredito = EnumSet.copyOf(HABILITADOS_HOY);
+    conSistecredito.add(MetodoPago.SISTECREDITO);
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, conSistecredito);
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertTrue(disponibles.contains(MetodoPago.SISTECREDITO));
+  }
+
   /** El día que Wompi active Addi: una variable de entorno, sin tocar código. */
   @Test
   void unMetodoDePasarelaSeOfreceEnCuantoLaConfiguracionLoHabilita() {

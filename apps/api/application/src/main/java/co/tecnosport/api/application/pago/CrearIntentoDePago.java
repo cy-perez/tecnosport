@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.pago.ReferenciaPago;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -67,12 +68,16 @@ public final class CrearIntentoDePago {
   }
 
   /**
-   * Que el método se procese por la pasarela no significa que esté habilitado hoy: eso lo decide
-   * {@code MetodosDePagoDisponibles} con la configuración, y {@code CrearPedido} lo exige antes de
-   * que el pedido exista. Aquí solo se comprueba lo que no depende de la configuración — a un
-   * pedido de contraentrega o de transferencia manual no hay intento de pago que pedirle.
+   * Que el método lo cobre Wompi no significa que esté habilitado hoy: eso lo decide {@code
+   * MetodosDePagoDisponibles} con la configuración, y {@code CrearPedido} lo exige antes de que el
+   * pedido exista. Aquí solo se comprueba lo que no depende de la configuración — a un pedido de
+   * contraentrega o de transferencia manual no hay intento de pago que pedirle.
+   *
+   * <p>Se pregunta por Wompi y no por "¿lo cobra alguna pasarela?" desde {@code adr/0048}: un
+   * pedido de Sistecrédito lo cobra una pasarela, pero no esta, y tiene su propio caso de uso. Con
+   * el predicado viejo habría entrado aquí y se habría ido a firmar contra Wompi.
    */
   private boolean seProcesaPorWompi(MetodoPago metodoPago) {
-    return metodoPago.seProcesaPorPasarela();
+    return metodoPago.pasarela() == ProveedorDePago.WOMPI;
   }
 }
