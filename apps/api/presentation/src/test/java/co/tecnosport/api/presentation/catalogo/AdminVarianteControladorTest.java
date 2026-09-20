@@ -1,21 +1,32 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
+import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoAtributo;
+import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -208,6 +219,143 @@ class AdminVarianteControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  @Test
+  void sinMedirDevuelveLaListaYLosDosConteos() throws Exception {
+    repositorioProductos.conVariantesSinMedir(
+        new VarianteSinMedir(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Moto G17",
+            "TS-MOTO-1",
+            EstadoProducto.PUBLICADO),
+        new VarianteSinMedir(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Honor X9d",
+            "TS-HONOR-1",
+            EstadoProducto.BORRADOR));
+
+    mockMvc
+        .perform(get("/api/v1/admin/variantes/sin-medir"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.totalEnPublicados").value(1))
+        .andExpect(jsonPath("$.items[0].nombreProducto").value("Moto G17"))
+        .andExpect(jsonPath("$.items[0].sku").value("TS-MOTO-1"))
+        .andExpect(jsonPath("$.items[0].estadoProducto").value("PUBLICADO"));
+  }
+
+  /** El caso al que hay que llegar: el panel usa estos ceros para no enseñar el aviso. */
+  @Test
+  void sinNadaQueMedirDevuelveCeroYUnaListaVacia() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/admin/variantes/sin-medir"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(0))
+        .andExpect(jsonPath("$.totalEnPublicados").value(0))
+        .andExpect(jsonPath("$.items").isEmpty());
+  }
+
+  @Test
+  void medirDevuelveLasMedidasGrabadasYDeclaraQueNoEsUnaCorreccion() throws Exception {
+    Variante sinMedir = variante("TS-MEDIR-1", null);
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(sinMedir);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/paquete", sinMedir.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"pesoGramos":430,"largoCm":17,"anchoCm":9,"altoCm":5}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sku").value("TS-MEDIR-1"))
+        .andExpect(jsonPath("$.pesoGramos").value(430))
+        .andExpect(jsonPath("$.largoCm").value(17))
+        .andExpect(jsonPath("$.correccion").value(false));
+  }
+
+  @Test
+  void remedirUnaVarianteQueYaTeniaPaqueteLoDeclaraComoCorreccion() throws Exception {
+    Variante medida = variante("TS-REMEDIR-1", new Paquete(300, 12, 8, 5));
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(medida);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/paquete", medida.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"pesoGramos":420,"largoCm":14,"anchoCm":9,"altoCm":6}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.correccion").value(true));
+  }
+
+  @Test
+  void medirUnaVarianteQueNoExisteDevuelve404() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/paquete", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"pesoGramos":430,"largoCm":17,"anchoCm":9,"altoCm":5}
+                    """))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void medirConUnaDimensionEnCeroDevuelve422() throws Exception {
+    Variante sinMedir = variante("TS-MEDIR-CERO", null);
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(sinMedir);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/paquete", sinMedir.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"pesoGramos":430,"largoCm":0,"anchoCm":9,"altoCm":5}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  /**
+   * Un cuerpo al que le falta una medida no se acepta, y aquí sí lo atrapa Jackson: los cuatro
+   * componentes de {@code MedirVariantePeticion} son primitivos a propósito. Es lo contrario que en
+   * el alta, donde faltar es un estado legítimo.
+   */
+  @Test
+  void medirSinTodasLasMedidasDevuelve422() throws Exception {
+    Variante sinMedir = variante("TS-MEDIR-INCOMPLETO", null);
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(sinMedir);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/paquete", sinMedir.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"pesoGramos":430,"anchoCm":9,"altoCm":5}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  private static Variante variante(String sku, Paquete paquete) {
+    return Variante.crear(
+        new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), 5, null, paquete, List.of());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -248,8 +396,23 @@ class AdminVarianteControladorTest {
     }
 
     @Bean
+    ListarVariantesSinMedir listarVariantesSinMedir(RepositorioProductos repositorioProductos) {
+      return new ListarVariantesSinMedir(repositorioProductos);
+    }
+
+    @Bean
+    MedirVariante medirVariante(RepositorioProductos repositorioProductos) {
+      return new MedirVariante(repositorioProductos);
+    }
+
+    @Bean
     MapeadorRespuestasCatalogo mapeadorRespuestasCatalogo() {
       return new MapeadorRespuestasCatalogo();
+    }
+
+    @Bean
+    MapeadorVariantesSinMedir mapeadorVariantesSinMedir() {
+      return new MapeadorVariantesSinMedir();
     }
   }
 }

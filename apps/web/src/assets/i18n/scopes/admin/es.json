@@ -33,7 +33,11 @@
     "ir_a_pedidos": "Pedidos",
     "ir_a_productos": "Productos",
     "ir_a_atencion": "PQR",
-    "ir_a_envios": "Revisión de envíos"
+    "ir_a_envios": "Revisión de envíos",
+    "sinMedir": {
+      "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Sin peso ni dimensiones no se puede cotizar el envío: solo se entregan con recogida en el punto.",
+      "enlace": "Ver y medir"
+    }
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -223,7 +227,28 @@
       "atributoNumero": "Atributo {{numero}}",
       "quitarAtributoAccesible": "Quitar el atributo {{numero}}"
     },
-    "capturar360": "Capturar 360"
+    "capturar360": "Capturar 360",
+    "sinMedir": {
+      "titulo": "Variantes sin medir",
+      "explicacion": "Una variante sin peso ni dimensiones se vende, pero solo con recogida en el punto: cotizar su envío a domicilio se rechaza nombrándola. Las medidas son las del producto ya empacado, no las del producto desnudo.",
+      "resumen": "{{total}} sin medir, {{publicados}} en productos ya publicados.",
+      "ninguna": "No queda ninguna variante sin medir.",
+      "medida": "Listo: {{sku}} ya tiene sus medidas y se puede cotizar su envío a domicilio.",
+      "errorLista": "No se pudo cargar la lista de variantes sin medir.",
+      "columnas": {
+        "producto": "Producto",
+        "sku": "SKU",
+        "estado": "Estado"
+      },
+      "medir": "Medir",
+      "medirVariante": "Medir la variante {{sku}}",
+      "paqueteDe": "Paquete de {{sku}}",
+      "paqueteAyuda": "Del producto ya empacado, con su caja y sus accesorios dentro. Peso en gramos, medidas en centímetros enteros.",
+      "guardar": "Guardar medidas",
+      "cancelar": "Cancelar",
+      "faltanCampos": "Hacen falta las cuatro medidas, y todas mayores que cero.",
+      "error": "No se pudieron guardar las medidas."
+    }
   },
   "retractos": {
     "titulo": "Retracto",

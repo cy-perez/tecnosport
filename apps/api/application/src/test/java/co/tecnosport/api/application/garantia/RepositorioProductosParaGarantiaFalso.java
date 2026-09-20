@@ -6,6 +6,7 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -82,5 +83,16 @@ final class RepositorioProductosParaGarantiaFalso implements RepositorioProducto
 
   static List<UUID> vacio() {
     return List.of();
+  }
+
+  @Override
+  public java.util.List<co.tecnosport.api.application.catalogo.VarianteSinMedir>
+      variantesSinMedir() {
+    throw new UnsupportedOperationException("No usado por las pruebas de garantia.");
+  }
+
+  @Override
+  public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+    throw new UnsupportedOperationException("No usado por las pruebas de garantia.");
   }
 }

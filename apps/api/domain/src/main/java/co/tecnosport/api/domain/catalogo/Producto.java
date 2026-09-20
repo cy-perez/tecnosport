@@ -99,6 +99,33 @@ public final class Producto {
     variantes.add(variante);
   }
 
+  /**
+   * Graba el paquete de una de sus variantes y devuelve la variante ya medida.
+   *
+   * <p>Pasa por el agregado y no por la variante suelta para que exista un sitio donde se compruebe
+   * que <b>esa variante es de este producto</b>. Es la única regla que aquí hay que proteger, y es
+   * real: un caso de uso que cargue el producto por un lado y aplique la medida por otro escribiría
+   * el peso de un parlante en un celular sin que nada se queje, porque las dos cosas son enteros
+   * positivos.
+   */
+  public Variante medirVariante(UUID varianteId, Paquete paquete) {
+    Objects.requireNonNull(varianteId, "El id de la variante no puede ser nulo.");
+    int posicion = -1;
+    for (int i = 0; i < variantes.size(); i++) {
+      if (variantes.get(i).id().equals(varianteId)) {
+        posicion = i;
+        break;
+      }
+    }
+    if (posicion < 0) {
+      throw new ExcepcionDeDominio(
+          "La variante '" + varianteId + "' no pertenece al producto '" + nombre + "'.");
+    }
+    Variante medida = variantes.get(posicion).medida(paquete);
+    variantes.set(posicion, medida);
+    return medida;
+  }
+
   public void asignarImagenPrincipal(ImagenProducto imagen) {
     if (imagen != null && imagen.tipo() != TipoImagen.PRINCIPAL) {
       throw new ImagenProductoInvalidaException("La imagen principal debe ser de tipo PRINCIPAL.");

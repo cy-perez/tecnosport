@@ -5,9 +5,12 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  InventarioSinMedir,
+  MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
   SubirImagenPrincipalAdmin,
+  VarianteMedida,
 } from './producto-admin.model';
 
 export interface RepositorioProductosAdmin {
@@ -20,6 +23,12 @@ export interface RepositorioProductosAdmin {
   editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin>;
 
   agregarVariante(comando: AgregarVarianteAdmin): Promise<void>;
+
+  /** Lo que falta por medir, entero y sin paginar: es una lista de tareas que tiene que llegar a
+   * cero, no un listado del catálogo. */
+  listarSinMedir(): Promise<InventarioSinMedir>;
+
+  medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida>;
 
   /** Encadena los tres pasos (URL firmada, PUT directo a Cloud Storage, confirmación) — ver
    * docs/07-infra-gcp.md. El PUT no pasa por el backend propio, pero sigue siendo infraestructura. */

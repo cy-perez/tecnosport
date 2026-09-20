@@ -5616,9 +5616,108 @@ el JBL Go 5 medido llega hasta el proveedor.
 
 - **La existencia de los doce es 5, un número que me inventé.** Es lo único del lote que no sale de
   ningún dato real, y hay que corregirlo en el panel con el conteo de verdad.
-- **Nada avisa de cuántos productos están sin medir.** Hoy se sabe consultando la base. Mientras no
-  exista ese vigilante, el riesgo es que "temporal" se vuelva permanente por olvido, que es
-  exactamente cómo acaban estas cosas.
+- ~~**Nada avisa de cuántos productos están sin medir.**~~ **Resuelto el 19 de septiembre de 2026**,
+  y al construirlo se destapó que el panel tampoco sabía *medirlas*: `AdminVarianteControlador`
+  solo tenía `POST`. Ver "El vigilante de lo que falta por medir" al final de esta fase.
+
+## El vigilante de lo que falta por medir, y la puerta que no existía (2026-09-19)
+
+El día anterior quedó escrito como pendiente que **nada avisa de cuántos productos están sin
+medir**, con el riesgo nombrado: que "temporal" se vuelva permanente por olvido. Al ir a construir
+ese vigilante apareció algo más grande, y cambió el alcance antes de escribir una línea.
+
+### El panel no sabía modificar una variante. Ninguna, nunca
+
+`AdminVarianteControlador` tenía un solo método, `POST`. No existía forma de cambiar nada de una
+variante ya creada —ni el paquete ni la existencia— y tampoco hay ningún caso de uso de ajuste de
+inventario: `application/inventario` solo contiene el puerto. O sea que **los dos pendientes del
+día anterior eran, los dos, imposibles de resolver desde el panel**: las ocho variantes sin medir y
+el 5 de existencia inventado solo se corregían escribiendo en la base a mano.
+
+Eso convierte al vigilante solo en media funcionalidad. Un aviso que informa de un problema que la
+interfaz no puede arreglar enseña a ignorar el aviso, que es exactamente el mecanismo del que se
+quería salir. Así que la sesión hizo las dos mitades: **contar y listar**, y **medir**.
+
+### Lo que se construyó
+
+`GET /api/v1/admin/variantes/sin-medir` devuelve la lista entera con dos conteos —el total y
+cuántas están en productos ya publicados— y `PATCH /api/v1/admin/variantes/{id}/paquete` graba las
+cuatro cifras. En el panel, un aviso con el conteo, y la pantalla `/admin/productos/sin-medir` con
+la tabla y el formulario dentro de cada fila.
+
+**Tres decisiones que vale la pena dejar escritas, porque las tres se pudieron haber tomado al
+revés:**
+
+- **El `PATCH` corrige, no solo rellena.** Puede reemplazar un paquete que ya existía. Se evaluó
+  restringirlo a rellenar lo que falta y se descartó: una medida mal tomada no se nota al
+  guardarla, se nota en el margen de **cada** pedido a domicilio de esa variante, y cerrar la
+  puerta solo consigue que la enmienda ocurra por fuera del sistema y sin rastro. El servidor
+  distingue los dos casos y lo registra distinto —`info` al medir por primera vez, `warn` al
+  remedir, diciendo que los pedidos ya cotizados llevan el flete viejo— y la respuesta trae
+  `correccion`, para que el panel pueda decirle a quien acaba de guardar cuál de las dos cosas
+  hizo.
+- **El conteo no tiene tope.** La bandeja de revisión de envíos corta en cien filas con un buen
+  argumento —es una pantalla de diagnóstico— y aquí no sirve: **un conteo que se satura en cien
+  deja de moverse justo cuando más hay que mirarlo**, y el vigilante se queda ciego sin decirlo.
+  La consulta está acotada por el tamaño del catálogo, no por el tráfico.
+- **El enlace aparece solo cuando hay algo que medir.** Con la cuenta en cero no hay aviso ni
+  enlace, que es lo que pide la regla de navegación de este plan para una pantalla que depende de
+  un estado. Un enlace permanente a una lista vacía enseña a ignorar el sitio donde algún día sí
+  habrá algo. Hay una prueba para cada lado.
+
+**El orden lo decide el caso de uso, no el `order by`:** publicados primero, y dentro de cada
+grupo por nombre. Lo que está a la venta le niega hoy el envío a domicilio a quien lo compre; un
+borrador todavía no le niega nada a nadie. Mismo criterio que `ListarEnviosEnRevision` — la regla
+de negocio se lee en una clase que alguien prueba, no en un SQL que no prueba nadie.
+
+**Y la consulta pregunta por las cuatro columnas en nulo, no solo por el peso**, aunque el `check`
+de la `V55` garantice que van juntas. Es el mismo razonamiento del `check` de positividad de la
+`V32`: `SembradorCatalogo` escribe entidades JPA directo, sin pasar por `Paquete`, y una fila a
+medias tiene que salir en la lista —que es donde alguien la mira— en vez de reventar más tarde al
+hidratarla.
+
+### Cuatro cosas que aparecieron al construirlo
+
+- **Las marcas reales de la `V54` chocan con las pruebas.** Sembrar una marca "Motorola" en una
+  prueba de Testcontainers revienta contra `marca_nombre_unico`: esas doce filas las insertó una
+  migración y están en la base de cualquier prueba. Las pruebas nuevas usan nombres propios. Es el
+  precio, correcto, de haber metido el dato real por migración en vez de por sembrador.
+- **Una consulta con `JdbcTemplate` no ve lo que JPA todavía no ha volcado.** La prueba sembraba
+  con los repositorios de Spring Data y la consulta nueva devolvía cero, porque Hibernate hace
+  *auto-flush* antes de una consulta JPQL pero no antes de un SQL nativo. Un `entityManager.flush()`
+  explícito, como ya hacían otras cuatro pruebas de ese mismo archivo.
+- **`domain` y `application` no tienen AssertJ en el classpath de pruebas**, solo JUnit —
+  `domain/build.gradle.kts` está literalmente vacío, que es la regla dura #1 hecha build. Las
+  pruebas nuevas de esas dos capas usan `assertEquals`/`assertThrows`, como sus vecinas.
+- **Agregar un método a un puerto se paga en cada doble.** Los dos métodos nuevos de
+  `RepositorioProductos` obligaron a tocar **siete** dobles en el backend y **cuatro** en el
+  frontend. No es un argumento contra el puerto —es el que hace que el caso de uso se pueda probar
+  sin base de datos—, pero conviene saber que ese es el precio y que se paga entero, de una vez.
+
+**El guardián se comprobó rompiéndolo**, como manda la casa: con el `where` de la consulta
+reducido a `1 = 1`, las dos pruebas de infraestructura fallan. Y `npm run contratos` se corrió con
+el backend arriba, que es lo que ningún otro guardián vigila.
+
+### Verificado en el navegador, con las ocho de verdad
+
+Contra el backend real y la base local, que ya tiene los doce productos cargados: el panel avisa
+de las que hay, el enlace lleva a la lista, el formulario se abre dentro de la fila, enviarlo
+vacío dice qué falta —el botón no se deshabilita, así que quien navega con teclado llega a él— y
+al guardar la fila desaparece, el conteo baja y la confirmación nombra el SKU. El anillo de foco
+del primer campo se ve al tabular desde el botón que abrió el formulario.
+
+**La variante que se midió no era ninguna de las ocho reales**, sino una creada a propósito sobre
+el catálogo sembrado —ficción declarada, el mismo criterio que ya usa `SembradorCatalogo` para sus
+medidas de demostración— y borrada al terminar. Medir un Moto G17 de verdad con una cifra sacada
+de la cabeza habría sido justo lo que este plan prohíbe: los fabricantes de celulares no publican
+las medidas de su caja, y esas ocho se miden con báscula y metro.
+
+### Lo que esto **no** arregla
+
+**La existencia sigue sin poderse corregir**, y el 5 inventado de los doce productos sigue ahí. No
+es un olvido: el `Inventario` es por movimientos, no un contador, así que ajustarlo necesita su
+propio caso de uso con su motivo registrado —y necesita el conteo real, que es un dato de negocio
+que este proyecto no puede inventar. Queda como la siguiente tarea de esta rama.
 
 ## Cómo conversar con Claude Code en este proyecto
 

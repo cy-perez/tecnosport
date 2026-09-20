@@ -4,8 +4,10 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -28,6 +30,9 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   Variante ultimaVarianteAgregada;
   UUID ultimoProductoIdConImagen;
   ImagenProducto ultimaImagenPrincipal;
+  UUID ultimaVarianteMedida;
+  Paquete ultimoPaqueteGrabado;
+  private List<VarianteSinMedir> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -52,7 +57,14 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimaVarianteAgregada = null;
     this.ultimoProductoIdConImagen = null;
     this.ultimaImagenPrincipal = null;
+    this.ultimaVarianteMedida = null;
+    this.ultimoPaqueteGrabado = null;
+    this.sinMedir = List.of();
     this.skusEnUso.clear();
+  }
+
+  void conVariantesSinMedir(VarianteSinMedir... variantes) {
+    this.sinMedir = List.of(variantes);
   }
 
   void devolverEnBusqueda(ResultadoPaginado<Producto> resultado) {
@@ -125,5 +137,16 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     this.ultimoProductoIdConImagen = productoId;
     this.ultimaImagenPrincipal = imagen;
+  }
+
+  @Override
+  public List<VarianteSinMedir> variantesSinMedir() {
+    return sinMedir;
+  }
+
+  @Override
+  public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+    this.ultimaVarianteMedida = varianteId;
+    this.ultimoPaqueteGrabado = paquete;
   }
 }

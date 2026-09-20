@@ -2,6 +2,7 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -32,6 +33,9 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   Variante ultimaVarianteAgregada;
   UUID ultimoProductoIdConImagen;
   ImagenProducto ultimaImagenPrincipal;
+  UUID ultimaVarianteMedida;
+  Paquete ultimoPaqueteGrabado;
+  private List<VarianteSinMedir> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -48,6 +52,10 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   void devolverEnBusquedaAdmin(ProductosPaginados resultado) {
     this.resultadoAdmin = resultado;
+  }
+
+  void conVariantesSinMedir(VarianteSinMedir... variantes) {
+    this.sinMedir = List.of(variantes);
   }
 
   @Override
@@ -112,5 +120,16 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     this.ultimoProductoIdConImagen = productoId;
     this.ultimaImagenPrincipal = imagen;
+  }
+
+  @Override
+  public List<VarianteSinMedir> variantesSinMedir() {
+    return sinMedir;
+  }
+
+  @Override
+  public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+    this.ultimaVarianteMedida = varianteId;
+    this.ultimoPaqueteGrabado = paquete;
   }
 }

@@ -2,10 +2,12 @@ package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -65,6 +67,22 @@ public interface RepositorioProductos {
    * — {@code Producto.agregarVariante} no puede ver esto por sí solo.
    */
   boolean existeVarianteConSku(Sku sku);
+
+  /**
+   * Las variantes activas sin {@code Paquete}, de todo el catálogo y sin paginar — el conteo que
+   * devuelve alimenta un aviso, y un conteo truncado avisaría de menos justo cuando hay más.
+   *
+   * <p>Solo las {@code ACTIVA}: una variante retirada no se va a despachar, así que medirla no
+   * arregla nada y su fila solo ensuciaría la lista de lo que sí hay que hacer.
+   */
+  List<VarianteSinMedir> variantesSinMedir();
+
+  /**
+   * Graba el paquete de una variante existente, la tuviera o no. El puerto no opina sobre cuál de
+   * los dos casos es: la diferencia entre medir por primera vez y corregir una medida equivocada la
+   * decide {@code MedirVariante}, que es quien la puede explicar.
+   */
+  void actualizarPaquete(UUID varianteId, Paquete paquete);
 
   /**
    * Reemplaza la imagen principal del producto (a lo sumo una por producto, constraint única en BD)

@@ -26,6 +26,24 @@
     }}</a>
   </nav>
 
+  @if (haySinMedir()) {
+    <!-- Un aviso, no una alerta: nada está roto. Lo que hay es una promesa a medias — esas
+         variantes se venden, pero solo con recogida en el punto. Por eso `role="status"` y no
+         `role="alert"`: se anuncia cuando el lector termine lo que está diciendo, sin
+         interrumpir. -->
+    <div class="mb-24 border border-ts-borde p-16" role="status">
+      <p class="m-0 mb-8">
+        {{
+          'admin.panel.sinMedir.aviso'
+            | transloco: { total: totalSinMedir(), publicados: sinMedirEnPublicados() }
+        }}
+      </p>
+      <a class="anillo-foco text-ts-primario" routerLink="../productos/sin-medir">{{
+        'admin.panel.sinMedir.enlace' | transloco
+      }}</a>
+    </div>
+  }
+
   <ts-boton variante="secundario" (click)="cerrarSesion()">
     {{ 'admin.panel.cerrar_sesion' | transloco }}
   </ts-boton>

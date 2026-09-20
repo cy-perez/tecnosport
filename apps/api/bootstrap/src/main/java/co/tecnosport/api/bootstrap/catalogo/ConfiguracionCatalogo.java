@@ -16,6 +16,8 @@ import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
+import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
+import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
@@ -117,6 +119,17 @@ public class ConfiguracionCatalogo {
   @Bean
   public ListarProductosAdmin listarProductosAdmin(RepositorioProductos repositorioProductos) {
     return new ListarProductosAdmin(repositorioProductos);
+  }
+
+  @Bean
+  public ListarVariantesSinMedir listarVariantesSinMedir(
+      RepositorioProductos repositorioProductos) {
+    return new ListarVariantesSinMedir(repositorioProductos);
+  }
+
+  @Bean
+  public MedirVariante medirVariante(RepositorioProductos repositorioProductos) {
+    return new MedirVariante(repositorioProductos);
   }
 
   @Bean

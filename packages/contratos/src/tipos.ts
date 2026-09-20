@@ -804,6 +804,22 @@ export interface paths {
         patch: operations["actualizarCantidad"];
         trace?: never;
     };
+    "/api/v1/admin/variantes/{id}/paquete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["medir"];
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}": {
         parameters: {
             query?: never;
@@ -956,6 +972,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/variantes/sin-medir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sinMedir"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1650,6 +1682,30 @@ export interface components {
             /** Format: int32 */
             cantidad?: number;
         };
+        MedirVariantePeticion: {
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            altoCm?: number;
+        };
+        VarianteMedidaRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            sku?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            altoCm?: number;
+            correccion?: boolean;
+        };
         EditarProductoPeticion: {
             nombre?: string;
             descripcion?: string;
@@ -1748,6 +1804,22 @@ export interface components {
         ResultadoPaginadoRespuestaAtributoRespuesta: {
             items?: components["schemas"]["AtributoRespuesta"][];
             cursorSiguiente?: string;
+        };
+        VarianteSinMedirRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: uuid */
+            productoId?: string;
+            nombreProducto?: string;
+            sku?: string;
+            estadoProducto?: string;
+        };
+        VariantesSinMedirRespuesta: {
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalEnPublicados?: number;
+            items?: components["schemas"]["VarianteSinMedirRespuesta"][];
         };
         ProductosAdminPaginadosRespuesta: {
             items?: components["schemas"]["ProductoAdminRespuesta"][];
@@ -3161,6 +3233,32 @@ export interface operations {
             };
         };
     };
+    medir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedirVariantePeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VarianteMedidaRespuesta"];
+                };
+            };
+        };
+    };
     ver: {
         parameters: {
             query?: never;
@@ -3403,6 +3501,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultadoPaginadoRespuestaAtributoRespuesta"];
+                };
+            };
+        };
+    };
+    sinMedir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
                 };
             };
         };

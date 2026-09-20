@@ -87,6 +87,31 @@ public final class Variante {
         null);
   }
 
+  /**
+   * La misma variante, ya medida. Devuelve una copia en vez de mutar porque {@code Variante} no
+   * tiene un solo campo que cambie después de creada, y abrir el primero por esto sería el precio
+   * más caro de la operación más pequeña.
+   *
+   * <p><b>Admite reemplazar un paquete que ya existía</b>, y no solo rellenar el que falta. No es
+   * un descuido: una medida mal tomada cobra el flete equivocado en <em>cada</em> pedido de esa
+   * variante, y sin esta puerta la única forma de enmendarla sería por la base de datos. Quien
+   * llama es el que decide si eso está permitido y quién queda en el registro.
+   */
+  public Variante medida(Paquete paquete) {
+    Objects.requireNonNull(paquete, "No se puede medir una variante con un paquete nulo.");
+    return new Variante(
+        id,
+        sku,
+        precio,
+        tasaIva,
+        existencia,
+        codigoBarras,
+        paquete,
+        estado,
+        atributos,
+        setRotacionPropio);
+  }
+
   private static BigDecimal validarTasaIva(BigDecimal tasaIva) {
     Objects.requireNonNull(tasaIva, "La tasa de IVA no puede ser nula.");
     if (tasaIva.signum() < 0 || tasaIva.compareTo(BigDecimal.ONE) > 0) {

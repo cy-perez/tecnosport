@@ -33,7 +33,11 @@
     "ir_a_pedidos": "Orders",
     "ir_a_productos": "Products",
     "ir_a_atencion": "Requests",
-    "ir_a_envios": "Shipment review"
+    "ir_a_envios": "Shipment review",
+    "sinMedir": {
+      "aviso": "{{total}} catalog variant(s) have no package measurements, {{publicados}} of them on published products. Without weight and dimensions shipping cannot be quoted: they can only be handed over at the pickup point.",
+      "enlace": "Review and measure"
+    }
   },
   "pedidos": {
     "titulo": "Orders",
@@ -223,7 +227,28 @@
       "atributoNumero": "Attribute {{numero}}",
       "quitarAtributoAccesible": "Remove attribute {{numero}}"
     },
-    "capturar360": "Capture 360"
+    "capturar360": "Capture 360",
+    "sinMedir": {
+      "titulo": "Variants without measurements",
+      "explicacion": "A variant without weight and dimensions can still be sold, but only with pickup at the point: quoting home delivery is rejected and names it. Measurements are those of the packaged product, not the bare one.",
+      "resumen": "{{total}} without measurements, {{publicados}} on already published products.",
+      "ninguna": "Every variant has its measurements.",
+      "medida": "Done: {{sku}} now has its measurements and home delivery can be quoted.",
+      "errorLista": "The list of variants without measurements could not be loaded.",
+      "columnas": {
+        "producto": "Product",
+        "sku": "SKU",
+        "estado": "Status"
+      },
+      "medir": "Measure",
+      "medirVariante": "Measure variant {{sku}}",
+      "paqueteDe": "Package for {{sku}}",
+      "paqueteAyuda": "Of the packaged product, box and accessories included. Weight in grams, dimensions in whole centimeters.",
+      "guardar": "Save measurements",
+      "cancelar": "Cancel",
+      "faltanCampos": "All four measurements are required, and all greater than zero.",
+      "error": "The measurements could not be saved."
+    }
   },
   "retractos": {
     "titulo": "Withdrawal",

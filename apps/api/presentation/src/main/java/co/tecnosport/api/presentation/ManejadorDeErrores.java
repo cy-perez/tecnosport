@@ -12,6 +12,7 @@ import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
 import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
+import co.tecnosport.api.application.catalogo.VarianteNoEncontradaPorIdException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
@@ -81,6 +82,11 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProductoNoEncontradoPorIdException.class)
   public ProblemDetail productoNoEncontradoPorId(ProductoNoEncontradoPorIdException excepcion) {
     return problema(HttpStatus.NOT_FOUND, "Producto no encontrado", excepcion);
+  }
+
+  @ExceptionHandler(VarianteNoEncontradaPorIdException.class)
+  public ProblemDetail varianteNoEncontradaPorId(VarianteNoEncontradaPorIdException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Variante no encontrada", excepcion);
   }
 
   @ExceptionHandler(CarritoNoEncontradoException.class)
