@@ -25,9 +25,15 @@ import java.util.Set;
  * monto" nunca lo delega el servidor al cliente (docs/03-api.md).
  *
  * <p>Son dos preguntas encadenadas y conviene no mezclarlas. La primera no mira el pedido:
- * <b>¿ofrece el negocio ese método hoy?</b> — la responde {@link #habilitados()} con lo que la
- * cuenta de la pasarela tiene activado ({@code tecnosport.wompi.metodos.habilitados}). La segunda
- * sí lo mira: <b>¿le sirve a este pedido?</b>, y hoy solo {@code CONTRAENTREGA} la tiene.
+ * <b>¿ofrece el negocio ese método hoy?</b> — la responde {@link #habilitados()} con lo que las
+ * cuentas de las pasarelas tienen activado ({@code tecnosport.wompi.metodos.habilitados} más {@code
+ * tecnosport.sistecredito.habilitado}, unidos en bootstrap). La segunda sí lo mira: <b>¿le sirve a
+ * este pedido?</b>, y hoy solo {@code CONTRAENTREGA} la tiene.
+ *
+ * <p>Llega aquí <b>la unión</b> de lo habilitado por los dos proveedores, no un mapa por proveedor:
+ * la comprobación de que cada método le corresponde a quien lo habilitó vive donde se lee la
+ * configuración de ese proveedor ({@code PropiedadesMetodosDeWompi}), que es donde se puede dar un
+ * mensaje de error útil. Aquí solo se exige que a alguien lo cobre una pasarela ({@code adr/0048}).
  *
  * <p>Hasta la Fase 3 la primera pregunta no existía: se devolvía el enum entero, así que el
  * checkout ofrecía cualquier método que el código supiera procesar, estuviera o no activado en la
@@ -56,6 +62,7 @@ public final class MetodosDePagoDisponibles {
   private final RepositorioPedidos repositorioPedidos;
   private final CriteriosContraentrega criteriosContraentrega;
   private final Set<MetodoPago> metodosDePasarelaHabilitados;
+  private final Dinero montoMinimoSistecredito;
 
   public MetodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
@@ -63,7 +70,8 @@ public final class MetodosDePagoDisponibles {
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
-      Set<MetodoPago> metodosDePasarelaHabilitados) {
+      Set<MetodoPago> metodosDePasarelaHabilitados,
+      Dinero montoMinimoSistecredito) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -78,15 +86,27 @@ public final class MetodosDePagoDisponibles {
         metodosDePasarelaHabilitados,
         "Los métodos habilitados en la pasarela no pueden ser nulos.");
     for (MetodoPago metodo : metodosDePasarelaHabilitados) {
-      if (!metodo.seProcesaPorPasarela()) {
+      if (!metodo.laCobraUnaPasarela()) {
         throw new IllegalArgumentException(
-            "El método " + metodo + " no lo procesa la pasarela: no se habilita desde aquí.");
+            "El método " + metodo + " no lo cobra ninguna pasarela: no se habilita desde aquí.");
       }
     }
     this.metodosDePasarelaHabilitados =
         metodosDePasarelaHabilitados.isEmpty()
             ? EnumSet.noneOf(MetodoPago.class)
             : EnumSet.copyOf(metodosDePasarelaHabilitados);
+    // Sistecrédito rechaza con su código 802 los créditos por debajo de un mínimo que define él, y
+    // ese número no está en su documentación ni es público: dos comercios aliados publican cifras
+    // distintas. Sin el dato no se puede ofrecer el método sin prometer algo que la pasarela va a
+    // rechazar con un mensaje que el comprador no entiende, así que encenderlo sin configurar el
+    // mínimo no arranca. Falla cerrado, y falla temprano.
+    if (this.metodosDePasarelaHabilitados.contains(MetodoPago.SISTECREDITO)
+        && montoMinimoSistecredito == null) {
+      throw new IllegalArgumentException(
+          "SISTECREDITO está habilitado pero no se configuró su monto mínimo"
+              + " (tecnosport.sistecredito.monto-minimo).");
+    }
+    this.montoMinimoSistecredito = montoMinimoSistecredito;
   }
 
   /**
@@ -100,20 +120,61 @@ public final class MetodosDePagoDisponibles {
   public Set<MetodoPago> habilitados() {
     Set<MetodoPago> habilitados = EnumSet.allOf(MetodoPago.class);
     habilitados.removeIf(
-        metodo -> metodo.seProcesaPorPasarela() && !metodosDePasarelaHabilitados.contains(metodo));
+        metodo -> metodo.laCobraUnaPasarela() && !metodosDePasarelaHabilitados.contains(metodo));
     return habilitados;
   }
 
   public Set<MetodoPago> ejecutar(MetodosDePagoDisponiblesComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Set<MetodoPago> disponibles = habilitados();
-    if (!contraentregaElegible(comando)) {
+    // Perezoso y memorizado, no resuelto de entrada. Las dos cosas importan: resolverlo hace un
+    // `buscarPorVarianteId` por línea y esto corre en cada carga del checkout, así que calcularlo
+    // dos veces duplicaba las consultas —lo que pasaba con Sistecrédito encendido—; pero
+    // calcularlo siempre se las cobraría también a un retiro en punto sin contraentrega, que no
+    // lo mira nunca. Y no es solo coste: resolver el carrito puede lanzar
+    // `VarianteNoEncontradaException`, así que adelantarlo cambiaría cuándo falla.
+    CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
+    if (!contraentregaElegible(comando, carrito)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
+    }
+    if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(carrito)) {
+      disponibles.remove(MetodoPago.SISTECREDITO);
     }
     return disponibles;
   }
 
-  private boolean contraentregaElegible(MetodosDePagoDisponiblesComando comando) {
+  /**
+   * Se compara contra <b>la mercancía sola</b>, sin flete, y es una decisión conservadora tomada a
+   * sabiendas: aquí solo se cotiza el envío cuando hace falta para contraentrega, y pedir una
+   * cotización más por esto le costaría una llamada de red al proveedor a cada carga del checkout.
+   * La consecuencia es que un carrito cuya mercancía queda justo por debajo del mínimo y lo
+   * superaría sumando el flete no ve Sistecrédito. Se pierde una venta rara; la alternativa
+   * —ofrecerlo y que la pasarela lo rechace con el 802— le rompe el pago a alguien que ya eligió.
+   */
+  private boolean alcanzaElMinimoDeSistecredito(CarritoPerezoso carrito) {
+    return carrito.datos().total().valor().compareTo(montoMinimoSistecredito.valor()) >= 0;
+  }
+
+  /** Resuelve el carrito como mucho una vez, y solo si alguien lo pide. */
+  private final class CarritoPerezoso {
+
+    private final List<MetodosDePagoDisponiblesComando.LineaComando> lineas;
+    private DatosCarrito resueltos;
+
+    private CarritoPerezoso(List<MetodosDePagoDisponiblesComando.LineaComando> lineas) {
+      this.lineas = lineas;
+    }
+
+    private DatosCarrito datos() {
+      if (resueltos == null) {
+        resueltos = resolverCarrito(lineas);
+      }
+      return resueltos;
+    }
+  }
+
+  private boolean contraentregaElegible(
+      MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
     if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO || comando.direccion() == null) {
       return false;
     }
@@ -122,8 +183,8 @@ public final class MetodosDePagoDisponibles {
     if (conRecaudo.isEmpty()) {
       return false;
     }
-    DatosCarrito carrito = resolverCarrito(comando.lineas());
-    Dinero aRecaudar = Dinero.deCop(carrito.total().valor().add(conRecaudo.get().costo().valor()));
+    DatosCarrito datos = carrito.datos();
+    Dinero aRecaudar = Dinero.deCop(datos.total().valor().add(conRecaudo.get().costo().valor()));
     if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
       return false;
     }
@@ -134,7 +195,7 @@ public final class MetodosDePagoDisponibles {
         // se compara contra eso y no contra la mercancía sola: el límite existe por cuánto
         // efectivo carga el mensajero, y el flete también lo carga.
         aRecaudar,
-        carrito.categorias(),
+        datos.categorias(),
         true,
         rechazoPrevio);
   }

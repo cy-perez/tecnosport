@@ -167,6 +167,18 @@ completo, con las cláusulas redactadas y la auditoría del sistema, en
   está en la lista de países con nivel adecuado de protección de la SIC — lo que
   no exime de verificar con qué entidad se contrata y dónde se procesan los datos.
 
+- **Sistecrédito recibe el documento de identidad de quien compra**, además de
+  abrirle un crédito a su nombre (`ADR-0048`). Hay que declararlo en la política
+  de datos y en la casilla de autorización: el dato se transmite aunque **no se
+  guarde** en este sistema —viaja del checkout a la pasarela y ahí termina—, y el
+  deber de informar no depende de que lo conservemos.
+  **Y hay una pregunta que este expediente no puede responder:** si Sistecrédito
+  es un *encargado* nuestro o un **segundo responsable**. Trata el documento para
+  su propia finalidad —decidir y otorgar un crédito, con su propio contrato con
+  esa persona—, lo que apunta a lo segundo, y de eso depende qué tiene que decir
+  exactamente la autorización. Va al abogado con el punto 5 de
+  `docs/14-consultas-al-abogado.md`.
+
 **Fotografías de producto.** Las imágenes son del negocio, tomadas por el negocio.
 No se usan fotos de proveedores, de fabricantes ni de otras tiendas sin
 autorización escrita. El asistente de captura existe, entre otras cosas, para que

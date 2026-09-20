@@ -68,7 +68,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pagos/intentos": {
+    "/api/v1/pagos/sistecredito/intentos": {
         parameters: {
             query?: never;
             header?: never;
@@ -78,6 +78,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["crear_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/sistecredito/confirmacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/intentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["crear_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -125,7 +157,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_2"];
+        post: operations["crear_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -285,7 +317,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_3"];
+        post: operations["crear_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -429,7 +461,7 @@ export interface paths {
         };
         get: operations["listar"];
         put?: never;
-        post: operations["crear_4"];
+        post: operations["crear_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -669,7 +701,7 @@ export interface paths {
         };
         get: operations["listar_4"];
         put?: never;
-        post: operations["crear_5"];
+        post: operations["crear_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1220,6 +1252,20 @@ export interface components {
             correo?: string;
             tipoEntrega?: string;
             direccion?: components["schemas"]["DireccionRequest"];
+        };
+        CrearIntentoSistecreditoRequest: {
+            /** Format: uuid */
+            pedidoId: string;
+            /** @enum {string} */
+            tipoDocumento: "CC" | "TI" | "TIE" | "NIT";
+            documento: string;
+            /** @description Idioma al que vuelve el comprador: es o en. Cualquier otro cae en es. */
+            idioma?: string;
+        };
+        IntentoSistecreditoRespuesta: {
+            referencia?: string;
+            monto?: components["schemas"]["DineroRespuesta"];
+            urlRedireccion?: string;
         };
         CrearIntentoDePagoRequest: {
             /** Format: uuid */
@@ -1987,6 +2033,55 @@ export interface operations {
         };
         requestBody: {
             content: {
+                "application/json": components["schemas"]["CrearIntentoSistecreditoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntentoSistecreditoRespuesta"];
+                };
+            };
+        };
+    };
+    confirmacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Notificación de Sistecrédito, tal como la envía la pasarela. No viene firmada: se verifica consultando la transacción. */
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    crear_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
                 "application/json": components["schemas"]["CrearIntentoDePagoRequest"];
             };
         };
@@ -2048,7 +2143,7 @@ export interface operations {
             };
         };
     };
-    crear_2: {
+    crear_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2277,7 +2372,7 @@ export interface operations {
             };
         };
     };
-    crear_3: {
+    crear_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2522,7 +2617,7 @@ export interface operations {
             };
         };
     };
-    crear_4: {
+    crear_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2980,7 +3075,7 @@ export interface operations {
             };
         };
     };
-    crear_5: {
+    crear_6: {
         parameters: {
             query?: never;
             header?: never;

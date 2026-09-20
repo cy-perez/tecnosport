@@ -1,6 +1,7 @@
 import { Pedido } from './pedido.model';
 import {
   datosTransferenciaDelPedido,
+  esMetodoPagoSistecredito,
   esMetodoPagoWompi,
   puedeReintentarPago,
   requiereDireccion,
@@ -48,6 +49,28 @@ describe('esMetodoPagoWompi', () => {
   it.each(['TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)('%s no va por Wompi', (metodo) => {
     expect(esMetodoPagoWompi(metodo)).toBe(false);
   });
+
+  /**
+   * La que importa: si alguien mete SISTECREDITO en esta lista, el pedido se va a construir una
+   * URL de Wompi con una firma que Sistecrédito no genera, y el comprador acaba en una pantalla
+   * de error de otro proveedor.
+   */
+  it('Sistecrédito NO va por Wompi: lo cobra otra pasarela con otro flujo', () => {
+    expect(esMetodoPagoWompi('SISTECREDITO')).toBe(false);
+  });
+});
+
+describe('esMetodoPagoSistecredito', () => {
+  it('reconoce su propio método', () => {
+    expect(esMetodoPagoSistecredito('SISTECREDITO')).toBe(true);
+  });
+
+  it.each(['TARJETA', 'ADDI', 'TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)(
+    '%s no lo cobra Sistecrédito',
+    (metodo) => {
+      expect(esMetodoPagoSistecredito(metodo)).toBe(false);
+    },
+  );
 });
 
 describe('puedeReintentarPago', () => {

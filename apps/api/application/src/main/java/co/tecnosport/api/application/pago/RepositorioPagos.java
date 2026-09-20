@@ -15,7 +15,7 @@ public interface RepositorioPagos {
   List<Pago> buscarPorPedidoId(UUID pedidoId);
 
   /**
-   * {@code PENDIENTE}, con {@code idTransaccionWompi} registrado, creados antes de {@code
+   * {@code PENDIENTE}, con {@code idTransaccionPasarela} registrado, creados antes de {@code
    * creadosAntesDe} — el universo de la conciliación programada (docs/11-pagos-y-envios.md). Un
    * pago sin ese id no aparece aquí: no hay cómo consultarlo en la API de Wompi.
    */

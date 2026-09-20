@@ -46,7 +46,7 @@ public class RepositorioPagosJpa implements RepositorioPagos {
   @Override
   public List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe) {
     return pagos
-        .findByEstadoAndIdTransaccionWompiIsNotNullAndCreadoEnBefore(
+        .findByEstadoAndIdTransaccionPasarelaIsNotNullAndCreadoEnBefore(
             EstadoPago.PENDIENTE.name(), creadosAntesDe)
         .stream()
         .map(this::aPago)
@@ -76,7 +76,7 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         eventosDelPago,
         entidad.getCreadoEn(),
         entidad.getActualizadoEn(),
-        entidad.getIdTransaccionWompi(),
+        entidad.getIdTransaccionPasarela(),
         entidad.getMedioReportadoPasarela());
   }
 
@@ -94,7 +94,7 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         pago.estado().name(),
         pago.creadoEn(),
         pago.actualizadoEn(),
-        pago.idTransaccionWompi().orElse(null),
+        pago.idTransaccionPasarela().orElse(null),
         pago.medioReportadoPorLaPasarela().orElse(null));
   }
 

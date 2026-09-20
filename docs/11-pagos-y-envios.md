@@ -8,11 +8,14 @@
 | PSE | Wompi | Al aprobar |
 | Nequi | Wompi | Al aprobar |
 | Bancolombia a la mano y botón Bancolombia | Wompi | Al aprobar |
+| **Sistecrédito** | Sistecrédito (pasarela propia) | Al aprobar el crédito |
 | Transferencia manual | Ninguno | Al conciliar el comprobante |
 | **Contraentrega** | Transportadora con recaudo, vía Skydropx | Días después de la entrega |
 
-**Qué se ofrece no lo decide esta tabla, lo decide
-`tecnosport.wompi.metodos.habilitados`** (`WOMPI_METODOS_HABILITADOS`). Es la
+**Qué se ofrece no lo decide esta tabla, lo deciden
+`tecnosport.wompi.metodos.habilitados` (`WOMPI_METODOS_HABILITADOS`) y
+`tecnosport.sistecredito.habilitado` (`SISTECREDITO_HABILITADO`)**, cuya unión
+arma `ConfiguracionEnvio`. Es la
 lista de lo que la *cuenta* de Wompi tiene activado, que no es lo mismo que lo
 que el código sabe procesar. `MetodosDePagoDisponibles` parte de ahí y
 `CrearPedido` lo exige otra vez antes de crear el pedido — el servidor no se fía
@@ -83,7 +86,115 @@ valor queda y no se ofrece.
   producción. Es deuda declarada, no un olvido: comparar sin haber decidido qué
   hacer con la discrepancia sería una alerta sin dueño.
 - Ambiente de pruebas hasta que los recorridos completos pasen. Las llaves de
-  producción entran solo por Secret Manager.
+  producción entran solo por Secret Manager. **Esta frase vale para Wompi y no
+  para Sistecrédito**, que no tiene ambiente de pruebas — ver abajo.
+
+## Sistecrédito
+
+**Es una segunda pasarela, no un medio más de Wompi** (`ADR-0048`). No comparte
+con ella ni una operación: sin firma de integridad, sin checksum en el webhook,
+con la URL de pago entregada por sondeo, y con su propia traducción de estados.
+Por eso tiene su puerto (`PasarelaSistecredito`), su caso de uso
+(`CrearIntentoDePagoSistecredito`), su endpoint de confirmación y su
+conciliación.
+
+**El flujo es al revés que el de Wompi.** Allá el backend firma unos datos y el
+navegador arma la URL; aquí el backend llama a `POST /pay/create`, recibe un
+`_id` y **ninguna URL** —la pasarela sigue hablando con el medio de pago— y
+sondea `GET /pay/GetTransactionResponse` hasta que aparece. El sondeo vive en el
+cliente HTTP, como el de Skydropx. La URL es de un solo uso y la transacción vive
+unos 15 minutos.
+
+**El documento del comprador no se guarda.** Sistecrédito lo exige para
+encontrar al cliente; viaja del checkout al caso de uso, de ahí a la pasarela, y
+ahí termina. No hay columna, no hay entidad y el `Pedido` no lo conoce. Un
+reintento vuelve a pedirlo, que es el precio y es barato: guardarlo obligaría a
+retención, borrado y respuesta a los derechos del titular sobre algo que solo
+hace falta durante los segundos que dura la creación de la transacción.
+
+### Adónde vuelve el comprador
+
+La URL de respuesta la arma el backend por transacción, y lleva tres cosas: el
+**idioma** —las rutas del sitio van con prefijo y la comodín redirige a `/es`
+perdiendo los parámetros—, y el **pedido y el correo como segmentos de ruta**,
+que es lo que la pantalla de estado necesita para consultar el seguimiento.
+
+Van en la ruta y no como parámetros de consulta a propósito: Sistecrédito
+concatena los suyos (`paymentRef`, `transactionId`, `orderId`) a esta URL y las
+guías no dicen si lo hace con `?` o con `&`. Como parámetros, una concatenación
+con `?` habría dejado la cadena con dos signos de interrogación y ninguno
+legible — y el comprador, en "no encontramos este pedido" justo después de haber
+pedido su crédito.
+
+El idioma sale de una lista cerrada y no de lo que mande el navegador: es un
+valor que se incrusta en una URL que le entregamos a un tercero para que
+redirija a una persona.
+
+### La notificación no viene firmada
+
+Y el endpoint de confirmación es público, porque la pasarela tiene que poder
+alcanzarlo. Un cuerpo JSON que dice `Approved` lo puede enviar cualquiera desde
+cualquier parte del mundo.
+
+**Lo que la autentica es el contraste contra la consulta**, que la propia guía
+`G-ALI-08` propone y que aquí es obligatorio: con el `_id` recibido se consulta
+la transacción y se comparan `_id`, `invoice` y `transactionStatus`. Si no
+coinciden, o si no se pudo preguntar, **no se aplica nada** y la conciliación
+recoge el pago después. Fallar cerrado cuesta un retraso de minutos; fallar
+abierto cuesta el pedido.
+
+### El monto de vuelta también se comprueba
+
+Wompi trae una firma de integridad sobre referencia, monto y moneda. Aquí no hay
+nada equivalente, y el contraste que propone la guía compara `_id`, `invoice` y
+`transactionStatus` — **no el valor**. Un prestamista que apruebe por debajo de
+lo solicitado es una cosa que hacen los prestamistas, así que el monto de la
+consulta se compara contra el del pago antes de aplicar nada. Si no cuadra, no
+se aplica y queda registrado para que alguien lo mire.
+
+Si la pasarela no manda el valor, no se bloquea: negarse a aplicar un pago
+aprobado por un campo que quizá nunca venga sería peor. **Queda pendiente
+confirmarlo con el primer crédito real.**
+
+### No hay ambiente de pruebas, y el freno es un booleano
+
+Las credenciales entregadas son **productivas** (asesora de Sistecrédito, 20 de
+septiembre de 2026). Lo que sí hay es el **modo sandbox del cuerpo de la
+petición**: `sandbox.isActive` le pide a la pasarela simular la respuesta del
+medio de pago sin ir a pedir un crédito real, y con eso se ejercita casi todo —
+la máquina de estados, la confirmación, la conciliación, el inventario, los
+correos—. Solo el recorrido del comprador (cuotas, token por SMS) exige una
+transacción de verdad.
+
+Ese booleano es entonces **lo único que separa una prueba de un crédito a nombre
+de una persona**, y encendido en producción aprobaría pagos que nadie pagó sin
+que nada fallara. Por eso: sale de configuración, exige decir qué estado simula,
+se registra en cada arranque, y **el arranque se niega** si está encendido con
+`WOMPI_AMBIENTE=produccion`.
+
+### La anulación no tiene API
+
+La página oficial de Sistecrédito para el consumidor la describe como una
+reclamación que **el comercio aliado** debe solicitar —"la anulación del crédito
+y el pagaré"—, no como un botón de devolución; se hace en el portal Credinet.
+
+Eso importa más de lo que parece: en un retracto, lo que hay que deshacer **no
+es una transferencia hacia el comprador**, porque el comprador nunca pagó. Quedó
+debiéndole un crédito a Sistecrédito, y si nadie lo anula sigue pagando cuotas de
+algo que devolvió. `MedioReintegro.SISTECREDITO` es la constancia de que la
+anulación se pidió y se obtuvo — el `Reintegro` sigue sin mover un peso, como
+todos los demás.
+
+**TODO (dato de negocio, no lo inventes):** `SISTECREDITO_MONTO_MINIMO`. Es el
+mínimo del crédito por debajo del cual la pasarela responde `802`. No está en la
+documentación entregada ni es público: dos comercios aliados publican cifras
+distintas —$20.000 y $30.000—, lo que confirma que varía por comercio. Mientras
+falte, habilitar el método **no arranca**.
+
+**Lo que todavía no se sabe y hay que medir:** si una anulación hecha en Credinet
+dispara una notificación a `urlConfirmation`. Si no la dispara, un pedido puede
+quedar marcado como pagado mientras la venta está anulada del otro lado y nada
+avisa.
 
 ## Inventario y reintento de pago
 

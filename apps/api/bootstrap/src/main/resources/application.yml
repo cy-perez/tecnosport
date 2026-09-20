@@ -114,6 +114,56 @@ tecnosport:
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
       antiguedad-minima-minutos: ${WOMPI_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:15}
+  sistecredito:
+    # La SEGUNDA pasarela (adr/0048). Arranca apagada, y no por prudencia generica: falta el monto
+    # minimo del credito, que lo define Sistecredito y no es publico. Encenderla sin ese dato no
+    # arranca, a proposito.
+    habilitado: ${SISTECREDITO_HABILITADO:false}
+    url-base: ${SISTECREDITO_URL_BASE:https://api.credinet.co/pay}
+    # Las tres credenciales. Sin valor por omision que parezca real (regla dura #5): esta cuenta
+    # SOLO tiene credenciales productivas, asi que un placeholder que funcionara seria peor que
+    # uno que no.
+    llave-suscripcion: ${SISTECREDITO_SUBSCRIPTION_KEY:}
+    store-id: ${SISTECREDITO_STORE_ID:}
+    vendor-id: ${SISTECREDITO_VENDOR_ID:}
+    # El header SCOrigen. Production porque no hay ambiente de pruebas para esta cuenta; lo
+    # confirmo la asesora el 20 de septiembre de 2026.
+    ambiente: ${SISTECREDITO_AMBIENTE:Production}
+    # {idioma} lo reemplaza el caso de uso con el idioma del comprador, validado contra una lista
+    # cerrada. Hace falta: las rutas del sitio llevan prefijo de idioma y la ruta comodin redirige
+    # a /es PERDIENDO los parametros, asi que una URL sin prefijo se traga el retorno entero.
+    # A donde vuelve el comprador y a donde llegan las notificaciones. Se derivan de las URL
+    # publicas por omision y se pueden fijar aparte. LA DE CONFIRMACION TIENE QUE SER PUBLICA:
+    # en local no llega ninguna notificacion, por eso las pruebas van contra el despliegue de dev.
+    url-respuesta: ${SISTECREDITO_URL_RESPUESTA:${APP_URL_PUBLICA:http://localhost:4200}/{idioma}/checkout/sistecredito/retorno}
+    url-confirmacion: ${SISTECREDITO_URL_CONFIRMACION:${API_URL_PUBLICA:http://localhost:8080}/api/v1/pagos/sistecredito/confirmacion}
+    # El id del medio de pago Sistecredito dentro de su propia pasarela. Vale 2 en Staging y en
+    # Production (guia G-ALI-12), asi que no es un secreto ni cambia por despliegue; es variable
+    # igual porque lo genera Sistecredito y podria cambiarlo.
+    metodo-de-pago-id: ${SISTECREDITO_METODO_ID:2}
+    timeout-segundos: ${SISTECREDITO_TIMEOUT_SEGUNDOS:10}
+    # La URL de pago no llega en la respuesta de creacion: hay que sondear la consulta hasta que
+    # aparezca (G-ALI-12). Parametros tecnicos del sondeo, no datos de negocio.
+    sondeo-intentos: ${SISTECREDITO_SONDEO_INTENTOS:10}
+    sondeo-espera-milis: ${SISTECREDITO_SONDEO_ESPERA_MILIS:700}
+    # EL FRENO DE SEGURIDAD. Sin ambiente de pruebas, este booleano es lo unico que separa una
+    # prueba de un credito real a nombre de una persona. Encendido, la pasarela simula el estado
+    # de abajo sin cobrarle a nadie — y encendido en produccion despacharia mercancia regalada sin
+    # que nada fallara. ConfiguracionSistecredito se niega a arrancar si esta encendido con
+    # WOMPI_AMBIENTE=produccion.
+    sandbox-activo: ${SISTECREDITO_SANDBOX_ACTIVO:false}
+    sandbox-estado: ${SISTECREDITO_SANDBOX_ESTADO:Approved}
+    # TODO (dato de negocio, no lo inventes): SISTECREDITO_MONTO_MINIMO. Es el minimo del credito
+    # que define Sistecredito y por debajo del cual la pasarela responde 802. No esta en la
+    # documentacion entregada ni es publico — dos comercios aliados publican cifras distintas
+    # (20.000 y 30.000), lo que confirma que varia por comercio. Pendiente de la asesora.
+    monto-minimo: ${SISTECREDITO_MONTO_MINIMO:}
+    conciliacion:
+      # Hace mas falta que la de Wompi: si el comprador cierra la ventana en vez de pulsar "volver
+      # al comercio", la confirmacion puede tardar hasta tres minutos (G-ALI-12), y una notificacion
+      # que no se pudo verificar no aplica nada y queda esperando aqui.
+      intervalo-minutos: ${SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS:10}
+      antiguedad-minima-minutos: ${SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:5}
   contraentrega:
     # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
     # Se activa explicito cuando el negocio confirme la cobertura.

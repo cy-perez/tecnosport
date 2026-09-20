@@ -3,8 +3,9 @@ import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { desempaquetar, exigirExito } from '../../../core/http/respuesta-http';
 import { IntentoDePago } from '../domain/intento-pago.model';
+import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { RepositorioPagos } from '../domain/repositorio-pagos.puerto';
-import { aIntentoDePago } from './mapeador-pago';
+import { aIntentoDePago, aIntentoSistecredito } from './mapeador-pago';
 
 @Injectable()
 export class PagoHttpRepositorio implements RepositorioPagos {
@@ -18,6 +19,33 @@ export class PagoHttpRepositorio implements RepositorioPagos {
       body: { pedidoId },
     });
     return aIntentoDePago(desempaquetar(respuesta, 'no se pudo iniciar el pago con Wompi'));
+  }
+
+  /**
+   * Con `Idempotency-Key` por lo mismo que el de Wompi: cada llamada crea un intento de pago
+   * nuevo, y aquí además una transacción del lado de Sistecrédito — repetirla por un reintento
+   * del navegador dejaría dos créditos abiertos para la misma compra.
+   */
+  async crearIntentoSistecredito(
+    pedidoId: string,
+    documento: DocumentoComprador,
+    idioma: string,
+  ): Promise<IntentoSistecredito> {
+    const respuesta = await this.cliente.POST('/api/v1/pagos/sistecredito/intentos', {
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      body: {
+        pedidoId,
+        tipoDocumento: documento.tipoDocumento,
+        documento: documento.documento,
+        // A qué versión del sitio vuelve el comprador. Va el código de idioma y no la URL: el
+        // backend compone la dirección, y dejar que el navegador la dictara sería una
+        // redirección abierta con nuestro dominio de por medio.
+        idioma,
+      },
+    });
+    return aIntentoSistecredito(
+      desempaquetar(respuesta, 'no se pudo iniciar el pago con Sistecrédito'),
+    );
   }
 
   /** Sin `Idempotency-Key`: no crea nada, solo sobrescribe un campo — repetir

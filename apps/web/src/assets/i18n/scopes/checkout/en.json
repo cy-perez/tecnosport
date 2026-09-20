@@ -65,9 +65,23 @@
     "nequi": "Nequi",
     "bancolombia": "Bancolombia Button",
     "addi": "Addi (installments)",
+    "sistecredito": "Sistecrédito (pay in instalments)",
     "transferencia_manual": "Bank transfer",
     "contraentrega": "Cash on delivery",
-    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only"
+    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only",
+    "documento": {
+      "titulo": "Your details for the credit",
+      "explicacion": "Sistecrédito needs your ID number to find your credit limit. We send it to them for this purchase and we do not store it.",
+      "numero": "ID number",
+      "invalido": "Enter your ID number, with no dots or spaces.",
+      "tipo": {
+        "label": "ID type",
+        "cc": "Citizenship ID (cédula)",
+        "ti": "Minor's ID (tarjeta de identidad)",
+        "tie": "Foreign minor's ID",
+        "nit": "Tax ID (NIT)"
+      }
+    }
   },
   "confirmar": {
     "titulo": "Confirm order",
@@ -81,11 +95,20 @@
     "articulo_sin_medidas": "{{articulos}} is only available for pickup at our store. Go back and choose pickup at our Medellín store, or remove it from your cart.",
     "articulos_sin_medidas": "{{articulos}} are only available for pickup at our store. Go back and choose pickup at our Medellín store, or remove them from your cart.",
     "envio_no_calculado": "We couldn't work out the shipping cost, so we cannot create this order yet. Try again in a few minutes, or go back and choose to pick it up at our Medellín location.",
-    "envio_rechazado": "We can't send this order for home delivery, so we cannot create it with delivery. Go back and choose to pick it up at our Medellín location."
+    "envio_rechazado": "We can't send this order for home delivery, so we cannot create it with delivery. Go back and choose to pick it up at our Medellín location.",
+    "sistecredito_801": "Sistecrédito already has a credit application in progress for that ID. Wait a few minutes and try again, or choose another payment method.",
+    "sistecredito_802": "Your purchase is below the minimum amount Sistecrédito finances. Add something to your cart or choose another payment method."
   },
   "retornoWompi": {
     "verificando": "Checking your payment…",
     "sin_datos": "We couldn't find this payment's details."
+  },
+  "retornoSistecredito": {
+    "titulo": "Returning from Sistecrédito",
+    "procesando": "We are confirming your payment. Please do not close this window.",
+    "sin_datos_titulo": "We could not identify your purchase",
+    "sin_datos": "Go back to the home page and check your order status from the email we sent you.",
+    "volver_inicio": "Back to home"
   },
   "estado": {
     "titulo": "Order {{numero}}",

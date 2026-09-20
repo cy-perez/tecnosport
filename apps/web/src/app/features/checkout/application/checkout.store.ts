@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { injectMutation } from '@tanstack/angular-query-experimental';
 import { IntentoDePago } from '../domain/intento-pago.model';
+import { DocumentoComprador, IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS } from '../domain/repositorio-pagos.puerto';
@@ -61,6 +62,24 @@ export class CheckoutStore {
     // Mismo motivo que en guardarDatosEntrega: el método de pago queda
     // congelado en el pedido ya creado, así que cambiarlo exige uno nuevo.
     this.pedido.set(null);
+    if (metodo !== 'SISTECREDITO') {
+      // Elegir otro método suelta el documento: es un dato personal que solo tiene sentido
+      // mientras Sistecrédito sea el método elegido, y dejarlo en memoria después sería
+      // guardarlo sin motivo (`adr/0048`).
+      this.documentoComprador.set(null);
+    }
+  }
+
+  /**
+   * Quién pide el crédito, solo para Sistecrédito. **En memoria y nunca en `localStorage`**, a
+   * diferencia del id del carrito: es un número de documento, y el backend tampoco lo guarda. Se
+   * pierde en un refresh a propósito — volver a teclearlo es barato, y es lo que evita que quede
+   * por ahí un dato personal que ya no hace falta.
+   */
+  readonly documentoComprador = signal<DocumentoComprador | null>(null);
+
+  anotarDocumentoComprador(documento: DocumentoComprador | null): void {
+    this.documentoComprador.set(documento);
   }
 
   private readonly mutacionCrear = injectMutation(() => ({
@@ -75,6 +94,15 @@ export class CheckoutStore {
     mutationFn: (pedidoId: string) => this.repositorioPagos.crearIntento(pedidoId),
   }));
 
+  private readonly mutacionCrearIntentoSistecredito = injectMutation(() => ({
+    mutationFn: (variables: { pedidoId: string; documento: DocumentoComprador; idioma: string }) =>
+      this.repositorioPagos.crearIntentoSistecredito(
+        variables.pedidoId,
+        variables.documento,
+        variables.idioma,
+      ),
+  }));
+
   private readonly mutacionRegistrarIdTransaccion = injectMutation(() => ({
     mutationFn: (variables: { referencia: string; idTransaccionWompi: string }) =>
       this.repositorioPagos.registrarIdTransaccion(
@@ -85,7 +113,10 @@ export class CheckoutStore {
 
   readonly creando = computed(() => this.mutacionCrear.isPending());
   readonly reintentando = computed(() => this.mutacionReintentar.isPending());
-  readonly iniciandoPago = computed(() => this.mutacionCrearIntento.isPending());
+  readonly iniciandoPago = computed(
+    () =>
+      this.mutacionCrearIntento.isPending() || this.mutacionCrearIntentoSistecredito.isPending(),
+  );
 
   async crearPedido(comando: CrearPedidoComando): Promise<Pedido> {
     const pedido = await this.mutacionCrear.mutateAsync(comando);
@@ -104,6 +135,15 @@ export class CheckoutStore {
    * estado `CONFIRMADO_CONTRAENTREGA` ya traen todo lo necesario. */
   crearIntentoPago(pedidoId: string): Promise<IntentoDePago> {
     return this.mutacionCrearIntento.mutateAsync(pedidoId);
+  }
+
+  /** Solo para `SISTECREDITO`. Devuelve la URL a la que hay que mandar al comprador, ya hecha. */
+  crearIntentoSistecredito(
+    pedidoId: string,
+    documento: DocumentoComprador,
+    idioma: string,
+  ): Promise<IntentoSistecredito> {
+    return this.mutacionCrearIntentoSistecredito.mutateAsync({ pedidoId, documento, idioma });
   }
 
   /** Llamada desde la pantalla de retorno de Wompi. Sin señal que actualizar

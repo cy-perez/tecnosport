@@ -6,6 +6,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
+import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -15,11 +16,11 @@ import java.util.Optional;
 /**
  * Trabajo programado (docs/11-pagos-y-envios.md: "un trabajo programado concilia los pagos que
  * quedaron pendientes y nunca recibieron webhook. Los webhooks se pierden; el dinero no puede
- * perderse con ellos"). Solo revisa pagos con {@link Pago#idTransaccionWompi()} registrado — sin él
- * no hay cómo consultar la API de Wompi, que busca por su id, no por la referencia propia. Un pago
- * sin ese id (el cliente cerró la pestaña antes de volver del checkout, y tampoco llegó el webhook)
- * queda fuera de este mecanismo, para seguimiento manual en el panel — la vista de operación mínima
- * de esta fase, no construida todavía.
+ * perderse con ellos"). Solo revisa pagos con {@link Pago#idTransaccionPasarela()} registrado — sin
+ * él no hay cómo consultar la API de Wompi, que busca por su id, no por la referencia propia. Un
+ * pago sin ese id (el cliente cerró la pestaña antes de volver del checkout, y tampoco llegó el
+ * webhook) queda fuera de este mecanismo, para seguimiento manual en el panel — la vista de
+ * operación mínima de esta fase, no construida todavía.
  */
 public final class ConciliarPagosPendientes {
 
@@ -50,20 +51,29 @@ public final class ConciliarPagosPendientes {
     List<Pago> pendientes =
         repositorioPagos.buscarPendientesParaConciliar(ahora.minus(antiguedadMinima));
 
+    // Desde que hay dos pasarelas (adr/0048) esta consulta devuelve también los pagos de
+    // Sistecrédito: la columna del id de transacción es la misma para las dos. Preguntarle a Wompi
+    // por un `_id` de Sistecrédito no rompería nada —responde que no existe y el pago se salta—
+    // pero gastaría una llamada por pago y por corrida, y sobre todo dejaría creyendo que esos
+    // pagos están conciliados por alguien. Los concilia `ConciliarPagosSistecredito`.
+    List<Pago> deWompi =
+        pendientes.stream()
+            .filter(pago -> pago.metodoPago().pasarela() == ProveedorDePago.WOMPI)
+            .toList();
+
     int conciliados = 0;
-    for (Pago pago : pendientes) {
+    for (Pago pago : deWompi) {
       if (conciliar(pago, ahora)) {
         conciliados++;
       }
     }
-    return new ResultadoConciliacion(
-        pendientes.size(), conciliados, pendientes.size() - conciliados);
+    return new ResultadoConciliacion(deWompi.size(), conciliados, deWompi.size() - conciliados);
   }
 
   private boolean conciliar(Pago pago, Instant ahora) {
-    String idTransaccionWompi = pago.idTransaccionWompi().orElseThrow();
+    String idTransaccionPasarela = pago.idTransaccionPasarela().orElseThrow();
     Optional<TransaccionDePasarela> transaccion =
-        pasarelaDePagos.consultarTransaccion(idTransaccionWompi);
+        pasarelaDePagos.consultarTransaccion(idTransaccionPasarela);
     if (transaccion.isEmpty()) {
       return false;
     }
@@ -74,7 +84,7 @@ public final class ConciliarPagosPendientes {
     }
     EventoPago evento =
         new EventoPago(
-            "conciliacion:" + idTransaccionWompi + ":" + estadoWompi, nuevoEstado, ahora);
+            "conciliacion:" + idTransaccionPasarela + ":" + estadoWompi, nuevoEstado, ahora);
     ResultadoEventoDePago resultado =
         AplicadorDeResultadoDePago.aplicar(
             pago,

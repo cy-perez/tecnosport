@@ -8,7 +8,20 @@ export type TipoEntrega = 'ENVIO_A_DOMICILIO' | 'RETIRO_EN_PUNTO';
 
 /** Tabla de métodos de `docs/11-pagos-y-envios.md`. */
 export type MetodoPago =
-  'TARJETA' | 'PSE' | 'NEQUI' | 'BANCOLOMBIA' | 'ADDI' | 'TRANSFERENCIA_MANUAL' | 'CONTRAENTREGA';
+  | 'TARJETA'
+  | 'PSE'
+  | 'NEQUI'
+  | 'BANCOLOMBIA'
+  | 'ADDI'
+  | 'SISTECREDITO'
+  | 'TRANSFERENCIA_MANUAL'
+  | 'CONTRAENTREGA';
+
+/**
+ * Los tipos de documento que acepta la pasarela de Sistecrédito (`adr/0048`). No son todos los que
+ * existen en Colombia: son los que el único consumidor que hoy los pide sabe recibir.
+ */
+export type TipoDocumento = 'CC' | 'TI' | 'TIE' | 'NIT';
 
 /** Grafo completo de `docs/02-modelo-datos.md`. Los estados de operación
  * (`EN_PREPARACION` en adelante) solo se ven en la página de seguimiento. */

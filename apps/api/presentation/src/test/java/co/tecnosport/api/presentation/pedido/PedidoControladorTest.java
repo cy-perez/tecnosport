@@ -767,8 +767,10 @@ class PedidoControladorTest {
           cotizarEnvio,
           repositorioPedidos,
           criteriosContraentrega,
-          // Los mismos que el valor por omisión de application.yml: Addi fuera.
-          EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA));
+          // Los mismos que el valor por omisión de application.yml: Addi fuera, y Sistecrédito
+          // también — su interruptor arranca apagado mientras falte el monto mínimo (adr/0048).
+          EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
+          null);
     }
 
     @Bean

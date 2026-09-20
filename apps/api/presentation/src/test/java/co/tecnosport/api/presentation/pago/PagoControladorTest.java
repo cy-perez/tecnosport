@@ -258,7 +258,7 @@ class PagoControladorTest {
         pagos
             .buscarPorReferencia(pago.referencia())
             .orElseThrow()
-            .idTransaccionWompi()
+            .idTransaccionPasarela()
             .orElseThrow());
   }
 

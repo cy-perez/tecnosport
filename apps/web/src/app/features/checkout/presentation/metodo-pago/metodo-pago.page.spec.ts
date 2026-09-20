@@ -14,6 +14,7 @@ import {
 } from '../../../carrito/domain/repositorio-carrito.puerto';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
+import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
@@ -23,6 +24,10 @@ import { proveerAlmacenesCarrito, sembrarCarritoId } from '../../../../../testin
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
     throw new Error('no usado en esta prueba');
   }
 
@@ -226,6 +231,86 @@ describe('MetodoPagoPage', () => {
 
     expect(screen.getByRole('button', { name: 'Continuar' }).hasAttribute('disabled')).toBe(false);
     expect(checkout.metodoPago()).toBe('CONTRAENTREGA');
+  });
+
+  /**
+   * El documento se pide aquí y no en la pantalla siguiente: es parte de elegir este método, y
+   * quien lo elige tiene que saber antes de seguir que le van a pedir su cédula y por qué.
+   */
+  it('al elegir Sistecrédito aparece el campo del documento, con su explicación', async () => {
+    sembrarCarritoId('carrito-1');
+
+    await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TARJETA', 'SISTECREDITO']),
+    );
+    await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' });
+
+    expect(screen.queryByLabelText('Número de documento')).toBeFalsy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+
+    expect(await screen.findByLabelText('Número de documento')).toBeTruthy();
+    expect(screen.getByLabelText('Tipo de documento')).toBeTruthy();
+    expect(screen.getByText(/no lo guardamos/)).toBeTruthy();
+  });
+
+  /**
+   * El botón no se deshabilita: un botón apagado no dice qué le falta. Pulsarlo marca el campo y
+   * enseña el mensaje, que es lo que el comprador necesita para arreglarlo.
+   */
+  it('sin un documento válido no se continúa, y el error lo dice', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { fixture } = await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['SISTECREDITO']),
+    );
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+    await screen.findByLabelText('Número de documento');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText(/Escribe tu número de documento/)).toBeTruthy();
+    expect(checkout.documentoComprador()).toBeNull();
+  });
+
+  /** Con el documento puesto, se anota para que la pantalla de confirmar lo mande a la pasarela. */
+  it('con un documento válido queda anotado en el store', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { fixture } = await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['SISTECREDITO']),
+    );
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sistecrédito (paga a cuotas)' }));
+    const campo = await screen.findByLabelText('Número de documento');
+
+    fireEvent.input(campo, { target: { value: '1017254896' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(checkout.documentoComprador()).toEqual({
+      tipoDocumento: 'CC',
+      documento: '1017254896',
+    });
+  });
+
+  /** Cambiar de método suelta el documento: es un dato personal que ya no hace falta. */
+  it('elegir otro método borra el documento anotado', async () => {
+    sembrarCarritoId('carrito-1');
+
+    const { fixture } = await renderConDatosEntrega(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(['TARJETA', 'SISTECREDITO']),
+    );
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+    checkout.anotarDocumentoComprador({ tipoDocumento: 'CC', documento: '1017254896' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Tarjeta de crédito o débito' }));
+
+    expect(checkout.documentoComprador()).toBeNull();
   });
 
   // Los métodos de pago son botones que se seleccionan: el estado elegido tiene que llegarle a un

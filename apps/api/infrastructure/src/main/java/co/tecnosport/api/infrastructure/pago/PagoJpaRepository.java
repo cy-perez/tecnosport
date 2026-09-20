@@ -13,6 +13,6 @@ public interface PagoJpaRepository extends JpaRepository<PagoJpaEntity, UUID> {
 
   List<PagoJpaEntity> findByPedidoId(UUID pedidoId);
 
-  List<PagoJpaEntity> findByEstadoAndIdTransaccionWompiIsNotNullAndCreadoEnBefore(
+  List<PagoJpaEntity> findByEstadoAndIdTransaccionPasarelaIsNotNullAndCreadoEnBefore(
       String estado, Instant creadoEn);
 }

@@ -50,7 +50,7 @@ lo que sigue del asistente de captura.
 | Cloud SQL PostgreSQL 16 | Base de datos, sin IP pública, por conector |
 | Artifact Registry | Imágenes de contenedor |
 | Cloud Storage y CDN | Imágenes de producto, sets de rotación y estáticos |
-| Secret Manager | Llaves de Wompi, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
+| Secret Manager | Llaves de Wompi, las tres credenciales de Sistecrédito, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
 | Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
 | Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
 | Cloud Scheduler | Liberar reservas vencidas, conciliar pagos, conciliar seguimiento de envíos, generar sitemap |
@@ -351,6 +351,34 @@ WOMPI_METODOS_HABILITADOS (lo que la CUENTA de Wompi tiene activado, no lo que e
                          procesar: separado por comas y solo métodos de pasarela. Un nombre que
                          no exista impide arrancar. Addi queda fuera hasta que Wompi lo active,
                          y el día que entre hay que devolver la frase de los términos — `ADR-0029`)
+
+SISTECREDITO_HABILITADO, SISTECREDITO_URL_BASE, SISTECREDITO_AMBIENTE (el header `SCOrigen`:
+                         `Staging` o `Production`, tal cual)
+SISTECREDITO_SUBSCRIPTION_KEY, SISTECREDITO_STORE_ID, SISTECREDITO_VENDOR_ID
+                        (las tres cabeceras que autentican la pasarela — `Ocp-Apim-Subscription-Key`,
+                         `ApplicationKey` y `ApplicationToken`. **Esta cuenta solo tiene
+                         credenciales productivas**: no hay ambiente de pruebas, así que en
+                         desarrollo las llaves son las mismas y cada transacción real es un
+                         crédito real a nombre de una persona — `adr/0048`)
+SISTECREDITO_METODO_ID, SISTECREDITO_TIMEOUT_SEGUNDOS
+SISTECREDITO_SONDEO_INTENTOS, SISTECREDITO_SONDEO_ESPERA_MILIS
+                        (la URL de pago no llega al crear la transacción: hay que consultar hasta
+                         que aparezca)
+SISTECREDITO_SANDBOX_ACTIVO, SISTECREDITO_SANDBOX_ESTADO
+                        (**el freno de seguridad**. Sin ambiente de pruebas, ese booleano es lo
+                         único que separa una prueba de un crédito real. Encendido en producción
+                         aprobaría pagos que nadie pagó y la mercancía saldría sin que nada
+                         fallara, así que el arranque se niega si está en `true` con
+                         `WOMPI_AMBIENTE=produccion`)
+SISTECREDITO_MONTO_MINIMO (**falta y bloquea**: el mínimo del crédito lo define Sistecrédito y no
+                         es público. Habilitar el método sin él impide arrancar, a propósito)
+SISTECREDITO_URL_RESPUESTA, SISTECREDITO_URL_CONFIRMACION
+                        (derivadas de `APP_URL_PUBLICA` y `API_URL_PUBLICA`. La de respuesta lleva
+                         el marcador `{idioma}`, que el caso de uso sustituye: las rutas del sitio
+                         llevan prefijo de idioma y la comodín redirige a `/es` perdiendo los
+                         parámetros. **La de confirmación tiene que ser pública**: en local no
+                         llega ninguna notificación)
+SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS, SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS
 
 TRANSFERENCIA_BANCO, TRANSFERENCIA_TIPO_CUENTA, TRANSFERENCIA_NUMERO_CUENTA,
 TRANSFERENCIA_TITULAR

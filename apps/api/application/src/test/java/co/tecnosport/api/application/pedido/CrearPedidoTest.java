@@ -104,6 +104,13 @@ class CrearPedidoTest {
   private static final Set<MetodoPago> HABILITADOS_EN_PASARELA =
       EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
 
+  /**
+   * Valor de prueba, NO el dato real: el mínimo del crédito lo define Sistecrédito y todavía no lo
+   * tenemos (adr/0048). Lo que estas pruebas comprueban es que el corte exista y se aplique, no
+   * cuánto vale.
+   */
+  private static final Dinero MONTO_MINIMO_SISTECREDITO = Dinero.deCop(30_000);
+
   private CrearPedido crear(CriteriosContraentrega criterios, boolean recaudaEnElDestino) {
     productos = new RepositorioProductosFalso();
     inventarios = new RepositorioInventarioFalso();
@@ -125,7 +132,8 @@ class CrearPedidoTest {
             cotizarEnvio,
             pedidos,
             criterios,
-            HABILITADOS_EN_PASARELA);
+            HABILITADOS_EN_PASARELA,
+            MONTO_MINIMO_SISTECREDITO);
     return new CrearPedido(
         productos,
         inventarios,

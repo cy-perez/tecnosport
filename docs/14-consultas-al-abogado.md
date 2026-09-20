@@ -323,6 +323,40 @@ formulación que no diga "todo".
 
 ---
 
+## 5. Quién le devuelve las cuotas ya pagadas a quien compró con Sistecrédito
+
+**El hecho.** Desde `ADR-0048` el sitio cobra con Sistecrédito, que no es un
+medio de pago sino un **crédito de un tercero**: el comprador no nos paga a
+nosotros, queda debiéndole cuotas a Sistecrédito, y a nosotros nos paga
+Sistecrédito comprando la factura.
+
+**Lo que eso rompe.** El derecho de retracto (Ley 1480 de 2011, art. 47) obliga
+a resolver el contrato y a devolver "el dinero que el consumidor hubiese pagado".
+Aquí el consumidor no nos pagó nada a nosotros. Lo que hay que deshacer es el
+crédito y el pagaré, y **eso no lo podemos hacer nosotros**: la página oficial de
+Sistecrédito lo describe como una reclamación que el comercio aliado debe
+*solicitar*, y se tramita a mano en el portal Credinet. No hay API.
+
+**El caso que no está resuelto.** Si el comprador ya le pagó una o más cuotas a
+Sistecrédito antes de retractarse, esas sumas no las recibimos nosotros. La ley
+dice que se devuelven "sin deducción alguna" y en un plazo que corre desde que se
+ejerce el derecho; el dinero, sin embargo, lo tiene un tercero.
+
+**Lo que decide el abogado:**
+
+1. Si la obligación de devolver esas cuotas es nuestra —y entonces adelantamos
+   el dinero y nos lo cobramos a Sistecrédito— o de Sistecrédito, y qué tiene que
+   decir el contrato de vinculación para que eso quede claro.
+2. Qué plazo nos obliga a nosotros cuando el trámite depende de la respuesta de
+   un tercero, y qué hay que decirle al comprador mientras tanto.
+3. Si los términos y condiciones publicados tienen que nombrar a Sistecrédito y
+   explicar que el crédito lo otorga y lo anula él — hoy no lo hacen.
+
+**Lo que este expediente no puede resolver solo:** el contrato con Sistecrédito
+no está leído en este punto. Antes de la consulta hay que tenerlo a la mano.
+
+---
+
 ## Antes de la consulta
 
 - [x] ~~Leer el contrato y la documentación de Resend y anotar la región de
@@ -331,6 +365,10 @@ formulación que no diga "todo".
       SIC, así que la transferencia no depende de la autorización del titular.
 - [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
       septiembre de 2026: 93,0 % con envío a domicilio.
+- [ ] **Llevar el contrato de vinculación con Sistecrédito**, que el punto 5
+      necesita y que este expediente no ha leído. De ahí salen además tres datos
+      que el código espera: el monto mínimo del crédito, la comisión y quién la
+      asume, y si exigen alguna leyenda o logo en el checkout.
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
       con su fecha, no una transcripción. **Las hojas ya se generan solas**:
       `npm run legales-impresos` las escribe en `docs/tramites/impresos/` leyendo

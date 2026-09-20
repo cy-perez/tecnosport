@@ -29,13 +29,17 @@ import co.tecnosport.api.application.envio.GuiaNoEncontradaException;
 import co.tecnosport.api.application.envio.ResultadoEmision;
 import co.tecnosport.api.application.garantia.LineaNoEsDelPedidoException;
 import co.tecnosport.api.application.garantia.ReclamacionGarantiaNoEncontradaException;
+import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoException;
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
+import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoEsTransferenciaManualException;
 import co.tecnosport.api.application.pedido.MetodoDePagoNoHabilitadoException;
 import co.tecnosport.api.application.pedido.PedidoNoEncontradoException;
+import co.tecnosport.api.application.pedido.SistecreditoNoDisponibleException;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
 import co.tecnosport.api.application.reintegro.MontoDeReintegroInvalidoException;
 import co.tecnosport.api.application.reintegro.ReintegroRequeridoException;
@@ -362,6 +366,51 @@ public class ManejadorDeErrores {
           excepcion);
     }
     return problema(HttpStatus.BAD_GATEWAY, "La transportadora rechazó la emisión", excepcion);
+  }
+
+  // Sistecrédito no está disponible para ESTE pedido: hoy, porque el carrito no llega al monto
+  // mínimo del crédito. Mismo 409 y mismo motivo que contraentrega — la petición está bien formada
+  // y el cliente pudo haber consultado /metodos-de-pago-disponibles con otro carrito.
+  @ExceptionHandler(SistecreditoNoDisponibleException.class)
+  public ProblemDetail sistecreditoNoDisponible(SistecreditoNoDisponibleException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Sistecrédito no disponible", excepcion);
+  }
+
+  @ExceptionHandler(MetodoDePagoNoEsDeSistecreditoException.class)
+  public ProblemDetail metodoDePagoNoEsDeSistecredito(
+      MetodoDePagoNoEsDeSistecreditoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Método de pago no es de Sistecrédito", excepcion);
+  }
+
+  /**
+   * La transacción se creó y el medio de pago no entregó URL. Viaja <b>el código</b> y no el texto
+   * del proveedor, y la diferencia importa: al comprador se le cuentan cosas distintas según cuál
+   * sea —{@code 801} es "ya tienes una solicitud en curso"; {@code 802} es "el monto no alcanza"— y
+   * con el código el frontend elige su propio mensaje traducido.
+   *
+   * <p><b>El texto crudo de Sistecrédito no sale.</b> El del {@code 801} dice que esa persona ya
+   * tiene una solicitud de crédito en curso, y devolverlo convertiría este endpoint en un oráculo
+   * público sobre el estado crediticio de cualquier cédula que alguien quisiera probar — Ley 1266
+   * además de la 1581, y justo lo contrario de lo que pide docs/08-seguridad-legal.md. Queda en los
+   * registros del servidor, que es donde sirve para diagnosticar.
+   */
+  @ExceptionHandler(SistecreditoNoEntregoLaUrlDePagoException.class)
+  public ProblemDetail sistecreditoNoEntregoLaUrl(
+      SistecreditoNoEntregoLaUrlDePagoException excepcion) {
+    ProblemDetail detalle =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT, "Sistecrédito no entregó una URL de pago para este pedido.");
+    detalle.setTitle("Sistecrédito no entregó la URL de pago");
+    detalle.setProperty("codigoSistecredito", excepcion.codigo());
+    detalle.setProperty("estadoSistecredito", excepcion.estado());
+    return detalle;
+  }
+
+  // La pasarela no contestó. 503 y no 409: no es una respuesta de negocio, es una caída, y el
+  // comprador puede reintentar o elegir otro medio.
+  @ExceptionHandler(SistecreditoNoRespondeException.class)
+  public ProblemDetail sistecreditoNoResponde(SistecreditoNoRespondeException excepcion) {
+    return problema(HttpStatus.SERVICE_UNAVAILABLE, "Sistecrédito no responde", excepcion);
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo

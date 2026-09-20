@@ -19,6 +19,15 @@ public enum TextoDeCorreo {
   RETRACTO_ACUSE_CUERPO("retracto.acuse.cuerpo"),
   RETRACTO_REINTEGRO_ASUNTO("retracto.reintegro.asunto"),
   RETRACTO_REINTEGRO_CUERPO("retracto.reintegro.cuerpo"),
+
+  /**
+   * Sistecrédito no devuelve dinero: anula el crédito y el pagaré ({@code adr/0048}). A quien pagó
+   * así, el texto normal del reintegro le llega falso en sus dos frases —nunca pagó dinero, y nada
+   * va a reflejarse en su cuenta— y se calla lo único que necesita saber: que deje de pagar cuotas
+   * de algo que devolvió.
+   */
+  RETRACTO_REINTEGRO_SISTECREDITO_ASUNTO("retracto.reintegro.sistecredito.asunto"),
+  RETRACTO_REINTEGRO_SISTECREDITO_CUERPO("retracto.reintegro.sistecredito.cuerpo"),
   PEDIDO_CANCELACION_ASUNTO("pedido.cancelacion.asunto"),
   PEDIDO_CANCELACION_NO_DISPONIBILIDAD("pedido.cancelacion.no_disponibilidad"),
   PEDIDO_CANCELACION_PLAZO_INCUMPLIDO("pedido.cancelacion.plazo_incumplido"),

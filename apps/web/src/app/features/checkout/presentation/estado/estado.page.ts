@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -14,7 +14,11 @@ import {
   usarSeguimientoPedido,
 } from '../../application/seguimiento-pedido.consulta';
 import { EnvioPublico, EstadoPedido, Pedido, RetractoPublico } from '../../domain/pedido.model';
-import { esMetodoPagoWompi, puedeReintentarPago } from '../../domain/reglas-pedido';
+import {
+  esMetodoPagoSistecredito,
+  esMetodoPagoWompi,
+  puedeReintentarPago,
+} from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 import { fechaLarga } from '../../../../core/i18n/fecha-colombia';
 
@@ -55,6 +59,7 @@ export class EstadoPage {
 
   private readonly route = inject(ActivatedRoute);
   private readonly transloco = inject(TranslocoService);
+  private readonly router = inject(Router);
   private readonly traducir = usarTraductor();
   protected readonly checkout = inject(CheckoutStore);
 
@@ -128,6 +133,19 @@ export class EstadoPage {
     this.reintentando.set(true);
     try {
       const actualizado = await this.checkout.reintentarPago(pedido.id);
+      // Sistecrédito antes que Wompi, con su propia rama. Este `if` era el único del archivo
+      // porque hasta ahora solo un pedido de Wompi podía llegar a PAGO_FALLIDO. Ya no —los
+      // estados Rejected/Cancelled/Expired/Abandoned de Sistecrédito también llevan ahí— y sin
+      // esta rama el botón dejaba el pedido de vuelta en PAGO_PENDIENTE sin intento vivo, sin
+      // redirección y sin un solo mensaje. Es el mismo fork que `ConfirmarPage`: si uno cambia,
+      // el otro también.
+      if (esMetodoPagoSistecredito(actualizado.metodoPago)) {
+        // El documento no sobrevive a la recarga de la SPA (vive solo en memoria, a propósito) y
+        // a esta pantalla se llega justo después de volver de un dominio externo. Se vuelve a
+        // pedir donde se pide siempre.
+        void this.router.navigate(['/', this.transloco.activeLang(), 'checkout', 'metodo-pago']);
+        return;
+      }
       if (esMetodoPagoWompi(actualizado.metodoPago)) {
         const intento = await this.checkout.crearIntentoPago(actualizado.id);
         const idioma = this.transloco.activeLang();

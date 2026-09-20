@@ -106,12 +106,12 @@ public final class WompiClient implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
-    Objects.requireNonNull(idTransaccionWompi, "El id de transacción no puede ser nulo.");
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionPasarela) {
+    Objects.requireNonNull(idTransaccionPasarela, "El id de transacción no puede ser nulo.");
     try {
       HttpRequest peticion =
           HttpRequest.newBuilder()
-              .uri(URI.create(urlBase + "/transactions/" + idTransaccionWompi))
+              .uri(URI.create(urlBase + "/transactions/" + idTransaccionPasarela))
               .timeout(TIMEOUT_CONSULTA)
               .header("Authorization", "Bearer " + llavePublica)
               .GET()

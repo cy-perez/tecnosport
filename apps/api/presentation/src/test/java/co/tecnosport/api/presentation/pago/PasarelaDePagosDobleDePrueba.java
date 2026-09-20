@@ -21,7 +21,7 @@ final class PasarelaDePagosDobleDePrueba implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionPasarela) {
     return Optional.empty();
   }
 }
