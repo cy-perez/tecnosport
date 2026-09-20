@@ -2,6 +2,8 @@ package co.tecnosport.api.infrastructure.inventario;
 
 import co.tecnosport.api.infrastructure.inventario.entidad.InventarioJpaEntity;
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +17,11 @@ public interface InventarioJpaRepository extends JpaRepository<InventarioJpaEnti
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<InventarioJpaEntity> findByVarianteId(UUID varianteId);
+
+  /**
+   * Sin {@code @Lock}, y con otro nombre que {@link #findByVarianteId} justamente para que no lo
+   * herede: esto lo llama el catálogo público en cada página que pinta, y bloquear ahí sería
+   * serializar la vitrina contra el checkout.
+   */
+  List<InventarioJpaEntity> findAllByVarianteIdIn(Collection<UUID> varianteIds);
 }

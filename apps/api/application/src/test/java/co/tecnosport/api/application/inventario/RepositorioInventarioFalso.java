@@ -2,9 +2,11 @@ package co.tecnosport.api.application.inventario;
 
 import co.tecnosport.api.domain.inventario.Inventario;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,5 +40,10 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
   public void guardar(Inventario inventario) {
     guardados.add(inventario);
     porVarianteId.put(inventario.varianteId(), inventario);
+  }
+
+  @Override
+  public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
+    return varianteIds.stream().map(porVarianteId::get).filter(Objects::nonNull).toList();
   }
 }

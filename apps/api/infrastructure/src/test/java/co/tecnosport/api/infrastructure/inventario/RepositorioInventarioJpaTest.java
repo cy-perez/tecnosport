@@ -164,6 +164,78 @@ class RepositorioInventarioJpaTest {
     assertThat(vacio.saldoTotal()).isZero();
   }
 
+  /**
+   * Lo mismo que el listado del panel, pero acotado: lo que hay que demostrar es que el filtro
+   * <b>filtra</b> —el tercer libro existe y no puede venir en la respuesta— y que cada libro sigue
+   * trayendo sus propios movimientos. Con el {@code IN} devolviendo de más, o con el agrupamiento
+   * cruzado, la vitrina diría que hay existencia de algo que no la tiene.
+   *
+   * <p>Fuera de toda transacción, como lo va a llamar el catálogo público en cada página.
+   */
+  @Test
+  void buscarPorVarianteIdsTraeSoloLosLibrosPedidosConSusMovimientos() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID pedida = variantePropia("SKU-INV-LOTE-1");
+    UUID tambienPedida = variantePropia("SKU-INV-LOTE-2");
+    UUID ajena = variantePropia("SKU-INV-LOTE-3");
+    Instant ahora = Instant.now();
+
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario una = Inventario.crear(pedida);
+          una.registrarEntrada(7, "siembra de prueba", ahora);
+          una.reservar(2, Duration.ofMinutes(30), ahora);
+          repositorio.guardar(una);
+
+          Inventario otra = Inventario.crear(tambienPedida);
+          otra.registrarEntrada(3, "siembra de prueba", ahora);
+          repositorio.guardar(otra);
+
+          Inventario laDeNadie = Inventario.crear(ajena);
+          laDeNadie.registrarEntrada(99, "siembra de prueba", ahora);
+          repositorio.guardar(laDeNadie);
+        });
+
+    List<Inventario> libros = repositorio.buscarPorVarianteIds(List.of(pedida, tambienPedida));
+
+    assertThat(libros)
+        .extracting(Inventario::varianteId)
+        .containsExactlyInAnyOrder(pedida, tambienPedida);
+    Inventario una =
+        libros.stream().filter(i -> i.varianteId().equals(pedida)).findFirst().orElseThrow();
+    Inventario otra =
+        libros.stream().filter(i -> i.varianteId().equals(tambienPedida)).findFirst().orElseThrow();
+    assertThat(una.saldoTotal()).isEqualTo(7);
+    assertThat(una.saldoDisponible(ahora)).isEqualTo(5);
+    assertThat(otra.movimientos()).hasSize(1);
+    assertThat(otra.saldoTotal()).isEqualTo(3);
+  }
+
+  /**
+   * Una variante sin libro no vuelve con saldo cero: no vuelve. La diferencia importa porque quien
+   * llama es el que decide qué significa esa ausencia, y para la vitrina significa agotado.
+   *
+   * <p>Y un conjunto vacío no llega a la base: {@code IN ()} no es SQL válido.
+   */
+  @Test
+  void buscarPorVarianteIdsOmiteLasQueNoTienenLibroYAguantaElConjuntoVacio() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID conLibro = variantePropia("SKU-INV-LOTE-4");
+    UUID sinLibro = variantePropia("SKU-INV-LOTE-5");
+
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario libro = Inventario.crear(conLibro);
+          libro.registrarEntrada(1, "siembra de prueba", Instant.now());
+          repositorio.guardar(libro);
+        });
+
+    assertThat(repositorio.buscarPorVarianteIds(List.of(conLibro, sinLibro)))
+        .extracting(Inventario::varianteId)
+        .containsExactly(conLibro);
+    assertThat(repositorio.buscarPorVarianteIds(List.of())).isEmpty();
+  }
+
   @Test
   void reservarConfirmarYLiberarSobrevivenElViajeAJpa() {
     transaccion = new TransactionTemplate(transactionManager);

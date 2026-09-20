@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.inventario;
 
 import co.tecnosport.api.domain.inventario.Inventario;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,18 @@ public interface RepositorioInventario {
    * cara a propósito: la alternativa era duplicar esa regla en SQL.
    */
   List<Inventario> listarTodos();
+
+  /**
+   * Los libros de un puñado de variantes, <b>sin bloqueo</b>, para que el catálogo público pueda
+   * decir si algo se puede comprar (adr/0050). Es {@link #listarTodos} acotado a una página de la
+   * vitrina: el mismo motivo para devolver el agregado y no un saldo ya calculado —quién sabe qué
+   * reserva sigue vigente es {@link Inventario}— y el mismo precio, el histórico entero de cada
+   * variante que se pide.
+   *
+   * <p>Las variantes sin libro <b>no salen en la lista</b>, no salen con saldo cero: el que llama
+   * es el que decide qué significa esa ausencia. Para la vitrina significa agotado.
+   */
+  List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds);
 
   void guardar(Inventario inventario);
 }
