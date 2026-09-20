@@ -2,13 +2,17 @@ package co.tecnosport.api.domain.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ProductoTest {
@@ -98,6 +102,46 @@ class ProductoTest {
         "Descripción",
         marca,
         categoria);
+  }
+
+  @Test
+  void medirVarianteGrabaElPaqueteYDevuelveLaVarianteYaMedida() {
+    Producto producto = productoDePrueba();
+    Variante sinMedir =
+        Variante.crear(
+            new Sku("TS-SIN-MEDIR"),
+            Dinero.deCop(89_900),
+            new BigDecimal("0.19"),
+            5,
+            null,
+            null,
+            List.of());
+    producto.agregarVariante(sinMedir);
+
+    Variante medida = producto.medirVariante(sinMedir.id(), new Paquete(430, 17, 9, 5));
+
+    assertEquals(Optional.of(new Paquete(430, 17, 9, 5)), medida.paquete());
+    assertEquals(1, producto.variantes().size());
+    assertEquals(Optional.of(new Paquete(430, 17, 9, 5)), producto.variantes().get(0).paquete());
+    assertEquals(new Sku("TS-SIN-MEDIR"), producto.variantes().get(0).sku());
+  }
+
+  /**
+   * La única regla que este método existe para proteger. Sin ella, un caso de uso que cargue un
+   * producto por un lado y aplique la medida por otro escribiría el peso de un parlante en un
+   * celular sin que nada se queje: las dos cosas son cuatro enteros positivos.
+   */
+  @Test
+  void noSePuedeMedirUnaVarianteDeOtroProducto() {
+    Producto producto = productoDePrueba();
+    producto.agregarVariante(variante("TS-PROPIA"));
+    UUID ajena = UUID.randomUUID();
+
+    ExcepcionDeDominio excepcion =
+        assertThrows(
+            ExcepcionDeDominio.class,
+            () -> producto.medirVariante(ajena, new Paquete(430, 17, 9, 5)));
+    assertTrue(excepcion.getMessage().contains(ajena.toString()));
   }
 
   private static ImagenProducto imagenPrincipal() {

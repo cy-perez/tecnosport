@@ -4,7 +4,9 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -190,6 +192,60 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   @Override
   public boolean existeVarianteConSku(Sku sku) {
     return varianteJpaRepository.existsBySku(sku.valor());
+  }
+
+  /**
+   * La consulta pregunta por <b>cualquiera</b> de las cuatro columnas en nulo, y no solo por el
+   * peso, aunque la restricción {@code variante_paquete_completo_o_ausente} de la V55 garantice que
+   * van juntas. Es el mismo criterio del {@code check} de positividad de la V32: {@code
+   * SembradorCatalogo} escribe entidades JPA directo, sin pasar por {@link Paquete}, y una fila a
+   * medias tiene que salir en esta lista —que es donde alguien la mira— en vez de reventar más
+   * tarde al hidratarla.
+   */
+  @Override
+  public List<VarianteSinMedir> variantesSinMedir() {
+    return jdbc.query(
+        "select v.id as variante_id, p.id as producto_id, p.nombre as nombre_producto, "
+            + "       v.sku as sku, p.estado as estado_producto "
+            + "from variante v "
+            + "join producto p on p.id = v.producto_id "
+            + "where v.estado = 'ACTIVA' "
+            + "  and (v.peso_gramos is null or v.largo_cm is null "
+            + "       or v.ancho_cm is null or v.alto_cm is null)",
+        new MapSqlParameterSource(),
+        (rs, fila) ->
+            new VarianteSinMedir(
+                rs.getObject("variante_id", UUID.class),
+                rs.getObject("producto_id", UUID.class),
+                rs.getString("nombre_producto"),
+                rs.getString("sku"),
+                EstadoProducto.valueOf(rs.getString("estado_producto"))));
+  }
+
+  @Override
+  public void actualizarPaquete(UUID varianteId, Paquete paquete) {
+    VarianteJpaEntity existente =
+        varianteJpaRepository
+            .findById(varianteId)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "No existe la variante '" + varianteId + "' que se intenta medir."));
+    varianteJpaRepository.save(
+        new VarianteJpaEntity(
+            existente.getId(),
+            existente.getProductoId(),
+            existente.getSku(),
+            existente.getPrecio(),
+            existente.getTasaIva(),
+            existente.getExistencia(),
+            existente.getCodigoBarras(),
+            paquete.pesoGramos(),
+            paquete.largoCm(),
+            paquete.anchoCm(),
+            paquete.altoCm(),
+            existente.getEstado(),
+            existente.getCreadoEn()));
   }
 
   private VarianteAtributoValorJpaEntity aEntidad(UUID varianteId, ValorAtributo valorAtributo) {

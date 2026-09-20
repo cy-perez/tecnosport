@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -519,6 +520,85 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).paquete()).isEmpty();
   }
 
+  /**
+   * El vigilante, contra Postgres de verdad.
+   *
+   * <p>Siembra las cuatro situaciones que la consulta tiene que distinguir —publicada sin medir,
+   * borrador sin medir, publicada medida e inactiva sin medir— porque una consulta que devuelva
+   * todo también pasaría una prueba que solo siembre el caso positivo.
+   */
+  @Test
+  void variantesSinMedirTraeSoloLasActivasSinPaqueteYDiceDeQueProductoSon() {
+    MarcaJpaEntity marca = marca("Marca sin medir T1");
+    CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-sm", "TECNOLOGIA");
+    ProductoJpaEntity publicado =
+        producto("Moto G17 publicado", "moto-g17-sm", "PUBLICADO", marca, categoria);
+    ProductoJpaEntity borrador =
+        producto("Honor X9d borrador", "honor-x9d-sm", "BORRADOR", marca, categoria);
+
+    varianteSinMedir(publicado, "TS-SM-PUB", "ACTIVA");
+    varianteSinMedir(borrador, "TS-SM-BOR", "ACTIVA");
+    varianteSinMedir(publicado, "TS-SM-INACTIVA", "INACTIVA");
+    variante(publicado, "TS-SM-MEDIDA", "190000");
+    entityManager.flush();
+
+    List<VarianteSinMedir> sinMedir = repositorio.variantesSinMedir();
+
+    assertThat(sinMedir)
+        .extracting(VarianteSinMedir::sku)
+        .containsExactlyInAnyOrder("TS-SM-PUB", "TS-SM-BOR");
+    VarianteSinMedir delPublicado =
+        sinMedir.stream().filter(v -> v.sku().equals("TS-SM-PUB")).findFirst().orElseThrow();
+    assertThat(delPublicado.nombreProducto()).isEqualTo("Moto G17 publicado");
+    assertThat(delPublicado.productoId()).isEqualTo(publicado.getId());
+    assertThat(delPublicado.estadoProducto()).isEqualTo(EstadoProducto.PUBLICADO);
+  }
+
+  /**
+   * Medir escribe las cuatro columnas, y la variante vuelve del catálogo con su paquete.
+   *
+   * <p>Se lee de vuelta con {@code buscarPorSlug} —el camino que usa la vitrina— y no consultando
+   * la fila: lo que hay que demostrar no es que el {@code update} corrió, es que lo escrito se lee
+   * como un {@link Paquete}. Es la lección del 500 de la V55, donde base y Hibernate no estaban de
+   * acuerdo sobre la misma columna.
+   */
+  @Test
+  void actualizarPaqueteMideUnaVarianteQueEstabaSinMedir() {
+    MarcaJpaEntity marca = marca("Marca sin medir T2");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-sm2", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Moto G17", "moto-g17-medir", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = varianteSinMedir(productoJpa, "TS-MEDIR-1", "ACTIVA");
+    entityManager.flush();
+
+    repositorio.actualizarPaquete(variante.getId(), new Paquete(430, 17, 9, 5));
+    entityManager.flush();
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("moto-g17-medir")).orElseThrow();
+    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(430, 17, 9, 5));
+    assertThat(repositorio.variantesSinMedir()).isEmpty();
+  }
+
+  /** Y remedir reemplaza, que es lo que hace de esto una corrección y no solo un relleno. */
+  @Test
+  void actualizarPaqueteReemplazaUnaMedidaAnterior() {
+    MarcaJpaEntity marca = marca("Marca sin medir T3");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-sm3", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Galaxy A17", "galaxy-a17-remedir", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-REMEDIR-1", "890000");
+
+    repositorio.actualizarPaquete(variante.getId(), new Paquete(500, 20, 12, 7));
+    entityManager.flush();
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-remedir")).orElseThrow();
+    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(500, 20, 12, 7));
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
+    assertThat(p.variantes().get(0).existencia()).isEqualTo(5);
+  }
+
   /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */
   @Test
   void agregarVarianteConMedidasLaDevuelveCompleta() {
@@ -648,6 +728,25 @@ class RepositorioProductosJpaTest {
             25,
             4,
             "ACTIVA",
+            Instant.now()));
+  }
+
+  private VarianteJpaEntity varianteSinMedir(
+      ProductoJpaEntity producto, String sku, String estado) {
+    return variantes.save(
+        new VarianteJpaEntity(
+            UUID.randomUUID(),
+            producto.getId(),
+            sku,
+            new BigDecimal("190000"),
+            new BigDecimal("0.00"),
+            5,
+            null,
+            null,
+            null,
+            null,
+            null,
+            estado,
             Instant.now()));
   }
 
