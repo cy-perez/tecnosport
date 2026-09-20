@@ -15,8 +15,14 @@ import java.util.UUID;
  * lectura; el agregado {@code Inventario} por movimientos llega en Fase 2, ver
  * docs/09-plan-de-arranque.md.
  *
- * <p>El {@link Paquete} es obligatorio, igual que el SKU: una variante sin peso ni dimensiones no
- * se puede cotizar y por lo tanto no se puede vender (adr/0021).
+ * <p>El {@link Paquete} es <b>opcional desde el 19 de septiembre de 2026</b> (adr/0046). Lo fue
+ * obligatorio desde adr/0021, con un argumento correcto —sin peso ni dimensiones no hay cotización
+ * de envío— que escondía un salto: de "no se puede cotizar" no se sigue "no se puede vender". Se
+ * puede vender para recogida en el punto, que es un canal que este negocio ya tiene y ofrece.
+ *
+ * <p>Lo que no se relaja es el {@link Paquete} en sí: si existe, sus cuatro cifras siguen siendo
+ * mayores que cero. La diferencia entre "no lo sé todavía" y "mide cero" es justo la que hay que
+ * conservar, porque la segunda es la que cobra fletes de menos.
  */
 public final class Variante {
 
@@ -51,11 +57,10 @@ public final class Variante {
     }
     this.existencia = existencia;
     this.codigoBarras = codigoBarras == null || codigoBarras.isBlank() ? null : codigoBarras.trim();
-    this.paquete =
-        Objects.requireNonNull(
-            paquete,
-            "El paquete de la variante no puede ser nulo: sin peso ni dimensiones no hay"
-                + " cotización de envío.");
+    // Puede ser nulo: una variante sin medir se vende, pero solo con recogida en el punto. Quien
+    // arma los bultos para cotizar es el que se topa con eso, y lo dice nombrando el artículo
+    // (ArticuloSinMedidasException), igual que hace con los que superan el techo asegurable.
+    this.paquete = paquete;
     this.estado = Objects.requireNonNull(estado, "El estado de la variante no puede ser nulo.");
     this.atributos = List.copyOf(Objects.requireNonNullElse(atributos, List.of()));
     this.setRotacionPropio = setRotacionPropio;
@@ -114,8 +119,9 @@ public final class Variante {
     return Optional.ofNullable(codigoBarras);
   }
 
-  public Paquete paquete() {
-    return paquete;
+  /** Vacío cuando la variante todavía no se ha medido. Sin medidas no hay envío a domicilio. */
+  public Optional<Paquete> paquete() {
+    return Optional.ofNullable(paquete);
   }
 
   public EstadoVariante estado() {

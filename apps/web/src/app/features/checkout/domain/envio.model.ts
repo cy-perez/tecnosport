@@ -55,6 +55,16 @@ export type ResultadoCotizacion =
       readonly articulos: readonly ArticuloNoAsegurable[];
     }
   /**
+   * El artículo todavía no se ha medido, así que no se puede cotizar (`ADR-0046`). Para quien
+   * compra es lo mismo que `ARTICULO_NO_ASEGURABLE` —no te lo podemos enviar, lo puedes recoger—
+   * y por eso comparte forma. Lo que las separa no se le cuenta: aquella no se arregla nunca y
+   * esta se arregla en cuanto alguien pase el producto por la báscula.
+   */
+  | {
+      readonly tipo: 'ARTICULO_SIN_MEDIDAS';
+      readonly articulos: readonly ArticuloNoAsegurable[];
+    }
+  /**
    * La transportadora rechazó los datos de este envío, y **reintentar no sirve**: el servidor
    * preguntó, la plataforma contestó que el cuerpo estaba mal, y la misma pregunta trae el mismo
    * rechazo. No es `isError()` —eso es "no se pudo preguntar", y ahí insistir sí ayuda— ni

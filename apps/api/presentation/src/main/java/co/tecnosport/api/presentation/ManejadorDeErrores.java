@@ -15,6 +15,7 @@ import co.tecnosport.api.application.catalogo.TasaIvaNoPermitidaException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
+import co.tecnosport.api.application.envio.ArticuloSinMedidasException;
 import co.tecnosport.api.application.envio.CotizacionNoDisponibleException;
 import co.tecnosport.api.application.envio.CotizacionRechazadaException;
 import co.tecnosport.api.application.envio.EmisionNoAplicableException;
@@ -248,6 +249,22 @@ public class ManejadorDeErrores {
   public ProblemDetail articuloNoAsegurable(ArticuloNoAsegurableException excepcion) {
     ProblemDetail problema =
         problema(HttpStatus.CONFLICT, "Artículo no asegurable para envío", excepcion);
+    problema.setProperty(
+        "articulos",
+        excepcion.articulos().stream()
+            .map(
+                articulo ->
+                    Map.of("varianteId", articulo.varianteId(), "nombre", articulo.nombre()))
+            .toList());
+    return problema;
+  }
+
+  // La hermana de la de arriba, con la misma forma porque para quien compra son el mismo hecho:
+  // esto no se puede enviar, se recoge en el punto. Ver ArticuloSinMedidasException.
+  @ExceptionHandler(ArticuloSinMedidasException.class)
+  public ProblemDetail articuloSinMedidas(ArticuloSinMedidasException excepcion) {
+    ProblemDetail problema =
+        problema(HttpStatus.CONFLICT, "Artículo sin medidas para envío", excepcion);
     problema.setProperty(
         "articulos",
         excepcion.articulos().stream()

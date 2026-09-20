@@ -486,6 +486,62 @@ class RepositorioProductosJpaTest {
     assertThat(p.variantes().get(0).atributos().get(0).colorHex()).isEqualTo("#1E3A8A");
   }
 
+  /**
+   * Una variante sin medir, de ida y vuelta contra Postgres (adr/0046).
+   *
+   * <p>Esta prueba nació de un 500 en dev, y por eso está: las pruebas de dominio, de caso de uso y
+   * de controlador pasaban todas, y aun así guardar una variante sin paquete reventaba. Al cambiar
+   * los cuatro campos de la entidad a {@code Integer} se me quedaron sus {@code @Column(nullable =
+   * false)}, así que la base ya aceptaba el nulo —la V55 lo permitía— pero Hibernate lo rechazaba
+   * antes de llegar a ella. Ninguna capa de arriba puede ver eso; solo una que escriba de verdad.
+   */
+  @Test
+  void agregarVarianteSinMedidasLaPersisteYVuelveVacia() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-t30", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Parlante t30", "parlante-t30", "BORRADOR", marca, categoria);
+
+    Variante sinMedir =
+        Variante.crear(
+            new Sku("TS-SIN-MEDIR-T30"),
+            Dinero.deCop(190_000),
+            new BigDecimal("0.00"),
+            3,
+            null,
+            null,
+            List.of());
+
+    repositorio.agregarVariante(productoJpa.getId(), sinMedir);
+
+    Producto p = repositorio.buscarPorSlug(new Slug("parlante-t30")).orElseThrow();
+    assertThat(p.variantes()).hasSize(1);
+    assertThat(p.variantes().get(0).paquete()).isEmpty();
+  }
+
+  /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */
+  @Test
+  void agregarVarianteConMedidasLaDevuelveCompleta() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-t31", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Parlante t31", "parlante-t31", "BORRADOR", marca, categoria);
+
+    repositorio.agregarVariante(
+        productoJpa.getId(),
+        Variante.crear(
+            new Sku("TS-MEDIDO-T31"),
+            Dinero.deCop(190_000),
+            new BigDecimal("0.00"),
+            3,
+            null,
+            new Paquete(320, 13, 9, 6),
+            List.of()));
+
+    Producto p = repositorio.buscarPorSlug(new Slug("parlante-t31")).orElseThrow();
+    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(320, 13, 9, 6));
+  }
+
   @Test
   void existeVarianteConSkuDistingueEntreExistenteEInexistente() {
     MarcaJpaEntity marca = marca("TecnoSport");

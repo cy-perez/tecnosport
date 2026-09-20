@@ -110,15 +110,20 @@ columna fija en la variante: `sku`, `precio`, `tasa_iva`, `existencia`,
 `estado`, `codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`,
 `ancho_cm`, `alto_cm`**.
 
-**El paquete es obligatorio y es columna fija, no atributo** (`adr/0021`). Sin
-peso ni dimensiones no hay cotización de envío, así que una variante sin esos
-cuatro valores no se puede publicar — es una invariante del dominio, igual que el
-SKU. Van como columnas y no como pares atributo-valor porque no describen el
+**El paquete es columna fija, no atributo** (`adr/0021`), y desde el 19 de
+septiembre de 2026 es **opcional** (`adr/0046`). Sin peso ni dimensiones no hay
+cotización de envío, pero eso no impide vender: la variante sin medir se publica y
+su producto se ofrece **solo con recogida en el punto**. Cuando alguien intenta
+cotizarlo, el checkout responde `409 ARTICULO_SIN_MEDIDAS` nombrando el artículo,
+igual que hace con los que superan el techo asegurable. Lo que no se relaja es el
+objeto de valor: si las cuatro cifras vienen, son mayores que cero, y van las
+cuatro o ninguna. Van como columnas y no como pares atributo-valor porque no describen el
 producto para el comprador: los consume el cotizador, y un dato que un adaptador
 necesita leer siempre no puede vivir en una bolsa de atributos opcionales.
 `adr/0012` los había eliminado; `adr/0021` los devuelve. **Construido el 10 de
 septiembre de 2026** (`V32`): objeto de valor `Paquete` en el dominio, cuatro
-columnas `not null` con un `check` de positividad —que también está en el dominio,
+columnas ~~`not null`~~ **nulables desde la `V55`**, con un `check` que exige las
+cuatro juntas o ninguna, y otro de positividad —que también está en el dominio,
 pero el sembrador escribe entidades JPA directo y no pasa por él—, y el panel
 pidiéndolos al crear una variante.
 
@@ -144,9 +149,12 @@ Queda escrito el 18 de septiembre de 2026, y es corto a propósito.
 2. **Con báscula y cinta**, las dos del negocio. El peso en **gramos** y las tres medidas en
    **centímetros** enteros, redondeando siempre **hacia arriba**: quedarse corto se paga en cada
    flete, pasarse cuesta unos pesos en uno.
-3. **Quien carga el producto es quien mide**, en el momento de cargarlo. No después: una variante
-   sin paquete no se puede guardar, así que no hay forma de dejarlo "para luego" — y eso es
-   deliberado.
+3. **Quien carga el producto es quien mide**, en el momento de cargarlo, siempre que se pueda.
+   ~~No después: una variante sin paquete no se puede guardar, así que no hay forma de dejarlo
+   "para luego" — y eso es deliberado.~~ **Eso dejó de ser cierto el 19 de septiembre de 2026**: una
+   variante sin medir sí se guarda, y entonces el producto se vende **solo con recogida en el
+   punto** (`adr/0046`). No es una puerta trasera, es el reconocimiento de que "no se puede
+   cotizar" y "no se puede vender" no son lo mismo.
 
    **Matizado el 19 de septiembre de 2026, al cargar el primer catálogo real.** Lo que no se puede
    aplazar es que las cuatro cifras *existan*; lo que sí se puede es de dónde salen. Si no hay

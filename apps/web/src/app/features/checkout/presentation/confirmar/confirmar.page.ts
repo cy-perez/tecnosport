@@ -126,6 +126,22 @@ export class ConfirmarPage {
     return resultado?.tipo === 'ARTICULO_NO_ASEGURABLE' ? resultado.articulos : [];
   });
 
+  /**
+   * El cuarto motivo, y el único temporal: el artículo todavía no se ha medido (`ADR-0046`). La
+   * salida que se le ofrece a quien compra es la misma —recoger o quitarlo— pero el texto va
+   * aparte, porque el de los no asegurables explica un porqué que aquí sería falso.
+   */
+  protected readonly articulosSinMedidas = computed(() => {
+    const resultado = this.cotizacion.data();
+    return resultado?.tipo === 'ARTICULO_SIN_MEDIDAS' ? resultado.articulos : [];
+  });
+
+  protected readonly nombresSinMedidas = computed(() =>
+    this.articulosSinMedidas()
+      .map((articulo) => articulo.nombre)
+      .join(', '),
+  );
+
   protected readonly nombresNoAsegurables = computed(() =>
     this.articulosNoAsegurables()
       .map((articulo) => articulo.nombre)

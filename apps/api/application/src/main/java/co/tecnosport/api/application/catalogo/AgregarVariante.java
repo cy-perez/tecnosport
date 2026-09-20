@@ -68,8 +68,10 @@ public final class AgregarVariante {
             comando.tasaIva(),
             comando.existenciaInicial(),
             comando.codigoBarras(),
-            new Paquete(
-                comando.pesoGramos(), comando.largoCm(), comando.anchoCm(), comando.altoCm()),
+            comando.traePaquete()
+                ? new Paquete(
+                    comando.pesoGramos(), comando.largoCm(), comando.anchoCm(), comando.altoCm())
+                : null,
             atributos);
     producto.agregarVariante(variante);
     repositorioProductos.agregarVariante(producto.id(), variante);

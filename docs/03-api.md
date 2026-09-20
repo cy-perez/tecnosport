@@ -227,10 +227,14 @@ se pedía y un `409` obligaría a consultar antes para no chocar.
 **Lo que publicar exige y lo que no.** Exige **imagen principal** — es la invariante del dominio y
 la única. **No** exige una resolución mínima de esa imagen: se publica con la maestra que haya, y el
 listón de 1200 px del procesamiento de fotos es criterio de calidad, no regla del sistema
-(`docs/02`). Y exige, por el lado de la variante, **el peso y las tres medidas del paquete**, que
-`Paquete` valida mayores que cero: sin ellas no hay cotización de envío y la variante no se puede
-guardar (`adr/0021`, `V32`). Esas cuatro cifras pueden ser estimadas y corregirse después, pero no
-pueden faltar.
+(`docs/02`). Y **no** exige el peso ni las medidas del paquete: desde `adr/0046` una variante se
+puede cargar sin medir, y entonces su producto se vende solo con recogida en el punto — al cotizar,
+`POST /api/v1/envios/cotizacion` responde `409` con `codigo: "ARTICULO_SIN_MEDIDAS"` y la lista de
+artículos, con la misma forma que `ARTICULO_NO_ASEGURABLE`.
+
+Lo que sí exige, cuando las medidas vienen, es que vengan **las cuatro**: `Paquete` las valida
+mayores que cero y el DTO rechaza el cuerpo a medias con `422`. Tres medidas y un peso ausente no es
+"a medio medir", es una carga rota.
 
 No hay endpoint para despublicar, y la ausencia es deliberada: retirar algo que ya se vendió toca
 los pedidos en curso, los enlaces compartidos y el sitemap indexado, y ninguna de esas tres cosas

@@ -15,6 +15,7 @@ const SIN_COBERTURA = 'ENVIO_SIN_COBERTURA';
 
 /** Y el que usa para "esto vale más de lo que la transportadora asegura" (`ADR-0036`). */
 const ARTICULO_NO_ASEGURABLE = 'ARTICULO_NO_ASEGURABLE';
+const ARTICULO_SIN_MEDIDAS = 'ARTICULO_SIN_MEDIDAS';
 
 /**
  * Y el tercero: la plataforma rechazó los datos de este envío. Va con 409 y no con el 503 de "no se
@@ -96,6 +97,9 @@ export class EnvioHttpRepositorio implements RepositorioEnvios {
       }
       if (error instanceof ErrorHttp && error.codigo === ARTICULO_NO_ASEGURABLE) {
         return { tipo: 'ARTICULO_NO_ASEGURABLE', articulos: articulosDe(respuesta.error) };
+      }
+      if (error instanceof ErrorHttp && error.codigo === ARTICULO_SIN_MEDIDAS) {
+        return { tipo: 'ARTICULO_SIN_MEDIDAS', articulos: articulosDe(respuesta.error) };
       }
       if (error instanceof ErrorHttp && error.codigo === COTIZACION_RECHAZADA) {
         return { tipo: 'COTIZACION_RECHAZADA' };

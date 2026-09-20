@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +66,7 @@ class AgregarVarianteTest {
                 List.of(new ValorAtributoComando(color.id(), "Azul marino", "#1E3A8A"))));
 
     assertEquals("TS-CAM-AZ-M", variante.sku().valor());
-    assertEquals(new Paquete(180, 30, 25, 4), variante.paquete());
+    assertEquals(Optional.of(new Paquete(180, 30, 25, 4)), variante.paquete());
     assertEquals(1, variante.atributos().size());
     assertEquals("Azul marino", variante.atributos().get(0).valor());
     assertEquals(producto.id(), repositorioProductos.ultimoProductoIdConVariante);

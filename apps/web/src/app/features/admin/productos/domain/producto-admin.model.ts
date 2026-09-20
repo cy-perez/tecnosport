@@ -65,10 +65,14 @@ export interface AgregarVarianteAdmin {
   readonly codigoBarras: string | null;
   readonly existenciaInicial: number;
   /** El paquete: sin peso ni dimensiones no hay cotización de envío (adr/0021). */
-  readonly pesoGramos: number;
-  readonly largoCm: number;
-  readonly anchoCm: number;
-  readonly altoCm: number;
+  /**
+   * Las cuatro medidas van juntas o no van (`ADR-0046`). Ausentes, la variante se vende solo con
+   * recogida en el punto — el servidor lo traduce a `ARTICULO_SIN_MEDIDAS` al cotizar.
+   */
+  readonly pesoGramos: number | null;
+  readonly largoCm: number | null;
+  readonly anchoCm: number | null;
+  readonly altoCm: number | null;
   readonly atributos: readonly ValorAtributoAdmin[];
 }
 

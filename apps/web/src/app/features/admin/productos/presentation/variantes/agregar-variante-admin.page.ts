@@ -1,6 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarAtributos } from '../../../../catalogo/application/listar-atributos.consulta';
@@ -26,6 +34,19 @@ function grupoAtributo(): GrupoAtributo {
     valor: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     colorHex: new FormControl('', { nonNullable: true }),
   });
+}
+
+/**
+ * Las cuatro medidas van juntas o no van. Es la misma regla que el constructor compacto del DTO y
+ * la restricción `check` de la V55 — tres capas para una regla porque una carga a medias deja una
+ * fila que revienta al leerse, que es el peor momento para enterarse.
+ */
+function paqueteCompletoOAusente(control: AbstractControl): ValidationErrors | null {
+  const medidas = ['pesoGramos', 'largoCm', 'anchoCm', 'altoCm'].map(
+    (nombre) => control.get(nombre)?.value,
+  );
+  const puestas = medidas.filter((medida) => medida !== null && medida !== '').length;
+  return puestas === 0 || puestas === 4 ? null : { paqueteIncompleto: true };
 }
 
 @Component({
@@ -62,37 +83,38 @@ export class AgregarVarianteAdminPage {
 
   protected readonly error = signal<string | null>(null);
 
-  protected readonly form = new FormGroup({
-    sku: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    precio: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
-    // Estatuto Tributario). El campo se queda —la calidad se pierde al cruzar los topes y ese día
-    // vuelve a hacer falta—, pero el servidor rechaza cualquier tasa distinta de cero mientras
-    // NEGOCIO_RESPONSABLE_IVA siga en false. Ver adr/0041.
-    tasaIva: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    codigoBarras: new FormControl('', { nonNullable: true }),
-    existenciaInicial: new FormControl(0, { nonNullable: true, validators: [Validators.min(0)] }),
-    // El paquete es obligatorio y no tiene valor por omisión: un cero heredado de un formulario en
-    // blanco sería un peso inventado, y el servidor lo rechazaría igual (adr/0021).
-    pesoGramos: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(1)],
-    }),
-    largoCm: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(1)],
-    }),
-    anchoCm: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(1)],
-    }),
-    altoCm: new FormControl<number | null>(null, {
-      validators: [Validators.required, Validators.min(1)],
-    }),
-    atributos: new FormArray<GrupoAtributo>([]),
-  });
+  protected readonly form = new FormGroup(
+    {
+      sku: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      precio: new FormControl<number | null>(null, {
+        validators: [Validators.required, Validators.min(0)],
+      }),
+      // Cero, y no 0.19, porque el negocio no es responsable de IVA (par. 3 del art. 437 del
+      // Estatuto Tributario). El campo se queda —la calidad se pierde al cruzar los topes y ese día
+      // vuelve a hacer falta—, pero el servidor rechaza cualquier tasa distinta de cero mientras
+      // NEGOCIO_RESPONSABLE_IVA siga en false. Ver adr/0041.
+      tasaIva: new FormControl(0, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0)],
+      }),
+      codigoBarras: new FormControl('', { nonNullable: true }),
+      existenciaInicial: new FormControl(0, { nonNullable: true, validators: [Validators.min(0)] }),
+      // El paquete es OPCIONAL desde adr/0046: sin él la variante se vende, pero solo con recogida en
+      // el punto. Sin valor por omisión y con mínimo 1, que es lo que no cambió — un cero heredado de
+      // un formulario en blanco sería un peso inventado, y esa es justo la diferencia que hay que
+      // conservar entre "no lo sé todavía" y "mide cero".
+      //
+      // Sin `Validators.required`, pero con la regla de las cuatro o ninguna en el grupo: tres
+      // medidas y un peso vacío no es "a medio medir", es una carga rota, y el servidor la rechaza
+      // con 422. Vale más decirlo aquí que dejar que el panel mande algo que ya se sabe que falla.
+      pesoGramos: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+      largoCm: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+      anchoCm: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+      altoCm: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+      atributos: new FormArray<GrupoAtributo>([]),
+    },
+    { validators: [paqueteCompletoOAusente] },
+  );
 
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -165,10 +187,12 @@ export class AgregarVarianteAdminPage {
         tasaIva: valores.tasaIva,
         codigoBarras: valores.codigoBarras || null,
         existenciaInicial: valores.existenciaInicial,
-        pesoGramos: valores.pesoGramos ?? 0,
-        largoCm: valores.largoCm ?? 0,
-        anchoCm: valores.anchoCm ?? 0,
-        altoCm: valores.altoCm ?? 0,
+        // Sin `?? 0`: ese cero convertía "todavía no lo sé" en "mide cero", que es justo la
+        // distinción que ADR-0046 existe para conservar, y el servidor lo rechazaría con 422.
+        pesoGramos: valores.pesoGramos ?? null,
+        largoCm: valores.largoCm ?? null,
+        anchoCm: valores.anchoCm ?? null,
+        altoCm: valores.altoCm ?? null,
         atributos: valores.atributos.map((a) => ({
           atributoId: a.atributoId,
           valor: a.valor,

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -130,12 +131,33 @@ describe('AgregarVarianteAdminPage', () => {
     expect(repositorio.llamadasAgregarVariante).toHaveLength(0);
   });
 
-  it('sin el paquete no se crea la variante, aunque haya SKU y precio', async () => {
+  /**
+   * Lo contrario de lo que esta prueba exigía hasta el 19 de septiembre de 2026. Con `ADR-0046` la
+   * variante sin medir es un estado legítimo: se vende, pero solo con recogida en el punto, y el
+   * panel tiene que dejar cargarla — si no, el catálogo se queda esperando una báscula.
+   */
+  it('sin el paquete sí se crea la variante: se venderá solo con recogida', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
     await renderPagina(repositorio);
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
+
+    await vi.waitFor(() => expect(repositorio.llamadasAgregarVariante).toHaveLength(1));
+    const enviado = repositorio.llamadasAgregarVariante[0];
+    expect(enviado.pesoGramos ?? null).toBeNull();
+    expect(enviado.largoCm ?? null).toBeNull();
+  });
+
+  /** Tres medidas y un peso vacío no es "a medio medir": es una carga rota, y el panel lo para. */
+  it('con el paquete a medias no se crea la variante', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
+
+    fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
+    fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
+    fireEvent.input(screen.getByLabelText('Largo (cm)'), { target: { value: '30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear variante' }));
 
     expect(await screen.findByText(/Faltan datos obligatorios/)).toBeTruthy();
