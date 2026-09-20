@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.pago;
 
 import co.tecnosport.api.domain.pago.EstadoPago;
+import java.util.Locale;
 
 /**
  * Traduce el {@code transactionStatus} de Sistecrédito al {@link EstadoPago} del dominio, igual que
@@ -22,11 +23,20 @@ final class EstadosSistecredito {
 
   private EstadosSistecredito() {}
 
+  /**
+   * <b>Insensible a mayúsculas a propósito.</b> Las guías son de 2023, no hay ambiente de pruebas
+   * donde comprobar la grafía exacta, y el resto del código ya compara estados con {@code
+   * equalsIgnoreCase}. Si la pasarela respondiera alguna vez {@code APPROVED}, un {@code switch}
+   * exacto devolvería {@code null}: el pago se quedaría en {@code ESTADO_NO_SOPORTADO} —que sale
+   * como una línea informativa—, la conciliación devolvería lo mismo en cada corrida para siempre,
+   * la reserva vencería, y el resultado sería <b>un crédito aprobado y desembolsado con un pedido
+   * que nunca avanzó</b>. Una línea de código contra eso es barata.
+   */
   static EstadoPago aEstadoPago(String estado) {
-    return switch (estado == null ? "" : estado.trim()) {
-      case "Approved" -> EstadoPago.APROBADO;
-      case "Rejected", "Cancelled", "Expired", "Abandoned" -> EstadoPago.RECHAZADO;
-      case "Failed" -> EstadoPago.ERROR;
+    return switch (estado == null ? "" : estado.trim().toLowerCase(Locale.ROOT)) {
+      case "approved" -> EstadoPago.APROBADO;
+      case "rejected", "cancelled", "expired", "abandoned" -> EstadoPago.RECHAZADO;
+      case "failed" -> EstadoPago.ERROR;
       default -> null;
     };
   }

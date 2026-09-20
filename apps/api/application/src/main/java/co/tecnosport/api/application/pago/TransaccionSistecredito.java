@@ -1,6 +1,5 @@
 package co.tecnosport.api.application.pago;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -24,6 +23,7 @@ public record TransaccionSistecredito(
     String id,
     String referencia,
     String estado,
+    Long valor,
     String urlRedireccion,
     String codigoMedioDePago,
     String descripcion) {
@@ -49,19 +49,5 @@ public record TransaccionSistecredito(
 
   public boolean tieneUrlDeRedireccion() {
     return urlDeRedireccion().isPresent();
-  }
-
-  /**
-   * ¿Coincide con lo que dijo otra fuente? Es la comprobación que la guía {@code G-ALI-08} pide
-   * hacer sobre cada notificación —comparar {@code _id}, {@code invoice} y {@code
-   * transactionStatus} contra la consulta— y que aquí es obligatoria y no opcional: la notificación
-   * no viene firmada, así que este contraste es la única autenticación que existe ({@code
-   * adr/0048}).
-   */
-  public boolean concuerdaCon(TransaccionSistecredito otra) {
-    Objects.requireNonNull(otra, "La transacción a contrastar no puede ser nula.");
-    return id.equals(otra.id)
-        && estado.equalsIgnoreCase(otra.estado)
-        && Objects.equals(referencia, otra.referencia);
   }
 }

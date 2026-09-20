@@ -383,16 +383,24 @@ public class ManejadorDeErrores {
   }
 
   /**
-   * La transacción se creó y el medio de pago no entregó URL. El código de Sistecrédito viaja en el
-   * cuerpo porque al comprador se le cuentan cosas distintas según cuál sea —{@code 801} es "ya
-   * tienes una solicitud en curso, espera"; {@code 802} es "el monto no alcanza"— y sin él el
-   * frontend solo puede enseñar un mensaje genérico que no dice si vale la pena reintentar.
+   * La transacción se creó y el medio de pago no entregó URL. Viaja <b>el código</b> y no el texto
+   * del proveedor, y la diferencia importa: al comprador se le cuentan cosas distintas según cuál
+   * sea —{@code 801} es "ya tienes una solicitud en curso"; {@code 802} es "el monto no alcanza"— y
+   * con el código el frontend elige su propio mensaje traducido.
+   *
+   * <p><b>El texto crudo de Sistecrédito no sale.</b> El del {@code 801} dice que esa persona ya
+   * tiene una solicitud de crédito en curso, y devolverlo convertiría este endpoint en un oráculo
+   * público sobre el estado crediticio de cualquier cédula que alguien quisiera probar — Ley 1266
+   * además de la 1581, y justo lo contrario de lo que pide docs/08-seguridad-legal.md. Queda en los
+   * registros del servidor, que es donde sirve para diagnosticar.
    */
   @ExceptionHandler(SistecreditoNoEntregoLaUrlDePagoException.class)
   public ProblemDetail sistecreditoNoEntregoLaUrl(
       SistecreditoNoEntregoLaUrlDePagoException excepcion) {
     ProblemDetail detalle =
-        problema(HttpStatus.CONFLICT, "Sistecrédito no entregó la URL de pago", excepcion);
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.CONFLICT, "Sistecrédito no entregó una URL de pago para este pedido.");
+    detalle.setTitle("Sistecrédito no entregó la URL de pago");
     detalle.setProperty("codigoSistecredito", excepcion.codigo());
     detalle.setProperty("estadoSistecredito", excepcion.estado());
     return detalle;

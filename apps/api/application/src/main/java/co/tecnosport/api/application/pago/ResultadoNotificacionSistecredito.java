@@ -29,5 +29,12 @@ public enum ResultadoNotificacionSistecredito {
   DISCREPANCIA_CON_LA_PASARELA,
 
   PAGO_NO_ENCONTRADO,
-  ESTADO_NO_SOPORTADO
+  ESTADO_NO_SOPORTADO,
+
+  /**
+   * La pasarela aprobo un monto distinto del que este pedido cobra. No se aplica: marcarlo como
+   * pagado despacharia la mercancia completa por menos dinero, y la diferencia no apareceria en
+   * ningun sitio. Necesita que alguien lo mire.
+   */
+  MONTO_NO_COINCIDE
 }

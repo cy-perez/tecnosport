@@ -266,6 +266,7 @@ public final class SistecreditoClient implements PasarelaSistecredito {
         texto(datos.path("_id")),
         texto(datos.path("invoice")),
         texto(datos.path("transactionStatus")),
+        entero(datos.path("value")),
         urlDeRedireccion(datos, respuestaMedio),
         texto(respuestaMedio.path("codeResponse")),
         texto(respuestaMedio.path("description")));
@@ -286,6 +287,14 @@ public final class SistecreditoClient implements PasarelaSistecredito {
    * Nulo en vez de cadena vacía cuando el campo no viene: quien recibe la transacción distingue "la
    * pasarela no dijo nada" de "dijo una cadena vacía", y de eso depende que el sondeo siga o pare.
    */
+  /** Nulo si no vino o no es un número: quien lo recibe distingue "no lo dijo" de "dijo cero". */
+  private static Long entero(JsonNode nodo) {
+    if (nodo == null || !nodo.isNumber()) {
+      return null;
+    }
+    return nodo.asLong();
+  }
+
   private static String texto(JsonNode nodo) {
     if (nodo == null || nodo.isMissingNode() || nodo.isNull()) {
       return null;

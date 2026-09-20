@@ -39,6 +39,7 @@ class CrearIntentoDePagoSistecreditoTest {
   private RepositorioPedidosFalso pedidos;
   private RepositorioPagosFalso pagos;
   private PasarelaSistecreditoFalsa pasarela;
+  private EnTransaccionPropiaFalsa transacciones;
 
   private CrearIntentoDePagoSistecredito crear() {
     return crear(false, null);
@@ -49,10 +50,12 @@ class CrearIntentoDePagoSistecreditoTest {
     pagos = new RepositorioPagosFalso();
     pasarela = new PasarelaSistecreditoFalsa();
     pasarela.responder(transaccion("Pending", URL_PAGO, null, null));
+    transacciones = new EnTransaccionPropiaFalsa();
     return new CrearIntentoDePagoSistecredito(
         pedidos,
         pagos,
         pasarela,
+        transacciones,
         new RelojFalso(AHORA),
         "https://tecnosport.co/{idioma}/checkout/sistecredito/retorno",
         "https://api.tecnosport.co/api/v1/pagos/sistecredito/confirmacion",
@@ -63,7 +66,7 @@ class CrearIntentoDePagoSistecreditoTest {
   private static TransaccionSistecredito transaccion(
       String estado, String url, String codigo, String descripcion) {
     return new TransaccionSistecredito(
-        "649b4c821b581f96e45b5696", "TS-2026-000001-1", estado, url, codigo, descripcion);
+        "649b4c821b581f96e45b5696", "TS-2026-000001-1", estado, null, url, codigo, descripcion);
   }
 
   private Pedido pedidoConMetodo(MetodoPago metodoPago, int secuencial) {
@@ -146,7 +149,7 @@ class CrearIntentoDePagoSistecreditoTest {
     caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
     pasarela.responder(
         new TransaccionSistecredito(
-            "otro-id", "TS-2026-000001-2", "Pending", URL_PAGO, null, null));
+            "otro-id", "TS-2026-000001-2", "Pending", null, URL_PAGO, null, null));
     IntentoDePagoSistecredito segundo =
         caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
 
@@ -165,10 +168,64 @@ class CrearIntentoDePagoSistecreditoTest {
   }
 
   /**
-   * Lo importante de esta prueba no es la excepción: es que el pago quedó guardado con su id. Una
-   * transacción rechazada existe del lado de Sistecrédito, y perder su id aquí la dejaría sin nadie
-   * que pueda consultarla después.
+   * <b>La prueba que el diseño anterior no tenía y necesitaba.</b> La versión original afirmaba "el
+   * pago quedó guardado con su id" contra un repositorio en memoria, y pasaba también con el código
+   * roto: lo que revertía la fila era el {@code TransactionTemplate} del controlador, que un doble
+   * en memoria no reproduce.
+   *
+   * <p>Lo que sí se puede comprobar aquí es la <b>consecuencia observable</b> de perder esa fila:
+   * el número de intento sale de contar los pagos del pedido, así que un pago que no sobrevive deja
+   * el contador en cero y el reintento repite la misma factura — la que Sistecrédito ya tiene
+   * activa y rechaza con su {@code 738}, dejando el pedido imposible de pagar para siempre.
    */
+  @Test
+  void trasUnRechazoElSiguienteIntentoNoRepiteLaFactura() {
+    CrearIntentoDePagoSistecredito caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
+    pasarela.responder(
+        transaccion("Rejected", null, "802", "El valor del crédito solicitado es menor al mínimo"));
+
+    assertThrows(
+        SistecreditoNoEntregoLaUrlDePagoException.class,
+        () ->
+            caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
+
+    pasarela.responder(
+        new TransaccionSistecredito(
+            "otro", "TS-2026-000001-2", "Pending", null, URL_PAGO, null, null));
+    IntentoDePagoSistecredito segundo =
+        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
+
+    assertEquals("TS-2026-000001-2", segundo.referencia().valor());
+  }
+
+  /**
+   * Si la pasarela no responde, el intento igual queda abierto: no sabemos si llegó a crear algo de
+   * su lado, así que el reintento tiene que usar una factura nueva.
+   */
+  @Test
+  void siLaPasarelaNoRespondeElIntentoIgualQuedaAbiertoYNumerado() {
+    CrearIntentoDePagoSistecredito caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
+    pasarela.fallar(new SistecreditoNoRespondeException("sin red"));
+
+    assertThrows(
+        SistecreditoNoRespondeException.class,
+        () ->
+            caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
+
+    assertTrue(pagos.buscarPorReferencia(new ReferenciaPago("TS-2026-000001-1")).isPresent());
+    pasarela.responder(
+        new TransaccionSistecredito(
+            "otro", "TS-2026-000001-2", "Pending", null, URL_PAGO, null, null));
+    assertEquals(
+        "TS-2026-000001-2",
+        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"))
+            .referencia()
+            .valor());
+  }
+
+  /** Y el id se guarda igual, que es lo que permite consultar la transacción rechazada después. */
   @Test
   void unRechazoDelMedioDePagoGuardaIgualElPagoConSuIdYExplicaElCodigo() {
     CrearIntentoDePagoSistecredito caso = crear();
@@ -200,9 +257,11 @@ class CrearIntentoDePagoSistecreditoTest {
 
     caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "en"));
 
-    assertEquals(
-        "https://tecnosport.co/en/checkout/sistecredito/retorno",
-        pasarela.ultimaSolicitud().urlRespuesta());
+    assertTrue(
+        pasarela
+            .ultimaSolicitud()
+            .urlRespuesta()
+            .startsWith("https://tecnosport.co/en/checkout/sistecredito/retorno/" + pedido.id()));
   }
 
   /**
@@ -219,9 +278,11 @@ class CrearIntentoDePagoSistecreditoTest {
         new CrearIntentoDePagoSistecreditoComando(
             pedido.id(), DOCUMENTO, "../../malicioso.example"));
 
-    assertEquals(
-        "https://tecnosport.co/es/checkout/sistecredito/retorno",
-        pasarela.ultimaSolicitud().urlRespuesta());
+    assertTrue(
+        pasarela
+            .ultimaSolicitud()
+            .urlRespuesta()
+            .startsWith("https://tecnosport.co/es/checkout/sistecredito/retorno/"));
   }
 
   @Test

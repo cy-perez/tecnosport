@@ -53,6 +53,13 @@ public class SistecreditoControlador {
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
+  /**
+   * <b>Sin {@code TransactionTemplate} a propósito</b>, a diferencia de todo lo demás en esta capa.
+   * El caso de uso abre y cierra sus propias transacciones ({@code EnTransaccionPropia}) porque en
+   * la mitad llama a un tercero que abre una solicitud de crédito, y eso ninguna transacción
+   * revierte. Envolverlo aquí hacía dos daños: revertía el intento cuando la pasarela lo rechazaba
+   * —dejando el pedido imposible de pagar— y retenía una conexión del pool durante todo el sondeo.
+   */
   @PostMapping("/intentos")
   public IntentoSistecreditoRespuesta crear(@RequestBody CrearIntentoSistecreditoRequest cuerpo) {
     CrearIntentoDePagoSistecreditoComando comando =
@@ -60,8 +67,7 @@ public class SistecreditoControlador {
             cuerpo.pedidoId(),
             new DocumentoIdentidad(cuerpo.tipoDocumento(), cuerpo.documento()),
             cuerpo.idioma());
-    IntentoDePagoSistecredito intento =
-        transaccion.execute(estado -> crearIntento.ejecutar(comando));
+    IntentoDePagoSistecredito intento = crearIntento.ejecutar(comando);
     return new IntentoSistecreditoRespuesta(
         intento.referencia().valor(),
         new DineroRespuesta(intento.monto().valor().longValueExact(), Dinero.MONEDA),
@@ -115,6 +121,13 @@ public class SistecreditoControlador {
               comando.idTransaccion(),
               comando.referencia(),
               comando.estado());
+      case MONTO_NO_COINCIDE ->
+          log.error(
+              "Sistecrédito aprobó un monto distinto del que cobra el pedido. NO se aplicó:"
+                  + " despacharlo sería entregar la mercancía completa por menos dinero."
+                  + " referencia={}, transaccion={}",
+              comando.referencia(),
+              comando.idTransaccion());
       case PAGO_NO_ENCONTRADO ->
           log.warn(
               "Notificación de Sistecrédito para una referencia sin pago propio: {}",

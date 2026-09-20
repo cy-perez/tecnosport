@@ -127,10 +127,17 @@ public final class MetodosDePagoDisponibles {
   public Set<MetodoPago> ejecutar(MetodosDePagoDisponiblesComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Set<MetodoPago> disponibles = habilitados();
-    if (!contraentregaElegible(comando)) {
+    // Perezoso y memorizado, no resuelto de entrada. Las dos cosas importan: resolverlo hace un
+    // `buscarPorVarianteId` por línea y esto corre en cada carga del checkout, así que calcularlo
+    // dos veces duplicaba las consultas —lo que pasaba con Sistecrédito encendido—; pero
+    // calcularlo siempre se las cobraría también a un retiro en punto sin contraentrega, que no
+    // lo mira nunca. Y no es solo coste: resolver el carrito puede lanzar
+    // `VarianteNoEncontradaException`, así que adelantarlo cambiaría cuándo falla.
+    CarritoPerezoso carrito = new CarritoPerezoso(comando.lineas());
+    if (!contraentregaElegible(comando, carrito)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
     }
-    if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(comando)) {
+    if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(carrito)) {
       disponibles.remove(MetodoPago.SISTECREDITO);
     }
     return disponibles;
@@ -144,12 +151,30 @@ public final class MetodosDePagoDisponibles {
    * superaría sumando el flete no ve Sistecrédito. Se pierde una venta rara; la alternativa
    * —ofrecerlo y que la pasarela lo rechace con el 802— le rompe el pago a alguien que ya eligió.
    */
-  private boolean alcanzaElMinimoDeSistecredito(MetodosDePagoDisponiblesComando comando) {
-    Dinero mercancia = resolverCarrito(comando.lineas()).total();
-    return mercancia.valor().compareTo(montoMinimoSistecredito.valor()) >= 0;
+  private boolean alcanzaElMinimoDeSistecredito(CarritoPerezoso carrito) {
+    return carrito.datos().total().valor().compareTo(montoMinimoSistecredito.valor()) >= 0;
   }
 
-  private boolean contraentregaElegible(MetodosDePagoDisponiblesComando comando) {
+  /** Resuelve el carrito como mucho una vez, y solo si alguien lo pide. */
+  private final class CarritoPerezoso {
+
+    private final List<MetodosDePagoDisponiblesComando.LineaComando> lineas;
+    private DatosCarrito resueltos;
+
+    private CarritoPerezoso(List<MetodosDePagoDisponiblesComando.LineaComando> lineas) {
+      this.lineas = lineas;
+    }
+
+    private DatosCarrito datos() {
+      if (resueltos == null) {
+        resueltos = resolverCarrito(lineas);
+      }
+      return resueltos;
+    }
+  }
+
+  private boolean contraentregaElegible(
+      MetodosDePagoDisponiblesComando comando, CarritoPerezoso carrito) {
     if (comando.tipoEntrega() != TipoEntrega.ENVIO_A_DOMICILIO || comando.direccion() == null) {
       return false;
     }
@@ -158,8 +183,8 @@ public final class MetodosDePagoDisponibles {
     if (conRecaudo.isEmpty()) {
       return false;
     }
-    DatosCarrito carrito = resolverCarrito(comando.lineas());
-    Dinero aRecaudar = Dinero.deCop(carrito.total().valor().add(conRecaudo.get().costo().valor()));
+    DatosCarrito datos = carrito.datos();
+    Dinero aRecaudar = Dinero.deCop(datos.total().valor().add(conRecaudo.get().costo().valor()));
     if (!elRecaudoCuadra(comando.lineas(), aRecaudar)) {
       return false;
     }
@@ -170,7 +195,7 @@ public final class MetodosDePagoDisponibles {
         // se compara contra eso y no contra la mercancía sola: el límite existe por cuánto
         // efectivo carga el mensajero, y el flete también lo carga.
         aRecaudar,
-        carrito.categorias(),
+        datos.categorias(),
         true,
         rechazoPrevio);
   }

@@ -38,7 +38,10 @@ public class PagoJpaEntity {
   @Column(name = "id_transaccion_pasarela")
   private String idTransaccionPasarela;
 
-  /** El {@code payment_method_type} que reportó Wompi, crudo. Ver V39. */
+  /**
+   * Con qué se cobró de verdad, crudo y tal como lo nombre la pasarela: el {@code
+   * payment_method_type} de Wompi, o {@code SISTECREDITO}. Ver V39.
+   */
   @Column(name = "medio_reportado_pasarela")
   private String medioReportadoPasarela;
 

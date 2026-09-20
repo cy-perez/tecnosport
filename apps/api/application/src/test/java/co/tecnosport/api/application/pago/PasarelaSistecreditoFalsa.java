@@ -13,6 +13,15 @@ final class PasarelaSistecreditoFalsa implements PasarelaSistecredito {
   private final List<SolicitudTransaccionSistecredito> solicitudes = new ArrayList<>();
   private TransaccionSistecredito respuesta;
   private RuntimeException falla;
+  private int consultas;
+
+  /**
+   * Cuántas veces se le preguntó a la pasarela: el endpoint público no puede gastar una por
+   * petición anónima.
+   */
+  int consultas() {
+    return consultas;
+  }
 
   void responder(TransaccionSistecredito respuesta) {
     this.respuesta = respuesta;
@@ -43,6 +52,7 @@ final class PasarelaSistecreditoFalsa implements PasarelaSistecredito {
 
   @Override
   public Optional<TransaccionSistecredito> consultar(String idTransaccion) {
+    consultas++;
     return Optional.ofNullable(respuesta);
   }
 }

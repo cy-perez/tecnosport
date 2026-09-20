@@ -57,7 +57,17 @@ public class ConfiguracionLimiteIntentos {
                 reloj,
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
-    registro.addUrlPatterns("/api/v1/pedidos");
+    registro.addUrlPatterns(
+        "/api/v1/pedidos",
+        // Ruta exacta, así que hay que nombrarla aparte — el mismo descuido de la cotización.
+        //
+        // Y aquí pesa más que en ningún otro sitio: esta ruta es pública, las credenciales de
+        // Sistecrédito son PRODUCTIVAS, y cada llamada **abre una solicitud de crédito real a
+        // nombre del documento que venga en el cuerpo**, con su token por SMS al teléfono de esa
+        // persona. El `Idempotency-Key` no sirve de control: lo elige el cliente, así que protege
+        // el doble clic honesto y no al abusador. Sin este límite, cualquiera con un pedido propio
+        // barato podía disparar N solicitudes contra la cédula de cualquiera (adr/0048).
+        "/api/v1/pagos/sistecredito/intentos");
     return registro;
   }
 

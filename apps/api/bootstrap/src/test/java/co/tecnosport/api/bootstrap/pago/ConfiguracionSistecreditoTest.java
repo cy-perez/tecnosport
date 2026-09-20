@@ -22,20 +22,29 @@ class ConfiguracionSistecreditoTest {
   private final ConfiguracionSistecredito configuracion = new ConfiguracionSistecredito();
 
   @Test
-  void elModoSandboxEncendidoEnProduccionImpideArrancar() {
-    IllegalStateException error =
-        assertThrows(
-            IllegalStateException.class,
-            () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi("produccion")));
-
-    assertTrue(error.getMessage().contains("sandbox-activo"));
-    assertTrue(error.getMessage().contains("producción"));
-  }
-
-  @Test
-  void elModoSandboxEncendidoFueraDeProduccionSiArranca() {
+  void elModoSandboxEncendidoEnUnAmbienteDePruebasReconocidoSiArranca() {
     assertDoesNotThrow(
         () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi("sandbox")));
+    assertDoesNotThrow(
+        () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi("pruebas")));
+  }
+
+  /**
+   * <b>La prueba que justifica la lista blanca.</b> El freno estaba escrito como lista negra —negar
+   * solo si el ambiente era exactamente "produccion"— y así un typo, otra grafía o un despliegue
+   * donde nadie fijó la variable lo dejaban pasar. Lo que hay al otro lado es despachar mercancía
+   * regalada sin una sola línea de error.
+   */
+  @Test
+  void unAmbienteQueNoSeReconoceComoDePruebasNoDejaEncenderElSandbox() {
+    for (String ambiente : new String[] {"production", "PRODUCCION", "prod", "produccion", "qa"}) {
+      IllegalStateException error =
+          assertThrows(
+              IllegalStateException.class,
+              () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi(ambiente)),
+              "el ambiente \"" + ambiente + "\" no debería dejar encender el sandbox");
+      assertTrue(error.getMessage().contains("sandbox-activo"));
+    }
   }
 
   @Test

@@ -99,7 +99,7 @@ class ConciliarPagosSistecreditoTest {
     Pago pago = pagoPendienteCon(MetodoPago.SISTECREDITO, "id-sistecredito", 1);
     pasarela.responder(
         new TransaccionSistecredito(
-            "id-sistecredito", pago.referencia().valor(), "Approved", null, null, null));
+            "id-sistecredito", pago.referencia().valor(), "Approved", null, null, null, null));
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -132,7 +132,7 @@ class ConciliarPagosSistecreditoTest {
     Pago pago = pagoPendienteCon(MetodoPago.SISTECREDITO, "id-sistecredito", 1);
     pasarela.responder(
         new TransaccionSistecredito(
-            "id-sistecredito", pago.referencia().valor(), "Pending", null, null, null));
+            "id-sistecredito", pago.referencia().valor(), "Pending", null, null, null, null));
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -153,7 +153,7 @@ class ConciliarPagosSistecreditoTest {
     Pago pago = pagoPendienteCon(MetodoPago.SISTECREDITO, "id-sistecredito", 1);
     TransaccionSistecredito aprobada =
         new TransaccionSistecredito(
-            "id-sistecredito", pago.referencia().valor(), "Approved", null, null, null);
+            "id-sistecredito", pago.referencia().valor(), "Approved", null, null, null, null);
     pasarela.responder(aprobada);
     caso.ejecutar();
 

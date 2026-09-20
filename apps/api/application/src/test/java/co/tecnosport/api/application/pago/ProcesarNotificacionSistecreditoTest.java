@@ -91,7 +91,7 @@ class ProcesarNotificacionSistecreditoTest {
 
   private static TransaccionSistecredito laPasarelaDice(String estado) {
     return new TransaccionSistecredito(
-        ID_TRANSACCION, REFERENCIA.valor(), estado, null, null, null);
+        ID_TRANSACCION, REFERENCIA.valor(), estado, null, null, null, null);
   }
 
   private ProcesarNotificacionSistecreditoComando notificacion(String estado) {
@@ -130,17 +130,94 @@ class ProcesarNotificacionSistecreditoTest {
         EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
-  /** Lo mismo con la factura: el id es de otra transacción distinta de la que dice la pasarela. */
+  /**
+   * Una notificación que cita una factura nuestra que no existe no llega ni a preguntar.
+   *
+   * <p>Eso último es la mitad del asunto: este endpoint es público y anónimo, y antes consultaba a
+   * la pasarela <b>antes</b> de mirar si la referencia existía. Cualquiera podía hacernos gastar
+   * una llamada con nuestras credenciales productivas por cada petición inventada, cada una
+   * reteniendo además una conexión hasta que la pasarela respondiera.
+   */
   @Test
-  void unaNotificacionConOtraFacturaNoAplicaNada() {
+  void unaNotificacionConUnaFacturaQueNoExisteNoLlegaAPreguntarle() {
     ProcesarNotificacionSistecredito caso = crear();
     pasarela.responder(laPasarelaDice("Approved"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
+        caso.ejecutar(
+            new ProcesarNotificacionSistecreditoComando(
+                ID_TRANSACCION, "TS-2026-000999-1", "Approved")));
+    assertEquals(0, pasarela.consultas());
+  }
+
+  /**
+   * El id de transacción también tiene que ser el que ese pago guardó. Decía "si no tengo id
+   * guardado, acepta cualquiera", y un pago de otra pasarela cuyo id nunca se registró —el
+   * comprador que cierra la pestaña— cumplía la condición.
+   */
+  @Test
+  void unaNotificacionConOtroIdDeTransaccionNoAplicaNada() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(
+        new TransaccionSistecredito(
+            "id-de-otra", REFERENCIA.valor(), "Approved", null, null, null, null));
 
     assertEquals(
         ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA,
         caso.ejecutar(
             new ProcesarNotificacionSistecreditoComando(
-                ID_TRANSACCION, "TS-2026-000999-1", "Approved")));
+                "id-de-otra", REFERENCIA.valor(), "Approved")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /**
+   * De ida el monto lo pone el servidor; de vuelta no había nada que lo comprobara. Un crédito
+   * aprobado por menos de lo pedido —un cupo tope— se habría aplicado como pago completo y la
+   * diferencia sería pérdida invisible.
+   */
+  @Test
+  void unMontoAprobadoDistintoDelDelPedidoNoSeAplica() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(
+        new TransaccionSistecredito(
+            ID_TRANSACCION, REFERENCIA.valor(), "Approved", 50_000L, null, null, null));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.MONTO_NO_COINCIDE,
+        caso.ejecutar(notificacion("Approved")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /**
+   * Un segundo estado terminal distinto —`Rejected` y después `Expired`— son dos ids de evento con
+   * el mismo `EstadoPago`. Reventaba con una excepción de dominio que salía como 422, justo lo que
+   * el controlador promete no devolver nunca, y la pasarela habría reintentado en bucle.
+   */
+  @Test
+  void unSegundoEstadoTerminalNoRevienta() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Rejected"));
+    assertEquals(
+        ResultadoNotificacionSistecredito.APLICADO, caso.ejecutar(notificacion("Rejected")));
+
+    pasarela.responder(laPasarelaDice("Expired"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.YA_PROCESADO, caso.ejecutar(notificacion("Expired")));
+  }
+
+  /** La grafía exacta del estado no está garantizada: las guías son de 2023 y no hay sandbox. */
+  @Test
+  void elEstadoSeEntiendeSinImportarLasMayusculas() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("APPROVED"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.APLICADO, caso.ejecutar(notificacion("APPROVED")));
+    assertEquals(EstadoPago.APROBADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
   }
 
   /**
@@ -211,7 +288,7 @@ class ProcesarNotificacionSistecreditoTest {
     ProcesarNotificacionSistecredito caso = crear();
     pasarela.responder(
         new TransaccionSistecredito(
-            ID_TRANSACCION, "TS-2026-000777-1", "Approved", null, null, null));
+            ID_TRANSACCION, "TS-2026-000777-1", "Approved", null, null, null, null));
 
     assertEquals(
         ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
