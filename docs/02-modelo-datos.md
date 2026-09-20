@@ -141,8 +141,12 @@ tenis.
 
 Aquí hubo durante dos fases un `TODO` pidiendo "el peso y las dimensiones reales del catálogo de
 producción", y estaba mal planteado: el catálogo de producción no sale del sembrador, sale del
-panel, que exige las cuatro cifras desde la `V32`. No faltaba un dato: faltaba un **procedimiento**.
-Queda escrito el 18 de septiembre de 2026, y es corto a propósito.
+panel. No faltaba un dato: faltaba un **procedimiento**. Queda escrito el 18 de septiembre de 2026,
+y es corto a propósito.
+
+Desde `adr/0046` el panel ya **no exige** las cuatro cifras —una variante sin medir se vende, solo
+con recogida—, así que este procedimiento pasó de ser un requisito de carga a ser una mejora
+incremental: cada producto que se mida gana envío a domicilio, de a uno, sin desplegar nada.
 
 1. **Mide el producto ya empacado**, en la caja con la que va a salir — con su relleno, su bolsa y
    su cinta. No el producto desnudo ni la caja del fabricante si no es la que se despacha.

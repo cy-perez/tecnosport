@@ -63,6 +63,20 @@ y no en el código.
 Nunca H2. Si la prueba no corre contra el mismo motor que producción, no prueba
 la consulta que importa.
 
+**Y hay un hueco entre capas que solo una prueba de `infrastructure` ve: el mapeo JPA contra la
+migración.** El 19 de septiembre de 2026, al hacer opcional el paquete de la variante
+(`adr/0046`), la `V55` quitó el `not null` de las cuatro columnas y los campos de la entidad
+pasaron a `Integer` — pero se quedaron sus `@Column(nullable = false)`. Resultado: **la base
+aceptaba el nulo y Hibernate lo rechazaba antes de llegar a ella**, con un 500.
+
+Las pruebas de dominio, de caso de uso y de controlador pasaban todas, y ninguna podía ver el
+problema: las tres primeras no tocan JPA y la cuarta usa un doble. Lo destapó cargar producto real.
+
+De ahí la regla: **cuando una migración cambia la nulabilidad, la longitud o el tipo de una
+columna, la prueba que lo demuestra escribe y vuelve a leer esa fila contra Postgres.** No basta con
+que la migración corra — corrió, y el defecto estaba del otro lado del mapeo. Y va con su pareja:
+una prueba que guarde el caso *lleno*, para que la del caso vacío no pase por no leer nada.
+
 Lo que tiene prueba sin excepción:
 
 - Cálculo de total con IVA y redondeo.

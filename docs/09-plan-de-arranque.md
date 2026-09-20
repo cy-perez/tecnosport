@@ -566,6 +566,13 @@ Panel completo: productos, variantes, existencias, imágenes con URL firmada.
 La vista de operación de pedidos y conciliación de recaudo de la Fase 3 pasa a
 tener aquí el diseño y los componentes definitivos.
 
+> **"Completo" no lo estuvo hasta el 19 de septiembre de 2026, y nadie lo notó en cinco fases.**
+> Faltaba lo último de la cadena: **publicar**. Se podía crear el producto, subirle la imagen y
+> agregarle variantes, y el producto se quedaba en `BORRADOR` para siempre — `Producto.publicar()`
+> existía desde la Fase 1 y solo lo llamaban las pruebas. No se vio porque el sembrador escribe el
+> estado directo en la fila, así que la tienda de desarrollo siempre se vio llena. Lo destapó el
+> primer intento de cargar un producto real.  Ver la entrada del 19 de septiembre.
+
 **Sesión compartida del frontend, login de `ADMIN`, `EnviadorDeCorreo`, y
 registro de cliente con verificación de correo obligatoria cerrados de punta a
 punta** (2026-09-04). `Usuario.correoVerificadoEn` (nulo = sin verificar) y el

@@ -241,9 +241,20 @@ dos se aplican en `ArmadorDeBultos`, y no se aplican igual:
   negocio si el paquete se pierde (`ADR-0036`). El carrito que lo lleve cae a
   recogida en el punto, entero: este sistema no tiene pedidos parciales.
 
-**Peso y dimensiones son obligatorios por variante.** Sin paquete no hay
-cotización. Una variante sin esos datos no se publica, y el catálogo ya sembrado
-necesita relleno antes de encender la cotización.
+**Peso y dimensiones son opcionales por variante desde el 19 de septiembre de
+2026** (`ADR-0046`). Sin paquete no hay cotización —eso no cambió— pero sí hay
+venta: la variante sin medir se publica y su producto se ofrece **solo con
+recogida en el punto**. Al cotizarlo, el checkout responde `409
+ARTICULO_SIN_MEDIDAS` nombrando el artículo, con la misma forma y el mismo trato
+que `ARTICULO_NO_ASEGURABLE`.
+
+~~Una variante sin esos datos no se publica, y el catálogo ya sembrado necesita
+relleno antes de encender la cotización.~~ Lo primero dejó de ser cierto; lo
+segundo se hizo en la `V32`.
+
+Cuando las cuatro cifras vienen, siguen siendo mayores que cero y van **las
+cuatro o ninguna**: "no lo sé todavía" y "mide cero" no son lo mismo, y la
+segunda es la que cobra fletes de menos en silencio.
 
 **El costo real sigue registrándose en `Envio`**, separado del flete cobrado y de
 la comisión de recaudo. La diferencia con antes es que ahora hay un valor cobrado
