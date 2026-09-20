@@ -160,7 +160,8 @@ class CrearIntentoDePagoSistecreditoTest {
 
     assertThrows(
         MetodoDePagoNoEsDeSistecreditoException.class,
-        () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
+        () ->
+            caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
   }
 
   /**
@@ -178,7 +179,9 @@ class CrearIntentoDePagoSistecreditoTest {
     SistecreditoNoEntregoLaUrlDePagoException error =
         assertThrows(
             SistecreditoNoEntregoLaUrlDePagoException.class,
-            () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
+            () ->
+                caso.ejecutar(
+                    new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
 
     assertEquals("802", error.codigo());
     assertEquals("Rejected", error.estado());
@@ -203,9 +206,9 @@ class CrearIntentoDePagoSistecreditoTest {
   }
 
   /**
-   * El idioma se incrusta en una URL que le entregamos a un tercero para que redirija al
-   * comprador. Aceptar cualquier cadena convertiría el campo en una redirección abierta con
-   * nuestro propio dominio de por medio.
+   * El idioma se incrusta en una URL que le entregamos a un tercero para que redirija al comprador.
+   * Aceptar cualquier cadena convertiría el campo en una redirección abierta con nuestro propio
+   * dominio de por medio.
    */
   @Test
   void unIdiomaQueNoPublicamosCaeEnElPorOmisionEnVezDeIncrustarse() {

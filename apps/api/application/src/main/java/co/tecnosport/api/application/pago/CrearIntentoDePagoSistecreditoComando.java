@@ -10,8 +10,8 @@ import java.util.UUID;
  *
  * <p>{@code idioma} decide a qué versión del sitio vuelve el comprador. Es lo único que el cliente
  * aporta para construir esa URL, y llega como un código de idioma y no como una URL a propósito:
- * dejar que el navegador dijera a dónde volver sería una redirección abierta con nuestro dominio
- * de por medio.
+ * dejar que el navegador dijera a dónde volver sería una redirección abierta con nuestro dominio de
+ * por medio.
  */
 public record CrearIntentoDePagoSistecreditoComando(
     UUID pedidoId, DocumentoIdentidad documento, String idioma) {}
