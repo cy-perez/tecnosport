@@ -5,6 +5,9 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  AjustarExistenciaAdmin,
+  ExistenciaAjustada,
+  ExistenciasDelCatalogo,
   InventarioSinMedir,
   MedirVarianteAdmin,
   ProductoAdmin,
@@ -29,6 +32,10 @@ export interface RepositorioProductosAdmin {
   listarSinMedir(): Promise<InventarioSinMedir>;
 
   medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida>;
+
+  listarExistencias(): Promise<ExistenciasDelCatalogo>;
+
+  ajustarExistencia(comando: AjustarExistenciaAdmin): Promise<ExistenciaAjustada>;
 
   /** Encadena los tres pasos (URL firmada, PUT directo a Cloud Storage, confirmación) — ver
    * docs/07-infra-gcp.md. El PUT no pasa por el backend propio, pero sigue siendo infraestructura. */

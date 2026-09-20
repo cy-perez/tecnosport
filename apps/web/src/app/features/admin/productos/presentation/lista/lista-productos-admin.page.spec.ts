@@ -6,6 +6,8 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import {
+  ExistenciaAjustada,
+  ExistenciasDelCatalogo,
   InventarioSinMedir,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -75,6 +77,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   medirVariante(): Promise<VarianteMedida> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  listarExistencias(): Promise<ExistenciasDelCatalogo> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  ajustarExistencia(): Promise<ExistenciaAjustada> {
     throw new Error('no usado por esta prueba');
   }
 }

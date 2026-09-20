@@ -135,3 +135,57 @@ export interface VarianteMedida {
   readonly altoCm: number;
   readonly correccion: boolean;
 }
+
+/**
+ * Las tres cifras de una variante, separadas a propósito (`ADR-0049`):
+ *
+ * - `existenciaDeclarada` es la columna del catálogo, la que ve quien compra.
+ * - `saldoTotal` es el libro de movimientos, que es la verdad.
+ * - `disponible` es el saldo menos lo reservado por pedidos en vuelo.
+ *
+ * `descuadrada` la calcula el servidor. No se deriva aquí comparando las dos primeras: es una regla
+ * de negocio, y repetirla en el cliente crearía una segunda definición capaz de divergir.
+ */
+export interface ExistenciaDeVariante {
+  readonly varianteId: string;
+  readonly productoId: string;
+  readonly nombreProducto: string;
+  readonly sku: string;
+  readonly estadoProducto: EstadoProducto;
+  readonly existenciaDeclarada: number;
+  readonly saldoTotal: number;
+  readonly disponible: number;
+  readonly reservadas: number;
+  readonly descuadrada: boolean;
+}
+
+/** Los conteos vienen del servidor, igual que los de `InventarioSinMedir` y por lo mismo. */
+export interface ExistenciasDelCatalogo {
+  readonly total: number;
+  readonly totalDescuadradas: number;
+  readonly totalDescuadradasEnPublicados: number;
+  readonly items: readonly ExistenciaDeVariante[];
+}
+
+/** El conteo físico y su motivo, que es obligatorio: un ajuste sin motivo no se puede auditar. */
+export interface AjustarExistenciaAdmin {
+  readonly varianteId: string;
+  readonly cantidadContada: number;
+  readonly motivo: string;
+}
+
+/**
+ * `sinCambios` distingue "conté y estaba bien" de "conté y corregí", y `dejaReservasSinRespaldo`
+ * avisa de que hay compras aceptadas por encima de lo que dice el conteo.
+ */
+export interface ExistenciaAjustada {
+  readonly varianteId: string;
+  readonly sku: string;
+  readonly nombreProducto: string;
+  readonly saldoAnterior: number;
+  readonly saldoNuevo: number;
+  readonly diferencia: number;
+  readonly unidadesReservadas: number;
+  readonly sinCambios: boolean;
+  readonly dejaReservasSinRespaldo: boolean;
+}

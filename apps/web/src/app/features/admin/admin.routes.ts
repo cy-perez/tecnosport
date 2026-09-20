@@ -141,6 +141,13 @@ export const adminRoutes: Routes = [
               ),
           },
           {
+            path: 'existencias',
+            loadComponent: () =>
+              import('./productos/presentation/existencias/existencias-admin.page').then(
+                (m) => m.ExistenciasAdminPage,
+              ),
+          },
+          {
             path: 'crear',
             providers: [
               // Los del panel y no los de la vitrina: el endpoint público solo devuelve

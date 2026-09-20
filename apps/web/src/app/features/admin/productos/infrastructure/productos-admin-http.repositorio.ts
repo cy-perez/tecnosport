@@ -10,6 +10,9 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  AjustarExistenciaAdmin,
+  ExistenciaAjustada,
+  ExistenciasDelCatalogo,
   InventarioSinMedir,
   MedirVarianteAdmin,
   ProductoAdmin,
@@ -20,6 +23,8 @@ import {
 import { RepositorioProductosAdmin } from '../domain/repositorio-productos-admin.puerto';
 import {
   aImagenAdmin,
+  aExistenciaAjustada,
+  aExistenciasDelCatalogo,
   aInventarioSinMedir,
   aProductoAdmin,
   aProductosPaginadosAdmin,
@@ -114,6 +119,21 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     });
     return aVarianteMedida(desempaquetar(respuesta, 'no se pudo medir la variante'));
+  }
+
+  async listarExistencias(): Promise<ExistenciasDelCatalogo> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/variantes/existencias', {});
+    return aExistenciasDelCatalogo(
+      desempaquetar(respuesta, 'no se pudo consultar las existencias'),
+    );
+  }
+
+  async ajustarExistencia(comando: AjustarExistenciaAdmin): Promise<ExistenciaAjustada> {
+    const respuesta = await this.cliente.PATCH('/api/v1/admin/variantes/{id}/existencia', {
+      params: { path: { id: comando.varianteId } },
+      body: { cantidadContada: comando.cantidadContada, motivo: comando.motivo },
+    });
+    return aExistenciaAjustada(desempaquetar(respuesta, 'no se pudo ajustar la existencia'));
   }
 
   async subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin> {

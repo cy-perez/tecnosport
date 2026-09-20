@@ -3,6 +3,9 @@ import {
   CategoriaAdmin,
   EstadoProducto,
   ImagenAdmin,
+  ExistenciaAjustada,
+  ExistenciaDeVariante,
+  ExistenciasDelCatalogo,
   InventarioSinMedir,
   MarcaAdmin,
   ProductoAdmin,
@@ -18,6 +21,9 @@ type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
 type SinMedirDto = components['schemas']['VariantesSinMedirRespuesta'];
 type VarianteSinMedirDto = components['schemas']['VarianteSinMedirRespuesta'];
+type ExistenciasDto = components['schemas']['ExistenciasRespuesta'];
+type ExistenciaDeVarianteDto = components['schemas']['ExistenciaDeVarianteRespuesta'];
+type ExistenciaAjustadaDto = components['schemas']['ExistenciaAjustadaRespuesta'];
 type VarianteMedidaDto = components['schemas']['VarianteMedidaRespuesta'];
 
 /**
@@ -104,5 +110,44 @@ export function aVarianteMedida(dto: VarianteMedidaDto): VarianteMedida {
     anchoCm: dto.anchoCm ?? 0,
     altoCm: dto.altoCm ?? 0,
     correccion: dto.correccion ?? false,
+  };
+}
+
+/** Mismo criterio que `aInventarioSinMedir`: los conteos se leen, no se derivan de `items`. */
+export function aExistenciasDelCatalogo(dto: ExistenciasDto): ExistenciasDelCatalogo {
+  return {
+    total: dto.total ?? 0,
+    totalDescuadradas: dto.totalDescuadradas ?? 0,
+    totalDescuadradasEnPublicados: dto.totalDescuadradasEnPublicados ?? 0,
+    items: (dto.items ?? []).map(aExistenciaDeVariante),
+  };
+}
+
+function aExistenciaDeVariante(dto: ExistenciaDeVarianteDto): ExistenciaDeVariante {
+  return {
+    varianteId: dto.varianteId ?? '',
+    productoId: dto.productoId ?? '',
+    nombreProducto: dto.nombreProducto ?? '',
+    sku: dto.sku ?? '',
+    estadoProducto: (dto.estadoProducto ?? 'BORRADOR') as EstadoProducto,
+    existenciaDeclarada: dto.existenciaDeclarada ?? 0,
+    saldoTotal: dto.saldoTotal ?? 0,
+    disponible: dto.disponible ?? 0,
+    reservadas: dto.reservadas ?? 0,
+    descuadrada: dto.descuadrada ?? false,
+  };
+}
+
+export function aExistenciaAjustada(dto: ExistenciaAjustadaDto): ExistenciaAjustada {
+  return {
+    varianteId: dto.varianteId ?? '',
+    sku: dto.sku ?? '',
+    nombreProducto: dto.nombreProducto ?? '',
+    saldoAnterior: dto.saldoAnterior ?? 0,
+    saldoNuevo: dto.saldoNuevo ?? 0,
+    diferencia: dto.diferencia ?? 0,
+    unidadesReservadas: dto.unidadesReservadas ?? 0,
+    sinCambios: dto.sinCambios ?? false,
+    dejaReservasSinRespaldo: dto.dejaReservasSinRespaldo ?? false,
   };
 }
