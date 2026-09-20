@@ -12,6 +12,7 @@ import co.tecnosport.api.application.reintegro.RepositorioReintegros;
 import co.tecnosport.api.application.reintegro.TopeDeReintegro;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.reintegro.MedioReintegro;
 import co.tecnosport.api.domain.reintegro.MotivoReintegro;
 import co.tecnosport.api.domain.reintegro.Reintegro;
 import co.tecnosport.api.domain.retracto.SolicitudRetracto;
@@ -119,7 +120,7 @@ public final class RegistrarReintegro {
 
     repositorioReintegros.guardar(reintegro);
     repositorioSolicitudes.guardar(solicitud);
-    enviarConstancia(pedido, monto);
+    enviarConstancia(pedido, monto, comando.medio());
     return solicitud;
   }
 
@@ -136,13 +137,23 @@ public final class RegistrarReintegro {
    * bandeja de salida, y está escrito en {@link
    * co.tecnosport.api.application.compartido.EnviadorDeCorreo}.
    */
-  private void enviarConstancia(Pedido pedido, Dinero monto) {
+  private void enviarConstancia(Pedido pedido, Dinero monto, MedioReintegro medio) {
+    // Sistecredito no devuelve dinero: anula el credito y el pagare (adr/0048). El texto
+    // normal --"reintegramos X, puede tardar en reflejarse en tu cuenta"-- le llega falso en
+    // sus dos frases a quien pago asi, y se calla lo unico que necesita saber: que deje de
+    // pagar cuotas de algo que devolvio.
+    boolean esAnulacionDeCredito = medio == MedioReintegro.SISTECREDITO;
     try {
       enviadorDeCorreo.enviar(
           pedido.correo(),
-          textos.texto(TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
           textos.texto(
-              TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
+              esAnulacionDeCredito
+                  ? TextoDeCorreo.RETRACTO_REINTEGRO_SISTECREDITO_ASUNTO
+                  : TextoDeCorreo.RETRACTO_REINTEGRO_ASUNTO),
+          textos.texto(
+              esAnulacionDeCredito
+                  ? TextoDeCorreo.RETRACTO_REINTEGRO_SISTECREDITO_CUERPO
+                  : TextoDeCorreo.RETRACTO_REINTEGRO_CUERPO,
               monto.valor().toPlainString(),
               Dinero.MONEDA,
               pedido.numeroPedido().valor()));
