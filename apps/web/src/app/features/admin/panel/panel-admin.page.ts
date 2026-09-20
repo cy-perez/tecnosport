@@ -45,24 +45,24 @@ export class PanelAdminPage {
   protected readonly haySinMedir = computed(() => this.totalSinMedir() > 0);
 
   /**
-   * El otro vigilante, y este avisa de algo que el sistema se hace a sí mismo: el catálogo declara
-   * una existencia que solo mueven el alta de la variante y un conteo, mientras el libro de
-   * inventario se mueve con cada venta (`ADR-0049`). O sea que el descuadre aparece solo, y el
-   * número que ve quien compra se va quedando viejo sin que nada falle.
+   * El otro vigilante. Avisó del descuadre entre el catálogo y el libro hasta `ADR-0050`, que
+   * borró la columna del catálogo y con ella la posibilidad misma de descuadrarse. Ahora vigila lo
+   * que sí le puede pasar a quien compra: algo publicado sin una sola unidad en el libro, que en
+   * la vitrina se ve agotado.
    *
    * <p>Aviso condicionado, enlace permanente — al revés que el de sin-medir, y a propósito. La
    * lista de existencias nunca está vacía mientras haya catálogo, así que un enlace fijo lleva
-   * siempre a algo; el aviso, en cambio, solo tiene sentido cuando hay algo desalineado.
+   * siempre a algo; el aviso, en cambio, solo tiene sentido cuando hay algo que mirar.
    */
   private readonly existencias = usarExistencias();
 
-  protected readonly totalDescuadradas = computed(
-    () => this.existencias.data()?.totalDescuadradas ?? 0,
+  protected readonly totalSinExistencia = computed(
+    () => this.existencias.data()?.totalSinExistencia ?? 0,
   );
-  protected readonly descuadradasEnPublicados = computed(
-    () => this.existencias.data()?.totalDescuadradasEnPublicados ?? 0,
+  protected readonly sinExistenciaEnPublicados = computed(
+    () => this.existencias.data()?.totalSinExistenciaEnPublicados ?? 0,
   );
-  protected readonly hayDescuadradas = computed(() => this.totalDescuadradas() > 0);
+  protected readonly haySinExistencia = computed(() => this.totalSinExistencia() > 0);
 
   protected async cerrarSesion(): Promise<void> {
     await this.sesionStore.cerrarSesion();

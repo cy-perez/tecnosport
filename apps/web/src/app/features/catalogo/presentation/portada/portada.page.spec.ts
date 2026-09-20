@@ -33,7 +33,7 @@ function productoDePrueba(slug: string): Producto {
         id: `id-${slug}`,
         sku: `SKU-${slug}`,
         precio: { valor: 10_000, moneda: 'COP' },
-        existencia: 5,
+        disponible: true,
         atributos: [],
       },
     ],

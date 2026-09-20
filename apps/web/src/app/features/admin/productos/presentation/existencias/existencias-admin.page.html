@@ -58,7 +58,7 @@
       <p class="mb-16" role="status">
         {{
           'admin.productos.existencias.resumen'
-            | transloco: { total: total(), descuadradas: totalDescuadradas() }
+            | transloco: { total: total(), sinExistencia: totalSinExistencia() }
         }}
       </p>
 
@@ -71,7 +71,6 @@
               <th scope="col">{{ 'admin.productos.existencias.columnas.producto' | transloco }}</th>
               <th scope="col">{{ 'admin.productos.existencias.columnas.sku' | transloco }}</th>
               <th scope="col">{{ 'admin.productos.existencias.columnas.estado' | transloco }}</th>
-              <th scope="col">{{ 'admin.productos.existencias.columnas.catalogo' | transloco }}</th>
               <th scope="col">{{ 'admin.productos.existencias.columnas.libro' | transloco }}</th>
               <th scope="col">
                 {{ 'admin.productos.existencias.columnas.disponible' | transloco }}
@@ -85,14 +84,13 @@
                 <td>{{ variante.nombreProducto }}</td>
                 <td>{{ variante.sku }}</td>
                 <td>{{ etiquetaEstado(variante.estadoProducto) }}</td>
-                <td>{{ variante.existenciaDeclarada }}</td>
                 <td>
                   {{ variante.saldoTotal }}
-                  <!-- El descuadre se dice con palabras y no solo con un color: un color no lo lee
-                       quien usa lector de pantalla, y este es el dato que motiva la pantalla. -->
-                  @if (variante.descuadrada) {
+                  <!-- "Sin existencia" se dice con palabras y no solo con un color: un color no lo
+                       lee quien usa lector de pantalla, y es el dato que ordena la lista. -->
+                  @if (variante.saldoTotal === 0) {
                     <span class="text-ts-error">
-                      {{ 'admin.productos.existencias.descuadrada' | transloco }}
+                      {{ 'admin.productos.existencias.sinExistencia' | transloco }}
                     </span>
                   }
                 </td>
@@ -123,7 +121,7 @@
 
               @if (contando() === variante.varianteId) {
                 <tr>
-                  <td colspan="7">
+                  <td colspan="6">
                     <form
                       class="flex flex-col gap-16"
                       [formGroup]="form"

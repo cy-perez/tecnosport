@@ -1410,8 +1410,7 @@ export interface components {
             id?: string;
             sku?: string;
             precio?: components["schemas"]["DineroRespuesta"];
-            /** Format: int32 */
-            existencia?: number;
+            disponible?: boolean;
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
         };
         AbrirSetRotacionPeticion: {
@@ -1932,22 +1931,19 @@ export interface components {
             sku?: string;
             estadoProducto?: string;
             /** Format: int32 */
-            existenciaDeclarada?: number;
-            /** Format: int32 */
             saldoTotal?: number;
             /** Format: int32 */
             disponible?: number;
             /** Format: int32 */
             reservadas?: number;
-            descuadrada?: boolean;
         };
         ExistenciasRespuesta: {
             /** Format: int32 */
             total?: number;
             /** Format: int32 */
-            totalDescuadradas?: number;
+            totalSinExistencia?: number;
             /** Format: int32 */
-            totalDescuadradasEnPublicados?: number;
+            totalSinExistenciaEnPublicados?: number;
             items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
         };
         ProductosAdminPaginadosRespuesta: {

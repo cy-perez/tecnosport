@@ -23,7 +23,7 @@ describe('mapeador-productos', () => {
           id: 'v1',
           sku: 'TS-CAM-AZ-M',
           precio: { valor: 89900, moneda: 'COP' },
-          existencia: 5,
+          disponible: true,
           atributos: [
             { nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A' },
             { nombre: 'Garantía', valor: '12', unidad: 'meses' },

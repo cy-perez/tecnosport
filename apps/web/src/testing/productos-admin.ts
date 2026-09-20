@@ -25,15 +25,15 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
 
   /**
    * El segundo argumento existe porque el panel mira <b>las dos</b> consultas: lo que falta por
-   * medir y lo que está descuadrado. Por omisión, nada descuadrado — así una prueba que solo
+   * medir y lo que no tiene existencia. Por omisión, nada sin existencia — así una prueba que solo
    * hable de medición no tiene que enterarse de que existe la otra.
    */
   constructor(
     private inventario: InventarioSinMedir = { total: 0, totalEnPublicados: 0, items: [] },
     private existencias: ExistenciasDelCatalogo = {
       total: 0,
-      totalDescuadradas: 0,
-      totalDescuadradasEnPublicados: 0,
+      totalSinExistencia: 0,
+      totalSinExistenciaEnPublicados: 0,
       items: [],
     },
   ) {}
@@ -101,9 +101,9 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
  * El gemelo del anterior para la pantalla de existencias y para el aviso del panel, que también
  * son dos pantallas distintas mirando la misma consulta.
  *
- * <p>Al ajustar recalcula la fila como lo hace el servidor —la columna del catálogo se iguala al
- * conteo y el descuadre desaparece (`ADR-0049`)—, porque sin eso una prueba no podría distinguir
- * "se ajustó" de "no pasó nada".
+ * <p>Al ajustar recalcula la fila como lo hace el servidor —el libro pasa a decir lo contado y el
+ * disponible baja lo que haya reservado (`ADR-0050`)—, porque sin eso una prueba no podría
+ * distinguir "se ajustó" de "no pasó nada".
  */
 export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   readonly ajustes: AjustarExistenciaAdmin[] = [];
@@ -111,8 +111,8 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   constructor(
     private existencias: ExistenciasDelCatalogo = {
       total: 0,
-      totalDescuadradas: 0,
-      totalDescuadradasEnPublicados: 0,
+      totalSinExistencia: 0,
+      totalSinExistenciaEnPublicados: 0,
       items: [],
     },
   ) {}
@@ -131,19 +131,17 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
       v.varianteId === comando.varianteId
         ? {
             ...v,
-            existenciaDeclarada: comando.cantidadContada,
             saldoTotal: comando.cantidadContada,
             disponible: comando.cantidadContada - v.reservadas,
-            descuadrada: false,
           }
         : v,
     );
     this.existencias = {
       ...this.existencias,
       items,
-      totalDescuadradas: items.filter((v) => v.descuadrada).length,
-      totalDescuadradasEnPublicados: items.filter(
-        (v) => v.descuadrada && v.estadoProducto === 'PUBLICADO',
+      totalSinExistencia: items.filter((v) => v.saldoTotal === 0).length,
+      totalSinExistenciaEnPublicados: items.filter(
+        (v) => v.saldoTotal === 0 && v.estadoProducto === 'PUBLICADO',
       ).length,
     };
 

@@ -18,21 +18,19 @@ function existencia(overrides: Partial<ExistenciaDeVariante> = {}): ExistenciaDe
     nombreProducto: 'Moto G17',
     sku: 'TS-MOTO-G17-NEGRO',
     estadoProducto: 'PUBLICADO',
-    existenciaDeclarada: 5,
     saldoTotal: 5,
     disponible: 5,
     reservadas: 0,
-    descuadrada: false,
     ...overrides,
   };
 }
 
 function catalogo(items: readonly ExistenciaDeVariante[]): ExistenciasDelCatalogo {
-  const descuadradas = items.filter((v) => v.descuadrada);
+  const sinExistencia = items.filter((v) => v.saldoTotal === 0);
   return {
     total: items.length,
-    totalDescuadradas: descuadradas.length,
-    totalDescuadradasEnPublicados: descuadradas.filter((v) => v.estadoProducto === 'PUBLICADO')
+    totalSinExistencia: sinExistencia.length,
+    totalSinExistenciaEnPublicados: sinExistencia.filter((v) => v.estadoProducto === 'PUBLICADO')
       .length,
     items,
   };
@@ -65,7 +63,7 @@ async function abrirFormulario(sku: string) {
 }
 
 describe('ExistenciasAdminPage', () => {
-  it('enseña las tres cifras por separado, que es de lo que trata la pantalla', async () => {
+  it('enseña las dos cifras por separado, que es de lo que trata la pantalla', async () => {
     await renderPagina([existencia({ saldoTotal: 5, disponible: 3, reservadas: 2 })]);
 
     expect(await screen.findByText('Moto G17')).toBeTruthy();
@@ -76,13 +74,13 @@ describe('ExistenciasAdminPage', () => {
   });
 
   /**
-   * El descuadre es el motivo de existir de la pantalla, y se dice con palabras: un color no lo
-   * lee quien usa lector de pantalla.
+   * Que algo publicado no tenga ni una unidad se dice con palabras: un color no lo lee quien usa
+   * lector de pantalla, y es además el criterio que ordena la lista.
    */
-  it('marca con texto la variante que el catálogo cuenta distinto del libro', async () => {
-    await renderPagina([existencia({ existenciaDeclarada: 5, saldoTotal: 2, descuadrada: true })]);
+  it('marca con texto la variante que el libro deja en cero', async () => {
+    await renderPagina([existencia({ saldoTotal: 0, disponible: 0 })]);
 
-    expect(await screen.findByText(esAdmin.productos.existencias.descuadrada)).toBeTruthy();
+    expect(await screen.findByText(esAdmin.productos.existencias.sinExistencia)).toBeTruthy();
   });
 
   it('sin variantes que contar lo dice, en vez de dejar la pantalla en blanco', async () => {
@@ -170,7 +168,7 @@ describe('ExistenciasAdminPage', () => {
   });
 
   it('no tiene violaciones de accesibilidad', async () => {
-    const { container } = await renderPagina([existencia({ descuadrada: true })]);
+    const { container } = await renderPagina([existencia({ saldoTotal: 0, disponible: 0 })]);
     await screen.findByText('Moto G17');
 
     await esperarSinViolaciones(container);

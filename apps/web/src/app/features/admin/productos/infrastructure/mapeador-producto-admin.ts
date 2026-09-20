@@ -117,8 +117,8 @@ export function aVarianteMedida(dto: VarianteMedidaDto): VarianteMedida {
 export function aExistenciasDelCatalogo(dto: ExistenciasDto): ExistenciasDelCatalogo {
   return {
     total: dto.total ?? 0,
-    totalDescuadradas: dto.totalDescuadradas ?? 0,
-    totalDescuadradasEnPublicados: dto.totalDescuadradasEnPublicados ?? 0,
+    totalSinExistencia: dto.totalSinExistencia ?? 0,
+    totalSinExistenciaEnPublicados: dto.totalSinExistenciaEnPublicados ?? 0,
     items: (dto.items ?? []).map(aExistenciaDeVariante),
   };
 }
@@ -130,11 +130,9 @@ function aExistenciaDeVariante(dto: ExistenciaDeVarianteDto): ExistenciaDeVarian
     nombreProducto: dto.nombreProducto ?? '',
     sku: dto.sku ?? '',
     estadoProducto: (dto.estadoProducto ?? 'BORRADOR') as EstadoProducto,
-    existenciaDeclarada: dto.existenciaDeclarada ?? 0,
     saldoTotal: dto.saldoTotal ?? 0,
     disponible: dto.disponible ?? 0,
     reservadas: dto.reservadas ?? 0,
-    descuadrada: dto.descuadrada ?? false,
   };
 }
 

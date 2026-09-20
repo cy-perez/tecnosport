@@ -32,14 +32,15 @@
     }}</a>
   </nav>
 
-  @if (hayDescuadradas()) {
-    <!-- `role="status"` por lo mismo que el de sin-medir: nada está roto. Lo que hay es un número
-         viejo en la ficha de alguien, que es grave de otra manera — nadie lo va a ver fallar. -->
+  @if (haySinExistencia()) {
+    <!-- `role="status"` por lo mismo que el de sin-medir: nada está roto. Lo que hay es algo
+         publicado que nadie puede comprar, y eso se atiende yendo a la bodega, no arreglando
+         código. -->
     <div class="mb-24 border border-ts-borde p-16" role="status">
       <p class="m-0 mb-8">
         {{
           'admin.panel.existencias.aviso'
-            | transloco: { total: totalDescuadradas(), publicados: descuadradasEnPublicados() }
+            | transloco: { total: totalSinExistencia(), publicados: sinExistenciaEnPublicados() }
         }}
       </p>
       <a class="anillo-foco text-ts-primario" routerLink="../productos/existencias">{{

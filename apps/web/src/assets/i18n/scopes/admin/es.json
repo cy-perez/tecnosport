@@ -41,7 +41,7 @@
     },
     "ir_a_marcas": "Marcas",
     "existencias": {
-      "aviso": "{{total}} variantes tienen en el catálogo una existencia distinta de la del libro de inventario, {{publicados}} en productos ya publicados. Quien las vea en la tienda está leyendo un número viejo.",
+      "aviso": "{{total}} variantes no tienen una sola unidad en el libro de inventario, {{publicados}} en productos ya publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
     }
   },
@@ -258,10 +258,10 @@
     },
     "existencias": {
       "titulo": "Existencias",
-      "explicacion": "Tres cifras por variante, y no son lo mismo. La del catálogo es la que ve quien compra; la del libro es la verdad, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
-      "resumen": "{{total}} variantes activas, {{descuadradas}} con el catálogo diciendo algo distinto del libro.",
+      "explicacion": "Dos cifras por variante, y no son lo mismo. La del libro es lo que hay, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso, y es la que decide si la tienda deja comprar. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
+      "resumen": "{{total}} variantes activas, {{sinExistencia}} sin una sola unidad en el libro.",
       "ninguna": "Todavía no hay variantes activas que contar.",
-      "descuadrada": "(no coincide)",
+      "sinExistencia": "(sin existencia)",
       "reservadas": "({{reservadas}} reservadas)",
       "contar": "Contar",
       "contarVariante": "Contar las unidades de {{sku}}",
@@ -281,7 +281,6 @@
         "producto": "Producto",
         "sku": "SKU",
         "estado": "Estado",
-        "catalogo": "Catálogo",
         "libro": "Libro",
         "disponible": "Disponible"
       }

@@ -37,7 +37,12 @@ export interface Variante {
   readonly id: string;
   readonly sku: string;
   readonly precio: Dinero;
-  readonly existencia: number;
+  /**
+   * Si se puede comprar ahora mismo. Un booleano y no un número desde `ADR-0050`: el servidor lo
+   * calcula sobre el libro de movimientos —descontando las reservas de los pedidos en vuelo— y la
+   * vitrina nunca usó el número para otra cosa que compararlo con cero.
+   */
+  readonly disponible: boolean;
   readonly atributos: readonly ValorAtributo[];
 }
 
@@ -98,5 +103,5 @@ export function precioDesde(producto: Producto): Dinero | null {
 }
 
 export function hayExistencia(producto: Producto): boolean {
-  return producto.variantes.some((variante) => variante.existencia > 0);
+  return producto.variantes.some((variante) => variante.disponible);
 }

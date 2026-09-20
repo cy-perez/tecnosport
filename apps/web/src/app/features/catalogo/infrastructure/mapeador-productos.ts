@@ -84,7 +84,7 @@ function aVariante(dto: VarianteDto): Variante {
     id: dto.id ?? '',
     sku: dto.sku ?? '',
     precio: { valor: dto.precio?.valor ?? 0, moneda: dto.precio?.moneda ?? 'COP' },
-    existencia: dto.existencia ?? 0,
+    disponible: dto.disponible ?? false,
     atributos: (dto.atributos ?? []).map(aValorAtributo),
   };
 }
