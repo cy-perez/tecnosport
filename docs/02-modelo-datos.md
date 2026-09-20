@@ -301,7 +301,7 @@ panel. Ver `ADR-0018`.
 | `TokenRecuperacionClave` | token, vencimiento, un solo uso | Consumirlo revoca todas las sesiones del usuario (`ADR-0015`) |
 | `Direccion` | departamento, ciudad, dirección, barrio, indicaciones | Códigos DANE. El barrio y las indicaciones son opcionales: el barrio es el `area_level3` de la plataforma de envíos, y el checkout lo pide sin exigirlo |
 | `Contacto` | nombre y teléfono de quien recibe | Va en la guía y es a quien llama el mensajero. Nulo solo en pedidos anteriores a `V36` |
-| `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses" |
+| `Categoria`, `Marca`, `Atributo` | catálogo maestro | `Atributo.unidad` (opcional) acompaña al valor cuando el número solo no dice nada: "12 meses". `Marca.nombre` es único **sin distinguir mayúsculas** (`V56`) y se crea desde el panel; la categoría sigue entrando por migración (`ADR-0047`) |
 | `SetRotacion`, `ImagenProducto` | material visual | |
 | `CorreoPendiente` | destinatario, asunto, cuerpo, intentos, próximo intento | No es del dominio: es la bandeja de salida (`ADR-0045`). La fila se escribe con la transacción de la operación que la origina, así que un correo de algo que revirtió no se manda. Lleva datos personales en reposo y se purga a los 30 días |
 
