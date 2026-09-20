@@ -29,9 +29,13 @@ El reparto de trabajo es deliberado:
 
 | Quién | Qué hace |
 |---|---|
+| esta skill (`icecat_local.py`, `preparar_fotos.py`) | consigue el material y arma el pedido de lo que falta |
 | esta skill (`filtrar_fotos.py`) | decide **qué foto sirve** y descarta el resto |
-| `fotos-estudio-degradado` | decide **cómo se ve** y produce maestras y variantes |
-| esta skill (`organizar_imagenes.py`) | acomoda el resultado por producto |
+| `fotos-estudio-degradado` | decide **cómo se ve**, agrupa por producto y separa por ancho |
+| esta skill (`construir_entregables.py`) | lee `<producto>/maestra/` y arma el ZIP |
+
+No hay paso de reacomodo en el medio: la otra skill ya entrega la forma que
+consume el ZIP.
 
 El estilo del catálogo lo define un solo lugar. Si cada skill recortara y
 encuadrara a su manera, el catálogo dejaría de verse parejo, que es justo lo que
@@ -61,10 +65,44 @@ poder discutirse.
 ### Lo que se marca pero no se descarta
 
 La resolución. El estándar de estudio encuadra el producto a 1700 px y muchas
-fotos de Icecat no llegan —en una corrida real, 84 de 122—. No se descartan
-porque en varias marcas no hay nada mejor disponible, y una foto pequeña es
-mejor que ninguna; el retoque las marcará por ampliación y la salida real es
-pedirle al proveedor una mejor.
+fotos de Icecat no llegan —en una corrida real, 84 de 122; en la del 19/09/2026,
+68 de 105—. No se descartan porque en varias marcas no hay nada mejor
+disponible, y una foto pequeña es mejor que ninguna.
+
+**Y se retocan igual** (decisión del negocio, 19/09/2026). Que el retoque marque
+una foto `REPETIR` por ampliación **no debería sacarla del catálogo**: la marca
+es un registro, no una compuerta. Se publica con lo que hay y se pide material
+mejor en paralelo; cuando llegue, se reemplaza. Lo que no se hace es dejar el
+producto sin foto esperando.
+
+### Lo que `fotos-estudio-degradado` ya hace solo, y lo que no
+
+Medido en la corrida del 19/09/2026, y conviene saberlo antes de inventar
+soluciones:
+
+- **El lienzo ya se adapta a la fuente.** No es 2000×2000 siempre: el script
+  elige 400, 480, 800, 1200 o 2000 según lo que da el original, y emite solo las
+  variantes de ese ancho hacia abajo. Un Honor Choice X7e de 400 px sale en
+  `400/` y nada más. **No hay que topar nada a mano**: ya viene topado.
+- **La salida ya viene por producto**, con subcarpetas por ancho
+  (`<producto>/maestra/`, `1200/`, `800/`, `480/`). Es la misma forma que arma
+  `organizar_imagenes.py`, así que **no hay paso de reacomodo**: `construir_entregables.py`
+  lee `<producto>/maestra/` directamente.
+- **Lo que sí es una compuerta es el `REPETIR` por ampliación**, y sigue
+  siéndolo: retira los archivos y `marcar.py --aprobar` no lo levanta —responde
+  «está en REPETIR y eso no se aprueba a ojo»—. Lo que se movió es dónde cae:
+  `ampliacion_repetir` pasó de 2.0 a **3.0** el 19/09/2026, por decisión del
+  negocio y con el porqué escrito en el `SKILL.md` de esa skill.
+
+  Con 2.0 se retenían 11 de 105 fotos y siete productos quedaban con menos de
+  cuatro tomas. Con 3.0 entran las cuatro ampliaciones de 2,59× a 2,94× y
+  quedan fuera las siete de 3,22× a 4,41×. Esas siete van al pedido de fotos al
+  proveedor, que es su sitio: a 4× la foto se ve mal y publicarla no ayuda a
+  vender.
+
+El umbral no se toca desde esta skill. Vive en `fotos-estudio-degradado` porque
+es la que define el estilo del catálogo desde un solo lugar, y cambiarlo afecta
+a **todas** las fotos del sitio, no solo a las de una lista.
 
 ### Mejor tres fotos buenas que cuatro con relleno
 

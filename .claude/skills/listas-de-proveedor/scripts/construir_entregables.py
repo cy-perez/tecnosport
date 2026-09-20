@@ -89,7 +89,17 @@ def construir(datos: dict, dir_imagenes: Path, salida: Path):
         origen = dir_imagenes / p["id"] if dir_imagenes else None
         todas = []
         if origen and origen.is_dir():
-            todas = sorted(f for f in origen.iterdir() if f.suffix.lower() in EXT_IMAGEN)
+            # `fotos-estudio-degradado` agrupa por producto y separa por ancho
+            # (`<producto>/maestra/`, `1200/`, `800/`…) en cuanto las fotos le
+            # llegan en subcarpetas, que es siempre en este flujo. Para el ZIP
+            # se lleva la maestra, que es la mejor versión de cada toma.
+            maestra = origen / "maestra"
+            if maestra.is_dir():
+                todas = sorted(f for f in maestra.iterdir()
+                               if f.suffix.lower() in EXT_IMAGEN)
+            else:
+                todas = sorted(f for f in origen.iterdir()
+                               if f.suffix.lower() in EXT_IMAGEN)
 
         # Las maestras se llaman <id>-01.jpg; el resto son variantes responsive.
         patron = re.compile(rf"^{re.escape(p['id'])}-\d{{2}}$")
@@ -111,8 +121,13 @@ def construir(datos: dict, dir_imagenes: Path, salida: Path):
                 f"Hay {n_fotos} de 4 fotos. Faltan {4 - n_fotos}.",
                 "",
                 "Orden de las fotos: 01 frontal · 02 posterior · 03 ángulo o lateral · 04 detalle.",
-                "Fuentes admitidas: sala de prensa del fabricante, material del proveedor",
-                "o fotos propias. Registrar el origen de cada una antes de publicar.",
+                "Fuentes admitidas: el paquete de imágenes del proveedor, el portal de",
+                "partners si la tienda es revendedor autorizado, Open Icecat o fotos propias.",
+                "Registrar el origen de cada una antes de publicar.",
+                "",
+                "NO sirven las salas de prensa del fabricante (Apple Newsroom, Samsung",
+                "Mobile Press y equivalentes): sus condiciones autorizan uso editorial o",
+                "personal, no publicar el producto en una tienda.",
                 "",
             ]
             for c in p.get("imagenes_candidatas", []):

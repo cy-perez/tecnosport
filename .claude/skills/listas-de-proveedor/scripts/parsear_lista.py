@@ -278,6 +278,12 @@ MESES = {
 
 TITULOS_LISTA = ("LISTA DE", "LISTADO DE", "LISTA ", "LISTADO ")
 
+# Ancho máximo, en palabras, de un encabezado que llega sin marcadores de negrita.
+# Un encabezado es corto; la frase de cortesía con que el proveedor cierra la
+# lista —"TE BRINDAMOS UNA AMPLIA VARIEDAD DE TECNOLOGÍA…"— contiene VARIEDAD y
+# sin este tope se leería como el encabezado de esa sección.
+PALABRAS_MAX_ENCABEZADO_SIN_NEGRITA = 6
+
 
 # --------------------------------------------------------------------------
 # Utilidades
@@ -668,18 +674,35 @@ def atributos_sim(prod):
 # --------------------------------------------------------------------------
 
 def es_encabezado(texto: str) -> bool:
+    """
+    WhatsApp marca los encabezados en *negrita*, pero el mensaje llega sin los
+    asteriscos cuando se copia desde una vista que ya los renderizó. Una lista
+    real llegó así (12/09/2026) y no se reconoció ni una sola sección: los
+    productos quedaron sin la marca y sin la categoría que pone el encabezado,
+    29 sin marca y 7 de marca excluida colándose al análisis.
+
+    Por eso la línea sin marcadores también se acepta, con dos condiciones que un
+    encabezado siempre cumple y una línea de producto casi nunca: no trae precio
+    y es corta. Las reglas de ENCABEZADOS y MARCAS son de subcadena y de prefijo,
+    lo bastante laxas como para tragarse un producto si no se acota el largo.
+    """
     t = limpiar(sin_emojis(texto)).strip()
     if not t or "$" in texto:
         return False
-    if not ((t.startswith("*") and t.rstrip().endswith("*")) or
-            (t.startswith("_") and t.rstrip().endswith("_"))):
-        return False
+    con_negrita = ((t.startswith("*") and t.rstrip().endswith("*")) or
+                   (t.startswith("_") and t.rstrip().endswith("_")))
     contenido = normalizar(t.replace("*", " ").replace("_", " "))
     if any(x in contenido for x in TITULOS_LISTA) or contenido.startswith("LLEGANDO"):
         return True
+    if not con_negrita and len(contenido.split()) > PALABRAS_MAX_ENCABEZADO_SIN_NEGRITA:
+        return False
     if any(clave in contenido for clave, _ in ENCABEZADOS):
         return True
-    return any(contenido == mk or contenido.startswith(mk + " ") for mk in MARCAS)
+    if con_negrita:
+        return any(contenido == mk or contenido.startswith(mk + " ") for mk in MARCAS)
+    # Sin negrita, el encabezado de solo marca tiene que ser exactamente la marca:
+    # "SAMSUNG" es la sección, "SAMSUNG BAND FIT 3" es un producto de esa sección.
+    return contenido in MARCAS
 
 
 def es_ruido(linea: str) -> bool:

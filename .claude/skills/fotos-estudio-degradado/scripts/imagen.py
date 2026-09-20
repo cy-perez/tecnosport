@@ -403,7 +403,7 @@ def quitar_adornos(m: np.ndarray, rgb: np.ndarray, cfg: dict) -> tuple[np.ndarra
     datos = {"adornos_quitados": 0, "adornos": []}
     if not cfg.get("adornos_quitar", True):
         return m, datos
-    binaria = (m > 0.5).astype(np.uint8)
+    binaria = (m > float(cfg.get("alfa_umbral_binario", 0.5))).astype(np.uint8)
     n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(binaria, connectivity=8)
     if n <= 2:
         return m, datos
@@ -439,9 +439,18 @@ def quitar_adornos(m: np.ndarray, rgb: np.ndarray, cfg: dict) -> tuple[np.ndarra
     return m, datos
 
 
-def limpiar_islas(m: np.ndarray, fraccion_min: float, fraccion_aviso: float) -> tuple[np.ndarray, dict]:
-    """Quita fragmentos menores que `fraccion_min` del área del producto y cuenta las piezas grandes."""
-    binaria = (m > 0.5).astype(np.uint8)
+def limpiar_islas(m: np.ndarray, fraccion_min: float, fraccion_aviso: float,
+                  umbral: float = 0.5) -> tuple[np.ndarray, dict]:
+    """Quita fragmentos menores que `fraccion_min` del área del producto y cuenta las piezas grandes.
+
+    `umbral` decide qué cuenta como producto al agrupar en islas, y es el parámetro
+    que salva las superficies de malla. En el JBL Flip 7 la tela de la rejilla sale
+    del modelo con alfa entre 0,2 y 0,5: con el corte en 0,5 se parte en fragmentos
+    que esta función descarta por pequeños, y el parlante se publica sin cuerpo.
+    Bajando el corte a 0,2 la malla entra entera —el producto crece un 81 %— y en
+    una máscara limpia el efecto es de apenas un 1 %.
+    """
+    binaria = (m > umbral).astype(np.uint8)
     n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(binaria, connectivity=8)
     datos = {"islas_descartadas": 0, "mayor_isla_descartada": 0.0, "piezas": 0}
     if n <= 1:
@@ -548,6 +557,61 @@ def corregir_tono(color: np.ndarray, alfa: np.ndarray, cfg_t: dict, fpx: float) 
     datos["gamut_limitado_pct"] = round(100 * float(limitados[interior].mean()), 3)
     lab[..., 0] = L3
     return lab_a_rgb(lab), datos
+
+
+def solidificar_interior(alfa: np.ndarray, banda_px: float,
+                         frac_agujero_max: float = 0.0,
+                         umbral: float = 0.5,
+                         cierre_px: float = 0.0) -> tuple[np.ndarray, float]:
+    """Lleva a 1 el alfa del interior del producto y deja el borde como estaba.
+
+    El modelo de recorte devuelve alfa parcial **dentro** del producto cuando su
+    superficie se parece al fondo: en una foto del Galaxy A56 el 35,6 % de los
+    píxeles interiores tenían alfa < 1, con mínimos de 0,53. Al componer, el gris
+    del estudio se ve a través de esas zonas y la pantalla sale con manchas
+    grises y oliva que no están en la foto original.
+
+    El interior se define por distancia al cero más cercano, no por erosión de la
+    silueta, y esa diferencia importa: `distanceTransform` mide también la
+    distancia a un **agujero** del producto, así que un asa calada o el hueco de
+    un aro siguen abiertos. Solo se rellena lo que está lejos de cualquier borde.
+
+    La rampa evita la costura: en el borde manda el alfa original, a `banda_px`
+    hacia adentro el alfa es 1, y entre medias sube suave. Nunca baja el alfa.
+    """
+    solido = (alfa >= umbral).astype(np.uint8)
+    if not solido.any():
+        return alfa, 0.0
+
+    # Los agujeros pequeños del recorte se cierran; los grandes no. Un asa calada
+    # o el hueco de un aro son una fracción grande del producto y tienen que
+    # seguir abiertos; una mancha del modelo en mitad de una pantalla es diminuta.
+    if frac_agujero_max > 0:
+        n, etiquetas, stats, _ = cv2.connectedComponentsWithStats(1 - solido, 8)
+        area_producto = float(solido.sum())
+        borde = set(etiquetas[0, :]) | set(etiquetas[-1, :]) | set(etiquetas[:, 0]) | set(etiquetas[:, -1])
+        for i in range(1, n):
+            if i in borde:                                   # eso es el fondo, no un agujero
+                continue
+            if stats[i, cv2.CC_STAT_AREA] <= frac_agujero_max * area_producto:
+                solido[etiquetas == i] = 1
+
+    # Las grietas finas se cierran antes de medir la distancia. El modelo parte un
+    # producto en dos piezas cuando una costura o un reflejo le baja el alfa en una
+    # línea estrecha; si esa línea sobrevive, la rampa la trata como borde y el
+    # fondo se ve a través de ella como un fleco claro en mitad del producto.
+    # Un cierre morfológico une los dos lados sin mover el contorno exterior.
+    if cierre_px >= 1:
+        k = int(cierre_px) | 1
+        solido = cv2.morphologyEx(solido, cv2.MORPH_CLOSE,
+                                  cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+
+    dist = cv2.distanceTransform(solido, cv2.DIST_L2, 3)
+    rampa = np.clip(dist / max(float(banda_px), 1e-6), 0.0, 1.0)
+    nuevo = np.maximum(alfa, rampa).astype(np.float32)
+    dentro = solido > 0
+    subidos = float((nuevo[dentro] - alfa[dentro] > 1e-3).mean()) if dentro.any() else 0.0
+    return nuevo, round(subidos, 4)
 
 
 def enfocar(color: np.ndarray, alfa: np.ndarray, cfg_e: dict, fpx: float) -> np.ndarray:

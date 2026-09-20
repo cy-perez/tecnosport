@@ -26,21 +26,36 @@ y en una sola página por producto:
 
 ### Cómo se usa
 
-**1. Cosechar los slugs, no adivinarlos.** Adivinar URLs gasta media docena de
-404. Las listas de producto traen los enlaces reales:
+**1. Comprobar el slug, no cosecharlo.** Las rutas de mi.com cambian: las de
+2026-09-15 (`/co/product-list/phone/`, `/wearable/`, `/accessory/`) **devuelven
+404** desde el 19/09/2026. Ahora el catálogo está partido por línea:
 
 ```
-https://www.mi.com/co/product-list/phone/       celulares, y de paso casi todo
-https://www.mi.com/co/product-list/wearable/    relojes, bandas y audífonos
-https://www.mi.com/co/product-list/accessory/   tablets
+https://www.mi.com/co/product-list/phone/xiaomi/   Xiaomi
+https://www.mi.com/co/product-list/phone/redmi/    Redmi
+https://www.mi.com/co/poco/                        POCO
+https://www.mi.com/co/wearables/                   relojes, bandas y audífonos
+https://www.mi.com/co/product-list/tablets/tablet/ tablets
 ```
 
-En cualquiera de ellas, los slugs salen del DOM:
+Y cosechar slugs de esas páginas **no funciona bien**: los enlaces de producto
+salen del menú de navegación, no del listado, así que se recogen 67 slugs que no
+son los que buscas. Conviene al revés: **construir el slug desde el título y
+comprobarlo**, que acierta casi siempre porque el patrón es regular
+(`redmi-note-15-pro`, `poco-x8-pro-max`, `redmi-pad-2-9-7-inch`,
+`xiaomi-smart-projector-l1`).
+
+**Cuidado con el 404 blando: el estado HTTP no sirve.** mi.com responde **200 a
+cualquier slug**, incluido uno inventado, y redirige por dentro a
+`/co/errors/404`. Lo que distingue un producto real es la **URL final**:
 
 ```js
-[...document.querySelectorAll('a[href*="/co/product/"]')]
-  .map(a => a.getAttribute('href').match(/\/co\/product\/([^\/?#]+)/)?.[1])
+const r = await fetch('/co/product/' + slug + '/specs/');
+const existe = !r.url.includes('/errors/404');   // NO mirar r.status
 ```
+
+Comprobado así, las 26 referencias Xiaomi de la lista del 12/09/2026 tenían
+ficha, incluidas las que el listado no mostraba.
 
 **2. La ficha está en `/specs/`:** `https://www.mi.com/co/product/<slug>/specs/`.
 
@@ -86,7 +101,23 @@ Recorta desde `Comprar ahora` hasta el pie de página (`Suscríbete`, `Síguenos
 `scripts/icecat_local.py` trae fichas completas en español y las fotos en la
 misma pasada. Cubrió 34 de 98 productos en la misma corrida.
 
-### Cobertura real (medida el 15/09/2026)
+### Cobertura real
+
+Medida dos veces, con listas parecidas y resultado parecido:
+
+| | 15/09/2026 | 19/09/2026 |
+|---|--:|--:|
+| Productos de la lista | 98 | 96 |
+| Resueltos por `mi.com/co` | 39 | 38 |
+| Fichas traídas de Open Icecat | 34 | 34 |
+| Productos con sus 4 fotos de Icecat | — | 23 |
+| Sin ficha de ninguna de las dos | — | 16 |
+
+La proporción se repite: **Icecat cubre un tercio largo y Xiaomi otro tercio**,
+y queda un resto que solo resuelve el proveedor. No es un fallo del paso; es la
+razon de que `preparar_fotos.py` descuente lo resuelto y arme el pedido.
+
+### Cobertura por marca (medida el 15/09/2026)
 
 | En el catálogo abierto | Solo en el catálogo de pago |
 |---|---|
@@ -101,7 +132,7 @@ Como Xiaomi es la marca más grande de estas listas, **Icecat nunca va a cubrir
 la mitad del catálogo**. Eso no es un fallo del paso: es la razón por la que
 `preparar_fotos.py` descuenta lo resuelto y arma el pedido al proveedor.
 
-### Las tres trampas del emparejamiento
+### Las cuatro trampas del emparejamiento
 
 1. **Trae la ficha de otra variante.** El índice mezcla capacidades y redes. En
    la corrida real, el A17 4G y el A17 5G emparejaron con *la misma* ficha, que
@@ -115,6 +146,31 @@ la mitad del catálogo**. Eso no es un fallo del paso: es la razón por la que
    llama `PartyBox Stage 320` a lo que la lista dice `PARTYBOX 320`, y
    `EXTREME 4/NO` a lo que la marca escribe `Xtreme 4`. La ficha corrige el
    nombre; el campo `modelo` de Icecat no siempre es publicable tal cual.
+4. **Trae la ficha del juego, no la de la consola.** El bundle
+   `Nintendo Switch 2 Mario Kart` empareja con `Nintendo Mario Kart World
+   (Switch 2)`, que **pesa 10 gramos**: es el juego. Es la misma trampa que
+   tiende el buscador de Alkosto con esa referencia. El peso es la señal más
+   rápida para detectarla.
+
+Cuando la ficha contradiga la categoría, el peso o el tamaño del producto, se
+descarta entera con `"icecat": false` en `prosa.json`. No se le saca «lo que
+sirva»: si la ficha es de otro producto, todos sus datos son de otro producto.
+
+### Lo que Icecat trae vacío
+
+`icecat_local.py traer` deja un JSON por producto con `especificaciones` —unos
+115 pares atributo/valor, que es de donde sale la tabla—, `vinetas`, `resumen`
+y `atribucion`. Pero **`meta_titulo`, `meta_descripcion`, `garantia` y
+`descripcion_larga` vienen vacíos** en todas las fichas medidas. Esos cuatro los
+escribe una persona; no los esperes del catálogo.
+
+### La memoria nunca sale de la ficha
+
+Es la consecuencia práctica de la trampa 1, y `redactar_fichas.py` ya la aplica:
+la fila «Memoria» de la tabla se arma **siempre** con la RAM y el
+almacenamiento de la línea del proveedor. La ficha del Galaxy A56 declara 128GB
+y vendemos 256; la del A57 declara 8GB y el nuestro trae 12. Copiar la ficha tal
+cual publica una tabla que contradice el título del propio producto.
 
 ### Cuando `buscar` no encuentra lo que sí existe
 
