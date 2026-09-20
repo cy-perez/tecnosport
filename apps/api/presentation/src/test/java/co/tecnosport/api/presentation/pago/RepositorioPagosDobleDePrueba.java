@@ -28,7 +28,7 @@ final class RepositorioPagosDobleDePrueba implements RepositorioPagos {
   public List<Pago> buscarPendientesParaConciliar(Instant creadosAntesDe) {
     return pagos.stream()
         .filter(p -> p.estado() == EstadoPago.PENDIENTE)
-        .filter(p -> p.idTransaccionWompi().isPresent())
+        .filter(p -> p.idTransaccionPasarela().isPresent())
         .filter(p -> p.creadoEn().isBefore(creadosAntesDe))
         .toList();
   }

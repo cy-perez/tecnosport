@@ -79,45 +79,45 @@ class PagoTest {
   }
 
   @Test
-  void unPagoNuevoNoTieneIdDeTransaccionWompi() {
+  void unPagoNuevoNoTieneIdDeTransaccionDeLaPasarela() {
     Pago pago = crear();
 
-    assertTrue(pago.idTransaccionWompi().isEmpty());
+    assertTrue(pago.idTransaccionPasarela().isEmpty());
   }
 
   @Test
-  void registrarElIdDeTransaccionWompiQuedaDisponible() {
+  void registrarElIdDeTransaccionDeLaPasarelaQuedaDisponible() {
     Pago pago = crear();
 
-    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+    pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
-    assertEquals("1234-1610641025-49201", pago.idTransaccionWompi().orElseThrow());
+    assertEquals("1234-1610641025-49201", pago.idTransaccionPasarela().orElseThrow());
   }
 
   @Test
   void registrarElMismoIdDosVecesEsInofensivo() {
     Pago pago = crear();
-    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+    pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
-    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+    pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
-    assertEquals("1234-1610641025-49201", pago.idTransaccionWompi().orElseThrow());
+    assertEquals("1234-1610641025-49201", pago.idTransaccionPasarela().orElseThrow());
   }
 
   @Test
   void registrarUnIdDistintoAlYaRegistradoSeRechaza() {
     Pago pago = crear();
-    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+    pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
     assertThrows(
-        ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionWompi("otro-id-distinto"));
+        ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionPasarela("otro-id-distinto"));
   }
 
   @Test
   void registrarUnIdVacioSeRechaza() {
     Pago pago = crear();
 
-    assertThrows(ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionWompi("  "));
+    assertThrows(ExcepcionDeDominio.class, () -> pago.registrarIdTransaccionPasarela("  "));
   }
 
   @Test

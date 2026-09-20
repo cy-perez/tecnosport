@@ -15,11 +15,11 @@ import java.util.Optional;
 /**
  * Trabajo programado (docs/11-pagos-y-envios.md: "un trabajo programado concilia los pagos que
  * quedaron pendientes y nunca recibieron webhook. Los webhooks se pierden; el dinero no puede
- * perderse con ellos"). Solo revisa pagos con {@link Pago#idTransaccionWompi()} registrado — sin él
- * no hay cómo consultar la API de Wompi, que busca por su id, no por la referencia propia. Un pago
- * sin ese id (el cliente cerró la pestaña antes de volver del checkout, y tampoco llegó el webhook)
- * queda fuera de este mecanismo, para seguimiento manual en el panel — la vista de operación mínima
- * de esta fase, no construida todavía.
+ * perderse con ellos"). Solo revisa pagos con {@link Pago#idTransaccionPasarela()} registrado — sin
+ * él no hay cómo consultar la API de Wompi, que busca por su id, no por la referencia propia. Un
+ * pago sin ese id (el cliente cerró la pestaña antes de volver del checkout, y tampoco llegó el
+ * webhook) queda fuera de este mecanismo, para seguimiento manual en el panel — la vista de
+ * operación mínima de esta fase, no construida todavía.
  */
 public final class ConciliarPagosPendientes {
 
@@ -61,9 +61,9 @@ public final class ConciliarPagosPendientes {
   }
 
   private boolean conciliar(Pago pago, Instant ahora) {
-    String idTransaccionWompi = pago.idTransaccionWompi().orElseThrow();
+    String idTransaccionPasarela = pago.idTransaccionPasarela().orElseThrow();
     Optional<TransaccionDePasarela> transaccion =
-        pasarelaDePagos.consultarTransaccion(idTransaccionWompi);
+        pasarelaDePagos.consultarTransaccion(idTransaccionPasarela);
     if (transaccion.isEmpty()) {
       return false;
     }
@@ -74,7 +74,7 @@ public final class ConciliarPagosPendientes {
     }
     EventoPago evento =
         new EventoPago(
-            "conciliacion:" + idTransaccionWompi + ":" + estadoWompi, nuevoEstado, ahora);
+            "conciliacion:" + idTransaccionPasarela + ":" + estadoWompi, nuevoEstado, ahora);
     ResultadoEventoDePago resultado =
         AplicadorDeResultadoDePago.aplicar(
             pago,

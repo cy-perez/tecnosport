@@ -34,7 +34,7 @@ class RegistrarIdTransaccionWompiTest {
         new RegistrarIdTransaccionWompiComando(REFERENCIA.valor(), "1234-1610641025-49201"));
 
     Pago pagoActualizado = pagos.buscarPorReferencia(REFERENCIA).orElseThrow();
-    assertEquals("1234-1610641025-49201", pagoActualizado.idTransaccionWompi().orElseThrow());
+    assertEquals("1234-1610641025-49201", pagoActualizado.idTransaccionPasarela().orElseThrow());
   }
 
   @Test

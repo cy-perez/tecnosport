@@ -35,8 +35,8 @@ public class PagoJpaEntity {
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn;
 
-  @Column(name = "id_transaccion_wompi")
-  private String idTransaccionWompi;
+  @Column(name = "id_transaccion_pasarela")
+  private String idTransaccionPasarela;
 
   /** El {@code payment_method_type} que reportó Wompi, crudo. Ver V39. */
   @Column(name = "medio_reportado_pasarela")
@@ -53,7 +53,7 @@ public class PagoJpaEntity {
       String estado,
       Instant creadoEn,
       Instant actualizadoEn,
-      String idTransaccionWompi,
+      String idTransaccionPasarela,
       String medioReportadoPasarela) {
     this.id = id;
     this.pedidoId = pedidoId;
@@ -63,7 +63,7 @@ public class PagoJpaEntity {
     this.estado = estado;
     this.creadoEn = creadoEn;
     this.actualizadoEn = actualizadoEn;
-    this.idTransaccionWompi = idTransaccionWompi;
+    this.idTransaccionPasarela = idTransaccionPasarela;
     this.medioReportadoPasarela = medioReportadoPasarela;
   }
 
@@ -99,8 +99,8 @@ public class PagoJpaEntity {
     return actualizadoEn;
   }
 
-  public String getIdTransaccionWompi() {
-    return idTransaccionWompi;
+  public String getIdTransaccionPasarela() {
+    return idTransaccionPasarela;
   }
 
   public String getMedioReportadoPasarela() {

@@ -36,5 +36,5 @@ public interface PasarelaDePagos {
    * dejaba a la conciliación cerrando pedidos sin enterarse de que el comprador pagó con algo
    * distinto de lo que había elegido en el checkout.
    */
-  Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi);
+  Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionPasarela);
 }

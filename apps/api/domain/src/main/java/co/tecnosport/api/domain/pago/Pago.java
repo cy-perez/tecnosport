@@ -29,7 +29,7 @@ public final class Pago {
   private final Instant creadoEn;
   private EstadoPago estado;
   private Instant actualizadoEn;
-  private String idTransaccionWompi;
+  private String idTransaccionPasarela;
   private String medioReportadoPorLaPasarela;
 
   public Pago(
@@ -42,7 +42,7 @@ public final class Pago {
       List<EventoPago> eventos,
       Instant creadoEn,
       Instant actualizadoEn,
-      String idTransaccionWompi,
+      String idTransaccionPasarela,
       String medioReportadoPorLaPasarela) {
     this.id = Objects.requireNonNull(id, "El id del pago no puede ser nulo.");
     this.pedidoId = Objects.requireNonNull(pedidoId, "El id del pedido no puede ser nulo.");
@@ -55,7 +55,7 @@ public final class Pago {
     this.creadoEn = Objects.requireNonNull(creadoEn, "La fecha de creación no puede ser nula.");
     this.actualizadoEn =
         Objects.requireNonNull(actualizadoEn, "La fecha de actualización no puede ser nula.");
-    this.idTransaccionWompi = idTransaccionWompi;
+    this.idTransaccionPasarela = idTransaccionPasarela;
     this.medioReportadoPorLaPasarela = normalizar(medioReportadoPorLaPasarela);
   }
 
@@ -116,8 +116,8 @@ public final class Pago {
     return actualizadoEn;
   }
 
-  public Optional<String> idTransaccionWompi() {
-    return Optional.ofNullable(idTransaccionWompi);
+  public Optional<String> idTransaccionPasarela() {
+    return Optional.ofNullable(idTransaccionPasarela);
   }
 
   /**
@@ -182,14 +182,14 @@ public final class Pago {
    * {@link #referencia}. Registrar el mismo id dos veces es inofensivo; uno distinto se rechaza,
    * porque no debería poder pasar.
    */
-  public void registrarIdTransaccionWompi(String id) {
+  public void registrarIdTransaccionPasarela(String id) {
     if (id == null || id.isBlank()) {
       throw new ExcepcionDeDominio("El id de transacción de Wompi no puede estar vacío.");
     }
-    if (idTransaccionWompi != null && !idTransaccionWompi.equals(id)) {
+    if (idTransaccionPasarela != null && !idTransaccionPasarela.equals(id)) {
       throw new ExcepcionDeDominio(
           "El pago ya tiene registrado un id de transacción de Wompi distinto.");
     }
-    idTransaccionWompi = id;
+    idTransaccionPasarela = id;
   }
 }

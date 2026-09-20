@@ -84,7 +84,7 @@ class ConciliarPagosPendientesTest {
     return pedido;
   }
 
-  private Pago pagoPendiente(Pedido pedido, String idTransaccionWompi, Instant creadoEn) {
+  private Pago pagoPendiente(Pedido pedido, String idTransaccionPasarela, Instant creadoEn) {
     Pago pago =
         Pago.crear(
             pedido.id(),
@@ -92,8 +92,8 @@ class ConciliarPagosPendientesTest {
             pedido.metodoPago(),
             pedido.total(),
             creadoEn);
-    if (idTransaccionWompi != null) {
-      pago.registrarIdTransaccionWompi(idTransaccionWompi);
+    if (idTransaccionPasarela != null) {
+      pago.registrarIdTransaccionPasarela(idTransaccionPasarela);
     }
     pagos.guardar(pago);
     return pago;
@@ -147,7 +147,7 @@ class ConciliarPagosPendientesTest {
   }
 
   @Test
-  void unPagoSinIdTransaccionWompiNoSeRevisa() {
+  void unPagoSinIdDeTransaccionDeLaPasarelaNoSeRevisa() {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
     pagoPendiente(pedido, null, AHORA.minus(Duration.ofMinutes(20)));

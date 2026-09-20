@@ -24,12 +24,12 @@ final class PasarelaDePagosFalsa implements PasarelaDePagos {
   }
 
   /** Sin medio: Wompi no siempre lo trae, y el estado tiene que bastar para conciliar. */
-  void conEstadoDeTransaccion(String idTransaccionWompi, String estado) {
-    transacciones.put(idTransaccionWompi, new TransaccionDePasarela(estado, null));
+  void conEstadoDeTransaccion(String idTransaccionPasarela, String estado) {
+    transacciones.put(idTransaccionPasarela, new TransaccionDePasarela(estado, null));
   }
 
-  void conTransaccion(String idTransaccionWompi, String estado, String medio) {
-    transacciones.put(idTransaccionWompi, new TransaccionDePasarela(estado, medio));
+  void conTransaccion(String idTransaccionPasarela, String estado, String medio) {
+    transacciones.put(idTransaccionPasarela, new TransaccionDePasarela(estado, medio));
   }
 
   @Override
@@ -44,7 +44,7 @@ final class PasarelaDePagosFalsa implements PasarelaDePagos {
   }
 
   @Override
-  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionWompi) {
-    return Optional.ofNullable(transacciones.get(idTransaccionWompi));
+  public Optional<TransaccionDePasarela> consultarTransaccion(String idTransaccionPasarela) {
+    return Optional.ofNullable(transacciones.get(idTransaccionPasarela));
   }
 }

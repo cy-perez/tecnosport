@@ -180,17 +180,17 @@ class RepositorioPagosJpaTest {
   }
 
   @Test
-  void registrarIdTransaccionWompiSePersiste() {
+  void registrarIdTransaccionPasarelaSePersiste() {
     UUID pedidoId = crearYGuardarPedido();
     ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
     Pago pago =
         Pago.crear(pedidoId, referencia, MetodoPago.NEQUI, Dinero.deCop(100_000), Instant.now());
-    pago.registrarIdTransaccionWompi("1234-1610641025-49201");
+    pago.registrarIdTransaccionPasarela("1234-1610641025-49201");
 
     repositorio.guardar(pago);
 
     Pago encontrado = repositorio.buscarPorReferencia(referencia).orElseThrow();
-    assertThat(encontrado.idTransaccionWompi()).contains("1234-1610641025-49201");
+    assertThat(encontrado.idTransaccionPasarela()).contains("1234-1610641025-49201");
   }
 
   @Test
@@ -207,7 +207,7 @@ class RepositorioPagosJpaTest {
             MetodoPago.NEQUI,
             Dinero.deCop(100_000),
             viejo);
-    califica.registrarIdTransaccionWompi("wompi-tx-califica");
+    califica.registrarIdTransaccionPasarela("wompi-tx-califica");
     repositorio.guardar(califica);
 
     Pago sinId =
@@ -226,7 +226,7 @@ class RepositorioPagosJpaTest {
             MetodoPago.NEQUI,
             Dinero.deCop(100_000),
             ahora);
-    muyReciente.registrarIdTransaccionWompi("wompi-tx-reciente");
+    muyReciente.registrarIdTransaccionPasarela("wompi-tx-reciente");
     repositorio.guardar(muyReciente);
 
     Pago yaAprobado =
@@ -236,7 +236,7 @@ class RepositorioPagosJpaTest {
             MetodoPago.NEQUI,
             Dinero.deCop(100_000),
             viejo);
-    yaAprobado.registrarIdTransaccionWompi("wompi-tx-aprobado");
+    yaAprobado.registrarIdTransaccionPasarela("wompi-tx-aprobado");
     yaAprobado.aplicarEvento(new EventoPago("evt-aprobado", EstadoPago.APROBADO, viejo));
     repositorio.guardar(yaAprobado);
 

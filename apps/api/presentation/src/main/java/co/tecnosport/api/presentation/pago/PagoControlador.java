@@ -77,6 +77,9 @@ public class PagoControlador {
   public void registrarIdTransaccion(
       @PathVariable String referencia, @RequestBody RegistrarIdTransaccionWompiRequest cuerpo) {
     RegistrarIdTransaccionWompiComando comando =
+        // El DTO conserva el nombre `idTransaccionWompi`: es el contrato publicado de un endpoint
+        // que solo usa el retorno del Web Checkout de Wompi, y renombrarlo movería el OpenAPI y el
+        // cliente TypeScript generado sin que nada lo pidiera (adr/0048).
         new RegistrarIdTransaccionWompiComando(referencia, cuerpo.idTransaccionWompi());
     transaccion.executeWithoutResult(estado -> registrarIdTransaccionWompi.ejecutar(comando));
   }

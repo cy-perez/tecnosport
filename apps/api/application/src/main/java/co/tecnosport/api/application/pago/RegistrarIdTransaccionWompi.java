@@ -24,7 +24,7 @@ public final class RegistrarIdTransaccionWompi {
         repositorioPagos
             .buscarPorReferencia(new ReferenciaPago(comando.referencia()))
             .orElseThrow(() -> new PagoNoEncontradoException(comando.referencia()));
-    pago.registrarIdTransaccionWompi(comando.idTransaccionWompi());
+    pago.registrarIdTransaccionPasarela(comando.idTransaccionPasarela());
     repositorioPagos.guardar(pago);
   }
 }
