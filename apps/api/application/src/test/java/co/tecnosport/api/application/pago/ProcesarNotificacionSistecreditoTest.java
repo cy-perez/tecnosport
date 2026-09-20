@@ -1,0 +1,222 @@
+package co.tecnosport.api.application.pago;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import co.tecnosport.api.application.compartido.RelojFalso;
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.compartido.Dinero;
+import co.tecnosport.api.domain.compartido.Sku;
+import co.tecnosport.api.domain.inventario.Inventario;
+import co.tecnosport.api.domain.inventario.MovimientoInventario;
+import co.tecnosport.api.domain.pago.EstadoPago;
+import co.tecnosport.api.domain.pago.Pago;
+import co.tecnosport.api.domain.pago.ReferenciaPago;
+import co.tecnosport.api.domain.pedido.Direccion;
+import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.LineaPedido;
+import co.tecnosport.api.domain.pedido.MetodoPago;
+import co.tecnosport.api.domain.pedido.NumeroPedido;
+import co.tecnosport.api.domain.pedido.Pedido;
+import co.tecnosport.api.domain.pedido.TipoEntrega;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Lo que estas pruebas protegen es el único punto de esta integración donde un desconocido puede
+ * escribirnos: el endpoint de confirmación es público y la notificación no viene firmada ({@code
+ * adr/0048}). Si el contraste contra la pasarela se afloja, aprobar un pedido pasa a costar una
+ * petición HTTP desde cualquier parte del mundo.
+ */
+class ProcesarNotificacionSistecreditoTest {
+
+  private static final Instant AHORA = Instant.parse("2026-09-20T12:00:00Z");
+  private static final CorreoElectronico CORREO = new CorreoElectronico("cliente@tecnosport.co");
+  private static final Direccion DIRECCION =
+      Direccion.sinBarrio("05", "Antioquia", "05001", "Medellín", "Cra. 26C #38B-31", "Casa azul");
+  private static final String ID_TRANSACCION = "649b4c821b581f96e45b5696";
+  private static final ReferenciaPago REFERENCIA = new ReferenciaPago("TS-2026-000001-1");
+
+  private RepositorioPagosFalso pagos;
+  private RepositorioPedidosFalso pedidos;
+  private RepositorioInventarioFalso inventarios;
+  private PasarelaSistecreditoFalsa pasarela;
+  private Pedido pedido;
+
+  private ProcesarNotificacionSistecredito crear() {
+    pagos = new RepositorioPagosFalso();
+    pedidos = new RepositorioPedidosFalso();
+    inventarios = new RepositorioInventarioFalso();
+    pasarela = new PasarelaSistecreditoFalsa();
+    pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 1),
+            null,
+            CORREO,
+            List.of(linea()),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION,
+            MetodoPago.SISTECREDITO,
+            "cliente@tecnosport.co",
+            AHORA);
+    pedidos.conPedido(pedido);
+    Pago pago = Pago.crear(pedido.id(), REFERENCIA, MetodoPago.SISTECREDITO, pedido.total(), AHORA);
+    pago.registrarIdTransaccionPasarela(ID_TRANSACCION);
+    pagos.guardar(pago);
+    return new ProcesarNotificacionSistecredito(
+        pagos, pedidos, inventarios, pasarela, new RelojFalso(AHORA));
+  }
+
+  /** Con reserva vigente: confirmar o liberar la encuentran válida, como en un pedido real. */
+  private LineaPedido linea() {
+    UUID varianteId = UUID.randomUUID();
+    Inventario inventario = Inventario.crear(varianteId);
+    inventario.registrarEntrada(10, "siembra de prueba", AHORA);
+    MovimientoInventario reserva = inventario.reservar(1, Duration.ofMinutes(30), AHORA);
+    inventarios.conInventario(inventario);
+    return new LineaPedido(
+        UUID.randomUUID(),
+        varianteId,
+        new Sku("TS-CAM-AZ-M"),
+        "Camiseta running Dry-Fit",
+        1,
+        Dinero.deCop(80_000),
+        new BigDecimal("0.19"),
+        "https://cdn.tecnosport.co/img.webp",
+        reserva.id());
+  }
+
+  private static TransaccionSistecredito laPasarelaDice(String estado) {
+    return new TransaccionSistecredito(
+        ID_TRANSACCION, REFERENCIA.valor(), estado, null, null, null);
+  }
+
+  private ProcesarNotificacionSistecreditoComando notificacion(String estado) {
+    return new ProcesarNotificacionSistecreditoComando(ID_TRANSACCION, REFERENCIA.valor(), estado);
+  }
+
+  @Test
+  void unaNotificacionAprobadaQueLaPasarelaConfirmaAplicaElPago() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Approved"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.APLICADO, caso.ejecutar(notificacion("Approved")));
+    assertEquals(EstadoPago.APROBADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+    // Con el inventario confirmado el pedido no se queda en PAGADO: sigue de una vez a
+    // EN_PREPARACION, igual que con Wompi. Es el aplicador compartido haciendo su trabajo.
+    assertEquals(
+        EstadoPedido.EN_PREPARACION, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * <b>La prueba que justifica todo el diseño.</b> Alguien manda al endpoint público un cuerpo que
+   * dice "Approved" para una transacción que la pasarela reporta como rechazada. No se aplica nada.
+   */
+  @Test
+  void unaNotificacionQueMienteSobreElEstadoNoAplicaNada() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Rejected"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA,
+        caso.ejecutar(notificacion("Approved")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /** Lo mismo con la factura: el id es de otra transacción distinta de la que dice la pasarela. */
+  @Test
+  void unaNotificacionConOtraFacturaNoAplicaNada() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Approved"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA,
+        caso.ejecutar(
+            new ProcesarNotificacionSistecreditoComando(
+                ID_TRANSACCION, "TS-2026-000999-1", "Approved")));
+  }
+
+  /**
+   * Sin poder preguntar no se aplica. Cuesta un retraso de minutos —la conciliación lo recoge— y
+   * evita el único fallo caro: creerle a un cuerpo que nadie verificó.
+   */
+  @Test
+  void siNoSePuedePreguntarALaPasarelaNoSeAplicaNada() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(null);
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.NO_SE_PUDO_VERIFICAR,
+        caso.ejecutar(notificacion("Approved")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  @Test
+  void sinIdDeTransaccionNoHayNadaQueVerificar() {
+    ProcesarNotificacionSistecredito caso = crear();
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.NO_SE_PUDO_VERIFICAR,
+        caso.ejecutar(
+            new ProcesarNotificacionSistecreditoComando(null, REFERENCIA.valor(), "Approved")));
+  }
+
+  /** La pasarela avisa cada cambio de estado, y el camino no es un resultado. */
+  @Test
+  void losEstadosEnVueloNoSonUnResultado() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("PendingForPaymentMethod"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.ESTADO_NO_SOPORTADO,
+        caso.ejecutar(notificacion("PendingForPaymentMethod")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /** Cancelada, vencida o abandonada: la compra no ocurrió y la reserva tiene que soltarse. */
+  @Test
+  void unaTransaccionAbandonadaRechazaElPago() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Abandoned"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.APLICADO, caso.ejecutar(notificacion("Abandoned")));
+    assertEquals(
+        EstadoPago.RECHAZADO, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
+  }
+
+  /** Se repite la misma notificación: la segunda no vuelve a mover nada. */
+  @Test
+  void laMismaNotificacionDosVecesSoloSeAplicaUnaVez() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Approved"));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.APLICADO, caso.ejecutar(notificacion("Approved")));
+    assertEquals(
+        ResultadoNotificacionSistecredito.YA_PROCESADO, caso.ejecutar(notificacion("Approved")));
+  }
+
+  @Test
+  void unaReferenciaSinPagoPropioNoEsUnError() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(
+        new TransaccionSistecredito(
+            ID_TRANSACCION, "TS-2026-000777-1", "Approved", null, null, null));
+
+    assertEquals(
+        ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
+        caso.ejecutar(
+            new ProcesarNotificacionSistecreditoComando(
+                ID_TRANSACCION, "TS-2026-000777-1", "Approved")));
+  }
+}

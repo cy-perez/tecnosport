@@ -1,8 +1,10 @@
 package co.tecnosport.api.bootstrap.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.pago.CrearIntentoDePagoSistecredito;
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
+import co.tecnosport.api.application.pago.ProcesarNotificacionSistecredito;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
@@ -76,6 +78,17 @@ public class ConfiguracionSistecredito {
         propiedades.urlConfirmacion(),
         propiedades.sandboxActivo(),
         propiedades.sandboxEstado());
+  }
+
+  @Bean
+  public ProcesarNotificacionSistecredito procesarNotificacionSistecredito(
+      RepositorioPagos repositorioPagos,
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      PasarelaSistecredito pasarelaSistecredito,
+      Reloj reloj) {
+    return new ProcesarNotificacionSistecredito(
+        repositorioPagos, repositorioPedidos, repositorioInventario, pasarelaSistecredito, reloj);
   }
 
   /**
