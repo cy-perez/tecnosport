@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
+import { usarExistencias } from '../productos/application/listar-existencias.consulta';
 import { usarVariantesSinMedir } from '../productos/application/listar-variantes-sin-medir.consulta';
 
 /**
@@ -42,6 +43,26 @@ export class PanelAdminPage {
     () => this.sinMedir.data()?.totalEnPublicados ?? 0,
   );
   protected readonly haySinMedir = computed(() => this.totalSinMedir() > 0);
+
+  /**
+   * El otro vigilante, y este avisa de algo que el sistema se hace a sí mismo: el catálogo declara
+   * una existencia que solo mueven el alta de la variante y un conteo, mientras el libro de
+   * inventario se mueve con cada venta (`ADR-0049`). O sea que el descuadre aparece solo, y el
+   * número que ve quien compra se va quedando viejo sin que nada falle.
+   *
+   * <p>Aviso condicionado, enlace permanente — al revés que el de sin-medir, y a propósito. La
+   * lista de existencias nunca está vacía mientras haya catálogo, así que un enlace fijo lleva
+   * siempre a algo; el aviso, en cambio, solo tiene sentido cuando hay algo desalineado.
+   */
+  private readonly existencias = usarExistencias();
+
+  protected readonly totalDescuadradas = computed(
+    () => this.existencias.data()?.totalDescuadradas ?? 0,
+  );
+  protected readonly descuadradasEnPublicados = computed(
+    () => this.existencias.data()?.totalDescuadradasEnPublicados ?? 0,
+  );
+  protected readonly hayDescuadradas = computed(() => this.totalDescuadradas() > 0);
 
   protected async cerrarSesion(): Promise<void> {
     await this.sesionStore.cerrarSesion();

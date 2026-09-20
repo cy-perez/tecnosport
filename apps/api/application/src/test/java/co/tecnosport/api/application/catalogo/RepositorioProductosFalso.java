@@ -132,4 +132,16 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     this.ultimaVarianteMedida = varianteId;
     this.ultimoPaqueteGrabado = paquete;
   }
+
+  /** Lo usa el listado de existencias, que vive en el paquete de inventario y trae el suyo. */
+  @Override
+  public List<VarianteActiva> variantesActivas() {
+    return List.of();
+  }
+
+  /** Lo llama el ajuste de existencia, que vive en el paquete de inventario y trae el suyo. */
+  @Override
+  public void actualizarExistencia(UUID varianteId, int existencia) {
+    // Sin efecto: ninguna prueba de este paquete mira la columna del catálogo.
+  }
 }

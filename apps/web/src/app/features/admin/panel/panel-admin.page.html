@@ -27,7 +27,26 @@
     <a class="anillo-foco text-ts-primario" routerLink="../envios">{{
       'admin.panel.ir_a_envios' | transloco
     }}</a>
+    <a class="anillo-foco text-ts-primario" routerLink="../productos/existencias">{{
+      'admin.panel.ir_a_existencias' | transloco
+    }}</a>
   </nav>
+
+  @if (hayDescuadradas()) {
+    <!-- `role="status"` por lo mismo que el de sin-medir: nada está roto. Lo que hay es un número
+         viejo en la ficha de alguien, que es grave de otra manera — nadie lo va a ver fallar. -->
+    <div class="mb-24 border border-ts-borde p-16" role="status">
+      <p class="m-0 mb-8">
+        {{
+          'admin.panel.existencias.aviso'
+            | transloco: { total: totalDescuadradas(), publicados: descuadradasEnPublicados() }
+        }}
+      </p>
+      <a class="anillo-foco text-ts-primario" routerLink="../productos/existencias">{{
+        'admin.panel.existencias.enlace' | transloco
+      }}</a>
+    </div>
+  }
 
   @if (haySinMedir()) {
     <!-- Un aviso, no una alerta: nada está roto. Lo que hay es una promesa a medias — esas

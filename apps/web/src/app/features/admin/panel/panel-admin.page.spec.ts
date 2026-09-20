@@ -12,7 +12,10 @@ import {
 } from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
-import { InventarioSinMedir } from '../productos/domain/producto-admin.model';
+import {
+  ExistenciasDelCatalogo,
+  InventarioSinMedir,
+} from '../productos/domain/producto-admin.model';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from '../productos/domain/repositorio-productos-admin.puerto';
 import { RepositorioMedicionFalso } from '../../../../testing/productos-admin';
 import { PanelAdminPage } from './panel-admin.page';
@@ -34,8 +37,17 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 const NADA_SIN_MEDIR: InventarioSinMedir = { total: 0, totalEnPublicados: 0, items: [] };
+const NADA_DESCUADRADO: ExistenciasDelCatalogo = {
+  total: 0,
+  totalDescuadradas: 0,
+  totalDescuadradasEnPublicados: 0,
+  items: [],
+};
 
-async function renderPanel(inventario: InventarioSinMedir = NADA_SIN_MEDIR) {
+async function renderPanel(
+  inventario: InventarioSinMedir = NADA_SIN_MEDIR,
+  existencias: ExistenciasDelCatalogo = NADA_DESCUADRADO,
+) {
   const sesion = new RepositorioSesionFalso();
   const resultado = await render(PanelAdminPage, {
     imports: [
@@ -51,7 +63,7 @@ async function renderPanel(inventario: InventarioSinMedir = NADA_SIN_MEDIR) {
       { provide: REPOSITORIO_SESION, useValue: sesion },
       {
         provide: REPOSITORIO_PRODUCTOS_ADMIN,
-        useValue: new RepositorioMedicionFalso(inventario),
+        useValue: new RepositorioMedicionFalso(inventario, existencias),
       },
     ],
   });
@@ -91,6 +103,37 @@ describe('PanelAdminPage', () => {
     const aviso = await screen.findByRole('status');
     expect(aviso.textContent).toContain('8');
     expect(screen.getByRole('link', { name: esAdmin.panel.sinMedir.enlace })).toBeTruthy();
+  });
+
+  /**
+   * El otro vigilante. Este avisa de algo que el sistema se hace solo: el catálogo declara una
+   * existencia que solo mueven el alta y un conteo, mientras el libro se mueve con cada venta
+   * (`ADR-0049`). Nadie lo ve fallar, y el número que lee quien compra se queda viejo.
+   */
+  it('avisa cuántas variantes tienen el catálogo descuadrado del libro', async () => {
+    await renderPanel(NADA_SIN_MEDIR, {
+      total: 12,
+      totalDescuadradas: 3,
+      totalDescuadradasEnPublicados: 2,
+      items: [],
+    });
+
+    const aviso = await screen.findByRole('status');
+    expect(aviso.textContent).toContain('3');
+    expect(screen.getByRole('link', { name: esAdmin.panel.existencias.enlace })).toBeTruthy();
+  });
+
+  /**
+   * El enlace de existencias es permanente y el de sin-medir no, y la diferencia no es un olvido:
+   * la lista de existencias nunca está vacía mientras haya catálogo, así que lleva siempre a algo.
+   * Lo que desaparece con todo cuadrado es el aviso.
+   */
+  it('con todo cuadrado no hay aviso, pero el enlace a existencias sigue ahí', async () => {
+    await renderPanel();
+
+    await screen.findByRole('button', { name: 'Cerrar sesión' });
+    expect(screen.queryByText(esAdmin.panel.existencias.enlace)).toBeNull();
+    expect(screen.getByRole('link', { name: esAdmin.panel.ir_a_existencias })).toBeTruthy();
   });
 
   /**

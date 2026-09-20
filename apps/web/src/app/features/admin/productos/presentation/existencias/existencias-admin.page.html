@@ -1,0 +1,178 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.productos.existencias.titulo' | transloco }}
+  </h1>
+
+  <p class="mb-24 text-ts-texto-suave">
+    {{ 'admin.productos.existencias.explicacion' | transloco }}
+  </p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="mb-16 text-ts-error" role="alert">
+      {{ 'admin.productos.existencias.errorLista' | transloco }}
+    </p>
+  } @else {
+    <!-- Tres desenlaces distintos, tres mensajes distintos. "Conté y corregí" y "conté y estaba
+         bien" no son lo mismo, y el tercero no es una felicitación: son compras aceptadas que no
+         se van a poder despachar, y quien acaba de contar es la única persona que se puede
+         enterar a tiempo. -->
+    @if (ajuste(); as resultado) {
+      @if (resultado.sinCambios) {
+        <p class="mb-16 text-ts-exito" role="status">
+          {{
+            'admin.productos.existencias.sinCambios'
+              | transloco: { sku: resultado.sku, unidades: resultado.saldoNuevo }
+          }}
+        </p>
+      } @else {
+        <p class="mb-16 text-ts-exito" role="status">
+          {{
+            'admin.productos.existencias.ajustada'
+              | transloco
+                : {
+                    sku: resultado.sku,
+                    anterior: resultado.saldoAnterior,
+                    nuevo: resultado.saldoNuevo,
+                  }
+          }}
+        </p>
+      }
+
+      @if (resultado.dejaReservasSinRespaldo) {
+        <p class="mb-16 text-ts-error" role="alert">
+          {{
+            'admin.productos.existencias.reservasSinRespaldo'
+              | transloco: { sku: resultado.sku, reservadas: resultado.unidadesReservadas }
+          }}
+        </p>
+      }
+    }
+
+    @if (total() === 0) {
+      <p class="text-ts-texto-suave">{{ 'admin.productos.existencias.ninguna' | transloco }}</p>
+    } @else {
+      <p class="mb-16" role="status">
+        {{
+          'admin.productos.existencias.resumen'
+            | transloco: { total: total(), descuadradas: totalDescuadradas() }
+        }}
+      </p>
+
+      <div class="overflow-x-auto">
+        <table
+          class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+        >
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.productos.existencias.columnas.producto' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.existencias.columnas.sku' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.existencias.columnas.estado' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.existencias.columnas.catalogo' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.existencias.columnas.libro' | transloco }}</th>
+              <th scope="col">
+                {{ 'admin.productos.existencias.columnas.disponible' | transloco }}
+              </th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (variante of variantes(); track variante.varianteId) {
+              <tr>
+                <td>{{ variante.nombreProducto }}</td>
+                <td>{{ variante.sku }}</td>
+                <td>{{ etiquetaEstado(variante.estadoProducto) }}</td>
+                <td>{{ variante.existenciaDeclarada }}</td>
+                <td>
+                  {{ variante.saldoTotal }}
+                  <!-- El descuadre se dice con palabras y no solo con un color: un color no lo lee
+                       quien usa lector de pantalla, y este es el dato que motiva la pantalla. -->
+                  @if (variante.descuadrada) {
+                    <span class="text-ts-error">
+                      {{ 'admin.productos.existencias.descuadrada' | transloco }}
+                    </span>
+                  }
+                </td>
+                <td>
+                  {{ variante.disponible }}
+                  @if (variante.reservadas > 0) {
+                    <span class="text-ts-texto-suave">
+                      {{
+                        'admin.productos.existencias.reservadas'
+                          | transloco: { reservadas: variante.reservadas }
+                      }}
+                    </span>
+                  }
+                </td>
+                <td>
+                  <ts-boton
+                    variante="secundario"
+                    [etiquetaAccesible]="
+                      'admin.productos.existencias.contarVariante'
+                        | transloco: { sku: variante.sku }
+                    "
+                    (click)="abrir(variante.varianteId)"
+                  >
+                    {{ 'admin.productos.existencias.contar' | transloco }}
+                  </ts-boton>
+                </td>
+              </tr>
+
+              @if (contando() === variante.varianteId) {
+                <tr>
+                  <td colspan="7">
+                    <form
+                      class="flex flex-col gap-16"
+                      [formGroup]="form"
+                      (submit)="$event.preventDefault(); enviar(variante.varianteId)"
+                    >
+                      <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+                        <legend>
+                          {{
+                            'admin.productos.existencias.conteoDe'
+                              | transloco: { sku: variante.sku }
+                          }}
+                        </legend>
+                        <p>{{ 'admin.productos.existencias.conteoAyuda' | transloco }}</p>
+
+                        <ts-campo
+                          [idCampo]="'contar-cantidad-' + variante.varianteId"
+                          tipo="number"
+                          [label]="'admin.productos.existencias.cantidadContada' | transloco"
+                          formControlName="cantidadContada"
+                        />
+
+                        <ts-campo
+                          [idCampo]="'contar-motivo-' + variante.varianteId"
+                          tipo="text"
+                          [label]="'admin.productos.existencias.motivo' | transloco"
+                          formControlName="motivo"
+                        />
+                      </fieldset>
+
+                      @if (error(); as mensaje) {
+                        <p class="text-ts-error" role="alert">{{ mensaje }}</p>
+                      }
+
+                      <div class="flex flex-wrap gap-16">
+                        <ts-boton tipo="submit" [cargando]="enviando()">
+                          {{ 'admin.productos.existencias.guardar' | transloco }}
+                        </ts-boton>
+                        <ts-boton variante="secundario" (click)="cancelar()">
+                          {{ 'admin.productos.existencias.cancelar' | transloco }}
+                        </ts-boton>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

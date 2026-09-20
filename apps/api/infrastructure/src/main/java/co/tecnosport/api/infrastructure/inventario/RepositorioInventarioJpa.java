@@ -7,9 +7,11 @@ import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import co.tecnosport.api.infrastructure.inventario.entidad.InventarioJpaEntity;
 import co.tecnosport.api.infrastructure.inventario.entidad.MovimientoInventarioJpaEntity;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,6 +38,26 @@ public class RepositorioInventarioJpa implements RepositorioInventario {
     return inventarios
         .findByVarianteId(varianteId)
         .map(entidad -> aInventario(entidad, movimientos.findByInventarioId(entidad.getId())));
+  }
+
+  /**
+   * Sin {@code @Lock}, a diferencia de {@link #buscarPorVarianteId}: esto lo llama una pantalla de
+   * solo lectura del panel y bloquear el catálogo entero para pintarla sería un despropósito.
+   *
+   * <p>Dos consultas y un agrupamiento en memoria, no una por inventario: {@code
+   * findByInventarioId} dentro de un bucle serían tantas consultas como variantes tenga el
+   * catálogo. Lo que sí trae entero es el histórico de movimientos, con el precio que adr/0049 deja
+   * escrito.
+   */
+  @Override
+  public List<Inventario> listarTodos() {
+    Map<UUID, List<MovimientoInventarioJpaEntity>> porInventario =
+        movimientos.findAll().stream()
+            .collect(Collectors.groupingBy(MovimientoInventarioJpaEntity::getInventarioId));
+    return inventarios.findAll().stream()
+        .map(
+            entidad -> aInventario(entidad, porInventario.getOrDefault(entidad.getId(), List.of())))
+        .toList();
   }
 
   @Override

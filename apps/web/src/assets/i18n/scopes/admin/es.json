@@ -34,11 +34,16 @@
     "ir_a_productos": "Productos",
     "ir_a_atencion": "PQR",
     "ir_a_envios": "Revisión de envíos",
+    "ir_a_existencias": "Existencias",
     "sinMedir": {
       "aviso": "{{total}} variante(s) del catálogo están sin medir, {{publicados}} de ellas en productos publicados. Sin peso ni dimensiones no se puede cotizar el envío: solo se entregan con recogida en el punto.",
       "enlace": "Ver y medir"
     },
-    "ir_a_marcas": "Marcas"
+    "ir_a_marcas": "Marcas",
+    "existencias": {
+      "aviso": "{{total}} variantes tienen en el catálogo una existencia distinta de la del libro de inventario, {{publicados}} en productos ya publicados. Quien las vea en la tienda está leyendo un número viejo.",
+      "enlace": "Ver las existencias y contar"
+    }
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -250,6 +255,36 @@
       "cancelar": "Cancelar",
       "faltanCampos": "Hacen falta las cuatro medidas, y todas mayores que cero.",
       "error": "No se pudieron guardar las medidas."
+    },
+    "existencias": {
+      "titulo": "Existencias",
+      "explicacion": "Tres cifras por variante, y no son lo mismo. La del catálogo es la que ve quien compra; la del libro es la verdad, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
+      "resumen": "{{total}} variantes activas, {{descuadradas}} con el catálogo diciendo algo distinto del libro.",
+      "ninguna": "Todavía no hay variantes activas que contar.",
+      "descuadrada": "(no coincide)",
+      "reservadas": "({{reservadas}} reservadas)",
+      "contar": "Contar",
+      "contarVariante": "Contar las unidades de {{sku}}",
+      "conteoDe": "Conteo de {{sku}}",
+      "conteoAyuda": "Escribe cuántas unidades hay de verdad en bodega, no la diferencia. Cero es un conteo válido. El motivo queda guardado en el histórico y es lo que va a leer quien revise este ajuste dentro de seis meses.",
+      "cantidadContada": "Unidades contadas",
+      "motivo": "Motivo del ajuste",
+      "guardar": "Guardar el conteo",
+      "cancelar": "Cancelar",
+      "faltanCampos": "Faltan las unidades contadas o el motivo. El motivo es obligatorio: un ajuste sin motivo no se puede auditar.",
+      "error": "No se pudo guardar el conteo.",
+      "errorLista": "No se pudo cargar la lista de existencias.",
+      "ajustada": "Listo: {{sku}} pasó de {{anterior}} a {{nuevo}} unidades.",
+      "sinCambios": "Sin novedad: {{sku}} sigue en {{unidades}} unidades. No se registró ningún movimiento.",
+      "reservasSinRespaldo": "Ojo: hay {{reservadas}} unidades de {{sku}} comprometidas en pedidos en curso, más de las que acabas de contar. Esas compras ya están aceptadas y no se van a poder despachar.",
+      "columnas": {
+        "producto": "Producto",
+        "sku": "SKU",
+        "estado": "Estado",
+        "catalogo": "Catálogo",
+        "libro": "Libro",
+        "disponible": "Disponible"
+      }
     }
   },
   "retractos": {

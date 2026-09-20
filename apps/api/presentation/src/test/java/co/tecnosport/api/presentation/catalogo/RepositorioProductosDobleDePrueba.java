@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -20,6 +21,10 @@ import java.util.UUID;
 
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioProductosDobleDePrueba implements RepositorioProductos {
+
+  private List<VarianteActiva> activas = List.of();
+  UUID ultimaVarianteConExistenciaActualizada;
+  Integer ultimaExistenciaGrabada;
 
   private List<Producto> productos = List.of();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
@@ -61,6 +66,10 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimoPaqueteGrabado = null;
     this.sinMedir = List.of();
     this.skusEnUso.clear();
+  }
+
+  void conVariantesActivas(VarianteActiva... variantes) {
+    this.activas = List.of(variantes);
   }
 
   void conVariantesSinMedir(VarianteSinMedir... variantes) {
@@ -148,5 +157,16 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void actualizarPaquete(UUID varianteId, Paquete paquete) {
     this.ultimaVarianteMedida = varianteId;
     this.ultimoPaqueteGrabado = paquete;
+  }
+
+  @Override
+  public List<VarianteActiva> variantesActivas() {
+    return activas;
+  }
+
+  @Override
+  public void actualizarExistencia(UUID varianteId, int existencia) {
+    this.ultimaVarianteConExistenciaActualizada = varianteId;
+    this.ultimaExistenciaGrabada = existencia;
   }
 }

@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -11,8 +12,11 @@ import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -26,6 +30,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import co.tecnosport.api.domain.inventario.Inventario;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -47,6 +52,7 @@ class AdminVarianteControladorTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioProductosDobleDePrueba repositorioProductos;
   @Autowired private RepositorioAtributosDobleDePrueba repositorioAtributos;
+  @Autowired private RepositorioInventarioDobleDePrueba repositorioInventario;
 
   private static Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
@@ -356,6 +362,142 @@ class AdminVarianteControladorTest {
         new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), 5, null, paquete, List.of());
   }
 
+  @Test
+  void existenciasDevuelveLasTresCifrasYLosConteos() throws Exception {
+    UUID varianteId = UUID.randomUUID();
+    repositorioProductos.conVariantesActivas(
+        new VarianteActiva(
+            varianteId, UUID.randomUUID(), "Moto G17", "TS-MOTO-G17", EstadoProducto.PUBLICADO, 5));
+    Inventario libro = Inventario.crear(varianteId);
+    libro.registrarEntrada(2, "siembra de prueba", Instant.now());
+    repositorioInventario.con(libro);
+
+    mockMvc
+        .perform(get("/api/v1/admin/variantes/existencias"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.totalDescuadradas").value(1))
+        .andExpect(jsonPath("$.totalDescuadradasEnPublicados").value(1))
+        .andExpect(jsonPath("$.items[0].sku").value("TS-MOTO-G17"))
+        .andExpect(jsonPath("$.items[0].existenciaDeclarada").value(5))
+        .andExpect(jsonPath("$.items[0].saldoTotal").value(2))
+        .andExpect(jsonPath("$.items[0].disponible").value(2))
+        .andExpect(jsonPath("$.items[0].descuadrada").value(true));
+  }
+
+  @Test
+  void ajustarExistenciaDevuelveLoQueCambioYLoDejaEnLaColumnaDelCatalogo() throws Exception {
+    Producto producto = productoDePrueba();
+    Variante variante = varianteDePrueba();
+    producto.agregarVariante(variante);
+    repositorioProductos.conProductos(producto);
+    Inventario libro = Inventario.crear(variante.id());
+    libro.registrarEntrada(5, "siembra de prueba", Instant.now());
+    repositorioInventario.con(libro);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/existencia", variante.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cantidadContada":8,"motivo":"Conteo físico del 20 de septiembre"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.saldoAnterior").value(5))
+        .andExpect(jsonPath("$.saldoNuevo").value(8))
+        .andExpect(jsonPath("$.diferencia").value(3))
+        .andExpect(jsonPath("$.sinCambios").value(false))
+        .andExpect(jsonPath("$.dejaReservasSinRespaldo").value(false));
+
+    assertEquals(8, repositorioProductos.ultimaExistenciaGrabada);
+  }
+
+  /** Contar lo mismo responde 200 y lo declara: es un resultado, no un error. */
+  @Test
+  void ajustarConElMismoConteoDevuelveSinCambios() throws Exception {
+    Producto producto = productoDePrueba();
+    Variante variante = varianteDePrueba();
+    producto.agregarVariante(variante);
+    repositorioProductos.conProductos(producto);
+    Inventario libro = Inventario.crear(variante.id());
+    libro.registrarEntrada(5, "siembra de prueba", Instant.now());
+    repositorioInventario.con(libro);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/existencia", variante.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cantidadContada":5,"motivo":"Conteo físico, sin novedad"}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.sinCambios").value(true))
+        .andExpect(jsonPath("$.diferencia").value(0));
+  }
+
+  @Test
+  void ajustarLaExistenciaDeUnaVarianteQueNoExisteDevuelve404() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/existencia", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cantidadContada":3,"motivo":"Conteo"}
+                    """))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("VARIANTE_NO_ENCONTRADA_POR_ID"));
+  }
+
+  @Test
+  void ajustarSinMotivoDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    Variante variante = varianteDePrueba();
+    producto.agregarVariante(variante);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/existencia", variante.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cantidadContada":3,"motivo":"   "}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  @Test
+  void ajustarConUnConteoNegativoDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    Variante variante = varianteDePrueba();
+    producto.agregarVariante(variante);
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/variantes/{id}/existencia", variante.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"cantidadContada":-2,"motivo":"Conteo"}
+                    """))
+        .andExpect(status().isUnprocessableContent());
+  }
+
+  private static Variante varianteDePrueba() {
+    return Variante.crear(
+        new Sku("TS-EXISTENCIA-CTRL"),
+        Dinero.deCop(89_900),
+        new BigDecimal("0.00"),
+        5,
+        null,
+        new Paquete(180, 30, 25, 4),
+        List.of());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -413,6 +555,27 @@ class AdminVarianteControladorTest {
     @Bean
     MapeadorVariantesSinMedir mapeadorVariantesSinMedir() {
       return new MapeadorVariantesSinMedir();
+    }
+
+    @Bean
+    ListarExistencias listarExistencias(
+        RepositorioProductos repositorioProductos,
+        RepositorioInventario repositorioInventario,
+        Reloj reloj) {
+      return new ListarExistencias(repositorioProductos, repositorioInventario, reloj);
+    }
+
+    @Bean
+    AjustarExistencia ajustarExistencia(
+        RepositorioProductos repositorioProductos,
+        RepositorioInventario repositorioInventario,
+        Reloj reloj) {
+      return new AjustarExistencia(repositorioProductos, repositorioInventario, reloj);
+    }
+
+    @Bean
+    MapeadorExistencias mapeadorExistencias() {
+      return new MapeadorExistencias();
     }
   }
 }

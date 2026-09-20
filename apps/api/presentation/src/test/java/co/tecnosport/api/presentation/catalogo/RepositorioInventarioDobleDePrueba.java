@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.catalogo;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,12 @@ class RepositorioInventarioDobleDePrueba implements RepositorioInventario {
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
   Inventario ultimoGuardado;
 
+  void con(Inventario... inventarios) {
+    for (Inventario inventario : inventarios) {
+      porVarianteId.put(inventario.varianteId(), inventario);
+    }
+  }
+
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
     return Optional.ofNullable(porVarianteId.get(varianteId));
@@ -22,5 +29,10 @@ class RepositorioInventarioDobleDePrueba implements RepositorioInventario {
   public void guardar(Inventario inventario) {
     this.ultimoGuardado = inventario;
     porVarianteId.put(inventario.varianteId(), inventario);
+  }
+
+  @Override
+  public List<Inventario> listarTodos() {
+    return List.copyOf(porVarianteId.values());
   }
 }

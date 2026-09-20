@@ -34,11 +34,16 @@
     "ir_a_productos": "Products",
     "ir_a_atencion": "Requests",
     "ir_a_envios": "Shipment review",
+    "ir_a_existencias": "Stock",
     "sinMedir": {
       "aviso": "{{total}} catalog variant(s) have no package measurements, {{publicados}} of them on published products. Without weight and dimensions shipping cannot be quoted: they can only be handed over at the pickup point.",
       "enlace": "Review and measure"
     },
-    "ir_a_marcas": "Brands"
+    "ir_a_marcas": "Brands",
+    "existencias": {
+      "aviso": "{{total}} variants show a stock figure in the catalogue that differs from the inventory ledger, {{publicados}} on already published products. Anyone seeing them in the shop is reading an outdated number.",
+      "enlace": "Review stock and count"
+    }
   },
   "pedidos": {
     "titulo": "Orders",
@@ -250,6 +255,36 @@
       "cancelar": "Cancel",
       "faltanCampos": "All four measurements are required, and all greater than zero.",
       "error": "The measurements could not be saved."
+    },
+    "existencias": {
+      "titulo": "Stock",
+      "explicacion": "Three figures per variant, and they are not the same. The catalogue one is what buyers see; the ledger one is the truth, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
+      "resumen": "{{total}} active variants, {{descuadradas}} where the catalogue says something different from the ledger.",
+      "ninguna": "There are no active variants to count yet.",
+      "descuadrada": "(does not match)",
+      "reservadas": "({{reservadas}} reserved)",
+      "contar": "Count",
+      "contarVariante": "Count the units of {{sku}}",
+      "conteoDe": "Count for {{sku}}",
+      "conteoAyuda": "Enter how many units are actually in the warehouse, not the difference. Zero is a valid count. The reason is kept in the history and is what whoever reviews this adjustment in six months will read.",
+      "cantidadContada": "Units counted",
+      "motivo": "Reason for the adjustment",
+      "guardar": "Save the count",
+      "cancelar": "Cancel",
+      "faltanCampos": "The counted units or the reason are missing. The reason is required: an adjustment without one cannot be audited.",
+      "error": "The count could not be saved.",
+      "errorLista": "The stock list could not be loaded.",
+      "ajustada": "Done: {{sku}} went from {{anterior}} to {{nuevo}} units.",
+      "sinCambios": "No change: {{sku}} is still at {{unidades}} units. No movement was recorded.",
+      "reservasSinRespaldo": "Careful: {{reservadas}} units of {{sku}} are committed to orders in progress, more than you just counted. Those purchases are already accepted and will not be shippable.",
+      "columnas": {
+        "producto": "Product",
+        "sku": "SKU",
+        "estado": "Status",
+        "catalogo": "Catalogue",
+        "libro": "Ledger",
+        "disponible": "Available"
+      }
     }
   },
   "retractos": {

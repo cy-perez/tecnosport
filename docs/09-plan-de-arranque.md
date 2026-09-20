@@ -5984,6 +5984,128 @@ despliegue de producción **impide arrancar**.
 - **El perfil de producción de la configuración**, anotado como `TODO` técnico en
   `ConfiguracionSistecredito`.
 
+## El panel aprende a contar, y aparece la segunda existencia (2026-09-20)
+
+El 19 de septiembre quedó escrito como "la siguiente tarea de esta rama": **la existencia sigue sin
+poderse corregir**, y el 5 inventado de los doce productos reales seguía ahí. Al ir a hacerlo
+apareció algo que el enunciado no decía, y que cambió el alcance antes de escribir una línea.
+
+### Hay dos existencias y no se hablan
+
+| | Qué es | Quién la mueve |
+|---|---|---|
+| `variante.existencia` | una columna del catálogo | **`AgregarVariante`, al crear la variante. Nadie más, nunca** |
+| `Inventario` | el libro de movimientos | `CrearPedido` reserva, el pago confirma, el retracto devuelve |
+
+La columna es la que sale en `VarianteRespuesta.existencia` y la que la vitrina lee para decidir si
+algo está agotado. El libro es el que decide de verdad si una compra se puede completar.
+
+O sea que **vender las cinco unidades de una variante no cambiaba el número que ve quien compra**.
+Y no era un descuido reciente: `RepositorioProductos` no tenía —no podía tener— un método capaz de
+actualizar esa columna. `docs/02` ya lo tenía anotado desde la Fase 4 con la frase exacta que
+importa: *"ningún mecanismo detecta si algo las desincroniza más adelante"*.
+
+Lo que ese párrafo no decía, y es lo que cambia el cálculo, es que **no hace falta que algo las
+desincronice: cada venta lo hace.**
+
+### La decisión, que se pudo tomar de tres maneras
+
+`ADR-0049` las escribe las tres. La corta —el ajuste escribe en los dos sitios—, la intermedia
+—la columna pasa a ser una proyección que recalcula todo el que mueva inventario— y la correcta
+—se borra la columna y el disponible se calcula desde el libro—.
+
+**Se eligió la corta, y la correcta queda pendiente.** La intermedia es la que peor sale de las
+tres: cuesta tocar el camino del pago, donde un error se paga con un pedido, y aun así seguiría
+mostrando el saldo *total* cuando lo que decide si se puede comprar es el *disponible*, que baja con
+cada reserva y sube solo cuando una vence. Pagar ese precio para seguir enseñando un número
+equivocado es el peor de los dos mundos.
+
+Y la correcta no cabía aquí: convierte "el panel corrige la existencia" en "se rediseña cómo la
+vitrina sabe si hay existencia", que toca el catálogo público.
+
+### Tres decisiones más que se pudieron tomar al revés
+
+- **El panel manda el conteo, no la diferencia.** Quien cuenta sabe "hay tres", no "menos dos".
+  Pedirle la resta le pide además ir a buscar contra qué restar, y **un error en esa resta es
+  indistinguible de una pérdida real**: las dos llegan como un ajuste negativo con un motivo escrito
+  por una persona.
+- **Contar por debajo de lo reservado se graba y se avisa.** Si hay dos unidades comprometidas en
+  pedidos en vuelo y el conteo da una, la realidad es esa; prohibir la corrección solo consigue que
+  la base siga mintiendo con más confianza. Lo que no puede es pasar callando: sale en la respuesta,
+  la pantalla lo dice en rojo y el servidor lo registra como `warn`.
+- **La pantalla marca el descuadre en vez de esconderlo.** Mientras las dos existencias convivan, esa
+  marca va a aparecer sola después de cada venta — y ese es, precisamente, el argumento acumulándose
+  para hacer la opción correcta.
+
+### El dominio ya estaba escrito, y eso dice algo
+
+`Inventario.registrarAjuste(cantidad, motivo, ahora)` existe **desde la Fase 2**: acepta cantidad con
+signo, exige motivo y se niega a dejar el saldo en negativo. Lo que faltaba era todo lo de arriba.
+`application/inventario` tenía un solo archivo —el puerto— desde entonces.
+
+Un dominio correcto al que no llega ninguna puerta sirve exactamente para nada: el resultado
+práctico fueron dos días con el 5 inventado publicado y la única salida siendo escribir SQL a mano.
+
+### Lo que se construyó
+
+`GET /api/v1/admin/variantes/existencias` y `PATCH /api/v1/admin/variantes/{id}/existencia`, con la
+pantalla `/admin/productos/existencias`: tabla con las tres cifras y el formulario dentro de la fila,
+gemela de la de sin-medir.
+
+Con una diferencia deliberada en la navegación: **aviso condicionado, enlace permanente.** El de
+sin-medir desaparece entero cuando no hay nada que medir, porque allá no habría nada que ver. La
+lista de existencias nunca está vacía mientras haya catálogo, así que un enlace fijo lleva siempre a
+algo. Hay una prueba para cada lado.
+
+**Los saldos los calcula el dominio, no un `select`.** Traducir a SQL qué reserva sigue vigente —no
+vencida, no resuelta por una salida, no resuelta por una liberación— serían tres condiciones de
+`Inventario` que tendrían que quedarse sincronizadas para siempre, en un sitio donde ninguna prueba
+de dominio las mira. El precio está escrito y no se disimula: la consulta trae el histórico de
+movimientos completo, que crece con las ventas y no solo con el tamaño del catálogo. Con doce
+productos no se nota; con un año de ventas encima, esa pantalla necesita paginación o una proyección.
+
+### Lo que costó el puerto, otra vez
+
+Dos métodos nuevos en dos puertos: **once dobles de prueba en el backend y seis en el frontend**. Es
+el mismo peaje que el 19 de septiembre y conviene tenerlo medido, porque es el argumento que alguien
+va a usar para no declarar un puerto — y sigue sin ser suficiente.
+
+### Los guardianes, comprobados rompiéndolos
+
+Con el `where` de `variantesActivas` en `1 = 1` y con el agrupamiento de `listarTodos` devolviendo
+todos los movimientos a todos los libros, **fallan tres pruebas de infraestructura**. Con el código
+correcto, las veintiocho pasan.
+
+### Comprobado en el navegador, y lo que apareció ahí
+
+Contra el backend real y la base local: veinte variantes activas, **dos descuadradas**, las dos
+arriba del todo como manda el orden.
+
+Y una de ellas explicaba el defecto entero sin que hubiera que inventarse un ejemplo:
+`TS-CEL-AUR-256` decía 2 en el catálogo y 1 en el libro, porque **una `RESERVA` y su `SALIDA` del 17
+de septiembre habían bajado el libro mientras la columna se quedaba quieta.** Una venta de verdad, en
+datos de verdad, haciendo exactamente lo que `ADR-0049` describe.
+
+El recorrido completo: enviar el formulario vacío dice qué falta —y el botón no se deshabilita, así
+que quien navega con teclado llega a él—, contar 7 confirma "pasó de 1 a 7", el conteo de
+descuadradas baja de 2 a 1, la fila se reordena sola al cuadrar, y **la vitrina pública pasa a
+responder 7**, que es lo único que prueba que la opción elegida sirve de algo.
+
+Repetir el mismo conteo responde "sin novedad" y **no escribe nada**: comprobado en la base, un solo
+movimiento `AJUSTE` en la tabla, no dos. El anillo de foco del primer campo se vio al tabular desde
+el botón que abrió el formulario.
+
+**El conteo era ficción declarada** —el motivo que quedó guardado lo decía— sobre una variante del
+sembrador, y se borró de la base con SQL al terminar, junto con la columna restaurada. Contar de
+verdad una de las variantes reales habría sido inventar un dato de negocio.
+
+### Lo que esto **no** arregla
+
+- **La columna se sigue desincronizando con cada venta.** Ahora se ve; no se arregla.
+- **El 5 inventado de los doce productos reales sigue ahí.** Esta sesión construyó la puerta; las
+  cifras las escribe una persona que contó la bodega, y no hay forma honesta de que las escriba
+  nadie más.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

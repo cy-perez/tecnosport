@@ -102,6 +102,68 @@ class RepositorioInventarioJpaTest {
     return variante.getId();
   }
 
+  /**
+   * El listado del panel, contra Postgres de verdad. Lo que hay que demostrar es que cada libro
+   * vuelve con <b>sus</b> movimientos y no con los del vecino: el agrupamiento en memoria por
+   * {@code inventarioId} es justo el sitio donde eso se puede cruzar sin que nada reviente.
+   *
+   * <p>Y que vuelve sin bloquear: se llama fuera de toda transacción a propósito, que es como lo va
+   * a llamar el controlador de una pantalla de solo lectura. Con {@code @Lock} encima esto fallaría
+   * en seco con {@code TransactionRequiredException}, que es la lección que apps/api/CLAUDE.md dejó
+   * escrita en la Fase 2.
+   */
+  @Test
+  void listarTodosDevuelveCadaLibroConSusPropiosMovimientos() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID unaVariante = variantePropia("SKU-INV-LISTAR-1");
+    UUID otraVariante = variantePropia("SKU-INV-LISTAR-2");
+    Instant ahora = Instant.now();
+
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario uno = Inventario.crear(unaVariante);
+          uno.registrarEntrada(7, "siembra de prueba", ahora);
+          uno.reservar(2, Duration.ofMinutes(30), ahora);
+          repositorio.guardar(uno);
+
+          Inventario otro = Inventario.crear(otraVariante);
+          otro.registrarEntrada(3, "siembra de prueba", ahora);
+          repositorio.guardar(otro);
+        });
+
+    List<Inventario> todos = repositorio.listarTodos();
+
+    Inventario uno =
+        todos.stream().filter(i -> i.varianteId().equals(unaVariante)).findFirst().orElseThrow();
+    Inventario otro =
+        todos.stream().filter(i -> i.varianteId().equals(otraVariante)).findFirst().orElseThrow();
+    assertThat(uno.saldoTotal()).isEqualTo(7);
+    assertThat(uno.saldoDisponible(ahora)).isEqualTo(5);
+    assertThat(otro.saldoTotal()).isEqualTo(3);
+    assertThat(otro.saldoDisponible(ahora)).isEqualTo(3);
+    assertThat(otro.movimientos()).hasSize(1);
+  }
+
+  /**
+   * Un libro recién creado y sin un solo movimiento vuelve igual, no se pierde por el agrupamiento.
+   */
+  @Test
+  void listarTodosDevuelveTambienLosLibrosVacios() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID varianteId = variantePropia("SKU-INV-LISTAR-3");
+
+    transaccion.executeWithoutResult(estado -> repositorio.guardar(Inventario.crear(varianteId)));
+
+    Inventario vacio =
+        repositorio.listarTodos().stream()
+            .filter(i -> i.varianteId().equals(varianteId))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(vacio.movimientos()).isEmpty();
+    assertThat(vacio.saldoTotal()).isZero();
+  }
+
   @Test
   void reservarConfirmarYLiberarSobrevivenElViajeAJpa() {
     transaccion = new TransactionTemplate(transactionManager);

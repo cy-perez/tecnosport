@@ -331,10 +331,21 @@ compradores simultáneos no vendan la misma última unidad.
 **`variante.existencia` y `Inventario` conviven, todavía no están unificados**
 (confirmado al construir "agregar variante", Fase 4): la ficha pública y la
 rejilla siguen leyendo la columna directo, el checkout sigue calculando el
-saldo desde `Inventario`. Al crear una variante se escriben las dos a la vez
-en la misma transacción, pero ningún mecanismo detecta si algo las
-desincroniza más adelante. Migrar la lectura pública a
+saldo desde `Inventario`. Migrar la lectura pública a
 `Inventario.saldoDisponible` es el objetivo de fondo, pendiente (`ADR-0017`).
+
+**Lo que cambió el 20 de septiembre de 2026 es que la desincronización ya no es
+invisible** (`ADR-0049`). Antes se escribían las dos a la vez al crear la
+variante y nadie volvía a tocar la columna nunca: **cada venta las separaba**, y
+ningún mecanismo lo detectaba. Ahora `AjustarExistencia` escribe el movimiento y
+copia el conteo a la columna, y `GET /admin/variantes/existencias` enseña las
+tres cifras juntas marcando las descuadradas, con un aviso en el panel.
+
+Se comprobó con datos reales en cuanto existió la pantalla: dos variantes
+sembradas salían descuadradas, y el motivo de una era exactamente ese — una
+`RESERVA` y su `SALIDA` habían bajado el libro de 2 a 1 mientras la columna
+seguía diciendo 2. Copiar el conteo es un parche con fecha de caducidad; el
+arreglo sigue siendo leer del libro.
 
 ## Estados del pedido
 

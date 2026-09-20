@@ -3,6 +3,7 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,5 +23,11 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
   public void guardar(Inventario inventario) {
     this.ultimoGuardado = inventario;
     porVarianteId.put(inventario.varianteId(), inventario);
+  }
+
+  /** Lo usa el listado de existencias, que vive en su propio paquete y trae el suyo. */
+  @Override
+  public List<Inventario> listarTodos() {
+    return List.copyOf(porVarianteId.values());
   }
 }

@@ -868,6 +868,22 @@ export interface paths {
         patch: operations["medir"];
         trace?: never;
     };
+    "/api/v1/admin/variantes/{id}/existencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ajustarExistencia"];
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}": {
         parameters: {
             query?: never;
@@ -1036,6 +1052,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["sinMedir"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/variantes/existencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["existencias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1755,6 +1787,27 @@ export interface components {
             altoCm?: number;
             correccion?: boolean;
         };
+        AjustarExistenciaPeticion: {
+            /** Format: int32 */
+            cantidadContada?: number;
+            motivo?: string;
+        };
+        ExistenciaAjustadaRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            sku?: string;
+            nombreProducto?: string;
+            /** Format: int32 */
+            saldoAnterior?: number;
+            /** Format: int32 */
+            saldoNuevo?: number;
+            /** Format: int32 */
+            diferencia?: number;
+            /** Format: int32 */
+            unidadesReservadas?: number;
+            sinCambios?: boolean;
+            dejaReservasSinRespaldo?: boolean;
+        };
         EditarProductoPeticion: {
             nombre?: string;
             descripcion?: string;
@@ -1869,6 +1922,33 @@ export interface components {
             /** Format: int32 */
             totalEnPublicados?: number;
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];
+        };
+        ExistenciaDeVarianteRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: uuid */
+            productoId?: string;
+            nombreProducto?: string;
+            sku?: string;
+            estadoProducto?: string;
+            /** Format: int32 */
+            existenciaDeclarada?: number;
+            /** Format: int32 */
+            saldoTotal?: number;
+            /** Format: int32 */
+            disponible?: number;
+            /** Format: int32 */
+            reservadas?: number;
+            descuadrada?: boolean;
+        };
+        ExistenciasRespuesta: {
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalDescuadradas?: number;
+            /** Format: int32 */
+            totalDescuadradasEnPublicados?: number;
+            items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
         };
         ProductosAdminPaginadosRespuesta: {
             items?: components["schemas"]["ProductoAdminRespuesta"][];
@@ -3401,6 +3481,32 @@ export interface operations {
             };
         };
     };
+    ajustarExistencia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AjustarExistenciaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExistenciaAjustadaRespuesta"];
+                };
+            };
+        };
+    };
     ver: {
         parameters: {
             query?: never;
@@ -3663,6 +3769,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
+                };
+            };
+        };
+    };
+    existencias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExistenciasRespuesta"];
                 };
             };
         };
