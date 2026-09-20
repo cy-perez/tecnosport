@@ -6179,15 +6179,35 @@ pantalla nueva. Lo que aquel día se podía enseñar, este se puede arreglar.
   página es pagable; el día que una variante acumule miles de movimientos, lo que hace falta es un
   corte de saldo en el libro — no una columna en el catálogo.
 
-### Lo que queda pendiente de mirar en el navegador
+### Comprobado en el navegador, y lo que apareció ahí
 
-La extensión de Chrome no estaba conectada en esta sesión, así que quedaron sin comprobar a ojo las
-dos cosas que `docs/06-testing.md` dice que jsdom no atrapa, más el recorrido del panel:
+Contra el backend real y la base local, las dos cosas que `docs/06-testing.md` dice que jsdom no
+atrapa, más el recorrido del panel:
 
-- Elegir la variante de 128 GB en la ficha y ver la etiqueta "Agotado" con el botón deshabilitado
-  contra el backend real. Lo cubre una prueba de Vitest y la respuesta de la API, pero no el ojo.
-- La pantalla `/admin/productos/existencias` con sus dos columnas, el aviso nuevo del panel y el
-  anillo de foco del formulario de conteo.
+- **La ficha.** Elegir 128 GB / Negro —la variante del caso de arriba— pinta "Agotado" y el botón de
+  comprar sale con `disabled: true`, comprobado en el DOM y no solo de vista. Su hermana de 256 GB,
+  con el libro en 1, sigue comprándose.
+- **La pantalla de existencias**, con dos columnas en vez de tres: "20 variantes activas, 1 sin una
+  sola unidad en el libro", y `TS-CEL-AUR-128` primera de la lista con su `0 (sin existencia)` en
+  rojo. El orden nuevo funciona.
+- **El foco**, que es lo otro que jsdom no ve: tabular desde el botón que abre el formulario deja el
+  anillo en el primer campo — `:focus-visible` verdadero, contorno de 2 px con 2 px de separación.
+- El formulario se abrió y se cerró **sin escribir nada**: contar de verdad una variante sería
+  inventarse un dato de negocio.
+
+**Y apareció un defecto de redacción que ninguna prueba mira**: el aviso del panel decía *"1
+variantes no tienen..."*. El aviso gemelo de sin-medir ya resolvía eso con `variante(s)`, así que se
+igualó el estilo en los dos idiomas. Es el tipo de cosa que solo se ve con el dato real en pantalla:
+con cualquier número distinto de uno, la frase estaba bien.
+
+### Un tropiezo que conviene no repetir
+
+A mitad de la comprobación, el login del panel empezó a responder *"No pudimos conectarnos con el
+servidor"*. No era la aplicación: **`npm run verificar` recompiló los jars por debajo del `bootRun`
+que estaba corriendo**, y la JVM viva se quedó sin una clase que carga tarde
+(`ClassNotFoundException: IpDelCliente`, justo en el filtro del límite de intentos). Se arregla
+reiniciando la API. Correr la verificación completa con el backend levantado deja el proceso en un
+estado incoherente sin decir nada hasta que alguien toca la ruta equivocada.
 
 ## Cómo conversar con Claude Code en este proyecto
 

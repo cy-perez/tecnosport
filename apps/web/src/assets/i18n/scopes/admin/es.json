@@ -41,7 +41,7 @@
     },
     "ir_a_marcas": "Marcas",
     "existencias": {
-      "aviso": "{{total}} variantes no tienen una sola unidad en el libro de inventario, {{publicados}} en productos ya publicados. Quien las vea en la tienda las ve agotadas.",
+      "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
     }
   },

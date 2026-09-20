@@ -41,7 +41,7 @@
     },
     "ir_a_marcas": "Brands",
     "existencias": {
-      "aviso": "{{total}} variants have not a single unit in the inventory ledger, {{publicados}} on already published products. Anyone seeing them in the shop sees them sold out.",
+      "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"
     }
   },
