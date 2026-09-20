@@ -47,8 +47,8 @@ frontend, así que no sigue la convención JSON del resto del contrato.
 ```
 GET  /api/v1/productos                      filtros, orden, cursor
 GET  /api/v1/productos/{slug}               incluye imágenes y set de rotación
-GET  /api/v1/categorias
-GET  /api/v1/marcas
+GET  /api/v1/categorias                     solo las que tienen algo publicado
+GET  /api/v1/marcas                         solo las que tienen algo publicado
 POST /api/v1/carritos
 GET  /api/v1/carritos/{id}
 POST /api/v1/carritos/{id}/lineas
@@ -210,13 +210,53 @@ La respuesta es `{ "items": [...], "cursorSiguiente": "..." }`.
 `cursorSiguiente` es `null` cuando no hay más páginas.
 
 `GET /api/v1/categorias`, `GET /api/v1/marcas` y `GET /api/v1/atributos` no
-tienen parámetros —listas completas, sin paginar, porque son pocos
-registros— y devuelven la misma envoltura `{ "items": [...], "cursorSiguiente":
+tienen parámetros —sin paginar, porque son pocos registros— y devuelven la misma
+envoltura `{ "items": [...], "cursorSiguiente":
 null }` que el catálogo paginado, nunca un arreglo desnudo. Si alguno de
 estos catálogos crece mucho, esto necesitará paginar igual que `/productos`.
 `/atributos` es un catálogo global, sin asociación a categoría en el
 esquema (docs/02-modelo-datos.md) — el panel admin lo usa para armar el
 selector de atributos al agregar una variante.
+
+**Publicar es un `POST` sobre un subrecurso, no un `PATCH` del estado.** No es editar un campo:
+es una transición con su propia regla —no hay publicación sin imagen principal, invariante del
+dominio desde la Fase 1— y responde `409` con `codigo: "PRODUCTO_SIN_IMAGEN_PRINCIPAL"` cuando no
+se cumple. Es idempotente: publicar lo ya publicado devuelve `200`, porque el resultado es el que
+se pedía y un `409` obligaría a consultar antes para no chocar.
+
+**Lo que publicar exige y lo que no.** Exige **imagen principal** — es la invariante del dominio y
+la única. **No** exige una resolución mínima de esa imagen: se publica con la maestra que haya, y el
+listón de 1200 px del procesamiento de fotos es criterio de calidad, no regla del sistema
+(`docs/02`). Y **no** exige el peso ni las medidas del paquete: desde `adr/0046` una variante se
+puede cargar sin medir, y entonces su producto se vende solo con recogida en el punto — al cotizar,
+`POST /api/v1/envios/cotizacion` responde `409` con `codigo: "ARTICULO_SIN_MEDIDAS"` y la lista de
+artículos, con la misma forma que `ARTICULO_NO_ASEGURABLE`.
+
+Lo que sí exige, cuando las medidas vienen, es que vengan **las cuatro**: `Paquete` las valida
+mayores que cero y el DTO rechaza el cuerpo a medias con `422`. Tres medidas y un peso ausente no es
+"a medio medir", es una carga rota.
+
+No hay endpoint para despublicar, y la ausencia es deliberada: retirar algo que ya se vendió toca
+los pedidos en curso, los enlaces compartidos y el sitemap indexado, y ninguna de esas tres cosas
+está decidida.
+
+**`/categorias` y `/marcas` no son "todas": son las que tienen al menos un
+producto `PUBLICADO`.** No es una optimización, es lo que el endpoint significa —
+alimenta el filtro de la vitrina, y un filtro que lleva a una rejilla vacía es una
+promesa rota en dos clics. El criterio es *el mismo* que usa `/productos` para
+armar la rejilla (`p.estado = 'PUBLICADO'`), no uno parecido: si algún día la
+rejilla exigiera además variante activa, este tendría que moverse con ella.
+
+Hasta el 19 de septiembre de 2026 devolvían la tabla entera, y desde que
+`V38__linea_tecnologia.sql` dejó la línea de tecnología con once categorías, la
+vitrina ofrecía "Proyectores" y "Computadores" sin un solo producto detrás.
+
+El panel necesita lo contrario —la categoría vacía es justo la que hace falta
+para cargarle el primer producto—, y por eso existen `GET /api/v1/admin/marcas`
+y `GET /api/v1/admin/categorias`. Son dos preguntas distintas con dos audiencias
+distintas, y se separan en dos endpoints en vez de un parámetro: con un
+parámetro, el cliente elegiría qué ve y la vitrina quedaría a un carácter de
+volver a ofrecer filtros vacíos.
 
 Las variantes con `estado == INACTIVA` nunca aparecen en `variantes` de la
 ficha pública: mismo principio que `Producto.estado == PUBLICADO`, el
@@ -264,9 +304,12 @@ declarado aparte porque uno exacto no cubre subrutas.
 Rol `ADMIN`.
 
 ```
+GET /api/v1/admin/marcas                                     todas, incluidas las que no tienen productos
+GET /api/v1/admin/categorias                                 todas, incluidas las que no tienen productos
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
 GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría
+POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET/POST /api/v1/admin/variantes/{id}/inventario              pendiente: reabastecimiento/ajuste sobre una variante ya creada
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage

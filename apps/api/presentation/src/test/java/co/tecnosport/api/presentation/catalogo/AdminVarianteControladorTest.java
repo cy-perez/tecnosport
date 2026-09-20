@@ -142,12 +142,17 @@ class AdminVarianteControladorTest {
   }
 
   /**
-   * Un cuerpo sin los campos del paquete no cae en cero por omisión: Jackson 3 no rellena los
-   * componentes que falten de un record y la deserialización entera muere. Es el resultado que se
-   * quiere — una variante sin peso no se puede cotizar.
+   * Hasta el 19 de septiembre de 2026 esto devolvía 422, y el javadoc explicaba por qué estaba
+   * bien: Jackson 3 no rellena los componentes que falten de un record, así que un cuerpo sin
+   * paquete moría antes de llegar al dominio. Con {@code adr/0046} la variante sin medir es un
+   * estado legítimo — se vende, pero solo con recogida — y el cuerpo sin esos campos se acepta.
+   *
+   * <p>El SKU va distinto del de las otras pruebas a propósito: el doble es un singleton que Spring
+   * comparte entre los métodos de esta clase, y desde que este cuerpo SÍ crea la variante, repetir
+   * "TS-1" hacía fallar a otra prueba con un 409 que no tenía nada que ver con ella.
    */
   @Test
-  void crearSinLosCamposDelPaqueteDevuelve422() throws Exception {
+  void crearSinLosCamposDelPaqueteCreaUnaVarianteSinMedir() throws Exception {
     Producto producto = productoDePrueba();
     repositorioProductos.conProductos(producto);
 
@@ -157,8 +162,28 @@ class AdminVarianteControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"productoId":"%s","sku":"TS-1","precio":1000,"tasaIva":0,
+                    {"productoId":"%s","sku":"TS-SIN-MEDIR","precio":1000,"tasaIva":0,
                      "codigoBarras":null,"existenciaInicial":0,"atributos":[]}
+                    """
+                        .formatted(producto.id())))
+        .andExpect(status().isCreated());
+  }
+
+  /** Tres medidas y un peso ausente no es "a medio medir": es una carga rota. */
+  @Test
+  void crearConElPaqueteAMediasDevuelve422() throws Exception {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/variantes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"productoId":"%s","sku":"TS-A-MEDIAS","precio":1000,"tasaIva":0,
+                     "codigoBarras":null,"existenciaInicial":0,"largoCm":30,"anchoCm":25,"altoCm":4,
+                     "atributos":[]}
                     """
                         .formatted(producto.id())))
         .andExpect(status().isUnprocessableContent());

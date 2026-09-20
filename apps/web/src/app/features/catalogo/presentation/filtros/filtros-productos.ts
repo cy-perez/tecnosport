@@ -139,9 +139,22 @@ export class FiltrosProductos {
     scope: 'catalogo',
   });
 
+  /**
+   * Las líneas que de verdad tienen algo detrás, no las tres que existen en el modelo.
+   *
+   * `LINEAS` es una constante, así que este selector ofrecía "Ropa y calzado" y "Bolsos" aunque no
+   * hubiera un solo producto publicado de ninguna de las dos — el mismo defecto que el 19 de
+   * septiembre de 2026 se arregló para categorías y marcas, pero un nivel más arriba y del lado del
+   * cliente, donde el servidor no podía verlo.
+   *
+   * Se deduce de las categorías, que ya llegan filtradas por el servidor: si una línea no tiene
+   * ninguna categoría con productos publicados, no tiene productos. Se recorre `LINEAS` y no el
+   * conjunto para conservar el orden canónico del modelo, que es el del negocio y no el alfabético.
+   */
   protected readonly opcionesLinea = computed<OpcionSelect[]>(() => {
     const etiquetas = this.etiquetasLinea();
-    return LINEAS.map((linea) => ({
+    const conProductos = new Set((this.opciones.categorias.data() ?? []).map((c) => c.linea));
+    return LINEAS.filter((linea) => conProductos.has(linea)).map((linea) => ({
       valor: linea,
       etiqueta: etiquetaDe(etiquetas, linea.toLowerCase()),
     }));

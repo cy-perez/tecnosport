@@ -118,6 +118,39 @@ class ArmadorDeBultosTest {
   }
 
   /**
+   * El camino que abrió {@code adr/0046}: una variante sin medir no se puede empacar, pero no es un
+   * error del sistema — el checkout lo traduce a recogida en el punto.
+   */
+  @Test
+  void el_articulo_sin_medidas_no_se_puede_empacar() {
+    Variante sinMedir =
+        agregarVarianteAlCatalogo(
+            "Parlante sin medir", "TS-SIN-MEDIR", Dinero.deCop(200_000), null);
+
+    ArticuloSinMedidasException error =
+        assertThrows(
+            ArticuloSinMedidasException.class, () -> armador.armar(List.of(linea(sinMedir, 1))));
+
+    assertEquals(1, error.articulos().size());
+    assertEquals(sinMedir.id(), error.articulos().getFirst().varianteId());
+    assertEquals("Parlante sin medir", error.articulos().getFirst().nombre());
+  }
+
+  /**
+   * Con los dos motivos a la vez gana el techo asegurable, y no es un capricho de orden: de los dos
+   * ese es el que no se arregla nunca. Decirle al comprador "nos falta medirlo" cuando además el
+   * artículo jamás va a poder viajar asegurado sería darle una esperanza falsa.
+   */
+  @Test
+  void si_un_articulo_no_es_asegurable_y_ademas_no_esta_medido_manda_el_techo() {
+    Variante caroYSinMedir =
+        agregarVarianteAlCatalogo("Proyector caro", "TS-CARO", Dinero.deCop(8_000_000), null);
+
+    assertThrows(
+        ArticuloNoAsegurableException.class, () -> armador.armar(List.of(linea(caroYSinMedir, 1))));
+  }
+
+  /**
    * El valor justo en el techo sí se despacha. Un límite que se equivoca por uno deja fuera al
    * artículo que costaba exactamente lo que la transportadora sí asegura, y nadie lo notaría: se
    * vería como "ese producto no se envía", que es lo que este caso viene a evitar.
@@ -183,6 +216,11 @@ class ArmadorDeBultosTest {
    * listan todos" pasaría por la razón equivocada.
    */
   private Variante agregarVarianteAlCatalogo(String nombre, String sku, Dinero precio) {
+    return agregarVarianteAlCatalogo(nombre, sku, precio, PAQUETE_CABLE);
+  }
+
+  private Variante agregarVarianteAlCatalogo(
+      String nombre, String sku, Dinero precio, Paquete paquete) {
     Producto producto =
         Producto.crear(
             nombre,
@@ -203,8 +241,7 @@ class ArmadorDeBultosTest {
             "alt es",
             "alt en"));
     Variante variante =
-        Variante.crear(
-            new Sku(sku), precio, new BigDecimal("0.19"), 10, null, PAQUETE_CABLE, List.of());
+        Variante.crear(new Sku(sku), precio, new BigDecimal("0.19"), 10, null, paquete, List.of());
     producto.agregarVariante(variante);
     producto.publicar();
     catalogo.add(producto);

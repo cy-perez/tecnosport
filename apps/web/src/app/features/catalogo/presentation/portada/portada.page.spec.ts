@@ -6,7 +6,11 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCatalogo from '../../../../../assets/i18n/scopes/catalogo/es.json';
 import { FiltroProductos } from '../../domain/filtro-productos.model';
-import { Producto } from '../../domain/producto.model';
+import { Categoria, Producto } from '../../domain/producto.model';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from '../../domain/repositorio-categorias.puerto';
 import {
   REPOSITORIO_PRODUCTOS,
   RepositorioProductos,
@@ -49,7 +53,24 @@ class RepositorioProductosFalso implements RepositorioProductos {
   }
 }
 
-async function renderPortada(repositorio = new RepositorioProductosFalso()) {
+class RepositorioCategoriasFalso implements RepositorioCategorias {
+  constructor(private readonly categorias: Categoria[]) {}
+
+  async listarTodas(): Promise<Categoria[]> {
+    return this.categorias;
+  }
+}
+
+const TRES_LINEAS: Categoria[] = [
+  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
+  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
+];
+
+async function renderPortada(
+  repositorio = new RepositorioProductosFalso(),
+  categorias: Categoria[] = TRES_LINEAS,
+) {
   const resultado = await render(PortadaPage, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -62,6 +83,7 @@ async function renderPortada(repositorio = new RepositorioProductosFalso()) {
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
+      { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(categorias) },
     ],
   });
   await resultado.fixture.whenStable();
@@ -116,15 +138,38 @@ describe('PortadaPage', () => {
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {
     await renderPortada();
 
-    expect(screen.getByRole('link', { name: 'Ropa y calzado' }).getAttribute('href')).toBe(
+    // `findBy*` y no `getBy*`: las baldosas ya no salen de una constante, salen de la consulta de
+    // categorías, y `whenStable()` no espera a que TanStack Query resuelva (apps/web/CLAUDE.md).
+    expect((await screen.findByRole('link', { name: 'Ropa y calzado' })).getAttribute('href')).toBe(
       '/es/productos?linea=ROPA_Y_CALZADO',
     );
-    expect(screen.getByRole('link', { name: 'Bolsos' }).getAttribute('href')).toBe(
+    expect((await screen.findByRole('link', { name: 'Bolsos' })).getAttribute('href')).toBe(
       '/es/productos?linea=BOLSOS',
     );
-    expect(screen.getByRole('link', { name: 'Tecnología' }).getAttribute('href')).toBe(
+    expect((await screen.findByRole('link', { name: 'Tecnología' })).getAttribute('href')).toBe(
       '/es/productos?linea=TECNOLOGIA',
     );
+  });
+
+  it('una línea sin categorías con productos no se ofrece', async () => {
+    await renderPortada(new RepositorioProductosFalso(), [
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
+    ]);
+
+    await screen.findByRole('link', { name: 'Tecnología' });
+
+    // Enlazar a una rejilla vacía desde la portada es peor que en el filtro: es la primera
+    // pantalla del sitio, y quien la abre lee "se agotó" donde dice "no vendemos eso".
+    expect(screen.queryByRole('link', { name: 'Ropa y calzado' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Bolsos' })).toBeNull();
+  });
+
+  it('sin ninguna línea con productos, la sección entera desaparece', async () => {
+    await renderPortada(new RepositorioProductosFalso(), []);
+
+    // El estado de una tienda recién desplegada, antes de publicar el primer producto. Un
+    // encabezado "Nuestras líneas" con nada debajo informa peor que no estar.
+    expect(screen.queryByRole('heading', { name: 'Nuestras líneas' })).toBeNull();
   });
 
   it('muestra las novedades pidiéndolas por fecha, no por relevancia', async () => {
@@ -154,6 +199,7 @@ describe('PortadaPage', () => {
         provideRouter([]),
         provideTanStackQuery(new QueryClient({ defaultOptions: { queries: { retry: false } } })),
         { provide: REPOSITORIO_PRODUCTOS, useValue: repositorioCaido },
+        { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(TRES_LINEAS) },
       ],
     });
 
@@ -178,6 +224,7 @@ describe('PortadaPage', () => {
         provideRouter([]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_PRODUCTOS, useValue: repositorioVacio },
+        { provide: REPOSITORIO_CATEGORIAS, useValue: new RepositorioCategoriasFalso(TRES_LINEAS) },
       ],
     });
 

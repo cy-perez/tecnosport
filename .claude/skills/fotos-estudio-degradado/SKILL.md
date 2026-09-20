@@ -1,6 +1,6 @@
 ---
 name: fotos-estudio-degradado
-description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin tocar su color, su forma ni sus logos, lo escala al 85 % de un lienzo de 2000×2000, lo centra sobre un fondo degradado gris idéntico en todo el catálogo con una sombra de contacto sutil y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Úsala siempre que alguien pida fotos «de estudio», «con fondo gris», «con degradado», «con sombra», «como las de TecnoSport» o que combinen con el catálogo que ya tiene ese estilo, aunque no diga «editar». No la uses para fondo blanco puro o fotos para Mercado Libre y Amazon (eso es fotos-de-producto), para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with grey gradient backgrounds and contact shadow, batch background removal, AVIF export and image QA.
+description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin retocar su interior —ni color, ni forma, ni brillo, ni logos—, lo escala al 85 % de un lienzo cuadrado de hasta 2000 px, menor cuando la foto no da para más, y lo centra sobre un fondo degradado gris idéntico en todo el catálogo con una sombra de contacto sutil y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Úsala siempre que alguien pida fotos «de estudio», «con fondo gris», «con degradado», «con sombra», «como las de TecnoSport» o que combinen con el catálogo que ya tiene ese estilo, aunque no diga «editar». No la uses para fondo blanco puro o fotos para Mercado Libre y Amazon (eso es fotos-de-producto), para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with grey gradient backgrounds and contact shadow, batch background removal, AVIF export and image QA.
 ---
 
 # Fotos de estudio con degradado (estilo TecnoSport)
@@ -40,7 +40,7 @@ invertidas. `SALIDA` es la carpeta de resultados. Usa `python3` en Linux y macOS
 
 ```
 SALIDA/
-├── maestras/<nombre>.jpg            2000×2000 · JPEG q92 progresivo 4:4:4 · sRGB · sin EXIF/XMP/IPTC · ≤ 800 KB
+├── maestras/<nombre>.jpg            2000×2000 en salida plana · JPEG q92 progresivo 4:4:4 · sRGB · sin EXIF/XMP/IPTC · ≤ 800 KB
 ├── escritorio/<nombre>-2000.avif    AVIF 10 bits · calidad 60, que sube si aparecen escalones · ≤ 300 KB
 ├── revision-1.jpg, revision-2.jpg…  antes/después, 8 fotos por hoja, con estado, motivos y datos
 ├── reporte.json                     parámetros, mediciones, estado y motivos de cada foto
@@ -67,6 +67,134 @@ SALIDA/
 escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 `.trabajo/vistas/` para poder mostrarla y explicar el problema.
 
+## El producto sale tal cual la foto original
+
+Decisión del negocio del 19/09/2026, y es la regla que manda sobre los parámetros
+de esta skill: **dentro de la silueta se publican los píxeles del original**. Lo
+que esta skill aporta es el fondo, la sombra de contacto, el resplandor alrededor
+y el encuadre; el interior no se retoca.
+
+De ahí salen tres ajustes que conviene no deshacer sin leer esto.
+
+### 1. El interior se compone opaco (`alfa_solida_banda_px`)
+
+Es el que motivó la regla. El modelo de recorte devuelve **alfa parcial dentro
+del producto** cuando su superficie se parece al fondo: en una foto del Galaxy
+A56, el **35,6 % de los píxeles interiores** tenían alfa < 1, con mínimos de
+0,533. Al componer, el gris del estudio se ve a través de esas zonas y la
+pantalla sale con manchas grises y oliva que **no están en la foto original**.
+Apareció en 21 fotos de un lote de 105, sobre todo en celulares con el fondo de
+pantalla claro.
+
+`solidificar_interior()` lo corrige en dos pasos:
+
+- **Cierra los agujeros pequeños** del recorte —menos de
+  `alfa_agujero_max_frac` del área del producto, hoy 0,5 %—, que son manchas del
+  modelo en mitad de una superficie. Los grandes no: **un asa calada o el hueco
+  de un aro siguen abiertos**, y así está probado.
+- **Sube el alfa a 1 según la distancia al borde**, con una rampa de
+  `alfa_solida_banda_px` (3 px). En el borde manda el alfa original, para que el
+  antialias y el resplandor no cambien; a 3 píxeles hacia adentro el alfa es 1.
+  Nunca baja el alfa.
+
+La distancia se mide con `distanceTransform`, no con una erosión, y esa
+diferencia es la que preserva los agujeros: la transformada mide también la
+distancia al hueco, así que sus bordes no se rellenan.
+
+Cuando sube más de `alfa_interior_aviso` (25 %) del interior, el reporte lo
+avisa. **Ese aviso importa en un producto transparente o espejado de verdad**
+—un vaso, una vitrina, una malla—: ahí la opacidad sí cambia lo que se ve y hay
+que mirarlo a tamaño real. Para un catálogo de celulares, tablets y parlantes es
+lo correcto.
+
+### 1.b El corte de la máscara está en 0,2, no en 0,5 (`alfa_umbral_binario`)
+
+Segundo hallazgo del mismo día, y va de la mano del anterior. **Una superficie de
+malla o tejido sale del modelo con alfa entre 0,2 y 0,5.** Con el corte en 0,5,
+`limpiar_islas` la parte en fragmentos, los descarta por pequeños, y el producto
+se publica sin cuerpo: el JBL Flip 7 salía como el logo, la tapa y unos jirones
+de rejilla, con el 80 % del parlante ausente.
+
+Medido bajando el corte desde 0,5, la máscara cruda crece así:
+
+| Corte | JBL Flip 7 (malla) | Galaxy A56 (limpio) |
+|---|--:|--:|
+| 0,4 | +36,9 % | +0,4 % |
+| 0,3 | +69,8 % | +0,7 % |
+| **0,2** | **+81,4 %** | **+1,2 %** |
+| 0,1 | +84,7 % | +1,6 % |
+
+La cobertura **se estanca por debajo de 0,2**: ahí acaba la malla y empieza el
+fondo. Por eso el corte es 0,2 y no menos.
+
+Bajarlo trae dos efectos que hay que compensar, y los dos parámetros que siguen
+existen por eso:
+
+- **`alfa_solida_banda_px` = 14, no 3.** Al entrar el halo del fondo como
+  producto, una rampa corta lo vuelve opaco y aparece un fleco claro en el
+  contorno. Con 14 px el halo se queda dentro de la banda donde manda el alfa
+  original, así que sigue translucido y el antialias se conserva.
+- **`alfa_cierre_px` = 31.** El modelo parte un producto en dos piezas cuando un
+  reflejo o una costura le bajan el alfa en una línea estrecha; la rampa trataba
+  esa grieta como borde y dejaba un fleco blanco **en mitad** del producto. Un
+  cierre morfológico une los dos lados antes de medir la distancia.
+
+Comprobado que el cierre **no puentea piezas separadas**: los Galaxy Buds Core
+salen con los dos audífonos bien sueltos y en LISTA. Si alguna vez dos piezas
+quedan a menos de 31 px, el motivo `varias_piezas` lo avisa.
+
+### 2. `tono.activo` está en `false`
+
+La corrección tonal automática subía hasta 0,3 EV y añadía microcontraste 0,12.
+Solo tocaba L*, nunca a* ni b*, así que el color no cambiaba —pero el brillo y el
+contraste local sí, y eso es una variación respecto al original.
+
+### 3. `enfoque.cantidad` está en `0`
+
+La máscara de enfoque añadía nitidez dentro del producto. Misma razón.
+
+Las dos siguen implementadas y se reactivan con un valor en el config o con
+`--ajuste tono.activo=true`. Si alguna vez el catálogo se surte de fotografía
+propia bien expuesta, volver a encenderlas tiene sentido; con material de
+catálogo ajeno, no: lo que hace falta es fidelidad, no interpretación.
+
+## Quién consume esta salida: `listas-de-proveedor`
+
+El catálogo se surte sobre todo de esa skill, que baja fotos de Open Icecat y del
+proveedor y las manda aquí. Conviene saber qué espera de esta salida, porque la
+interfaz ya se rompió una vez sin que nadie lo notara.
+
+**Lo que le llega a esta skill.** Una carpeta `crudas/<producto>/<producto>-NN.jpg`,
+ya filtrada: `filtrar_fotos.py` quitó antes los pictogramas, los logos y las
+tomas donde el producto sale cortado. Como vienen en subcarpetas, **el modo por
+producto se activa solo** y no hace falta pasar `--por-producto`.
+
+**Lo que se lleva de vuelta.** La forma agrupada, tal cual:
+
+```
+<producto>/maestra/<producto>-01.jpg     lo que va al ZIP del catálogo
+<producto>/<ancho>/<producto>-01.avif    lo que va al sitio
+```
+
+`construir_entregables.py` lee `<producto>/maestra/` directamente. **Si esta
+skill cambia esa forma, ese script deja de encontrar las fotos y el ZIP sale
+vacío sin fallar.** Hubo un `organizar_imagenes.py` que reacomodaba la salida
+plana; quedó fuera del flujo el 19/09/2026 justamente porque esta skill ya
+entrega la forma buena, y estuvo un tiempo sin hacer nada sin que se notara.
+
+**Lo que esa skill decidió sobre el material pobre.** Su regla 16 dice que una
+foto por debajo del estándar se publica igual, al máximo que dé la fuente,
+porque un producto sin foto no vende. De ahí sale el valor de
+`ampliacion_repetir`, que está en 3.0 y no en 2.0; el porqué está unas secciones
+más abajo. Dos cosas que esa regla **no** pide y conviene no concederle:
+
+- No hay que topar anchos a mano: esta skill ya elige el lienzo según la fuente
+  y solo emite las variantes de ese ancho hacia abajo.
+- El `REPETIR` sigue reteniendo los archivos, y `marcar.py --aprobar` sigue
+  negándose a levantarlo. Es la compuerta que evita que una foto ampliada 4×
+  entre al catálogo. Si alguien pide subirla, se mueve el umbral con su razón
+  escrita, no se rodea la compuerta.
+
 ## Especificación
 
 | Aspecto | Valor por defecto (`config.json`) |
@@ -79,7 +207,10 @@ escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 | Adornos | se quitan solos los elementos ajenos separados del cuerpo, pequeños (< 15 %) y de un color que no aparece en él (≥ 20 en a*b*): los destellos de «Galaxy AI» y adornos de render parecidos. Las piezas legítimas comparten el color del cuerpo y se conservan |
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
 | Enfoque | después de escalar, sobre L*: radio 1 px, 70 %, umbral 2 |
-| Escala | ≥ 1,5× → REVISAR · ≥ 2× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
+| Escala | ≥ 1,5× → REVISAR · ≥ 3× → REPETIR (el producto debe medir ≥ 1700 px en la foto) |
+| Máscara | corte en 0,2 para que la malla y el tejido entren enteros |
+| Interior | se compone opaco: alfa 1 a partir de 14 px del borde, cerrando grietas de 31 px y agujeros de menos del 0,5 % del área |
+| Tono y enfoque | apagados: el interior del producto no se retoca |
 | Lienzo por producto | escalones 2000 · 1600 · 1200 · 1000 · 800 · 600 · 480 · 400 · 320; se toma el mayor que la mejor foto alcance sin pasar de 1,25× de ampliación, y si no llega a ninguno, el menor |
 | Web | AVIF a 10 bits con `avifenc` (a 8 bits con Pillow si no lo hay); con `--variantes`, JPEG q88 de respaldo |
 
@@ -198,6 +329,28 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/marcar.py" SALIDA --lista
 ```
 
 `--aprobar` sólo levanta los motivos REVISAR automáticos que ya miraste a tamaño
+### Por qué el corte de ampliación está en 3× y no en 2×
+
+`ampliacion_repetir` estuvo en 2.0 hasta el 19/09/2026. Se subió a 3.0 por una
+decisión del negocio, y conviene saber de dónde salió para no volverla a bajar
+sin pensarlo.
+
+El catálogo se surte de listas de proveedor, y buena parte de ese material viene
+de Open Icecat en resoluciones bajas: en una corrida de 105 fotos, 68 no llegaban
+a los 1700 px que pide el encuadre. Con el corte en 2×, once fotos se retenían y
+siete productos quedaban con menos de cuatro tomas —algunos con una sola—, o sin
+ninguna. Un producto sin foto no se vende; uno con una foto regular, sí.
+
+El corte en 3× deja pasar lo que se ve aceptable a tamaño de tarjeta y sigue
+reteniendo lo que se ve mal de verdad: de esas once pasaron cuatro (ampliaciones
+de 2,59× a 2,94×) y quedaron fuera siete (de 3,22× a 4,41×). Las retenidas van
+al pedido de fotos al proveedor.
+
+Lo que **no** cambió: `REPETIR` sigue retirando los archivos y `marcar.py
+--aprobar` sigue negándose a levantarlo. La compuerta existe; solo se movió
+dónde cae. Si alguna vez el material del catálogo mejora —fotos propias o un
+paquete decente del proveedor—, esto vuelve a 2.0.
+
 real; nunca sirve para saltarse un REPETIR. Una marca REPETIR retira los archivos
 de las carpetas de entrega y `--limpiar` los restaura.
 

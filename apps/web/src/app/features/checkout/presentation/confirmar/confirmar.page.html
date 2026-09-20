@@ -89,6 +89,15 @@
                 : 'checkout.resumen.articulos_no_asegurables'
               ) | transloco: { articulos: nombresNoAsegurables() }
             }}</span>
+          } @else if (articulosSinMedidas().length > 0) {
+            <!-- Mismo trato que el no asegurable y texto propio: al comprador no se le cuenta que
+                 nos falta pesarlo, se le da la opción que sí tiene. -->
+            <span class="text-ts-error" role="alert">{{
+              (articulosSinMedidas().length === 1
+                ? 'checkout.resumen.articulo_sin_medidas'
+                : 'checkout.resumen.articulos_sin_medidas'
+              ) | transloco: { articulos: nombresSinMedidas() }
+            }}</span>
           } @else if (cotizacionRechazada()) {
             <!-- Rechazo de la plataforma: no se dice "intenta de nuevo" porque el reintento trae el
                  mismo rechazo — las cotizaciones se deduplican por contenido. -->

@@ -32,17 +32,20 @@ public class VarianteJpaEntity {
   @Column(name = "codigo_barras")
   private String codigoBarras;
 
-  @Column(name = "peso_gramos", nullable = false)
-  private int pesoGramos;
+  @Column(name = "peso_gramos")
+  // Integer y no int desde la V55: las cuatro columnas son nulables porque una variante puede
+  // venderse sin medir, solo con recogida en el punto. Un primitivo las leeria como cero, que es
+  // justo la confusion que hay que evitar — "no lo se" y "mide cero" no son lo mismo.
+  private Integer pesoGramos;
 
-  @Column(name = "largo_cm", nullable = false)
-  private int largoCm;
+  @Column(name = "largo_cm")
+  private Integer largoCm;
 
-  @Column(name = "ancho_cm", nullable = false)
-  private int anchoCm;
+  @Column(name = "ancho_cm")
+  private Integer anchoCm;
 
-  @Column(name = "alto_cm", nullable = false)
-  private int altoCm;
+  @Column(name = "alto_cm")
+  private Integer altoCm;
 
   @Column(nullable = false)
   private String estado;
@@ -60,10 +63,10 @@ public class VarianteJpaEntity {
       BigDecimal tasaIva,
       int existencia,
       String codigoBarras,
-      int pesoGramos,
-      int largoCm,
-      int anchoCm,
-      int altoCm,
+      Integer pesoGramos,
+      Integer largoCm,
+      Integer anchoCm,
+      Integer altoCm,
       String estado,
       Instant creadoEn) {
     this.id = id;
@@ -109,19 +112,19 @@ public class VarianteJpaEntity {
     return codigoBarras;
   }
 
-  public int getPesoGramos() {
+  public Integer getPesoGramos() {
     return pesoGramos;
   }
 
-  public int getLargoCm() {
+  public Integer getLargoCm() {
     return largoCm;
   }
 
-  public int getAnchoCm() {
+  public Integer getAnchoCm() {
     return anchoCm;
   }
 
-  public int getAltoCm() {
+  public Integer getAltoCm() {
     return altoCm;
   }
 

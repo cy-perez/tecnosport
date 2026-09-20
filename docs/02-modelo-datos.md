@@ -110,15 +110,20 @@ columna fija en la variante: `sku`, `precio`, `tasa_iva`, `existencia`,
 `estado`, `codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`,
 `ancho_cm`, `alto_cm`**.
 
-**El paquete es obligatorio y es columna fija, no atributo** (`adr/0021`). Sin
-peso ni dimensiones no hay cotización de envío, así que una variante sin esos
-cuatro valores no se puede publicar — es una invariante del dominio, igual que el
-SKU. Van como columnas y no como pares atributo-valor porque no describen el
+**El paquete es columna fija, no atributo** (`adr/0021`), y desde el 19 de
+septiembre de 2026 es **opcional** (`adr/0046`). Sin peso ni dimensiones no hay
+cotización de envío, pero eso no impide vender: la variante sin medir se publica y
+su producto se ofrece **solo con recogida en el punto**. Cuando alguien intenta
+cotizarlo, el checkout responde `409 ARTICULO_SIN_MEDIDAS` nombrando el artículo,
+igual que hace con los que superan el techo asegurable. Lo que no se relaja es el
+objeto de valor: si las cuatro cifras vienen, son mayores que cero, y van las
+cuatro o ninguna. Van como columnas y no como pares atributo-valor porque no describen el
 producto para el comprador: los consume el cotizador, y un dato que un adaptador
 necesita leer siempre no puede vivir en una bolsa de atributos opcionales.
 `adr/0012` los había eliminado; `adr/0021` los devuelve. **Construido el 10 de
 septiembre de 2026** (`V32`): objeto de valor `Paquete` en el dominio, cuatro
-columnas `not null` con un `check` de positividad —que también está en el dominio,
+columnas ~~`not null`~~ **nulables desde la `V55`**, con un `check` que exige las
+cuatro juntas o ninguna, y otro de positividad —que también está en el dominio,
 pero el sembrador escribe entidades JPA directo y no pasa por él—, y el panel
 pidiéndolos al crear una variante.
 
@@ -136,17 +141,35 @@ tenis.
 
 Aquí hubo durante dos fases un `TODO` pidiendo "el peso y las dimensiones reales del catálogo de
 producción", y estaba mal planteado: el catálogo de producción no sale del sembrador, sale del
-panel, que exige las cuatro cifras desde la `V32`. No faltaba un dato: faltaba un **procedimiento**.
-Queda escrito el 18 de septiembre de 2026, y es corto a propósito.
+panel. No faltaba un dato: faltaba un **procedimiento**. Queda escrito el 18 de septiembre de 2026,
+y es corto a propósito.
+
+Desde `adr/0046` el panel ya **no exige** las cuatro cifras —una variante sin medir se vende, solo
+con recogida—, así que este procedimiento pasó de ser un requisito de carga a ser una mejora
+incremental: cada producto que se mida gana envío a domicilio, de a uno, sin desplegar nada.
 
 1. **Mide el producto ya empacado**, en la caja con la que va a salir — con su relleno, su bolsa y
    su cinta. No el producto desnudo ni la caja del fabricante si no es la que se despacha.
 2. **Con báscula y cinta**, las dos del negocio. El peso en **gramos** y las tres medidas en
    **centímetros** enteros, redondeando siempre **hacia arriba**: quedarse corto se paga en cada
    flete, pasarse cuesta unos pesos en uno.
-3. **Quien carga el producto es quien mide**, en el momento de cargarlo. No después: una variante
-   sin paquete no se puede guardar, así que no hay forma de dejarlo "para luego" — y eso es
-   deliberado.
+3. **Quien carga el producto es quien mide**, en el momento de cargarlo, siempre que se pueda.
+   ~~No después: una variante sin paquete no se puede guardar, así que no hay forma de dejarlo
+   "para luego" — y eso es deliberado.~~ **Eso dejó de ser cierto el 19 de septiembre de 2026**: una
+   variante sin medir sí se guarda, y entonces el producto se vende **solo con recogida en el
+   punto** (`adr/0046`). No es una puerta trasera, es el reconocimiento de que "no se puede
+   cotizar" y "no se puede vender" no son lo mismo.
+
+   **Matizado el 19 de septiembre de 2026, al cargar el primer catálogo real.** Lo que no se puede
+   aplazar es que las cuatro cifras *existan*; lo que sí se puede es de dónde salen. Si no hay
+   báscula a mano, vale tomarlas de la **ficha oficial del fabricante** cuando publique el empaque
+   —JBL lo hace, "packaging dimensions" y "gross weight"— o de una **estimación razonada sobre una
+   caja comparable**, y corregirlas después con `PATCH` sobre la variante. Lo que **no** vale es
+   usar las medidas del producto desnudo: un celular pesa 190 g y su caja con cargador pasa de 400,
+   así que esa cifra no es una aproximación, es un error garantizado en la dirección cara.
+
+   Cuando la cifra sea estimada y no medida, **queda dicho en la descripción del ingreso**, para que
+   quien revise sepa cuáles hay que volver a pasar por la báscula.
 4. **El panel avisa** si el peso pasa de 8 kg, que es el tope más bajo de las seis transportadoras
    de la cuenta (medidos: 8, 25, 60, 150, 200 y 500 kg — `docs/13` §6). Avisa y no bloquea: lo que
    ese aviso atrapa de verdad es el error de unidad, 18 kg tecleados donde iban 1,8.
@@ -191,6 +214,19 @@ tipo: PRINCIPAL | GALERIA | ROTACION
 
 Reglas:
 
+- **No hay resolución mínima para publicar, y es deliberado** (19 de septiembre de
+  2026). Ni el dominio ni la API exigen un tamaño: se publica con la maestra que
+  haya en `catalogo/fotos/estudio/{producto}/maestra`, sea de 2000 px o de 480.
+  El listón de 1200 px que usa el retoque es un **criterio de calidad del
+  procesamiento**, no una regla del sistema, y confundir los dos dejaría el
+  catálogo sin publicar esperando fotos que quizá no lleguen nunca — de los 33
+  productos con foto del primer lote real, 6 no llegaban a 1200 y tres de ellos
+  eran los parlantes grandes, que son de los que más se venden.
+  La consecuencia de publicar una foto pequeña es que la ficha la pinta ampliada
+  y se nota: la ficha ocupa ~570 px CSS, que en una pantalla 2× son ~1140. Es un
+  costo visible y reversible —se reemplaza la imagen cuando llegue una mejor— y
+  esa es exactamente la diferencia con el peso del paquete, que no es reversible
+  porque el flete ya se cobró.
 - **El set de rotación pertenece a la variante cuando el color cambia el aspecto**
   (ropa, bolsos, celulares). Si la variante no tiene set propio, se usa el del
   producto. Esto evita fotografiar catorce colores el primer día sin cerrar la

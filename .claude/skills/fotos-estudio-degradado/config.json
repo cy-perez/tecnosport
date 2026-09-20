@@ -20,7 +20,10 @@
     "notas_foto": "dominante_croma_min y luces_quemadas_pct sólo generan notas informativas.",
     "adornos": "Elementos ajenos que el recorte conserva —los destellos de «Galaxy AI» y adornos de render parecidos—. Se quita la isla que está separada del cuerpo principal, ocupa menos de adorno_area_max_fraccion y queda a adorno_distancia_ab_min o más en el plano a*b*: un color que no aparece en el cuerpo. Las piezas legítimas comparten color y se conservan. adornos_quitar=false lo desactiva."
   },
-  "lienzo": [2000, 2000],
+  "lienzo": [
+    2000,
+    2000
+  ],
   "ocupacion": 0.85,
   "fondo_centro": "#FFFFFF",
   "fondo_esquinas": "#A5A5A5",
@@ -34,8 +37,18 @@
   "sombra_sigma_px": 58,
   "sombra_desplazamiento_y_px": 14,
   "ampliacion_revisar": 1.5,
-  "ampliacion_repetir": 2.0,
-  "lienzos_escala": [2000, 1600, 1200, 1000, 800, 600, 480, 400, 320],
+  "ampliacion_repetir": 3.0,
+  "lienzos_escala": [
+    2000,
+    1600,
+    1200,
+    1000,
+    800,
+    600,
+    480,
+    400,
+    320
+  ],
   "ampliacion_tolerada": 1.25,
   "jpeg_calidad": 92,
   "jpeg_peso_max_kb": 800,
@@ -54,21 +67,52 @@
   "webp_calidad_max": 95,
   "webp_paso_calidad": 5,
   "banding_umbral": 0.6,
-  "anchos_variantes": [2000],
-  "formatos_web": ["avif"],
-  "anchos_variantes_propuestos": [480, 800, 1200, 1600, 2000],
-  "formatos_web_propuestos": ["avif", "jpg"],
+  "anchos_variantes": [
+    2000
+  ],
+  "formatos_web": [
+    "avif"
+  ],
+  "anchos_variantes_propuestos": [
+    480,
+    800,
+    1200,
+    1600,
+    2000
+  ],
+  "formatos_web_propuestos": [
+    "avif",
+    "jpg"
+  ],
   "pesos_max_kb": {
-    "avif": {"480": 30, "800": 70, "1200": 130, "1600": 200, "2000": 300},
-    "jpg": {"480": 40, "800": 90, "1200": 170, "1600": 260, "2000": 380},
-    "webp": {"480": 45, "800": 100, "1200": 190, "1600": 290, "2000": 420}
+    "avif": {
+      "480": 30,
+      "800": 70,
+      "1200": 130,
+      "1600": 200,
+      "2000": 300
+    },
+    "jpg": {
+      "480": 40,
+      "800": 90,
+      "1200": 170,
+      "1600": 260,
+      "2000": 380
+    },
+    "webp": {
+      "480": 45,
+      "800": 100,
+      "1200": 190,
+      "1600": 290,
+      "2000": 420
+    }
   },
   "carpeta_maestras": "maestras",
   "carpeta_web": "escritorio",
   "modelo_recorte": "isnet-general-use",
   "isla_min_fraccion": 0.005,
   "isla_aviso_fraccion": 0.001,
-  "alfa_caja_min": 0.10,
+  "alfa_caja_min": 0.1,
   "borde_corte_fraccion": 0.005,
   "contraccion_borde_px": 1,
   "adornos_quitar": true,
@@ -78,9 +122,9 @@
   "separacion_min_l": 3.0,
   "separacion_sectores_max": 0.25,
   "contraste_original_min_de": 8.0,
-  "contraste_original_sectores_max": 0.20,
+  "contraste_original_sectores_max": 0.2,
   "tono": {
-    "activo": true,
+    "activo": false,
     "ev_max": 0.3,
     "recorte_max": 0.005,
     "negro_max_l": 6.0,
@@ -89,7 +133,7 @@
   },
   "enfoque": {
     "radio_px": 1.0,
-    "cantidad": 0.7,
+    "cantidad": 0.0,
     "umbral": 2
   },
   "croma_max_delta": 2.0,
@@ -98,5 +142,10 @@
   "tolerancia_esquinas": 3,
   "dominante_croma_min": 10.0,
   "luces_quemadas_pct": 3.0,
-  "fotos_por_hoja": 8
+  "fotos_por_hoja": 8,
+  "alfa_solida_banda_px": 14.0,
+  "alfa_interior_aviso": 0.25,
+  "alfa_agujero_max_frac": 0.005,
+  "alfa_umbral_binario": 0.2,
+  "alfa_cierre_px": 31.0
 }

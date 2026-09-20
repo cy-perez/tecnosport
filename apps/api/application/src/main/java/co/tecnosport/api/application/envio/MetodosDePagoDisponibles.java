@@ -156,7 +156,9 @@ public final class MetodosDePagoDisponibles {
           lineas.stream().map(l -> new LineaAEmpacar(l.varianteId(), l.cantidad(), null)).toList(),
           aRecaudar);
       return true;
-    } catch (RecaudoNoCuadraException | ArticuloNoAsegurableException e) {
+    } catch (RecaudoNoCuadraException
+        | ArticuloNoAsegurableException
+        | ArticuloSinMedidasException e) {
       // La segunda puede aparecer aquí y no antes: el techo se valida después de repartir el flete,
       // así que un artículo al filo puede pasarse solo en contraentrega (adr/0037).
       return false;
@@ -182,6 +184,7 @@ public final class MetodosDePagoDisponibles {
                   true)));
     } catch (EnvioSinCoberturaException
         | ArticuloNoAsegurableException
+        | ArticuloSinMedidasException
         | CotizacionRechazadaException e) {
       // Las tres significan lo mismo para esta consulta —no hay envío a domicilio— y ninguna es un
       // error que deba salir por aquí: quien pregunta por los medios de pago se quedaría sin

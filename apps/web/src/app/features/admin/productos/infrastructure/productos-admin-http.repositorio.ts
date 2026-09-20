@@ -71,10 +71,12 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
         tasaIva: comando.tasaIva,
         codigoBarras: comando.codigoBarras ?? undefined,
         existenciaInicial: comando.existenciaInicial,
-        pesoGramos: comando.pesoGramos,
-        largoCm: comando.largoCm,
-        anchoCm: comando.anchoCm,
-        altoCm: comando.altoCm,
+        // Ausentes se omiten del cuerpo en vez de viajar como null: el servidor lee "no vino"
+        // igual que "vino nulo", y omitir es lo que dice el contrato generado (ADR-0046).
+        pesoGramos: comando.pesoGramos ?? undefined,
+        largoCm: comando.largoCm ?? undefined,
+        anchoCm: comando.anchoCm ?? undefined,
+        altoCm: comando.altoCm ?? undefined,
         atributos: comando.atributos.map((a) => ({
           atributoId: a.atributoId,
           valor: a.valor,

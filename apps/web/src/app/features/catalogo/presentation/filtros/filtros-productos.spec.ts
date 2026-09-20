@@ -1,3 +1,4 @@
+import { Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import {
@@ -22,12 +23,22 @@ import {
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
 import { FiltrosProductos } from './filtros-productos';
 
+// Las tres líneas representadas, porque el selector de línea se deduce de aquí: sin una categoría
+// de ropa, "Ropa y calzado" deja de ofrecerse y la prueba de i18n de más abajo no tendría qué leer.
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
+      { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
       { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
       { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
     ];
+  }
+}
+
+/** Solo tecnología: el catálogo que este negocio va a tener el día que abra. */
+class RepositorioCategoriasSoloTecnologia implements RepositorioCategorias {
+  async listarTodas(): Promise<Categoria[]> {
+    return [{ id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' }];
   }
 }
 
@@ -41,7 +52,7 @@ function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function renderFiltros() {
+async function renderFiltros(categorias: Type<RepositorioCategorias> = RepositorioCategoriasFalso) {
   return render(FiltrosProductos, {
     imports: [
       TranslocoTestingModule.forRoot({
@@ -53,7 +64,7 @@ async function renderFiltros() {
     providers: [
       provideRouter([]),
       provideTanStackQuery(new QueryClient()),
-      { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
+      { provide: REPOSITORIO_CATEGORIAS, useClass: categorias },
       { provide: REPOSITORIO_MARCAS, useClass: RepositorioMarcasFalso },
     ],
   });
@@ -106,12 +117,47 @@ function etiquetasDe(select: HTMLElement): string[] {
   );
 }
 
+/**
+ * El selector de línea ya no se arma de una constante sino de las categorías que trae el servidor,
+ * así que hay un instante en el que solo está el placeholder. Se espera por el resultado y no con
+ * un `esperar(ms)` fijo, como pide `apps/web/CLAUDE.md`.
+ */
+async function selectConOpciones(etiqueta: string): Promise<HTMLElement> {
+  const select = await screen.findByLabelText(etiqueta);
+  await vi.waitFor(() => expect(etiquetasDe(select).length).toBeGreaterThan(1));
+  return select;
+}
+
 describe('FiltrosProductos', () => {
   // En el teléfono los siete controles ocupaban la primera pantalla entera.
   // El botón solo se pinta por debajo del primer punto de quiebre (clase
   // `desde-movil:hidden`, que jsdom no evalúa), así que aquí se prueba el
   // contrato del *disclosure*: el estado anunciado, a qué región apunta y que
   // el clic lo alterna.
+  it('el selector de línea solo ofrece las líneas que tienen categorías con productos', async () => {
+    await renderFiltros(RepositorioCategoriasSoloTecnologia);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtrar y ordenar' }));
+    const linea = await selectConOpciones('Línea');
+
+    // "Ropa y calzado" y "Bolsos" existen en el modelo y no en el catálogo. Ofrecerlas manda a una
+    // rejilla vacía, que quien compra lee como "se agotó" y no como "no vendemos eso".
+    expect(etiquetasDe(linea)).not.toContain('Ropa y calzado');
+    expect(etiquetasDe(linea)).not.toContain('Bolsos');
+    expect(etiquetasDe(linea)).toContain('Tecnología');
+  });
+
+  it('con categorías de las tres líneas, las ofrece las tres y en el orden del modelo', async () => {
+    await renderFiltros();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtrar y ordenar' }));
+    const linea = await selectConOpciones('Línea');
+    await vi.waitFor(() => expect(etiquetasDe(linea)).toHaveLength(4));
+
+    // Sin el placeholder: el orden es el de LINEAS, que es el del negocio y no el alfabético.
+    expect(etiquetasDe(linea).slice(-3)).toEqual(['Ropa y calzado', 'Bolsos', 'Tecnología']);
+  });
+
   it('sin filtros en la URL, arranca plegado y el botón lo despliega', async () => {
     await renderFiltros();
 
@@ -156,7 +202,9 @@ describe('FiltrosProductos', () => {
     const router = fixture.debugElement.injector.get(Router);
     const navegar = vi.spyOn(router, 'navigate');
 
-    fireEvent.change(await screen.findByLabelText('Línea'), { target: { value: 'BOLSOS' } });
+    // Hay que esperar a que las opciones existan: un `<select>` ignora un valor que no está entre
+    // ellas, y desde que la línea se deduce de las categorías ya no están desde el primer render.
+    fireEvent.change(await selectConOpciones('Línea'), { target: { value: 'BOLSOS' } });
     expect(navegar).not.toHaveBeenCalled();
 
     await esperar(350);

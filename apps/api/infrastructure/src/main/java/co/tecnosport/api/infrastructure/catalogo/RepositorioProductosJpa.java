@@ -6,6 +6,7 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
@@ -143,10 +144,10 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             variante.tasaIva(),
             variante.existencia(),
             variante.codigoBarras().orElse(null),
-            variante.paquete().pesoGramos(),
-            variante.paquete().largoCm(),
-            variante.paquete().anchoCm(),
-            variante.paquete().altoCm(),
+            variante.paquete().map(Paquete::pesoGramos).orElse(null),
+            variante.paquete().map(Paquete::largoCm).orElse(null),
+            variante.paquete().map(Paquete::anchoCm).orElse(null),
+            variante.paquete().map(Paquete::altoCm).orElse(null),
             variante.estado().name(),
             Instant.now()));
     List<VarianteAtributoValorJpaEntity> atributos =

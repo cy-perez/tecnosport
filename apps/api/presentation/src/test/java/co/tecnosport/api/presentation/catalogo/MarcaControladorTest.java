@@ -28,7 +28,7 @@ class MarcaControladorTest {
 
   @Test
   void listadoDevuelveItemsYCursorSiguienteNulo() throws Exception {
-    repositorio.conMarcas(Marca.crear("TecnoSport"));
+    repositorio.conMarcasConProductosPublicados(Marca.crear("TecnoSport"));
 
     mockMvc
         .perform(get("/api/v1/marcas"))
@@ -36,6 +36,21 @@ class MarcaControladorTest {
         .andExpect(jsonPath("$.items", hasSize(1)))
         .andExpect(jsonPath("$.items[0].nombre").value("TecnoSport"))
         .andExpect(jsonPath("$.cursorSiguiente").isEmpty());
+  }
+
+  /**
+   * El endpoint público es el filtro de la vitrina: una marca que existe pero no tiene nada
+   * publicado no puede salir por aquí, porque el filtro llevaría a una rejilla vacía.
+   */
+  @Test
+  void noDevuelveUnaMarcaQueExistePeroNoTieneProductosPublicados() throws Exception {
+    repositorio.conMarcas(Marca.crear("Bose"));
+    repositorio.conMarcasConProductosPublicados();
+
+    mockMvc
+        .perform(get("/api/v1/marcas"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items", hasSize(0)));
   }
 
   @TestConfiguration
@@ -59,20 +74,30 @@ class MarcaControladorTest {
 
   static class RepositorioMarcasDobleDePrueba implements RepositorioMarcas {
 
-    private List<Marca> marcas = List.of();
+    private List<Marca> todas = List.of();
+    private List<Marca> conProductos = List.of();
 
     void conMarcas(Marca... marcas) {
-      this.marcas = List.of(marcas);
+      this.todas = List.of(marcas);
+    }
+
+    void conMarcasConProductosPublicados(Marca... marcas) {
+      this.conProductos = List.of(marcas);
     }
 
     @Override
     public List<Marca> listarTodas() {
-      return marcas;
+      return todas;
+    }
+
+    @Override
+    public List<Marca> listarConProductosPublicados() {
+      return conProductos;
     }
 
     @Override
     public Optional<Marca> buscarPorId(UUID id) {
-      return marcas.stream().filter(marca -> marca.id().equals(id)).findFirst();
+      return todas.stream().filter(marca -> marca.id().equals(id)).findFirst();
     }
   }
 }

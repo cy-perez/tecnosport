@@ -566,6 +566,13 @@ Panel completo: productos, variantes, existencias, imágenes con URL firmada.
 La vista de operación de pedidos y conciliación de recaudo de la Fase 3 pasa a
 tener aquí el diseño y los componentes definitivos.
 
+> **"Completo" no lo estuvo hasta el 19 de septiembre de 2026, y nadie lo notó en cinco fases.**
+> Faltaba lo último de la cadena: **publicar**. Se podía crear el producto, subirle la imagen y
+> agregarle variantes, y el producto se quedaba en `BORRADOR` para siempre — `Producto.publicar()`
+> existía desde la Fase 1 y solo lo llamaban las pruebas. No se vio porque el sembrador escribe el
+> estado directo en la fila, así que la tienda de desarrollo siempre se vio llena. Lo destapó el
+> primer intento de cargar un producto real.  Ver la entrada del 19 de septiembre.
+
 **Sesión compartida del frontend, login de `ADMIN`, `EnviadorDeCorreo`, y
 registro de cliente con verificación de correo obligatoria cerrados de punta a
 punta** (2026-09-04). `Usuario.correoVerificadoEn` (nulo = sin verificar) y el
@@ -5249,6 +5256,369 @@ Arreglado con dos defensas y no una, porque la de tiempo sola vuelve a depender 
 vigencia: renovación por reloj cada media hora, y además cualquier `401` fuerza reautenticación y un
 reintento. Y el reanudado dejó de dar por medido un fallo — sin eso los 377 se habrían quedado
 perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio país.
+
+## Los trámites que nadie había mandado, y una exclusión que la ley no concede (2026-09-19)
+
+El día anterior cerró la Fase 7 y dejó tres cosas que no eran código: un dato de contrato sin
+mirar, tres asuntos con un proveedor sin enviar, y un expediente para el abogado listo pero sin
+imprimir. Ninguna bloqueaba un despliegue, y por eso llevaban semanas ahí — **el trabajo que no
+bloquea nada es el que no se hace nunca**.
+
+### Resend procesa en Estados Unidos, y eso resultó ser una buena noticia
+
+El punto 3 de `docs/14` decía "alguien tiene que leer el contrato". Se leyó: el acuerdo de
+tratamiento dice que las operaciones principales ocurren en Estados Unidos, y los veintidós
+subencargados de la lista —actualizada el 27 de agosto— están todos allí.
+
+**Lo que no estaba mirado es que Colombia publica una lista de países con nivel adecuado**, en el
+numeral 3.2 del Capítulo Tercero del Título V de la Circular Única de la SIC. **Estados Unidos está
+en ella.** O sea que la transferencia no necesita apoyarse en la autorización del titular —la
+excepción del art. 26 literal a, que es donde uno esperaría que cayera— ni en una declaración de
+conformidad ante la Superintendencia.
+
+Eso cambia la pregunta al abogado de "¿es legal mandar esto fuera?" a "¿conviene nombrar el país?",
+que es la misma forma que ya había tomado la pregunta de las transportadoras. Y aparecieron dos
+subencargados que no son infraestructura —Anthropic y RunPod, los dos de inteligencia artificial—
+con una pregunta de hecho que la lista no contesta: a qué datos alcanzan.
+
+**Lo que no se pudo verificar va escrito como tal.** La lista se leyó en la compilación oficial de
+la Circular 5 de 2017; el Título V consolidado que publica la SIC es un PDF escaneado que no se
+deja leer, y existe una Circular 2 de 2025 sobre transferencias cuyo alcance no se pudo cotejar.
+Una versión posterior añadió Australia y Japón sin quitar a Estados Unidos, así que todo apunta a
+que sigue vigente. Pero **"todo apunta" no es "está verificado"**, y en este documento esas dos
+cosas no se escriben igual.
+
+### Tres asuntos con Skydropx, en un mensaje y con su adjunto
+
+Los 74 códigos DANE que su catálogo rechaza, el retiro de la solicitud del 14 de septiembre —que
+era nuestra y se resolvió el 15— y el conector de recolección de Servientrega. Llevaban en la tabla
+de estado de `docs/13` como cosas que había que mandar, que es distinto de cosas mandadas.
+
+Nace `docs/tramites/`: el mensaje redactado, su adjunto, y un sitio donde anotar la respuesta. El
+CSV de los 74 sale de la tabla del documento, no se teclea — y hubo que entrecomillar los campos
+porque un departamento trae una coma en el nombre.
+
+De paso salió una hipótesis que se les ofrece como pista: **21 de los 74 son municipios cuyo nombre
+oficial en DIVIPOLA es más largo que el de uso común** —Tumaco es "San Andrés de Tumaco", Buga es
+"Guadalajara de Buga", Mompox es "Santa Cruz de Mompox"—, que es justo lo que se caería de un
+catálogo armado cruzando nombres contra una lista vieja. No explica los 74, y va dicho así.
+
+### Las hojas para el abogado se generan, no se transcriben
+
+El expediente pedía llevar los textos "en su versión vigente y con su fecha, **no una
+transcripción**". Copiar de la pantalla es exactamente una transcripción, y con diecinueve
+secciones basta perder una para que la consulta se haga sobre algo que nadie publicó.
+
+`npm run legales-impresos` lee los mismos JSON de Transloco que pinta el sitio y los recorre en el
+orden de `documento-legal.page.html`. Revienta si la versión difiere entre idiomas, que es el único
+modo en que el papel podría decir una fecha y la pantalla otra. La salida no se versiona: una copia
+del texto legal dentro del repositorio acabaría desfasada del original y nadie sabría cuál rige.
+
+### Y "desgaste normal" salió de los términos
+
+Esta sí tocó texto publicado, y la decisión de hacerlo ahora en vez de esperar al abogado se tomó a
+sabiendas: sube la versión legal hoy y volverá a subir cuando él responda.
+
+El art. 16 de la Ley 1480 enumera cuatro causales de exoneración y el desgaste no está entre ellas.
+Una exclusión más amplia que la legal no solo es ineficaz —no se puede oponer— sino que en un
+expediente de la SIC se lee como cláusula abusiva, y eso contamina toda la disputa, no solo ese
+punto.
+
+**Lo interesante no fue quitar la palabra, sino lo que apareció al cotejar la frase entera contra
+el artículo: la lista sobraba por un lado y faltaba por dos.** Decía "fuerza mayor" pero no el caso
+fortuito, y no mencionaba el hecho de un tercero. O sea que el texto **renunciaba a dos defensas
+que la ley concede mientras se inventaba una que no existe**. Es el mismo género de error que el
+plugin de capas que aceptaba la configuración sin aplicarla: algo que parece estar cubriendo un
+flanco y está mirando a otro lado.
+
+Se añadieron además dos precisiones que están en el artículo y no estaban en el texto: que la
+causal del manual solo opera si el manual se entregó en castellano, y que **la carga de la prueba
+es nuestra**. Ninguna es una concesión — las dos ya estaban en la ley, y callarlas solo servía para
+que quien lee creyera otra cosa.
+
+**Antes de tocar el texto se comprobó qué hace el sistema con esas exclusiones, y la respuesta es
+lo que le da peso al cambio: nada.** No hay enum de motivos de rechazo ni regla que mencione el
+desgaste; `DesenlaceGarantia` solo conoce reparar, reponer y reintegrar, y una reclamación negada
+se responde por el flujo de atención con texto libre. Esa frase **es** el criterio con el que una
+persona rechaza una reclamación real. Cambiarla cambia lo que pasa.
+
+Lo que sigue abierto es la reformulación en positivo —decir que el deterioro esperable por el uso
+normal no es un defecto de calidad— y ahí sí hace falta criterio profesional: la frontera entre
+informarlo y excluirlo es justo donde se juega si la cláusula es abusiva. Hoy el texto calla, que
+es la opción que se sostiene sola.
+
+### Lo que este día deja pendiente
+
+- **El catálogo real.** `catalogo/productos.json` tiene 103 productos de la lista del 12 de
+  septiembre, pero es la salida del análisis y nada más: cero descripciones, cero precios de
+  mercado, cero colores, cero imágenes y 29 sin marca identificada. Y no hay ni una foto en el
+  repositorio. Decidido el alcance: **un subconjunto de 15 a 25 productos de las marcas fuertes**,
+  completos de punta a punta, en vez de 103 a medias.
+- **Lighthouse** sigue sin poder medirse con propiedad mientras las tarjetas traigan sus fotos de
+  `picsum.photos`. Depende de lo anterior.
+- ~~**El panel no sabe crear marcas**, y el catálogo real no se puede cargar sin ellas.~~
+  **Resuelto el mismo día con `V54__marcas_reales.sql`**: las doce marcas identificadas en la
+  lista del proveedor, por migración y no por endpoint nuevo. Se pudieron dar de alta las doce, y
+  no solo las del primer lote, porque el arreglo del filtro ya impide que una marca sin productos
+  publicados aparezca en la vitrina — el día antes, esta migración habría metido doce filtros
+  vacíos. De paso salió que `marca` se creó en V1 **sin índice único sobre el nombre**, así que la
+  base admitía dos "Xiaomi": el `on conflict do nothing` que la migración llevaba no protegía de
+  nada. El índice atrapó un duplicado de verdad el primer día, en una prueba de inventario que no
+  es `@Transactional` y dejaba una "Marca de prueba" por método. El enunciado viejo:
+  `POST /api/v1/admin/productos` exige `marcaId` y `categoriaId` de registros que ya existan, y
+  `CategoriaControlador` y `MarcaControlador` son de solo lectura: alimentan los filtros de la
+  vitrina. **Las categorías ya están resueltas** — `V38__linea_tecnologia.sql` insertó las diez de
+  la línea de tecnología como migración, y dejó escrito el porqué: el sembrador solo corre con la
+  tabla de productos vacía, así que nada de lo que se ponga ahí llega a una base que ya tiene
+  datos. **Las marcas no.** Las únicas que existen son "TecnoSport" y "Under Trail", las dos
+  ficción declarada del sembrador; ninguna de las que el negocio de verdad vende —Xiaomi, Samsung,
+  Apple, JBL, Motorola, Honor— existe en ninguna base. El camino ya está marcado por V38, y por su
+  propio razonamiento: el dato real que toda instalación necesita es una migración.
+- **La Etapa 4, producción**, que esperaba a que la Fase 7 cerrara y ya puede empezar cuando haya
+  catálogo que desplegar.
+
+## El filtro que llevaba a una rejilla vacía (2026-09-19)
+
+Salió de buscar por dónde cargar las marcas del catálogo real, que es como salen casi todos: nadie
+lo estaba buscando.
+
+`ListarMarcas` y `ListarCategorias` devolvían `listarTodas()`, sin mirar si había algo publicado
+detrás. Con el catálogo sembrado no se notaba porque las dos marcas de ficción tienen productos —
+**pero desde el 14 de septiembre sí se notaba con las categorías**, y llevaba cinco días a la vista:
+`V38__linea_tecnologia.sql` dejó la línea de tecnología con once categorías, y la vitrina ofrecía
+"Proyectores" y "Computadores" con cero productos detrás.
+
+Medido contra la base real antes y después: **el filtro público pasó de once categorías a cuatro.**
+Las siete que sobraban llevaban a una rejilla vacía.
+
+**Lo que hace daño no es el filtro de más, es lo que le dice a quien compra.** Una categoría que
+existe en el filtro y devuelve cero resultados no se lee como "no vendemos eso": se lee como "se
+agotó". El sitio informa peor que si no ofreciera la categoría, y encima informa algo falso.
+
+### El criterio tiene que ser el mismo, no uno parecido
+
+La rejilla arma su página con `p.estado = 'PUBLICADO'` y nada más — la unión con variantes es un
+`left join` que solo sirve para el precio desde. Así que el filtro usa exactamente eso. Va escrito
+en el javadoc de los dos puertos porque es la clase de cosa que se desincroniza sola: **el día que
+la rejilla exija además variante activa, este criterio tiene que moverse con ella o el defecto
+vuelve entero**, y quien toque la rejilla no tiene por qué acordarse de que existe un filtro.
+
+### Y no se podía arreglar sin partir el endpoint en dos
+
+Aquí estaba lo interesante, y no se veía hasta intentarlo: **el formulario del panel se alimenta del
+mismo endpoint que el filtro de la vitrina.** Filtrarlo a secas habría dejado el desplegable de
+"crear producto" sin la única categoría que hace falta ahí — la vacía, la que todavía no tiene su
+primer producto. Habría cambiado un defecto cosmético por uno que impide trabajar.
+
+De ahí `GET /api/v1/admin/marcas` y `GET /api/v1/admin/categorias`, que devuelven todas y quedan
+protegidos por el patrón `/api/v1/admin/**` que ya existía en `ConfiguracionSeguridad` — comprobado:
+403 sin credenciales, sin escribir una línea de seguridad nueva.
+
+**Dos endpoints y no un parámetro**, que era la alternativa barata. Con un `?conProductos=` el
+cliente elegiría qué ve, y la vitrina quedaría a un carácter de volver a ofrecer filtros vacíos. Son
+dos preguntas distintas con dos audiencias distintas: "¿por qué puedo filtrar?" y "¿a qué puedo
+asignar este producto?".
+
+En el frontend no cambió ni una pantalla: los dos repositorios nuevos cumplen el mismo puerto y
+`admin.routes.ts` provee el suyo.
+
+### Los dobles guardan dos listas a propósito
+
+Si `listarConProductosPublicados()` devolviera lo mismo que `listarTodas()` en el doble, una prueba
+que confundiera los dos casos de uso pasaría igual y no protegería de nada. Es el mismo género del
+doble cuyo reclamo atómico era un `Set.add()` y fijaba el defecto en verde, y por eso el porqué está
+escrito dentro del doble y no en el commit.
+
+Las pruebas van por pares y en espejo: la de la vitrina exige que la marca vacía **no** salga, la
+del panel exige que **sí**. Una sola de las dos dejaría pasar la mitad de las regresiones posibles.
+
+### Y estaba en tres sitios, no en uno
+
+Arreglado el endpoint, quedaba comprobar cómo se pintaba el panel de filtros con una lista vacía —
+el estado exacto de una base de producción recién desplegada—. Al mirarlo apareció que **el defecto
+seguía entero un nivel más arriba, del lado del cliente, donde el servidor no podía verlo.**
+
+`LINEAS` es una constante del modelo con las tres líneas del negocio, y de ahí salían dos cosas:
+
+1. **El selector de "Línea" del filtro**, que ofrecía las tres siempre.
+2. **Las baldosas de la portada**, una por línea, cada una enlazando a `/productos?linea=...`.
+
+La segunda es la peor de las tres versiones del defecto: **dos de las tres baldosas de la primera
+pantalla del sitio** llevarían a una rejilla vacía el día que abramos solo con tecnología, que es
+justo lo que va a pasar. Un filtro escondido detrás de un botón se descubre; una baldosa de la
+portada se pincha.
+
+Las dos se deducen ahora de las categorías, que ya llegan filtradas por el servidor: **una línea sin
+categorías con productos publicados no tiene productos.** No hizo falta ningún endpoint nuevo — el
+dato ya estaba, y esa es una de las cosas que hizo barato el arreglo de arriba.
+
+Se recorre `LINEAS` y no el conjunto de líneas encontradas, para conservar el orden del negocio, que
+no es el alfabético.
+
+**La portada gana una consulta**, así que se precarga en su `resolve` como pide `ADR-0011` — y solo
+las categorías, con un `usarCategorias()` nuevo: pedirle también las marcas sería una petición de
+más en la pantalla más visitada del sitio y en cada arranque en frío. Comparte llave y opciones con
+`usarOpcionesFiltro`, así que las dos pantallas reaprovechan la misma entrada de caché.
+
+Y si no hay ninguna línea con productos, **no se pinta ni el encabezado**: un "Nuestras líneas" con
+nada debajo informa peor que no estar.
+
+De paso, las pruebas que leían las baldosas tuvieron que pasar a `findBy*`. Ya no salen de una
+constante disponible en el primer render, y `whenStable()` no espera a que TanStack Query resuelva
+— que es la trampa que `apps/web/CLAUDE.md` ya tenía escrita y que aquí se cobró tres pruebas de
+golpe.
+
+**La lección, que es la de siempre en este proyecto con otra ropa:** arreglar el defecto donde se
+ve no es arreglarlo. El endpoint era el sitio correcto para el filtro de categorías y marcas, y no
+tocaba nada de las líneas, porque las líneas nunca pasaron por el servidor.
+
+### Lo que este arreglo no hace
+
+**El panel sigue sin saber crear marcas.** Estos dos endpoints son de lectura. Para cargar el
+catálogo real siguen haciendo falta las marcas reales en la base, y el camino ya está marcado por
+`V38` y por su propio razonamiento: el dato real que toda instalación necesita es una migración.
+
+## El primer producto real, y las dos cosas que impedían que hubiera ninguno (2026-09-19)
+
+El procesamiento del catálogo terminó —96 productos con título, descripción, precio y metas— y al ir
+a cargar los primeros aparecieron dos bloqueos que nadie había visto, porque nadie había intentado
+cargar un producto real por el panel.
+
+### Un producto no se podía publicar
+
+`Producto.publicar()` **existía desde la Fase 1**, con su invariante y todo: no se publica sin
+imagen principal. Y **solo lo llamaban las pruebas.** Ningún caso de uso, ningún endpoint, ningún
+botón. Por el panel, un producto nacía en `BORRADOR` y se quedaba ahí para siempre.
+
+No se notó en cinco fases porque **el sembrador escribe el estado directo en la fila**, así que la
+tienda de desarrollo siempre se vio llena. La ficción tapaba el hueco de la cosa real.
+
+Es el mismo género que el plugin de capas que aceptaba la configuración sin aplicarla: una regla
+escrita, correcta, y fuera del alcance de todo lo que corre en producción. La diferencia es que
+aquella no protegía, y esta **impedía usar el panel para lo que se construyó**.
+
+De paso, `ProductoSinImagenPrincipalException` nunca tuvo traducción HTTP —habría salido como 500—
+porque nada podía dispararla. Un error de dominio sin mapear es una pista de que ese camino no lo
+recorre nadie.
+
+### Las medidas del paquete no son las del producto
+
+`docs/02` fija que las cuatro medidas son **del producto ya empacado**, medidas por quien lo carga.
+Al buscarlas en la web apareció una asimetría que conviene tener escrita porque se va a repetir con
+cada lista de proveedor:
+
+- **JBL publica medidas de empaque y peso bruto en su specsheet oficial.** Los cuatro parlantes
+  salieron completos: PartyBox Stage 320 en 384 × 728 × 437 mm y 18,9 kg brutos, Boombox 4 en
+  565 × 345 × 256 mm y 8,16 kg, Xtreme 4 en 325 × 218 × 173 mm y 3,27 kg, Go 5 en 125 × 90 × 58 mm
+  y 0,32 kg.
+- **Los fabricantes de celulares no publican nada de la caja.** Ni Motorola en su ficha oficial de
+  soporte, ni Samsung, ni los agregadores. Solo el equipo desnudo.
+
+Y el equipo desnudo **no sirve**: un celular pesa 190 g y su caja con cargador y cable pasa de 400.
+Cargar esa cifra sería cobrar de menos el flete en cada pedido, que es exactamente contra lo que
+`docs/02` advierte. Así que los celulares se quedan esperando báscula y metro, y no se les inventa
+un número.
+
+### Tener foto no es tener foto utilizable
+
+La tercera sorpresa, midiendo las maestras del estudio: de los 33 productos con foto, **27 tienen
+todas sus maestras a 1200 px o más y 6 no**. Y los que no son justo tres de los cuatro JBL cuyas
+medidas de caja sí estaban: Xtreme 4 y Boombox 4 en 600 px, PartyBox Stage 320 en **480**. La ficha
+pinta ~570 px CSS, que en una pantalla 2× son ~1140: a 480 se nota.
+
+O sea que las dos condiciones —medidas reales y foto utilizable— **se cumplen a la vez en un solo
+producto de los doce**. El JBL Go 5, con maestra de 2000 × 2000 y su specsheet completo.
+
+### Lo que sí quedó cargado, y qué demostró
+
+`JBL Go 5`, de punta a punta y por la misma API que usa el panel: producto, imagen subida a Cloud
+Storage con URL firmada, variante con sus cuatro medidas y el precio, y publicación. Nada de
+escribir en la base directamente — por ahí se saltarían las invariantes y el catálogo real entraría
+por una puerta que nadie más va a volver a usar.
+
+Y sirvió de comprobación cruzada de lo de esta mañana: **al publicarlo aparecieron "JBL" en el
+filtro de marcas y "Parlantes" en el de categorías**, que hasta ese segundo no estaban porque no
+tenían nada publicado detrás. Los dos arreglos del día, funcionando juntos contra una base real.
+
+## Los doce primeros productos reales, y el requisito que había que levantar (2026-09-19)
+
+Cargar el primer catálogo destapó, uno tras otro, tres supuestos que el proyecto daba por buenos.
+El tercero costó un cambio de dominio.
+
+### El paquete obligatorio bloqueaba más de lo que protegía
+
+`ADR-0021` hizo obligatorias las cuatro medidas y la `V32` las llevó a `NOT NULL` negándose a
+rellenar por defecto — *"un flete cobrado de menos se paga; una migración que falla se arregla"*.
+El argumento es correcto y sigue en pie. Lo que escondía es un salto:
+
+> de **"no se puede cotizar"** no se sigue **"no se puede vender"**.
+
+Se puede vender para **recogida en el punto**, que este negocio ya tiene, ya ofrece en el checkout y
+ya usa como salida cuando ninguna transportadora cubre el destino.
+
+El salto se hizo visible al buscar las medidas: **JBL publica caja y peso bruto en su specsheet; los
+fabricantes de celulares no publican nada del empaque.** Ni Motorola en su ficha oficial, ni Samsung,
+ni los agregadores. Así que siete de los doce productos listos se quedaban fuera por un dato que no
+existe en ninguna fuente pública y que exige el producto en la mano.
+
+**Un requisito que bloquea la venta de un catálogo entero para proteger el flete de una parte de él
+está mal calibrado.** `ADR-0046` lo levanta.
+
+Lo que no se relaja, y es la mitad importante: el objeto de valor `Paquete` sigue exigiendo las
+cuatro cifras mayores que cero, y van **las cuatro o ninguna**. La diferencia entre "no lo sé
+todavía" y "mide cero" es justo la que hay que conservar — la segunda es la que cobra fletes de
+menos en silencio. Esa regla vive en tres capas (base, DTO, comando) porque una que solo vive en el
+DTO se salta por cualquier otra puerta.
+
+### El comportamiento calca al del artículo no asegurable, y eso no es pereza
+
+Ya existía un caso con la misma forma: un artículo que vale más de lo asegurable no va a domicilio y
+se ofrece para recogida (`ADR-0036`). El nuevo se enchufa en los mismos sitios — `ArmadorDeBultos`
+recoge a todos los culpables y los nombra, `MetodosDePagoDisponibles` los atrapa en las dos mismas
+capturas, y sale como `409 ARTICULO_SIN_MEDIDAS`.
+
+**Con los dos problemas a la vez manda el techo asegurable**, y el orden no es un capricho: de los
+dos motivos, ese es el que no se arregla nunca. Decirle "nos falta medirlo" a quien además tiene un
+artículo que jamás podrá viajar asegurado es darle una esperanza falsa.
+
+Y el texto que lee el comprador va aparte del de su hermana, aunque la acción que se le ofrece sea
+la misma: el de aquella explica un porqué —"su valor supera el máximo asegurable"— que aquí sería
+falso. **De las medidas no se le habla**: es un problema nuestro, no suyo.
+
+### El 500 que ninguna prueba vio
+
+Al cargar, las ocho variantes sin medir reventaron con un `500`. Dominio, caso de uso y controlador
+pasaban en verde: al cambiar los cuatro campos de la entidad JPA a `Integer` se me quedaron sus
+`@Column(nullable = false)`, así que **la base ya aceptaba el nulo —la `V55` lo permitía— y
+Hibernate lo rechazaba antes de llegar a ella.**
+
+Ninguna capa de arriba puede ver eso. Solo una prueba que escriba de verdad, y no había ninguna que
+guardara una variante sin paquete. Ahora hay dos, y la segunda existe para que la primera no pase
+por no leer nada.
+
+Es la misma lección de siempre con ropa nueva: **la prueba que falta es la del camino que nadie
+había recorrido todavía.**
+
+### Lo que quedó cargado
+
+Doce productos publicados en dev, por la misma API que usa el panel: producto, imagen a Cloud
+Storage con URL firmada, variante y publicación.
+
+| | |
+|---|---|
+| Con medidas, envío a domicilio | 4 JBL (Go 5, Xtreme 4, Boombox 4, PartyBox Stage 320) |
+| Sin medir, solo recogida | 8 (seis Motorola, dos Samsung, un Honor) |
+
+Comprobado de punta a punta: cotizar el Moto G17 sin medir responde `409` nombrando el artículo, y
+el JBL Go 5 medido llega hasta el proveedor.
+
+**Y dos cosas que quedan pendientes y conviene no perder de vista:**
+
+- **La existencia de los doce es 5, un número que me inventé.** Es lo único del lote que no sale de
+  ningún dato real, y hay que corregirlo en el panel con el conteo de verdad.
+- **Nada avisa de cuántos productos están sin medir.** Hoy se sabe consultando la base. Mientras no
+  exista ese vigilante, el riesgo es que "temporal" se vuelva permanente por olvido, que es
+  exactamente cómo acaban estas cosas.
 
 ## Cómo conversar con Claude Code en este proyecto
 

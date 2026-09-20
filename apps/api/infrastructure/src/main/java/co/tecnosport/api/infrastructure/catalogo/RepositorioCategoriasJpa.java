@@ -2,6 +2,7 @@ package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.domain.catalogo.Categoria;
+import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
@@ -24,6 +25,13 @@ public class RepositorioCategoriasJpa implements RepositorioCategorias {
   @Override
   public List<Categoria> listarTodas() {
     return categoriaJpaRepository.findAll(Sort.by("nombre")).stream()
+        .map(this::aCategoria)
+        .toList();
+  }
+
+  @Override
+  public List<Categoria> listarConProductosPublicados() {
+    return categoriaJpaRepository.findConProductosEnEstado(EstadoProducto.PUBLICADO.name()).stream()
         .map(this::aCategoria)
         .toList();
   }

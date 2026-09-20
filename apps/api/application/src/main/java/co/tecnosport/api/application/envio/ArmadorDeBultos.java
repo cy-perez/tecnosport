@@ -2,6 +2,7 @@ package co.tecnosport.api.application.envio;
 
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.pedido.VarianteNoEncontradaException;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -131,6 +133,9 @@ public final class ArmadorDeBultos {
     // Se recogen todos los que se pasan del techo y se falla al final, no en el primero: quitar un
     // artículo del carrito y volver a chocar con el siguiente es cómo se abandona un carrito.
     List<ArticuloNoAsegurableException.Articulo> noAsegurables = new ArrayList<>();
+    // Los que todavía no se han medido se recogen igual que los no asegurables, y por el mismo
+    // motivo: el comprador tiene que enterarse de todos de una vez, no de uno por intento.
+    List<ArticuloSinMedidasException.Articulo> sinMedidas = new ArrayList<>();
     for (int i = 0; i < porEmpacar.size(); i++) {
       PorEmpacar entrada = porEmpacar.get(i);
       Dinero declarado = declarados.get(i);
@@ -143,12 +148,22 @@ public final class ArmadorDeBultos {
                 entrada.variante().id(), entrada.producto().nombre()));
         continue;
       }
-      bultos.add(
-          new BultoDespachable(
-              new Bulto(entrada.variante().paquete(), declarado), entrada.contenido()));
+      Optional<Paquete> paquete = entrada.variante().paquete();
+      if (paquete.isEmpty()) {
+        sinMedidas.add(
+            new ArticuloSinMedidasException.Articulo(
+                entrada.variante().id(), entrada.producto().nombre()));
+        continue;
+      }
+      bultos.add(new BultoDespachable(new Bulto(paquete.get(), declarado), entrada.contenido()));
     }
+    // El techo asegurable primero: de los dos motivos para no despachar, ese es el que no se
+    // arregla nunca, y si un artículo tiene los dos conviene que el comprador lea el definitivo.
     if (!noAsegurables.isEmpty()) {
       throw new ArticuloNoAsegurableException(noAsegurables);
+    }
+    if (!sinMedidas.isEmpty()) {
+      throw new ArticuloSinMedidasException(sinMedidas);
     }
     return List.copyOf(bultos);
   }

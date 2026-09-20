@@ -9,6 +9,7 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsTarjetaProducto } from '../tarjeta-producto/ts-tarjeta-producto';
 import { TsHero } from './hero/ts-hero';
 import { usarBusquedaProductos } from '../../application/buscar-productos.consulta';
+import { usarCategorias } from '../../application/listar-opciones-filtro.consulta';
 import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
 
 @Component({
@@ -20,7 +21,27 @@ import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
 export class PortadaPage {
   private readonly transloco = inject(TranslocoService);
 
-  protected readonly lineas = LINEAS;
+  private readonly categorias = usarCategorias();
+
+  /**
+   * Las líneas que tienen algo detrás, no las tres del modelo.
+   *
+   * Esta rejilla de baldosas llevaba a `/productos?linea=...` con las tres siempre, así que en un
+   * catálogo de pura tecnología dos de ellas eran enlaces a una rejilla vacía — en la portada, que
+   * es la primera pantalla del sitio. Es el mismo defecto que el 19 de septiembre de 2026 se
+   * arregló para el filtro de categorías y marcas, y este era el sitio más visible de los tres.
+   *
+   * Se deduce de las categorías, que ya llegan filtradas por el servidor: una línea sin categorías
+   * con productos publicados no tiene productos. Se recorre `LINEAS` para conservar el orden del
+   * negocio.
+   */
+  protected readonly lineas = computed(() => {
+    const conProductos = new Set(
+      (this.categorias.data() ?? []).map((categoria) => categoria.linea),
+    );
+    return LINEAS.filter((linea) => conProductos.has(linea));
+  });
+
   protected readonly marcadoresDeCarga = [1, 2, 3, 4];
 
   protected readonly consulta = usarBusquedaProductos(() => FILTRO_NOVEDADES);

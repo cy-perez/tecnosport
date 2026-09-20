@@ -42,6 +42,8 @@
     "envio_sin_cobertura": "We have no carrier for this address. You can pick up your order at our Medellín location.",
     "articulo_no_asegurable": "{{articulos}} is only available for pickup at our location, because its value is above the maximum the carrier can insure.",
     "articulos_no_asegurables": "{{articulos}} are only available for pickup at our location, because their value is above the maximum the carrier can insure.",
+    "articulo_sin_medidas": "{{articulos}} is only available for pickup at our store.",
+    "articulos_sin_medidas": "{{articulos}} are only available for pickup at our store.",
     "retiro_ahorro": "You save {{valor}} in shipping",
     "envio_estimado_un_dia": "Estimated delivery: 1 day",
     "envio_no_calculado": "We couldn't work out the shipping cost right now. Try again in a few minutes, or choose to pick your order up at our Medellín location.",
@@ -76,6 +78,8 @@
     "sin_cobertura": "We have no carrier for this address, so we cannot create this order. Go back and choose to pick it up at our Medellín location, or enter a different address.",
     "articulo_no_asegurable": "{{articulos}} is only available for pickup at our location, because its value is above the maximum the carrier can insure. Go back and choose to pick it up at our Medellín location, or remove it from your cart.",
     "articulos_no_asegurables": "{{articulos}} are only available for pickup at our location, because their value is above the maximum the carrier can insure. Go back and choose to pick it up at our Medellín location, or remove them from your cart.",
+    "articulo_sin_medidas": "{{articulos}} is only available for pickup at our store. Go back and choose pickup at our Medellín store, or remove it from your cart.",
+    "articulos_sin_medidas": "{{articulos}} are only available for pickup at our store. Go back and choose pickup at our Medellín store, or remove them from your cart.",
     "envio_no_calculado": "We couldn't work out the shipping cost, so we cannot create this order yet. Try again in a few minutes, or go back and choose to pick it up at our Medellín location.",
     "envio_rechazado": "We can't send this order for home delivery, so we cannot create it with delivery. Go back and choose to pick it up at our Medellín location."
   },

@@ -436,6 +436,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/publicacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/imagen-principal": {
         parameters: {
             query?: never;
@@ -980,7 +996,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/envios/revision": {
+    "/api/v1/admin/marcas": {
         parameters: {
             query?: never;
             header?: never;
@@ -988,6 +1004,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listar_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2423,6 +2471,28 @@ export interface operations {
             };
         };
     };
+    publicar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
     confirmarImagenPrincipal: {
         parameters: {
             query?: never;
@@ -3385,6 +3455,26 @@ export interface operations {
     };
     listar_9: {
         parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_10: {
+        parameters: {
             query?: {
                 maximo?: number;
             };
@@ -3401,6 +3491,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["BandejaDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    listar_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
                 };
             };
         };

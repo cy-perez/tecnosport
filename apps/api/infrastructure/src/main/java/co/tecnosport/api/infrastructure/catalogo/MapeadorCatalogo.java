@@ -237,7 +237,7 @@ public class MapeadorCatalogo {
         v.getTasaIva(),
         v.getExistencia(),
         v.getCodigoBarras(),
-        new Paquete(v.getPesoGramos(), v.getLargoCm(), v.getAnchoCm(), v.getAltoCm()),
+        paqueteDe(v),
         EstadoVariante.valueOf(v.getEstado()),
         atributos,
         setRotacionPropio);
@@ -311,5 +311,20 @@ public class MapeadorCatalogo {
 
   private static <T> Map<UUID, T> indexarPorId(List<T> elementos, Function<T, UUID> extractor) {
     return elementos.stream().collect(Collectors.toMap(extractor, Function.identity()));
+  }
+
+  /**
+   * Las cuatro columnas son nulables desde la V55: una variante sin medir se vende, pero solo con
+   * recogida. Se exigen las cuatro o ninguna — con tres el {@code Paquete} reventaria al
+   * construirse, y una fila a medias es un error de carga, no un estado del negocio.
+   */
+  private static Paquete paqueteDe(VarianteJpaEntity v) {
+    if (v.getPesoGramos() == null
+        || v.getLargoCm() == null
+        || v.getAnchoCm() == null
+        || v.getAltoCm() == null) {
+      return null;
+    }
+    return new Paquete(v.getPesoGramos(), v.getLargoCm(), v.getAnchoCm(), v.getAltoCm());
   }
 }

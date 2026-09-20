@@ -10,29 +10,51 @@ nadie. Cada una lleva aquí lo mismo: **qué dice hoy el texto publicado, qué h
 el sistema, qué dice la norma verificada, y qué recomienda este proyecto.**
 
 Las normas se verificaron contra el texto vigente en el SISJUR de la Alcaldía de
-Bogotá el 19 de septiembre de 2026, no de memoria. Donde no hay cita es porque no
-se encontró norma que lo resuelva, y eso también es un dato.
+Bogotá el 19 de septiembre de 2026, no de memoria, y la lista de países con nivel
+adecuado de protección contra la compilación oficial de la Circular 5 de 2017 de
+la SIC. Donde no hay cita es porque no se encontró norma que lo resuelva, y eso
+también es un dato. Donde la fuente no se dejó leer —el Título V consolidado es un
+PDF escaneado— queda dicho en el punto que lo necesita, en vez de citarlo como si
+se hubiera leído.
 
 ---
 
 ## 1. "Desgaste normal" como exclusión de la garantía
 
-**Dónde está.** `legales.terminos.secciones[10]`, en los dos idiomas:
+> **Resuelto en parte el 19 de septiembre de 2026.** La exclusión se quitó del
+> texto publicado y la lista se alineó con el art. 16. Lo que sigue abierto es la
+> reformulación en positivo, que es donde hace falta criterio profesional.
+
+**Qué decía.** `legales.terminos.secciones[10]`, en los dos idiomas:
 
 > La garantía no cubre el daño causado por uso indebido, modificación no
 > autorizada, desgaste normal ni fuerza mayor.
 
-**Qué hace el sistema.** Nada automático: la garantía se atiende por el flujo de
-`garantia` del panel, y quien decide si un caso entra o no entra es una persona.
-O sea que esta frase no es decorativa — es el criterio con el que se va a
-rechazar una reclamación real.
+**Qué dice ahora:**
 
-**Qué dice la norma.** El art. 16 de la Ley 1480 de 2011 enumera las causales de
-exoneración y son cuatro: fuerza mayor, caso fortuito, hecho de un tercero, y el
-uso indebido del bien o el incumplimiento de las instrucciones de instalación,
-uso o mantenimiento. **"Desgaste normal" no aparece**, ni ahí ni en los arts. 7 y
-8. Tres de las cuatro que el texto enumera sí están en la ley; la cuarta la
-añadimos nosotros.
+> La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del
+> hecho de un tercero, del uso indebido del producto —incluida la modificación no
+> autorizada— o del incumplimiento de las instrucciones de instalación, uso o
+> mantenimiento cuando el producto se entregó con manual en castellano. Son las
+> causales del artículo 16 de la Ley 1480 de 2011, y demostrar que el daño viene
+> de una de ellas nos corresponde a nosotros, no a ti.
+
+**Qué hace el sistema.** Nada automático, y eso se comprobó antes de tocar el
+texto: no hay ningún enum de motivos de rechazo ni ninguna regla que mencione el
+desgaste. `DesenlaceGarantia` solo conoce las tres salidas que concede la ley
+—reparar, reponer, reintegrar— y una reclamación negada se responde por el flujo
+de atención, con texto libre. O sea que **esta frase no es decorativa: es el
+único criterio escrito con el que una persona va a rechazar una reclamación
+real**, y cambiarla cambia de verdad lo que pasa.
+
+**Qué dice la norma, verificada.** El art. 16 de la Ley 1480 de 2011 enumera las
+causales de exoneración y son cuatro: fuerza mayor o caso fortuito, hecho de un
+tercero, uso indebido del bien por el consumidor, e incumplimiento de las
+instrucciones de instalación, uso o mantenimiento —esta última **solo si se
+entregó manual en castellano**—. "Desgaste normal" no aparece, ni ahí ni en los
+arts. 7 y 8. Y el mismo artículo pone la carga de la prueba del lado del
+obligado: le toca demostrar el nexo causal entre la causal que alega y el
+defecto.
 
 Y hay un agravante de método: la Ley 1480 es de orden público y se interpreta a
 favor del consumidor. Una exclusión más amplia que la legal no solo es ineficaz
@@ -40,22 +62,51 @@ favor del consumidor. Una exclusión más amplia que la legal no solo es inefica
 abusiva, lo que empeora la posición del negocio en toda la disputa, no solo en
 ese punto.
 
-**La tensión real, que es la que hay que resolver.** El desgaste normal sí
-importa comercialmente: una batería de celular que pierde capacidad con los
-ciclos, o unos tenis con la suela gastada al año, no son un defecto de calidad ni
-de idoneidad. La pregunta no es si se puede excluir —no se puede, con ese
-nombre—; es **cómo se dice lo que sí es cierto**: que la garantía cubre defectos,
-y que el deterioro esperable por el uso normal durante la vida útil del producto
-no es un defecto.
+### Lo que el cotejo destapó y no era la pregunta
 
-**Recomendación.** Quitar "desgaste normal" de la lista de exclusiones y, si el
-abogado lo avala, reformular en positivo dentro de la definición de qué cubre la
-garantía, sin presentarlo como una causal de exoneración. Las otras tres se
-quedan como están.
+La lista vieja no solo sobraba por un lado: **faltaba por dos**. Enumeraba
+"fuerza mayor" pero no el caso fortuito, y no mencionaba el hecho de un tercero,
+que son dos de las cuatro causales que la ley sí concede. O sea que el texto
+renunciaba a defensas legítimas mientras se inventaba una que no existe. Las dos
+cosas se arreglaron a la vez porque son la misma frase.
 
-**Lo que decide el abogado:** si esa reformulación en positivo es defendible o si
-lo prudente es sencillamente no decir nada sobre desgaste y resolver caso por
-caso.
+Se añadieron además dos precisiones que están en el artículo y no estaban en el
+texto: que la causal del manual **solo opera si el manual se entregó en
+castellano**, y que **la carga de la prueba es nuestra**. Ninguna de las dos es
+una concesión: las dos estaban ya en la ley y callarlas solo servía para que
+quien lee creyera otra cosa.
+
+### La tensión que queda, y es la que decide el abogado
+
+El desgaste normal sí importa comercialmente: una batería que pierde capacidad
+con los ciclos, o unos tenis con la suela gastada al año, no son un defecto de
+calidad ni de idoneidad. Quitar la palabra no vuelve falso ese hecho — lo deja
+sin decir.
+
+La pregunta no es si se puede excluir, que ya está contestada: no, con ese
+nombre. Es **cómo se dice lo que sí es cierto**, y hay dos salidas:
+
+1. **Reformular en positivo** dentro de la definición de qué cubre la garantía:
+   que el deterioro esperable por el uso normal durante la vida útil del producto
+   no constituye un defecto de calidad o idoneidad. Informa mejor, y arriesga que
+   se lea como la misma exclusión con otro nombre.
+2. **Callar** y resolver caso por caso, apoyándose en que la garantía cubre
+   defectos y el desgaste no lo es. Más seguro, menos informativo, y deja a quien
+   atiende el PQR sin criterio escrito.
+
+Hoy el texto está en la opción 2, porque es la que no requiere criterio
+profesional para sostenerse.
+
+**Lo que decide el abogado:** cuál de las dos, y si elige la primera, con qué
+redacción exacta. La decisión no es de estilo: la frontera entre "informar que el
+desgaste no es un defecto" y "excluir el desgaste" es justo donde se juega si la
+cláusula es abusiva.
+
+**Y una tercera, que el cotejo dejó planteada:** si conviene enumerar las cuatro
+causales de la ley —que es lo que se hizo— o si es preferible no enumerarlas y
+remitirse al artículo. Enumerar informa mejor, pero cada enumeración que se
+desvía del texto legal es una oportunidad de desviarse. Esta se pegó al artículo
+a propósito.
 
 ---
 
@@ -137,18 +188,84 @@ número de pedido y —en el comprobante— el detalle de lo comprado y la direc
 de entrega. Desde `adr/0045` ese contenido también queda en reposo en la tabla
 `correo_pendiente` hasta treinta días, en nuestra propia base.
 
-**Qué falta, y no es una cuestión de norma.** Es un **dato de contrato**: en qué
-región procesa Resend y qué dice su DPA. Nadie lo ha mirado. La política ya cubre
-el caso diciendo "pueden estar fuera de Colombia", que es una afirmación
-prudente y probablemente cierta, pero **está escrita sin haberlo comprobado**, y
-este proyecto tiene la costumbre de no dejar pasar eso.
+### El dato, leído el 19 de septiembre de 2026
 
-**Recomendación.** Antes de la consulta con el abogado, alguien tiene que leer el
-contrato y la documentación de Resend y anotar aquí la región. Con el dato en la
-mano, la pregunta al abogado es corta: si la redacción genérica actual basta o si
-conviene nombrar el país. Sin el dato, no hay consulta que hacer.
+Era lo único que faltaba, y no era una cuestión de norma sino de contrato.
 
-**Pendiente de este lado, no del abogado.**
+**Resend procesa en Estados Unidos.** Su acuerdo de tratamiento de datos lo dice
+sin rodeos:
+
+> Customer acknowledges that Company's primary processing operations take place
+> in the United States, and that the transfer of Customer's Personal Data to the
+> United States is necessary for the provision of the Services to Customer.
+
+**Sus veintidós subencargados están todos en Estados Unidos**, según la lista que
+el propio contrato manda consultar, actualizada el 27 de agosto de 2026. Entre
+ellos AWS (alojamiento y envío), PlanetScale y Supabase (bases de datos), Vercel,
+Cloudflare, Datadog y Stripe. Y dos que conviene mirar con atención porque no son
+infraestructura: **Anthropic, PBC** («Artificial Intelligence») y **RunPod, Inc.**
+(«Self-hosted LLMs»). La lista no dice a qué datos alcanzan.
+
+**Los mecanismos de transferencia que Resend invoca no sirven aquí.** El contrato
+se apoya en las cláusulas contractuales tipo de la Unión Europea, la adenda del
+Reino Unido y el *EU-U.S. Data Privacy Framework*. Los tres son instrumentos
+europeos y británicos: ninguno dice nada sobre una transferencia desde Colombia.
+
+### Y con el dato en la mano, la pregunta cambió de forma
+
+El art. 26 de la Ley 1581 de 2012 prohíbe transferir datos a países que no
+ofrezcan un nivel adecuado de protección. Lo que no estaba mirado es que
+**Colombia publica la lista de los que sí**: el numeral 3.2 del Capítulo Tercero
+del Título V de la Circular Única de la SIC.
+
+**Estados Unidos de América está en esa lista**, verificado en la compilación
+oficial de la Circular 5 de 2017 y no de memoria:
+
+> garantizan un nivel adecuado de protección los siguientes países: Alemania;
+> Austria; Bélgica; Bulgaria; Chipre; Costa Rica; Croacia; Dinamarca; Eslovaquia;
+> Eslovenia; Estonia; España; **Estados Unidos de América**; Finlandia; Francia;
+> Grecia; Hungría; Irlanda; Islandia; Italia; Letonia; Lituania; Luxemburgo;
+> Malta; México; Noruega; Países Bajos; Perú; Polonia; Portugal; Reino Unido;
+> República Checa; República de Corea; Rumania; Serbia; Suecia; y los países que
+> han sido declarados con nivel adecuado de protección por la Comisión Europea.
+
+O sea que la transferencia a Resend **no necesita apoyarse en la autorización del
+titular** —la excepción del art. 26 literal a, que es donde uno esperaría que
+cayera— ni en una declaración de conformidad ante la Superintendencia. Cae en el
+supuesto general, que es el camino cómodo. El parágrafo 2 del mismo numeral
+describe qué tocaría hacer si el país no estuviera en la lista: verificar una
+excepción del art. 26, acreditar los estándares del 3.1, o pedir la declaración
+de conformidad. No es nuestro caso.
+
+**Lo que no pude verificar, y va dicho para que no se lea como más firme de lo que
+es.** La lista se leyó en la compilación oficial de la Circular 5 de 2017. La
+versión consolidada del Título V que publica la SIC es un PDF escaneado que no se
+deja leer, y existe además una Circular 2 de 2025 sobre transferencias
+internacionales cuyo alcance no se pudo cotejar. Una versión posterior a 2017
+añadió Australia y Japón **sin quitar a Estados Unidos**, así que todo apunta a
+que sigue vigente — pero quien firme la política debería confirmarlo contra el
+texto consolidado de hoy. Es exactamente el tipo de comprobación por la que se
+paga un abogado.
+
+**Recomendación.** Dejar la redacción genérica como está. Es cierta, y nombrar el
+país no lo exige ninguna norma: el art. 12 de la Ley 1581 pide identificar al
+responsable, y el art. 13 del Decreto 1377 enumera el contenido de la política
+sin incluir la geografía del encargado. Nombrar «Estados Unidos» es opcional y
+arrastra el mismo argumento en contra que nombrar a las transportadoras del punto
+2: un dato concreto que caduca solo es peor que una descripción correcta que no
+caduca.
+
+**Lo que decide el abogado:**
+
+1. Si con Estados Unidos en la lista de la SIC conviene nombrarlo en la política
+   —lo que la haría más transparente y más frágil a la vez— o mantener la
+   fórmula genérica.
+2. Si los dos subencargados de inteligencia artificial de Resend piden algo más
+   que la mención genérica. La pregunta previa es de hecho y no de derecho, y la
+   lista no la contesta: **a qué datos alcanzan**. Por los correos pasan nombre,
+   dirección de entrega y detalle de lo comprado.
+
+**Cerrado de este lado el 19 de septiembre de 2026.** Ya hay consulta que hacer.
 
 ---
 
@@ -208,12 +325,17 @@ formulación que no diga "todo".
 
 ## Antes de la consulta
 
-- [ ] Leer el contrato y la documentación de Resend y anotar la región de
-      procesamiento en el punto 3.
+- [x] ~~Leer el contrato y la documentación de Resend y anotar la región de
+      procesamiento en el punto 3.~~ Leído el 19 de septiembre de 2026:
+      **Estados Unidos**, y ese país está en la lista de nivel adecuado de la
+      SIC, así que la transferencia no depende de la autorización del titular.
 - [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
       septiembre de 2026: 93,0 % con envío a domicilio.
 - [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
-      con su fecha, no una transcripción.
+      con su fecha, no una transcripción. **Las hojas ya se generan solas**:
+      `npm run legales-impresos` las escribe en `docs/tramites/impresos/` leyendo
+      los mismos JSON que pinta el sitio, con la versión y la fecha en la cabecera
+      y en el nombre del archivo. Falta imprimirlas.
 
 Este expediente lo preparó el proyecto, no un abogado. Los cuatro puntos son
 decisiones de riesgo y las cuatro recomendaciones son un punto de partida para la

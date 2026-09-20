@@ -314,7 +314,8 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
         notas.append(f"Se quitaron {adornos['adornos_quitados']} elemento(s) ajenos al producto "
                      f"({detalle} del cuerpo): están separados, son pequeños y su color no aparece en él "
                      "(destellos de render y adornos parecidos). Confirma que no eran parte del producto.")
-    m, islas = imagen.limpiar_islas(m, cfg["isla_min_fraccion"], cfg["isla_aviso_fraccion"])
+    m, islas = imagen.limpiar_islas(m, cfg["isla_min_fraccion"], cfg["isla_aviso_fraccion"],
+                                    float(cfg.get("alfa_umbral_binario", 0.5)))
     a = m if alfa_png is not None else imagen.niveles_alfa(m)
     recorte = {"metodo": metodo, "toca_borde": False, "lados": [], **islas, **adornos}
     reg["recorte"] = recorte
@@ -440,6 +441,22 @@ def procesar_foto(ctx: Contexto, ruta: Path, nombre: str, previo: dict) -> dict:
                    f"({donde_texto(co)}; ΔE mínima {co['de_min']}): ahí el recorte pudo comerse parte del producto o "
                    "sumar parte de la superficie. Revisa esa zona a tamaño real; si falla, repite la foto sobre un "
                    "fondo que contraste con el producto.")
+
+    # ---- 5.2b el interior del producto se compone opaco
+    # Va antes de medir bordes inciertos y de componer: si el alfa interior queda
+    # parcial, el fondo del estudio se ve a través del producto.
+    banda = float(cfg.get("alfa_solida_banda_px", 0)) * fpx
+    if banda > 0:
+        ac, subidos = imagen.solidificar_interior(
+            ac, banda, float(cfg.get("alfa_agujero_max_frac", 0)),
+            float(cfg.get("alfa_umbral_binario", 0.5)),
+            float(cfg.get("alfa_cierre_px", 0)) * fpx)
+        recorte["alfa_interior_subido"] = subidos
+        if subidos > cfg.get("alfa_interior_aviso", 0.25):
+            avisos.append(
+                f"El recorte dejaba alfa parcial en el {100 * subidos:.0f} % del interior y se "
+                "compuso opaco. Si el producto es transparente o espejado de verdad, revísalo "
+                "a tamaño real: ahí la opacidad sí cambia lo que se ve.")
 
     # ---- 5.3 tono (sólo L*) y enfoque después de redimensionar
     F2, tono = imagen.corregir_tono(F, ac, cfg["tono"], fpx)

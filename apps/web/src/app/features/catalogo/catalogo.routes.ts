@@ -3,7 +3,10 @@ import { provideTranslocoScope } from '@jsverse/transloco';
 import { precargarScopeI18n } from '../../core/i18n/precargar-scope';
 import { precargarFichaProducto } from './application/buscar-ficha-producto.consulta';
 import { precargarProductos } from './application/buscar-productos.consulta';
-import { precargarOpcionesFiltro } from './application/listar-opciones-filtro.consulta';
+import {
+  precargarCategorias,
+  precargarOpcionesFiltro,
+} from './application/listar-opciones-filtro.consulta';
 import { FILTRO_NOVEDADES } from './domain/filtro-productos.model';
 import { filtroDesdeQueryParams } from './domain/query-params-filtro';
 import { REPOSITORIO_CATEGORIAS } from './domain/repositorio-categorias.puerto';
@@ -36,8 +39,15 @@ export const catalogoRoutes: Routes = [
         // de que un scope perezoso haya llegado a tiempo.
         data: { seo: { clave: 'seo.portada', indexable: true } },
         resolve: {
+          // Las categorías van aquí por la misma razón que los productos (ADR-0011): la
+          // portada deduce de ellas qué líneas ofrece, y sin precargarlas el HTML del SSR
+          // sale sin ninguna baldosa y aparecen al hidratar.
           _precarga: () =>
-            Promise.all([precargarProductos(FILTRO_NOVEDADES), precargarScopeI18n('catalogo')]),
+            Promise.all([
+              precargarProductos(FILTRO_NOVEDADES),
+              precargarCategorias(),
+              precargarScopeI18n('catalogo'),
+            ]),
         },
         loadComponent: () =>
           import('./presentation/portada/portada.page').then((m) => m.PortadaPage),

@@ -1,7 +1,10 @@
 # ADR 0021. Cotización de envío con Skydropx, precio base más flete
 
 Fecha: 2026-09-08. Estado: aceptada. Supera a `adr/0012`, y retoma la idea del
-puerto de `adr/0004`.
+puerto de `adr/0004`. **Superada en parte por `adr/0046`** (19 de septiembre de
+2026): el paquete por variante deja de ser obligatorio, porque de "no se puede
+cotizar" no se sigue "no se puede vender" — se vende con recogida en el punto.
+Todo lo demás de este ADR sigue vigente.
 
 ## Contexto
 

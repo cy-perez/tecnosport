@@ -4,8 +4,8 @@ import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
 import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
-import { CategoriasHttpRepositorio } from '../catalogo/infrastructure/categorias-http.repositorio';
-import { MarcasHttpRepositorio } from '../catalogo/infrastructure/marcas-http.repositorio';
+import { CategoriasAdminHttpRepositorio } from './productos/infrastructure/categorias-admin-http.repositorio';
+import { MarcasAdminHttpRepositorio } from './productos/infrastructure/marcas-admin-http.repositorio';
 import { adminGuard } from './admin.guard';
 import { REPOSITORIO_ATENCION } from './atencion/domain/repositorio-atencion.puerto';
 import { AtencionHttpRepositorio } from './atencion/infrastructure/atencion-http.repositorio';
@@ -120,8 +120,11 @@ export const adminRoutes: Routes = [
           {
             path: 'crear',
             providers: [
-              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
-              { provide: REPOSITORIO_MARCAS, useClass: MarcasHttpRepositorio },
+              // Los del panel y no los de la vitrina: el endpoint público solo devuelve
+              // marcas y categorías con productos publicados, así que el desplegable no
+              // ofrecería nunca aquella a la que hay que cargarle el primero.
+              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+              { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
             ],
             loadComponent: () =>
               import('./productos/presentation/crear/crear-producto-admin.page').then(
@@ -131,8 +134,11 @@ export const adminRoutes: Routes = [
           {
             path: ':id/editar',
             providers: [
-              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
-              { provide: REPOSITORIO_MARCAS, useClass: MarcasHttpRepositorio },
+              // Los del panel y no los de la vitrina: el endpoint público solo devuelve
+              // marcas y categorías con productos publicados, así que el desplegable no
+              // ofrecería nunca aquella a la que hay que cargarle el primero.
+              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+              { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
             ],
             loadComponent: () =>
               import('./productos/presentation/editar/editar-producto-admin.page').then(

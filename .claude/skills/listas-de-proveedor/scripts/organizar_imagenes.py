@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 """
+FUERA DEL FLUJO desde el 19/09/2026.
+
+`fotos-estudio-degradado` ya agrupa por producto cuando las fotos le llegan en
+subcarpetas, que es siempre en el flujo de `listas-de-proveedor`, y entrega
+`<producto>/maestra/` y `<producto>/<ancho>/` —exactamente la forma que este
+script armaba—. Contra esa salida este script no encuentra `maestras/` ni
+`escritorio/` y no hace nada.
+
+Sigue sirviendo si alguien procesa un lote con `--plano`. Antes de usarlo,
+comprueba qué forma tiene la carpeta de salida.
+
 Acomoda lo que entrega `fotos-estudio-degradado` en una carpeta por producto.
 
 Esa skill entrega por formato y tamaño, que es lo cómodo para revisar un lote:

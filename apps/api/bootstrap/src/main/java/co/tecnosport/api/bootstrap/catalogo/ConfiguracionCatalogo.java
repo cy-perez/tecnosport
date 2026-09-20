@@ -11,9 +11,12 @@ import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
+import co.tecnosport.api.application.catalogo.ListarCategoriasAdmin;
 import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
+import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
+import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
@@ -94,6 +97,21 @@ public class ConfiguracionCatalogo {
   @Bean
   public ListarMarcas listarMarcas(RepositorioMarcas repositorioMarcas) {
     return new ListarMarcas(repositorioMarcas);
+  }
+
+  @Bean
+  public ListarCategoriasAdmin listarCategoriasAdmin(RepositorioCategorias repositorioCategorias) {
+    return new ListarCategoriasAdmin(repositorioCategorias);
+  }
+
+  @Bean
+  public ListarMarcasAdmin listarMarcasAdmin(RepositorioMarcas repositorioMarcas) {
+    return new ListarMarcasAdmin(repositorioMarcas);
+  }
+
+  @Bean
+  public PublicarProducto publicarProducto(RepositorioProductos repositorioProductos) {
+    return new PublicarProducto(repositorioProductos);
   }
 
   @Bean

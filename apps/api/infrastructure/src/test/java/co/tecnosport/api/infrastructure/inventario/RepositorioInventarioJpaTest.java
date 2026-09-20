@@ -55,11 +55,19 @@ class RepositorioInventarioJpaTest {
 
   private TransactionTemplate transaccion;
 
-  /** Inventario referencia una variante real (FK) — a diferencia de linea_carrito, a propósito. */
+  /**
+   * Inventario referencia una variante real (FK) — a diferencia de linea_carrito, a propósito.
+   *
+   * <p>El nombre de la marca lleva el {@code sku} pegado por la misma razón por la que ya lo
+   * llevaba el slug de la categoría: esta clase no es {@code @Transactional}, así que las filas de
+   * un método siguen ahí en el siguiente, y desde {@code V54__marcas_reales.sql} el nombre de la
+   * marca es único. Antes de ese índice, cada método dejaba otra "Marca de prueba" en la tabla y
+   * nadie se enteraba.
+   */
   private UUID variantePropia(String sku) {
     Instant ahora = Instant.now();
     MarcaJpaEntity marca =
-        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca de prueba", ahora));
+        marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca de prueba " + sku, ahora));
     CategoriaJpaEntity categoria =
         categorias.save(
             new CategoriaJpaEntity(UUID.randomUUID(), "Categoría de prueba", sku, "BOLSOS", ahora));

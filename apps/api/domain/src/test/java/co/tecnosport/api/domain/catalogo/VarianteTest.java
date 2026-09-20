@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.Sku;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class VarianteTest {
@@ -47,22 +48,23 @@ class VarianteTest {
   }
 
   /**
-   * La invariante de adr/0021: sin peso ni dimensiones no hay cotización de envío, así que una
-   * variante sin paquete no se puede construir — igual que una sin SKU.
+   * Lo contrario de lo que esta prueba afirmaba hasta el 19 de septiembre de 2026: la invariante de
+   * adr/0021 —sin paquete no se puede construir— se levantó en adr/0046. Una variante sin medir se
+   * vende, pero solo con recogida en el punto, y quien se topa con eso es el armador de bultos.
    */
   @Test
-  void rechazaVarianteSinPaquete() {
-    assertThrows(
-        NullPointerException.class,
-        () ->
-            Variante.crear(
-                new Sku("TS-1"),
-                Dinero.deCop(100_000),
-                new BigDecimal("0.19"),
-                10,
-                null,
-                null,
-                List.of()));
+  void aceptaUnaVarianteSinPaquete() {
+    Variante variante =
+        Variante.crear(
+            new Sku("TS-1"),
+            Dinero.deCop(100_000),
+            new BigDecimal("0.19"),
+            10,
+            null,
+            null,
+            List.of());
+
+    assertTrue(variante.paquete().isEmpty());
   }
 
   @Test
@@ -91,7 +93,7 @@ class VarianteTest {
             PAQUETE,
             List.of());
 
-    assertEquals(PAQUETE, variante.paquete());
+    assertEquals(Optional.of(PAQUETE), variante.paquete());
   }
 
   @Test

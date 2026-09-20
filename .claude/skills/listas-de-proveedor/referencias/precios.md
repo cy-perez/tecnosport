@@ -76,6 +76,71 @@ de lista se anota al lado.
 por detrás.** Aunque estén a la vista en el HTML, usarlas es entrar por una
 puerta que la tienda no abrió. Se navega el sitio como lo navega una persona.
 
+#### Cómo sacar el lote sin morir en el intento
+
+Las tarjetas son `.product__item`; su `innerText` trae el nombre en la primera
+línea y los precios como `$1.699.900` (el primero es el vigente). Tres cosas que
+cuestan una tarde si se descubren sobre la marcha:
+
+- **Una consulta por navegación.** Los resultados los pinta Algolia en el
+  cliente, así que no sirve pedir el HTML: hay que navegar y esperar. Con
+  `browser_batch` caben unas diez consultas por llamada; si la llamada se pasa
+  de tiempo, los pasos igual se ejecutaron y basta con mirar el acumulado.
+- **Acumular en `localStorage`.** Cada consulta guarda su resultado bajo la
+  llave de la búsqueda y devuelve solo un contador. Así una navegación no borra
+  lo anterior y la salida de cada paso queda corta.
+- **La salida de JavaScript se trunca cerca de los 1.000 caracteres.** Para
+  sacar los ~30 KB del lote hay que leerlos por trozos con `slice`, doce trozos
+  por `browser_batch`. No intentes el portapapeles (la pestaña no tiene foco) ni
+  un POST a un servidor local: la CSP de Alkosto lo bloquea y congela la
+  pestaña.
+
+### El buscador de Alkosto es difuso, y eso no se arregla con código
+
+Devuelve vecinos con mucha soltura: al pedir «POCO X8 Pro Max» contesta iPhones.
+El emparejamiento final lo hace una persona, producto por producto, y queda
+escrito en `catalogo/alkosto-vitrina.json` con el nombre exacto de la tarjeta.
+Cuatro trampas que aparecieron en la lista del 12/09/2026:
+
+| Lo que devuelve | Por qué no sirve |
+|---|---|
+| `Note 15 Pro 256GB 5G + Power Bank 165W` | es un combo; el precio no es el del celular |
+| `Celular Reacondicionado REDMI Note 15 Pro` | reacondicionado, que el mercado paga menos |
+| `Juego NINTENDO SWITCH 2 Mario Kart World` | es el **juego**, no la consola |
+| `PARTY BOX ON THE GO 2` | es la generación siguiente del On-The-Go Essential |
+
+## Las tiendas VTEX tienen dos manías
+
+- **Responden 400 si la búsqueda trae `"` o `+`.** Las pulgadas (`8.7"`) y los
+  modelos con plus (`A11+`) tumbaban la consulta de las tres tiendas a la vez, y
+  el síntoma es un montón de `HTTP Error 400` sin explicación. `sanear()` los
+  quita sin tocar el número.
+- **Devuelven una fila por color.** El mismo producto en negro y en gris, al
+  mismo precio y en la misma tienda, es **una** observación. Contarlas aparte le
+  daba a Éxito dos votos contra uno de Alkosto y movía la mediana.
+
+## Dos errores de emparejamiento que se ven como precios normales
+
+Ninguno de los dos hace ruido: el número sale, parece razonable y está mal.
+
+1. **La capacidad que se lee es la RAM.** En `POCO F8 Pro 5G 12GB RAM 256GB` la
+   primera capacidad del título son los 12 GB de RAM, no los 256 de disco, así
+   que un listado de 512GB —que también dice 12GB— pasaba el filtro. Hay que
+   quitar la RAM de los dos lados antes de comparar.
+2. **La potencia no es una capacidad.** `Xiaomi Power Bank 10.000 mAh 165W`
+   emparejaba con una Awei de 10000 mAh 22.5W y con una Xiaomi Magnetic de
+   5000 mAh: la mediana daba 119.900 cuando la vitrina la vende a **249.900**.
+   En cargadores y power bank, los vatios y los miliamperios mandan.
+
+## El precio de Alkosto ancla, porque se verificó a mano
+
+`asignar_precios.py` empareja los de VTEX con una expresión regular y los de
+Alkosto los puso una persona. Cuando hay precio de Alkosto, las ofertas de
+vitrina que se alejen más del 35 % de él se dejan fuera: casi siempre son otro
+producto. Y lo que una revisión a mano rechaza entero va a
+`catalogo/precios-descartados.json` con el motivo, para que el producto quede
+**sin** precio de mercado en vez de con uno inventado.
+
 ## Señal de alarma: generación saliente
 
 Si el retail masivo **no tiene la referencia pero sí tiene la siguiente**, el
