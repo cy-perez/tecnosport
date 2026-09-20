@@ -60,10 +60,27 @@ POST /api/v1/pedidos                        revalida precios, existencias y cost
 POST /api/v1/pagos/intentos                 crea el intento en la pasarela
 PATCH /api/v1/pagos/intentos/{referencia}   registra el id de transacción de Wompi al volver del checkout
 POST /api/v1/pagos/webhook                  eventos de Wompi, firma verificada
+POST /api/v1/pagos/sistecredito/intentos    crea la transaccion y devuelve la URL de pago ya hecha
+POST /api/v1/pagos/sistecredito/confirmacion  notificaciones de Sistecredito, SIN firma: se contrastan
 POST /api/v1/envios/webhook                 eventos de seguimiento de Skydropx, firma verificada
 POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
 ```
+
+Los dos de Sistecrédito no son gemelos de los de Wompi, y conviene no leerlos
+así (`ADR-0048`):
+
+- **`/sistecredito/intentos` devuelve la URL hecha**, no unos datos firmados para
+  que el navegador arme la suya. El servidor llama a la pasarela y sondea hasta
+  que aparece. Recibe también el documento de quien pide el crédito —que la
+  pasarela exige para encontrar al cliente y que **no se guarda en ninguna
+  parte**— y el idioma, que decide a qué versión del sitio vuelve el comprador.
+- **`/sistecredito/confirmacion` no viene firmada.** No hay checksum que
+  verificar: lo que la autentica es consultar la transacción y comparar `_id`,
+  `invoice` y `transactionStatus`. Si no coinciden, o si no se pudo preguntar, no
+  se aplica nada. Responde `200` siempre, igual que el webhook de Wompi.
+- No hay un `PATCH` equivalente al de Wompi: el id de la transacción lo guarda el
+  servidor al crearla, no lo trae el navegador al volver.
 
 `GET /api/v1/envios/cobertura` **se retira**: la cobertura de contraentrega ya no
 sale de una tabla propia sino de la cotización (`ADR-0023`), así que la respuesta
@@ -511,9 +528,9 @@ Sus códigos de error, y por qué no son el mismo:
 
 Y una nota de operación: mientras hay una emisión abierta, **el despacho a mano sigue
 disponible**. Es la salida de quien está apurado, y la única cuando una emisión queda
-indeterminada. La diferencia con `POST /api/v1/pedidos` y `POST
-/api/v1/pagos/intentos`, que sí exigen la cabecera: esos dos *crean* un
-recurso nuevo cada vez que se llaman — sin un estado previo que la
+indeterminada. La diferencia con `POST /api/v1/pedidos`, `POST
+/api/v1/pagos/intentos` y `POST /api/v1/pagos/sistecredito/intentos`, que sí
+exigen la cabecera: esos tres *crean* un recurso nuevo cada vez que se llaman — sin un estado previo que la
 transición pueda rechazar, no hay forma de que el propio dominio detecte un
 reintento por su cuenta.
 
