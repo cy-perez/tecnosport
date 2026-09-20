@@ -6,6 +6,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.EventoPago;
 import co.tecnosport.api.domain.pago.Pago;
+import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -50,14 +51,23 @@ public final class ConciliarPagosPendientes {
     List<Pago> pendientes =
         repositorioPagos.buscarPendientesParaConciliar(ahora.minus(antiguedadMinima));
 
+    // Desde que hay dos pasarelas (adr/0048) esta consulta devuelve también los pagos de
+    // Sistecrédito: la columna del id de transacción es la misma para las dos. Preguntarle a Wompi
+    // por un `_id` de Sistecrédito no rompería nada —responde que no existe y el pago se salta—
+    // pero gastaría una llamada por pago y por corrida, y sobre todo dejaría creyendo que esos
+    // pagos están conciliados por alguien. Los concilia `ConciliarPagosSistecredito`.
+    List<Pago> deWompi =
+        pendientes.stream()
+            .filter(pago -> pago.metodoPago().pasarela() == ProveedorDePago.WOMPI)
+            .toList();
+
     int conciliados = 0;
-    for (Pago pago : pendientes) {
+    for (Pago pago : deWompi) {
       if (conciliar(pago, ahora)) {
         conciliados++;
       }
     }
-    return new ResultadoConciliacion(
-        pendientes.size(), conciliados, pendientes.size() - conciliados);
+    return new ResultadoConciliacion(deWompi.size(), conciliados, deWompi.size() - conciliados);
   }
 
   private boolean conciliar(Pago pago, Instant ahora) {

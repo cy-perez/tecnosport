@@ -2,6 +2,7 @@ package co.tecnosport.api.bootstrap.pago;
 
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pago.ConciliarPagosSistecredito;
 import co.tecnosport.api.application.pago.CrearIntentoDePagoSistecredito;
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
 import co.tecnosport.api.application.pago.ProcesarNotificacionSistecredito;
@@ -32,7 +33,10 @@ import org.springframework.context.annotation.Configuration;
  * freno debería colgar de él y no de la configuración de otra pasarela.
  */
 @Configuration
-@EnableConfigurationProperties(PropiedadesSistecredito.class)
+@EnableConfigurationProperties({
+  PropiedadesSistecredito.class,
+  PropiedadesConciliacionSistecredito.class
+})
 public class ConfiguracionSistecredito {
 
   private static final Logger log = LoggerFactory.getLogger(ConfiguracionSistecredito.class);
@@ -89,6 +93,23 @@ public class ConfiguracionSistecredito {
       Reloj reloj) {
     return new ProcesarNotificacionSistecredito(
         repositorioPagos, repositorioPedidos, repositorioInventario, pasarelaSistecredito, reloj);
+  }
+
+  @Bean
+  public ConciliarPagosSistecredito conciliarPagosSistecredito(
+      RepositorioPagos repositorioPagos,
+      RepositorioPedidos repositorioPedidos,
+      RepositorioInventario repositorioInventario,
+      PasarelaSistecredito pasarelaSistecredito,
+      Reloj reloj,
+      PropiedadesConciliacionSistecredito propiedades) {
+    return new ConciliarPagosSistecredito(
+        repositorioPagos,
+        repositorioPedidos,
+        repositorioInventario,
+        pasarelaSistecredito,
+        reloj,
+        Duration.ofMinutes(propiedades.antiguedadMinimaMinutos()));
   }
 
   /**

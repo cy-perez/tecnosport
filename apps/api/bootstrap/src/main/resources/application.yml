@@ -155,6 +155,12 @@ tecnosport:
     # documentacion entregada ni es publico — dos comercios aliados publican cifras distintas
     # (20.000 y 30.000), lo que confirma que varia por comercio. Pendiente de la asesora.
     monto-minimo: ${SISTECREDITO_MONTO_MINIMO:}
+    conciliacion:
+      # Hace mas falta que la de Wompi: si el comprador cierra la ventana en vez de pulsar "volver
+      # al comercio", la confirmacion puede tardar hasta tres minutos (G-ALI-12), y una notificacion
+      # que no se pudo verificar no aplica nada y queda esperando aqui.
+      intervalo-minutos: ${SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS:10}
+      antiguedad-minima-minutos: ${SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS:5}
   contraentrega:
     # Dato de negocio real, no inventado (regla dura #5): arranca deshabilitada a proposito.
     # Se activa explicito cuando el negocio confirme la cobertura.
