@@ -195,7 +195,9 @@ public class AdminVarianteControlador {
   public VarianteRespuesta crear(@RequestBody AgregarVariantePeticion cuerpo) {
     AgregarVarianteComando comando = aComando(cuerpo);
     Variante variante = transaccion.execute(estado -> agregarVariante.ejecutar(comando));
-    return mapeador.aRespuesta(variante);
+    // La variante acaba de nacer, así que su libro tiene exactamente la entrada inicial y nada
+    // más: preguntárselo al inventario sería una consulta para saber algo que ya está aquí.
+    return mapeador.aRespuesta(variante, cuerpo.existenciaInicial() > 0);
   }
 
   private AgregarVarianteComando aComando(AgregarVariantePeticion cuerpo) {

@@ -140,8 +140,4 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   /** Lo llama el ajuste de existencia, que vive en el paquete de inventario y trae el suyo. */
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    // Sin efecto: ninguna prueba de este paquete mira la columna del catálogo.
-  }
 }

@@ -77,7 +77,6 @@ class CotizacionEnvioControladorTest {
             new Sku("TS-CAM-AZ-M"),
             Dinero.deCop(50_000),
             new BigDecimal("0.19"),
-            5,
             null,
             new Paquete(180, 30, 25, 4),
             List.of());
@@ -216,7 +215,6 @@ class CotizacionEnvioControladorTest {
             new Sku("TS-PC-M4-16"),
             Dinero.deCop(8_000_000),
             new BigDecimal("0.19"),
-            3,
             null,
             new Paquete(2200, 40, 30, 5),
             List.of());

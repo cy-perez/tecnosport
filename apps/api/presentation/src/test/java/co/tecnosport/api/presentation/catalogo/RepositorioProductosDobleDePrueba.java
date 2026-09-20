@@ -163,10 +163,4 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public List<VarianteActiva> variantesActivas() {
     return activas;
   }
-
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    this.ultimaVarianteConExistenciaActualizada = varianteId;
-    this.ultimaExistenciaGrabada = existencia;
-  }
 }

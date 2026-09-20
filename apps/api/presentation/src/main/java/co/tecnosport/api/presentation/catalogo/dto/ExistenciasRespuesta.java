@@ -9,6 +9,6 @@ import java.util.List;
  */
 public record ExistenciasRespuesta(
     int total,
-    int totalDescuadradas,
-    int totalDescuadradasEnPublicados,
+    int totalSinExistencia,
+    int totalSinExistenciaEnPublicados,
     List<ExistenciaDeVarianteRespuesta> items) {}

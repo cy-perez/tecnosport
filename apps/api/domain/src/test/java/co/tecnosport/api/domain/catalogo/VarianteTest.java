@@ -17,20 +17,11 @@ class VarianteTest {
 
   private static final Paquete PAQUETE = new Paquete(180, 30, 25, 4);
 
-  @Test
-  void rechazaExistenciaNegativa() {
-    assertThrows(
-        ExcepcionDeDominio.class,
-        () ->
-            Variante.crear(
-                new Sku("TS-1"),
-                Dinero.deCop(100_000),
-                new BigDecimal("0.19"),
-                -1,
-                null,
-                PAQUETE,
-                List.of()));
-  }
+  /*
+   * Aquí había una prueba de que la existencia no podía ser negativa. La invariante no se perdió:
+   * se mudó, porque desde adr/0050 una variante no guarda ninguna existencia. Quien se niega a
+   * dejar el saldo en negativo es `Inventario.registrarAjuste`, y lo prueba `InventarioTest`.
+   */
 
   @Test
   void rechazaTasaIvaMayorAUno() {
@@ -41,7 +32,6 @@ class VarianteTest {
                 new Sku("TS-1"),
                 Dinero.deCop(100_000),
                 new BigDecimal("1.5"),
-                10,
                 null,
                 PAQUETE,
                 List.of()));
@@ -56,13 +46,7 @@ class VarianteTest {
   void aceptaUnaVarianteSinPaquete() {
     Variante variante =
         Variante.crear(
-            new Sku("TS-1"),
-            Dinero.deCop(100_000),
-            new BigDecimal("0.19"),
-            10,
-            null,
-            null,
-            List.of());
+            new Sku("TS-1"), Dinero.deCop(100_000), new BigDecimal("0.19"), null, null, List.of());
 
     assertTrue(variante.paquete().isEmpty());
   }
@@ -75,7 +59,6 @@ class VarianteTest {
                 new Sku("TS-1"),
                 Dinero.deCop(100_000),
                 new BigDecimal("0.19"),
-                10,
                 "7701234567890",
                 PAQUETE,
                 List.of()));
@@ -88,7 +71,6 @@ class VarianteTest {
             new Sku("TS-1"),
             Dinero.deCop(100_000),
             new BigDecimal("0.19"),
-            10,
             null,
             PAQUETE,
             List.of());
@@ -103,7 +85,6 @@ class VarianteTest {
             new Sku("TS-1"),
             Dinero.deCop(100_000),
             new BigDecimal("0.19"),
-            10,
             "  ",
             PAQUETE,
             List.of());

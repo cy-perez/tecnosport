@@ -13,8 +13,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Lo que hay que ver para poder contar: cada variante activa con lo que dice el catálogo, lo que
- * dice el libro y lo que queda disponible.
+ * Lo que hay que ver para poder contar: cada variante activa con lo que dice el libro y con lo que
+ * queda disponible después de las reservas en vuelo.
  *
  * <p><b>Los saldos los calcula el dominio, no un {@code select}.</b> Traducir a SQL qué reserva
  * sigue vigente —no vencida, no resuelta por una salida, no resuelta por una liberación— sería
@@ -24,9 +24,12 @@ import java.util.stream.Collectors;
  * ventas y no solo con el tamaño del catálogo.
  *
  * <p><b>El orden lo decide este caso de uso</b>, como en {@code ListarVariantesSinMedir}: primero
- * las descuadradas, que son las que hay que mirar hoy; dentro de ellas los productos publicados,
- * que son los que le están mintiendo a alguien ahora mismo; y después por nombre y SKU, para que la
- * lista no baile entre dos cargas.
+ * las que el libro deja en cero, que son las que no se pueden vender; dentro de ellas los productos
+ * publicados, que son los que alguien está viendo agotados ahora mismo; y después por nombre y SKU,
+ * para que la lista no baile entre dos cargas.
+ *
+ * <p>Hasta adr/0050 el primer criterio eran las descuadradas —catálogo contra libro—, y dejó de
+ * existir al borrarse la columna.
  */
 public final class ListarExistencias {
 
@@ -57,7 +60,7 @@ public final class ListarExistencias {
                 variante ->
                     aExistencia(variante, librosPorVariante.get(variante.varianteId()), ahora))
             .sorted(
-                Comparator.comparing(ExistenciaDeVariante::descuadrada)
+                Comparator.comparing((ExistenciaDeVariante e) -> e.saldoTotal() == 0)
                     .reversed()
                     .thenComparing(ExistenciaDeVariante::estadoProducto, Comparator.reverseOrder())
                     .thenComparing(ExistenciaDeVariante::nombreProducto)
@@ -66,9 +69,8 @@ public final class ListarExistencias {
   }
 
   /**
-   * Una variante sin libro cuenta como saldo cero, no se salta. Si el catálogo declara existencia y
-   * no hay un solo movimiento que la respalde, esa fila es precisamente la que alguien tiene que
-   * ver: sale descuadrada, que es lo que es.
+   * Una variante sin libro cuenta como saldo cero, no se salta: es exactamente la fila que alguien
+   * tiene que ver, porque es algo publicado que nadie ha contado nunca.
    */
   private ExistenciaDeVariante aExistencia(
       VarianteActiva variante, Inventario libro, Instant ahora) {
@@ -80,7 +82,6 @@ public final class ListarExistencias {
         variante.nombreProducto(),
         variante.sku(),
         variante.estadoProducto(),
-        variante.existenciaDeclarada(),
         saldoTotal,
         disponible);
   }

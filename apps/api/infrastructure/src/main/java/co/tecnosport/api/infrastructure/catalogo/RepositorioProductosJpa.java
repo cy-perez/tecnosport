@@ -145,7 +145,6 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             variante.sku().valor(),
             variante.precio().valor(),
             variante.tasaIva(),
-            variante.existencia(),
             variante.codigoBarras().orElse(null),
             variante.paquete().map(Paquete::pesoGramos).orElse(null),
             variante.paquete().map(Paquete::largoCm).orElse(null),
@@ -239,7 +238,6 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             existente.getSku(),
             existente.getPrecio(),
             existente.getTasaIva(),
-            existente.getExistencia(),
             existente.getCodigoBarras(),
             paquete.pesoGramos(),
             paquete.largoCm(),
@@ -253,7 +251,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   public List<VarianteActiva> variantesActivas() {
     return jdbc.query(
         "select v.id as variante_id, p.id as producto_id, p.nombre as nombre_producto, "
-            + "       v.sku as sku, p.estado as estado_producto, v.existencia as existencia "
+            + "       v.sku as sku, p.estado as estado_producto "
             + "from variante v "
             + "join producto p on p.id = v.producto_id "
             + "where v.estado = 'ACTIVA'",
@@ -264,39 +262,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 rs.getObject("producto_id", UUID.class),
                 rs.getString("nombre_producto"),
                 rs.getString("sku"),
-                EstadoProducto.valueOf(rs.getString("estado_producto")),
-                rs.getInt("existencia")));
-  }
-
-  /**
-   * Copia del conteo, no la verdad: la verdad es el libro de movimientos (adr/0049). Se reescribe
-   * la entidad entera igual que en {@link #actualizarPaquete} — el mapeo es inmutable y esta es la
-   * forma que ya tenía la casa.
-   */
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    VarianteJpaEntity existente =
-        varianteJpaRepository
-            .findById(varianteId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "No existe la variante '" + varianteId + "' cuya existencia se ajusta."));
-    varianteJpaRepository.save(
-        new VarianteJpaEntity(
-            existente.getId(),
-            existente.getProductoId(),
-            existente.getSku(),
-            existente.getPrecio(),
-            existente.getTasaIva(),
-            existencia,
-            existente.getCodigoBarras(),
-            existente.getPesoGramos(),
-            existente.getLargoCm(),
-            existente.getAnchoCm(),
-            existente.getAltoCm(),
-            existente.getEstado(),
-            existente.getCreadoEn()));
+                EstadoProducto.valueOf(rs.getString("estado_producto"))));
   }
 
   private VarianteAtributoValorJpaEntity aEntidad(UUID varianteId, ValorAtributo valorAtributo) {

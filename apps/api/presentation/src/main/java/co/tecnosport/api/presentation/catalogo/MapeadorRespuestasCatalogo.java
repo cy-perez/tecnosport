@@ -1,6 +1,9 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.CatalogoPaginado;
+import co.tecnosport.api.application.catalogo.FichaDeProducto;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.application.inventario.VariantesDisponibles;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
@@ -32,7 +35,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class MapeadorRespuestasCatalogo {
 
-  public ProductoRespuesta aRespuesta(Producto producto) {
+  public ProductoRespuesta aRespuesta(FichaDeProducto ficha) {
+    return aRespuesta(ficha.producto(), ficha.disponibles());
+  }
+
+  public ProductoRespuesta aRespuesta(Producto producto, VariantesDisponibles disponibles) {
     return new ProductoRespuesta(
         producto.slug().valor(),
         producto.nombre(),
@@ -46,13 +53,18 @@ public class MapeadorRespuestasCatalogo {
             .filter(set -> set.estado() == EstadoSetRotacion.PUBLICADO)
             .map(this::aRespuesta)
             .orElse(null),
-        producto.variantes().stream().map(this::aRespuesta).toList());
+        producto.variantes().stream()
+            .map(variante -> aRespuesta(variante, disponibles.hay(variante.id())))
+            .toList());
   }
 
-  public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(
-      ResultadoPaginado<Producto> resultado) {
+  public ResultadoPaginadoRespuesta<ProductoRespuesta> aRespuesta(CatalogoPaginado catalogo) {
+    ResultadoPaginado<Producto> pagina = catalogo.pagina();
     return new ResultadoPaginadoRespuesta<>(
-        resultado.items().stream().map(this::aRespuesta).toList(), resultado.cursorSiguiente());
+        pagina.items().stream()
+            .map(producto -> aRespuesta(producto, catalogo.disponibles()))
+            .toList(),
+        pagina.cursorSiguiente());
   }
 
   /** Listas completas, no paginadas: {@code cursorSiguiente} siempre nulo. */
@@ -90,13 +102,17 @@ public class MapeadorRespuestasCatalogo {
         atributo.unidad().orElse(null));
   }
 
-  /** Reutilizado por el alta de variante del panel admin, no solo por la ficha pública. */
-  public VarianteRespuesta aRespuesta(Variante variante) {
+  /**
+   * Reutilizado por el alta de variante del panel admin, no solo por la ficha pública. La
+   * disponibilidad la trae quien llama porque la sabe el libro de inventario, no la variante
+   * (adr/0050).
+   */
+  public VarianteRespuesta aRespuesta(Variante variante, boolean disponible) {
     return new VarianteRespuesta(
         variante.id(),
         variante.sku().valor(),
         aRespuesta(variante.precio()),
-        variante.existencia(),
+        disponible,
         variante.atributos().stream().map(this::aRespuesta).toList());
   }
 

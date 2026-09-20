@@ -19,8 +19,8 @@ public class MapeadorExistencias {
   public ExistenciasRespuesta aRespuesta(ExistenciasDelCatalogo existencias) {
     return new ExistenciasRespuesta(
         existencias.total(),
-        existencias.totalDescuadradas(),
-        existencias.totalDescuadradasEnPublicados(),
+        existencias.totalSinExistencia(),
+        existencias.totalSinExistenciaEnPublicados(),
         existencias.variantes().stream().map(MapeadorExistencias::aRespuesta).toList());
   }
 
@@ -44,10 +44,8 @@ public class MapeadorExistencias {
         existencia.nombreProducto(),
         existencia.sku(),
         existencia.estadoProducto().name(),
-        existencia.existenciaDeclarada(),
         existencia.saldoTotal(),
         existencia.disponible(),
-        existencia.reservadas(),
-        existencia.descuadrada());
+        existencia.reservadas());
   }
 }

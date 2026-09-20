@@ -112,7 +112,6 @@ class ProductoTest {
             new Sku("TS-SIN-MEDIR"),
             Dinero.deCop(89_900),
             new BigDecimal("0.19"),
-            5,
             null,
             null,
             List.of());
@@ -163,7 +162,6 @@ class ProductoTest {
         new Sku(sku),
         Dinero.deCop(89_900),
         new BigDecimal("0.19"),
-        5,
         null,
         new Paquete(180, 30, 25, 4),
         List.of());

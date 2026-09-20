@@ -74,7 +74,6 @@ class EmitirGuiaDePedidoTest {
             new Sku("TS-CEL-1"),
             Dinero.deCop(120_000),
             new BigDecimal("0.19"),
-            5,
             null,
             new Paquete(500, 20, 15, 5),
             List.of());

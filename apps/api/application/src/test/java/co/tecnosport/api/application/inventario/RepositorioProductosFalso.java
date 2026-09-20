@@ -24,10 +24,6 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   private List<Producto> productos = new ArrayList<>();
   private List<VarianteActiva> activas = List.of();
 
-  UUID ultimaVarianteConExistenciaActualizada;
-  Integer ultimaExistenciaGrabada;
-  int vecesQueSeActualizoLaExistencia;
-
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
   }
@@ -49,13 +45,6 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public List<VarianteActiva> variantesActivas() {
     return activas;
-  }
-
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    this.ultimaVarianteConExistenciaActualizada = varianteId;
-    this.ultimaExistenciaGrabada = existencia;
-    this.vecesQueSeActualizoLaExistencia++;
   }
 
   @Override

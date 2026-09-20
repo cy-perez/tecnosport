@@ -1,6 +1,5 @@
 package co.tecnosport.api.presentation.catalogo;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -82,7 +81,7 @@ class AdminVarianteControladorTest {
                         .formatted(producto.id(), color.id())))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.sku").value("TS-CAM-AZ-M"))
-        .andExpect(jsonPath("$.existencia").value(5))
+        .andExpect(jsonPath("$.disponible").value(true))
         .andExpect(jsonPath("$.atributos[0].valor").value("Azul marino"));
   }
 
@@ -359,15 +358,15 @@ class AdminVarianteControladorTest {
 
   private static Variante variante(String sku, Paquete paquete) {
     return Variante.crear(
-        new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), 5, null, paquete, List.of());
+        new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), null, paquete, List.of());
   }
 
   @Test
-  void existenciasDevuelveLasTresCifrasYLosConteos() throws Exception {
+  void existenciasDevuelveLasCifrasDelLibroYLosConteos() throws Exception {
     UUID varianteId = UUID.randomUUID();
     repositorioProductos.conVariantesActivas(
         new VarianteActiva(
-            varianteId, UUID.randomUUID(), "Moto G17", "TS-MOTO-G17", EstadoProducto.PUBLICADO, 5));
+            varianteId, UUID.randomUUID(), "Moto G17", "TS-MOTO-G17", EstadoProducto.PUBLICADO));
     Inventario libro = Inventario.crear(varianteId);
     libro.registrarEntrada(2, "siembra de prueba", Instant.now());
     repositorioInventario.con(libro);
@@ -376,17 +375,16 @@ class AdminVarianteControladorTest {
         .perform(get("/api/v1/admin/variantes/existencias"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.total").value(1))
-        .andExpect(jsonPath("$.totalDescuadradas").value(1))
-        .andExpect(jsonPath("$.totalDescuadradasEnPublicados").value(1))
+        .andExpect(jsonPath("$.totalSinExistencia").value(0))
+        .andExpect(jsonPath("$.totalSinExistenciaEnPublicados").value(0))
         .andExpect(jsonPath("$.items[0].sku").value("TS-MOTO-G17"))
-        .andExpect(jsonPath("$.items[0].existenciaDeclarada").value(5))
         .andExpect(jsonPath("$.items[0].saldoTotal").value(2))
         .andExpect(jsonPath("$.items[0].disponible").value(2))
-        .andExpect(jsonPath("$.items[0].descuadrada").value(true));
+        .andExpect(jsonPath("$.items[0].reservadas").value(0));
   }
 
   @Test
-  void ajustarExistenciaDevuelveLoQueCambioYLoDejaEnLaColumnaDelCatalogo() throws Exception {
+  void ajustarExistenciaDevuelveLoQueCambio() throws Exception {
     Producto producto = productoDePrueba();
     Variante variante = varianteDePrueba();
     producto.agregarVariante(variante);
@@ -409,8 +407,6 @@ class AdminVarianteControladorTest {
         .andExpect(jsonPath("$.diferencia").value(3))
         .andExpect(jsonPath("$.sinCambios").value(false))
         .andExpect(jsonPath("$.dejaReservasSinRespaldo").value(false));
-
-    assertEquals(8, repositorioProductos.ultimaExistenciaGrabada);
   }
 
   /** Contar lo mismo responde 200 y lo declara: es un resultado, no un error. */
@@ -492,7 +488,6 @@ class AdminVarianteControladorTest {
         new Sku("TS-EXISTENCIA-CTRL"),
         Dinero.deCop(89_900),
         new BigDecimal("0.00"),
-        5,
         null,
         new Paquete(180, 30, 25, 4),
         List.of());

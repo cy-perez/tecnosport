@@ -91,7 +91,6 @@ class RepositorioInventarioJpaTest {
                 sku,
                 new BigDecimal("10000"),
                 new BigDecimal("0.19"),
-                0,
                 null,
                 180,
                 30,

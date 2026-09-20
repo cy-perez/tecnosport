@@ -19,11 +19,11 @@ import java.util.Objects;
  * existencia 5, un número inventado, y la única manera de corregirlo era escribir en la base a
  * mano.
  *
- * <p><b>Escribe en dos sitios y eso es deliberado.</b> El movimiento va al libro, que es la verdad,
- * y el conteo se copia además a {@code variante.existencia}, que es la columna que la vitrina lee
- * para decidir si algo está agotado. Mientras las dos existan hay que dejarlas iguales en el
- * momento de contar; que se vuelvan a separar con cada venta es el defecto que adr/0049 documenta y
- * no resuelve.
+ * <p><b>Escribe en un solo sitio desde adr/0050</b>, y esa es toda la diferencia. Hasta entonces
+ * copiaba además el conteo a {@code variante.existencia}, porque la vitrina leía esa columna para
+ * decidir si algo estaba agotado; las dos quedaban iguales en el momento de contar y se separaban
+ * otra vez con la siguiente venta. Ya no hay columna: el movimiento va al libro y el libro es lo
+ * que la vitrina lee.
  *
  * <p>Sin {@code @Transactional}, igual que {@code CrearPedido}: el bloqueo pesimista que toma
  * {@code RepositorioInventario.buscarPorVarianteId} solo sirve si la carga, la mutación y el
@@ -86,7 +86,6 @@ public final class AjustarExistencia {
 
     inventario.registrarAjuste(diferencia, comando.motivo(), ahora);
     repositorioInventario.guardar(inventario);
-    repositorioProductos.actualizarExistencia(variante.id(), comando.cantidadContada());
 
     return resultado;
   }

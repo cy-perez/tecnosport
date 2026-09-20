@@ -1,7 +1,9 @@
 package co.tecnosport.api.infrastructure.catalogo.siembra;
 
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
+import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.infrastructure.catalogo.AtributoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ImagenProductoJpaRepository;
@@ -113,6 +115,7 @@ public class SembradorCatalogo implements ApplicationRunner {
   private final VarianteAtributoValorJpaRepository valoresAtributo;
   private final ImagenProductoJpaRepository imagenes;
   private final SetRotacionJpaRepository setsRotacion;
+  private final RepositorioInventario inventarios;
 
   public SembradorCatalogo(
       MarcaJpaRepository marcas,
@@ -122,7 +125,8 @@ public class SembradorCatalogo implements ApplicationRunner {
       VarianteJpaRepository variantes,
       VarianteAtributoValorJpaRepository valoresAtributo,
       ImagenProductoJpaRepository imagenes,
-      SetRotacionJpaRepository setsRotacion) {
+      SetRotacionJpaRepository setsRotacion,
+      RepositorioInventario inventarios) {
     this.marcas = marcas;
     this.categorias = categorias;
     this.atributos = atributos;
@@ -131,6 +135,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     this.valoresAtributo = valoresAtributo;
     this.imagenes = imagenes;
     this.setsRotacion = setsRotacion;
+    this.inventarios = inventarios;
   }
 
   @Override
@@ -380,7 +385,6 @@ public class SembradorCatalogo implements ApplicationRunner {
                 sku,
                 new BigDecimal(precio),
                 TASA_IVA,
-                existencia,
                 null,
                 paquete.pesoGramos(),
                 paquete.largoCm(),
@@ -388,6 +392,16 @@ public class SembradorCatalogo implements ApplicationRunner {
                 paquete.altoCm(),
                 "ACTIVA",
                 ahora));
+
+    // El libro de la variante se abre aquí, con la misma cifra y en el mismo sitio. Lo hacía un
+    // segundo sembrador que recorría las variantes ya escritas y leía su columna `existencia`;
+    // desde adr/0050 esa columna no existe, y el único que sabe cuántas unidades siembra es este
+    // método. Un sembrador que adivina la cantidad de otro es un sembrador que la inventa.
+    Inventario inventario = Inventario.crear(variante.getId());
+    if (existencia > 0) {
+      inventario.registrarEntrada(existencia, "siembra inicial", ahora);
+    }
+    inventarios.guardar(inventario);
 
     for (ValorPendiente pendiente : valores) {
       valoresAtributo.save(

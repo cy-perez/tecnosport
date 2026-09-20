@@ -107,7 +107,6 @@ class MetodosDePagoDisponiblesTest {
             new Sku("TS-CAM-AZ-M"),
             Dinero.deCop(50_000),
             new BigDecimal("0.19"),
-            5,
             null,
             new Paquete(180, 30, 25, 4),
             List.of());
@@ -142,7 +141,6 @@ class MetodosDePagoDisponiblesTest {
             new Sku("TS-PC-M4-16"),
             Dinero.deCop(8_000_000),
             new BigDecimal("0.19"),
-            3,
             null,
             new Paquete(2200, 40, 30, 5),
             List.of());
@@ -190,7 +188,6 @@ class MetodosDePagoDisponiblesTest {
             new Sku("TS-CAB-USBC"),
             Dinero.deCop(8_000),
             new BigDecimal("0.19"),
-            20,
             null,
             new Paquete(90, 12, 10, 3),
             List.of());

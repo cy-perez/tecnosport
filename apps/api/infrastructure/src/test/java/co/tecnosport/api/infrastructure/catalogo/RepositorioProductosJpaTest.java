@@ -177,7 +177,6 @@ class RepositorioProductosJpaTest {
             "SKU-T7-INACTIVA",
             new BigDecimal("1000000"),
             new BigDecimal("0.19"),
-            0,
             null,
             400,
             18,
@@ -471,7 +470,6 @@ class RepositorioProductosJpaTest {
             new Sku("TS-CAM-T12-AZ"),
             Dinero.deCop(89_900),
             new BigDecimal("0.19"),
-            5,
             null,
             new Paquete(180, 30, 25, 4),
             List.of(ValorAtributo.deColor(color, "Azul marino", "#1E3A8A")));
@@ -483,7 +481,6 @@ class RepositorioProductosJpaTest {
     Producto p = encontrado.orElseThrow();
     assertThat(p.variantes()).hasSize(1);
     assertThat(p.variantes().get(0).sku().valor()).isEqualTo("TS-CAM-T12-AZ");
-    assertThat(p.variantes().get(0).existencia()).isEqualTo(5);
     assertThat(p.variantes().get(0).atributos()).hasSize(1);
     assertThat(p.variantes().get(0).atributos().get(0).colorHex()).isEqualTo("#1E3A8A");
   }
@@ -509,7 +506,6 @@ class RepositorioProductosJpaTest {
             new Sku("TS-SIN-MEDIR-T30"),
             Dinero.deCop(190_000),
             new BigDecimal("0.00"),
-            3,
             null,
             null,
             List.of());
@@ -597,7 +593,6 @@ class RepositorioProductosJpaTest {
     Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-remedir")).orElseThrow();
     assertThat(p.variantes().get(0).paquete()).contains(new Paquete(500, 20, 12, 7));
     assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
-    assertThat(p.variantes().get(0).existencia()).isEqualTo(5);
   }
 
   /** Y una medida sí vuelve completa, para que la de arriba no pase por no leer nada. */
@@ -614,7 +609,6 @@ class RepositorioProductosJpaTest {
             new Sku("TS-MEDIDO-T31"),
             Dinero.deCop(190_000),
             new BigDecimal("0.00"),
-            3,
             null,
             new Paquete(320, 13, 9, 6),
             List.of()));
@@ -745,49 +739,6 @@ class RepositorioProductosJpaTest {
     assertThat(delPublicado.productoId()).isEqualTo(publicado.getId());
     assertThat(delPublicado.nombreProducto()).isEqualTo("JBL Go 5 publicado");
     assertThat(delPublicado.estadoProducto()).isEqualTo(EstadoProducto.PUBLICADO);
-    assertThat(delPublicado.existenciaDeclarada()).isEqualTo(5);
-  }
-
-  /**
-   * Y la escritura de esa misma columna, leída de vuelta por el camino de la vitrina —{@code
-   * buscarPorSlug}— y no consultando la fila: la lección del 500 de la V55 es que base y Hibernate
-   * pueden no estar de acuerdo sobre la misma columna.
-   */
-  @Test
-  void actualizarExistenciaCambiaLaColumnaYNoTocaElRestoDeLaVariante() {
-    MarcaJpaEntity marca = marca("Marca existencias T2");
-    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-ex2", "TECNOLOGIA");
-    ProductoJpaEntity productoJpa =
-        producto("Moto G17", "moto-g17-existencia", "PUBLICADO", marca, categoria);
-    VarianteJpaEntity variante = variante(productoJpa, "TS-EXISTENCIA-1", "890000");
-    entityManager.flush();
-
-    repositorio.actualizarExistencia(variante.getId(), 12);
-    entityManager.flush();
-    entityManager.clear();
-
-    Producto p = repositorio.buscarPorSlug(new Slug("moto-g17-existencia")).orElseThrow();
-    assertThat(p.variantes().get(0).existencia()).isEqualTo(12);
-    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
-    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(180, 30, 25, 4));
-  }
-
-  /** Cero es un conteo legítimo —se acabó— y tiene que poder escribirse como cualquier otro. */
-  @Test
-  void actualizarExistenciaAceptaElCero() {
-    MarcaJpaEntity marca = marca("Marca existencias T3");
-    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-ex3", "TECNOLOGIA");
-    ProductoJpaEntity productoJpa =
-        producto("Galaxy A17", "galaxy-a17-existencia", "PUBLICADO", marca, categoria);
-    VarianteJpaEntity variante = variante(productoJpa, "TS-EXISTENCIA-0", "790000");
-    entityManager.flush();
-
-    repositorio.actualizarExistencia(variante.getId(), 0);
-    entityManager.flush();
-    entityManager.clear();
-
-    Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-existencia")).orElseThrow();
-    assertThat(p.variantes().get(0).existencia()).isZero();
   }
 
   private VarianteJpaEntity variante(ProductoJpaEntity producto, String sku, String precio) {
@@ -798,7 +749,6 @@ class RepositorioProductosJpaTest {
             sku,
             new BigDecimal(precio),
             new BigDecimal("0.19"),
-            5,
             null,
             180,
             30,
@@ -817,7 +767,6 @@ class RepositorioProductosJpaTest {
             sku,
             new BigDecimal("190000"),
             new BigDecimal("0.00"),
-            5,
             null,
             null,
             null,

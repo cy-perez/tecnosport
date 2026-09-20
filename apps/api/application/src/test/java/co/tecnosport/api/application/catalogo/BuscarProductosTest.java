@@ -93,7 +93,7 @@ class BuscarProductosTest {
             categoria);
     producto.agregarVariante(
         Variante.crear(
-            new Sku(sku), Dinero.deCop(120_000), new BigDecimal("0.00"), 5, null, null, List.of()));
+            new Sku(sku), Dinero.deCop(120_000), new BigDecimal("0.00"), null, null, List.of()));
     return producto;
   }
 }

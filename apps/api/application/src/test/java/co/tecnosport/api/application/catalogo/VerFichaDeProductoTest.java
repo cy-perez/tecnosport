@@ -61,7 +61,6 @@ class VerFichaDeProductoTest {
             new Sku("TS-CAM-1"),
             Dinero.deCop(80_000),
             new BigDecimal("0.00"),
-            1,
             null,
             null,
             List.of());

@@ -66,7 +66,6 @@ public final class AgregarVariante {
             sku,
             Dinero.deCop(comando.precio()),
             comando.tasaIva(),
-            comando.existenciaInicial(),
             comando.codigoBarras(),
             comando.traePaquete()
                 ? new Paquete(

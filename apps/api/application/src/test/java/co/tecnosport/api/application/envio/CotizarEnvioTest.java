@@ -75,7 +75,6 @@ class CotizarEnvioTest {
             new Sku("TS-CAM-AZ-M"),
             PRECIO_CAMISETA,
             new BigDecimal("0.19"),
-            5,
             null,
             PAQUETE_CAMISETA,
             List.of());

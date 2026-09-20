@@ -2,7 +2,6 @@ package co.tecnosport.api.application.inventario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,25 +68,13 @@ class AjustarExistenciaTest {
 
     assertEquals(-2, resultado.diferencia());
     assertEquals(-2, ultimoAjuste().cantidad());
-    assertEquals(3, productos.ultimaExistenciaGrabada);
   }
 
-  /**
-   * El conteo se copia a la columna del catálogo, que es la que la vitrina lee para decidir si algo
-   * está agotado (adr/0049). Sin esta línea el panel diría una cosa y la ficha otra, que es
-   * exactamente el defecto del que se está saliendo.
+  /*
+   * Aquí había una prueba de que el conteo se copiaba a la columna del catálogo, que era lo que la
+   * vitrina leía. Desde adr/0050 no hay columna que copiar: el libro es la única existencia, y lo
+   * que prueba que el conteo llega a quien compra es `DisponibilidadDeVariantesTest`.
    */
-  @Test
-  void elConteoSeCopiaALaColumnaDelCatalogo() {
-    Variante variante = variante("TS-JBL-GO5");
-    productos.conProductos(productoCon(variante));
-    inventarios.con(libroCon(variante.id(), 5));
-
-    ajustarExistencia.ejecutar(new AjustarExistenciaComando(variante.id(), 9, "Llegó reposición"));
-
-    assertEquals(variante.id(), productos.ultimaVarianteConExistenciaActualizada);
-    assertEquals(9, productos.ultimaExistenciaGrabada);
-  }
 
   /**
    * Contar lo mismo que ya había es el resultado normal de un conteo, no un error. No se escribe
@@ -95,7 +82,7 @@ class AjustarExistenciaTest {
    * libro que nadie lee.
    */
   @Test
-  void contarLoMismoNoEscribeNadaEnNingunoDeLosDosSitios() {
+  void contarLoMismoNoEscribeNada() {
     Variante variante = variante("TS-JBL-GO5");
     productos.conProductos(productoCon(variante));
     inventarios.con(libroCon(variante.id(), 5));
@@ -107,7 +94,6 @@ class AjustarExistenciaTest {
     assertTrue(resultado.sinCambios());
     assertEquals(0, resultado.diferencia());
     assertTrue(inventarios.guardados().isEmpty());
-    assertEquals(0, productos.vecesQueSeActualizoLaExistencia);
   }
 
   /**
@@ -130,7 +116,6 @@ class AjustarExistenciaTest {
     assertEquals(2, resultado.unidadesReservadas());
     assertTrue(resultado.dejaReservasSinRespaldo());
     assertEquals(-4, ultimoAjuste().cantidad());
-    assertEquals(1, productos.ultimaExistenciaGrabada);
   }
 
   @Test
@@ -179,7 +164,6 @@ class AjustarExistenciaTest {
 
     assertTrue(excepcion.getMessage().contains(inexistente.toString()));
     assertTrue(inventarios.guardados().isEmpty());
-    assertNull(productos.ultimaExistenciaGrabada);
   }
 
   /**
@@ -240,6 +224,6 @@ class AjustarExistenciaTest {
 
   private static Variante variante(String sku) {
     return Variante.crear(
-        new Sku(sku), Dinero.deCop(289_000), new BigDecimal("0.00"), 5, null, null, List.of());
+        new Sku(sku), Dinero.deCop(289_000), new BigDecimal("0.00"), null, null, List.of());
   }
 }

@@ -95,8 +95,4 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   /** No lo usa esta prueba: ajustar existencia tiene la suya. */
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    // Sin efecto: ninguna prueba de este paquete mira la columna del catálogo.
-  }
 }

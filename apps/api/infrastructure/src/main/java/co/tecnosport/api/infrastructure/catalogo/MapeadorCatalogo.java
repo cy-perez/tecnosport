@@ -235,7 +235,6 @@ public class MapeadorCatalogo {
         new Sku(v.getSku()),
         Dinero.deCop(v.getPrecio()),
         v.getTasaIva(),
-        v.getExistencia(),
         v.getCodigoBarras(),
         paqueteDe(v),
         EstadoVariante.valueOf(v.getEstado()),
