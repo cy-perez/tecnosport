@@ -5818,6 +5818,172 @@ llega lleno y con la nueva dentro. El anillo de foco del campo se comprobó con 
 con SQL al terminar, porque el sistema a propósito no permite borrarla desde el panel. Inventar una
 marca real habría sido inventar un dato de negocio.
 
+## Sistecrédito, la segunda pasarela, y lo que la segunda destapa de la primera (2026-09-20)
+
+Veinte commits, una pasarela nueva de punta a punta y un `ADR-0048` que explica las decisiones. Esta
+entrada no repite el ADR: deja escrito lo que se aprendió construyéndolo, que es otra cosa.
+
+La fuente son las cinco guías que mandó Sistecrédito —`G-ALI-08` consumo de la pasarela, `G-ALI-09`
+códigos de error, `G-ALI-10` parámetros de petición, `G-ALI-12` integración del medio de pago,
+`G-SCL-21` datos de respuesta—, más lo que contestó la asesora el 20 de septiembre. Los PDF no están
+en el repo, a propósito: son documentación del proveedor, no del proyecto.
+
+### El salto que había que deshacer antes de escribir una línea
+
+`MetodoPago.seProcesaPorPasarela()` decía "pasarela" y significaba "Wompi": `CrearIntentoDePago`
+enrutaba a Wompi todo lo que ese método aprobara. **Con una sola pasarela la imprecisión no costaba
+nada, y por eso llevaba meses ahí.** Con dos, el primer pedido de Sistecrédito se habría ido a
+Wompi, que no lo conoce.
+
+Es el patrón de siempre en este proyecto: **la segunda de algo es la que revela lo que la primera
+dejó implícito.** Pasó también con el id de transacción —`idTransaccionWompi` guardaba en realidad
+"el id que la pasarela le da a su propia transacción", así que se renombró en vez de agregar un
+segundo par— y pasó con la conciliación, que es el hallazgo que sigue.
+
+### El filtro que le faltaba a la conciliación de Wompi, y por qué nadie lo había visto
+
+Como la columna del id de transacción es la misma para las dos pasarelas, `ConciliarPagosPendientes`
+empezó a recoger pagos de Sistecrédito y a preguntarle a Wompi por un `_id` que no conoce.
+
+**No reventaba nada, y ese era exactamente el problema.** Wompi responde que no existe, el pago se
+salta, la tarea termina en verde y el registro no dice nada raro. Parecía que alguien estaba
+conciliando esos pagos. Un fallo que se ve en los registros se arregla en una tarde; uno que se
+disfraza de funcionamiento normal dura hasta que alguien lo encuentra buscando otra cosa.
+
+### Por qué hay gemelos y no una abstracción común
+
+`CrearIntentoDePagoSistecredito` es hermano de `CrearIntentoDePago`, no una rama suya.
+`ConciliarPagosSistecredito` es gemelo de `ConciliarPagosPendientes`, no una generalización. Y el
+puerto es `PasarelaSistecredito`, no una segunda implementación de `PasarelaDePagos`.
+
+La razón es que **las dos pasarelas no comparten una sola operación con la misma semántica**:
+
+| | Wompi | Sistecrédito |
+|---|---|---|
+| La URL de pago | la compone el servidor y la firma | la entrega la pasarela, y hay que **sondear** hasta que aparece |
+| La notificación | viene con checksum | **no viene firmada** |
+| Ambiente de pruebas | sí | **no existe**: las credenciales son productivas |
+| Anular | por API | una solicitud que una persona hace en el portal Credinet |
+
+Lo que comparten son cuatro líneas. Lo que los separa es todo lo demás. Una jerarquía ahí habría
+obligado a que el padre declarara operaciones que un hijo no puede cumplir — el mismo argumento por
+el que el puerto del panel va aparte del de la vitrina (`ADR-0047`).
+
+El sondeo, además, vive en el cliente HTTP y no en el caso de uso, igual que el de Skydropx: es una
+particularidad del protocolo del proveedor, y **un caso de uso que duerme un hilo entre reintentos
+está haciendo de cliente**.
+
+### Lo que autentica una notificación que nadie firma
+
+El endpoint de confirmación es público —la pasarela tiene que poder llamarlo— y el cuerpo que llega
+diciendo `Approved` lo puede enviar cualquiera desde cualquier parte del mundo. Creerle sería
+regalar mercancía a quien conozca el formato.
+
+Lo que la autentica es lo que la propia `G-ALI-08` propone y aquí es **obligatorio**: consultar la
+transacción por su `_id` y comparar `_id`, `invoice` y `transactionStatus`. Si no coinciden, o si no
+se pudo preguntar, no se aplica nada y la conciliación lo recoge después. **Fallar cerrado cuesta un
+retraso de minutos; fallar abierto cuesta el pedido.**
+
+Y a partir del contraste manda lo que dijo la consulta, no el cuerpo que entró. Quedarse con la
+notificación dejaría la puerta abierta a que un cambio futuro en la comparación afloje sin que nadie
+lo note.
+
+Detalle que vale por sí solo: **la pasarela no le da id a sus notificaciones**, así que el id de
+evento se compone con transacción más estado. Es lo que hay que desduplicar, y es lo que permite que
+una notificación que llega después de la conciliación se reconozca como repetida en vez de
+intentar aplicarse sobre un pago ya final.
+
+### La revisión adversarial, otra vez, encontró lo que el verde escondía
+
+Seis hallazgos en el backend y tres en el frontend, con la suite entera pasando. Los dos peores no
+eran sutiles:
+
+- **El intento moría con la transacción que lo rechazaba.** Se guardaba el `Pago` y después se
+  lanzaba la excepción del rechazo, así que el `TransactionTemplate` del controlador revertía la
+  fila. Y como el número de intento sale de **contar** los pagos del pedido, el contador se quedaba
+  en cero y cada reintento repetía la misma factura — la que Sistecrédito ya tiene activa y rechaza
+  con su `738`. **Un pedido rechazado una vez quedaba imposible de pagar para siempre.** La
+  corrección son tres transacciones con `EnTransaccionPropia`, el patrón que este repo ya tenía para
+  "escribe, llama a un tercero que cobra, escribe", y que de paso deja de retener una conexión del
+  pool hasta ~117 segundos por comprador, con el pool en diez.
+- **Todo comprador que pagara con Sistecrédito aterrizaba en "No encontramos este pedido"**, justo
+  después de haber pedido su crédito. La pantalla de estado exige `pedidoId` y `correo` para
+  consultar el seguimiento y no tiene forma de pedirlos; la pasarela solo devuelve lo suyo. Ahora
+  los pone el backend en la URL de respuesta **como segmentos de ruta**, porque las guías no dicen
+  si Sistecrédito concatena sus parámetros con `?` o con `&`, y como parámetros de consulta una
+  concatenación con `?` habría dejado dos signos de interrogación y ninguno legible.
+
+Los otros cuatro del backend: el endpoint público gastaba una llamada a la pasarela por cada
+petición anónima, el **monto aprobado no se verificaba** —un crédito aprobado por debajo de lo
+pedido, que es justo lo que hace un prestamista con cupo tope, se habría aplicado como pago
+completo—, un segundo estado terminal respondía `422` y la pasarela habría reintentado en bucle, y
+los estados se comparan ahora sin importar mayúsculas, porque las guías son de 2023 y **no hay
+sandbox donde comprobar la grafía**: un `APPROVED` habría dejado un crédito desembolsado con un
+pedido que nunca avanzó.
+
+Más dos guardianes que faltaban: techo por IP en el endpoint que abre solicitudes de crédito —era
+público, con credenciales productivas, y cualquiera podía disparar N solicitudes contra la cédula de
+cualquiera— y el freno del modo sandbox pasó de lista negra a lista blanca, porque negarlo solo ante
+el texto exacto `produccion` lo dejaba pasar ante un error de tecleo.
+
+**El intento fuera de la idempotencia** merece renglón propio porque es de los que no se notan: el
+frontend mandaba su `Idempotency-Key` y el filtro no la miraba, porque está atado a rutas concretas
+y la ruta nueva nació fuera de esa lista. La cabecera se manda igual, el servidor responde `200`
+igual, y lo único distinto es que un doble envío —el comprador que pulsa dos veces, un reintento del
+navegador— abría **dos** créditos a nombre de la misma persona para el mismo pedido.
+
+### Retractarse de algo que nunca se pagó no es que te devuelvan la plata
+
+En los otros cuatro medios el dinero vuelve al comprador. Aquí el comprador nunca pagó: quedó
+debiéndole un crédito a Sistecrédito. Lo que se deshace no es una transferencia sino **el crédito y
+el pagaré**, y lo pide el comercio desde el portal Credinet, a mano, porque no hay API. El
+`Reintegro` sigue sin mover un peso —nunca lo movió— y es la constancia de que la anulación se pidió
+y se obtuvo.
+
+Eso hacía falso, en sus dos frases, el correo de reintegro que le llegaba a esa persona — y se
+callaba lo único que necesitaba saber: **que deje de pagar las cuotas de algo que devolvió.** Si
+nadie se lo dice, las sigue pagando. Dos llaves nuevas en los dos idiomas, y el cuerpo dice también
+qué pasa con las cuotas ya pagadas y a quién escribirle si no aparecen.
+
+### El documento de identidad que se pide y no se guarda
+
+El checkout pide la cédula porque la pasarela la exige, viaja del navegador a Sistecrédito y **ahí
+termina**: no se persiste en ninguna parte. Guardarla obligaría a política de retención y de borrado
+de un dato que solo hace falta durante la creación de la transacción.
+
+Se pide en la pantalla del método y no en la de confirmar, y tampoco es un detalle de comodidad:
+**quien elige Sistecrédito tiene que saber, antes de seguir, que le van a pedir su cédula y por
+qué.**
+
+El deber de informarlo no depende de que lo guardemos: va en la política de datos y en la casilla de
+autorización igual, y así quedó en `docs/08`. Lo que no se puede resolver aquí es si Sistecrédito es
+un **encargado** nuestro o un **segundo responsable**, porque trata el dato para su propia
+finalidad. Está en `docs/14`, para el abogado.
+
+### Lo que no se pudo probar, y hay que decirlo
+
+**No hay ambiente de pruebas.** Todo lo que se verificó contra la pasarela se verificó con
+credenciales productivas, y la lista de lo que no se verificó es más larga de lo habitual: la grafía
+real de los estados, si la anulación en Credinet notifica a `urlConfirmation`, y el comportamiento
+del `801` y del `802` con datos reales. El modo sandbox del código no es una comodidad: es el único
+freno entre una prueba y un crédito real a nombre de una persona, y por eso encendido en un
+despliegue de producción **impide arrancar**.
+
+### Lo que queda abierto
+
+- **`SISTECREDITO_MONTO_MINIMO` sigue sin dato.** La búsqueda pública encontró dos cifras distintas
+  publicadas por dos comercios aliados —$20.000 y $30.000—, lo que confirma que varía por comercio y
+  que ninguna sirve como dato nuestro. Es para la asesora. Habilitar el método sin configurarlo no
+  arranca: el dato que falta falla cerrado.
+- **Si la anulación en Credinet notifica o no.** No es averiguable por fuera; hay que medirlo. Si no
+  notifica, un pedido puede quedar marcado como pagado mientras la venta está anulada del otro lado
+  y nada avisa.
+- **Las cuotas ya pagadas antes de un retracto.** La ley obliga a devolver "todas las sumas pagadas
+  sin deducción alguna", pero esas sumas las recibió un tercero, no el negocio. `docs/14`.
+- **La comisión**, que no es pública y está en el contrato del negocio.
+- **El perfil de producción de la configuración**, anotado como `TODO` técnico en
+  `ConfiguracionSistecredito`.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
