@@ -41,7 +41,12 @@ export const checkoutRoutes: Routes = [
       {
         // La ruta la fija `tecnosport.sistecredito.url-respuesta` del backend, que es lo que la
         // pasarela recibe en `urlResponse`: si una de las dos cambia, la otra tiene que cambiar.
-        path: 'sistecredito/retorno',
+        //
+        // El pedido y el correo van en la RUTA y no en parámetros de consulta: Sistecrédito
+        // concatena los suyos a esta URL y las guías no dicen si lo hace con `?` o con `&`.
+        // Como parámetros, una concatenación con `?` habría dejado dos signos de interrogación
+        // y el navegador no habría leído ninguno de los dos lados.
+        path: 'sistecredito/retorno/:pedidoId/:correo',
         data: { seo: { clave: 'seo.checkout.retorno_sistecredito' } },
         loadComponent: () =>
           import('./retorno-sistecredito/retorno-sistecredito.page').then(

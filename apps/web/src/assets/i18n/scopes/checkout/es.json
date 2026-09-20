@@ -95,7 +95,9 @@
     "articulo_sin_medidas": "{{articulos}} solo está disponible para recogida en nuestro punto. Vuelve atrás y elige recoger en nuestro punto de Medellín, o quítalo del carrito.",
     "articulos_sin_medidas": "{{articulos}} solo están disponibles para recogida en nuestro punto. Vuelve atrás y elige recoger en nuestro punto de Medellín, o quítalos del carrito.",
     "envio_no_calculado": "No pudimos calcular el costo de envío, así que no podemos crear este pedido todavía. Inténtalo de nuevo en unos minutos, o vuelve atrás y elige recoger en nuestro punto de Medellín.",
-    "envio_rechazado": "No podemos enviar este pedido a domicilio, así que no podemos crearlo con entrega a domicilio. Vuelve atrás y elige recoger en nuestro punto de Medellín."
+    "envio_rechazado": "No podemos enviar este pedido a domicilio, así que no podemos crearlo con entrega a domicilio. Vuelve atrás y elige recoger en nuestro punto de Medellín.",
+    "sistecredito_801": "Sistecrédito ya tiene una solicitud de crédito en curso con ese documento. Espera unos minutos y vuelve a intentarlo, o elige otro medio de pago.",
+    "sistecredito_802": "El valor de tu compra no alcanza el mínimo que Sistecrédito financia. Agrega algo más al carrito o elige otro medio de pago."
   },
   "retornoWompi": {
     "verificando": "Verificando tu pago…",

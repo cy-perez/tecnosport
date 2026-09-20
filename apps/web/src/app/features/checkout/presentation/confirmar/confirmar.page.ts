@@ -309,19 +309,49 @@ export class ConfirmarPage {
       // y `elegirMetodoPago` limpian `pedido` cada vez que cambia algo que lo
       // volvería inválido, así que si sigue ahí es el mismo intento.
       const pedido = this.checkout.pedido() ?? (await this.checkout.crearPedido(comando));
-      await this.continuarSegunMetodoPago(pedido);
+      const continuo = await this.continuarSegunMetodoPago(pedido);
+      if (!continuo) {
+        // No se pudo seguir y ya se navegó a donde falta algo. Limpiar el carrito aquí dejaría al
+        // comprador con un pedido creado, sus líneas fuera de toda pantalla y la guarda del
+        // principio de este método impidiéndole volver a intentarlo.
+        return;
+      }
       // Aquí y no antes. Las líneas ya son del pedido, así que dejar el carrito lleno invita a
       // comprarlas dos veces; pero limpiarlo apenas se crea el pedido rompería el reintento de
       // arriba, porque la guarda del principio de este método exige un carrito con líneas. Si
       // `continuarSegunMetodoPago` falla —el intento de pago de Wompi, por ejemplo— no se llega
       // hasta acá y el carrito queda intacto para volver a intentarlo.
       this.carrito.limpiar();
-    } catch {
-      this.error.set(this.transloco.translate('checkout.confirmar.error'));
+    } catch (error) {
+      this.error.set(this.mensajeDeError(error));
     }
   }
 
-  private async continuarSegunMetodoPago(pedido: Pedido): Promise<void> {
+  /**
+   * `false` cuando no se pudo seguir y ya se navegó a otra pantalla. Quien llama **no puede
+   * limpiar el carrito** en ese caso: el pedido ya existe, y sin líneas en el carrito la guarda
+   * de `confirmar()` deja al comprador sin forma de volver a intentarlo.
+   */
+  /**
+   * El backend manda `codigoSistecredito` en el cuerpo del error justamente para esto: el `801`
+   * ("esa persona ya tiene una solicitud en curso") y el `802` ("el monto no alcanza") piden
+   * cosas distintas del comprador, y un mensaje genérico no le dice si vale la pena reintentar.
+   *
+   * <p>El texto del proveedor no llega y no debe llegar: el del 801 habla del estado crediticio
+   * de una persona. Lo que llega es el código, y el texto lo pone Transloco.
+   */
+  private mensajeDeError(error: unknown): string {
+    const codigo =
+      typeof error === 'object' && error !== null && 'codigoSistecredito' in error
+        ? String((error as { codigoSistecredito: unknown }).codigoSistecredito)
+        : null;
+    if (codigo === '801' || codigo === '802') {
+      return this.transloco.translate(`checkout.confirmar.sistecredito_${codigo}`);
+    }
+    return this.transloco.translate('checkout.confirmar.error');
+  }
+
+  private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {
     if (esMetodoPagoSistecredito(pedido.metodoPago)) {
       const documento = this.checkout.documentoComprador();
       if (!documento) {
@@ -329,7 +359,7 @@ export class ConfirmarPage {
         // único honesto: sin documento la pasarela no puede encontrar al cliente, y el pedido ya
         // existe, así que reintentar desde ahí no lo duplica.
         void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
-        return;
+        return false;
       }
       const intento = await this.checkout.crearIntentoSistecredito(
         pedido.id,
@@ -340,7 +370,7 @@ export class ConfirmarPage {
       // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
       // backend fija desde su configuración—, a diferencia de Wompi.
       window.location.href = intento.urlRedireccion;
-      return;
+      return true;
     }
 
     if (esMetodoPagoWompi(pedido.metodoPago)) {
@@ -359,7 +389,7 @@ export class ConfirmarPage {
       });
       const urlRetorno = `${window.location.origin}/${idioma}/checkout/retorno-wompi?${parametrosRetorno.toString()}`;
       window.location.href = urlWebCheckoutWompi(intento, urlRetorno);
-      return;
+      return true;
     }
 
     if (pedido.metodoPago === 'TRANSFERENCIA_MANUAL') {
@@ -370,9 +400,10 @@ export class ConfirmarPage {
         relativeTo: this.route,
         queryParams: { pedidoId: pedido.id, correo: pedido.correo },
       });
-      return;
+      return true;
     }
 
     void this.router.navigate(['../estado'], { relativeTo: this.route });
+    return true;
   }
 }

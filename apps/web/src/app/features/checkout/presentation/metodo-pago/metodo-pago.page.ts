@@ -9,7 +9,7 @@ import {
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import {
   OpcionMetodoPago,
@@ -68,7 +68,6 @@ const TIPOS_DE_DOCUMENTO: readonly TipoDocumento[] = ['CC', 'TI', 'TIE', 'NIT'];
 export class MetodoPagoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly transloco = inject(TranslocoService);
   private readonly traducir = usarTraductor();
   protected readonly carrito = inject(CarritoStore);
   protected readonly checkout = inject(CheckoutStore);

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { fireEvent, render, screen } from '@testing-library/angular';
@@ -257,6 +257,44 @@ describe('EstadoPage', () => {
     expect(window.location.href).toContain('https://checkout.wompi.co/p/?');
 
     Object.defineProperty(window, 'location', { configurable: true, value: ubicacionOriginal });
+  });
+
+  /**
+   * <b>El camino que no existía.</b> Hasta que entró Sistecrédito, solo un pedido de Wompi podía
+   * llegar a `PAGO_FALLIDO`, así que la única rama del método bastaba. Ya no: los estados
+   * `Rejected`, `Cancelled`, `Expired` y `Abandoned` de Sistecrédito también llevan ahí.
+   *
+   * <p>Sin la rama nueva, pulsar "reintentar pago" dejaba el pedido de vuelta en `PAGO_PENDIENTE`
+   * —sin intento vivo—, el spinner terminaba y no pasaba absolutamente nada más: ni redirección,
+   * ni mensaje, ni error. El pedido quedaba peor que antes.
+   *
+   * <p>Va al paso del método de pago y no directo a la pasarela porque hace falta el documento,
+   * que vive solo en memoria y no sobrevive a la recarga de la SPA al volver de un dominio
+   * externo — y a esta pantalla se llega justo después de ese viaje.
+   */
+  it('reintentar con Sistecrédito vuelve a pedir el documento en vez de no hacer nada', async () => {
+    const navegar = vi.spyOn(Router.prototype, 'navigate');
+    const pedidos = new RepositorioPedidosFalso(
+      null,
+      pedidoDePrueba({ estado: 'PAGO_PENDIENTE', metodoPago: 'SISTECREDITO' }),
+    );
+    const pagos = new RepositorioPagosFalso();
+    await renderConPedidoEnMemoria(
+      pedidoDePrueba({ estado: 'PAGO_FALLIDO', metodoPago: 'SISTECREDITO' }),
+      pedidos,
+      pagos,
+    );
+    await screen.findByRole('button', { name: 'Reintentar pago' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar pago' }));
+
+    await vi.waitFor(() => expect(pedidos.llamadasReintentar).toBe(1));
+    await vi.waitFor(() =>
+      expect(navegar).toHaveBeenCalledWith(['/', 'es', 'checkout', 'metodo-pago']),
+    );
+    // Y NO se crea un intento a ciegas: sin documento la pasarela no puede encontrar al cliente.
+    expect(pagos.llamadasCrearIntento).toBe(0);
+    navegar.mockRestore();
   });
 
   // Es la última pantalla del recorrido y la que alguien vuelve a abrir días después para ver

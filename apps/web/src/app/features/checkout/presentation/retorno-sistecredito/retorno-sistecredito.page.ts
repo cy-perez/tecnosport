@@ -16,10 +16,13 @@ import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
  * la pantalla de estado. Lo que el navegador trae no aprueba un pago: eso lo deciden la
  * notificación contrastada y la conciliación.
  *
- * `pedidoId` y `correo` no los devuelve la pasarela —solo agrega los suyos— y tampoco sobreviven
- * en memoria: la SPA se recarga entera al volver de un dominio externo, así que `CheckoutStore`
- * viene vacío. Por eso se sigue a la pantalla de estado con lo que haya; esa pantalla sabe pedir
- * lo que le falte en vez de dejar al comprador sin saber qué pasó con su compra.
+ * `pedidoId` y `correo` **los pone el backend en la propia URL de respuesta**, como segmentos de
+ * ruta. Hacen falta: la pantalla de estado los exige para consultar el seguimiento y no tiene
+ * forma de pedirlos — sin ellos enseña "no encontramos este pedido", que es lo que veía **todo**
+ * comprador que pagara con Sistecrédito antes de este arreglo, justo después de haber pagado.
+ *
+ * <p>La pasarela no los devuelve —solo concatena los suyos— y tampoco sobreviven en memoria: la
+ * SPA se recarga entera al volver de un dominio externo, así que `CheckoutStore` viene vacío.
  */
 @Component({
   selector: 'app-retorno-sistecredito',
@@ -34,22 +37,21 @@ export class RetornoSistecreditoPage {
   protected readonly sinDatos = signal(false);
 
   constructor() {
-    const parametros = this.route.snapshot.queryParamMap;
-    const referencia = parametros.get('orderId');
+    const parametros = this.route.snapshot.paramMap;
     const pedidoId = parametros.get('pedidoId');
     const correo = parametros.get('correo');
 
-    if (!referencia && !pedidoId) {
+    if (!pedidoId || !correo) {
       this.sinDatos.set(true);
       return;
     }
 
-    // Con pedidoId y correo, a la pantalla de estado, que consulta la verdad. Sin ellos —el caso
-    // normal, porque la pasarela solo devuelve lo suyo— se va igual: esa pantalla sabe pedir los
-    // datos que le faltan en vez de dejar al comprador sin saber qué pasó con su compra.
-    void this.router.navigate(['../estado'], {
+    // A la pantalla de estado, que es la que consulta la verdad. Lo que trae la pasarela en la
+    // URL (`paymentRef`, `transactionId`, `orderId`) no se usa para nada: no decide un pago, y el
+    // backend ya guardó el id de la transacción al crear el intento.
+    void this.router.navigate(['../../../estado'], {
       relativeTo: this.route,
-      queryParams: pedidoId && correo ? { pedidoId, correo } : {},
+      queryParams: { pedidoId, correo },
     });
   }
 }
