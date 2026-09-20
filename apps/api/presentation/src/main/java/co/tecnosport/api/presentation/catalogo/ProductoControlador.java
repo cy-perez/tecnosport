@@ -62,7 +62,7 @@ public class ProductoControlador {
         new BuscarProductosComando(
             filtro, OrdenProductos.valueOf(orden.toUpperCase(Locale.ROOT)), cursor, tamano);
 
-    return mapeador.aRespuesta(buscarProductos.ejecutar(comando));
+    return mapeador.aRespuesta(buscarProductos.ejecutar(comando).pagina());
   }
 
   /**
@@ -89,6 +89,6 @@ public class ProductoControlador {
   @GetMapping("/{slug}")
   public ProductoRespuesta verFicha(@PathVariable String slug) {
     return mapeador.aRespuesta(
-        verFichaDeProducto.ejecutar(new VerFichaDeProductoComando(new Slug(slug))));
+        verFichaDeProducto.ejecutar(new VerFichaDeProductoComando(new Slug(slug))).producto());
   }
 }

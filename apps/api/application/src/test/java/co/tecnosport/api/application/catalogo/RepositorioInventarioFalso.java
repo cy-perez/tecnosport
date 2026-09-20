@@ -16,6 +16,12 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
   Inventario ultimoGuardado;
 
+  void con(Inventario... inventarios) {
+    for (Inventario inventario : inventarios) {
+      porVarianteId.put(inventario.varianteId(), inventario);
+    }
+  }
+
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
     return Optional.ofNullable(porVarianteId.get(varianteId));

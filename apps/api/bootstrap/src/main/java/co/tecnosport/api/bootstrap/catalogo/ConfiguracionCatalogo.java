@@ -33,6 +33,7 @@ import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.DisponibilidadDeVariantes;
 import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
@@ -80,13 +81,21 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
-  public BuscarProductos buscarProductos(RepositorioProductos repositorioProductos) {
-    return new BuscarProductos(repositorioProductos);
+  public DisponibilidadDeVariantes disponibilidadDeVariantes(
+      RepositorioInventario repositorioInventario, Reloj reloj) {
+    return new DisponibilidadDeVariantes(repositorioInventario, reloj);
   }
 
   @Bean
-  public VerFichaDeProducto verFichaDeProducto(RepositorioProductos repositorioProductos) {
-    return new VerFichaDeProducto(repositorioProductos);
+  public BuscarProductos buscarProductos(
+      RepositorioProductos repositorioProductos, DisponibilidadDeVariantes disponibilidad) {
+    return new BuscarProductos(repositorioProductos, disponibilidad);
+  }
+
+  @Bean
+  public VerFichaDeProducto verFichaDeProducto(
+      RepositorioProductos repositorioProductos, DisponibilidadDeVariantes disponibilidad) {
+    return new VerFichaDeProducto(repositorioProductos, disponibilidad);
   }
 
   @Bean
