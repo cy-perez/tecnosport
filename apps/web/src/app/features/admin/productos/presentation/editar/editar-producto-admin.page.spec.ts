@@ -18,9 +18,11 @@ import {
 import {
   EditarProductoAdmin,
   ImagenAdmin,
+  InventarioSinMedir,
   ProductoAdmin,
   ProductosPaginadosAdmin,
   SubirImagenPrincipalAdmin,
+  VarianteMedida,
 } from '../../domain/producto-admin.model';
 import {
   REPOSITORIO_PRODUCTOS_ADMIN,
@@ -115,6 +117,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       altEn: comando.altEn,
     };
   }
+
+  listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  medirVariante(): Promise<VarianteMedida> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 class ImagenDePrueba {
@@ -152,7 +162,6 @@ async function renderPagina(repositorioProductos: RepositorioProductosAdmin, id 
     ],
   });
 }
-
 
 describe('EditarProductoAdminPage', () => {
   it('prellena el formulario con los datos del producto', async () => {
@@ -223,7 +232,9 @@ describe('EditarProductoAdminPage', () => {
     await screen.findByDisplayValue('Morral urbano');
 
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-    expect(await screen.findByText('No se pudo editar el producto. Intenta de nuevo.')).toBeTruthy();
+    expect(
+      await screen.findByText('No se pudo editar el producto. Intenta de nuevo.'),
+    ).toBeTruthy();
   });
 
   describe('imagen principal', () => {

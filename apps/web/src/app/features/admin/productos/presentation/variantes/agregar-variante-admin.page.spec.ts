@@ -14,8 +14,10 @@ import {
 } from '../../../../catalogo/domain/repositorio-atributos.puerto';
 import {
   AgregarVarianteAdmin,
+  InventarioSinMedir,
   ProductoAdmin,
   ProductosPaginadosAdmin,
+  VarianteMedida,
 } from '../../domain/producto-admin.model';
 import {
   REPOSITORIO_PRODUCTOS_ADMIN,
@@ -74,6 +76,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async subirImagenPrincipal(): Promise<never> {
     throw new Error('No usado en estas pruebas.');
+  }
+
+  listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  medirVariante(): Promise<VarianteMedida> {
+    throw new Error('no usado por esta prueba');
   }
 }
 

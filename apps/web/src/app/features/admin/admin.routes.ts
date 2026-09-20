@@ -65,6 +65,12 @@ export const adminRoutes: Routes = [
       {
         path: 'panel',
         canActivate: [adminGuard],
+        // El panel necesita el puerto de productos por el aviso de variantes sin medir. Es la
+        // única consulta que hace, y va aquí y no en `productos` porque el aviso vive en esta
+        // pantalla: el enlace a la lista es lo que lleva a la otra rama, que trae el suyo.
+        providers: [
+          { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+        ],
         loadComponent: () => import('./panel/panel-admin.page').then((m) => m.PanelAdminPage),
       },
       {
@@ -115,6 +121,13 @@ export const adminRoutes: Routes = [
             loadComponent: () =>
               import('./productos/presentation/lista/lista-productos-admin.page').then(
                 (m) => m.ListaProductosAdminPage,
+              ),
+          },
+          {
+            path: 'sin-medir',
+            loadComponent: () =>
+              import('./productos/presentation/sin-medir/variantes-sin-medir-admin.page').then(
+                (m) => m.VariantesSinMedirAdminPage,
               ),
           },
           {

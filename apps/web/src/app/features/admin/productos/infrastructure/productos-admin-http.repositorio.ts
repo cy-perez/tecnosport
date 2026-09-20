@@ -10,12 +10,21 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  InventarioSinMedir,
+  MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
   SubirImagenPrincipalAdmin,
+  VarianteMedida,
 } from '../domain/producto-admin.model';
 import { RepositorioProductosAdmin } from '../domain/repositorio-productos-admin.puerto';
-import { aImagenAdmin, aProductoAdmin, aProductosPaginadosAdmin } from './mapeador-producto-admin';
+import {
+  aImagenAdmin,
+  aInventarioSinMedir,
+  aProductoAdmin,
+  aProductosPaginadosAdmin,
+  aVarianteMedida,
+} from './mapeador-producto-admin';
 
 /** Todo bajo `/api/v1/admin/**` exige `Authorization: Bearer` — mismo criterio que
  * `admin/pedidos/infrastructure/pedidos-admin-http.repositorio.ts`. */
@@ -85,6 +94,26 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     });
     exigirExito(respuesta, 'no se pudo agregar la variante');
+  }
+
+  async listarSinMedir(): Promise<InventarioSinMedir> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/variantes/sin-medir', {});
+    return aInventarioSinMedir(
+      desempaquetar(respuesta, 'no se pudo consultar las variantes sin medir'),
+    );
+  }
+
+  async medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida> {
+    const respuesta = await this.cliente.PATCH('/api/v1/admin/variantes/{id}/paquete', {
+      params: { path: { id: comando.varianteId } },
+      body: {
+        pesoGramos: comando.pesoGramos,
+        largoCm: comando.largoCm,
+        anchoCm: comando.anchoCm,
+        altoCm: comando.altoCm,
+      },
+    });
+    return aVarianteMedida(desempaquetar(respuesta, 'no se pudo medir la variante'));
   }
 
   async subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin> {

@@ -5,7 +5,12 @@ import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
-import { ProductoAdmin, ProductosPaginadosAdmin } from '../../domain/producto-admin.model';
+import {
+  InventarioSinMedir,
+  ProductoAdmin,
+  ProductosPaginadosAdmin,
+  VarianteMedida,
+} from '../../domain/producto-admin.model';
 import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
@@ -63,6 +68,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   async subirImagenPrincipal(): Promise<never> {
     throw new Error('No usado en estas pruebas.');
+  }
+
+  listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  medirVariante(): Promise<VarianteMedida> {
+    throw new Error('no usado por esta prueba');
   }
 }
 
@@ -146,9 +159,7 @@ describe('ListaProductosAdminPage', () => {
     await renderLista([productoDePrueba()]);
     await screen.findByText('Morral urbano');
 
-    expect(screen.getByRole('link', { name: 'Nuevo producto' }).className).toContain(
-      'anillo-foco',
-    );
+    expect(screen.getByRole('link', { name: 'Nuevo producto' }).className).toContain('anillo-foco');
   });
 
   it('"Siguiente" queda habilitado cuando hay más páginas y navega con el query param', async () => {

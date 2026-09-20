@@ -93,3 +93,45 @@ export interface SubirImagenPrincipalAdmin {
   readonly altEs: string;
   readonly altEn: string;
 }
+
+/**
+ * Una variante activa a la que le falta el paquete. Solo se puede entregar con recogida en el
+ * punto: cotizar su envío responde 409 nombrándola (`ADR-0046`).
+ */
+export interface VarianteSinMedir {
+  readonly varianteId: string;
+  readonly productoId: string;
+  readonly nombreProducto: string;
+  readonly sku: string;
+  readonly estadoProducto: EstadoProducto;
+}
+
+/**
+ * Los dos conteos vienen del servidor y no se derivan de `items`: el aviso del panel enseña el
+ * número sin traerse la lista.
+ */
+export interface InventarioSinMedir {
+  readonly total: number;
+  readonly totalEnPublicados: number;
+  readonly items: readonly VarianteSinMedir[];
+}
+
+/** Las cuatro medidas, obligatorias y en las unidades del dominio: gramos y centímetros enteros. */
+export interface MedirVarianteAdmin {
+  readonly varianteId: string;
+  readonly pesoGramos: number;
+  readonly largoCm: number;
+  readonly anchoCm: number;
+  readonly altoCm: number;
+}
+
+/** `correccion` dice que había una medida anterior, y que algún pedido salió con ella. */
+export interface VarianteMedida {
+  readonly varianteId: string;
+  readonly sku: string;
+  readonly pesoGramos: number;
+  readonly largoCm: number;
+  readonly anchoCm: number;
+  readonly altoCm: number;
+  readonly correccion: boolean;
+}
