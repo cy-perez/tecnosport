@@ -59,12 +59,17 @@ puertos honestos.
 qué lado cae.
 
 > **Trampa que la implementación no puede pisar.** `MetodosDePagoDisponibles`
-> filtra hoy así: *si el método pasa por pasarela y no está en la lista de
+> filtra así: *si a ese método lo cobra alguna pasarela y no está en la lista de
 > habilitados, quítalo*. Si `ADDI` se reclasificara a `NINGUNO` —que suena
 > honesto, porque hoy ninguna pasarela lo procesa— **dejaría de filtrarse y se
-> ofrecería siempre**. El filtro tiene que preguntar por el proveedor concreto y
-> su lista de habilitados, no por "¿es de pasarela?". `ADDI` sigue como está y su
-> `TODO` de `docs/11` sigue abierto.
+> ofrecería siempre**. `ADDI` sigue apuntando a `WOMPI` y su `TODO` de `docs/11`
+> sigue abierto; hay una prueba en cada lado de esa frontera.
+>
+> Al caso de uso llega **la unión** de lo habilitado por los dos proveedores, no
+> un mapa por proveedor: la comprobación de que cada método le corresponde a
+> quien lo habilitó vive donde se lee la configuración de ese proveedor
+> (`PropiedadesMetodosDeWompi` rechaza `SISTECREDITO`), que es donde se puede dar
+> un mensaje de error útil.
 
 **3. La notificación no se cree; se contrasta.** La pasarela no firma sus
 notificaciones. La propia guía lo dice y propone el remedio: con el `_id`
@@ -82,12 +87,27 @@ el perfil de producción**, y cada transacción creada en modo sandbox se regist
 diciéndolo. Un booleano que puede costar un crédito a nombre de una persona no
 se deja sin barandas.
 
-**5. La anulación se registra, no se ejecuta** — y eso no es una concesión, es lo
+**5. El documento de quien pide el crédito no se guarda.** Sistecrédito lo exige
+para encontrar al cliente, así que hay que pedirlo y hay que enviarlo — pero no
+hay motivo para conservarlo: viaja del checkout al caso de uso, de ahí a la
+pasarela, y ahí termina. No hay columna, no hay entidad JPA y el `Pedido` no lo
+conoce. Un reintento vuelve a pedirlo.
+
+> Esto cambió sobre la marcha. El plan original le agregaba el documento al
+> `Pedido`, con su migración y su campo en la API. Al escribirlo quedó claro que
+> guardarlo compra una obligación —retención, borrado, respuesta a los derechos
+> del titular— a cambio de ahorrarle al comprador teclear diez dígitos en el caso
+> raro de un reintento. La minimización sale más barata para los dos.
+>
+> Lo que **no** desaparece es el deber de informar: el dato igual se transmite a
+> un tercero, y eso la política de datos tiene que decirlo.
+
+**6. La anulación se registra, no se ejecuta** — y eso no es una concesión, es lo
 que el sistema ya hace. `RegistrarReintegro` no mueve un peso a propósito: deja
 la constancia de cuándo salió el dinero, por dónde y cuánto. Sistecrédito entra
 por la misma puerta, con un valor nuevo en `MedioReintegro`.
 
-**6. Un crédito no es un pago, y el modelo tiene que notarlo.** Cuando un pedido
+**7. Un crédito no es un pago, y el modelo tiene que notarlo.** Cuando un pedido
 pagado con Sistecrédito se retracta, lo que hay que deshacer **no es una
 transferencia de dinero hacia el comprador**: es un crédito y un pagaré a su
 nombre. Si nadie los anula, esa persona sigue pagando cuotas de algo que
