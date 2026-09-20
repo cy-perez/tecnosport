@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { render } from '@testing-library/angular';
 import { IntentoDePago } from '../domain/intento-pago.model';
+import { IntentoSistecredito } from '../domain/intento-sistecredito.model';
 import { CrearPedidoComando } from '../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../domain/repositorio-pagos.puerto';
@@ -67,6 +68,10 @@ class RepositorioPagosFalso implements RepositorioPagos {
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
     };
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new Error('no usado en esta prueba');
   }
 
   async registrarIdTransaccion(referencia: string, idTransaccionWompi: string): Promise<void> {

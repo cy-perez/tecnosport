@@ -22,7 +22,7 @@ import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta
 import { CotizarEnvioComando } from '../../domain/envio.model';
 import { CrearPedidoComando } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
-import { esMetodoPagoWompi } from '../../domain/reglas-pedido';
+import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 
 const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
@@ -31,6 +31,7 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   NEQUI: 'checkout.metodoPago.nequi',
   BANCOLOMBIA: 'checkout.metodoPago.bancolombia',
   ADDI: 'checkout.metodoPago.addi',
+  SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
 };
@@ -321,6 +322,27 @@ export class ConfirmarPage {
   }
 
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<void> {
+    if (esMetodoPagoSistecredito(pedido.metodoPago)) {
+      const documento = this.checkout.documentoComprador();
+      if (!documento) {
+        // Se perdió en un refresh (vive solo en memoria, a propósito). Volver a pedirlo es lo
+        // único honesto: sin documento la pasarela no puede encontrar al cliente, y el pedido ya
+        // existe, así que reintentar desde ahí no lo duplica.
+        void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
+        return;
+      }
+      const intento = await this.checkout.crearIntentoSistecredito(
+        pedido.id,
+        documento,
+        this.transloco.activeLang(),
+      );
+      // La URL la arma la pasarela y es de un solo uso: no se compone nada aquí, solo se va. Y a
+      // dónde vuelve el comprador NO se decide en esta llamada —va en `urlResponse`, que el
+      // backend fija desde su configuración—, a diferencia de Wompi.
+      window.location.href = intento.urlRedireccion;
+      return;
+    }
+
     if (esMetodoPagoWompi(pedido.metodoPago)) {
       const intento = await this.checkout.crearIntentoPago(pedido.id);
       const idioma = this.transloco.activeLang();

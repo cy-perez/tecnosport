@@ -7,6 +7,7 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import esCheckout from '../../../../../assets/i18n/scopes/checkout/es.json';
 import { IntentoDePago } from '../../domain/intento-pago.model';
+import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
@@ -35,6 +36,10 @@ class RepositorioPagosFalso implements RepositorioPagos {
   fallar = false;
 
   async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
     throw new Error('no usado en esta prueba');
   }
 

@@ -39,6 +39,16 @@ export const checkoutRoutes: Routes = [
           import('./retorno-wompi/retorno-wompi.page').then((m) => m.RetornoWompiPage),
       },
       {
+        // La ruta la fija `tecnosport.sistecredito.url-respuesta` del backend, que es lo que la
+        // pasarela recibe en `urlResponse`: si una de las dos cambia, la otra tiene que cambiar.
+        path: 'sistecredito/retorno',
+        data: { seo: { clave: 'seo.checkout.retorno_sistecredito' } },
+        loadComponent: () =>
+          import('./retorno-sistecredito/retorno-sistecredito.page').then(
+            (m) => m.RetornoSistecreditoPage,
+          ),
+      },
+      {
         path: 'estado',
         data: { seo: { clave: 'seo.checkout.estado' } },
         loadComponent: () => import('./estado/estado.page').then((m) => m.EstadoPage),

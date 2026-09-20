@@ -65,9 +65,23 @@
     "nequi": "Nequi",
     "bancolombia": "Bancolombia Button",
     "addi": "Addi (installments)",
+    "sistecredito": "Sistecrédito (pay in instalments)",
     "transferencia_manual": "Bank transfer",
     "contraentrega": "Cash on delivery",
-    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only"
+    "contraentrega_efectivo": "Cash on delivery: you pay the total, shipping included, in cash only",
+    "documento": {
+      "titulo": "Your details for the credit",
+      "explicacion": "Sistecrédito needs your ID number to find your credit limit. We send it to them for this purchase and we do not store it.",
+      "numero": "ID number",
+      "invalido": "Enter your ID number, with no dots or spaces.",
+      "tipo": {
+        "label": "ID type",
+        "cc": "Citizenship ID (cédula)",
+        "ti": "Minor's ID (tarjeta de identidad)",
+        "tie": "Foreign minor's ID",
+        "nit": "Tax ID (NIT)"
+      }
+    }
   },
   "confirmar": {
     "titulo": "Confirm order",
@@ -86,6 +100,13 @@
   "retornoWompi": {
     "verificando": "Checking your payment…",
     "sin_datos": "We couldn't find this payment's details."
+  },
+  "retornoSistecredito": {
+    "titulo": "Returning from Sistecrédito",
+    "procesando": "We are confirming your payment. Please do not close this window.",
+    "sin_datos_titulo": "We could not identify your purchase",
+    "sin_datos": "Go back to the home page and check your order status from the email we sent you.",
+    "volver_inicio": "Back to home"
   },
   "estado": {
     "titulo": "Order {{numero}}",

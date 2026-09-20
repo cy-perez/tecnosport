@@ -15,6 +15,7 @@ import {
   RepositorioCarrito,
 } from '../../../carrito/domain/repositorio-carrito.puerto';
 import { IntentoDePago } from '../../domain/intento-pago.model';
+import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS, RepositorioPedidos } from '../../domain/repositorio-pedidos.puerto';
@@ -34,6 +35,10 @@ import {
 
 class RepositorioPagosFalso implements RepositorioPagos {
   async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
     throw new Error('no usado en esta prueba');
   }
 

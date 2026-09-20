@@ -54,7 +54,7 @@ class CrearIntentoDePagoSistecreditoTest {
         pagos,
         pasarela,
         new RelojFalso(AHORA),
-        "https://tecnosport.co/checkout/sistecredito/retorno",
+        "https://tecnosport.co/{idioma}/checkout/sistecredito/retorno",
         "https://api.tecnosport.co/api/v1/pagos/sistecredito/confirmacion",
         sandbox,
         estadoSimulado);
@@ -101,7 +101,7 @@ class CrearIntentoDePagoSistecreditoTest {
     Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
 
     IntentoDePagoSistecredito intento =
-        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO));
+        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
 
     assertEquals(URL_PAGO, intento.urlRedireccion());
     assertEquals("TS-2026-000001-1", intento.referencia().valor());
@@ -118,7 +118,7 @@ class CrearIntentoDePagoSistecreditoTest {
     CrearIntentoDePagoSistecredito caso = crear();
     Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
 
-    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO));
+    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
 
     SolicitudTransaccionSistecredito solicitud = pasarela.ultimaSolicitud();
     assertEquals(pedido.total(), solicitud.monto());
@@ -132,7 +132,7 @@ class CrearIntentoDePagoSistecreditoTest {
     CrearIntentoDePagoSistecredito caso = crear(true, "Approved");
     Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
 
-    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO));
+    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
 
     assertTrue(pasarela.ultimaSolicitud().sandbox());
     assertEquals("Approved", pasarela.ultimaSolicitud().estadoSimulado());
@@ -143,12 +143,12 @@ class CrearIntentoDePagoSistecreditoTest {
     CrearIntentoDePagoSistecredito caso = crear();
     Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
 
-    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO));
+    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
     pasarela.responder(
         new TransaccionSistecredito(
             "otro-id", "TS-2026-000001-2", "Pending", URL_PAGO, null, null));
     IntentoDePagoSistecredito segundo =
-        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO));
+        caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es"));
 
     assertEquals("TS-2026-000001-2", segundo.referencia().valor());
   }
@@ -160,7 +160,7 @@ class CrearIntentoDePagoSistecreditoTest {
 
     assertThrows(
         MetodoDePagoNoEsDeSistecreditoException.class,
-        () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO)));
+        () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
   }
 
   /**
@@ -178,12 +178,47 @@ class CrearIntentoDePagoSistecreditoTest {
     SistecreditoNoEntregoLaUrlDePagoException error =
         assertThrows(
             SistecreditoNoEntregoLaUrlDePagoException.class,
-            () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO)));
+            () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "es")));
 
     assertEquals("802", error.codigo());
     assertEquals("Rejected", error.estado());
     Pago guardado = pagos.buscarPorReferencia(new ReferenciaPago("TS-2026-000001-1")).orElseThrow();
     assertEquals("649b4c821b581f96e45b5696", guardado.idTransaccionPasarela().orElseThrow());
+  }
+
+  /**
+   * Las rutas del sitio llevan prefijo de idioma y la ruta comodín redirige a /es perdiendo los
+   * parámetros: volver sin prefijo se traga el retorno entero.
+   */
+  @Test
+  void laUrlDeRetornoLlevaElIdiomaDelComprador() {
+    CrearIntentoDePagoSistecredito caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
+
+    caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), DOCUMENTO, "en"));
+
+    assertEquals(
+        "https://tecnosport.co/en/checkout/sistecredito/retorno",
+        pasarela.ultimaSolicitud().urlRespuesta());
+  }
+
+  /**
+   * El idioma se incrusta en una URL que le entregamos a un tercero para que redirija al
+   * comprador. Aceptar cualquier cadena convertiría el campo en una redirección abierta con
+   * nuestro propio dominio de por medio.
+   */
+  @Test
+  void unIdiomaQueNoPublicamosCaeEnElPorOmisionEnVezDeIncrustarse() {
+    CrearIntentoDePagoSistecredito caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.SISTECREDITO, 1);
+
+    caso.ejecutar(
+        new CrearIntentoDePagoSistecreditoComando(
+            pedido.id(), DOCUMENTO, "../../malicioso.example"));
+
+    assertEquals(
+        "https://tecnosport.co/es/checkout/sistecredito/retorno",
+        pasarela.ultimaSolicitud().urlRespuesta());
   }
 
   @Test
@@ -193,7 +228,7 @@ class CrearIntentoDePagoSistecreditoTest {
 
     assertThrows(
         NullPointerException.class,
-        () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), null)));
+        () -> caso.ejecutar(new CrearIntentoDePagoSistecreditoComando(pedido.id(), null, "es")));
     assertTrue(pasarela.solicitudes().isEmpty());
   }
 }

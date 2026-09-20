@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.ProveedorDePago;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Crea el intento de pago de un pedido que se paga con Sistecrédito ({@code adr/0048}).
@@ -24,6 +25,16 @@ import java.util.Objects;
  * que es suyo y que no se guarda en ninguna parte.
  */
 public final class CrearIntentoDePagoSistecredito {
+
+  /**
+   * Los idiomas que el sitio publica. Lista cerrada y no "lo que venga": el idioma se incrusta en
+   * una URL que le entregamos a un tercero para que redirija al comprador, así que aceptar
+   * cualquier cadena convertiría este campo en una redirección abierta con nuestro dominio.
+   */
+  private static final Set<String> IDIOMAS = Set.of("es", "en");
+
+  private static final String IDIOMA_POR_OMISION = "es";
+  private static final String MARCADOR_IDIOMA = "{idioma}";
 
   private final RepositorioPedidos repositorioPedidos;
   private final RepositorioPagos repositorioPagos;
@@ -57,6 +68,16 @@ public final class CrearIntentoDePagoSistecredito {
     this.estadoSimulado = estadoSimulado;
   }
 
+  /**
+   * Las rutas del sitio llevan prefijo de idioma y la ruta comodín redirige a {@code /es}
+   * <b>perdiendo los parámetros</b>, así que volver a una URL sin prefijo se traga el retorno
+   * entero: el comprador aterriza en la portada y el pedido parece no existir.
+   */
+  private String urlRespuestaPara(String idioma) {
+    String elegido = IDIOMAS.contains(idioma) ? idioma : IDIOMA_POR_OMISION;
+    return urlRespuesta.replace(MARCADOR_IDIOMA, elegido);
+  }
+
   public IntentoDePagoSistecredito ejecutar(CrearIntentoDePagoSistecreditoComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     Objects.requireNonNull(comando.documento(), "El documento del comprador no puede ser nulo.");
@@ -85,7 +106,7 @@ public final class CrearIntentoDePagoSistecredito {
                 "Pedido " + pedido.numeroPedido().valor(),
                 pedido.total(),
                 comando.documento(),
-                urlRespuesta,
+                urlRespuestaPara(comando.idioma()),
                 urlConfirmacion,
                 sandbox,
                 estadoSimulado));

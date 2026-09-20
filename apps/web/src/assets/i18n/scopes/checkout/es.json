@@ -65,9 +65,23 @@
     "nequi": "Nequi",
     "bancolombia": "Botón Bancolombia",
     "addi": "Addi (crédito)",
+    "sistecredito": "Sistecrédito (paga a cuotas)",
     "transferencia_manual": "Transferencia bancaria",
     "contraentrega": "Pago contra entrega",
-    "contraentrega_efectivo": "Contra entrega: pagas el total, envío incluido, y solo en efectivo"
+    "contraentrega_efectivo": "Contra entrega: pagas el total, envío incluido, y solo en efectivo",
+    "documento": {
+      "titulo": "Tus datos para el crédito",
+      "explicacion": "Sistecrédito necesita tu documento para encontrar tu cupo. Se lo enviamos a ellos para esta compra y no lo guardamos.",
+      "numero": "Número de documento",
+      "invalido": "Escribe tu número de documento, sin puntos ni espacios.",
+      "tipo": {
+        "label": "Tipo de documento",
+        "cc": "Cédula de ciudadanía",
+        "ti": "Tarjeta de identidad",
+        "tie": "Tarjeta de identidad de extranjero",
+        "nit": "NIT"
+      }
+    }
   },
   "confirmar": {
     "titulo": "Confirmar pedido",
@@ -86,6 +100,13 @@
   "retornoWompi": {
     "verificando": "Verificando tu pago…",
     "sin_datos": "No encontramos los datos de este pago."
+  },
+  "retornoSistecredito": {
+    "titulo": "Volviendo de Sistecrédito",
+    "procesando": "Estamos confirmando tu pago. No cierres esta ventana.",
+    "sin_datos_titulo": "No pudimos identificar tu compra",
+    "sin_datos": "Vuelve al inicio y revisa el estado de tu pedido desde el correo que te enviamos.",
+    "volver_inicio": "Volver al inicio"
   },
   "estado": {
     "titulo": "Pedido {{numero}}",

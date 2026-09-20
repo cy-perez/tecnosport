@@ -16,7 +16,9 @@ import java.util.UUID;
 public record CrearIntentoSistecreditoRequest(
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID pedidoId,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) TipoDocumento tipoDocumento,
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String documento) {
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String documento,
+    @Schema(description = "Idioma al que vuelve el comprador: es o en. Cualquier otro cae en es.")
+        String idioma) {
 
   public CrearIntentoSistecreditoRequest {
     if (pedidoId == null) {

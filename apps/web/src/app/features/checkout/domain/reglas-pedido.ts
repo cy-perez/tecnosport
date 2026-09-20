@@ -19,6 +19,16 @@ export function esMetodoPagoWompi(metodoPago: MetodoPago): boolean {
   );
 }
 
+/**
+ * Sistecrédito lo cobra otra pasarela, con otro flujo: aquí el servidor pide la URL y la entrega
+ * hecha, en vez de firmar unos datos para que el navegador arme la suya (`adr/0048`). Por eso es
+ * una pregunta aparte y no un valor más en `esMetodoPagoWompi` — meterlo ahí habría mandado el
+ * pedido a construir una URL de Wompi con una firma que Sistecrédito no genera.
+ */
+export function esMetodoPagoSistecredito(metodoPago: MetodoPago): boolean {
+  return metodoPago === 'SISTECREDITO';
+}
+
 /** Único estado desde el que `ReintentarPago` transiciona de vuelta a
  * `PAGO_PENDIENTE` (`docs/02-modelo-datos.md`). */
 export function puedeReintentarPago(estado: EstadoPedido): boolean {

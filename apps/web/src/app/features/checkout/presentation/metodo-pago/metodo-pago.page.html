@@ -19,6 +19,32 @@
       (seleccionCambio)="elegir($event)"
     />
 
+    @if (pideDocumento()) {
+      <fieldset class="mt-24 mb-0 border-0 p-0" [formGroup]="formularioDocumento">
+        <legend class="mb-8 p-0 font-display text-lg">
+          {{ 'checkout.metodoPago.documento.titulo' | transloco }}
+        </legend>
+        <p class="mt-0 mb-16 text-sm text-ts-texto-suave">
+          {{ 'checkout.metodoPago.documento.explicacion' | transloco }}
+        </p>
+        <div class="grid grid-cols-1 gap-16 desde-tableta:grid-cols-2">
+          <ts-select
+            idCampo="tipo-documento"
+            formControlName="tipoDocumento"
+            [label]="'checkout.metodoPago.documento.tipo.label' | transloco"
+            [opciones]="opcionesTipoDocumento()"
+          />
+          <ts-campo
+            idCampo="numero-documento"
+            formControlName="documento"
+            tipo="text"
+            [label]="'checkout.metodoPago.documento.numero' | transloco"
+            [error]="errorDocumento()"
+          />
+        </div>
+      </fieldset>
+    }
+
     @if (ofreceContraentrega()) {
       <p class="mt-16 mb-0 text-sm text-ts-texto-suave">
         {{ 'checkout.metodoPago.contraentrega_efectivo' | transloco }}

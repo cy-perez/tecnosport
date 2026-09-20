@@ -119,6 +119,9 @@
       "retorno_wompi": {
         "titulo": "Procesando el pago · Tecno Sport"
       },
+      "retorno_sistecredito": {
+        "titulo": "Procesando el pago · Tecno Sport"
+      },
       "estado": {
         "titulo": "Estado del pedido · Tecno Sport"
       },

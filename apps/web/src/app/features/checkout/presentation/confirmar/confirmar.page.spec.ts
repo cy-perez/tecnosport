@@ -15,6 +15,7 @@ import {
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
+import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
@@ -120,6 +121,10 @@ class RepositorioPagosQueFalla implements RepositorioPagos {
     throw new Error('el proveedor de pagos no respondió');
   }
 
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async registrarIdTransaccion(): Promise<void> {
     throw new Error('no usado en esta prueba');
   }
@@ -137,6 +142,10 @@ class RepositorioPagosFalso implements RepositorioPagos {
       llavePublica: 'pub_test_xyz',
       ambiente: 'sandbox',
     };
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new Error('no usado en esta prueba');
   }
 
   async registrarIdTransaccion(): Promise<void> {

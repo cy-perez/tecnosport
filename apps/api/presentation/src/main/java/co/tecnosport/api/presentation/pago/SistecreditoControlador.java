@@ -57,7 +57,9 @@ public class SistecreditoControlador {
   public IntentoSistecreditoRespuesta crear(@RequestBody CrearIntentoSistecreditoRequest cuerpo) {
     CrearIntentoDePagoSistecreditoComando comando =
         new CrearIntentoDePagoSistecreditoComando(
-            cuerpo.pedidoId(), new DocumentoIdentidad(cuerpo.tipoDocumento(), cuerpo.documento()));
+            cuerpo.pedidoId(),
+            new DocumentoIdentidad(cuerpo.tipoDocumento(), cuerpo.documento()),
+            cuerpo.idioma());
     IntentoDePagoSistecredito intento =
         transaccion.execute(estado -> crearIntento.ejecutar(comando));
     return new IntentoSistecreditoRespuesta(
