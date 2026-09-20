@@ -8,8 +8,16 @@ import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.MedirVarianteComando;
 import co.tecnosport.api.application.catalogo.ResultadoDeMedicion;
 import co.tecnosport.api.application.catalogo.ValorAtributoComando;
+import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.AjustarExistenciaComando;
+import co.tecnosport.api.application.inventario.ExistenciasDelCatalogo;
+import co.tecnosport.api.application.inventario.ListarExistencias;
+import co.tecnosport.api.application.inventario.ResultadoDeAjuste;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarVariantePeticion;
+import co.tecnosport.api.presentation.catalogo.dto.AjustarExistenciaPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.ExistenciaAjustadaRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ExistenciasRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MedirVariantePeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ValorAtributoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteMedidaRespuesta;
@@ -48,22 +56,31 @@ public class AdminVarianteControlador {
   private final AgregarVariante agregarVariante;
   private final ListarVariantesSinMedir listarVariantesSinMedir;
   private final MedirVariante medirVariante;
+  private final ListarExistencias listarExistencias;
+  private final AjustarExistencia ajustarExistencia;
   private final MapeadorRespuestasCatalogo mapeador;
   private final MapeadorVariantesSinMedir mapeadorSinMedir;
+  private final MapeadorExistencias mapeadorExistencias;
   private final TransactionTemplate transaccion;
 
   public AdminVarianteControlador(
       AgregarVariante agregarVariante,
       ListarVariantesSinMedir listarVariantesSinMedir,
       MedirVariante medirVariante,
+      ListarExistencias listarExistencias,
+      AjustarExistencia ajustarExistencia,
       MapeadorRespuestasCatalogo mapeador,
       MapeadorVariantesSinMedir mapeadorSinMedir,
+      MapeadorExistencias mapeadorExistencias,
       PlatformTransactionManager transactionManager) {
     this.agregarVariante = Objects.requireNonNull(agregarVariante);
     this.listarVariantesSinMedir = Objects.requireNonNull(listarVariantesSinMedir);
     this.medirVariante = Objects.requireNonNull(medirVariante);
+    this.listarExistencias = Objects.requireNonNull(listarExistencias);
+    this.ajustarExistencia = Objects.requireNonNull(ajustarExistencia);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.mapeadorSinMedir = Objects.requireNonNull(mapeadorSinMedir);
+    this.mapeadorExistencias = Objects.requireNonNull(mapeadorExistencias);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
@@ -114,6 +131,63 @@ public class AdminVarianteControlador {
           cuerpo.altoCm());
     }
     return mapeadorSinMedir.aRespuesta(resultado);
+  }
+
+  /**
+   * Las existencias de todo el catálogo activo. Sin transacción: es una lectura, y el puerto que la
+   * resuelve no toma bloqueo a propósito.
+   */
+  @GetMapping("/existencias")
+  public ExistenciasRespuesta existencias() {
+    ExistenciasDelCatalogo existencias = listarExistencias.ejecutar();
+    return mapeadorExistencias.aRespuesta(existencias);
+  }
+
+  /**
+   * {@code PATCH} y no {@code PUT} por lo mismo que el de paquete: se toca la existencia, no la
+   * variante entera.
+   *
+   * <p>Transacción propia, y aquí no es por coherencia de lectura sino por el bloqueo: {@code
+   * AjustarExistencia} carga el inventario con {@code buscarPorVarianteId}, que es pesimista, y un
+   * método con {@code @Lock} fuera de una transacción revienta en seco (apps/api/CLAUDE.md). Es
+   * además lo que impide que un conteo y una reserva simultánea se pisen.
+   */
+  @PatchMapping("/{id}/existencia")
+  public ExistenciaAjustadaRespuesta ajustarExistencia(
+      @PathVariable("id") UUID id, @RequestBody AjustarExistenciaPeticion cuerpo) {
+    AjustarExistenciaComando comando =
+        new AjustarExistenciaComando(id, cuerpo.cantidadContada(), cuerpo.motivo());
+    ResultadoDeAjuste resultado =
+        transaccion.execute(estado -> ajustarExistencia.ejecutar(comando));
+    registrar(resultado);
+    return mapeadorExistencias.aRespuesta(resultado);
+  }
+
+  private void registrar(ResultadoDeAjuste resultado) {
+    if (resultado.sinCambios()) {
+      log.info(
+          "Variante {} ({}) contada sin novedad: siguen siendo {} unidades.",
+          resultado.varianteId(),
+          resultado.sku(),
+          resultado.saldoNuevo());
+      return;
+    }
+    log.info(
+        "Variante {} ({}) ajustada de {} a {} unidades ({}{}).",
+        resultado.varianteId(),
+        resultado.sku(),
+        resultado.saldoAnterior(),
+        resultado.saldoNuevo(),
+        resultado.diferencia() > 0 ? "+" : "",
+        resultado.diferencia());
+    if (resultado.dejaReservasSinRespaldo()) {
+      log.warn(
+          "El conteo de la variante {} ({}) queda por debajo de las {} unidades reservadas por"
+              + " pedidos en vuelo: hay compras aceptadas que no se van a poder despachar.",
+          resultado.varianteId(),
+          resultado.sku(),
+          resultado.unidadesReservadas());
+    }
   }
 
   @PostMapping

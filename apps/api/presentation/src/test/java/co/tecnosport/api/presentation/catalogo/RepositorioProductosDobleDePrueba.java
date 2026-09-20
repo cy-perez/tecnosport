@@ -22,6 +22,10 @@ import java.util.UUID;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 class RepositorioProductosDobleDePrueba implements RepositorioProductos {
 
+  private List<VarianteActiva> activas = List.of();
+  UUID ultimaVarianteConExistenciaActualizada;
+  Integer ultimaExistenciaGrabada;
+
   private List<Producto> productos = List.of();
   private ResultadoPaginado<Producto> resultadoBusqueda = new ResultadoPaginado<>(List.of(), null);
   private ProductosPaginados resultadoAdmin = new ProductosPaginados(List.of(), 0, 0, 0);
@@ -62,6 +66,10 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimoPaqueteGrabado = null;
     this.sinMedir = List.of();
     this.skusEnUso.clear();
+  }
+
+  void conVariantesActivas(VarianteActiva... variantes) {
+    this.activas = List.of(variantes);
   }
 
   void conVariantesSinMedir(VarianteSinMedir... variantes) {
@@ -151,15 +159,14 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimoPaqueteGrabado = paquete;
   }
 
-  /** No lo usa esta prueba: el listado de existencias tiene el suyo. */
   @Override
   public List<VarianteActiva> variantesActivas() {
-    return List.of();
+    return activas;
   }
 
-  /** No lo usa esta prueba: ajustar existencia tiene la suya. */
   @Override
   public void actualizarExistencia(UUID varianteId, int existencia) {
-    // Sin efecto: ninguna prueba de este paquete mira la columna del catálogo.
+    this.ultimaVarianteConExistenciaActualizada = varianteId;
+    this.ultimaExistenciaGrabada = existencia;
   }
 }

@@ -14,6 +14,12 @@ class RepositorioInventarioDobleDePrueba implements RepositorioInventario {
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
   Inventario ultimoGuardado;
 
+  void con(Inventario... inventarios) {
+    for (Inventario inventario : inventarios) {
+      porVarianteId.put(inventario.varianteId(), inventario);
+    }
+  }
+
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
     return Optional.ofNullable(porVarianteId.get(varianteId));
@@ -25,9 +31,8 @@ class RepositorioInventarioDobleDePrueba implements RepositorioInventario {
     porVarianteId.put(inventario.varianteId(), inventario);
   }
 
-  /** No lo usa esta prueba: el listado de existencias tiene la suya. */
   @Override
   public List<Inventario> listarTodos() {
-    return List.of();
+    return List.copyOf(porVarianteId.values());
   }
 }

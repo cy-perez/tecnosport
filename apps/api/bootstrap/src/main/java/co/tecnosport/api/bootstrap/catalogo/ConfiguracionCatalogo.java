@@ -32,6 +32,8 @@ import co.tecnosport.api.application.catalogo.SolicitarSubidasDeRotacion;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
 import co.tecnosport.api.infrastructure.catalogo.AlmacenDeImagenesGcs;
@@ -136,6 +138,22 @@ public class ConfiguracionCatalogo {
   @Bean
   public MedirVariante medirVariante(RepositorioProductos repositorioProductos) {
     return new MedirVariante(repositorioProductos);
+  }
+
+  @Bean
+  public ListarExistencias listarExistencias(
+      RepositorioProductos repositorioProductos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new ListarExistencias(repositorioProductos, repositorioInventario, reloj);
+  }
+
+  @Bean
+  public AjustarExistencia ajustarExistencia(
+      RepositorioProductos repositorioProductos,
+      RepositorioInventario repositorioInventario,
+      Reloj reloj) {
+    return new AjustarExistencia(repositorioProductos, repositorioInventario, reloj);
   }
 
   @Bean
