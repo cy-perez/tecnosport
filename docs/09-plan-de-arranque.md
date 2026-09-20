@@ -134,12 +134,17 @@ que la reserva ocurre "al iniciar el pago" (`docs/00-producto.md`), fuera
 de este agregado — queda para la Fase 3, cuando exista el caso de uso de
 creación de pedido que sí necesita bloquear existencias.
 
-**El carrito no vence todavía.** `docs/02-modelo-datos.md` dice que vive 30
-días, pero no hay columna de expiración ni tarea programada que lo borre —
-un carrito anónimo queda en la base indefinidamente. No bloquea la Fase 3;
-queda como `TODO` para cuando haya un mecanismo de tareas programadas en el
-backend (la reconciliación de transferencias de la Fase 3 va a necesitar
-uno igual, buen momento para resolver los dos juntos).
+~~**El carrito no vence todavía.**~~ **Resuelto en la Fase 6.**
+`docs/02-modelo-datos.md` dice que vive 30 días, y al cerrar la Fase 2 no
+había columna de expiración ni tarea programada que lo borrara — un carrito
+anónimo se quedaba en la base indefinidamente. No bloqueaba la Fase 3, así
+que quedó como `TODO` para cuando hubiera un mecanismo de tareas programadas
+en el backend, y la apuesta de esta nota —resolverlo junto con la
+reconciliación de la Fase 3— salió bien: `TareaPurgaCarritos` se escribió
+con el patrón de `TareaConciliacionWompi`. La columna es
+`V21__carrito_actualizado_en.sql`, el caso de uso `PurgarCarritosVencidos`,
+y se expira por **última actividad** y no por creación. Ver "El carrito ya
+vence" en la Fase 6.
 
 **Vitrina cerrada** (2026-09-03, `b4ece08`): agregar al carrito desde la
 ficha de producto, badge de cantidad en el encabezado, página `/carrito`
