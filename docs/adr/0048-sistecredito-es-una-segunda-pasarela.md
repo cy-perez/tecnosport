@@ -102,12 +102,33 @@ conoce. Un reintento vuelve a pedirlo.
 > Lo que **no** desaparece es el deber de informar: el dato igual se transmite a
 > un tercero, y eso la política de datos tiene que decirlo.
 
-**6. La anulación se registra, no se ejecuta** — y eso no es una concesión, es lo
+**6. El intento de pago se confirma antes de hablar con la pasarela, en su propia
+transacción.** En la mitad de este caso de uso hay un tercero que abre una
+solicitud de crédito a nombre de una persona, y eso ninguna transacción de base
+de datos revierte: es exactamente el caso de `EnTransaccionPropia` (`ADR-0033`).
+
+> Esto lo levantó la revisión adversarial y conviene que quede el porqué. La
+> primera versión guardaba el `Pago` y después lanzaba la excepción del rechazo,
+> con un comentario que afirmaba "el id se guarda SIEMPRE". Era falso: el
+> controlador envolvía todo en un `TransactionTemplate`, que revierte ante
+> cualquier `RuntimeException`.
+>
+> Lo caro no era perder la fila. El número de intento sale de contar los pagos
+> del pedido, así que revertido el pago el contador se quedaba en cero y **cada
+> reintento repetía la misma factura** — la que Sistecrédito ya tiene activa y
+> rechaza con su `738`. El pedido quedaba imposible de pagar para siempre, con
+> inventario reservado y un comprador que no entiende nada. Y los dos rechazos
+> más probables, `801` y `802`, entran justo por esa rama.
+>
+> El segundo motivo para partirlo es el sondeo: con una transacción abierta,
+> cada comprador retenía una conexión del pool hasta dos minutos.
+
+**7. La anulación se registra, no se ejecuta** — y eso no es una concesión, es lo
 que el sistema ya hace. `RegistrarReintegro` no mueve un peso a propósito: deja
 la constancia de cuándo salió el dinero, por dónde y cuánto. Sistecrédito entra
 por la misma puerta, con un valor nuevo en `MedioReintegro`.
 
-**7. Un crédito no es un pago, y el modelo tiene que notarlo.** Cuando un pedido
+**8. Un crédito no es un pago, y el modelo tiene que notarlo.** Cuando un pedido
 pagado con Sistecrédito se retracta, lo que hay que deshacer **no es una
 transferencia de dinero hacia el comprador**: es un crédito y un pagaré a su
 nombre. Si nadie los anula, esa persona sigue pagando cuotas de algo que
@@ -155,6 +176,34 @@ y no "se devolvió el dinero".
   llegan notificaciones, así que las pruebas van contra el despliegue de dev.
 - **La devolución depende de una persona entrando a un portal.** Con un plazo
   legal corriendo por detrás.
+
+## Lo que la revisión adversarial cambió
+
+Los dos revisores del repositorio (`revisor-pagos` y `revisor-arquitectura`)
+corrieron sobre la rama terminada y encontraron ocho fallos reales. Los cuatro
+que importan, porque ninguno se notaba:
+
+1. El intento que moría con la transacción que lo rechazaba (arriba, decisión 6).
+2. **Todo** comprador aterrizaba en "no encontramos este pedido" después de
+   pagar: la pantalla de estado exige `pedidoId` y `correo`, y Sistecrédito solo
+   devuelve lo suyo. Ahora viajan en la URL de respuesta **como segmentos de
+   ruta**, no como parámetros: las guías no dicen si la pasarela concatena con
+   `?` o con `&`, y como parámetros una concatenación con `?` habría partido la
+   URL en dos mitades ilegibles.
+3. El endpoint que abre solicitudes de crédito era público y sin techo por IP.
+   Con credenciales productivas, cualquiera podía disparar N solicitudes contra
+   la cédula de cualquier persona, con su token por SMS. El `Idempotency-Key` no
+   protege de eso: lo elige el cliente.
+4. El freno del sandbox estaba escrito como lista negra sobre un texto libre
+   —negar solo si el ambiente era exactamente `produccion`—, así que un typo, otra
+   grafía o una variable sin fijar lo dejaban pasar. Ahora es lista blanca.
+
+**El monto aprobado tampoco se verificaba.** De ida lo pone el servidor (regla
+dura #7); de vuelta no había nada, y el contraste que propone la guía compara
+`_id`, `invoice` y `transactionStatus` pero no el valor. Un crédito aprobado por
+debajo de lo solicitado —un cupo tope, que es lo que hace un prestamista— se
+habría aplicado como pago completo. Ahora se compara, y si no cuadra no se
+aplica: `MONTO_NO_COINCIDE`.
 
 ## Lo que esto NO arregla
 

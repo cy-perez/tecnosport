@@ -112,6 +112,24 @@ reintento vuelve a pedirlo, que es el precio y es barato: guardarlo obligaría a
 retención, borrado y respuesta a los derechos del titular sobre algo que solo
 hace falta durante los segundos que dura la creación de la transacción.
 
+### Adónde vuelve el comprador
+
+La URL de respuesta la arma el backend por transacción, y lleva tres cosas: el
+**idioma** —las rutas del sitio van con prefijo y la comodín redirige a `/es`
+perdiendo los parámetros—, y el **pedido y el correo como segmentos de ruta**,
+que es lo que la pantalla de estado necesita para consultar el seguimiento.
+
+Van en la ruta y no como parámetros de consulta a propósito: Sistecrédito
+concatena los suyos (`paymentRef`, `transactionId`, `orderId`) a esta URL y las
+guías no dicen si lo hace con `?` o con `&`. Como parámetros, una concatenación
+con `?` habría dejado la cadena con dos signos de interrogación y ninguno
+legible — y el comprador, en "no encontramos este pedido" justo después de haber
+pedido su crédito.
+
+El idioma sale de una lista cerrada y no de lo que mande el navegador: es un
+valor que se incrusta en una URL que le entregamos a un tercero para que
+redirija a una persona.
+
 ### La notificación no viene firmada
 
 Y el endpoint de confirmación es público, porque la pasarela tiene que poder
@@ -124,6 +142,19 @@ la transacción y se comparan `_id`, `invoice` y `transactionStatus`. Si no
 coinciden, o si no se pudo preguntar, **no se aplica nada** y la conciliación
 recoge el pago después. Fallar cerrado cuesta un retraso de minutos; fallar
 abierto cuesta el pedido.
+
+### El monto de vuelta también se comprueba
+
+Wompi trae una firma de integridad sobre referencia, monto y moneda. Aquí no hay
+nada equivalente, y el contraste que propone la guía compara `_id`, `invoice` y
+`transactionStatus` — **no el valor**. Un prestamista que apruebe por debajo de
+lo solicitado es una cosa que hacen los prestamistas, así que el monto de la
+consulta se compara contra el del pago antes de aplicar nada. Si no cuadra, no
+se aplica y queda registrado para que alguien lo mire.
+
+Si la pasarela no manda el valor, no se bloquea: negarse a aplicar un pago
+aprobado por un campo que quizá nunca venga sería peor. **Queda pendiente
+confirmarlo con el primer crédito real.**
 
 ### No hay ambiente de pruebas, y el freno es un booleano
 
