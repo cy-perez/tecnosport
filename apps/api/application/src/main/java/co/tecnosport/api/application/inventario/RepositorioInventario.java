@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.inventario;
 
 import co.tecnosport.api.domain.inventario.Inventario;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,17 @@ import java.util.UUID;
 public interface RepositorioInventario {
 
   Optional<Inventario> buscarPorVarianteId(UUID varianteId);
+
+  /**
+   * Todos los libros del catálogo, <b>sin bloqueo</b>, para que el panel pueda enseñar los saldos
+   * (adr/0049). El bloqueo pesimista de {@link #buscarPorVarianteId} no sirve aquí y haría daño:
+   * bloquearía el catálogo entero para pintar una pantalla de solo lectura.
+   *
+   * <p>Devuelve el agregado con sus movimientos y no un saldo ya calculado, porque el saldo —y
+   * sobre todo qué reserva sigue vigente— lo sabe {@link Inventario} y nadie más. Es una lectura
+   * cara a propósito: la alternativa era duplicar esa regla en SQL.
+   */
+  List<Inventario> listarTodos();
 
   void guardar(Inventario inventario);
 }

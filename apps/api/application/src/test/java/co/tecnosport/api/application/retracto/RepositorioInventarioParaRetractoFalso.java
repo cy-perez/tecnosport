@@ -3,6 +3,7 @@ package co.tecnosport.api.application.retracto;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,5 +24,11 @@ final class RepositorioInventarioParaRetractoFalso implements RepositorioInventa
   @Override
   public void guardar(Inventario inventario) {
     porVariante.put(inventario.varianteId(), inventario);
+  }
+
+  /** No lo usa esta prueba: el listado de existencias tiene la suya. */
+  @Override
+  public List<Inventario> listarTodos() {
+    return List.of();
   }
 }

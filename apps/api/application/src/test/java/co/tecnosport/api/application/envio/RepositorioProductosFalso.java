@@ -4,6 +4,7 @@ import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -86,5 +87,17 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public void actualizarPaquete(UUID varianteId, Paquete paquete) {
     throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
+  }
+
+  /** No lo usa esta prueba: el listado de existencias tiene el suyo. */
+  @Override
+  public List<VarianteActiva> variantesActivas() {
+    return List.of();
+  }
+
+  /** No lo usa esta prueba: ajustar existencia tiene la suya. */
+  @Override
+  public void actualizarExistencia(UUID varianteId, int existencia) {
+    // Sin efecto: ninguna prueba de este paquete mira la columna del catálogo.
   }
 }

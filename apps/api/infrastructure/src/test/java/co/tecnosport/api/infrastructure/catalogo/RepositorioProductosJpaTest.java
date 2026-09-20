@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import co.tecnosport.api.application.catalogo.FiltroProductos;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
+import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Atributo;
@@ -711,6 +712,82 @@ class RepositorioProductosJpaTest {
             estado,
             ahora,
             ahora));
+  }
+
+  /**
+   * El otro recorrido del catálogo por una columna concreta. Se siembran las mismas cuatro
+   * situaciones que el de sin-medir, porque una consulta sin el {@code where} también pasaría una
+   * prueba que solo sembrara el caso positivo.
+   */
+  @Test
+  void variantesActivasTraeSoloLasActivasConLaExistenciaQueDeclaraElCatalogo() {
+    MarcaJpaEntity marca = marca("Marca existencias T1");
+    CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-ex", "TECNOLOGIA");
+    ProductoJpaEntity publicado =
+        producto("JBL Go 5 publicado", "jbl-go5-ex", "PUBLICADO", marca, categoria);
+    ProductoJpaEntity borrador =
+        producto("JBL Xtreme borrador", "jbl-xtreme-ex", "BORRADOR", marca, categoria);
+
+    VarianteJpaEntity activaPublicada = variante(publicado, "TS-EX-PUB", "289000");
+    variante(borrador, "TS-EX-BOR", "990000");
+    varianteSinMedir(publicado, "TS-EX-INACTIVA", "INACTIVA");
+    entityManager.flush();
+
+    List<VarianteActiva> activas = repositorio.variantesActivas();
+
+    assertThat(activas)
+        .extracting(VarianteActiva::sku)
+        .contains("TS-EX-PUB", "TS-EX-BOR")
+        .doesNotContain("TS-EX-INACTIVA");
+    VarianteActiva delPublicado =
+        activas.stream().filter(v -> v.sku().equals("TS-EX-PUB")).findFirst().orElseThrow();
+    assertThat(delPublicado.varianteId()).isEqualTo(activaPublicada.getId());
+    assertThat(delPublicado.productoId()).isEqualTo(publicado.getId());
+    assertThat(delPublicado.nombreProducto()).isEqualTo("JBL Go 5 publicado");
+    assertThat(delPublicado.estadoProducto()).isEqualTo(EstadoProducto.PUBLICADO);
+    assertThat(delPublicado.existenciaDeclarada()).isEqualTo(5);
+  }
+
+  /**
+   * Y la escritura de esa misma columna, leída de vuelta por el camino de la vitrina —{@code
+   * buscarPorSlug}— y no consultando la fila: la lección del 500 de la V55 es que base y Hibernate
+   * pueden no estar de acuerdo sobre la misma columna.
+   */
+  @Test
+  void actualizarExistenciaCambiaLaColumnaYNoTocaElRestoDeLaVariante() {
+    MarcaJpaEntity marca = marca("Marca existencias T2");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-ex2", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Moto G17", "moto-g17-existencia", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-EXISTENCIA-1", "890000");
+    entityManager.flush();
+
+    repositorio.actualizarExistencia(variante.getId(), 12);
+    entityManager.flush();
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("moto-g17-existencia")).orElseThrow();
+    assertThat(p.variantes().get(0).existencia()).isEqualTo(12);
+    assertThat(p.variantes().get(0).precio()).isEqualTo(Dinero.deCop(890_000));
+    assertThat(p.variantes().get(0).paquete()).contains(new Paquete(180, 30, 25, 4));
+  }
+
+  /** Cero es un conteo legítimo —se acabó— y tiene que poder escribirse como cualquier otro. */
+  @Test
+  void actualizarExistenciaAceptaElCero() {
+    MarcaJpaEntity marca = marca("Marca existencias T3");
+    CategoriaJpaEntity categoria = categoria("Celulares", "celulares-ex3", "TECNOLOGIA");
+    ProductoJpaEntity productoJpa =
+        producto("Galaxy A17", "galaxy-a17-existencia", "PUBLICADO", marca, categoria);
+    VarianteJpaEntity variante = variante(productoJpa, "TS-EXISTENCIA-0", "790000");
+    entityManager.flush();
+
+    repositorio.actualizarExistencia(variante.getId(), 0);
+    entityManager.flush();
+    entityManager.clear();
+
+    Producto p = repositorio.buscarPorSlug(new Slug("galaxy-a17-existencia")).orElseThrow();
+    assertThat(p.variantes().get(0).existencia()).isZero();
   }
 
   private VarianteJpaEntity variante(ProductoJpaEntity producto, String sku, String precio) {
