@@ -15,10 +15,17 @@ import java.util.Optional;
 public interface PasarelaSistecredito {
 
   /**
-   * Pide la creación de la transacción ({@code POST /pay/create}). La respuesta llega con estado
-   * {@code PendingForPaymentMethod} y <b>casi nunca</b> con la URL de redirección: la pasarela
-   * todavía está hablando con el medio de pago. Quien llame tiene que sondear con {@link
-   * #consultar} hasta que aparezca.
+   * Pide la creación de la transacción y devuelve el resultado <b>ya resuelto</b>: con la URL a la
+   * que mandar al comprador, o con el estado terminal que explica por qué no la hay.
+   *
+   * <p>La pasarela no entrega la URL en la respuesta de creación —sigue hablando con el medio de
+   * pago— y hay que consultar hasta que aparezca. Ese sondeo lo hace el adaptador y no quien llama:
+   * es una particularidad del protocolo de este proveedor, y un caso de uso que tuviera que dormir
+   * un hilo entre reintentos estaría haciendo de cliente HTTP.
+   *
+   * <p>Puede devolver una transacción sin URL y sin estado terminal: significa que la pasarela se
+   * quedó pensando más de lo que el sondeo espera. La transacción existe y tiene id; hay que
+   * guardarla para que la conciliación la resuelva, no descartarla.
    *
    * @throws SistecreditoNoRespondeException si la pasarela no responde o responde algo ilegible. Un
    *     rechazo con cuerpo entendible no es esto: viene dentro de la {@link

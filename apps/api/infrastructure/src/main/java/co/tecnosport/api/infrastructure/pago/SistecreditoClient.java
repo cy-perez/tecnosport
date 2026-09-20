@@ -57,8 +57,19 @@ public final class SistecreditoClient implements PasarelaSistecredito {
   private final String ambiente;
   private final int metodoDePagoId;
   private final Duration timeout;
+  private final int intentosDeSondeo;
+  private final Duration esperaEntreSondeos;
+  private final Pausador pausador;
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final JsonMapper json = JsonMapper.builder().build();
+
+  /**
+   * Extraída para que las pruebas observen cuánto se habría dormido en vez de dormirlo — mismo
+   * motivo y misma forma que la de {@code LimitadorDePeticiones}, que vive en otro paquete.
+   */
+  interface Pausador {
+    void pausar(Duration duracion) throws InterruptedException;
+  }
 
   public SistecreditoClient(
       String urlBase,
@@ -67,7 +78,9 @@ public final class SistecreditoClient implements PasarelaSistecredito {
       String vendorId,
       String ambiente,
       int metodoDePagoId,
-      Duration timeout) {
+      Duration timeout,
+      int intentosDeSondeo,
+      Duration esperaEntreSondeos) {
     this(
         URI.create(exigir(urlBase, "La URL base de Sistecrédito")),
         exigir(llaveSuscripcion, "La llave de suscripción de Sistecrédito"),
@@ -75,10 +88,13 @@ public final class SistecreditoClient implements PasarelaSistecredito {
         exigir(vendorId, "El vendorId de Sistecrédito"),
         exigir(ambiente, "El ambiente de Sistecrédito"),
         metodoDePagoId,
-        timeout);
+        timeout,
+        intentosDeSondeo,
+        esperaEntreSondeos,
+        Thread::sleep);
   }
 
-  /** Punto de extensión para pruebas: apunta a un servidor local en vez de a api.credinet.co. */
+  /** Punto de extensión para pruebas: servidor local y pausas observables. */
   SistecreditoClient(
       URI urlBase,
       String llaveSuscripcion,
@@ -86,7 +102,10 @@ public final class SistecreditoClient implements PasarelaSistecredito {
       String vendorId,
       String ambiente,
       int metodoDePagoId,
-      Duration timeout) {
+      Duration timeout,
+      int intentosDeSondeo,
+      Duration esperaEntreSondeos,
+      Pausador pausador) {
     this.urlBase = Objects.requireNonNull(urlBase, "La URL base no puede ser nula.");
     this.llaveSuscripcion = llaveSuscripcion;
     this.storeId = storeId;
@@ -94,6 +113,14 @@ public final class SistecreditoClient implements PasarelaSistecredito {
     this.ambiente = ambiente;
     this.metodoDePagoId = metodoDePagoId;
     this.timeout = Objects.requireNonNull(timeout, "El timeout no puede ser nulo.");
+    if (intentosDeSondeo <= 0) {
+      throw new IllegalArgumentException(
+          "Los intentos de sondeo deben ser mayores que cero: " + intentosDeSondeo);
+    }
+    this.intentosDeSondeo = intentosDeSondeo;
+    this.esperaEntreSondeos =
+        Objects.requireNonNull(esperaEntreSondeos, "La espera entre sondeos no puede ser nula.");
+    this.pausador = Objects.requireNonNull(pausador, "El pausador no puede ser nulo.");
   }
 
   @Override
@@ -120,7 +147,61 @@ public final class SistecreditoClient implements PasarelaSistecredito {
               + ", message="
               + texto(raiz.path("message")));
     }
-    return aTransaccion(datos);
+    return sondearHastaLaUrl(aTransaccion(datos));
+  }
+
+  /**
+   * La URL de pago casi nunca viene en la respuesta de creación: la pasarela todavía está hablando
+   * con el medio de pago, y hay que consultar hasta que aparezca (guía {@code G-ALI-12}). El sondeo
+   * vive aquí y no en el caso de uso por lo mismo que el de Skydropx: es una particularidad del
+   * protocolo de este proveedor, y {@code application} no tiene por qué saber dormir un hilo.
+   *
+   * <p>Para en cuanto el estado es terminal, no solo cuando se acaban los intentos: una transacción
+   * rechazada no va a producir una URL nunca, y seguir preguntando solo retrasa el mensaje que el
+   * comprador tiene que ver.
+   */
+  private TransaccionSistecredito sondearHastaLaUrl(TransaccionSistecredito creada) {
+    if (creada.tieneUrlDeRedireccion() || esTerminal(creada.estado())) {
+      return creada;
+    }
+    TransaccionSistecredito ultima = creada;
+    for (int intento = 0; intento < intentosDeSondeo; intento++) {
+      try {
+        pausador.pausar(esperaEntreSondeos);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return ultima;
+      }
+      Optional<TransaccionSistecredito> consultada = consultar(creada.id());
+      if (consultada.isEmpty()) {
+        continue;
+      }
+      ultima = consultada.get();
+      if (ultima.tieneUrlDeRedireccion() || esTerminal(ultima.estado())) {
+        return ultima;
+      }
+    }
+    // Sin URL y sin estado terminal: la transacción existe y quedó viva. Se devuelve tal cual, con
+    // su id, para que quien llame la guarde y la conciliación pueda resolverla después — perderla
+    // aquí dejaría un intento de pago huérfano en la pasarela.
+    log.warn(
+        "Sistecrédito no entregó la URL de pago de la transacción {} tras {} sondeos; sigue en {}.",
+        creada.id(),
+        intentosDeSondeo,
+        ultima.estado());
+    return ultima;
+  }
+
+  /**
+   * Los estados de los que ya no se sale (guía {@code G-ALI-08}, "Interpretación de la respuesta").
+   * {@code Approved} no está: aprobado sin URL no es un caso del que haya que huir, y si llegara
+   * tampoco hay nada más que sondear — lo atrapa el tope de intentos.
+   */
+  private static boolean esTerminal(String estado) {
+    return switch (estado == null ? "" : estado.trim()) {
+      case "Rejected", "Cancelled", "Expired", "Abandoned", "Failed" -> true;
+      default -> false;
+    };
   }
 
   @Override

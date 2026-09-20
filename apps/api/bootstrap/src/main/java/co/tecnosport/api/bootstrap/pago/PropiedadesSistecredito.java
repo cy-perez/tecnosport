@@ -27,6 +27,8 @@ public record PropiedadesSistecredito(
     String storeId,
     String vendorId,
     String ambiente,
+    String urlRespuesta,
+    String urlConfirmacion,
     int metodoDePagoId,
     int timeoutSegundos,
     int sondeoIntentos,
@@ -48,6 +50,8 @@ public record PropiedadesSistecredito(
       exigir(storeId, "tecnosport.sistecredito.store-id");
       exigir(vendorId, "tecnosport.sistecredito.vendor-id");
       exigir(ambiente, "tecnosport.sistecredito.ambiente");
+      exigir(urlRespuesta, "tecnosport.sistecredito.url-respuesta");
+      exigir(urlConfirmacion, "tecnosport.sistecredito.url-confirmacion");
       if (!AMBIENTES.contains(ambiente)) {
         throw new IllegalStateException(
             "tecnosport.sistecredito.ambiente tiene que ser Staging o Production, no "

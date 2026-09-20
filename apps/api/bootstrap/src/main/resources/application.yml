@@ -129,6 +129,11 @@ tecnosport:
     # El header SCOrigen. Production porque no hay ambiente de pruebas para esta cuenta; lo
     # confirmo la asesora el 20 de septiembre de 2026.
     ambiente: ${SISTECREDITO_AMBIENTE:Production}
+    # A donde vuelve el comprador y a donde llegan las notificaciones. Se derivan de las URL
+    # publicas por omision y se pueden fijar aparte. LA DE CONFIRMACION TIENE QUE SER PUBLICA:
+    # en local no llega ninguna notificacion, por eso las pruebas van contra el despliegue de dev.
+    url-respuesta: ${SISTECREDITO_URL_RESPUESTA:${APP_URL_PUBLICA:http://localhost:4200}/checkout/sistecredito/retorno}
+    url-confirmacion: ${SISTECREDITO_URL_CONFIRMACION:${API_URL_PUBLICA:http://localhost:8080}/api/v1/pagos/sistecredito/confirmacion}
     # El id del medio de pago Sistecredito dentro de su propia pasarela. Vale 2 en Staging y en
     # Production (guia G-ALI-12), asi que no es un secreto ni cambia por despliegue; es variable
     # igual porque lo genera Sistecredito y podria cambiarlo.

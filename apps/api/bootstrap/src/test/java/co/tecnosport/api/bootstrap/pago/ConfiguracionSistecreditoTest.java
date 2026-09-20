@@ -75,6 +75,8 @@ class ConfiguracionSistecreditoTest {
         "store",
         "vendor",
         "Production",
+        "https://tecnosport.co/checkout/sistecredito/retorno",
+        "https://api.tecnosport.co/api/v1/pagos/sistecredito/confirmacion",
         2,
         10,
         10,

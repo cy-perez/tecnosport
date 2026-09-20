@@ -1,6 +1,10 @@
 package co.tecnosport.api.bootstrap.pago;
 
+import co.tecnosport.api.application.compartido.Reloj;
+import co.tecnosport.api.application.pago.CrearIntentoDePagoSistecredito;
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
+import co.tecnosport.api.application.pago.RepositorioPagos;
+import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
 import co.tecnosport.api.presentation.pago.PropiedadesWompiPublicas;
 import java.time.Duration;
@@ -51,7 +55,27 @@ public class ConfiguracionSistecredito {
         propiedades.vendorId(),
         propiedades.ambiente(),
         propiedades.metodoDePagoId(),
-        Duration.ofSeconds(propiedades.timeoutSegundos()));
+        Duration.ofSeconds(propiedades.timeoutSegundos()),
+        propiedades.sondeoIntentos(),
+        Duration.ofMillis(propiedades.sondeoEsperaMilis()));
+  }
+
+  @Bean
+  public CrearIntentoDePagoSistecredito crearIntentoDePagoSistecredito(
+      RepositorioPedidos repositorioPedidos,
+      RepositorioPagos repositorioPagos,
+      PasarelaSistecredito pasarelaSistecredito,
+      Reloj reloj,
+      PropiedadesSistecredito propiedades) {
+    return new CrearIntentoDePagoSistecredito(
+        repositorioPedidos,
+        repositorioPagos,
+        pasarelaSistecredito,
+        reloj,
+        propiedades.urlRespuesta(),
+        propiedades.urlConfirmacion(),
+        propiedades.sandboxActivo(),
+        propiedades.sandboxEstado());
   }
 
   /**

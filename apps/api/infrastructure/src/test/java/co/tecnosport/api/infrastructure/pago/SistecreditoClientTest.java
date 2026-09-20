@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -202,6 +203,89 @@ class SistecreditoClientTest {
     assertEquals(Optional.empty(), cliente(URI.create("http://localhost:1")).consultar("  "));
   }
 
+  /**
+   * El sondeo, que es lo que hace usable esta pasarela: la creación responde sin URL —sigue
+   * hablando con el medio de pago— y hay que consultar hasta que aparezca (guía G-ALI-12). Vive en
+   * el cliente y no en el caso de uso, igual que el de Skydropx.
+   */
+  @Test
+  void siLaCreacionNoTraeUrlSeSondeaLaConsultaHastaQueAparezca() throws IOException {
+    AtomicInteger consultas = new AtomicInteger();
+    URI base =
+        servirAmbos(
+            respuestaDeCreacion(null),
+            () ->
+                consultas.incrementAndGet() < 3
+                    ? respuestaConsultada(null, null)
+                    : respuestaConsultada("https://siste.credinet.co/pago/abc", null));
+
+    TransaccionSistecredito transaccion = cliente(base).crear(solicitud(false, null));
+
+    assertEquals(Optional.of("https://siste.credinet.co/pago/abc"), transaccion.urlDeRedireccion());
+    assertEquals(3, consultas.get());
+  }
+
+  /**
+   * Una transacción rechazada no va a producir una URL nunca. Seguir sondeando solo retrasa el
+   * mensaje que el comprador tiene que ver, así que el sondeo para en cuanto el estado es terminal.
+   */
+  @Test
+  void elSondeoParaEnCuantoElEstadoEsTerminal() throws IOException {
+    AtomicInteger consultas = new AtomicInteger();
+    URI base =
+        servirAmbos(
+            respuestaDeCreacion(null),
+            () -> {
+              consultas.incrementAndGet();
+              return """
+                  {"errorCode":0,"data":{"_id":"649b4c821b581f96e45b5696",
+                   "invoice":"TS-2026-000001-1","transactionStatus":"Rejected",
+                   "paymentMethodResponse":{"codeResponse":"801",
+                   "description":"Ya hay una solicitud en proceso para esta persona"}}}
+                  """;
+            });
+
+    TransaccionSistecredito transaccion = cliente(base).crear(solicitud(false, null));
+
+    assertEquals("Rejected", transaccion.estado());
+    assertEquals("801", transaccion.codigoMedioDePago());
+    assertEquals(1, consultas.get());
+  }
+
+  /**
+   * Agotado el sondeo sin URL y sin estado terminal, la transacción se devuelve igual: existe del
+   * lado de Sistecrédito y tiene id. Perderla aquí dejaría un intento de pago huérfano que nadie
+   * puede consultar después.
+   */
+  @Test
+  void agotadoElSondeoLaTransaccionSeDevuelveIgualConSuId() throws IOException {
+    URI base = servirAmbos(respuestaDeCreacion(null), () -> respuestaConsultada(null, null));
+
+    TransaccionSistecredito transaccion = cliente(base).crear(solicitud(false, null));
+
+    assertEquals("649b4c821b581f96e45b5696", transaccion.id());
+    assertFalse(transaccion.tieneUrlDeRedireccion());
+  }
+
+  private URI servirAmbos(String respuestaCreacion, java.util.function.Supplier<String> consulta)
+      throws IOException {
+    servidor = HttpServer.create(new InetSocketAddress(0), 0);
+    servidor.createContext("/pay/create", intercambio -> responder(intercambio, respuestaCreacion));
+    servidor.createContext(
+        "/pay/GetTransactionResponse", intercambio -> responder(intercambio, consulta.get()));
+    servidor.start();
+    return URI.create("http://localhost:" + servidor.getAddress().getPort() + "/pay");
+  }
+
+  private static void responder(com.sun.net.httpserver.HttpExchange intercambio, String respuesta)
+      throws IOException {
+    byte[] bytes = respuesta.getBytes(StandardCharsets.UTF_8);
+    intercambio.getResponseHeaders().add("Content-Type", "application/json");
+    intercambio.sendResponseHeaders(200, bytes.length);
+    intercambio.getResponseBody().write(bytes);
+    intercambio.close();
+  }
+
   private SistecreditoClient cliente(URI base) {
     return new SistecreditoClient(
         base,
@@ -210,7 +294,10 @@ class SistecreditoClientTest {
         "el-vendor-id",
         "Production",
         2,
-        Duration.ofSeconds(5));
+        Duration.ofSeconds(5),
+        3,
+        Duration.ofMillis(1),
+        duracion -> {});
   }
 
   private SolicitudTransaccionSistecredito solicitud(boolean sandbox, String estadoSimulado) {
