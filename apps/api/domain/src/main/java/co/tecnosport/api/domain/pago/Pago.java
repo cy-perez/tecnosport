@@ -184,7 +184,7 @@ public final class Pago {
    */
   public void registrarIdTransaccionPasarela(String id) {
     if (id == null || id.isBlank()) {
-      throw new ExcepcionDeDominio("El id de transacción de Wompi no puede estar vacío.");
+      throw new ExcepcionDeDominio("El id de transacción de la pasarela no puede estar vacío.");
     }
     if (idTransaccionPasarela != null && !idTransaccionPasarela.equals(id)) {
       throw new ExcepcionDeDominio(
