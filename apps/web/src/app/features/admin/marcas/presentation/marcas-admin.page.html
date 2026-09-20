@@ -1,0 +1,59 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.marcas.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.marcas.explicacion' | transloco }}</p>
+
+  <form
+    class="mb-32 flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
+    <ts-campo
+      idCampo="crear-marca-nombre"
+      [label]="'admin.marcas.nombre' | transloco"
+      formControlName="nombre"
+    />
+
+    @if (error(); as mensaje) {
+      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+    }
+
+    <!-- El "ya existe" es un error y la creación un aviso de estado: no se anuncian igual. Uno
+         interrumpe porque hay algo que corregir; el otro espera turno. -->
+    @if (creada(); as nombre) {
+      <p class="m-0 text-ts-exito" role="status">
+        {{ 'admin.marcas.creada' | transloco: { nombre: nombre } }}
+      </p>
+    }
+
+    <div>
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'admin.marcas.enviando' | transloco"
+      >
+        {{ 'admin.marcas.crear' | transloco }}
+      </ts-boton>
+    </div>
+  </form>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.marcas.errorLista' | transloco }}</p>
+  } @else if (marcas().length === 0) {
+    <p class="text-ts-texto-suave">{{ 'admin.marcas.ninguna' | transloco }}</p>
+  } @else {
+    <h2 class="m-0 mb-16 font-display text-xl">
+      {{ 'admin.marcas.listaTitulo' | transloco: { total: marcas().length } }}
+    </h2>
+    <ul class="m-0 list-none p-0">
+      @for (marca of marcas(); track marca.id) {
+        <li class="border-b border-ts-borde px-16 py-8">{{ marca.nombre }}</li>
+      }
+    </ul>
+  }
+</section>

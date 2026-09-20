@@ -37,7 +37,8 @@
     "sinMedir": {
       "aviso": "{{total}} catalog variant(s) have no package measurements, {{publicados}} of them on published products. Without weight and dimensions shipping cannot be quoted: they can only be handed over at the pickup point.",
       "enlace": "Review and measure"
-    }
+    },
+    "ir_a_marcas": "Brands"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -172,7 +173,8 @@
       "seleccionar": "Select an option",
       "crear": "Create product",
       "enviando": "Creating…",
-      "error": "Couldn't create the product. Try again."
+      "error": "Couldn't create the product. Try again.",
+      "faltaMarca": "Brand missing? Create it (anything typed here is lost)"
     },
     "editar": {
       "titulo": "Edit product",
@@ -507,5 +509,19 @@
       "advertencia": "If the shipment is not there, the order is free to buy another label. If it is there and you record it, we resume tracking and dispatch happens on its own once the carrier gives the tracking number.",
       "abrir_accesible": "Resolve the label issue for order {{pedido}}"
     }
+  },
+  "marcas": {
+    "titulo": "Brands",
+    "explicacion": "The catalogue's brands. A new brand can be created here and is available in the product form straight away. Brands can't be renamed or deleted: the name is what shoppers see, on the product page and in the store filter.",
+    "nombre": "Brand name",
+    "crear": "Create brand",
+    "enviando": "Creating…",
+    "creada": "Done: {{nombre}} is now in the catalogue and shows up in the product form.",
+    "yaExiste": "There's already a brand with that name. Different capitalisation doesn't make it a different one.",
+    "faltaNombre": "Enter the brand name.",
+    "error": "Couldn't create the brand. Try again.",
+    "errorLista": "Couldn't load the list of brands.",
+    "ninguna": "There are no brands yet.",
+    "listaTitulo": "In the catalogue ({{total}})"
   }
 }
