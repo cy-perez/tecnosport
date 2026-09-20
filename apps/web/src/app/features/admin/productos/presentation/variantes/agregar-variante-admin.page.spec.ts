@@ -138,7 +138,14 @@ describe('AgregarVarianteAdminPage', () => {
    */
   it('sin el paquete sí se crea la variante: se venderá solo con recogida', async () => {
     const repositorio = new RepositorioProductosAdminFalso();
-    await renderPagina(repositorio);
+    const { fixture } = await renderPagina(repositorio, 'p1');
+    // El espía va como en la prueba de éxito de más abajo, y no es decoración: el router de esta
+    // prueba se monta con `provideRouter([])`, así que una navegación de verdad se va contra un
+    // router sin rutas y deja una promesa rechazada que Vitest cuenta como error aunque las
+    // aserciones pasen. Lo destapó la CI; en local no se vio porque la salida se había filtrado a
+    // las líneas de "Tests" y la de "Errors" quedó fuera.
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
 
     fireEvent.input(screen.getByLabelText('SKU'), { target: { value: 'TS-1' } });
     fireEvent.input(screen.getByLabelText('Precio'), { target: { value: '1000' } });
@@ -148,6 +155,8 @@ describe('AgregarVarianteAdminPage', () => {
     const enviado = repositorio.llamadasAgregarVariante[0];
     expect(enviado.pesoGramos ?? null).toBeNull();
     expect(enviado.largoCm ?? null).toBeNull();
+    // Y vuelve al producto igual que cuando sí trae medidas: sin paquete no es un camino de error.
+    expect(navegar).toHaveBeenCalledWith(['/es', 'admin', 'productos', 'p1', 'editar']);
   });
 
   /** Tres medidas y un peso vacío no es "a medio medir": es una carga rota, y el panel lo para. */
