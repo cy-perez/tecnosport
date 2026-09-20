@@ -38,10 +38,12 @@ import co.tecnosport.api.application.pedido.MarcarEntregado;
 import co.tecnosport.api.application.pedido.RechazarEnEntrega;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.bootstrap.pago.PropiedadesMetodosDeWompi;
+import co.tecnosport.api.bootstrap.pago.PropiedadesSistecredito;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.infrastructure.envio.OrigenDespacho;
 import co.tecnosport.api.infrastructure.envio.SkydropxClient;
 import co.tecnosport.api.infrastructure.envio.VerificadorFirmaEnvioHmac;
@@ -52,6 +54,7 @@ import co.tecnosport.api.infrastructure.envio.siembra.EmisorDeGuiasSembrado;
 import co.tecnosport.api.presentation.envio.PropiedadesWebhookEnvio;
 import java.net.URI;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -330,14 +333,23 @@ public class ConfiguracionEnvio {
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
-      PropiedadesMetodosDeWompi metodosDeWompi) {
+      PropiedadesMetodosDeWompi metodosDeWompi,
+      PropiedadesSistecredito sistecredito) {
+    // La unión de lo que cada pasarela tiene activado (adr/0048). Se arma aquí y no en el caso de
+    // uso porque es configuración de dos proveedores distintos, y el caso de uso no tiene por qué
+    // saber cuántos hay.
+    Set<MetodoPago> habilitados = EnumSet.copyOf(metodosDeWompi.comoMetodosDePago());
+    if (sistecredito.habilitado()) {
+      habilitados.add(MetodoPago.SISTECREDITO);
+    }
     return new MetodosDePagoDisponibles(
         repositorioProductos,
         armadorDeBultos,
         cotizarEnvio,
         repositorioPedidos,
         criteriosContraentrega,
-        metodosDeWompi.comoMetodosDePago());
+        habilitados,
+        sistecredito.montoMinimoComoDinero());
   }
 
   /**

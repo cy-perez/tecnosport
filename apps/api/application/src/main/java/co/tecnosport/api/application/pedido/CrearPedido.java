@@ -158,6 +158,13 @@ public final class CrearPedido {
     if (comando.metodoPago() == MetodoPago.CONTRAENTREGA) {
       exigirContraentregaDisponible(comando, tarifaEnvio);
     }
+    // Simétrico a lo anterior y por el mismo motivo: `habilitados()` dice que el negocio ofrece
+    // Sistecrédito, no que este carrito llegue a su monto mínimo. Sin esta comprobación un cliente
+    // que postee el método creaba el pedido y el comprador se estrellaba contra el 802 de la
+    // pasarela, ya con el inventario reservado (adr/0048).
+    if (comando.metodoPago() == MetodoPago.SISTECREDITO) {
+      exigirSistecreditoDisponible(comando, tarifaEnvio);
+    }
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
 
     List<LineaPedido> lineasCongeladas = new ArrayList<>();
@@ -238,21 +245,32 @@ public final class CrearPedido {
    * a la misma pregunta es justo lo que había que evitar.
    */
   private void exigirContraentregaDisponible(CrearPedidoComando comando, TarifaEnvio tarifa) {
-    MetodosDePagoDisponiblesComando consulta =
-        new MetodosDePagoDisponiblesComando(
-            comando.lineas().stream()
-                .map(
-                    l ->
-                        new MetodosDePagoDisponiblesComando.LineaComando(
-                            l.varianteId(), l.cantidad()))
-                .toList(),
-            comando.correo(),
-            comando.tipoEntrega(),
-            comando.direccion(),
-            tarifa);
-    if (!metodosDePagoDisponibles.ejecutar(consulta).contains(MetodoPago.CONTRAENTREGA)) {
+    if (!metodosDePagoDisponibles
+        .ejecutar(consultaDeMetodos(comando, tarifa))
+        .contains(MetodoPago.CONTRAENTREGA)) {
       throw new ContraentregaNoDisponibleException();
     }
+  }
+
+  private void exigirSistecreditoDisponible(CrearPedidoComando comando, TarifaEnvio tarifa) {
+    if (!metodosDePagoDisponibles
+        .ejecutar(consultaDeMetodos(comando, tarifa))
+        .contains(MetodoPago.SISTECREDITO)) {
+      throw new SistecreditoNoDisponibleException();
+    }
+  }
+
+  private MetodosDePagoDisponiblesComando consultaDeMetodos(
+      CrearPedidoComando comando, TarifaEnvio tarifa) {
+    return new MetodosDePagoDisponiblesComando(
+        comando.lineas().stream()
+            .map(
+                l -> new MetodosDePagoDisponiblesComando.LineaComando(l.varianteId(), l.cantidad()))
+            .toList(),
+        comando.correo(),
+        comando.tipoEntrega(),
+        comando.direccion(),
+        tarifa);
   }
 
   private LineaPedido congelarLinea(

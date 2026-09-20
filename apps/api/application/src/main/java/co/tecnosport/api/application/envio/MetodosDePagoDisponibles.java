@@ -62,6 +62,7 @@ public final class MetodosDePagoDisponibles {
   private final RepositorioPedidos repositorioPedidos;
   private final CriteriosContraentrega criteriosContraentrega;
   private final Set<MetodoPago> metodosDePasarelaHabilitados;
+  private final Dinero montoMinimoSistecredito;
 
   public MetodosDePagoDisponibles(
       RepositorioProductos repositorioProductos,
@@ -69,7 +70,8 @@ public final class MetodosDePagoDisponibles {
       CotizarEnvio cotizarEnvio,
       RepositorioPedidos repositorioPedidos,
       CriteriosContraentrega criteriosContraentrega,
-      Set<MetodoPago> metodosDePasarelaHabilitados) {
+      Set<MetodoPago> metodosDePasarelaHabilitados,
+      Dinero montoMinimoSistecredito) {
     this.repositorioProductos =
         Objects.requireNonNull(
             repositorioProductos, "El repositorio de productos no puede ser nulo.");
@@ -93,6 +95,18 @@ public final class MetodosDePagoDisponibles {
         metodosDePasarelaHabilitados.isEmpty()
             ? EnumSet.noneOf(MetodoPago.class)
             : EnumSet.copyOf(metodosDePasarelaHabilitados);
+    // Sistecrédito rechaza con su código 802 los créditos por debajo de un mínimo que define él, y
+    // ese número no está en su documentación ni es público: dos comercios aliados publican cifras
+    // distintas. Sin el dato no se puede ofrecer el método sin prometer algo que la pasarela va a
+    // rechazar con un mensaje que el comprador no entiende, así que encenderlo sin configurar el
+    // mínimo no arranca. Falla cerrado, y falla temprano.
+    if (this.metodosDePasarelaHabilitados.contains(MetodoPago.SISTECREDITO)
+        && montoMinimoSistecredito == null) {
+      throw new IllegalArgumentException(
+          "SISTECREDITO está habilitado pero no se configuró su monto mínimo"
+              + " (tecnosport.sistecredito.monto-minimo).");
+    }
+    this.montoMinimoSistecredito = montoMinimoSistecredito;
   }
 
   /**
@@ -116,7 +130,23 @@ public final class MetodosDePagoDisponibles {
     if (!contraentregaElegible(comando)) {
       disponibles.remove(MetodoPago.CONTRAENTREGA);
     }
+    if (disponibles.contains(MetodoPago.SISTECREDITO) && !alcanzaElMinimoDeSistecredito(comando)) {
+      disponibles.remove(MetodoPago.SISTECREDITO);
+    }
     return disponibles;
+  }
+
+  /**
+   * Se compara contra <b>la mercancía sola</b>, sin flete, y es una decisión conservadora tomada a
+   * sabiendas: aquí solo se cotiza el envío cuando hace falta para contraentrega, y pedir una
+   * cotización más por esto le costaría una llamada de red al proveedor a cada carga del checkout.
+   * La consecuencia es que un carrito cuya mercancía queda justo por debajo del mínimo y lo
+   * superaría sumando el flete no ve Sistecrédito. Se pierde una venta rara; la alternativa
+   * —ofrecerlo y que la pasarela lo rechace con el 802— le rompe el pago a alguien que ya eligió.
+   */
+  private boolean alcanzaElMinimoDeSistecredito(MetodosDePagoDisponiblesComando comando) {
+    Dinero mercancia = resolverCarrito(comando.lineas()).total();
+    return mercancia.valor().compareTo(montoMinimoSistecredito.valor()) >= 0;
   }
 
   private boolean contraentregaElegible(MetodosDePagoDisponiblesComando comando) {

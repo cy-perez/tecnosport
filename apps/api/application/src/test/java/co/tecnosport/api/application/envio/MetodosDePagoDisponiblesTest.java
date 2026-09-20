@@ -45,6 +45,13 @@ class MetodosDePagoDisponiblesTest {
   private static final Set<MetodoPago> HABILITADOS_HOY =
       EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
 
+  /**
+   * Valor de prueba, NO el dato real: el mínimo del crédito lo define Sistecrédito y todavía no lo
+   * tenemos (adr/0048). Lo que estas pruebas comprueban es que el corte exista y se aplique, no
+   * cuánto vale.
+   */
+  private static final Dinero MONTO_MINIMO_SISTECREDITO = Dinero.deCop(30_000);
+
   private RepositorioProductosFalso productos;
   private CotizadorEnvioFalso cotizador;
   private RepositorioPedidosFalso pedidos;
@@ -68,7 +75,8 @@ class MetodosDePagoDisponiblesTest {
         new CotizarEnvio(armador, cotizador, () -> AHORA),
         pedidos,
         criterios,
-        habilitadosEnPasarela);
+        habilitadosEnPasarela,
+        MONTO_MINIMO_SISTECREDITO);
   }
 
   private void publicarProductoConVariante() {
@@ -236,6 +244,53 @@ class MetodosDePagoDisponiblesTest {
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
     assertTrue(disponibles.contains(MetodoPago.SISTECREDITO));
+  }
+
+  /**
+   * El corte por monto mínimo. Sistecrédito rechaza con su código 802 los créditos por debajo de un
+   * mínimo que define él, así que ofrecer el método en un carrito que no lo alcanza es prometer un
+   * pago que se va a caer — y se cae tarde, con el comprador ya dentro de la experiencia de la
+   * pasarela.
+   */
+  @Test
+  void sistecreditoNoSeOfreceSiElCarritoNoLlegaAlMinimo() {
+    Set<MetodoPago> conSistecredito = EnumSet.copyOf(HABILITADOS_HOY);
+    conSistecredito.add(MetodoPago.SISTECREDITO);
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, conSistecredito);
+    publicarProductoBarato();
+
+    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertFalse(disponibles.contains(MetodoPago.SISTECREDITO));
+    assertTrue(disponibles.contains(MetodoPago.TARJETA));
+  }
+
+  /**
+   * Falla cerrado y falla temprano: el mínimo no está en la documentación de Sistecrédito ni es
+   * público, así que encender el método sin ese dato es lo único que no se puede permitir. Mejor un
+   * despliegue que no arranca que un checkout que promete un crédito imposible.
+   */
+  @Test
+  void habilitarSistecreditoSinElMontoMinimoNoArranca() {
+    Set<MetodoPago> conSistecredito = EnumSet.copyOf(HABILITADOS_HOY);
+    conSistecredito.add(MetodoPago.SISTECREDITO);
+    productos = new RepositorioProductosFalso();
+    ArmadorDeBultos armador =
+        new ArmadorDeBultos(productos, Dinero.deCop(10_000), Dinero.deCop(5_000_000));
+
+    IllegalArgumentException error =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new MetodosDePagoDisponibles(
+                    productos,
+                    armador,
+                    new CotizarEnvio(armador, new CotizadorEnvioFalso(), () -> AHORA),
+                    new RepositorioPedidosFalso(),
+                    CRITERIOS_PERMISIVOS,
+                    conSistecredito,
+                    null));
+    assertTrue(error.getMessage().contains("monto mínimo"));
   }
 
   /** El día que Wompi active Addi: una variable de entorno, sin tocar código. */
