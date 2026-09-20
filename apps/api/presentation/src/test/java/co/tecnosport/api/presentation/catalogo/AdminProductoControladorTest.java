@@ -453,6 +453,17 @@ class AdminProductoControladorTest {
     }
 
     @Override
+    public boolean existeConNombre(String nombre) {
+      return marcas.stream().anyMatch(marca -> marca.nombre().equalsIgnoreCase(nombre));
+    }
+
+    /** Este controlador no crea marcas; aquí solo cumple el contrato del puerto. */
+    @Override
+    public void guardar(Marca marca) {
+      throw new UnsupportedOperationException("Este doble no guarda marcas.");
+    }
+
+    @Override
     public Optional<Marca> buscarPorId(UUID id) {
       return marcas.stream().filter(marca -> marca.id().equals(id)).findFirst();
     }

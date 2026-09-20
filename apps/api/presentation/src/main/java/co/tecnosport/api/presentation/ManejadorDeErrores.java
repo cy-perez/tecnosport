@@ -5,6 +5,7 @@ import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
+import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
@@ -186,6 +187,15 @@ public class ManejadorDeErrores {
   @ExceptionHandler(MontoDeReintegroInvalidoException.class)
   public ProblemDetail montoDeReintegroInvalido(MontoDeReintegroInvalidoException excepcion) {
     return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Monto de reintegro invalido", excepcion);
+  }
+
+  /**
+   * {@code 409} y no {@code 422}: el nombre que mandaron es perfectamente válido, lo que pasa es
+   * que el estado del catálogo lo rechaza. Mismo criterio que el SKU ya en uso, justo debajo.
+   */
+  @ExceptionHandler(MarcaYaExisteException.class)
+  public ProblemDetail marcaYaExiste(MarcaYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Marca ya existe", excepcion);
   }
 
   @ExceptionHandler(SkuYaEnUsoException.class)

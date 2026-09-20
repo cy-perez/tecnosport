@@ -3,6 +3,7 @@ package co.tecnosport.api.infrastructure.catalogo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
@@ -62,8 +63,10 @@ class RepositorioMarcasJpaTest {
   /**
    * La migración de las marcas reales, comprobada de verdad y no dada por hecha.
    *
-   * <p>Sin estas filas el catálogo real no se puede cargar: {@code POST /api/v1/admin/productos}
-   * exige un {@code marcaId} que ya exista y no hay endpoint que cree marcas.
+   * <p>Sin estas filas el catálogo real no se podía cargar: {@code POST /api/v1/admin/productos}
+   * exige un {@code marcaId} que ya exista, y cuando se escribió {@code V54} no había endpoint que
+   * creara marcas. Desde {@code ADR-0047} sí lo hay, y estas doce siguen entrando por migración:
+   * son el arranque que toda instalación necesita, no el crecimiento del catálogo.
    */
   @Test
   void laMigracionDejaLasMarcasRealesDelNegocio() {
@@ -99,7 +102,9 @@ class RepositorioMarcasJpaTest {
   }
 
   /**
-   * El índice único de {@code V54}, comprobado disparándolo.
+   * El índice único de {@code marca.nombre}, comprobado disparándolo. Nació en {@code V54} sobre la
+   * columna tal cual y {@code V56} lo pasó a {@code lower(nombre)}; el duplicado exacto que esta
+   * prueba dispara lo rechazan los dos, así que sigue valiendo igual.
    *
    * <p>La migración nació con un {@code on conflict do nothing} sin columna, que sin restricción no
    * protege de nada y solo aparenta hacerlo. Dos marcas con el mismo nombre repartirían los
@@ -185,5 +190,58 @@ class RepositorioMarcasJpaTest {
 
     assertThat(resultado).isPresent();
     assertThat(resultado.orElseThrow().nombre()).isEqualTo("Andes Wear");
+  }
+
+  /**
+   * El camino que nadie había recorrido: hasta hoy ninguna prueba escribía una marca <b>por el
+   * adaptador</b>. Es la lección del 19 de septiembre con las variantes sin medir — el {@code 500}
+   * que ninguna capa de arriba puede ver solo lo atrapa una prueba que guarde de verdad.
+   */
+  @Test
+  void guardarEscribeLaMarcaYListarTodasLaDevuelve() {
+    Marca marca = Marca.crear("Andes Wear");
+
+    repositorio.guardar(marca);
+
+    assertThat(repositorio.buscarPorId(marca.id()).orElseThrow().nombre()).isEqualTo("Andes Wear");
+    assertThat(repositorio.listarTodas()).extracting(Marca::nombre).contains("Andes Wear");
+  }
+
+  @Test
+  void existeConNombreNoDistingueMayusculas() {
+    repositorio.guardar(Marca.crear("Andes Wear"));
+
+    assertThat(repositorio.existeConNombre("andes wear")).isTrue();
+    assertThat(repositorio.existeConNombre("ANDES WEAR")).isTrue();
+    assertThat(repositorio.existeConNombre("Andes Wearable")).isFalse();
+  }
+
+  /**
+   * {@code V56} disparado. "Xiaomi" la sembró {@code V54}, así que esta fila entra en cualquier
+   * base del proyecto.
+   *
+   * <p>La comprobación del caso de uso no sustituye a esta: entre su {@code existeConNombre} y su
+   * {@code guardar} hay una ventana por la que se puede colar otra petición, y lo único que cierra
+   * esa ventana es la base.
+   */
+  @Test
+  void laBaseRechazaDosNombresQueSoloSeDiferencianEnLasMayusculas() {
+    assertThatThrownBy(
+            () -> marcas.saveAndFlush(new MarcaJpaEntity(UUID.randomUUID(), "xiaomi", AHORA)))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  /**
+   * La otra mitad de lo anterior: por el adaptador, la violación sale traducida y no como excepción
+   * de JPA — {@code apps/api/CLAUDE.md}, "ninguna excepción de JPA sale de infrastructure".
+   *
+   * <p>Es el camino de la carrera: {@code CrearMarca} ya preguntó y le dijeron que no existía. Sin
+   * el {@code saveAndFlush} del adaptador esta prueba pasaría en verde y el fallo aparecería al
+   * confirmar la transacción, fuera de cualquier {@code catch}.
+   */
+  @Test
+  void guardarTraduceLaViolacionDelUnicoEnUnaExcepcionDeAplicacion() {
+    assertThatThrownBy(() -> repositorio.guardar(Marca.crear("xiaomi")))
+        .isInstanceOf(MarcaYaExisteException.class);
   }
 }

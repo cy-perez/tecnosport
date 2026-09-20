@@ -24,4 +24,10 @@ public interface MarcaJpaRepository extends JpaRepository<MarcaJpaEntity, UUID> 
           + "(select 1 from ProductoJpaEntity p where p.marcaId = m.id and p.estado = :estado) "
           + "order by m.nombre")
   List<MarcaJpaEntity> findConProductosEnEstado(@Param("estado") String estado);
+
+  /**
+   * Spring Data la traduce a {@code where lower(nombre) = lower(?)}, que es literalmente el índice
+   * único de {@code V56} — así que además de responder la pregunta, la consulta lo usa.
+   */
+  boolean existsByNombreIgnoreCase(String nombre);
 }
