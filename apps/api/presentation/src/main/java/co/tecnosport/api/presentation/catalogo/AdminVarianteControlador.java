@@ -9,12 +9,12 @@ import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.MedirVarianteComando;
 import co.tecnosport.api.application.catalogo.ResultadoDeMedicion;
 import co.tecnosport.api.application.catalogo.ValorAtributoComando;
+import co.tecnosport.api.application.catalogo.VarianteCreada;
 import co.tecnosport.api.application.inventario.AjustarExistencia;
 import co.tecnosport.api.application.inventario.AjustarExistenciaComando;
 import co.tecnosport.api.application.inventario.ExistenciasDelCatalogo;
 import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.ResultadoDeAjuste;
-import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.presentation.catalogo.dto.AgregarVariantePeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AjustarExistenciaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ExistenciaAjustadaRespuesta;
@@ -210,10 +210,11 @@ public class AdminVarianteControlador {
   @ResponseStatus(HttpStatus.CREATED)
   public VarianteRespuesta crear(@RequestBody AgregarVariantePeticion cuerpo) {
     AgregarVarianteComando comando = aComando(cuerpo);
-    Variante variante = transaccion.execute(estado -> agregarVariante.ejecutar(comando));
-    // La variante acaba de nacer, así que su libro tiene exactamente la entrada inicial y nada
-    // más: preguntárselo al inventario sería una consulta para saber algo que ya está aquí.
-    return mapeador.aRespuesta(variante, cuerpo.existenciaInicial() > 0);
+    VarianteCreada creada = transaccion.execute(estado -> agregarVariante.ejecutar(comando));
+    // La disponibilidad la decide el caso de uso, mirando el libro que acaba de escribir. Antes se
+    // deducía aquí con `cuerpo.existenciaInicial() > 0`, que es la misma regla escrita por segunda
+    // vez, en presentación, y derivada de lo que dijo el cliente.
+    return mapeador.aRespuesta(creada.variante(), creada.disponible());
   }
 
   private AgregarVarianteComando aComando(AgregarVariantePeticion cuerpo) {

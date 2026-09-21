@@ -62,7 +62,17 @@ export class PanelAdminPage {
   protected readonly sinExistenciaEnPublicados = computed(
     () => this.existencias.data()?.totalSinExistenciaEnPublicados ?? 0,
   );
-  protected readonly haySinExistencia = computed(() => this.totalSinExistencia() > 0);
+  /**
+   * El aviso se enciende por lo que le puede pasar a un comprador —variantes **publicadas** sin
+   * una sola unidad—, que es lo que `ADR-0050` decidió y lo que el mensaje dice. Colgaba de
+   * `totalSinExistencia`, que cuenta también las de productos en BORRADOR: con un lote a medio
+   * cargar, que es el estado normal mientras se sube, el aviso quedaba encendido de forma
+   * permanente por productos que nadie puede comprar. Un aviso que siempre está encendido no
+   * avisa, y el día que hubiera un publicado agotado de verdad nadie iba a mirarlo.
+   *
+   * El mensaje sigue enseñando las dos cifras: la ancha da el contexto, la estrecha decide.
+   */
+  protected readonly haySinExistencia = computed(() => this.sinExistenciaEnPublicados() > 0);
 
   protected async cerrarSesion(): Promise<void> {
     await this.sesionStore.cerrarSesion();

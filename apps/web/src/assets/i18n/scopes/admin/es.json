@@ -1,5 +1,6 @@
 {
   "errores": {
+    "imagen_producto_invalida": "La galería cambió mientras tanto: recarga la página y vuelve a moverla.",
     "monto_de_reintegro_invalido": "El monto no cabe en lo que queda por devolver de este pedido.",
     "reintegro_requerido": "Falta el monto o el medio del reintegro, y este desenlace devuelve dinero.",
     "retracto_ya_radicado": "Este pedido ya tiene un retracto en curso.",

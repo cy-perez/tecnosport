@@ -151,6 +151,31 @@ class QuitarImagenDeGaleriaTest {
     assertTrue(producto.galeria().isEmpty());
   }
 
+  /**
+   * Dos peticiones que quitan la misma imagen: la segunda llega con un agregado que todavía la
+   * tiene, pero el repositorio ya no tiene fila que borrar, así que no hay nada que hacer en el
+   * bucket. Antes se iba igual al almacén y el controlador registraba el aviso de "salió de la
+   * galería sin borrar ningún objeto", que está escrito para otra cosa —el día que la URL pública
+   * cambie por un CDN—. Un aviso que suena por dos motivos no sirve para ninguno.
+   */
+  @Test
+  void siNoHabiaFilaQueBorrarNoSeTocaElAlmacen() {
+    Producto producto = productoDePrueba();
+    ImagenProducto imagen = imagenEnLaGaleria(producto, "repetida", 0);
+    repositorioProductos.conProductos(producto);
+    // Otra petición ya la borró: la fila no está, aunque este agregado siga teniéndola.
+    repositorioProductos.eliminarImagenDeGaleria(producto.id(), imagen.id());
+
+    ImagenDeGaleriaQuitada resultado =
+        quitarImagenDeGaleria.ejecutar(
+            new QuitarImagenDeGaleriaComando(producto.id(), imagen.id()));
+
+    assertFalse(resultado.objetoBorrado());
+    assertFalse(resultado.limpiezaFallida());
+    // El objeto sigue en el bucket: lo borró —o no— quien sí tenía la fila.
+    assertTrue(almacenDeImagenes.existe("productos/" + producto.id() + "/galeria-repetida.jpg"));
+  }
+
   @Test
   void productoInexistenteLanzaProductoNoEncontradoPorId() {
     assertThrows(

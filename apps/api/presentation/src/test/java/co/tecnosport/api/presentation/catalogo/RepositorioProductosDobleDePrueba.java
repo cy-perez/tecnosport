@@ -38,6 +38,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   ImagenProducto ultimaImagenPrincipal;
   final List<ImagenProducto> imagenesDeGaleriaGuardadas = new ArrayList<>();
   final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
+  private final Set<UUID> idsBorrados = new HashSet<>();
 
   /** La galería tal como la dejó el último reordenamiento. */
   List<ImagenProducto> ordenGuardado;
@@ -164,8 +165,13 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
-  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+  public boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    // Devuelve si de verdad borro, como el adaptador real.
+    // La lista es para las aserciones; el conjunto es el que sabe si había algo que borrar.
+    // `List.add` siempre devuelve `true`, así que devolverlo era decir "borré una fila" también
+    // la segunda vez sobre la misma imagen — justo el caso que el adaptador real distingue.
     this.imagenesDeGaleriaEliminadas.add(imagenId);
+    return this.idsBorrados.add(imagenId);
   }
 
   @Override

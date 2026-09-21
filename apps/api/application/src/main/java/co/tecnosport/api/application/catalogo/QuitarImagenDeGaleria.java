@@ -44,7 +44,14 @@ public final class QuitarImagenDeGaleria {
     // Lanza si esa imagen no es de la galería de este producto, que es la guarda que impide que un
     // id suelto borre la foto de otro.
     ImagenProducto quitada = producto.quitarImagenGaleria(comando.imagenId());
-    repositorioProductos.eliminarImagenDeGaleria(producto.id(), quitada.id());
+    // Si no había fila que borrar, el agregado que se leyó ya estaba obsoleto: otra petición
+    // quitó esa misma imagen mientras tanto. Seguir hasta el bucket haría que el controlador
+    // registrara el aviso de "salió de la galería sin borrar ningún objeto", que está escrito para
+    // el día que la URL pública cambie por un CDN. Un aviso que suena por dos motivos distintos no
+    // sirve para ninguno.
+    if (!repositorioProductos.eliminarImagenDeGaleria(producto.id(), quitada.id())) {
+      return new ImagenDeGaleriaQuitada(quitada, false, false);
+    }
 
     Optional<String> objectKey = almacenDeImagenes.objectKeyDe(quitada.url());
     if (objectKey.isEmpty()) {

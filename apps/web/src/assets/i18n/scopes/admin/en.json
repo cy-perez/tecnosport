@@ -1,5 +1,6 @@
 {
   "errores": {
+    "imagen_producto_invalida": "The gallery changed in the meantime: reload the page and move it again.",
     "monto_de_reintegro_invalido": "The amount does not fit in what is left to refund for this order.",
     "reintegro_requerido": "The refund amount or method is missing, and this outcome returns money.",
     "retracto_ya_radicado": "This order already has a withdrawal in progress.",

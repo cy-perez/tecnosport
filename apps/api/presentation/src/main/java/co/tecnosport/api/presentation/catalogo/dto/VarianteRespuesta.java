@@ -1,6 +1,7 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,5 +21,10 @@ public record VarianteRespuesta(
     UUID id,
     String sku,
     DineroRespuesta precio,
-    boolean disponible,
+    // `@Schema` porque springdoc no lo deduce: sin esto el OpenAPI lo publica como opcional, el
+    // cliente TypeScript lo genera como `disponible?: boolean` y el mapeador del front cae a
+    // `?? false`. O sea que el dia que el campo dejara de serializarse, **la tienda entera saldria
+    // agotada** sin una sola prueba en rojo ni una linea en el registro. El primitivo garantiza que
+    // siempre va; lo que faltaba era que el contrato lo dijera.
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean disponible,
     List<AtributoValorRespuesta> atributos) {}

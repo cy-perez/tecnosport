@@ -148,4 +148,29 @@ describe('PanelAdminPage', () => {
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByRole('link', { name: esAdmin.panel.sinMedir.enlace })).toBeNull();
   });
+
+  /**
+   * El aviso mira las publicadas y no el total. Un lote de borradores a medio cargar —el estado
+   * normal mientras se sube uno— no le puede pasar nada a nadie, y encendía el aviso igual: uno
+   * que está siempre encendido deja de leerse, y el día que haya un publicado agotado de verdad
+   * nadie lo mira.
+   *
+   * <p>El aviso de sin-medir se pide a propósito y se espera primero: es lo que demuestra que las
+   * consultas del panel ya resolvieron. Sin ese ancla, afirmar que algo no está en pantalla no
+   * afirma nada — la primera versión de esta prueba pasaba igual con el defecto puesto.
+   */
+  it('no enseña el aviso de existencias si las que faltan son todas de borradores', async () => {
+    await renderPanel(
+      { total: 8, totalEnPublicados: 8, items: [] },
+      {
+        total: 9,
+        totalSinExistencia: 4,
+        totalSinExistenciaEnPublicados: 0,
+        items: [],
+      },
+    );
+
+    await screen.findByRole('link', { name: esAdmin.panel.sinMedir.enlace });
+    expect(screen.queryByRole('link', { name: esAdmin.panel.existencias.enlace })).toBeNull();
+  });
 });

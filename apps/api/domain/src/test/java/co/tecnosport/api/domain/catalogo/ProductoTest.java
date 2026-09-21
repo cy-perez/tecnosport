@@ -347,6 +347,12 @@ class ProductoTest {
     assertEquals(List.of(0, 1), producto.galeria().stream().map(ImagenProducto::orden).toList());
   }
 
+  /**
+   * Con la misma excepción que el orden incompleto, y no con la de "no encontrada": las dos son la
+   * misma carrera —la galería cambió entre que se pintó y que se pulsó— y adr/0053 las resuelve
+   * igual, con un 422. Con `ImagenDeGaleriaNoEncontradaException` esta mitad daba 404 sobre un
+   * recurso que sí existe, y el panel pintaba el mensaje del borrado.
+   */
   @Test
   void reordenarNombrandoUnaImagenQueNoEsDeLaGaleriaFalla() {
     Producto producto = productoDePrueba();
@@ -354,7 +360,7 @@ class ProductoTest {
     producto.agregarImagenGaleria(primera);
 
     assertThrows(
-        ImagenDeGaleriaNoEncontradaException.class,
+        ImagenProductoInvalidaException.class,
         () -> producto.reordenarGaleria(List.of(primera.id(), UUID.randomUUID())));
   }
 
