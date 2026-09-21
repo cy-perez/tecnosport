@@ -27,6 +27,10 @@
 //   --token JWT     o la variable de entorno TS_TOKEN_ADMIN
 //   --correo X      inicia sesión él mismo: pregunta la clave en la terminal, sin eco. La clave
 //                   no pasa por `argv` ni por el historial, y el token no se imprime nunca.
+//   --medir SKU=peso,largo,ancho,alto   corrige el paquete de una variante que ya existe, por el
+//                   mismo endpoint del panel. Se puede repetir. Gramos y centímetros enteros.
+//                   Va aquí y no en un script propio porque necesita exactamente lo mismo que la
+//                   carga: la sesión del panel y el catálogo de variantes para resolver el SKU.
 //
 // El SKU y el slug de cada producto quedan anotados en catalogo/cargados.json, que es lo que
 // permite volver a correr esto sin duplicar nada — y lo que faltaba la primera vez, cuando
@@ -43,6 +47,9 @@ const valor = (nombre, omision = null) => {
   const i = argv.indexOf(nombre);
   return i >= 0 && argv[i + 1] ? argv[i + 1] : omision;
 };
+/** Todos los valores de una opción que se puede repetir. */
+const valores = (nombre) =>
+  argv.flatMap((arg, i) => (arg === nombre && argv[i + 1] ? [argv[i + 1]] : []));
 
 const API = valor("--api", "http://localhost:8080").replace(/\/$/, "");
 const CORREO = valor("--correo");
@@ -281,12 +288,13 @@ async function cargarUno(producto, catalogos, registro) {
 
 const { productos } = leerMaterial();
 const porId = new Map(productos.map((p) => [p.id, p]));
+const mediciones = valores("--medir");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)
   : (valor("--ids") ?? "").split(",").filter(Boolean);
 
-if (pedidos.length === 0) {
-  console.error("Hay que decir qué cargar: --ids a,b,c o --listos.");
+if (pedidos.length === 0 && mediciones.length === 0) {
+  console.error("Hay que decir qué hacer: --ids a,b,c, --listos, o --medir SKU=peso,largo,ancho,alto.");
   process.exit(1);
 }
 if (CORREO && !TOKEN) {
@@ -307,6 +315,57 @@ if (ESCRIBIR && !TOKEN) {
 if (!Number.isInteger(EXISTENCIA) || EXISTENCIA < 0) {
   console.error("--existencia tiene que ser un entero mayor o igual que cero.");
   process.exit(1);
+}
+
+/**
+ * Corrige el paquete de variantes que ya existen. Sale temprano: medir no es cargar, y mezclar
+ * las dos cosas en una corrida haría difícil saber qué pasó con cuál.
+ */
+async function medir(peticiones) {
+  const existencias = await pedir("/api/v1/admin/variantes/existencias");
+  const porSku = new Map(existencias.items.map((v) => [v.sku, v]));
+  let corregidas = 0;
+
+  for (const peticion of peticiones) {
+    const [sku, cifras] = peticion.split("=");
+    const [pesoGramos, largoCm, anchoCm, altoCm] = (cifras ?? "")
+      .split(",")
+      .map((n) => Number.parseInt(n, 10));
+    if ([pesoGramos, largoCm, anchoCm, altoCm].some((n) => !Number.isInteger(n) || n <= 0)) {
+      console.error(`FALLÓ       ${sku}: se esperan cuatro enteros mayores que cero, "${cifras}"`);
+      process.exitCode = 1;
+      continue;
+    }
+    const variante = porSku.get(sku);
+    if (!variante) {
+      console.error(`FALLÓ       ${sku}: no hay ninguna variante activa con ese SKU`);
+      process.exitCode = 1;
+      continue;
+    }
+    console.log(
+      `${ESCRIBIR ? "midiendo" : "simulado"}    ${variante.nombreProducto} (${sku})` +
+        ` → ${pesoGramos} g, ${largoCm}x${anchoCm}x${altoCm} cm`,
+    );
+    if (!ESCRIBIR) continue;
+    await pedir(`/api/v1/admin/variantes/${variante.varianteId}/paquete`, {
+      method: "PATCH",
+      body: JSON.stringify({ pesoGramos, largoCm, anchoCm, altoCm }),
+    });
+    corregidas++;
+  }
+  console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
+}
+
+if (mediciones.length > 0) {
+  if (!TOKEN) {
+    console.error(
+      "Medir necesita sesión hasta para simularlo: el SKU se resuelve preguntándole al catálogo.\n" +
+        "Usa --correo <correo> o --token <jwt>.",
+    );
+    process.exit(1);
+  }
+  await medir(mediciones);
+  process.exit(process.exitCode ?? 0);
 }
 
 const registro = leerJson(REGISTRO) ?? {};
