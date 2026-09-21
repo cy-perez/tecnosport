@@ -20,12 +20,13 @@ final class RepositorioInventarioDobleDePrueba implements RepositorioInventario 
 
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
-    return Optional.ofNullable(porVarianteId.get(varianteId));
+    return Optional.ofNullable(porVarianteId.get(varianteId))
+        .map(RepositorioInventarioDobleDePrueba::reconstituido);
   }
 
   @Override
   public void guardar(Inventario inventario) {
-    porVarianteId.put(inventario.varianteId(), inventario);
+    porVarianteId.put(inventario.varianteId(), reconstituido(inventario));
   }
 
   /** No lo usa esta prueba: el listado de existencias tiene la suya. */
@@ -36,6 +37,19 @@ final class RepositorioInventarioDobleDePrueba implements RepositorioInventario 
 
   @Override
   public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
-    return varianteIds.stream().map(porVarianteId::get).filter(Objects::nonNull).toList();
+    return varianteIds.stream()
+        .map(porVarianteId::get)
+        .filter(Objects::nonNull)
+        .map(RepositorioInventarioDobleDePrueba::reconstituido)
+        .toList();
+  }
+
+  /**
+   * Cada lectura devuelve un agregado nuevo, igual que {@code RepositorioInventarioJpa} al
+   * reconstruirlo desde sus filas. Devolver la instancia guardada hacía que una mutación sin {@code
+   * guardar} se viera igual que una guardada, y eso en producción es sobreventa.
+   */
+  private static Inventario reconstituido(Inventario inventario) {
+    return new Inventario(inventario.id(), inventario.varianteId(), inventario.movimientos());
   }
 }

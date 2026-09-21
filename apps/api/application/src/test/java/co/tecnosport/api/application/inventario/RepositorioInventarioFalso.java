@@ -28,22 +28,36 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
 
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
-    return Optional.ofNullable(porVarianteId.get(varianteId));
+    return Optional.ofNullable(porVarianteId.get(varianteId))
+        .map(RepositorioInventarioFalso::reconstituido);
   }
 
   @Override
   public List<Inventario> listarTodos() {
-    return List.copyOf(porVarianteId.values());
+    return porVarianteId.values().stream().map(RepositorioInventarioFalso::reconstituido).toList();
   }
 
   @Override
   public void guardar(Inventario inventario) {
     guardados.add(inventario);
-    porVarianteId.put(inventario.varianteId(), inventario);
+    porVarianteId.put(inventario.varianteId(), reconstituido(inventario));
   }
 
   @Override
   public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
-    return varianteIds.stream().map(porVarianteId::get).filter(Objects::nonNull).toList();
+    return varianteIds.stream()
+        .map(porVarianteId::get)
+        .filter(Objects::nonNull)
+        .map(RepositorioInventarioFalso::reconstituido)
+        .toList();
+  }
+
+  /**
+   * Cada lectura devuelve un agregado nuevo, igual que {@code RepositorioInventarioJpa} al
+   * reconstruirlo desde sus filas. Devolver la instancia guardada hacía que una mutación sin {@code
+   * guardar} se viera igual que una guardada, y eso en producción es sobreventa.
+   */
+  private static Inventario reconstituido(Inventario inventario) {
+    return new Inventario(inventario.id(), inventario.varianteId(), inventario.movimientos());
   }
 }
