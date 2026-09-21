@@ -12,6 +12,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
+import co.tecnosport.api.infrastructure.inventario.entidad.MovimientoInventarioJpaEntity;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -52,6 +53,7 @@ class RepositorioInventarioJpaTest {
   @Autowired private CategoriaJpaRepository categorias;
   @Autowired private ProductoJpaRepository productos;
   @Autowired private VarianteJpaRepository variantes;
+  @Autowired private MovimientoInventarioJpaRepository movimientosJpa;
 
   private TransactionTemplate transaccion;
 
@@ -275,6 +277,48 @@ class RepositorioInventarioJpaTest {
           assertThat(inventario.saldoTotal()).isEqualTo(3);
           assertThat(inventario.saldoDisponible(Instant.now())).isEqualTo(3);
         });
+  }
+
+  /**
+   * {@code guardar} escribe solo los movimientos nuevos, y esta es la forma de comprobarlo desde
+   * fuera: escribir el histórico entero significaba un {@code merge} por movimiento ya guardado, y
+   * un {@code merge} vuelve a insertar la fila que ya no está. Sobre una tabla de solo-agregar eso
+   * es resucitar en silencio algo que alguien borró.
+   *
+   * <p>Es además el único síntoma observable del defecto: el resto —mil seiscientas sentencias con
+   * el bloqueo tomado para escribir una— solo se ve en el perfil, no en el resultado.
+   */
+  @Test
+  void guardarNoReescribeElHistoricoNiResucitaUnMovimientoBorrado() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID varianteId = variantePropia("SKU-INV-NUEVOS");
+    Instant ahora = Instant.now();
+
+    UUID inventarioId =
+        transaccion.execute(
+            estado -> {
+              Inventario libro = Inventario.crear(varianteId);
+              libro.registrarEntrada(5, "siembra de prueba", ahora);
+              libro.registrarAjuste(2, "conteo de prueba", ahora);
+              repositorio.guardar(libro);
+              return libro.id();
+            });
+
+    Inventario cargado =
+        transaccion.execute(estado -> repositorio.buscarPorVarianteId(varianteId).orElseThrow());
+    assertThat(cargado.movimientos()).hasSize(2);
+    assertThat(cargado.movimientosNuevos()).isEmpty();
+
+    // Alguien borra a mano uno de los dos movimientos que este agregado tiene en memoria.
+    UUID borrado = cargado.movimientos().get(0).id();
+    transaccion.executeWithoutResult(estado -> movimientosJpa.deleteById(borrado));
+
+    cargado.registrarAjuste(1, "conteo posterior", ahora);
+    transaccion.executeWithoutResult(estado -> repositorio.guardar(cargado));
+
+    List<MovimientoInventarioJpaEntity> enLaBase = movimientosJpa.findByInventarioId(inventarioId);
+    assertThat(enLaBase).hasSize(2);
+    assertThat(enLaBase.stream().map(MovimientoInventarioJpaEntity::getId)).doesNotContain(borrado);
   }
 
   @Test
