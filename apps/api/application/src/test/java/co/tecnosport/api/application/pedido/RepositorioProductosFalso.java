@@ -79,8 +79,8 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public java.util.List<co.tecnosport.api.application.catalogo.VarianteSinMedir>
-      variantesSinMedir() {
+  public java.util.List<co.tecnosport.api.application.catalogo.MedidaDeVariante>
+      medidasDeVariantes() {
     throw new UnsupportedOperationException("No usado por las pruebas de pedido.");
   }
 

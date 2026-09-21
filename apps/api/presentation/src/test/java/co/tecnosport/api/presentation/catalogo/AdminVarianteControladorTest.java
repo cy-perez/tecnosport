@@ -7,12 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.tecnosport.api.application.catalogo.AgregarVariante;
+import co.tecnosport.api.application.catalogo.ListarMedidasDeVariantes;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.AjustarExistencia;
 import co.tecnosport.api.application.inventario.ListarExistencias;
@@ -224,21 +225,63 @@ class AdminVarianteControladorTest {
         .andExpect(status().isUnprocessableContent());
   }
 
+  /**
+   * El endpoint de la pantalla de corrección. Lo que hay que demostrar es lo contrario que en
+   * {@code /sin-medir}: que la ya medida <b>sí</b> sale, y con sus cuatro cifras.
+   */
   @Test
-  void sinMedirDevuelveLaListaYLosDosConteos() throws Exception {
+  void medidasDevuelveTambienLasYaMedidasConSuPaquete() throws Exception {
     repositorioProductos.conVariantesSinMedir(
-        new VarianteSinMedir(
+        new MedidaDeVariante(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "JBL Go 5",
+            "JBL-GO-5",
+            EstadoProducto.PUBLICADO,
+            new Paquete(320, 14, 10, 6)),
+        new MedidaDeVariante(
             UUID.randomUUID(),
             UUID.randomUUID(),
             "Moto G17",
             "TS-MOTO-1",
-            EstadoProducto.PUBLICADO),
-        new VarianteSinMedir(
+            EstadoProducto.PUBLICADO,
+            null));
+
+    mockMvc
+        .perform(get("/api/v1/admin/variantes/medidas"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(2))
+        .andExpect(jsonPath("$.totalSinMedir").value(1))
+        .andExpect(jsonPath("$.totalSinMedirEnPublicados").value(1))
+        // Las sin medir van primero: son las que no se pueden enviar a domicilio.
+        .andExpect(jsonPath("$.items[0].sku").value("TS-MOTO-1"))
+        .andExpect(jsonPath("$.items[0].sinMedir").value(true))
+        .andExpect(jsonPath("$.items[0].pesoGramos").doesNotExist())
+        .andExpect(jsonPath("$.items[1].sku").value("JBL-GO-5"))
+        .andExpect(jsonPath("$.items[1].sinMedir").value(false))
+        .andExpect(jsonPath("$.items[1].pesoGramos").value(320))
+        .andExpect(jsonPath("$.items[1].largoCm").value(14))
+        .andExpect(jsonPath("$.items[1].anchoCm").value(10))
+        .andExpect(jsonPath("$.items[1].altoCm").value(6));
+  }
+
+  @Test
+  void sinMedirDevuelveLaListaYLosDosConteos() throws Exception {
+    repositorioProductos.conVariantesSinMedir(
+        new MedidaDeVariante(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Moto G17",
+            "TS-MOTO-1",
+            EstadoProducto.PUBLICADO,
+            null),
+        new MedidaDeVariante(
             UUID.randomUUID(),
             UUID.randomUUID(),
             "Honor X9d",
             "TS-HONOR-1",
-            EstadoProducto.BORRADOR));
+            EstadoProducto.BORRADOR,
+            null));
 
     mockMvc
         .perform(get("/api/v1/admin/variantes/sin-medir"))
@@ -253,6 +296,11 @@ class AdminVarianteControladorTest {
   /** El caso al que hay que llegar: el panel usa estos ceros para no enseñar el aviso. */
   @Test
   void sinNadaQueMedirDevuelveCeroYUnaListaVacia() throws Exception {
+    // Explícito y no heredado del estado inicial: el doble es un bean del contexto, así que vive
+    // entre pruebas, y una que dependa de que ninguna anterior lo haya tocado falla el día que
+    // alguien agrega un método más arriba. Pasó al escribir la prueba del endpoint de medidas.
+    repositorioProductos.conVariantesSinMedir();
+
     mockMvc
         .perform(get("/api/v1/admin/variantes/sin-medir"))
         .andExpect(status().isOk())
@@ -535,6 +583,11 @@ class AdminVarianteControladorTest {
     @Bean
     ListarVariantesSinMedir listarVariantesSinMedir(RepositorioProductos repositorioProductos) {
       return new ListarVariantesSinMedir(repositorioProductos);
+    }
+
+    @Bean
+    ListarMedidasDeVariantes listarMedidasDeVariantes(RepositorioProductos repositorioProductos) {
+      return new ListarMedidasDeVariantes(repositorioProductos);
     }
 
     @Bean

@@ -3,10 +3,10 @@ package co.tecnosport.api.infrastructure.catalogo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.Atributo;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -518,14 +518,14 @@ class RepositorioProductosJpaTest {
   }
 
   /**
-   * El vigilante, contra Postgres de verdad.
+   * La consulta de medidas, contra Postgres de verdad.
    *
-   * <p>Siembra las cuatro situaciones que la consulta tiene que distinguir —publicada sin medir,
-   * borrador sin medir, publicada medida e inactiva sin medir— porque una consulta que devuelva
-   * todo también pasaría una prueba que solo siembre el caso positivo.
+   * <p>Siembra las cuatro situaciones que tiene que distinguir —publicada sin medir, borrador sin
+   * medir, publicada medida e inactiva— porque lo que hay que demostrar es doble: que trae las
+   * activas con y sin paquete, y que la inactiva no entra.
    */
   @Test
-  void variantesSinMedirTraeSoloLasActivasSinPaqueteYDiceDeQueProductoSon() {
+  void medidasDeVariantesTraeLasActivasConYSinPaqueteYDiceDeQueProductoSon() {
     MarcaJpaEntity marca = marca("Marca sin medir T1");
     CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-sm", "TECNOLOGIA");
     ProductoJpaEntity publicado =
@@ -539,16 +539,25 @@ class RepositorioProductosJpaTest {
     variante(publicado, "TS-SM-MEDIDA", "190000");
     entityManager.flush();
 
-    List<VarianteSinMedir> sinMedir = repositorio.variantesSinMedir();
+    List<MedidaDeVariante> medidas = repositorio.medidasDeVariantes();
 
-    assertThat(sinMedir)
-        .extracting(VarianteSinMedir::sku)
-        .containsExactlyInAnyOrder("TS-SM-PUB", "TS-SM-BOR");
-    VarianteSinMedir delPublicado =
-        sinMedir.stream().filter(v -> v.sku().equals("TS-SM-PUB")).findFirst().orElseThrow();
+    assertThat(medidas)
+        .extracting(MedidaDeVariante::sku)
+        .contains("TS-SM-PUB", "TS-SM-BOR", "TS-SM-MEDIDA")
+        .doesNotContain("TS-SM-INACTIVA");
+    MedidaDeVariante delPublicado =
+        medidas.stream().filter(v -> v.sku().equals("TS-SM-PUB")).findFirst().orElseThrow();
     assertThat(delPublicado.nombreProducto()).isEqualTo("Moto G17 publicado");
     assertThat(delPublicado.productoId()).isEqualTo(publicado.getId());
     assertThat(delPublicado.estadoProducto()).isEqualTo(EstadoProducto.PUBLICADO);
+    assertThat(delPublicado.sinMedir()).isTrue();
+    assertThat(delPublicado.medida()).isEmpty();
+
+    // La medida vuelve entera, que es lo que la pantalla de corrección necesita enseñar.
+    MedidaDeVariante medida =
+        medidas.stream().filter(v -> v.sku().equals("TS-SM-MEDIDA")).findFirst().orElseThrow();
+    assertThat(medida.sinMedir()).isFalse();
+    assertThat(medida.medida()).contains(new Paquete(180, 30, 25, 4));
   }
 
   /**
@@ -574,7 +583,10 @@ class RepositorioProductosJpaTest {
 
     Producto p = repositorio.buscarPorSlug(new Slug("moto-g17-medir")).orElseThrow();
     assertThat(p.variantes().get(0).paquete()).contains(new Paquete(430, 17, 9, 5));
-    assertThat(repositorio.variantesSinMedir()).isEmpty();
+    assertThat(repositorio.medidasDeVariantes())
+        .filteredOn(v -> v.sku().equals("TS-MEDIR-1"))
+        .singleElement()
+        .satisfies(v -> assertThat(v.medida()).contains(new Paquete(430, 17, 9, 5)));
   }
 
   /** Y remedir reemplaza, que es lo que hace de esto una corrección y no solo un relleno. */

@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.catalogo;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AgregarVarianteComando;
 import co.tecnosport.api.application.catalogo.InventarioSinMedir;
+import co.tecnosport.api.application.catalogo.ListarMedidasDeVariantes;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.MedirVarianteComando;
@@ -18,6 +19,7 @@ import co.tecnosport.api.presentation.catalogo.dto.AgregarVariantePeticion;
 import co.tecnosport.api.presentation.catalogo.dto.AjustarExistenciaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ExistenciaAjustadaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ExistenciasRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.MedidasRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.MedirVariantePeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ValorAtributoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteMedidaRespuesta;
@@ -55,6 +57,7 @@ public class AdminVarianteControlador {
 
   private final AgregarVariante agregarVariante;
   private final ListarVariantesSinMedir listarVariantesSinMedir;
+  private final ListarMedidasDeVariantes listarMedidasDeVariantes;
   private final MedirVariante medirVariante;
   private final ListarExistencias listarExistencias;
   private final AjustarExistencia ajustarExistencia;
@@ -66,6 +69,7 @@ public class AdminVarianteControlador {
   public AdminVarianteControlador(
       AgregarVariante agregarVariante,
       ListarVariantesSinMedir listarVariantesSinMedir,
+      ListarMedidasDeVariantes listarMedidasDeVariantes,
       MedirVariante medirVariante,
       ListarExistencias listarExistencias,
       AjustarExistencia ajustarExistencia,
@@ -75,6 +79,7 @@ public class AdminVarianteControlador {
       PlatformTransactionManager transactionManager) {
     this.agregarVariante = Objects.requireNonNull(agregarVariante);
     this.listarVariantesSinMedir = Objects.requireNonNull(listarVariantesSinMedir);
+    this.listarMedidasDeVariantes = Objects.requireNonNull(listarMedidasDeVariantes);
     this.medirVariante = Objects.requireNonNull(medirVariante);
     this.listarExistencias = Objects.requireNonNull(listarExistencias);
     this.ajustarExistencia = Objects.requireNonNull(ajustarExistencia);
@@ -92,6 +97,17 @@ public class AdminVarianteControlador {
   public VariantesSinMedirRespuesta sinMedir() {
     InventarioSinMedir inventario = listarVariantesSinMedir.ejecutar();
     return mapeadorSinMedir.aRespuesta(inventario);
+  }
+
+  /**
+   * Las activas <b>con</b> su medida, incluidas las que ya la tienen. Es la lista de la pantalla
+   * que permite corregir: {@code MedirVariante} admite reemplazar un paquete desde adr/0046 y hasta
+   * ahora no había forma de llegar hasta ahí, porque la única lista del panel soltaba una variante
+   * en cuanto se medía.
+   */
+  @GetMapping("/medidas")
+  public MedidasRespuesta medidas() {
+    return mapeadorSinMedir.aRespuesta(listarMedidasDeVariantes.ejecutar());
   }
 
   /**

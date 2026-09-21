@@ -1,11 +1,11 @@
 package co.tecnosport.api.application.inventario;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -83,7 +83,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return List.of();
   }
 

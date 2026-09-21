@@ -35,7 +35,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   ImagenProducto ultimaImagenPrincipal;
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
-  private List<VarianteSinMedir> sinMedir = List.of();
+  private List<MedidaDeVariante> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -54,7 +54,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     this.resultadoAdmin = resultado;
   }
 
-  void conVariantesSinMedir(VarianteSinMedir... variantes) {
+  void conVariantesSinMedir(MedidaDeVariante... variantes) {
     this.sinMedir = List.of(variantes);
   }
 
@@ -123,7 +123,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return sinMedir;
   }
 

@@ -1,11 +1,11 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -37,7 +37,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   ImagenProducto ultimaImagenPrincipal;
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
-  private List<VarianteSinMedir> sinMedir = List.of();
+  private List<MedidaDeVariante> sinMedir = List.of();
   private final Set<String> skusEnUso = new HashSet<>();
 
   void conProductos(Producto... productos) {
@@ -72,7 +72,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.activas = List.of(variantes);
   }
 
-  void conVariantesSinMedir(VarianteSinMedir... variantes) {
+  void conVariantesSinMedir(MedidaDeVariante... variantes) {
     this.sinMedir = List.of(variantes);
   }
 
@@ -149,7 +149,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return sinMedir;
   }
 

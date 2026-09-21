@@ -1,11 +1,11 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -203,23 +203,39 @@ public class RepositorioProductosJpa implements RepositorioProductos {
    * tarde al hidratarla.
    */
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return jdbc.query(
         "select v.id as variante_id, p.id as producto_id, p.nombre as nombre_producto, "
-            + "       v.sku as sku, p.estado as estado_producto "
+            + "       v.sku as sku, p.estado as estado_producto, "
+            + "       v.peso_gramos, v.largo_cm, v.ancho_cm, v.alto_cm "
             + "from variante v "
             + "join producto p on p.id = v.producto_id "
-            + "where v.estado = 'ACTIVA' "
-            + "  and (v.peso_gramos is null or v.largo_cm is null "
-            + "       or v.ancho_cm is null or v.alto_cm is null)",
+            + "where v.estado = 'ACTIVA'",
         new MapSqlParameterSource(),
         (rs, fila) ->
-            new VarianteSinMedir(
+            new MedidaDeVariante(
                 rs.getObject("variante_id", UUID.class),
                 rs.getObject("producto_id", UUID.class),
                 rs.getString("nombre_producto"),
                 rs.getString("sku"),
-                EstadoProducto.valueOf(rs.getString("estado_producto"))));
+                EstadoProducto.valueOf(rs.getString("estado_producto")),
+                paqueteDeLaFila(rs)));
+  }
+
+  /**
+   * Las cuatro o ninguna, igual que en el mapeador del agregado: una fila con tres reventaría al
+   * construir el {@link Paquete}, y eso es un error de carga y no un estado del negocio. La base lo
+   * impide desde la {@code V55}; esto es el cinturón del otro lado.
+   */
+  private static Paquete paqueteDeLaFila(java.sql.ResultSet rs) throws java.sql.SQLException {
+    int peso = rs.getInt("peso_gramos");
+    if (rs.wasNull()) {
+      return null;
+    }
+    int largo = rs.getInt("largo_cm");
+    int ancho = rs.getInt("ancho_cm");
+    int alto = rs.getInt("alto_cm");
+    return rs.wasNull() ? null : new Paquete(peso, largo, ancho, alto);
   }
 
   @Override

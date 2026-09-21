@@ -69,13 +69,14 @@ public interface RepositorioProductos {
   boolean existeVarianteConSku(Sku sku);
 
   /**
-   * Las variantes activas sin {@code Paquete}, de todo el catálogo y sin paginar — el conteo que
-   * devuelve alimenta un aviso, y un conteo truncado avisaría de menos justo cuando hay más.
+   * Todas las variantes {@code ACTIVA} del catálogo con la medida de su paquete, que puede faltar.
+   * Sin paginar, mismo criterio que {@link #variantesActivas()}: el panel necesita la lista
+   * completa para medir y para corregir una medida ya tomada.
    *
-   * <p>Solo las {@code ACTIVA}: una variante retirada no se va a despachar, así que medirla no
-   * arregla nada y su fila solo ensuciaría la lista de lo que sí hay que hacer.
+   * <p>Fue {@code variantesSinMedir()}, con el filtro en el {@code where}. Quién está sin medir lo
+   * decide ahora {@code ListarVariantesSinMedir}, que es una clase con pruebas.
    */
-  List<VarianteSinMedir> variantesSinMedir();
+  List<MedidaDeVariante> medidasDeVariantes();
 
   /**
    * Graba el paquete de una variante existente, la tuviera o no. El puerto no opina sobre cuál de
