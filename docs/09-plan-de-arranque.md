@@ -492,8 +492,10 @@ tampoco se puede dar por resuelto:
 - ~~**Límite de intentos por IP/cuenta** en login, registro, recuperación y
   creación de pedidos, prometido en `docs/08-seguridad-legal.md`: sigue sin
   construirse.~~ Cerrado en la Fase 4, Track A — ver más abajo.
-- **Rotación de clave de un ADMIN ya creado**: sigue sin construirse (ya
-  estaba anotado).
+- ~~**Rotación de clave de un ADMIN ya creado**: sigue sin construirse~~ (ya
+  estaba anotado). **La premisa era falsa**, comprobado el 21 de septiembre de
+  2026: ver la nota del paso previo a la Fase 5, donde esta misma frase apareció
+  por tercera vez y se corrigió.
 - **El historial de rechazos en la entrega compara solo por correo.** Desde
   el 13 de septiembre de 2026 el pedido sí guarda nombre y teléfono de quien
   recibe (`Contacto`, `V36`) —el recorrido visual encontró que el checkout no
@@ -964,8 +966,9 @@ tampoco se puede dar por resuelto:
   confirmado** — nadie del negocio los pidió con esos números exactos
   (5 intentos por cuenta en 15 minutos, 24 horas para verificar correo, etc.);
   revisar si en producción resultan demasiado laxos o demasiado estrictos.
-- **Rotación de clave de un `ADMIN` ya creado**: sigue sin construirse (ya
-  estaba anotado desde la Fase 3).
+- ~~**Rotación de clave de un `ADMIN` ya creado**: sigue sin construirse~~ (ya
+  estaba anotado desde la Fase 3). **Corregido el 21 de septiembre de 2026**: ver
+  unas líneas más abajo, donde la misma frase se escribió por tercera vez.
 
 ## Paso previo a la Fase 5. Navegación, portada y vitrina
 
@@ -1337,9 +1340,21 @@ faltaban en la plantilla.
 
 Con eso se sembró el `ADMIN` real del proyecto (`contacto@tecnosport.co`, el
 mismo buzón del pie), borrando antes el `admin@tecnosport.co` que había creado
-el valor por defecto. **Rotar la clave de un `ADMIN` ya creado sigue sin
+el valor por defecto. ~~**Rotar la clave de un `ADMIN` ya creado sigue sin
 construirse**, y ahora se siente más: la única salida es borrar la fila y volver
-a arrancar. Queda anotado en el propio `.env.example`.
+a arrancar.~~ Queda anotado en el propio `.env.example`.
+
+**La premisa era falsa, y la destapó una barrida de documentación el 21 de
+septiembre de 2026.** `SolicitarRecuperacion` y `ConfirmarRecuperacion` **no miran
+el rol en ninguna línea**, así que `/cuenta/recuperar-clave` le sirve igual a un
+`ADMIN`: el correo sembrado es `contacto@tecnosport.co`, un buzón real que recibe.
+Borrar la fila nunca fue la única salida.
+
+Lo que de verdad falta es más chico de lo que la nota decía —una pantalla del panel
+para cambiar la propia clave con la sesión abierta, sin dar la vuelta por el correo—
+y **ese camino no se ha ejercido con la cuenta real**, así que esto corrige la
+premisa y no declara nada probado. La frase se escribió tres veces en tres fases sin
+que nadie la comprobara: un pendiente repetido se lee como más cierto cada vez.
 
 **Pendientes que este paso no toca:** `ts-checkbox`, `ts-radio`, `ts-dialogo`
 y `ts-notificacion` siguen sin construirse, a propósito — nada los necesita
@@ -2231,9 +2246,12 @@ de cierre cumplidas y verificadas.
 - ~~**Cosmético, en la lista de productos del panel**: "Editar" y "Capturar 360"
   se pintan pegados ("EditarCapturar 360"), sin separación.~~ Cerrado en
   `3d3b915`, durante el tramo de interfaz posterior a la fase.
-- **El carrito sigue sin vencer** (Fase 2) y `Playwright` sigue sin existir,
+- ~~**El carrito sigue sin vencer** (Fase 2) y `Playwright` sigue sin existir,
   aunque `docs/06-testing.md` lo nombra como la herramienta de los recorridos
-  completos. Los dos son de la Fase 6.
+  completos.~~ **Los dos cayeron en la Fase 6, como esta nota anticipó**: el
+  carrito vence con `V21`, `PurgarCarritosVencidos` y `TareaPurgaCarritos`, y
+  Playwright corre dos recorridos en `apps/web/e2e/` con `npm run e2e` y su propio
+  flujo de integración continua.
 
 ## Fase 6. Cierre para publicar
 
@@ -2398,8 +2416,11 @@ significará nada.
 **Datos estructurados.** `Product` con `AggregateOffer` y `BreadcrumbList` en la
 ficha; `Organization` y `WebSite` en la portada. Los datos del negocio salen de
 las claves del pie —las que la ley ya obliga a publicar— y no de una segunda
-copia. `openingHours` **no se emite**: el horario de atención sigue sin decidirse,
-y Google lo muestra como si fuera cierto. El escapado de `<` al serializar no es
+copia. `openingHours` **no se emite**, ~~el horario de atención sigue sin
+decidirse~~ y desde el 10 de septiembre de 2026 **es por una decisión y no por un
+pendiente**: no hay horario de mostrador, el punto de recogida se coordina al
+confirmar el pedido (Fase 7). Emitir un horario inventado es justo lo que Google
+mostraría como si fuera cierto. El escapado de `<` al serializar no es
 cosmético: la descripción de un producto la escribe el panel, y un `</script>` ahí
 cerraría la etiqueta en el HTML del SSR.
 
@@ -2942,14 +2963,19 @@ legal.
 |---|---|
 | `[[QUIÉN PAGA EL FLETE DE DEVOLUCIÓN]]` | Lo reparte la ley, y con **dos** respuestas: por retracto el transporte lo paga el comprador (art. 47 de la Ley 1480), pero los gastos de devolver el dinero los paga el vendedor; en garantía la reparación y su transporte son gratuitos (art. 11). Donde había una frase ahora hay dos, en dos secciones. Y la respuesta estaba escrita en `docs/12-legales-de-envio.md` desde el 8 de septiembre |
 | `[[GARANTÍA DE CELULARES]]` | El texto prometía "la garantía del fabricante", que puede ser **menor** que la legal. No hay régimen especial para equipos terminales: un año para producto nuevo, y si el productor anuncia más, manda el mayor |
-| `[[TRANSPORTADORA]]` | Decidida en `ADR-0021/0023`, pero Skydropx todavía no despacha ni un pedido |
-| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Resend está decidido para dev (`docs/07-infra-gcp.md`), no para producción |
+| `[[TRANSPORTADORA]]` | Decidida en `ADR-0021/0023`, ~~pero Skydropx todavía no despacha ni un pedido~~ — **emite guías desde el 15 de septiembre de 2026**, contra el sandbox y no con pedidos de clientes, y la política de datos nombra a Skydropx S.A.S., NIT 901.508.804-5, desde el 14 |
+| `[[PROVEEDOR DE CORREO TRANSACCIONAL]]` | Resend está decidido para dev (`docs/07-infra-gcp.md`), ~~no para producción~~ — **también para producción desde el 10 de septiembre de 2026**, y nombrado en la política de datos |
 
 Los dos últimos enseñaron algo que no estaba escrito: **decidido no es
 construido.** Nombrar en la política de datos a un tercero que todavía no recibe
 ni un dato es cambiar una promesa falsa por otra más concreta y más fácil de
-desmentir. Los dos quedan descritos por su categoría, y se los nombra el día que
-reciban datos — que en el caso de Skydropx es un paso de la Fase 7.
+desmentir. ~~Los dos quedan descritos por su categoría, y se los nombra el día que
+reciban datos — que en el caso de Skydropx es un paso de la Fase 7.~~ **Ese día
+llegó para los dos**, comprobado el 21 de septiembre de 2026 en
+`legales/es.json`: Resend el 10 de septiembre y Skydropx S.A.S. el 14, con NIT y
+domicilio.
+La lección de arriba no se toca — fue la que mantuvo los dos nombres fuera del
+texto mientras no recibían nada.
 
 Los dos que sí son del negocio quedaron sin marcador y sin dato inventado, con las
 dos únicas salidas honestas: el **plazo de entrega** declara el término legal
@@ -3541,9 +3567,12 @@ Orden de construcción, un caso de uso a la vez:
    - **El secreto no existía.** `docs/07-infra-gcp.md` ya listaba
      `SKYDROPX_SECRETO_WEBHOOK` y nadie lo había conectado: `PropiedadesWebhookEnvio`
      solo tenía el nombre de la cabecera. Va con marcador de desarrollo, así que
-     **el webhook sigue sin verificar nada** — pero ahora lo que falta es un
+     ~~**el webhook sigue sin verificar nada**~~ — pero ahora lo que falta es un
      secreto del panel, que es una variable de entorno, y no un algoritmo, que era
-     un despliegue de código.
+     un despliegue de código. **El secreto se puso el 16 de septiembre de 2026**
+     (`docs/13` §6.9), y con él se cayó la premisa de la frase: no hay nada que
+     copiar del panel porque **la clave la ponemos nosotros**, el mismo valor en
+     Secret Manager y en la suscripción de Skydropx. El webhook verifica.
    - **El cuerpo llegaba como `String`, y eso era un fallo esperando.** Con
      `application/json` sin `charset`, la decodificación la elige el convertidor de
      Spring; si no fuera UTF-8, recodificar esa cadena para el HMAC daría bytes

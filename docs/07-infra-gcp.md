@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Local | Docker Compose en Windows | PostgreSQL 16 en contenedor | Mailpit: no sale nada |
 | Dev en línea | GCP, proyecto `tecnosport-dev`, capa gratuita | Neon, plan gratuito | Resend, entrega real |
-| Producción | GCP, proyecto `tecnosport-prod` | Cloud SQL PostgreSQL 16 | por decidir |
+| Producción | GCP, proyecto `tecnosport-prod` | Cloud SQL PostgreSQL 16 | Resend, decidido el 10 de septiembre de 2026 |
 
 Staging cuando haya tráfico que justifique el costo. Terraform lo deja como un
 módulo parametrizado, así que agregarlo será cambiar una variable.
@@ -117,11 +117,20 @@ día**. A partir de ahí, o se paga el plan o se cambia de proveedor; con el top
 alcanzado, los correos de verificación de cuenta y de recuperación de clave
 **dejan de salir**, y los dos bloquean el acceso de quien compra.
 
-**Lo que sigue sin decidirse, y toca a un abogado:** en qué región procesa Resend
-los datos. La cláusula de transferencia internacional dice hoy "fuera de Colombia"
-sin nombrar país, que es verdadero y suficiente; declarar un país exige leerlo en
-el contrato, no suponerlo. Mismo pendiente que la entidad exacta con la que se
-firma — la política nombra "Resend" y no una razón social, a propósito.
+~~**Lo que sigue sin decidirse, y toca a un abogado:** en qué región procesa
+Resend los datos.~~ **Resuelto el 19 de septiembre de 2026, y no era para un
+abogado sino para el contrato** (`docs/14-consultas-al-abogado.md`, §3): **Resend
+procesa en Estados Unidos**, y sus veintidós subencargados también. Lo que convirtió
+el dato en un no-problema fue mirar dónde no se había mirado: Estados Unidos está en
+la lista de países con nivel adecuado de protección del numeral 3.2 del Capítulo
+Tercero del Título V de la Circular Única de la SIC, así que la transferencia cae en
+el supuesto general del art. 26 de la Ley 1581 y no necesita apoyarse en la
+autorización del titular.
+
+La cláusula de transferencia internacional **sigue diciendo "fuera de Colombia" sin
+nombrar país**, y se deja así a propósito: es verdadera, suficiente, y no envejece el
+día que Resend abra una región nueva. **Lo que sí sigue pendiente** es la entidad
+exacta con la que se firma — la política nombra "Resend" y no una razón social.
 
 **Dev usa Resend** (`resend.com`, plan gratuito: 3.000 correos al mes con tope de
 100 al día, 3 dominios y 30 días de registros). No hay nada que programar:
@@ -173,12 +182,15 @@ Dos cosas que hay que tener presentes al usarlo:
 - **El tope diario son 100 correos.** Suficiente para probar registro y
   recuperación de clave; no para una prueba de carga que mande correos.
 
-Para producción la decisión sigue abierta a propósito. No porque Resend no
-sirva —es transaccional de primera intención, que es exactamente lo que hace
-falta—, sino porque elegir el proveedor de producción es una decisión de negocio
-con otras variables: volumen real, precio al crecer, soporte y qué pasa el día
-que un correo de confirmación de pedido no llega. Heredarla de lo que se eligió
-para dev sería tomarla por inercia.
+~~Para producción la decisión sigue abierta a propósito.~~ **Se tomó el 10 de
+septiembre de 2026 y es la que abre esta sección: Resend también en producción.**
+Este párrafo se quedó atrás y durante once días contradijo al encabezado de su propia
+sección, que es la forma más barata de envenenar una respuesta: quien leyera de abajo
+hacia arriba encontraba abierto lo que estaba cerrado.
+
+Lo que no cambia son las variables que obligarían a revisarla —volumen real, precio al
+crecer, soporte y qué pasa el día que un correo de confirmación de pedido no llega—, y
+la primera que va a apretar es el tope del plan gratuito de más arriba.
 
 ## Imágenes de contenedor
 
@@ -295,14 +307,25 @@ mueve las revisiones de Cloud Run. Decisiones que quedaron dentro:
 - **Un despliegue a la vez y sin cancelar el que va**: matar un `gcloud run deploy` a mitad deja el
   servicio en un estado que nadie pidió. Los otros flujos sí se cancelan entre sí; este espera.
 
-**Todavía se dispara solo a demanda**, y es deliberado: sin base de datos la API no arranca, así
-que engancharlo a `main` hoy produciría un despliegue rojo en cada merge. Pasa a `push` cuando
-exista el proyecto de Neon y los secretos tengan valor.
+~~**Todavía se dispara solo a demanda**~~ **Corre al mezclar a `main` desde el 9 de septiembre de
+2026** (`1d085f2`), y también a demanda. Estuvo solo a demanda mientras no hubo base de datos
+—engancharlo antes habría producido un despliegue rojo en cada merge— y pasó a `push` cuando la
+hubo y dos corridas manuales demostraron el flujo entero.
 
-**Lo que este flujo no hace todavía: las migraciones como paso propio.** Hoy Flyway corre al
-arrancar la aplicación, como en local. Para dev es tolerable —Flyway toma un bloqueo, así que tres
-instancias arrancando a la vez no se pisan— pero **para producción no**, y está escrito arriba por
-qué. El paso separado se agrega junto con Neon, que es cuando se puede probar de verdad.
+~~**Lo que este flujo no hace todavía: las migraciones como paso propio.**~~ **Las hace desde el 8
+de septiembre de 2026** (`c39871b`), en el paso `Migrar la base`: un contenedor
+`flyway/flyway:12.4.0` —la misma versión que trae Spring Boot, porque dos versiones distintas de
+Flyway pueden discrepar sobre el formato de su propia tabla de historial— que corre **antes** de
+mover ninguna revisión, con el host, la base y el usuario leídos del propio servicio de Cloud Run y
+la clave de Secret Manager.
+
+El servicio va con `SPRING_FLYWAY_ENABLED=false`, así que si ese paso se salta, la aplicación **no
+migra por su cuenta**: Hibernate valida el esquema y la revisión falla en voz alta. Un esquema a
+medias es peor que un despliegue detenido.
+
+Estas dos frases se quedaron atrás doce días, y el motivo es el de siempre: **el flujo cambió en el
+YAML y nadie volvió a este documento**. Lo que se lee aquí decidía si engancharlo a `main` era
+seguro, y decía que no cuando ya llevaba doce días haciéndolo.
 
 ## Infraestructura como código
 
