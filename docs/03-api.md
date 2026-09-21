@@ -346,6 +346,7 @@ GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición 
 POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET /api/v1/admin/variantes/sin-medir                        las activas sin paquete, con el total y cuántas ya están publicadas
+GET /api/v1/admin/variantes/medidas                          las activas **con** su paquete, tengan o no: la lista que permite corregir
 PATCH /api/v1/admin/variantes/{id}/paquete                   pone o corrige las cuatro medidas; 422 si alguna no es mayor que cero
 GET /api/v1/admin/variantes/existencias                      las activas con lo que dice el libro y lo que queda disponible
 PATCH /api/v1/admin/variantes/{id}/existencia                registra un conteo físico como movimiento de AJUSTE; 422 sin motivo

@@ -6209,6 +6209,74 @@ que estaba corriendo**, y la JVM viva se quedó sin una clase que carga tarde
 reiniciando la API. Correr la verificación completa con el backend levantado deja el proceso en un
 estado incoherente sin decir nada hasta que alguien toca la ruta equivocada.
 
+## Los trece productos, y la puerta para corregir una medida (2026-09-21)
+
+El cruce del material dejó una lista y la lista destapó tres cosas que no estaban en el plan.
+
+### Veinticinco publicables, no veintisiete
+
+El cruce y el cargador tenían cada uno su idea de "publicable" y ya habían divergido: el primero
+miraba el precio del **proveedor** donde el segundo mira el de **mercado**, así que daba por listos
+dos productos sin precio de venta —el Moto G67 y el Galaxy A57, cero fuentes—. Ahora los dos leen
+el material por el mismo módulo, que es la única forma de que no vuelva a pasar.
+
+### Cuatro productos que se venden al costo
+
+De los publicables nuevos, cuatro dejan **5% o menos** sobre lo que cuestan: el JBL Flip 7 y el
+Lenovo Tab Plus quedan en cero, el Tab One en 2% y el JBL Grip en 3%. Publicarlos a precio de
+mercado es trabajar gratis. El cargador filtra con `--margen-minimo`, que es una regla y no una
+lista escrita a mano: la próxima lista del proveedor se filtra igual.
+
+### La ficha de Icecat del Switch 2 era del juego suelto
+
+**50 g en una caja de 17 × 11 × 2 cm** — las medidas de la tarjeta de Mario Kart World, no del
+paquete con la consola. La ficha llegaba completa y se leía como buena; declararla habría cotizado
+el flete de un juego para despachar una consola de dos millones y medio. Queda excluida por id y
+con el motivo escrito, en vez de inventar un umbral del tipo "menos de 200 g es sospechoso": lo que
+está mal no es la cifra, es de qué producto es.
+
+### Lo que quedó cargado
+
+Trece productos **en BORRADOR**, con existencia cero: fuera de la vitrina hasta que alguien cuente
+la bodega. Los dieciséis publicados siguen siendo los mismos, comprobado por la API pública.
+`catalogo/cargados.json` guarda la correspondencia id → slug → SKU, que es lo que faltaba la primera
+vez — `jbl-extreme-4` terminó publicado como `jbl-xtreme-4` y nada lo anotó.
+
+### Y la puerta que no existía: corregir una medida
+
+`MedirVariante` admite reemplazar un paquete desde `ADR-0046`, y **no había forma de llegar hasta
+ahí**: la única lista del panel soltaba una variante justo cuando se medía. Una medida mal tomada
+solo se podía enmendar escribiendo en la base.
+
+`GET /api/v1/admin/variantes/medidas` trae las activas con su paquete, tengan o no, y
+`/admin/productos/medidas` las lista con el formulario dentro de la fila. **Una consulta en lugar de
+dos**: `variantesSinMedir()` era un `select` gemelo con cuatro `is null` en el `where`, y quién está
+sin medir lo decide ahora el caso de uso filtrando — una regla de negocio en una clase con pruebas.
+Comprobado rompiéndolo: sin el filtro, la prueba del vigilante falla.
+
+El formulario arranca con las cifras que ya tiene la variante. Corregir un peso mal tecleado es
+cambiar un número; un formulario en blanco obliga a copiar tres cifras correctas para tocar la
+cuarta, que es justo como se equivoca uno.
+
+**Estrenada con el caso que la motivó**: el JBL Go 5 estaba en 13 × 9 × 6 donde su ficha dice
+136 × 93 × 58 mm, que redondeado hacia arriba —como manda `docs/02`— son 14 × 10 × 6. La carga del
+19 de septiembre redondeó hacia abajo. Son milímetros, y son flete cobrado de menos en cada envío.
+Corregido desde la pantalla, contra la base real, con el aviso diciendo "se corrigieron" y no
+"quedó medida".
+
+### Dos tropiezos de método que conviene no repetir
+
+- **Correr `npm run verificar` con el `bootRun` levantado** recompila los jars por debajo del
+  proceso vivo, y la JVM se queda sin las clases que carga tarde. Se ve como un
+  `ClassNotFoundException` en una ruta concreta y, de cara a quien usa el panel, como "no pudimos
+  conectarnos con el servidor" al iniciar sesión. La API sigue respondiendo en `/salud`, así que
+  parece viva y el fallo se lee como una regresión del código recién escrito. No lo es.
+- **Los prompts interactivos no funcionan** en los comandos que se corren desde la conversación:
+  `read -rs` devuelve cadena vacía y el comando sigue como si nada. Costó dos intentos y dos
+  diagnósticos equivocados —un token que valía la palabra `undefined`, y después un `422` por clave
+  en blanco—. Por eso `cargar-catalogo.mjs` comprueba el estado del login antes de creerse nada, y
+  por eso lo que necesite credenciales se corre en una terminal de verdad.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
