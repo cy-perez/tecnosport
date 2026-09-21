@@ -227,6 +227,15 @@ Reglas:
   costo visible y reversible —se reemplaza la imagen cuando llegue una mejor— y
   esa es exactamente la diferencia con el peso del paquete, que no es reversible
   porque el flete ya se cobró.
+- **La galería acumula; la principal se reemplaza** (`ADR-0052`, 21 de septiembre de
+  2026). Agregar una imagen de galería no borra nada del bucket —limpiar el
+  prefijo `galeria-` se llevaría las hermanas, que siguen publicadas—, y quitarla
+  borra su objeto por la key exacta. Caben ocho, que es una barandilla y no un
+  dato de negocio: sin tope, un bucle equivocado llena la ficha y el bucket sin
+  que nada chille. El `orden` de la siguiente es **uno más que el mayor**, no el
+  tamaño de la lista, así que quitar deja huecos a propósito: la ficha ordena y no
+  cuenta. Y **la misma foto no entra dos veces**, comparando el `hash` —que es
+  justo para lo que está, ver abajo—.
 - **El set de rotación pertenece a la variante cuando el color cambia el aspecto**
   (ropa, bolsos, celulares). Si la variante no tiene set propio, se usa el del
   producto. Esto evita fotografiar catorce colores el primer día sin cerrar la

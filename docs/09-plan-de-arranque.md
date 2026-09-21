@@ -6355,6 +6355,78 @@ Y una frase que duró un día: la confirmación de publicar decía *"el panel no
 Dejó de ser cierta en cuanto se construyó el inverso, así que se reemplazó en vez de quedarse ahí
 tranquilizando con algo falso.
 
+## La galería, que era el cuarto hueco de la misma semana (2026-09-21)
+
+El panel no sabía crear marcas, no sabía corregir una medida, no sabía publicar — y **no sabía
+subir la galería**. El patrón es siempre el mismo y conviene nombrarlo: el dominio lleva la
+funcionalidad escrita desde hace fases, la tubería de lectura está completa, y lo que falta es la
+puerta.
+
+`Producto` tiene `galeria` desde la Fase 1. `MapeadorCatalogo` la lee y la ordena,
+`ProductoRespuesta.galeria` la publica, `ficha.page.ts:97` la pinta como
+`[imagenPrincipal, ...galeria]`. En `AdminProductoControlador` solo existían los dos endpoints de
+`imagen-principal`.
+
+**Mientras tanto, `catalogo/fotos/estudio` tenía 48 carpetas con cuatro tomas cada una**, en cinco
+resoluciones y con AVIF, ya retocadas al estándar de estudio desde el 15 de septiembre. A la ficha
+llegaba una. El Galaxy S25 Ultra, de $4.999.900, se veía con una sola foto.
+
+### Lo que la forma del problema decidió
+
+| | Imagen principal | Galería |
+|---|---|---|
+| Una subida nueva | **reemplaza** la anterior | **suma** a las que hay |
+| Limpieza del bucket al confirmar | el prefijo `principal-` entero | ninguna |
+| Cómo se borra un objeto | por prefijo | por la key exacta |
+
+Borrar por prefijo en la galería se llevaría las hermanas. Pasar la key entera como prefijo
+funcionaría hoy por la forma de las keys, y esa es la clase de casualidad que deja de ser cierta sin
+que nadie se entere: por eso el puerto tiene un `eliminar(objectKey)` que dice lo que hace.
+
+El precio de no limpiar al agregar es que una subida firmada y no confirmada deja un objeto sin
+reclamar. Se acepta a sabiendas, y por eso el tope se comprueba **antes de firmar** y no solo al
+agregar: para no invitar a subir lo que no va a caber. Todo en `ADR-0052`, con las cuatro
+alternativas descartadas.
+
+### Tres cosas que solo aparecieron al construirlo
+
+- **`objectKeyDe` tiene que poder devolver vacío.** El camino de vuelta de `urlPublica` hace falta
+  para borrar una imagen de galería, que es lo único que se elimina conociendo solo la URL. Y el
+  catálogo sembrado de `local` y `dev` trae imágenes de **picsum.photos**: quitar una de esas tiene
+  que sacar la fila y no intentar borrar nada, no reventar.
+- **Un borrado derivado de Spring Data no trae transacción propia**, a diferencia de `save`. Eso no
+  se ve en verde —la clase de Testcontainers es `@Transactional` entera, así que siempre hay una
+  abierta— y se cae en `bootRun` con `TransactionRequiredException`. Ya había precedente exacto en
+  `RepositorioSetsRotacionJpa.eliminar`, y se copió de ahí.
+- **Las etiquetas del formulario no se pueden llamar igual que las de la principal.** Dicho así
+  suena a redacción; es lo que hizo fallar cuatro pruebas existentes, que buscan el campo por su
+  etiqueta accesible. Dos campos con el mismo nombre accesible en la misma pantalla no son un
+  problema de las pruebas: son un problema de quien usa un lector de pantalla.
+
+### Lo que quedó cargado
+
+`--galeria-todos` rellenó lo que las cargas anteriores dejaron a medias: **catorce imágenes en seis
+galerías** de los trece productos del día anterior. Los otros siete llegaron con una sola foto de
+Icecat, así que no hay nada que rellenar y el cargador lo dice.
+
+**Un producto que ya tiene galería no se toca**, y esa es toda la idempotencia que hace falta.
+Comparar foto por foto pediría el hash de cada imagen ya subida, que la API no devuelve —y no
+debería: sirve para una cosa, y esa cosa la decide el servidor rechazando duplicados—; intentarlo y
+dejar que responda 409 costaría subir el archivo al bucket para descubrir que sobra. Comprobado
+corriéndolo dos veces: la segunda sube cero.
+
+### Lo que queda abierto, y nace aquí
+
+- **No se puede reordenar la galería.** Las cuatro tomas del estudio vienen numeradas y se suben en
+  ese orden, así que el caso no aprieta todavía. Hacerlo bien pide un índice único sobre
+  `(producto_id, orden)` que un intercambio viola a mitad de sentencia.
+- **Nadie limpia los objetos huérfanos** que deja una subida firmada y no confirmada. Si algún día
+  pesa, va como regla de ciclo de vida del bucket sobre el prefijo `galeria-` por antigüedad, no
+  como código que borra.
+- **Siete de los trece siguen con una sola foto**, y no es un problema de esta puerta: es que Icecat
+  no trae más material para ellos. Eso lo resuelve el trámite de fotos al proveedor, que sigue
+  redactado y sin mandar.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
