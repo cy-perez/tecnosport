@@ -17,6 +17,7 @@
     "contrastes": "node tools/verificar-contrastes.mjs",
     "capas": "node tools/verificar-capas.mjs",
     "marcadores": "node tools/verificar-marcadores.mjs",
+    "kit": "node tools/verificar-kit.mjs",
     "iconos-marca": "node tools/generar-iconos-marca.mjs",
     "lighthouse": "node tools/medir-lighthouse.mjs",
     "datos-negocio": "node tools/verificar-datos-de-negocio.mjs",

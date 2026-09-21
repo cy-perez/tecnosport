@@ -111,6 +111,7 @@ npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verda
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
+npm run kit                              ¿el kit de marca se regenera igual que como está guardado?
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
