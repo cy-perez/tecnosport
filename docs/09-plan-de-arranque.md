@@ -5270,6 +5270,12 @@ perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio
 
 ## Los trámites que nadie había mandado, y una exclusión que la ley no concede (2026-09-19)
 
+> **Los dos que quedaron redactados se mandaron el 21 de septiembre de 2026**, después de dos días
+> en la carpeta. El de Skydropx lleva los 74 códigos DANE, el retiro de la solicitud del 14 y el
+> conector de recolección de Servientrega; el del proveedor, las fotos de 73 productos. Los dos
+> esperan respuesta, y los dos tienen abajo, en su propio archivo, qué hay que mirar cuando
+> llegue — porque "contestaron" no es lo mismo que "se resolvió".
+
 El día anterior cerró la Fase 7 y dejó tres cosas que no eran código: un dato de contrato sin
 mirar, tres asuntos con un proveedor sin enviar, y un expediente para el abogado listo pero sin
 imprimir. Ninguna bloqueaba un despliegue, y por eso llevaban semanas ahí — **el trabajo que no
@@ -6354,6 +6360,173 @@ nada**, ni en un sentido ni en el otro.
 Y una frase que duró un día: la confirmación de publicar decía *"el panel no sabe despublicar"*.
 Dejó de ser cierta en cuanto se construyó el inverso, así que se reemplazó en vez de quedarse ahí
 tranquilizando con algo falso.
+
+## La galería, que era el cuarto hueco de la misma semana (2026-09-21)
+
+El panel no sabía crear marcas, no sabía corregir una medida, no sabía publicar — y **no sabía
+subir la galería**. El patrón es siempre el mismo y conviene nombrarlo: el dominio lleva la
+funcionalidad escrita desde hace fases, la tubería de lectura está completa, y lo que falta es la
+puerta.
+
+`Producto` tiene `galeria` desde la Fase 1. `MapeadorCatalogo` la lee y la ordena,
+`ProductoRespuesta.galeria` la publica, `ficha.page.ts:97` la pinta como
+`[imagenPrincipal, ...galeria]`. En `AdminProductoControlador` solo existían los dos endpoints de
+`imagen-principal`.
+
+**Mientras tanto, `catalogo/fotos/estudio` tenía 48 carpetas con cuatro tomas cada una**, en cinco
+resoluciones y con AVIF, ya retocadas al estándar de estudio desde el 15 de septiembre. A la ficha
+llegaba una. El Galaxy S25 Ultra, de $4.999.900, se veía con una sola foto.
+
+### Lo que la forma del problema decidió
+
+| | Imagen principal | Galería |
+|---|---|---|
+| Una subida nueva | **reemplaza** la anterior | **suma** a las que hay |
+| Limpieza del bucket al confirmar | el prefijo `principal-` entero | ninguna |
+| Cómo se borra un objeto | por prefijo | por la key exacta |
+
+Borrar por prefijo en la galería se llevaría las hermanas. Pasar la key entera como prefijo
+funcionaría hoy por la forma de las keys, y esa es la clase de casualidad que deja de ser cierta sin
+que nadie se entere: por eso el puerto tiene un `eliminar(objectKey)` que dice lo que hace.
+
+El precio de no limpiar al agregar es que una subida firmada y no confirmada deja un objeto sin
+reclamar. Se acepta a sabiendas, y por eso el tope se comprueba **antes de firmar** y no solo al
+agregar: para no invitar a subir lo que no va a caber. Todo en `ADR-0052`, con las cuatro
+alternativas descartadas.
+
+### Tres cosas que solo aparecieron al construirlo
+
+- **`objectKeyDe` tiene que poder devolver vacío.** El camino de vuelta de `urlPublica` hace falta
+  para borrar una imagen de galería, que es lo único que se elimina conociendo solo la URL. Y el
+  catálogo sembrado de `local` y `dev` trae imágenes de **picsum.photos**: quitar una de esas tiene
+  que sacar la fila y no intentar borrar nada, no reventar.
+- **Un borrado derivado de Spring Data no trae transacción propia**, a diferencia de `save`. Eso no
+  se ve en verde —la clase de Testcontainers es `@Transactional` entera, así que siempre hay una
+  abierta— y se cae en `bootRun` con `TransactionRequiredException`. Ya había precedente exacto en
+  `RepositorioSetsRotacionJpa.eliminar`, y se copió de ahí.
+- **Las etiquetas del formulario no se pueden llamar igual que las de la principal.** Dicho así
+  suena a redacción; es lo que hizo fallar cuatro pruebas existentes, que buscan el campo por su
+  etiqueta accesible. Dos campos con el mismo nombre accesible en la misma pantalla no son un
+  problema de las pruebas: son un problema de quien usa un lector de pantalla.
+
+### Lo que quedó cargado
+
+`--galeria-todos` rellenó lo que las cargas anteriores dejaron a medias: **catorce imágenes en seis
+galerías** de los trece productos del día anterior. Los otros siete llegaron con una sola foto de
+Icecat, así que no hay nada que rellenar y el cargador lo dice.
+
+**Un producto que ya tiene galería no se toca**, y esa es toda la idempotencia que hace falta.
+Comparar foto por foto pediría el hash de cada imagen ya subida, que la API no devuelve —y no
+debería: sirve para una cosa, y esa cosa la decide el servidor rechazando duplicados—; intentarlo y
+dejar que responda 409 costaría subir el archivo al bucket para descubrir que sobra. Comprobado
+corriéndolo dos veces: la segunda sube cero.
+
+### Y la revisión, que con todo en verde encontró ocho defectos
+
+Las 1695 pruebas del backend, las 903 del frontend, `capas`, `marcadores`, `contrastes` y los dos
+builds estaban en verde, y el recorrido del navegador hecho. Los dos revisores encontraron esto:
+
+**El que de verdad importaba**: la guarda de `AgregarImagenDeGaleria` miraba solo
+`productos/{id}/`, copiada de la imagen principal, así que **se podía confirmar la key de la
+principal como imagen de galería** — y el siguiente reemplazo de la principal, que limpia ese
+prefijo entero, borraba el objeto que la galería estaba sirviendo. Una foto rota en una ficha
+publicada, causada por el sistema, sin un solo error en el log. Es la regla dura #7, y el camino por
+el que se coló es instructivo: copiar una guarda que era correcta a un sitio donde la premisa había
+cambiado.
+
+**El más vergonzoso**: el panel numeraba las imágenes con `imagen.orden + 1`. El ADR que escribí
+horas antes dice, con esas palabras, que quitar deja huecos y que *"la ficha ordena y no cuenta"* —
+y la pantalla contaba. Tras quitar la del medio de tres, ofrecía "imagen 1" e "imagen 3" sobre dos
+fotos, y eso es el nombre accesible del único control que las distingue. Escribir la regla no impide
+saltársela doce archivos más allá.
+
+Los otros seis, en corto: el mismo objeto podía entrar dos veces con hashes distintos (el hash lo
+manda el cliente) y romper el borrado de su hermana; el `alt` de las miniaturas estaba cableado a
+español **con la clave traducida ya escrita y sin usar**; el nombre accesible del botón era la
+pregunta de confirmación; el error de quitar se pintaba dentro del formulario de agregar; el foco
+caía a `<body>` al confirmar y al cancelar; y `objetoBorrado` se calculaba, se documentaba y no lo
+leía nadie — el día que el bucket pase detrás de un CDN, ninguna URL vieja se reconocería y cada
+borrado se saldría en silencio sin borrar nada.
+
+**Dos correcciones de diseño, no de código**: el `DELETE` abría un `TransactionTemplate` que era
+redundante —el adaptador ya es `@Transactional`— y que además metía la llamada a Cloud Storage
+dentro de la transacción, con lo que el orden que el caso de uso promete por escrito dejaba de estar
+garantizado. Y con la galería llena se apagaban dos controles sin decir por qué; un `input`
+deshabilitado no es enfocable, así que para quien navega con teclado el formulario simplemente no
+existía.
+
+### Lo que queda abierto, y nace aquí
+
+- **No se puede reordenar la galería.** Las cuatro tomas del estudio vienen numeradas y se suben en
+  ese orden, así que el caso no aprieta todavía. Hacerlo bien pide un índice único sobre
+  `(producto_id, orden)` que un intercambio viola a mitad de sentencia.
+- **Nadie limpia los objetos huérfanos** que deja una subida firmada y no confirmada. Si algún día
+  pesa, va como regla de ciclo de vida del bucket sobre el prefijo `galeria-` por antigüedad, no
+  como código que borra.
+- ~~**El kit de marca no se regenera igual que como está commiteado.**~~ **Arreglado el mismo día**,
+  en una rama aparte para no esconder un problema dentro de otro — ver la entrada de abajo. El
+  token de miniatura se llevó regenerando a un directorio aparte y copiando solo `tokens.css`,
+  que era lo único seguro mientras el generador estuviera roto.
+- **Siete de los trece siguen con una sola foto**, y no es un problema de esta puerta: es que Icecat
+  no trae más material para ellos. Lo desbloquea el trámite de fotos al proveedor, **mandado el 21
+  de septiembre** después de dos días redactado — y cuando lleguen, `--galeria SKU` es lo que las
+  sube sin volver a tocar nada.
+
+## El kit no se regeneraba igual que como estaba guardado (2026-09-21)
+
+Salió de añadir un token de miniatura para la galería, que es como salen casi todos: nadie lo
+estaba buscando. El comando que documentaba el propio `LEEME.md` del kit dejaba el repositorio
+**peor** que antes de ejecutarlo, y ninguna prueba lo miraba porque el kit no tiene ninguna.
+
+### Tres defectos, no uno
+
+1. **El generador conservaba las tipografías y no los logos.** En `kit_ui.py` hay una guarda con un
+   comentario que explica el problema con todas sus letras: *"quien recibe el kit cambia un color,
+   regenera, y el CSS vuelve a apuntar a Google Fonts en silencio: pierde el autoalojado teniendo
+   los `.woff2` delante"*. Es exactamente lo que le pasaba al logo — `traer_logo` devuelve `None`
+   sin `--logo` aunque `logo/logo-horizontal.svg` esté ahí al lado—, y para el logo esa guarda no
+   existía. La guía visual sustituía el logo por el nombre de la marca en texto.
+2. **El `LEEME` generado recomendaba la bandera destructiva justo cuando lo era.** La línea que lo
+   escribía era `"--out . " + ("--fuentes" if fuentes_ok else "")`: te decía que pasaras `--fuentes`
+   **porque** las tipografías ya estaban autoalojadas, que es precisamente cuando volver a
+   descargarlas las estropea.
+3. **`fuentes.py` escribía `format('woff2')` a mano para todas las caras**, y la conversión puede
+   fallar y dejar el TTF. El resultado era un `.ttf` declarado como woff2 — que el navegador carga
+   igual, adivinando por los bytes, así que nada se rompe a la vista y nadie se entera.
+
+### Y el que explica por qué no saltó nada
+
+`hay_brotli()` comprobaba **brotli**, y la conversión necesita las dos cosas: `fontTools` para
+comprimir y para leer el rango de pesos de una variable, y brotli para el algoritmo. En esta
+máquina brotli está y fontTools no, así que la comprobación daba verde, `procesar` fallaba cara por
+cara con `ModuleNotFoundError`, y el kit se llenaba de TTF con `font-weight: 400` donde antes había
+`100 900`.
+
+**La primera versión de la guarda estaba en el sitio equivocado**, y conviene anotarlo: la puse en
+`main()` de `fuentes.py`, que es donde parece que va — pero `kit_ui.py --fuentes` **no pasa por
+`main()`**: importa el módulo y llama a `procesar()` directo. O sea que protegía todo menos el
+único camino que había roto algo. Se movió a una función que usan los dos.
+
+### Lo que ahora se comprueba y antes no
+
+- **Regenerar dos veces seguidas no produce ningún diff.** Es la propiedad que le faltaba a este
+  generador y la única que de verdad lo vigila.
+- **Con `--fuentes` y sin ella se obtiene lo mismo**, porque con las tipografías ya dentro la
+  bandera se niega en vez de hacer daño, y dice qué instalar.
+
+El regenerado corrigió de paso dos cosas que llevaban tiempo viejas en los archivos guardados: el
+verde de éxito del `contraste.md` —`tokens.json` ya decía otro— y el NIT del `index.html`, con el
+dígito de verificación que la Fase 6 arregló en todos los demás sitios. No eran decisiones: eran
+artefactos que nadie había vuelto a generar.
+
+### Lo que queda abierto
+
+- **`hay_brotli()` instala brotli con `pip` por su cuenta** si no lo encuentra, sin preguntar. Viene
+  de la skill que generó el kit, no se tocó aquí, y choca con "no agregues dependencias sin
+  preguntar" del `CLAUDE.md`. Si alguien regenera en una máquina limpia, se va a encontrar con eso.
+- **El kit no tiene ninguna prueba.** Las dos comprobaciones de arriba se hicieron a mano; no hay
+  nada que las repita sola. Es un candidato claro para `npm run verificar`, y no se metió aquí
+  porque el arreglo ya era de tres archivos.
 
 ## Cómo conversar con Claude Code en este proyecto
 

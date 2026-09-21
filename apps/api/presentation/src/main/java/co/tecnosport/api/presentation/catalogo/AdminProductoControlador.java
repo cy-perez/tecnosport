@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
@@ -8,21 +10,31 @@ import co.tecnosport.api.application.catalogo.CrearProductoComando;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EditarProductoComando;
+import co.tecnosport.api.application.catalogo.ImagenDeGaleriaQuitada;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleriaComando;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.ImagenDeGaleriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
 import java.util.Objects;
@@ -60,6 +72,9 @@ public class AdminProductoControlador {
   private final EditarProducto editarProducto;
   private final SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal;
   private final ConfirmarImagenPrincipal confirmarImagenPrincipal;
+  private final SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria;
+  private final AgregarImagenDeGaleria agregarImagenDeGaleria;
+  private final QuitarImagenDeGaleria quitarImagenDeGaleria;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
@@ -71,6 +86,9 @@ public class AdminProductoControlador {
       EditarProducto editarProducto,
       SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal,
       ConfirmarImagenPrincipal confirmarImagenPrincipal,
+      SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria,
+      AgregarImagenDeGaleria agregarImagenDeGaleria,
+      QuitarImagenDeGaleria quitarImagenDeGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
       MapeadorRespuestasProductoAdmin mapeador) {
@@ -81,6 +99,10 @@ public class AdminProductoControlador {
     this.solicitarSubidaDeImagenPrincipal =
         Objects.requireNonNull(solicitarSubidaDeImagenPrincipal);
     this.confirmarImagenPrincipal = Objects.requireNonNull(confirmarImagenPrincipal);
+    this.solicitarSubidaDeImagenDeGaleria =
+        Objects.requireNonNull(solicitarSubidaDeImagenDeGaleria);
+    this.agregarImagenDeGaleria = Objects.requireNonNull(agregarImagenDeGaleria);
+    this.quitarImagenDeGaleria = Objects.requireNonNull(quitarImagenDeGaleria);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
@@ -106,8 +128,8 @@ public class AdminProductoControlador {
   }
 
   @GetMapping("/{id}")
-  public ProductoAdminRespuesta ver(@PathVariable("id") UUID id) {
-    return mapeador.aRespuesta(verProductoAdmin.ejecutar(id));
+  public ProductoAdminDetalleRespuesta ver(@PathVariable("id") UUID id) {
+    return mapeador.aDetalle(verProductoAdmin.ejecutar(id));
   }
 
   @PatchMapping("/{id}")
@@ -185,5 +207,74 @@ public class AdminProductoControlador {
           confirmacion.objetosAnterioresBorrados());
     }
     return mapeador.aRespuesta(confirmacion.imagen());
+  }
+
+  @PostMapping("/{id}/galeria/url-subida")
+  @ResponseStatus(HttpStatus.CREATED)
+  public UrlSubidaRespuesta solicitarUrlDeSubidaDeGaleria(
+      @PathVariable("id") UUID id, @RequestBody SolicitarSubidaDeImagenDeGaleriaPeticion cuerpo) {
+    SolicitudDeSubida solicitud =
+        solicitarSubidaDeImagenDeGaleria.ejecutar(
+            new SolicitarSubidaDeImagenDeGaleriaComando(id, cuerpo.contentType()));
+    return new UrlSubidaRespuesta(solicitud.url(), solicitud.objectKey());
+  }
+
+  /**
+   * {@code 201} y no {@code 200} como la principal: allá se reemplaza algo que ya existía, aquí
+   * nace una imagen nueva que antes no estaba.
+   */
+  @PostMapping("/{id}/galeria")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ImagenDeGaleriaRespuesta agregarImagenDeGaleria(
+      @PathVariable("id") UUID id, @RequestBody AgregarImagenDeGaleriaPeticion cuerpo) {
+    ImagenProducto imagen =
+        agregarImagenDeGaleria.ejecutar(
+            new AgregarImagenDeGaleriaComando(
+                id,
+                cuerpo.objectKey(),
+                cuerpo.ancho(),
+                cuerpo.alto(),
+                cuerpo.hash(),
+                cuerpo.altEs(),
+                cuerpo.altEn()));
+    log.info("Producto {}: imagen agregada a la galería en el orden {}.", id, imagen.orden());
+    return mapeador.aRespuestaDeGaleria(imagen);
+  }
+
+  /**
+   * {@code 204} y no la galería que queda: el panel vuelve a pedir el producto igual, y devolver
+   * una lista aquí invitaría a creerle a esta respuesta en vez de a la consulta.
+   *
+   * <p><b>Sin {@code TransactionTemplate}, y eso es una corrección.</b> Lo tuvo, con el argumento
+   * de que un borrado derivado de Spring Data no trae transacción propia — cierto, pero la trae
+   * {@code RepositorioProductosJpa.eliminarImagenDeGaleria}, que es donde toca. Envolver el caso de
+   * uso entero metía además la llamada a Cloud Storage dentro de la transacción, y con eso el orden
+   * que el caso de uso promete —primero la fila, después el objeto— dejaba de estar garantizado: el
+   * objeto se borraba antes del commit.
+   */
+  @DeleteMapping("/{id}/galeria/{imagenId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void quitarImagenDeGaleria(
+      @PathVariable("id") UUID id, @PathVariable("imagenId") UUID imagenId) {
+    ImagenDeGaleriaQuitada quitada =
+        quitarImagenDeGaleria.ejecutar(new QuitarImagenDeGaleriaComando(id, imagenId));
+    if (quitada.limpiezaFallida()) {
+      log.error(
+          "Producto {}: la imagen {} salió de la galería, pero no se pudo borrar su objeto del"
+              + " bucket. Queda un archivo sin reclamar.",
+          id,
+          imagenId);
+    } else if (!quitada.objetoBorrado()) {
+      // No es un error, pero tampoco es rutina, y el día que deje de ser inofensivo hará falta esta
+      // línea: si cambia la URL pública del bucket —por ponerlo detrás de un CDN, por ejemplo—,
+      // ninguna URL vieja se reconocería y cada borrado se saldría por aquí sin borrar nada.
+      log.warn(
+          "Producto {}: la imagen {} salió de la galería sin borrar ningún objeto. O su URL no es"
+              + " de este almacén, o el objeto ya no estaba.",
+          id,
+          imagenId);
+    } else {
+      log.info("Producto {}: imagen {} retirada de la galería, con su objeto.", id, imagenId);
+    }
   }
 }

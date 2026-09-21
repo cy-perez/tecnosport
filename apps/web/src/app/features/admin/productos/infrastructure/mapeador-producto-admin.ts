@@ -3,6 +3,7 @@ import {
   CategoriaAdmin,
   EstadoProducto,
   ImagenAdmin,
+  ImagenDeGaleriaAdmin,
   ExistenciaAjustada,
   ExistenciaDeVariante,
   ExistenciasDelCatalogo,
@@ -11,6 +12,7 @@ import {
   MedidasDelCatalogo,
   MarcaAdmin,
   ProductoAdmin,
+  ProductoAdminDetalle,
   ProductosPaginadosAdmin,
   VarianteMedida,
   VarianteSinMedir,
@@ -21,6 +23,8 @@ type ProductosPaginadosDto = components['schemas']['ProductosAdminPaginadosRespu
 type MarcaDto = components['schemas']['MarcaRespuesta'];
 type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
+type ProductoDetalleDto = components['schemas']['ProductoAdminDetalleRespuesta'];
+type ImagenDeGaleriaDto = components['schemas']['ImagenDeGaleriaRespuesta'];
 type SinMedirDto = components['schemas']['VariantesSinMedirRespuesta'];
 type VarianteSinMedirDto = components['schemas']['VarianteSinMedirRespuesta'];
 type MedidasDto = components['schemas']['MedidasRespuesta'];
@@ -47,6 +51,26 @@ export function aProductoAdmin(dto: ProductoDto): ProductoAdmin {
     categoria: aCategoria(dto.categoria),
     imagenPrincipalUrl: dto.imagenPrincipalUrl ?? null,
     totalVariantes: dto.totalVariantes ?? 0,
+  };
+}
+
+export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDetalle {
+  return {
+    ...aProductoAdmin(dto),
+    galeria: (dto.galeria ?? []).map(aImagenDeGaleriaAdmin),
+  };
+}
+
+export function aImagenDeGaleriaAdmin(dto: ImagenDeGaleriaDto): ImagenDeGaleriaAdmin {
+  return {
+    id: dto.id ?? '',
+    url: dto.url ?? '',
+    urlWebp: dto.urlWebp ?? '',
+    ancho: dto.ancho ?? 0,
+    alto: dto.alto ?? 0,
+    orden: dto.orden ?? 0,
+    altEs: dto.altEs ?? '',
+    altEn: dto.altEn ?? '',
   };
 }
 

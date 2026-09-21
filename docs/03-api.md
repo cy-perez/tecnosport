@@ -342,7 +342,7 @@ POST /api/v1/admin/marcas                                    crea una marca; 409
 GET /api/v1/admin/categorias                                 todas, incluidas las que no tienen productos
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
-GET/PATCH /api/v1/admin/productos/{id}                       detalle y edición de nombre/descripción/marca/categoría
+GET/PATCH /api/v1/admin/productos/{id}                       detalle —con la galería— y edición de nombre/descripción/marca/categoría
 POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 DELETE /api/v1/admin/productos/{id}/publicacion              PUBLICADO -> BORRADOR: lo saca de la vitrina sin tocar los pedidos
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
@@ -353,6 +353,9 @@ GET /api/v1/admin/variantes/existencias                      las activas con lo 
 PATCH /api/v1/admin/variantes/{id}/existencia                registra un conteo físico como movimiento de AJUSTE; 422 sin motivo
 POST /api/v1/admin/productos/{id}/imagen-principal/url-subida  pide una URL firmada V4 de subida a Cloud Storage
 POST /api/v1/admin/productos/{id}/imagen-principal            confirma la subida, reemplaza la principal y borra la anterior del bucket
+POST /api/v1/admin/productos/{id}/galeria/url-subida         igual que la principal, con su propio prefijo: la limpieza de una no toca a la otra
+POST /api/v1/admin/productos/{id}/galeria                    confirma y suma a la galería; 409 si la foto ya está o si no caben más (adr/0052)
+DELETE /api/v1/admin/productos/{id}/galeria/{imagenId}       la saca de la ficha y borra su objeto; 204, y 404 si no era de ese producto
 GET /api/v1/admin/pedidos                                   paginado; ?estado= filtra y ordena por más antiguo primero
 POST /api/v1/admin/pedidos/{id}/verificar-contraentrega     contacto por WhatsApp o llamada
 POST /api/v1/admin/pedidos/{id}/emitir-guia                 le pide las guías a Skydropx; 202, no despacha todavía

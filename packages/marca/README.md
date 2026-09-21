@@ -19,11 +19,19 @@ tipografia.md  Familias, pesos, licencia e instalación.
 ## Regenerar
 
 ```
-python generador/kit_ui.py tokens.json --out . --fuentes
+python generador/kit_ui.py tokens.json --out .
 ```
 
 Los estados (hover, presionado, foco, texto sobre cada fondo), el modo oscuro y
-el informe de contraste se recalculan solos.
+el informe de contraste se recalculan solos. **Las tipografías y los logos que
+ya están dentro del kit se conservan**, así que no hay que volver a pasarlos.
+
+**Sin `--fuentes`, y no es un olvido.** Esa bandera vuelve a descargar las
+tipografías de `google/fonts`, y solo hace falta al montar el kit por primera vez
+o al cambiar de familia. Pedirla con las fuentes ya puestas rehace trabajo hecho,
+y sin `fonttools` y `brotli` instalados dejaba el kit **peor** que antes: `.ttf`
+en vez de `.woff2`, declarados como woff2 y sin el rango de pesos de las
+variables. Desde el 21 de septiembre de 2026 se niega en vez de hacerlo.
 
 **No se editan `tokens.css` ni `fuentes.css` a mano.** El siguiente regenerado
 borra el cambio. Si falta un valor, se agrega a `tokens.json` con nombre.

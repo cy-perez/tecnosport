@@ -322,6 +322,8 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         L.append("  --ancho-min-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("controles_px") or {}).items():
         L.append("  --control-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("imagenes_px") or {}).items():
+        L.append("  --imagen-{}: {}px;".format(k.replace("_", "-"), v))
     mov = extra.get("movimiento") or {}
     for k, v in (mov.get("duracion_ms") or {}).items():
         L.append("  --mov-{}: {}ms;".format(k.replace("_", "-"), v))
@@ -644,6 +646,7 @@ def main():
              "hero_px": t.get("hero_px") or {},
              "anchos_min_px": t.get("anchos_min_px") or {},
              "controles_px": t.get("controles_px") or {},
+             "imagenes_px": t.get("imagenes_px") or {},
              "movimiento": t.get("movimiento") or {},
              "mono": bool((t.get("tipografia") or {}).get("mono"))}
     extra["chaflan_px"] = {k: v for k, v in extra["chaflan_px"].items()
@@ -682,18 +685,24 @@ def main():
         try:
             sys.path.insert(0, str(aqui))
             import fuentes as MF
+            # Antes de descargar nada: --fuentes con las tipografias ya puestas y sin
+            # brotli deja el kit peor que estaba, y eso no se ve hasta abrir la web.
+            motivo = MF.por_que_empeoraria(out / "fuentes", MF.puede_woff2())
+            if motivo:
+                raise RuntimeError("\n" + motivo)
             caras = []
             for rol in ("display", "texto", "mono"):
                 if rol in tipo and tipo[rol].get("origen", "google") == "google":
                     print("Descargando {}...".format(tipo[rol]["familia"]))
                     caras += MF.procesar(tipo[rol]["familia"], tipo[rol]["pesos"],
-                                         out / "fuentes", MF.hay_brotli())
+                                         out / "fuentes", MF.puede_woff2())
             if caras:
                 (out / "fuentes.css").write_text(MF.css_fuentes(caras), encoding="utf-8")
                 fuentes_ok = True
         except Exception as e:
-            print("  AVISO: no se pudieron autoalojar las fuentes ({}).".format(type(e).__name__))
-            print("         El kit queda enlazando a Google Fonts.")
+            print("  AVISO: no se autoalojaron las fuentes ({}).{}".format(
+                type(e).__name__, e if isinstance(e, RuntimeError) else ""))
+            print("         Se conserva lo que el kit ya tenia dentro.")
 
     # Si el kit ya trae las tipografias dentro, se siguen usando aunque se
     # regenere sin --fuentes. Sin esto, quien recibe el kit cambia un color,
@@ -715,10 +724,32 @@ def main():
         copiar(ruta, destino)
         return "logo/" + destino.name
 
-    logo_rel = traer_logo(args.logo)
-    logo_neg_rel = traer_logo(args.logo_negativo)
-    isotipo_rel = traer_logo(args.isotipo)
-    isotipo_neg_rel = traer_logo(args.isotipo_negativo)
+    def conservar_logo(*nombres):
+        """El logo que el kit ya tiene, cuando no se pasa por la linea de comandos.
+
+        Gemela de la guarda de las tipografias de arriba, y por la misma razon
+        exacta: quien recibe el kit cambia un color, regenera, y la guia visual
+        pierde el logo y lo sustituye por el nombre de la marca en texto. Se
+        comprobo el 21 de septiembre de 2026 regenerando para anadir un token.
+
+        Los nombres son los que escribe el kit de identidad (skill
+        diseno-de-marca), que es de donde salen estos archivos: `traer_logo`
+        copia conservando el nombre del origen.
+        """
+        for nombre in nombres:
+            if (out / "logo" / nombre).exists():
+                return "logo/" + nombre
+        return None
+
+    logo_rel = traer_logo(args.logo) or conservar_logo(
+        "logo-horizontal.svg", "logo-principal.svg")
+    logo_neg_rel = traer_logo(args.logo_negativo) or conservar_logo(
+        "logo-mono-negativo.svg")
+    isotipo_rel = traer_logo(args.isotipo) or conservar_logo("isotipo.svg")
+    isotipo_neg_rel = traer_logo(args.isotipo_negativo) or conservar_logo(
+        "isotipo-negativo.svg")
+    if logo_rel and not args.logo:
+        print("  Logos ya dentro del kit: se conservan.")
 
     (out / "index.html").write_text(
         html(d, tip, marca, logo_rel, inf, tipo, fuentes_ok, logo_neg_rel,
@@ -745,11 +776,17 @@ def main():
         "1. Edita `tokens.json` — por ejemplo el color primario o un tamano de texto.",
         "2. Vuelve a generar:", "",
         "```bash",
-        "python3 generador/kit_ui.py tokens.json --out . " + ("--fuentes" if fuentes_ok else ""),
+        "python3 generador/kit_ui.py tokens.json --out .",
         "```", "",
         "Los estados (hover, pressed, foco, texto sobre cada fondo) y el modo oscuro",
         "se recalculan solos, y el informe de contraste se rehace. Por eso no se",
-        "editan a mano: el proximo regenerado borraria el cambio.", "",
+        "editan a mano: el proximo regenerado borraria el cambio.", ""] + ([
+        "**Sin `--fuentes`, y no es un olvido.** Las tipografias y los logos que ya",
+        "estan dentro del kit se conservan solos. `--fuentes` vuelve a descargarlas",
+        "de google/fonts, y eso solo hace falta al montar el kit por primera vez o",
+        "al cambiar de tipografia: pedirlo con las fuentes ya puestas es rehacer",
+        "trabajo hecho, y sin `fonttools` y `brotli` instalados deja el kit peor",
+        "que antes (por eso ahora se niega).", ""] if fuentes_ok else []) + [
         "## Como se enlaza en el sitio", "",
         "```html"]
     if fuentes_ok:

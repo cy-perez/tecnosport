@@ -15,6 +15,13 @@ public interface ImagenProductoJpaRepository extends JpaRepository<ImagenProduct
   Optional<ImagenProductoJpaEntity> findByProductoIdAndTipoAndVarianteIdIsNull(
       UUID productoId, String tipo);
 
+  /**
+   * Por id <b>y</b> producto: un id de imagen suelto no puede borrar la foto de otro producto, ni
+   * aunque el caso de uso se equivoque. Devuelve cuántas filas borró, que es lo que permite
+   * distinguir "no era de este producto" de "ya no estaba".
+   */
+  int deleteByIdAndProductoId(UUID id, UUID productoId);
+
   List<ImagenProductoJpaEntity> findBySetRotacionId(UUID setRotacionId);
 
   void deleteBySetRotacionId(UUID setRotacionId);

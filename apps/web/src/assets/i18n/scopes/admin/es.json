@@ -16,7 +16,10 @@
     "guia_no_encontrada": "No existe ninguna guía con ese número.",
     "emision_no_encontrada": "Esa emisión ya no está.",
     "acuse_no_aplicable": "Eso no está pidiendo revisión.",
-    "producto_sin_imagen_principal": "Este producto no tiene imagen principal, y sin ella no se puede publicar."
+    "producto_sin_imagen_principal": "Este producto no tiene imagen principal, y sin ella no se puede publicar.",
+    "galeria_llena": "La galería ya está llena. Quita una imagen antes de agregar otra.",
+    "imagen_de_galeria_duplicada": "Esa misma imagen ya está en la galería.",
+    "imagen_de_galeria_no_encontrada": "Esa imagen ya no está en la galería."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -206,6 +209,30 @@
         "subiendo": "Subiendo…",
         "tipoNoSoportado": "Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.",
         "error": "No se pudo subir la imagen. Intenta de nuevo."
+      },
+      "galeria": {
+        "titulo": "Galería",
+        "ayuda": "Hasta {{tope}} imágenes, además de la principal. Salen en la ficha en el orden en que se suben.",
+        "vacia": "Este producto no tiene imágenes de galería. La ficha enseña solo la principal.",
+        "imagen": "Imagen {{posicion}} de la galería",
+        "archivo": "Agrega una imagen (JPEG, PNG o WebP)",
+        "altEs": "Texto alternativo de la galería (español)",
+        "altEn": "Texto alternativo de la galería (inglés)",
+        "previsualizacion": "Vista previa de la imagen por agregar",
+        "agregar": "Agregar a la galería",
+        "agregando": "Agregando…",
+        "quitar": "Quitar",
+        "confirmarQuitar": "¿Quitar la imagen {{posicion}} de la galería?",
+        "loQueImplicaQuitar": "Sale de la ficha y su archivo se borra. No tiene vuelta: para recuperarla hay que volver a subirla.",
+        "confirmarQuitarAccion": "Sí, quitar",
+        "cancelar": "Cancelar",
+        "quitada": "La imagen salió de la galería.",
+        "tipoNoSoportado": "Ese tipo de archivo no está soportado para la galería. Usa JPEG, PNG o WebP.",
+        "error": "No se pudo agregar la imagen. Intenta de nuevo.",
+        "errorQuitar": "No se pudo quitar la imagen. Intenta de nuevo.",
+        "quitarImagen": "Quitar la imagen {{posicion}} de la galería",
+        "quitando": "Quitando…",
+        "agregada": "La imagen se agregó a la galería."
       }
     },
     "agregarVariante": {

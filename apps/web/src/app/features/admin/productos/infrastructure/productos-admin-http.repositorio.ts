@@ -10,6 +10,7 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  ImagenDeGaleriaAdmin,
   AjustarExistenciaAdmin,
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
@@ -17,18 +18,23 @@ import {
   MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
+  ProductoAdminDetalle,
   ProductosPaginadosAdmin,
+  QuitarImagenDeGaleriaAdmin,
+  SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
 } from '../domain/producto-admin.model';
 import { RepositorioProductosAdmin } from '../domain/repositorio-productos-admin.puerto';
 import {
   aImagenAdmin,
+  aImagenDeGaleriaAdmin,
   aExistenciaAjustada,
   aExistenciasDelCatalogo,
   aInventarioSinMedir,
   aMedidasDelCatalogo,
   aProductoAdmin,
+  aProductoAdminDetalle,
   aProductosPaginadosAdmin,
   aVarianteMedida,
 } from './mapeador-producto-admin';
@@ -58,11 +64,11 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     return aProductoAdmin(desempaquetar(respuesta, 'no se pudo crear el producto'));
   }
 
-  async obtener(id: string): Promise<ProductoAdmin> {
+  async obtener(id: string): Promise<ProductoAdminDetalle> {
     const respuesta = await this.cliente.GET('/api/v1/admin/productos/{id}', {
       params: { path: { id } },
     });
-    return aProductoAdmin(desempaquetar(respuesta, 'no se pudo cargar el producto'));
+    return aProductoAdminDetalle(desempaquetar(respuesta, 'no se pudo cargar el producto'));
   }
 
   async editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin> {
@@ -191,5 +197,50 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     });
     return aImagenAdmin(desempaquetar(respuesta, 'no se pudo confirmar la imagen principal'));
+  }
+
+  async subirImagenDeGaleria(comando: SubirImagenDeGaleriaAdmin): Promise<ImagenDeGaleriaAdmin> {
+    const respuestaSolicitud = await this.cliente.POST(
+      '/api/v1/admin/productos/{id}/galeria/url-subida',
+      {
+        params: { path: { id: comando.productoId } },
+        body: { contentType: comando.archivo.type },
+      },
+    );
+    const solicitud = desempaquetar(respuestaSolicitud, 'no se pudo solicitar la URL de subida');
+    if (!solicitud.url || !solicitud.objectKey) {
+      throw new ErrorHttp(respuestaSolicitud.response.status, 'la URL de subida llegó incompleta');
+    }
+
+    const respuestaSubida = await fetch(solicitud.url, {
+      method: 'PUT',
+      headers: { 'Content-Type': comando.archivo.type },
+      body: comando.archivo,
+    });
+    if (!respuestaSubida.ok) {
+      throw new Error('No se pudo subir la imagen a Cloud Storage.');
+    }
+
+    const respuesta = await this.cliente.POST('/api/v1/admin/productos/{id}/galeria', {
+      params: { path: { id: comando.productoId } },
+      body: {
+        objectKey: solicitud.objectKey,
+        ancho: comando.ancho,
+        alto: comando.alto,
+        hash: await sha256Hex(comando.archivo),
+        altEs: comando.altEs,
+        altEn: comando.altEn,
+      },
+    });
+    return aImagenDeGaleriaAdmin(
+      desempaquetar(respuesta, 'no se pudo agregar la imagen a la galería'),
+    );
+  }
+
+  async quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/productos/{id}/galeria/{imagenId}', {
+      params: { path: { id: comando.productoId, imagenId: comando.imagenId } },
+    });
+    exigirExito(respuesta, 'no se pudo quitar la imagen de la galería');
   }
 }

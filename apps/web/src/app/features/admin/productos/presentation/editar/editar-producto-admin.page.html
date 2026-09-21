@@ -126,5 +126,171 @@
         {{ 'admin.productos.editar.imagenPrincipal.subir' | transloco }}
       </ts-boton>
     </section>
+
+    <section
+      class="mt-32 flex flex-col gap-16 border-t border-ts-borde pt-24"
+      aria-labelledby="editar-producto-galeria-titulo"
+    >
+      <h2 id="editar-producto-galeria-titulo">
+        {{ 'admin.productos.editar.galeria.titulo' | transloco }}
+      </h2>
+
+      <p class="m-0 text-ts-texto-suave">
+        {{ 'admin.productos.editar.galeria.ayuda' | transloco: { tope: topeDeGaleria } }}
+      </p>
+
+      @if (galeria().length === 0) {
+        <p class="m-0 text-ts-texto-suave">
+          {{ 'admin.productos.editar.galeria.vacia' | transloco }}
+        </p>
+      } @else {
+        <ul class="m-0 flex list-none flex-wrap gap-16 p-0">
+          <!-- `$index`, no `imagen.orden`: el orden del dominio deja huecos a proposito (ADR-0052),
+               asi que tras quitar la del medio diria "imagen 1" e "imagen 3" sobre dos fotos. Lo
+               que la pantalla nombra es la posicion que se ve. -->
+          @for (imagen of galeria(); track imagen.id; let i = $index) {
+            <li #filaDeGaleria class="flex flex-col gap-8" [attr.data-imagen-id]="imagen.id">
+              <img
+                class="size-[var(--imagen-miniatura)] object-cover"
+                [src]="imagen.url"
+                [alt]="'admin.productos.editar.galeria.imagen' | transloco: { posicion: i + 1 }"
+                [width]="imagen.ancho"
+                [height]="imagen.alto"
+              />
+              <!-- El texto alternativo guardado se pinta, no solo se lee: es un dato que se esta
+                   editando, y metido solo en el `alt` unicamente lo oye quien usa lector de
+                   pantalla, que ademas lo oye como si describiera esta miniatura. -->
+              <p class="m-0 max-w-[var(--imagen-miniatura)] text-ts-texto-suave">
+                {{ imagen.altEs }}
+              </p>
+              <ts-boton
+                variante="secundario"
+                tipo="button"
+                [etiquetaAccesible]="
+                  'admin.productos.editar.galeria.quitarImagen' | transloco: { posicion: i + 1 }
+                "
+                [expandido]="confirmandoQuitar() === imagen.id"
+                [controla]="'editar-producto-galeria-confirmar-' + imagen.id"
+                (click)="preguntarSiQuitar(imagen)"
+              >
+                {{ 'admin.productos.editar.galeria.quitar' | transloco }}
+              </ts-boton>
+
+              @if (confirmandoQuitar() === imagen.id) {
+                <div
+                  #cajaConfirmacion
+                  class="flex flex-col gap-16 border border-ts-borde p-16"
+                  role="group"
+                  tabindex="-1"
+                  [id]="'editar-producto-galeria-confirmar-' + imagen.id"
+                  [attr.aria-labelledby]="'editar-producto-galeria-pregunta-' + imagen.id"
+                  [attr.aria-describedby]="'editar-producto-galeria-implica-' + imagen.id"
+                  (keydown.escape)="cancelarQuitar()"
+                >
+                  <p class="m-0" [id]="'editar-producto-galeria-pregunta-' + imagen.id">
+                    {{
+                      'admin.productos.editar.galeria.confirmarQuitar'
+                        | transloco: { posicion: i + 1 }
+                    }}
+                  </p>
+                  <!-- Borra el archivo, no solo la fila. Va en el `aria-describedby` del grupo para
+                       que se oiga al entrar: suelto quedaba fuera de todo, y se podia confirmar sin
+                       haberlo encontrado nunca. -->
+                  <p
+                    class="m-0 text-ts-texto-suave"
+                    [id]="'editar-producto-galeria-implica-' + imagen.id"
+                  >
+                    {{ 'admin.productos.editar.galeria.loQueImplicaQuitar' | transloco }}
+                  </p>
+
+                  @if (errorQuitar(); as mensaje) {
+                    <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                  }
+
+                  <div class="flex flex-wrap gap-16">
+                    <ts-boton
+                      [cargando]="quitandoDeGaleria()"
+                      [etiquetaCargando]="'admin.productos.editar.galeria.quitando' | transloco"
+                      (click)="quitarDeGaleria(imagen)"
+                    >
+                      {{ 'admin.productos.editar.galeria.confirmarQuitarAccion' | transloco }}
+                    </ts-boton>
+                    <ts-boton variante="secundario" (click)="cancelarQuitar()">
+                      {{ 'admin.productos.editar.galeria.cancelar' | transloco }}
+                    </ts-boton>
+                  </div>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+      <!-- La region vive siempre y lo que cambia es su contenido: montarla ya llena con un `@if`
+           es justo lo que los lectores de pantalla anuncian mal. Recibe el foco al quitar, porque
+           el boton que se pulso desaparece con su fila. -->
+      <p class="m-0" role="status" tabindex="-1" #avisoGaleria>
+        @if (aviso(); as clave) {
+          {{ clave | transloco }}
+        }
+      </p>
+
+      @if (galeriaLlena()) {
+        <!-- Un input deshabilitado no es enfocable: sin esto, quien navega con teclado o con lector
+             de pantalla no encuentra el formulario y nada le dice por que. -->
+        <p class="m-0 text-ts-texto-suave" role="status">
+          {{ 'admin.errores.galeria_llena' | transloco }}
+        </p>
+      } @else {
+        <div class="flex flex-col gap-16" [formGroup]="formularioGaleria">
+          @if (previsualizacionGaleria(); as previsualizacion) {
+            <img
+              class="size-[var(--ancho-min-vista-previa)] object-cover"
+              [src]="previsualizacion"
+              [alt]="'admin.productos.editar.galeria.previsualizacion' | transloco"
+              width="200"
+              height="200"
+            />
+          }
+
+          <label for="editar-producto-galeria-archivo">
+            {{ 'admin.productos.editar.galeria.archivo' | transloco }}
+          </label>
+          <input
+            id="editar-producto-galeria-archivo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            (change)="onArchivoDeGaleriaSeleccionado($event)"
+          />
+
+          <ts-campo
+            idCampo="editar-producto-galeria-alt-es"
+            [label]="'admin.productos.editar.galeria.altEs' | transloco"
+            formControlName="altEs"
+          />
+
+          <ts-campo
+            idCampo="editar-producto-galeria-alt-en"
+            [label]="'admin.productos.editar.galeria.altEn' | transloco"
+            formControlName="altEn"
+          />
+
+          @if (errorGaleria(); as mensaje) {
+            <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+          }
+
+          <ts-boton
+            variante="secundario"
+            tipo="button"
+            [deshabilitado]="!imagenDeGaleriaListaParaSubir()"
+            [cargando]="agregandoAGaleria()"
+            [etiquetaCargando]="'admin.productos.editar.galeria.agregando' | transloco"
+            (click)="agregarAGaleria()"
+          >
+            {{ 'admin.productos.editar.galeria.agregar' | transloco }}
+          </ts-boton>
+        </div>
+      }
+    </section>
   }
 </ts-pagina-formulario>

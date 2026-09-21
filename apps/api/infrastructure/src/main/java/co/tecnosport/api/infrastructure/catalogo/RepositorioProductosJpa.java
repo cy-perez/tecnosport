@@ -33,6 +33,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Adaptador del puerto {@link RepositorioProductos}. {@code buscarPorSlug} es un hallazgo simple
@@ -187,6 +188,42 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.altEs(),
             imagen.altEn(),
             Instant.now()));
+  }
+
+  @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    // Sin el borrado previo de guardarImagenPrincipal: aquí no hay fila que reemplazar ni índice
+    // único que respetar. El orden lo trae ya puesto el agregado.
+    imagenProductoJpaRepository.save(
+        new ImagenProductoJpaEntity(
+            imagen.id(),
+            productoId,
+            null,
+            null,
+            imagen.tipo().name(),
+            imagen.orden(),
+            imagen.url(),
+            imagen.urlWebp(),
+            imagen.ancho(),
+            imagen.alto(),
+            imagen.bytes(),
+            imagen.hash().valor(),
+            imagen.altEs(),
+            imagen.altEn(),
+            Instant.now()));
+  }
+
+  /**
+   * {@code @Transactional} como {@code RepositorioSetsRotacionJpa.eliminar}: un borrado derivado de
+   * Spring Data no trae transacción propia —a diferencia de {@code save}, que la hereda de {@code
+   * SimpleJpaRepository}—, y sin ella revienta con {@code TransactionRequiredException}. Las
+   * pruebas no lo atrapan: la clase de Testcontainers es {@code @Transactional} entera, así que
+   * siempre hay una abierta. Esto se cae en {@code bootRun}, no en verde.
+   */
+  @Override
+  @Transactional
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    imagenProductoJpaRepository.deleteByIdAndProductoId(imagenId, productoId);
   }
 
   @Override

@@ -174,7 +174,16 @@ y de dónde venía:
 | `--ancho-min-eje` | mínimo de columna de los ejes de categoría | `minmax(200px, 1fr)` |
 | `--ancho-min-tarjeta` | mínimo de columna de las tarjetas | `minmax(220px, 1fr)` |
 | `--ancho-min-vista-previa` | vista previa de imagen en el panel | `width/height: 200px` |
+| `--imagen-miniatura` | miniatura de la galería del panel | `size-[var(--imagen-miniatura)]`, 96px |
 | `--mov-*` y `--curva-*` | duraciones y curvas | literales en `tailwind.css` |
+
+**`--imagen-miniatura` no es un `--ancho-min-*` pequeño**, y por eso vive en su
+propio grupo (`imagenes_px` en el `tokens.json` del kit, 21 de septiembre de
+2026). Un ancho mínimo es el valor por debajo del cual algo deja de ser usable,
+para rejillas que se auto-ajustan; una miniatura es un tamaño **fijo**, y lo que
+decide su valor es cuántas caben en una fila. Confundir las dos cosas fue dejar
+ocho imágenes de 200 px apiladas en una columna de formulario: a 96 px entran
+tres por fila en `--ancho-formulario`.
 
 Sobre los `--ancho-min-*` se preguntó explícitamente si eran **un solo valor de
 sistema**, porque tres valores elegidos a ojo en tres pantallas suelen serlo. La

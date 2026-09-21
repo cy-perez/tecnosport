@@ -33,6 +33,9 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   Variante ultimaVarianteAgregada;
   UUID ultimoProductoIdConImagen;
   ImagenProducto ultimaImagenPrincipal;
+  UUID ultimoProductoIdConImagenDeGaleria;
+  final List<ImagenProducto> imagenesDeGaleriaGuardadas = new ArrayList<>();
+  final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
   private List<MedidaDeVariante> sinMedir = List.of();
@@ -120,6 +123,18 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     this.ultimoProductoIdConImagen = productoId;
     this.ultimaImagenPrincipal = imagen;
+  }
+
+  @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    this.imagenesDeGaleriaGuardadas.add(imagen);
+    this.ultimoProductoIdConImagenDeGaleria = productoId;
+  }
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    this.imagenesDeGaleriaEliminadas.add(imagenId);
+    this.ultimoProductoIdConImagenDeGaleria = productoId;
   }
 
   @Override

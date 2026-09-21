@@ -51,6 +51,9 @@ import co.tecnosport.api.application.usuario.CredencialesInvalidasException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoComprometidaException;
 import co.tecnosport.api.application.usuario.SesionDeRefrescoInvalidaException;
 import co.tecnosport.api.domain.carrito.LineaCarritoNoEncontradaException;
+import co.tecnosport.api.domain.catalogo.GaleriaLlenaException;
+import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaDuplicadaException;
+import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.ProductoSinImagenPrincipalException;
 import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
@@ -140,6 +143,25 @@ public class ManejadorDeErrores {
   @ExceptionHandler(ProductoSinImagenPrincipalException.class)
   public ProblemDetail productoSinImagenPrincipal(ProductoSinImagenPrincipalException excepcion) {
     return problema(HttpStatus.CONFLICT, "El producto no tiene imagen principal", excepcion);
+  }
+
+  // 409 por el mismo criterio que el set publicado: la petición está bien formada y el producto
+  // existe; lo que pasa es que ya no cabe otra, y eso se arregla quitando una.
+  @ExceptionHandler(GaleriaLlenaException.class)
+  public ProblemDetail galeriaLlena(GaleriaLlenaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La galería está llena", excepcion);
+  }
+
+  // 409 y no 422: subir dos veces la misma foto no es un cuerpo mal formado, es un conflicto con
+  // lo que ya hay. Y es accionable — dice exactamente qué pasó.
+  @ExceptionHandler(ImagenDeGaleriaDuplicadaException.class)
+  public ProblemDetail imagenDeGaleriaDuplicada(ImagenDeGaleriaDuplicadaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Esa imagen ya está en la galería", excepcion);
+  }
+
+  @ExceptionHandler(ImagenDeGaleriaNoEncontradaException.class)
+  public ProblemDetail imagenDeGaleriaNoEncontrada(ImagenDeGaleriaNoEncontradaException excepcion) {
+    return problema(HttpStatus.NOT_FOUND, "Imagen no encontrada en la galería", excepcion);
   }
 
   @ExceptionHandler(SolicitudRetractoNoEncontradaException.class)

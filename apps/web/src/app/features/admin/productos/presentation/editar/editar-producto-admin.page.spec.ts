@@ -20,10 +20,14 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   ImagenAdmin,
+  ImagenDeGaleriaAdmin,
   InventarioSinMedir,
   MedidasDelCatalogo,
   ProductoAdmin,
+  ProductoAdminDetalle,
   ProductosPaginadosAdmin,
+  QuitarImagenDeGaleriaAdmin,
+  SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
 } from '../../domain/producto-admin.model';
@@ -43,7 +47,7 @@ const OTRA_CATEGORIA: Categoria = {
   linea: 'TECNOLOGIA',
 };
 
-function productoDePrueba(): ProductoAdmin {
+function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {
   return {
     id: 'p1',
     nombre: 'Morral urbano',
@@ -54,6 +58,20 @@ function productoDePrueba(): ProductoAdmin {
     categoria: CATEGORIA,
     imagenPrincipalUrl: null,
     totalVariantes: 0,
+    galeria,
+  };
+}
+
+function imagenDeGaleria(orden: number): ImagenDeGaleriaAdmin {
+  return {
+    id: 'img' + orden,
+    url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/galeria-' + orden + '.jpg',
+    urlWebp: 'https://storage.googleapis.com/tecnosport-dev-imagenes/galeria-' + orden + '.jpg',
+    ancho: 2000,
+    alto: 2000,
+    orden,
+    altEs: 'Vista ' + orden,
+    altEn: 'View ' + orden,
   };
 }
 
@@ -72,9 +90,12 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasEditar: { id: string; comando: EditarProductoAdmin }[] = [];
   llamadasSubirImagen: SubirImagenPrincipalAdmin[] = [];
+  llamadasSubirGaleria: SubirImagenDeGaleriaAdmin[] = [];
+  llamadasQuitarDeGaleria: QuitarImagenDeGaleriaAdmin[] = [];
+  errorAlTocarLaGaleria = false;
 
   constructor(
-    private producto: ProductoAdmin | null = productoDePrueba(),
+    private producto: ProductoAdminDetalle | null = productoDePrueba(),
     private errorAlEditar = false,
     private errorAlSubirImagen = false,
   ) {}
@@ -87,7 +108,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('No usado en estas pruebas.');
   }
 
-  async obtener(): Promise<ProductoAdmin> {
+  async obtener(): Promise<ProductoAdminDetalle> {
     if (!this.producto) {
       throw new Error('no encontrado');
     }
@@ -147,6 +168,31 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   ajustarExistencia(): Promise<ExistenciaAjustada> {
     throw new Error('no usado por esta prueba');
+  }
+
+  async subirImagenDeGaleria(comando: SubirImagenDeGaleriaAdmin): Promise<ImagenDeGaleriaAdmin> {
+    this.llamadasSubirGaleria.push(comando);
+    if (this.errorAlTocarLaGaleria) {
+      throw new Error('falló');
+    }
+    const agregada = imagenDeGaleria(this.producto?.galeria.length ?? 0);
+    if (this.producto) {
+      this.producto = { ...this.producto, galeria: [...this.producto.galeria, agregada] };
+    }
+    return agregada;
+  }
+
+  async quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void> {
+    this.llamadasQuitarDeGaleria.push(comando);
+    if (this.errorAlTocarLaGaleria) {
+      throw new Error('falló');
+    }
+    if (this.producto) {
+      this.producto = {
+        ...this.producto,
+        galeria: this.producto.galeria.filter((imagen) => imagen.id !== comando.imagenId),
+      };
+    }
   }
 }
 
@@ -355,6 +401,230 @@ describe('EditarProductoAdminPage', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
       expect(await screen.findByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeTruthy();
+    });
+  });
+
+  describe('galería', () => {
+    beforeEach(() => {
+      vi.stubGlobal('Image', ImagenDePrueba);
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+      vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    function archivoValido(): File {
+      return new File(['contenido'], 'galeria.jpg', { type: 'image/jpeg' });
+    }
+
+    async function completarYAgregar() {
+      fireEvent.change(screen.getByLabelText('Agrega una imagen (JPEG, PNG o WebP)'), {
+        target: { files: [archivoValido()] },
+      });
+      await screen.findByLabelText('Texto alternativo de la galería (español)');
+      fireEvent.input(screen.getByLabelText('Texto alternativo de la galería (español)'), {
+        target: { value: 'alt es' },
+      });
+      fireEvent.input(screen.getByLabelText('Texto alternativo de la galería (inglés)'), {
+        target: { value: 'alt en' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar a la galería' }));
+    }
+
+    it('sin imágenes, lo dice en vez de enseñar una lista vacía', async () => {
+      await renderPagina(new RepositorioProductosAdminFalso());
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(
+        screen.getByText(
+          'Este producto no tiene imágenes de galería. La ficha enseña solo la principal.',
+        ),
+      ).toBeTruthy();
+    });
+
+    it('enseña las que ya hay, nombradas por su posición y no por su orden guardado', async () => {
+      await renderPagina(
+        new RepositorioProductosAdminFalso(
+          productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+        ),
+      );
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(await screen.findByAltText('Imagen 1 de la galería')).toBeTruthy();
+      expect(screen.getByAltText('Imagen 2 de la galería')).toBeTruthy();
+    });
+
+    // El defecto que esto cierra: `orden` deja huecos a propósito, así que tras quitar la del medio
+    // la pantalla ofrecía "imagen 1" e "imagen 3" sobre dos fotos, y el nombre accesible del único
+    // control que las distingue nombraba una imagen que no existe.
+    it('con un hueco en el orden guardado, las numera por su posición visible', async () => {
+      await renderPagina(
+        new RepositorioProductosAdminFalso(
+          productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(5)]),
+        ),
+      );
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(await screen.findByAltText('Imagen 2 de la galería')).toBeTruthy();
+      expect(screen.queryByAltText('Imagen 6 de la galería')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Quitar la imagen 2 de la galería' })).toBeTruthy();
+    });
+
+    it('pinta el texto alternativo guardado, que es un dato que se está revisando', async () => {
+      await renderPagina(
+        new RepositorioProductosAdminFalso(productoDePrueba([imagenDeGaleria(0)])),
+      );
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(await screen.findByText('Vista 0')).toBeTruthy();
+    });
+
+    it('agrega la imagen con las dimensiones leídas del archivo', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      await completarYAgregar();
+      await vi.waitFor(() => expect(repositorio.llamadasSubirGaleria).toHaveLength(1));
+
+      expect(repositorio.llamadasSubirGaleria).toEqual([
+        {
+          productoId: 'p1',
+          archivo: expect.any(File),
+          ancho: 800,
+          alto: 600,
+          altEs: 'alt es',
+          altEn: 'alt en',
+        },
+      ]);
+    });
+
+    // Lo mismo que pide el botón de publicar: un solo clic no puede borrar un archivo.
+    it('un solo clic en Quitar no quita nada: primero pregunta', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Quitar la imagen 1 de la galería' }),
+      );
+
+      expect(
+        await screen.findByText(
+          'Sale de la ficha y su archivo se borra. No tiene vuelta: para recuperarla hay que volver a subirla.',
+        ),
+      ).toBeTruthy();
+      expect(repositorio.llamadasQuitarDeGaleria).toHaveLength(0);
+    });
+
+    it('al confirmar, la quita', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Quitar la imagen 1 de la galería' }),
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Sí, quitar' }));
+
+      await vi.waitFor(() =>
+        expect(repositorio.llamadasQuitarDeGaleria).toEqual([
+          { productoId: 'p1', imagenId: 'img0' },
+        ]),
+      );
+    });
+
+    it('al cancelar la pregunta, no quita nada', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Quitar la imagen 1 de la galería' }),
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+      await vi.waitFor(() =>
+        expect(
+          screen.queryByText(
+            'Sale de la ficha y su archivo se borra. No tiene vuelta: para recuperarla hay que volver a subirla.',
+          ),
+        ).toBeNull(),
+      );
+      expect(repositorio.llamadasQuitarDeGaleria).toHaveLength(0);
+    });
+
+    it('con la galería llena, no ofrece el formulario de agregar', async () => {
+      const llena = Array.from({ length: 8 }, (_, i) => imagenDeGaleria(i));
+      await renderPagina(new RepositorioProductosAdminFalso(productoDePrueba(llena)));
+      await screen.findByDisplayValue('Morral urbano');
+
+      await vi.waitFor(() =>
+        expect(screen.queryByLabelText('Agrega una imagen (JPEG, PNG o WebP)')).toBeNull(),
+      );
+      expect(screen.queryByRole('button', { name: 'Agregar a la galería' })).toBeNull();
+    });
+
+    it('si quitar falla, el error sale en la fila y no en el formulario de agregar', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0)]),
+      );
+      repositorio.errorAlTocarLaGaleria = true;
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Quitar la imagen 1 de la galería' }),
+      );
+      fireEvent.click(await screen.findByRole('button', { name: 'Sí, quitar' }));
+
+      const mensaje = await screen.findByText('No se pudo quitar la imagen. Intenta de nuevo.');
+      // Dentro del bloque de confirmación, que es la fila que falló.
+      expect(mensaje.closest('[role="group"]')).toBeTruthy();
+    });
+
+    it('al agregar lo anuncia, en vez de crecer en silencio', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      await completarYAgregar();
+
+      expect(await screen.findByText('La imagen se agregó a la galería.')).toBeTruthy();
+    });
+
+    it('con la galería llena lo dice, en vez de apagar el formulario en silencio', async () => {
+      const llena = Array.from({ length: 8 }, (_, i) => imagenDeGaleria(i));
+      await renderPagina(new RepositorioProductosAdminFalso(productoDePrueba(llena)));
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(
+        await screen.findByText(
+          'La galería ya está llena. Quita una imagen antes de agregar otra.',
+        ),
+      ).toBeTruthy();
+    });
+
+    it('con un error del servidor al agregar, lo dice', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      repositorio.errorAlTocarLaGaleria = true;
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      await completarYAgregar();
+
+      expect(
+        await screen.findByText('No se pudo agregar la imagen. Intenta de nuevo.'),
+      ).toBeTruthy();
     });
   });
 });

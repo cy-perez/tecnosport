@@ -23,6 +23,8 @@ import {
   ProductoAdmin,
   ProductosPaginadosAdmin,
   VarianteMedida,
+  ImagenDeGaleriaAdmin,
+  ProductoAdminDetalle,
 } from '../../domain/producto-admin.model';
 import {
   REPOSITORIO_PRODUCTOS_ADMIN,
@@ -72,7 +74,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     };
   }
 
-  async obtener(): Promise<ProductoAdmin> {
+  async obtener(): Promise<ProductoAdminDetalle> {
     throw new Error('No usado en estas pruebas.');
   }
 
@@ -113,6 +115,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   ajustarExistencia(): Promise<ExistenciaAjustada> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  subirImagenDeGaleria(): Promise<ImagenDeGaleriaAdmin> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  quitarImagenDeGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

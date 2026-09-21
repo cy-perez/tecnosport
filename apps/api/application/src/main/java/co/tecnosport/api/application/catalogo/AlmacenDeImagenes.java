@@ -18,6 +18,30 @@ public interface AlmacenDeImagenes {
   String urlPublica(String objectKey);
 
   /**
+   * El camino de vuelta de {@link #urlPublica(String)}: qué objeto hay detrás de una URL ya
+   * guardada. Hace falta para borrar la imagen de una galería, que es lo único que se elimina
+   * conociendo solo la URL —la principal se limpia por prefijo, y un set de rotación borra el suyo
+   * entero—.
+   *
+   * <p>Vacío cuando la URL no es de este almacén, y ese caso <b>existe de verdad</b>: el catálogo
+   * sembrado de {@code local} y {@code dev} trae imágenes de picsum.photos. Quitar una de esas
+   * tiene que sacar la fila y no intentar borrar nada, no reventar.
+   */
+  Optional<String> objectKeyDe(String urlPublica);
+
+  /**
+   * Borra un objeto concreto y dice si había algo que borrar.
+   *
+   * <p>Existe además de {@link #eliminarPorPrefijo} porque las imágenes de una galería comparten
+   * prefijo y siguen vivas: limpiar {@code productos/{id}/galeria-} para quitar una se llevaría las
+   * hermanas. Pasar la key entera como prefijo funcionaría hoy por la forma de las keys, y esa es
+   * exactamente la clase de casualidad que deja de ser cierta sin que nadie se entere.
+   *
+   * <p>Idempotente: borrar algo que ya no está devuelve {@code false}, no falla.
+   */
+  boolean eliminar(String objectKey);
+
+  /**
    * Borra los objetos cuya key empiece por el prefijo dado, salvo los de {@code conservar}, y
    * devuelve cuántos borró.
    *

@@ -31,6 +31,11 @@
 //                   mismo endpoint del panel. Se puede repetir. Gramos y centímetros enteros.
 //                   Va aquí y no en un script propio porque necesita exactamente lo mismo que la
 //                   carga: la sesión del panel y el catálogo de variantes para resolver el SKU.
+//   --galeria SKU   sube a la galería las tomas que faltan de un producto que ya está cargado,
+//                   por el SKU de su variante. Se puede repetir, y `--galeria-todos` lo hace con
+//                   todo lo que anota el registro. Existe porque las cargas anteriores a esto
+//                   solo subían la imagen principal: había cuatro tomas de estudio por producto y
+//                   a la ficha llegaba una.
 //   --publicar-sku SKU   publica un producto que ya está cargado, por su SKU. Se puede repetir.
 //                   El panel **no sabe publicar** —no hay ninguna acción de publicación en el
 //                   frontend—, así que hoy esta es la única puerta que no pasa por la base.
@@ -176,6 +181,48 @@ async function pedir(ruta, opciones = {}) {
   return respuesta.status === 204 ? null : respuesta.json();
 }
 
+/** El mismo tope que `Producto.TOPE_DE_GALERIA`. El que manda es el servidor; esto evita pedir
+ * una URL firmada para un objeto que va a quedar huérfano cuando la confirmación responda 409. */
+const TOPE_DE_GALERIA = 8;
+
+/**
+ * Sube un archivo a la galería del producto: URL firmada, PUT a Cloud Storage, confirmación.
+ * Los mismos tres pasos de la imagen principal, contra el subrecurso `galeria`.
+ */
+async function subirAGaleria(productoId, foto, titulo) {
+  const bytes = readFileSync(foto.ruta);
+  const subida = await pedir(`/api/v1/admin/productos/${productoId}/galeria/url-subida`, {
+    method: "POST",
+    body: JSON.stringify({ contentType: "image/jpeg" }),
+  });
+  const puesta = await fetch(subida.url, {
+    method: "PUT",
+    headers: { "Content-Type": "image/jpeg" },
+    body: bytes,
+  });
+  if (!puesta.ok) {
+    throw new Error(`La subida de la imagen a Cloud Storage respondió ${puesta.status}`);
+  }
+  return pedir(`/api/v1/admin/productos/${productoId}/galeria`, {
+    method: "POST",
+    body: JSON.stringify({
+      objectKey: subida.objectKey,
+      ancho: foto.ancho,
+      alto: foto.alto,
+      hash: createHash("sha256").update(bytes).digest("hex"),
+      altEs: `${titulo} sobre fondo gris`,
+      altEn: `${titulo} on a grey background`,
+    }),
+  });
+}
+
+/**
+ * Las tomas que van a la galería: todas menos la primera, que es la principal.
+ *
+ * <p>El estándar de estudio produce cuatro por producto y hasta ahora llegaba una sola a la ficha.
+ */
+const fotosDeGaleria = (producto) => producto.foto.archivos.slice(1, TOPE_DE_GALERIA + 1);
+
 function descripcion(producto) {
   const prosa = producto.prosa;
   const vinetas = (prosa.vinetas ?? []).map((v) => `• ${v}`).join("\n");
@@ -257,6 +304,15 @@ async function cargarUno(producto, catalogos, registro) {
     }),
   });
 
+  // La galería va antes que la variante a propósito: si algo falla subiendo fotos, el producto
+  // queda sin variante y por tanto sin SKU, que es justo lo que `yaEstaCargado` mira para no
+  // duplicarlo en la siguiente corrida.
+  let enGaleria = 0;
+  for (const otra of fotosDeGaleria(producto)) {
+    await subirAGaleria(creado.id, otra, producto.titulo);
+    enGaleria++;
+  }
+
   await pedir("/api/v1/admin/variantes", {
     method: "POST",
     body: JSON.stringify({
@@ -284,6 +340,7 @@ async function cargarUno(producto, catalogos, registro) {
     sku,
     cargadoEn: new Date().toISOString(),
     publicado: PUBLICAR,
+    imagenesDeGaleria: enGaleria,
   };
   writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
   return registro[producto.id];
@@ -293,14 +350,27 @@ const { productos } = leerMaterial();
 const porId = new Map(productos.map((p) => [p.id, p]));
 const mediciones = valores("--medir");
 const aPublicar = valores("--publicar-sku");
+// `filter(Boolean)`: una carga interrumpida antes de crear la variante deja una entrada sin SKU
+// —es el escenario que el orden de `cargarUno` busca a propósito—, y sin esto la corrida grande se
+// llena de `FALLÓ undefined`.
+const aRellenarGaleria = bandera("--galeria-todos")
+  ? Object.values(leerJson(REGISTRO) ?? {})
+      .map((anotado) => anotado.sku)
+      .filter(Boolean)
+  : valores("--galeria");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)
   : (valor("--ids") ?? "").split(",").filter(Boolean);
 
-if (pedidos.length === 0 && mediciones.length === 0 && aPublicar.length === 0) {
+if (
+  pedidos.length === 0 &&
+  mediciones.length === 0 &&
+  aPublicar.length === 0 &&
+  aRellenarGaleria.length === 0
+) {
   console.error(
     "Hay que decir qué hacer: --ids a,b,c, --listos, --medir SKU=peso,largo,ancho,alto," +
-      " o --publicar-sku SKU.",
+      " --publicar-sku SKU, --galeria SKU o --galeria-todos.",
   );
   process.exit(1);
 }
@@ -378,6 +448,18 @@ if (aPublicar.length > 0) {
   process.exit(process.exitCode ?? 0);
 }
 
+if (aRellenarGaleria.length > 0) {
+  if (!TOKEN) {
+    console.error(
+      "Rellenar la galería necesita sesión hasta para simularlo: el SKU se resuelve" +
+        " preguntándole al catálogo. Usa --correo <correo> o --token <jwt>.",
+    );
+    process.exit(1);
+  }
+  await rellenarGalerias(aRellenarGaleria, registro);
+  process.exit(process.exitCode ?? 0);
+}
+
 if (mediciones.length > 0) {
   if (!TOKEN) {
     console.error(
@@ -398,6 +480,79 @@ if (mediciones.length > 0) {
  * uso es idempotente— pero decir "publicado" de algo que ya lo estaba esconde que el SKU pedido no
  * era el que se creía.
  */
+/**
+ * Sube a la galería las tomas que faltan de productos ya cargados. Sale temprano como medir y
+ * publicar, por lo mismo.
+ *
+ * <p><b>Un producto que ya tenga galería no se toca</b>, y esa es toda la idempotencia que hace
+ * falta. Comparar foto por foto pediría el hash de cada imagen ya subida, que la API no devuelve
+ * —y no debería: sirve para una cosa, y esa cosa la decide el servidor rechazando duplicados—.
+ * Intentarlo y dejar que responda 409 costaría subir el archivo al bucket para descubrir que
+ * sobra, y ese objeto no lo reclama nadie.
+ */
+async function rellenarGalerias(skus, registro) {
+  const existencias = await pedir("/api/v1/admin/variantes/existencias");
+  const porSku = new Map(existencias.items.map((v) => [v.sku, v]));
+  const idPorSku = new Map(
+    Object.entries(registro).map(([id, anotado]) => [anotado.sku, id]),
+  );
+  let subidas = 0;
+
+  for (const sku of skus) {
+    const variante = porSku.get(sku);
+    if (!variante) {
+      console.error(`FALLÓ       ${sku}: no hay ninguna variante activa con ese SKU`);
+      process.exitCode = 1;
+      continue;
+    }
+    const id = idPorSku.get(sku);
+    const producto = id ? porId.get(id) : null;
+    if (!producto) {
+      console.error(
+        `FALLÓ       ${sku}: el registro no dice de qué producto de la lista salió, así que no` +
+          " hay de dónde sacar sus fotos",
+      );
+      process.exitCode = 1;
+      continue;
+    }
+
+    const detalle = await pedir(`/api/v1/admin/productos/${variante.productoId}`);
+    if ((detalle.galeria ?? []).length > 0) {
+      console.log(
+        `saltado     ${sku}: ${variante.nombreProducto} ya tiene` +
+          ` ${detalle.galeria.length} imagen(es) de galería`,
+      );
+      continue;
+    }
+
+    const fotos = fotosDeGaleria(producto);
+    if (fotos.length === 0) {
+      console.log(
+        `saltado     ${sku}: ${variante.nombreProducto} no tiene más tomas que la principal`,
+      );
+      continue;
+    }
+
+    console.log(
+      `${ESCRIBIR ? "subiendo" : "simulado"}    ${variante.nombreProducto} (${sku})` +
+        ` → ${fotos.length} imagen(es) a la galería`,
+    );
+    if (!ESCRIBIR) continue;
+
+    for (const foto of fotos) {
+      await subirAGaleria(variante.productoId, foto, producto.titulo);
+      subidas++;
+    }
+    if (id) {
+      registro[id] = { ...registro[id], imagenesDeGaleria: fotos.length };
+      writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
+`, "utf8");
+    }
+  }
+  console.log(`
+${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}`);
+}
+
 async function publicarSkus(skus, registro) {
   const existencias = await pedir("/api/v1/admin/variantes/existencias");
   const porSku = new Map(existencias.items.map((v) => [v.sku, v]));

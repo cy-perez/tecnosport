@@ -62,6 +62,23 @@ public class AlmacenDeImagenesGcs implements AlmacenDeImagenes {
   }
 
   @Override
+  public Optional<String> objectKeyDe(String urlPublica) {
+    String prefijo = urlPublicaBase + "/";
+    if (!urlPublica.startsWith(prefijo)) {
+      return Optional.empty();
+    }
+    String key = urlPublica.substring(prefijo.length());
+    return key.isBlank() ? Optional.empty() : Optional.of(key);
+  }
+
+  @Override
+  public boolean eliminar(String objectKey) {
+    // Por nombre, sin generación, por lo mismo que explica eliminarPorPrefijo: con la generación
+    // concreta el borrado se salta el versionado del bucket y no queda nada que restaurar.
+    return storage.delete(BlobId.of(bucket, objectKey));
+  }
+
+  @Override
   public int eliminarPorPrefijo(String prefijo, Set<String> conservar) {
     int borrados = 0;
     for (Blob blob : storage.list(bucket, Storage.BlobListOption.prefix(prefijo)).iterateAll()) {

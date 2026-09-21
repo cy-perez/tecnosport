@@ -85,6 +85,43 @@ export interface ImagenAdmin {
   readonly altEn: string;
 }
 
+/**
+ * Una imagen de la galería. Lleva `id` y `orden`, que la vitrina no expone y el panel sí necesita:
+ * sin el id no hay forma de pedir que se quite.
+ */
+export interface ImagenDeGaleriaAdmin {
+  readonly id: string;
+  readonly url: string;
+  readonly urlWebp: string;
+  readonly ancho: number;
+  readonly alto: number;
+  readonly orden: number;
+  readonly altEs: string;
+  readonly altEn: string;
+}
+
+/**
+ * El producto con su galería. Lo devuelve `obtener`, no la lista: veinte productos por página con
+ * hasta ocho imágenes cada uno engordarían la lista para que la pantalla que las usa no sea esa.
+ */
+export interface ProductoAdminDetalle extends ProductoAdmin {
+  readonly galeria: readonly ImagenDeGaleriaAdmin[];
+}
+
+export interface SubirImagenDeGaleriaAdmin {
+  readonly productoId: string;
+  readonly archivo: File;
+  readonly ancho: number;
+  readonly alto: number;
+  readonly altEs: string;
+  readonly altEn: string;
+}
+
+export interface QuitarImagenDeGaleriaAdmin {
+  readonly productoId: string;
+  readonly imagenId: string;
+}
+
 export interface SubirImagenPrincipalAdmin {
   readonly productoId: string;
   readonly archivo: File;
