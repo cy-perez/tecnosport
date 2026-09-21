@@ -167,15 +167,6 @@ public final class Producto {
   }
 
   /**
-   * Suma una imagen a la galería. La principal va por {@link #asignarImagenPrincipal}: son dos
-   * cosas distintas y la ficha las pinta en sitios distintos.
-   *
-   * <p>Rechaza subir dos veces el mismo archivo comparando el hash del contenido, que es justo para
-   * lo que {@code docs/02} lo puso. Cuatro tomas que se suben una por una desde un formulario son
-   * el sitio natural para repetir una sin darse cuenta, y una galería con la misma foto dos veces
-   * no se ve como un error del sistema: se ve como descuido del que vende.
-   */
-  /**
    * Falla si la galería ya está llena.
    *
    * <p>Es público porque quien pide una URL firmada necesita preguntarlo <b>antes</b> de que el
@@ -195,6 +186,19 @@ public final class Producto {
     }
   }
 
+  /**
+   * Suma una imagen a la galería. La principal va por {@link #asignarImagenPrincipal}: son dos
+   * cosas distintas y la ficha las pinta en sitios distintos.
+   *
+   * <p>Rechaza subir dos veces el mismo archivo comparando el hash del contenido, que es justo para
+   * lo que {@code docs/02} lo puso. Cuatro tomas que se suben una por una desde un formulario son
+   * el sitio natural para repetir una sin darse cuenta, y una galería con la misma foto dos veces
+   * no se ve como un error del sistema: se ve como descuido del que vende.
+   *
+   * <p>Ese rechazo no basta por sí solo: el hash lo calcula el cliente. Que dos imágenes no apunten
+   * al mismo objeto del bucket lo comprueba {@code AgregarImagenDeGaleria}, que es quien conoce las
+   * keys.
+   */
   public void agregarImagenGaleria(ImagenProducto imagen) {
     Objects.requireNonNull(imagen, "La imagen no puede ser nula.");
     if (imagen.tipo() != TipoImagen.GALERIA) {

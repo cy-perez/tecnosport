@@ -1,7 +1,6 @@
 package co.tecnosport.api.application.catalogo;
 
 import co.tecnosport.api.domain.catalogo.Producto;
-import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import java.util.Objects;
 
 /**
@@ -41,13 +40,7 @@ public final class SolicitarSubidaDeImagenDeGaleria {
 
     String extension = TiposDeImagen.extensionDe(comando.contentType());
 
-    String objectKey =
-        "productos/"
-            + comando.productoId()
-            + "/galeria-"
-            + GeneradorIdentificador.nuevo()
-            + "."
-            + extension;
+    String objectKey = ClavesDeGaleria.nueva(comando.productoId(), extension);
     UrlFirmada urlFirmada = almacenDeImagenes.generarUrlDeSubida(objectKey, comando.contentType());
     return new SolicitudDeSubida(urlFirmada.url(), objectKey);
   }

@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.catalogo;
 
+import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaDuplicadaException;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
@@ -41,12 +42,18 @@ public final class AgregarImagenDeGaleria {
             .buscarPorId(comando.productoId())
             .orElseThrow(() -> new ProductoNoEncontradoPorIdException(comando.productoId()));
 
-    String prefijoEsperado = "productos/" + comando.productoId() + "/";
+    // El prefijo completo, con 'galeria-', y no solo el del producto. Esta guarda nació copiada de
+    // ConfirmarImagenPrincipal, donde bastaba porque había un solo prefijo por producto. Con dos,
+    // aceptar una key de 'principal-' como imagen de galería tiene una consecuencia concreta: el
+    // siguiente reemplazo de la imagen principal limpia ese prefijo entero y borra el objeto que la
+    // galería está sirviendo. Una foto rota en una ficha publicada, causada por el propio sistema y
+    // sin una línea de error en ningún sitio.
+    String prefijoEsperado = ClavesDeGaleria.prefijoDe(comando.productoId());
     if (!comando.objectKey().startsWith(prefijoEsperado)) {
       throw new IllegalArgumentException(
           "El objeto '"
               + comando.objectKey()
-              + "' no pertenece al producto "
+              + "' no es una imagen de galería del producto "
               + comando.productoId()
               + ".");
     }
@@ -57,6 +64,15 @@ public final class AgregarImagenDeGaleria {
             .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(comando.objectKey()));
 
     String url = almacenDeImagenes.urlPublica(comando.objectKey());
+
+    // Dos filas apuntando al mismo objeto romperían el borrado: quitar una se lleva el archivo por
+    // la key exacta y deja a la hermana rota. El rechazo por hash no cubre esto —el hash lo manda
+    // el cliente—, así que la unicidad que de verdad sostiene el borrado se comprueba aquí.
+    boolean mismoObjeto = producto.galeria().stream().anyMatch(i -> i.url().equals(url));
+    if (mismoObjeto) {
+      throw new ImagenDeGaleriaDuplicadaException(
+          "El objeto '" + comando.objectKey() + "' ya está en la galería de este producto.");
+    }
     ImagenProducto imagen =
         ImagenProducto.crear(
             TipoImagen.GALERIA,

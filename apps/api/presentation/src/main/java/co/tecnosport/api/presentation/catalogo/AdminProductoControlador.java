@@ -42,8 +42,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -80,7 +78,6 @@ public class AdminProductoControlador {
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
-  private final TransactionTemplate transacciones;
 
   public AdminProductoControlador(
       ListarProductosAdmin listarProductosAdmin,
@@ -94,8 +91,7 @@ public class AdminProductoControlador {
       QuitarImagenDeGaleria quitarImagenDeGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
-      MapeadorRespuestasProductoAdmin mapeador,
-      PlatformTransactionManager transactionManager) {
+      MapeadorRespuestasProductoAdmin mapeador) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
     this.verProductoAdmin = Objects.requireNonNull(verProductoAdmin);
@@ -110,7 +106,6 @@ public class AdminProductoControlador {
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
-    this.transacciones = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   @GetMapping
@@ -250,25 +245,36 @@ public class AdminProductoControlador {
    * {@code 204} y no la galería que queda: el panel vuelve a pedir el producto igual, y devolver
    * una lista aquí invitaría a creerle a esta respuesta en vez de a la consulta.
    *
-   * <p>La transacción la abre este método porque el borrado derivado de Spring Data no trae la
-   * suya. Va aquí y no dentro del caso de uso porque {@code application} es framework-free.
+   * <p><b>Sin {@code TransactionTemplate}, y eso es una corrección.</b> Lo tuvo, con el argumento
+   * de que un borrado derivado de Spring Data no trae transacción propia — cierto, pero la trae
+   * {@code RepositorioProductosJpa.eliminarImagenDeGaleria}, que es donde toca. Envolver el caso de
+   * uso entero metía además la llamada a Cloud Storage dentro de la transacción, y con eso el orden
+   * que el caso de uso promete —primero la fila, después el objeto— dejaba de estar garantizado: el
+   * objeto se borraba antes del commit.
    */
   @DeleteMapping("/{id}/galeria/{imagenId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void quitarImagenDeGaleria(
       @PathVariable("id") UUID id, @PathVariable("imagenId") UUID imagenId) {
     ImagenDeGaleriaQuitada quitada =
-        transacciones.execute(
-            estado ->
-                quitarImagenDeGaleria.ejecutar(new QuitarImagenDeGaleriaComando(id, imagenId)));
-    if (quitada != null && quitada.limpiezaFallida()) {
+        quitarImagenDeGaleria.ejecutar(new QuitarImagenDeGaleriaComando(id, imagenId));
+    if (quitada.limpiezaFallida()) {
       log.error(
           "Producto {}: la imagen {} salió de la galería, pero no se pudo borrar su objeto del"
               + " bucket. Queda un archivo sin reclamar.",
           id,
           imagenId);
+    } else if (!quitada.objetoBorrado()) {
+      // No es un error, pero tampoco es rutina, y el día que deje de ser inofensivo hará falta esta
+      // línea: si cambia la URL pública del bucket —por ponerlo detrás de un CDN, por ejemplo—,
+      // ninguna URL vieja se reconocería y cada borrado se saldría por aquí sin borrar nada.
+      log.warn(
+          "Producto {}: la imagen {} salió de la galería sin borrar ningún objeto. O su URL no es"
+              + " de este almacén, o el objeto ya no estaba.",
+          id,
+          imagenId);
     } else {
-      log.info("Producto {}: imagen {} retirada de la galería.", id, imagenId);
+      log.info("Producto {}: imagen {} retirada de la galería, con su objeto.", id, imagenId);
     }
   }
 }

@@ -350,8 +350,13 @@ const { productos } = leerMaterial();
 const porId = new Map(productos.map((p) => [p.id, p]));
 const mediciones = valores("--medir");
 const aPublicar = valores("--publicar-sku");
+// `filter(Boolean)`: una carga interrumpida antes de crear la variante deja una entrada sin SKU
+// —es el escenario que el orden de `cargarUno` busca a propósito—, y sin esto la corrida grande se
+// llena de `FALLÓ undefined`.
 const aRellenarGaleria = bandera("--galeria-todos")
-  ? Object.values(leerJson(REGISTRO) ?? {}).map((anotado) => anotado.sku)
+  ? Object.values(leerJson(REGISTRO) ?? {})
+      .map((anotado) => anotado.sku)
+      .filter(Boolean)
   : valores("--galeria");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)

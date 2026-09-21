@@ -122,6 +122,50 @@ class AgregarImagenDeGaleriaTest {
     assertTrue(repositorioProductos.imagenesDeGaleriaGuardadas.isEmpty());
   }
 
+  /**
+   * La guarda nació mirando solo {@code productos/{id}/}, copiada de la imagen principal. Con dos
+   * prefijos por producto eso dejaba confirmar la key de la principal como imagen de galería, y el
+   * siguiente reemplazo de la principal —que limpia su prefijo entero— borraba el objeto que la
+   * galería estaba sirviendo.
+   */
+  @Test
+  void unaKeyDeLaImagenPrincipalNoEntraComoImagenDeGaleria() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String deLaPrincipal = "productos/" + producto.id() + "/principal-abc.jpg";
+    almacenDeImagenes.conObjeto(deLaPrincipal, 45_000);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            agregarImagenDeGaleria.ejecutar(
+                new AgregarImagenDeGaleriaComando(
+                    producto.id(), deLaPrincipal, 100, 100, hash(1), "a", "b")));
+    assertTrue(repositorioProductos.imagenesDeGaleriaGuardadas.isEmpty());
+  }
+
+  /**
+   * El rechazo por hash no cubre este caso: el hash lo calcula el cliente. Dos filas apuntando al
+   * mismo objeto romperían el borrado, que va por la key exacta y dejaría a la hermana rota.
+   */
+  @Test
+  void elMismoObjetoDosVecesNoEntraAunqueElClienteCambieElHash() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String objectKey = "productos/" + producto.id() + "/galeria-uno.jpg";
+    almacenDeImagenes.conObjeto(objectKey, 120_000);
+    agregarImagenDeGaleria.ejecutar(
+        new AgregarImagenDeGaleriaComando(producto.id(), objectKey, 2000, 2000, hash(1), "a", "b"));
+
+    assertThrows(
+        ImagenDeGaleriaDuplicadaException.class,
+        () ->
+            agregarImagenDeGaleria.ejecutar(
+                new AgregarImagenDeGaleriaComando(
+                    producto.id(), objectKey, 2000, 2000, hash(2), "a", "b")));
+    assertEquals(1, repositorioProductos.imagenesDeGaleriaGuardadas.size());
+  }
+
   @Test
   void objectKeyDeOtroProductoLanzaIllegalArgument() {
     Producto producto = productoDePrueba();
