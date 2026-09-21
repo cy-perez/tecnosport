@@ -62,6 +62,54 @@ def hay_brotli():
         except Exception:
             return False
 
+def puede_woff2():
+    """Si de verdad se puede producir woff2 aqui y ahora.
+
+    `hay_brotli()` solo mira brotli, y la conversion necesita **las dos cosas**:
+    `fontTools` para comprimir y para leer el rango de pesos de una variable, y
+    brotli para el algoritmo. Con brotli puesto y fontTools ausente —el caso de
+    esta maquina el 21 de septiembre de 2026— la comprobacion daba verde,
+    `procesar` fallaba cara por cara con `ModuleNotFoundError` y el kit se
+    llenaba de TTF.
+
+    Se comprueba importando exactamente lo que usa `procesar`, no algo parecido.
+    """
+    try:
+        from fontTools.ttLib.woff2 import compress  # noqa: F401
+    except Exception:
+        return False
+    return hay_brotli()
+
+
+def por_que_empeoraria(destino, comprimir, sin_comprimir=False):
+    """Por que NO se deben regenerar las fuentes ahora mismo, o None si se puede.
+
+    Sin `brotli` esto produce TTF en vez de woff2, y sin `fontTools` tampoco lee
+    el rango de pesos de una variable. Si el kit **ya** tiene woff2 buenos,
+    seguir adelante los reemplaza por archivos peores: el comando deja el kit
+    peor que antes de ejecutarlo.
+
+    Paso de verdad el 21 de septiembre de 2026, regenerando el kit para anadir un
+    token: `fuentes.css` acabo apuntando a `.ttf` con `font-weight: 400` donde
+    antes habia `.woff2` con `100 900`. No fallo nada, no se rompio ninguna
+    prueba, y en el navegador se habria visto como la tipografia de respaldo.
+
+    Devuelve el texto del error en vez de imprimirlo o lanzarlo, porque lo usan
+    dos sitios: este script y `kit_ui.py --fuentes`, que importa este modulo y
+    llama a `procesar()` sin pasar por `main()`.
+    """
+    if comprimir or sin_comprimir:
+        return None
+    destino = Path(destino)
+    if not (destino.is_dir() and any(destino.glob("*.woff2"))):
+        return None
+    return ("  ERROR: falta fonttools o brotli para generar woff2, y en '{}' ya hay .woff2\n"
+            "         buenos. Seguir los reemplazaria por TTF: mas pesados y sin el rango\n"
+            "         de pesos de las variables.\n"
+            "         Instala las dos cosas y repite:  pip install fonttools brotli\n"
+            "         O, si de verdad quieres los TTF, pasa --sin-comprimir.".format(destino))
+
+
 def rango_pesos(ruta_ttf):
     """Si es fuente variable devuelve (min, max) del eje wght."""
     try:
@@ -168,6 +216,17 @@ def procesar(familia, pesos_pedidos, destino, comprimir):
             continue
     return caras
 
+def formato_de(nombre):
+    """El `format()` que le toca al archivo que de verdad se escribio.
+
+    Estaba escrito a mano como 'woff2' para todas las caras, y la conversion a
+    woff2 puede fallar y dejar el TTF (ver `procesar`): el resultado era un .ttf
+    declarado como woff2. El navegador lo carga igual —adivina por los bytes—,
+    asi que nada se rompe a la vista y nadie se entera.
+    """
+    return "woff2" if nombre.lower().endswith(".woff2") else "truetype"
+
+
 def css_fuentes(caras, carpeta="fuentes"):
     L = ["/* Tipografias autoalojadas. Enlaza este archivo ANTES de tokens.css.",
          "   font-display: swap hace que el texto se vea con la fuente de respaldo",
@@ -175,7 +234,8 @@ def css_fuentes(caras, carpeta="fuentes"):
     for c in caras:
         L += ["@font-face {",
               '  font-family: "{}";'.format(c["familia"]),
-              "  src: url('./{}/{}') format('woff2');".format(carpeta, c["archivo"]),
+              "  src: url('./{}/{}') format('{}');".format(
+                  carpeta, c["archivo"], formato_de(c["archivo"])),
               "  font-weight: {};".format(c["peso"]),
               "  font-style: normal;",
               "  font-display: swap;",
@@ -210,12 +270,17 @@ def main():
         if f.lower() not in vistos:
             vistos.add(f.lower()); unicos.append((f, p))
 
-    comprimir = not a.sin_comprimir and hay_brotli()
-    if not comprimir and not a.sin_comprimir:
-        print("  AVISO: sin brotli no se puede generar woff2. Se dejaran los TTF,")
-        print("         que pesan el doble. Instala brotli y vuelve a ejecutar.\n")
-
+    comprimir = not a.sin_comprimir and puede_woff2()
     destino = Path(a.out)
+
+    motivo = por_que_empeoraria(destino, comprimir, a.sin_comprimir)
+    if motivo:
+        print(motivo)
+        sys.exit(1)
+    if not comprimir and not a.sin_comprimir:
+        print("  AVISO: falta fonttools o brotli, asi que no se puede generar woff2.")
+        print("         Se dejaran los TTF, que pesan el doble y no traen el rango")
+
     caras = []
     for fam, pesos in unicos:
         print("{}:".format(fam))

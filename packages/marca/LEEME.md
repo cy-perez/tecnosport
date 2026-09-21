@@ -23,12 +23,19 @@ kit/
 2. Vuelve a generar:
 
 ```bash
-python3 generador/kit_ui.py tokens.json --out . --fuentes
+python3 generador/kit_ui.py tokens.json --out .
 ```
 
 Los estados (hover, pressed, foco, texto sobre cada fondo) y el modo oscuro
 se recalculan solos, y el informe de contraste se rehace. Por eso no se
 editan a mano: el proximo regenerado borraria el cambio.
+
+**Sin `--fuentes`, y no es un olvido.** Las tipografias y los logos que ya
+estan dentro del kit se conservan solos. `--fuentes` vuelve a descargarlas
+de google/fonts, y eso solo hace falta al montar el kit por primera vez o
+al cambiar de tipografia: pedirlo con las fuentes ya puestas es rehacer
+trabajo hecho, y sin `fonttools` y `brotli` instalados deja el kit peor
+que antes (por eso ahora se niega).
 
 ## Como se enlaza en el sitio
 
