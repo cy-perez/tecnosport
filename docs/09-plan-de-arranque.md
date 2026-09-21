@@ -6709,6 +6709,60 @@ ventana delante. Es la tercera vez que este documento escribe la misma lección:
 diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
 diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
 
+## La revisión adversarial de los 110 commits, y lo que encontró en el inventario (2026-09-21)
+
+Cuatro revisores en paralelo sobre lo que entró desde el 20 de septiembre —la existencia desde el
+libro, la corrección de medidas, publicar y retirar, la galería y su orden, y las herramientas del
+catálogo—, con todo en verde y `gradlew.bat build` pasando. **Treinta y ocho hallazgos, siete
+graves.** Dos aparecieron por duplicado desde revisores que no se hablaban, y eso los subió de
+categoría.
+
+Lo que sigue es el primer bloque: el inventario. Los otros tres van en sus propias entradas.
+
+### El instrumento, antes que el diagnóstico
+
+El primer commit no arregla nada de producción: arregla los **once dobles de prueba** de
+`RepositorioInventario`, que guardaban el agregado en un mapa y lo devolvían tal cual en cada
+lectura. El adaptador real reconstruye un `Inventario` nuevo desde sus filas, así que una mutación
+que no se guarde se pierde; con los dobles viejos, la prueba y el caso de uso compartían el objeto.
+
+**Quitar el `guardar()` de `CrearPedido` dejaba la batería entera en verde.** Con los dobles
+arreglados caen tres pruebas. Ese era el orden correcto: sin el instrumento arreglado, todo lo
+demás se medía con una regla torcida.
+
+### El interbloqueo que elegía el cliente
+
+`CrearPedido` tomaba un bloqueo pesimista por línea **en el orden del cuerpo HTTP**, sin soltarlo
+hasta el commit. Dos compradores con las mismas variantes en distinto orden se bloqueaban en cruz;
+Postgres abortaba uno con `40P01`, que nadie atrapa, y el comprador veía un 500 con el pago a un
+clic. Provocable a propósito, porque el orden de las líneas lo elige quien postea.
+
+Ahora los libros se piden en orden de `varianteId`, y el pedido conserva el orden del comprador:
+lo que se ordenó es la toma de bloqueos, no el comprobante. De paso, las líneas duplicadas —que
+nadie rechazaba— salen con 422 en vez de sumarse. Todo en `adr/0054`.
+
+### Dos garantías que eran ciertas en el camino que se probó
+
+- **El conteo de una variante sin libro no bloqueaba nada.** El javadoc prometía que el bloqueo
+  pesimista impide que un conteo y una reserva se pisen, y eso valía solo en la rama del
+  `Optional` lleno: sin fila, el `select … for update` no bloquea. Dos conteos simultáneos
+  escribían dos libros y el que perdía moría con un 500 sin traducir.
+- **Cada reserva reescribía el histórico completo dentro del bloqueo.** `@Id` asignado sin
+  `@Version` hace que cada `save` sea un `merge`: ~1600 sentencias para escribir una, en una
+  variante con ochocientos movimientos, y `CrearPedido` lo hace por línea. **Lo encontraron dos
+  revisores por separado**, uno mirando dinero y otro mirando capas.
+
+### La prueba que faltaba, y el número que la hace valer
+
+La única prueba de concurrencia cubría reserva contra reserva. La carrera que `adr/0050`
+introdujo —un conteo del panel contra una venta que se confirma— no la miraba nadie, y no es que
+los dos movimientos se pisen: es que el ajuste se calcula como `contado - saldoAnterior`. Si el
+conteo lee un saldo que otra transacción está a punto de cambiar, la resta sale de un número que ya
+no es cierto.
+
+Comprobado quitando el bloqueo: **la persona cuenta 3 y el libro termina en 2.** Ese número es lo
+que hace que la prueba valga; sin él sería una prueba que pasa.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
