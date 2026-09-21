@@ -43,7 +43,8 @@
     "existencias": {
       "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"
-    }
+    },
+    "ir_a_medidas": "Package measurements"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -283,6 +284,36 @@
         "estado": "Status",
         "libro": "Ledger",
         "disponible": "Available"
+      }
+    },
+    "medidas": {
+      "titulo": "Package measurements",
+      "explicacion": "Every active variant with the weight and dimensions of its box, whether it has them or not. Without all four figures shipping cannot be quoted and the product can only be handed over at the pickup point. A measurement already taken can be corrected here: if it is wrong, the wrong shipping cost is charged on every order of that variant.",
+      "resumen": "{{total}} active variant(s), {{sinMedir}} not measured.",
+      "ninguna": "There are no active variants in the catalogue yet.",
+      "errorLista": "We could not load the measurements. Please try again.",
+      "sinMedir": "Not measured",
+      "gramos": "{{peso}} g",
+      "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
+      "medir": "Measure",
+      "corregir": "Correct",
+      "medirVariante": "Measure the package of {{sku}}",
+      "corregirVariante": "Correct the package of {{sku}}",
+      "paqueteDe": "Package of {{sku}}",
+      "paqueteAyuda": "The product already packed, in whole grams and centimetres rounded up. Measuring short means losing the difference on every shipment; measuring long scares buyers away with a shipping cost that is not real.",
+      "avisoCorreccion": "This variant already had measurements. Correcting them does not change orders already quoted with the previous ones.",
+      "guardar": "Save measurements",
+      "cancelar": "Cancel",
+      "faltanCampos": "Measurements are missing: the weight and the three dimensions, all greater than zero.",
+      "error": "We could not save the measurements. Please try again.",
+      "medida": "{{sku}} is now measured.",
+      "corregida": "The measurements of {{sku}} were corrected.",
+      "columnas": {
+        "producto": "Product",
+        "sku": "SKU",
+        "estado": "Status",
+        "peso": "Weight",
+        "dimensiones": "Length × width × height"
       }
     }
   },

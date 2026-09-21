@@ -14,6 +14,7 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -26,6 +27,7 @@ import {
   aExistenciaAjustada,
   aExistenciasDelCatalogo,
   aInventarioSinMedir,
+  aMedidasDelCatalogo,
   aProductoAdmin,
   aProductosPaginadosAdmin,
   aVarianteMedida,
@@ -99,6 +101,11 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       },
     });
     exigirExito(respuesta, 'no se pudo agregar la variante');
+  }
+
+  async listarMedidas(): Promise<MedidasDelCatalogo> {
+    const respuesta = await this.cliente.GET('/api/v1/admin/variantes/medidas', {});
+    return aMedidasDelCatalogo(desempaquetar(respuesta, 'no se pudo consultar las medidas'));
   }
 
   async listarSinMedir(): Promise<InventarioSinMedir> {

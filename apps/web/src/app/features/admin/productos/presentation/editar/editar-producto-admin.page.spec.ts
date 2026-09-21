@@ -21,6 +21,7 @@ import {
   ExistenciasDelCatalogo,
   ImagenAdmin,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   ProductoAdmin,
   ProductosPaginadosAdmin,
   SubirImagenPrincipalAdmin,
@@ -121,6 +122,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   }
 
   listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  listarMedidas(): Promise<MedidasDelCatalogo> {
     throw new Error('no usado por esta prueba');
   }
 

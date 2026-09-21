@@ -7,6 +7,8 @@ import {
   ExistenciaDeVariante,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  MedidaDeVariante,
+  MedidasDelCatalogo,
   MarcaAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -21,6 +23,8 @@ type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
 type SinMedirDto = components['schemas']['VariantesSinMedirRespuesta'];
 type VarianteSinMedirDto = components['schemas']['VarianteSinMedirRespuesta'];
+type MedidasDto = components['schemas']['MedidasRespuesta'];
+type MedidaDeVarianteDto = components['schemas']['MedidaDeVarianteRespuesta'];
 type ExistenciasDto = components['schemas']['ExistenciasRespuesta'];
 type ExistenciaDeVarianteDto = components['schemas']['ExistenciaDeVarianteRespuesta'];
 type ExistenciaAjustadaDto = components['schemas']['ExistenciaAjustadaRespuesta'];
@@ -88,6 +92,35 @@ export function aInventarioSinMedir(dto: SinMedirDto): InventarioSinMedir {
     total: dto.total ?? 0,
     totalEnPublicados: dto.totalEnPublicados ?? 0,
     items: (dto.items ?? []).map(aVarianteSinMedir),
+  };
+}
+
+export function aMedidasDelCatalogo(dto: MedidasDto): MedidasDelCatalogo {
+  return {
+    total: dto.total ?? 0,
+    totalSinMedir: dto.totalSinMedir ?? 0,
+    totalSinMedirEnPublicados: dto.totalSinMedirEnPublicados ?? 0,
+    items: (dto.items ?? []).map(aMedidaDeVariante),
+  };
+}
+
+/**
+ * Las cuatro cifras se mapean a `null` y no a `0` cuando faltan: un cero es una medida inválida
+ * —el dominio exige mayor que cero— y pintarlo diría que la variante mide cero en vez de que
+ * nadie la ha medido.
+ */
+function aMedidaDeVariante(dto: MedidaDeVarianteDto): MedidaDeVariante {
+  return {
+    varianteId: dto.varianteId ?? '',
+    productoId: dto.productoId ?? '',
+    nombreProducto: dto.nombreProducto ?? '',
+    sku: dto.sku ?? '',
+    estadoProducto: (dto.estadoProducto ?? 'BORRADOR') as EstadoProducto,
+    pesoGramos: dto.pesoGramos ?? null,
+    largoCm: dto.largoCm ?? null,
+    anchoCm: dto.anchoCm ?? null,
+    altoCm: dto.altoCm ?? null,
+    sinMedir: dto.sinMedir ?? true,
   };
 }
 

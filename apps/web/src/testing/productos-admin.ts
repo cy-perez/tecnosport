@@ -5,6 +5,7 @@ import {
   ExistenciasDelCatalogo,
   ImagenAdmin,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -36,10 +37,26 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
       totalSinExistenciaEnPublicados: 0,
       items: [],
     },
+    private catalogoDeMedidas: MedidasDelCatalogo = {
+      total: 0,
+      totalSinMedir: 0,
+      totalSinMedirEnPublicados: 0,
+      items: [],
+    },
   ) {}
 
   async listarSinMedir(): Promise<InventarioSinMedir> {
     return this.inventario;
+  }
+
+  /**
+   * Refleja lo que hace el servidor: la lista de medidas trae **todas** las activas, así que una
+   * variante medida sigue aquí con sus cifras nuevas — al revés que en `listarSinMedir`, de donde
+   * desaparece. Sin esto, la prueba de la pantalla de corrección no distinguiría "se corrigió" de
+   * "no pasó nada".
+   */
+  async listarMedidas(): Promise<MedidasDelCatalogo> {
+    return this.catalogoDeMedidas;
   }
 
   async medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida> {
@@ -53,14 +70,39 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
       total: this.inventario.total - 1,
       items: this.inventario.items.filter((v) => v.varianteId !== comando.varianteId),
     };
+
+    // En la lista de medidas la fila **no** desaparece: se queda con las cifras nuevas, que es lo
+    // que hace el servidor y lo que permite ver que una corrección entró.
+    const enMedidas = this.catalogoDeMedidas.items.find((v) => v.varianteId === comando.varianteId);
+    const correccion = enMedidas ? !enMedidas.sinMedir : false;
+    const items = this.catalogoDeMedidas.items.map((v) =>
+      v.varianteId === comando.varianteId
+        ? {
+            ...v,
+            pesoGramos: comando.pesoGramos,
+            largoCm: comando.largoCm,
+            anchoCm: comando.anchoCm,
+            altoCm: comando.altoCm,
+            sinMedir: false,
+          }
+        : v,
+    );
+    this.catalogoDeMedidas = {
+      ...this.catalogoDeMedidas,
+      items,
+      totalSinMedir: items.filter((v) => v.sinMedir).length,
+      totalSinMedirEnPublicados: items.filter((v) => v.sinMedir && v.estadoProducto === 'PUBLICADO')
+        .length,
+    };
+
     return {
       varianteId: comando.varianteId,
-      sku: variante?.sku ?? '',
+      sku: variante?.sku ?? enMedidas?.sku ?? '',
       pesoGramos: comando.pesoGramos,
       largoCm: comando.largoCm,
       anchoCm: comando.anchoCm,
       altoCm: comando.altoCm,
-      correccion: false,
+      correccion,
     };
   }
 
@@ -115,6 +157,12 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
       totalSinExistenciaEnPublicados: 0,
       items: [],
     },
+    private catalogoDeMedidas: MedidasDelCatalogo = {
+      total: 0,
+      totalSinMedir: 0,
+      totalSinMedirEnPublicados: 0,
+      items: [],
+    },
   ) {}
 
   async listarExistencias(): Promise<ExistenciasDelCatalogo> {
@@ -159,6 +207,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  listarMedidas(): Promise<MedidasDelCatalogo> {
     throw new Error('no usado por las pruebas de existencias');
   }
 

@@ -1060,6 +1060,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/variantes/medidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["medidas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/variantes/existencias": {
         parameters: {
             query?: never;
@@ -1921,6 +1937,33 @@ export interface components {
             /** Format: int32 */
             totalEnPublicados?: number;
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];
+        };
+        MedidaDeVarianteRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: uuid */
+            productoId?: string;
+            nombreProducto?: string;
+            sku?: string;
+            estadoProducto?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            altoCm?: number;
+            sinMedir?: boolean;
+        };
+        MedidasRespuesta: {
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalSinMedir?: number;
+            /** Format: int32 */
+            totalSinMedirEnPublicados?: number;
+            items?: components["schemas"]["MedidaDeVarianteRespuesta"][];
         };
         ExistenciaDeVarianteRespuesta: {
             /** Format: uuid */
@@ -3765,6 +3808,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
+                };
+            };
+        };
+    };
+    medidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedidasRespuesta"];
                 };
             };
         };

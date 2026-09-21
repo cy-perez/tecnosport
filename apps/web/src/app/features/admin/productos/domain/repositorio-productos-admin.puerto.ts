@@ -9,6 +9,7 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -30,6 +31,9 @@ export interface RepositorioProductosAdmin {
   /** Lo que falta por medir, entero y sin paginar: es una lista de tareas que tiene que llegar a
    * cero, no un listado del catálogo. */
   listarSinMedir(): Promise<InventarioSinMedir>;
+
+  /** Todas las activas con su medida, tengan o no: la lista de la pantalla que corrige. */
+  listarMedidas(): Promise<MedidasDelCatalogo>;
 
   medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida>;
 

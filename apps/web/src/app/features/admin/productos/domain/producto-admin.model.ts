@@ -116,6 +116,35 @@ export interface InventarioSinMedir {
   readonly items: readonly VarianteSinMedir[];
 }
 
+/**
+ * Una variante activa con la medida de su paquete, que puede no existir todavía.
+ *
+ * <p>Es lo que lista la pantalla de medidas, la que permite **corregir**: a diferencia de
+ * `VarianteSinMedir`, aquí las ya medidas también salen. `sinMedir` lo dice el servidor en vez de
+ * deducirse mirando si las cuatro cifras vienen nulas, que es la misma comprobación repetida en un
+ * sitio donde equivocarse en una de las cuatro no lo nota nadie.
+ */
+export interface MedidaDeVariante {
+  readonly varianteId: string;
+  readonly productoId: string;
+  readonly nombreProducto: string;
+  readonly sku: string;
+  readonly estadoProducto: EstadoProducto;
+  readonly pesoGramos: number | null;
+  readonly largoCm: number | null;
+  readonly anchoCm: number | null;
+  readonly altoCm: number | null;
+  readonly sinMedir: boolean;
+}
+
+/** Mismo criterio que `InventarioSinMedir`: los conteos se leen, no se derivan de `items`. */
+export interface MedidasDelCatalogo {
+  readonly total: number;
+  readonly totalSinMedir: number;
+  readonly totalSinMedirEnPublicados: number;
+  readonly items: readonly MedidaDeVariante[];
+}
+
 /** Las cuatro medidas, obligatorias y en las unidades del dominio: gramos y centímetros enteros. */
 export interface MedirVarianteAdmin {
   readonly varianteId: string;
