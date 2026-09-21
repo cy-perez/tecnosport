@@ -69,6 +69,13 @@ const PARES = [
   // superficie, pero no sobre esta.
   ["--color-error", "--color-superficie-alt", UMBRAL_TEXTO, "plazo vencido en la fila expandida"],
   ["--color-exito", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de disponible"],
+  // Los cuatro acuses del panel —publicado, retirado, existencia ajustada, medida corregida—
+  // pintan en verde directamente sobre el lienzo, no sobre una superficie. El guardian solo
+  // miraba el verde sobre superficie-alt, asi que ese par no lo vigilaba nadie.
+  ["--color-exito", "--color-fondo", UMBRAL_TEXTO, "acuses del panel sobre el lienzo"],
+  // El borde de las cajas de confirmacion en linea, que es lo unico que las separa de la fila de
+  // arriba. `--color-borde` da 1,19:1 sobre el lienzo y era invisible.
+  ["--color-borde-control", "--color-fondo", UMBRAL_GRANDE, "borde de una caja de confirmacion"],
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],
   ["--color-sobre-primario", "--color-exito", UMBRAL_TEXTO, "aviso de éxito de la captura"],

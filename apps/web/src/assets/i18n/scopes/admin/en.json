@@ -176,6 +176,7 @@
       "publicado": "Published"
     },
     "crear": {
+      "faltanCampos": "Required fields are missing: name, description, brand and category.",
       "titulo": "New product",
       "nombre": "Name",
       "descripcion": "Description",
@@ -188,6 +189,7 @@
       "faltaMarca": "Brand missing? Create it (anything typed here is lost)"
     },
     "editar": {
+      "faltanCampos": "Required fields are missing. Check the highlighted fields and try again.",
       "titulo": "Edit product",
       "nombre": "Name",
       "descripcion": "Description",
@@ -200,6 +202,7 @@
       "error_carga": "Couldn't load the product.",
       "agregarVariante": "Add variant",
       "imagenPrincipal": {
+        "faltanCampos": "The file or one of the two alternative texts is missing.",
         "titulo": "Main image",
         "actual": "Current main image",
         "previsualizacion": "Preview of the new image",
@@ -213,6 +216,7 @@
         "error": "Couldn't upload the image. Try again."
       },
       "galeria": {
+        "faltanCampos": "The file or one of the two alternative texts is missing.",
         "titulo": "Gallery",
         "ayuda": "Up to {{tope}} images, on top of the main one. They appear on the product page in this order, and you can change it.",
         "vacia": "This product has no gallery images. The product page shows only the main one.",

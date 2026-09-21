@@ -176,6 +176,7 @@
       "publicado": "Publicado"
     },
     "crear": {
+      "faltanCampos": "Faltan datos obligatorios: el nombre, la descripción, la marca y la categoría.",
       "titulo": "Nuevo producto",
       "nombre": "Nombre",
       "descripcion": "Descripción",
@@ -188,6 +189,7 @@
       "faltaMarca": "¿No está la marca? Crearla (se pierde lo escrito aquí)"
     },
     "editar": {
+      "faltanCampos": "Faltan datos obligatorios. Revisa los campos marcados y vuelve a intentarlo.",
       "titulo": "Editar producto",
       "nombre": "Nombre",
       "descripcion": "Descripción",
@@ -200,6 +202,7 @@
       "error_carga": "No se pudo cargar el producto.",
       "agregarVariante": "Agregar variante",
       "imagenPrincipal": {
+        "faltanCampos": "Falta el archivo o alguno de los dos textos alternativos.",
         "titulo": "Imagen principal",
         "actual": "Imagen principal actual",
         "previsualizacion": "Vista previa de la nueva imagen",
@@ -213,6 +216,7 @@
         "error": "No se pudo subir la imagen. Intenta de nuevo."
       },
       "galeria": {
+        "faltanCampos": "Falta el archivo o alguno de los dos textos alternativos.",
         "titulo": "Galería",
         "ayuda": "Hasta {{tope}} imágenes, además de la principal. Salen en la ficha en este mismo orden, y lo puedes cambiar.",
         "vacia": "Este producto no tiene imágenes de galería. La ficha enseña solo la principal.",

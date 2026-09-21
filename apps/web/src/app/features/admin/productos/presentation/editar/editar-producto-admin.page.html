@@ -1,7 +1,10 @@
 <ts-pagina-formulario [titulo]="'admin.productos.editar.titulo' | transloco">
   <ts-migas [ruta]="migas()" />
 
-  <a class="anillo-foco mb-24 inline-block text-ts-primario" [routerLink]="enlaceAgregarVariante()">
+  <a
+    class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario"
+    [routerLink]="enlaceAgregarVariante()"
+  >
     {{ 'admin.productos.editar.agregarVariante' | transloco }}
   </a>
 
@@ -52,7 +55,6 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [deshabilitado]="formularioInvalido()"
         [cargando]="enviando()"
         [etiquetaCargando]="'admin.productos.editar.guardando' | transloco"
       >
@@ -69,13 +71,14 @@
         {{ 'admin.productos.editar.imagenPrincipal.titulo' | transloco }}
       </h2>
 
+      <!-- Sin `width`/`height`: el CSS fija las dos dimensiones con el token, así que no hay
+           espacio que reservar, y los 200 de antes eran el token duplicado a mano **y falsos** —
+           el archivo que sube una persona puede ser 1000x1400 y el atributo declaraba 1:1. -->
       @if (consulta.data()?.imagenPrincipalUrl; as urlActual) {
         <img
           class="size-[var(--ancho-min-vista-previa)] object-cover"
           [src]="urlActual"
           [alt]="'admin.productos.editar.imagenPrincipal.actual' | transloco"
-          width="200"
-          height="200"
         />
       }
 
@@ -84,8 +87,6 @@
           class="size-[var(--ancho-min-vista-previa)] object-cover"
           [src]="previsualizacion"
           [alt]="'admin.productos.editar.imagenPrincipal.previsualizacion' | transloco"
-          width="200"
-          height="200"
         />
       }
 
@@ -93,6 +94,7 @@
         {{ 'admin.productos.editar.imagenPrincipal.archivo' | transloco }}
       </label>
       <input
+        class="anillo-foco min-h-tactil"
         id="editar-producto-imagen-archivo"
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -126,7 +128,6 @@
       <ts-boton
         variante="secundario"
         tipo="button"
-        [deshabilitado]="!imagenListaParaSubir()"
         [ocupado]="subiendoImagen()"
         [etiquetaCargando]="'admin.productos.editar.imagenPrincipal.subiendo' | transloco"
         (click)="subirImagenPrincipal()"
@@ -171,7 +172,10 @@
               <!-- El del idioma del panel, no siempre el español: `altEn` se pide obligatorio al
                    subir y no habia ni una pantalla donde volver a leerlo, asi que un texto en
                    ingles mal escrito no se podia ni detectar ni corregir. -->
-              <p class="m-0 max-w-[var(--imagen-miniatura)] text-ts-texto-suave">
+              <p
+                class="m-0 line-clamp-2 max-w-[var(--imagen-miniatura)] break-words text-ts-texto-suave"
+                [title]="idioma() === 'en' ? imagen.altEn : imagen.altEs"
+              >
                 {{ idioma() === 'en' ? imagen.altEn : imagen.altEs }}
               </p>
               <!-- Un puesto a la vez y con botones, no arrastrando: el arrastre no existe para
@@ -228,7 +232,7 @@
               @if (confirmandoQuitar() === imagen.id) {
                 <div
                   #cajaConfirmacion
-                  class="flex flex-col gap-16 border border-ts-borde p-16"
+                  class="flex flex-col gap-16 border border-ts-borde-control p-16"
                   role="group"
                   tabindex="-1"
                   [id]="'editar-producto-galeria-confirmar-' + imagen.id"
@@ -301,8 +305,6 @@
               class="size-[var(--ancho-min-vista-previa)] object-cover"
               [src]="previsualizacion"
               [alt]="'admin.productos.editar.galeria.previsualizacion' | transloco"
-              width="200"
-              height="200"
             />
           }
 
@@ -310,6 +312,7 @@
             {{ 'admin.productos.editar.galeria.archivo' | transloco }}
           </label>
           <input
+            class="anillo-foco min-h-tactil"
             id="editar-producto-galeria-archivo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -335,7 +338,6 @@
           <ts-boton
             variante="secundario"
             tipo="button"
-            [deshabilitado]="!imagenDeGaleriaListaParaSubir()"
             [cargando]="agregandoAGaleria()"
             [etiquetaCargando]="'admin.productos.editar.galeria.agregando' | transloco"
             (click)="agregarAGaleria()"

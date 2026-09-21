@@ -116,11 +116,6 @@ export class EditarProductoAdminPage {
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
-  protected readonly formularioInvalido = computed(() => {
-    this.valorFormulario();
-    return this.form.invalid;
-  });
-
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
@@ -150,11 +145,6 @@ export class EditarProductoAdminPage {
   protected readonly previsualizacionUrl = signal<string | null>(null);
   private dimensionesArchivo: { ancho: number; alto: number } | null = null;
   protected readonly errorImagen = signal<string | null>(null);
-
-  protected readonly imagenListaParaSubir = computed(() => {
-    this.valorFormularioImagen();
-    return this.archivoSeleccionado() !== null && !this.formularioImagen.invalid;
-  });
 
   protected readonly subiendoImagen = computed(() => this.mutacionImagen.isPending());
 
@@ -205,13 +195,6 @@ export class EditarProductoAdminPage {
   );
 
   protected readonly galeriaLlena = computed(() => this.galeria().length >= TOPE_DE_GALERIA);
-
-  protected readonly imagenDeGaleriaListaParaSubir = computed(() => {
-    this.valorFormularioGaleria();
-    return (
-      this.archivoDeGaleria() !== null && !this.formularioGaleria.invalid && !this.galeriaLlena()
-    );
-  });
 
   protected readonly agregandoAGaleria = computed(() => this.mutacionGaleria.isPending());
   protected readonly quitandoDeGaleria = computed(() => this.mutacionQuitarDeGaleria.isPending());
@@ -276,6 +259,10 @@ export class EditarProductoAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Se dice qué falta en vez de deshabilitar el botón: un `<button disabled>` sale del orden
+      // de tabulación, así que quien borre el nombre no encuentra "Guardar" en ninguna parte y
+      // nada le explica por qué. Mismo criterio que marcas, medidas y existencias.
+      this.error.set(this.transloco.translate('admin.productos.editar.faltanCampos'));
       return;
     }
     this.error.set(null);
@@ -393,6 +380,9 @@ export class EditarProductoAdminPage {
     const archivo = this.archivoDeGaleria();
     if (!archivo || !this.dimensionesGaleria || this.formularioGaleria.invalid) {
       this.formularioGaleria.markAllAsTouched();
+      this.errorGaleria.set(
+        this.transloco.translate('admin.productos.editar.galeria.faltanCampos'),
+      );
       return;
     }
     this.errorGaleria.set(null);
@@ -550,6 +540,9 @@ export class EditarProductoAdminPage {
     const archivo = this.archivoSeleccionado();
     if (!archivo || !this.dimensionesArchivo || this.formularioImagen.invalid) {
       this.formularioImagen.markAllAsTouched();
+      this.errorImagen.set(
+        this.transloco.translate('admin.productos.editar.imagenPrincipal.faltanCampos'),
+      );
       return;
     }
     this.errorImagen.set(null);
