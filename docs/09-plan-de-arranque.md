@@ -6709,6 +6709,66 @@ ventana delante. Es la tercera vez que este documento escribe la misma lección:
 diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
 diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
 
+## Cinco formas de mentir sin fallar, en las herramientas (2026-09-21)
+
+El tercer bloque de la revisión. Las tres promesas grandes se comprobaron leyendo cada invocación,
+y se cumplen: `huerfanos` hace una sola llamada a gcloud y es un `ls`; `verificar-kit`
+regenera siempre en un temporal y del repositorio solo lee; y las doce escrituras del cargador
+están todas detrás de `--escribir`, incluidas `--medir`, `--publicar-sku` y `--galeria`.
+
+Lo que no se cumplía es más sutil, y todo de la misma familia: **cosas que fallan sin fallar**.
+
+### El filtro de plata que un orden de argumentos apagaba
+
+`valor()` devolvía el argumento siguiente sin mirar si era otra bandera. Así que
+`--margen-minimo --listos` dejaba `parseFloat("--listos")` en `NaN`, y `NaN > 0` es `false`:
+el filtro del margen **desaparecía sin una línea de aviso**. Medido en simulación: 12 productos
+donde debían ser 8, y los cuatro de diferencia son justo los que se venden al costo. Con un
+`--escribir --publicar` detrás, salen a la vitrina.
+
+### El informe que podía cruzar dos ambientes
+
+`--bucket` no tiene omisión, con un mensaje que explica muy bien por qué: *"el nombre del bucket
+de producción y el de dev se parecen lo bastante"*. Pero `--api` sí la tenía, `localhost:8080`.
+Olvidarla con el `bootRun` levantado —el estado normal de esta máquina— listaba el bucket que se
+pidiera y lo cruzaba contra el catálogo local: casi todo salía huérfano, con fecha y tamaño, y el
+informe remataba afirmando que cada uno era una subida que nunca se confirmó. **La mitad protegida
+era la que no decidía nada.**
+
+### Tres resúmenes que no cuadraban con sus propias filas
+
+Es el defecto que este proyecto ya pagó tres veces —la simulación que listaba tres líneas y
+remataba con "0", el cruce y el cargador con dos ideas de "publicable", la sonda que midió a qué
+hora caducó un token—, y volvió en tres sitios: el pie de la carga sumaba cargados y saltados y
+callaba los fallos; `reclaman N de ellos` contaba las keys del panel en vez de la intersección, y
+podía salir mayor que el número de objetos listados; y el encabezado del cruce decía "96 productos
+procesados" sobre una tabla de 33.
+
+### Y la divergencia, un nivel más abajo de donde se buscó
+
+`material-catalogo.mjs` existe para que "publicable" se decida en un solo sitio, y eso funciona.
+Lo que se quedó fuera fue el **margen**: el cruce comparaba `venta <= costo * 1.05` —sobre el
+costo— y el cargador `(venta - costo) / venta` —sobre la venta—, y los dos lo llamaban "5%". Entre
+4,76 % y 5,00 % sobre la venta, el informe daba el producto por bueno y el cargador lo descartaba.
+
+### Lo demás
+
+`?tamano=200` clavado en tres sitios sin mirar `totalProductos`; un listado de gcloud que no se
+pudiera interpretar se veía igual que un bucket vacío; `RAIZ` se rompía con un espacio o una tilde
+en la ruta del repositorio; la clave se armaba byte a byte, así que una `ñ` la corrompía y el 401
+se explicaba como "clave incorrecta"; `process.exit()` dentro del `try` se salta el `finally`,
+y `verificar-kit` dejaba un temporal por cada corrida fallida.
+
+Y una corrida de `--galeria` interrumpida dejaba el producto a medias: el salto decía "ya tiene N
+imagen(es)" sin mirar cuántas había, así que las tomas que faltaban no subían nunca más y el
+mensaje se leía como éxito.
+
+**Lo que no se hizo, y por qué:** el guardián del kit sigue sin mirar si un archivo generado dejó
+de producirse y sigue commiteado. El temporal lleva las entradas más lo generado, y el repositorio
+lleva además `LEEME.md` y compañía; sin saber cuáles produce `kit_ui.py`, la comprobación
+dispararía con falsos positivos. Un guardián que grita por nada se desactiva, y entonces tampoco
+vigila lo que sí importa.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
