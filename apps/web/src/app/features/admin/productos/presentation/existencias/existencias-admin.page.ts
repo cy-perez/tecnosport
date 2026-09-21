@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -25,10 +34,9 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
  * criterio que la de sin-medir: contar es recorrer la bodega con la lista delante, y sacar a quien
  * cuenta de la lista para devolverlo después alarga la única tarea que esta pantalla tiene.
  *
- * <p>Las tres cifras van separadas —lo que declara el catálogo, lo que dice el libro y lo
- * disponible— porque son tres cosas distintas y la primera es la única que ve quien compra. Que la
- * primera y la segunda puedan diferir es el defecto que `ADR-0049` documenta: se marca, no se
- * disimula.
+ * <p>Dos cifras por variante —lo que hay y lo que se puede vender—, que son dos cosas distintas:
+ * la segunda descuenta las reservas en vuelo. Fueron tres hasta `ADR-0050`, cuando la columna
+ * `variante.existencia` desapareció y con ella el descuadre que la tercera servía para marcar.
  */
 @Component({
   selector: 'app-existencias-admin',
@@ -64,6 +72,18 @@ export class ExistenciasAdminPage {
 
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
+  private readonly enfocarDespuesDePintar = usarFoco();
+  private readonly avisoExistencias = viewChild<ElementRef<HTMLElement>>('avisoExistencias');
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /** El `<button>` real dentro del `ts-boton` que abre el conteo de una fila. */
+  private botonDeAbrir(varianteId: string): HTMLElement | null {
+    return (
+      this.raiz.nativeElement.querySelector<HTMLElement>(`[data-abrir="${varianteId}"] button`) ??
+      null
+    );
+  }
+
   protected readonly form = new FormGroup({
     // Sin valor por omisión: un cero heredado de un formulario en blanco sería un conteo
     // inventado, y este es justo el dato que no se puede inventar. Cero sí es un conteo válido
@@ -89,12 +109,22 @@ export class ExistenciasAdminPage {
     this.contando.set(varianteId);
   }
 
-  protected cancelar(): void {
+  /**
+   * Cancelar destruye el formulario con el botón "Cancelar" dentro, así que el foco hay que
+   * devolverlo a mano al botón que lo abrió: si no, el navegador lo manda a `<body>`.
+   */
+  protected cancelar(varianteId: string): void {
     this.contando.set(null);
     this.error.set(null);
+    this.enfocarDespuesDePintar(() => this.botonDeAbrir(varianteId));
   }
 
   protected enviar(varianteId: string): void {
+    // Guarda de reentrada en vez de `[cargando]` en el botón de enviar: deshabilitarlo mientras
+    // va la petición le quita el foco a quien acaba de pulsarlo.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       // Decir qué falta en vez de solo marcar, y sin deshabilitar el botón: un `<button disabled>`
@@ -116,6 +146,9 @@ export class ExistenciasAdminPage {
         onSuccess: (resultado) => {
           this.contando.set(null);
           this.ajuste.set(resultado);
+          // El formulario ya no existe: el foco va al aviso, que es lo que explica qué pasó —y en
+          // el peor caso, que el conteo dejó reservas sin respaldo.
+          this.enfocarDespuesDePintar(() => this.avisoExistencias()?.nativeElement);
         },
         onError: () =>
           this.error.set(this.transloco.translate('admin.productos.existencias.error')),

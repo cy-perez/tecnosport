@@ -164,6 +164,7 @@
     "nuevo": "Nuevo producto",
     "editarEnlace": "Editar",
     "columnas": {
+      "acciones": "Acciones",
       "nombre": "Nombre",
       "marca": "Marca",
       "categoria": "Categoría",
@@ -208,6 +209,7 @@
         "subir": "Subir imagen",
         "subiendo": "Subiendo…",
         "tipoNoSoportado": "Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.",
+        "subida": "Imagen principal actualizada.",
         "error": "No se pudo subir la imagen. Intenta de nuevo."
       },
       "galeria": {
@@ -294,7 +296,7 @@
     "existencias": {
       "titulo": "Existencias",
       "explicacion": "Dos cifras por variante, y no son lo mismo. La del libro es lo que hay, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso, y es la que decide si la tienda deja comprar. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
-      "resumen": "{{total}} variantes activas, {{sinExistencia}} sin una sola unidad en el libro.",
+      "resumen": "{{total}} variante(s) activas, {{sinExistencia}} sin una sola unidad en el libro.",
       "ninguna": "Todavía no hay variantes activas que contar.",
       "sinExistencia": "(sin existencia)",
       "reservadas": "({{reservadas}} reservadas)",

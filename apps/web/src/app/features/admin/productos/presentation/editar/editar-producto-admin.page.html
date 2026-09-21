@@ -115,11 +115,19 @@
         <p class="m-0 text-ts-error" role="alert">{{ errorImagen() }}</p>
       }
 
+      <!-- Subir la imagen principal no dejaba ningun rastro: el formulario se limpiaba y ya. Para
+           quien usa lector de pantalla eso era indistinguible de no haber hecho nada. -->
+      <p class="m-0 text-ts-exito" role="status" tabindex="-1" #avisoImagenPrincipal>
+        @if (avisoImagen(); as clave) {
+          {{ clave | transloco }}
+        }
+      </p>
+
       <ts-boton
         variante="secundario"
         tipo="button"
         [deshabilitado]="!imagenListaParaSubir()"
-        [cargando]="subiendoImagen()"
+        [ocupado]="subiendoImagen()"
         [etiquetaCargando]="'admin.productos.editar.imagenPrincipal.subiendo' | transloco"
         (click)="subirImagenPrincipal()"
       >
@@ -160,8 +168,11 @@
               <!-- El texto alternativo guardado se pinta, no solo se lee: es un dato que se esta
                    editando, y metido solo en el `alt` unicamente lo oye quien usa lector de
                    pantalla, que ademas lo oye como si describiera esta miniatura. -->
+              <!-- El del idioma del panel, no siempre el español: `altEn` se pide obligatorio al
+                   subir y no habia ni una pantalla donde volver a leerlo, asi que un texto en
+                   ingles mal escrito no se podia ni detectar ni corregir. -->
               <p class="m-0 max-w-[var(--imagen-miniatura)] text-ts-texto-suave">
-                {{ imagen.altEs }}
+                {{ idioma() === 'en' ? imagen.altEn : imagen.altEs }}
               </p>
               <!-- Un puesto a la vez y con botones, no arrastrando: el arrastre no existe para
                    quien navega con teclado. En cada extremo el boton que no lleva a ningun sitio

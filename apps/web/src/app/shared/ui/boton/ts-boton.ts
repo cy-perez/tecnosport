@@ -78,6 +78,20 @@ export class TsBoton {
   readonly variante = input<VarianteBoton>('primario');
   readonly tipo = input<'button' | 'submit'>('button');
   readonly cargando = input(false);
+  /**
+   * Como `cargando`, pero **sin deshabilitar el botón**: solo pinta `aria-busy`.
+   *
+   * Existe porque `cargando` hace las dos cosas y la segunda tiene un precio que no siempre se
+   * quiere pagar: deshabilitar el botón que la persona acaba de pulsar le quita el foco, y el
+   * navegador lo manda a `<body>`. En una acción de fila —publicar, contar, medir, quitar— eso
+   * devuelve al principio del documento a quien navega con teclado. Ese defecto costó dos
+   * correcciones en la misma semana y seguía vivo en cuatro pantallas del panel.
+   *
+   * `cargando` sigue siendo lo correcto donde deshabilitar es el punto: el envío de un formulario
+   * de página completa, donde no hay foco de fila que perder. Para una acción de fila, este más una
+   * guarda de reentrada en el manejador.
+   */
+  readonly ocupado = input(false);
   readonly deshabilitado = input(false);
   /** Para usarlo como botón de alternancia (p. ej. una opción de un selector de variante). */
   readonly presionado = input<boolean | null>(null);

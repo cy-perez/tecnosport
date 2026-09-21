@@ -11,10 +11,14 @@ export function usarAjustarExistencia() {
   return injectMutation(() => ({
     mutationFn: (comando: AjustarExistenciaAdmin): Promise<ExistenciaAjustada> =>
       repositorio.ajustarExistencia(comando),
-    // Dos llaves, no una. La de esta pantalla, y la del catálogo público: el ajuste escribe
-    // también `variante.existencia` (`ADR-0049`), así que la ficha y la rejilla tienen dentro el
-    // número viejo hasta que su entrada caduque. Es el mismo descuido que costó que una marca
+    // Dos llaves, no una. La de esta pantalla, y la del catálogo público: la ficha y la rejilla
+    // llevan dentro el booleano de disponibilidad, que este ajuste acaba de cambiar, y se quedan
+    // con el viejo hasta que su entrada caduque. Es el mismo descuido que costó que una marca
     // recién creada no saliera en su desplegable.
+    //
+    // El motivo era otro hasta `ADR-0050` —el ajuste escribía además `variante.existencia`, una
+    // columna que ya no existe— y la invalidación sigue haciendo falta igual. Se deja dicho para
+    // que quien lea esto sabiendo que la columna murió no la quite por huérfana.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: CLAVE_EXISTENCIAS });
       void queryClient.invalidateQueries({ queryKey: ['catalogo'] });

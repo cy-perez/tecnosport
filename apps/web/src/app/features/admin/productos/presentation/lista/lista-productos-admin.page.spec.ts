@@ -6,6 +6,7 @@ import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
 import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
+import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
@@ -349,5 +350,27 @@ describe('ListaProductosAdminPage', () => {
       [],
       expect.objectContaining({ queryParams: { pagina: 2 } }),
     );
+  });
+
+  // La pantalla con más superficie interactiva nueva del panel no tenía ni una comprobación de
+  // axe. Dos casos, porque la confirmación en línea solo existe en el segundo.
+  it('no tiene violaciones de accesibilidad', async () => {
+    const { container } = await renderLista([productoDePrueba()]);
+    await screen.findByRole('table');
+
+    await esperarSinViolaciones(container);
+  });
+
+  it('tampoco con la confirmación de publicar abierta', async () => {
+    const producto = productoDePrueba({ estado: 'BORRADOR' });
+    const { container } = await renderLista([producto]);
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', producto.nombre),
+      }),
+    );
+    await screen.findByRole('button', { name: esAdmin.productos.publicar.confirmarAccion });
+
+    await esperarSinViolaciones(container);
   });
 });

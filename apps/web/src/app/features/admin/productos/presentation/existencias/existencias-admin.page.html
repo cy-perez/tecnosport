@@ -20,16 +20,23 @@
          bien" no son lo mismo, y el tercero no es una felicitación: son compras aceptadas que no
          se van a poder despachar, y quien acaba de contar es la única persona que se puede
          enterar a tiempo. -->
-    @if (ajuste(); as resultado) {
-      @if (resultado.sinCambios) {
-        <p class="mb-16 text-ts-exito" role="status">
+    <!-- Los dos nodos están siempre en el DOM, aunque estén vacíos: una región viva que se monta
+         ya llena con un `@if` es justo lo que los lectores de pantalla anuncian mal, y el segundo
+         de estos mensajes es el más importante de la pantalla. Lo que cambia es el contenido. -->
+    <p
+      #avisoExistencias
+      class="text-ts-exito"
+      role="status"
+      tabindex="-1"
+      [class.mb-16]="ajuste() !== null"
+    >
+      @if (ajuste(); as resultado) {
+        @if (resultado.sinCambios) {
           {{
             'admin.productos.existencias.sinCambios'
               | transloco: { sku: resultado.sku, unidades: resultado.saldoNuevo }
           }}
-        </p>
-      } @else {
-        <p class="mb-16 text-ts-exito" role="status">
+        } @else {
           {{
             'admin.productos.existencias.ajustada'
               | transloco
@@ -39,23 +46,29 @@
                     nuevo: resultado.saldoNuevo,
                   }
           }}
-        </p>
+        }
       }
+    </p>
 
-      @if (resultado.dejaReservasSinRespaldo) {
-        <p class="mb-16 text-ts-error" role="alert">
+    <p
+      class="text-ts-error"
+      role="alert"
+      [class.mb-16]="ajuste()?.dejaReservasSinRespaldo === true"
+    >
+      @if (ajuste(); as resultado) {
+        @if (resultado.dejaReservasSinRespaldo) {
           {{
             'admin.productos.existencias.reservasSinRespaldo'
               | transloco: { sku: resultado.sku, reservadas: resultado.unidadesReservadas }
           }}
-        </p>
+        }
       }
-    }
+    </p>
 
     @if (total() === 0) {
       <p class="text-ts-texto-suave">{{ 'admin.productos.existencias.ninguna' | transloco }}</p>
     } @else {
-      <p class="mb-16" role="status">
+      <p class="mb-16">
         {{
           'admin.productos.existencias.resumen'
             | transloco: { total: total(), sinExistencia: totalSinExistencia() }
@@ -75,7 +88,9 @@
               <th scope="col">
                 {{ 'admin.productos.existencias.columnas.disponible' | transloco }}
               </th>
-              <th scope="col"></th>
+              <th scope="col">
+                <span class="sr-only">{{ 'admin.productos.columnas.acciones' | transloco }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -107,7 +122,10 @@
                 </td>
                 <td>
                   <ts-boton
+                    [attr.data-abrir]="variante.varianteId"
                     variante="secundario"
+                    [expandido]="contando() === variante.varianteId"
+                    [controla]="'conteo-' + variante.varianteId"
                     [etiquetaAccesible]="
                       'admin.productos.existencias.contarVariante'
                         | transloco: { sku: variante.sku }
@@ -120,12 +138,13 @@
               </tr>
 
               @if (contando() === variante.varianteId) {
-                <tr>
+                <tr [id]="'conteo-' + variante.varianteId">
                   <td colspan="6">
                     <form
                       class="flex flex-col gap-16"
                       [formGroup]="form"
                       (submit)="$event.preventDefault(); enviar(variante.varianteId)"
+                      (keydown.escape)="cancelar(variante.varianteId)"
                     >
                       <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
                         <legend>
@@ -156,10 +175,10 @@
                       }
 
                       <div class="flex flex-wrap gap-16">
-                        <ts-boton tipo="submit" [cargando]="enviando()">
+                        <ts-boton tipo="submit" [ocupado]="enviando()">
                           {{ 'admin.productos.existencias.guardar' | transloco }}
                         </ts-boton>
-                        <ts-boton variante="secundario" (click)="cancelar()">
+                        <ts-boton variante="secundario" (click)="cancelar(variante.varianteId)">
                           {{ 'admin.productos.existencias.cancelar' | transloco }}
                         </ts-boton>
                       </div>

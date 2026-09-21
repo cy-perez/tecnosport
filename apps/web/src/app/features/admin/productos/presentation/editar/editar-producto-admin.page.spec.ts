@@ -36,6 +36,7 @@ import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../../domain/repositorio-productos-admin.puerto';
+import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
@@ -700,5 +701,14 @@ describe('EditarProductoAdminPage', () => {
         await screen.findByText('No se pudo agregar la imagen. Intenta de nuevo.'),
       ).toBeTruthy();
     });
+  });
+
+  // La pantalla con la galería, las dos subidas y los botones de reordenar tampoco tenía ninguna
+  // comprobación de axe, y es la que más ARIA escribe a mano de todo el panel.
+  it('no tiene violaciones de accesibilidad', async () => {
+    const { container } = await renderPagina(new RepositorioProductosAdminFalso());
+    await screen.findByDisplayValue('Morral urbano');
+
+    await esperarSinViolaciones(container);
   });
 });

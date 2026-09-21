@@ -164,6 +164,7 @@
     "nuevo": "New product",
     "editarEnlace": "Edit",
     "columnas": {
+      "acciones": "Actions",
       "nombre": "Name",
       "marca": "Brand",
       "categoria": "Category",
@@ -208,6 +209,7 @@
         "subir": "Upload image",
         "subiendo": "Uploading…",
         "tipoNoSoportado": "That file type isn't supported. Use JPEG, PNG or WebP.",
+        "subida": "Main image updated.",
         "error": "Couldn't upload the image. Try again."
       },
       "galeria": {
@@ -294,7 +296,7 @@
     "existencias": {
       "titulo": "Stock",
       "explicacion": "Two figures per variant, and they are not the same. The ledger one is what there is, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress, and it is the one that decides whether the shop allows buying. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
-      "resumen": "{{total}} active variants, {{sinExistencia}} without a single unit in the ledger.",
+      "resumen": "{{total}} active variant(s), {{sinExistencia}} without a single unit in the ledger.",
       "ninguna": "There are no active variants to count yet.",
       "sinExistencia": "(out of stock)",
       "reservadas": "({{reservadas}} reserved)",

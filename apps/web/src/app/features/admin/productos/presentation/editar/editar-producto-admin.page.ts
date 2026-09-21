@@ -15,6 +15,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -75,6 +76,7 @@ export class EditarProductoAdminPage {
   private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
   private readonly mutacionReordenarGaleria = usarReordenarGaleriaAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
+  protected readonly idioma = usarIdiomaActivo();
 
   private readonly paramMap = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -181,6 +183,8 @@ export class EditarProductoAdminPage {
 
   /** Una sola región viva para los dos anuncios; guarda la clave, no el texto. */
   protected readonly aviso = signal<string | null>(null);
+  /** Aparte del de la galeria: son dos secciones distintas y cada acuse se pinta donde paso. */
+  protected readonly avisoImagen = signal<string | null>(null);
 
   /** El id de la imagen cuya fila está preguntando, como en la lista de productos. */
   protected readonly confirmandoQuitar = signal<string | null>(null);
@@ -192,6 +196,8 @@ export class EditarProductoAdminPage {
    */
   private readonly cajaConfirmacion = viewChild<ElementRef<HTMLElement>>('cajaConfirmacion');
   private readonly avisoGaleria = viewChild<ElementRef<HTMLElement>>('avisoGaleria');
+  private readonly avisoImagenPrincipal =
+    viewChild<ElementRef<HTMLElement>>('avisoImagenPrincipal');
   private readonly filas = viewChildren<ElementRef<HTMLElement>>('filaDeGaleria');
 
   protected readonly galeria = computed<readonly ImagenDeGaleriaAdmin[]>(
@@ -547,6 +553,7 @@ export class EditarProductoAdminPage {
       return;
     }
     this.errorImagen.set(null);
+    this.avisoImagen.set(null);
 
     const { altEs, altEn } = this.formularioImagen.getRawValue();
     this.mutacionImagen.mutate(
@@ -564,6 +571,8 @@ export class EditarProductoAdminPage {
           this.archivoSeleccionado.set(null);
           this.dimensionesArchivo = null;
           this.formularioImagen.reset();
+          this.avisoImagen.set('admin.productos.editar.imagenPrincipal.subida');
+          this.enfocarDespuesDePintar(() => this.avisoImagenPrincipal()?.nativeElement);
         },
         onError: () =>
           this.errorImagen.set(

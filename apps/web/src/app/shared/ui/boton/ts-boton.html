@@ -3,7 +3,7 @@
      proyecta Angular no es evidente, y aquí no hace falta averiguarlo:
      `ngTemplateOutlet` instancia el mismo bloque en la rama que toque. -->
 <ng-template #contenido>
-  @if (cargando() && etiquetaCargando()) {
+  @if ((cargando() || ocupado()) && etiquetaCargando()) {
     {{ etiquetaCargando() }}
   } @else {
     <ng-content />
@@ -33,7 +33,7 @@
     [class]="clases()"
     [type]="tipo()"
     [disabled]="deshabilitado() || cargando()"
-    [attr.aria-busy]="cargando() ? 'true' : null"
+    [attr.aria-busy]="cargando() || ocupado() ? 'true' : null"
     [attr.aria-pressed]="presionado() === null ? null : presionado() ? 'true' : 'false'"
     [attr.aria-expanded]="expandido() === null ? null : expandido() ? 'true' : 'false'"
     [attr.aria-controls]="controla()"
