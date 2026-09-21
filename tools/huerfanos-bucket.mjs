@@ -51,6 +51,18 @@ const BUCKET = valor("--bucket", process.env.GCS_BUCKET_IMAGENES);
 const CORREO = valor("--correo");
 let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
 
+// El nombre va dentro de `gs://${BUCKET}/productos/**` en una invocación con `shell: true`
+// —que hace falta porque en Windows gcloud es un `.cmd`—, así que un valor con `&`, `|` o
+// comillas ejecutaría lo que venga detrás. Las reglas de nombre de Cloud Storage no admiten
+// ninguno de esos caracteres, de modo que validarlo no rechaza ningún bucket real.
+if (BUCKET && !/^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$/.test(BUCKET)) {
+  console.error(
+    `"${BUCKET}" no tiene forma de nombre de bucket. Se comprueba porque el nombre se interpola` +
+      " en una línea de shell.",
+  );
+  process.exit(1);
+}
+
 if (!API) {
   console.error(
     "Falta la API: --api <url>. Tampoco tiene omisión: el informe cruza lo que hay en el bucket" +

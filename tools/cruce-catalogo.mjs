@@ -77,7 +77,10 @@ if (sinMargen.length > 0) {
 }
 console.log("");
 
-const ancho = Math.max(...filas.map((f) => f.id.length));
+// Con `filas` vacío —`productos.json` presente y ninguna foto procesada, sin `--todos`—,
+// `Math.max()` da `-Infinity` y `padEnd(-Infinity)` revienta con un error que no dice nada de lo
+// que de verdad pasa, que es que no hay nada que enseñar.
+const ancho = filas.length === 0 ? 0 : Math.max(...filas.map((f) => f.id.length));
 const ordenadas = filas.sort((a, b) => a.faltas.length - b.faltas.length || a.id.localeCompare(b.id));
 for (const fila of ordenadas) {
   const costo = fila.precio_proveedor_cop;

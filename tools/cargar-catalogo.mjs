@@ -83,6 +83,19 @@ const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
 const MARGEN_MINIMO = Number.parseFloat(valor("--margen-minimo", "0"));
 const REGISTRO = join(CATALOGO, "cargados.json");
 
+// Las ramas salen temprano en orden fijo, así que `--medir X --publicar-sku Y` publicaba y no
+// medía, sin una palabra. Salir temprano está bien; ignorar en silencio lo que se pidió, no.
+const MODOS = ["--reconciliar", "--publicar-sku", "--galeria", "--medir"].filter((n) =>
+  argv.includes(n),
+);
+if (MODOS.length > 1) {
+  console.error(
+    `Esas opciones no se combinan: ${MODOS.join(", ")}. Cada una es una corrida aparte, y` +
+      " mezclarlas haría difícil saber qué pasó con cuál. Córrelas una por una.",
+  );
+  process.exit(1);
+}
+
 
 
 /** Las categorías de la lista del proveedor y su slug en el catálogo. */
@@ -549,6 +562,7 @@ async function rellenarGalerias(skus, registro) {
     Object.entries(registro).map(([id, anotado]) => [anotado.sku, id]),
   );
   let subidas = 0;
+  let fallaronGalerias = 0;
 
   for (const sku of skus) {
     const variante = porSku.get(sku);
@@ -569,11 +583,22 @@ async function rellenarGalerias(skus, registro) {
     }
 
     const detalle = await pedir(`/api/v1/admin/productos/${variante.productoId}`);
-    if ((detalle.galeria ?? []).length > 0) {
+    const yaTiene = (detalle.galeria ?? []).length;
+    const disponibles = fotosDeGaleria(producto).length;
+    if (yaTiene > 0) {
+      // Con menos de las que hay, no es "ya está": es una corrida que se cortó a mitad. El salto
+      // silencioso convertía eso en un mensaje que se lee como éxito y las tomas que faltaban no
+      // se subían nunca más. No se completa sola —no hay forma de saber cuál de las de allá
+      // corresponde a cuál de las de aquí— pero se dice, que es lo que faltaba.
+      const incompleta = yaTiene < disponibles;
       console.log(
-        `saltado     ${sku}: ${variante.nombreProducto} ya tiene` +
-          ` ${detalle.galeria.length} imagen(es) de galería`,
+        `${incompleta ? "INCOMPLETA " : "saltado    "} ${sku}: ${variante.nombreProducto} tiene` +
+          ` ${yaTiene} de ${disponibles} imagen(es) de galería` +
+          (incompleta ? " — revisar a mano: una corrida anterior no terminó" : ""),
       );
+      if (incompleta) {
+        process.exitCode = 1;
+      }
       continue;
     }
 
@@ -592,17 +617,30 @@ async function rellenarGalerias(skus, registro) {
     subidas += fotos.length;
     if (!ESCRIBIR) continue;
 
-    for (const foto of fotos) {
-      await subirAGaleria(variante.productoId, foto, producto.titulo);
+    let subidasDeEste = 0;
+    try {
+      for (const foto of fotos) {
+        await subirAGaleria(variante.productoId, foto, producto.titulo);
+        subidasDeEste++;
+      }
+    } catch (error) {
+      // Sin este `catch`, un 500 o un token vencido a mitad propagaba fuera del bucle: moría el
+      // proceso, no se imprimía ninguna línea de resumen y no había forma de saber cuáles de los
+      // doce habían quedado hechos.
+      console.error(
+        `FALLÓ       ${sku}: ${error.message} (subió ${subidasDeEste} de ${fotos.length})`,
+      );
+      fallaronGalerias++;
+      process.exitCode = 1;
     }
-    if (id) {
-      registro[id] = { ...registro[id], imagenesDeGaleria: fotos.length };
+    if (id && subidasDeEste > 0) {
+      registro[id] = { ...registro[id], imagenesDeGaleria: subidasDeEste };
       writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
 `, "utf8");
     }
   }
   console.log(`
-${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}`);
+${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}${fallaronGalerias > 0 ? ` · fallaron: ${fallaronGalerias}` : ""}`);
 }
 
 /**
