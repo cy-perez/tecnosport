@@ -26,7 +26,7 @@ import java.util.Objects;
  * que la vitrina lee.
  *
  * <p>Sin {@code @Transactional}, igual que {@code CrearPedido}: el bloqueo pesimista que toma
- * {@code RepositorioInventario.buscarPorVarianteId} solo sirve si la carga, la mutación y el
+ * {@code RepositorioInventario.abrirLibroConBloqueo} solo sirve si la carga, la mutación y el
  * guardado corren en una transacción que abre quien llama. Es lo que impide que un conteo y una
  * reserva simultánea se pisen.
  */
@@ -58,13 +58,16 @@ public final class AjustarExistencia {
             .findFirst()
             .orElseThrow(() -> new VarianteNoEncontradaPorIdException(comando.varianteId()));
 
-    // Una variante sin libro no bloquea la corrección: `SembradorCatalogo` escribe entidades JPA
-    // directo, así que puede haber variantes sin fila de inventario. Negarse aquí dejaría el dato
-    // malo en pie y obligaría a arreglarlo con SQL, que es de lo que se está saliendo.
-    Inventario inventario =
-        repositorioInventario
-            .buscarPorVarianteId(comando.varianteId())
-            .orElseGet(() -> Inventario.crear(comando.varianteId()));
+    // Una variante sin libro no bloquea la corrección: negarse dejaría el dato malo en pie y
+    // obligaría a arreglarlo con SQL, que es de lo que se está saliendo — y además la pantalla de
+    // existencias enseña precisamente esas variantes, así que serían filas imposibles de corregir
+    // desde el sitio que existe para corregirlas.
+    //
+    // Lo que no puede es abrirlo aquí. Un `orElseGet(() -> Inventario.crear(...))` deja esa rama
+    // sin ningún bloqueo: el `select … for update` no encuentra fila, así que no bloquea nada, y
+    // dos conteos simultáneos escribían dos libros contra `ux_inventario_variante`. Quien abre el
+    // libro es el repositorio, de forma idempotente, y devuelve el bloqueo tomado en las dos ramas.
+    Inventario inventario = repositorioInventario.abrirLibroConBloqueo(comando.varianteId());
 
     Instant ahora = reloj.ahora();
     int saldoAnterior = inventario.saldoTotal();

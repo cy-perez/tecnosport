@@ -278,6 +278,78 @@ class RepositorioInventarioJpaTest {
   }
 
   @Test
+  void abrirLibroConBloqueoLoCreaSiNoExisteYDevuelveElMismoSiYaEstaba() {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID varianteId = variantePropia("SKU-INV-ABRIR-1");
+    Instant ahora = Instant.now();
+
+    UUID primerId =
+        transaccion.execute(estado -> repositorio.abrirLibroConBloqueo(varianteId).id());
+
+    // Con el libro ya abierto y con movimientos, vuelve el mismo agregado y no uno nuevo.
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario libro = repositorio.abrirLibroConBloqueo(varianteId);
+          libro.registrarEntrada(4, "siembra de prueba", ahora);
+          repositorio.guardar(libro);
+        });
+
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario libro = repositorio.abrirLibroConBloqueo(varianteId);
+          assertThat(libro.id()).isEqualTo(primerId);
+          assertThat(libro.saldoTotal()).isEqualTo(4);
+        });
+  }
+
+  /**
+   * La carrera que motivó el método. Antes, quien necesitaba el libro de una variante que no lo
+   * tenía hacía {@code buscarPorVarianteId(id).orElseGet(() -> Inventario.crear(id))}, y esa rama
+   * no sostiene ningún bloqueo: dos conteos simultáneos escribían dos agregados distintos contra
+   * {@code ux_inventario_variante} y el que perdía moría con una violación de integridad.
+   *
+   * <p>Lo que se comprueba es que los dos hilos terminan y que queda <b>un solo</b> libro.
+   */
+  @Test
+  void dosConteosSimultaneosSobreUnaVarianteSinLibroNoCreanDosLibros() throws Exception {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID varianteId = variantePropia("SKU-INV-ABRIR-2");
+
+    CountDownLatch listos = new CountDownLatch(2);
+    Callable<UUID> intento =
+        () -> {
+          listos.countDown();
+          listos.await();
+          return transaccion.execute(
+              estado -> {
+                Inventario libro = repositorio.abrirLibroConBloqueo(varianteId);
+                libro.registrarAjuste(1, "conteo simultáneo", Instant.now());
+                repositorio.guardar(libro);
+                return libro.id();
+              });
+        };
+
+    ExecutorService ejecutor = Executors.newFixedThreadPool(2);
+    List<Future<UUID>> resultados;
+    try {
+      resultados = ejecutor.invokeAll(List.of(intento, intento));
+    } finally {
+      ejecutor.shutdown();
+    }
+
+    UUID primero = resultados.get(0).get();
+    UUID segundo = resultados.get(1).get();
+    assertThat(primero).isEqualTo(segundo);
+
+    // Y el libro único quedó con los dos ajustes, no con uno: el segundo esperó al primero.
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario libro = repositorio.buscarPorVarianteId(varianteId).orElseThrow();
+          assertThat(libro.saldoTotal()).isEqualTo(2);
+        });
+  }
+
+  @Test
   void dosCompradoresSimultaneosPorLaUltimaUnidadSoloUnoGana() throws Exception {
     transaccion = new TransactionTemplate(transactionManager);
     UUID varianteId = variantePropia("SKU-INV-T2");

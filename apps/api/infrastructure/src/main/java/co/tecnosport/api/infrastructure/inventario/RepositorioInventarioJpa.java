@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.inventario;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
@@ -87,6 +88,25 @@ public class RepositorioInventarioJpa implements RepositorioInventario {
         .map(
             entidad -> aInventario(entidad, porInventario.getOrDefault(entidad.getId(), List.of())))
         .toList();
+  }
+
+  /**
+   * Inserta si hace falta y vuelve a leer con bloqueo. El {@code findByVarianteId} de la segunda
+   * línea es el que toma el {@code select … for update}, y para entonces la fila existe seguro — la
+   * haya puesto esta transacción o la que ganó la carrera.
+   *
+   * <p>El id se genera aquí y puede acabar descartándolo el {@code on conflict}: es el precio de no
+   * tener que preguntar antes si existe, y preguntar antes es justo lo que no sirve, porque entre
+   * la pregunta y la inserción cabe la otra transacción.
+   */
+  @Override
+  public Inventario abrirLibroConBloqueo(UUID varianteId) {
+    inventarios.abrirSiNoExiste(GeneradorIdentificador.nuevo(), varianteId);
+    return buscarPorVarianteId(varianteId)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "El libro de la variante " + varianteId + " no existe después de abrirlo."));
   }
 
   @Override

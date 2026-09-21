@@ -25,6 +25,12 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
         .map(RepositorioInventarioFalso::reconstituido);
   }
 
+  /** Abre el libro si no existe, como hace el adaptador real de forma idempotente. */
+  @Override
+  public Inventario abrirLibroConBloqueo(UUID varianteId) {
+    return reconstituido(porVarianteId.computeIfAbsent(varianteId, Inventario::crear));
+  }
+
   @Override
   public void guardar(Inventario inventario) {
     porVarianteId.put(inventario.varianteId(), reconstituido(inventario));
