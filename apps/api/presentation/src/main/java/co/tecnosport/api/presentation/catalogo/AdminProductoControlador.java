@@ -5,6 +5,7 @@ import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.CrearProductoComando;
+import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EditarProductoComando;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
@@ -29,6 +30,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,6 +61,7 @@ public class AdminProductoControlador {
   private final SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal;
   private final ConfirmarImagenPrincipal confirmarImagenPrincipal;
   private final PublicarProducto publicarProducto;
+  private final DespublicarProducto despublicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
 
   public AdminProductoControlador(
@@ -69,6 +72,7 @@ public class AdminProductoControlador {
       SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal,
       ConfirmarImagenPrincipal confirmarImagenPrincipal,
       PublicarProducto publicarProducto,
+      DespublicarProducto despublicarProducto,
       MapeadorRespuestasProductoAdmin mapeador) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
@@ -78,6 +82,7 @@ public class AdminProductoControlador {
         Objects.requireNonNull(solicitarSubidaDeImagenPrincipal);
     this.confirmarImagenPrincipal = Objects.requireNonNull(confirmarImagenPrincipal);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
+    this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
   }
 
@@ -124,6 +129,23 @@ public class AdminProductoControlador {
   public ProductoAdminRespuesta publicar(@PathVariable("id") UUID id) {
     Producto producto = publicarProducto.ejecutar(id);
     log.info("Producto publicado: {}", id);
+    return mapeador.aRespuesta(producto);
+  }
+
+  /**
+   * {@code DELETE} sobre el mismo subrecurso que lo creó: se borra la publicación, no el producto
+   * —que sigue ahí, en {@code BORRADOR}—. Es la forma que ya tiene sentido en esta API para
+   * deshacer una transición, y evita inventar un {@code /despublicacion} que nombraría un recurso
+   * que no existe.
+   *
+   * <p>Se registra como {@code warn} y no como {@code info}: publicar es rutina, retirar algo de la
+   * vitrina no. Si alguien pregunta mañana por qué un producto dejó de verse, esta línea es la
+   * respuesta.
+   */
+  @DeleteMapping("/{id}/publicacion")
+  public ProductoAdminRespuesta despublicar(@PathVariable("id") UUID id) {
+    Producto producto = despublicarProducto.ejecutar(id);
+    log.warn("Producto retirado de la vitrina: {}", id);
     return mapeador.aRespuesta(producto);
   }
 

@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.CrearProducto;
+import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
@@ -132,6 +133,11 @@ public class ConfiguracionCatalogo {
   @Bean
   public PublicarProducto publicarProducto(RepositorioProductos repositorioProductos) {
     return new PublicarProducto(repositorioProductos);
+  }
+
+  @Bean
+  public DespublicarProducto despublicarProducto(RepositorioProductos repositorioProductos) {
+    return new DespublicarProducto(repositorioProductos);
   }
 
   @Bean

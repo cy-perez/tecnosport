@@ -478,7 +478,7 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["publicar_1"];
-        delete?: never;
+        delete: operations["despublicar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2761,6 +2761,28 @@ export interface operations {
         };
     };
     publicar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    despublicar: {
         parameters: {
             query?: never;
             header?: never;

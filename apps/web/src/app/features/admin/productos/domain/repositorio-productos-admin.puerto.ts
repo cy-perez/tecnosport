@@ -38,6 +38,9 @@ export interface RepositorioProductosAdmin {
    */
   publicar(id: string): Promise<ProductoAdmin>;
 
+  /** Lo saca de la vitrina y lo devuelve a BORRADOR. Los pedidos en curso no se tocan. */
+  despublicar(id: string): Promise<ProductoAdmin>;
+
   /** Todas las activas con su medida, tengan o no: la lista de la pantalla que corrige. */
   listarMedidas(): Promise<MedidasDelCatalogo>;
 

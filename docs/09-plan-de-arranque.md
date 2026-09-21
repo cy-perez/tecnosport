@@ -6312,15 +6312,42 @@ inventario y el conteo de sin-medir, cuyos avisos distinguen borradores de publi
 solo la lista dejaría el tablero diciendo el número de antes justo cuando un producto acaba de
 entrar a la vitrina sin existencia y sin medir.
 
+### Y el inverso, el mismo día
+
+`PublicarProducto` llevaba un día diciendo en su javadoc por qué **no** existía `DespublicarProducto`:
+*"retirar algo que ya se vendió tiene consecuencias que nadie ha decidido —qué pasa con los pedidos
+en curso, con los enlaces compartidos, con el sitemap ya indexado— y un caso de uso que se escribe
+sin esa decisión la toma en silencio"*. Las tres se decidieron leyendo el código, no de memoria:
+
+| | Qué pasa al retirar |
+|---|---|
+| Rejilla y ficha | Desaparece: las dos consultas filtran `estado = 'PUBLICADO'` |
+| Enlace compartido | **404**, que es lo que corresponde a algo retirado |
+| Sitemap | Sale en la siguiente generación, mismo filtro |
+| **Pedidos en curso** | **Intactos.** Llevan sus líneas congeladas y ningún paso posterior vuelve a mirar el estado del producto |
+| Carritos que lo tengan | La línea se queda y el checkout la rechaza, con el mismo mensaje que una variante borrada |
+
+Retirar de la vitrina no es cancelar lo vendido, y confundir las dos cosas habría sido el error
+caro. `DELETE` sobre el mismo subrecurso que lo creó —se borra la publicación, no el producto— y
+se registra como `warn` y no como `info`: publicar es rutina, retirar no.
+
 ### Comprobado en el navegador
 
-La fila del JBL Charge 6, ya publicado, no ofrece el botón. La del Switch 2 sí, y al pulsarlo
-aparece la pregunta con el aviso de que no tiene vuelta. Tabular desde el botón deja el anillo de
-foco en "Sí, publicar". Se canceló sin publicar: diecisiete públicos y doce borradores antes y
-después, comprobado contra la API y contra la base.
+El recorrido completo sobre el JBL Charge 6, que era el único publicado de los trece: retirado
+—la vitrina bajó a 16, su ficha respondió 404, salió del mapa del sitio— y publicado otra vez,
+que es como quedó. La fila cambia de botón sola, y la pregunta dice cosas distintas en cada
+sentido.
 
-Once pruebas en la lista, cuatro de ellas nuevas — incluida la que importa: **un solo clic no
-publica nada**.
+Con el botón de publicar: la fila del Switch 2 lo ofrece, y al pulsarlo aparece la pregunta.
+Tabular desde el botón deja el anillo de foco en "Sí, publicar", y cancelar no publicó nada
+—diecisiete públicos y doce borradores antes y después, contra la API y contra la base—.
+
+Doce pruebas en la lista, cinco de ellas nuevas, incluida la que importa: **un solo clic no cambia
+nada**, ni en un sentido ni en el otro.
+
+Y una frase que duró un día: la confirmación de publicar decía *"el panel no sabe despublicar"*.
+Dejó de ser cierta en cuanto se construyó el inverso, así que se reemplazó en vez de quedarse ahí
+tranquilizando con algo falso.
 
 ## Cómo conversar con Claude Code en este proyecto
 

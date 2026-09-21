@@ -321,11 +321,18 @@
       "accion": "Publicar",
       "publicarProducto": "Publicar {{nombre}}",
       "confirmar": "¿Publicar {{nombre}}? Va a quedar visible en la tienda.",
-      "sinVuelta": "El panel no sabe despublicar: para sacarlo de la vitrina después habría que tocar la base de datos.",
       "confirmarAccion": "Sí, publicar",
       "cancelar": "Cancelar",
       "hecho": "{{nombre}} quedó publicado.",
-      "error": "No pudimos publicar el producto. Vuelve a intentarlo."
+      "error": "No pudimos publicar el producto. Vuelve a intentarlo.",
+      "loQueImplica": "El panel ya sabe retirarlo después, pero mientras esté publicado cualquiera puede comprarlo.",
+      "accionRetirar": "Retirar",
+      "retirarProducto": "Retirar {{nombre}} de la vitrina",
+      "confirmarRetirar": "¿Retirar {{nombre}} de la vitrina?",
+      "loQueImplicaRetirar": "Deja de verse en la tienda, su enlace responde 404 y sale del mapa del sitio. Los pedidos ya hechos siguen su curso; un carrito que lo tenga fallará al pagar.",
+      "confirmarRetirarAccion": "Sí, retirar",
+      "retirado": "{{nombre}} salió de la vitrina.",
+      "errorRetirar": "No pudimos retirar el producto. Vuelve a intentarlo."
     }
   },
   "retractos": {

@@ -26,6 +26,11 @@
         {{ 'admin.productos.publicar.hecho' | transloco: { nombre: nombre } }}
       </p>
     }
+    @if (retirado(); as nombre) {
+      <p class="mb-16 text-ts-exito" role="status">
+        {{ 'admin.productos.publicar.retirado' | transloco: { nombre: nombre } }}
+      </p>
+    }
 
     <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
          página. Siete columnas no caben en 380 px —medido: el documento se iba
@@ -72,18 +77,23 @@
                     [routerLink]="[producto.id, 'captura-360']"
                     >{{ 'admin.productos.capturar360' | transloco }}</a
                   >
-                  @if (producto.estado === 'BORRADOR') {
-                    <ts-boton
-                      variante="secundario"
-                      [etiquetaAccesible]="
-                        'admin.productos.publicar.publicarProducto'
-                          | transloco: { nombre: producto.nombre }
-                      "
-                      (click)="preguntar(producto)"
-                    >
-                      {{ 'admin.productos.publicar.accion' | transloco }}
-                    </ts-boton>
-                  }
+                  <ts-boton
+                    variante="secundario"
+                    [etiquetaAccesible]="
+                      (producto.estado === 'BORRADOR'
+                        ? 'admin.productos.publicar.publicarProducto'
+                        : 'admin.productos.publicar.retirarProducto'
+                      ) | transloco: { nombre: producto.nombre }
+                    "
+                    (click)="preguntar(producto)"
+                  >
+                    {{
+                      (producto.estado === 'BORRADOR'
+                        ? 'admin.productos.publicar.accion'
+                        : 'admin.productos.publicar.accionRetirar'
+                      ) | transloco
+                    }}
+                  </ts-boton>
                 </div>
               </td>
             </tr>
@@ -94,14 +104,20 @@
                   <div class="flex flex-col gap-16 border border-ts-borde p-16">
                     <p class="m-0" role="status">
                       {{
-                        'admin.productos.publicar.confirmar'
-                          | transloco: { nombre: producto.nombre }
+                        (producto.estado === 'BORRADOR'
+                          ? 'admin.productos.publicar.confirmar'
+                          : 'admin.productos.publicar.confirmarRetirar'
+                        ) | transloco: { nombre: producto.nombre }
                       }}
                     </p>
-                    <!-- Que no tiene vuelta se dice antes, no después: el panel no sabe
-                         despublicar y sacar algo de la vitrina exige tocar la base. -->
+                    <!-- Lo que cada una arrastra se dice antes, no después. -->
                     <p class="m-0 text-ts-texto-suave">
-                      {{ 'admin.productos.publicar.sinVuelta' | transloco }}
+                      {{
+                        (producto.estado === 'BORRADOR'
+                          ? 'admin.productos.publicar.loQueImplica'
+                          : 'admin.productos.publicar.loQueImplicaRetirar'
+                        ) | transloco
+                      }}
                     </p>
 
                     @if (error(); as mensaje) {
@@ -109,9 +125,15 @@
                     }
 
                     <div class="flex flex-wrap gap-16">
-                      <ts-boton [cargando]="publicando()" (click)="publicar(producto)">
-                        {{ 'admin.productos.publicar.confirmarAccion' | transloco }}
-                      </ts-boton>
+                      @if (producto.estado === 'BORRADOR') {
+                        <ts-boton [cargando]="publicando()" (click)="publicar(producto)">
+                          {{ 'admin.productos.publicar.confirmarAccion' | transloco }}
+                        </ts-boton>
+                      } @else {
+                        <ts-boton [cargando]="publicando()" (click)="despublicar(producto)">
+                          {{ 'admin.productos.publicar.confirmarRetirarAccion' | transloco }}
+                        </ts-boton>
+                      }
                       <ts-boton variante="secundario" (click)="cancelar()">
                         {{ 'admin.productos.publicar.cancelar' | transloco }}
                       </ts-boton>

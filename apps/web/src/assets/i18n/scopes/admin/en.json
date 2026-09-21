@@ -321,11 +321,18 @@
       "accion": "Publish",
       "publicarProducto": "Publish {{nombre}}",
       "confirmar": "Publish {{nombre}}? It will become visible in the shop.",
-      "sinVuelta": "The panel cannot unpublish: taking it out of the shop afterwards would mean touching the database.",
       "confirmarAccion": "Yes, publish",
       "cancelar": "Cancel",
       "hecho": "{{nombre}} is now published.",
-      "error": "We could not publish the product. Please try again."
+      "error": "We could not publish the product. Please try again.",
+      "loQueImplica": "The panel can take it down later, but while it is published anyone can buy it.",
+      "accionRetirar": "Take down",
+      "retirarProducto": "Take {{nombre}} out of the shop",
+      "confirmarRetirar": "Take {{nombre}} out of the shop?",
+      "loQueImplicaRetirar": "It stops showing in the shop, its link answers 404 and it leaves the sitemap. Orders already placed carry on; a cart holding it will fail at checkout.",
+      "confirmarRetirarAccion": "Yes, take it down",
+      "retirado": "{{nombre}} is out of the shop.",
+      "errorRetirar": "We could not take the product down. Please try again."
     }
   },
   "retractos": {

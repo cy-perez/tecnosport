@@ -3,6 +3,7 @@ package co.tecnosport.api.presentation.catalogo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
+import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
@@ -355,6 +357,36 @@ class AdminProductoControladorTest {
         .andExpect(jsonPath("$.codigo").value("PRODUCTO_SIN_IMAGEN_PRINCIPAL"));
   }
 
+  /**
+   * {@code DELETE} sobre el mismo subrecurso: se borra la publicación, no el producto. Lo que hay
+   * que demostrar es justo eso — vuelve a BORRADOR y sigue existiendo, con su nombre y su slug.
+   */
+  @Test
+  void despublicarDevuelveElProductoABorradorSinBorrarlo() throws Exception {
+    Producto producto = productoConImagen();
+    producto.publicar();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + producto.id() + "/publicacion"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("BORRADOR"))
+        .andExpect(jsonPath("$.nombre").value(producto.nombre()))
+        .andExpect(jsonPath("$.slug").value(producto.slug().valor()));
+  }
+
+  /** Idempotente como su inverso: despublicar un borrador es el estado que se pedía. */
+  @Test
+  void despublicarUnBorradorResponde200() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + producto.id() + "/publicacion"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.estado").value("BORRADOR"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -419,6 +451,11 @@ class AdminProductoControladorTest {
     @Bean
     PublicarProducto publicarProducto(RepositorioProductos repositorioProductos) {
       return new PublicarProducto(repositorioProductos);
+    }
+
+    @Bean
+    DespublicarProducto despublicarProducto(RepositorioProductos repositorioProductos) {
+      return new DespublicarProducto(repositorioProductos);
     }
 
     @Bean

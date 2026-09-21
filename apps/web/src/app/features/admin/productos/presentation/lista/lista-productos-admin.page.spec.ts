@@ -86,6 +86,14 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   readonly publicados: string[] = [];
   fallaAlPublicar: Error | null = null;
 
+  readonly retirados: string[] = [];
+
+  async despublicar(id: string): Promise<ProductoAdmin> {
+    this.retirados.push(id);
+    this.items = this.items.map((p) => (p.id === id ? { ...p, estado: 'BORRADOR' } : p));
+    return this.items.find((p) => p.id === id)!;
+  }
+
   async publicar(id: string): Promise<ProductoAdmin> {
     if (this.fallaAlPublicar) throw this.fallaAlPublicar;
     this.publicados.push(id);
@@ -128,9 +136,8 @@ async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {
 
 describe('ListaProductosAdminPage', () => {
   /**
-   * Publicar es el único cambio de estado del catálogo que se hace desde aquí, y no tiene vuelta:
-   * el dominio no sabe despublicar. Por eso pregunta antes, y por eso esta prueba comprueba que
-   * un solo clic **no** publica nada.
+   * Las dos transiciones preguntan antes, y esta prueba comprueba lo que de verdad importa de esa
+   * pregunta: que un solo clic **no** cambia nada.
    */
   it('publicar pregunta antes, y el primer clic no publica', async () => {
     const { repositorio } = await renderLista([productoDePrueba()]);
@@ -144,7 +151,7 @@ describe('ListaProductosAdminPage', () => {
     expect(
       screen.getByText(esAdmin.productos.publicar.confirmar.replace('{{nombre}}', 'Morral urbano')),
     ).toBeTruthy();
-    expect(screen.getByText(esAdmin.productos.publicar.sinVuelta)).toBeTruthy();
+    expect(screen.getByText(esAdmin.productos.publicar.loQueImplica)).toBeTruthy();
     expect(repositorio.publicados).toEqual([]);
   });
 
@@ -186,8 +193,8 @@ describe('ListaProductosAdminPage', () => {
     expect(repositorio.publicados).toEqual([]);
   });
 
-  /** Un producto ya publicado no ofrece el botón: no hay nada que hacer con él desde aquí. */
-  it('un producto publicado no ofrece publicar', async () => {
+  /** Un producto publicado ofrece lo contrario: retirarlo, no publicarlo otra vez. */
+  it('un producto publicado ofrece retirar y no publicar', async () => {
     await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
 
     await screen.findByText('Morral urbano');
@@ -196,6 +203,39 @@ describe('ListaProductosAdminPage', () => {
         name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
       }),
     ).toBeNull();
+    expect(
+      screen.getByRole('button', {
+        name: esAdmin.productos.publicar.retirarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    ).toBeTruthy();
+  });
+
+  /**
+   * Retirar arrastra más que publicar —el enlace pasa a 404, sale del sitemap— y hay una cosa que
+   * **no** arrastra y conviene que se lea antes de pulsar: los pedidos ya hechos siguen su curso.
+   */
+  it('al retirar dice qué se lleva por delante y qué no', async () => {
+    const { repositorio } = await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.retirarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    );
+
+    expect(screen.getByText(esAdmin.productos.publicar.loQueImplicaRetirar)).toBeTruthy();
+    expect(repositorio.retirados).toEqual([]);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: esAdmin.productos.publicar.confirmarRetirarAccion }),
+    );
+
+    expect(
+      await screen.findByText(
+        esAdmin.productos.publicar.retirado.replace('{{nombre}}', 'Morral urbano'),
+      ),
+    ).toBeTruthy();
+    expect(repositorio.retirados).toEqual(['p1']);
   });
 
   /**

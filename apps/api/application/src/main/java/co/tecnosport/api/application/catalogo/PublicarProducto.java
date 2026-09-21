@@ -19,10 +19,11 @@ import java.util.UUID;
  * regla escrita, correcta, y fuera del alcance de todo lo que corre en producción. La diferencia es
  * que aquella no protegía; esta directamente impedía usar el panel para lo que se construyó.
  *
- * <p>No hay {@code DespublicarProducto} todavía y no se añade "por simetría": retirar algo que ya
- * se vendió tiene consecuencias que nadie ha decidido —qué pasa con los pedidos en curso, con los
- * enlaces compartidos, con el sitemap ya indexado— y un caso de uso que se escribe sin esa decisión
- * la toma en silencio.
+ * <p>Durante un día no hubo {@code DespublicarProducto}, y este javadoc explicaba por qué: retirar
+ * algo que ya se vendió tiene consecuencias que nadie había decidido —los pedidos en curso, los
+ * enlaces compartidos, el sitemap ya indexado— y escribirlo sin decidirlas las habría decidido en
+ * silencio. **Ya existe**, con esas tres respuestas escritas en su propio javadoc y comprobadas
+ * contra el código, no supuestas.
  */
 public final class PublicarProducto {
 
