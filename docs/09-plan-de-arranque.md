@@ -6463,19 +6463,70 @@ existía.
 - **Nadie limpia los objetos huérfanos** que deja una subida firmada y no confirmada. Si algún día
   pesa, va como regla de ciclo de vida del bucket sobre el prefijo `galeria-` por antigüedad, no
   como código que borra.
-- **El kit de marca no se regenera igual que como está commiteado.** Salió al añadir el token de
-  miniatura: `python generador/kit_ui.py tokens.json --out . --fuentes`, el comando que documenta su
-  propio `LEEME.md`, **rebaja las fuentes de `.woff2` a `.ttf`** y las declara como woff2; sin
-  `--logo`, cambia el logo del `index.html` por texto. Y al revés, el regenerado **corrige** dos
-  cosas que llevaban tiempo viejas ahí: el `contraste.md` publicado trae un verde de éxito que ya no
-  es el de `tokens.json`, y el `index.html` tiene el NIT con el dígito de verificación equivocado
-  que la Fase 6 arregló en todos los demás sitios. Por eso el token se llevó regenerando a un
-  directorio aparte y copiando **solo `tokens.css`**: mezclar eso con una funcionalidad habría sido
-  esconder un problema dentro de otro.
+- ~~**El kit de marca no se regenera igual que como está commiteado.**~~ **Arreglado el mismo día**,
+  en una rama aparte para no esconder un problema dentro de otro — ver la entrada de abajo. El
+  token de miniatura se llevó regenerando a un directorio aparte y copiando solo `tokens.css`,
+  que era lo único seguro mientras el generador estuviera roto.
 - **Siete de los trece siguen con una sola foto**, y no es un problema de esta puerta: es que Icecat
   no trae más material para ellos. Lo desbloquea el trámite de fotos al proveedor, **mandado el 21
   de septiembre** después de dos días redactado — y cuando lleguen, `--galeria SKU` es lo que las
   sube sin volver a tocar nada.
+
+## El kit no se regeneraba igual que como estaba guardado (2026-09-21)
+
+Salió de añadir un token de miniatura para la galería, que es como salen casi todos: nadie lo
+estaba buscando. El comando que documentaba el propio `LEEME.md` del kit dejaba el repositorio
+**peor** que antes de ejecutarlo, y ninguna prueba lo miraba porque el kit no tiene ninguna.
+
+### Tres defectos, no uno
+
+1. **El generador conservaba las tipografías y no los logos.** En `kit_ui.py` hay una guarda con un
+   comentario que explica el problema con todas sus letras: *"quien recibe el kit cambia un color,
+   regenera, y el CSS vuelve a apuntar a Google Fonts en silencio: pierde el autoalojado teniendo
+   los `.woff2` delante"*. Es exactamente lo que le pasaba al logo — `traer_logo` devuelve `None`
+   sin `--logo` aunque `logo/logo-horizontal.svg` esté ahí al lado—, y para el logo esa guarda no
+   existía. La guía visual sustituía el logo por el nombre de la marca en texto.
+2. **El `LEEME` generado recomendaba la bandera destructiva justo cuando lo era.** La línea que lo
+   escribía era `"--out . " + ("--fuentes" if fuentes_ok else "")`: te decía que pasaras `--fuentes`
+   **porque** las tipografías ya estaban autoalojadas, que es precisamente cuando volver a
+   descargarlas las estropea.
+3. **`fuentes.py` escribía `format('woff2')` a mano para todas las caras**, y la conversión puede
+   fallar y dejar el TTF. El resultado era un `.ttf` declarado como woff2 — que el navegador carga
+   igual, adivinando por los bytes, así que nada se rompe a la vista y nadie se entera.
+
+### Y el que explica por qué no saltó nada
+
+`hay_brotli()` comprobaba **brotli**, y la conversión necesita las dos cosas: `fontTools` para
+comprimir y para leer el rango de pesos de una variable, y brotli para el algoritmo. En esta
+máquina brotli está y fontTools no, así que la comprobación daba verde, `procesar` fallaba cara por
+cara con `ModuleNotFoundError`, y el kit se llenaba de TTF con `font-weight: 400` donde antes había
+`100 900`.
+
+**La primera versión de la guarda estaba en el sitio equivocado**, y conviene anotarlo: la puse en
+`main()` de `fuentes.py`, que es donde parece que va — pero `kit_ui.py --fuentes` **no pasa por
+`main()`**: importa el módulo y llama a `procesar()` directo. O sea que protegía todo menos el
+único camino que había roto algo. Se movió a una función que usan los dos.
+
+### Lo que ahora se comprueba y antes no
+
+- **Regenerar dos veces seguidas no produce ningún diff.** Es la propiedad que le faltaba a este
+  generador y la única que de verdad lo vigila.
+- **Con `--fuentes` y sin ella se obtiene lo mismo**, porque con las tipografías ya dentro la
+  bandera se niega en vez de hacer daño, y dice qué instalar.
+
+El regenerado corrigió de paso dos cosas que llevaban tiempo viejas en los archivos guardados: el
+verde de éxito del `contraste.md` —`tokens.json` ya decía otro— y el NIT del `index.html`, con el
+dígito de verificación que la Fase 6 arregló en todos los demás sitios. No eran decisiones: eran
+artefactos que nadie había vuelto a generar.
+
+### Lo que queda abierto
+
+- **`hay_brotli()` instala brotli con `pip` por su cuenta** si no lo encuentra, sin preguntar. Viene
+  de la skill que generó el kit, no se tocó aquí, y choca con "no agregues dependencias sin
+  preguntar" del `CLAUDE.md`. Si alguien regenera en una máquina limpia, se va a encontrar con eso.
+- **El kit no tiene ninguna prueba.** Las dos comprobaciones de arriba se hicieron a mano; no hay
+  nada que las repita sola. Es un candidato claro para `npm run verificar`, y no se metió aquí
+  porque el arreglo ya era de tres archivos.
 
 ## Cómo conversar con Claude Code en este proyecto
 

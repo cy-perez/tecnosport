@@ -15,7 +15,7 @@ Umbrales WCAG 2.1: 4.5:1 para texto normal, 3:1 para texto grande (24px o
 | Primario como texto o icono sobre fondo | `#1B1F26` | `#F5F6F8` | 15.28:1 | AAA (texto grande) |
 | Texto del boton principal en hover | `#FFFFFF` | `#3B3E44` | 10.72:1 | AAA |
 | Texto del boton de acento | `#14171C` | `#F5B301` | 9.69:1 | AAA |
-| Etiqueta 'En stock' sobre tarjeta | `#14804A` | `#FFFFFF` | 4.98:1 | AA |
+| Etiqueta 'En stock' sobre tarjeta | `#116B3E` | `#FFFFFF` | 6.57:1 | AA |
 | Aviso sobre tarjeta | `#A15C00` | `#FFFFFF` | 5.19:1 | AA |
 | Mensaje de error sobre fondo | `#B3261E` | `#F5F6F8` | 6.04:1 | AA |
 | Borde de campo de formulario | `#7C8595` | `#FFFFFF` | 3.72:1 | AA (texto grande) |
