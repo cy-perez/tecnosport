@@ -12,6 +12,18 @@ import java.util.UUID;
 /** Raíz del catálogo. No se publica sin imagen principal (docs/00-producto.md). */
 public final class Producto {
 
+  /**
+   * Cuántas imágenes caben en la galería, sin contar la principal.
+   *
+   * <p>No es un dato de negocio ni una regla que nadie pidió: es una barandilla. Las imágenes se
+   * suben una por una desde el panel y desde un script, y sin tope un bucle equivocado llena la
+   * ficha y el bucket sin que nada chille — el precio de eso es espacio pagado todos los meses y
+   * una ficha que nadie puede recorrer. Ocho es holgado para las cuatro tomas del estándar de
+   * estudio y para un producto que llegue con más. Si un día quedan cortas, se sube el número: es
+   * reversible y no hay ningún dato que se pierda.
+   */
+  public static final int TOPE_DE_GALERIA = 8;
+
   private final UUID id;
   private String nombre;
   private final Slug slug;
@@ -51,6 +63,12 @@ public final class Producto {
     }
     this.imagenPrincipal = imagenPrincipal;
     this.galeria = new ArrayList<>(Objects.requireNonNullElse(galeria, List.of()));
+    for (ImagenProducto imagen : this.galeria) {
+      if (imagen.tipo() != TipoImagen.GALERIA) {
+        throw new ImagenProductoInvalidaException(
+            "Una imagen de la galería no puede ser de tipo " + imagen.tipo() + ".");
+      }
+    }
     this.setRotacion = setRotacion;
     this.variantes = new ArrayList<>();
     for (Variante variante : Objects.requireNonNullElse(variantes, List.<Variante>of())) {
@@ -131,6 +149,75 @@ public final class Producto {
       throw new ImagenProductoInvalidaException("La imagen principal debe ser de tipo PRINCIPAL.");
     }
     this.imagenPrincipal = imagen;
+  }
+
+  /**
+   * El orden que le toca a la siguiente imagen de la galería: uno más que el mayor que haya.
+   *
+   * <p><b>Uno más que el mayor, y no el tamaño de la lista</b>, porque quitar una imagen deja
+   * huecos a propósito —{@code 0, 2, 3} se pinta igual que {@code 0, 1, 2}, la ficha ordena y no
+   * cuenta—. Con el tamaño, borrar la última y subir otra repetiría un orden que ya existe.
+   *
+   * <p>Vive aquí y no en el caso de uso porque es la regla de cómo se ordena una galería, y el caso
+   * de uso necesita el número <em>antes</em> de construir la {@link ImagenProducto}, que es
+   * inmutable.
+   */
+  public int siguienteOrdenDeGaleria() {
+    return galeria.stream().mapToInt(ImagenProducto::orden).max().orElse(-1) + 1;
+  }
+
+  /**
+   * Suma una imagen a la galería. La principal va por {@link #asignarImagenPrincipal}: son dos
+   * cosas distintas y la ficha las pinta en sitios distintos.
+   *
+   * <p>Rechaza subir dos veces el mismo archivo comparando el hash del contenido, que es justo para
+   * lo que {@code docs/02} lo puso. Cuatro tomas que se suben una por una desde un formulario son
+   * el sitio natural para repetir una sin darse cuenta, y una galería con la misma foto dos veces
+   * no se ve como un error del sistema: se ve como descuido del que vende.
+   */
+  public void agregarImagenGaleria(ImagenProducto imagen) {
+    Objects.requireNonNull(imagen, "La imagen no puede ser nula.");
+    if (imagen.tipo() != TipoImagen.GALERIA) {
+      throw new ImagenProductoInvalidaException(
+          "Una imagen de la galería debe ser de tipo GALERIA, y esta es " + imagen.tipo() + ".");
+    }
+    if (galeria.size() >= TOPE_DE_GALERIA) {
+      throw new GaleriaLlenaException(
+          "La galería de '"
+              + nombre
+              + "' ya tiene el máximo de "
+              + TOPE_DE_GALERIA
+              + " imágenes. Quita una antes de agregar otra.");
+    }
+    boolean mismoContenido = galeria.stream().anyMatch(i -> i.hash().equals(imagen.hash()));
+    if (mismoContenido) {
+      throw new ImagenDeGaleriaDuplicadaException(
+          "Esa misma imagen ya está en la galería de '" + nombre + "'.");
+    }
+    boolean ordenOcupado = galeria.stream().anyMatch(i -> i.orden() == imagen.orden());
+    if (ordenOcupado) {
+      throw new ImagenProductoInvalidaException(
+          "La galería de '" + nombre + "' ya tiene una imagen en el orden " + imagen.orden() + ".");
+    }
+    galeria.add(imagen);
+  }
+
+  /**
+   * Saca una imagen de la galería y la devuelve, porque quien llama necesita su URL para borrar el
+   * objeto del bucket: sin eso quedaría pagando un archivo que ya nadie sirve.
+   *
+   * <p>No renumera las que quedan. Renumerar obligaría a reescribir filas que nadie tocó para
+   * arreglar un problema que no existe — ver {@link #siguienteOrdenDeGaleria()}.
+   */
+  public ImagenProducto quitarImagenGaleria(UUID imagenId) {
+    Objects.requireNonNull(imagenId, "El id de la imagen no puede ser nulo.");
+    for (int i = 0; i < galeria.size(); i++) {
+      if (galeria.get(i).id().equals(imagenId)) {
+        return galeria.remove(i);
+      }
+    }
+    throw new ImagenDeGaleriaNoEncontradaException(
+        "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
   }
 
   public void asignarSetRotacion(SetRotacion setRotacion) {
