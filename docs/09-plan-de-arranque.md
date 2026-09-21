@@ -6709,6 +6709,63 @@ ventana delante. Es la tercera vez que este documento escribe la misma lección:
 diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
 diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
 
+## El foco del panel, y la pregunta que nadie oía (2026-09-21)
+
+El segundo bloque de la revisión adversarial. El defecto del foco que ya había costado dos
+correcciones esta misma semana **seguía vivo en cuatro pantallas más** —la lista, existencias,
+medidas y marcas—, y la explicación de por qué nadie lo había visto estaba en el mismo informe.
+
+### El mismo error, cuatro veces, porque se copió la interacción y no el arreglo
+
+`[cargando]` sobre el botón que se acaba de pulsar: `ts-boton` lo traduce a `disabled`, y
+deshabilitar el botón bajo el dedo manda el foco a `<body>`. En la lista era peor que en las
+demás, porque la mutación hace `await` de las cuatro invalidaciones y `isPending` seguía en
+`true` durante todos los refetch: el botón estaba apagado el viaje entero.
+
+La entrada nueva `ocupado` de `ts-boton` pinta `aria-busy` **sin deshabilitar**, y el doble
+envío lo evita una guarda de reentrada en el manejador. `cargando` sigue siendo lo correcto donde
+deshabilitar es el punto; para una acción de fila, no lo es.
+
+Y `usarFoco` en `shared/foco/` recoge el `requestAnimationFrame` que `editar` tenía suelto.
+Vive ahí para que la próxima pantalla que copie la interacción copie también la solución.
+
+### Lo que un lector de pantalla no oía
+
+- **Ningún disparador decía que abría algo.** `ts-boton` tenía `expandido` y `controla` desde
+  que se escribió, y solo `editar` los usaba: quien pulsaba "Contar las unidades de SKU-X" no oía
+  absolutamente nada, y descubrir que había aparecido un formulario era seguir tabulando a ciegas.
+- **Cinco regiones vivas se montaban ya llenas con un `@if`**, incluido el `role="alert"` de
+  "deja reservas sin respaldo", que es el mensaje más importante de la pantalla de existencias. El
+  comentario que explica por qué eso se anuncia mal estaba escrito en `editar`, la única pantalla
+  que lo hacía bien.
+- Y al revés: dos `role="status"` colgaban del **resumen de una tabla**, que no es un mensaje de
+  estado. Cada revalidación en segundo plano los volvía a leer en voz alta.
+
+### Por qué no saltó antes
+
+`editar`, `lista` y `panel` **no tenían una sola comprobación de axe** —son las tres con más
+superficie interactiva nueva—, y en existencias, medidas y marcas el axe corría solo con el
+formulario cerrado, o sea sin auditar la mitad que importa. Seis pruebas nuevas, y comprobado que
+comprueban algo: una imagen sin `alt` metida a propósito hace fallar la del panel.
+
+### Las once mejoras, y una contradicción que llevaba escrita tres veces
+
+Diez enlaces por debajo del objetivo táctil; el borde de ocho cajas en 1,19:1 sobre el lienzo, que
+es lo único que separa una confirmación de la fila de arriba; seis píxeles literales que además
+declaraban 1:1 para un archivo que puede ser 1000×1400; el `altEn` que se pedía obligatorio y no
+se podía volver a leer en ninguna pantalla; "1 variantes activas" un día después de arreglarlo en
+el tablero.
+
+Y cuatro botones que se deshabilitaban sin decir qué falta, **contradiciendo tres comentarios de
+este mismo panel** —marcas, medidas y existencias— que explican por qué no se hace: un
+`<button disabled>` sale del orden de tabulación, así que quien borre el nombre del producto no
+encuentra "Guardar" en ninguna parte. Al arreglarlo, las tres señales que solo servían para
+deshabilitarlo quedaron muertas y se fueron.
+
+**Lo que sigue sin comprobarse y no lo puede comprobar una prueba:** el aterrizaje real del foco
+—con la ventana delante, no en una pestaña oculta, que da falso negativo siempre— y que un lector
+de pantalla anuncie de verdad las regiones vivas.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
