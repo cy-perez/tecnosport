@@ -112,6 +112,7 @@ npm run contrastes                       WCAG AA de los pares de color, claro y 
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
+npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 npm run legales-impresos                 los textos legales en una hoja para imprimir, sin transcribir
 docker compose up -d                     PostgreSQL, Mailpit, Adminer
