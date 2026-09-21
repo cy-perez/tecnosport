@@ -4,9 +4,12 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   PLATFORM_ID,
   signal,
+  viewChild,
+  viewChildren,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -166,9 +169,28 @@ export class EditarProductoAdminPage {
   protected readonly previsualizacionGaleria = signal<string | null>(null);
   private dimensionesGaleria: { ancho: number; alto: number } | null = null;
   protected readonly errorGaleria = signal<string | null>(null);
-  protected readonly quitada = signal(false);
+
+  /**
+   * El fallo de quitar tiene su propia señal, y no es cosmética: `errorGaleria` solo se pinta
+   * dentro del formulario de agregar, así que "no se pudo quitar la imagen" salía a varios cientos
+   * de píxeles de la fila que falló y colocado como si fuera un error de la subida.
+   */
+  protected readonly errorQuitar = signal<string | null>(null);
+
+  /** Una sola región viva para los dos anuncios; guarda la clave, no el texto. */
+  protected readonly aviso = signal<string | null>(null);
+
   /** El id de la imagen cuya fila está preguntando, como en la lista de productos. */
   protected readonly confirmandoQuitar = signal<string | null>(null);
+
+  /**
+   * El foco no puede quedarse donde estaba: al confirmar desaparece la fila entera con su botón
+   * dentro, y al cancelar desaparece la caja. En los dos casos el navegador lo manda a `<body>` y
+   * quien navega con teclado vuelve al principio del documento.
+   */
+  private readonly cajaConfirmacion = viewChild<ElementRef<HTMLElement>>('cajaConfirmacion');
+  private readonly avisoGaleria = viewChild<ElementRef<HTMLElement>>('avisoGaleria');
+  private readonly filas = viewChildren<ElementRef<HTMLElement>>('filaDeGaleria');
 
   protected readonly galeria = computed<readonly ImagenDeGaleriaAdmin[]>(
     () => this.consulta.data()?.galeria ?? [],
@@ -284,7 +306,7 @@ export class EditarProductoAdminPage {
     const input = evento.target as HTMLInputElement;
     const archivo = input.files?.[0] ?? null;
     this.errorGaleria.set(null);
-    this.quitada.set(false);
+    this.aviso.set(null);
     this.limpiarPrevisualizacionGaleria();
     if (!archivo) {
       this.archivoDeGaleria.set(null);
@@ -341,6 +363,8 @@ export class EditarProductoAdminPage {
           this.archivoDeGaleria.set(null);
           this.dimensionesGaleria = null;
           this.formularioGaleria.reset();
+          // Un formulario que se vacía se lee igual como "funcionó" que como "nunca se envió".
+          this.aviso.set('admin.productos.editar.galeria.agregada');
         },
         // El 409 de la foto repetida y el de la galería llena son accionables, y `mensajeDeError`
         // los dice con sus palabras: "no se pudo" mandaría a mirar el sitio equivocado.
@@ -353,27 +377,55 @@ export class EditarProductoAdminPage {
   }
 
   protected preguntarSiQuitar(imagen: ImagenDeGaleriaAdmin): void {
-    this.errorGaleria.set(null);
-    this.quitada.set(false);
+    // Solo lo suyo: abrir una pregunta no es razón para borrar el error de una subida que falló.
+    this.errorQuitar.set(null);
+    this.aviso.set(null);
     this.confirmandoQuitar.set(imagen.id);
+    // Sin esto la advertencia de que el archivo se borra queda detrás del foco: tabular desde
+    // "Quitar" salta directo a "Sí, quitar" y se puede confirmar sin haberla encontrado nunca.
+    this.enfocarDespuesDePintar(() => this.cajaConfirmacion()?.nativeElement);
   }
 
   protected cancelarQuitar(): void {
+    const id = this.confirmandoQuitar();
     this.confirmandoQuitar.set(null);
+    this.errorQuitar.set(null);
+    this.enfocarDespuesDePintar(() => this.botonQuitarDe(id));
+  }
+
+  /**
+   * El elemento se enfoca en el siguiente cuadro: en el momento de la llamada todavía no existe
+   * —lo acaba de crear un `@if`— o está a punto de dejar de existir.
+   */
+  private enfocarDespuesDePintar(elemento: () => HTMLElement | null | undefined): void {
+    if (!this.esNavegador) {
+      return;
+    }
+    requestAnimationFrame(() => elemento()?.focus());
+  }
+
+  private botonQuitarDe(imagenId: string | null): HTMLElement | null {
+    if (!imagenId) {
+      return null;
+    }
+    const fila = this.filas().find((f) => f.nativeElement.dataset['imagenId'] === imagenId);
+    return fila?.nativeElement.querySelector('button') ?? null;
   }
 
   /** Borra el archivo además de la fila, así que pregunta antes: no hay vuelta. */
   protected quitarDeGaleria(imagen: ImagenDeGaleriaAdmin): void {
-    this.errorGaleria.set(null);
+    this.errorQuitar.set(null);
     this.mutacionQuitarDeGaleria.mutate(
       { productoId: this.id(), imagenId: imagen.id },
       {
         onSuccess: () => {
           this.confirmandoQuitar.set(null);
-          this.quitada.set(true);
+          this.aviso.set('admin.productos.editar.galeria.quitada');
+          // La fila y su botón ya no existen; el aviso sí, y dice lo que pasó.
+          this.enfocarDespuesDePintar(() => this.avisoGaleria()?.nativeElement);
         },
         onError: (error) =>
-          this.errorGaleria.set(
+          this.errorQuitar.set(
             mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorQuitar'),
           ),
       },

@@ -89,6 +89,31 @@ que un clic no puede bastar. La pregunta dice las dos cosas —que sale de la fi
 borra— **antes**, no después. Sin diálogo del CDK: es una pregunta de una línea, y montar una trampa
 de foco para eso es más ceremonia que la decisión.
 
+### 7. La key que se confirma tiene que ser del prefijo de galería, y no puede repetirse
+
+Las dos guardas nacieron de una revisión adversarial el mismo día, y las dos son la regla dura #7.
+
+**La primera guarda miraba solo `productos/{id}/`**, copiada literal de `ConfirmarImagenPrincipal`,
+donde bastaba porque había un solo prefijo por producto. Con dos, un cliente podía confirmar
+`productos/{id}/principal-abc.jpg` como imagen de galería — y entonces el siguiente reemplazo de la
+imagen principal, que limpia ese prefijo **entero**, borraba el objeto que la galería estaba
+sirviendo. Una foto rota en una ficha publicada, causada por el propio sistema, sin una línea de
+error en ningún sitio. `ClavesDeGaleria` existe para que el prefijo que se escribe y el que se
+exige sean la misma cadena, como `ClavesDeRotacion`.
+
+**La segunda: el mismo objeto no entra dos veces.** El rechazo por hash no lo cubre, porque el hash
+lo calcula el cliente: dos POST con la misma key y hashes distintos creaban dos filas apuntando al
+mismo archivo, y quitar una borraba el objeto por la key exacta dejando a la hermana rota. Toda la
+lógica de borrado de esta rama se apoya en que una key pertenece a una sola fila, así que eso se
+comprueba en vez de suponerse.
+
+### 8. Lo que el panel numera es la posición visible, no el `orden` guardado
+
+Consecuencia directa de §2 que la primera versión de la pantalla se saltó: como quitar deja huecos,
+tras quitar la del medio de tres el panel ofrecía *"imagen 1"* e *"imagen 3"* sobre dos fotos — y
+ese texto es el nombre accesible del único control que las distingue. `orden` es la clave de
+ordenamiento del agregado; lo que se le enseña a una persona es el `$index`.
+
 ## Alternativas descartadas
 
 - **Un campo `galeria` en `ProductoAdminRespuesta`, sin DTO nuevo.** Más corto de escribir y peor de
@@ -102,6 +127,23 @@ de foco para eso es más ceremonia que la decisión.
   galería, que es la pregunta que de verdad le importa.
 - **Borrar la galería entera al despublicar.** Ni se consideró en serio, y se escribe para que quede
   cerrado: retirar de la vitrina no destruye material (`adr/0051`).
+
+## Lo que queda sin respaldo, dicho a propósito
+
+- **El tope y la unicidad de `orden` solo viven en el agregado.** La invariante gemela de la
+  principal sí está en la base (`ux_imagen_principal_por_producto`, `V1`). Aquí no: dos POST
+  concurrentes contra el mismo producto calculan el mismo `siguienteOrdenDeGaleria()` e insertan los
+  dos. Hoy no se dispara —el panel lo opera una persona y el cargador sube en serie— y un índice
+  único sobre `(producto_id, orden)` es justo el que haría difícil el reordenamiento de §2. Se deja
+  sin respaldar **sabiéndolo**; si algún día la galería se llena desde dos sitios a la vez, la
+  decisión de §2 hay que volver a tomarla junto con esta.
+- **El tope 8 vive en tres sitios**: el dominio, que manda, y sendas copias en el panel y en el
+  cargador que solo evitan ofrecer lo que el servidor va a rechazar. Si sube a 12, el panel seguirá
+  diciendo "hasta 8" sin que falle nada. Se acepta porque ninguna de las dos copias protege una
+  invariante; la salida barata, el día que moleste, es que el detalle del panel lo traiga.
+- **El panel no usa `urlPreferida` ni `NgOptimizedImage`** para las miniaturas, igual que la sección
+  de imagen principal que ya estaba. Es deuda heredada y la galería la multiplica por ocho; no se
+  arregla aquí porque toca la regla compartida del catálogo, no esta pantalla.
 
 ## Consecuencias
 

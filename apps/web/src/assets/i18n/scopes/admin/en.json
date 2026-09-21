@@ -214,7 +214,7 @@
         "titulo": "Gallery",
         "ayuda": "Up to {{tope}} images, on top of the main one. They appear on the product page in the order you upload them.",
         "vacia": "This product has no gallery images. The product page shows only the main one.",
-        "imagen": "Gallery image {{orden}}",
+        "imagen": "Gallery image {{posicion}}",
         "archivo": "Add an image (JPEG, PNG or WebP)",
         "altEs": "Gallery alt text (Spanish)",
         "altEn": "Gallery alt text (English)",
@@ -222,14 +222,17 @@
         "agregar": "Add to gallery",
         "agregando": "Adding…",
         "quitar": "Remove",
-        "confirmarQuitar": "Remove gallery image {{orden}}?",
+        "confirmarQuitar": "Remove gallery image {{posicion}}?",
         "loQueImplicaQuitar": "It leaves the product page and its file is deleted. There's no undo: to get it back you have to upload it again.",
         "confirmarQuitarAccion": "Yes, remove",
         "cancelar": "Cancel",
         "quitada": "The image left the gallery.",
         "tipoNoSoportado": "That file type isn't supported for the gallery. Use JPEG, PNG or WebP.",
         "error": "Couldn't add the image. Try again.",
-        "errorQuitar": "Couldn't remove the image. Try again."
+        "errorQuitar": "Couldn't remove the image. Try again.",
+        "quitarImagen": "Remove gallery image {{posicion}}",
+        "quitando": "Removing…",
+        "agregada": "The image was added to the gallery."
       }
     },
     "agregarVariante": {

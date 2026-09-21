@@ -6415,6 +6415,40 @@ debería: sirve para una cosa, y esa cosa la decide el servidor rechazando dupli
 dejar que responda 409 costaría subir el archivo al bucket para descubrir que sobra. Comprobado
 corriéndolo dos veces: la segunda sube cero.
 
+### Y la revisión, que con todo en verde encontró ocho defectos
+
+Las 1695 pruebas del backend, las 903 del frontend, `capas`, `marcadores`, `contrastes` y los dos
+builds estaban en verde, y el recorrido del navegador hecho. Los dos revisores encontraron esto:
+
+**El que de verdad importaba**: la guarda de `AgregarImagenDeGaleria` miraba solo
+`productos/{id}/`, copiada de la imagen principal, así que **se podía confirmar la key de la
+principal como imagen de galería** — y el siguiente reemplazo de la principal, que limpia ese
+prefijo entero, borraba el objeto que la galería estaba sirviendo. Una foto rota en una ficha
+publicada, causada por el sistema, sin un solo error en el log. Es la regla dura #7, y el camino por
+el que se coló es instructivo: copiar una guarda que era correcta a un sitio donde la premisa había
+cambiado.
+
+**El más vergonzoso**: el panel numeraba las imágenes con `imagen.orden + 1`. El ADR que escribí
+horas antes dice, con esas palabras, que quitar deja huecos y que *"la ficha ordena y no cuenta"* —
+y la pantalla contaba. Tras quitar la del medio de tres, ofrecía "imagen 1" e "imagen 3" sobre dos
+fotos, y eso es el nombre accesible del único control que las distingue. Escribir la regla no impide
+saltársela doce archivos más allá.
+
+Los otros seis, en corto: el mismo objeto podía entrar dos veces con hashes distintos (el hash lo
+manda el cliente) y romper el borrado de su hermana; el `alt` de las miniaturas estaba cableado a
+español **con la clave traducida ya escrita y sin usar**; el nombre accesible del botón era la
+pregunta de confirmación; el error de quitar se pintaba dentro del formulario de agregar; el foco
+caía a `<body>` al confirmar y al cancelar; y `objetoBorrado` se calculaba, se documentaba y no lo
+leía nadie — el día que el bucket pase detrás de un CDN, ninguna URL vieja se reconocería y cada
+borrado se saldría en silencio sin borrar nada.
+
+**Dos correcciones de diseño, no de código**: el `DELETE` abría un `TransactionTemplate` que era
+redundante —el adaptador ya es `@Transactional`— y que además metía la llamada a Cloud Storage
+dentro de la transacción, con lo que el orden que el caso de uso promete por escrito dejaba de estar
+garantizado. Y con la galería llena se apagaban dos controles sin decir por qué; un `input`
+deshabilitado no es enfocable, así que para quien navega con teclado el formulario simplemente no
+existía.
+
 ### Lo que queda abierto, y nace aquí
 
 - **No se puede reordenar la galería.** Las cuatro tomas del estudio vienen numeradas y se suben en
@@ -6423,6 +6457,15 @@ corriéndolo dos veces: la segunda sube cero.
 - **Nadie limpia los objetos huérfanos** que deja una subida firmada y no confirmada. Si algún día
   pesa, va como regla de ciclo de vida del bucket sobre el prefijo `galeria-` por antigüedad, no
   como código que borra.
+- **El kit de marca no se regenera igual que como está commiteado.** Salió al añadir el token de
+  miniatura: `python generador/kit_ui.py tokens.json --out . --fuentes`, el comando que documenta su
+  propio `LEEME.md`, **rebaja las fuentes de `.woff2` a `.ttf`** y las declara como woff2; sin
+  `--logo`, cambia el logo del `index.html` por texto. Y al revés, el regenerado **corrige** dos
+  cosas que llevaban tiempo viejas ahí: el `contraste.md` publicado trae un verde de éxito que ya no
+  es el de `tokens.json`, y el `index.html` tiene el NIT con el dígito de verificación equivocado
+  que la Fase 6 arregló en todos los demás sitios. Por eso el token se llevó regenerando a un
+  directorio aparte y copiando **solo `tokens.css`**: mezclar eso con una funcionalidad habría sido
+  esconder un problema dentro de otro.
 - **Siete de los trece siguen con una sola foto**, y no es un problema de esta puerta: es que Icecat
   no trae más material para ellos. Eso lo resuelve el trámite de fotos al proveedor, que sigue
   redactado y sin mandar.
