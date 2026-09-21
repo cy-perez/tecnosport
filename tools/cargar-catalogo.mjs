@@ -36,6 +36,11 @@
 //                   todo lo que anota el registro. Existe porque las cargas anteriores a esto
 //                   solo subían la imagen principal: había cuatro tomas de estudio por producto y
 //                   a la ficha llegaba una.
+//   --reconciliar   anota en el registro lo que el catálogo ya tiene y el registro no sabe.
+//                   `cargados.json` nació el 21 de septiembre y los doce primeros productos
+//                   reales se cargaron el 19: para el registro no existen, así que
+//                   `--galeria-todos` no les puede rellenar la galería y se quedaron en la
+//                   vitrina con una sola toma de las cuatro que hay en el estudio.
 //   --publicar-sku SKU   publica un producto que ya está cargado, por su SKU. Se puede repetir.
 //                   El panel **no sabe publicar** —no hay ninguna acción de publicación en el
 //                   frontend—, así que hoy esta es la única puerta que no pasa por la base.
@@ -358,6 +363,7 @@ const aRellenarGaleria = bandera("--galeria-todos")
       .map((anotado) => anotado.sku)
       .filter(Boolean)
   : valores("--galeria");
+const RECONCILIAR = bandera("--reconciliar");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)
   : (valor("--ids") ?? "").split(",").filter(Boolean);
@@ -366,11 +372,12 @@ if (
   pedidos.length === 0 &&
   mediciones.length === 0 &&
   aPublicar.length === 0 &&
-  aRellenarGaleria.length === 0
+  aRellenarGaleria.length === 0 &&
+  !RECONCILIAR
 ) {
   console.error(
     "Hay que decir qué hacer: --ids a,b,c, --listos, --medir SKU=peso,largo,ancho,alto," +
-      " --publicar-sku SKU, --galeria SKU o --galeria-todos.",
+      " --publicar-sku SKU, --galeria SKU, --galeria-todos o --reconciliar.",
   );
   process.exit(1);
 }
@@ -435,6 +442,18 @@ async function medir(peticiones) {
 
 // El registro se lee antes de cualquier rama: publicar también lo escribe, no solo cargar.
 const registro = leerJson(REGISTRO) ?? {};
+
+if (RECONCILIAR) {
+  if (!TOKEN) {
+    console.error(
+      "Reconciliar es preguntarle al catálogo qué tiene, así que necesita sesión hasta para" +
+        " simularlo. Usa --correo <correo> o --token <jwt>.",
+    );
+    process.exit(1);
+  }
+  await reconciliar(registro);
+  process.exit(process.exitCode ?? 0);
+}
 
 if (aPublicar.length > 0) {
   if (!TOKEN) {
@@ -551,6 +570,122 @@ async function rellenarGalerias(skus, registro) {
   }
   console.log(`
 ${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}`);
+}
+
+/**
+ * Anota en el registro lo que el catálogo ya tiene y el registro no sabe. Sale temprano como las
+ * otras: no carga nada, solo deja de mentir.
+ *
+ * <p>Casa por las <b>mismas dos guardas</b> que usa la carga para no duplicar, y en el mismo
+ * orden: el SKU, que es una regla mecánica sobre el id de la lista y por tanto recalculable; y si
+ * no, el nombre, que es el que atrapa lo que cargó cualquier otra cosa con otra regla de SKU
+ * —`jbl-extreme-4` quedó publicado como `jbl-xtreme-4`—. Lo que no case con ninguna de las dos
+ * no se adivina: se cuenta aparte y se dice que no está cargado.
+ *
+ * <p>Anota el SKU <b>del catálogo</b> y no el que tocaría por la regla, porque es el que
+ * `--galeria-todos` y `--publicar-sku` van a usar para volver a encontrar el producto.
+ */
+async function reconciliar(registro) {
+  const existencias = (await pedir("/api/v1/admin/variantes/existencias")).items;
+  const porSku = new Map(existencias.map((v) => [v.sku, v]));
+  const porProductoId = new Map(existencias.map((v) => [v.productoId, v]));
+  const porNombre = new Map(
+    (await pedir("/api/v1/admin/productos?tamano=200")).items.map((p) => [
+      p.nombre.toLowerCase(),
+      p,
+    ]),
+  );
+
+  let yaEstaban = 0;
+  let sinRastro = 0;
+
+  // Primera pasada, sin escribir nada: quién casa con quién. Va aparte de la segunda porque dos
+  // ids de la lista que casen con el mismo producto del catálogo invalidan **las dos**
+  // coincidencias, y eso solo se sabe después de mirarlas todas. Anotar la primera y rechazar la
+  // segunda dejaría escrita justo la que no se puede comprobar.
+  const casados = [];
+  for (const producto of productos) {
+    if (registro[producto.id]) {
+      yaEstaban++;
+      continue;
+    }
+    const porElSku = porSku.get(skuDe(producto.id));
+    const porElNombre = porNombre.get(producto.titulo.toLowerCase());
+    const productoId = porElSku?.productoId ?? porElNombre?.id;
+    if (!productoId) {
+      sinRastro++;
+      continue;
+    }
+    casados.push({ producto, productoId, porElSku });
+  }
+
+  // Los productoId que ya están en el registro también compiten: uno de ellos casando otra vez
+  // significa que el registro ya dice que ese producto es otro id de la lista.
+  const cuantos = new Map();
+  for (const anotado of Object.values(registro)) {
+    cuantos.set(anotado.productoId, (cuantos.get(anotado.productoId) ?? 0) + 1);
+  }
+  for (const { productoId } of casados) {
+    cuantos.set(productoId, (cuantos.get(productoId) ?? 0) + 1);
+  }
+
+  const limpios = [];
+  for (const casado of casados) {
+    if (cuantos.get(casado.productoId) > 1) {
+      const rivales = casados
+        .filter((otro) => otro.productoId === casado.productoId && otro !== casado)
+        .map((otro) => otro.producto.id);
+      console.error(
+        `FALLÓ       ${casado.producto.id}: casa con el mismo producto del catálogo que` +
+          ` ${rivales.length > 0 ? rivales.join(", ") : "algo que el registro ya anotó"}.` +
+          " Uno de los dos está mal y no es este script quien puede decidir cuál, así que no se" +
+          " anota ninguno.",
+      );
+      process.exitCode = 1;
+      continue;
+    }
+    limpios.push(casado);
+  }
+
+  // Segunda pasada: el detalle solo se pide de lo que va a quedar anotado.
+  let anotados = 0;
+  for (const { producto, productoId, porElSku } of limpios) {
+    const variante = porElSku ?? porProductoId.get(productoId);
+    const detalle = await pedir(`/api/v1/admin/productos/${productoId}`);
+    const enGaleria = (detalle.galeria ?? []).length;
+    const esperando = fotosDeGaleria(producto).length;
+    console.log(
+      `${ESCRIBIR ? "anotando" : "simulado"}    ${detalle.nombre}` +
+        ` (${porElSku ? "por su SKU" : "por su nombre"})\n` +
+        `            ${variante?.sku ?? "sin variante"} · ${detalle.estado}` +
+        ` · ${enGaleria} en galería` +
+        (enGaleria === 0 && esperando > 0 ? ` · ${esperando} toma(s) esperando en el estudio` : ""),
+    );
+    // Se cuenta lo que se haría, escriba o no, como en la carga: un resumen que dice "0" debajo
+    // de tres líneas que dicen "simulado" hace dudar de las tres líneas.
+    anotados++;
+    if (!ESCRIBIR) continue;
+
+    registro[producto.id] = {
+      productoId,
+      slug: detalle.slug,
+      sku: variante?.sku ?? null,
+      reconciliadoEn: new Date().toISOString(),
+      publicado: detalle.estado === "PUBLICADO",
+      imagenesDeGaleria: enGaleria,
+    };
+    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
+  }
+
+  console.log(
+    `\n${ESCRIBIR ? "anotados" : "se anotarían"}: ${anotados}` +
+      ` · ya estaban: ${yaEstaban}` +
+      ` · sin rastro en el catálogo: ${sinRastro}` +
+      (ESCRIBIR ? `\nRegistro en ${REGISTRO}` : "\n\nNada de esto pasó: falta --escribir."),
+  );
+  console.log(
+    "Los que no tienen rastro no están cargados: eso lo arregla --ids o --listos, no esto.",
+  );
 }
 
 async function publicarSkus(skus, registro) {
