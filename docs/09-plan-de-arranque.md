@@ -931,19 +931,25 @@ tampoco se puede dar por resuelto:
   cualquier atributo en cualquier categoría; la asociación es solo una
   convención de negocio en los datos de siembra (`ADR` no abierto, anotado en
   `docs/02-modelo-datos.md`).
-- **`variante.existencia` e `Inventario` sin unificar** — la ficha pública
-  sigue sin leer `Inventario.saldoDisponible`; ambos se mantienen en sync a
-  mano solo en el punto donde se crea una variante (`ADR-0017`).
-- **`GET/POST /api/v1/admin/variantes/{id}/inventario`** (reabastecimiento o
-  ajuste sobre una variante ya creada) sigue sin construirse — anotado ya en
-  `docs/03-api.md` como pendiente.
+- ~~**`variante.existencia` e `Inventario` sin unificar** — la ficha pública
+  sigue sin leer `Inventario.saldoDisponible`.~~ **Resuelto el 20 de septiembre
+  de 2026** (`ADR-0050`): la columna se borró y la vitrina publica un booleano
+  calculado desde el libro. `ADR-0017`, que dejó esta deuda escrita, queda
+  superada.
+- ~~**`GET/POST /api/v1/admin/variantes/{id}/inventario`** (reabastecimiento o
+  ajuste sobre una variante ya creada) sigue sin construirse.~~ **Resuelto el 20
+  de septiembre de 2026** con otro nombre: `PATCH /api/v1/admin/variantes/{id}/existencia`
+  recibe un conteo físico y lo registra como movimiento de `AJUSTE` con su motivo
+  (`ADR-0049`), con su pantalla en el panel.
 - **La pantalla de agregar variante no muestra las variantes existentes de un
   producto** — declarado fuera de alcance en el plan para no crecer el paso,
   sigue sin construirse.
 - **Imagen principal:** sin conversión dual WebP/JPEG (llega con el asistente
   de la Fase 5), ancho/alto confiados al cliente sin verificar contra el
-  archivo real, sin borrado del objeto anterior en Cloud Storage al
-  reemplazar (mitigado por el versionado del bucket), sin verificación de
+  archivo real, ~~sin borrado del objeto anterior en Cloud Storage al
+  reemplazar (mitigado por el versionado del bucket)~~ —**resuelto en la Fase 5**:
+  `ConfirmarImagenPrincipal` borra por prefijo, y se lleva de paso lo que
+  quedó de subidas que nunca se confirmaron—, sin verificación de
   contenido real ni tamaño máximo propio (`ADR-0016`).
 - **La subida real de bytes contra el bucket de GCP no se verificó en esta
   sesión** — el wiring de `bootRun` se confirmó hasta el arranque del
@@ -5721,10 +5727,11 @@ las medidas de su caja, y esas ocho se miden con báscula y metro.
 
 ### Lo que esto **no** arregla
 
-**La existencia sigue sin poderse corregir**, y el 5 inventado de los doce productos sigue ahí. No
-es un olvido: el `Inventario` es por movimientos, no un contador, así que ajustarlo necesita su
-propio caso de uso con su motivo registrado —y necesita el conteo real, que es un dato de negocio
-que este proyecto no puede inventar. Queda como la siguiente tarea de esta rama.
+~~**La existencia sigue sin poderse corregir**~~ **Resuelto el 20 de septiembre de 2026**
+(`ADR-0049`): `AjustarExistencia` y la pantalla de existencias. El `Inventario` es por movimientos,
+no un contador, así que ajustarlo necesitaba su propio caso de uso con su motivo registrado — y el
+conteo real, que es un dato de negocio que este proyecto no puede inventar. **El 5 inventado de los
+doce productos sí sigue ahí**, y ahí seguirá hasta que alguien cuente la bodega.
 
 ## El panel aprende a crear marcas, y dos desplegables que estaban rotos (2026-09-20)
 
@@ -6105,6 +6112,248 @@ verdad una de las variantes reales habría sido inventar un dato de negocio.
 - **El 5 inventado de los doce productos reales sigue ahí.** Esta sesión construyó la puerta; las
   cifras las escribe una persona que contó la bodega, y no hay forma honesta de que las escriba
   nadie más.
+
+## La existencia sale del libro, y la vitrina dice la verdad (2026-09-20)
+
+`ADR-0049`, escrito esa misma mañana, dejó su propia continuación por nombre: la opción C, *"se
+borra la columna y la respuesta calcula el disponible leyendo el libro"*, descrita ahí como la
+correcta y aplazada por alcance. Esto es esa opción, en una rama propia.
+
+### Lo que hizo que fuera más barata de lo que el ADR temía
+
+Dos hallazgos, los dos de mirar antes de escribir:
+
+- **La vitrina nunca usó el número.** `hayExistencia`, `variantePorDefecto`, la etiqueta de stock y
+  el `availability` de schema.org lo comparaban con cero y nada más. O sea que el contrato público
+  podía salir de esto siendo un booleano, y no había que decidir qué hacer con un entero.
+- **`AgregarVariante` ya escribía la `ENTRADA` en el libro** desde el día que se creó. La columna no
+  guardaba ni un dato que el libro no tuviera, salvo en variantes escritas por fuera de ese camino.
+  Borrarla no perdía información: solo dejaba de haber dos versiones del mismo número.
+
+### Las dos decisiones que había que tomar primero
+
+**Booleano, no número.** Publicar el conteo exacto era darle el inventario a cualquiera que mirase
+la red para que ninguna pantalla lo usara. Y un número envejece peor que un sí/no: los dos quedan
+viejos entre el render y el clic, pero el número aparenta una precisión que no tiene. Lo que protege
+la venta sigue siendo que el servidor revalida al reservar, con bloqueo pesimista.
+
+**Se calcula al leer, y no se materializa.** Este es el argumento que conviene tener escrito porque
+alguien lo va a querer repetir: **el disponible depende de `ahora`**. Una reserva vence sola, y en
+ese instante la unidad vuelve a estar a la venta sin que nadie escriba nada. Una proyección en
+columna se quedaría vieja exactamente igual que la que se estaba borrando — por otro motivo, con el
+mismo resultado.
+
+### Lo que la migración hace, y lo que se niega a hacer
+
+`V59` le abre libro, con la cifra de la columna, a las variantes que no tenían ninguno: para ésas la
+columna era el único sitio donde estaba el dato.
+
+**No cuadra hacia arriba las que ya tienen libro diciendo menos.** Esa diferencia no es un dato
+perdido: es la venta que el libro registró y la columna no vio. Cuadrarla habría sido resucitar el
+error con una migración.
+
+Comprobado antes de correrla, sobre la base local: veinte variantes, todas con libro, dos con el
+libro por debajo de la columna. Y después, exactamente las mismas cifras del libro.
+
+### Tres cosas más que no podían quedarse
+
+- **El descuadre murió con la columna.** La pantalla pasa de tres cifras a dos y pierde la marca; ya
+  no hay dos números que puedan discrepar. El aviso del panel se reapunta a lo que sí le puede pasar
+  a un comprador: algo publicado sin una sola unidad en el libro. Era eso o quitar el aviso, y el
+  hueco que deja —nadie más vigila eso— es real.
+- **`AjustarExistencia` escribe en un solo sitio.** Copiar el conteo a la columna era todo el motivo
+  de que dependiera de dos puertos para escribir.
+- **`SembradorInventario` desaparece.** Abría el libro de cada variante leyendo su columna; sin
+  columna, el único que sabe cuántas unidades siembra es quien las siembra, así que el trabajo se
+  hizo dentro de `SembradorCatalogo`. Un sembrador que adivina la cantidad de otro es un sembrador
+  que la inventa.
+
+### La prueba que vale es la del dato real
+
+`TS-CEL-AUR-128` declaraba **3** en el catálogo con el libro en **0** —una `RESERVA` y su `SALIDA`
+lo habían vaciado— y la ficha decía "Disponible". Contra el backend real, después del cambio:
+`disponible: false`. Su hermana `TS-CEL-AUR-256`, con el libro en 1, sigue comprándose.
+
+Es el mismo par de variantes que el 20 de septiembre por la mañana aparecieron descuadradas en la
+pantalla nueva. Lo que aquel día se podía enseñar, este se puede arreglar.
+
+### Lo que esto **no** arregla
+
+- **El 5 inventado de los doce productos reales sigue ahí.** Se escribió también en el libro al
+  darlos de alta, así que borrar la columna no lo borra: solo deja de haber dos copias del invento.
+  Lo corrige un conteo de bodega, por la pantalla de existencias.
+- **La consulta sigue trayendo el histórico completo** de las variantes de la página. Acotado a una
+  página es pagable; el día que una variante acumule miles de movimientos, lo que hace falta es un
+  corte de saldo en el libro — no una columna en el catálogo.
+
+### Comprobado en el navegador, y lo que apareció ahí
+
+Contra el backend real y la base local, las dos cosas que `docs/06-testing.md` dice que jsdom no
+atrapa, más el recorrido del panel:
+
+- **La ficha.** Elegir 128 GB / Negro —la variante del caso de arriba— pinta "Agotado" y el botón de
+  comprar sale con `disabled: true`, comprobado en el DOM y no solo de vista. Su hermana de 256 GB,
+  con el libro en 1, sigue comprándose.
+- **La pantalla de existencias**, con dos columnas en vez de tres: "20 variantes activas, 1 sin una
+  sola unidad en el libro", y `TS-CEL-AUR-128` primera de la lista con su `0 (sin existencia)` en
+  rojo. El orden nuevo funciona.
+- **El foco**, que es lo otro que jsdom no ve: tabular desde el botón que abre el formulario deja el
+  anillo en el primer campo — `:focus-visible` verdadero, contorno de 2 px con 2 px de separación.
+- El formulario se abrió y se cerró **sin escribir nada**: contar de verdad una variante sería
+  inventarse un dato de negocio.
+
+**Y apareció un defecto de redacción que ninguna prueba mira**: el aviso del panel decía *"1
+variantes no tienen..."*. El aviso gemelo de sin-medir ya resolvía eso con `variante(s)`, así que se
+igualó el estilo en los dos idiomas. Es el tipo de cosa que solo se ve con el dato real en pantalla:
+con cualquier número distinto de uno, la frase estaba bien.
+
+### Un tropiezo que conviene no repetir
+
+A mitad de la comprobación, el login del panel empezó a responder *"No pudimos conectarnos con el
+servidor"*. No era la aplicación: **`npm run verificar` recompiló los jars por debajo del `bootRun`
+que estaba corriendo**, y la JVM viva se quedó sin una clase que carga tarde
+(`ClassNotFoundException: IpDelCliente`, justo en el filtro del límite de intentos). Se arregla
+reiniciando la API. Correr la verificación completa con el backend levantado deja el proceso en un
+estado incoherente sin decir nada hasta que alguien toca la ruta equivocada.
+
+## Los trece productos, y la puerta para corregir una medida (2026-09-21)
+
+El cruce del material dejó una lista y la lista destapó tres cosas que no estaban en el plan.
+
+### Veinticinco publicables, no veintisiete
+
+El cruce y el cargador tenían cada uno su idea de "publicable" y ya habían divergido: el primero
+miraba el precio del **proveedor** donde el segundo mira el de **mercado**, así que daba por listos
+dos productos sin precio de venta —el Moto G67 y el Galaxy A57, cero fuentes—. Ahora los dos leen
+el material por el mismo módulo, que es la única forma de que no vuelva a pasar.
+
+### Cuatro productos que se venden al costo
+
+De los publicables nuevos, cuatro dejan **5% o menos** sobre lo que cuestan: el JBL Flip 7 y el
+Lenovo Tab Plus quedan en cero, el Tab One en 2% y el JBL Grip en 3%. Publicarlos a precio de
+mercado es trabajar gratis. El cargador filtra con `--margen-minimo`, que es una regla y no una
+lista escrita a mano: la próxima lista del proveedor se filtra igual.
+
+### La ficha de Icecat del Switch 2 era del juego suelto
+
+**50 g en una caja de 17 × 11 × 2 cm** — las medidas de la tarjeta de Mario Kart World, no del
+paquete con la consola. La ficha llegaba completa y se leía como buena; declararla habría cotizado
+el flete de un juego para despachar una consola de dos millones y medio. Queda excluida por id y
+con el motivo escrito, en vez de inventar un umbral del tipo "menos de 200 g es sospechoso": lo que
+está mal no es la cifra, es de qué producto es.
+
+### Lo que quedó cargado
+
+Trece productos **en BORRADOR**, con existencia cero: fuera de la vitrina hasta que alguien cuente
+la bodega. Los dieciséis publicados siguen siendo los mismos, comprobado por la API pública.
+`catalogo/cargados.json` guarda la correspondencia id → slug → SKU, que es lo que faltaba la primera
+vez — `jbl-extreme-4` terminó publicado como `jbl-xtreme-4` y nada lo anotó.
+
+### Y la puerta que no existía: corregir una medida
+
+`MedirVariante` admite reemplazar un paquete desde `ADR-0046`, y **no había forma de llegar hasta
+ahí**: la única lista del panel soltaba una variante justo cuando se medía. Una medida mal tomada
+solo se podía enmendar escribiendo en la base.
+
+`GET /api/v1/admin/variantes/medidas` trae las activas con su paquete, tengan o no, y
+`/admin/productos/medidas` las lista con el formulario dentro de la fila. **Una consulta en lugar de
+dos**: `variantesSinMedir()` era un `select` gemelo con cuatro `is null` en el `where`, y quién está
+sin medir lo decide ahora el caso de uso filtrando — una regla de negocio en una clase con pruebas.
+Comprobado rompiéndolo: sin el filtro, la prueba del vigilante falla.
+
+El formulario arranca con las cifras que ya tiene la variante. Corregir un peso mal tecleado es
+cambiar un número; un formulario en blanco obliga a copiar tres cifras correctas para tocar la
+cuarta, que es justo como se equivoca uno.
+
+**Estrenada con el caso que la motivó**: el JBL Go 5 estaba en 13 × 9 × 6 donde su ficha dice
+136 × 93 × 58 mm, que redondeado hacia arriba —como manda `docs/02`— son 14 × 10 × 6. La carga del
+19 de septiembre redondeó hacia abajo. Son milímetros, y son flete cobrado de menos en cada envío.
+Corregido desde la pantalla, contra la base real, con el aviso diciendo "se corrigieron" y no
+"quedó medida".
+
+### Dos tropiezos de método que conviene no repetir
+
+- **Correr `npm run verificar` con el `bootRun` levantado** recompila los jars por debajo del
+  proceso vivo, y la JVM se queda sin las clases que carga tarde. Se ve como un
+  `ClassNotFoundException` en una ruta concreta y, de cara a quien usa el panel, como "no pudimos
+  conectarnos con el servidor" al iniciar sesión. La API sigue respondiendo en `/salud`, así que
+  parece viva y el fallo se lee como una regresión del código recién escrito. No lo es.
+- **Los prompts interactivos no funcionan** en los comandos que se corren desde la conversación:
+  `read -rs` devuelve cadena vacía y el comando sigue como si nada. Costó dos intentos y dos
+  diagnósticos equivocados —un token que valía la palabra `undefined`, y después un `422` por clave
+  en blanco—. Por eso `cargar-catalogo.mjs` comprueba el estado del login antes de creerse nada, y
+  por eso lo que necesite credenciales se corre en una terminal de verdad.
+
+## El panel aprende a publicar, y la puerta pide confirmación (2026-09-21)
+
+Tercer hueco del mismo tipo en una semana: el panel no sabía crear marcas, no sabía corregir una
+medida, y no sabía publicar. `PublicarProducto` existe desde la Fase 4 y su endpoint también; lo
+que no existía era el botón. Los doce primeros productos reales se publicaron con un script de usar
+y tirar, y el JBL Charge 6 con `--publicar-sku` la noche anterior.
+
+### Publicar no tenía vuelta, y eso decidió la forma
+
+`Producto.publicar()` era de una sola vía: no había `despublicar()` en el dominio ni endpoint de
+regreso —eso se construyó unas horas después, y está abajo—. Un botón que deja algo en la vitrina
+para siempre y que se dispara con un clic es una trampa, así que **pregunta antes**. La pregunta
+decía entonces las dos cosas que importaban: que va a quedar visible en la tienda, y que el panel
+no sabía sacarlo de ahí.
+
+La confirmación va dentro de la fila y no en un diálogo del CDK: es una pregunta de una línea, y
+montar un modal con trampa de foco para eso es más ceremonia que la decisión.
+
+### El 409 que sí vale la pena traducir
+
+Publicar sin imagen principal responde `409 PRODUCTO_SIN_IMAGEN_PRINCIPAL`, y eso es accionable —
+hay que subir la foto—. La pantalla lo dice con sus palabras usando `mensajeDeError`, el ayudante
+que ya existía para esto y que la lista de productos no usaba. "No se pudo completar la acción"
+habría mandado a mirar el sitio equivocado.
+
+### Cuatro consultas, no una
+
+Publicar cambia el estado, y el estado lo enseñan cuatro consultas: la lista, las dos pantallas de
+inventario y el conteo de sin-medir, cuyos avisos distinguen borradores de publicados. Invalidar
+solo la lista dejaría el tablero diciendo el número de antes justo cuando un producto acaba de
+entrar a la vitrina sin existencia y sin medir.
+
+### Y el inverso, el mismo día
+
+`PublicarProducto` llevaba un día diciendo en su javadoc por qué **no** existía `DespublicarProducto`:
+*"retirar algo que ya se vendió tiene consecuencias que nadie ha decidido —qué pasa con los pedidos
+en curso, con los enlaces compartidos, con el sitemap ya indexado— y un caso de uso que se escribe
+sin esa decisión la toma en silencio"*. Las tres se decidieron leyendo el código, no de memoria:
+
+| | Qué pasa al retirar |
+|---|---|
+| Rejilla y ficha | Desaparece: las dos consultas filtran `estado = 'PUBLICADO'` |
+| Enlace compartido | **404**, que es lo que corresponde a algo retirado |
+| Sitemap | Sale en la siguiente generación, mismo filtro |
+| **Pedidos en curso** | **Intactos.** Llevan sus líneas congeladas y ningún paso posterior vuelve a mirar el estado del producto |
+| Carritos que lo tengan | La línea se queda y el checkout la rechaza, con el mismo mensaje que una variante borrada |
+
+Retirar de la vitrina no es cancelar lo vendido, y confundir las dos cosas habría sido el error
+caro. `DELETE` sobre el mismo subrecurso que lo creó —se borra la publicación, no el producto— y
+se registra como `warn` y no como `info`: publicar es rutina, retirar no. Todo en `ADR-0051`, con
+las tres alternativas que se descartaron: un estado `RETIRADO` aparte, bloquear la retirada cuando
+hay pedidos en curso, y cancelarlos al retirar.
+
+### Comprobado en el navegador
+
+El recorrido completo sobre el JBL Charge 6, que era el único publicado de los trece: retirado
+—la vitrina bajó a 16, su ficha respondió 404, salió del mapa del sitio— y publicado otra vez,
+que es como quedó. La fila cambia de botón sola, y la pregunta dice cosas distintas en cada
+sentido.
+
+Con el botón de publicar: la fila del Switch 2 lo ofrece, y al pulsarlo aparece la pregunta.
+Tabular desde el botón deja el anillo de foco en "Sí, publicar", y cancelar no publicó nada
+—diecisiete públicos y doce borradores antes y después, contra la API y contra la base—.
+
+Doce pruebas en la lista, cinco de ellas nuevas, incluida la que importa: **un solo clic no cambia
+nada**, ni en un sentido ni en el otro.
+
+Y una frase que duró un día: la confirmación de publicar decía *"el panel no sabe despublicar"*.
+Dejó de ser cierta en cuanto se construyó el inverso, así que se reemplazó en vez de quedarse ahí
+tranquilizando con algo falso.
 
 ## Cómo conversar con Claude Code en este proyecto
 

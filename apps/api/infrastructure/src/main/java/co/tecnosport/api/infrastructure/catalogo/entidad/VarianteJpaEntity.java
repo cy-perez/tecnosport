@@ -26,9 +26,6 @@ public class VarianteJpaEntity {
   @Column(name = "tasa_iva", nullable = false)
   private BigDecimal tasaIva;
 
-  @Column(nullable = false)
-  private int existencia;
-
   @Column(name = "codigo_barras")
   private String codigoBarras;
 
@@ -61,7 +58,6 @@ public class VarianteJpaEntity {
       String sku,
       BigDecimal precio,
       BigDecimal tasaIva,
-      int existencia,
       String codigoBarras,
       Integer pesoGramos,
       Integer largoCm,
@@ -74,7 +70,6 @@ public class VarianteJpaEntity {
     this.sku = sku;
     this.precio = precio;
     this.tasaIva = tasaIva;
-    this.existencia = existencia;
     this.codigoBarras = codigoBarras;
     this.pesoGramos = pesoGramos;
     this.largoCm = largoCm;
@@ -102,10 +97,6 @@ public class VarianteJpaEntity {
 
   public BigDecimal getTasaIva() {
     return tasaIva;
-  }
-
-  public int getExistencia() {
-    return existencia;
   }
 
   public String getCodigoBarras() {

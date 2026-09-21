@@ -9,6 +9,7 @@ import {
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -30,6 +31,15 @@ export interface RepositorioProductosAdmin {
   /** Lo que falta por medir, entero y sin paginar: es una lista de tareas que tiene que llegar a
    * cero, no un listado del catálogo. */
   listarSinMedir(): Promise<InventarioSinMedir>;
+
+  /** Publica un producto en BORRADOR: desde ese momento existe para quien compra. */
+  publicar(id: string): Promise<ProductoAdmin>;
+
+  /** Lo saca de la vitrina y lo devuelve a BORRADOR. Los pedidos en curso no se tocan. */
+  despublicar(id: string): Promise<ProductoAdmin>;
+
+  /** Todas las activas con su medida, tengan o no: la lista de la pantalla que corrige. */
+  listarMedidas(): Promise<MedidasDelCatalogo>;
 
   medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida>;
 

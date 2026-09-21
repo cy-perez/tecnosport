@@ -3,9 +3,11 @@
 
   <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.productos.titulo' | transloco }}</h1>
 
-  <a class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario" routerLink="crear">{{
-    'admin.productos.nuevo' | transloco
-  }}</a>
+  <a
+    class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario"
+    routerLink="crear"
+    >{{ 'admin.productos.nuevo' | transloco }}</a
+  >
 
   @if (consulta.isPending()) {
     <ts-esqueleto />
@@ -17,6 +19,19 @@
          lo repite. -->
     <p class="text-ts-texto-suave">{{ 'admin.productos.sin_productos' | transloco }}</p>
   } @else {
+    <!-- La fila publicada cambia de estado y deja de ofrecer el botón, así que la confirmación
+         tiene que vivir fuera de ella: si no, el mensaje desaparece con el botón que lo causó. -->
+    @if (publicado(); as nombre) {
+      <p class="mb-16 text-ts-exito" role="status">
+        {{ 'admin.productos.publicar.hecho' | transloco: { nombre: nombre } }}
+      </p>
+    }
+    @if (retirado(); as nombre) {
+      <p class="mb-16 text-ts-exito" role="status">
+        {{ 'admin.productos.publicar.retirado' | transloco: { nombre: nombre } }}
+      </p>
+    }
+
     <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
          página. Siete columnas no caben en 380 px —medido: el documento se iba
          a 650 px— y encoger una tabla de datos hasta que quepa la vuelve
@@ -52,17 +67,81 @@
                    entero a la migración a Tailwind: ninguna prueba mira
                    separaciones, y el CSS anterior tampoco las ponía. -->
                 <div class="flex flex-wrap gap-16">
-                  <a class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario" [routerLink]="[producto.id, 'editar']">{{
-                    'admin.productos.editarEnlace' | transloco
-                  }}</a>
+                  <a
+                    class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario"
+                    [routerLink]="[producto.id, 'editar']"
+                    >{{ 'admin.productos.editarEnlace' | transloco }}</a
+                  >
                   <a
                     class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario"
                     [routerLink]="[producto.id, 'captura-360']"
                     >{{ 'admin.productos.capturar360' | transloco }}</a
                   >
+                  <ts-boton
+                    variante="secundario"
+                    [etiquetaAccesible]="
+                      (producto.estado === 'BORRADOR'
+                        ? 'admin.productos.publicar.publicarProducto'
+                        : 'admin.productos.publicar.retirarProducto'
+                      ) | transloco: { nombre: producto.nombre }
+                    "
+                    (click)="preguntar(producto)"
+                  >
+                    {{
+                      (producto.estado === 'BORRADOR'
+                        ? 'admin.productos.publicar.accion'
+                        : 'admin.productos.publicar.accionRetirar'
+                      ) | transloco
+                    }}
+                  </ts-boton>
                 </div>
               </td>
             </tr>
+
+            @if (confirmando() === producto.id) {
+              <tr>
+                <td colspan="6">
+                  <div class="flex flex-col gap-16 border border-ts-borde p-16">
+                    <p class="m-0" role="status">
+                      {{
+                        (producto.estado === 'BORRADOR'
+                          ? 'admin.productos.publicar.confirmar'
+                          : 'admin.productos.publicar.confirmarRetirar'
+                        ) | transloco: { nombre: producto.nombre }
+                      }}
+                    </p>
+                    <!-- Lo que cada una arrastra se dice antes, no después. -->
+                    <p class="m-0 text-ts-texto-suave">
+                      {{
+                        (producto.estado === 'BORRADOR'
+                          ? 'admin.productos.publicar.loQueImplica'
+                          : 'admin.productos.publicar.loQueImplicaRetirar'
+                        ) | transloco
+                      }}
+                    </p>
+
+                    @if (error(); as mensaje) {
+                      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                    }
+
+                    <div class="flex flex-wrap gap-16">
+                      @if (producto.estado === 'BORRADOR') {
+                        <ts-boton [cargando]="publicando()" (click)="publicar(producto)">
+                          {{ 'admin.productos.publicar.confirmarAccion' | transloco }}
+                        </ts-boton>
+                      } @else {
+                        <ts-boton [cargando]="publicando()" (click)="despublicar(producto)">
+                          {{ 'admin.productos.publicar.confirmarRetirarAccion' | transloco }}
+                        </ts-boton>
+                      }
+                      <ts-boton variante="secundario" (click)="cancelar()">
+                        {{ 'admin.productos.publicar.cancelar' | transloco }}
+                      </ts-boton>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>

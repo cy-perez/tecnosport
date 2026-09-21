@@ -11,6 +11,11 @@ import java.util.Objects;
  * precio. El orden lo decide este caso de uso y no la consulta por el mismo criterio de {@code
  * ListarEnviosEnRevision} — la regla de negocio se lee en una clase que alguien prueba, no en un
  * {@code order by} que no prueba nadie.
+ *
+ * <p><b>Y quién está sin medir también lo decide aquí</b>, filtrando lo que trae la consulta. Era
+ * un {@code where} con cuatro {@code is null} en el adaptador, gemelo de otro {@code select} que
+ * traía las mismas filas sin filtrar; ahora hay una sola consulta y dos casos de uso que la leen
+ * distinto.
  */
 public final class ListarVariantesSinMedir {
 
@@ -22,7 +27,16 @@ public final class ListarVariantesSinMedir {
 
   public InventarioSinMedir ejecutar() {
     return new InventarioSinMedir(
-        repositorioProductos.variantesSinMedir().stream()
+        repositorioProductos.medidasDeVariantes().stream()
+            .filter(MedidaDeVariante::sinMedir)
+            .map(
+                variante ->
+                    new VarianteSinMedir(
+                        variante.varianteId(),
+                        variante.productoId(),
+                        variante.nombreProducto(),
+                        variante.sku(),
+                        variante.estadoProducto()))
             .sorted(
                 Comparator.comparing(VarianteSinMedir::estadoProducto)
                     .reversed()

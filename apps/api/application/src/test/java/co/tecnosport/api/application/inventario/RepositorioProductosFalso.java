@@ -1,11 +1,11 @@
 package co.tecnosport.api.application.inventario;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Paquete;
@@ -23,10 +23,6 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   private List<Producto> productos = new ArrayList<>();
   private List<VarianteActiva> activas = List.of();
-
-  UUID ultimaVarianteConExistenciaActualizada;
-  Integer ultimaExistenciaGrabada;
-  int vecesQueSeActualizoLaExistencia;
 
   void conProductos(Producto... productos) {
     this.productos = List.of(productos);
@@ -49,13 +45,6 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   @Override
   public List<VarianteActiva> variantesActivas() {
     return activas;
-  }
-
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    this.ultimaVarianteConExistenciaActualizada = varianteId;
-    this.ultimaExistenciaGrabada = existencia;
-    this.vecesQueSeActualizoLaExistencia++;
   }
 
   @Override
@@ -94,7 +83,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return List.of();
   }
 

@@ -15,7 +15,8 @@
     "limite_de_intentos_excedido": "Too many attempts in a row. Wait a few minutes before trying again.",
     "guia_no_encontrada": "There is no shipment with that tracking number.",
     "emision_no_encontrada": "That label purchase no longer exists.",
-    "acuse_no_aplicable": "That is not awaiting review."
+    "acuse_no_aplicable": "That is not awaiting review.",
+    "producto_sin_imagen_principal": "This product has no main image, and it cannot be published without one."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -41,9 +42,10 @@
     },
     "ir_a_marcas": "Brands",
     "existencias": {
-      "aviso": "{{total}} variants show a stock figure in the catalogue that differs from the inventory ledger, {{publicados}} on already published products. Anyone seeing them in the shop is reading an outdated number.",
+      "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"
-    }
+    },
+    "ir_a_medidas": "Package measurements"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -258,10 +260,10 @@
     },
     "existencias": {
       "titulo": "Stock",
-      "explicacion": "Three figures per variant, and they are not the same. The catalogue one is what buyers see; the ledger one is the truth, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
-      "resumen": "{{total}} active variants, {{descuadradas}} where the catalogue says something different from the ledger.",
+      "explicacion": "Two figures per variant, and they are not the same. The ledger one is what there is, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress, and it is the one that decides whether the shop allows buying. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
+      "resumen": "{{total}} active variants, {{sinExistencia}} without a single unit in the ledger.",
       "ninguna": "There are no active variants to count yet.",
-      "descuadrada": "(does not match)",
+      "sinExistencia": "(out of stock)",
       "reservadas": "({{reservadas}} reserved)",
       "contar": "Count",
       "contarVariante": "Count the units of {{sku}}",
@@ -281,10 +283,56 @@
         "producto": "Product",
         "sku": "SKU",
         "estado": "Status",
-        "catalogo": "Catalogue",
         "libro": "Ledger",
         "disponible": "Available"
       }
+    },
+    "medidas": {
+      "titulo": "Package measurements",
+      "explicacion": "Every active variant with the weight and dimensions of its box, whether it has them or not. Without all four figures shipping cannot be quoted and the product can only be handed over at the pickup point. A measurement already taken can be corrected here: if it is wrong, the wrong shipping cost is charged on every order of that variant.",
+      "resumen": "{{total}} active variant(s), {{sinMedir}} not measured.",
+      "ninguna": "There are no active variants in the catalogue yet.",
+      "errorLista": "We could not load the measurements. Please try again.",
+      "sinMedir": "Not measured",
+      "gramos": "{{peso}} g",
+      "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
+      "medir": "Measure",
+      "corregir": "Correct",
+      "medirVariante": "Measure the package of {{sku}}",
+      "corregirVariante": "Correct the package of {{sku}}",
+      "paqueteDe": "Package of {{sku}}",
+      "paqueteAyuda": "The product already packed, in whole grams and centimetres rounded up. Measuring short means losing the difference on every shipment; measuring long scares buyers away with a shipping cost that is not real.",
+      "avisoCorreccion": "This variant already had measurements. Correcting them does not change orders already quoted with the previous ones.",
+      "guardar": "Save measurements",
+      "cancelar": "Cancel",
+      "faltanCampos": "Measurements are missing: the weight and the three dimensions, all greater than zero.",
+      "error": "We could not save the measurements. Please try again.",
+      "medida": "{{sku}} is now measured.",
+      "corregida": "The measurements of {{sku}} were corrected.",
+      "columnas": {
+        "producto": "Product",
+        "sku": "SKU",
+        "estado": "Status",
+        "peso": "Weight",
+        "dimensiones": "Length × width × height"
+      }
+    },
+    "publicar": {
+      "accion": "Publish",
+      "publicarProducto": "Publish {{nombre}}",
+      "confirmar": "Publish {{nombre}}? It will become visible in the shop.",
+      "confirmarAccion": "Yes, publish",
+      "cancelar": "Cancel",
+      "hecho": "{{nombre}} is now published.",
+      "error": "We could not publish the product. Please try again.",
+      "loQueImplica": "The panel can take it down later, but while it is published anyone can buy it.",
+      "accionRetirar": "Take down",
+      "retirarProducto": "Take {{nombre}} out of the shop",
+      "confirmarRetirar": "Take {{nombre}} out of the shop?",
+      "loQueImplicaRetirar": "It stops showing in the shop, its link answers 404 and it leaves the sitemap. Orders already placed carry on; a cart holding it will fail at checkout.",
+      "confirmarRetirarAccion": "Yes, take it down",
+      "retirado": "{{nombre}} is out of the shop.",
+      "errorRetirar": "We could not take the product down. Please try again."
     }
   },
   "retractos": {

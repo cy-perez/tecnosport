@@ -56,7 +56,7 @@ Tres niveles, porque las tres líneas del catálogo se comportan distinto:
 
 - **Producto** — lo que el cliente reconoce: "Camiseta running Dry-Fit",
   "iPhone 15". Nombre, descripción, marca, categoría, imágenes.
-- **Variante** — lo que se compra y lo que tiene existencia y SKU propio:
+- **Variante** — lo que se compra, con SKU propio:
   "Camiseta running Dry-Fit, azul, talla M". Es la unidad de inventario. El
   SKU es único en todo el catálogo, no solo dentro de su producto — se
   aprovechó la implementación de Fase 1 para dejarlo como `UNIQUE` de base
@@ -65,9 +65,9 @@ Tres niveles, porque las tres líneas del catálogo se comportan distinto:
   de sí mismo.
 - **Unidad serializada** — solo celulares. Un equipo físico con IMEI.
 
-Un producto tiene N variantes. Una variante tiene existencia numérica; si es de
-la categoría celulares, además tiene N unidades con IMEI, y la existencia es el
-conteo de unidades disponibles, no un número que se edita a mano.
+Un producto tiene N variantes. **Una variante no guarda existencia** desde el 20 de
+septiembre de 2026 (`ADR-0050`): la tiene su `Inventario`, que es un libro de
+movimientos. Si es de la categoría celulares, además tiene N unidades con IMEI.
 
 ## Variantes por categoría, mercado colombiano
 
@@ -106,9 +106,9 @@ conteo de unidades disponibles, no un número que se edita a mano.
 Estos ejes se modelan como **atributos**, no como columnas fijas: una tabla
 `atributo` con su tipo y sus valores permitidos, y la variante guarda pares
 atributo-valor. Así se agrega "material" sin migrar el esquema. Lo que sí es
-columna fija en la variante: `sku`, `precio`, `tasa_iva`, `existencia`,
-`estado`, `codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`,
-`ancho_cm`, `alto_cm`**.
+columna fija en la variante: `sku`, `precio`, `tasa_iva`, `estado`,
+`codigo_barras`, y **el paquete: `peso_gramos`, `largo_cm`, `ancho_cm`,
+`alto_cm`**. Hubo también `existencia`, y la `V59` la borró (`ADR-0050`).
 
 **El paquete es columna fija, no atributo** (`adr/0021`), y desde el 19 de
 septiembre de 2026 es **opcional** (`adr/0046`). Sin peso ni dimensiones no hay
@@ -286,7 +286,7 @@ panel. Ver `ADR-0018`.
 | Agregado | Contenido | Nota |
 |---|---|---|
 | `Producto` | variantes, imágenes, set de rotación, marca, categoría, estado | Raíz del catálogo |
-| `Variante` | sku, atributos, precio, existencia | Dentro de `Producto` |
+| `Variante` | sku, atributos, precio, paquete | Dentro de `Producto`. Sin existencia: la tiene `Inventario` (`ADR-0050`) |
 | `UnidadSerializada` | imei, estado, variante | Solo celulares |
 | `Inventario` | movimientos y reservas | El saldo no se edita: se agrega movimiento |
 | `Carrito` | líneas, identificador anónimo o de usuario | Vive 30 días |
@@ -308,8 +308,15 @@ panel. Ver `ADR-0018`.
 ## Reglas de inventario
 
 El saldo de existencias no es una columna que se actualiza. Es la suma de
-`MovimientoInventario` (`ENTRADA`, `SALIDA`, `AJUSTE`, `RESERVA`, `LIBERACION`).
-Se guarda un saldo materializado por rendimiento, pero se recalcula y se concilia.
+`MovimientoInventario` (`ENTRADA`, `SALIDA`, `AJUSTE`, `RESERVA`, `LIBERACION`),
+y se calcula al leer, cada vez.
+
+Este párrafo decía además, desde la Fase 1, que *"se guarda un saldo materializado
+por rendimiento, pero se recalcula y se concilia"*. **Nunca fue verdad y dejó de
+poder serlo**: lo más parecido a ese saldo materializado era `variante.existencia`,
+que nadie recalculaba ni conciliaba —ese fue exactamente el defecto de `ADR-0050`—
+y que ya no existe. Si algún día el histórico pesa lo suficiente para necesitar un
+corte de saldo, será una decisión con su ADR, no una frase heredada.
 
 Ciclo con pago en línea: el checkout reserva al crear el intento de pago; la
 reserva vence a los 30 minutos; el pago aprobado convierte reserva en salida; el
@@ -328,24 +335,23 @@ de `LIBERACION` que registra el motivo.
 La reserva se toma con bloqueo pesimista sobre la variante para que dos
 compradores simultáneos no vendan la misma última unidad.
 
-**`variante.existencia` y `Inventario` conviven, todavía no están unificados**
-(confirmado al construir "agregar variante", Fase 4): la ficha pública y la
-rejilla siguen leyendo la columna directo, el checkout sigue calculando el
-saldo desde `Inventario`. Migrar la lectura pública a
-`Inventario.saldoDisponible` es el objetivo de fondo, pendiente (`ADR-0017`).
+**Hubo dos existencias que no se hablaban, y ya no** (`ADR-0050`, 20 de
+septiembre de 2026). `variante.existencia` era una columna que solo movía el alta
+de la variante, mientras el libro bajaba con cada venta; la ficha y la rejilla
+leían la columna, así que vender las cinco unidades de algo no cambiaba el número
+que veía quien compraba. `ADR-0049` lo hizo visible —el ajuste por conteo escribía
+en los dos sitios y la pantalla marcaba el descuadre— y dejó escrito que el
+arreglo era leer del libro. La `V59` borró la columna.
 
-**Lo que cambió el 20 de septiembre de 2026 es que la desincronización ya no es
-invisible** (`ADR-0049`). Antes se escribían las dos a la vez al crear la
-variante y nadie volvía a tocar la columna nunca: **cada venta las separaba**, y
-ningún mecanismo lo detectaba. Ahora `AjustarExistencia` escribe el movimiento y
-copia el conteo a la columna, y `GET /admin/variantes/existencias` enseña las
-tres cifras juntas marcando las descuadradas, con un aviso en el panel.
+**Ahora el catálogo público calcula la disponibilidad al leer**: `BuscarProductos`
+y `VerFichaDeProducto` piden los libros de las variantes de la página y publican
+un booleano por variante, no un número (`docs/03-api.md`). No se materializa en
+ninguna columna a propósito: **el disponible depende de `ahora`**, porque una
+reserva vence sola, y una columna se quedaría vieja igual que la que se borró.
 
-Se comprobó con datos reales en cuanto existió la pantalla: dos variantes
-sembradas salían descuadradas, y el motivo de una era exactamente ese — una
-`RESERVA` y su `SALIDA` habían bajado el libro de 2 a 1 mientras la columna
-seguía diciendo 2. Copiar el conteo es un parche con fecha de caducidad; el
-arreglo sigue siendo leer del libro.
+Se comprobó con datos reales el mismo día: `TS-CEL-AUR-128` declaraba 3 en el
+catálogo con el libro en 0 —una venta de verdad lo había vaciado— y pasó a
+responder agotada.
 
 ## Estados del pedido
 

@@ -8,6 +8,7 @@ import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.CrearProducto;
+import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
@@ -16,6 +17,7 @@ import co.tecnosport.api.application.catalogo.ListarCategoriasAdmin;
 import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
+import co.tecnosport.api.application.catalogo.ListarMedidasDeVariantes;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
@@ -33,6 +35,7 @@ import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.DisponibilidadDeVariantes;
 import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
@@ -80,13 +83,21 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
-  public BuscarProductos buscarProductos(RepositorioProductos repositorioProductos) {
-    return new BuscarProductos(repositorioProductos);
+  public DisponibilidadDeVariantes disponibilidadDeVariantes(
+      RepositorioInventario repositorioInventario, Reloj reloj) {
+    return new DisponibilidadDeVariantes(repositorioInventario, reloj);
   }
 
   @Bean
-  public VerFichaDeProducto verFichaDeProducto(RepositorioProductos repositorioProductos) {
-    return new VerFichaDeProducto(repositorioProductos);
+  public BuscarProductos buscarProductos(
+      RepositorioProductos repositorioProductos, DisponibilidadDeVariantes disponibilidad) {
+    return new BuscarProductos(repositorioProductos, disponibilidad);
+  }
+
+  @Bean
+  public VerFichaDeProducto verFichaDeProducto(
+      RepositorioProductos repositorioProductos, DisponibilidadDeVariantes disponibilidad) {
+    return new VerFichaDeProducto(repositorioProductos, disponibilidad);
   }
 
   @Bean
@@ -125,6 +136,11 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
+  public DespublicarProducto despublicarProducto(RepositorioProductos repositorioProductos) {
+    return new DespublicarProducto(repositorioProductos);
+  }
+
+  @Bean
   public ListarProductosAdmin listarProductosAdmin(RepositorioProductos repositorioProductos) {
     return new ListarProductosAdmin(repositorioProductos);
   }
@@ -133,6 +149,11 @@ public class ConfiguracionCatalogo {
   public ListarVariantesSinMedir listarVariantesSinMedir(
       RepositorioProductos repositorioProductos) {
     return new ListarVariantesSinMedir(repositorioProductos);
+  }
+
+  @Bean
+  public ListarMedidasDeVariantes listarMedidasDeVariantes(RepositorioProductos repositorio) {
+    return new ListarMedidasDeVariantes(repositorio);
   }
 
   @Bean

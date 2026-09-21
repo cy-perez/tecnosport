@@ -15,7 +15,8 @@
     "limite_de_intentos_excedido": "Demasiados intentos seguidos. Espera unos minutos antes de volver a intentarlo.",
     "guia_no_encontrada": "No existe ninguna guía con ese número.",
     "emision_no_encontrada": "Esa emisión ya no está.",
-    "acuse_no_aplicable": "Eso no está pidiendo revisión."
+    "acuse_no_aplicable": "Eso no está pidiendo revisión.",
+    "producto_sin_imagen_principal": "Este producto no tiene imagen principal, y sin ella no se puede publicar."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -41,9 +42,10 @@
     },
     "ir_a_marcas": "Marcas",
     "existencias": {
-      "aviso": "{{total}} variantes tienen en el catálogo una existencia distinta de la del libro de inventario, {{publicados}} en productos ya publicados. Quien las vea en la tienda está leyendo un número viejo.",
+      "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
-    }
+    },
+    "ir_a_medidas": "Medidas del paquete"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -258,10 +260,10 @@
     },
     "existencias": {
       "titulo": "Existencias",
-      "explicacion": "Tres cifras por variante, y no son lo mismo. La del catálogo es la que ve quien compra; la del libro es la verdad, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
-      "resumen": "{{total}} variantes activas, {{descuadradas}} con el catálogo diciendo algo distinto del libro.",
+      "explicacion": "Dos cifras por variante, y no son lo mismo. La del libro es lo que hay, porque es la suma de todos los movimientos; la disponible es esa misma menos lo que ya está comprometido en pedidos en curso, y es la que decide si la tienda deja comprar. Contar escribe un movimiento de ajuste con su motivo: el número no se edita, se corrige.",
+      "resumen": "{{total}} variantes activas, {{sinExistencia}} sin una sola unidad en el libro.",
       "ninguna": "Todavía no hay variantes activas que contar.",
-      "descuadrada": "(no coincide)",
+      "sinExistencia": "(sin existencia)",
       "reservadas": "({{reservadas}} reservadas)",
       "contar": "Contar",
       "contarVariante": "Contar las unidades de {{sku}}",
@@ -281,10 +283,56 @@
         "producto": "Producto",
         "sku": "SKU",
         "estado": "Estado",
-        "catalogo": "Catálogo",
         "libro": "Libro",
         "disponible": "Disponible"
       }
+    },
+    "medidas": {
+      "titulo": "Medidas del paquete",
+      "explicacion": "Cada variante activa con el peso y las medidas de su caja, las tenga o no. Sin las cuatro cifras no se puede cotizar el envío y el producto solo se entrega con recogida en el punto. Una medida ya tomada se puede corregir aquí: si está mal, se cobra el flete equivocado en cada pedido de esa variante.",
+      "resumen": "{{total}} variante(s) activas, {{sinMedir}} sin medir.",
+      "ninguna": "Todavía no hay variantes activas en el catálogo.",
+      "errorLista": "No pudimos cargar las medidas. Vuelve a intentarlo.",
+      "sinMedir": "Sin medir",
+      "gramos": "{{peso}} g",
+      "centimetros": "{{largo}} × {{ancho}} × {{alto}} cm",
+      "medir": "Medir",
+      "corregir": "Corregir",
+      "medirVariante": "Medir el paquete de {{sku}}",
+      "corregirVariante": "Corregir el paquete de {{sku}}",
+      "paqueteDe": "Paquete de {{sku}}",
+      "paqueteAyuda": "El producto ya empacado, en gramos y centímetros enteros redondeados hacia arriba. Medir de menos es perder la diferencia en cada envío; medir de más es ahuyentar a quien compra con un flete que no corresponde.",
+      "avisoCorreccion": "Esta variante ya tenía medidas. Corregirlas no cambia los pedidos que ya salieron cotizados con las anteriores.",
+      "guardar": "Guardar las medidas",
+      "cancelar": "Cancelar",
+      "faltanCampos": "Faltan medidas: el peso y las tres dimensiones, todas mayores que cero.",
+      "error": "No pudimos guardar las medidas. Vuelve a intentarlo.",
+      "medida": "{{sku}} quedó medida.",
+      "corregida": "Se corrigieron las medidas de {{sku}}.",
+      "columnas": {
+        "producto": "Producto",
+        "sku": "SKU",
+        "estado": "Estado",
+        "peso": "Peso",
+        "dimensiones": "Largo × ancho × alto"
+      }
+    },
+    "publicar": {
+      "accion": "Publicar",
+      "publicarProducto": "Publicar {{nombre}}",
+      "confirmar": "¿Publicar {{nombre}}? Va a quedar visible en la tienda.",
+      "confirmarAccion": "Sí, publicar",
+      "cancelar": "Cancelar",
+      "hecho": "{{nombre}} quedó publicado.",
+      "error": "No pudimos publicar el producto. Vuelve a intentarlo.",
+      "loQueImplica": "El panel ya sabe retirarlo después, pero mientras esté publicado cualquiera puede comprarlo.",
+      "accionRetirar": "Retirar",
+      "retirarProducto": "Retirar {{nombre}} de la vitrina",
+      "confirmarRetirar": "¿Retirar {{nombre}} de la vitrina?",
+      "loQueImplicaRetirar": "Deja de verse en la tienda, su enlace responde 404 y sale del mapa del sitio. Los pedidos ya hechos siguen su curso; un carrito que lo tenga fallará al pagar.",
+      "confirmarRetirarAccion": "Sí, retirar",
+      "retirado": "{{nombre}} salió de la vitrina.",
+      "errorRetirar": "No pudimos retirar el producto. Vuelve a intentarlo."
     }
   },
   "retractos": {

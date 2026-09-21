@@ -37,16 +37,16 @@ class RepositorioSesionFalso implements RepositorioSesion {
 }
 
 const NADA_SIN_MEDIR: InventarioSinMedir = { total: 0, totalEnPublicados: 0, items: [] };
-const NADA_DESCUADRADO: ExistenciasDelCatalogo = {
+const TODO_CON_EXISTENCIA: ExistenciasDelCatalogo = {
   total: 0,
-  totalDescuadradas: 0,
-  totalDescuadradasEnPublicados: 0,
+  totalSinExistencia: 0,
+  totalSinExistenciaEnPublicados: 0,
   items: [],
 };
 
 async function renderPanel(
   inventario: InventarioSinMedir = NADA_SIN_MEDIR,
-  existencias: ExistenciasDelCatalogo = NADA_DESCUADRADO,
+  existencias: ExistenciasDelCatalogo = TODO_CON_EXISTENCIA,
 ) {
   const sesion = new RepositorioSesionFalso();
   const resultado = await render(PanelAdminPage, {
@@ -106,15 +106,15 @@ describe('PanelAdminPage', () => {
   });
 
   /**
-   * El otro vigilante. Este avisa de algo que el sistema se hace solo: el catálogo declara una
-   * existencia que solo mueven el alta y un conteo, mientras el libro se mueve con cada venta
-   * (`ADR-0049`). Nadie lo ve fallar, y el número que lee quien compra se queda viejo.
+   * El otro vigilante. Avisó del descuadre entre catálogo y libro hasta `ADR-0050`, que borró la
+   * columna del catálogo; ahora avisa de lo que sí puede ver un comprador: algo publicado sin una
+   * sola unidad en el libro, que en la vitrina se ve agotado.
    */
-  it('avisa cuántas variantes tienen el catálogo descuadrado del libro', async () => {
+  it('avisa cuántas variantes no tienen una sola unidad en el libro', async () => {
     await renderPanel(NADA_SIN_MEDIR, {
       total: 12,
-      totalDescuadradas: 3,
-      totalDescuadradasEnPublicados: 2,
+      totalSinExistencia: 3,
+      totalSinExistenciaEnPublicados: 2,
       items: [],
     });
 
@@ -126,9 +126,9 @@ describe('PanelAdminPage', () => {
   /**
    * El enlace de existencias es permanente y el de sin-medir no, y la diferencia no es un olvido:
    * la lista de existencias nunca está vacía mientras haya catálogo, así que lleva siempre a algo.
-   * Lo que desaparece con todo cuadrado es el aviso.
+   * Lo que desaparece cuando no falta existencia en ningún lado es el aviso.
    */
-  it('con todo cuadrado no hay aviso, pero el enlace a existencias sigue ahí', async () => {
+  it('con todo con existencia no hay aviso, pero el enlace a existencias sigue ahí', async () => {
     await renderPanel();
 
     await screen.findByRole('button', { name: 'Cerrar sesión' });

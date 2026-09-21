@@ -1,0 +1,178 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">
+    {{ 'admin.productos.medidas.titulo' | transloco }}
+  </h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.productos.medidas.explicacion' | transloco }}</p>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="mb-16 text-ts-error" role="alert">
+      {{ 'admin.productos.medidas.errorLista' | transloco }}
+    </p>
+  } @else {
+    <!-- Medir por primera vez y corregir no son la misma noticia: la segunda dice que hubo
+         pedidos cotizados con la medida vieja, y eso es algo que alguien tiene que saber. -->
+    @if (guardada(); as resultado) {
+      <p class="mb-16 text-ts-exito" role="status">
+        {{
+          (resultado.correccion
+            ? 'admin.productos.medidas.corregida'
+            : 'admin.productos.medidas.medida'
+          ) | transloco: { sku: resultado.sku }
+        }}
+      </p>
+    }
+
+    @if (total() === 0) {
+      <p class="text-ts-texto-suave">{{ 'admin.productos.medidas.ninguna' | transloco }}</p>
+    } @else {
+      <p class="mb-16" role="status">
+        {{
+          'admin.productos.medidas.resumen'
+            | transloco: { total: total(), sinMedir: totalSinMedir() }
+        }}
+      </p>
+
+      <div class="overflow-x-auto">
+        <table
+          class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+        >
+          <thead>
+            <tr>
+              <th scope="col">{{ 'admin.productos.medidas.columnas.producto' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.medidas.columnas.sku' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.medidas.columnas.estado' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.medidas.columnas.peso' | transloco }}</th>
+              <th scope="col">{{ 'admin.productos.medidas.columnas.dimensiones' | transloco }}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (variante of variantes(); track variante.varianteId) {
+              <tr>
+                <td>{{ variante.nombreProducto }}</td>
+                <td>{{ variante.sku }}</td>
+                <td>{{ etiquetaEstado(variante.estadoProducto) }}</td>
+                @if (variante.sinMedir) {
+                  <!-- "Sin medir" con palabras y ocupando las dos celdas: un guion en cada una se
+                       lee igual que un cero, y no es lo mismo. -->
+                  <td colspan="2" class="text-ts-error">
+                    {{ 'admin.productos.medidas.sinMedir' | transloco }}
+                  </td>
+                } @else {
+                  <td>
+                    {{
+                      'admin.productos.medidas.gramos' | transloco: { peso: variante.pesoGramos }
+                    }}
+                  </td>
+                  <td>
+                    {{
+                      'admin.productos.medidas.centimetros'
+                        | transloco
+                          : {
+                              largo: variante.largoCm,
+                              ancho: variante.anchoCm,
+                              alto: variante.altoCm,
+                            }
+                    }}
+                  </td>
+                }
+                <td>
+                  <ts-boton
+                    variante="secundario"
+                    [etiquetaAccesible]="
+                      (variante.sinMedir
+                        ? 'admin.productos.medidas.medirVariante'
+                        : 'admin.productos.medidas.corregirVariante'
+                      ) | transloco: { sku: variante.sku }
+                    "
+                    (click)="abrir(variante)"
+                  >
+                    {{
+                      (variante.sinMedir
+                        ? 'admin.productos.medidas.medir'
+                        : 'admin.productos.medidas.corregir'
+                      ) | transloco
+                    }}
+                  </ts-boton>
+                </td>
+              </tr>
+
+              @if (midiendo() === variante.varianteId) {
+                <tr>
+                  <td colspan="6">
+                    <form
+                      class="flex flex-col gap-16"
+                      [formGroup]="form"
+                      (submit)="$event.preventDefault(); enviar(variante.varianteId)"
+                    >
+                      <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+                        <legend>
+                          {{
+                            'admin.productos.medidas.paqueteDe' | transloco: { sku: variante.sku }
+                          }}
+                        </legend>
+                        <p>{{ 'admin.productos.medidas.paqueteAyuda' | transloco }}</p>
+
+                        @if (!variante.sinMedir) {
+                          <p class="text-ts-texto-suave">
+                            {{ 'admin.productos.medidas.avisoCorreccion' | transloco }}
+                          </p>
+                        }
+
+                        <ts-campo
+                          [idCampo]="'medida-peso-' + variante.varianteId"
+                          tipo="number"
+                          [label]="'admin.productos.agregarVariante.pesoGramos' | transloco"
+                          formControlName="pesoGramos"
+                        />
+
+                        <ts-campo
+                          [idCampo]="'medida-largo-' + variante.varianteId"
+                          tipo="number"
+                          [label]="'admin.productos.agregarVariante.largoCm' | transloco"
+                          formControlName="largoCm"
+                        />
+
+                        <ts-campo
+                          [idCampo]="'medida-ancho-' + variante.varianteId"
+                          tipo="number"
+                          [label]="'admin.productos.agregarVariante.anchoCm' | transloco"
+                          formControlName="anchoCm"
+                        />
+
+                        <ts-campo
+                          [idCampo]="'medida-alto-' + variante.varianteId"
+                          tipo="number"
+                          [label]="'admin.productos.agregarVariante.altoCm' | transloco"
+                          formControlName="altoCm"
+                        />
+                      </fieldset>
+
+                      @if (error(); as mensaje) {
+                        <p class="text-ts-error" role="alert">{{ mensaje }}</p>
+                      }
+
+                      <div class="flex flex-wrap gap-16">
+                        <ts-boton tipo="submit" [cargando]="enviando()">
+                          {{ 'admin.productos.medidas.guardar' | transloco }}
+                        </ts-boton>
+                        <ts-boton variante="secundario" (click)="cancelar()">
+                          {{ 'admin.productos.medidas.cancelar' | transloco }}
+                        </ts-boton>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>

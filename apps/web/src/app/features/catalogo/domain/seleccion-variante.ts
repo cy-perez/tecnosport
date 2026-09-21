@@ -57,9 +57,9 @@ export function varianteSeleccionada(producto: Producto, seleccion: Seleccion): 
   );
 }
 
-/** La primera variante con existencia; si ninguna tiene, la primera de todas. */
+/** La primera variante disponible; si ninguna lo está, la primera de todas. */
 export function variantePorDefecto(producto: Producto): Variante | null {
   return (
-    producto.variantes.find((variante) => variante.existencia > 0) ?? producto.variantes[0] ?? null
+    producto.variantes.find((variante) => variante.disponible) ?? producto.variantes[0] ?? null
   );
 }

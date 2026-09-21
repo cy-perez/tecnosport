@@ -103,6 +103,6 @@ class MedirVarianteTest {
 
   private static Variante varianteMedida(String sku, Paquete paquete) {
     return Variante.crear(
-        new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), 5, null, paquete, List.of());
+        new Sku(sku), Dinero.deCop(890_000), new BigDecimal("0.00"), null, paquete, List.of());
   }
 }

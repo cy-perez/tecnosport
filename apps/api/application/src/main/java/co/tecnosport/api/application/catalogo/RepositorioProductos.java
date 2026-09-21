@@ -69,13 +69,14 @@ public interface RepositorioProductos {
   boolean existeVarianteConSku(Sku sku);
 
   /**
-   * Las variantes activas sin {@code Paquete}, de todo el catálogo y sin paginar — el conteo que
-   * devuelve alimenta un aviso, y un conteo truncado avisaría de menos justo cuando hay más.
+   * Todas las variantes {@code ACTIVA} del catálogo con la medida de su paquete, que puede faltar.
+   * Sin paginar, mismo criterio que {@link #variantesActivas()}: el panel necesita la lista
+   * completa para medir y para corregir una medida ya tomada.
    *
-   * <p>Solo las {@code ACTIVA}: una variante retirada no se va a despachar, así que medirla no
-   * arregla nada y su fila solo ensuciaría la lista de lo que sí hay que hacer.
+   * <p>Fue {@code variantesSinMedir()}, con el filtro en el {@code where}. Quién está sin medir lo
+   * decide ahora {@code ListarVariantesSinMedir}, que es una clase con pruebas.
    */
-  List<VarianteSinMedir> variantesSinMedir();
+  List<MedidaDeVariante> medidasDeVariantes();
 
   /**
    * Graba el paquete de una variante existente, la tuviera o no. El puerto no opina sobre cuál de
@@ -85,20 +86,11 @@ public interface RepositorioProductos {
   void actualizarPaquete(UUID varianteId, Paquete paquete);
 
   /**
-   * Las variantes {@code ACTIVA} de todo el catálogo con la existencia que declara la columna, sin
-   * paginar — la lista que el panel necesita para contar (adr/0049).
+   * Las variantes {@code ACTIVA} de todo el catálogo, sin paginar — la lista que el panel necesita
+   * para contar (adr/0049). Los saldos no salen de aquí: los pone el libro de movimientos
+   * (adr/0050).
    */
   List<VarianteActiva> variantesActivas();
-
-  /**
-   * Copia a la columna del catálogo el conteo que acaba de registrarse en el libro de inventario.
-   *
-   * <p>Este método no existía, y esa ausencia <b>es</b> el defecto de adr/0049: {@code
-   * variante.existencia} la escribía el alta de la variante y no volvía a moverse nunca, mientras
-   * la vitrina la usaba para decidir si algo estaba agotado. Quien lo llame tiene que haber escrito
-   * antes el movimiento correspondiente: esta columna es una copia, no la verdad.
-   */
-  void actualizarExistencia(UUID varianteId, int existencia);
 
   /**
    * Reemplaza la imagen principal del producto (a lo sumo una por producto, constraint única en BD)

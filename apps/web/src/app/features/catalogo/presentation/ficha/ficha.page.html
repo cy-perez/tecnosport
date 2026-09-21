@@ -49,10 +49,10 @@
         >
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />
-            <ts-etiqueta-stock [disponible]="variante.existencia > 0" />
+            <ts-etiqueta-stock [disponible]="variante.disponible" />
             <ts-boton
               variante="primario"
-              [deshabilitado]="variante.existencia === 0 || carrito.agregando()"
+              [deshabilitado]="!variante.disponible || carrito.agregando()"
               [cargando]="carrito.agregando()"
               [etiquetaCargando]="'carrito.agregando' | transloco"
               (click)="agregarAlCarrito()"

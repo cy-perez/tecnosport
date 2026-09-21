@@ -7,6 +7,8 @@ import {
   ExistenciaDeVariante,
   ExistenciasDelCatalogo,
   InventarioSinMedir,
+  MedidaDeVariante,
+  MedidasDelCatalogo,
   MarcaAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -21,6 +23,8 @@ type CategoriaDto = components['schemas']['CategoriaRespuesta'];
 type ImagenDto = components['schemas']['ImagenRespuesta'];
 type SinMedirDto = components['schemas']['VariantesSinMedirRespuesta'];
 type VarianteSinMedirDto = components['schemas']['VarianteSinMedirRespuesta'];
+type MedidasDto = components['schemas']['MedidasRespuesta'];
+type MedidaDeVarianteDto = components['schemas']['MedidaDeVarianteRespuesta'];
 type ExistenciasDto = components['schemas']['ExistenciasRespuesta'];
 type ExistenciaDeVarianteDto = components['schemas']['ExistenciaDeVarianteRespuesta'];
 type ExistenciaAjustadaDto = components['schemas']['ExistenciaAjustadaRespuesta'];
@@ -91,6 +95,35 @@ export function aInventarioSinMedir(dto: SinMedirDto): InventarioSinMedir {
   };
 }
 
+export function aMedidasDelCatalogo(dto: MedidasDto): MedidasDelCatalogo {
+  return {
+    total: dto.total ?? 0,
+    totalSinMedir: dto.totalSinMedir ?? 0,
+    totalSinMedirEnPublicados: dto.totalSinMedirEnPublicados ?? 0,
+    items: (dto.items ?? []).map(aMedidaDeVariante),
+  };
+}
+
+/**
+ * Las cuatro cifras se mapean a `null` y no a `0` cuando faltan: un cero es una medida inválida
+ * —el dominio exige mayor que cero— y pintarlo diría que la variante mide cero en vez de que
+ * nadie la ha medido.
+ */
+function aMedidaDeVariante(dto: MedidaDeVarianteDto): MedidaDeVariante {
+  return {
+    varianteId: dto.varianteId ?? '',
+    productoId: dto.productoId ?? '',
+    nombreProducto: dto.nombreProducto ?? '',
+    sku: dto.sku ?? '',
+    estadoProducto: (dto.estadoProducto ?? 'BORRADOR') as EstadoProducto,
+    pesoGramos: dto.pesoGramos ?? null,
+    largoCm: dto.largoCm ?? null,
+    anchoCm: dto.anchoCm ?? null,
+    altoCm: dto.altoCm ?? null,
+    sinMedir: dto.sinMedir ?? true,
+  };
+}
+
 function aVarianteSinMedir(dto: VarianteSinMedirDto): VarianteSinMedir {
   return {
     varianteId: dto.varianteId ?? '',
@@ -117,8 +150,8 @@ export function aVarianteMedida(dto: VarianteMedidaDto): VarianteMedida {
 export function aExistenciasDelCatalogo(dto: ExistenciasDto): ExistenciasDelCatalogo {
   return {
     total: dto.total ?? 0,
-    totalDescuadradas: dto.totalDescuadradas ?? 0,
-    totalDescuadradasEnPublicados: dto.totalDescuadradasEnPublicados ?? 0,
+    totalSinExistencia: dto.totalSinExistencia ?? 0,
+    totalSinExistenciaEnPublicados: dto.totalSinExistenciaEnPublicados ?? 0,
     items: (dto.items ?? []).map(aExistenciaDeVariante),
   };
 }
@@ -130,11 +163,9 @@ function aExistenciaDeVariante(dto: ExistenciaDeVarianteDto): ExistenciaDeVarian
     nombreProducto: dto.nombreProducto ?? '',
     sku: dto.sku ?? '',
     estadoProducto: (dto.estadoProducto ?? 'BORRADOR') as EstadoProducto,
-    existenciaDeclarada: dto.existenciaDeclarada ?? 0,
     saldoTotal: dto.saldoTotal ?? 0,
     disponible: dto.disponible ?? 0,
     reservadas: dto.reservadas ?? 0,
-    descuadrada: dto.descuadrada ?? false,
   };
 }
 

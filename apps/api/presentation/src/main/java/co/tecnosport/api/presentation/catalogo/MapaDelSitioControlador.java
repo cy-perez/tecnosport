@@ -1,8 +1,11 @@
 package co.tecnosport.api.presentation.catalogo;
 
 import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
+import co.tecnosport.api.application.catalogo.MapaDelSitio;
 import co.tecnosport.api.presentation.catalogo.dto.MapaDelSitioRespuesta;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,16 +23,32 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/mapa-del-sitio")
 public class MapaDelSitioControlador {
 
+  private static final Logger log = LoggerFactory.getLogger(MapaDelSitioControlador.class);
+
   private final ListarMapaDelSitio listarMapaDelSitio;
 
   public MapaDelSitioControlador(ListarMapaDelSitio listarMapaDelSitio) {
     this.listarMapaDelSitio = Objects.requireNonNull(listarMapaDelSitio);
   }
 
+  /**
+   * El aviso se registra aquí y no en el caso de uso porque {@code application} es framework-free y
+   * no tiene con qué registrar. Es {@code warn} y no {@code error}: la respuesta es correcta y el
+   * sitemap sirve; lo que pasa es que el catálogo creció más allá de lo que cabe en un archivo y
+   * hay trabajo pendiente —partirlo y publicar un índice— que nadie va a ver venir de otra forma.
+   */
   @GetMapping
   public MapaDelSitioRespuesta ver() {
+    MapaDelSitio mapa = listarMapaDelSitio.ejecutar();
+    if (mapa.truncado()) {
+      log.warn(
+          "El mapa del sitio se cortó en {} URL: el catálogo ya no cabe en un solo sitemap y hay"
+              + " productos publicados que ningún buscador va a encontrar por aquí. Toca partirlo"
+              + " en varios archivos con un índice.",
+          mapa.entradas().size());
+    }
     return new MapaDelSitioRespuesta(
-        listarMapaDelSitio.ejecutar().stream()
+        mapa.entradas().stream()
             .map(
                 entrada ->
                     new MapaDelSitioRespuesta.Producto(

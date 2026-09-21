@@ -11,9 +11,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * La unidad de inventario y de compra. {@code existencia} es un conteo simple en este paso de solo
- * lectura; el agregado {@code Inventario} por movimientos llega en Fase 2, ver
- * docs/09-plan-de-arranque.md.
+ * La unidad de inventario y de compra.
+ *
+ * <p><b>Una variante no sabe cuántas unidades hay, y eso es deliberado desde adr/0050.</b> Tuvo una
+ * columna {@code existencia} desde la Fase 1, cuando el catálogo era de solo lectura y el agregado
+ * {@code Inventario} no existía todavía. Cuando llegó, la columna se quedó: la movía el alta de la
+ * variante y nadie más, mientras el libro de movimientos bajaba con cada venta. La vitrina leía la
+ * columna, así que vender las cinco unidades de algo no cambiaba el número que veía quien compraba.
+ * Quién tiene existencia lo dice {@code Inventario} y solo él.
  *
  * <p>El {@link Paquete} es <b>opcional desde el 19 de septiembre de 2026</b> (adr/0046). Lo fue
  * obligatorio desde adr/0021, con un argumento correcto —sin peso ni dimensiones no hay cotización
@@ -30,7 +35,6 @@ public final class Variante {
   private final Sku sku;
   private final Dinero precio;
   private final BigDecimal tasaIva;
-  private final int existencia;
   private final String codigoBarras;
   private final Paquete paquete;
   private final EstadoVariante estado;
@@ -42,7 +46,6 @@ public final class Variante {
       Sku sku,
       Dinero precio,
       BigDecimal tasaIva,
-      int existencia,
       String codigoBarras,
       Paquete paquete,
       EstadoVariante estado,
@@ -52,10 +55,6 @@ public final class Variante {
     this.sku = Objects.requireNonNull(sku, "El SKU de la variante no puede ser nulo.");
     this.precio = Objects.requireNonNull(precio, "El precio de la variante no puede ser nulo.");
     this.tasaIva = validarTasaIva(tasaIva);
-    if (existencia < 0) {
-      throw new ExcepcionDeDominio("La existencia de una variante no puede ser negativa.");
-    }
-    this.existencia = existencia;
     this.codigoBarras = codigoBarras == null || codigoBarras.isBlank() ? null : codigoBarras.trim();
     // Puede ser nulo: una variante sin medir se vende, pero solo con recogida en el punto. Quien
     // arma los bultos para cotizar es el que se topa con eso, y lo dice nombrando el artículo
@@ -70,7 +69,6 @@ public final class Variante {
       Sku sku,
       Dinero precio,
       BigDecimal tasaIva,
-      int existencia,
       String codigoBarras,
       Paquete paquete,
       List<ValorAtributo> atributos) {
@@ -79,7 +77,6 @@ public final class Variante {
         sku,
         precio,
         tasaIva,
-        existencia,
         codigoBarras,
         paquete,
         EstadoVariante.ACTIVA,
@@ -100,16 +97,7 @@ public final class Variante {
   public Variante medida(Paquete paquete) {
     Objects.requireNonNull(paquete, "No se puede medir una variante con un paquete nulo.");
     return new Variante(
-        id,
-        sku,
-        precio,
-        tasaIva,
-        existencia,
-        codigoBarras,
-        paquete,
-        estado,
-        atributos,
-        setRotacionPropio);
+        id, sku, precio, tasaIva, codigoBarras, paquete, estado, atributos, setRotacionPropio);
   }
 
   private static BigDecimal validarTasaIva(BigDecimal tasaIva) {
@@ -134,10 +122,6 @@ public final class Variante {
 
   public BigDecimal tasaIva() {
     return tasaIva;
-  }
-
-  public int existencia() {
-    return existencia;
   }
 
   public Optional<String> codigoBarras() {

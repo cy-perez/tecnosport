@@ -1,8 +1,6 @@
 package co.tecnosport.api.application.inventario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.application.catalogo.VarianteActiva;
 import co.tecnosport.api.application.compartido.RelojFalso;
@@ -24,40 +22,21 @@ class ListarExistenciasTest {
       new ListarExistencias(productos, inventarios, new RelojFalso(AHORA));
 
   @Test
-  void cruzaLoQueDiceElCatalogoConLoQueDiceElLibro() {
+  void cadaVarianteActivaSaleConLoQueDiceSuLibro() {
     UUID varianteId = UUID.randomUUID();
-    productos.conVariantesActivas(activa(varianteId, "TS-JBL-GO5", "JBL Go 5", 5));
+    productos.conVariantesActivas(activa(varianteId, "TS-JBL-GO5", "JBL Go 5"));
     inventarios.con(libroCon(varianteId, 5));
 
     ExistenciaDeVariante existencia = listarExistencias.ejecutar().variantes().get(0);
 
-    assertEquals(5, existencia.existenciaDeclarada());
     assertEquals(5, existencia.saldoTotal());
     assertEquals(5, existencia.disponible());
-    assertFalse(existencia.descuadrada());
-  }
-
-  /**
-   * El descuadre es el defecto de adr/0049 hecho visible: la columna del catálogo solo la mueven el
-   * alta y el ajuste, así que cada venta la separa del libro.
-   */
-  @Test
-  void marcaDescuadradaLaVarianteQueElCatalogoCuentaDistintoQueElLibro() {
-    UUID varianteId = UUID.randomUUID();
-    productos.conVariantesActivas(activa(varianteId, "TS-MOTO-G17", "Moto G17", 5));
-    inventarios.con(libroCon(varianteId, 2));
-
-    ExistenciasDelCatalogo existencias = listarExistencias.ejecutar();
-
-    assertTrue(existencias.variantes().get(0).descuadrada());
-    assertEquals(1, existencias.totalDescuadradas());
-    assertEquals(1, existencias.totalDescuadradasEnPublicados());
   }
 
   @Test
   void elDisponibleDescuentaLasReservasVigentesYElSaldoTotalNo() {
     UUID varianteId = UUID.randomUUID();
-    productos.conVariantesActivas(activa(varianteId, "TS-MOTO-G17", "Moto G17", 5));
+    productos.conVariantesActivas(activa(varianteId, "TS-MOTO-G17", "Moto G17"));
     Inventario libro = libroCon(varianteId, 5);
     libro.reservar(2, Duration.ofMinutes(30), AHORA);
     inventarios.con(libro);
@@ -67,7 +46,6 @@ class ListarExistenciasTest {
     assertEquals(5, existencia.saldoTotal());
     assertEquals(3, existencia.disponible());
     assertEquals(2, existencia.reservadas());
-    assertFalse(existencia.descuadrada());
   }
 
   /**
@@ -76,7 +54,7 @@ class ListarExistenciasTest {
   @Test
   void unaReservaVencidaNoDescuentaDelDisponible() {
     UUID varianteId = UUID.randomUUID();
-    productos.conVariantesActivas(activa(varianteId, "TS-MOTO-G17", "Moto G17", 5));
+    productos.conVariantesActivas(activa(varianteId, "TS-MOTO-G17", "Moto G17"));
     Inventario libro = libroCon(varianteId, 5);
     libro.reservar(2, Duration.ofMinutes(30), AHORA.minus(Duration.ofHours(2)));
     inventarios.con(libro);
@@ -88,38 +66,33 @@ class ListarExistenciasTest {
   }
 
   /**
-   * Una variante que el catálogo cuenta y de la que no hay un solo movimiento es justo la fila que
-   * alguien tiene que ver, no una que se pueda saltar.
+   * Una variante activa de la que no hay un solo movimiento es justo la fila que alguien tiene que
+   * ver —algo publicado que nadie ha contado nunca—, no una que se pueda saltar.
    */
   @Test
-  void unaVarianteSinLibroSaleConSaldoCeroYDescuadrada() {
+  void unaVarianteSinLibroSaleConSaldoCero() {
     UUID varianteId = UUID.randomUUID();
-    productos.conVariantesActivas(activa(varianteId, "TS-SAMSUNG-A17", "Galaxy A17", 3));
+    productos.conVariantesActivas(activa(varianteId, "TS-SAMSUNG-A17", "Galaxy A17"));
 
-    ExistenciaDeVariante existencia = listarExistencias.ejecutar().variantes().get(0);
+    ExistenciasDelCatalogo existencias = listarExistencias.ejecutar();
 
-    assertEquals(0, existencia.saldoTotal());
-    assertEquals(0, existencia.disponible());
-    assertTrue(existencia.descuadrada());
+    assertEquals(0, existencias.variantes().get(0).saldoTotal());
+    assertEquals(0, existencias.variantes().get(0).disponible());
+    assertEquals(1, existencias.totalSinExistencia());
   }
 
   @Test
-  void lasDescuadradasVanPrimeroYDentroDeEllasLosPublicados() {
-    UUID cuadrada = UUID.randomUUID();
-    UUID descuadradaBorrador = UUID.randomUUID();
-    UUID descuadradaPublicada = UUID.randomUUID();
+  void lasQueEstanEnCeroVanPrimeroYDentroDeEllasLosPublicados() {
+    UUID conSaldo = UUID.randomUUID();
+    UUID enCeroBorrador = UUID.randomUUID();
+    UUID enCeroPublicada = UUID.randomUUID();
     productos.conVariantesActivas(
-        activa(cuadrada, "TS-A", "Aaa cuadrada", 5),
+        activa(conSaldo, "TS-A", "Aaa con saldo"),
         new VarianteActiva(
-            descuadradaBorrador,
-            UUID.randomUUID(),
-            "Bbb borrador",
-            "TS-B",
-            EstadoProducto.BORRADOR,
-            9),
-        activa(descuadradaPublicada, "TS-C", "Ccc publicada", 9));
+            enCeroBorrador, UUID.randomUUID(), "Bbb borrador", "TS-B", EstadoProducto.BORRADOR),
+        activa(enCeroPublicada, "TS-C", "Ccc publicada"));
     inventarios.con(
-        libroCon(cuadrada, 5), libroCon(descuadradaBorrador, 1), libroCon(descuadradaPublicada, 1));
+        libroCon(conSaldo, 5), libroCon(enCeroBorrador, 0), libroCon(enCeroPublicada, 0));
 
     List<ExistenciaDeVariante> variantes = listarExistencias.ejecutar().variantes();
 
@@ -128,35 +101,35 @@ class ListarExistenciasTest {
     assertEquals("TS-A", variantes.get(2).sku());
   }
 
+  /**
+   * El aviso del panel habla de lo que un comprador puede ver, así que un borrador sin existencia
+   * no cuenta para él — aunque sí para la lista.
+   */
   @Test
-  void elConteoDeDescuadradasEnPublicadosNoCuentaLosBorradores() {
+  void elConteoEnPublicadosNoCuentaLosBorradores() {
     UUID borrador = UUID.randomUUID();
     productos.conVariantesActivas(
         new VarianteActiva(
-            borrador, UUID.randomUUID(), "Borrador", "TS-B", EstadoProducto.BORRADOR, 9));
-    inventarios.con(libroCon(borrador, 1));
+            borrador, UUID.randomUUID(), "Borrador", "TS-B", EstadoProducto.BORRADOR));
+    inventarios.con(libroCon(borrador, 0));
 
     ExistenciasDelCatalogo existencias = listarExistencias.ejecutar();
 
     assertEquals(1, existencias.total());
-    assertEquals(1, existencias.totalDescuadradas());
-    assertEquals(0, existencias.totalDescuadradasEnPublicados());
+    assertEquals(1, existencias.totalSinExistencia());
+    assertEquals(0, existencias.totalSinExistenciaEnPublicados());
   }
 
-  private static VarianteActiva activa(
-      UUID varianteId, String sku, String nombreProducto, int existenciaDeclarada) {
+  private static VarianteActiva activa(UUID varianteId, String sku, String nombreProducto) {
     return new VarianteActiva(
-        varianteId,
-        UUID.randomUUID(),
-        nombreProducto,
-        sku,
-        EstadoProducto.PUBLICADO,
-        existenciaDeclarada);
+        varianteId, UUID.randomUUID(), nombreProducto, sku, EstadoProducto.PUBLICADO);
   }
 
   private static Inventario libroCon(UUID varianteId, int unidades) {
     Inventario inventario = Inventario.crear(varianteId);
-    inventario.registrarEntrada(unidades, "Alta inicial de variante", AHORA);
+    if (unidades > 0) {
+      inventario.registrarEntrada(unidades, "Alta inicial de variante", AHORA);
+    }
     return inventario;
   }
 }

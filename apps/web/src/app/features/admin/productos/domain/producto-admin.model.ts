@@ -116,6 +116,35 @@ export interface InventarioSinMedir {
   readonly items: readonly VarianteSinMedir[];
 }
 
+/**
+ * Una variante activa con la medida de su paquete, que puede no existir todavía.
+ *
+ * <p>Es lo que lista la pantalla de medidas, la que permite **corregir**: a diferencia de
+ * `VarianteSinMedir`, aquí las ya medidas también salen. `sinMedir` lo dice el servidor en vez de
+ * deducirse mirando si las cuatro cifras vienen nulas, que es la misma comprobación repetida en un
+ * sitio donde equivocarse en una de las cuatro no lo nota nadie.
+ */
+export interface MedidaDeVariante {
+  readonly varianteId: string;
+  readonly productoId: string;
+  readonly nombreProducto: string;
+  readonly sku: string;
+  readonly estadoProducto: EstadoProducto;
+  readonly pesoGramos: number | null;
+  readonly largoCm: number | null;
+  readonly anchoCm: number | null;
+  readonly altoCm: number | null;
+  readonly sinMedir: boolean;
+}
+
+/** Mismo criterio que `InventarioSinMedir`: los conteos se leen, no se derivan de `items`. */
+export interface MedidasDelCatalogo {
+  readonly total: number;
+  readonly totalSinMedir: number;
+  readonly totalSinMedirEnPublicados: number;
+  readonly items: readonly MedidaDeVariante[];
+}
+
 /** Las cuatro medidas, obligatorias y en las unidades del dominio: gramos y centímetros enteros. */
 export interface MedirVarianteAdmin {
   readonly varianteId: string;
@@ -137,14 +166,14 @@ export interface VarianteMedida {
 }
 
 /**
- * Las tres cifras de una variante, separadas a propósito (`ADR-0049`):
+ * Las dos cifras de una variante, separadas a propósito (`ADR-0050`):
  *
- * - `existenciaDeclarada` es la columna del catálogo, la que ve quien compra.
- * - `saldoTotal` es el libro de movimientos, que es la verdad.
- * - `disponible` es el saldo menos lo reservado por pedidos en vuelo.
+ * - `saldoTotal` es lo que hay según el libro de movimientos.
+ * - `disponible` es ese saldo menos lo reservado por pedidos en vuelo.
  *
- * `descuadrada` la calcula el servidor. No se deriva aquí comparando las dos primeras: es una regla
- * de negocio, y repetirla en el cliente crearía una segunda definición capaz de divergir.
+ * Eran tres hasta `ADR-0050`, y la que falta —`existenciaDeclarada`, la columna del catálogo— se
+ * llevó consigo el `descuadrada` que comparaba las dos. Ya no hay dos números que puedan
+ * discrepar: el libro es la única existencia.
  */
 export interface ExistenciaDeVariante {
   readonly varianteId: string;
@@ -152,18 +181,16 @@ export interface ExistenciaDeVariante {
   readonly nombreProducto: string;
   readonly sku: string;
   readonly estadoProducto: EstadoProducto;
-  readonly existenciaDeclarada: number;
   readonly saldoTotal: number;
   readonly disponible: number;
   readonly reservadas: number;
-  readonly descuadrada: boolean;
 }
 
 /** Los conteos vienen del servidor, igual que los de `InventarioSinMedir` y por lo mismo. */
 export interface ExistenciasDelCatalogo {
   readonly total: number;
-  readonly totalDescuadradas: number;
-  readonly totalDescuadradasEnPublicados: number;
+  readonly totalSinExistencia: number;
+  readonly totalSinExistenciaEnPublicados: number;
   readonly items: readonly ExistenciaDeVariante[];
 }
 

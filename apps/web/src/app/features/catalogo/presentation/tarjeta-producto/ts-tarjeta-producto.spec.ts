@@ -29,7 +29,7 @@ function productoDePrueba(): Producto {
         id: 'variante-1',
         sku: 'SKU-1',
         precio: { valor: 150_000, moneda: 'COP' },
-        existencia: 3,
+        disponible: true,
         atributos: [],
       },
     ],

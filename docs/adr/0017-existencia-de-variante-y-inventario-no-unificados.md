@@ -1,6 +1,12 @@
 # ADR 0017. `variante.existencia` y `Inventario` conviven, no se unifican
 
-Fecha: 2026-09-05. Estado: aceptada, con deuda pendiente de revisar.
+Fecha: 2026-09-05. Estado: **superada por `adr/0050`** (20 de septiembre de
+2026). La deuda que esta decisión dejó explícita —unificar el camino de lectura
+público a `Inventario.saldoDisponible` y borrar la columna— se pagó entera: la
+columna ya no existe y la vitrina publica un booleano calculado desde el libro.
+Lo que sigue leyéndose bien de aquí es el diagnóstico, que resultó exacto: *"es
+una fuente real de bugs silenciosos mientras no se resuelva"*, y lo fue durante
+quince días.
 
 ## Contexto
 

@@ -241,7 +241,7 @@ class ArmadorDeBultosTest {
             "alt es",
             "alt en"));
     Variante variante =
-        Variante.crear(new Sku(sku), precio, new BigDecimal("0.19"), 10, null, paquete, List.of());
+        Variante.crear(new Sku(sku), precio, new BigDecimal("0.19"), null, paquete, List.of());
     producto.agregarVariante(variante);
     producto.publicar();
     catalogo.add(producto);

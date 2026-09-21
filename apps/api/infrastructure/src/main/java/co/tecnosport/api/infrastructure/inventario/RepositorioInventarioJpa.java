@@ -6,6 +6,7 @@ import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
 import co.tecnosport.api.infrastructure.inventario.entidad.InventarioJpaEntity;
 import co.tecnosport.api.infrastructure.inventario.entidad.MovimientoInventarioJpaEntity;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +56,34 @@ public class RepositorioInventarioJpa implements RepositorioInventario {
         movimientos.findAll().stream()
             .collect(Collectors.groupingBy(MovimientoInventarioJpaEntity::getInventarioId));
     return inventarios.findAll().stream()
+        .map(
+            entidad -> aInventario(entidad, porInventario.getOrDefault(entidad.getId(), List.of())))
+        .toList();
+  }
+
+  /**
+   * El mismo agrupamiento en memoria que {@link #listarTodos}, acotado a las variantes que se
+   * piden: dos consultas, no una por variante. Sin {@code @Lock} por el mismo motivo, con el
+   * agravante de que aquí quien llama es la vitrina y no una pantalla del panel.
+   *
+   * <p>Un conjunto vacío no llega a la base: {@code IN ()} no es SQL válido en Postgres y Spring
+   * Data lo traduce a una consulta que nunca trae nada. Se corta antes y se ahorra el viaje.
+   */
+  @Override
+  public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
+    if (varianteIds == null || varianteIds.isEmpty()) {
+      return List.of();
+    }
+    List<InventarioJpaEntity> libros = inventarios.findAllByVarianteIdIn(varianteIds);
+    if (libros.isEmpty()) {
+      return List.of();
+    }
+    Map<UUID, List<MovimientoInventarioJpaEntity>> porInventario =
+        movimientos
+            .findByInventarioIdIn(libros.stream().map(InventarioJpaEntity::getId).toList())
+            .stream()
+            .collect(Collectors.groupingBy(MovimientoInventarioJpaEntity::getInventarioId));
+    return libros.stream()
         .map(
             entidad -> aInventario(entidad, porInventario.getOrDefault(entidad.getId(), List.of())))
         .toList();

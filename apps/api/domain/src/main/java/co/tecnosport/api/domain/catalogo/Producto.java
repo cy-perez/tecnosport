@@ -145,6 +145,23 @@ public final class Producto {
     this.estado = EstadoProducto.PUBLICADO;
   }
 
+  /**
+   * Lo saca de la vitrina y lo devuelve a {@code BORRADOR}. Sin invariante que lo impida: retirar
+   * algo de la venta es precisamente lo que hay que poder hacer cuando resulta estar mal —una foto
+   * que no era, un precio equivocado, un producto que el proveedor ya no tiene—, y una regla que lo
+   * bloqueara obligaría a arreglarlo por la base.
+   *
+   * <p><b>No toca nada más, y eso es la decisión</b>: los pedidos ya creados siguen su curso
+   * —llevan sus líneas congeladas y ningún paso posterior vuelve a mirar el estado del producto— y
+   * las reservas de inventario se quedan donde están. Retirar de la vitrina no es cancelar lo
+   * vendido.
+   *
+   * <p>Idempotente como {@link #publicar()}: despublicar un borrador deja un borrador.
+   */
+  public void despublicar() {
+    this.estado = EstadoProducto.BORRADOR;
+  }
+
   public UUID id() {
     return id;
   }

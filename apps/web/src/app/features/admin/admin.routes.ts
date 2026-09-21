@@ -141,6 +141,13 @@ export const adminRoutes: Routes = [
               ),
           },
           {
+            path: 'medidas',
+            loadComponent: () =>
+              import('./productos/presentation/medidas/medidas-admin.page').then(
+                (m) => m.MedidasAdminPage,
+              ),
+          },
+          {
             path: 'existencias',
             loadComponent: () =>
               import('./productos/presentation/existencias/existencias-admin.page').then(

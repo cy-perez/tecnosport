@@ -5,6 +5,7 @@ import {
   ExistenciasDelCatalogo,
   ImagenAdmin,
   InventarioSinMedir,
+  MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
   ProductosPaginadosAdmin,
@@ -25,21 +26,45 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
 
   /**
    * El segundo argumento existe porque el panel mira <b>las dos</b> consultas: lo que falta por
-   * medir y lo que está descuadrado. Por omisión, nada descuadrado — así una prueba que solo
+   * medir y lo que no tiene existencia. Por omisión, nada sin existencia — así una prueba que solo
    * hable de medición no tiene que enterarse de que existe la otra.
    */
   constructor(
     private inventario: InventarioSinMedir = { total: 0, totalEnPublicados: 0, items: [] },
     private existencias: ExistenciasDelCatalogo = {
       total: 0,
-      totalDescuadradas: 0,
-      totalDescuadradasEnPublicados: 0,
+      totalSinExistencia: 0,
+      totalSinExistenciaEnPublicados: 0,
+      items: [],
+    },
+    private catalogoDeMedidas: MedidasDelCatalogo = {
+      total: 0,
+      totalSinMedir: 0,
+      totalSinMedirEnPublicados: 0,
       items: [],
     },
   ) {}
 
   async listarSinMedir(): Promise<InventarioSinMedir> {
     return this.inventario;
+  }
+
+  /**
+   * Refleja lo que hace el servidor: la lista de medidas trae **todas** las activas, así que una
+   * variante medida sigue aquí con sus cifras nuevas — al revés que en `listarSinMedir`, de donde
+   * desaparece. Sin esto, la prueba de la pantalla de corrección no distinguiría "se corrigió" de
+   * "no pasó nada".
+   */
+  async listarMedidas(): Promise<MedidasDelCatalogo> {
+    return this.catalogoDeMedidas;
+  }
+
+  publicar(): Promise<ProductoAdmin> {
+    throw new Error('no usado por las pruebas de medición');
+  }
+
+  despublicar(): Promise<ProductoAdmin> {
+    throw new Error('no usado por las pruebas de medición');
   }
 
   async medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida> {
@@ -53,14 +78,39 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
       total: this.inventario.total - 1,
       items: this.inventario.items.filter((v) => v.varianteId !== comando.varianteId),
     };
+
+    // En la lista de medidas la fila **no** desaparece: se queda con las cifras nuevas, que es lo
+    // que hace el servidor y lo que permite ver que una corrección entró.
+    const enMedidas = this.catalogoDeMedidas.items.find((v) => v.varianteId === comando.varianteId);
+    const correccion = enMedidas ? !enMedidas.sinMedir : false;
+    const items = this.catalogoDeMedidas.items.map((v) =>
+      v.varianteId === comando.varianteId
+        ? {
+            ...v,
+            pesoGramos: comando.pesoGramos,
+            largoCm: comando.largoCm,
+            anchoCm: comando.anchoCm,
+            altoCm: comando.altoCm,
+            sinMedir: false,
+          }
+        : v,
+    );
+    this.catalogoDeMedidas = {
+      ...this.catalogoDeMedidas,
+      items,
+      totalSinMedir: items.filter((v) => v.sinMedir).length,
+      totalSinMedirEnPublicados: items.filter((v) => v.sinMedir && v.estadoProducto === 'PUBLICADO')
+        .length,
+    };
+
     return {
       varianteId: comando.varianteId,
-      sku: variante?.sku ?? '',
+      sku: variante?.sku ?? enMedidas?.sku ?? '',
       pesoGramos: comando.pesoGramos,
       largoCm: comando.largoCm,
       anchoCm: comando.anchoCm,
       altoCm: comando.altoCm,
-      correccion: false,
+      correccion,
     };
   }
 
@@ -101,9 +151,9 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
  * El gemelo del anterior para la pantalla de existencias y para el aviso del panel, que también
  * son dos pantallas distintas mirando la misma consulta.
  *
- * <p>Al ajustar recalcula la fila como lo hace el servidor —la columna del catálogo se iguala al
- * conteo y el descuadre desaparece (`ADR-0049`)—, porque sin eso una prueba no podría distinguir
- * "se ajustó" de "no pasó nada".
+ * <p>Al ajustar recalcula la fila como lo hace el servidor —el libro pasa a decir lo contado y el
+ * disponible baja lo que haya reservado (`ADR-0050`)—, porque sin eso una prueba no podría
+ * distinguir "se ajustó" de "no pasó nada".
  */
 export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   readonly ajustes: AjustarExistenciaAdmin[] = [];
@@ -111,8 +161,14 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   constructor(
     private existencias: ExistenciasDelCatalogo = {
       total: 0,
-      totalDescuadradas: 0,
-      totalDescuadradasEnPublicados: 0,
+      totalSinExistencia: 0,
+      totalSinExistenciaEnPublicados: 0,
+      items: [],
+    },
+    private catalogoDeMedidas: MedidasDelCatalogo = {
+      total: 0,
+      totalSinMedir: 0,
+      totalSinMedirEnPublicados: 0,
       items: [],
     },
   ) {}
@@ -131,19 +187,17 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
       v.varianteId === comando.varianteId
         ? {
             ...v,
-            existenciaDeclarada: comando.cantidadContada,
             saldoTotal: comando.cantidadContada,
             disponible: comando.cantidadContada - v.reservadas,
-            descuadrada: false,
           }
         : v,
     );
     this.existencias = {
       ...this.existencias,
       items,
-      totalDescuadradas: items.filter((v) => v.descuadrada).length,
-      totalDescuadradasEnPublicados: items.filter(
-        (v) => v.descuadrada && v.estadoProducto === 'PUBLICADO',
+      totalSinExistencia: items.filter((v) => v.saldoTotal === 0).length,
+      totalSinExistenciaEnPublicados: items.filter(
+        (v) => v.saldoTotal === 0 && v.estadoProducto === 'PUBLICADO',
       ).length,
     };
 
@@ -161,6 +215,18 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   listarSinMedir(): Promise<InventarioSinMedir> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  listarMedidas(): Promise<MedidasDelCatalogo> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  publicar(): Promise<ProductoAdmin> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  despublicar(): Promise<ProductoAdmin> {
     throw new Error('no usado por las pruebas de existencias');
   }
 

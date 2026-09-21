@@ -52,8 +52,8 @@ export class ExistenciasAdminPage {
     () => this.consulta.data()?.items ?? [],
   );
   protected readonly total = computed(() => this.consulta.data()?.total ?? 0);
-  protected readonly totalDescuadradas = computed(
-    () => this.consulta.data()?.totalDescuadradas ?? 0,
+  protected readonly totalSinExistencia = computed(
+    () => this.consulta.data()?.totalSinExistencia ?? 0,
   );
 
   /** La fila con el formulario abierto. `null` = ninguna. */

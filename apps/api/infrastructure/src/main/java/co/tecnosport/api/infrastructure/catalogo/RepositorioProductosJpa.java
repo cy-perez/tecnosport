@@ -1,11 +1,11 @@
 package co.tecnosport.api.infrastructure.catalogo;
 
 import co.tecnosport.api.application.catalogo.FiltroProductos;
+import co.tecnosport.api.application.catalogo.MedidaDeVariante;
 import co.tecnosport.api.application.catalogo.OrdenProductos;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VarianteActiva;
-import co.tecnosport.api.application.catalogo.VarianteSinMedir;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -145,7 +145,6 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             variante.sku().valor(),
             variante.precio().valor(),
             variante.tasaIva(),
-            variante.existencia(),
             variante.codigoBarras().orElse(null),
             variante.paquete().map(Paquete::pesoGramos).orElse(null),
             variante.paquete().map(Paquete::largoCm).orElse(null),
@@ -204,23 +203,39 @@ public class RepositorioProductosJpa implements RepositorioProductos {
    * tarde al hidratarla.
    */
   @Override
-  public List<VarianteSinMedir> variantesSinMedir() {
+  public List<MedidaDeVariante> medidasDeVariantes() {
     return jdbc.query(
         "select v.id as variante_id, p.id as producto_id, p.nombre as nombre_producto, "
-            + "       v.sku as sku, p.estado as estado_producto "
+            + "       v.sku as sku, p.estado as estado_producto, "
+            + "       v.peso_gramos, v.largo_cm, v.ancho_cm, v.alto_cm "
             + "from variante v "
             + "join producto p on p.id = v.producto_id "
-            + "where v.estado = 'ACTIVA' "
-            + "  and (v.peso_gramos is null or v.largo_cm is null "
-            + "       or v.ancho_cm is null or v.alto_cm is null)",
+            + "where v.estado = 'ACTIVA'",
         new MapSqlParameterSource(),
         (rs, fila) ->
-            new VarianteSinMedir(
+            new MedidaDeVariante(
                 rs.getObject("variante_id", UUID.class),
                 rs.getObject("producto_id", UUID.class),
                 rs.getString("nombre_producto"),
                 rs.getString("sku"),
-                EstadoProducto.valueOf(rs.getString("estado_producto"))));
+                EstadoProducto.valueOf(rs.getString("estado_producto")),
+                paqueteDeLaFila(rs)));
+  }
+
+  /**
+   * Las cuatro o ninguna, igual que en el mapeador del agregado: una fila con tres reventaría al
+   * construir el {@link Paquete}, y eso es un error de carga y no un estado del negocio. La base lo
+   * impide desde la {@code V55}; esto es el cinturón del otro lado.
+   */
+  private static Paquete paqueteDeLaFila(java.sql.ResultSet rs) throws java.sql.SQLException {
+    int peso = rs.getInt("peso_gramos");
+    if (rs.wasNull()) {
+      return null;
+    }
+    int largo = rs.getInt("largo_cm");
+    int ancho = rs.getInt("ancho_cm");
+    int alto = rs.getInt("alto_cm");
+    return rs.wasNull() ? null : new Paquete(peso, largo, ancho, alto);
   }
 
   @Override
@@ -239,7 +254,6 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             existente.getSku(),
             existente.getPrecio(),
             existente.getTasaIva(),
-            existente.getExistencia(),
             existente.getCodigoBarras(),
             paquete.pesoGramos(),
             paquete.largoCm(),
@@ -253,7 +267,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   public List<VarianteActiva> variantesActivas() {
     return jdbc.query(
         "select v.id as variante_id, p.id as producto_id, p.nombre as nombre_producto, "
-            + "       v.sku as sku, p.estado as estado_producto, v.existencia as existencia "
+            + "       v.sku as sku, p.estado as estado_producto "
             + "from variante v "
             + "join producto p on p.id = v.producto_id "
             + "where v.estado = 'ACTIVA'",
@@ -264,39 +278,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
                 rs.getObject("producto_id", UUID.class),
                 rs.getString("nombre_producto"),
                 rs.getString("sku"),
-                EstadoProducto.valueOf(rs.getString("estado_producto")),
-                rs.getInt("existencia")));
-  }
-
-  /**
-   * Copia del conteo, no la verdad: la verdad es el libro de movimientos (adr/0049). Se reescribe
-   * la entidad entera igual que en {@link #actualizarPaquete} — el mapeo es inmutable y esta es la
-   * forma que ya tenía la casa.
-   */
-  @Override
-  public void actualizarExistencia(UUID varianteId, int existencia) {
-    VarianteJpaEntity existente =
-        varianteJpaRepository
-            .findById(varianteId)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "No existe la variante '" + varianteId + "' cuya existencia se ajusta."));
-    varianteJpaRepository.save(
-        new VarianteJpaEntity(
-            existente.getId(),
-            existente.getProductoId(),
-            existente.getSku(),
-            existente.getPrecio(),
-            existente.getTasaIva(),
-            existencia,
-            existente.getCodigoBarras(),
-            existente.getPesoGramos(),
-            existente.getLargoCm(),
-            existente.getAnchoCm(),
-            existente.getAltoCm(),
-            existente.getEstado(),
-            existente.getCreadoEn()));
+                EstadoProducto.valueOf(rs.getString("estado_producto"))));
   }
 
   private VarianteAtributoValorJpaEntity aEntidad(UUID varianteId, ValorAtributo valorAtributo) {

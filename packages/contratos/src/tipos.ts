@@ -478,7 +478,7 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["publicar_1"];
-        delete?: never;
+        delete: operations["despublicar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1060,6 +1060,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/variantes/medidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["medidas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/variantes/existencias": {
         parameters: {
             query?: never;
@@ -1410,8 +1426,7 @@ export interface components {
             id?: string;
             sku?: string;
             precio?: components["schemas"]["DineroRespuesta"];
-            /** Format: int32 */
-            existencia?: number;
+            disponible?: boolean;
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
         };
         AbrirSetRotacionPeticion: {
@@ -1923,6 +1938,33 @@ export interface components {
             totalEnPublicados?: number;
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];
         };
+        MedidaDeVarianteRespuesta: {
+            /** Format: uuid */
+            varianteId?: string;
+            /** Format: uuid */
+            productoId?: string;
+            nombreProducto?: string;
+            sku?: string;
+            estadoProducto?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            altoCm?: number;
+            sinMedir?: boolean;
+        };
+        MedidasRespuesta: {
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalSinMedir?: number;
+            /** Format: int32 */
+            totalSinMedirEnPublicados?: number;
+            items?: components["schemas"]["MedidaDeVarianteRespuesta"][];
+        };
         ExistenciaDeVarianteRespuesta: {
             /** Format: uuid */
             varianteId?: string;
@@ -1932,22 +1974,19 @@ export interface components {
             sku?: string;
             estadoProducto?: string;
             /** Format: int32 */
-            existenciaDeclarada?: number;
-            /** Format: int32 */
             saldoTotal?: number;
             /** Format: int32 */
             disponible?: number;
             /** Format: int32 */
             reservadas?: number;
-            descuadrada?: boolean;
         };
         ExistenciasRespuesta: {
             /** Format: int32 */
             total?: number;
             /** Format: int32 */
-            totalDescuadradas?: number;
+            totalSinExistencia?: number;
             /** Format: int32 */
-            totalDescuadradasEnPublicados?: number;
+            totalSinExistenciaEnPublicados?: number;
             items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
         };
         ProductosAdminPaginadosRespuesta: {
@@ -2722,6 +2761,28 @@ export interface operations {
         };
     };
     publicar_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                };
+            };
+        };
+    };
+    despublicar: {
         parameters: {
             query?: never;
             header?: never;
@@ -3769,6 +3830,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
+                };
+            };
+        };
+    };
+    medidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedidasRespuesta"];
                 };
             };
         };

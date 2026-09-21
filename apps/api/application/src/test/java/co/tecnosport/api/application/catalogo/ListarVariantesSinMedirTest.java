@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
+import co.tecnosport.api.domain.catalogo.Paquete;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,29 @@ class ListarVariantesSinMedirTest {
     assertEquals(0, inventario.totalEnPublicados());
   }
 
-  private static VarianteSinMedir sinMedir(String producto, String sku, EstadoProducto estado) {
-    return new VarianteSinMedir(UUID.randomUUID(), UUID.randomUUID(), producto, sku, estado);
+  /**
+   * El filtro vive ahora en el caso de uso y no en el {@code where}, así que hay que probarlo aquí:
+   * una variante con paquete no es trabajo pendiente y no puede salir en esta lista.
+   */
+  @Test
+  void unaVarianteYaMedidaNoEsTrabajoPendiente() {
+    repositorio.conVariantesSinMedir(
+        sinMedir("Moto G17", "TS-SIN", EstadoProducto.PUBLICADO),
+        medida("JBL Go 5", "TS-CON", EstadoProducto.PUBLICADO));
+
+    InventarioSinMedir inventario = listar.ejecutar();
+
+    assertEquals(1, inventario.total());
+    assertEquals("TS-SIN", inventario.variantes().get(0).sku());
+  }
+
+  private static MedidaDeVariante sinMedir(String producto, String sku, EstadoProducto estado) {
+    return new MedidaDeVariante(UUID.randomUUID(), UUID.randomUUID(), producto, sku, estado, null);
+  }
+
+  /** Una ya medida, para demostrar que el filtro la deja fuera. */
+  private static MedidaDeVariante medida(String producto, String sku, EstadoProducto estado) {
+    return new MedidaDeVariante(
+        UUID.randomUUID(), UUID.randomUUID(), producto, sku, estado, new Paquete(180, 30, 25, 4));
   }
 }

@@ -10,6 +10,8 @@ import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
 import co.tecnosport.api.application.compartido.ResultadoPaginado;
+import co.tecnosport.api.application.inventario.DisponibilidadDeVariantes;
+import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
@@ -18,6 +20,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,13 +148,25 @@ class ProductoControladorTest {
     }
 
     @Bean
-    BuscarProductos buscarProductos(RepositorioProductos repositorio) {
-      return new BuscarProductos(repositorio);
+    RepositorioInventarioDobleDePrueba repositorioInventario() {
+      return new RepositorioInventarioDobleDePrueba();
     }
 
     @Bean
-    VerFichaDeProducto verFichaDeProducto(RepositorioProductos repositorio) {
-      return new VerFichaDeProducto(repositorio);
+    DisponibilidadDeVariantes disponibilidadDeVariantes(RepositorioInventario inventarios) {
+      return new DisponibilidadDeVariantes(inventarios, Instant::now);
+    }
+
+    @Bean
+    BuscarProductos buscarProductos(
+        RepositorioProductos repositorio, DisponibilidadDeVariantes disponibilidad) {
+      return new BuscarProductos(repositorio, disponibilidad);
+    }
+
+    @Bean
+    VerFichaDeProducto verFichaDeProducto(
+        RepositorioProductos repositorio, DisponibilidadDeVariantes disponibilidad) {
+      return new VerFichaDeProducto(repositorio, disponibilidad);
     }
 
     @Bean

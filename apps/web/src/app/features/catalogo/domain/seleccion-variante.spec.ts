@@ -7,8 +7,8 @@ import {
   etiquetaDeOpcion,
 } from './seleccion-variante';
 
-function variante(sku: string, existencia: number, atributos: Variante['atributos']): Variante {
-  return { id: `id-${sku}`, sku, precio: { valor: 100_000, moneda: 'COP' }, existencia, atributos };
+function variante(sku: string, disponible: boolean, atributos: Variante['atributos']): Variante {
+  return { id: `id-${sku}`, sku, precio: { valor: 100_000, moneda: 'COP' }, disponible, atributos };
 }
 
 function productoDePrueba(variantes: Variante[]): Producto {
@@ -25,11 +25,11 @@ function productoDePrueba(variantes: Variante[]): Producto {
   };
 }
 
-const azulM = variante('SKU-AZ-M', 5, [
+const azulM = variante('SKU-AZ-M', true, [
   { nombre: 'Color', valor: 'Azul marino', colorHex: '#1E3A8A', unidad: null },
   { nombre: 'Talla', valor: 'M', colorHex: null, unidad: null },
 ]);
-const negroL = variante('SKU-NG-L', 0, [
+const negroL = variante('SKU-NG-L', false, [
   { nombre: 'Color', valor: 'Negro', colorHex: '#111111', unidad: null },
   { nombre: 'Talla', valor: 'L', colorHex: null, unidad: null },
 ]);
@@ -60,7 +60,7 @@ describe('ejesDeAtributos', () => {
 
   // "Garantía: 12" se leía sin decir 12 qué: la unidad viaja con el atributo y sube al eje.
   it('la unidad del atributo sube al eje', () => {
-    const conGarantia = variante('SKU-G', 1, [
+    const conGarantia = variante('SKU-G', true, [
       { nombre: 'Garantía', valor: '12', colorHex: null, unidad: 'meses' },
     ]);
 
@@ -98,12 +98,12 @@ describe('varianteSeleccionada', () => {
 });
 
 describe('variantePorDefecto', () => {
-  it('prefiere la primera variante con existencia', () => {
+  it('prefiere la primera variante disponible', () => {
     expect(variantePorDefecto(productoDePrueba([negroL, azulM]))).toBe(azulM);
   });
 
-  it('si ninguna tiene existencia, devuelve la primera', () => {
-    const agotada = variante('SKU-AGOTADA', 0, []);
+  it('si ninguna está disponible, devuelve la primera', () => {
+    const agotada = variante('SKU-AGOTADA', false, []);
     expect(variantePorDefecto(productoDePrueba([negroL, agotada]))).toBe(negroL);
   });
 

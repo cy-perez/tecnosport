@@ -178,7 +178,6 @@ class CrearPedidoTest {
             new Sku("TS-CAM-AZ-M"),
             Dinero.deCop(50_000),
             new BigDecimal("0.19"),
-            0,
             null,
             new Paquete(180, 30, 25, 4),
             List.of());
@@ -648,7 +647,6 @@ class CrearPedidoTest {
             new Sku("TS-SIN-PUB"),
             Dinero.deCop(10_000),
             new BigDecimal("0.19"),
-            5,
             null,
             new Paquete(180, 30, 25, 4),
             List.of());
