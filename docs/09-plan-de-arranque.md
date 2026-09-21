@@ -6557,6 +6557,158 @@ artefactos que nadie había vuelto a generar.
   nada que las repita sola. Es un candidato claro para `npm run verificar`, y no se metió aquí
   porque el arreglo ya era de tres archivos.
 
+## El registro que no sabía de los doce primeros (2026-09-21)
+
+`catalogo/cargados.json` nació el 21 de septiembre; los doce primeros productos reales se
+cargaron el 19, con un script de usar y tirar. Para el registro no existen, y eso no era una
+molestia de contabilidad: **`--galeria-todos` resuelve el SKU contra el registro** para saber de
+qué producto de la lista sacar las fotos, así que esos doce se quedaron publicados con una sola
+toma de las cuatro que llevan en el estudio desde el 15 de septiembre.
+
+O sea que lo que parecía "cargar los doce publicables que faltan" son dos cosas distintas y la
+segunda se ve más: cargar ocho nuevos, y **rellenar la galería de doce que ya están en la
+vitrina**.
+
+### `--reconciliar`, y por qué casa por dos cosas
+
+Por las mismas dos guardas que ya usa la carga para no duplicar, y en el mismo orden: el SKU, que
+es una regla mecánica sobre el id de la lista y por tanto recalculable; y si no, el nombre, que es
+el que atrapa lo que cargó otra cosa con otra regla — `jbl-extreme-4` quedó publicado como
+`jbl-xtreme-4`. Anota el SKU **del catálogo** y no el que tocaría por la regla, porque es el que
+`--galeria-todos` y `--publicar-sku` van a usar después.
+
+**Dos pasadas y no una.** Dos ids de la lista que casen con el mismo producto del catálogo
+invalidan las dos coincidencias, y eso solo se sabe después de mirarlas todas. Anotar la primera y
+rechazar la segunda dejaría escrita justo la que no se puede comprobar; ahora no se anota ninguna,
+se nombran las dos y el script sale con 1.
+
+Comprobado contra un catálogo falso con la forma de dev —casa por SKU, casa por nombre con el SKU
+ajeno, rechaza las dos caras del choque— y después `--galeria-todos` ya alcanza lo reconciliado.
+
+### Un defecto de conteo que llevaba ahí desde el principio
+
+`medir`, `rellenarGalerias` y `publicarSkus` contaban **después** del `if (!ESCRIBIR) continue`, así
+que toda simulación terminaba diciendo "se subirían: 0" debajo de las líneas que acababan de decir
+qué haría con cada uno. El resumen es justo lo que se mira para decidir si vale la pena volver a
+correrlo de verdad, y decía que no había nada que hacer. La carga contaba bien; era el resto el que
+estaba desalineado con ella.
+
+### Lo que queda, y es tuyo
+
+La carga en sí **no la corrió nadie todavía**: escribe en un bucket real y necesita la clave del
+panel, que no se puede teclear desde la conversación. Y hay dos decisiones que no son de un script:
+los cuatro publicables que dejan 5% o menos sobre el costo —JBL Flip 7 y Lenovo Tab Plus en cero,
+Tab One en 2%, JBL Grip en 3%—, que se cargan en BORRADOR y no salen a la vitrina hasta que alguien
+diga que sí; y la existencia inventada de 5 que llevan los doce primeros en dev.
+
+## Tres deudas chicas del kit y del bucket (2026-09-21)
+
+### El kit vuelve a `npm run verificar`
+
+El arreglo del generador del 21 de septiembre dejó dos comprobaciones hechas a mano y nada que las
+repitiera: el kit no tiene ninguna prueba. `npm run kit` regenera en un temporal —nunca sobre el
+repositorio, porque un guardián que escribe donde vigila no distingue "esto estaba bien" de "lo
+acabo de arreglar sin darme cuenta"— con el comando exacto que documenta el `LEEME`, y compara los
+29 archivos contra lo guardado. Más la guarda de las tipografías: si no se puede comprimir a woff2,
+el generador tiene que negarse.
+
+**Esa segunda se comprueba llamando a `por_que_empeoraria`, no corriendo `--fuentes`**, y la
+diferencia importa: con fontTools instalado, `--fuentes` se descarga las familias de Google Fonts.
+Una verificación que necesita red falla los días que falla la red, y eso enseña a ignorarla.
+
+Comprobado rompiéndolo tres veces, una por cada defecto de aquel día: editar a mano un generado,
+dejar de conservar el logo, y aceptar rehacer las tipografías sin con qué comprimirlas. Las tres
+disparan.
+
+**Y una cuarta cosa que solo apareció al construirlo.** Comparar byte a byte marcaba los seis
+archivos de texto como distintos en Windows y como idénticos en CI: Python escribe CRLF y
+`.gitattributes` guarda LF. Un guardián que solo dispara en un sistema operativo no dice nada del
+kit, dice en qué máquina se corrió. Se compara como compara git, y lo binario sí byte a byte.
+
+### El generador deja de instalar brotli por su cuenta
+
+`hay_brotli()` corría `pip install brotli --break-system-packages` sin preguntar cuando no lo
+encontraba. Viene de la skill que generó el kit y choca de frente con "no agregues dependencias sin
+preguntar". Ahora solo mira, y lo que falta ya se dice donde toca.
+
+### Los huérfanos del bucket: el informe primero, porque la regla no se podía escribir
+
+`ADR-0052` dejó anotado que una subida firmada y no confirmada deja un objeto sin reclamar, y que
+algún día se resolvería "con una regla de ciclo de vida sobre el prefijo `galeria-`".
+
+**Esa regla no se puede escribir.** La key es `productos/{id}/galeria-{uuid}.ext` y el
+`matchesPrefix` de Cloud Storage compara desde el principio del nombre: lo único prefijable es
+`productos/`, y una regla por antigüedad sobre eso **borra las fotos vivas** — la del producto
+publicado hace seis meses es justo la más vieja.
+
+Así que primero el número. `npm run huerfanos` lista el bucket con `gcloud` —sin dependencias
+nuevas— y lo cruza con lo que el panel reclama; del panel y no del catálogo público, porque un
+borrador también tiene sus fotos subidas y desde fuera no se ven. Lo que no juzga son los
+fotogramas de `rotacion/`, y lo dice: un set sin publicar no expone sus imágenes por ninguna API.
+
+Con el número delante se decide lo de verdad: mover lo no confirmado a un prefijo `pendientes/`
+—y entonces sí, una regla trivial y segura— o dejarlo estar. **Nadie lo ha corrido todavía contra
+dev**: necesita la clave del panel.
+
+## Reordenar la galería, y el instrumento que era la variable (2026-09-21)
+
+El último pendiente que dejó `ADR-0052`. La nota decía: *"Hacerlo bien pide un índice único sobre
+`(producto_id, orden)` que un intercambio viola a mitad de sentencia"*, dando por supuesto que el
+índice es el camino y el intercambio el problema. Al construirlo resultó ser al revés.
+
+### El índice no se puede escribir como haría falta
+
+Tres hechos de PostgreSQL encadenados: un `UNIQUE` diferible tiene que ser *constraint*; una
+constraint `UNIQUE` no admite `WHERE`; y sin el `WHERE tipo = 'GALERIA'` la unicidad se lleva por
+delante **los fotogramas del set de rotación**, que comparten `producto_id` y numeran desde cero.
+Parcial y diferible a la vez no existe. Todo en `ADR-0053`, con las cuatro alternativas
+descartadas.
+
+Así que la invariante se queda donde ya vivía: en el agregado. Lo que se pierde es la red para el
+día en que alguien escriba SQL a mano, y queda anotado que no hay red.
+
+### La galería entera, no un movimiento
+
+`PUT .../galeria/orden` con la lista completa de ids. Un `POST .../subir` por movimiento es más
+cómodo de escribir y peor: con dos pestañas abiertas sobre el mismo producto, dos movimientos
+parciales se aplican sobre estados distintos y el resultado es un orden **que nadie pidió**, sin
+que nada falle. Con la lista entera, la segunda petición habla de una galería que ya no existe y
+eso se detecta — 422, y no se graba nada.
+
+### El adaptador modifica la fila en vez de volver a guardarla
+
+Un `save` con una entidad nueva del mismo id también actualizaría, pero obliga a rellenar todas las
+columnas, y la única que el dominio no conoce es `creada_en`: rehacerla con `Instant.now()` dejaría
+toda la galería como recién creada cada vez que alguien mueve una foto. De ahí el único mutador de
+`ImagenProductoJpaEntity` y la prueba de Testcontainers que mira las fechas.
+
+### Y lo que solo se ve en el navegador
+
+Dos defectos, los dos de foco, y ninguno lo habría visto una prueba:
+
+- **`[cargando]` deshabilitaba los botones de mover** mientras iba la petición, y `ts-boton`
+  traduce `cargando` a `disabled`. Deshabilitar el botón que acabas de pulsar le quita el foco al
+  sitio. Es el mismo error que la galería llena ya había costado dos días antes. Ahora el botón
+  sigue vivo y el doble envío lo evita el manejador.
+- **El foco se pedía en el cuadro siguiente**, cuando la lista todavía no se había repintado:
+  reordenar invalida la consulta, así que las filas las vuelve a pintar la respuesta del servidor y
+  el botón viejo desaparece un instante después. Ahora el componente anota a quién enfocar y espera
+  **al orden pedido** — no a que la imagen esté en la galería, que está desde antes de mover.
+
+### El instrumento, otra vez
+
+Las tres primeras lecturas dijeron "el foco cae a `<body>`" y las tres eran mentira: **la pestaña
+que maneja la automatización estaba `hidden`**, y con la pestaña oculta ni corre
+`requestAnimationFrame` ni el documento retiene `activeElement`. Se descubrió al poner trazas en
+vez de seguir adivinando: la traza del `rAF` no aparecía nunca.
+
+Con un clic real del navegador la traza dice lo que hacía falta — el efecto dispara cuando el orden
+ya es el nuevo y encuentra "Subir la imagen 2 un puesto", el botón de la imagen movida en su fila
+nueva—, pero **el aterrizaje final del foco sigue sin comprobarse** y hay que hacerlo con la
+ventana delante. Es la tercera vez que este documento escribe la misma lección: una herramienta de
+diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
+diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
