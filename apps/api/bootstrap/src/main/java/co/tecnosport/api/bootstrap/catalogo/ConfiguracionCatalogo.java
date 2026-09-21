@@ -25,6 +25,7 @@ import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.ReordenarGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
@@ -101,6 +102,11 @@ public class ConfiguracionCatalogo {
   public QuitarImagenDeGaleria quitarImagenDeGaleria(
       RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
     return new QuitarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+  }
+
+  @Bean
+  public ReordenarGaleria reordenarGaleria(RepositorioProductos repositorioProductos) {
+    return new ReordenarGaleria(repositorioProductos);
   }
 
   @Bean

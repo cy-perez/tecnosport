@@ -38,6 +38,10 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   ImagenProducto ultimaImagenPrincipal;
   final List<ImagenProducto> imagenesDeGaleriaGuardadas = new ArrayList<>();
   final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
+
+  /** La galería tal como la dejó el último reordenamiento. */
+  List<ImagenProducto> ordenGuardado;
+
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
   private List<MedidaDeVariante> sinMedir = List.of();
@@ -67,6 +71,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimaImagenPrincipal = null;
     this.imagenesDeGaleriaGuardadas.clear();
     this.imagenesDeGaleriaEliminadas.clear();
+    this.ordenGuardado = null;
     this.ultimaVarianteMedida = null;
     this.ultimoPaqueteGrabado = null;
     this.sinMedir = List.of();
@@ -161,6 +166,11 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     this.imagenesDeGaleriaEliminadas.add(imagenId);
+  }
+
+  @Override
+  public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
+    this.ordenGuardado = List.copyOf(galeria);
   }
 
   @Override

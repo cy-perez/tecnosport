@@ -109,4 +109,13 @@ public interface RepositorioProductos {
    * de que un id de imagen suelto no pueda borrar la imagen de otro producto.
    */
   void eliminarImagenDeGaleria(UUID productoId, UUID imagenId);
+
+  /**
+   * Graba el orden que el agregado acaba de decidir para la galería entera.
+   *
+   * <p>La galería completa y no una imagen suelta, porque reordenar no es cambiar una fila: es
+   * dejar el conjunto como quedó. Quien llama ya renumeró de 0 a n-1 —{@code
+   * Producto.reordenarGaleria}—, así que aquí no se calcula nada: se escribe.
+   */
+  void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria);
 }

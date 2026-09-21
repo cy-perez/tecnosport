@@ -35,8 +35,10 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -754,6 +756,63 @@ class RepositorioProductosJpaTest {
     repositorio.eliminarImagenDeGaleria(uno.getId(), delOtro.id());
 
     assertThat(imagenes.findByProductoIdIn(List.of(otro.getId()))).hasSize(1);
+  }
+
+  @Test
+  void guardarOrdenDeGaleriaCambiaElOrdenDeLasFilasQueYaEstaban() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t25", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t25", "morral-t25", "BORRADOR", marca, categoria);
+    ImagenProducto primera = imagenDeGaleria(0, 21);
+    ImagenProducto segunda = imagenDeGaleria(1, 22);
+    ImagenProducto tercera = imagenDeGaleria(2, 23);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), primera);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), segunda);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), tercera);
+
+    Producto hidratado = repositorio.buscarPorSlug(new Slug("morral-t25")).orElseThrow();
+    hidratado.reordenarGaleria(List.of(tercera.id(), primera.id(), segunda.id()));
+    repositorio.guardarOrdenDeGaleria(hidratado.id(), hidratado.galeria());
+
+    Producto vueltoALeer = repositorio.buscarPorSlug(new Slug("morral-t25")).orElseThrow();
+    assertThat(vueltoALeer.galeria().stream().map(ImagenProducto::id).toList())
+        .containsExactly(tercera.id(), primera.id(), segunda.id());
+    assertThat(vueltoALeer.galeria().stream().map(ImagenProducto::orden).toList())
+        .containsExactly(0, 1, 2);
+    // Sigue habiendo tres filas: se actualizan, no se borran y se vuelven a insertar.
+    assertThat(imagenes.findByProductoIdIn(List.of(productoJpa.getId()))).hasSize(3);
+  }
+
+  /**
+   * La razón por la que el adaptador modifica la fila en vez de volver a guardarla entera. Un
+   * {@code save} con una entidad nueva del mismo id también actualizaría, pero obligaría a rellenar
+   * {@code creada_en} —que el dominio no conoce— y dejaría toda la galería como recién creada cada
+   * vez que alguien mueve una foto de sitio.
+   */
+  @Test
+  void reordenarNoTocaLaFechaDeCreacionDeLasImagenes() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t26", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t26", "morral-t26", "BORRADOR", marca, categoria);
+    ImagenProducto primera = imagenDeGaleria(0, 24);
+    ImagenProducto segunda = imagenDeGaleria(1, 25);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), primera);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), segunda);
+    Map<UUID, Instant> creadasAntes =
+        imagenes.findByProductoIdIn(List.of(productoJpa.getId())).stream()
+            .collect(
+                Collectors.toMap(
+                    ImagenProductoJpaEntity::getId, ImagenProductoJpaEntity::getCreadaEn));
+
+    Producto hidratado = repositorio.buscarPorSlug(new Slug("morral-t26")).orElseThrow();
+    hidratado.reordenarGaleria(List.of(segunda.id(), primera.id()));
+    repositorio.guardarOrdenDeGaleria(hidratado.id(), hidratado.galeria());
+
+    for (ImagenProductoJpaEntity fila : imagenes.findByProductoIdIn(List.of(productoJpa.getId()))) {
+      assertThat(fila.getCreadaEn()).isEqualTo(creadasAntes.get(fila.getId()));
+    }
   }
 
   private ImagenProducto imagenDeGaleria(int orden, int semillaDelHash) {

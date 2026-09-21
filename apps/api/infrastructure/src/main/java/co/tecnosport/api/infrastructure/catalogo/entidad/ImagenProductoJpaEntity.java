@@ -110,6 +110,15 @@ public class ImagenProductoJpaEntity {
     return tipo;
   }
 
+  /**
+   * El unico campo que se puede cambiar despues de construida, y solo por el reordenamiento de la
+   * galeria. La entidad no tiene setters a proposito: una fila de imagen se escribe entera al
+   * crearse. El orden es la excepcion porque es lo unico que cambia sin que cambie la imagen.
+   */
+  public void cambiarOrden(int nuevoOrden) {
+    this.orden = nuevoOrden;
+  }
+
   public int getOrden() {
     return orden;
   }
