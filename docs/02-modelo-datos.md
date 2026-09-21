@@ -308,8 +308,15 @@ panel. Ver `ADR-0018`.
 ## Reglas de inventario
 
 El saldo de existencias no es una columna que se actualiza. Es la suma de
-`MovimientoInventario` (`ENTRADA`, `SALIDA`, `AJUSTE`, `RESERVA`, `LIBERACION`).
-Se guarda un saldo materializado por rendimiento, pero se recalcula y se concilia.
+`MovimientoInventario` (`ENTRADA`, `SALIDA`, `AJUSTE`, `RESERVA`, `LIBERACION`),
+y se calcula al leer, cada vez.
+
+Este párrafo decía además, desde la Fase 1, que *"se guarda un saldo materializado
+por rendimiento, pero se recalcula y se concilia"*. **Nunca fue verdad y dejó de
+poder serlo**: lo más parecido a ese saldo materializado era `variante.existencia`,
+que nadie recalculaba ni conciliaba —ese fue exactamente el defecto de `ADR-0050`—
+y que ya no existe. Si algún día el histórico pesa lo suficiente para necesitar un
+corte de saldo, será una decisión con su ADR, no una frase heredada.
 
 Ciclo con pago en línea: el checkout reserva al crear el intento de pago; la
 reserva vence a los 30 minutos; el pago aprobado convierte reserva en salida; el

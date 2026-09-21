@@ -1,7 +1,7 @@
 # ADR-0050 — La existencia sale del libro, y el catálogo deja de guardar una
 
 **Fecha:** 2026-09-20
-**Estado:** aceptado
+**Estado:** aceptado. Supera a `adr/0017` y a la decisión 1 de `adr/0049`.
 
 ## Contexto
 

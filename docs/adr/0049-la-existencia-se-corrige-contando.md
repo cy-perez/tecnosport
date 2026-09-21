@@ -1,7 +1,10 @@
 # ADR-0049 — La existencia se corrige contando, y el catálogo copia el conteo
 
 **Fecha:** 2026-09-20
-**Estado:** aceptado
+**Estado:** aceptado. **Su decisión 1 quedó superada por `adr/0050`** ese mismo día: la opción C
+—borrar la columna y calcular el disponible desde el libro—, que aquí se describe como la correcta
+y se aplaza por alcance, se hizo. El resto sigue vigente: el panel manda el conteo y no la
+diferencia, el motivo es obligatorio, y contar por debajo de lo reservado se graba y se avisa.
 
 ## Contexto
 

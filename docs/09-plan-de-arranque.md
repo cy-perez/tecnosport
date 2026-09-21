@@ -931,12 +931,16 @@ tampoco se puede dar por resuelto:
   cualquier atributo en cualquier categoría; la asociación es solo una
   convención de negocio en los datos de siembra (`ADR` no abierto, anotado en
   `docs/02-modelo-datos.md`).
-- **`variante.existencia` e `Inventario` sin unificar** — la ficha pública
-  sigue sin leer `Inventario.saldoDisponible`; ambos se mantienen en sync a
-  mano solo en el punto donde se crea una variante (`ADR-0017`).
-- **`GET/POST /api/v1/admin/variantes/{id}/inventario`** (reabastecimiento o
-  ajuste sobre una variante ya creada) sigue sin construirse — anotado ya en
-  `docs/03-api.md` como pendiente.
+- ~~**`variante.existencia` e `Inventario` sin unificar** — la ficha pública
+  sigue sin leer `Inventario.saldoDisponible`.~~ **Resuelto el 20 de septiembre
+  de 2026** (`ADR-0050`): la columna se borró y la vitrina publica un booleano
+  calculado desde el libro. `ADR-0017`, que dejó esta deuda escrita, queda
+  superada.
+- ~~**`GET/POST /api/v1/admin/variantes/{id}/inventario`** (reabastecimiento o
+  ajuste sobre una variante ya creada) sigue sin construirse.~~ **Resuelto el 20
+  de septiembre de 2026** con otro nombre: `PATCH /api/v1/admin/variantes/{id}/existencia`
+  recibe un conteo físico y lo registra como movimiento de `AJUSTE` con su motivo
+  (`ADR-0049`), con su pantalla en el panel.
 - **La pantalla de agregar variante no muestra las variantes existentes de un
   producto** — declarado fuera de alcance en el plan para no crecer el paso,
   sigue sin construirse.
