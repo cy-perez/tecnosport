@@ -6281,6 +6281,47 @@ Corregido desde la pantalla, contra la base real, con el aviso diciendo "se corr
   en blanco—. Por eso `cargar-catalogo.mjs` comprueba el estado del login antes de creerse nada, y
   por eso lo que necesite credenciales se corre en una terminal de verdad.
 
+## El panel aprende a publicar, y la puerta pide confirmación (2026-09-21)
+
+Tercer hueco del mismo tipo en una semana: el panel no sabía crear marcas, no sabía corregir una
+medida, y no sabía publicar. `PublicarProducto` existe desde la Fase 4 y su endpoint también; lo
+que no existía era el botón. Los doce primeros productos reales se publicaron con un script de usar
+y tirar, y el JBL Charge 6 con `--publicar-sku` la noche anterior.
+
+### Publicar no tiene vuelta, y eso decidió la forma
+
+`Producto.publicar()` es de una sola vía: no hay `despublicar()` en el dominio ni endpoint de
+regreso. Un botón que deja algo en la vitrina para siempre y que se dispara con un clic es una
+trampa, así que **pregunta antes**, y la pregunta dice las dos cosas que importan: que va a quedar
+visible en la tienda, y que el panel no sabe sacarlo de ahí.
+
+La confirmación va dentro de la fila y no en un diálogo del CDK: es una pregunta de una línea, y
+montar un modal con trampa de foco para eso es más ceremonia que la decisión.
+
+### El 409 que sí vale la pena traducir
+
+Publicar sin imagen principal responde `409 PRODUCTO_SIN_IMAGEN_PRINCIPAL`, y eso es accionable —
+hay que subir la foto—. La pantalla lo dice con sus palabras usando `mensajeDeError`, el ayudante
+que ya existía para esto y que la lista de productos no usaba. "No se pudo completar la acción"
+habría mandado a mirar el sitio equivocado.
+
+### Cuatro consultas, no una
+
+Publicar cambia el estado, y el estado lo enseñan cuatro consultas: la lista, las dos pantallas de
+inventario y el conteo de sin-medir, cuyos avisos distinguen borradores de publicados. Invalidar
+solo la lista dejaría el tablero diciendo el número de antes justo cuando un producto acaba de
+entrar a la vitrina sin existencia y sin medir.
+
+### Comprobado en el navegador
+
+La fila del JBL Charge 6, ya publicado, no ofrece el botón. La del Switch 2 sí, y al pulsarlo
+aparece la pregunta con el aviso de que no tiene vuelta. Tabular desde el botón deja el anillo de
+foco en "Sí, publicar". Se canceló sin publicar: diecisiete públicos y doce borradores antes y
+después, comprobado contra la API y contra la base.
+
+Once pruebas en la lista, cuatro de ellas nuevas — incluida la que importa: **un solo clic no
+publica nada**.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

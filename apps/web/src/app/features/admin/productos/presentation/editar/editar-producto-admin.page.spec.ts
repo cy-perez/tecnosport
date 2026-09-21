@@ -129,6 +129,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
+  publicar(): Promise<ProductoAdmin> {
+    throw new Error('no usado por esta prueba');
+  }
+
   medirVariante(): Promise<VarianteMedida> {
     throw new Error('no usado por esta prueba');
   }

@@ -15,7 +15,8 @@
     "limite_de_intentos_excedido": "Demasiados intentos seguidos. Espera unos minutos antes de volver a intentarlo.",
     "guia_no_encontrada": "No existe ninguna guía con ese número.",
     "emision_no_encontrada": "Esa emisión ya no está.",
-    "acuse_no_aplicable": "Eso no está pidiendo revisión."
+    "acuse_no_aplicable": "Eso no está pidiendo revisión.",
+    "producto_sin_imagen_principal": "Este producto no tiene imagen principal, y sin ella no se puede publicar."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -315,6 +316,16 @@
         "peso": "Peso",
         "dimensiones": "Largo × ancho × alto"
       }
+    },
+    "publicar": {
+      "accion": "Publicar",
+      "publicarProducto": "Publicar {{nombre}}",
+      "confirmar": "¿Publicar {{nombre}}? Va a quedar visible en la tienda.",
+      "sinVuelta": "El panel no sabe despublicar: para sacarlo de la vitrina después habría que tocar la base de datos.",
+      "confirmarAccion": "Sí, publicar",
+      "cancelar": "Cancelar",
+      "hecho": "{{nombre}} quedó publicado.",
+      "error": "No pudimos publicar el producto. Vuelve a intentarlo."
     }
   },
   "retractos": {

@@ -15,7 +15,8 @@
     "limite_de_intentos_excedido": "Too many attempts in a row. Wait a few minutes before trying again.",
     "guia_no_encontrada": "There is no shipment with that tracking number.",
     "emision_no_encontrada": "That label purchase no longer exists.",
-    "acuse_no_aplicable": "That is not awaiting review."
+    "acuse_no_aplicable": "That is not awaiting review.",
+    "producto_sin_imagen_principal": "This product has no main image, and it cannot be published without one."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -315,6 +316,16 @@
         "peso": "Weight",
         "dimensiones": "Length × width × height"
       }
+    },
+    "publicar": {
+      "accion": "Publish",
+      "publicarProducto": "Publish {{nombre}}",
+      "confirmar": "Publish {{nombre}}? It will become visible in the shop.",
+      "sinVuelta": "The panel cannot unpublish: taking it out of the shop afterwards would mean touching the database.",
+      "confirmarAccion": "Yes, publish",
+      "cancelar": "Cancel",
+      "hecho": "{{nombre}} is now published.",
+      "error": "We could not publish the product. Please try again."
     }
   },
   "retractos": {

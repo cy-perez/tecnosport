@@ -59,6 +59,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
     return this.catalogoDeMedidas;
   }
 
+  publicar(): Promise<ProductoAdmin> {
+    throw new Error('no usado por las pruebas de medición');
+  }
+
   async medirVariante(comando: MedirVarianteAdmin): Promise<VarianteMedida> {
     this.medidas.push(comando);
     const variante = this.inventario.items.find((v) => v.varianteId === comando.varianteId);
@@ -211,6 +215,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   listarMedidas(): Promise<MedidasDelCatalogo> {
+    throw new Error('no usado por las pruebas de existencias');
+  }
+
+  publicar(): Promise<ProductoAdmin> {
     throw new Error('no usado por las pruebas de existencias');
   }
 

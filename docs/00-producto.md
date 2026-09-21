@@ -31,8 +31,8 @@ Sí entra:
 - **Cotización de envío por destino con Skydropx**, o recogida sin costo en el
   punto, y **seguimiento del envío** visible para el comprador.
 - Compra como invitado; cuenta opcional.
-- Panel de administración: productos, variantes, existencias, medidas de empaque,
-  imágenes, pedidos.
+- Panel de administración: productos —alta, edición y publicación—, variantes,
+  existencias, medidas de empaque, imágenes, pedidos.
 - Correos transaccionales: confirmación, pago aprobado, despacho, entrega.
 - Español e inglés.
 - Modo claro y oscuro, y controles de accesibilidad.

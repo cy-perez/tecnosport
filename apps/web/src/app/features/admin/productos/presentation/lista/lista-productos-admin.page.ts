@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
+import { usarPublicarProducto } from '../../application/publicar-producto.mutacion';
 import { filtroDesdeQueryParams, queryParamsDesdeFiltro } from '../../domain/query-params-filtro';
 import {
   EstadoProducto,
@@ -21,12 +24,18 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
 };
 
 /**
- * Primer caso de uso de Track B: solo listar, sin filtros ni acciones todavía — cada uno de
- * crear/editar, variantes+existencias e imágenes es su propio caso de uso en una sesión futura.
+ * La lista del catálogo desde el panel, y el único sitio donde un producto pasa de BORRADOR a
+ * PUBLICADO.
+ *
+ * <p><b>Publicar pide confirmación, y no por costumbre</b>: el dominio no sabe despublicar
+ * —`Producto.publicar()` es de una sola vía y no hay endpoint de vuelta—, así que un clic de más
+ * deja el producto en la vitrina y sacarlo de ahí exige tocar la base. La confirmación va dentro
+ * de la fila y no en un diálogo: es una pregunta de una línea, y abrir un modal con trampa de foco
+ * para eso es más ceremonia que la decisión.
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [RouterLink, TranslocoPipe, TsEsqueleto, TsMigas, TsPaginador],
+  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsMigas, TsPaginador],
   templateUrl: './lista-productos-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -63,6 +72,39 @@ export class ListaProductosAdminPage {
 
   protected etiquetaEstado(estado: EstadoProducto): string {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
+  }
+
+  /** El producto con la confirmación de publicar abierta. `null` = ninguna. */
+  protected readonly confirmando = signal<string | null>(null);
+  protected readonly error = signal<string | null>(null);
+  /** El nombre de lo último publicado, para confirmarlo cuando su fila ya cambió de estado. */
+  protected readonly publicado = signal<string | null>(null);
+
+  private readonly mutacion = usarPublicarProducto();
+  protected readonly publicando = computed(() => this.mutacion.isPending());
+
+  protected preguntar(producto: ProductoAdmin): void {
+    this.error.set(null);
+    this.publicado.set(null);
+    this.confirmando.set(producto.id);
+  }
+
+  protected cancelar(): void {
+    this.confirmando.set(null);
+  }
+
+  protected publicar(producto: ProductoAdmin): void {
+    this.error.set(null);
+    this.mutacion.mutate(producto.id, {
+      onSuccess: () => {
+        this.confirmando.set(null);
+        this.publicado.set(producto.nombre);
+      },
+      // El 409 de "no tiene imagen principal" es accionable y se dice: quien publica tiene que
+      // saber que le falta la foto, no que "no se pudo".
+      onError: (error) =>
+        this.error.set(mensajeDeError(error, this.transloco, 'admin.productos.publicar.error')),
+    });
   }
 
   protected irAPagina(pagina: number): void {

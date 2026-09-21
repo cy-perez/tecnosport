@@ -103,6 +103,13 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     exigirExito(respuesta, 'no se pudo agregar la variante');
   }
 
+  async publicar(id: string): Promise<ProductoAdmin> {
+    const respuesta = await this.cliente.POST('/api/v1/admin/productos/{id}/publicacion', {
+      params: { path: { id } },
+    });
+    return aProductoAdmin(desempaquetar(respuesta, 'no se pudo publicar el producto'));
+  }
+
   async listarMedidas(): Promise<MedidasDelCatalogo> {
     const respuesta = await this.cliente.GET('/api/v1/admin/variantes/medidas', {});
     return aMedidasDelCatalogo(desempaquetar(respuesta, 'no se pudo consultar las medidas'));

@@ -4,6 +4,7 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 import { fireEvent, render, screen } from '@testing-library/angular';
 import en from '../../../../../../assets/i18n/en.json';
 import es from '../../../../../../assets/i18n/es.json';
+import { ErrorHttp } from '../../../../../core/http/respuesta-http';
 import esAdmin from '../../../../../../assets/i18n/scopes/admin/es.json';
 import {
   ExistenciaAjustada,
@@ -81,6 +82,18 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
+  /** Lo publicado, y el fallo que se quiera provocar. */
+  readonly publicados: string[] = [];
+  fallaAlPublicar: Error | null = null;
+
+  async publicar(id: string): Promise<ProductoAdmin> {
+    if (this.fallaAlPublicar) throw this.fallaAlPublicar;
+    this.publicados.push(id);
+    // Como el servidor: la fila vuelve publicada, así que el botón desaparece de esa fila.
+    this.items = this.items.map((p) => (p.id === id ? { ...p, estado: 'PUBLICADO' } : p));
+    return this.items.find((p) => p.id === id)!;
+  }
+
   medirVariante(): Promise<VarianteMedida> {
     throw new Error('no usado por esta prueba');
   }
@@ -114,6 +127,99 @@ async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {
 }
 
 describe('ListaProductosAdminPage', () => {
+  /**
+   * Publicar es el único cambio de estado del catálogo que se hace desde aquí, y no tiene vuelta:
+   * el dominio no sabe despublicar. Por eso pregunta antes, y por eso esta prueba comprueba que
+   * un solo clic **no** publica nada.
+   */
+  it('publicar pregunta antes, y el primer clic no publica', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    );
+
+    expect(
+      screen.getByText(esAdmin.productos.publicar.confirmar.replace('{{nombre}}', 'Morral urbano')),
+    ).toBeTruthy();
+    expect(screen.getByText(esAdmin.productos.publicar.sinVuelta)).toBeTruthy();
+    expect(repositorio.publicados).toEqual([]);
+  });
+
+  it('al confirmar publica y lo dice', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: esAdmin.productos.publicar.confirmarAccion }),
+    );
+
+    expect(
+      await screen.findByText(
+        esAdmin.productos.publicar.hecho.replace('{{nombre}}', 'Morral urbano'),
+      ),
+    ).toBeTruthy();
+    expect(repositorio.publicados).toEqual(['p1']);
+  });
+
+  it('cancelar cierra la pregunta sin publicar', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.publicar.cancelar }));
+
+    expect(
+      screen.queryByText(
+        esAdmin.productos.publicar.confirmar.replace('{{nombre}}', 'Morral urbano'),
+      ),
+    ).toBeNull();
+    expect(repositorio.publicados).toEqual([]);
+  });
+
+  /** Un producto ya publicado no ofrece el botón: no hay nada que hacer con él desde aquí. */
+  it('un producto publicado no ofrece publicar', async () => {
+    await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
+
+    await screen.findByText('Morral urbano');
+    expect(
+      screen.queryByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    ).toBeNull();
+  });
+
+  /**
+   * El 409 de "sin imagen principal" es accionable: hay que subir la foto. Decir "no se pudo
+   * completar la acción" mandaría a mirar el sitio equivocado.
+   */
+  it('si falta la imagen principal lo dice con sus palabras, no con el error genérico', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+    repositorio.fallaAlPublicar = new ErrorHttp(409, 'sin imagen', 'PRODUCTO_SIN_IMAGEN_PRINCIPAL');
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: esAdmin.productos.publicar.confirmarAccion }),
+    );
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      esAdmin.errores.producto_sin_imagen_principal,
+    );
+  });
+
   it('lista los productos con sus columnas principales', async () => {
     await renderLista([productoDePrueba()]);
 
