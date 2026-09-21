@@ -25,6 +25,8 @@
 //   --escribir      hace los cambios de verdad
 //   --api URL       por omisión http://localhost:8080
 //   --token JWT     o la variable de entorno TS_TOKEN_ADMIN
+//   --correo X      inicia sesión él mismo: pregunta la clave en la terminal, sin eco. La clave
+//                   no pasa por `argv` ni por el historial, y el token no se imprime nunca.
 //
 // El SKU y el slug de cada producto quedan anotados en catalogo/cargados.json, que es lo que
 // permite volver a correr esto sin duplicar nada — y lo que faltaba la primera vez, cuando
@@ -43,7 +45,8 @@ const valor = (nombre, omision = null) => {
 };
 
 const API = valor("--api", "http://localhost:8080").replace(/\/$/, "");
-const TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
+const CORREO = valor("--correo");
+let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
 const ESCRIBIR = bandera("--escribir");
 const PUBLICAR = bandera("--publicar");
 const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
@@ -81,6 +84,71 @@ const skuDe = (id) => id.toUpperCase().slice(0, 60);
 
 /** El precio de venta es el de mercado, no el del proveedor. Vender al costo no es vender. */
 const precioDe = (producto) => producto.precio_mercado_cop;
+
+/**
+ * La clave, leída de la terminal sin eco. Sin dependencias: el modo crudo de stdin es lo que
+ * usan las que existen, y aquí hacen falta veinte líneas, no un paquete.
+ */
+function preguntarClave(pregunta) {
+  return new Promise((resolve, reject) => {
+    if (!process.stdin.isTTY) {
+      reject(new Error("No hay terminal donde preguntar la clave. Usa --token."));
+      return;
+    }
+    process.stdout.write(pregunta);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    let clave = "";
+    process.stdin.on("data", function escuchar(bloque) {
+      for (const byte of bloque) {
+        if (byte === 3) {
+          // Ctrl-C mientras se escribe una clave tiene que salir, no dejar la terminal en crudo.
+          process.stdin.setRawMode(false);
+          process.stdout.write("\n");
+          process.exit(130);
+        }
+        if (byte === 13 || byte === 10) {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.off("data", escuchar);
+          process.stdout.write("\n");
+          resolve(clave);
+          return;
+        }
+        if (byte === 127 || byte === 8) clave = clave.slice(0, -1);
+        else clave += String.fromCharCode(byte);
+      }
+    });
+  });
+}
+
+/**
+ * Inicia sesión y se queda el token en memoria. Mira el estado de la respuesta antes de creerse
+ * nada: un login fallido que devuelve un cuerpo sin `accessToken` se convertiría, si no, en un
+ * token con la palabra `undefined` dentro y en un 403 más adelante que no dice por qué.
+ */
+async function iniciarSesion(correo) {
+  const clave = await preguntarClave(`Clave de ${correo}: `);
+  const respuesta = await fetch(`${API}/api/v1/auth/sesion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ correo, clave }),
+  });
+  if (!respuesta.ok) {
+    throw new Error(
+      `El inicio de sesión respondió ${respuesta.status}.` +
+        (respuesta.status === 401 ? " Correo o clave incorrectos." : ""),
+    );
+  }
+  const sesion = await respuesta.json();
+  if (sesion.rol !== "ADMIN") {
+    throw new Error(`Esa cuenta tiene rol ${sesion.rol}, y el panel exige ADMIN.`);
+  }
+  if (!sesion.accessToken) {
+    throw new Error("El inicio de sesión no devolvió token.");
+  }
+  return sesion.accessToken;
+}
 
 async function pedir(ruta, opciones = {}) {
   const respuesta = await fetch(`${API}${ruta}`, {
@@ -221,9 +289,18 @@ if (pedidos.length === 0) {
   console.error("Hay que decir qué cargar: --ids a,b,c o --listos.");
   process.exit(1);
 }
+if (CORREO && !TOKEN) {
+  try {
+    TOKEN = await iniciarSesion(CORREO);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
 if (ESCRIBIR && !TOKEN) {
   console.error(
-    "Falta el token del panel: --token <jwt> o TS_TOKEN_ADMIN. Sin él no se puede escribir.",
+    "Falta el token del panel: --correo <correo> para iniciar sesión aquí mismo, --token <jwt>," +
+      " o la variable TS_TOKEN_ADMIN. Sin él no se puede escribir.",
   );
   process.exit(1);
 }
