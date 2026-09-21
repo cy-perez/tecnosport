@@ -114,6 +114,7 @@ npm run marcadores                       ¿quedó algún [[ ]] en un texto que s
 npm run kit                              ¿el kit de marca se regenera igual que como está guardado?
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
+npm run huerfanos                        ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 npm run legales-impresos                 los textos legales en una hoja para imprimir, sin transcribir

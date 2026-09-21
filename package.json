@@ -22,7 +22,8 @@
     "lighthouse": "node tools/medir-lighthouse.mjs",
     "datos-negocio": "node tools/verificar-datos-de-negocio.mjs",
     "legales-impresos": "node tools/imprimir-legales.mjs",
-    "cruce-catalogo": "node tools/cruce-catalogo.mjs"
+    "cruce-catalogo": "node tools/cruce-catalogo.mjs",
+    "huerfanos": "node tools/huerfanos-bucket.mjs"
   },
   "allowScripts": {
     "esbuild": true,

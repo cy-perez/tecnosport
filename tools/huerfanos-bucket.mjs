@@ -1,0 +1,209 @@
+#!/usr/bin/env node
+// ¿Cuántos objetos del bucket de imágenes no los reclama nadie?
+//
+// **Informa; no borra.** Y no es prudencia de más: la nota que pedía esto proponía resolverlo con
+// una regla de ciclo de vida "sobre el prefijo `galeria-`", y esa regla **no se puede escribir**.
+// La key es `productos/{id}/galeria-{uuid}.ext` y el `matchesPrefix` de Cloud Storage compara
+// desde el principio del nombre: lo único prefijable ahí es `productos/`, y una regla por
+// antigüedad sobre eso borraría las fotos vivas — la del producto publicado hace seis meses es
+// justo la más vieja. Con el número delante se decide si vale la pena cambiar la forma de las
+// keys (lo no confirmado a `pendientes/`, y entonces sí una regla trivial y segura) o si esto no
+// pesa lo suficiente para tocar nada.
+//
+// De dónde sale cada cosa:
+//
+//   - El bucket, de `gcloud storage ls`. Sin dependencias nuevas: la alternativa era el SDK de
+//     Cloud Storage, y cada librería nueva es deuda.
+//   - Lo referenciado, del panel: la imagen principal de la lista y la galería de cada ficha.
+//     Del panel y no del catálogo público porque un borrador también tiene sus fotos subidas, y
+//     desde fuera no se ven: darlas por huérfanas sería justo el error caro.
+//
+// Lo que este informe **no juzga** son los fotogramas de `rotacion/`: un set sin publicar no
+// expone sus imágenes por ninguna API, así que desde aquí no hay forma de distinguir "es de un
+// set en preparación" de "no lo reclama nadie". Se cuentan aparte y se dice por qué.
+//
+// Uso:  node tools/huerfanos-bucket.mjs --bucket <nombre> --correo <correo>
+//       node tools/huerfanos-bucket.mjs --bucket <nombre> --token <jwt> --api <url>
+import { spawnSync } from "node:child_process";
+
+const argv = process.argv.slice(2);
+const valor = (nombre, omision = null) => {
+  const i = argv.indexOf(nombre);
+  return i >= 0 && argv[i + 1] ? argv[i + 1] : omision;
+};
+
+const API = valor("--api", "http://localhost:8080").replace(/\/$/, "");
+const BUCKET = valor("--bucket", process.env.GCS_BUCKET_IMAGENES);
+const CORREO = valor("--correo");
+let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
+
+if (!BUCKET) {
+  console.error(
+    "Falta el bucket: --bucket <nombre> o la variable GCS_BUCKET_IMAGENES.\n" +
+      "No hay ninguno por omisión a propósito: el nombre del bucket de producción y el de dev se" +
+      " parecen lo bastante como para que equivocarse sea fácil.",
+  );
+  process.exit(1);
+}
+
+/** La clave, leída de la terminal sin eco. Copiada de `cargar-catalogo.mjs`, que la explica. */
+function preguntarClave(pregunta) {
+  return new Promise((resolve, reject) => {
+    if (!process.stdin.isTTY) {
+      reject(new Error("No hay terminal donde preguntar la clave. Usa --token."));
+      return;
+    }
+    process.stdout.write(pregunta);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    let clave = "";
+    process.stdin.on("data", function escuchar(bloque) {
+      for (const byte of bloque) {
+        if (byte === 3) {
+          process.stdin.setRawMode(false);
+          process.stdout.write("\n");
+          process.exit(130);
+        }
+        if (byte === 13 || byte === 10) {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.off("data", escuchar);
+          process.stdout.write("\n");
+          resolve(clave);
+          return;
+        }
+        if (byte === 127 || byte === 8) clave = clave.slice(0, -1);
+        else clave += String.fromCharCode(byte);
+      }
+    });
+  });
+}
+
+async function pedir(ruta) {
+  const respuesta = await fetch(`${API}${ruta}`, {
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
+  });
+  if (!respuesta.ok) {
+    throw new Error(`GET ${ruta} respondió ${respuesta.status}: ${await respuesta.text()}`);
+  }
+  return respuesta.json();
+}
+
+/**
+ * La key dentro del bucket de una URL pública, o null si esa URL no apunta a nuestro bucket.
+ *
+ * Se busca `productos/` en vez de recortar por la base configurada, y eso resuelve dos cosas a la
+ * vez: no hace falta pasarle aquí otra variable de entorno que tendría que coincidir con la del
+ * servidor, y las imágenes sembradas de `picsum.photos` —que las hay en local y en dev— se
+ * descartan solas por no contener ese tramo.
+ */
+function keyDe(url) {
+  const corte = String(url ?? "").indexOf("productos/");
+  return corte < 0 ? null : url.slice(corte);
+}
+
+const enMiB = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
+
+if (CORREO && !TOKEN) {
+  const clave = await preguntarClave(`Clave de ${CORREO}: `);
+  const respuesta = await fetch(`${API}/api/v1/auth/sesion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ correo: CORREO, clave }),
+  });
+  if (!respuesta.ok) {
+    console.error(`El inicio de sesión respondió ${respuesta.status}.`);
+    process.exit(1);
+  }
+  const sesion = await respuesta.json();
+  if (sesion.rol !== "ADMIN" || !sesion.accessToken) {
+    console.error(`Esa cuenta no sirve: rol ${sesion.rol}.`);
+    process.exit(1);
+  }
+  TOKEN = sesion.accessToken;
+}
+
+if (!TOKEN) {
+  console.error(
+    "Falta el token del panel: --correo <correo>, --token <jwt> o la variable TS_TOKEN_ADMIN.\n" +
+      "Hace falta porque un producto en BORRADOR también tiene sus fotos subidas y no se ven" +
+      " desde fuera: sin sesión, todas parecerían huérfanas.",
+  );
+  process.exit(1);
+}
+
+// --- lo que hay en el bucket ---
+// `shell: true` en Windows y no por gusto: ahí `gcloud` es un `.cmd`, no un ejecutable, y sin
+// shell `spawnSync` falla con ENOENT y `stdout` sin definir — o sea, un error que no se parece
+// en nada a "no tengo gcloud".
+const listado = spawnSync(
+  "gcloud",
+  ["storage", "ls", "--long", "--recursive", `gs://${BUCKET}/productos/**`],
+  { encoding: "utf8", shell: process.platform === "win32" },
+);
+if (listado.error || listado.status !== 0) {
+  console.error(
+    `No se pudo listar gs://${BUCKET}/productos/:\n` +
+      (listado.error?.message ?? listado.stderr ?? "").trim() +
+      "\n\n¿Está gcloud instalado y con sesión? `gcloud config get-value project` lo dice.",
+  );
+  process.exit(1);
+}
+
+const objetos = [];
+for (const linea of listado.stdout.split("\n")) {
+  // `    597252  2026-09-19T23:00:02Z  gs://bucket/productos/{id}/principal-{uuid}.jpg`
+  const partes = linea.trim().match(/^(\d+)\s+(\S+)\s+gs:\/\/[^/]+\/(.+)$/);
+  if (partes) {
+    objetos.push({ bytes: Number(partes[1]), fecha: partes[2], key: partes[3] });
+  }
+}
+if (objetos.length === 0) {
+  console.log(`En gs://${BUCKET}/productos/ no hay ningún objeto.`);
+  process.exit(0);
+}
+
+// --- lo que el catálogo reclama ---
+const productos = (await pedir("/api/v1/admin/productos?tamano=200")).items;
+const reclamadas = new Set();
+for (const producto of productos) {
+  const principal = keyDe(producto.imagenPrincipalUrl);
+  if (principal) reclamadas.add(principal);
+  const detalle = await pedir(`/api/v1/admin/productos/${producto.id}`);
+  for (const imagen of detalle.galeria ?? []) {
+    const key = keyDe(imagen.url);
+    if (key) reclamadas.add(key);
+  }
+}
+
+const deRotacion = objetos.filter((o) => o.key.includes("/rotacion/"));
+const juzgables = objetos.filter((o) => !o.key.includes("/rotacion/"));
+const huerfanos = juzgables.filter((o) => !reclamadas.has(o.key));
+const sumar = (lista) => lista.reduce((total, o) => total + o.bytes, 0);
+
+console.log(
+  `gs://${BUCKET}/productos/ · ${objetos.length} objetos · ${enMiB(sumar(objetos))}\n` +
+    `${productos.length} productos en el panel reclaman ${reclamadas.size} de ellos.\n`,
+);
+
+if (huerfanos.length === 0) {
+  console.log("Ningún objeto de 'principal-' ni de 'galeria-' está sin reclamar.");
+} else {
+  const ordenados = [...huerfanos].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  console.log(`${huerfanos.length} sin reclamar · ${enMiB(sumar(huerfanos))}:\n`);
+  for (const objeto of ordenados) {
+    console.log(`  ${objeto.fecha}  ${String(objeto.bytes).padStart(8)}  ${objeto.key}`);
+  }
+  console.log(
+    `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una subida firmada` +
+      " que nunca se confirmó:\n el objeto quedó en el bucket y la fila nunca se creó.",
+  );
+}
+
+if (deRotacion.length > 0) {
+  console.log(
+    `\nY ${deRotacion.length} fotogramas de 'rotacion/' (${enMiB(sumar(deRotacion))}) que este` +
+      " informe no juzga:\nun set sin publicar no expone sus imágenes por ninguna API, así que" +
+      " desde aquí no se distingue\nun set en preparación de un resto que nadie reclama.",
+  );
+}
