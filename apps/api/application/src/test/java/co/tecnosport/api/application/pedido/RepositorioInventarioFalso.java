@@ -2,6 +2,7 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 final class RepositorioInventarioFalso implements RepositorioInventario {
 
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
+  private final List<UUID> ordenDeConsultas = new ArrayList<>();
   private int consultasConBloqueo;
 
   void conInventario(Inventario inventario) {
@@ -23,8 +25,17 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
     consultasConBloqueo++;
+    ordenDeConsultas.add(varianteId);
     return Optional.ofNullable(porVarianteId.get(varianteId))
         .map(RepositorioInventarioFalso::reconstituido);
+  }
+
+  /**
+   * En qué orden se pidieron los libros. Cada uno toma un bloqueo pesimista en producción, así que
+   * este orden es el que decide si dos compradores con las mismas variantes pueden abrazarse.
+   */
+  List<UUID> ordenDeConsultas() {
+    return List.copyOf(ordenDeConsultas);
   }
 
   /**
