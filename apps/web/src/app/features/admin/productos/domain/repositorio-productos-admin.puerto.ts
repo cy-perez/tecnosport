@@ -5,6 +5,7 @@ import {
   EditarProductoAdmin,
   FiltroProductosAdmin,
   ImagenAdmin,
+  ImagenDeGaleriaAdmin,
   AjustarExistenciaAdmin,
   ExistenciaAjustada,
   ExistenciasDelCatalogo,
@@ -12,7 +13,10 @@ import {
   MedidasDelCatalogo,
   MedirVarianteAdmin,
   ProductoAdmin,
+  ProductoAdminDetalle,
   ProductosPaginadosAdmin,
+  QuitarImagenDeGaleriaAdmin,
+  SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
 } from './producto-admin.model';
@@ -22,7 +26,8 @@ export interface RepositorioProductosAdmin {
 
   crear(comando: CrearProductoAdmin): Promise<ProductoAdmin>;
 
-  obtener(id: string): Promise<ProductoAdmin>;
+  /** El detalle trae la galería; la lista no (ver `ProductoAdminDetalle`). */
+  obtener(id: string): Promise<ProductoAdminDetalle>;
 
   editar(id: string, comando: EditarProductoAdmin): Promise<ProductoAdmin>;
 
@@ -50,6 +55,12 @@ export interface RepositorioProductosAdmin {
   /** Encadena los tres pasos (URL firmada, PUT directo a Cloud Storage, confirmación) — ver
    * docs/07-infra-gcp.md. El PUT no pasa por el backend propio, pero sigue siendo infraestructura. */
   subirImagenPrincipal(comando: SubirImagenPrincipalAdmin): Promise<ImagenAdmin>;
+
+  /** Los mismos tres pasos de la principal, contra el subrecurso `galeria`. */
+  subirImagenDeGaleria(comando: SubirImagenDeGaleriaAdmin): Promise<ImagenDeGaleriaAdmin>;
+
+  /** Saca la imagen de la ficha y borra su objeto del bucket. No tiene vuelta. */
+  quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(

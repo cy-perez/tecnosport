@@ -10,6 +10,8 @@ import {
   ProductoAdmin,
   ProductosPaginadosAdmin,
   VarianteMedida,
+  ImagenDeGaleriaAdmin,
+  ProductoAdminDetalle,
 } from '../app/features/admin/productos/domain/producto-admin.model';
 import { RepositorioProductosAdmin } from '../app/features/admin/productos/domain/repositorio-productos-admin.puerto';
 
@@ -122,7 +124,7 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por las pruebas de medición');
   }
 
-  obtener(): Promise<ProductoAdmin> {
+  obtener(): Promise<ProductoAdminDetalle> {
     throw new Error('no usado por las pruebas de medición');
   }
 
@@ -144,6 +146,14 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
 
   ajustarExistencia(): Promise<ExistenciaAjustada> {
     throw new Error('no usado por las pruebas de medición');
+  }
+
+  subirImagenDeGaleria(): Promise<ImagenDeGaleriaAdmin> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  quitarImagenDeGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
   }
 }
 
@@ -242,7 +252,7 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por las pruebas de existencias');
   }
 
-  obtener(): Promise<ProductoAdmin> {
+  obtener(): Promise<ProductoAdminDetalle> {
     throw new Error('no usado por las pruebas de existencias');
   }
 
@@ -256,5 +266,13 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
 
   subirImagenPrincipal(): Promise<ImagenAdmin> {
     throw new Error('no usado por las pruebas de existencias');
+  }
+
+  subirImagenDeGaleria(): Promise<ImagenDeGaleriaAdmin> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  quitarImagenDeGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
   }
 }

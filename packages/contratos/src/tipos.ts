@@ -516,6 +516,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/galeria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregarImagenDeGaleria"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/galeria/url-subida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["solicitarUrlDeSubidaDeGaleria"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pedidos/{pedidoId}/reversiones": {
         parameters: {
             query?: never;
@@ -1172,6 +1204,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["quitarImagenDeGaleria"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1607,6 +1655,33 @@ export interface components {
             url?: string;
             objectKey?: string;
         };
+        AgregarImagenDeGaleriaPeticion: {
+            objectKey?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+            hash?: string;
+            altEs?: string;
+            altEn?: string;
+        };
+        ImagenDeGaleriaRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            url?: string;
+            urlWebp?: string;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            orden?: number;
+            altEs?: string;
+            altEn?: string;
+        };
+        SolicitarSubidaDeImagenDeGaleriaPeticion: {
+            contentType?: string;
+        };
         RadicarReversionRequest: {
             causal?: string;
             /** Format: date-time */
@@ -1997,6 +2072,20 @@ export interface components {
             totalPaginas?: number;
             /** Format: int64 */
             totalProductos?: number;
+        };
+        ProductoAdminDetalleRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            descripcion?: string;
+            slug?: string;
+            estado?: string;
+            marca?: components["schemas"]["MarcaRespuesta"];
+            categoria?: components["schemas"]["CategoriaRespuesta"];
+            imagenPrincipalUrl?: string;
+            /** Format: int32 */
+            totalVariantes?: number;
+            galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -2856,6 +2945,58 @@ export interface operations {
             };
         };
     };
+    agregarImagenDeGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarImagenDeGaleriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImagenDeGaleriaRespuesta"];
+                };
+            };
+        };
+    };
+    solicitarUrlDeSubidaDeGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidaDeImagenDeGaleriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UrlSubidaRespuesta"];
+                };
+            };
+        };
+    };
     listar_1: {
         parameters: {
             query?: never;
@@ -3585,7 +3726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                    "*/*": components["schemas"]["ProductoAdminDetalleRespuesta"];
                 };
             };
         };
@@ -3968,6 +4109,27 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    quitarImagenDeGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                imagenId: string;
             };
             cookie?: never;
         };

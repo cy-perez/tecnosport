@@ -16,7 +16,10 @@
     "guia_no_encontrada": "There is no shipment with that tracking number.",
     "emision_no_encontrada": "That label purchase no longer exists.",
     "acuse_no_aplicable": "That is not awaiting review.",
-    "producto_sin_imagen_principal": "This product has no main image, and it cannot be published without one."
+    "producto_sin_imagen_principal": "This product has no main image, and it cannot be published without one.",
+    "galeria_llena": "The gallery is full. Remove an image before adding another one.",
+    "imagen_de_galeria_duplicada": "That same image is already in the gallery.",
+    "imagen_de_galeria_no_encontrada": "That image is no longer in the gallery."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -206,6 +209,27 @@
         "subiendo": "Uploading…",
         "tipoNoSoportado": "That file type isn't supported. Use JPEG, PNG or WebP.",
         "error": "Couldn't upload the image. Try again."
+      },
+      "galeria": {
+        "titulo": "Gallery",
+        "ayuda": "Up to {{tope}} images, on top of the main one. They appear on the product page in the order you upload them.",
+        "vacia": "This product has no gallery images. The product page shows only the main one.",
+        "imagen": "Gallery image {{orden}}",
+        "archivo": "Add an image (JPEG, PNG or WebP)",
+        "altEs": "Gallery alt text (Spanish)",
+        "altEn": "Gallery alt text (English)",
+        "previsualizacion": "Preview of the image to add",
+        "agregar": "Add to gallery",
+        "agregando": "Adding…",
+        "quitar": "Remove",
+        "confirmarQuitar": "Remove gallery image {{orden}}?",
+        "loQueImplicaQuitar": "It leaves the product page and its file is deleted. There's no undo: to get it back you have to upload it again.",
+        "confirmarQuitarAccion": "Yes, remove",
+        "cancelar": "Cancel",
+        "quitada": "The image left the gallery.",
+        "tipoNoSoportado": "That file type isn't supported for the gallery. Use JPEG, PNG or WebP.",
+        "error": "Couldn't add the image. Try again.",
+        "errorQuitar": "Couldn't remove the image. Try again."
       }
     },
     "agregarVariante": {

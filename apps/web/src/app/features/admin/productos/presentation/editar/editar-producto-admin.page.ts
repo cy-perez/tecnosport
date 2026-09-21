@@ -23,13 +23,25 @@ import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-contr
 import { usarMigasAdmin } from '../../../migas-admin';
 import { usarEditarProductoAdmin } from '../../application/editar-producto-admin.mutacion';
 import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-principal-admin.mutacion';
+import { usarSubirImagenDeGaleriaAdmin } from '../../application/subir-imagen-de-galeria-admin.mutacion';
+import { usarQuitarImagenDeGaleriaAdmin } from '../../application/quitar-imagen-de-galeria-admin.mutacion';
+import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
 
 const TIPOS_DE_IMAGEN_SOPORTADOS = ['image/jpeg', 'image/png', 'image/webp'];
 
+/**
+ * El mismo tope que `Producto.TOPE_DE_GALERIA` en el backend, que es quien manda: esto solo sirve
+ * para decirlo en la ayuda y para no ofrecer un formulario que va a responder 409. Si un día
+ * divergen, el que decide sigue siendo el servidor.
+ */
+const TOPE_DE_GALERIA = 8;
+
 @Component({
   selector: 'app-editar-producto-admin',
-  imports: [TsPaginaFormulario, 
+  imports: [
+    TsPaginaFormulario,
     ReactiveFormsModule,
     RouterLink,
     TranslocoPipe,
@@ -55,6 +67,8 @@ export class EditarProductoAdminPage {
   private readonly opciones = usarOpcionesFiltro();
   private readonly mutacion = usarEditarProductoAdmin();
   private readonly mutacionImagen = usarSubirImagenPrincipalAdmin();
+  private readonly mutacionGaleria = usarSubirImagenDeGaleriaAdmin();
+  private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly paramMap = toSignal(this.route.paramMap, {
@@ -136,6 +150,41 @@ export class EditarProductoAdminPage {
   });
 
   protected readonly subiendoImagen = computed(() => this.mutacionImagen.isPending());
+
+  protected readonly topeDeGaleria = TOPE_DE_GALERIA;
+
+  protected readonly formularioGaleria = new FormGroup({
+    altEs: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    altEn: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+  });
+
+  private readonly valorFormularioGaleria = toSignal(this.formularioGaleria.valueChanges, {
+    initialValue: this.formularioGaleria.getRawValue(),
+  });
+
+  protected readonly archivoDeGaleria = signal<File | null>(null);
+  protected readonly previsualizacionGaleria = signal<string | null>(null);
+  private dimensionesGaleria: { ancho: number; alto: number } | null = null;
+  protected readonly errorGaleria = signal<string | null>(null);
+  protected readonly quitada = signal(false);
+  /** El id de la imagen cuya fila está preguntando, como en la lista de productos. */
+  protected readonly confirmandoQuitar = signal<string | null>(null);
+
+  protected readonly galeria = computed<readonly ImagenDeGaleriaAdmin[]>(
+    () => this.consulta.data()?.galeria ?? [],
+  );
+
+  protected readonly galeriaLlena = computed(() => this.galeria().length >= TOPE_DE_GALERIA);
+
+  protected readonly imagenDeGaleriaListaParaSubir = computed(() => {
+    this.valorFormularioGaleria();
+    return (
+      this.archivoDeGaleria() !== null && !this.formularioGaleria.invalid && !this.galeriaLlena()
+    );
+  });
+
+  protected readonly agregandoAGaleria = computed(() => this.mutacionGaleria.isPending());
+  protected readonly quitandoDeGaleria = computed(() => this.mutacionQuitarDeGaleria.isPending());
 
   constructor() {
     effect(() => {
@@ -226,6 +275,109 @@ export class EditarProductoAdminPage {
       URL.revokeObjectURL(anterior);
     }
     this.previsualizacionUrl.set(null);
+  }
+
+  protected async onArchivoDeGaleriaSeleccionado(evento: Event): Promise<void> {
+    if (!this.esNavegador) {
+      return;
+    }
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    this.errorGaleria.set(null);
+    this.quitada.set(false);
+    this.limpiarPrevisualizacionGaleria();
+    if (!archivo) {
+      this.archivoDeGaleria.set(null);
+      return;
+    }
+    if (!TIPOS_DE_IMAGEN_SOPORTADOS.includes(archivo.type)) {
+      this.errorGaleria.set(
+        this.transloco.translate('admin.productos.editar.galeria.tipoNoSoportado'),
+      );
+      input.value = '';
+      return;
+    }
+
+    const url = URL.createObjectURL(archivo);
+    try {
+      this.dimensionesGaleria = await this.leerDimensiones(url);
+      this.previsualizacionGaleria.set(url);
+      this.archivoDeGaleria.set(archivo);
+    } catch {
+      URL.revokeObjectURL(url);
+      this.errorGaleria.set(this.transloco.translate('admin.productos.editar.galeria.error'));
+    }
+  }
+
+  private limpiarPrevisualizacionGaleria(): void {
+    const anterior = this.previsualizacionGaleria();
+    if (anterior) {
+      URL.revokeObjectURL(anterior);
+    }
+    this.previsualizacionGaleria.set(null);
+  }
+
+  protected agregarAGaleria(): void {
+    const archivo = this.archivoDeGaleria();
+    if (!archivo || !this.dimensionesGaleria || this.formularioGaleria.invalid) {
+      this.formularioGaleria.markAllAsTouched();
+      return;
+    }
+    this.errorGaleria.set(null);
+
+    const { altEs, altEn } = this.formularioGaleria.getRawValue();
+    this.mutacionGaleria.mutate(
+      {
+        productoId: this.id(),
+        archivo,
+        ancho: this.dimensionesGaleria.ancho,
+        alto: this.dimensionesGaleria.alto,
+        altEs,
+        altEn,
+      },
+      {
+        onSuccess: () => {
+          this.limpiarPrevisualizacionGaleria();
+          this.archivoDeGaleria.set(null);
+          this.dimensionesGaleria = null;
+          this.formularioGaleria.reset();
+        },
+        // El 409 de la foto repetida y el de la galería llena son accionables, y `mensajeDeError`
+        // los dice con sus palabras: "no se pudo" mandaría a mirar el sitio equivocado.
+        onError: (error) =>
+          this.errorGaleria.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.error'),
+          ),
+      },
+    );
+  }
+
+  protected preguntarSiQuitar(imagen: ImagenDeGaleriaAdmin): void {
+    this.errorGaleria.set(null);
+    this.quitada.set(false);
+    this.confirmandoQuitar.set(imagen.id);
+  }
+
+  protected cancelarQuitar(): void {
+    this.confirmandoQuitar.set(null);
+  }
+
+  /** Borra el archivo además de la fila, así que pregunta antes: no hay vuelta. */
+  protected quitarDeGaleria(imagen: ImagenDeGaleriaAdmin): void {
+    this.errorGaleria.set(null);
+    this.mutacionQuitarDeGaleria.mutate(
+      { productoId: this.id(), imagenId: imagen.id },
+      {
+        onSuccess: () => {
+          this.confirmandoQuitar.set(null);
+          this.quitada.set(true);
+        },
+        onError: (error) =>
+          this.errorGaleria.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorQuitar'),
+          ),
+      },
+    );
   }
 
   protected subirImagenPrincipal(): void {
