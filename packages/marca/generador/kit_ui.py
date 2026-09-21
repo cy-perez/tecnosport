@@ -322,6 +322,8 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         L.append("  --ancho-min-{}: {}px;".format(k.replace("_", "-"), v))
     for k, v in (extra.get("controles_px") or {}).items():
         L.append("  --control-{}: {}px;".format(k.replace("_", "-"), v))
+    for k, v in (extra.get("imagenes_px") or {}).items():
+        L.append("  --imagen-{}: {}px;".format(k.replace("_", "-"), v))
     mov = extra.get("movimiento") or {}
     for k, v in (mov.get("duracion_ms") or {}).items():
         L.append("  --mov-{}: {}ms;".format(k.replace("_", "-"), v))
@@ -644,6 +646,7 @@ def main():
              "hero_px": t.get("hero_px") or {},
              "anchos_min_px": t.get("anchos_min_px") or {},
              "controles_px": t.get("controles_px") or {},
+             "imagenes_px": t.get("imagenes_px") or {},
              "movimiento": t.get("movimiento") or {},
              "mono": bool((t.get("tipografia") or {}).get("mono"))}
     extra["chaflan_px"] = {k: v for k, v in extra["chaflan_px"].items()
