@@ -190,6 +190,34 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   }
 
   @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    // Sin el borrado previo de guardarImagenPrincipal: aquí no hay fila que reemplazar ni índice
+    // único que respetar. El orden lo trae ya puesto el agregado.
+    imagenProductoJpaRepository.save(
+        new ImagenProductoJpaEntity(
+            imagen.id(),
+            productoId,
+            null,
+            null,
+            imagen.tipo().name(),
+            imagen.orden(),
+            imagen.url(),
+            imagen.urlWebp(),
+            imagen.ancho(),
+            imagen.alto(),
+            imagen.bytes(),
+            imagen.hash().valor(),
+            imagen.altEs(),
+            imagen.altEn(),
+            Instant.now()));
+  }
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    imagenProductoJpaRepository.deleteByIdAndProductoId(imagenId, productoId);
+  }
+
+  @Override
   public boolean existeVarianteConSku(Sku sku) {
     return varianteJpaRepository.existsBySku(sku.valor());
   }

@@ -92,4 +92,10 @@ final class RepositorioProductosFalso implements RepositorioProductos {
 
   @Override
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {}
+
+  @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {}
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {}
 }

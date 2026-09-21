@@ -97,4 +97,16 @@ public interface RepositorioProductos {
    * — si había una anterior, esta la sustituye.
    */
   void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen);
+
+  /**
+   * Suma una imagen a la galería del producto. Inserta siempre: a diferencia de la principal, aquí
+   * no hay nada que reemplazar — quien decide cuántas caben y en qué orden es el agregado.
+   */
+  void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen);
+
+  /**
+   * Borra la fila de una imagen de la galería. Recibe también el producto porque es la única forma
+   * de que un id de imagen suelto no pueda borrar la imagen de otro producto.
+   */
+  void eliminarImagenDeGaleria(UUID productoId, UUID imagenId);
 }

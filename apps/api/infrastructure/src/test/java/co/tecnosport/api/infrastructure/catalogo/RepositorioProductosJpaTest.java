@@ -686,6 +686,91 @@ class RepositorioProductosJpaTest {
     assertThat(imagenesDelProducto.get(0).getAncho()).isEqualTo(1200);
   }
 
+  @Test
+  void guardarImagenDeGaleriaAcumulaEnVezDeReemplazarYQuedaLegibleAlHidratar() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t20", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t20", "morral-t20", "BORRADOR", marca, categoria);
+    imagenPrincipal(productoJpa);
+
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(0, 1));
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(1, 2));
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(2, 3));
+
+    // Lo contrario de la principal, que tiene índice único y reemplaza: aquí caben todas.
+    Producto hidratado = repositorio.buscarPorSlug(new Slug("morral-t20")).orElseThrow();
+    assertThat(hidratado.galeria()).hasSize(3);
+    assertThat(hidratado.galeria().stream().map(ImagenProducto::orden).toList())
+        .containsExactly(0, 1, 2);
+    assertThat(hidratado.imagenPrincipal()).isPresent();
+  }
+
+  @Test
+  void laGaleriaSeHidrataOrdenadaAunqueLasFilasSeHayanInsertadoAlReves() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t21", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t21", "morral-t21", "BORRADOR", marca, categoria);
+
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(2, 30));
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(0, 10));
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), imagenDeGaleria(1, 20));
+
+    Producto hidratado = repositorio.buscarPorSlug(new Slug("morral-t21")).orElseThrow();
+    assertThat(hidratado.galeria().stream().map(ImagenProducto::orden).toList())
+        .containsExactly(0, 1, 2);
+  }
+
+  @Test
+  void eliminarImagenDeGaleriaBorraSoloEsaFila() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t22", "BOLSOS");
+    ProductoJpaEntity productoJpa =
+        producto("Morral t22", "morral-t22", "BORRADOR", marca, categoria);
+    ImagenProducto primera = imagenDeGaleria(0, 11);
+    ImagenProducto segunda = imagenDeGaleria(1, 12);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), primera);
+    repositorio.guardarImagenDeGaleria(productoJpa.getId(), segunda);
+
+    repositorio.eliminarImagenDeGaleria(productoJpa.getId(), primera.id());
+
+    List<ImagenProductoJpaEntity> quedan =
+        imagenes.findByProductoIdIn(List.of(productoJpa.getId()));
+    assertThat(quedan).hasSize(1);
+    assertThat(quedan.get(0).getId()).isEqualTo(segunda.id());
+  }
+
+  @Test
+  void eliminarImagenDeGaleriaNoBorraLaDeOtroProducto() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t23", "BOLSOS");
+    ProductoJpaEntity uno = producto("Morral t23", "morral-t23", "BORRADOR", marca, categoria);
+    ProductoJpaEntity otro = producto("Morral t24", "morral-t24", "BORRADOR", marca, categoria);
+    ImagenProducto delOtro = imagenDeGaleria(0, 13);
+    repositorio.guardarImagenDeGaleria(otro.getId(), delOtro);
+
+    // El id existe, pero no es de este producto: la consulta va por los dos campos a propósito.
+    repositorio.eliminarImagenDeGaleria(uno.getId(), delOtro.id());
+
+    assertThat(imagenes.findByProductoIdIn(List.of(otro.getId()))).hasSize(1);
+  }
+
+  private ImagenProducto imagenDeGaleria(int orden, int semillaDelHash) {
+    String url = "https://cdn/galeria-" + semillaDelHash + ".jpg";
+    return ImagenProducto.crear(
+        TipoImagen.GALERIA,
+        orden,
+        url,
+        url,
+        2000,
+        2000,
+        120_000,
+        new HashContenido("%064x".formatted(semillaDelHash)),
+        "alt es",
+        "alt en");
+  }
+
   private MarcaJpaEntity marca(String nombre) {
     return marcas.save(new MarcaJpaEntity(UUID.randomUUID(), nombre, Instant.now()));
   }

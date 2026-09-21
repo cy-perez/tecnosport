@@ -175,12 +175,16 @@ public final class Producto {
    * el sitio natural para repetir una sin darse cuenta, y una galería con la misma foto dos veces
    * no se ve como un error del sistema: se ve como descuido del que vende.
    */
-  public void agregarImagenGaleria(ImagenProducto imagen) {
-    Objects.requireNonNull(imagen, "La imagen no puede ser nula.");
-    if (imagen.tipo() != TipoImagen.GALERIA) {
-      throw new ImagenProductoInvalidaException(
-          "Una imagen de la galería debe ser de tipo GALERIA, y esta es " + imagen.tipo() + ".");
-    }
+  /**
+   * Falla si la galería ya está llena.
+   *
+   * <p>Es público porque quien pide una URL firmada necesita preguntarlo <b>antes</b> de que el
+   * navegador suba veinte megas a un bucket donde ese objeto se quedaría sin que nadie lo reclame.
+   * No es una invariante duplicada: {@link #agregarImagenGaleria} lo vuelve a comprobar, que es
+   * quien de verdad protege. Lo que se evita aquí es el trabajo tirado, y por eso el mensaje vive
+   * en un solo sitio.
+   */
+  public void verificarQueCabeOtraImagenEnLaGaleria() {
     if (galeria.size() >= TOPE_DE_GALERIA) {
       throw new GaleriaLlenaException(
           "La galería de '"
@@ -189,6 +193,15 @@ public final class Producto {
               + TOPE_DE_GALERIA
               + " imágenes. Quita una antes de agregar otra.");
     }
+  }
+
+  public void agregarImagenGaleria(ImagenProducto imagen) {
+    Objects.requireNonNull(imagen, "La imagen no puede ser nula.");
+    if (imagen.tipo() != TipoImagen.GALERIA) {
+      throw new ImagenProductoInvalidaException(
+          "Una imagen de la galería debe ser de tipo GALERIA, y esta es " + imagen.tipo() + ".");
+    }
+    verificarQueCabeOtraImagenEnLaGaleria();
     boolean mismoContenido = galeria.stream().anyMatch(i -> i.hash().equals(imagen.hash()));
     if (mismoContenido) {
       throw new ImagenDeGaleriaDuplicadaException(

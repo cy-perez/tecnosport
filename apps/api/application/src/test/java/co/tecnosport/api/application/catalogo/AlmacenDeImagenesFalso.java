@@ -10,8 +10,11 @@ import java.util.Set;
 /** Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md. */
 final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
 
+  private static final String BASE_PUBLICA = "https://storage.googleapis.com/bucket-falso/";
+
   private final Map<String, Long> objetos = new HashMap<>();
   final List<String> prefijosEliminados = new ArrayList<>();
+  final List<String> objetosEliminados = new ArrayList<>();
   boolean fallarAlEliminar;
   String ultimoObjectKeyFirmado;
   String ultimoContentTypeFirmado;
@@ -28,7 +31,7 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
   public UrlFirmada generarUrlDeSubida(String objectKey, String contentType) {
     this.ultimoObjectKeyFirmado = objectKey;
     this.ultimoContentTypeFirmado = contentType;
-    return new UrlFirmada("https://storage.googleapis.com/bucket-falso/" + objectKey + "?firmada");
+    return new UrlFirmada(BASE_PUBLICA + objectKey + "?firmada");
   }
 
   @Override
@@ -38,7 +41,23 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
 
   @Override
   public String urlPublica(String objectKey) {
-    return "https://storage.googleapis.com/bucket-falso/" + objectKey;
+    return BASE_PUBLICA + objectKey;
+  }
+
+  @Override
+  public Optional<String> objectKeyDe(String urlPublica) {
+    return urlPublica.startsWith(BASE_PUBLICA)
+        ? Optional.of(urlPublica.substring(BASE_PUBLICA.length()))
+        : Optional.empty();
+  }
+
+  @Override
+  public boolean eliminar(String objectKey) {
+    if (fallarAlEliminar) {
+      throw new IllegalStateException("El almacén falló al borrar.");
+    }
+    objetosEliminados.add(objectKey);
+    return objetos.remove(objectKey) != null;
   }
 
   @Override

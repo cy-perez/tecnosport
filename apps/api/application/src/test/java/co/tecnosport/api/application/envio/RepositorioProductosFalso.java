@@ -79,6 +79,16 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
+  }
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
+  }
+
+  @Override
   public java.util.List<co.tecnosport.api.application.catalogo.MedidaDeVariante>
       medidasDeVariantes() {
     throw new UnsupportedOperationException("No usado por MetodosDePagoDisponibles.");
