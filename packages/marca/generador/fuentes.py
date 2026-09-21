@@ -15,7 +15,7 @@ Genera:
     fuentes/OFL-*.txt    la licencia de cada familia
     fuentes.css          los @font-face listos para enlazar
 """
-import argparse, json, re, shutil, subprocess, sys, urllib.parse, urllib.request
+import argparse, json, re, sys, urllib.parse, urllib.request
 from pathlib import Path
 
 RAW = "https://raw.githubusercontent.com/google/fonts/main/{path}"
@@ -48,19 +48,21 @@ def buscar_familia(nombre):
     return None, None, None
 
 def hay_brotli():
+    """Si brotli esta disponible. Solo mira; no instala nada.
+
+    Instalaba brotli por su cuenta con `pip --break-system-packages` cuando no lo
+    encontraba, sin preguntar. Viene de la skill que genero este kit, y choca con
+    el "no agregues dependencias sin preguntar" del CLAUDE.md del proyecto: quien
+    regenera en una maquina limpia se encontraba con un paquete instalado que no
+    pidio, y en el entorno del sistema. Ahora se dice que falta y como ponerlo
+    —`por_que_empeoraria` ya escribe la linea de pip—, que es lo que deja la
+    decision donde tiene que estar.
+    """
     try:
         import brotli  # noqa
         return True
     except ImportError:
-        print("  brotli no esta instalado; intentando instalarlo...")
-        try:
-            subprocess.run([sys.executable, "-m", "pip", "install", "brotli",
-                            "--break-system-packages", "-q", "--timeout", "90"],
-                           check=True, capture_output=True, timeout=180)
-            import brotli  # noqa
-            return True
-        except Exception:
-            return False
+        return False
 
 def puede_woff2():
     """Si de verdad se puede producir woff2 aqui y ahora.
