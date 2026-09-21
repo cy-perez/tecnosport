@@ -3,7 +3,7 @@
 De los 96 productos de la lista del 12 de septiembre, **33 tienen foto y 63 no**. De los 33, solo
 **21 llegan a las cuatro tomas** que pide la ficha; los otros 12 se quedaron en una o dos.
 
-**Estado:** redactado, **pendiente de enviar**.
+**Estado:** **enviado el 21 de septiembre de 2026**. Redactado el 19 de septiembre.
 **El texto completo, con los 73 productos agrupados por marca**, lo genera el proceso del catálogo
 en `catalogo/fotos/pedido-al-proveedor.txt` — esa carpeta no se versiona porque pesa 1,2 GB, así
 que aquí queda lo que hay que saber para mandarlo y para no volver a levantarlo desde cero.
@@ -70,4 +70,14 @@ productos en esa situación.
 
 ## Respuesta
 
-_Pendiente. Anotar aquí la fecha y qué mandaron._
+_Sin respuesta todavía. Enviado el 21 de septiembre de 2026._
+
+Cuando llegue, anotar aquí **la fecha y qué mandaron exactamente**, marca por marca: lo que decida
+si esto se cierra o hay que insistir no es "contestaron", es cuántos de los 73 productos quedaron
+con sus cuatro tomas. Xiaomi son 38 de los 96 y Apple 5, y las dos están enteras sin material, así
+que una respuesta que no las traiga no mueve el problema.
+
+Lo que hay que rehacer al recibirlas: el retoque al estándar de estudio
+(`fotos-estudio-degradado`), `npm run cruce-catalogo` para ver qué pasa a publicable, y
+`node tools/cargar-catalogo.mjs --galeria SKU` para los que ya están cargados con una sola foto —
+son siete de los trece.

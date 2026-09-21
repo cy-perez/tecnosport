@@ -5270,6 +5270,12 @@ perdidos y la corrida siguiente habría repetido el mismo porcentaje sobre medio
 
 ## Los trámites que nadie había mandado, y una exclusión que la ley no concede (2026-09-19)
 
+> **Los dos que quedaron redactados se mandaron el 21 de septiembre de 2026**, después de dos días
+> en la carpeta. El de Skydropx lleva los 74 códigos DANE, el retiro de la solicitud del 14 y el
+> conector de recolección de Servientrega; el del proveedor, las fotos de 73 productos. Los dos
+> esperan respuesta, y los dos tienen abajo, en su propio archivo, qué hay que mirar cuando
+> llegue — porque "contestaron" no es lo mismo que "se resolvió".
+
 El día anterior cerró la Fase 7 y dejó tres cosas que no eran código: un dato de contrato sin
 mirar, tres asuntos con un proveedor sin enviar, y un expediente para el abogado listo pero sin
 imprimir. Ninguna bloqueaba un despliegue, y por eso llevaban semanas ahí — **el trabajo que no
@@ -6467,8 +6473,9 @@ existía.
   directorio aparte y copiando **solo `tokens.css`**: mezclar eso con una funcionalidad habría sido
   esconder un problema dentro de otro.
 - **Siete de los trece siguen con una sola foto**, y no es un problema de esta puerta: es que Icecat
-  no trae más material para ellos. Eso lo resuelve el trámite de fotos al proveedor, que sigue
-  redactado y sin mandar.
+  no trae más material para ellos. Lo desbloquea el trámite de fotos al proveedor, **mandado el 21
+  de septiembre** después de dos días redactado — y cuando lleguen, `--galeria SKU` es lo que las
+  sube sin volver a tocar nada.
 
 ## Cómo conversar con Claude Code en este proyecto
 
