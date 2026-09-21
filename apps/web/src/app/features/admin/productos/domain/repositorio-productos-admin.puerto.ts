@@ -32,10 +32,7 @@ export interface RepositorioProductosAdmin {
    * cero, no un listado del catálogo. */
   listarSinMedir(): Promise<InventarioSinMedir>;
 
-  /**
-   * Publica un producto en BORRADOR. **No hay vuelta**: el dominio no sabe despublicar, así que
-   * quien llama tiene que haber confirmado.
-   */
+  /** Publica un producto en BORRADOR: desde ese momento existe para quien compra. */
   publicar(id: string): Promise<ProductoAdmin>;
 
   /** Lo saca de la vitrina y lo devuelve a BORRADOR. Los pedidos en curso no se tocan. */

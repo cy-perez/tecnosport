@@ -946,8 +946,10 @@ tampoco se puede dar por resuelto:
   sigue sin construirse.
 - **Imagen principal:** sin conversión dual WebP/JPEG (llega con el asistente
   de la Fase 5), ancho/alto confiados al cliente sin verificar contra el
-  archivo real, sin borrado del objeto anterior en Cloud Storage al
-  reemplazar (mitigado por el versionado del bucket), sin verificación de
+  archivo real, ~~sin borrado del objeto anterior en Cloud Storage al
+  reemplazar (mitigado por el versionado del bucket)~~ —**resuelto en la Fase 5**:
+  `ConfirmarImagenPrincipal` borra por prefijo, y se lleva de paso lo que
+  quedó de subidas que nunca se confirmaron—, sin verificación de
   contenido real ni tamaño máximo propio (`ADR-0016`).
 - **La subida real de bytes contra el bucket de GCP no se verificó en esta
   sesión** — el wiring de `bootRun` se confirmó hasta el arranque del
@@ -5725,10 +5727,11 @@ las medidas de su caja, y esas ocho se miden con báscula y metro.
 
 ### Lo que esto **no** arregla
 
-**La existencia sigue sin poderse corregir**, y el 5 inventado de los doce productos sigue ahí. No
-es un olvido: el `Inventario` es por movimientos, no un contador, así que ajustarlo necesita su
-propio caso de uso con su motivo registrado —y necesita el conteo real, que es un dato de negocio
-que este proyecto no puede inventar. Queda como la siguiente tarea de esta rama.
+~~**La existencia sigue sin poderse corregir**~~ **Resuelto el 20 de septiembre de 2026**
+(`ADR-0049`): `AjustarExistencia` y la pantalla de existencias. El `Inventario` es por movimientos,
+no un contador, así que ajustarlo necesitaba su propio caso de uso con su motivo registrado — y el
+conteo real, que es un dato de negocio que este proyecto no puede inventar. **El 5 inventado de los
+doce productos sí sigue ahí**, y ahí seguirá hasta que alguien cuente la bodega.
 
 ## El panel aprende a crear marcas, y dos desplegables que estaban rotos (2026-09-20)
 
@@ -6288,12 +6291,13 @@ medida, y no sabía publicar. `PublicarProducto` existe desde la Fase 4 y su end
 que no existía era el botón. Los doce primeros productos reales se publicaron con un script de usar
 y tirar, y el JBL Charge 6 con `--publicar-sku` la noche anterior.
 
-### Publicar no tiene vuelta, y eso decidió la forma
+### Publicar no tenía vuelta, y eso decidió la forma
 
-`Producto.publicar()` es de una sola vía: no hay `despublicar()` en el dominio ni endpoint de
-regreso. Un botón que deja algo en la vitrina para siempre y que se dispara con un clic es una
-trampa, así que **pregunta antes**, y la pregunta dice las dos cosas que importan: que va a quedar
-visible en la tienda, y que el panel no sabe sacarlo de ahí.
+`Producto.publicar()` era de una sola vía: no había `despublicar()` en el dominio ni endpoint de
+regreso —eso se construyó unas horas después, y está abajo—. Un botón que deja algo en la vitrina
+para siempre y que se dispara con un clic es una trampa, así que **pregunta antes**. La pregunta
+decía entonces las dos cosas que importaban: que va a quedar visible en la tienda, y que el panel
+no sabía sacarlo de ahí.
 
 La confirmación va dentro de la fila y no en un diálogo del CDK: es una pregunta de una línea, y
 montar un modal con trampa de foco para eso es más ceremonia que la decisión.
@@ -6329,7 +6333,9 @@ sin esa decisión la toma en silencio"*. Las tres se decidieron leyendo el códi
 
 Retirar de la vitrina no es cancelar lo vendido, y confundir las dos cosas habría sido el error
 caro. `DELETE` sobre el mismo subrecurso que lo creó —se borra la publicación, no el producto— y
-se registra como `warn` y no como `info`: publicar es rutina, retirar no.
+se registra como `warn` y no como `info`: publicar es rutina, retirar no. Todo en `ADR-0051`, con
+las tres alternativas que se descartaron: un estado `RETIRADO` aparte, bloquear la retirada cuando
+hay pedidos en curso, y cancelarlos al retirar.
 
 ### Comprobado en el navegador
 

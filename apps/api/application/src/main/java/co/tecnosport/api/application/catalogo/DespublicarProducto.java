@@ -8,8 +8,8 @@ import java.util.UUID;
  * Saca un producto de la vitrina y lo devuelve a {@code BORRADOR}.
  *
  * <p>{@code PublicarProducto} decía que este caso de uso no se añadía "por simetría", porque
- * retirar algo que ya se vendió tiene consecuencias que nadie había decidido. Se decidieron, con el
- * código a la vista, y por eso ahora existe:
+ * retirar algo que ya se vendió tiene consecuencias que nadie había decidido. Se decidieron con el
+ * código a la vista y quedaron escritas en {@code adr/0051}; el resumen:
  *
  * <ul>
  *   <li><b>La vitrina.</b> Desaparece de la rejilla y de la ficha: las dos consultas filtran por
