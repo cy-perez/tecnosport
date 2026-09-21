@@ -2,6 +2,8 @@ package co.tecnosport.api.infrastructure.inventario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import co.tecnosport.api.application.inventario.AjustarExistencia;
+import co.tecnosport.api.application.inventario.AjustarExistenciaComando;
 import co.tecnosport.api.domain.inventario.ExistenciaInsuficienteException;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.infrastructure.catalogo.CategoriaJpaRepository;
@@ -54,6 +56,7 @@ class RepositorioInventarioJpaTest {
   @Autowired private ProductoJpaRepository productos;
   @Autowired private VarianteJpaRepository variantes;
   @Autowired private MovimientoInventarioJpaRepository movimientosJpa;
+  @Autowired private co.tecnosport.api.infrastructure.catalogo.RepositorioProductosJpa productosJpa;
 
   private TransactionTemplate transaccion;
 
@@ -70,15 +73,17 @@ class RepositorioInventarioJpaTest {
     Instant ahora = Instant.now();
     MarcaJpaEntity marca =
         marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca de prueba " + sku, ahora));
+    String slug = sku.toLowerCase(java.util.Locale.ROOT);
     CategoriaJpaEntity categoria =
         categorias.save(
-            new CategoriaJpaEntity(UUID.randomUUID(), "Categoría de prueba", sku, "BOLSOS", ahora));
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Categoría de prueba", slug, "BOLSOS", ahora));
     ProductoJpaEntity producto =
         productos.save(
             new ProductoJpaEntity(
                 UUID.randomUUID(),
                 "Producto de prueba",
-                sku,
+                slug,
                 "",
                 marca.getId(),
                 categoria.getId(),
@@ -390,6 +395,86 @@ class RepositorioInventarioJpaTest {
         estado -> {
           Inventario libro = repositorio.buscarPorVarianteId(varianteId).orElseThrow();
           assertThat(libro.saldoTotal()).isEqualTo(2);
+        });
+  }
+
+  /**
+   * La carrera que adr/0050 introdujo y que nadie había probado: un conteo del panel contra una
+   * venta que se confirma en el mismo instante. {@code AjustarExistencia} afirma en su javadoc que
+   * el bloqueo pesimista impide que las dos se pisen, y hasta aquí eso era una afirmación.
+   *
+   * <p>Lo delicado no es que los dos movimientos se escriban —el libro es de solo-agregar y dos
+   * sumas conmutan—, es que el ajuste se calcula como {@code contado - saldoAnterior}. Si el conteo
+   * lee un saldo que otra transacción está a punto de cambiar, la resta sale de un número que ya no
+   * es cierto y el libro termina en algo que <b>nadie contó</b>.
+   *
+   * <p>Por eso el escenario fuerza el orden: la venta toma el bloqueo primero y lo sostiene, y el
+   * conteo llega después. Con el bloqueo, el conteo lee 4 y el libro termina exactamente en los 3
+   * que la persona contó. Sin él leería 5, restaría 2 y el libro terminaría en 2.
+   */
+  @Test
+  void unConteoDelPanelContraUnaVentaQueSeConfirmaTerminaEnLoQueSeConto() throws Exception {
+    transaccion = new TransactionTemplate(transactionManager);
+    UUID varianteId = variantePropia("SKU-INV-CONTEO-VENTA");
+    Instant ahora = Instant.now();
+
+    UUID reservaId =
+        transaccion.execute(
+            estado -> {
+              Inventario libro = Inventario.crear(varianteId);
+              libro.registrarEntrada(5, "siembra de prueba", ahora);
+              UUID id = libro.reservar(1, null, ahora).id();
+              repositorio.guardar(libro);
+              return id;
+            });
+
+    AjustarExistencia ajustar = new AjustarExistencia(productosJpa, repositorio, Instant::now);
+    CountDownLatch ventaTieneElBloqueo = new CountDownLatch(1);
+    CountDownLatch conteoArranco = new CountDownLatch(1);
+
+    Callable<Void> venta =
+        () -> {
+          transaccion.executeWithoutResult(
+              estado -> {
+                Inventario libro = repositorio.buscarPorVarianteId(varianteId).orElseThrow();
+                libro.confirmar(reservaId, Instant.now());
+                repositorio.guardar(libro);
+                ventaTieneElBloqueo.countDown();
+                try {
+                  // Sostiene el bloqueo hasta que el conteo haya arrancado de verdad.
+                  conteoArranco.await();
+                  Thread.sleep(300);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                }
+              });
+          return null;
+        };
+
+    Callable<Void> conteo =
+        () -> {
+          ventaTieneElBloqueo.await();
+          conteoArranco.countDown();
+          transaccion.executeWithoutResult(
+              estado ->
+                  ajustar.ejecutar(
+                      new AjustarExistenciaComando(varianteId, 3, "conteo de bodega")));
+          return null;
+        };
+
+    ExecutorService ejecutor = Executors.newFixedThreadPool(2);
+    try {
+      for (Future<Void> resultado : ejecutor.invokeAll(List.of(venta, conteo))) {
+        resultado.get();
+      }
+    } finally {
+      ejecutor.shutdown();
+    }
+
+    transaccion.executeWithoutResult(
+        estado -> {
+          Inventario libro = repositorio.buscarPorVarianteId(varianteId).orElseThrow();
+          assertThat(libro.saldoTotal()).isEqualTo(3);
         });
   }
 
