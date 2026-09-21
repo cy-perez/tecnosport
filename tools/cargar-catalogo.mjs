@@ -423,12 +423,12 @@ async function medir(peticiones) {
       `${ESCRIBIR ? "midiendo" : "simulado"}    ${variante.nombreProducto} (${sku})` +
         ` → ${pesoGramos} g, ${largoCm}x${anchoCm}x${altoCm} cm`,
     );
+    corregidas++;
     if (!ESCRIBIR) continue;
     await pedir(`/api/v1/admin/variantes/${variante.varianteId}/paquete`, {
       method: "PATCH",
       body: JSON.stringify({ pesoGramos, largoCm, anchoCm, altoCm }),
     });
-    corregidas++;
   }
   console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
 }
@@ -537,11 +537,11 @@ async function rellenarGalerias(skus, registro) {
       `${ESCRIBIR ? "subiendo" : "simulado"}    ${variante.nombreProducto} (${sku})` +
         ` → ${fotos.length} imagen(es) a la galería`,
     );
+    subidas += fotos.length;
     if (!ESCRIBIR) continue;
 
     for (const foto of fotos) {
       await subirAGaleria(variante.productoId, foto, producto.titulo);
-      subidas++;
     }
     if (id) {
       registro[id] = { ...registro[id], imagenesDeGaleria: fotos.length };
@@ -591,10 +591,10 @@ async function publicarSkus(skus, registro) {
         ` · saldo ${variante.saldoTotal}` +
         `${variante.saldoTotal === 0 ? " — sale a la vitrina marcado AGOTADO" : ""}`,
     );
+    publicados++;
     if (!ESCRIBIR) continue;
     await pedir(`/api/v1/admin/productos/${variante.productoId}/publicacion`, { method: "POST" });
     anotarPublicado(sku);
-    publicados++;
   }
   console.log(`\n${ESCRIBIR ? "publicados" : "se publicarían"}: ${publicados}`);
 }
