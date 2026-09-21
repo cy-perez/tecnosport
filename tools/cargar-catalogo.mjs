@@ -363,6 +363,9 @@ async function medir(peticiones) {
   console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
 }
 
+// El registro se lee antes de cualquier rama: publicar también lo escribe, no solo cargar.
+const registro = leerJson(REGISTRO) ?? {};
+
 if (aPublicar.length > 0) {
   if (!TOKEN) {
     console.error(
@@ -371,7 +374,7 @@ if (aPublicar.length > 0) {
     );
     process.exit(1);
   }
-  await publicarSkus(aPublicar);
+  await publicarSkus(aPublicar, registro);
   process.exit(process.exitCode ?? 0);
 }
 
@@ -395,10 +398,23 @@ if (mediciones.length > 0) {
  * uso es idempotente— pero decir "publicado" de algo que ya lo estaba esconde que el SKU pedido no
  * era el que se creía.
  */
-async function publicarSkus(skus) {
+async function publicarSkus(skus, registro) {
   const existencias = await pedir("/api/v1/admin/variantes/existencias");
   const porSku = new Map(existencias.items.map((v) => [v.sku, v]));
   let publicados = 0;
+
+  /**
+   * El registro tiene que quedar diciendo la verdad, publique este comando o descubra que ya
+   * estaba publicado. Existe para que se sepa qué se cargó y en qué estado quedó sin ir a
+   * preguntarle a la base, y un registro que miente es peor que no tenerlo.
+   */
+  const anotarPublicado = (sku) => {
+    const id = Object.keys(registro).find((clave) => registro[clave].sku === sku);
+    if (!id || registro[id].publicado) return false;
+    registro[id] = { ...registro[id], publicado: true, publicadoEn: new Date().toISOString() };
+    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
+    return true;
+  };
 
   for (const sku of skus) {
     const variante = porSku.get(sku);
@@ -408,7 +424,11 @@ async function publicarSkus(skus) {
       continue;
     }
     if (variante.estadoProducto === "PUBLICADO") {
-      console.log(`saltado     ${sku}: ${variante.nombreProducto} ya estaba publicado`);
+      const corregido = ESCRIBIR && anotarPublicado(sku);
+      console.log(
+        `saltado     ${sku}: ${variante.nombreProducto} ya estaba publicado` +
+          (corregido ? " (el registro decía que no; corregido)" : ""),
+      );
       continue;
     }
     console.log(
@@ -418,12 +438,12 @@ async function publicarSkus(skus) {
     );
     if (!ESCRIBIR) continue;
     await pedir(`/api/v1/admin/productos/${variante.productoId}/publicacion`, { method: "POST" });
+    anotarPublicado(sku);
     publicados++;
   }
   console.log(`\n${ESCRIBIR ? "publicados" : "se publicarían"}: ${publicados}`);
 }
 
-const registro = leerJson(REGISTRO) ?? {};
 if (!TOKEN) {
   console.log(
     "Sin token: esta simulación no puede preguntarle al catálogo qué hay ya cargado, así que va\n" +
