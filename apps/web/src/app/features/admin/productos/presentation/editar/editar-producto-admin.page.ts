@@ -28,6 +28,7 @@ import { usarEditarProductoAdmin } from '../../application/editar-producto-admin
 import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-principal-admin.mutacion';
 import { usarSubirImagenDeGaleriaAdmin } from '../../application/subir-imagen-de-galeria-admin.mutacion';
 import { usarQuitarImagenDeGaleriaAdmin } from '../../application/quitar-imagen-de-galeria-admin.mutacion';
+import { usarReordenarGaleriaAdmin } from '../../application/reordenar-galeria-admin.mutacion';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
@@ -72,6 +73,7 @@ export class EditarProductoAdminPage {
   private readonly mutacionImagen = usarSubirImagenPrincipalAdmin();
   private readonly mutacionGaleria = usarSubirImagenDeGaleriaAdmin();
   private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
+  private readonly mutacionReordenarGaleria = usarReordenarGaleriaAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly paramMap = toSignal(this.route.paramMap, {
@@ -207,8 +209,50 @@ export class EditarProductoAdminPage {
 
   protected readonly agregandoAGaleria = computed(() => this.mutacionGaleria.isPending());
   protected readonly quitandoDeGaleria = computed(() => this.mutacionQuitarDeGaleria.isPending());
+  protected readonly reordenandoGaleria = computed(() => this.mutacionReordenarGaleria.isPending());
+
+  /**
+   * La imagen cuyo botón hay que enfocar **cuando la galería vuelva a pintarse**, no antes.
+   *
+   * <p>Reordenar invalida la consulta del producto, así que la lista se repinta con lo que
+   * responda el servidor. Enfocar en el siguiente cuadro —como hacen quitar y cancelar— agarra el
+   * botón viejo, que el repintado destruye un instante después: el foco acaba en `<body>` y quien
+   * navega con teclado vuelve al principio del documento. Se vio en el navegador; en jsdom no
+   * pasa.
+   */
+  private readonly enfocarAlRepintar = signal<{
+    id: string;
+    desplazamiento: -1 | 1;
+    ordenEsperado: readonly string[];
+  } | null>(null);
+
+  /**
+   * El fallo de reordenar va aparte del de quitar por el mismo motivo por el que aquel se separó
+   * del de agregar: se pinta donde pasó.
+   */
+  protected readonly errorReordenar = signal<string | null>(null);
 
   constructor() {
+    effect(() => {
+      // Depende de la galería a propósito: es el cambio que hay que esperar.
+      const galeria = this.galeria();
+      const pendiente = this.enfocarAlRepintar();
+      // Se espera al **orden** pedido, no a que la imagen esté: está desde antes de mover, así
+      // que preguntar por ella daba por repintada la lista vieja y volvía a enfocar el botón que
+      // estaba a punto de desaparecer.
+      const yaSeRepinto =
+        pendiente !== null &&
+        galeria.length === pendiente.ordenEsperado.length &&
+        galeria.every((imagen, i) => imagen.id === pendiente.ordenEsperado[i]);
+      if (!pendiente || !yaSeRepinto) {
+        return;
+      }
+      this.enfocarAlRepintar.set(null);
+      this.enfocarDespuesDePintar(() =>
+        this.botonDeMoverDe(pendiente.id, pendiente.desplazamiento),
+      );
+    });
+
     effect(() => {
       const producto = this.consulta.data();
       if (producto && !this.prefilled) {
@@ -409,7 +453,9 @@ export class EditarProductoAdminPage {
       return null;
     }
     const fila = this.filas().find((f) => f.nativeElement.dataset['imagenId'] === imagenId);
-    return fila?.nativeElement.querySelector('button') ?? null;
+    // Por su marca y no por `querySelector('button')`: la fila tiene ahora tres botones —subir,
+    // bajar y quitar— y el primero dejó de ser este.
+    return fila?.nativeElement.querySelector<HTMLElement>('[data-quitar] button') ?? null;
   }
 
   /** Borra el archivo además de la fila, así que pregunta antes: no hay vuelta. */
@@ -429,6 +475,68 @@ export class EditarProductoAdminPage {
             mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorQuitar'),
           ),
       },
+    );
+  }
+
+  /**
+   * Mueve una imagen un puesto arriba o abajo y manda la galería entera con el orden resultante.
+   *
+   * <p>Un puesto a la vez, con botones, y no arrastrando: el arrastre no existe para quien navega
+   * con teclado, y aquí se mueven cuatro fotos, no cuarenta. El botón del extremo no se
+   * deshabilita —un control deshabilitado no es enfocable y desaparece para un lector de
+   * pantalla—: sencillamente no está, porque en el extremo no hay ningún movimiento que ofrecer.
+   */
+  protected mover(imagen: ImagenDeGaleriaAdmin, desplazamiento: -1 | 1): void {
+    // El botón no se deshabilita mientras va la petición, y el guardia está aquí a propósito:
+    // `[cargando]` pone `disabled`, y deshabilitar el botón que acabas de pulsar le quita el foco
+    // al sitio —a `<body>`— antes de que la lista se repinte. Se vio en el navegador.
+    if (this.reordenandoGaleria()) {
+      return;
+    }
+    const actual = this.galeria().map((i) => i.id);
+    const desde = actual.indexOf(imagen.id);
+    const hasta = desde + desplazamiento;
+    if (desde < 0 || hasta < 0 || hasta >= actual.length) {
+      return;
+    }
+    const pedido = [...actual];
+    [pedido[desde], pedido[hasta]] = [pedido[hasta], pedido[desde]];
+
+    this.errorReordenar.set(null);
+    this.aviso.set(null);
+    this.mutacionReordenarGaleria.mutate(
+      { productoId: this.id(), imagenIds: pedido },
+      {
+        onSuccess: () => {
+          this.aviso.set('admin.productos.editar.galeria.reordenada');
+          // El foco sigue a la imagen que se movió, no al sitio donde estaba el botón: si se
+          // quedara quieto, pulsar "subir" dos veces movería dos imágenes distintas. Se pide
+          // aquí y se hace cuando la lista vuelva a pintarse — ver `enfocarAlRepintar`.
+          this.enfocarAlRepintar.set({ id: imagen.id, desplazamiento, ordenEsperado: pedido });
+        },
+        onError: (error) =>
+          this.errorReordenar.set(
+            mensajeDeError(error, this.transloco, 'admin.productos.editar.galeria.errorReordenar'),
+          ),
+      },
+    );
+  }
+
+  /**
+   * El botón que movió la imagen, ya en su fila nueva. Puede no existir: si la imagen llegó a un
+   * extremo, ese botón desaparece, y entonces el foco va al que sigue teniendo sentido.
+   */
+  private botonDeMoverDe(imagenId: string, desplazamiento: -1 | 1): HTMLElement | null {
+    const fila = this.filas().find((f) => f.nativeElement.dataset['imagenId'] === imagenId);
+    if (!fila) {
+      return null;
+    }
+    // Hasta el `<button>` de dentro: el atributo cae en el host de `ts-boton`, que no es
+    // enfocable.
+    const direccion = desplazamiento === -1 ? 'subir' : 'bajar';
+    return (
+      fila.nativeElement.querySelector<HTMLElement>(`[data-mover="${direccion}"] button`) ??
+      fila.nativeElement.querySelector<HTMLElement>('[data-mover] button')
     );
   }
 

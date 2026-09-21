@@ -163,9 +163,47 @@
               <p class="m-0 max-w-[var(--imagen-miniatura)] text-ts-texto-suave">
                 {{ imagen.altEs }}
               </p>
+              <!-- Un puesto a la vez y con botones, no arrastrando: el arrastre no existe para
+                   quien navega con teclado. En cada extremo el boton que no lleva a ningun sitio
+                   no se deshabilita, se quita: un control deshabilitado no es enfocable y para un
+                   lector de pantalla no esta. -->
+              @if (galeria().length > 1) {
+                <div class="flex gap-8">
+                  @if (i > 0) {
+                    <ts-boton
+                      variante="secundario"
+                      tipo="button"
+                      data-mover="subir"
+                      [etiquetaAccesible]="
+                        'admin.productos.editar.galeria.subirImagen'
+                          | transloco: { posicion: i + 1 }
+                      "
+                      (click)="mover(imagen, -1)"
+                    >
+                      {{ 'admin.productos.editar.galeria.subir' | transloco }}
+                    </ts-boton>
+                  }
+                  @if (i < galeria().length - 1) {
+                    <ts-boton
+                      variante="secundario"
+                      tipo="button"
+                      data-mover="bajar"
+                      [etiquetaAccesible]="
+                        'admin.productos.editar.galeria.bajarImagen'
+                          | transloco: { posicion: i + 1 }
+                      "
+                      (click)="mover(imagen, 1)"
+                    >
+                      {{ 'admin.productos.editar.galeria.bajar' | transloco }}
+                    </ts-boton>
+                  }
+                </div>
+              }
+
               <ts-boton
                 variante="secundario"
                 tipo="button"
+                data-quitar
                 [etiquetaAccesible]="
                   'admin.productos.editar.galeria.quitarImagen' | transloco: { posicion: i + 1 }
                 "
@@ -224,6 +262,10 @@
             </li>
           }
         </ul>
+
+        @if (errorReordenar(); as mensaje) {
+          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+        }
       }
 
       <!-- La region vive siempre y lo que cambia es su contenido: montarla ya llena con un `@if`

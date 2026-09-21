@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +21,7 @@ import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.ReordenarGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
@@ -391,6 +393,71 @@ class AdminProductoControladorTest {
   }
 
   @Test
+  void reordenarLaGaleriaDevuelve204YGrabaElOrdenPedido() throws Exception {
+    Producto producto = productoEnBorrador();
+    ImagenProducto primera = imagenDeGaleria(0);
+    ImagenProducto segunda = imagenDeGaleria(1);
+    ImagenProducto tercera = imagenDeGaleria(2);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+    producto.agregarImagenGaleria(tercera);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/galeria/orden", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"imagenIds\":[\"%s\",\"%s\",\"%s\"]}"
+                        .formatted(tercera.id(), primera.id(), segunda.id())))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        List.of(tercera.id(), primera.id(), segunda.id()),
+        repositorio.ordenGuardado.stream().map(ImagenProducto::id).toList());
+    org.junit.jupiter.api.Assertions.assertEquals(
+        List.of(0, 1, 2), repositorio.ordenGuardado.stream().map(ImagenProducto::orden).toList());
+  }
+
+  @Test
+  void reordenarNombrandoUnaImagenQueNoEsDeEseProductoDevuelve404() throws Exception {
+    Producto producto = productoEnBorrador();
+    ImagenProducto primera = imagenDeGaleria(0);
+    producto.agregarImagenGaleria(primera);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/galeria/orden", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"imagenIds\":[\"%s\"]}".formatted(UUID.randomUUID())))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("IMAGEN_DE_GALERIA_NO_ENCONTRADA"));
+
+    org.junit.jupiter.api.Assertions.assertNull(repositorio.ordenGuardado);
+  }
+
+  /** Media galería reordenada es peor que ninguna: el 422 llega antes de grabar nada. */
+  @Test
+  void reordenarSinNombrarTodaLaGaleriaDevuelve422YNoGrabaNada() throws Exception {
+    Producto producto = productoEnBorrador();
+    ImagenProducto primera = imagenDeGaleria(0);
+    ImagenProducto segunda = imagenDeGaleria(1);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            put("/api/v1/admin/productos/{id}/galeria/orden", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"imagenIds\":[\"%s\"]}".formatted(primera.id())))
+        .andExpect(status().isUnprocessableContent());
+
+    org.junit.jupiter.api.Assertions.assertNull(repositorio.ordenGuardado);
+  }
+
+  @Test
   void quitarImagenDeGaleriaDevuelve204YBorraSuObjeto() throws Exception {
     Producto producto = productoEnBorrador();
     String objectKey = "productos/" + producto.id() + "/galeria-uno.jpg";
@@ -630,6 +697,11 @@ class AdminProductoControladorTest {
     QuitarImagenDeGaleria quitarImagenDeGaleria(
         RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
       return new QuitarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    ReordenarGaleria reordenarGaleria(RepositorioProductos repositorioProductos) {
+      return new ReordenarGaleria(repositorioProductos);
     }
 
     /**

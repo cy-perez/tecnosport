@@ -17,6 +17,8 @@ import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleriaComando;
+import co.tecnosport.api.application.catalogo.ReordenarGaleria;
+import co.tecnosport.api.application.catalogo.ReordenarGaleriaComando;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
@@ -34,9 +36,11 @@ import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ReordenarGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -47,6 +51,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -75,6 +80,7 @@ public class AdminProductoControlador {
   private final SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria;
   private final AgregarImagenDeGaleria agregarImagenDeGaleria;
   private final QuitarImagenDeGaleria quitarImagenDeGaleria;
+  private final ReordenarGaleria reordenarGaleria;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
@@ -89,6 +95,7 @@ public class AdminProductoControlador {
       SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria,
       AgregarImagenDeGaleria agregarImagenDeGaleria,
       QuitarImagenDeGaleria quitarImagenDeGaleria,
+      ReordenarGaleria reordenarGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
       MapeadorRespuestasProductoAdmin mapeador) {
@@ -103,6 +110,7 @@ public class AdminProductoControlador {
         Objects.requireNonNull(solicitarSubidaDeImagenDeGaleria);
     this.agregarImagenDeGaleria = Objects.requireNonNull(agregarImagenDeGaleria);
     this.quitarImagenDeGaleria = Objects.requireNonNull(quitarImagenDeGaleria);
+    this.reordenarGaleria = Objects.requireNonNull(reordenarGaleria);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
@@ -276,5 +284,22 @@ public class AdminProductoControlador {
     } else {
       log.info("Producto {}: imagen {} retirada de la galería, con su objeto.", id, imagenId);
     }
+  }
+
+  /**
+   * {@code PUT} y no {@code PATCH}: lo que se manda es el estado completo del orden de la galería,
+   * no un cambio parcial sobre él. Con eso, mandarlo dos veces deja lo mismo.
+   *
+   * <p>{@code 204} y no la galería que queda, igual que quitar y por el mismo motivo: el panel
+   * vuelve a pedir el producto, y devolver la lista aquí invitaría a creerle a esta respuesta en
+   * vez de a la consulta.
+   */
+  @PutMapping("/{id}/galeria/orden")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void reordenarGaleria(
+      @PathVariable("id") UUID id, @RequestBody ReordenarGaleriaPeticion cuerpo) {
+    List<ImagenProducto> galeria =
+        reordenarGaleria.ejecutar(new ReordenarGaleriaComando(id, cuerpo.imagenIds()));
+    log.info("Producto {}: galería reordenada, {} imágenes.", id, galeria.size());
   }
 }

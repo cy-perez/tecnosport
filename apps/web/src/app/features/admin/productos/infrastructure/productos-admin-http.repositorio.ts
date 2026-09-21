@@ -21,6 +21,7 @@ import {
   ProductoAdminDetalle,
   ProductosPaginadosAdmin,
   QuitarImagenDeGaleriaAdmin,
+  ReordenarGaleriaAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
@@ -242,5 +243,13 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
       params: { path: { id: comando.productoId, imagenId: comando.imagenId } },
     });
     exigirExito(respuesta, 'no se pudo quitar la imagen de la galería');
+  }
+
+  async reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void> {
+    const respuesta = await this.cliente.PUT('/api/v1/admin/productos/{id}/galeria/orden', {
+      params: { path: { id: comando.productoId } },
+      body: { imagenIds: [...comando.imagenIds] },
+    });
+    exigirExito(respuesta, 'no se pudo cambiar el orden de la galería');
   }
 }

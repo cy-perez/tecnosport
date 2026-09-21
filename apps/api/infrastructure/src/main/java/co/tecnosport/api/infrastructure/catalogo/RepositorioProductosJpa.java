@@ -23,10 +23,12 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -224,6 +226,39 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   @Transactional
   public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     imagenProductoJpaRepository.deleteByIdAndProductoId(imagenId, productoId);
+  }
+
+  /**
+   * Cambia el {@code orden} de las filas que ya existen, y solo eso.
+   *
+   * <p><b>Se modifica la fila en vez de volver a guardarla entera</b>, que era lo otro que se podía
+   * hacer: construir una {@code ImagenProductoJpaEntity} nueva con el mismo id hace un merge —o
+   * sea, un update— pero obliga a rellenar todas las columnas, y la única que el dominio no conoce
+   * es {@code creada_en}. Reescribirla con {@code Instant.now()} pondría todas las imágenes de la
+   * galería como recién creadas cada vez que alguien arrastra una foto.
+   *
+   * <p>{@code @Transactional} por lo mismo que {@code eliminarImagenDeGaleria}: aquí el cambio lo
+   * detecta Hibernate al volcar la sesión, y sin transacción abierta no hay volcado que valga. Las
+   * pruebas de Testcontainers no lo verían —la clase entera es transaccional—, así que esto se
+   * caería en {@code bootRun} y no en verde.
+   */
+  @Override
+  @Transactional
+  public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
+    Map<UUID, Integer> ordenPorImagen =
+        galeria.stream()
+            .collect(Collectors.toMap(ImagenProducto::id, ImagenProducto::orden, (a, b) -> a));
+    List<ImagenProductoJpaEntity> filas =
+        imagenProductoJpaRepository.findByProductoIdIn(List.of(productoId));
+    List<ImagenProductoJpaEntity> cambiadas = new ArrayList<>();
+    for (ImagenProductoJpaEntity fila : filas) {
+      Integer nuevoOrden = ordenPorImagen.get(fila.getId());
+      if (nuevoOrden != null && nuevoOrden != fila.getOrden()) {
+        fila.cambiarOrden(nuevoOrden);
+        cambiadas.add(fila);
+      }
+    }
+    imagenProductoJpaRepository.saveAll(cambiadas);
   }
 
   @Override

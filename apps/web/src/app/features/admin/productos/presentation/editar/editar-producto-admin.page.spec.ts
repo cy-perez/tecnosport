@@ -27,6 +27,7 @@ import {
   ProductoAdminDetalle,
   ProductosPaginadosAdmin,
   QuitarImagenDeGaleriaAdmin,
+  ReordenarGaleriaAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
@@ -92,6 +93,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   llamadasSubirImagen: SubirImagenPrincipalAdmin[] = [];
   llamadasSubirGaleria: SubirImagenDeGaleriaAdmin[] = [];
   llamadasQuitarDeGaleria: QuitarImagenDeGaleriaAdmin[] = [];
+  llamadasReordenarGaleria: ReordenarGaleriaAdmin[] = [];
   errorAlTocarLaGaleria = false;
 
   constructor(
@@ -180,6 +182,20 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       this.producto = { ...this.producto, galeria: [...this.producto.galeria, agregada] };
     }
     return agregada;
+  }
+
+  async reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void> {
+    this.llamadasReordenarGaleria.push(comando);
+    if (this.errorAlTocarLaGaleria) {
+      throw new Error('falló');
+    }
+    if (this.producto) {
+      const porId = new Map(this.producto.galeria.map((imagen) => [imagen.id, imagen]));
+      this.producto = {
+        ...this.producto,
+        galeria: comando.imagenIds.map((id, orden) => ({ ...porId.get(id)!, orden })),
+      };
+    }
   }
 
   async quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void> {
@@ -561,6 +577,64 @@ describe('EditarProductoAdminPage', () => {
         ).toBeNull(),
       );
       expect(repositorio.llamadasQuitarDeGaleria).toHaveLength(0);
+    });
+
+    it('subir una imagen manda la galería entera con el orden nuevo', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1), imagenDeGaleria(2)]),
+      );
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Subir la imagen 3 un puesto' }));
+
+      // La lista completa, no "mueve la tercera": es lo que impide que dos pestañas se pisen.
+      await vi.waitFor(() =>
+        expect(repositorio.llamadasReordenarGaleria).toEqual([
+          { productoId: 'p1', imagenIds: ['img0', 'img2', 'img1'] },
+        ]),
+      );
+    });
+
+    it('en los extremos no ofrece el movimiento que no lleva a ningún sitio', async () => {
+      await renderPagina(
+        new RepositorioProductosAdminFalso(
+          productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+        ),
+      );
+      await screen.findByDisplayValue('Morral urbano');
+
+      // Y no está deshabilitado: un control deshabilitado no es enfocable, así que para quien
+      // navega con teclado sería un botón que existe y no responde.
+      expect(screen.queryByRole('button', { name: 'Subir la imagen 1 un puesto' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Bajar la imagen 2 un puesto' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Bajar la imagen 1 un puesto' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Subir la imagen 2 un puesto' })).toBeTruthy();
+    });
+
+    it('con una sola imagen no ofrece mover nada', async () => {
+      await renderPagina(
+        new RepositorioProductosAdminFalso(productoDePrueba([imagenDeGaleria(0)])),
+      );
+      await screen.findByDisplayValue('Morral urbano');
+
+      expect(screen.queryByRole('button', { name: 'Subir la imagen 1 un puesto' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Bajar la imagen 1 un puesto' })).toBeNull();
+    });
+
+    it('si falla, lo dice junto a la galería y no dentro del formulario de agregar', async () => {
+      const repositorio = new RepositorioProductosAdminFalso(
+        productoDePrueba([imagenDeGaleria(0), imagenDeGaleria(1)]),
+      );
+      repositorio.errorAlTocarLaGaleria = true;
+      await renderPagina(repositorio);
+      await screen.findByDisplayValue('Morral urbano');
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Bajar la imagen 1 un puesto' }));
+
+      expect(
+        await screen.findByText('No se pudo cambiar el orden. Intenta de nuevo.'),
+      ).toBeTruthy();
     });
 
     it('con la galería llena, no ofrece el formulario de agregar', async () => {

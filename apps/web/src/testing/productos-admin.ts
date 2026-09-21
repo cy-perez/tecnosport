@@ -155,6 +155,10 @@ export class RepositorioMedicionFalso implements RepositorioProductosAdmin {
   quitarImagenDeGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  reordenarGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 /**
@@ -273,6 +277,10 @@ export class RepositorioExistenciasFalso implements RepositorioProductosAdmin {
   }
 
   quitarImagenDeGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
+  reordenarGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
 }

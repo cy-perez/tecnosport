@@ -35,6 +35,10 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   ImagenProducto ultimaImagenPrincipal;
   UUID ultimoProductoIdConImagenDeGaleria;
   final List<ImagenProducto> imagenesDeGaleriaGuardadas = new ArrayList<>();
+
+  /** Lo último que grabó {@code guardarOrdenDeGaleria}, para poder mirarlo en las pruebas. */
+  List<ImagenProducto> ordenGuardado;
+
   final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
@@ -135,6 +139,12 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     this.imagenesDeGaleriaEliminadas.add(imagenId);
     this.ultimoProductoIdConImagenDeGaleria = productoId;
+  }
+
+  @Override
+  public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
+    this.ultimoProductoIdConImagenDeGaleria = productoId;
+    this.ordenGuardado = List.copyOf(galeria);
   }
 
   @Override

@@ -88,6 +88,11 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
+  public void guardarOrdenDeGaleria(UUID productoId, List<ImagenProducto> galeria) {
+    throw new UnsupportedOperationException("No usado por los controladores de pedido.");
+  }
+
+  @Override
   public java.util.List<co.tecnosport.api.application.catalogo.MedidaDeVariante>
       medidasDeVariantes() {
     throw new UnsupportedOperationException("No usado por las pruebas de pedido.");
