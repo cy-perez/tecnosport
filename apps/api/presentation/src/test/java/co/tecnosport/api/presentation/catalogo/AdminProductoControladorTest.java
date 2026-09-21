@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
@@ -18,9 +19,11 @@ import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.Categoria;
@@ -44,6 +47,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionStatus;
 
 @WebMvcTest(AdminProductoControlador.class)
 @Import(AdminProductoControladorTest.Configuracion.class)
@@ -299,6 +305,166 @@ class AdminProductoControladorTest {
         .andExpect(status().isNotFound());
   }
 
+  @Test
+  void solicitarUrlDeSubidaDeGaleriaDevuelve201ConSuPropioPrefijo() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/galeria/url-subida", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"contentType":"image/jpeg"}
+                    """))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.objectKey", startsWith("productos/" + producto.id() + "/galeria-")));
+  }
+
+  @Test
+  void agregarImagenDeGaleriaDevuelve201ConSuIdYSuOrden() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    String objectKey = "productos/" + producto.id() + "/galeria-abc.jpg";
+    almacenDeImagenes.conObjeto(objectKey, 120_000);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/galeria", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    """
+                        .formatted(objectKey, "%064x".formatted(1))))
+        .andExpect(status().isCreated())
+        // El id es lo que la pantalla necesita para poder quitarla después; sin él, la galería
+        // sería de solo escritura.
+        .andExpect(jsonPath("$.id").isNotEmpty())
+        .andExpect(jsonPath("$.orden").value(0))
+        .andExpect(jsonPath("$.ancho").value(2000));
+  }
+
+  @Test
+  void agregarLaMismaImagenDosVecesDevuelve409() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+    String primera = "productos/" + producto.id() + "/galeria-uno.jpg";
+    String otraVez = "productos/" + producto.id() + "/galeria-otra-vez.jpg";
+    almacenDeImagenes.conObjeto(primera, 120_000);
+    almacenDeImagenes.conObjeto(otraVez, 120_000);
+    String mismoHash = "%064x".formatted(7);
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/galeria", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoDeGaleria(primera, mismoHash)))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/galeria", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoDeGaleria(otraVez, mismoHash)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("IMAGEN_DE_GALERIA_DUPLICADA"));
+  }
+
+  @Test
+  void agregarConLaGaleriaLlenaDevuelve409() throws Exception {
+    Producto producto = productoEnBorrador();
+    for (int i = 0; i < 8; i++) {
+      producto.agregarImagenGaleria(imagenDeGaleria(i));
+    }
+    repositorio.conProductos(producto);
+    String objectKey = "productos/" + producto.id() + "/galeria-una-mas.jpg";
+    almacenDeImagenes.conObjeto(objectKey, 120_000);
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/productos/{id}/galeria", producto.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(cuerpoDeGaleria(objectKey, "%064x".formatted(99))))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("GALERIA_LLENA"));
+  }
+
+  @Test
+  void quitarImagenDeGaleriaDevuelve204YBorraSuObjeto() throws Exception {
+    Producto producto = productoEnBorrador();
+    String objectKey = "productos/" + producto.id() + "/galeria-uno.jpg";
+    almacenDeImagenes.conObjeto(objectKey, 120_000);
+    ImagenProducto imagen = imagenDeGaleriaEn(almacenDeImagenes.urlPublica(objectKey), 0, 1);
+    producto.agregarImagenGaleria(imagen);
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            delete("/api/v1/admin/productos/{id}/galeria/{imagenId}", producto.id(), imagen.id()))
+        .andExpect(status().isNoContent());
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        List.of(imagen.id()), repositorio.imagenesDeGaleriaEliminadas);
+    org.junit.jupiter.api.Assertions.assertFalse(almacenDeImagenes.existe(objectKey));
+  }
+
+  @Test
+  void quitarUnaImagenQueNoEsDeEseProductoDevuelve404() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(
+            delete(
+                "/api/v1/admin/productos/{id}/galeria/{imagenId}",
+                producto.id(),
+                UUID.randomUUID()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.codigo").value("IMAGEN_DE_GALERIA_NO_ENCONTRADA"));
+  }
+
+  @Test
+  void verDevuelveLaGaleriaOrdenadaConSusIds() throws Exception {
+    Producto producto = productoEnBorrador();
+    producto.agregarImagenGaleria(imagenDeGaleria(0));
+    producto.agregarImagenGaleria(imagenDeGaleria(1));
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.galeria", hasSize(2)))
+        .andExpect(jsonPath("$.galeria[0].orden").value(0))
+        .andExpect(jsonPath("$.galeria[0].id").isNotEmpty())
+        .andExpect(jsonPath("$.galeria[1].orden").value(1));
+  }
+
+  private static String cuerpoDeGaleria(String objectKey, String hash) {
+    return """
+        {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+        """
+        .formatted(objectKey, hash);
+  }
+
+  private static ImagenProducto imagenDeGaleria(int orden) {
+    return imagenDeGaleriaEn("https://x/galeria-" + orden + ".jpg", orden, orden + 1);
+  }
+
+  private static ImagenProducto imagenDeGaleriaEn(String url, int orden, int semillaDelHash) {
+    return ImagenProducto.crear(
+        TipoImagen.GALERIA,
+        orden,
+        url,
+        url,
+        2000,
+        2000,
+        120_000,
+        new HashContenido("%064x".formatted(semillaDelHash)),
+        "alt es",
+        "alt en");
+  }
+
   /** Un borrador al que ya se le asignó la principal: el único estado desde el que se publica. */
   private static Producto productoConImagen() {
     Producto producto = productoEnBorrador();
@@ -446,6 +612,48 @@ class AdminProductoControladorTest {
     ConfirmarImagenPrincipal confirmarImagenPrincipal(
         RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
       return new ConfirmarImagenPrincipal(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria(
+        RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+      return new SolicitarSubidaDeImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    AgregarImagenDeGaleria agregarImagenDeGaleria(
+        RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+      return new AgregarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+    }
+
+    @Bean
+    QuitarImagenDeGaleria quitarImagenDeGaleria(
+        RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+      return new QuitarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+    }
+
+    /**
+     * El controlador abre una transacción para el borrado de galería. En {@code @WebMvcTest} no hay
+     * base de datos ni gestor real, así que este ejecuta el callback tal cual — lo que se prueba
+     * aquí es el endpoint, no la transacción.
+     */
+    @Bean
+    PlatformTransactionManager transactionManager() {
+      return new org.springframework.transaction.support.AbstractPlatformTransactionManager() {
+        @Override
+        protected Object doGetTransaction() {
+          return new Object();
+        }
+
+        @Override
+        protected void doBegin(Object transaccion, TransactionDefinition definicion) {}
+
+        @Override
+        protected void doCommit(DefaultTransactionStatus estado) {}
+
+        @Override
+        protected void doRollback(DefaultTransactionStatus estado) {}
+      };
     }
 
     @Bean

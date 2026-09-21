@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.catalogo;
 
 import co.tecnosport.api.application.catalogo.AbrirSetRotacion;
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.AgregarVariante;
 import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
@@ -23,12 +24,14 @@ import co.tecnosport.api.application.catalogo.ListarVariantesSinMedir;
 import co.tecnosport.api.application.catalogo.MedirVariante;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
 import co.tecnosport.api.application.catalogo.PublicarSetRotacion;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.RepositorioAtributos;
 import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.application.catalogo.RepositorioMapaDelSitio;
 import co.tecnosport.api.application.catalogo.RepositorioMarcas;
 import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidasDeRotacion;
 import co.tecnosport.api.application.catalogo.VerFichaDeProducto;
@@ -80,6 +83,24 @@ public class ConfiguracionCatalogo {
   public ConfirmarImagenPrincipal confirmarImagenPrincipal(
       RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
     return new ConfirmarImagenPrincipal(repositorioProductos, almacenDeImagenes);
+  }
+
+  @Bean
+  public SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria(
+      RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+    return new SolicitarSubidaDeImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+  }
+
+  @Bean
+  public AgregarImagenDeGaleria agregarImagenDeGaleria(
+      RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+    return new AgregarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
+  }
+
+  @Bean
+  public QuitarImagenDeGaleria quitarImagenDeGaleria(
+      RepositorioProductos repositorioProductos, AlmacenDeImagenes almacenDeImagenes) {
+    return new QuitarImagenDeGaleria(repositorioProductos, almacenDeImagenes);
   }
 
   @Bean

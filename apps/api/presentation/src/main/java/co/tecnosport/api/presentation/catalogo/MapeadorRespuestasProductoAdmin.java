@@ -3,7 +3,9 @@ package co.tecnosport.api.presentation.catalogo;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.ImagenDeGaleriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
 import org.springframework.stereotype.Component;
@@ -37,8 +39,34 @@ public class MapeadorRespuestasProductoAdmin {
         producto.variantes().size());
   }
 
+  public ProductoAdminDetalleRespuesta aDetalle(Producto producto) {
+    return new ProductoAdminDetalleRespuesta(
+        producto.id(),
+        producto.nombre(),
+        producto.descripcion(),
+        producto.slug().valor(),
+        producto.estado().name(),
+        mapeadorCatalogo.aRespuesta(producto.marca()),
+        mapeadorCatalogo.aRespuesta(producto.categoria()),
+        producto.imagenPrincipal().map(ImagenProducto::url).orElse(null),
+        producto.variantes().size(),
+        producto.galeria().stream().map(this::aRespuestaDeGaleria).toList());
+  }
+
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return mapeadorCatalogo.aRespuesta(imagen);
+  }
+
+  public ImagenDeGaleriaRespuesta aRespuestaDeGaleria(ImagenProducto imagen) {
+    return new ImagenDeGaleriaRespuesta(
+        imagen.id(),
+        imagen.url(),
+        imagen.urlWebp(),
+        imagen.ancho(),
+        imagen.alto(),
+        imagen.orden(),
+        imagen.altEs(),
+        imagen.altEn());
   }
 
   public ProductosAdminPaginadosRespuesta aRespuesta(ProductosPaginados productos) {

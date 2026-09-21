@@ -78,6 +78,16 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   }
 
   @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    throw new UnsupportedOperationException("Este doble no guarda imágenes.");
+  }
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    throw new UnsupportedOperationException("Este doble no guarda imágenes.");
+  }
+
+  @Override
   public java.util.List<co.tecnosport.api.application.catalogo.MedidaDeVariante>
       medidasDeVariantes() {
     throw new UnsupportedOperationException("No usado por las pruebas de pedido.");

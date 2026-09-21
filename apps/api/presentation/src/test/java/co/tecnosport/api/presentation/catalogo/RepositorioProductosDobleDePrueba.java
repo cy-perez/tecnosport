@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,8 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   Variante ultimaVarianteAgregada;
   UUID ultimoProductoIdConImagen;
   ImagenProducto ultimaImagenPrincipal;
+  final List<ImagenProducto> imagenesDeGaleriaGuardadas = new ArrayList<>();
+  final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
   private List<MedidaDeVariante> sinMedir = List.of();
@@ -62,6 +65,8 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimaVarianteAgregada = null;
     this.ultimoProductoIdConImagen = null;
     this.ultimaImagenPrincipal = null;
+    this.imagenesDeGaleriaGuardadas.clear();
+    this.imagenesDeGaleriaEliminadas.clear();
     this.ultimaVarianteMedida = null;
     this.ultimoPaqueteGrabado = null;
     this.sinMedir = List.of();
@@ -146,6 +151,16 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     this.ultimoProductoIdConImagen = productoId;
     this.ultimaImagenPrincipal = imagen;
+  }
+
+  @Override
+  public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
+    this.imagenesDeGaleriaGuardadas.add(imagen);
+  }
+
+  @Override
+  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    this.imagenesDeGaleriaEliminadas.add(imagenId);
   }
 
   @Override

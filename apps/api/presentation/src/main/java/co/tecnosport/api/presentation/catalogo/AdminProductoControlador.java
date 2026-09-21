@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.AgregarImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.ConfirmacionDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipalComando;
@@ -8,21 +10,31 @@ import co.tecnosport.api.application.catalogo.CrearProductoComando;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EditarProductoComando;
+import co.tecnosport.api.application.catalogo.ImagenDeGaleriaQuitada;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.QuitarImagenDeGaleriaComando;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
+import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleriaComando;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
+import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
+import co.tecnosport.api.presentation.catalogo.dto.AgregarImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.ConfirmarImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.CrearProductoPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.EditarProductoPeticion;
+import co.tecnosport.api.presentation.catalogo.dto.ImagenDeGaleriaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
 import java.util.Objects;
@@ -30,6 +42,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -60,9 +74,13 @@ public class AdminProductoControlador {
   private final EditarProducto editarProducto;
   private final SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal;
   private final ConfirmarImagenPrincipal confirmarImagenPrincipal;
+  private final SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria;
+  private final AgregarImagenDeGaleria agregarImagenDeGaleria;
+  private final QuitarImagenDeGaleria quitarImagenDeGaleria;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
+  private final TransactionTemplate transacciones;
 
   public AdminProductoControlador(
       ListarProductosAdmin listarProductosAdmin,
@@ -71,9 +89,13 @@ public class AdminProductoControlador {
       EditarProducto editarProducto,
       SolicitarSubidaDeImagenPrincipal solicitarSubidaDeImagenPrincipal,
       ConfirmarImagenPrincipal confirmarImagenPrincipal,
+      SolicitarSubidaDeImagenDeGaleria solicitarSubidaDeImagenDeGaleria,
+      AgregarImagenDeGaleria agregarImagenDeGaleria,
+      QuitarImagenDeGaleria quitarImagenDeGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
-      MapeadorRespuestasProductoAdmin mapeador) {
+      MapeadorRespuestasProductoAdmin mapeador,
+      PlatformTransactionManager transactionManager) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
     this.verProductoAdmin = Objects.requireNonNull(verProductoAdmin);
@@ -81,9 +103,14 @@ public class AdminProductoControlador {
     this.solicitarSubidaDeImagenPrincipal =
         Objects.requireNonNull(solicitarSubidaDeImagenPrincipal);
     this.confirmarImagenPrincipal = Objects.requireNonNull(confirmarImagenPrincipal);
+    this.solicitarSubidaDeImagenDeGaleria =
+        Objects.requireNonNull(solicitarSubidaDeImagenDeGaleria);
+    this.agregarImagenDeGaleria = Objects.requireNonNull(agregarImagenDeGaleria);
+    this.quitarImagenDeGaleria = Objects.requireNonNull(quitarImagenDeGaleria);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
+    this.transacciones = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
 
   @GetMapping
@@ -106,8 +133,8 @@ public class AdminProductoControlador {
   }
 
   @GetMapping("/{id}")
-  public ProductoAdminRespuesta ver(@PathVariable("id") UUID id) {
-    return mapeador.aRespuesta(verProductoAdmin.ejecutar(id));
+  public ProductoAdminDetalleRespuesta ver(@PathVariable("id") UUID id) {
+    return mapeador.aDetalle(verProductoAdmin.ejecutar(id));
   }
 
   @PatchMapping("/{id}")
@@ -185,5 +212,63 @@ public class AdminProductoControlador {
           confirmacion.objetosAnterioresBorrados());
     }
     return mapeador.aRespuesta(confirmacion.imagen());
+  }
+
+  @PostMapping("/{id}/galeria/url-subida")
+  @ResponseStatus(HttpStatus.CREATED)
+  public UrlSubidaRespuesta solicitarUrlDeSubidaDeGaleria(
+      @PathVariable("id") UUID id, @RequestBody SolicitarSubidaDeImagenDeGaleriaPeticion cuerpo) {
+    SolicitudDeSubida solicitud =
+        solicitarSubidaDeImagenDeGaleria.ejecutar(
+            new SolicitarSubidaDeImagenDeGaleriaComando(id, cuerpo.contentType()));
+    return new UrlSubidaRespuesta(solicitud.url(), solicitud.objectKey());
+  }
+
+  /**
+   * {@code 201} y no {@code 200} como la principal: allá se reemplaza algo que ya existía, aquí
+   * nace una imagen nueva que antes no estaba.
+   */
+  @PostMapping("/{id}/galeria")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ImagenDeGaleriaRespuesta agregarImagenDeGaleria(
+      @PathVariable("id") UUID id, @RequestBody AgregarImagenDeGaleriaPeticion cuerpo) {
+    ImagenProducto imagen =
+        agregarImagenDeGaleria.ejecutar(
+            new AgregarImagenDeGaleriaComando(
+                id,
+                cuerpo.objectKey(),
+                cuerpo.ancho(),
+                cuerpo.alto(),
+                cuerpo.hash(),
+                cuerpo.altEs(),
+                cuerpo.altEn()));
+    log.info("Producto {}: imagen agregada a la galería en el orden {}.", id, imagen.orden());
+    return mapeador.aRespuestaDeGaleria(imagen);
+  }
+
+  /**
+   * {@code 204} y no la galería que queda: el panel vuelve a pedir el producto igual, y devolver
+   * una lista aquí invitaría a creerle a esta respuesta en vez de a la consulta.
+   *
+   * <p>La transacción la abre este método porque el borrado derivado de Spring Data no trae la
+   * suya. Va aquí y no dentro del caso de uso porque {@code application} es framework-free.
+   */
+  @DeleteMapping("/{id}/galeria/{imagenId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void quitarImagenDeGaleria(
+      @PathVariable("id") UUID id, @PathVariable("imagenId") UUID imagenId) {
+    ImagenDeGaleriaQuitada quitada =
+        transacciones.execute(
+            estado ->
+                quitarImagenDeGaleria.ejecutar(new QuitarImagenDeGaleriaComando(id, imagenId)));
+    if (quitada != null && quitada.limpiezaFallida()) {
+      log.error(
+          "Producto {}: la imagen {} salió de la galería, pero no se pudo borrar su objeto del"
+              + " bucket. Queda un archivo sin reclamar.",
+          id,
+          imagenId);
+    } else {
+      log.info("Producto {}: imagen {} retirada de la galería.", id, imagenId);
+    }
   }
 }
