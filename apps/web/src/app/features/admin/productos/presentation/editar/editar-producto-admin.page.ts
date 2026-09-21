@@ -212,12 +212,47 @@ export class EditarProductoAdminPage {
   protected readonly reordenandoGaleria = computed(() => this.mutacionReordenarGaleria.isPending());
 
   /**
+   * La imagen cuyo botón hay que enfocar **cuando la galería vuelva a pintarse**, no antes.
+   *
+   * <p>Reordenar invalida la consulta del producto, así que la lista se repinta con lo que
+   * responda el servidor. Enfocar en el siguiente cuadro —como hacen quitar y cancelar— agarra el
+   * botón viejo, que el repintado destruye un instante después: el foco acaba en `<body>` y quien
+   * navega con teclado vuelve al principio del documento. Se vio en el navegador; en jsdom no
+   * pasa.
+   */
+  private readonly enfocarAlRepintar = signal<{
+    id: string;
+    desplazamiento: -1 | 1;
+    ordenEsperado: readonly string[];
+  } | null>(null);
+
+  /**
    * El fallo de reordenar va aparte del de quitar por el mismo motivo por el que aquel se separó
    * del de agregar: se pinta donde pasó.
    */
   protected readonly errorReordenar = signal<string | null>(null);
 
   constructor() {
+    effect(() => {
+      // Depende de la galería a propósito: es el cambio que hay que esperar.
+      const galeria = this.galeria();
+      const pendiente = this.enfocarAlRepintar();
+      // Se espera al **orden** pedido, no a que la imagen esté: está desde antes de mover, así
+      // que preguntar por ella daba por repintada la lista vieja y volvía a enfocar el botón que
+      // estaba a punto de desaparecer.
+      const yaSeRepinto =
+        pendiente !== null &&
+        galeria.length === pendiente.ordenEsperado.length &&
+        galeria.every((imagen, i) => imagen.id === pendiente.ordenEsperado[i]);
+      if (!pendiente || !yaSeRepinto) {
+        return;
+      }
+      this.enfocarAlRepintar.set(null);
+      this.enfocarDespuesDePintar(() =>
+        this.botonDeMoverDe(pendiente.id, pendiente.desplazamiento),
+      );
+    });
+
     effect(() => {
       const producto = this.consulta.data();
       if (producto && !this.prefilled) {
@@ -452,6 +487,12 @@ export class EditarProductoAdminPage {
    * pantalla—: sencillamente no está, porque en el extremo no hay ningún movimiento que ofrecer.
    */
   protected mover(imagen: ImagenDeGaleriaAdmin, desplazamiento: -1 | 1): void {
+    // El botón no se deshabilita mientras va la petición, y el guardia está aquí a propósito:
+    // `[cargando]` pone `disabled`, y deshabilitar el botón que acabas de pulsar le quita el foco
+    // al sitio —a `<body>`— antes de que la lista se repinte. Se vio en el navegador.
+    if (this.reordenandoGaleria()) {
+      return;
+    }
     const actual = this.galeria().map((i) => i.id);
     const desde = actual.indexOf(imagen.id);
     const hasta = desde + desplazamiento;
@@ -469,8 +510,9 @@ export class EditarProductoAdminPage {
         onSuccess: () => {
           this.aviso.set('admin.productos.editar.galeria.reordenada');
           // El foco sigue a la imagen que se movió, no al sitio donde estaba el botón: si se
-          // quedara quieto, pulsar "subir" dos veces movería dos imágenes distintas.
-          this.enfocarDespuesDePintar(() => this.botonDeMoverDe(imagen.id, desplazamiento));
+          // quedara quieto, pulsar "subir" dos veces movería dos imágenes distintas. Se pide
+          // aquí y se hace cuando la lista vuelva a pintarse — ver `enfocarAlRepintar`.
+          this.enfocarAlRepintar.set({ id: imagen.id, desplazamiento, ordenEsperado: pedido });
         },
         onError: (error) =>
           this.errorReordenar.set(
