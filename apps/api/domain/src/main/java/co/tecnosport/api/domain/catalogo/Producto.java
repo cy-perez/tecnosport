@@ -4,9 +4,13 @@ import co.tecnosport.api.domain.compartido.ExcepcionDeDominio;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** Raíz del catálogo. No se publica sin imagen principal (docs/00-producto.md). */
@@ -235,6 +239,62 @@ public final class Producto {
     }
     throw new ImagenDeGaleriaNoEncontradaException(
         "La imagen '" + imagenId + "' no está en la galería de '" + nombre + "'.");
+  }
+
+  /**
+   * Deja la galería en el orden pedido, renumerando de 0 a n-1.
+   *
+   * <p><b>La lista tiene que ser exactamente la galería</b>: los mismos ids, ni uno más ni uno
+   * menos y ninguno repetido. Se podría haber aceptado una lista parcial —"sube esta"— y completar
+   * con el resto, y sería peor: dos pantallas abiertas sobre el mismo producto mandarían órdenes
+   * parciales que se pisan y el resultado dependería de cuál llegó antes. Con la lista entera, la
+   * segunda en llegar manda sobre una galería que ya no es la que vio, y eso se nota aquí en vez de
+   * quedar en un orden que nadie pidió.
+   *
+   * <p><b>Renumera de cero y de corrido</b>, que es lo único que distingue este método de los otros
+   * dos: agregar y quitar dejan huecos a propósito —{@link #siguienteOrdenDeGaleria()} explica por
+   * qué—, y reordenar es justo el momento en que reescribir todas las filas deja de ser trabajo
+   * tirado, porque ya se están reescribiendo. Los huecos se cierran de paso; no se ve nada distinto
+   * en la ficha, que ordena y no cuenta.
+   *
+   * <p>Pedir el orden que la galería ya tiene no falla: vuelve a dejar lo mismo. Un botón que se
+   * pulsa dos veces no es un error.
+   */
+  public void reordenarGaleria(List<UUID> ordenDeseado) {
+    Objects.requireNonNull(ordenDeseado, "El orden pedido no puede ser nulo.");
+    Set<UUID> pedidos = new LinkedHashSet<>(ordenDeseado);
+    if (pedidos.size() != ordenDeseado.size()) {
+      throw new ImagenProductoInvalidaException(
+          "El orden pedido para la galería de '" + nombre + "' repite alguna imagen.");
+    }
+    Map<UUID, ImagenProducto> porId = new LinkedHashMap<>();
+    for (ImagenProducto imagen : galeria) {
+      porId.put(imagen.id(), imagen);
+    }
+    for (UUID id : pedidos) {
+      if (!porId.containsKey(id)) {
+        throw new ImagenDeGaleriaNoEncontradaException(
+            "La imagen '" + id + "' no está en la galería de '" + nombre + "'.");
+      }
+    }
+    if (pedidos.size() != porId.size()) {
+      throw new ImagenProductoInvalidaException(
+          "El orden pedido para la galería de '"
+              + nombre
+              + "' nombra "
+              + pedidos.size()
+              + " imágenes y la galería tiene "
+              + porId.size()
+              + ". Tienen que ser todas.");
+    }
+
+    List<ImagenProducto> reordenada = new ArrayList<>(pedidos.size());
+    int orden = 0;
+    for (UUID id : pedidos) {
+      reordenada.add(porId.get(id).conOrden(orden++));
+    }
+    galeria.clear();
+    galeria.addAll(reordenada);
   }
 
   public void asignarSetRotacion(SetRotacion setRotacion) {

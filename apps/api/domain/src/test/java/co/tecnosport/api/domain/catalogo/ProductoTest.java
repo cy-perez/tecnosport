@@ -266,6 +266,99 @@ class ProductoTest {
   }
 
   @Test
+  void reordenarLaGaleriaDejaLasImagenesEnElOrdenPedido() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    ImagenProducto segunda = imagenDeGaleria(1, 2);
+    ImagenProducto tercera = imagenDeGaleria(2, 3);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+    producto.agregarImagenGaleria(tercera);
+
+    producto.reordenarGaleria(List.of(tercera.id(), primera.id(), segunda.id()));
+
+    assertEquals(
+        List.of(tercera.id(), primera.id(), segunda.id()),
+        producto.galeria().stream().map(ImagenProducto::id).toList());
+    assertEquals(List.of(0, 1, 2), producto.galeria().stream().map(ImagenProducto::orden).toList());
+  }
+
+  @Test
+  void reordenarCierraLosHuecosQueDejoQuitarUna() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    ImagenProducto segunda = imagenDeGaleria(1, 2);
+    ImagenProducto tercera = imagenDeGaleria(2, 3);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+    producto.agregarImagenGaleria(tercera);
+    producto.quitarImagenGaleria(segunda.id());
+    assertEquals(List.of(0, 2), producto.galeria().stream().map(ImagenProducto::orden).toList());
+
+    producto.reordenarGaleria(List.of(primera.id(), tercera.id()));
+
+    assertEquals(List.of(0, 1), producto.galeria().stream().map(ImagenProducto::orden).toList());
+    assertEquals(2, producto.siguienteOrdenDeGaleria());
+  }
+
+  @Test
+  void reordenarConElMismoOrdenQueYaTeniaNoCambiaNadaNiFalla() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    ImagenProducto segunda = imagenDeGaleria(1, 2);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+
+    producto.reordenarGaleria(List.of(primera.id(), segunda.id()));
+
+    assertEquals(
+        List.of(primera.id(), segunda.id()),
+        producto.galeria().stream().map(ImagenProducto::id).toList());
+    assertEquals(List.of(0, 1), producto.galeria().stream().map(ImagenProducto::orden).toList());
+  }
+
+  @Test
+  void reordenarSinNombrarTodasLasImagenesFalla() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    ImagenProducto segunda = imagenDeGaleria(1, 2);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+
+    assertThrows(
+        ImagenProductoInvalidaException.class,
+        () -> producto.reordenarGaleria(List.of(primera.id())));
+    assertEquals(
+        List.of(primera.id(), segunda.id()),
+        producto.galeria().stream().map(ImagenProducto::id).toList());
+  }
+
+  @Test
+  void reordenarRepitiendoUnaImagenFalla() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    ImagenProducto segunda = imagenDeGaleria(1, 2);
+    producto.agregarImagenGaleria(primera);
+    producto.agregarImagenGaleria(segunda);
+
+    assertThrows(
+        ImagenProductoInvalidaException.class,
+        () -> producto.reordenarGaleria(List.of(primera.id(), primera.id())));
+    assertEquals(List.of(0, 1), producto.galeria().stream().map(ImagenProducto::orden).toList());
+  }
+
+  @Test
+  void reordenarNombrandoUnaImagenQueNoEsDeLaGaleriaFalla() {
+    Producto producto = productoDePrueba();
+    ImagenProducto primera = imagenDeGaleria(0, 1);
+    producto.agregarImagenGaleria(primera);
+
+    assertThrows(
+        ImagenDeGaleriaNoEncontradaException.class,
+        () -> producto.reordenarGaleria(List.of(primera.id(), UUID.randomUUID())));
+  }
+
+  @Test
   void reconstruirConUnaImagenQueNoEsDeGaleriaEnLaGaleriaFalla() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =

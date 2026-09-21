@@ -92,6 +92,20 @@ public final class ImagenProducto {
         altEn);
   }
 
+  /**
+   * La misma imagen en otra posición de la galería.
+   *
+   * <p>Visible solo en el paquete, y a propósito: el orden de una imagen no es una propiedad suya
+   * que se pueda cambiar suelta, es el sitio que ocupa dentro de una galería. Quien decide eso es
+   * {@link Producto#reordenarGaleria}, que puede comprobar que el resultado siga teniendo sentido
+   * —ninguna repetida, ninguna perdida—; desde fuera del agregado, cambiar el orden de una sola
+   * imagen solo puede dejar dos en la misma posición.
+   */
+  ImagenProducto conOrden(int nuevoOrden) {
+    return new ImagenProducto(
+        id, tipo, nuevoOrden, url, urlWebp, ancho, alto, bytes, hash, altEs, altEn);
+  }
+
   private static String requerido(String valor, String mensaje) {
     if (valor == null || valor.isBlank()) {
       throw new ImagenProductoInvalidaException(mensaje);
