@@ -31,6 +31,9 @@
 //                   mismo endpoint del panel. Se puede repetir. Gramos y centímetros enteros.
 //                   Va aquí y no en un script propio porque necesita exactamente lo mismo que la
 //                   carga: la sesión del panel y el catálogo de variantes para resolver el SKU.
+//   --publicar-sku SKU   publica un producto que ya está cargado, por su SKU. Se puede repetir.
+//                   El panel **no sabe publicar** —no hay ninguna acción de publicación en el
+//                   frontend—, así que hoy esta es la única puerta que no pasa por la base.
 //
 // El SKU y el slug de cada producto quedan anotados en catalogo/cargados.json, que es lo que
 // permite volver a correr esto sin duplicar nada — y lo que faltaba la primera vez, cuando
@@ -289,12 +292,16 @@ async function cargarUno(producto, catalogos, registro) {
 const { productos } = leerMaterial();
 const porId = new Map(productos.map((p) => [p.id, p]));
 const mediciones = valores("--medir");
+const aPublicar = valores("--publicar-sku");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)
   : (valor("--ids") ?? "").split(",").filter(Boolean);
 
-if (pedidos.length === 0 && mediciones.length === 0) {
-  console.error("Hay que decir qué hacer: --ids a,b,c, --listos, o --medir SKU=peso,largo,ancho,alto.");
+if (pedidos.length === 0 && mediciones.length === 0 && aPublicar.length === 0) {
+  console.error(
+    "Hay que decir qué hacer: --ids a,b,c, --listos, --medir SKU=peso,largo,ancho,alto," +
+      " o --publicar-sku SKU.",
+  );
   process.exit(1);
 }
 if (CORREO && !TOKEN) {
@@ -356,6 +363,18 @@ async function medir(peticiones) {
   console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
 }
 
+if (aPublicar.length > 0) {
+  if (!TOKEN) {
+    console.error(
+      "Publicar necesita sesión hasta para simularlo: el SKU se resuelve preguntándole al" +
+        " catálogo. Usa --correo <correo> o --token <jwt>.",
+    );
+    process.exit(1);
+  }
+  await publicarSkus(aPublicar);
+  process.exit(process.exitCode ?? 0);
+}
+
 if (mediciones.length > 0) {
   if (!TOKEN) {
     console.error(
@@ -366,6 +385,42 @@ if (mediciones.length > 0) {
   }
   await medir(mediciones);
   process.exit(process.exitCode ?? 0);
+}
+
+/**
+ * Publica productos que ya están cargados, por el SKU de su variante. Sale temprano, como medir:
+ * son operaciones distintas y mezclarlas en una corrida haría difícil saber qué pasó con cuál.
+ *
+ * <p>El estado anterior se lee antes: publicar algo que ya estaba publicado no falla —el caso de
+ * uso es idempotente— pero decir "publicado" de algo que ya lo estaba esconde que el SKU pedido no
+ * era el que se creía.
+ */
+async function publicarSkus(skus) {
+  const existencias = await pedir("/api/v1/admin/variantes/existencias");
+  const porSku = new Map(existencias.items.map((v) => [v.sku, v]));
+  let publicados = 0;
+
+  for (const sku of skus) {
+    const variante = porSku.get(sku);
+    if (!variante) {
+      console.error(`FALLÓ       ${sku}: no hay ninguna variante activa con ese SKU`);
+      process.exitCode = 1;
+      continue;
+    }
+    if (variante.estadoProducto === "PUBLICADO") {
+      console.log(`saltado     ${sku}: ${variante.nombreProducto} ya estaba publicado`);
+      continue;
+    }
+    console.log(
+      `${ESCRIBIR ? "publicando" : "simulado"}  ${variante.nombreProducto} (${sku})` +
+        ` · saldo ${variante.saldoTotal}` +
+        `${variante.saldoTotal === 0 ? " — sale a la vitrina marcado AGOTADO" : ""}`,
+    );
+    if (!ESCRIBIR) continue;
+    await pedir(`/api/v1/admin/productos/${variante.productoId}/publicacion`, { method: "POST" });
+    publicados++;
+  }
+  console.log(`\n${ESCRIBIR ? "publicados" : "se publicarían"}: ${publicados}`);
 }
 
 const registro = leerJson(REGISTRO) ?? {};
