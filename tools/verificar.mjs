@@ -38,6 +38,11 @@ if (!soloApi) {
   // celular del negocio estuvo mal en el pie y en tres parrafos de los legales durante una fase
   // entera, y al corregirlo no quedo nada que impidiera que volviera a pasar.
   ejecutar("node tools/verificar-datos-de-negocio.mjs");
+  // Y por el mismo motivo y al mismo precio (menos de un segundo): que el kit de marca siga
+  // regenerándose igual que como está guardado. El comando que documentaba su propio LEEME dejó
+  // el repositorio peor que antes de ejecutarlo durante días, y nada lo miraba porque el kit no
+  // tiene ninguna prueba.
+  ejecutar("node tools/verificar-kit.mjs");
   ejecutar("npm run lint --workspaces --if-present");
   ejecutar("npm test --workspaces --if-present");
   ejecutar("npm run build --workspaces --if-present");
