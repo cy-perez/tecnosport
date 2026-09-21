@@ -14,6 +14,10 @@
 // Opciones:
 //   --ids a,b,c     los ids de catalogo/productos.json a cargar
 //   --listos        todos los que no tienen faltas (ver material-catalogo.mjs)
+//   --margen-minimo N  deja fuera los que dejen menos de N% sobre el costo. La lista del
+//                   proveedor trae productos cuyo precio de mercado es igual o menor que lo que
+//                   cuestan, y publicarlos es vender a pérdida. Es una regla y no una lista
+//                   escrita a mano para que la siguiente lista se filtre igual.
 //   --existencia N  unidades de la entrada inicial. **Por omisión 0**, y no es un descuido:
 //                   inventarse un conteo fue el defecto que adr/0049 y adr/0050 tuvieron que
 //                   limpiar. El número sale de contar la bodega, y para eso está el panel.
@@ -43,7 +47,16 @@ const TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
 const ESCRIBIR = bandera("--escribir");
 const PUBLICAR = bandera("--publicar");
 const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
+const MARGEN_MINIMO = Number.parseFloat(valor("--margen-minimo", "0"));
 const REGISTRO = join(CATALOGO, "cargados.json");
+
+/** Lo que queda sobre la venta después del costo, en tanto por ciento. */
+const margenDe = (producto) =>
+  producto.precio_proveedor_cop && producto.precio_mercado_cop
+    ? ((producto.precio_mercado_cop - producto.precio_proveedor_cop) /
+        producto.precio_mercado_cop) *
+      100
+    : null;
 
 /** Las categorías de la lista del proveedor y su slug en el catálogo. */
 const CATEGORIAS = {
@@ -119,6 +132,9 @@ async function cargarUno(producto, catalogos, registro) {
   const medidas = paquete
     ? `${paquete.pesoGramos} g, ${paquete.largoCm}x${paquete.anchoCm}x${paquete.altoCm} cm`
     : "sin medir (solo recogida)";
+  if (producto.fichaDeOtroProducto) {
+    console.log(`            ojo: ${producto.fichaDeOtroProducto}`);
+  }
 
   console.log(
     `${ESCRIBIR ? "cargando" : "simulado"}    ${producto.titulo}\n` +
@@ -217,6 +233,12 @@ if (!Number.isInteger(EXISTENCIA) || EXISTENCIA < 0) {
 }
 
 const registro = leerJson(REGISTRO) ?? {};
+if (!TOKEN) {
+  console.log(
+    "Sin token: esta simulación no puede preguntarle al catálogo qué hay ya cargado, así que va\n" +
+      "a decir que carga cosas que quizá ya existen. Con token, la misma simulación las salta.\n",
+  );
+}
 const catalogos = TOKEN
   ? {
       marcas: (await pedir("/api/v1/admin/marcas")).items,
@@ -256,6 +278,15 @@ for (const id of pedidos) {
   }
   if (producto.faltas.length > 0) {
     console.log(`saltado     ${id}: ${producto.faltas.join(", ")}`);
+    saltados++;
+    continue;
+  }
+  const margen = margenDe(producto);
+  if (MARGEN_MINIMO > 0 && (margen === null || margen < MARGEN_MINIMO)) {
+    console.log(
+      `saltado     ${id}: deja ${margen === null ? "un margen desconocido" : `${Math.round(margen)}%`}` +
+        ` sobre el costo, menos del ${MARGEN_MINIMO}% pedido`,
+    );
     saltados++;
     continue;
   }

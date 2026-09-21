@@ -61,6 +61,20 @@ function fotos(id) {
 }
 
 /**
+ * Fichas de Icecat que quedaron pegadas a **otro** producto. La búsqueda por nombre acierta casi
+ * siempre y cuando falla no avisa: la ficha llega completa, con sus medidas, y se lee como buena.
+ *
+ * <p>Se listan aquí, con el motivo, en vez de confiar en un umbral inventado del tipo "un peso
+ * menor de 200 g es sospechoso": lo que está mal no es la cifra, es de qué producto es.
+ */
+const FICHA_DE_OTRO_PRODUCTO = {
+  "nintendo-switch-2-mario-kart":
+    "la ficha es del juego Mario Kart World suelto —50 g en una caja de 17x11x2 cm—, no del " +
+    "paquete con la consola. Declarar eso cobraría el flete de una tarjeta de juego para " +
+    "despachar una consola de dos millones y medio.",
+};
+
+/**
  * Las cuatro cifras del empaque salen de la ficha de Icecat cuando el fabricante las publica. Los
  * de celulares no publican nada del empaque: ahí toca báscula, y eso no lo resuelve ningún script.
  *
@@ -69,6 +83,7 @@ function fotos(id) {
  * es una carga rota (`adr/0021`, `adr/0046`).
  */
 function empaque(id) {
+  if (FICHA_DE_OTRO_PRODUCTO[id]) return null;
   const ficha = leerJson(join(CATALOGO, "icecat", "fichas", `${id}.json`));
   if (!ficha) return null;
   const especificaciones = (ficha.especificaciones ?? []).flatMap((grupo) =>
@@ -128,7 +143,14 @@ export function leerMaterial() {
     else if (foto.ladoMenor < LADO_MINIMO) faltas.push(`foto ${foto.ladoMenor}px`);
     if (!prosa[producto.id]?.apertura) faltas.push("sin prosa");
     if (!producto.precio_mercado_cop) faltas.push("sin precio");
-    return { ...producto, foto, empaque: empaque(producto.id), prosa: prosa[producto.id], faltas };
+    return {
+      ...producto,
+      foto,
+      empaque: empaque(producto.id),
+      fichaDeOtroProducto: FICHA_DE_OTRO_PRODUCTO[producto.id] ?? null,
+      prosa: prosa[producto.id],
+      faltas,
+    };
   });
 
   return { fecha: catalogo.fecha_lista, productos };
