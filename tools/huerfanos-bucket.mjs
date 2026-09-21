@@ -29,13 +29,36 @@ import { spawnSync } from "node:child_process";
 const argv = process.argv.slice(2);
 const valor = (nombre, omision = null) => {
   const i = argv.indexOf(nombre);
-  return i >= 0 && argv[i + 1] ? argv[i + 1] : omision;
+  if (i < 0) return omision;
+  const siguiente = argv[i + 1];
+  // Un valor que empieza por `--` es la bandera de al lado, no el valor de esta. Sin esta
+  // comprobación, `--margen-minimo --listos` dejaba `parseFloat("--listos")` en NaN y el filtro
+  // del margen desaparecía **sin una sola línea de aviso**: medido, 12 productos cargados donde
+  // debían ser 8, con los cuatro que se venden al costo entre ellos.
+  if (siguiente === undefined || siguiente.startsWith("--")) {
+    console.error(`La opción ${nombre} necesita un valor.`);
+    process.exit(1);
+  }
+  return siguiente;
 };
 
-const API = valor("--api", "http://localhost:8080").replace(/\/$/, "");
+// Sin omisión, igual que `--bucket`, y por el mismo motivo: los dos lados del cruce tienen que
+// ser deliberados. Con `http://localhost:8080` por omisión, olvidar `--api` con el `bootRun`
+// levantado —el estado normal de esta máquina— cruzaba el bucket que se pidiera contra el
+// catálogo local y daba por huérfano casi todo lo de allá. La mitad protegida no decidía nada.
+const API = (valor("--api") ?? "").replace(/[/]$/, "");
 const BUCKET = valor("--bucket", process.env.GCS_BUCKET_IMAGENES);
 const CORREO = valor("--correo");
 let TOKEN = valor("--token", process.env.TS_TOKEN_ADMIN);
+
+if (!API) {
+  console.error(
+    "Falta la API: --api <url>. Tampoco tiene omisión: el informe cruza lo que hay en el bucket" +
+      " contra lo que el panel reclama, y con las dos mitades de ambientes distintos el resultado" +
+      " es basura que se lee como un hallazgo.",
+  );
+  process.exit(1);
+}
 
 if (!BUCKET) {
   console.error(
@@ -56,7 +79,10 @@ function preguntarClave(pregunta) {
     process.stdout.write(pregunta);
     process.stdin.setRawMode(true);
     process.stdin.resume();
-    let clave = "";
+    // Los bytes se juntan y se decodifican al final: una "ñ" llega en dos bytes y
+    // `String.fromCharCode` por byte los convertía en dos caracteres distintos, así que la clave
+    // que viajaba no era la tecleada y el 401 se explicaba como "clave incorrecta".
+    const bytes = [];
     process.stdin.on("data", function escuchar(bloque) {
       for (const byte of bloque) {
         if (byte === 3) {
@@ -69,11 +95,11 @@ function preguntarClave(pregunta) {
           process.stdin.pause();
           process.stdin.off("data", escuchar);
           process.stdout.write("\n");
-          resolve(clave);
+          resolve(Buffer.from(bytes).toString("utf8"));
           return;
         }
-        if (byte === 127 || byte === 8) clave = clave.slice(0, -1);
-        else clave += String.fromCharCode(byte);
+        if (byte === 127 || byte === 8) bytes.pop();
+        else bytes.push(byte);
       }
     });
   });
@@ -158,13 +184,55 @@ for (const linea of listado.stdout.split("\n")) {
     objetos.push({ bytes: Number(partes[1]), fecha: partes[2], key: partes[3] });
   }
 }
+// Una salida que no se pudo interpretar no es un bucket vacío, y las dos se veían igual: si
+// gcloud cambia el formato de `--long`, o el proyecto no está seleccionado y responde otra cosa
+// por stdout con código 0, todas las líneas se descartaban en silencio y el informe remataba con
+// "no hay ningún objeto". Un parcial es peor todavía: cada línea perdida encoge el total, el
+// tamaño y la lista de huérfanos, sin dejar rastro de que faltaba algo.
+const lineasUtiles = listado.stdout
+  .split("\n")
+  .filter((linea) => linea.trim() !== "" && !/^TOTAL:/i.test(linea.trim()));
+if (objetos.length !== lineasUtiles.length) {
+  const sinInterpretar = lineasUtiles.filter(
+    (linea) => !objetos.some((objeto) => linea.includes(objeto.key)),
+  );
+  console.error(
+    `No entendí ${sinInterpretar.length} de ${lineasUtiles.length} líneas que devolvió gcloud.\n` +
+      "El informe se calcularía sobre lo que sí se pudo leer, y cada objeto que falte se leería\n" +
+      "como reclamado. Primera línea sin interpretar:\n  " +
+      (sinInterpretar[0] ?? "").trim(),
+  );
+  process.exit(1);
+}
 if (objetos.length === 0) {
   console.log(`En gs://${BUCKET}/productos/ no hay ningún objeto.`);
   process.exit(0);
 }
 
+
+/**
+ * Todos los productos del panel, recorriendo las páginas.
+ *
+ * Existía como `?tamano=200` a secas, en tres sitios y sin mirar `totalProductos`. Con 29
+ * productos funcionaba; con 201 el que sobra desaparece **en silencio**, y lo que cuelga de esta
+ * lista no es cosmético: la guarda que impide cargar dos veces el mismo producto, y el informe
+ * de huérfanos, que daría por no reclamadas las fotos vivas de los que no vinieron.
+ */
+async function todosLosProductos() {
+  const items = [];
+  let pagina = 0;
+  let totalPaginas = 1;
+  do {
+    const respuesta = await pedir(`/api/v1/admin/productos?tamano=200&pagina=${pagina}`);
+    items.push(...respuesta.items);
+    totalPaginas = respuesta.totalPaginas ?? 1;
+    pagina++;
+  } while (pagina < totalPaginas);
+  return items;
+}
+
 // --- lo que el catálogo reclama ---
-const productos = (await pedir("/api/v1/admin/productos?tamano=200")).items;
+const productos = await todosLosProductos();
 const reclamadas = new Set();
 for (const producto of productos) {
   const principal = keyDe(producto.imagenPrincipalUrl);
@@ -180,10 +248,14 @@ const deRotacion = objetos.filter((o) => o.key.includes("/rotacion/"));
 const juzgables = objetos.filter((o) => !o.key.includes("/rotacion/"));
 const huerfanos = juzgables.filter((o) => !reclamadas.has(o.key));
 const sumar = (lista) => lista.reduce((total, o) => total + o.bytes, 0);
+// La interseccion, no el tamaño del conjunto: `reclamadas` son las keys que el panel dice tener,
+// y una fila que apunte a un objeto ya borrado inflaba el numero hasta poder salir mayor que la
+// cantidad de objetos listados — "28 objetos · 31 reclamados".
+const reclamadosPresentes = objetos.filter((o) => reclamadas.has(o.key)).length;
 
 console.log(
   `gs://${BUCKET}/productos/ · ${objetos.length} objetos · ${enMiB(sumar(objetos))}\n` +
-    `${productos.length} productos en el panel reclaman ${reclamadas.size} de ellos.\n`,
+    `${productos.length} productos en el panel reclaman ${reclamadosPresentes} de ellos.\n`,
 );
 
 if (huerfanos.length === 0) {

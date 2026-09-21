@@ -30,7 +30,7 @@
 // Uso:  node tools/cruce-catalogo.mjs [--todos]
 //       --todos  lista también los que no tienen ni una foto procesada.
 
-import { leerMaterial } from "./material-catalogo.mjs";
+import { leerMaterial, margenDe, MARGEN_MINIMO_SUGERIDO } from "./material-catalogo.mjs";
 
 const todos = process.argv.includes("--todos");
 
@@ -45,12 +45,22 @@ try {
 const filas = material.productos.filter((p) => todos || p.foto.archivos.length > 0);
 const publicables = filas.filter((f) => f.faltas.length === 0);
 const conEnvio = publicables.filter((f) => f.empaque);
-const sinMargen = publicables.filter(
-  (f) => f.precio_proveedor_cop && f.precio_mercado_cop <= f.precio_proveedor_cop * 1.05,
-);
+// El mismo `margenDe` que filtra el cargador: antes esta linea calculaba el margen sobre el
+// costo y el cargador sobre la venta, y los dos lo llamaban "5%".
+const sinMargen = publicables.filter((f) => {
+  const margen = margenDe(f);
+  return margen !== null && margen <= MARGEN_MINIMO_SUGERIDO;
+});
 
 const pesos = (valor) => (valor ? valor.toLocaleString("es-CO") : "—");
-console.log(`Lista del ${material.fecha} · ${material.productos.length} productos procesados`);
+// Los dos numeros, porque no son el mismo: la tabla enseña las filas con foto salvo que se pida
+// `--todos`, asi que "96 productos procesados" encabezaba una tabla de 34 y nada lo decia.
+console.log(
+  `Lista del ${material.fecha} · ${material.productos.length} productos procesados` +
+    (filas.length === material.productos.length
+      ? ""
+      : ` · ${filas.length} en la tabla (los demas no tienen ni una foto; --todos los incluye)`),
+);
 console.log(
   `${publicables.length} publicables · ${conEnvio.length} de ellos con medidas de empaque, ` +
     `los otros ${publicables.length - conEnvio.length} solo con recogida en el punto`,
@@ -61,7 +71,7 @@ console.log(
 );
 if (sinMargen.length > 0) {
   console.log(
-    `\nOJO: ${sinMargen.length} publicable(s) dejan 5% o menos sobre el costo. Publicarlos a ese\n` +
+    `\nOJO: ${sinMargen.length} publicable(s) dejan ${MARGEN_MINIMO_SUGERIDO}% o menos sobre la venta. Publicarlos a ese\n` +
       "precio es trabajar gratis o perder plata; hay que decidirlos uno por uno.",
   );
 }
@@ -72,7 +82,8 @@ const ordenadas = filas.sort((a, b) => a.faltas.length - b.faltas.length || a.id
 for (const fila of ordenadas) {
   const costo = fila.precio_proveedor_cop;
   const venta = fila.precio_mercado_cop;
-  const margen = costo && venta ? `${Math.round(((venta - costo) / venta) * 100)}%` : "—";
+  const porciento = margenDe(fila);
+  const margen = porciento === null ? "—" : `${Math.round(porciento)}%`;
   console.log(
     [
       (fila.faltas.length === 0 ? "LISTO" : "FALTA").padEnd(6),

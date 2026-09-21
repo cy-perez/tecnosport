@@ -5,10 +5,34 @@
 
 import { readFileSync, readdirSync, existsSync, openSync, readSync, closeSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const LADO_MINIMO = 1200;
 
-export const RAIZ = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+/**
+ * Lo que queda sobre la **venta** después del costo, en tanto por ciento.
+ *
+ * Vive aquí y no en cada script por la misma razón que `faltas`: estaba en los dos y con dos
+ * fórmulas distintas. El cruce comparaba `venta <= costo * 1.05` —margen sobre el costo— y el
+ * cargador `(venta - costo) / venta` —margen sobre la venta—, que no son el mismo umbral: entre
+ * 4,76 % y 5,00 % sobre la venta, el informe daba el producto por bueno y el cargador lo
+ * descartaba sin que nada lo hubiera anunciado. Es la divergencia que este módulo existe para
+ * evitar, un nivel más abajo de donde se buscó.
+ */
+export function margenDe(producto) {
+  const costo = producto.precio_proveedor_cop;
+  const venta = producto.precio_mercado_cop;
+  return costo && venta ? ((venta - costo) / venta) * 100 : null;
+}
+
+/** Por debajo de esto se trabaja gratis. Lo usan el informe y el filtro del cargador. */
+export const MARGEN_MINIMO_SUGERIDO = 5;
+
+// `fileURLToPath` y no `.pathname`, que viene percent-encoded: con el repositorio bajo
+// `D:/Mis Proyectos/` o `C:/Users/José/`, `RAIZ` salía con `%20` dentro, `CATALOGO` apuntaba a una
+// carpeta inexistente y el error que se veía era "esa carpeta no está versionada", que manda a
+// buscar justo donde no es. `verificar-kit.mjs` ya lo hacía bien.
+export const RAIZ = fileURLToPath(new URL("..", import.meta.url));
 export const CATALOGO = join(RAIZ, "catalogo");
 const ESTUDIO = join(CATALOGO, "fotos", "estudio");
 
