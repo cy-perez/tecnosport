@@ -6709,6 +6709,72 @@ ventana delante. Es la tercera vez que este documento escribe la misma lección:
 diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
 diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
 
+## Las seis deudas del catálogo, y el contrato que no exigía lo que el servidor manda (2026-09-21)
+
+El cuarto y último bloque de la revisión. Ninguna de las seis rompía nada hoy; las seis rompen algo
+el día que cambie otra cosa, que es la definición de deuda.
+
+### La regla escrita dos veces, una de ellas en el sitio equivocado
+
+`AdminVarianteControlador` respondía la disponibilidad del alta con
+`cuerpo.existenciaInicial() > 0`: una segunda implementación de la regla que `adr/0050`
+centralizó, escrita en presentación y derivada **del cuerpo de la petición** en vez del libro.
+
+Hoy coincide, y ahí está el problema: coincide por una cadena de suposiciones que nada sostiene. El
+día que el alta reserve la existencia inicial, o abra el libro sin `ENTRADA`, o recorte la
+cantidad, el `POST` seguiría respondiendo `disponible: true` con la vitrina pintándola agotada, y
+**ninguna prueba fallaría**. Ahora `AgregarVariante` devuelve `VarianteCreada`, con la
+disponibilidad sacada del libro que acaba de escribir.
+
+### El contrato que no exigía un campo que el servidor siempre manda
+
+`disponible` es un `boolean` primitivo, así que siempre se serializa. Pero springdoc no lo
+deduce: el OpenAPI lo publicaba **opcional**, el cliente TypeScript lo generaba como
+`disponible?: boolean` y el mapeador del front caía a `?? false`.
+
+O sea que el día que ese campo dejara de serializarse —un `@JsonInclude` heredado, un cambio de
+nombre que TypeScript no viera porque el tipo es opcional— **la tienda entera saldría agotada**:
+todos los botones de comprar deshabilitados, sin una prueba en rojo y sin una línea en el registro.
+La caída a `false` parecía la elección segura y era la peor posible junto a un contrato que no
+exigía el campo. Es la lección que `apps/api/CLAUDE.md` ya tenía escrita sobre `@Schema`, en su
+tercera aparición.
+
+### El ADR decía una cosa y el código hacía otra
+
+`adr/0053` §2 describe la carrera de las dos pestañas y promete *"422, y no se graba nada"*. La
+implementación la partía en dos respuestas **según si a la lista le faltaba o le sobraba una
+imagen**: 404 cuando la otra pestaña había quitado una, 422 cuando había agregado. En la mitad del
+404 el panel pintaba el mensaje escrito para el borrado, y el código `IMAGEN_PRODUCTO_INVALIDA` de
+la otra mitad no estaba traducido, así que caía al genérico.
+
+O se corregía el ADR o se corregía el código. Se corrigió el código: el recurso del `PUT` —la
+galería del producto— existe, y lo que pasa es que la lista que mandaron ya no lo describe. El 404
+se queda donde sí corresponde, al quitar una imagen.
+
+### Y tres más
+
+- **El adaptador tiraba el conteo de filas borradas** que el javadoc de su propio repositorio decía
+  que servía para distinguir "no era de este producto" de "ya no estaba". Con dos peticiones
+  simultáneas, la segunda se iba igual al bucket y el controlador registraba el aviso de "salió de
+  la galería sin borrar ningún objeto" — que está escrito para el día que la URL pública cambie por
+  un CDN. Un aviso que suena por dos motivos no sirve para ninguno.
+- **El ajuste por conteo estaba fuera de la lista de idempotencia**, con el javadoc de esa misma
+  clase advirtiendo que la lista es fácil de olvidar y cara de olvidar. Hoy el daño es bajo porque
+  el comando es un conteo absoluto y no un delta; que el diseño lo salve no es razón para dejarlo
+  fuera.
+- **Publicar y retirar no invalidaban el catálogo público**, así que en la misma sesión el producto
+  retirado seguía en la rejilla hasta que venciera su `staleTime` y la ficha respondía 404 al
+  hacer clic. `adr/0051` promete que desaparece; en esa sesión no desaparecía.
+
+### La lección de método del día
+
+La primera versión de la prueba del aviso del panel **pasaba igual con el defecto puesto**. Afirmaba
+una ausencia —"el aviso no se enciende"— después de esperar solo al botón de cerrar sesión, que se
+pinta de inmediato: con la consulta sin resolver, el aviso no estaba por el motivo equivocado.
+
+Una aserción de ausencia necesita un ancla que demuestre que los datos ya llegaron. Está en
+`docs/06-testing.md`, junto a las otras dos formas que tiene un doble de mentir.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
