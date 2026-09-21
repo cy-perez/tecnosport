@@ -123,6 +123,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   quitarImagenDeGaleria(): Promise<void> {
     throw new Error('no usado por esta prueba');
   }
+
+  reordenarGaleria(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
 }
 
 async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {

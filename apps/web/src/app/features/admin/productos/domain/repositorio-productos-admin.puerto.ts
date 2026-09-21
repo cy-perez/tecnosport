@@ -16,6 +16,7 @@ import {
   ProductoAdminDetalle,
   ProductosPaginadosAdmin,
   QuitarImagenDeGaleriaAdmin,
+  ReordenarGaleriaAdmin,
   SubirImagenDeGaleriaAdmin,
   SubirImagenPrincipalAdmin,
   VarianteMedida,
@@ -61,6 +62,13 @@ export interface RepositorioProductosAdmin {
 
   /** Saca la imagen de la ficha y borra su objeto del bucket. No tiene vuelta. */
   quitarImagenDeGaleria(comando: QuitarImagenDeGaleriaAdmin): Promise<void>;
+
+  /**
+   * Deja la galería en el orden pedido. Se manda la lista **entera**, no "sube esta": con dos
+   * pestañas abiertas sobre el mismo producto, dos movimientos parciales se pisarían y ganaría el
+   * último sin que nadie se entere.
+   */
+  reordenarGaleria(comando: ReordenarGaleriaAdmin): Promise<void>;
 }
 
 export const REPOSITORIO_PRODUCTOS_ADMIN = new InjectionToken<RepositorioProductosAdmin>(

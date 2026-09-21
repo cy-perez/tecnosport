@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/v1/admin/productos/{id}/galeria/orden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reordenarGaleria"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pedidos": {
         parameters: {
             query?: never;
@@ -1224,6 +1240,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ReordenarGaleriaPeticion: {
+            imagenIds: string[];
+        };
         CrearPedidoRequest: {
             correo?: string;
             nombre?: string;
@@ -2137,6 +2156,30 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    reordenarGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReordenarGaleriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     crear: {
         parameters: {
             query?: never;

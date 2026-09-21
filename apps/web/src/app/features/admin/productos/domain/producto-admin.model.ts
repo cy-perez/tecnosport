@@ -122,6 +122,12 @@ export interface QuitarImagenDeGaleriaAdmin {
   readonly imagenId: string;
 }
 
+/** La galería entera, en el orden en que tiene que quedar. Ver el puerto. */
+export interface ReordenarGaleriaAdmin {
+  readonly productoId: string;
+  readonly imagenIds: readonly string[];
+}
+
 export interface SubirImagenPrincipalAdmin {
   readonly productoId: string;
   readonly archivo: File;
