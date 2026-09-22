@@ -1,5 +1,7 @@
 package co.tecnosport.api.presentation.usuario;
 
+import co.tecnosport.api.application.usuario.CambiarClave;
+import co.tecnosport.api.application.usuario.CambiarClaveComando;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CerrarSesionComando;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
@@ -19,6 +21,7 @@ import co.tecnosport.api.application.usuario.TokensDeSesion;
 import co.tecnosport.api.application.usuario.VerificarCorreo;
 import co.tecnosport.api.application.usuario.VerificarCorreoComando;
 import co.tecnosport.api.presentation.compartido.IpDelCliente;
+import co.tecnosport.api.presentation.usuario.dto.CambiarClaveRequest;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
 import co.tecnosport.api.presentation.usuario.dto.ReenviarVerificacionRequest;
@@ -36,6 +39,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -64,6 +69,7 @@ public class AutenticacionControlador {
   private final ReenviarVerificacion reenviarVerificacion;
   private final SolicitarRecuperacion solicitarRecuperacion;
   private final ConfirmarRecuperacion confirmarRecuperacion;
+  private final CambiarClave cambiarClave;
   private final IniciarSesion iniciarSesion;
   private final RefrescarToken refrescarToken;
   private final CerrarSesion cerrarSesion;
@@ -75,6 +81,7 @@ public class AutenticacionControlador {
       ReenviarVerificacion reenviarVerificacion,
       SolicitarRecuperacion solicitarRecuperacion,
       ConfirmarRecuperacion confirmarRecuperacion,
+      CambiarClave cambiarClave,
       IniciarSesion iniciarSesion,
       RefrescarToken refrescarToken,
       CerrarSesion cerrarSesion,
@@ -84,6 +91,7 @@ public class AutenticacionControlador {
     this.reenviarVerificacion = Objects.requireNonNull(reenviarVerificacion);
     this.solicitarRecuperacion = Objects.requireNonNull(solicitarRecuperacion);
     this.confirmarRecuperacion = Objects.requireNonNull(confirmarRecuperacion);
+    this.cambiarClave = Objects.requireNonNull(cambiarClave);
     this.iniciarSesion = Objects.requireNonNull(iniciarSesion);
     this.refrescarToken = Objects.requireNonNull(refrescarToken);
     this.cerrarSesion = Objects.requireNonNull(cerrarSesion);
@@ -142,6 +150,25 @@ public class AutenticacionControlador {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Cambio de clave de quien ya tiene sesion iniciada. Responde como el login -tokens nuevos y
+   * cookie nueva- porque el caso de uso revoca todas las sesiones del usuario: sin esta respuesta,
+   * quien acaba de cambiar su propia clave se quedaria fuera.
+   *
+   * <p>Es la unica ruta de {@code /auth} que exige autenticacion, y quien lo exige es {@code
+   * ConfiguracionSeguridad} (bootstrap) -el resto de la cadena es {@code permitAll}-.
+   */
+  @PostMapping("/clave")
+  public ResponseEntity<SesionRespuesta> cambiarClave(@RequestBody CambiarClaveRequest cuerpo) {
+    UUID usuarioId = usuarioAutenticadoId();
+    TokensDeSesion tokens =
+        transaccion.execute(
+            estado ->
+                cambiarClave.ejecutar(
+                    new CambiarClaveComando(usuarioId, cuerpo.claveActual(), cuerpo.claveNueva())));
+    return respuestaConCookie(tokens);
+  }
+
   @PostMapping("/sesion")
   public ResponseEntity<SesionRespuesta> iniciarSesion(@RequestBody IniciarSesionRequest cuerpo) {
     TokensDeSesion tokens =
@@ -188,6 +215,19 @@ public class AutenticacionControlador {
     return ResponseEntity.noContent()
         .header(HttpHeaders.SET_COOKIE, cookieVacia.toString())
         .build();
+  }
+
+  /**
+   * El principal que deja {@link FiltroAutenticacionJwt}: el id del usuario, no su correo. Nulo
+   * solo si la ruta dejara de exigir autenticacion en {@code ConfiguracionSeguridad} -entonces el
+   * 401 es la respuesta correcta y no un 500 por dereferenciar nulo-.
+   */
+  private UUID usuarioAutenticadoId() {
+    Authentication autenticacion = SecurityContextHolder.getContext().getAuthentication();
+    if (autenticacion == null || !(autenticacion.getPrincipal() instanceof UUID usuarioId)) {
+      throw new SesionDeRefrescoInvalidaException();
+    }
+    return usuarioId;
   }
 
   private ResponseEntity<SesionRespuesta> respuestaConCookie(TokensDeSesion tokens) {

@@ -3,6 +3,7 @@ package co.tecnosport.api.bootstrap.usuario;
 import co.tecnosport.api.presentation.usuario.FiltroAutenticacionJwt;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,6 +17,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * navegador. {@code /api/v1/admin/**} exige rol {@code ADMIN} (sin rutas todavía, listo para cuando
  * existan); el resto es público — cada ruta decide sus propias reglas de negocio (Wompi verifica su
  * propia firma, por ejemplo), esta clase solo decide autenticación.
+ *
+ * <p>Con una excepción, y es la única de {@code /api/v1/auth}: {@code POST /auth/clave} exige
+ * sesión iniciada. El resto de ese prefijo es público por definición —quien registra, verifica,
+ * inicia sesión o recupera su clave todavía no tiene una—, pero cambiar la clave desde dentro sí, y
+ * el controlador saca de ahí de quién es la clave que cambia. Sin esta línea el endpoint quedaría
+ * abierto por el {@code anyRequest().permitAll()} de abajo y llegaría sin principal: un olvido que
+ * no falla ruidosamente, solo deja la puerta abierta.
  */
 @Configuration
 @EnableWebSecurity
@@ -28,7 +36,12 @@ public class ConfiguracionSeguridad {
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN").anyRequest().permitAll())
+                auth.requestMatchers("/api/v1/admin/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/clave")
+                    .authenticated()
+                    .anyRequest()
+                    .permitAll())
         .addFilterBefore(filtroAutenticacionJwt, UsernamePasswordAuthenticationFilter.class);
     return http.build();
   }

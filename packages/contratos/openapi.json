@@ -219,6 +219,21 @@
         },
         "type" : "object"
       },
+      "CambiarClaveRequest" : {
+        "properties" : {
+          "claveActual" : {
+            "type" : "string"
+          },
+          "claveNueva" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "claveActual",
+          "claveNueva"
+        ],
+        "type" : "object"
+      },
       "CancelarPedidoRequest" : {
         "properties" : {
           "comprobante" : {
@@ -4461,6 +4476,36 @@
         ],
         "responses" : {
           "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/clave" : {
+      "post" : {
+        "operationId" : "cambiarClave",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CambiarClaveRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
             "description" : "OK"
           }
         },
