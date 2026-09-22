@@ -272,6 +272,30 @@ Transloco retardado a propósito y las dos del *debounce* de los filtros, donde 
 que se prueba **es** el paso del tiempo. Ahí `vi.waitFor` pasaría al instante y
 no probaría nada.
 
+**Un número fijo de *vueltas* es lo mismo que un número fijo de milisegundos**, y
+cuesta más verlo. `captura-360.page.spec.ts` esperaba con `asentarVarias`, que
+asienta catorce veces y ya; el 22 de septiembre de 2026 la verificación web falló
+con `expected Array(3) to have a length of 4` — tres de los cuatro fotogramas
+subidos. Dos cosas que conviene tener presentes:
+
+- **No era cuestión de microtareas.** El hash de cada fotograma es un
+  `crypto.subtle.digest` de verdad, así que cuántas vueltas hacen falta depende de
+  lo cargada que esté la máquina. Un bucle de `await` no "termina el trabajo
+  pendiente": solo cede el turno unas cuantas veces.
+- **Lo destapó un PR que no tocaba captura360**: solo añadía un archivo de pruebas.
+  Vitest reparte los archivos entre trabajadores, así que **sumar uno cambia la
+  carga de los demás** y basta para que una prueba frágil se quede sin vueltas. Si
+  una prueba empieza a fallar en un PR que no la toca, sospecha de esto antes que
+  del cambio.
+
+La salida es la de siempre: `vi.waitFor` con las aserciones dentro. Si además hace
+falta empujar la detección de cambios, el callback puede ser `async` y llamar a
+`asentar(fixture)` en cada intento.
+
+**Ojo con cuál `waitFor` se usa**: el de `@testing-library/angular` tipa su callback
+como síncrono (`() => never`) y no acepta uno `async` — el compilador lo dice, pero
+el mensaje no es evidente. Para esperar por un contador o un espía, `vi.waitFor`.
+
 Tres lecciones que costaron un fallo cada una:
 
 - **`waitFor` tiene que cubrir lo último que ocurre, no lo primero.** Esperar a

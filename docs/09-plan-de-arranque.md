@@ -7974,14 +7974,13 @@ El orden no es negociable: cada uno alimenta al siguiente.
     una unión, la deuda sigue. La salida es publicarlo como enum en el OpenAPI —un `@Schema` en el
     DTO— y que el frontend use el tipo generado.
 
-26. **`catalogo/cargados.json` no dice de qué ambiente habla.** Guarda el `productoId` de cada SKU,
-    y esos ids son de **una** base: la local, si el cargador corrió contra `localhost` —que es su
-    valor por omisión— o la de dev si corrió contra dev. Cargar el catálogo en otro ambiente
-    reescribe el registro y deja el anterior sin forma de rehacerse: `--rehacer-imagenes` responde
-    404 por cada producto, que es exactamente lo que pasó el 22 de septiembre al apuntar a dev con
-    un registro escrito en local. El archivo **no está versionado**, así que tampoco hay historial
-    del que recuperarlo. **Cómo comprobarlo:** abrir `catalogo/cargados.json` y buscar un campo que
-    nombre el ambiente; mientras no exista, la deuda sigue.
+26. ~~**`catalogo/cargados.json` no dice de qué ambiente habla.**~~ **Abierta y cerrada el 22 de
+    septiembre.** El registro está ahora indexado por la URL de la API, así que local y dev conviven
+    en el mismo archivo, cada uno con sus ids. Un registro con el formato viejo **no se migra
+    solo**: el cargador se niega y dice cómo convertirlo, porque adivinar de qué ambiente era es
+    justo el error que esto cierra — el mismo archivo pudo escribirlo una carga contra `localhost`
+    o una contra dev. Comprobado contra los dos: `--rehacer-imagenes` propone 29 principales en
+    local y 25 en dev, cada uno con los suyos.
 
 27. **El hero de la portada pesa 130 kB y se pinta en un hueco de 665×499.** Es
     `public/imagenes/portada/hero.webp`, 1200×900, y es **lo único** que sigue señalando
