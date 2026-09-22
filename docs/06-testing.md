@@ -237,6 +237,17 @@ pasaron de verdad y ninguna prueba las vio.
   con Tab sí, con clic en un `<input>` no siempre. Y la trampa de foco del CDK
   (`[cdkTrapFocus]`) usa `InteractivityChecker`, que mide layout — en jsdom todo
   mide cero. **Ambas se verifican a mano en `ng serve`.**
+- **Cuál variante de imagen descarga el navegador tampoco se prueba en jsdom.**
+  No evalúa `srcset` ni `sizes`: la prueba puede comprobar que el atributo está
+  bien escrito —y lo hace, en `ts-galeria.spec.ts`— pero no que el navegador
+  eligiera el ancho correcto. Eso se mira en las herramientas de desarrollo, en
+  la pestaña de red, o en los bytes que reporta `image-delivery-insight` del
+  arnés de Lighthouse, que son la parte de ese informe en la que sí se puede
+  confiar (`ADR-0057`).
+  **Y una prueba de `srcset` sin `IMAGE_LOADER` registrado no prueba nada**:
+  NgOptimizedImage no emite el atributo con el loader por omisión, así que la
+  aserción pasaría sobre un `srcset` vacío. Las pruebas que lo miran registran el
+  mismo loader que `app.config.ts`.
 
 ### Esperas en las pruebas de componente
 

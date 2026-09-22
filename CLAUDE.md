@@ -53,8 +53,12 @@ para y dime por qué antes de escribir el código.
    Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
    todo" lo sostiene la regla, no el compilador.
    La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
-   Queda **un** literal, y es una limitación de CSS, no una decisión: los puntos
-   de quiebre, porque una media query no puede leer una propiedad personalizada.
+   Quedan **dos** literales, y los dos por la misma limitación, no por decisión:
+   los puntos de quiebre, porque una media query no puede leer una propiedad
+   personalizada; y los `sizes` de las imágenes (`ADR-0057`), porque el navegador
+   los lee **antes** de aplicar una sola hoja de estilos. Los segundos viven
+   juntos en `core/imagenes/tamanos-de-imagen.ts` —no sueltos en cada plantilla—
+   y repiten los valores de `--breakpoint-*`: si allá cambian, aquí también.
    Todo lo demás —objetivo táctil, insignia, mínimos de rejilla, duraciones y
    curvas de movimiento— se pidió al kit y sale de `tokens.json`.
 3. **No se edita `tokens.css` ni `fuentes.css` a mano.** Son generados. Tailwind
@@ -83,10 +87,13 @@ para y dime por qué antes de escribir el código.
 7. **El servidor no confía en el cliente** para precio, existencia, costo de
    envío ni estado de pago. Nunca.
 8. **Nada se da por terminado sin pruebas** que fallen si la lógica se rompe.
-   En el frontend hay dos cosas que las pruebas **no** atrapan y hay que
+   En el frontend hay tres cosas que las pruebas **no** atrapan y hay que
    verificar en el navegador: que una clase de Tailwind exista de verdad (una
-   inventada no falla, no hace nada) y el foco — `:focus-visible` y la trampa de
-   foco del CDK no se reproducen en jsdom. Ver `docs/06-testing.md`.
+   inventada no falla, no hace nada); el foco — `:focus-visible` y la trampa de
+   foco del CDK no se reproducen en jsdom; y **cuál variante de imagen descarga
+   el navegador**, porque jsdom no evalúa `srcset` ni `sizes`: la prueba puede
+   comprobar que el atributo está bien escrito y no que se eligió el ancho
+   correcto. Ver `docs/06-testing.md`.
 9. **No inventes la API de una versión.** Java 21, Spring Boot 4.1.0 y Angular
    22.5 son recientes. Si no estás seguro de una firma, una anotación o un
    builder, dilo y consúltalo. Una alucinación de API cuesta más que una pregunta.
@@ -124,7 +131,8 @@ npm run kit                              ¿el kit se regenera igual, y sus tipog
                                          lo que el sitio escribe? (pide pip install fonttools brotli)
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
-npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
+npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra;
+                                         ciego a las variantes de la imagen principal, lo avisa él mismo)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 npm run legales-impresos                 los textos legales en una hoja para imprimir, sin transcribir
