@@ -131,8 +131,7 @@ npm run kit                              ¿el kit se regenera igual, y sus tipog
                                          lo que el sitio escribe? (pide pip install fonttools brotli)
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
-npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra;
-                                         ciego a las variantes de la imagen principal, lo avisa él mismo)
+npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)
 node tools/cargar-catalogo.mjs           carga por la API del panel; simula si no le pasas --escribir
 npm run iconos-marca                     regenera los logos de marca desde simple-icons
 npm run legales-impresos                 los textos legales en una hoja para imprimir, sin transcribir

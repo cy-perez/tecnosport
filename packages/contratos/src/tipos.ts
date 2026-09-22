@@ -1798,7 +1798,7 @@ export interface components {
             galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
             /** Format: uuid */
             id?: string;
-            imagenPrincipalUrl?: string;
+            imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
             marca?: components["schemas"]["MarcaRespuesta"];
             nombre?: string;
             slug?: string;

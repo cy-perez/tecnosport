@@ -498,18 +498,25 @@ describe('Captura360Page', () => {
     await capturarCuatro(fixture);
 
     fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
-    await asentarVarias(fixture);
 
-    expect(procesador.renderizados).toBe(4);
-    expect(repositorio.subidas).toHaveLength(4);
-    expect(repositorio.completadoCon).toHaveLength(4);
-    // El backend recibe el tamano de salida, no el de la camara.
-    expect(repositorio.completadoCon[0].ancho).toBe(1000);
-    // Y el SHA-256 de cada fotograma, calculado sobre el blob que se subio: el backend lo guarda
-    // como hash de la imagen y rechaza cualquier cosa que no tenga esa forma.
-    for (const fotograma of repositorio.completadoCon) {
-      expect(fotograma.hash).toMatch(/^[0-9a-f]{64}$/);
-    }
+    // Se espera por el RESULTADO, no por un numero fijo de vueltas (docs/06-testing.md). Esto
+    // afirmaba despues de `asentarVarias`, que asienta 14 veces y ya, y en integracion continua
+    // llegaba con tres de los cuatro fotogramas subidos: el hash es un `crypto.subtle.digest` de
+    // verdad, asi que cuantas vueltas hacen falta depende de lo cargada que este la maquina, no
+    // de cuantas microtareas quedan. Lo destapo un PR que solo anadia un archivo de pruebas.
+    await vi.waitFor(async () => {
+      await asentar(fixture);
+      expect(procesador.renderizados).toBe(4);
+      expect(repositorio.subidas).toHaveLength(4);
+      expect(repositorio.completadoCon).toHaveLength(4);
+      // El backend recibe el tamano de salida, no el de la camara.
+      expect(repositorio.completadoCon[0].ancho).toBe(1000);
+      // Y el SHA-256 de cada fotograma, calculado sobre el blob que se subio: el backend lo guarda
+      // como hash de la imagen y rechaza cualquier cosa que no tenga esa forma.
+      for (const fotograma of repositorio.completadoCon) {
+        expect(fotograma.hash).toMatch(/^[0-9a-f]{64}$/);
+      }
+    });
     expect(await screen.findByText('Revisa la rotación completa')).toBeTruthy();
     // Publicar es un paso aparte: el set todavia no esta publicado.
     expect(repositorio.publicados).toEqual([]);
@@ -533,7 +540,12 @@ describe('Captura360Page', () => {
     await capturarCuatro(fixture);
 
     fireEvent.click(screen.getByRole('button', { name: 'Procesar y subir el set' }));
-    await asentarVarias(fixture);
+    // Igual que arriba: el boton de publicar solo aparece cuando los cuatro fotogramas estan
+    // arriba, y cuantas vueltas cuesta eso no es una constante.
+    await vi.waitFor(async () => {
+      await asentar(fixture);
+      expect(repositorio.completadoCon).toHaveLength(4);
+    });
     fireEvent.click(await screen.findByRole('button', { name: 'Publicar el set' }));
     await asentar(fixture);
 
