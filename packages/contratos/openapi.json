@@ -1492,8 +1492,8 @@
             "format" : "uuid",
             "type" : "string"
           },
-          "imagenPrincipalUrl" : {
-            "type" : "string"
+          "imagenPrincipal" : {
+            "$ref" : "#/components/schemas/ImagenRespuesta"
           },
           "marca" : {
             "$ref" : "#/components/schemas/MarcaRespuesta"

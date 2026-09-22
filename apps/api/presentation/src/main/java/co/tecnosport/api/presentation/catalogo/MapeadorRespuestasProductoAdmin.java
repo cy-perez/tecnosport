@@ -49,7 +49,7 @@ public class MapeadorRespuestasProductoAdmin {
         producto.estado().name(),
         mapeadorCatalogo.aRespuesta(producto.marca()),
         mapeadorCatalogo.aRespuesta(producto.categoria()),
-        producto.imagenPrincipal().map(ImagenProducto::url).orElse(null),
+        producto.imagenPrincipal().map(this::aRespuesta).orElse(null),
         producto.variantes().size(),
         producto.galeria().stream().map(this::aRespuestaDeGaleria).toList());
   }

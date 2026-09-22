@@ -57,6 +57,10 @@ export function aProductoAdmin(dto: ProductoDto): ProductoAdmin {
 export function aProductoAdminDetalle(dto: ProductoDetalleDto): ProductoAdminDetalle {
   return {
     ...aProductoAdmin(dto),
+    // El detalle devuelve la imagen principal entera —con sus variantes— y la lista solo su URL.
+    // Aquí se toma la URL de la mayor, que es lo único que el panel pinta: una vista previa. Las
+    // variantes existen en el contrato para quien sí las necesita, que es el informe de huérfanos.
+    imagenPrincipalUrl: dto.imagenPrincipal?.url ?? null,
     galeria: (dto.galeria ?? []).map(aImagenDeGaleriaAdmin),
   };
 }

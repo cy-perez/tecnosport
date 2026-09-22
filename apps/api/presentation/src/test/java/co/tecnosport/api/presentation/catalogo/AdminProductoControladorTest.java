@@ -515,6 +515,49 @@ class AdminProductoControladorTest {
         .andExpect(jsonPath("$.galeria[1].orden").value(1));
   }
 
+  /**
+   * La razón de ser del detalle: con una sola URL, nadie de fuera sabe qué anchos existen de la
+   * imagen principal — y eso dejaba ciego al informe de huérfanos, que daba por no reclamados los
+   * anchos pequeños y el JPEG de vista previa estando vivos (deuda 24).
+   */
+  @Test
+  void verDevuelveLaImagenPrincipalConSusVariantesYSuVistaPrevia() throws Exception {
+    Producto producto = productoEnBorrador();
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(
+                new VarianteDeImagen(480, "https://x/p-480.avif", 12_000),
+                new VarianteDeImagen(1200, "https://x/p-1200.avif", 58_000)),
+            "https://x/p-previa.jpg",
+            900,
+            new HashContenido("%064x".formatted(9)),
+            "alt es",
+            "alt en"));
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.imagenPrincipal.url").value("https://x/p-1200.avif"))
+        .andExpect(jsonPath("$.imagenPrincipal.variantes", hasSize(2)))
+        .andExpect(jsonPath("$.imagenPrincipal.variantes[0].ancho").value(480))
+        .andExpect(jsonPath("$.imagenPrincipal.variantes[1].ancho").value(1200))
+        .andExpect(jsonPath("$.imagenPrincipal.urlVistaPrevia").value("https://x/p-previa.jpg"));
+  }
+
+  @Test
+  void verDevuelveLaImagenPrincipalNulaCuandoNoHay() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(get("/api/v1/admin/productos/{id}", producto.id()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.imagenPrincipal").doesNotExist());
+  }
+
   private static String cuerpoDeGaleria(String objectKey, String hash) {
     return """
         {"variantes":[{"ancho":2000,"objectKey":"%s"}],"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
