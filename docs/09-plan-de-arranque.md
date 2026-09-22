@@ -7835,6 +7835,45 @@ Dos consecuencias que conviene tener presentes:
   clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
   Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
 
+## Los huérfanos del bucket, y que el informe contaba de más (2026-09-22)
+
+Cerró el borrado que la deuda 7 dejó pendiente —"queda pendiente borrarlos a mano alguna vez, que
+no lo hace ningún script"— y de paso destapó un defecto del propio informe que conviene saber antes
+de volver a usarlo.
+
+### El informe, tal cual lo dio
+
+```
+gs://tecnosport-dev-imagenes/productos/ · 666 objetos · 30,97 MiB
+29 productos en el panel reclaman 300 de ellos.
+366 sin reclamar · 18,65 MiB
+```
+
+**Y 366 es falso.** Cruzados esos objetos contra `catalogo/cargados.json` —que desde el 22 de
+septiembre está indexado por ambiente— resulta que **348 de ellos los reclama el catálogo local**,
+el de `http://localhost:8080`: sus 29 productos, con sus escaleras de variantes completas. No están
+huérfanos, están vivos en otra base de datos.
+
+La causa es simple y no es un error de nadie: **local y dev comparten el bucket**. `GCS_BUCKET_IMAGENES`
+apunta a `tecnosport-dev-imagenes` en los dos, así que una carga contra `localhost` sube los objetos
+ahí igual, con ids de producto que la base de dev nunca tuvo. El informe cruza contra **una** API
+—la que se le pasa en `--api`— y todo lo que reclame la otra le parece basura.
+
+Los que de verdad no reclama nadie son **18 objetos, 5,31 MiB**: los `principal-*.jpg` de las cargas
+del 19 y el 20 de septiembre, exactamente los que este documento registró el 21. Esos se borraron.
+El bucket quedó en 648 objetos.
+
+### Lo que esto enseña, y es lo que importa
+
+**Tomar la lista del informe al pie de la letra habría borrado 348 objetos vivos**, y el síntoma no
+habría aparecido en dev —donde todo habría seguido igual— sino en local, con las fichas del catálogo
+mostrando imágenes rotas, a saber cuándo y sin relación aparente con nada. Es el mismo patrón que el
+propio informe ya documenta en su encabezado para los borradores: "darlas por huérfanas sería justo
+el error caro". La diferencia es que aquel caso sí lo cubre y este no.
+
+El informe tiene la mitad del cruce hecho —el bucket— y le falta la otra mitad cuando el bucket
+sirve a dos ambientes.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7854,6 +7893,18 @@ portada, y el límite que quedó escrito sobre el propio arnés —sus cifras ab
 describen lo que ve una persona en pantallas con imágenes; sus bytes y sus comparaciones consigo
 mismo sí—. **Sigue abierto todo el Bloque 3 en adelante**, que es donde está lo que no resuelve un
 script: las decisiones de negocio, los terceros y lo que pide el aparato delante.
+
+**Ese párrafo se escribió a mediodía y el día siguió** — que es, otra vez, el defecto que este
+documento tiene y por el que cada deuda lleva su "cómo comprobarlo". Después se cerraron la **20** y
+la **23** (una imagen deja de tener una URL y pasa a tener varias), la **24** (el informe ciego a
+las variantes), la **26** (el registro por ambiente), la **25** (el enum de métodos de pago), la
+**27** (el hero de la portada) y el borrado que arrastraba la **7**. Avanzó la **11**: Sistecrédito
+queda declarado y encendido en dev, y falta producción entera.
+
+Se abrieron dos, y las dos salieron de hacer el trabajo, no de buscarlas: la **28** —rotar la clave
+de un administrador exige borrar filas en la base de datos— y la **29** —el informe de huérfanos
+cuenta como basura lo que reclama el otro ambiente—. Y algo que no es deuda pero sí el mismo
+síntoma: `docs/07` describía un freno de seguridad que había cambiado tres días antes.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -7890,7 +7941,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
 7. ~~**Correr `npm run huerfanos` contra dev.**~~ **Hecho el 21 de septiembre, y con eso la
    decisión tomada**: 18 objetos sin reclamar, 5,31 MiB, todos `principal-` de las cargas del 19 y
    el 20. No pagan cambiar la forma de las keys; se deja como está y se vuelve a medir con el
-   catálogo completo. Queda pendiente borrarlos a mano alguna vez, que no lo hace ningún script.
+   catálogo completo. **Borrados el 22 de septiembre**: los mismos 18, 5,31 MiB, y el bucket quedó
+   en 648 objetos. Al medir de nuevo el informe cantó 366 sin reclamar, y 348 de esos estaban vivos
+   — ver la entrada de arriba y la deuda 29.
 8. ~~**Repetir Lighthouse.**~~ **Hecho el 21 de septiembre, y por fin válido**: cero peticiones a
    `picsum.photos`. Accesibilidad, buenas prácticas y SEO en 100 en las tres pantallas y en las
    dos corridas. Deja dos cosas abiertas, las dos nuevas y anotadas en la entrada de arriba: el
@@ -8028,6 +8081,19 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
     septiembre es la estructura que necesitan, que no es lo mismo.
+
+### Lo que dejó abierto el borrado de huérfanos
+
+29. **El informe de huérfanos da por no reclamado lo que reclama el otro ambiente.** Local y dev
+    comparten `tecnosport-dev-imagenes`, así que una carga contra `localhost` deja en ese bucket
+    objetos con ids que la base de dev nunca tuvo. `npm run huerfanos` cruza contra **una** API —la
+    de `--api`— y los cuenta como basura: el 22 de septiembre listó 366 sin reclamar y **348 eran
+    las imágenes vivas del catálogo local**. Borrar esa lista no habría roto dev, habría roto local,
+    y el síntoma habría aparecido días después sin relación aparente con nada. **Cómo comprobarlo:**
+    correr el informe contra dev con el catálogo local cargado; mientras la cifra de "sin reclamar"
+    incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
+    salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
+    reclama nadie"; la cara y definitiva es un bucket por ambiente.
 
 ### Lo que está anotado y no es deuda
 
