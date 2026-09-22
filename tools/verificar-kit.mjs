@@ -94,12 +94,27 @@ if (!python) {
 }
 
 const temporal = mkdtempSync(join(tmpdir(), "kit-"));
+
+/**
+ * Salir del bloque sin saltarse la limpieza.
+ *
+ * `process.exit()` no ejecuta los `finally` pendientes, así que las cuatro salidas que había aquí
+ * dentro dejaban en %TEMP% una copia del kit en cada corrida fallida — y una corrida fallida es
+ * justo la que uno repite diez veces seguidas mientras arregla el generador.
+ */
+class SalidaDelKit extends Error {
+  constructor(codigo) {
+    super(`salida ${codigo}`);
+    this.codigo = codigo;
+  }
+}
+
 try {
   for (const entrada of ENTRADAS) {
     const origen = join(KIT, entrada);
     if (!existsSync(origen)) {
       console.error(`ERROR: al kit le falta '${entrada}', que es de donde se regenera.`);
-      process.exit(1);
+      throw new SalidaDelKit(1);
     }
     cpSync(origen, join(temporal, entrada), { recursive: true });
   }
@@ -114,7 +129,7 @@ try {
     console.error("ERROR: el generador del kit falló.\n");
     console.error(generado.stdout || "");
     console.error(generado.stderr || "");
-    process.exit(1);
+    throw new SalidaDelKit(1);
   }
 
   const diferencias = [];
@@ -148,7 +163,7 @@ try {
         "\nlo que produjo. Las dos se arreglan en el mismo sitio —`tokens.json` y `generador/`—," +
         "\nnunca editando el archivo que sale.",
     );
-    process.exit(1);
+    throw new SalidaDelKit(1);
   }
 
   // Propiedad B, sin red: la guarda que impide rehacer las tipografías cuando no se pueden
@@ -173,7 +188,7 @@ try {
         "\nasí que nada se rompe a la vista y nadie se entera.",
     );
     console.error(guarda.stdout || "", guarda.stderr || "");
-    process.exit(1);
+    throw new SalidaDelKit(1);
   }
 
   const cuantos = archivosDe(temporal).length;
@@ -181,6 +196,9 @@ try {
     `El kit se regenera igual que como está guardado (${cuantos} archivos, con ${python}),` +
       " y se niega a rehacer las tipografías sin con qué comprimirlas.",
   );
+} catch (error) {
+  if (!(error instanceof SalidaDelKit)) throw error;
+  process.exitCode = error.codigo;
 } finally {
   rmSync(temporal, { recursive: true, force: true });
 }

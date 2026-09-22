@@ -169,4 +169,14 @@ describe('MedidasAdminPage', () => {
 
     await esperarSinViolaciones(container);
   });
+
+  // Con el formulario cerrado no se auditan ni las cuatro etiquetas del paquete ni el
+  // `aria-controls` de la fila, que es justo la mitad interactiva de la pantalla.
+  it('tampoco con el formulario de medida abierto', async () => {
+    const { container } = await renderPagina([medida(), sinMedir()]);
+    await abrirFormulario(esAdmin.productos.medidas.corregirVariante, 'JBL-GO-5');
+    await screen.findByLabelText(esAdmin.productos.agregarVariante.pesoGramos);
+
+    await esperarSinViolaciones(container);
+  });
 });

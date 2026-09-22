@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { usarFoco } from '../../../../shared/foco/foco';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../shared/ts-migas/ts-migas';
@@ -38,6 +47,9 @@ export class MarcasAdminPage {
   protected readonly marcas = computed<readonly Marca[]>(() => this.consulta.data() ?? []);
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
+  private readonly enfocarDespuesDePintar = usarFoco();
+  private readonly avisoMarca = viewChild<ElementRef<HTMLElement>>('avisoMarca');
+
   protected readonly error = signal<string | null>(null);
   /** El nombre recién creado, para confirmarlo por su nombre y no con un "listo" genérico. */
   protected readonly creada = signal<string | null>(null);
@@ -47,6 +59,11 @@ export class MarcasAdminPage {
   });
 
   protected enviar(): void {
+    // Guarda de reentrada en vez de deshabilitar el botón mientras va la petición: un botón que se
+    // apaga bajo el dedo manda el foco a `<body>`, y aquí el formulario además se reinicia.
+    if (this.enviando()) {
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       // Se dice qué falta en vez de deshabilitar el botón: un `<button disabled>` sale del orden de
@@ -66,6 +83,9 @@ export class MarcasAdminPage {
         }
         this.creada.set(resultado.marca.nombre);
         this.form.reset();
+        // El formulario queda en blanco: sin esto, quien usa teclado no tiene forma de distinguir
+        // "se creó" de "no se envió".
+        this.enfocarDespuesDePintar(() => this.avisoMarca()?.nativeElement);
       },
       onError: () => this.error.set(this.transloco.translate('admin.marcas.error')),
     });

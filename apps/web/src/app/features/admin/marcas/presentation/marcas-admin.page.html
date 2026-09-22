@@ -22,17 +22,17 @@
 
     <!-- El "ya existe" es un error y la creación un aviso de estado: no se anuncian igual. Uno
          interrumpe porque hay algo que corregir; el otro espera turno. -->
-    @if (creada(); as nombre) {
-      <p class="m-0 text-ts-exito" role="status">
+    <p #avisoMarca class="m-0 text-ts-exito" role="status" tabindex="-1">
+      @if (creada(); as nombre) {
         {{ 'admin.marcas.creada' | transloco: { nombre: nombre } }}
-      </p>
-    }
+      }
+    </p>
 
     <div>
       <ts-boton
         variante="primario"
         tipo="submit"
-        [cargando]="enviando()"
+        [ocupado]="enviando()"
         [etiquetaCargando]="'admin.marcas.enviando' | transloco"
       >
         {{ 'admin.marcas.crear' | transloco }}

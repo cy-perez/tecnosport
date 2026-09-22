@@ -79,6 +79,45 @@ class PedidoTest {
         AHORA);
   }
 
+  /**
+   * La red del agregado. {@code CrearPedido} ya lo exige antes de reservar nada, pero esa guarda
+   * protege un camino; esta protege el tipo. Dos líneas de la misma variante serían dos reservas
+   * separadas sobre el mismo libro y un comprobante con el mismo artículo repetido.
+   */
+  @Test
+  void noSeCreaConDosLineasDeLaMismaVariante() {
+    UUID varianteRepetida = UUID.randomUUID();
+    List<LineaPedido> lineas =
+        List.of(lineaDeVariante(varianteRepetida), lineaDeVariante(varianteRepetida));
+
+    assertThrows(
+        LineasDuplicadasException.class,
+        () ->
+            Pedido.crear(
+                NUMERO,
+                null,
+                CORREO,
+                lineas,
+                TipoEntrega.ENVIO_A_DOMICILIO,
+                DIRECCION_MEDELLIN,
+                MetodoPago.NEQUI,
+                "cliente@tecnosport.co",
+                AHORA));
+  }
+
+  private LineaPedido lineaDeVariante(UUID varianteId) {
+    return new LineaPedido(
+        UUID.randomUUID(),
+        varianteId,
+        new Sku("TS-CAM-AZ-M"),
+        "Camiseta running Dry-Fit",
+        1,
+        Dinero.deCop(BigDecimal.valueOf(50_000)),
+        new BigDecimal("0.19"),
+        "https://cdn.tecnosport.co/img.webp",
+        UUID.randomUUID());
+  }
+
   @Test
   void crearConContactoLoConserva() {
     Contacto contacto = new Contacto("Ana Pérez", "313 881 6711");

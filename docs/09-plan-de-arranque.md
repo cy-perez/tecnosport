@@ -6709,6 +6709,183 @@ ventana delante. Es la tercera vez que este documento escribe la misma lección:
 diagnóstico también es una variable del experimento. Las dos anteriores fueron el proxy de
 diagnóstico roto y el token que caducaba a mitad de la sonda de cobertura.
 
+## La revisión adversarial de los 110 commits, y lo que encontró en el inventario (2026-09-21)
+
+Cuatro revisores en paralelo sobre lo que entró desde el 20 de septiembre —la existencia desde el
+libro, la corrección de medidas, publicar y retirar, la galería y su orden, y las herramientas del
+catálogo—, con todo en verde y `gradlew.bat build` pasando. **Treinta y ocho hallazgos, siete
+graves.** Dos aparecieron por duplicado desde revisores que no se hablaban, y eso los subió de
+categoría.
+
+Lo que sigue es el primer bloque: el inventario. Los otros tres van en sus propias entradas.
+
+### El instrumento, antes que el diagnóstico
+
+El primer commit no arregla nada de producción: arregla los **once dobles de prueba** de
+`RepositorioInventario`, que guardaban el agregado en un mapa y lo devolvían tal cual en cada
+lectura. El adaptador real reconstruye un `Inventario` nuevo desde sus filas, así que una mutación
+que no se guarde se pierde; con los dobles viejos, la prueba y el caso de uso compartían el objeto.
+
+**Quitar el `guardar()` de `CrearPedido` dejaba la batería entera en verde.** Con los dobles
+arreglados caen tres pruebas. Ese era el orden correcto: sin el instrumento arreglado, todo lo
+demás se medía con una regla torcida.
+
+### El interbloqueo que elegía el cliente
+
+`CrearPedido` tomaba un bloqueo pesimista por línea **en el orden del cuerpo HTTP**, sin soltarlo
+hasta el commit. Dos compradores con las mismas variantes en distinto orden se bloqueaban en cruz;
+Postgres abortaba uno con `40P01`, que nadie atrapa, y el comprador veía un 500 con el pago a un
+clic. Provocable a propósito, porque el orden de las líneas lo elige quien postea.
+
+Ahora los libros se piden en orden de `varianteId`, y el pedido conserva el orden del comprador:
+lo que se ordenó es la toma de bloqueos, no el comprobante. De paso, las líneas duplicadas —que
+nadie rechazaba— salen con 422 en vez de sumarse. Todo en `adr/0054`.
+
+### Dos garantías que eran ciertas en el camino que se probó
+
+- **El conteo de una variante sin libro no bloqueaba nada.** El javadoc prometía que el bloqueo
+  pesimista impide que un conteo y una reserva se pisen, y eso valía solo en la rama del
+  `Optional` lleno: sin fila, el `select … for update` no bloquea. Dos conteos simultáneos
+  escribían dos libros y el que perdía moría con un 500 sin traducir.
+- **Cada reserva reescribía el histórico completo dentro del bloqueo.** `@Id` asignado sin
+  `@Version` hace que cada `save` sea un `merge`: ~1600 sentencias para escribir una, en una
+  variante con ochocientos movimientos, y `CrearPedido` lo hace por línea. **Lo encontraron dos
+  revisores por separado**, uno mirando dinero y otro mirando capas.
+
+### La prueba que faltaba, y el número que la hace valer
+
+La única prueba de concurrencia cubría reserva contra reserva. La carrera que `adr/0050`
+introdujo —un conteo del panel contra una venta que se confirma— no la miraba nadie, y no es que
+los dos movimientos se pisen: es que el ajuste se calcula como `contado - saldoAnterior`. Si el
+conteo lee un saldo que otra transacción está a punto de cambiar, la resta sale de un número que ya
+no es cierto.
+
+Comprobado quitando el bloqueo: **la persona cuenta 3 y el libro termina en 2.** Ese número es lo
+que hace que la prueba valga; sin él sería una prueba que pasa.
+
+## El foco del panel, y la pregunta que nadie oía (2026-09-21)
+
+El segundo bloque de la revisión adversarial. El defecto del foco que ya había costado dos
+correcciones esta misma semana **seguía vivo en cuatro pantallas más** —la lista, existencias,
+medidas y marcas—, y la explicación de por qué nadie lo había visto estaba en el mismo informe.
+
+### El mismo error, cuatro veces, porque se copió la interacción y no el arreglo
+
+`[cargando]` sobre el botón que se acaba de pulsar: `ts-boton` lo traduce a `disabled`, y
+deshabilitar el botón bajo el dedo manda el foco a `<body>`. En la lista era peor que en las
+demás, porque la mutación hace `await` de las cuatro invalidaciones y `isPending` seguía en
+`true` durante todos los refetch: el botón estaba apagado el viaje entero.
+
+La entrada nueva `ocupado` de `ts-boton` pinta `aria-busy` **sin deshabilitar**, y el doble
+envío lo evita una guarda de reentrada en el manejador. `cargando` sigue siendo lo correcto donde
+deshabilitar es el punto; para una acción de fila, no lo es.
+
+Y `usarFoco` en `shared/foco/` recoge el `requestAnimationFrame` que `editar` tenía suelto.
+Vive ahí para que la próxima pantalla que copie la interacción copie también la solución.
+
+### Lo que un lector de pantalla no oía
+
+- **Ningún disparador decía que abría algo.** `ts-boton` tenía `expandido` y `controla` desde
+  que se escribió, y solo `editar` los usaba: quien pulsaba "Contar las unidades de SKU-X" no oía
+  absolutamente nada, y descubrir que había aparecido un formulario era seguir tabulando a ciegas.
+- **Cinco regiones vivas se montaban ya llenas con un `@if`**, incluido el `role="alert"` de
+  "deja reservas sin respaldo", que es el mensaje más importante de la pantalla de existencias. El
+  comentario que explica por qué eso se anuncia mal estaba escrito en `editar`, la única pantalla
+  que lo hacía bien.
+- Y al revés: dos `role="status"` colgaban del **resumen de una tabla**, que no es un mensaje de
+  estado. Cada revalidación en segundo plano los volvía a leer en voz alta.
+
+### Por qué no saltó antes
+
+`editar`, `lista` y `panel` **no tenían una sola comprobación de axe** —son las tres con más
+superficie interactiva nueva—, y en existencias, medidas y marcas el axe corría solo con el
+formulario cerrado, o sea sin auditar la mitad que importa. Seis pruebas nuevas, y comprobado que
+comprueban algo: una imagen sin `alt` metida a propósito hace fallar la del panel.
+
+### Las once mejoras, y una contradicción que llevaba escrita tres veces
+
+Diez enlaces por debajo del objetivo táctil; el borde de ocho cajas en 1,19:1 sobre el lienzo, que
+es lo único que separa una confirmación de la fila de arriba; seis píxeles literales que además
+declaraban 1:1 para un archivo que puede ser 1000×1400; el `altEn` que se pedía obligatorio y no
+se podía volver a leer en ninguna pantalla; "1 variantes activas" un día después de arreglarlo en
+el tablero.
+
+Y cuatro botones que se deshabilitaban sin decir qué falta, **contradiciendo tres comentarios de
+este mismo panel** —marcas, medidas y existencias— que explican por qué no se hace: un
+`<button disabled>` sale del orden de tabulación, así que quien borre el nombre del producto no
+encuentra "Guardar" en ninguna parte. Al arreglarlo, las tres señales que solo servían para
+deshabilitarlo quedaron muertas y se fueron.
+
+**Comprobado después en el navegador, con la pestaña visible y `rAF` corriendo:** el orden de
+tabulación disparador → confirmar → cancelar, que Escape y "Cancelar" devuelven el foco al botón
+que abrió la caja, y que confirmar de verdad no deshabilita el botón ni pierde el foco —comprobado
+también al revés, revirtiendo `ocupado` a `cargando` y midiendo que el botón queda deshabilitado
+las 50 muestras seguidas—. El caso que este documento daba por no verificado, el aterrizaje al
+reordenar la galería, aterriza en el botón correcto de la fila movida, incluido el caso del
+extremo donde "Subir" deja de existir. Lo único que sigue sin un lector de pantalla real es la
+confirmación de que NVDA o VoiceOver anuncian las regiones vivas: se verificó la estructura que
+necesitan, no el anuncio.
+
+## Cinco formas de mentir sin fallar, en las herramientas (2026-09-21)
+
+El tercer bloque de la revisión. Las tres promesas grandes se comprobaron leyendo cada invocación,
+y se cumplen: `huerfanos` hace una sola llamada a gcloud y es un `ls`; `verificar-kit`
+regenera siempre en un temporal y del repositorio solo lee; y las doce escrituras del cargador
+están todas detrás de `--escribir`, incluidas `--medir`, `--publicar-sku` y `--galeria`.
+
+Lo que no se cumplía es más sutil, y todo de la misma familia: **cosas que fallan sin fallar**.
+
+### El filtro de plata que un orden de argumentos apagaba
+
+`valor()` devolvía el argumento siguiente sin mirar si era otra bandera. Así que
+`--margen-minimo --listos` dejaba `parseFloat("--listos")` en `NaN`, y `NaN > 0` es `false`:
+el filtro del margen **desaparecía sin una línea de aviso**. Medido en simulación: 12 productos
+donde debían ser 8, y los cuatro de diferencia son justo los que se venden al costo. Con un
+`--escribir --publicar` detrás, salen a la vitrina.
+
+### El informe que podía cruzar dos ambientes
+
+`--bucket` no tiene omisión, con un mensaje que explica muy bien por qué: *"el nombre del bucket
+de producción y el de dev se parecen lo bastante"*. Pero `--api` sí la tenía, `localhost:8080`.
+Olvidarla con el `bootRun` levantado —el estado normal de esta máquina— listaba el bucket que se
+pidiera y lo cruzaba contra el catálogo local: casi todo salía huérfano, con fecha y tamaño, y el
+informe remataba afirmando que cada uno era una subida que nunca se confirmó. **La mitad protegida
+era la que no decidía nada.**
+
+### Tres resúmenes que no cuadraban con sus propias filas
+
+Es el defecto que este proyecto ya pagó tres veces —la simulación que listaba tres líneas y
+remataba con "0", el cruce y el cargador con dos ideas de "publicable", la sonda que midió a qué
+hora caducó un token—, y volvió en tres sitios: el pie de la carga sumaba cargados y saltados y
+callaba los fallos; `reclaman N de ellos` contaba las keys del panel en vez de la intersección, y
+podía salir mayor que el número de objetos listados; y el encabezado del cruce decía "96 productos
+procesados" sobre una tabla de 33.
+
+### Y la divergencia, un nivel más abajo de donde se buscó
+
+`material-catalogo.mjs` existe para que "publicable" se decida en un solo sitio, y eso funciona.
+Lo que se quedó fuera fue el **margen**: el cruce comparaba `venta <= costo * 1.05` —sobre el
+costo— y el cargador `(venta - costo) / venta` —sobre la venta—, y los dos lo llamaban "5%". Entre
+4,76 % y 5,00 % sobre la venta, el informe daba el producto por bueno y el cargador lo descartaba.
+
+### Lo demás
+
+`?tamano=200` clavado en tres sitios sin mirar `totalProductos`; un listado de gcloud que no se
+pudiera interpretar se veía igual que un bucket vacío; `RAIZ` se rompía con un espacio o una tilde
+en la ruta del repositorio; la clave se armaba byte a byte, así que una `ñ` la corrompía y el 401
+se explicaba como "clave incorrecta"; `process.exit()` dentro del `try` se salta el `finally`,
+y `verificar-kit` dejaba un temporal por cada corrida fallida.
+
+Y una corrida de `--galeria` interrumpida dejaba el producto a medias: el salto decía "ya tiene N
+imagen(es)" sin mirar cuántas había, así que las tomas que faltaban no subían nunca más y el
+mensaje se leía como éxito.
+
+**Lo que no se hizo, y por qué:** el guardián del kit sigue sin mirar si un archivo generado dejó
+de producirse y sigue commiteado. El temporal lleva las entradas más lo generado, y el repositorio
+lleva además `LEEME.md` y compañía; sin saber cuáles produce `kit_ui.py`, la comprobación
+dispararía con falsos positivos. Un guardián que grita por nada se desactiva, y entonces tampoco
+vigila lo que sí importa.
+
 ## Las seis deudas del catálogo, y el contrato que no exigía lo que el servidor manda (2026-09-21)
 
 El cuarto y último bloque de la revisión. Ninguna de las seis rompía nada hoy; las seis rompen algo

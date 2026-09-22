@@ -52,13 +52,23 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CATALOGO, leerJson, leerMaterial } from "./material-catalogo.mjs";
+import { CATALOGO, leerJson, leerMaterial, margenDe } from "./material-catalogo.mjs";
 
 const argv = process.argv.slice(2);
 const bandera = (nombre) => argv.includes(nombre);
 const valor = (nombre, omision = null) => {
   const i = argv.indexOf(nombre);
-  return i >= 0 && argv[i + 1] ? argv[i + 1] : omision;
+  if (i < 0) return omision;
+  const siguiente = argv[i + 1];
+  // Un valor que empieza por `--` es la bandera de al lado, no el valor de esta. Sin esta
+  // comprobación, `--margen-minimo --listos` dejaba `parseFloat("--listos")` en NaN y el filtro
+  // del margen desaparecía **sin una sola línea de aviso**: medido, 12 productos cargados donde
+  // debían ser 8, con los cuatro que se venden al costo entre ellos.
+  if (siguiente === undefined || siguiente.startsWith("--")) {
+    console.error(`La opción ${nombre} necesita un valor.`);
+    process.exit(1);
+  }
+  return siguiente;
 };
 /** Todos los valores de una opción que se puede repetir. */
 const valores = (nombre) =>
@@ -73,13 +83,20 @@ const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
 const MARGEN_MINIMO = Number.parseFloat(valor("--margen-minimo", "0"));
 const REGISTRO = join(CATALOGO, "cargados.json");
 
-/** Lo que queda sobre la venta después del costo, en tanto por ciento. */
-const margenDe = (producto) =>
-  producto.precio_proveedor_cop && producto.precio_mercado_cop
-    ? ((producto.precio_mercado_cop - producto.precio_proveedor_cop) /
-        producto.precio_mercado_cop) *
-      100
-    : null;
+// Las ramas salen temprano en orden fijo, así que `--medir X --publicar-sku Y` publicaba y no
+// medía, sin una palabra. Salir temprano está bien; ignorar en silencio lo que se pidió, no.
+const MODOS = ["--reconciliar", "--publicar-sku", "--galeria", "--medir"].filter((n) =>
+  argv.includes(n),
+);
+if (MODOS.length > 1) {
+  console.error(
+    `Esas opciones no se combinan: ${MODOS.join(", ")}. Cada una es una corrida aparte, y` +
+      " mezclarlas haría difícil saber qué pasó con cuál. Córrelas una por una.",
+  );
+  process.exit(1);
+}
+
+
 
 /** Las categorías de la lista del proveedor y su slug en el catálogo. */
 const CATEGORIAS = {
@@ -118,7 +135,12 @@ function preguntarClave(pregunta) {
     process.stdout.write(pregunta);
     process.stdin.setRawMode(true);
     process.stdin.resume();
-    let clave = "";
+    // Los bytes se juntan y se decodifican al final, no uno a uno. Una "ñ" en UTF-8 llega como
+    // dos bytes (0xC3 0xB1) y `String.fromCharCode` por byte los convertía en dos caracteres
+    // distintos: la clave que viajaba no era la que se tecleó, el login respondía 401 y el script
+    // lo explicaba como "correo o clave incorrectos" — el diagnóstico equivocado, que en este
+    // mismo sitio ya costó dos intentos perdidos.
+    const bytes = [];
     process.stdin.on("data", function escuchar(bloque) {
       for (const byte of bloque) {
         if (byte === 3) {
@@ -132,11 +154,13 @@ function preguntarClave(pregunta) {
           process.stdin.pause();
           process.stdin.off("data", escuchar);
           process.stdout.write("\n");
-          resolve(clave);
+          resolve(Buffer.from(bytes).toString("utf8"));
           return;
         }
-        if (byte === 127 || byte === 8) clave = clave.slice(0, -1);
-        else clave += String.fromCharCode(byte);
+        // El borrado quita un byte, que con un carácter multibyte a medio escribir dejaría basura;
+        // pero es lo mismo que hace la terminal, y quien borra vuelve a teclear el carácter entero.
+        if (byte === 127 || byte === 8) bytes.pop();
+        else bytes.push(byte);
       }
     });
   });
@@ -184,6 +208,28 @@ async function pedir(ruta, opciones = {}) {
     throw new Error(`${opciones.method ?? "GET"} ${ruta} respondió ${respuesta.status}: ${cuerpo}`);
   }
   return respuesta.status === 204 ? null : respuesta.json();
+}
+
+
+/**
+ * Todos los productos del panel, recorriendo las páginas.
+ *
+ * Existía como `?tamano=200` a secas, en tres sitios y sin mirar `totalProductos`. Con 29
+ * productos funcionaba; con 201 el que sobra desaparece **en silencio**, y lo que cuelga de esta
+ * lista no es cosmético: la guarda que impide cargar dos veces el mismo producto, y el informe
+ * de huérfanos, que daría por no reclamadas las fotos vivas de los que no vinieron.
+ */
+async function todosLosProductos() {
+  const items = [];
+  let pagina = 0;
+  let totalPaginas = 1;
+  do {
+    const respuesta = await pedir(`/api/v1/admin/productos?tamano=200&pagina=${pagina}`);
+    items.push(...respuesta.items);
+    totalPaginas = respuesta.totalPaginas ?? 1;
+    pagina++;
+  } while (pagina < totalPaginas);
+  return items;
 }
 
 /** El mismo tope que `Producto.TOPE_DE_GALERIA`. El que manda es el servidor; esto evita pedir
@@ -516,6 +562,7 @@ async function rellenarGalerias(skus, registro) {
     Object.entries(registro).map(([id, anotado]) => [anotado.sku, id]),
   );
   let subidas = 0;
+  let fallaronGalerias = 0;
 
   for (const sku of skus) {
     const variante = porSku.get(sku);
@@ -536,11 +583,22 @@ async function rellenarGalerias(skus, registro) {
     }
 
     const detalle = await pedir(`/api/v1/admin/productos/${variante.productoId}`);
-    if ((detalle.galeria ?? []).length > 0) {
+    const yaTiene = (detalle.galeria ?? []).length;
+    const disponibles = fotosDeGaleria(producto).length;
+    if (yaTiene > 0) {
+      // Con menos de las que hay, no es "ya está": es una corrida que se cortó a mitad. El salto
+      // silencioso convertía eso en un mensaje que se lee como éxito y las tomas que faltaban no
+      // se subían nunca más. No se completa sola —no hay forma de saber cuál de las de allá
+      // corresponde a cuál de las de aquí— pero se dice, que es lo que faltaba.
+      const incompleta = yaTiene < disponibles;
       console.log(
-        `saltado     ${sku}: ${variante.nombreProducto} ya tiene` +
-          ` ${detalle.galeria.length} imagen(es) de galería`,
+        `${incompleta ? "INCOMPLETA " : "saltado    "} ${sku}: ${variante.nombreProducto} tiene` +
+          ` ${yaTiene} de ${disponibles} imagen(es) de galería` +
+          (incompleta ? " — revisar a mano: una corrida anterior no terminó" : ""),
       );
+      if (incompleta) {
+        process.exitCode = 1;
+      }
       continue;
     }
 
@@ -559,17 +617,30 @@ async function rellenarGalerias(skus, registro) {
     subidas += fotos.length;
     if (!ESCRIBIR) continue;
 
-    for (const foto of fotos) {
-      await subirAGaleria(variante.productoId, foto, producto.titulo);
+    let subidasDeEste = 0;
+    try {
+      for (const foto of fotos) {
+        await subirAGaleria(variante.productoId, foto, producto.titulo);
+        subidasDeEste++;
+      }
+    } catch (error) {
+      // Sin este `catch`, un 500 o un token vencido a mitad propagaba fuera del bucle: moría el
+      // proceso, no se imprimía ninguna línea de resumen y no había forma de saber cuáles de los
+      // doce habían quedado hechos.
+      console.error(
+        `FALLÓ       ${sku}: ${error.message} (subió ${subidasDeEste} de ${fotos.length})`,
+      );
+      fallaronGalerias++;
+      process.exitCode = 1;
     }
-    if (id) {
-      registro[id] = { ...registro[id], imagenesDeGaleria: fotos.length };
+    if (id && subidasDeEste > 0) {
+      registro[id] = { ...registro[id], imagenesDeGaleria: subidasDeEste };
       writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
 `, "utf8");
     }
   }
   console.log(`
-${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}`);
+${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}${fallaronGalerias > 0 ? ` · fallaron: ${fallaronGalerias}` : ""}`);
 }
 
 /**
@@ -590,7 +661,7 @@ async function reconciliar(registro) {
   const porSku = new Map(existencias.map((v) => [v.sku, v]));
   const porProductoId = new Map(existencias.map((v) => [v.productoId, v]));
   const porNombre = new Map(
-    (await pedir("/api/v1/admin/productos?tamano=200")).items.map((p) => [
+    (await todosLosProductos()).map((p) => [
       p.nombre.toLowerCase(),
       p,
     ]),
@@ -751,7 +822,7 @@ const skusExistentes = TOKEN
   : new Set();
 const nombresExistentes = TOKEN
   ? new Set(
-      (await pedir("/api/v1/admin/productos?tamano=200")).items.map((p) => p.nombre.toLowerCase()),
+      (await todosLosProductos()).map((p) => p.nombre.toLowerCase()),
     )
   : new Set();
 
@@ -770,6 +841,9 @@ function yaEstaCargado(id, producto) {
 
 let cargados = 0;
 let saltados = 0;
+// Un pie que suma cargados y saltados y calla los fallos no cuadra con las líneas de arriba:
+// trece pedidos con cinco caídos por un token vencido remataban en "cargados: 8 · saltados: 0".
+let fallaron = 0;
 for (const id of pedidos) {
   const producto = porId.get(id);
   if (!producto) {
@@ -802,11 +876,13 @@ for (const id of pedidos) {
     cargados++;
   } catch (error) {
     console.error(`FALLÓ       ${id}: ${error.message}`);
+    fallaron++;
     process.exitCode = 1;
   }
 }
 
 console.log(
   `\n${ESCRIBIR ? "cargados" : "se cargarían"}: ${cargados} · saltados: ${saltados}` +
+    (fallaron > 0 ? ` · fallaron: ${fallaron}` : "") +
     (ESCRIBIR ? `\nRegistro en ${REGISTRO}` : "\n\nNada de esto pasó: falta --escribir."),
 );

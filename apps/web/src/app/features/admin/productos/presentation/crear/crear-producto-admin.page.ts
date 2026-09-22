@@ -79,6 +79,10 @@ export class CrearProductoAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Se dice qué falta en vez de deshabilitar el botón, que es lo que este mismo panel ya hace
+      // en marcas, medidas y existencias: un `<button disabled>` sale del orden de tabulación y
+      // quien navega con teclado no encuentra el botón ni se entera de por qué no pasa nada.
+      this.error.set(this.transloco.translate('admin.productos.crear.faltanCampos'));
       return;
     }
     this.error.set(null);

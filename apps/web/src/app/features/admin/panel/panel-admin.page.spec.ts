@@ -18,6 +18,7 @@ import {
 } from '../productos/domain/producto-admin.model';
 import { REPOSITORIO_PRODUCTOS_ADMIN } from '../productos/domain/repositorio-productos-admin.puerto';
 import { RepositorioMedicionFalso } from '../../../../testing/productos-admin';
+import { esperarSinViolaciones } from '../../../../testing/axe';
 import { PanelAdminPage } from './panel-admin.page';
 
 class RepositorioSesionFalso implements RepositorioSesion {
@@ -172,5 +173,12 @@ describe('PanelAdminPage', () => {
 
     await screen.findByRole('link', { name: esAdmin.panel.sinMedir.enlace });
     expect(screen.queryByRole('link', { name: esAdmin.panel.existencias.enlace })).toBeNull();
+  });
+
+  it('no tiene violaciones de accesibilidad', async () => {
+    const { container } = await renderPanel();
+    await screen.findByRole('button', { name: 'Cerrar sesión' });
+
+    await esperarSinViolaciones(container);
   });
 });
