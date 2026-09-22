@@ -358,3 +358,12 @@ segundos, no entre dos corridas separadas por un build. De ahí el piso por
 métrica —cifras de ese control, no un porcentaje a ojo— y de ahí que lo más que
 se pueda decir de una mejora de tiempo sea *"quizá: repite el par"*. Los bytes
 sí se afirman: no dependen del reloj.
+
+**Repetir el par significa cuatro corridas en orden invertido**, no dos más:
+`sin`, `con`, `con`, `sin`. Si la máquina se va calentando durante los veinte
+minutos del experimento, medir siempre en el mismo orden le regala la mejora al
+segundo; invirtiendo la segunda pareja, un arrastre monótono empuja a las dos en
+sentidos contrarios y se ve. Así se midió la hidratación diferida, y así se
+descubrió que los 145 ms que se le habían atribuido eran **40** —el efecto era
+real, la cifra no—. Dos parejas que coinciden en signo no demuestran nada por sí
+solas: hacen creíble lo que cada una por separado no puede afirmar.

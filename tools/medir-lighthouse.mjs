@@ -458,7 +458,10 @@ function comparar(antes, despues) {
       "  'bajo el piso'       se mueve menos que lo que se movio el MISMO build medido dos veces\n" +
       "                       (portada: 198 ms de evaluacion de scripts, 4 puntos, sin tocar nada).\n" +
       "  'quiza: repite'      es lo mas que se puede decir de un tiempo con una sola pareja de\n" +
-      "                       corridas. Mide otra vez las dos y mira si el cambio se repite.\n" +
+      "                       corridas. Repite la pareja INVIRTIENDO el orden (sin, con, con, sin)\n" +
+      "                       y mira si el signo se repite: si la maquina se va calentando durante\n" +
+      "                       el experimento, medir siempre en el mismo orden le regala la mejora\n" +
+      "                       al segundo. Cuatro corridas asi valen mas que veinte seguidas.\n" +
       "  'si: son bytes'      peso y tipografias no dependen del reloj.",
   );
 }
