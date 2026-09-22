@@ -199,7 +199,8 @@ hay maquetación, así que `color-contrast` y `target-size` no pueden evaluarse
 —nada tiene tamaño ni posición—. Las dos están cubiertas mejor por otra vía: el
 contraste con **`npm run contrastes`**, que calcula los pares reales de
 `tokens.css` en los dos temas; y el objetivo táctil con `min-h-tactil`, que es
-una clase verificable con `npm run clases`.
+una clase verificable con `npm run clases` — que desde el 21 de septiembre de 2026, sin
+argumentos, barre el frontend entero en vez de responder por una clase a la vez.
 
 ### Lo que Vitest no atrapa en la capa visual
 

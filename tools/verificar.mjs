@@ -43,6 +43,10 @@ if (!soloApi) {
   // el repositorio peor que antes de ejecutarlo durante días, y nada lo miraba porque el kit no
   // tiene ninguna prueba.
   ejecutar("node tools/verificar-kit.mjs");
+  // Y por el mismo motivo y en menos de dos segundos: que las clases de Tailwind que usa el
+  // frontend existan. Una que no existe no falla, no hace nada, y hasta hoy la regla dura #8 la
+  // sostenia que alguien se acordara de preguntar por ella a mano, clase por clase.
+  ejecutar("node tools/verificar-clases-tailwind.mjs");
   // Y el segundo eslabon del contrato: que el cliente generado corresponda al OpenAPI guardado.
   // El primero —que ese OpenAPI sea el que la aplicacion sirve— lo vigila ContratoOpenApiTest
   // dentro del build de la API. Los dos juntos reemplazan al trabajo de integracion continua que
