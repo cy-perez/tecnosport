@@ -114,11 +114,14 @@ npm run contrastes                       WCAG AA de los pares de color, claro y 
 npm run lighthouse                       tres muestras y la mediana; pide docker y bootRun arriba
 npm run lighthouse -- --etiqueta X       guarda la corrida con nombre, para poder compararla
 npm run lighthouse -- --comparar X Y     enfrenta dos corridas guardadas; no mide, no pide nada
+npm run lighthouse -- --traza            guarda además la traza de Chrome (7 MB por pantalla)
+npm run lighthouse -- --con-ventana      mide con un Chrome visible en vez del headless
 npm run pareja -- --antes A --despues B --prefijo P   ¿la diferencia se repite? (4 corridas, ~20 min)
 npm run pareja -- --solo-resumen P       vuelve a sacar el veredicto de un experimento ya medido
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
-npm run kit                              ¿el kit de marca se regenera igual que como está guardado?
+npm run kit                              ¿el kit se regenera igual, y sus tipografías aún escriben
+                                         lo que el sitio escribe? (pide pip install fonttools brotli)
 npm run datos-negocio                    ¿el teléfono, el NIT y la versión legal dicen lo mismo en todas sus copias?
 npm run cruce-catalogo                   ¿qué productos de la lista están listos para publicar?
 npm run huerfanos -- --bucket X --api Y  ¿qué objetos del bucket no los reclama nadie? (informa, no borra)

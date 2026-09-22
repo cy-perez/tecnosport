@@ -68,10 +68,43 @@ de cualquier componente `var(--color-primario)` funciona sin `::ng-deep`.
 Las licencias OFL se distribuyen con las fuentes. Es condición de la licencia, no
 un detalle.
 
+## Las tipografías van recortadas al alfabeto latino
+
+Desde el 22 de septiembre de 2026 los `woff2` del kit **no son los que sube
+Google**: se recortan al rango `latin` + `latin-ext` antes de comprimir. Las
+familias vienen con cirílico, griego y vietnamita dentro, y este sitio no escribe
+ni una letra de eso — IBM Plex Sans pesaba 225 KB y pesa 92. Las cuatro juntas
+pasaron de 487 a 271 KB.
+
+Se recorta a `latin-ext` y no solo a `latin` porque el catálogo lo escriben
+proveedores: un nombre de producto con una letra centroeuropea no puede salir en
+tofu por ahorrar 8 KB. El rango vive en `RANGO_LATINO`, en
+`packages/marca/generador/fuentes.py`, y ahí es donde se añade lo que falte.
+Nunca se edita el `.woff2`.
+
+**Esto necesita `fonttools` y `brotli`** (`pip install fonttools brotli`), y no
+solo para regenerar: `generador/comprobar_fuentes.py` mira el `cmap` de cada
+archivo guardado y exige los caracteres que el sitio escribe, más que una familia
+variable conserve su eje `wght`. Es la tercera propiedad de `npm run kit`, y sin
+la librería **no se puede comprobar**: en local avisa, en integración continua
+falla, porque "no comprobado" no es "está bien". El trabajo de web las instala.
+
+Un recorte de más no rompe nada que se vea —el navegador dibuja la eñe con la
+fuente de respaldo y la palabra sale con una letra de otra familia—, y por eso
+tiene guardián en vez de confianza.
+
+Cuando el recorte se aplica sobre lo ya guardado y no sobre una descarga nueva,
+va `python3 generador/fuentes.py --out fuentes --desde-local`: así el cambio no
+arrastra además la versión de hoy de cada familia, que es otra cosa y se mezcla
+mal en el mismo commit.
+
 ## Lo que no se toca
 
 - **`tokens.css` y `fuentes.css` son generados.** Se edita `tokens.json` y se
   regenera. Un cambio a mano lo borra el siguiente regenerado.
+- **Los `.woff2` también son generados**, y desde el recorte no basta con que se
+  regeneren igual: tienen que seguir escribiendo lo que el sitio escribe. Ver
+  arriba.
 - **Radio 0 en todo.** Ninguna esquina redondeada, en ningún componente. Desde
   `ADR-0020`, la escala de radios de Tailwind está borrada, así que
   `rounded-sm/md/lg/xl` no existen y una plantilla que los use no compila nada.

@@ -20,9 +20,20 @@ autocontenido dentro de `apps/api` y no se mezcla con npm.
 
 Razones de esta decisión, y sus consecuencias, en `adr/0007`.
 
-En integración continua los cambios se detectan por ruta: un cambio que solo toca
-`apps/web` no reconstruye el backend. Las pruebas de contrato sí corren siempre,
-porque son justamente las que detectan que una parte se desincronizó de la otra.
+**En integración continua los dos trabajos corren siempre, sin filtros por ruta**,
+y eso es deliberado aunque parezca desperdicio. Este documento dijo lo contrario
+durante meses: con `paths:`, el trabajo que no aplica **no se salta, se queda
+pendiente para siempre**, y una comprobación obligatoria pendiente bloquea el
+merge sin decir por qué. El repositorio es público —los minutos no se cobran— y
+con la caché el trabajo que sobra cuesta un par de minutos de reloj. El razonamiento
+completo está en el propio `.github/workflows/verificar.yml`, que es donde lo va a
+leer quien lo toque.
+
+Los dos trabajos ejecutan `tools/verificar.mjs`, **el mismo archivo** que
+`npm run verificar` en local, con una bandera que elige la mitad. El trabajo de web
+instala además `fonttools` y `brotli`: el guardián del kit mira dentro de cada
+`woff2` y sin esa librería no puede, así que falla en vez de saltarse la
+comprobación (ver `docs/04-ui-marca.md`).
 
 ## Backend: capas
 

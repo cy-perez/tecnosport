@@ -39,6 +39,8 @@ const PUERTO_PROXY = 4300;
 const BASE = `http://localhost:${PUERTO_PROXY}`;
 
 const sinBuild = process.argv.includes("--sin-build");
+const conTraza = process.argv.includes("--traza");
+const conVentana = process.argv.includes("--con-ventana");
 const INFORMES = join(RAIZ, "apps/web/lighthouse");
 const procesos = [];
 
@@ -220,7 +222,13 @@ async function medirUnaVez(url, puertoChrome, lighthouse) {
     undefined,
   );
   const c = resultado.lhr.categories;
+  // La traza solo si se pide: pesa entre diez y treinta megas por pantalla, y el informe basta
+  // para casi todo. Hace falta cuando la pregunta es "¿qué está recalculando?" — el informe dice
+  // cuántos milisegundos se van en estilo y layout, pero no de dónde salen.
+  const artefactos = resultado.artifacts ?? {};
+  const traza = conTraza ? (artefactos.Trace ?? artefactos.traces?.defaultPass ?? null) : null;
   return {
+    traza,
     puntajes: {
       rendimiento: Math.round(c.performance.score * 100),
       accesibilidad: Math.round(c.accessibility.score * 100),
@@ -291,6 +299,9 @@ async function medir(url, etiqueta, puertoChrome, lighthouse, destino) {
   const mejor = ordenadas.at(-1).puntajes.rendimiento;
 
   writeFileSync(join(destino, `${etiqueta}.json`), mediana.informe);
+  if (conTraza && mediana.traza) {
+    writeFileSync(join(destino, `${etiqueta}-traza.json`), JSON.stringify(mediana.traza));
+  }
 
   return {
     fila: { pantalla: etiqueta, ...mediana.puntajes, "rendimiento (peor-mejor)": `${peor}-${mejor}` },
@@ -513,7 +524,10 @@ async function main() {
 
   const { default: lighthouse } = await import("lighthouse");
   const { launch } = await import("chrome-launcher");
-  const chrome = await launch({ chromeFlags: ["--headless=new"] });
+  // `--con-ventana` abre un Chrome de verdad en vez del headless. No es comodidad: el headless
+  // rasteriza por software, y eso no es un detalle para una pantalla con `clip-path` sobre una
+  // banda del alto de la pantalla. Ver la entrada del 22 de septiembre en docs/09.
+  const chrome = await launch({ chromeFlags: conVentana ? [] : ["--headless=new"] });
 
   const filas = [];
   const detalles = [];
