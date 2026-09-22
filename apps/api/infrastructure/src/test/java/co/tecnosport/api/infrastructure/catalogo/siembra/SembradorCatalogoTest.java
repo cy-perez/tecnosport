@@ -9,6 +9,7 @@ import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
+import co.tecnosport.api.infrastructure.catalogo.VarianteImagenJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
@@ -61,6 +62,7 @@ class SembradorCatalogoTest {
   @Autowired private VarianteJpaRepository variantes;
   @Autowired private VarianteAtributoValorJpaRepository valoresAtributo;
   @Autowired private ImagenProductoJpaRepository imagenes;
+  @Autowired private VarianteImagenJpaRepository variantesDeImagen;
   @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private RepositorioInventarioJpa inventarios;
 
@@ -77,6 +79,7 @@ class SembradorCatalogoTest {
             variantes,
             valoresAtributo,
             imagenes,
+            variantesDeImagen,
             setsRotacion,
             inventarios);
     sembrador.run(null);

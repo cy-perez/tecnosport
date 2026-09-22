@@ -4,12 +4,18 @@ import co.tecnosport.api.application.catalogo.RepositorioSetsRotacion;
 import co.tecnosport.api.domain.catalogo.EstadoSetRotacion;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,14 +32,17 @@ public class RepositorioSetsRotacionJpa implements RepositorioSetsRotacion {
 
   private final SetRotacionJpaRepository setRotacionJpaRepository;
   private final ImagenProductoJpaRepository imagenProductoJpaRepository;
+  private final VarianteImagenJpaRepository varianteImagenJpaRepository;
   private final MapeadorCatalogo mapeador;
 
   public RepositorioSetsRotacionJpa(
       SetRotacionJpaRepository setRotacionJpaRepository,
       ImagenProductoJpaRepository imagenProductoJpaRepository,
+      VarianteImagenJpaRepository varianteImagenJpaRepository,
       MapeadorCatalogo mapeador) {
     this.setRotacionJpaRepository = setRotacionJpaRepository;
     this.imagenProductoJpaRepository = imagenProductoJpaRepository;
+    this.varianteImagenJpaRepository = varianteImagenJpaRepository;
     this.mapeador = mapeador;
   }
 
@@ -79,7 +88,40 @@ public class RepositorioSetsRotacionJpa implements RepositorioSetsRotacion {
         set.fotogramas().stream().map(fotograma -> aEntidad(set, fotograma)).toList();
     if (!entidades.isEmpty()) {
       imagenProductoJpaRepository.saveAll(entidades);
+      guardarVariantes(set);
     }
+  }
+
+  /**
+   * Las variantes de los fotogramas, reusando el id de la fila que ya exista para ese ancho.
+   *
+   * <p>Aquí no se puede insertar y ya, como en las imágenes de producto: este método vuelve a
+   * guardar fotogramas que ya estaban, y una fila nueva para el mismo ancho chocaría contra el
+   * único de la V60. Reusar el id convierte el segundo guardado en un `update` con los mismos
+   * valores, que es lo que el método dice que hace.
+   */
+  private void guardarVariantes(SetRotacion set) {
+    record Clave(UUID imagen, int ancho) {}
+
+    List<UUID> imagenIds = set.fotogramas().stream().map(ImagenProducto::id).toList();
+    Map<Clave, UUID> existentes =
+        varianteImagenJpaRepository.findByImagenIdIn(imagenIds).stream()
+            .collect(
+                Collectors.toMap(
+                    v -> new Clave(v.getImagenId(), v.getAncho()), VarianteImagenJpaEntity::getId));
+
+    List<VarianteImagenJpaEntity> filas = new ArrayList<>();
+    for (ImagenProducto fotograma : set.fotogramas()) {
+      for (VarianteDeImagen variante : fotograma.variantes()) {
+        UUID id =
+            existentes.getOrDefault(
+                new Clave(fotograma.id(), variante.ancho()), GeneradorIdentificador.nuevo());
+        filas.add(
+            new VarianteImagenJpaEntity(
+                id, fotograma.id(), variante.ancho(), variante.url(), variante.bytes()));
+      }
+    }
+    varianteImagenJpaRepository.saveAll(filas);
   }
 
   private SetRotacionJpaEntity aEntidad(SetRotacion set) {
@@ -104,8 +146,7 @@ public class RepositorioSetsRotacionJpa implements RepositorioSetsRotacion {
         fotograma.tipo().name(),
         fotograma.orden(),
         fotograma.url(),
-        // Se va en la V60, con la columna.
-        fotograma.url(),
+        fotograma.urlVistaPrevia().orElse(null),
         fotograma.ancho(),
         fotograma.alto(),
         fotograma.bytes(),
