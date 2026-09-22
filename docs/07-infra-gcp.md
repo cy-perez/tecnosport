@@ -391,8 +391,13 @@ SISTECREDITO_SANDBOX_ACTIVO, SISTECREDITO_SANDBOX_ESTADO
                         (**el freno de seguridad**. Sin ambiente de pruebas, ese booleano es lo
                          único que separa una prueba de un crédito real. Encendido en producción
                          aprobaría pagos que nadie pagó y la mercancía saldría sin que nada
-                         fallara, así que el arranque se niega si está en `true` con
-                         `WOMPI_AMBIENTE=produccion`)
+                         fallara. **El freno cambió el 21 de septiembre de 2026 y esta página decía
+                         lo de antes**: ya no pregunta si el despliegue es producción —mirando
+                         `WOMPI_AMBIENTE`, que vale `sandbox` por omisión y dejaba pasar el caso
+                         peligroso: producción recién montada sin variables— sino si está declarado
+                         como despliegue de pruebas. La lista blanca son los perfiles `local`,
+                         `dev`, `e2e` y `pruebas`; **un despliegue sin ningún perfil tampoco arranca
+                         con el sandbox encendido**)
 SISTECREDITO_MONTO_MINIMO (**50.000**, confirmado por el dueño del negocio el 22 de septiembre de
                          2026. No es público ni está en la documentación entregada —dos comercios
                          aliados publican 20.000 y 30.000— porque varía por comercio. Sigue sin
@@ -404,7 +409,12 @@ SISTECREDITO_URL_RESPUESTA, SISTECREDITO_URL_CONFIRMACION
                          el marcador `{idioma}`, que el caso de uso sustituye: las rutas del sitio
                          llevan prefijo de idioma y la comodín redirige a `/es` perdiendo los
                          parámetros. **La de confirmación tiene que ser pública**: en local no
-                         llega ninguna notificación)
+                         llega ninguna notificación. **Y en dev no se deriva, se declara**: el
+                         servicio de la API no tiene `API_URL_PUBLICA` —esa variable la lleva el
+                         servicio web, y con otro significado, porque incluye `/api/v1`—, así que
+                         `SISTECREDITO_URL_CONFIRMACION` se fija entera desde `dominio_publico_api`
+                         en Terraform. Derivarla de `module.api.url` no se puede: sería el módulo
+                         refiriéndose a sí mismo y Terraform lo rechaza como ciclo)
 SISTECREDITO_CONCILIACION_INTERVALO_MINUTOS, SISTECREDITO_CONCILIACION_ANTIGUEDAD_MINIMA_MINUTOS
 
 TRANSFERENCIA_BANCO, TRANSFERENCIA_TIPO_CUENTA, TRANSFERENCIA_NUMERO_CUENTA,
