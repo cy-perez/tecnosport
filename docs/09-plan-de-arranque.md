@@ -7159,6 +7159,53 @@ falla si viene encendido junto con el perfil de producción"*, y hasta hoy eso s
 vía. Y `ConfiguracionSistecredito` deja de importar `PropiedadesWompiPublicas`: una configuración
 de pagos menos que sabe de una pasarela que no es la suya.
 
+## Los doce que estaban en la vitrina con una foto de cuatro (2026-09-21)
+
+El bloque 2 de la lista de deudas, que no era escribir código sino correr lo que ya estaba
+escrito. Los doce primeros productos reales se cargaron el 19 de septiembre con un script de usar
+y tirar, y `cargados.json` nació el 21: para el registro no existían, así que `--galeria-todos` no
+les podía rellenar nada y llevaban dos días publicados con **una** de las cuatro tomas que tenían
+en el estudio desde el 15.
+
+`--reconciliar` los anotó: doce, sobre trece que ya estaban, y quedan 71 de la lista del proveedor
+sin cargar. Casó ocho por SKU y cuatro por nombre, que es la mitad que importa — `jbl-extreme-4`
+está publicado como `JBL-EXTREME-4` pero se llama "JBL Xtreme 4". Anotó el SKU **del catálogo** y
+no el que tocaría por la regla, porque es el que las pasadas siguientes van a usar.
+
+Después, **36 tomas a la galería**: tres por cada uno de los doce. Comprobado sin creerle al
+registro: 50 tomas anotadas, 50 objetos `galeria-` en el bucket, y tres fichas pedidas a la API
+—`JBL-EXTREME-4`, el Moto G17 y la Tab A11— con tres imágenes de galería cada una.
+
+### El límite de intentos, que hizo exactamente lo que tiene que hacer
+
+Cuatro corridas seguidas —dos simulaciones y dos escrituras, cada una pidiendo su sesión— se
+comieron los cinco intentos por cuenta cada quince minutos de `limite-intentos.auth`, y la quinta
+se fue con un **429**. No es un estorbo: es el freno que `docs/08` pide contra la fuerza bruta,
+funcionando contra el caso que no sabe distinguir —un script propio— igual que contra el que
+importa. Costó dos ventanas de cinco minutos.
+
+Lo que había que corregir no era el límite sino la forma de pedir la sesión: **una por comando**,
+cuando el token vive quince minutos. Queda anotado para la próxima: pedirlo una vez, cachearlo, y
+pasárselo a las herramientas por `TS_TOKEN_ADMIN` — nunca por `argv`.
+
+### El informe de huérfanos, por fin corrido
+
+`ADR-0052` dejó anotado que una subida firmada y no confirmada deja un objeto sin reclamar, y las
+tres deudas chicas del kit dejaron la herramienta escrita y **sin correr nunca**. Ya tiene número:
+
+> 29 productos en el panel reclaman 75 objetos. **18 sin reclamar, 5,31 MiB.**
+
+Los dieciocho son `principal-` del 19 y el 20 de septiembre, o sea de las cargas de aquel script
+de usar y tirar, y **ninguno es de galería**: la pasada de hoy no dejó ni uno suelto. Cuadra con
+el conteo de arriba — 50 objetos `galeria-` en el bucket y 50 reclamados.
+
+Con el número delante, la decisión que la nota dejaba abierta se puede tomar de verdad, y es la
+aburrida: **5,31 MiB no pagan cambiar la forma de las keys**. Mover lo no confirmado a un prefijo
+`pendientes/` para poder escribir una regla de ciclo de vida es tocar el flujo de subida entero
+por menos de lo que pesa una foto de portada. Se deja como está y se vuelve a medir cuando el
+catálogo esté completo; lo que sí conviene es borrar esos dieciocho a mano alguna vez, y eso lo
+decide quien mira el bucket, no un script — por eso la herramienta informa y no borra.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7193,16 +7240,18 @@ volver a comprobarlo**, que es lo único que no caduca.
 
 El orden no es negociable: cada uno alimenta al siguiente.
 
-4. **Reconciliar el registro.** `catalogo/cargados.json` tiene 13 entradas y **ninguna
-   reconciliada**, así que los doce primeros —cargados el 19 con un script de usar y tirar— siguen
-   sin SKU para el registro.
-5. **Rellenar las galerías.** Consecuencia directa del punto anterior: esos doce están publicados
-   con **una** de las cuatro tomas que llevan en el estudio desde el 15 de septiembre.
+4. ~~**Reconciliar el registro.**~~ **Hecho el 21 de septiembre**: 12 anotados, el registro pasó
+   de 13 a 25 entradas.
+5. ~~**Rellenar las galerías.**~~ **Hecho el 21 de septiembre**: 36 tomas, tres por cada uno de
+   los doce, comprobadas contra el bucket y contra la API.
 6. **Cargar lo que falta.** El cruce del 21 de septiembre da **25 publicables**, 4 de ellos con
-   medidas de empaque y los otros 21 solo con recogida en el punto (`adr/0046`).
-7. **Correr `npm run huerfanos` contra dev.** Informa, no borra, y **nunca se ha corrido**. Con el
-   número delante se decide lo de verdad: mover lo no confirmado a un prefijo `pendientes/` —y
-   entonces sí una regla de ciclo de vida trivial— o dejarlo estar. Sin el número no se decide.
+   medidas de empaque y los otros 21 solo con recogida en el punto (`adr/0046`). De la lista del
+   proveedor quedan **71 sin rastro en el catálogo**. Es el único paso del bloque que sigue
+   abierto, y depende del punto 9: cuatro de esos publicables se venden al costo.
+7. ~~**Correr `npm run huerfanos` contra dev.**~~ **Hecho el 21 de septiembre, y con eso la
+   decisión tomada**: 18 objetos sin reclamar, 5,31 MiB, todos `principal-` de las cargas del 19 y
+   el 20. No pagan cambiar la forma de las keys; se deja como está y se vuelve a medir con el
+   catálogo completo. Queda pendiente borrarlos a mano alguna vez, que no lo hace ningún script.
 8. **Repetir Lighthouse.** El pendiente vivo más viejo, y el único que ya sabe exactamente de qué
    depende: la portada perdió doce puntos de rendimiento por la foto de la banda, que es el nuevo
    LCP, y eso no se puede medir con propiedad mientras las tarjetas traigan ocho peticiones a
