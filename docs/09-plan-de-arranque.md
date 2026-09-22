@@ -7911,6 +7911,15 @@ El orden no es negociable: cada uno alimenta al siguiente.
     una unión, la deuda sigue. La salida es publicarlo como enum en el OpenAPI —un `@Schema` en el
     DTO— y que el frontend use el tipo generado.
 
+26. **`catalogo/cargados.json` no dice de qué ambiente habla.** Guarda el `productoId` de cada SKU,
+    y esos ids son de **una** base: la local, si el cargador corrió contra `localhost` —que es su
+    valor por omisión— o la de dev si corrió contra dev. Cargar el catálogo en otro ambiente
+    reescribe el registro y deja el anterior sin forma de rehacerse: `--rehacer-imagenes` responde
+    404 por cada producto, que es exactamente lo que pasó el 22 de septiembre al apuntar a dev con
+    un registro escrito en local. El archivo **no está versionado**, así que tampoco hay historial
+    del que recuperarlo. **Cómo comprobarlo:** abrir `catalogo/cargados.json` y buscar un campo que
+    nombre el ambiente; mientras no exista, la deuda sigue.
+
 ### Bloque 3. Decisiones que no toma un script
 
 9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo

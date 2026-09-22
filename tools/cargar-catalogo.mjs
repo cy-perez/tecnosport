@@ -814,14 +814,26 @@ async function rehacerImagenes(registro) {
       ),
     });
 
-    for (const toma of tomas) {
-      await subirAGaleria(anotado.productoId, toma, producto.titulo);
-    }
-
+    // La galeria se BORRA ANTES de volver a subirla, y es lo contrario de lo que hacia hasta el
+    // 22 de septiembre de 2026. El orden viejo —subir lo nuevo, borrar lo viejo— venia de no
+    // dejar nunca un producto publicado sin fotos, y funcionaba solo porque cada corrida cambiaba
+    // el archivo: la del 21 subio AVIF donde habia JPEG, asi que el hash era otro. Rehacer con el
+    // mismo archivo en varios anchos manda el hash de la variante mayor, que es exactamente el
+    // que ya esta guardado, y el agregado rechaza el duplicado con 409. No es un fallo del
+    // servidor: dos filas apuntando a la misma foto romperian el borrado por key.
+    //
+    // Lo que se pierde con el orden nuevo es el margen entre borrar y subir. Se acota a la
+    // galeria: LA IMAGEN PRINCIPAL NO SE TOCA AQUI —se reemplaza arriba, en una sola llamada— asi
+    // que una corrida cortada deja la ficha con su foto principal y la galeria a medias, y el
+    // comando se vuelve a correr. Antes el riesgo era no poder correrlo en absoluto.
     for (const imagenId of viejas) {
       await pedir(`/api/v1/admin/productos/${anotado.productoId}/galeria/${imagenId}`, {
         method: "DELETE",
       });
+    }
+
+    for (const toma of tomas) {
+      await subirAGaleria(anotado.productoId, toma, producto.titulo);
     }
 
     anotado.imagenesDeGaleria = tomas.length;
