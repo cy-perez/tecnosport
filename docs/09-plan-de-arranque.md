@@ -7049,6 +7049,8 @@ escribiría CRLF en Windows y LF en integración continua y el guardián fallar�
 corriera. Es el mismo error que `verificar-kit.mjs` ya había pagado, tres días antes y en el
 archivo de al lado.
 
+Todo en `ADR-0055`, con las tres alternativas descartadas.
+
 ### Lo que el primer regenerado destapó, y lo que no
 
 El cliente regenerado desde la instantánea da **1.455 líneas distintas de 4.190**, y ninguna es un
