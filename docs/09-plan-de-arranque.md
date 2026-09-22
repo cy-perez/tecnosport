@@ -7809,6 +7809,20 @@ describen una base local.
 
 No es un error de nadie: es una consecuencia del valor por omisión, y no estaba escrita. Ahora sí.
 
+**Y dev ya lo tiene.** El mismo día se cargaron allí los 25 publicables, en BORRADOR y con
+existencia 0 —los valores por omisión del cargador—, con sus escaleras completas: la galería de
+`samsung-galaxy-s25-ultra-256gb` devuelve `[480, 800, 1200]` y su JPEG de vista previa. Dev pasó de
+cuatro productos de ficción a 29.
+
+Dos consecuencias que conviene tener presentes:
+
+- **El bucket guarda ahora las fotos de los dos ambientes**: 666 objetos donde había 109. Las de
+  local son huérfanas desde el punto de vista de dev y al revés, y el informe de huérfanos no puede
+  distinguirlas de basura real — corre contra una API a la vez. Borrar "lo que sobra" mirando una
+  sola de las dos se llevaría las fotos vivas de la otra.
+- **Los 25 de dev están en BORRADOR**, así que la vitrina pública de dev sigue mostrando solo los
+  de ficción. Publicarlos es una decisión de negocio, no un paso de esta carga.
+
 ### Dos defectos que solo aparecen ejecutando
 
 - **`--rehacer-imagenes` reventaba con 409 en el primer producto.** Subía lo nuevo y después
