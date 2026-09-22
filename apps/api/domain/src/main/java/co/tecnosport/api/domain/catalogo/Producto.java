@@ -271,10 +271,20 @@ public final class Producto {
     for (ImagenProducto imagen : galeria) {
       porId.put(imagen.id(), imagen);
     }
+    // `ImagenProductoInvalidaException` y no `ImagenDeGaleriaNoEncontradaException`, que da 404:
+    // aquí el recurso del PUT —la galería del producto— sí existe, y lo que pasa es que la lista
+    // que mandaron ya no lo describe. Es la carrera de las dos pestañas que adr/0053 resuelve con
+    // un 422 "y no se graba nada", y el 404 la partía en dos respuestas distintas según si a la
+    // lista le faltaba o le sobraba una imagen. El 404 sigue siendo el correcto al quitar una,
+    // donde el subrecurso del DELETE de verdad no existe.
     for (UUID id : pedidos) {
       if (!porId.containsKey(id)) {
-        throw new ImagenDeGaleriaNoEncontradaException(
-            "La imagen '" + id + "' no está en la galería de '" + nombre + "'.");
+        throw new ImagenProductoInvalidaException(
+            "El orden pedido para la galería de '"
+                + nombre
+                + "' nombra la imagen '"
+                + id
+                + "', que ya no está: la galería cambió mientras tanto.");
       }
     }
     if (pedidos.size() != porId.size()) {

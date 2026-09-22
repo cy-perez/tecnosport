@@ -40,6 +40,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   List<ImagenProducto> ordenGuardado;
 
   final List<UUID> imagenesDeGaleriaEliminadas = new ArrayList<>();
+  private final Set<UUID> idsBorrados = new HashSet<>();
   UUID ultimaVarianteMedida;
   Paquete ultimoPaqueteGrabado;
   private List<MedidaDeVariante> sinMedir = List.of();
@@ -136,9 +137,15 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
-    this.imagenesDeGaleriaEliminadas.add(imagenId);
+  public boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     this.ultimoProductoIdConImagenDeGaleria = productoId;
+    // Devuelve si de verdad borró, como el adaptador real: la segunda vez sobre la misma imagen
+    // no borra nada, que es el caso de las dos peticiones a la vez.
+    // La lista es para las aserciones; el conjunto es el que sabe si había algo que borrar.
+    // `List.add` siempre devuelve `true`, así que devolverlo era decir "borré una fila" también
+    // la segunda vez sobre la misma imagen — justo el caso que el adaptador real distingue.
+    this.imagenesDeGaleriaEliminadas.add(imagenId);
+    return this.idsBorrados.add(imagenId);
   }
 
   @Override

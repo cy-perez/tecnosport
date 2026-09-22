@@ -1,6 +1,7 @@
 package co.tecnosport.api.application.catalogo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +51,7 @@ class AgregarVarianteTest {
     Atributo color = Atributo.crear("Color", TipoAtributo.COLOR, List.of());
     repositorioAtributos.conAtributos(color);
 
-    var variante =
+    var creada =
         agregarVariante.ejecutar(
             new AgregarVarianteComando(
                 producto.id(),
@@ -65,14 +66,14 @@ class AgregarVarianteTest {
                 4,
                 List.of(new ValorAtributoComando(color.id(), "Azul marino", "#1E3A8A"))));
 
-    assertEquals("TS-CAM-AZ-M", variante.sku().valor());
-    assertEquals(Optional.of(new Paquete(180, 30, 25, 4)), variante.paquete());
-    assertEquals(1, variante.atributos().size());
-    assertEquals("Azul marino", variante.atributos().get(0).valor());
+    assertEquals("TS-CAM-AZ-M", creada.variante().sku().valor());
+    assertEquals(Optional.of(new Paquete(180, 30, 25, 4)), creada.variante().paquete());
+    assertEquals(1, creada.variante().atributos().size());
+    assertEquals("Azul marino", creada.variante().atributos().get(0).valor());
     assertEquals(producto.id(), repositorioProductos.ultimoProductoIdConVariante);
-    assertEquals(variante, repositorioProductos.ultimaVarianteAgregada);
+    assertEquals(creada.variante(), repositorioProductos.ultimaVarianteAgregada);
 
-    assertEquals(variante.id(), repositorioInventario.ultimoGuardado.varianteId());
+    assertEquals(creada.variante().id(), repositorioInventario.ultimoGuardado.varianteId());
     assertEquals(1, repositorioInventario.ultimoGuardado.movimientos().size());
     var movimiento = repositorioInventario.ultimoGuardado.movimientos().get(0);
     assertEquals(TipoMovimientoInventario.ENTRADA, movimiento.tipo());
@@ -197,6 +198,28 @@ class AgregarVarianteTest {
     assertNull(repositorioProductos.ultimaVarianteAgregada);
   }
 
+  /**
+   * La disponibilidad de la respuesta sale del libro, no del comando. Se comprueba con el caso que
+   * los separa: una variante que nace sin existencia no se puede comprar.
+   */
+  @Test
+  void laDisponibilidadSaleDelLibroYNoDeLoQuePidioElCliente() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    var conExistencia = agregarVariante.ejecutar(comandoConExistencia(producto.id(), "TS-CON", 3));
+    var sinExistencia = agregarVariante.ejecutar(comandoConExistencia(producto.id(), "TS-SIN", 0));
+
+    assertTrue(conExistencia.disponible());
+    assertFalse(sinExistencia.disponible());
+  }
+
+  private AgregarVarianteComando comandoConExistencia(
+      java.util.UUID productoId, String sku, int existenciaInicial) {
+    return new AgregarVarianteComando(
+        productoId, sku, 1000, BigDecimal.ZERO, null, existenciaInicial, 180, 30, 25, 4, List.of());
+  }
+
   @Test
   void aceptaLaTasaDeIvaSiElNegocioSiEsResponsable() {
     Producto producto = productoDePrueba();
@@ -205,7 +228,7 @@ class AgregarVarianteTest {
         new AgregarVariante(
             repositorioProductos, repositorioAtributos, repositorioInventario, reloj, true);
 
-    var variante =
+    var creada =
         conIva.ejecutar(
             new AgregarVarianteComando(
                 producto.id(),
@@ -220,6 +243,6 @@ class AgregarVarianteTest {
                 4,
                 List.of()));
 
-    assertEquals(new BigDecimal("0.19"), variante.tasaIva());
+    assertEquals(new BigDecimal("0.19"), creada.variante().tasaIva());
   }
 }

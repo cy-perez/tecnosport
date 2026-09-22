@@ -84,7 +84,7 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   @Override
-  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+  public boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
     throw new UnsupportedOperationException("No usado por CrearPedido.");
   }
 

@@ -107,8 +107,13 @@ public interface RepositorioProductos {
   /**
    * Borra la fila de una imagen de la galería. Recibe también el producto porque es la única forma
    * de que un id de imagen suelto no pueda borrar la imagen de otro producto.
+   *
+   * @return {@code true} si borró una fila; {@code false} si no había ninguna que borrar, que es lo
+   *     que pasa cuando dos peticiones quitan la misma imagen a la vez o cuando el agregado que
+   *     tiene quien llama ya está obsoleto. Era {@code void}, y el adaptador descartaba el conteo
+   *     que su propio javadoc decía que servía justo para distinguir esos dos casos.
    */
-  void eliminarImagenDeGaleria(UUID productoId, UUID imagenId);
+  boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId);
 
   /**
    * Graba el orden que el agregado acaba de decidir para la galería entera.

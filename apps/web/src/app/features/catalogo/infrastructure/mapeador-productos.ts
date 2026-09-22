@@ -84,7 +84,11 @@ function aVariante(dto: VarianteDto): Variante {
     id: dto.id ?? '',
     sku: dto.sku ?? '',
     precio: { valor: dto.precio?.valor ?? 0, moneda: dto.precio?.moneda ?? 'COP' },
-    disponible: dto.disponible ?? false,
+    // Sin `?? false`: el contrato lo declara obligatorio desde que el DTO lleva su `@Schema`.
+    // La caída a `false` parecía la elección segura y era la peor posible junto a un contrato que
+    // no exigía el campo: si algún día dejaba de serializarse, todo el catálogo salía agotado sin
+    // una sola prueba en rojo. Ahora el tipo no deja que falte.
+    disponible: dto.disponible,
     atributos: (dto.atributos ?? []).map(aValorAtributo),
   };
 }

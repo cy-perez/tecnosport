@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
-import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaNoEncontradaException;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
+import co.tecnosport.api.domain.catalogo.ImagenProductoInvalidaException;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -91,7 +91,7 @@ class ReordenarGaleriaTest {
     repositorioProductos.conProductos(producto);
 
     assertThrows(
-        ImagenDeGaleriaNoEncontradaException.class,
+        ImagenProductoInvalidaException.class,
         () ->
             reordenarGaleria.ejecutar(
                 new ReordenarGaleriaComando(

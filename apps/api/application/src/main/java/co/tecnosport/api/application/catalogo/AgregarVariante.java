@@ -10,6 +10,7 @@ import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.inventario.Inventario;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,7 +41,7 @@ public final class AgregarVariante {
     this.negocioResponsableDeIva = negocioResponsableDeIva;
   }
 
-  public Variante ejecutar(AgregarVarianteComando comando) {
+  public VarianteCreada ejecutar(AgregarVarianteComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
 
     // La guarda va primero, como en el registro: comprobarla al final dejaría un SKU consultado y
@@ -75,14 +76,16 @@ public final class AgregarVariante {
     producto.agregarVariante(variante);
     repositorioProductos.agregarVariante(producto.id(), variante);
 
+    Instant ahora = reloj.ahora();
     Inventario inventario = Inventario.crear(variante.id());
     if (comando.existenciaInicial() > 0) {
-      inventario.registrarEntrada(
-          comando.existenciaInicial(), "Alta inicial de variante", reloj.ahora());
+      inventario.registrarEntrada(comando.existenciaInicial(), "Alta inicial de variante", ahora);
     }
     repositorioInventario.guardar(inventario);
 
-    return variante;
+    // La disponibilidad sale del libro que este caso de uso acaba de escribir, y no de lo que
+    // pidio el cliente: es la misma regla que aplica la vitrina, aplicada en el mismo sitio.
+    return new VarianteCreada(variante, inventario.saldoDisponible(ahora) > 0);
   }
 
   private ValorAtributo aValorAtributo(ValorAtributoComando comando) {

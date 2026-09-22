@@ -224,8 +224,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
    */
   @Override
   @Transactional
-  public void eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
-    imagenProductoJpaRepository.deleteByIdAndProductoId(imagenId, productoId);
+  public boolean eliminarImagenDeGaleria(UUID productoId, UUID imagenId) {
+    return imagenProductoJpaRepository.deleteByIdAndProductoId(imagenId, productoId) > 0;
   }
 
   /**

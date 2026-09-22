@@ -1493,7 +1493,7 @@ export interface components {
             id?: string;
             sku?: string;
             precio?: components["schemas"]["DineroRespuesta"];
-            disponible?: boolean;
+            disponible: boolean;
             atributos?: components["schemas"]["AtributoValorRespuesta"][];
         };
         AbrirSetRotacionPeticion: {

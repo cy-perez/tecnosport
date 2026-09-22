@@ -419,8 +419,15 @@ class AdminProductoControladorTest {
         List.of(0, 1, 2), repositorio.ordenGuardado.stream().map(ImagenProducto::orden).toList());
   }
 
+  /**
+   * 422 y no 404, que es lo que daba: la galería del producto —el recurso del PUT— existe, y lo que
+   * pasa es que la lista que mandaron ya no la describe. Es la misma carrera de dos pestañas que el
+   * caso de abajo, y adr/0053 la resuelve igual en las dos direcciones; el 404 la partía en dos
+   * respuestas distintas según si a la lista le faltaba o le sobraba una imagen, y el panel pintaba
+   * el mensaje escrito para el borrado.
+   */
   @Test
-  void reordenarNombrandoUnaImagenQueNoEsDeEseProductoDevuelve404() throws Exception {
+  void reordenarNombrandoUnaImagenQueNoEsDeEseProductoDevuelve422() throws Exception {
     Producto producto = productoEnBorrador();
     ImagenProducto primera = imagenDeGaleria(0);
     producto.agregarImagenGaleria(primera);
@@ -431,8 +438,8 @@ class AdminProductoControladorTest {
             put("/api/v1/admin/productos/{id}/galeria/orden", producto.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"imagenIds\":[\"%s\"]}".formatted(UUID.randomUUID())))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.codigo").value("IMAGEN_DE_GALERIA_NO_ENCONTRADA"));
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("IMAGEN_PRODUCTO_INVALIDA"));
 
     org.junit.jupiter.api.Assertions.assertNull(repositorio.ordenGuardado);
   }

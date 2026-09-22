@@ -79,6 +79,18 @@ galería llena necesitó dos días antes.
 Y el foco sigue a la imagen que se movió, no al botón que se pulsó: si se quedara quieto, pulsar
 *subir* dos veces movería dos imágenes distintas.
 
+## Corrección posterior (2026-09-21)
+
+El punto 2 de arriba dice *"la segunda petición habla de una galería que ya no existe —le falta o
+le sobra alguna imagen— y eso se detecta: `422`, y no se graba nada"*. La implementación no hacía
+eso: partía el caso en dos respuestas según la dirección —**404** si a la lista le sobraba una
+imagen (porque reutilizaba `ImagenDeGaleriaNoEncontradaException`, la del borrado), **422** si le
+faltaba—. En la mitad del 404 el panel pintaba el mensaje escrito para quitar una foto.
+
+Lo encontró la revisión adversarial del 21 de septiembre. Se corrigió el código y no el ADR, porque
+el ADR tenía razón: el recurso del `PUT` es la galería del producto, y existe. El 404 se queda
+donde el subrecurso de verdad no existe, que es el `DELETE` de una imagen.
+
 ## Alternativas descartadas
 
 - **Índice único parcial y renumerado en dos fases** (órdenes negativos temporales y después los

@@ -24,6 +24,12 @@ async function invalidarLoQueEnsenaElEstado(queryClient: QueryClient): Promise<v
   await queryClient.invalidateQueries({ queryKey: CLAVE_EXISTENCIAS });
   await queryClient.invalidateQueries({ queryKey: CLAVE_MEDIDAS });
   await queryClient.invalidateQueries({ queryKey: CLAVE_VARIANTES_SIN_MEDIR });
+  // Y la quinta, que faltaba: el catálogo público. Son cuatro consultas del panel y una de la
+  // tienda, y esta última es la que ve quien compra. En la misma sesión —el admin con la vitrina
+  // abierta en otra pestaña de la SPA— un producto retirado seguía en la rejilla hasta que su
+  // entrada venciera, y al hacer clic la ficha respondía 404. `ADR-0051` promete que desaparece;
+  // en esa sesión no desaparecía. Es el mismo descuido que `ajustar-existencia` ya tenía cubierto.
+  await queryClient.invalidateQueries({ queryKey: ['catalogo'] });
 }
 
 export function usarPublicarProducto() {
