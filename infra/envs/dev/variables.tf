@@ -67,3 +67,21 @@ variable "wompi_llave_publica" {
   type        = string
   default     = ""
 }
+
+variable "dominio_publico_api" {
+  description = "Origen público del servicio de la API. Se llena después del primer apply, igual que `dominio_publico_web`, y no se puede derivar de `module.api.url` dentro del propio módulo: Terraform lo ve como un ciclo. Lo necesita la URL de confirmación de Sistecrédito, que la pasarela llama desde fuera."
+  type        = string
+  default     = ""
+}
+
+variable "sistecredito_listo" {
+  description = "Si los tres secretos de Sistecrédito ya tienen versión cargada. Mientras sea false, el método arranca apagado y los secretos no se montan — que es la misma secuencia de `secretos_cargados` y por el mismo motivo doble: montar `latest` de un secreto sin versiones hace que la revisión no arranque, y encender el método sin sus credenciales tampoco arranca, esta vez a propósito (PropiedadesSistecredito se niega). Orden: apply, cargar los tres valores con gcloud, poner esto en true, volver a aplicar."
+  type        = bool
+  default     = false
+}
+
+variable "correo_admin" {
+  description = "La cuenta de administración del panel. No es secreta —la clave sí, y vive en Secret Manager—. Estaba fijada a mano en el servicio de Cloud Run y no en esta configuración, así que el primer apply que tocara el servicio la habría borrado."
+  type        = string
+  default     = "contacto@tecnosport.co"
+}
