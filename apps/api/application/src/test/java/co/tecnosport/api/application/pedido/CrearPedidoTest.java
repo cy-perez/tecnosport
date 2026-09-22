@@ -42,6 +42,8 @@ import co.tecnosport.api.domain.pedido.Contacto;
 import co.tecnosport.api.domain.pedido.CriteriosContraentrega;
 import co.tecnosport.api.domain.pedido.Direccion;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
+import co.tecnosport.api.domain.pedido.LineaPedido;
+import co.tecnosport.api.domain.pedido.LineasDuplicadasException;
 import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.domain.pedido.Pedido;
 import co.tecnosport.api.domain.pedido.TipoEntrega;
@@ -52,6 +54,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class CrearPedidoTest {
@@ -92,6 +95,7 @@ class CrearPedidoTest {
   private static final Contacto CONTACTO = new Contacto("Ana Pérez", "3138816711");
 
   private Variante variante;
+  private Producto primerProducto;
 
   private CrearPedido crear() {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
@@ -150,6 +154,65 @@ class CrearPedidoTest {
         VERSION_POLITICA);
   }
 
+  /**
+   * Un segundo producto publicado, con su propia variante y su propio libro. Hace falta para las
+   * pruebas del orden de los bloqueos, que necesitan dos variantes en el mismo pedido.
+   */
+  private Variante publicarSegundaVarianteConExistencia(int existencia) {
+    Marca marca = Marca.crear("TecnoSport");
+    Categoria categoria =
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+    Producto producto =
+        Producto.crear(
+            "Pantaloneta running",
+            new Slug("pantaloneta-running"),
+            "Descripción",
+            marca,
+            categoria);
+    producto.asignarImagenPrincipal(
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            "https://cdn.tecnosport.co/img2.jpg",
+            "https://cdn.tecnosport.co/img2.webp",
+            800,
+            600,
+            1000,
+            new HashContenido("%064x".formatted(2)),
+            "alt es",
+            "alt en"));
+    Variante segunda =
+        Variante.crear(
+            new Sku("TS-PAN-NE-M"),
+            Dinero.deCop(40_000),
+            new BigDecimal("0.19"),
+            null,
+            new Paquete(150, 28, 22, 3),
+            List.of());
+    producto.agregarVariante(segunda);
+    producto.publicar();
+    // `conProductos` reemplaza la lista entera: hay que volver a pasar el primero.
+    productos.conProductos(primerProducto, producto);
+
+    Inventario inventario = Inventario.crear(segunda.id());
+    inventario.registrarEntrada(existencia, "siembra de prueba", AHORA);
+    inventarios.conInventario(inventario);
+    return segunda;
+  }
+
+  private CrearPedidoComando comandoCon(List<CrearPedidoComando.LineaComando> lineas) {
+    return new CrearPedidoComando(
+        null,
+        "cliente@tecnosport.co",
+        CONTACTO,
+        lineas,
+        TipoEntrega.ENVIO_A_DOMICILIO,
+        DIRECCION_MEDELLIN,
+        MetodoPago.NEQUI,
+        true,
+        IP);
+  }
+
   private void publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
@@ -183,6 +246,7 @@ class CrearPedidoTest {
             List.of());
     producto.agregarVariante(variante);
     producto.publicar();
+    primerProducto = producto;
     productos.conProductos(producto);
 
     Inventario inventario = Inventario.crear(variante.id());
@@ -386,6 +450,67 @@ class CrearPedidoTest {
           admite,
           tarifa.venceEn());
     }
+  }
+
+  /**
+   * El orden de los bloqueos no lo elige quien postea. Dos compradores con las mismas variantes en
+   * distinto orden se bloqueaban en cruz y Postgres abortaba uno con `40P01`, que el comprador veía
+   * como un 500. Aquí se comprueba con una sola petición lo que allí pasaba con dos: que la
+   * secuencia de libros que se piden sea la del `varianteId` y no la del cuerpo.
+   */
+  @Test
+  void tomaLosBloqueosEnOrdenDeVarianteIdYNoEnElQueMandaElCliente() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    Variante otra = publicarSegundaVarianteConExistencia(5);
+
+    List<UUID> esperado = Stream.of(variante.id(), otra.id()).sorted().toList();
+    // El cuerpo llega justo al revés del orden canónico.
+    List<CrearPedidoComando.LineaComando> alReves =
+        esperado.reversed().stream().map(id -> new CrearPedidoComando.LineaComando(id, 1)).toList();
+
+    caso.ejecutar(comandoCon(alReves));
+
+    assertEquals(esperado, inventarios.ordenDeConsultas());
+  }
+
+  @Test
+  void elPedidoConservaElOrdenDeLineasDelComprador() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+    Variante otra = publicarSegundaVarianteConExistencia(5);
+
+    List<UUID> comoLasMando = Stream.of(variante.id(), otra.id()).sorted().toList().reversed();
+
+    Pedido pedido =
+        caso.ejecutar(
+            comandoCon(
+                comoLasMando.stream()
+                    .map(id -> new CrearPedidoComando.LineaComando(id, 1))
+                    .toList()));
+
+    assertEquals(comoLasMando, pedido.lineas().stream().map(LineaPedido::varianteId).toList());
+  }
+
+  /**
+   * Y no se reserva nada al rechazarlo: la guarda va antes de tocar el inventario, como la de la
+   * autorización de datos. Reservar y fallar después dejaría existencias comprometidas para un
+   * pedido que no va a existir.
+   */
+  @Test
+  void rechazaDosLineasDeLaMismaVarianteSinReservarNada() {
+    CrearPedido caso = crear();
+    publicarProductoConVarianteYExistencia(5);
+
+    CrearPedidoComando comando =
+        comandoCon(
+            List.of(
+                new CrearPedidoComando.LineaComando(variante.id(), 1),
+                new CrearPedidoComando.LineaComando(variante.id(), 1)));
+
+    assertThrows(LineasDuplicadasException.class, () -> caso.ejecutar(comando));
+    assertEquals(0, inventarios.consultasConBloqueo());
+    assertEquals(5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoTotal());
   }
 
   @Test

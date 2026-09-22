@@ -43,5 +43,22 @@ public interface RepositorioInventario {
    */
   List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds);
 
+  /**
+   * El libro de una variante, abriéndolo si todavía no existe, y <b>siempre con el bloqueo</b> de
+   * {@link #buscarPorVarianteId}.
+   *
+   * <p>Existe porque la alternativa no es segura. Quien necesitaba esto hacía {@code
+   * buscarPorVarianteId(id).orElseGet(() -> Inventario.crear(id))}, y esa rama del {@code
+   * orElseGet} no sostiene ningún bloqueo: el {@code select … for update} no encuentra fila, así
+   * que no hay nada que bloquear y la transacción sigue creyendo que lo tiene. Dos conteos
+   * simultáneos sobre una variante sin libro escribían dos agregados contra {@code
+   * ux_inventario_variante}, y el que perdía moría con una violación de integridad sin traducir.
+   *
+   * <p>La implementación de producción inserta de forma idempotente y vuelve a leer con bloqueo, de
+   * modo que las dos ramas acaban sosteniendo la misma garantía. Devuelve el libro, nunca un vacío:
+   * si no existía, existe.
+   */
+  Inventario abrirLibroConBloqueo(UUID varianteId);
+
   void guardar(Inventario inventario);
 }

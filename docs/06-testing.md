@@ -39,6 +39,28 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
   hacía — en verde todo el tiempo. Un doble tiene que fallar con el mismo tipo y
   en los mismos casos que lo que imita; si no, lo que prueba es a sí mismo. Ver
   `adr/0044`.
+- **Y la tercera variante, encontrada el 21 de septiembre: un doble que devuelve
+  el mismo objeto que le sembraron.** Los once `RepositorioInventarioFalso`
+  guardaban el agregado en un mapa y lo devolvían tal cual en cada lectura. El
+  adaptador real no hace eso: reconstruye un `Inventario` nuevo desde sus filas,
+  así que una mutación que no se guarde **se pierde**. Con los dobles viejos, la
+  prueba y el caso de uso compartían el objeto, de modo que quitar el
+  `repositorioInventario.guardar(inventario)` de `CrearPedido` dejaba la batería
+  entera en verde — y en producción eso es una reserva que no existe, una línea
+  de pedido con un `id_reserva` que no apunta a ningún movimiento, y sobreventa.
+
+  La regla que se saca: **un doble de un repositorio copia en la lectura**. Si el
+  real reconstruye el agregado —y cualquiera que mapee de filas a objetos lo
+  hace—, devolver la instancia guardada convierte "olvidé persistir" en algo
+  indistinguible de "persistí". Ver `adr/0054`.
+- **Afirmar que algo NO está en pantalla no afirma nada si no se esperó a que la
+  pantalla tuviera datos.** La primera versión de la prueba de "el aviso no se
+  enciende con solo borradores" pasaba igual con el defecto puesto: esperaba al
+  botón de cerrar sesión —que se pinta de inmediato— y preguntaba por el enlace
+  con `queryByRole`, que no espera. Con la consulta todavía sin resolver, el
+  aviso no estaba por el motivo equivocado. **Una aserción de ausencia necesita
+  un ancla**: algo que solo se puede ver cuando los datos ya llegaron, esperado
+  con `findBy*` antes de preguntar por lo que no debería estar.
 - **Una prueba puede fijar un defecto tan bien como fija un acierto.**
   `unFalloAlEnviarSeRegistraYNoPropaga` exigía `doesNotThrowAnyException()` y lo
   que protegía era el error. La cobertura no distingue las dos cosas: al leer una

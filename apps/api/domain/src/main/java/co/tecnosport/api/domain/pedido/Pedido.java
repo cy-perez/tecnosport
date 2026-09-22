@@ -8,10 +8,12 @@ import co.tecnosport.api.domain.envio.TarifaEnvio;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -270,6 +272,7 @@ public final class Pedido {
       TarifaEnvio tarifaEnvio,
       Contacto contacto) {
     Objects.requireNonNull(metodoPago, "El método de pago no puede ser nulo.");
+    exigirVariantesSinRepetir(lineas.stream().map(LineaPedido::varianteId).toList());
     EstadoPedido estadoInicial = estadoInicial(metodoPago);
     HistorialPedido primerRegistro =
         new HistorialPedido(
@@ -289,6 +292,24 @@ public final class Pedido {
         null,
         tarifaEnvio,
         contacto);
+  }
+
+  /**
+   * Un pedido no puede traer dos líneas de la misma variante.
+   *
+   * <p>Guarda estática y pública, como {@code AutorizacionDatos.exigirAutorizacion}, porque quien
+   * confirma el pedido tiene que poder exigirla <b>antes</b> de reservar inventario: llegar hasta
+   * {@link #crear} con líneas repetidas significaría haber tomado ya dos reservas sobre la misma
+   * variante para un pedido que no va a existir. La comprobación de {@link #crear} se queda igual,
+   * como red para cualquier otro camino que construya un pedido.
+   */
+  public static void exigirVariantesSinRepetir(List<UUID> varianteIds) {
+    Set<UUID> vistas = new HashSet<>();
+    for (UUID varianteId : varianteIds) {
+      if (!vistas.add(varianteId)) {
+        throw new LineasDuplicadasException(varianteId);
+      }
+    }
   }
 
   private static EstadoPedido estadoInicial(MetodoPago metodoPago) {

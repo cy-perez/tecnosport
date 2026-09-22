@@ -20,12 +20,19 @@ final class RepositorioInventarioParaRetractoFalso implements RepositorioInventa
 
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
-    return Optional.ofNullable(porVariante.get(varianteId));
+    return Optional.ofNullable(porVariante.get(varianteId))
+        .map(RepositorioInventarioParaRetractoFalso::reconstituido);
+  }
+
+  /** Abre el libro si no existe, como hace el adaptador real de forma idempotente. */
+  @Override
+  public Inventario abrirLibroConBloqueo(UUID varianteId) {
+    return reconstituido(porVariante.computeIfAbsent(varianteId, Inventario::crear));
   }
 
   @Override
   public void guardar(Inventario inventario) {
-    porVariante.put(inventario.varianteId(), inventario);
+    porVariante.put(inventario.varianteId(), reconstituido(inventario));
   }
 
   /** No lo usa esta prueba: el listado de existencias tiene la suya. */
@@ -36,6 +43,19 @@ final class RepositorioInventarioParaRetractoFalso implements RepositorioInventa
 
   @Override
   public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
-    return varianteIds.stream().map(porVariante::get).filter(Objects::nonNull).toList();
+    return varianteIds.stream()
+        .map(porVariante::get)
+        .filter(Objects::nonNull)
+        .map(RepositorioInventarioParaRetractoFalso::reconstituido)
+        .toList();
+  }
+
+  /**
+   * Cada lectura devuelve un agregado nuevo, igual que {@code RepositorioInventarioJpa} al
+   * reconstruirlo desde sus filas. Devolver la instancia guardada hacía que una mutación sin {@code
+   * guardar} se viera igual que una guardada, y eso en producción es sobreventa.
+   */
+  private static Inventario reconstituido(Inventario inventario) {
+    return new Inventario(inventario.id(), inventario.varianteId(), inventario.movimientos());
   }
 }

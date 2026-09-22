@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.inventario;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
 import co.tecnosport.api.domain.inventario.Inventario;
 import co.tecnosport.api.domain.inventario.MovimientoInventario;
 import co.tecnosport.api.domain.inventario.TipoMovimientoInventario;
@@ -89,13 +90,49 @@ public class RepositorioInventarioJpa implements RepositorioInventario {
         .toList();
   }
 
+  /**
+   * Inserta si hace falta y vuelve a leer con bloqueo. El {@code findByVarianteId} de la segunda
+   * línea es el que toma el {@code select … for update}, y para entonces la fila existe seguro — la
+   * haya puesto esta transacción o la que ganó la carrera.
+   *
+   * <p>El id se genera aquí y puede acabar descartándolo el {@code on conflict}: es el precio de no
+   * tener que preguntar antes si existe, y preguntar antes es justo lo que no sirve, porque entre
+   * la pregunta y la inserción cabe la otra transacción.
+   */
+  @Override
+  public Inventario abrirLibroConBloqueo(UUID varianteId) {
+    inventarios.abrirSiNoExiste(GeneradorIdentificador.nuevo(), varianteId);
+    return buscarPorVarianteId(varianteId)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "El libro de la variante " + varianteId + " no existe después de abrirlo."));
+  }
+
+  /**
+   * Escribe <b>solo los movimientos nuevos</b>, no el histórico entero.
+   *
+   * <p>Pasaba lo segundo, y costaba caro sin que se viera: {@code MovimientoInventarioJpaEntity}
+   * lleva el {@code @Id} asignado y no tiene {@code @Version}, así que Spring Data la da por
+   * existente y cada {@code save} acaba en un {@code merge} — un {@code SELECT} y un posible {@code
+   * UPDATE} por cada movimiento ya guardado. Reservar una unidad de una variante con ochocientos
+   * movimientos eran unas mil seiscientas sentencias, emitidas <b>con el bloqueo pesimista ya
+   * tomado</b>, y {@code CrearPedido} lo hacía una vez por línea. O sea que el checkout se
+   * degradaba justo en las variantes que más se venden, que son las que más histórico acumulan.
+   *
+   * <p>Y un {@code merge} sobre una tabla que es de solo-agregar por diseño podía resucitar en
+   * silencio una fila borrada a mano.
+   */
   @Override
   public void guardar(Inventario inventario) {
     if (inventarios.findById(inventario.id()).isEmpty()) {
       inventarios.save(new InventarioJpaEntity(inventario.id(), inventario.varianteId()));
     }
     List<MovimientoInventarioJpaEntity> entidades =
-        inventario.movimientos().stream().map(m -> aEntidad(inventario.id(), m)).toList();
+        inventario.movimientosNuevos().stream().map(m -> aEntidad(inventario.id(), m)).toList();
+    if (entidades.isEmpty()) {
+      return;
+    }
     movimientos.saveAll(entidades);
   }
 
