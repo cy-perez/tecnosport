@@ -7277,13 +7277,83 @@ dos formatos. Para el mismo fotograma del JBL Flip 7:
 | 480 | 28 kB | 8 kB |
 
 La tarjeta de la rejilla pinta esa foto a menos de 400 px de ancho en móvil. Se está mandando
-**diez veces** lo que hace falta, y el LCP de la portada (7,0 s) y el de la ficha (8,1–8,5 s) son
-eso, no otra cosa.
+**diez veces** lo que hace falta.
+
+*(Dicho el mismo día y corregido en la entrada siguiente: "el elemento más pesado" no es lo mismo
+que "el LCP". Lo era en la ficha; en la portada, no.)*
 
 Queda como el siguiente trabajo de rendimiento, y no es "optimizar imágenes" en abstracto: es
 elegir qué variante sube el cargador —y si sube varias con `srcset`—, cambiar el `contentType`
 que hoy está clavado en `image/jpeg`, y volver a subir lo que ya está. Con el número delante, es
 la única cosa de esta lista que vale puntos de verdad.
+
+## El sitio deja de servir las maestras, y el LCP dice de qué habla (2026-09-21)
+
+La deuda 18, abierta esa misma tarde por la primera medición de Lighthouse que valió algo. El
+cargador subía la foto **maestra** del estudio —2000 px, medio megabyte— porque era lo único que
+la lista blanca de la API dejaba pasar. Las 91 imágenes del catálogo pesaban **22,01 MiB**; las
+mismas 91 en AVIF de 1200 px pesan **2,18 MiB**. Un 90,1 % menos, comprobado archivo por archivo
+en disco y contando el bucket: 91 objetos `.avif` y ni uno `.jpg` de los vivos.
+
+### Tres piezas, y una de ellas era del backend
+
+1. **`image/avif` no existía para la API.** `TiposDeImagen` era una lista blanca de tres tipos, y
+   la extensión de la clave sale de ahí: sin la entrada, el objeto habría quedado en el bucket con
+   la extensión equivocada. Tiene su prueba, y afirma lo que importa —que la clave termine en
+   `.avif`—, no solo que el tipo se acepte.
+2. **Juzgar y subir dejaron de ser lo mismo.** `material-catalogo.mjs` seguía leyendo la maestra
+   para todo, y tenía que seguir haciéndolo para una cosa: la resolución de verdad vive ahí y
+   `dimensionesJpeg` solo sabe leer JPEG. Ahora cada toma lleva además su variante web —el AVIF
+   más grande hasta 1200— resuelta **por nombre de archivo y no por posición**, para que las dos
+   listas no puedan desalinearse en silencio.
+3. **`--rehacer-imagenes`**, porque lo ya subido no se arregla solo. Sube la principal nueva, sube
+   la galería nueva y **después** borra la vieja. El orden es el contrario del obvio a propósito:
+   borrar primero deja el producto publicado y sin una sola foto si la corrida se corta a la
+   mitad, y lo peor que puede pasar con este orden es que sobren unas cuantas, que se ven y se
+   arreglan volviendo a correrlo.
+
+**Se niega en vez de caer a la maestra** cuando la variante no está. Caer sería volver al defecto
+que esto corrige y sin decir nada: la carga terminaría "bien" y el sitio seguiría pesando diez
+veces lo que debe.
+
+Cuatro productos no tienen AVIF de 1200 porque su foto original era más pequeña —el procesamiento
+del estudio no amplía— y suben la mayor que exista: 800 el Honor X7D, 600 el Xtreme 4 y el Boombox
+4, 480 el PartyBox. Son los mismos cuatro que el cruce ya marcaba con la foto por debajo del
+mínimo.
+
+Todo en `ADR-0056`, con las cuatro alternativas descartadas.
+
+### La primera corrida falló, y falló bien
+
+Contra el `bootRun` que estaba levantado, que era el jar de **antes** de aceptar `image/avif`: un
+422 en la primera petición del primer producto, sin subir ni borrar nada. Reiniciar la API y
+repetir. Vale anotarlo porque el orden correcto no es obvio cuando el cambio cruza los dos lados:
+**el backend se reinicia antes de correr la herramienta**, no después de ver el error.
+
+### Lo que la medición dice, que no es lo que se esperaba
+
+| | antes (2 corridas) | después (2 corridas) |
+|---|---|---|
+| LCP ficha | 8,5 s · 8,1 s | **5,7 s · 5,2 s** |
+| LCP portada | 7,0 s · 7,0 s | 6,2 s · 6,9 s |
+| rendimiento ficha | 63 · 65 | 66 · 65 |
+| rendimiento portada | 59 · 59 | 51 · 57 |
+
+**La ficha mejoró tres segundos de LCP, y el desglose explica por qué**: la carga del recurso pasó
+de 128 ms a 54, y el *element render delay* de 1.133 ms a 209. Ahí la foto **sí** era el elemento
+más grande.
+
+**La portada no se movió, y el desglose dice algo más útil todavía**: su LCP **no tiene fases de
+recurso**, ni antes ni después. O sea que el elemento más grande de la portada nunca fue una
+imagen — es texto, y lo que lo retrasa es el *render delay* de 1,3 a 1,5 segundos. La hipótesis
+escrita el 19 de septiembre —"la banda de portada es el nuevo LCP"— era falsa, y la frase que se
+escribió esta misma tarde —"el LCP de la portada es la foto de 635 kB"— también: 635 kB era el
+**recurso más pesado**, que es otra cosa. Lo que queda en la portada es JavaScript, no fotos.
+
+**Y los puntajes siguen sin poder leerse en esta máquina**: `legales`, que no tiene una sola imagen
+y que nadie tocó en todo esto, dio 70, 89, 69 y 86 en cuatro corridas. Por eso la tabla de arriba
+mira el LCP y no el número grande. La deuda 17 —tres corridas y la mediana— pasa de "estaría bien"
+a "hace falta".
 
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
@@ -7344,11 +7414,21 @@ El orden no es negociable: cada uno alimenta al siguiente.
 17. **El arnés de Lighthouse toma una sola muestra.** Con la varianza medida —22 puntos entre dos
     corridas del mismo build, cinco minutos aparte— una muestra puede inventar una regresión o
     taparla. Tres corridas y la mediana.
-18. **El sitio sirve las fotos maestras.** `material-catalogo.mjs` lee de `estudio/<id>/maestra` y
-    sube 635 kB donde el AVIF de 1200 px pesa 58. Es el LCP de la portada y el de la ficha. Pide
-    decidir qué variante sube el cargador —y si sube varias con `srcset`—, cambiar el
-    `contentType` clavado en `image/jpeg`, y volver a subir lo que ya está.
+18. ~~**El sitio sirve las fotos maestras.**~~ **Cerrada el 21 de septiembre**: las 91 imágenes
+    pasaron de 22,01 MiB a 2,18 —un 90,1 %— y el LCP de la ficha bajó tres segundos. Deja dos
+    cosas dichas: la portada **no** mejoró porque su LCP nunca fue una imagen, y no se puso
+    `srcset` —se sube una sola variante de 1200— porque con el peso ya resuelto eso es afinar, no
+    arreglar.
+19. **La portada tarda 1,3–1,5 s en pintar su elemento más grande, y es texto.** Lo que queda ahí
+    es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
+    portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
+    y no tiene nada que ver con las fotos.
 
+20. **`url_webp` guarda la URL de un AVIF.** La columna nació esperando una conversión que iba a
+    hacer el asistente de captura de la Fase 5 y que nunca existió; siempre apuntó al mismo objeto
+    que `url`, y ahora además el nombre dice un formato que no es. Renombrarla cruza el dominio,
+    una migración, el DTO y el contrato generado, así que es un trabajo con su plan, no un
+    `sed`. Mientras tanto, lo que engaña es el nombre, no el dato.
 ### Bloque 3. Decisiones que no toma un script
 
 9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
