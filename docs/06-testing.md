@@ -61,6 +61,18 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
   aviso no estaba por el motivo equivocado. **Una aserción de ausencia necesita
   un ancla**: algo que solo se puede ver cuando los datos ya llegaron, esperado
   con `findBy*` antes de preguntar por lo que no debería estar.
+- **Un `@defer` deja fuera del DOM lo que envuelve, y las pruebas que no lo
+  nombran siguen verdes.** `TestBed` no dispara los bloques diferidos por
+  omisión. Al meter el pie en un `@defer (on immediate; hydrate on viewport)`
+  (22 de septiembre), las cinco pruebas de `app.spec.ts` siguieron pasando —
+  incluida la de axe, cuyo comentario dice que cubre "encabezado, enlace de
+  salto, landmark principal y pie" y que había dejado de ver el último. No es
+  un fallo del `@defer`: es que **una prueba de ausencia implícita no existe**.
+  Un bloque diferido nuevo obliga a dos cosas:
+  `deferBlockBehavior: DeferBlockBehavior.Playthrough` en el `TestBed` —o en el
+  `render` de Testing Library, que lo acepta igual— y una prueba que afirme que
+  el contenido se pinta, comprobada cambiando el disparador normal por uno
+  perezoso para verla caer.
 - **Una prueba puede fijar un defecto tan bien como fija un acierto.**
   `unFalloAlEnviarSeRegistraYNoPropaga` exigía `doesNotThrowAnyException()` y lo
   que protegía era el error. La cobertura no distingue las dos cosas: al leer una

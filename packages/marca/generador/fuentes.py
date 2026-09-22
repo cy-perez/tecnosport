@@ -4,6 +4,11 @@
 Uso:
     python3 fuentes.py tokens.json --out kit/fuentes
     python3 fuentes.py --familias "Inter" "Fraunces" --out kit/fuentes
+    python3 fuentes.py --out kit/fuentes --desde-local   # recorta lo que ya hay
+
+Las familias se **recortan al alfabeto latino** antes de comprimir. Lo que sube
+Google trae cirilico, griego y vietnamita dentro: IBM Plex Sans pesaba 225 KB y
+este sitio no escribe ni una letra de eso. Con `--completas` se deja entera.
 
 Por que autoalojar y no enlazar a Google Fonts: el sitio deja de depender de un
 tercero, carga antes, y el kit se puede entregar completo sin conexion. Ademas
@@ -20,6 +25,24 @@ from pathlib import Path
 
 RAW = "https://raw.githubusercontent.com/google/fonts/main/{path}"
 LICENCIAS = ["ofl", "apache", "ufl"]
+
+# Los caracteres que se conservan al recortar. Son los rangos "latin" y "latin-ext" que
+# publica Google Fonts, y no una lista inventada: ahi estan los acentos, la enye, los
+# signos de apertura, las comillas y rayas tipograficas (U+2000-206F), el euro y el
+# simbolo de marca registrada. El peso todavia era el que subio de Google: las familias
+# vienen con cirilico, griego y vietnamita dentro, que este sitio no escribe en ninguna
+# parte. IBM Plex Sans pesaba 225 KB por eso.
+#
+# Se incluye latin-ext y no solo latin porque el catalogo lo escriben proveedores: un
+# nombre de producto con una letra centroeuropea no puede salir en tofu por ahorrar 8 KB.
+RANGO_LATINO = (
+    "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,"
+    "U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,"
+    "U+2212,U+2215,U+FEFF,U+FFFD,"
+    "U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,"
+    "U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,"
+    "U+2113,U+2C60-2C7F,U+A720-A7FF"
+)
 
 def traer(url, timeout=60):
     req = urllib.request.Request(url, headers={"User-Agent": "skill-diseno-ui-web"})
@@ -112,6 +135,66 @@ def por_que_empeoraria(destino, comprimir, sin_comprimir=False):
             "         O, si de verdad quieres los TTF, pasa --sin-comprimir.".format(destino))
 
 
+def subconjunto(origen, salida, unicodes, flavor=None):
+    """Recorta una fuente a `unicodes` y la escribe en `salida`.
+
+    Conserva el eje de pesos: `Subsetter` no instancia las variables, asi que una
+    familia variable sigue siendo variable despues del recorte. Eso importa aqui,
+    donde `fuentes.css` declara `font-weight: 100 900`; si el recorte fijara un peso,
+    el CSS estaria mintiendo y el navegador sintetizaria las negritas.
+
+    `name_IDs` va mas alla del valor por omision (0-6) para conservar el 13 y el 14,
+    que son la licencia y su URL dentro del propio archivo. La OFL se cumple con el
+    OFL-*.txt que ya se distribuye al lado, pero quitar el aviso de dentro de la
+    fuente al recortarla es gratis de evitar.
+    """
+    from fontTools import subset
+    opciones = subset.Options()
+    opciones.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]
+    opciones.notdef_outline = True
+    if flavor:
+        opciones.flavor = flavor
+    fuente = subset.load_font(str(origen), opciones)
+    recortador = subset.Subsetter(options=opciones)
+    recortador.populate(unicodes=subset.parse_unicodes(unicodes))
+    recortador.subset(fuente)
+    subset.save_font(fuente, str(salida), opciones)
+    fuente.close()
+
+
+def recortar_lo_que_hay(destino, unicodes):
+    """Recorta los woff2 que ya estan en el kit, sin bajar nada.
+
+    Existe para que anadir el recorte no signifique ademas traerse la version de hoy
+    de cada familia: `procesar` descarga de google/fonts, y esas familias cambian.
+    Mezclar las dos cosas en un commit deja sin responder cual de las dos movio lo
+    que se vea en pantalla.
+
+    No reescribe `fuentes.css`: los nombres, los pesos y el `format` son los mismos
+    despues del recorte, y regenerar un archivo que no cambia solo ensucia el diff.
+    """
+    destino = Path(destino)
+    archivos = sorted(destino.glob("*.woff2"))
+    if not archivos:
+        raise SystemExit("No hay .woff2 en '{}': nada que recortar.".format(destino))
+    antes_total = despues_total = 0
+    for arch in archivos:
+        antes = arch.stat().st_size
+        tmp = arch.with_name(arch.name + ".recortada")
+        subconjunto(arch, tmp, unicodes, flavor="woff2")
+        tmp.replace(arch)
+        despues = arch.stat().st_size
+        antes_total += antes
+        despues_total += despues
+        print("  {:<30} {:>5} KB -> {:>4} KB  ({:.0f} % menos)".format(
+            arch.name, round(antes / 1024), round(despues / 1024),
+            100 * (1 - despues / antes)))
+    print("\n{} archivo(s): {} KB -> {} KB, {} KB menos ({:.0f} %).".format(
+        len(archivos), round(antes_total / 1024), round(despues_total / 1024),
+        round((antes_total - despues_total) / 1024),
+        100 * (1 - despues_total / antes_total)))
+
+
 def rango_pesos(ruta_ttf):
     """Si es fuente variable devuelve (min, max) del eje wght."""
     try:
@@ -158,7 +241,7 @@ def peso_de(nombre_archivo):
             return PESOS[k], italica
     return 400, italica
 
-def procesar(familia, pesos_pedidos, destino, comprimir):
+def procesar(familia, pesos_pedidos, destino, comprimir, recortar=True):
     ruta, archivos, lic = buscar_familia(familia)
     if not archivos:
         print("  [!] No se encontro '{}' en google/fonts.".format(familia))
@@ -188,6 +271,21 @@ def procesar(familia, pesos_pedidos, destino, comprimir):
             tmp.unlink()
             continue
         rango = rango_pesos(tmp)
+        if recortar:
+            antes = tmp.stat().st_size
+            try:
+                parcial = tmp.with_name(tmp.name + ".recortada")
+                subconjunto(tmp, parcial, RANGO_LATINO)
+                parcial.replace(tmp)
+                print("  {:<28} recorte a latino: {} KB -> {} KB".format(
+                    arch, round(antes / 1024), round(tmp.stat().st_size / 1024)))
+            except Exception as e:
+                # Que el recorte falle deja la fuente completa, que es lo que habia
+                # antes de que esto existiera: mas pesada, nunca rota. Por eso avisa y
+                # sigue, en vez de negarse como hace `por_que_empeoraria` con el woff2,
+                # donde continuar si dejaba el kit peor.
+                print("  [!] No se pudo recortar {} ({}). Se deja completa.".format(
+                    arch, type(e).__name__))
         salida = destino / (slug(familia) + ("-variable" if rango else
                   "-{}".format(peso_de(arch)[0])) + ".woff2")
         if comprimir:
@@ -250,7 +348,23 @@ def main():
     ap.add_argument("--familias", nargs="*", default=None)
     ap.add_argument("--out", default="fuentes")
     ap.add_argument("--sin-comprimir", action="store_true", help="Deja el TTF sin pasar a woff2")
+    ap.add_argument("--desde-local", action="store_true",
+                    help="Recorta los woff2 que ya estan en --out, sin descargar nada")
+    ap.add_argument("--completas", action="store_true",
+                    help="No recorta: deja cada familia con todos sus alfabetos")
     a = ap.parse_args()
+
+    if a.desde_local:
+        if a.completas:
+            raise SystemExit("--desde-local solo sirve para recortar; con --completas no hace nada.")
+        if not puede_woff2():
+            raise SystemExit(
+                "  ERROR: recortar un woff2 necesita fontTools y brotli.\n"
+                "         Instala las dos cosas y repite:  pip install fonttools brotli")
+        print("Recortando lo que ya hay en '{}' (sin red):".format(a.out))
+        recortar_lo_que_hay(Path(a.out), RANGO_LATINO)
+        print("fuentes.css no cambia: los nombres y los pesos son los mismos.")
+        return
 
     pedidos = []
     if a.familias:
@@ -286,7 +400,7 @@ def main():
     caras = []
     for fam, pesos in unicos:
         print("{}:".format(fam))
-        caras += procesar(fam, pesos, destino, comprimir)
+        caras += procesar(fam, pesos, destino, comprimir, recortar=not a.completas)
 
     if caras:
         css = destino.parent / "fuentes.css"

@@ -675,7 +675,7 @@ def main():
     if not args.sin_generador:
         gen = out / "generador"
         gen.mkdir(parents=True, exist_ok=True)
-        for f in ("kit_ui.py", "_plantilla_kit.html", "fuentes.py"):
+        for f in ("kit_ui.py", "_plantilla_kit.html", "fuentes.py", "comprobar_fuentes.py"):
             if (aqui / f).exists():
                 copiar(aqui / f, gen / f)
         copiar(args.tokens, out / "tokens.json")
