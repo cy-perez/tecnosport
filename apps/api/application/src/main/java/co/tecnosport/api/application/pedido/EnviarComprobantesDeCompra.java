@@ -165,7 +165,7 @@ public final class EnviarComprobantesDeCompra {
     return switch (pedido.metodoPago()) {
       case CONTRAENTREGA -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_CONTRAENTREGA;
       case TRANSFERENCIA_MANUAL -> TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_TRANSFERENCIA;
-      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI, SISTECREDITO ->
+      case TARJETA, PSE, NEQUI, BANCOLOMBIA, SISTECREDITO ->
           TextoDeCorreo.PEDIDO_COMPROBANTE_PAGO_EN_LINEA;
     };
   }

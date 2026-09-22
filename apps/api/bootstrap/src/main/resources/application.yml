@@ -105,11 +105,11 @@ tecnosport:
       # Lo que la CUENTA de Wompi tiene activado hoy, que no es lo mismo que lo que el codigo sabe
       # procesar. Separados por comas, de MetodoPago, y solo metodos que pasen por la pasarela.
       #
-      # ADDI ESTA FUERA A PROPOSITO (decision del 14 de septiembre de 2026): Addi exige que el
-      # sitio ya este en linea para estudiar la activacion, asi que hasta entonces ofrecerlo seria
-      # prometer un medio de pago que no se puede honrar. El dia que lo activen se agrega ADDI
-      # aqui, y hay que devolver la frase de los terminos que se quito con esto
-      # (docs/11-pagos-y-envios.md).
+      # ADDI YA NO ES UN VALOR DE MetodoPago (22 de septiembre de 2026, V61). Estuvo fuera de
+      # esta lista desde el 14 de septiembre porque Addi exige que el sitio este en linea para
+      # estudiar la activacion, y el 22 se quito del enum: un valor que solo se mantenia fuera del
+      # checkout por no estar aqui. Cuando se integre de verdad vuelve a las dos partes, y hay que
+      # devolver la frase de los terminos que se quito con esto (docs/11-pagos-y-envios.md).
       habilitados: ${WOMPI_METODOS_HABILITADOS:TARJETA,PSE,NEQUI,BANCOLOMBIA}
     conciliacion:
       intervalo-minutos: ${WOMPI_CONCILIACION_INTERVALO_MINUTOS:15}
@@ -154,10 +154,15 @@ tecnosport:
     # tampoco.
     sandbox-activo: ${SISTECREDITO_SANDBOX_ACTIVO:false}
     sandbox-estado: ${SISTECREDITO_SANDBOX_ESTADO:Approved}
-    # TODO (dato de negocio, no lo inventes): SISTECREDITO_MONTO_MINIMO. Es el minimo del credito
-    # que define Sistecredito y por debajo del cual la pasarela responde 802. No esta en la
-    # documentacion entregada ni es publico — dos comercios aliados publican cifras distintas
-    # (20.000 y 30.000), lo que confirma que varia por comercio. Pendiente de la asesora.
+    # El minimo del credito por debajo del cual la pasarela responde 802. Confirmado por el duenno
+    # del negocio el 22 de septiembre de 2026: 50.000 COP. No es publico ni esta en la
+    # documentacion entregada —dos comercios aliados publican 20.000 y 30.000—, porque varia por
+    # comercio; el dato de ESTE comercio es el de arriba.
+    #
+    # SIGUE SIN VALOR POR OMISION, y ahora es una decision y no una falta: varia por comercio y
+    # puede cambiar, asi que un despliegue que olvide la variable tiene que no arrancar con el
+    # metodo encendido, en vez de cobrar con una cifra que alguien escribio aqui hace meses. El
+    # valor se declara en el despliegue (docs/07-infra-gcp.md).
     monto-minimo: ${SISTECREDITO_MONTO_MINIMO:}
     conciliacion:
       # Hace mas falta que la de Wompi: si el comprador cierra la ventana en vez de pulsar "volver

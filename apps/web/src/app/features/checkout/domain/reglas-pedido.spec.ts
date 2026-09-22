@@ -39,7 +39,7 @@ describe('requiereDireccion', () => {
 });
 
 describe('esMetodoPagoWompi', () => {
-  it.each(['TARJETA', 'PSE', 'NEQUI', 'BANCOLOMBIA', 'ADDI'] as const)(
+  it.each(['TARJETA', 'PSE', 'NEQUI', 'BANCOLOMBIA'] as const)(
     '%s va por Wompi',
     (metodo) => {
       expect(esMetodoPagoWompi(metodo)).toBe(true);
@@ -65,7 +65,7 @@ describe('esMetodoPagoSistecredito', () => {
     expect(esMetodoPagoSistecredito('SISTECREDITO')).toBe(true);
   });
 
-  it.each(['TARJETA', 'ADDI', 'TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)(
+  it.each(['TARJETA', 'BANCOLOMBIA', 'TRANSFERENCIA_MANUAL', 'CONTRAENTREGA'] as const)(
     '%s no lo cobra Sistecrédito',
     (metodo) => {
       expect(esMetodoPagoSistecredito(metodo)).toBe(false);

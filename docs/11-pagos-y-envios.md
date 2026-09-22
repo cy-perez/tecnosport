@@ -41,17 +41,25 @@ provee Wompi, y no es cierto.** La documentación pública de Wompi consultada e
 14 de septiembre de 2026 no lista Addi entre sus medios; lo que Wompi ofrece en
 esa familia es `BANCOLOMBIA_BNPL` ("Compra y Paga Después Bancolombia", cuatro
 cuotas) y `SU_PLUS`. Addi es un proveedor aparte, con su propia integración. Así
-que `MetodoPago.ADDI` sigue marcado como método de pasarela en el enum y
-`CrearIntentoDePago` lo enrutaría a Wompi, donde no existe. Hoy eso no puede
-pasar —la configuración no lo habilita y `CrearPedido` lo rechaza— pero el
-modelo está mintiendo mientras nadie lo toque.
+que `MetodoPago.ADDI` estuvo marcado como método de pasarela en el enum, y
+`CrearIntentoDePago` lo habría enrutado a Wompi, donde no existe. No podía pasar
+—la configuración no lo habilitaba y `CrearPedido` lo rechazaba— pero el modelo
+mentía.
 
-**TODO (dato de negocio, no lo inventes):** decidir qué se hace con
-`MetodoPago.ADDI`. Las dos salidas razonables son integrar Addi directamente
-cuando lo aprueben —y entonces deja de ser un método de pasarela— o quitar el
-valor del enum y ofrecer en su lugar el BNPL de Bancolombia, que sí llega por
-Wompi y por tanto por la configuración que ya existe. Mientras se decide, el
-valor queda y no se ofrece.
+**Decidido el 22 de septiembre de 2026: el valor se quitó del enum** (`V61`). Addi
+se integrará cuando el sitio esté en producción, que es la condición que ellos ponen
+para estudiar la activación, y volverá entonces **con su integración**: su propio
+`ProveedorDePago`, no un valor suelto apuntando a una pasarela que no lo cobra.
+
+Un valor que solo se mantenía fuera del checkout por no estar en la lista de
+habilitados de otra cuenta era un accidente esperando a que alguien tocara esa
+lista. El día que Addi vuelva hay que devolver además la frase de los términos que
+se quitó con él.
+
+**Lo que no se hizo, y es una decisión aparte:** ofrecer en su lugar el BNPL de
+Bancolombia. `MetodoPago.BANCOLOMBIA` ya existe y ya está habilitado, así que eso
+no es código: es qué medios activa la cuenta de Wompi (`WOMPI_METODOS_HABILITADOS`,
+`ADR-0029`).
 
 ## Wompi
 
@@ -185,11 +193,16 @@ algo que devolvió. `MedioReintegro.SISTECREDITO` es la constancia de que la
 anulación se pidió y se obtuvo — el `Reintegro` sigue sin mover un peso, como
 todos los demás.
 
-**TODO (dato de negocio, no lo inventes):** `SISTECREDITO_MONTO_MINIMO`. Es el
-mínimo del crédito por debajo del cual la pasarela responde `802`. No está en la
-documentación entregada ni es público: dos comercios aliados publican cifras
-distintas —$20.000 y $30.000—, lo que confirma que varía por comercio. Mientras
-falte, habilitar el método **no arranca**.
+**`SISTECREDITO_MONTO_MINIMO` = $50.000**, confirmado por el dueño del negocio el
+22 de septiembre de 2026. Es el mínimo del crédito por debajo del cual la pasarela
+responde `802`. No está en la documentación entregada ni es público: dos comercios
+aliados publican cifras distintas —$20.000 y $30.000—, lo que confirma que varía por
+comercio, y el de arriba es el de **este** comercio.
+
+**Sigue sin valor por omisión en `application.yml`, y ahora es una decisión y no una
+falta.** Varía por comercio y puede cambiar; un despliegue que olvide la variable
+tiene que no arrancar con el método encendido, en vez de cobrar con una cifra que
+alguien escribió aquí hace meses.
 
 **Lo que todavía no se sabe y hay que medir:** si una anulación hecha en Credinet
 dispara una notificación a `urlConfirmation`. Si no la dispara, un pedido puede

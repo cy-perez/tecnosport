@@ -393,8 +393,12 @@ SISTECREDITO_SANDBOX_ACTIVO, SISTECREDITO_SANDBOX_ESTADO
                          aprobaría pagos que nadie pagó y la mercancía saldría sin que nada
                          fallara, así que el arranque se niega si está en `true` con
                          `WOMPI_AMBIENTE=produccion`)
-SISTECREDITO_MONTO_MINIMO (**falta y bloquea**: el mínimo del crédito lo define Sistecrédito y no
-                         es público. Habilitar el método sin él impide arrancar, a propósito)
+SISTECREDITO_MONTO_MINIMO (**50.000**, confirmado por el dueño del negocio el 22 de septiembre de
+                         2026. No es público ni está en la documentación entregada —dos comercios
+                         aliados publican 20.000 y 30.000— porque varía por comercio. Sigue sin
+                         valor por omisión en `application.yml`, y ahora es una decisión: un
+                         despliegue que olvide la variable no arranca con el método encendido, en
+                         vez de cobrar con una cifra escrita hace meses)
 SISTECREDITO_URL_RESPUESTA, SISTECREDITO_URL_CONFIRMACION
                         (derivadas de `APP_URL_PUBLICA` y `API_URL_PUBLICA`. La de respuesta lleva
                          el marcador `{idioma}`, que el caso de uso sustituye: las rutas del sitio

@@ -6,7 +6,6 @@ public enum MetodoPago {
   PSE,
   NEQUI,
   BANCOLOMBIA,
-  ADDI,
   SISTECREDITO,
   TRANSFERENCIA_MANUAL,
   CONTRAENTREGA;
@@ -19,19 +18,19 @@ public enum MetodoPago {
    * dejaba de alcanzar. Vivía antes como un {@code switch} privado en {@code CrearIntentoDePago} y
    * subió aquí cuando un segundo sitio necesitó la misma pregunta.
    *
-   * <p><b>{@code ADDI} sigue apuntando a {@code WOMPI} y eso es a propósito</b>, aunque Wompi no lo
-   * ofrezca: es lo que mantiene el método fuera del checkout, porque la lista de habilitados de
-   * Wompi no lo incluye y el filtro de {@code MetodosDePagoDisponibles} lo quita por eso.
-   * Reclasificarlo a {@code NINGUNO} —que suena más honesto— lo dejaría <b>sin filtro y ofrecido
-   * siempre</b>. El {@code TODO} de docs/11-pagos-y-envios.md sobre qué hacer con este valor sigue
-   * abierto y es el sitio donde se resuelve de verdad.
+   * <p><b>{@code ADDI} estuvo aquí y se fue</b> (22 de septiembre de 2026, V61). Apuntaba a {@code
+   * WOMPI}, donde Addi no existe, y eso era lo único que lo mantenía fuera del checkout: la lista
+   * de habilitados de la cuenta no lo incluye y el filtro lo quitaba por eso. Un valor que solo se
+   * sostenía por un efecto lateral de otra configuración. Vuelve cuando se integre de verdad —el
+   * sitio tiene que estar en producción para que Addi estudie la activación—, y volverá con su
+   * propio {@code ProveedorDePago}.
    *
    * <p>Sin {@code default} a propósito: un método nuevo en este enum no compila hasta que alguien
    * decida quién lo cobra.
    */
   public ProveedorDePago pasarela() {
     return switch (this) {
-      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI -> ProveedorDePago.WOMPI;
+      case TARJETA, PSE, NEQUI, BANCOLOMBIA -> ProveedorDePago.WOMPI;
       case SISTECREDITO -> ProveedorDePago.SISTECREDITO;
       case TRANSFERENCIA_MANUAL, CONTRAENTREGA -> ProveedorDePago.NINGUNO;
     };

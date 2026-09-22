@@ -360,7 +360,7 @@ public final class CrearPedido {
       // y la notificación de cierre puede tardar hasta 3 más (G-ALI-12), así que la reserva de
       // pago en línea la cubre con margen. Si algún día ese margen se estrecha, es un valor de
       // configuración, no un caso nuevo.
-      case TARJETA, PSE, NEQUI, BANCOLOMBIA, ADDI, SISTECREDITO -> duracionReservaPagoEnLinea;
+      case TARJETA, PSE, NEQUI, BANCOLOMBIA, SISTECREDITO -> duracionReservaPagoEnLinea;
     };
   }
 }

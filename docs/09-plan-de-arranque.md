@@ -7899,6 +7899,18 @@ El orden no es negociable: cada uno alimenta al siguiente.
     lista de cosas que alguien puede borrar. Ahora el detalle devuelve `imagenPrincipal` entera y el
     informe reclama las dos imágenes con todos sus anchos.
 
+25. **La lista de métodos de pago del frontend se mantiene a mano y nada la ata al enum.** En el
+    OpenAPI `metodoPago` viaja como `string` libre, así que el contrato generado no lo restringe:
+    las uniones de `checkout/domain/pedido.model.ts` y `admin/pedidos/domain/pedido-admin.model.ts`
+    están escritas a mano, y también el mapa de etiquetas de `metodo-pago.page.ts` y
+    `confirmar.page.ts`. Quitar `ADDI` el 22 de septiembre obligó a tocar esos cuatro sitios uno
+    por uno, y **nada habría fallado si me olvido de alguno**: sobra un valor que la API nunca
+    manda, o falta uno y la pantalla pinta la clave de traducción cruda. Al revés es peor: un
+    método nuevo en el enum no aparece en el checkout y nadie se entera. **Cómo comprobarlo:**
+    buscar `metodoPago?: string` en `packages/contratos/src/tipos.ts`; mientras sea `string` y no
+    una unión, la deuda sigue. La salida es publicarlo como enum en el OpenAPI —un `@Schema` en el
+    DTO— y que el frontend use el tipo generado.
+
 ### Bloque 3. Decisiones que no toma un script
 
 9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
@@ -7907,20 +7919,27 @@ El orden no es negociable: cada uno alimenta al siguiente.
    existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
    ese se renegocia con el proveedor o no se venden.
 10. **La existencia inventada de 5** que llevan los doce primeros en dev.
-11. **`SISTECREDITO_MONTO_MINIMO` sigue sin dato.** Es para la asesora: las dos cifras públicas que
-    se encontraron se contradicen, lo que confirma que varía por comercio. Falla cerrado a
-    propósito —habilitar el método sin el dato no arranca—, así que no hay prisa de seguridad, sí
-    de negocio.
-12. **`MetodoPago.ADDI`.** Sigue apuntando a `WOMPI` a propósito, porque es lo que lo mantiene
-    fuera del checkout; reclasificarlo a `NINGUNO`, que suena más honesto, lo dejaría ofrecido
-    siempre. Las dos salidas razonables están en `docs/11`: integrar Addi de verdad, o sacarlo.
+11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 22 de septiembre: son
+    $50.000**, confirmado por el dueño del negocio. Sigue sin valor por omisión en
+    `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
+    cambiar, así que un despliegue que olvide la variable no arranca con el método encendido. Queda
+    **declararla en el despliegue de dev y de producción**, que es lo único que falta para poder
+    encender Sistecrédito.
+12. ~~**`MetodoPago.ADDI`.**~~ **Cerrada el 22 de septiembre: se sacó del enum** (`V61`). Addi se
+    integrará cuando el sitio esté en producción —es la condición que ellos ponen para estudiar la
+    activación— y volverá con su propio `ProveedorDePago`, no como un valor suelto apuntando a una
+    pasarela que no lo cobra. Ofrecer en su lugar el BNPL de Bancolombia **no es código**:
+    `MetodoPago.BANCOLOMBIA` ya existe y ya está habilitado; es qué medios activa la cuenta de
+    Wompi.
 
 ### Bloque 4. Terceros. No se trabajan, se persiguen
 
 13. **Skydropx**, con el trámite mandado el 21 de septiembre: los 74 códigos DANE, retirar la
-    solicitud del 14 y el conector de recolección de Servientrega, caído en ocho intentos. Y dos
-    que no van en ese mensaje: el saldo, que quedó en 388 COP y **bloquea la recolección**, y el
+    solicitud del 14 y el conector de recolección de Servientrega, caído en ocho intentos. Y el
     host de la cuenta colombiana, que sigue como `TODO` en `PropiedadesSkydropx`.
+    **El saldo dejó de bloquear**: medido el 22 de septiembre está en **102.238 COP**, no en los
+    388 que decía este documento ni en los 10.088 de una nota intermedia. Se consulta con
+    `GET /api/v1/finance/credits`, que es de lectura y no gasta — conviene medirlo antes de citarlo.
 14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
 15. **Si la anulación en Credinet notifica a `urlConfirmation`.** No es averiguable por fuera: hay
     que medirlo. Si no notifica, un pedido puede quedar marcado como pagado con la venta anulada
