@@ -22,6 +22,14 @@
 // expone sus imágenes por ninguna API, así que desde aquí no hay forma de distinguir "es de un
 // set en preparación" de "no lo reclama nadie". Se cuentan aparte y se dice por qué.
 //
+// Y desde ADR-0057 hay un segundo punto ciego, más grande: **una imagen se publica en varios
+// anchos**. De la galería se reclaman todos, porque la ficha del panel los devuelve; de la
+// **imagen principal** solo se reclama la variante mayor, porque `ProductoAdminDetalleRespuesta`
+// expone un `imagenPrincipalUrl` y nada más. Mientras eso siga así, cada ancho pequeño y cada
+// JPEG de vista previa de una principal aparece aquí como no reclamado **estando vivo y
+// sirviéndose en el sitio**. Se avisa en el encabezado del informe, con todas las letras: quien
+// borre a mano lo que esta lista enumera, sin leer el aviso, deja las fichas sin fotos.
+//
 // Uso:  node tools/huerfanos-bucket.mjs --bucket <nombre> --correo <correo>
 //       node tools/huerfanos-bucket.mjs --bucket <nombre> --token <jwt> --api <url>
 import { spawnSync } from "node:child_process";
@@ -251,8 +259,16 @@ for (const producto of productos) {
   if (principal) reclamadas.add(principal);
   const detalle = await pedir(`/api/v1/admin/productos/${producto.id}`);
   for (const imagen of detalle.galeria ?? []) {
+    // Todas las variantes y la vista previa, no solo `url`: desde ADR-0057 una imagen son varios
+    // objetos y reclamar uno solo daría por huérfanos a los demás, que están vivos.
+    for (const variante of imagen.variantes ?? []) {
+      const key = keyDe(variante.url);
+      if (key) reclamadas.add(key);
+    }
     const key = keyDe(imagen.url);
     if (key) reclamadas.add(key);
+    const previa = keyDe(imagen.urlVistaPrevia);
+    if (previa) reclamadas.add(previa);
   }
 }
 
@@ -269,6 +285,19 @@ console.log(
   `gs://${BUCKET}/productos/ · ${objetos.length} objetos · ${enMiB(sumar(objetos))}\n` +
     `${productos.length} productos en el panel reclaman ${reclamadosPresentes} de ellos.\n`,
 );
+
+// El punto ciego de la imagen principal, dicho antes de la lista y no en una nota al pie: lo que
+// se lee primero es lo que decide si alguien borra.
+const principalesSinReclamar = huerfanos.filter((o) => o.key.includes("/principal-")).length;
+if (principalesSinReclamar > 0) {
+  console.log(
+    `OJO: ${principalesSinReclamar} de los objetos de abajo son de 'principal-', y de una imagen\n` +
+      "principal este informe solo sabe reclamar su variante mayor: la ficha del panel devuelve\n" +
+      "un 'imagenPrincipalUrl' y no la lista de anchos (ADR-0057). Los demás anchos y el JPEG de\n" +
+      "vista previa aparecen como no reclamados ESTANDO VIVOS. No borres nada de 'principal-'\n" +
+      "con esta lista en la mano hasta que la API del panel exponga las variantes.\n",
+  );
+}
 
 if (huerfanos.length === 0) {
   console.log("Ningún objeto de 'principal-' ni de 'galeria-' está sin reclamar.");

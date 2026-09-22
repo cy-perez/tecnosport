@@ -7892,6 +7892,17 @@ El orden no es negociable: cada uno alimenta al siguiente.
     siguen ahí, y la comparación con `--etiqueta antes/despues` en la misma sesión no tiene qué
     comparar.
 
+24. **El informe de huérfanos es ciego a las variantes de la imagen principal.** Reclama lo que
+    el panel devuelve, y `ProductoAdminDetalleRespuesta` devuelve `imagenPrincipalUrl` —una sola
+    URL— mientras la galería sí devuelve sus variantes y su vista previa. En cuanto se corra
+    `--rehacer-imagenes`, cada ancho pequeño y cada JPEG de vista previa de una principal saldrá
+    listado **estando vivo**. El informe lo avisa con todas las letras antes de la lista, así que
+    no engaña a quien lo lea; lo que falta es que deje de ser verdad. La salida es que la ficha del
+    panel exponga la imagen principal como expone la galería —con sus variantes—, que cruza el DTO,
+    el mapeador, el contrato y el modelo del panel. **Cómo comprobarlo:** buscar `imagenPrincipalUrl`
+    en `ProductoAdminDetalleRespuesta`; mientras el campo sea un `String`, la deuda sigue abierta.
+    Hasta entonces **no se borra nada de `principal-` a mano**.
+
 ### Bloque 3. Decisiones que no toma un script
 
 9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
