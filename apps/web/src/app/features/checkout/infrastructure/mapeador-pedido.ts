@@ -1,4 +1,5 @@
 import type { components } from '@tecnosport/contratos';
+import type { MismaUnion } from '../../../core/contratos/misma-union';
 import {
   Contacto,
   DatosTransferencia,
@@ -25,13 +26,27 @@ type DatosTransferenciaDto = components['schemas']['DatosTransferenciaRespuesta'
 
 /**
  * DTO generado -> modelo propio del front. Ningún componente ve la forma de
- * la respuesta HTTP. `tipoEntrega`/`metodoPago`/`estado` llegan como
- * `string` en el contrato (springdoc no expone el enum de Java como unión
- * literal): el backend garantiza que el valor es exactamente el nombre del
- * enum (`Enum::name`), así que se afirma el tipo en vez de validarlo a mano
- * — un valor fuera de la unión aquí es un cambio de contrato sin regenerar,
- * no un caso de negocio real.
+ * la respuesta HTTP. `tipoEntrega` y `estado` llegan como `string` en el
+ * contrato —springdoc no expone esos enums de Java como unión literal—: el
+ * backend garantiza que el valor es exactamente el nombre del enum
+ * (`Enum::name`), así que se afirma el tipo en vez de validarlo a mano — un
+ * valor fuera de la unión aquí es un cambio de contrato sin regenerar, no un
+ * caso de negocio real.
+ *
+ * `metodoPago` ya no: desde que el enum viaja en el OpenAPI, el contrato trae
+ * la unión y aquí **no hay afirmación de tipo**, hay asignación comprobada.
+ * Ver `METODOS_DE_PAGO_AL_DIA` abajo.
  */
+type MetodoPagoDto = NonNullable<PedidoDto['metodoPago']>;
+
+/**
+ * El eslabón que ata la unión de `domain/pedido.model.ts` al enum del backend, en las dos
+ * direcciones (`docs/09`, deuda 25). Si el backend agrega o quita un método y nadie toca el
+ * dominio, **esto no compila** y el error nombra el valor. Vive aquí, en `infrastructure`, porque
+ * es la única capa que puede conocer el contrato: el dominio importándolo sería la flecha al revés.
+ */
+export const METODOS_DE_PAGO_AL_DIA: MismaUnion<MetodoPago, MetodoPagoDto> = true;
+
 export function aPedido(dto: PedidoDto): Pedido {
   return {
     id: dto.id ?? '',
@@ -42,7 +57,7 @@ export function aPedido(dto: PedidoDto): Pedido {
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
-    metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago,
+    metodoPago: dto.metodoPago ?? 'TARJETA',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },
@@ -116,7 +131,7 @@ export function aSeguimiento(dto: SeguimientoDto): Seguimiento {
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
-    metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago,
+    metodoPago: dto.metodoPago ?? 'TARJETA',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     subtotal: { valor: dto.subtotal?.valor ?? 0, moneda: dto.subtotal?.moneda ?? 'COP' },
     costoEnvio: { valor: dto.costoEnvio?.valor ?? 0, moneda: dto.costoEnvio?.moneda ?? 'COP' },

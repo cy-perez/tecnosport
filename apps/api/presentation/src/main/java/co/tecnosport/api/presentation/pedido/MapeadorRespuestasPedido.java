@@ -55,7 +55,7 @@ public class MapeadorRespuestasPedido {
         pedido.lineas().stream().map(this::aRespuesta).toList(),
         pedido.tipoEntrega().name(),
         pedido.direccion().map(this::aRespuesta).orElse(null),
-        pedido.metodoPago().name(),
+        pedido.metodoPago(),
         pedido.estado().name(),
         aRespuesta(pedido.subtotal()),
         aRespuesta(pedido.costoEnvio()),
