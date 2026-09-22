@@ -39,7 +39,7 @@
       formControlName="existenciaInicial"
     />
 
-    <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+    <fieldset class="flex flex-col gap-16 border border-ts-borde-control p-16">
       <legend>{{ 'admin.productos.agregarVariante.paquete' | transloco }}</legend>
       <p>{{ 'admin.productos.agregarVariante.paqueteAyuda' | transloco }}</p>
 
@@ -73,7 +73,10 @@
       />
     </fieldset>
 
-    <fieldset class="flex flex-col gap-16 border border-ts-borde p-16" formArrayName="atributos">
+    <fieldset
+      class="flex flex-col gap-16 border border-ts-borde-control p-16"
+      formArrayName="atributos"
+    >
       <legend>{{ 'admin.productos.agregarVariante.atributos' | transloco }}</legend>
 
       @for (fila of form.controls.atributos.controls; track $index) {

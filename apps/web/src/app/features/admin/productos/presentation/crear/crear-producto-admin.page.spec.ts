@@ -159,12 +159,27 @@ async function llenarYEnviar() {
 }
 
 describe('CrearProductoAdminPage', () => {
-  it('el botón crear arranca deshabilitado con el formulario vacío', async () => {
-    await renderPagina(new RepositorioProductosAdminFalso());
+  /**
+   * El botón ya no arranca deshabilitado: pulsa, marca los campos y dice qué falta. Un
+   * `<button disabled>` sale del orden de tabulación, así que quien navega con teclado no lo
+   * encuentra y nada le explica por qué no pasa nada — el criterio que marcas, medidas y
+   * existencias ya tenían escrito en un comentario cada una.
+   */
+  it('con el formulario vacío dice qué falta y no crea nada', async () => {
+    const repositorio = new RepositorioProductosAdminFalso();
+    await renderPagina(repositorio);
 
-    expect(screen.getByRole('button', { name: 'Crear producto' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const boton = screen.getByRole('button', { name: 'Crear producto' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(
+      await screen.findByText(
+        'Faltan datos obligatorios: el nombre, la descripción, la marca y la categoría.',
+      ),
+    ).toBeTruthy();
+    expect(repositorio.llamadasCrear).toEqual([]);
   });
 
   it('carga las opciones de marca y categoría en los selects', async () => {

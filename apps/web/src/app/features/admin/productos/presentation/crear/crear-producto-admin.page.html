@@ -26,15 +26,6 @@
       formControlName="marcaId"
     />
 
-    <!-- El momento en que se descubre que falta la marca es este, con el formulario a medio
-         llenar. El enlace lleva a la pantalla de marcas, y sale de aquí sin guardar: el costo está
-         escrito en marcas-admin.page.ts. -->
-    <p class="m-0">
-      <a class="anillo-foco text-ts-primario" routerLink="../../marcas">{{
-        'admin.productos.crear.faltaMarca' | transloco
-      }}</a>
-    </p>
-
     <ts-select
       idCampo="crear-producto-categoria"
       [label]="'admin.productos.crear.categoria' | transloco"
@@ -50,11 +41,24 @@
     <ts-boton
       variante="primario"
       tipo="submit"
-      [deshabilitado]="formularioInvalido()"
       [cargando]="enviando()"
       [etiquetaCargando]="'admin.productos.crear.enviando' | transloco"
     >
       {{ 'admin.productos.crear.crear' | transloco }}
     </ts-boton>
   </form>
+
+  <!-- Fuera del formulario, y esa es toda la decisión: navegar de aquí descarta lo que se lleve
+       escrito, y estaba **entre el select de marca y el de categoría**. Tabulando el formulario se
+       llegaba a él con Enter a un dedo de distancia, y quien navega con teclado perdía todo sin
+       una sola pregunta. El momento en que se descubre que falta la marca sigue siendo el de
+       elegirla; lo que cambia es que ahora hay que ir a buscar el enlace, que es lo correcto para
+       algo que tira el trabajo a la basura. El costo está escrito en marcas-admin.page.ts. -->
+  <p class="mt-24">
+    <a
+      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+      routerLink="../../marcas"
+      >{{ 'admin.productos.crear.faltaMarca' | transloco }}</a
+    >
+  </p>
 </ts-pagina-formulario>

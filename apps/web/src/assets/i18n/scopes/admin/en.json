@@ -164,6 +164,7 @@
     "nuevo": "New product",
     "editarEnlace": "Edit",
     "columnas": {
+      "acciones": "Actions",
       "nombre": "Name",
       "marca": "Brand",
       "categoria": "Category",
@@ -175,6 +176,7 @@
       "publicado": "Published"
     },
     "crear": {
+      "faltanCampos": "Required fields are missing: name, description, brand and category.",
       "titulo": "New product",
       "nombre": "Name",
       "descripcion": "Description",
@@ -187,6 +189,7 @@
       "faltaMarca": "Brand missing? Create it (anything typed here is lost)"
     },
     "editar": {
+      "faltanCampos": "Required fields are missing. Check the highlighted fields and try again.",
       "titulo": "Edit product",
       "nombre": "Name",
       "descripcion": "Description",
@@ -199,6 +202,7 @@
       "error_carga": "Couldn't load the product.",
       "agregarVariante": "Add variant",
       "imagenPrincipal": {
+        "faltanCampos": "The file or one of the two alternative texts is missing.",
         "titulo": "Main image",
         "actual": "Current main image",
         "previsualizacion": "Preview of the new image",
@@ -208,9 +212,11 @@
         "subir": "Upload image",
         "subiendo": "Uploading…",
         "tipoNoSoportado": "That file type isn't supported. Use JPEG, PNG or WebP.",
+        "subida": "Main image updated.",
         "error": "Couldn't upload the image. Try again."
       },
       "galeria": {
+        "faltanCampos": "The file or one of the two alternative texts is missing.",
         "titulo": "Gallery",
         "ayuda": "Up to {{tope}} images, on top of the main one. They appear on the product page in this order, and you can change it.",
         "vacia": "This product has no gallery images. The product page shows only the main one.",
@@ -294,7 +300,7 @@
     "existencias": {
       "titulo": "Stock",
       "explicacion": "Two figures per variant, and they are not the same. The ledger one is what there is, because it is the sum of every movement; the available one is that minus whatever is already committed to orders in progress, and it is the one that decides whether the shop allows buying. Counting writes an adjustment movement with its reason: the number is not edited, it is corrected.",
-      "resumen": "{{total}} active variants, {{sinExistencia}} without a single unit in the ledger.",
+      "resumen": "{{total}} active variant(s), {{sinExistencia}} without a single unit in the ledger.",
       "ninguna": "There are no active variants to count yet.",
       "sinExistencia": "(out of stock)",
       "reservadas": "({{reservadas}} reserved)",

@@ -16,21 +16,28 @@
   } @else {
     <!-- Medir por primera vez y corregir no son la misma noticia: la segunda dice que hubo
          pedidos cotizados con la medida vieja, y eso es algo que alguien tiene que saber. -->
-    @if (guardada(); as resultado) {
-      <p class="mb-16 text-ts-exito" role="status">
+    <!-- Siempre en el DOM: una región viva montada ya llena con un `@if` se anuncia mal. -->
+    <p
+      #avisoMedidas
+      class="text-ts-exito"
+      role="status"
+      tabindex="-1"
+      [class.mb-16]="guardada() !== null"
+    >
+      @if (guardada(); as resultado) {
         {{
           (resultado.correccion
             ? 'admin.productos.medidas.corregida'
             : 'admin.productos.medidas.medida'
           ) | transloco: { sku: resultado.sku }
         }}
-      </p>
-    }
+      }
+    </p>
 
     @if (total() === 0) {
       <p class="text-ts-texto-suave">{{ 'admin.productos.medidas.ninguna' | transloco }}</p>
     } @else {
-      <p class="mb-16" role="status">
+      <p class="mb-16">
         {{
           'admin.productos.medidas.resumen'
             | transloco: { total: total(), sinMedir: totalSinMedir() }
@@ -48,7 +55,9 @@
               <th scope="col">{{ 'admin.productos.medidas.columnas.estado' | transloco }}</th>
               <th scope="col">{{ 'admin.productos.medidas.columnas.peso' | transloco }}</th>
               <th scope="col">{{ 'admin.productos.medidas.columnas.dimensiones' | transloco }}</th>
-              <th scope="col"></th>
+              <th scope="col">
+                <span class="sr-only">{{ 'admin.productos.columnas.acciones' | transloco }}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -83,7 +92,10 @@
                 }
                 <td>
                   <ts-boton
+                    [attr.data-abrir]="variante.varianteId"
                     variante="secundario"
+                    [expandido]="midiendo() === variante.varianteId"
+                    [controla]="'medida-' + variante.varianteId"
                     [etiquetaAccesible]="
                       (variante.sinMedir
                         ? 'admin.productos.medidas.medirVariante'
@@ -103,14 +115,15 @@
               </tr>
 
               @if (midiendo() === variante.varianteId) {
-                <tr>
+                <tr [id]="'medida-' + variante.varianteId">
                   <td colspan="6">
                     <form
                       class="flex flex-col gap-16"
                       [formGroup]="form"
                       (submit)="$event.preventDefault(); enviar(variante.varianteId)"
+                      (keydown.escape)="cancelar(variante.varianteId)"
                     >
-                      <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+                      <fieldset class="flex flex-col gap-16 border border-ts-borde-control p-16">
                         <legend>
                           {{
                             'admin.productos.medidas.paqueteDe' | transloco: { sku: variante.sku }
@@ -158,10 +171,10 @@
                       }
 
                       <div class="flex flex-wrap gap-16">
-                        <ts-boton tipo="submit" [cargando]="enviando()">
+                        <ts-boton tipo="submit" [ocupado]="enviando()">
                           {{ 'admin.productos.medidas.guardar' | transloco }}
                         </ts-boton>
-                        <ts-boton variante="secundario" (click)="cancelar()">
+                        <ts-boton variante="secundario" (click)="cancelar(variante.varianteId)">
                           {{ 'admin.productos.medidas.cancelar' | transloco }}
                         </ts-boton>
                       </div>

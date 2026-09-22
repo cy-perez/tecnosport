@@ -60,6 +60,22 @@ export function usarTraductorDeObjetos(): Signal<<T>(clave: string) => T | undef
 
   return computed(() => {
     revision();
-    return <T,>(clave: string): T | undefined => transloco.translateObject<T>(clave);
+    return <T>(clave: string): T | undefined => transloco.translateObject<T>(clave);
   });
+}
+
+/**
+ * El idioma activo, como señal.
+ *
+ * Existe para el puñado de sitios donde lo que hay que pintar no es una clave de Transloco sino un
+ * **dato del catálogo que está guardado en los dos idiomas** — el texto alternativo de una imagen,
+ * por ejemplo. Ahí no sirve el pipe: la cadena no vive en los JSON, vive en la base, y quien elige
+ * cuál de las dos mostrar es la pantalla.
+ *
+ * Cuelga de `langChanges$` y no de `activeLang` a secas por la misma razón que el traductor: leer
+ * la propiedad dentro de un `computed` no crea ninguna dependencia y el valor se congela.
+ */
+export function usarIdiomaActivo(): Signal<string> {
+  const transloco = inject(TranslocoService);
+  return toSignal(transloco.langChanges$, { initialValue: transloco.getActiveLang() });
 }

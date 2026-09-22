@@ -90,6 +90,36 @@ implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dur
   liga con `[attr.aria-label]` sobre el `<button>` interno. Cualquier
   componente compartido que envuelva un control nativo y necesite exponer
   ARIA más allá del contenido proyectado necesita el mismo input explícito.
+- **Una acción de fila nunca usa `[cargando]`, usa `[ocupado]` más una guarda de
+  reentrada en el manejador.** `cargando` hace dos cosas —marca `aria-busy` y
+  **deshabilita**— y la segunda tiene un precio: deshabilitar el botón que la
+  persona acaba de pulsar le quita el foco, y el navegador lo manda a `<body>`.
+  En una fila —publicar, contar, medir, quitar— eso devuelve al principio del
+  documento a quien navega con teclado. El defecto costó dos correcciones en una
+  semana y seguía vivo en cuatro pantallas del panel. `cargando` se queda para
+  el envío de un formulario de página completa, donde no hay foco de fila que
+  perder.
+- **Toda interacción que destruye su propio disparador devuelve el foco a mano.**
+  Cancelar una confirmación en línea, o confirmarla, borra la caja con el botón
+  dentro. `usarFoco()` (`shared/foco/`) es el `requestAnimationFrame` con
+  guardia de plataforma; el destino es el botón que abrió la caja al cancelar, y
+  el aviso de resultado al confirmar. **En jsdom no se reproduce**, así que la
+  prueba no lo va a atrapar: se comprueba en el navegador, con la ventana
+  delante — en una pestaña oculta no corre `requestAnimationFrame` y el
+  documento no retiene `activeElement`, así que da falso negativo siempre.
+- **Un botón que abre una región la declara**: `expandido` y `controla` de
+  `ts-boton`, que van al `aria-expanded` y al `aria-controls` del `<button>`
+  real. Sin ellos, pulsar "Contar las unidades de SKU-X" no anuncia nada y
+  descubrir que apareció un formulario es tabular a ciegas.
+- **Una región viva vive siempre en el DOM y lo que cambia es su contenido.**
+  Montarla ya llena con un `@if` es justo lo que los lectores de pantalla
+  anuncian mal. Y al revés: `role="status"` no va en el resumen estático de una
+  tabla — cada revalidación en segundo plano lo vuelve a leer en voz alta.
+- **No se deshabilita un botón para decir que faltan datos.** Un
+  `<button disabled>` sale del orden de tabulación: quien navega con teclado no
+  lo encuentra y nada le explica por qué no pasa nada. Se deja vivo, se valida al
+  pulsar y se dice qué falta, con `markAllAsTouched()` más un mensaje de
+  Transloco.
 - **Imágenes:** `NgOptimizedImage` siempre, en WebP **con el original de
   respaldo**. Esa elección es **una sola regla**, `urlPreferida` en el dominio
   del catálogo, y toda plantilla pasa por ella. No se escribe la expresión

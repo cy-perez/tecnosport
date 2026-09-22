@@ -72,7 +72,7 @@
                       [formGroup]="form"
                       (submit)="$event.preventDefault(); enviar(variante.varianteId)"
                     >
-                      <fieldset class="flex flex-col gap-16 border border-ts-borde p-16">
+                      <fieldset class="flex flex-col gap-16 border border-ts-borde-control p-16">
                         <legend>
                           {{
                             'admin.productos.sinMedir.paqueteDe' | transloco: { sku: variante.sku }

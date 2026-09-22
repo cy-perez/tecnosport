@@ -21,16 +21,24 @@
   } @else {
     <!-- La fila publicada cambia de estado y deja de ofrecer el botón, así que la confirmación
          tiene que vivir fuera de ella: si no, el mensaje desaparece con el botón que lo causó. -->
-    @if (publicado(); as nombre) {
-      <p class="mb-16 text-ts-exito" role="status">
+    <!-- Siempre en el DOM, aunque esté vacío: una región viva que se monta ya llena con un
+         `@if` es justo lo que los lectores de pantalla anuncian mal. Lo que cambia es el
+         contenido, no la existencia del nodo. `tabindex="-1"` para poder devolverle el foco
+         cuando la fila que lo causó cambió de estado. -->
+    <p
+      #avisoLista
+      class="text-ts-exito"
+      role="status"
+      tabindex="-1"
+      [class.mb-16]="publicado() !== null || retirado() !== null"
+    >
+      @if (publicado(); as nombre) {
         {{ 'admin.productos.publicar.hecho' | transloco: { nombre: nombre } }}
-      </p>
-    }
-    @if (retirado(); as nombre) {
-      <p class="mb-16 text-ts-exito" role="status">
+      }
+      @if (retirado(); as nombre) {
         {{ 'admin.productos.publicar.retirado' | transloco: { nombre: nombre } }}
-      </p>
-    }
+      }
+    </p>
 
     <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
          página. Siete columnas no caben en 380 px —medido: el documento se iba
@@ -48,7 +56,9 @@
             <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
             <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
             <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
-            <th scope="col"></th>
+            <th scope="col">
+              <span class="sr-only">{{ 'admin.productos.columnas.acciones' | transloco }}</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -78,7 +88,10 @@
                     >{{ 'admin.productos.capturar360' | transloco }}</a
                   >
                   <ts-boton
+                    [attr.data-preguntar]="producto.id"
                     variante="secundario"
+                    [expandido]="confirmando() === producto.id"
+                    [controla]="'confirmacion-' + producto.id"
                     [etiquetaAccesible]="
                       (producto.estado === 'BORRADOR'
                         ? 'admin.productos.publicar.publicarProducto'
@@ -99,10 +112,15 @@
             </tr>
 
             @if (confirmando() === producto.id) {
-              <tr>
+              <tr [id]="'confirmacion-' + producto.id">
                 <td colspan="6">
-                  <div class="flex flex-col gap-16 border border-ts-borde p-16">
-                    <p class="m-0" role="status">
+                  <div
+                    class="flex flex-col gap-16 border border-ts-borde-control p-16"
+                    role="group"
+                    [attr.aria-labelledby]="'pregunta-' + producto.id"
+                    (keydown.escape)="cancelar(producto.id)"
+                  >
+                    <p class="m-0" [id]="'pregunta-' + producto.id">
                       {{
                         (producto.estado === 'BORRADOR'
                           ? 'admin.productos.publicar.confirmar'
@@ -126,15 +144,15 @@
 
                     <div class="flex flex-wrap gap-16">
                       @if (producto.estado === 'BORRADOR') {
-                        <ts-boton [cargando]="publicando()" (click)="publicar(producto)">
+                        <ts-boton [ocupado]="publicando()" (click)="publicar(producto)">
                           {{ 'admin.productos.publicar.confirmarAccion' | transloco }}
                         </ts-boton>
                       } @else {
-                        <ts-boton [cargando]="publicando()" (click)="despublicar(producto)">
+                        <ts-boton [ocupado]="publicando()" (click)="despublicar(producto)">
                           {{ 'admin.productos.publicar.confirmarRetirarAccion' | transloco }}
                         </ts-boton>
                       }
-                      <ts-boton variante="secundario" (click)="cancelar()">
+                      <ts-boton variante="secundario" (click)="cancelar(producto.id)">
                         {{ 'admin.productos.publicar.cancelar' | transloco }}
                       </ts-boton>
                     </div>

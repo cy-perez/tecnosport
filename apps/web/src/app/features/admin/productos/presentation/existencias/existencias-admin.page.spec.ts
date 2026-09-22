@@ -173,4 +173,13 @@ describe('ExistenciasAdminPage', () => {
 
     await esperarSinViolaciones(container);
   });
+
+  // La mitad interactiva de esta pantalla vive dentro del formulario, y con el formulario cerrado
+  // no se audita ninguna de sus etiquetas, ni el `aria-controls` que la fila acaba de estrenar.
+  it('tampoco con el formulario de conteo abierto', async () => {
+    const { container } = await renderPagina([existencia({ saldoTotal: 0, disponible: 0 })]);
+    await abrirFormulario('TS-MOTO-G17-NEGRO');
+
+    await esperarSinViolaciones(container);
+  });
 });
