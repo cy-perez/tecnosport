@@ -1,6 +1,7 @@
 package co.tecnosport.api.bootstrap.usuario;
 
 import co.tecnosport.api.presentation.usuario.FiltroAutenticacionJwt;
+import co.tecnosport.api.presentation.usuario.PuntoDeEntradaNoAutenticado;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -33,6 +34,10 @@ public class ConfiguracionSeguridad {
   public SecurityFilterChain cadenaDeSeguridad(
       HttpSecurity http, FiltroAutenticacionJwt filtroAutenticacionJwt) throws Exception {
     http.csrf(csrf -> csrf.disable())
+        // Sin esto una peticion sin token recibe 403 -el codigo de "no puedes", para el caso en
+        // el que no se sabe quien eres- y el refresco silencioso del frontend, que cuelga del
+        // 401, no dispara nunca. Ver PuntoDeEntradaNoAutenticado.
+        .exceptionHandling(e -> e.authenticationEntryPoint(new PuntoDeEntradaNoAutenticado()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
