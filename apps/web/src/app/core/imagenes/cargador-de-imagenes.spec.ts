@@ -28,11 +28,16 @@ describe('cargadorDeImagenes', () => {
     expect(url).toBe('https://x/1200.avif');
   });
 
-  // El hero de la portada y la línea del carrito pasan por el mismo loader y no tienen variantes.
+  // La línea del carrito pasa por el mismo loader y no tiene variantes. El hero de la portada
+  // estaba en esta lista y salió el 22 de septiembre: ahora pasa las suyas por `loaderParams`, que
+  // es lo que le permitió tener `srcset` sin tocar este archivo.
   it('sin variantes devuelve el src tal cual', () => {
-    expect(cargadorDeImagenes({ src: '/imagenes/portada/hero.webp', width: 1200 })).toBe(
-      '/imagenes/portada/hero.webp',
-    );
+    expect(
+      cargadorDeImagenes({
+        src: 'https://cdn.tecnosport.co/productos/1/principal.avif',
+        width: 1200,
+      }),
+    ).toBe('https://cdn.tecnosport.co/productos/1/principal.avif');
   });
 
   // `ngSrcset` solo lista anchos que existen, así que esto no debería pasar. Si pasara, servir la

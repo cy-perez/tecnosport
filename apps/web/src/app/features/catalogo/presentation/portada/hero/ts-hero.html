@@ -56,12 +56,14 @@
          prioriza ninguna. -->
     <figure class="chaflan-hero m-0 overflow-hidden">
       <img
-        ngSrc="/imagenes/portada/hero.webp"
+        ngSrc="/imagenes/portada/hero-800.webp"
+        ngSrcset="480w, 800w, 1200w"
+        [loaderParams]="{ variantes: variantesHero }"
+        [sizes]="tamanosHero"
         [alt]="'portada.hero.imagen.alt' | transloco"
         width="1200"
         height="900"
         priority
-        disableOptimizedSrcset
         class="block h-full w-full object-cover"
       />
     </figure>

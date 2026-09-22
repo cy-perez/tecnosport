@@ -17,9 +17,14 @@ import { VarianteDeImagen } from '../../features/catalogo/domain/producto.model'
  * repositorios que nadie mantiene sincronizados, que es exactamente el acoplamiento silencioso que
  * produjo `url_webp`. Las URL viajan como dato desde la API hasta aquí.
  *
- * Sin `loaderParams` —una imagen que no es de producto, como el hero de la portada— devuelve el
- * `src` tal cual. Esas imágenes además llevan `disableOptimizedSrcset` en su plantilla, para que
- * Angular no anuncie un 2x que es el mismo archivo.
+ * Sin `loaderParams` devuelve el `src` tal cual, y esas imágenes llevan `disableOptimizedSrcset`
+ * en su plantilla para que Angular no anuncie un 2x que es el mismo archivo.
+ *
+ * **`loaderParams` no es exclusivo de las imágenes de producto**, y darlo por supuesto costó una
+ * medición: el hero de la portada estaba en el párrafo de arriba como ejemplo de imagen sin
+ * variantes, y con eso se dio por hecho que darle `srcset` exigía cambiar este archivo. No exigía
+ * nada: sus tres anchos son archivos del repositorio y su plantilla los pasa por aquí como dato,
+ * igual que la API pasa los de un producto.
  */
 export const cargadorDeImagenes: ImageLoader = (config: ImageLoaderConfig): string => {
   const variantes = config.loaderParams?.['variantes'] as readonly VarianteDeImagen[] | undefined;
