@@ -7894,6 +7894,18 @@ describen lo que ve una persona en pantallas con imágenes; sus bytes y sus comp
 mismo sí—. **Sigue abierto todo el Bloque 3 en adelante**, que es donde está lo que no resuelve un
 script: las decisiones de negocio, los terceros y lo que pide el aparato delante.
 
+**Ese párrafo se escribió a mediodía y el día siguió** — que es, otra vez, el defecto que este
+documento tiene y por el que cada deuda lleva su "cómo comprobarlo". Después se cerraron la **20** y
+la **23** (una imagen deja de tener una URL y pasa a tener varias), la **24** (el informe ciego a
+las variantes), la **26** (el registro por ambiente), la **25** (el enum de métodos de pago), la
+**27** (el hero de la portada) y el borrado que arrastraba la **7**. Avanzó la **11**: Sistecrédito
+queda declarado y encendido en dev, y falta producción entera.
+
+Se abrieron dos, y las dos salieron de hacer el trabajo, no de buscarlas: la **28** —rotar la clave
+de un administrador exige borrar filas en la base de datos— y la **29** —el informe de huérfanos
+cuenta como basura lo que reclama el otro ambiente—. Y algo que no es deuda pero sí el mismo
+síntoma: `docs/07` describía un freno de seguridad que había cambiado tres días antes.
+
 ### Bloque 1. Código, sin depender de nadie
 
 1. ~~**El contrato generado no tiene guardián.**~~ **Enunciado mal y corregido el mismo día: el
