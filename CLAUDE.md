@@ -111,6 +111,7 @@ npm run contratos-al-dia                 ¿el cliente guardado corresponde a ese
 npm run clases                           ¿las clases de Tailwind del frontend existen de verdad?
 npm run clases -- <clase>...             ¿esa clase en concreto existe? (antes de escribirla)
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
+npm run lighthouse                       tres muestras y la mediana; pide docker y bootRun arriba
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run kit                              ¿el kit de marca se regenera igual que como está guardado?

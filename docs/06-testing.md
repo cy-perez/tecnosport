@@ -302,8 +302,33 @@ pulsaba «Continuar» y **no pasaba nada**. La prueba de Vitest comprobaba que n
 guardara el borrador —cierto— pero no que se le dijera al comprador por qué. Esa
 es exactamente la diferencia entre probar el estado y probar el recorrido.
 
-### Lo que sigue sin herramienta
+## Lighthouse, con arnés
 
-**Lighthouse no está automatizado.** Se corre a mano desde DevTools sobre un
-`ng build` servido en producción, no sobre `ng serve`, que no comprime y ensucia
-los números.
+`npm run lighthouse` mide las tres pantallas —portada, ficha y legales— sobre el
+build de producción, en móvil y con estrangulamiento. Necesita
+`docker compose up -d` y `gradlew.bat bootRun`, y por eso está fuera de
+`npm run verificar`, igual que los recorridos. `--sin-build` reutiliza el `dist`
+que ya exista.
+
+**No es un script, es un arnés**, y la diferencia son las dos cosas que se niega
+a hacer en silencio:
+
+- **Levanta un proxy** que manda `/api` al backend y el resto al servidor SSR,
+  que es lo que hace el balanceador en producción y lo que `ng serve` hace en
+  desarrollo. Servir el build a secas mide otra aplicación: la consulta del
+  producto muere tras hidratar.
+- **Comprueba que la ficha cargó** antes de medir. Si sale con `noindex` es que
+  el producto no llegó, y las cifras que salgan después no significan nada. Fue
+  exactamente lo que invalidó la primera medición de la Fase 6, sin que nadie lo
+  notara mirando los números.
+
+**Mide tres veces cada pantalla y reporta la mediana**, con la dispersión al
+lado: una sola muestra puede inventar una regresión o tapar una real. Las
+muestras crudas quedan en `apps/web/lighthouse/resumen.json` y el informe
+completo de la corrida mediana en `<pantalla>.json`.
+
+**La regla de uso importa tanto como la herramienta**: el estado de la máquina
+mueve el rendimiento más que casi cualquier cambio de código —la misma portada,
+con el mismo build, dio 57 y 84 en dos sesiones de la misma noche—. Se mide
+antes y después del cambio **en la misma sesión**. Una tabla de otro día no es
+una línea base. La historia completa está en `docs/09-plan-de-arranque.md`.
