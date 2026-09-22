@@ -8,6 +8,7 @@ import co.tecnosport.api.presentation.catalogo.dto.ImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminDetalleRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoAdminRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductosAdminPaginadosRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
 import org.springframework.stereotype.Component;
 
 /**
@@ -61,7 +62,12 @@ public class MapeadorRespuestasProductoAdmin {
     return new ImagenDeGaleriaRespuesta(
         imagen.id(),
         imagen.url(),
+        // `urlWebp`: el mismo objeto que `url`. Se va en cuanto el frontend deje de leerlo.
         imagen.url(),
+        imagen.variantes().stream()
+            .map(v -> new VarianteDeImagenRespuesta(v.ancho(), v.url()))
+            .toList(),
+        imagen.urlVistaPrevia().orElse(null),
         imagen.ancho(),
         imagen.alto(),
         imagen.orden(),

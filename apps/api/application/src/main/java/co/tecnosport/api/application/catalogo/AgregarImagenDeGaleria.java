@@ -6,7 +6,11 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -50,22 +54,53 @@ public final class AgregarImagenDeGaleria {
     // siguiente reemplazo de la imagen principal limpia ese prefijo entero y borra el objeto que la
     // galería está sirviendo. Una foto rota en una ficha publicada, causada por el propio sistema y
     // sin una línea de error en ningún sitio.
-    String prefijoEsperado = ClavesDeGaleria.prefijoDe(comando.productoId());
-    if (!comando.objectKey().startsWith(prefijoEsperado)) {
-      throw new IllegalArgumentException(
-          "El objeto '"
-              + comando.objectKey()
-              + "' no es una imagen de galería del producto "
-              + comando.productoId()
-              + ".");
+    List<VarianteSubida> variantes =
+        Objects.requireNonNullElse(comando.variantes(), List.<VarianteSubida>of());
+    if (variantes.isEmpty()) {
+      throw new IllegalArgumentException("Hay que confirmar al menos una variante de la imagen.");
     }
 
-    long bytes =
-        almacenDeImagenes
-            .tamanoBytes(comando.objectKey())
-            .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(comando.objectKey()));
+    String prefijoEsperado = ClavesDeGaleria.prefijoDe(comando.productoId());
+    List<String> claves =
+        new ArrayList<>(variantes.stream().map(VarianteSubida::objectKey).toList());
+    if (comando.objectKeyVistaPrevia() != null && !comando.objectKeyVistaPrevia().isBlank()) {
+      claves.add(comando.objectKeyVistaPrevia().trim());
+    }
 
-    String url = almacenDeImagenes.urlPublica(comando.objectKey());
+    Map<String, Long> bytesPorClave = new LinkedHashMap<>();
+    for (String clave : claves) {
+      if (clave == null || !clave.startsWith(prefijoEsperado)) {
+        throw new IllegalArgumentException(
+            "El objeto '"
+                + clave
+                + "' no es una imagen de galería del producto "
+                + comando.productoId()
+                + ".");
+      }
+      bytesPorClave.put(
+          clave,
+          almacenDeImagenes
+              .tamanoBytes(clave)
+              .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(clave)));
+    }
+
+    List<VarianteDeImagen> variantesDeImagen =
+        variantes.stream()
+            .map(
+                v ->
+                    new VarianteDeImagen(
+                        v.ancho(),
+                        almacenDeImagenes.urlPublica(v.objectKey()),
+                        bytesPorClave.get(v.objectKey())))
+            .toList();
+
+    // La de la variante mayor, que es la que el agregado toma como base y la que la galería ya
+    // comparaba antes de que existieran las variantes.
+    String url =
+        variantesDeImagen.stream()
+            .max(Comparator.comparingInt(VarianteDeImagen::ancho))
+            .orElseThrow()
+            .url();
 
     // Dos filas apuntando al mismo objeto romperían el borrado: quitar una se lleva el archivo por
     // la key exacta y deja a la hermana rota. El rechazo por hash no cubre esto —el hash lo manda
@@ -73,14 +108,16 @@ public final class AgregarImagenDeGaleria {
     boolean mismoObjeto = producto.galeria().stream().anyMatch(i -> i.url().equals(url));
     if (mismoObjeto) {
       throw new ImagenDeGaleriaDuplicadaException(
-          "El objeto '" + comando.objectKey() + "' ya está en la galería de este producto.");
+          "El objeto '" + url + "' ya está en la galería de este producto.");
     }
     ImagenProducto imagen =
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             producto.siguienteOrdenDeGaleria(),
-            List.of(new VarianteDeImagen(comando.ancho(), url, bytes)),
-            null,
+            variantesDeImagen,
+            comando.objectKeyVistaPrevia() == null || comando.objectKeyVistaPrevia().isBlank()
+                ? null
+                : almacenDeImagenes.urlPublica(comando.objectKeyVistaPrevia().trim()),
             comando.alto(),
             new HashContenido(comando.hash()),
             comando.altEs(),

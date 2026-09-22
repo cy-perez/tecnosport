@@ -73,15 +73,17 @@
             "format" : "int32",
             "type" : "integer"
           },
-          "ancho" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
           "hash" : {
             "type" : "string"
           },
-          "objectKey" : {
+          "objectKeyVistaPrevia" : {
             "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteSubidaPeticion"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -317,15 +319,17 @@
             "format" : "int32",
             "type" : "integer"
           },
-          "ancho" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
           "hash" : {
             "type" : "string"
           },
-          "objectKey" : {
+          "objectKeyVistaPrevia" : {
             "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteSubidaPeticion"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -973,8 +977,17 @@
           "url" : {
             "type" : "string"
           },
+          "urlVistaPrevia" : {
+            "type" : "string"
+          },
           "urlWebp" : {
             "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -998,8 +1011,17 @@
           "url" : {
             "type" : "string"
           },
+          "urlVistaPrevia" : {
+            "type" : "string"
+          },
           "urlWebp" : {
             "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -2301,6 +2323,18 @@
         },
         "type" : "object"
       },
+      "VarianteDeImagenRespuesta" : {
+        "properties" : {
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "VarianteMedidaRespuesta" : {
         "properties" : {
           "altoCm" : {
@@ -2376,6 +2410,18 @@
           },
           "varianteId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VarianteSubidaPeticion" : {
+        "properties" : {
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "objectKey" : {
             "type" : "string"
           }
         },

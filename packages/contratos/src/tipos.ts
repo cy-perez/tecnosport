@@ -1269,10 +1269,9 @@ export interface components {
             altEs?: string;
             /** Format: int32 */
             alto?: number;
-            /** Format: int32 */
-            ancho?: number;
             hash?: string;
-            objectKey?: string;
+            objectKeyVistaPrevia?: string;
+            variantes?: components["schemas"]["VarianteSubidaPeticion"][];
         };
         AgregarLineaRequest: {
             /** Format: int32 */
@@ -1359,10 +1358,9 @@ export interface components {
             altEs?: string;
             /** Format: int32 */
             alto?: number;
-            /** Format: int32 */
-            ancho?: number;
             hash?: string;
-            objectKey?: string;
+            objectKeyVistaPrevia?: string;
+            variantes?: components["schemas"]["VarianteSubidaPeticion"][];
         };
         ConfirmarRecuperacionRequest: {
             claveNueva?: string;
@@ -1607,7 +1605,9 @@ export interface components {
             /** Format: int32 */
             orden?: number;
             url?: string;
+            urlVistaPrevia?: string;
             urlWebp?: string;
+            variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRespuesta: {
             altEn?: string;
@@ -1617,7 +1617,9 @@ export interface components {
             /** Format: int32 */
             ancho?: number;
             url?: string;
+            urlVistaPrevia?: string;
             urlWebp?: string;
+            variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRotacionRespuesta: {
             /** Format: int32 */
@@ -2103,6 +2105,11 @@ export interface components {
             colorHex?: string;
             valor?: string;
         };
+        VarianteDeImagenRespuesta: {
+            /** Format: int32 */
+            ancho?: number;
+            url?: string;
+        };
         VarianteMedidaRespuesta: {
             /** Format: int32 */
             altoCm?: number;
@@ -2133,6 +2140,11 @@ export interface components {
             sku?: string;
             /** Format: uuid */
             varianteId?: string;
+        };
+        VarianteSubidaPeticion: {
+            /** Format: int32 */
+            ancho?: number;
+            objectKey?: string;
         };
         VariantesSinMedirRespuesta: {
             items?: components["schemas"]["VarianteSinMedirRespuesta"][];

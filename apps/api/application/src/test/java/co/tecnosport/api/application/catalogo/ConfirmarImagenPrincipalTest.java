@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +43,13 @@ class ConfirmarImagenPrincipalTest {
         confirmarImagenPrincipal
             .ejecutar(
                 new ConfirmarImagenPrincipalComando(
-                    producto.id(), objectKey, 1000, 800, HASH, "alt es", "alt en"))
+                    producto.id(),
+                    List.of(new VarianteSubida(1000, objectKey)),
+                    null,
+                    800,
+                    HASH,
+                    "alt es",
+                    "alt en"))
             .imagen();
 
     assertEquals(TipoImagen.PRINCIPAL, imagen.tipo());
@@ -65,7 +72,13 @@ class ConfirmarImagenPrincipalTest {
         () ->
             confirmarImagenPrincipal.ejecutar(
                 new ConfirmarImagenPrincipalComando(
-                    productoId, objectKey, 100, 100, HASH, "a", "b")));
+                    productoId,
+                    List.of(new VarianteSubida(100, objectKey)),
+                    null,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
   }
 
   @Test
@@ -80,7 +93,13 @@ class ConfirmarImagenPrincipalTest {
         () ->
             confirmarImagenPrincipal.ejecutar(
                 new ConfirmarImagenPrincipalComando(
-                    producto.id(), objectKeyDeOtroProducto, 100, 100, HASH, "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(100, objectKeyDeOtroProducto)),
+                    null,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
   }
 
   @Test
@@ -94,7 +113,13 @@ class ConfirmarImagenPrincipalTest {
         () ->
             confirmarImagenPrincipal.ejecutar(
                 new ConfirmarImagenPrincipalComando(
-                    producto.id(), objectKey, 100, 100, HASH, "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(100, objectKey)),
+                    null,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
   }
 
   @Test
@@ -109,7 +134,13 @@ class ConfirmarImagenPrincipalTest {
     var confirmacion =
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
-                producto.id(), nueva, 1000, 800, HASH, "alt es", "alt en"));
+                producto.id(),
+                List.of(new VarianteSubida(1000, nueva)),
+                null,
+                800,
+                HASH,
+                "alt es",
+                "alt en"));
 
     // La anterior se va —si no, cada reemplazo deja pagando un objeto que ya nadie sirve— y la
     // recién subida se queda, aunque compartan prefijo.
@@ -131,7 +162,13 @@ class ConfirmarImagenPrincipalTest {
     var confirmacion =
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
-                producto.id(), nueva, 1000, 800, HASH, "alt es", "alt en"));
+                producto.id(),
+                List.of(new VarianteSubida(1000, nueva)),
+                null,
+                800,
+                HASH,
+                "alt es",
+                "alt en"));
 
     assertEquals(0, confirmacion.objetosAnterioresBorrados());
     assertTrue(almacenDeImagenes.existe(ajena));
@@ -148,7 +185,13 @@ class ConfirmarImagenPrincipalTest {
 
     confirmarImagenPrincipal.ejecutar(
         new ConfirmarImagenPrincipalComando(
-            producto.id(), nueva, 1000, 800, HASH, "alt es", "alt en"));
+            producto.id(),
+            List.of(new VarianteSubida(1000, nueva)),
+            null,
+            800,
+            HASH,
+            "alt es",
+            "alt en"));
 
     // El prefijo llega hasta "principal-" a propósito: con solo el id del producto, reemplazar la
     // imagen principal se llevaría por delante los fotogramas del visor 360.
@@ -166,11 +209,167 @@ class ConfirmarImagenPrincipalTest {
     var confirmacion =
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
-                producto.id(), nueva, 1000, 800, HASH, "alt es", "alt en"));
+                producto.id(),
+                List.of(new VarianteSubida(1000, nueva)),
+                null,
+                800,
+                HASH,
+                "alt es",
+                "alt en"));
 
     // Para cuando se limpia, la imagen ya está guardada: reportar un fallo seria mentir sobre una
     // operacion que funciono. Lo que queda es basura en el bucket, y se dice.
     assertTrue(confirmacion.limpiezaFallida());
     assertEquals(confirmacion.imagen(), repositorioProductos.ultimaImagenPrincipal);
+  }
+
+  @Test
+  void confirmaTresVariantesYLaImagenTomaLaMayorComoBase() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/principal-";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+    almacenDeImagenes.conObjeto(base + "b.avif", 30_000);
+    almacenDeImagenes.conObjeto(base + "c.avif", 58_000);
+
+    var imagen =
+        confirmarImagenPrincipal
+            .ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(
+                        new VarianteSubida(800, base + "b.avif"),
+                        new VarianteSubida(1200, base + "c.avif"),
+                        new VarianteSubida(480, base + "a.avif")),
+                    null,
+                    900,
+                    HASH,
+                    "alt es",
+                    "alt en"))
+            .imagen();
+
+    assertEquals(List.of(480, 800, 1200), imagen.variantes().stream().map(v -> v.ancho()).toList());
+    assertEquals(1200, imagen.ancho());
+    assertEquals(58_000, imagen.bytes());
+    assertTrue(imagen.url().endsWith(base + "c.avif"));
+  }
+
+  /**
+   * La limpieza borra el prefijo {@code principal-} entero. Si conservara solo una de las claves
+   * recién confirmadas, las otras dos se borrarían a sí mismas justo después de guardarse, y el
+   * navegador pediría un objeto que ya no está porque nosotros se lo ofrecimos en el `srcset`.
+   */
+  @Test
+  void laLimpiezaConservaTodasLasVariantesRecienSubidas() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/principal-";
+    almacenDeImagenes.conObjeto(base + "vieja.avif", 90_000);
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+    almacenDeImagenes.conObjeto(base + "b.avif", 58_000);
+    almacenDeImagenes.conObjeto(base + "previa.jpg", 70_000);
+
+    var confirmacion =
+        confirmarImagenPrincipal.ejecutar(
+            new ConfirmarImagenPrincipalComando(
+                producto.id(),
+                List.of(
+                    new VarianteSubida(480, base + "a.avif"),
+                    new VarianteSubida(1200, base + "b.avif")),
+                base + "previa.jpg",
+                900,
+                HASH,
+                "alt es",
+                "alt en"));
+
+    assertEquals(1, confirmacion.objetosAnterioresBorrados());
+    assertFalse(almacenDeImagenes.existe(base + "vieja.avif"));
+    assertTrue(almacenDeImagenes.existe(base + "a.avif"));
+    assertTrue(almacenDeImagenes.existe(base + "b.avif"));
+    assertTrue(almacenDeImagenes.existe(base + "previa.jpg"));
+  }
+
+  @Test
+  void unaVarianteQueNuncaLlegoAlBucketTumbaLaConfirmacion() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/principal-";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+
+    assertThrows(
+        ObjetoDeImagenNoEncontradoException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(
+                        new VarianteSubida(480, base + "a.avif"),
+                        new VarianteSubida(1200, base + "nunca-subida.avif")),
+                    null,
+                    900,
+                    HASH,
+                    "alt es",
+                    "alt en")));
+  }
+
+  @Test
+  void laVistaPreviaSeGuardaYSeExigeQueExista() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/principal-";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+
+    assertThrows(
+        ObjetoDeImagenNoEncontradoException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(480, base + "a.avif")),
+                    base + "previa-que-no-subio.jpg",
+                    900,
+                    HASH,
+                    "alt es",
+                    "alt en")));
+
+    almacenDeImagenes.conObjeto(base + "previa.jpg", 70_000);
+    var imagen =
+        confirmarImagenPrincipal
+            .ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(480, base + "a.avif")),
+                    base + "previa.jpg",
+                    900,
+                    HASH,
+                    "alt es",
+                    "alt en"))
+            .imagen();
+
+    assertTrue(imagen.urlVistaPrevia().orElseThrow().endsWith(base + "previa.jpg"));
+  }
+
+  @Test
+  void unaVarianteDeOtroProductoSeRechaza() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/principal-";
+    String ajena = "productos/" + UUID.randomUUID() + "/principal-ajena.avif";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+    almacenDeImagenes.conObjeto(ajena, 12_000);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(
+                        new VarianteSubida(480, base + "a.avif"), new VarianteSubida(1200, ajena)),
+                    null,
+                    900,
+                    HASH,
+                    "alt es",
+                    "alt en")));
   }
 }

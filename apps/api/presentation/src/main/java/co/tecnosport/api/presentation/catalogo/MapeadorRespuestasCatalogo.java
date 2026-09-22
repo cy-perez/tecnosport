@@ -23,6 +23,7 @@ import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteRespuesta;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import java.util.List;
@@ -119,7 +120,23 @@ public class MapeadorRespuestasCatalogo {
   /** Público: {@code MapeadorRespuestasProductoAdmin} lo reutiliza para la respuesta admin. */
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
-        imagen.url(), imagen.url(), imagen.ancho(), imagen.alto(), imagen.altEs(), imagen.altEn());
+        imagen.url(),
+        // `urlWebp`: el mismo objeto que `url`, como siempre. Se va en cuanto el frontend deje de
+        // leerlo.
+        imagen.url(),
+        variantesDe(imagen),
+        imagen.urlVistaPrevia().orElse(null),
+        imagen.ancho(),
+        imagen.alto(),
+        imagen.altEs(),
+        imagen.altEn());
+  }
+
+  /** Las variantes del dominio, que el agregado ya devuelve de menor a mayor ancho. */
+  private static List<VarianteDeImagenRespuesta> variantesDe(ImagenProducto imagen) {
+    return imagen.variantes().stream()
+        .map(v -> new VarianteDeImagenRespuesta(v.ancho(), v.url()))
+        .toList();
   }
 
   private RotacionRespuesta aRespuesta(SetRotacion setRotacion) {

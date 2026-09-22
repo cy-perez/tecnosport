@@ -5,7 +5,10 @@ import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -13,14 +16,16 @@ import java.util.Set;
  * Segundo paso: verifica contra el almacén real que el objeto llegó (no confía en que el navegador
  * terminó el `PUT`), arma la {@code ImagenProducto} y reemplaza la principal del producto.
  *
- * <p><strong>Hoy confirma una sola variante</strong>, la que se acaba de subir. Recibir las demás
- * —y el JPEG de la vista previa— es el paso siguiente del trabajo de las variantes; mientras tanto
- * la imagen tiene exactamente el ancho que tenía, y el {@code srcset} que sale de ella es de una
- * entrada, que es lo mismo que servía antes.
+ * <p><strong>Se verifica cada objeto, no solo el primero.</strong> Una variante que no llegó al
+ * bucket y se guarda igual sale en el {@code srcset} y el navegador la pide: una foto rota en una
+ * ficha publicada, elegida por el propio navegador entre las que le ofrecimos. Lo mismo vale para
+ * el JPEG de la vista previa, que además nadie vería fallar desde el sitio — se rompe en WhatsApp,
+ * lejos de aquí.
  *
  * <p><strong>La imagen anterior se borra del bucket</strong>, o cada reemplazo dejaría pagando un
  * objeto que ya nadie sirve. Se borra por prefijo —{@code productos/{id}/principal-}— salvo la key
- * recién subida, así que se lleva también lo que quedó de subidas que nunca se confirmaron.
+ * recién subidas —todas, no solo la mayor—, así que se lleva también lo que quedó de subidas que
+ * nunca se confirmaron.
  *
  * <p><strong>Y se borra después de guardar, al revés que en {@code EliminarSetRotacion}</strong>.
  * Un set se va entero, así que allá conviene borrar los objetos primero. Aquí la fila se reemplaza:
@@ -49,28 +54,58 @@ public final class ConfirmarImagenPrincipal {
             .buscarPorId(comando.productoId())
             .orElseThrow(() -> new ProductoNoEncontradoPorIdException(comando.productoId()));
 
-    String prefijoEsperado = "productos/" + comando.productoId() + "/";
-    if (!comando.objectKey().startsWith(prefijoEsperado)) {
-      throw new IllegalArgumentException(
-          "El objeto '"
-              + comando.objectKey()
-              + "' no pertenece al producto "
-              + comando.productoId()
-              + ".");
+    List<VarianteSubida> variantes =
+        Objects.requireNonNullElse(comando.variantes(), List.<VarianteSubida>of());
+    if (variantes.isEmpty()) {
+      throw new IllegalArgumentException("Hay que confirmar al menos una variante de la imagen.");
     }
 
-    long bytes =
-        almacenDeImagenes
-            .tamanoBytes(comando.objectKey())
-            .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(comando.objectKey()));
+    String prefijoEsperado = "productos/" + comando.productoId() + "/";
+    List<String> claves =
+        new ArrayList<>(variantes.stream().map(VarianteSubida::objectKey).toList());
+    if (comando.objectKeyVistaPrevia() != null && !comando.objectKeyVistaPrevia().isBlank()) {
+      claves.add(comando.objectKeyVistaPrevia().trim());
+    }
+    // El tamaño se pregunta una sola vez por objeto y se guarda: cada consulta es una llamada a
+    // Cloud Storage, y preguntarlo otra vez al armar las variantes costaría el doble de viajes sin
+    // enterarse de nada nuevo.
+    Map<String, Long> bytesPorClave = new LinkedHashMap<>();
+    for (String clave : claves) {
+      if (clave == null || !clave.startsWith(prefijoEsperado)) {
+        throw new IllegalArgumentException(
+            "El objeto '" + clave + "' no pertenece al producto " + comando.productoId() + ".");
+      }
+      // Que exista de verdad, una por una. El almacén es la única fuente que no miente aquí: el
+      // cliente puede reportar una key que nunca subió, y hasta hacerlo sin mala intención si un
+      // `PUT` falló y no lo miró.
+      bytesPorClave.put(
+          clave,
+          almacenDeImagenes
+              .tamanoBytes(clave)
+              .orElseThrow(() -> new ObjetoDeImagenNoEncontradoException(clave)));
+    }
 
-    String url = almacenDeImagenes.urlPublica(comando.objectKey());
+    List<VarianteDeImagen> variantesDeImagen =
+        variantes.stream()
+            .map(
+                v ->
+                    new VarianteDeImagen(
+                        v.ancho(),
+                        almacenDeImagenes.urlPublica(v.objectKey()),
+                        bytesPorClave.get(v.objectKey())))
+            .toList();
+
+    String urlVistaPrevia =
+        comando.objectKeyVistaPrevia() == null || comando.objectKeyVistaPrevia().isBlank()
+            ? null
+            : almacenDeImagenes.urlPublica(comando.objectKeyVistaPrevia().trim());
+
     ImagenProducto imagen =
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            List.of(new VarianteDeImagen(comando.ancho(), url, bytes)),
-            null,
+            variantesDeImagen,
+            urlVistaPrevia,
             comando.alto(),
             new HashContenido(comando.hash()),
             comando.altEs(),
@@ -80,9 +115,11 @@ public final class ConfirmarImagenPrincipal {
     repositorioProductos.guardarImagenPrincipal(producto.id(), imagen);
 
     try {
+      // Todas las claves recién confirmadas, no solo la primera: la limpieza borra el prefijo
+      // entero, así que una variante que no estuviera en esta lista se borraría a sí misma justo
+      // después de guardarse.
       int borrados =
-          almacenDeImagenes.eliminarPorPrefijo(
-              prefijoEsperado + "principal-", Set.of(comando.objectKey()));
+          almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado + "principal-", Set.copyOf(claves));
       return new ConfirmacionDeImagenPrincipal(imagen, borrados, false);
     } catch (RuntimeException e) {
       // La imagen ya está guardada y la ficha ya la muestra: propagar esto sería reportar como

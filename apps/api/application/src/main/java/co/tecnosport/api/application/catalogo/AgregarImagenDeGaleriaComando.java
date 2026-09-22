@@ -1,5 +1,6 @@
 package co.tecnosport.api.application.catalogo;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -11,8 +12,8 @@ import java.util.UUID;
  */
 public record AgregarImagenDeGaleriaComando(
     UUID productoId,
-    String objectKey,
-    int ancho,
+    List<VarianteSubida> variantes,
+    String objectKeyVistaPrevia,
     int alto,
     String hash,
     String altEs,

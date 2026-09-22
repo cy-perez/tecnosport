@@ -282,7 +282,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":1000,"objectKey":"%s"}],"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isOk())
@@ -302,7 +302,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":1000,"objectKey":"%s"}],"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isNotFound());
@@ -338,7 +338,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":2000,"objectKey":"%s"}],"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isCreated())
@@ -517,7 +517,7 @@ class AdminProductoControladorTest {
 
   private static String cuerpoDeGaleria(String objectKey, String hash) {
     return """
-        {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+        {"variantes":[{"ancho":2000,"objectKey":"%s"}],"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
         """
         .formatted(objectKey, hash);
   }

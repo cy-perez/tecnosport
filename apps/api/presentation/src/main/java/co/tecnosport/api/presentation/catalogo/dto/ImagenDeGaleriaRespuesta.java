@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.catalogo.dto;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -11,6 +12,8 @@ public record ImagenDeGaleriaRespuesta(
     UUID id,
     String url,
     String urlWebp,
+    List<VarianteDeImagenRespuesta> variantes,
+    String urlVistaPrevia,
     int ancho,
     int alto,
     int orden,

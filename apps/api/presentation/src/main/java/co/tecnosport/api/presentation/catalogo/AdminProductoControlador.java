@@ -24,6 +24,7 @@ import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleriaCo
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipalComando;
 import co.tecnosport.api.application.catalogo.SolicitudDeSubida;
+import co.tecnosport.api.application.catalogo.VarianteSubida;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
@@ -40,6 +41,7 @@ import co.tecnosport.api.presentation.catalogo.dto.ReordenarGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenDeGaleriaPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.SolicitarSubidaDeImagenPrincipalPeticion;
 import co.tecnosport.api.presentation.catalogo.dto.UrlSubidaRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteSubidaPeticion;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -196,8 +198,8 @@ public class AdminProductoControlador {
         confirmarImagenPrincipal.ejecutar(
             new ConfirmarImagenPrincipalComando(
                 id,
-                cuerpo.objectKey(),
-                cuerpo.ancho(),
+                aVariantesSubidas(cuerpo.variantes()),
+                cuerpo.objectKeyVistaPrevia(),
                 cuerpo.alto(),
                 cuerpo.hash(),
                 cuerpo.altEs(),
@@ -239,8 +241,8 @@ public class AdminProductoControlador {
         agregarImagenDeGaleria.ejecutar(
             new AgregarImagenDeGaleriaComando(
                 id,
-                cuerpo.objectKey(),
-                cuerpo.ancho(),
+                aVariantesSubidas(cuerpo.variantes()),
+                cuerpo.objectKeyVistaPrevia(),
                 cuerpo.alto(),
                 cuerpo.hash(),
                 cuerpo.altEs(),
@@ -301,5 +303,10 @@ public class AdminProductoControlador {
     List<ImagenProducto> galeria =
         reordenarGaleria.ejecutar(new ReordenarGaleriaComando(id, cuerpo.imagenIds()));
     log.info("Producto {}: galería reordenada, {} imágenes.", id, galeria.size());
+  }
+
+  /** El DTO de entrada no cruza a la capa de aplicación: se traduce aquí, como todos los demás. */
+  private static List<VarianteSubida> aVariantesSubidas(List<VarianteSubidaPeticion> variantes) {
+    return variantes.stream().map(v -> new VarianteSubida(v.ancho(), v.objectKey())).toList();
   }
 }

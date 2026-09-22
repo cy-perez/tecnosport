@@ -189,8 +189,10 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     const respuesta = await this.cliente.POST('/api/v1/admin/productos/{id}/imagen-principal', {
       params: { path: { id: comando.productoId } },
       body: {
-        objectKey: solicitud.objectKey,
-        ancho: comando.ancho,
+        // Una sola variante: el panel sube el archivo que una persona eligió y no tiene de dónde
+        // sacar otras resoluciones. La escalera completa la manda el cargador del catálogo, que sí
+        // las tiene del procesamiento de estudio.
+        variantes: [{ ancho: comando.ancho, objectKey: solicitud.objectKey }],
         alto: comando.alto,
         hash: await sha256Hex(comando.archivo),
         altEs: comando.altEs,
@@ -225,8 +227,10 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     const respuesta = await this.cliente.POST('/api/v1/admin/productos/{id}/galeria', {
       params: { path: { id: comando.productoId } },
       body: {
-        objectKey: solicitud.objectKey,
-        ancho: comando.ancho,
+        // Una sola variante: el panel sube el archivo que una persona eligió y no tiene de dónde
+        // sacar otras resoluciones. La escalera completa la manda el cargador del catálogo, que sí
+        // las tiene del procesamiento de estudio.
+        variantes: [{ ancho: comando.ancho, objectKey: solicitud.objectKey }],
         alto: comando.alto,
         hash: await sha256Hex(comando.archivo),
         altEs: comando.altEs,
