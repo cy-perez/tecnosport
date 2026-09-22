@@ -7835,6 +7835,54 @@ Dos consecuencias que conviene tener presentes:
   clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
   Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
 
+## El enum del backend deja de ser una cadena libre, y lo que había debajo (2026-09-22)
+
+Cerró la deuda 25. El enunciado era "la lista de métodos de pago del frontend se mantiene a mano y
+nada la ata al enum", y la salida que dejaba escrita era la correcta: publicarlo en el OpenAPI y que
+el frontend use el tipo generado. Lo que no estaba escrito es lo que apareció al conectarlo.
+
+### El defecto ya estaba ocurriendo
+
+La unión de `admin/pedidos/domain/pedido-admin.model.ts` **no tenía `SISTECREDITO`**, y el mapeador
+lo tapaba con `metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago`. O sea que un pedido pagado
+con Sistecrédito llevaba días entrando al panel con un valor fuera de su propio tipo, sin una sola
+señal. No rompía ninguna pantalla porque el panel solo compara contra `TRANSFERENCIA_MANUAL` y
+`CONTRAENTREGA`; el día que alguien escribiera un `Record<MetodoPago, …>` ahí, sí. La deuda decía
+"nada habría fallado si me olvido de alguno" en futuro y la respuesta era en pasado.
+
+### Una asignación comprueba una dirección, y la que falta es la peligrosa
+
+Quitar las afirmaciones de tipo ya ata el contrato al dominio: un método nuevo en el backend deja de
+compilar en el frontend. Pero al revés —un valor que el dominio tiene y el contrato no— una
+asignación **no lo ve**, y ese es justo el caso de `ADDI`: el valor que se retiró del enum el mismo
+día. Por eso el eslabón es un tipo, `core/contratos/misma-union.ts`, que compara los dos conjuntos en
+las dos direcciones y falla nombrando el valor que sobra o falta.
+
+Vive en `infrastructure` y no en `domain`, que es la única capa que puede conocer las dos formas: el
+dominio importando el contrato generado sería la flecha al revés, y `npm run capas` no lo atraparía
+porque `@tecnosport/contratos` es un paquete, no un import relativo. La regla la sostiene la
+convención, no el guardián — de los veinte archivos que importan el contrato hoy, los veinte son
+`infrastructure/`.
+
+### Dos cosas que solo se supieron comprobando
+
+- **`tsc -p apps/web/tsconfig.json` no comprueba nada.** Ese config es de referencias y tiene
+  `"files": []`: corre, sale en cero y no mira un solo archivo. La primera comprobación del guardián
+  dio verde **con el guardián roto a propósito**, que es exactamente el síntoma de la regla dura 1.
+  El que comprueba es `tsconfig.app.json`.
+- **El orden de la lista de métodos disponibles no era el del enum.** El endpoint hacía
+  `map(Enum::name).sorted()`, o sea alfabético; devolver `List<MetodoPago>` y dejar que Jackson lo
+  serialice habría ordenado por el orden de declaración y movido los botones del checkout de sitio
+  sin que nadie lo pidiera. Queda con un `Comparator.comparing(Enum::name)` explícito.
+
+### Lo que el error de un valor inválido pasa a ser
+
+Sigue siendo 422 `application/problem+json` con el mismo cuerpo. Cambia el `codigo`: de
+`ILLEGAL_ARGUMENT` —que además filtraba el nombre calificado del enum de Java en `detail`— a
+`HTTP_MESSAGE_NOT_READABLE`, que es como ya responde cualquier otro enum de esta API (`adr/0043`).
+No hay código nuevo que inventar y el frontend no se entera: `mensaje-de-error.ts` traduce por
+código y cae al genérico con los que no conoce.
+
 ## El hero de la portada, y por qué un solo archivo no cerraba esto (2026-09-22)
 
 Cerró la deuda 27, que era el único item que le quedaba a `image-delivery-insight` en la portada.
@@ -8133,9 +8181,13 @@ El orden no es negociable: cada uno alimenta al siguiente.
     lista de cosas que alguien puede borrar. Ahora el detalle devuelve `imagenPrincipal` entera y el
     informe reclama las dos imágenes con todos sus anchos.
 
-25. **La lista de métodos de pago del frontend se mantiene a mano y nada la ata al enum.** En el
-    OpenAPI `metodoPago` viaja como `string` libre, así que el contrato generado no lo restringe:
-    las uniones de `checkout/domain/pedido.model.ts` y `admin/pedidos/domain/pedido-admin.model.ts`
+25. ~~**La lista de métodos de pago del frontend se mantiene a mano y nada la ata al enum.**~~
+    **Cerrada el 22 de septiembre, y el defecto ya estaba dentro**: la unión del panel no tenía
+    `SISTECREDITO`. El enum viaja en el OpenAPI, el cliente generado lo restringe y `MismaUnion`
+    ata las dos uniones en las dos direcciones. Ver la entrada de arriba. Enunciado original, para
+    que se entienda qué cerró: «En el OpenAPI `metodoPago` viaja como `string` libre, así que el
+    contrato generado no lo restringe: las uniones de `checkout/domain/pedido.model.ts` y
+    `admin/pedidos/domain/pedido-admin.model.ts`
     están escritas a mano, y también el mapa de etiquetas de `metodo-pago.page.ts` y
     `confirmar.page.ts`. Quitar `ADDI` el 22 de septiembre obligó a tocar esos cuatro sitios uno
     por uno, y **nada habría fallado si me olvido de alguno**: sobra un valor que la API nunca
@@ -8143,7 +8195,7 @@ El orden no es negociable: cada uno alimenta al siguiente.
     método nuevo en el enum no aparece en el checkout y nadie se entera. **Cómo comprobarlo:**
     buscar `metodoPago?: string` en `packages/contratos/src/tipos.ts`; mientras sea `string` y no
     una unión, la deuda sigue. La salida es publicarlo como enum en el OpenAPI —un `@Schema` en el
-    DTO— y que el frontend use el tipo generado.
+    DTO— y que el frontend use el tipo generado.»
 
 26. ~~**`catalogo/cargados.json` no dice de qué ambiente habla.**~~ **Abierta y cerrada el 22 de
     septiembre.** El registro está ahora indexado por la URL de la API, así que local y dev conviven
