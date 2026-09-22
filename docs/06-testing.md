@@ -80,10 +80,19 @@ y no en el código.
 | `infrastructure` | Testcontainers con PostgreSQL 16 | Consultas, migraciones, mapeadores, bloqueos |
 | `presentation` | `@WebMvcTest` | Códigos HTTP, validación, formato de error |
 | Arquitectura | ArchUnit | Las flechas de dependencia. Falla el build |
+| Contrato | `ContratoOpenApiTest` | Que el OpenAPI servido sea `packages/contratos/openapi.json` |
 | Extremo a extremo | Spring Boot Test con Wompi y Skydropx falsos | Los recorridos de `00-producto.md` |
 
 Nunca H2. Si la prueba no corre contra el mismo motor que producción, no prueba
 la consulta que importa.
+
+**La prueba del contrato es una prueba de límite, no de comportamiento**, y por eso está en la
+tabla: lo que rompe no es una regla de negocio, es lo que el frontend cree que va a recibir. El
+21 de septiembre de 2026 el único guardián de eso era un trabajo de integración continua que
+levantaba PostgreSQL y `bootRun` para regenerar el cliente y mirar el diff: correcto, pero
+veinte minutos tarde y ya sobre la rama. Con el OpenAPI guardado en el repositorio, el mismo
+guardián son dos eslabones que corren en la máquina de quien programa —esta prueba en `gradlew
+build`, y `tools/verificar-contratos.mjs` en `npm run verificar`— y el trabajo de CI sobró.
 
 **Y hay un hueco entre capas que solo una prueba de `infrastructure` ve: el mapeo JPA contra la
 migración.** El 19 de septiembre de 2026, al hacer opcional el paquete de la variante

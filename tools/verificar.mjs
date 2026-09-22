@@ -43,6 +43,11 @@ if (!soloApi) {
   // el repositorio peor que antes de ejecutarlo durante días, y nada lo miraba porque el kit no
   // tiene ninguna prueba.
   ejecutar("node tools/verificar-kit.mjs");
+  // Y el segundo eslabon del contrato: que el cliente generado corresponda al OpenAPI guardado.
+  // El primero —que ese OpenAPI sea el que la aplicacion sirve— lo vigila ContratoOpenApiTest
+  // dentro del build de la API. Los dos juntos reemplazan al trabajo de integracion continua que
+  // levantaba PostgreSQL y bootRun para comprobar lo mismo veinte minutos mas tarde.
+  ejecutar("node tools/verificar-contratos.mjs");
   ejecutar("npm run lint --workspaces --if-present");
   ejecutar("npm test --workspaces --if-present");
   ejecutar("npm run build --workspaces --if-present");

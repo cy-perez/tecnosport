@@ -67,7 +67,8 @@ npm run dev --workspace=apps/web
 | `npm test --workspace=apps/web` | Vitest |
 | `gradlew.bat build` (en `apps/api`) | Compila, prueba y valida la arquitectura |
 | `gradlew.bat spotlessApply` | Formatea el código Java |
-| `npm run contratos` | Regenera el cliente TypeScript desde el OpenAPI |
+| `npm run contratos` | Regenera el cliente TypeScript desde `packages/contratos/openapi.json` |
+| `npm run contratos-al-dia` | ¿El cliente guardado corresponde a ese OpenAPI? (informa, no escribe) |
 | `docker compose up -d` | PostgreSQL, Mailpit y Adminer |
 
 ## Documentación

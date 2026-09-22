@@ -4,6 +4,422 @@
  */
 
 export interface paths {
+    "/api/v1/admin/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_5"];
+        put?: never;
+        post: operations["radicar_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/prorroga": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["prorrogar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/atencion/{id}/respuesta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["responder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_11"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_10"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/acuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acusarEmision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolverEmision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/envios/revision/guias/{numeroGuia}/acuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acusarGuia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/garantias/{id}/resolucion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolver_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/marcas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_4"];
+        put?: never;
+        post: operations["crear_6"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/cancelacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cancelar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/conciliar-transferencia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["conciliar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/despacho": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["despachar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/emitir-guia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["emitirGuia"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/entrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["marcarEntregado"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/recaudo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["conciliarRecaudo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/rechazo-entrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rechazarEnEntrega"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{id}/verificar-contraentrega": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verificar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/atencion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listarDePedido"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_3"];
+        put?: never;
+        post: operations["radicar_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_2"];
+        put?: never;
+        post: operations["radicar_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pedidos/{pedidoId}/reversiones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_1"];
+        put?: never;
+        post: operations["radicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar"];
+        put?: never;
+        post: operations["crear_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["editar"];
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/galeria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["agregarImagenDeGaleria"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/productos/{id}/galeria/orden": {
         parameters: {
             query?: never;
@@ -20,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos": {
+    "/api/v1/admin/productos/{id}/galeria/url-subida": {
         parameters: {
             query?: never;
             header?: never;
@@ -29,14 +445,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear"];
+        post: operations["solicitarUrlDeSubidaDeGaleria"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos/{id}/reintentar-pago": {
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -45,14 +461,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["reintentarPago"];
+        post?: never;
+        delete: operations["quitarImagenDeGaleria"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/productos/{id}/imagen-principal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmarImagenPrincipal"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos/metodos-de-pago-disponibles": {
+    "/api/v1/admin/productos/{id}/imagen-principal/url-subida": {
         parameters: {
             query?: never;
             header?: never;
@@ -61,14 +493,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["metodosDePagoDisponibles"];
+        post: operations["solicitarUrlDeSubida"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pagos/webhook": {
+    "/api/v1/admin/productos/{id}/publicacion": {
         parameters: {
             query?: never;
             header?: never;
@@ -77,14 +509,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["webhook"];
+        post: operations["publicar_1"];
+        delete: operations["despublicar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/retractos/{id}/recepcion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recibirProducto"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pagos/sistecredito/intentos": {
+    "/api/v1/admin/retractos/{id}/reintegro": {
         parameters: {
             query?: never;
             header?: never;
@@ -93,14 +541,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_1"];
+        post: operations["reintegrar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pagos/sistecredito/confirmacion": {
+    "/api/v1/admin/reversiones/{id}/gestion": {
         parameters: {
             query?: never;
             header?: never;
@@ -109,14 +557,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["confirmacion"];
+        post: operations["gestionar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pagos/intentos": {
+    "/api/v1/admin/reversiones/{id}/resolucion": {
         parameters: {
             query?: never;
             header?: never;
@@ -125,14 +573,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_2"];
+        post: operations["resolver"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/envios/webhook": {
+    "/api/v1/admin/sets-rotacion": {
         parameters: {
             query?: never;
             header?: never;
@@ -141,14 +589,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["webhook_1"];
+        post: operations["abrir"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/envios/cotizacion": {
+    "/api/v1/admin/sets-rotacion/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -157,14 +605,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["cotizar"];
+        post?: never;
+        delete: operations["eliminar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sets-rotacion/{id}/completar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["completar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/carritos": {
+    "/api/v1/admin/sets-rotacion/{id}/publicar": {
         parameters: {
             query?: never;
             header?: never;
@@ -173,14 +637,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_3"];
+        post: operations["publicar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/carritos/{id}/lineas": {
+    "/api/v1/admin/sets-rotacion/{id}/subidas": {
         parameters: {
             query?: never;
             header?: never;
@@ -189,14 +653,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["agregarLinea"];
+        post: operations["subidas"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/verificacion": {
+    "/api/v1/admin/variantes": {
         parameters: {
             query?: never;
             header?: never;
@@ -205,62 +669,62 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["verificacion"];
+        post: operations["crear_4"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/verificacion/reenviar": {
+    "/api/v1/admin/variantes/existencias": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["existencias"];
         put?: never;
-        post: operations["reenviarVerificacion"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/sesion": {
+    "/api/v1/admin/variantes/medidas": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["medidas"];
         put?: never;
-        post: operations["iniciarSesion"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/registro": {
+    "/api/v1/admin/variantes/sin-medir": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["sinMedir"];
         put?: never;
-        post: operations["registro"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/refresco": {
+    "/api/v1/admin/variantes/{id}/existencia": {
         parameters: {
             query?: never;
             header?: never;
@@ -269,7 +733,55 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["refrescar"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ajustarExistencia"];
+        trace?: never;
+    };
+    "/api/v1/admin/variantes/{id}/paquete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["medir"];
+        trace?: never;
+    };
+    "/api/v1/atributos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_8"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/cierre": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cerrarSesion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -308,7 +820,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/cierre": {
+    "/api/v1/auth/refresco": {
         parameters: {
             query?: never;
             header?: never;
@@ -317,14 +829,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["cerrarSesion"];
+        post: operations["refrescar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/variantes": {
+    "/api/v1/auth/registro": {
         parameters: {
             query?: never;
             header?: never;
@@ -333,14 +845,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["crear_4"];
+        post: operations["registro"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sets-rotacion": {
+    "/api/v1/auth/sesion": {
         parameters: {
             query?: never;
             header?: never;
@@ -349,14 +861,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["abrir"];
+        post: operations["iniciarSesion"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sets-rotacion/{id}/subidas": {
+    "/api/v1/auth/verificacion": {
         parameters: {
             query?: never;
             header?: never;
@@ -365,14 +877,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["subidas"];
+        post: operations["verificacion"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sets-rotacion/{id}/publicar": {
+    "/api/v1/auth/verificacion/reenviar": {
         parameters: {
             query?: never;
             header?: never;
@@ -381,14 +893,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publicar"];
+        post: operations["reenviarVerificacion"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/sets-rotacion/{id}/completar": {
+    "/api/v1/carritos": {
         parameters: {
             query?: never;
             header?: never;
@@ -397,14 +909,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["completar"];
+        post: operations["crear_3"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/reversiones/{id}/resolucion": {
+    "/api/v1/carritos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ver_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/carritos/{id}/lineas": {
         parameters: {
             query?: never;
             header?: never;
@@ -413,14 +941,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["resolver"];
+        post: operations["agregarLinea"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/reversiones/{id}/gestion": {
+    "/api/v1/carritos/{id}/lineas/{lineaId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -429,14 +957,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["gestionar"];
+        post?: never;
+        delete: operations["eliminarLinea"];
+        options?: never;
+        head?: never;
+        patch: operations["actualizarCantidad"];
+        trace?: never;
+    };
+    "/api/v1/categorias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_7"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/retractos/{id}/reintegro": {
+    "/api/v1/envios/cotizacion": {
         parameters: {
             query?: never;
             header?: never;
@@ -445,14 +989,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["reintegrar"];
+        post: operations["cotizar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/retractos/{id}/recepcion": {
+    "/api/v1/envios/webhook": {
         parameters: {
             query?: never;
             header?: never;
@@ -461,30 +1005,46 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["recibirProducto"];
+        post: operations["webhook_1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/productos": {
+    "/api/v1/mapa-del-sitio": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["listar"];
+        get: operations["ver_1"];
         put?: never;
-        post: operations["crear_5"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/productos/{id}/publicacion": {
+    "/api/v1/marcas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listar_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pagos/intentos": {
         parameters: {
             query?: never;
             header?: never;
@@ -493,375 +1053,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publicar_1"];
-        delete: operations["despublicar"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/productos/{id}/imagen-principal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["confirmarImagenPrincipal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/productos/{id}/imagen-principal/url-subida": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["solicitarUrlDeSubida"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/productos/{id}/galeria": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["agregarImagenDeGaleria"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/productos/{id}/galeria/url-subida": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["solicitarUrlDeSubidaDeGaleria"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{pedidoId}/reversiones": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_1"];
-        put?: never;
-        post: operations["radicar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{pedidoId}/retractos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_2"];
-        put?: never;
-        post: operations["radicar_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{pedidoId}/garantias": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_3"];
-        put?: never;
-        post: operations["radicar_2"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/verificar-contraentrega": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["verificar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/rechazo-entrega": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["rechazarEnEntrega"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/recaudo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["conciliarRecaudo"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/entrega": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["marcarEntregado"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/emitir-guia": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["emitirGuia"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/despacho": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["despachar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/conciliar-transferencia": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["conciliar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{id}/cancelacion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["cancelar"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/marcas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_4"];
-        put?: never;
-        post: operations["crear_6"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/garantias/{id}/resolucion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["resolver_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/envios/revision/guias/{numeroGuia}/acuse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["acusarGuia"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/envios/revision/emisiones/{emisionId}/resolucion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["resolverEmision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/envios/revision/emisiones/{emisionId}/acuse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["acusarEmision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/atencion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_5"];
-        put?: never;
-        post: operations["radicar_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/atencion/{id}/respuesta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["responder"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/atencion/{id}/prorroga": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["prorrogar"];
+        post: operations["crear_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -884,7 +1076,7 @@ export interface paths {
         patch: operations["registrarIdTransaccion"];
         trace?: never;
     };
-    "/api/v1/carritos/{id}/lineas/{lineaId}": {
+    "/api/v1/pagos/sistecredito/confirmacion": {
         parameters: {
             query?: never;
             header?: never;
@@ -893,14 +1085,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete: operations["eliminarLinea"];
+        post: operations["confirmacion"];
+        delete?: never;
         options?: never;
         head?: never;
-        patch: operations["actualizarCantidad"];
+        patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/variantes/{id}/paquete": {
+    "/api/v1/pagos/sistecredito/intentos": {
         parameters: {
             query?: never;
             header?: never;
@@ -909,14 +1101,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
+        post: operations["crear_1"];
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["medir"];
+        patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/variantes/{id}/existencia": {
+    "/api/v1/pagos/webhook": {
         parameters: {
             query?: never;
             header?: never;
@@ -925,37 +1117,69 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
+        post: operations["webhook"];
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["ajustarExistencia"];
+        patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/productos/{id}": {
+    "/api/v1/pedidos": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ver"];
+        get?: never;
         put?: never;
-        post?: never;
+        post: operations["crear"];
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["editar"];
+        patch?: never;
         trace?: never;
     };
-    "/api/v1/salud": {
+    "/api/v1/pedidos/metodos-de-pago-disponibles": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["salud"];
+        get?: never;
+        put?: never;
+        post: operations["metodosDePagoDisponibles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedidos/{id}/reintentar-pago": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reintentarPago"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pedidos/{id}/seguimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["seguimiento"];
         put?: never;
         post?: never;
         delete?: never;
@@ -996,241 +1220,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/pedidos/{id}/seguimiento": {
+    "/api/v1/salud": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["seguimiento"];
+        get: operations["salud"];
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/marcas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_6"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/mapa-del-sitio": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ver_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/categorias": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_7"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/carritos/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ver_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/atributos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_8"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/variantes/sin-medir": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["sinMedir"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/variantes/medidas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["medidas"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/variantes/existencias": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["existencias"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_9"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/pedidos/{pedidoId}/atencion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listarDePedido"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/envios/revision": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_10"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/categorias": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["listar_11"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/sets-rotacion/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["eliminar"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/productos/{id}/galeria/{imagenId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["quitarImagenDeGaleria"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1240,871 +1240,534 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        ReordenarGaleriaPeticion: {
-            imagenIds: string[];
-        };
-        CrearPedidoRequest: {
-            correo?: string;
-            nombre?: string;
-            telefono?: string;
-            lineas?: components["schemas"]["LineaRequest"][];
-            tipoEntrega?: string;
-            direccion?: components["schemas"]["DireccionRequest"];
-            metodoPago?: string;
-            autorizaDatos?: boolean;
-        };
-        DireccionRequest: {
-            codigoDaneDepartamento?: string;
-            departamento?: string;
-            codigoDaneCiudad?: string;
-            ciudad?: string;
-            direccion?: string;
-            indicaciones?: string;
-            barrio?: string;
-        };
-        LineaRequest: {
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: int32 */
-            cantidad?: number;
-        };
-        ContactoRespuesta: {
-            nombre?: string;
-            telefono?: string;
-        };
-        DatosTransferenciaRespuesta: {
-            banco?: string;
-            tipoCuenta?: string;
-            numeroCuenta?: string;
-            titular?: string;
-            referencia?: string;
-        };
-        DineroRespuesta: {
-            /** Format: int64 */
-            valor?: number;
-            moneda?: string;
-        };
-        DireccionRespuesta: {
-            codigoDaneDepartamento?: string;
-            departamento?: string;
-            codigoDaneCiudad?: string;
-            ciudad?: string;
-            direccion?: string;
-            indicaciones?: string;
-            barrio?: string;
-        };
-        EnvioRespuesta: {
-            guias?: components["schemas"]["GuiaRespuesta"][];
-            costoEnvio?: components["schemas"]["DineroRespuesta"];
-            /** Format: date-time */
-            despachadoEn?: string;
-            comisionRecaudo?: components["schemas"]["DineroRespuesta"];
-            /** Format: date-time */
-            recaudoConciliadoEn?: string;
-        };
-        GuiaRespuesta: {
-            transportadora?: string;
-            guia?: string;
-            costo?: components["schemas"]["DineroRespuesta"];
-            urlEtiqueta?: string;
-        };
-        HistorialPedidoRespuesta: {
-            estado?: string;
-            /** Format: date-time */
-            fecha?: string;
-            actor?: string;
-            motivo?: string;
-        };
-        LineaPedidoRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            varianteId?: string;
-            sku?: string;
-            nombre?: string;
-            /** Format: int32 */
-            cantidad?: number;
-            precioUnitario?: components["schemas"]["DineroRespuesta"];
-            tasaIva?: number;
-            imagenUrl?: string;
-        };
-        PedidoRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            numeroPedido?: string;
-            /** Format: uuid */
-            usuarioId?: string;
-            correo?: string;
-            contacto?: components["schemas"]["ContactoRespuesta"];
-            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
-            tipoEntrega?: string;
-            direccion?: components["schemas"]["DireccionRespuesta"];
-            metodoPago?: string;
-            estado?: string;
-            subtotal?: components["schemas"]["DineroRespuesta"];
-            costoEnvio?: components["schemas"]["DineroRespuesta"];
-            total?: components["schemas"]["DineroRespuesta"];
-            /** Format: date-time */
-            creadoEn?: string;
-            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
-            envio?: components["schemas"]["EnvioRespuesta"];
-            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
-            dineroRecibido?: components["schemas"]["DineroRespuesta"];
-            yaDevuelto?: components["schemas"]["DineroRespuesta"];
-            plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
-        };
-        PlazoDeEntregaRespuesta: {
-            /** Format: date-time */
-            inicio?: string;
-            /** Format: date-time */
-            limite?: string;
-            verdicto?: string;
-            /** Format: date-time */
-            avisadoEn?: string;
-        };
-        MetodosDePagoDisponiblesRequest: {
-            lineas?: components["schemas"]["LineaRequest"][];
-            correo?: string;
-            tipoEntrega?: string;
-            direccion?: components["schemas"]["DireccionRequest"];
-        };
-        CrearIntentoSistecreditoRequest: {
-            /** Format: uuid */
-            pedidoId: string;
-            /** @enum {string} */
-            tipoDocumento: "CC" | "TI" | "TIE" | "NIT";
-            documento: string;
-            /** @description Idioma al que vuelve el comprador: es o en. Cualquier otro cae en es. */
-            idioma?: string;
-        };
-        IntentoSistecreditoRespuesta: {
-            referencia?: string;
-            monto?: components["schemas"]["DineroRespuesta"];
-            urlRedireccion?: string;
-        };
-        CrearIntentoDePagoRequest: {
-            /** Format: uuid */
-            pedidoId?: string;
-        };
-        IntentoDePagoRespuesta: {
-            referencia?: string;
-            monto?: components["schemas"]["DineroRespuesta"];
-            firmaIntegridad?: string;
-            llavePublica?: string;
-            ambiente?: string;
-        };
-        CotizacionEnvioRequest: {
-            lineas?: components["schemas"]["LineaRequest"][];
-            direccion?: components["schemas"]["DireccionRequest"];
-        };
-        CotizacionEnvioRespuesta: {
-            costoEnvio?: components["schemas"]["DineroRespuesta"];
-            transportadora?: string;
-            /** Format: int32 */
-            diasEstimados?: number;
-            /** Format: date-time */
-            venceEn?: string;
-        };
-        CarritoRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            usuarioId?: string;
-            lineas?: components["schemas"]["LineaCarritoRespuesta"][];
-            /** Format: date-time */
-            creadoEn?: string;
-        };
-        LineaCarritoRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: int32 */
-            cantidad?: number;
-        };
-        AgregarLineaRequest: {
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: int32 */
-            cantidad?: number;
-        };
-        VerificarCorreoRequest: {
-            token?: string;
-        };
-        ReenviarVerificacionRequest: {
-            correo?: string;
-        };
-        IniciarSesionRequest: {
-            correo?: string;
-            clave?: string;
-        };
-        SesionRespuesta: {
-            /** Format: uuid */
-            usuarioId?: string;
-            rol?: string;
-            accessToken?: string;
-        };
-        RegistrarUsuarioRequest: {
-            correo?: string;
-            clave?: string;
-            autorizaDatos?: boolean;
-        };
-        SolicitarRecuperacionRequest: {
-            correo?: string;
-        };
-        ConfirmarRecuperacionRequest: {
-            token?: string;
-            claveNueva?: string;
-        };
-        AgregarVariantePeticion: {
-            /** Format: uuid */
-            productoId?: string;
-            sku?: string;
-            /** Format: int64 */
-            precio?: number;
-            tasaIva?: number;
-            codigoBarras?: string;
-            /** Format: int32 */
-            existenciaInicial?: number;
-            /** Format: int32 */
-            pesoGramos?: number;
-            /** Format: int32 */
-            largoCm?: number;
-            /** Format: int32 */
-            anchoCm?: number;
-            /** Format: int32 */
-            altoCm?: number;
-            atributos?: components["schemas"]["ValorAtributoPeticion"][];
-        };
-        ValorAtributoPeticion: {
-            /** Format: uuid */
-            atributoId?: string;
-            valor?: string;
-            colorHex?: string;
-        };
-        AtributoValorRespuesta: {
-            nombre?: string;
-            valor?: string;
-            colorHex?: string;
-            unidad?: string;
-        };
-        VarianteRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            sku?: string;
-            precio?: components["schemas"]["DineroRespuesta"];
-            disponible: boolean;
-            atributos?: components["schemas"]["AtributoValorRespuesta"][];
-        };
         AbrirSetRotacionPeticion: {
-            /** Format: uuid */
-            productoId?: string;
+            dispositivo?: string;
             /** Format: int32 */
             fotogramas?: number;
-            dispositivo?: string;
-            versionAsistente?: string;
-        };
-        ImagenRotacionRespuesta: {
-            /** Format: int32 */
-            orden?: number;
-            url?: string;
-            urlWebp?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-        };
-        SetRotacionRespuesta: {
-            /** Format: uuid */
-            id?: string;
             /** Format: uuid */
             productoId?: string;
-            /** Format: int32 */
-            fotogramasPrometidos?: number;
-            estado?: string;
-            capturadoPor?: string;
-            /** Format: date-time */
-            capturadoEn?: string;
-            dispositivo?: string;
             versionAsistente?: string;
-            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
-        };
-        SolicitarSubidasDeRotacionPeticion: {
-            contentType?: string;
-        };
-        SubidaDeFotogramaRespuesta: {
-            /** Format: int32 */
-            orden?: number;
-            url?: string;
-            objectKey?: string;
-        };
-        CompletarSetRotacionPeticion: {
-            fotogramas?: components["schemas"]["FotogramaPeticion"][];
-        };
-        FotogramaPeticion: {
-            /** Format: int32 */
-            orden?: number;
-            objectKey?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            hash?: string;
-        };
-        ResolverReversionRequest: {
-            desenlace?: string;
-            resumenParaElComprador?: string;
-            monto?: number;
-            medio?: string;
-            comprobante?: string;
-        };
-        SolicitudReversionRespuesta: {
-            id?: string;
-            solicitudId?: string;
-            pedidoId?: string;
-            causal?: string;
-            /** Format: date-time */
-            fechaDeNoticia?: string;
-            /** Format: date-time */
-            radicadaEn?: string;
-            verdictoAlRadicar?: string;
-            estado?: string;
-            /** Format: date-time */
-            gestionadaEn?: string;
-            gestionadaPor?: string;
-            gestion?: string;
-            desenlace?: string;
-            /** Format: date-time */
-            resueltaEn?: string;
-            reintegroId?: string;
-        };
-        RegistrarGestionRequest: {
-            gestion?: string;
-        };
-        RegistrarReintegroRequest: {
-            monto?: number;
-            medio?: string;
-            medioPreferido?: string;
-            comprobante?: string;
-        };
-        ReintegroRespuesta: {
-            id?: string;
-            motivo?: string;
-            monto?: number;
-            medio?: string;
-            comprobante?: string;
-            /** Format: date-time */
-            registradoEn?: string;
-            registradoPor?: string;
-        };
-        SolicitudRetractoRespuesta: {
-            id?: string;
-            pedidoId?: string;
-            /** Format: date-time */
-            radicadaEn?: string;
-            radicadaPor?: string;
-            motivo?: string;
-            verdictoAlRadicar?: string;
-            estado?: string;
-            /** Format: date-time */
-            productoRecibidoEn?: string;
-            /** Format: date-time */
-            limiteDeReintegro?: string;
-            medioPreferido?: string;
-            preferenciaRespetada?: boolean;
-            reintegro?: components["schemas"]["ReintegroRespuesta"];
-        };
-        CrearProductoPeticion: {
-            nombre?: string;
-            descripcion?: string;
-            /** Format: uuid */
-            marcaId?: string;
-            /** Format: uuid */
-            categoriaId?: string;
-        };
-        CategoriaRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            nombre?: string;
-            slug?: string;
-            linea?: string;
-        };
-        MarcaRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            nombre?: string;
-        };
-        ProductoAdminRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            nombre?: string;
-            descripcion?: string;
-            slug?: string;
-            estado?: string;
-            marca?: components["schemas"]["MarcaRespuesta"];
-            categoria?: components["schemas"]["CategoriaRespuesta"];
-            imagenPrincipalUrl?: string;
-            /** Format: int32 */
-            totalVariantes?: number;
-        };
-        ConfirmarImagenPrincipalPeticion: {
-            objectKey?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            hash?: string;
-            altEs?: string;
-            altEn?: string;
-        };
-        ImagenRespuesta: {
-            url?: string;
-            urlWebp?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            altEs?: string;
-            altEn?: string;
-        };
-        SolicitarSubidaDeImagenPrincipalPeticion: {
-            contentType?: string;
-        };
-        UrlSubidaRespuesta: {
-            url?: string;
-            objectKey?: string;
-        };
-        AgregarImagenDeGaleriaPeticion: {
-            objectKey?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            hash?: string;
-            altEs?: string;
-            altEn?: string;
-        };
-        ImagenDeGaleriaRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            url?: string;
-            urlWebp?: string;
-            /** Format: int32 */
-            ancho?: number;
-            /** Format: int32 */
-            alto?: number;
-            /** Format: int32 */
-            orden?: number;
-            altEs?: string;
-            altEn?: string;
-        };
-        SolicitarSubidaDeImagenDeGaleriaPeticion: {
-            contentType?: string;
-        };
-        RadicarReversionRequest: {
-            causal?: string;
-            /** Format: date-time */
-            fechaDeNoticia?: string;
-            /** Format: date-time */
-            recibidaEn?: string;
-            descripcion?: string;
-        };
-        RegistrarRetractoRequest: {
-            motivo?: string;
-            medioPreferido?: string;
-        };
-        RadicarGarantiaRequest: {
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: date-time */
-            recibidaEn?: string;
-            descripcionDelFallo?: string;
-        };
-        ReclamacionGarantiaRespuesta: {
-            id?: string;
-            solicitudId?: string;
-            pedidoId?: string;
-            varianteId?: string;
-            /** Format: date-time */
-            entregadoEn?: string;
-            /** Format: date-time */
-            radicadaEn?: string;
-            /** Format: int32 */
-            mesesDeTermino?: number;
-            /** Format: date-time */
-            finDelTermino?: string;
-            vigencia?: string;
-            descripcionDelFallo?: string;
-            estado?: string;
-            desenlace?: string;
-            /** Format: date-time */
-            resueltaEn?: string;
-            resueltaPor?: string;
-            reintegroId?: string;
-        };
-        VerificarContraentregaRequest: {
-            motivo?: string;
-        };
-        RechazarEnEntregaRequest: {
-            motivo?: string;
-        };
-        ConciliarRecaudoRequest: {
-            /** @enum {string} */
-            modalidadRecaudo: "CREDITOS" | "BANCO";
-            /** Format: int64 */
-            comisionRecaudo?: number;
-        };
-        EmisionDeGuiaRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            estado?: string;
-            transportadora?: string;
-            /** Format: int32 */
-            cuantosEnvios?: number;
-            detalle?: string;
-            /** Format: date-time */
-            solicitadaEn?: string;
-            /** Format: date-time */
-            resueltaEn?: string;
-        };
-        DespacharPedidoRequest: {
-            guias?: components["schemas"]["GuiaDespachadaRequest"][];
-        };
-        GuiaDespachadaRequest: {
-            transportadora?: string;
-            guia?: string;
-            /** Format: int64 */
-            costoEnvio?: number;
-        };
-        CancelarPedidoRequest: {
-            motivo?: string;
-            monto?: number;
-            medio?: string;
-            comprobante?: string;
-        };
-        CrearMarcaPeticion: {
-            nombre?: string;
-        };
-        ResolverGarantiaRequest: {
-            desenlace?: string;
-            resumenParaElComprador?: string;
-            monto?: number;
-            medio?: string;
-            comprobante?: string;
-        };
-        AcusarRevisionRequest: {
-            nota?: string;
-        };
-        AcuseDeRevisionRespuesta: {
-            id?: string;
-            tipo?: string;
-            referencia?: string;
-            /** Format: date-time */
-            revisadoEn?: string;
-            actor?: string;
-            nota?: string;
-        };
-        ResolverEmisionRequest: {
-            veredicto?: string;
-            enviosEnPlataforma?: string[];
-            nota?: string;
-        };
-        EmisionResueltaRespuesta: {
-            emisionId?: string;
-            estado?: string;
-            detalle?: string;
-            enviosEnPlataforma?: string[];
-            /** Format: date-time */
-            resueltaEn?: string;
-        };
-        RadicarSolicitudRequest: {
-            tipo?: string;
-            correo?: string;
-            /** Format: uuid */
-            pedidoId?: string;
-            /** Format: date-time */
-            recibidaEn?: string;
-            asunto?: string;
-        };
-        ProrrogaRespuesta: {
-            /** Format: date-time */
-            otorgadaEn?: string;
-            otorgadaPor?: string;
-            motivo?: string;
-            /** Format: date-time */
-            avisadaEn?: string;
-        };
-        RespuestaRespuesta: {
-            /** Format: date-time */
-            respondidaEn?: string;
-            respondidaPor?: string;
-            resumen?: string;
-        };
-        SolicitudAtencionRespuesta: {
-            id?: string;
-            numeroRadicado?: string;
-            tipo?: string;
-            correo?: string;
-            pedidoId?: string;
-            /** Format: date-time */
-            recibidaEn?: string;
-            /** Format: date-time */
-            radicadaEn?: string;
-            radicadaPor?: string;
-            asunto?: string;
-            estado?: string;
-            /** Format: date-time */
-            limiteDeRespuesta?: string;
-            verdicto?: string;
-            prorroga?: components["schemas"]["ProrrogaRespuesta"];
-            respuesta?: components["schemas"]["RespuestaRespuesta"];
-        };
-        ResponderSolicitudRequest: {
-            resumen?: string;
-        };
-        ProrrogarSolicitudRequest: {
-            motivo?: string;
-        };
-        RegistrarIdTransaccionWompiRequest: {
-            idTransaccionWompi?: string;
         };
         ActualizarCantidadRequest: {
             /** Format: int32 */
             cantidad?: number;
         };
-        MedirVariantePeticion: {
-            /** Format: int32 */
-            pesoGramos?: number;
-            /** Format: int32 */
-            largoCm?: number;
-            /** Format: int32 */
-            anchoCm?: number;
-            /** Format: int32 */
-            altoCm?: number;
+        AcusarRevisionRequest: {
+            nota?: string;
         };
-        VarianteMedidaRespuesta: {
+        AcuseDeRevisionRespuesta: {
+            actor?: string;
+            id?: string;
+            nota?: string;
+            referencia?: string;
+            /** Format: date-time */
+            revisadoEn?: string;
+            tipo?: string;
+        };
+        AgregarImagenDeGaleriaPeticion: {
+            altEn?: string;
+            altEs?: string;
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            hash?: string;
+            objectKey?: string;
+        };
+        AgregarLineaRequest: {
+            /** Format: int32 */
+            cantidad?: number;
             /** Format: uuid */
             varianteId?: string;
-            sku?: string;
+        };
+        AgregarVariantePeticion: {
             /** Format: int32 */
-            pesoGramos?: number;
+            altoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            atributos?: components["schemas"]["ValorAtributoPeticion"][];
+            codigoBarras?: string;
+            /** Format: int32 */
+            existenciaInicial?: number;
             /** Format: int32 */
             largoCm?: number;
             /** Format: int32 */
-            anchoCm?: number;
-            /** Format: int32 */
-            altoCm?: number;
-            correccion?: boolean;
+            pesoGramos?: number;
+            /** Format: int64 */
+            precio?: number;
+            /** Format: uuid */
+            productoId?: string;
+            sku?: string;
+            tasaIva?: number;
         };
         AjustarExistenciaPeticion: {
             /** Format: int32 */
             cantidadContada?: number;
             motivo?: string;
         };
-        ExistenciaAjustadaRespuesta: {
-            /** Format: uuid */
-            varianteId?: string;
-            sku?: string;
-            nombreProducto?: string;
-            /** Format: int32 */
-            saldoAnterior?: number;
-            /** Format: int32 */
-            saldoNuevo?: number;
-            /** Format: int32 */
-            diferencia?: number;
-            /** Format: int32 */
-            unidadesReservadas?: number;
-            sinCambios?: boolean;
-            dejaReservasSinRespaldo?: boolean;
-        };
-        EditarProductoPeticion: {
-            nombre?: string;
-            descripcion?: string;
-            /** Format: uuid */
-            marcaId?: string;
-            /** Format: uuid */
-            categoriaId?: string;
-        };
-        ProductoRespuesta: {
-            slug?: string;
-            nombre?: string;
-            descripcion?: string;
-            marca?: components["schemas"]["MarcaRespuesta"];
-            categoria?: components["schemas"]["CategoriaRespuesta"];
-            imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
-            galeria?: components["schemas"]["ImagenRespuesta"][];
-            rotacion?: components["schemas"]["RotacionRespuesta"];
-            variantes?: components["schemas"]["VarianteRespuesta"][];
-        };
-        ResultadoPaginadoRespuestaProductoRespuesta: {
-            items?: components["schemas"]["ProductoRespuesta"][];
-            cursorSiguiente?: string;
-        };
-        RotacionRespuesta: {
-            /** Format: int32 */
-            fotogramas?: number;
-            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
-        };
-        EnvioPublicoRespuesta: {
-            guias?: components["schemas"]["GuiaPublicaRespuesta"][];
-            /** Format: date-time */
-            despachadoEn?: string;
-        };
-        GuiaPublicaRespuesta: {
-            transportadora?: string;
-            guia?: string;
-        };
-        PedidoSeguimientoRespuesta: {
-            /** Format: uuid */
-            id?: string;
-            numeroPedido?: string;
-            correo?: string;
-            contacto?: components["schemas"]["ContactoRespuesta"];
-            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
-            tipoEntrega?: string;
-            direccion?: components["schemas"]["DireccionRespuesta"];
-            metodoPago?: string;
-            estado?: string;
-            subtotal?: components["schemas"]["DineroRespuesta"];
-            costoEnvio?: components["schemas"]["DineroRespuesta"];
-            total?: components["schemas"]["DineroRespuesta"];
-            /** Format: date-time */
-            creadoEn?: string;
-            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
-            envio?: components["schemas"]["EnvioPublicoRespuesta"];
-            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
-            retractos?: components["schemas"]["RetractoPublicoRespuesta"][];
-        };
-        RetractoPublicoRespuesta: {
-            estado?: string;
-            /** Format: date-time */
-            radicadaEn?: string;
-            motivo?: string;
-            /** Format: date-time */
-            productoRecibidoEn?: string;
-            /** Format: date-time */
-            limiteDeReintegro?: string;
-            montoReembolsado?: components["schemas"]["DineroRespuesta"];
-            /** Format: date-time */
-            reembolsadoEn?: string;
-        };
-        ResultadoPaginadoRespuestaMarcaRespuesta: {
-            items?: components["schemas"]["MarcaRespuesta"][];
-            cursorSiguiente?: string;
-        };
-        MapaDelSitioRespuesta: {
-            productos?: components["schemas"]["Producto"][];
-        };
-        Producto: {
-            slug?: string;
-            /** Format: date-time */
-            actualizadoEn?: string;
-        };
-        ResultadoPaginadoRespuestaCategoriaRespuesta: {
-            items?: components["schemas"]["CategoriaRespuesta"][];
-            cursorSiguiente?: string;
-        };
         AtributoRespuesta: {
             /** Format: uuid */
             id?: string;
             nombre?: string;
             tipo?: string;
-            valoresPermitidos?: string[];
             unidad?: string;
+            valoresPermitidos?: string[];
         };
-        ResultadoPaginadoRespuestaAtributoRespuesta: {
-            items?: components["schemas"]["AtributoRespuesta"][];
-            cursorSiguiente?: string;
+        AtributoValorRespuesta: {
+            colorHex?: string;
+            nombre?: string;
+            unidad?: string;
+            valor?: string;
         };
-        VarianteSinMedirRespuesta: {
+        BandejaDeRevisionRespuesta: {
+            emisiones?: components["schemas"]["EmisionEnRevisionRespuesta"][];
+            guias?: components["schemas"]["GuiaEnRevisionRespuesta"][];
+        };
+        CancelarPedidoRequest: {
+            comprobante?: string;
+            medio?: string;
+            monto?: number;
+            motivo?: string;
+        };
+        CarritoRespuesta: {
+            /** Format: date-time */
+            creadoEn?: string;
+            /** Format: uuid */
+            id?: string;
+            lineas?: components["schemas"]["LineaCarritoRespuesta"][];
+            /** Format: uuid */
+            usuarioId?: string;
+        };
+        CategoriaRespuesta: {
+            /** Format: uuid */
+            id?: string;
+            linea?: string;
+            nombre?: string;
+            slug?: string;
+        };
+        CompletarSetRotacionPeticion: {
+            fotogramas?: components["schemas"]["FotogramaPeticion"][];
+        };
+        ConciliarRecaudoRequest: {
+            /** Format: int64 */
+            comisionRecaudo?: number;
+            /** @enum {string} */
+            modalidadRecaudo: "CREDITOS" | "BANCO";
+        };
+        ConfirmarImagenPrincipalPeticion: {
+            altEn?: string;
+            altEs?: string;
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            hash?: string;
+            objectKey?: string;
+        };
+        ConfirmarRecuperacionRequest: {
+            claveNueva?: string;
+            token?: string;
+        };
+        ContactoRespuesta: {
+            nombre?: string;
+            telefono?: string;
+        };
+        CotizacionEnvioRequest: {
+            direccion?: components["schemas"]["DireccionRequest"];
+            lineas?: components["schemas"]["LineaRequest"][];
+        };
+        CotizacionEnvioRespuesta: {
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            /** Format: int32 */
+            diasEstimados?: number;
+            transportadora?: string;
+            /** Format: date-time */
+            venceEn?: string;
+        };
+        CrearIntentoDePagoRequest: {
+            /** Format: uuid */
+            pedidoId?: string;
+        };
+        CrearIntentoSistecreditoRequest: {
+            documento: string;
+            /** @description Idioma al que vuelve el comprador: es o en. Cualquier otro cae en es. */
+            idioma?: string;
+            /** Format: uuid */
+            pedidoId: string;
+            /** @enum {string} */
+            tipoDocumento: "CC" | "TI" | "TIE" | "NIT";
+        };
+        CrearMarcaPeticion: {
+            nombre?: string;
+        };
+        CrearPedidoRequest: {
+            autorizaDatos?: boolean;
+            correo?: string;
+            direccion?: components["schemas"]["DireccionRequest"];
+            lineas?: components["schemas"]["LineaRequest"][];
+            metodoPago?: string;
+            nombre?: string;
+            telefono?: string;
+            tipoEntrega?: string;
+        };
+        CrearProductoPeticion: {
+            /** Format: uuid */
+            categoriaId?: string;
+            descripcion?: string;
+            /** Format: uuid */
+            marcaId?: string;
+            nombre?: string;
+        };
+        DatosTransferenciaRespuesta: {
+            banco?: string;
+            numeroCuenta?: string;
+            referencia?: string;
+            tipoCuenta?: string;
+            titular?: string;
+        };
+        DespacharPedidoRequest: {
+            guias?: components["schemas"]["GuiaDespachadaRequest"][];
+        };
+        DineroRespuesta: {
+            moneda?: string;
+            /** Format: int64 */
+            valor?: number;
+        };
+        DireccionRequest: {
+            barrio?: string;
+            ciudad?: string;
+            codigoDaneCiudad?: string;
+            codigoDaneDepartamento?: string;
+            departamento?: string;
+            direccion?: string;
+            indicaciones?: string;
+        };
+        DireccionRespuesta: {
+            barrio?: string;
+            ciudad?: string;
+            codigoDaneCiudad?: string;
+            codigoDaneDepartamento?: string;
+            departamento?: string;
+            direccion?: string;
+            indicaciones?: string;
+        };
+        EditarProductoPeticion: {
+            /** Format: uuid */
+            categoriaId?: string;
+            descripcion?: string;
+            /** Format: uuid */
+            marcaId?: string;
+            nombre?: string;
+        };
+        EmisionDeGuiaRespuesta: {
+            /** Format: int32 */
+            cuantosEnvios?: number;
+            detalle?: string;
+            estado?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            /** Format: date-time */
+            solicitadaEn?: string;
+            transportadora?: string;
+        };
+        EmisionEnRevisionRespuesta: {
+            actor?: string;
+            detalle?: string;
+            emisionId?: string;
+            enviosEnPlataforma?: string[];
+            estado?: string;
+            idTarifa?: string;
+            numeroPedido?: string;
+            pedidoId?: string;
+            /** Format: date-time */
+            solicitadaEn?: string;
+            transportadora?: string;
+        };
+        EmisionResueltaRespuesta: {
+            detalle?: string;
+            emisionId?: string;
+            enviosEnPlataforma?: string[];
+            estado?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+        };
+        EnvioPublicoRespuesta: {
+            /** Format: date-time */
+            despachadoEn?: string;
+            guias?: components["schemas"]["GuiaPublicaRespuesta"][];
+        };
+        EnvioRespuesta: {
+            comisionRecaudo?: components["schemas"]["DineroRespuesta"];
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            despachadoEn?: string;
+            guias?: components["schemas"]["GuiaRespuesta"][];
+            /** Format: date-time */
+            recaudoConciliadoEn?: string;
+        };
+        ExistenciaAjustadaRespuesta: {
+            dejaReservasSinRespaldo?: boolean;
+            /** Format: int32 */
+            diferencia?: number;
+            nombreProducto?: string;
+            /** Format: int32 */
+            saldoAnterior?: number;
+            /** Format: int32 */
+            saldoNuevo?: number;
+            sinCambios?: boolean;
+            sku?: string;
+            /** Format: int32 */
+            unidadesReservadas?: number;
             /** Format: uuid */
             varianteId?: string;
-            /** Format: uuid */
-            productoId?: string;
-            nombreProducto?: string;
-            sku?: string;
-            estadoProducto?: string;
-        };
-        VariantesSinMedirRespuesta: {
-            /** Format: int32 */
-            total?: number;
-            /** Format: int32 */
-            totalEnPublicados?: number;
-            items?: components["schemas"]["VarianteSinMedirRespuesta"][];
-        };
-        MedidaDeVarianteRespuesta: {
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: uuid */
-            productoId?: string;
-            nombreProducto?: string;
-            sku?: string;
-            estadoProducto?: string;
-            /** Format: int32 */
-            pesoGramos?: number;
-            /** Format: int32 */
-            largoCm?: number;
-            /** Format: int32 */
-            anchoCm?: number;
-            /** Format: int32 */
-            altoCm?: number;
-            sinMedir?: boolean;
-        };
-        MedidasRespuesta: {
-            /** Format: int32 */
-            total?: number;
-            /** Format: int32 */
-            totalSinMedir?: number;
-            /** Format: int32 */
-            totalSinMedirEnPublicados?: number;
-            items?: components["schemas"]["MedidaDeVarianteRespuesta"][];
         };
         ExistenciaDeVarianteRespuesta: {
-            /** Format: uuid */
-            varianteId?: string;
-            /** Format: uuid */
-            productoId?: string;
-            nombreProducto?: string;
-            sku?: string;
-            estadoProducto?: string;
-            /** Format: int32 */
-            saldoTotal?: number;
             /** Format: int32 */
             disponible?: number;
+            estadoProducto?: string;
+            nombreProducto?: string;
+            /** Format: uuid */
+            productoId?: string;
             /** Format: int32 */
             reservadas?: number;
+            /** Format: int32 */
+            saldoTotal?: number;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
         };
         ExistenciasRespuesta: {
+            items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
             /** Format: int32 */
             total?: number;
             /** Format: int32 */
             totalSinExistencia?: number;
             /** Format: int32 */
             totalSinExistenciaEnPublicados?: number;
-            items?: components["schemas"]["ExistenciaDeVarianteRespuesta"][];
         };
-        ProductosAdminPaginadosRespuesta: {
-            items?: components["schemas"]["ProductoAdminRespuesta"][];
+        FotogramaPeticion: {
             /** Format: int32 */
-            pagina?: number;
+            alto?: number;
             /** Format: int32 */
-            totalPaginas?: number;
+            ancho?: number;
+            hash?: string;
+            objectKey?: string;
+            /** Format: int32 */
+            orden?: number;
+        };
+        GuiaDespachadaRequest: {
             /** Format: int64 */
-            totalProductos?: number;
+            costoEnvio?: number;
+            guia?: string;
+            transportadora?: string;
         };
-        ProductoAdminDetalleRespuesta: {
+        GuiaEnRevisionRespuesta: {
+            descripcion?: string;
+            estado?: string;
+            guiaId?: string;
+            numeroGuia?: string;
+            numeroPedido?: string;
+            /** Format: date-time */
+            ocurrioEn?: string;
+            pedidoId?: string;
+            /** Format: date-time */
+            recibidoEn?: string;
+            /** Format: date-time */
+            revisadaEn?: string;
+            transportadora?: string;
+        };
+        GuiaPublicaRespuesta: {
+            guia?: string;
+            transportadora?: string;
+        };
+        GuiaRespuesta: {
+            costo?: components["schemas"]["DineroRespuesta"];
+            guia?: string;
+            transportadora?: string;
+            urlEtiqueta?: string;
+        };
+        HistorialPedidoRespuesta: {
+            actor?: string;
+            estado?: string;
+            /** Format: date-time */
+            fecha?: string;
+            motivo?: string;
+        };
+        ImagenDeGaleriaRespuesta: {
+            altEn?: string;
+            altEs?: string;
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            orden?: number;
+            url?: string;
+            urlWebp?: string;
+        };
+        ImagenRespuesta: {
+            altEn?: string;
+            altEs?: string;
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            url?: string;
+            urlWebp?: string;
+        };
+        ImagenRotacionRespuesta: {
+            /** Format: int32 */
+            alto?: number;
+            /** Format: int32 */
+            ancho?: number;
+            /** Format: int32 */
+            orden?: number;
+            url?: string;
+            urlWebp?: string;
+        };
+        IniciarSesionRequest: {
+            clave?: string;
+            correo?: string;
+        };
+        IntentoDePagoRespuesta: {
+            ambiente?: string;
+            firmaIntegridad?: string;
+            llavePublica?: string;
+            monto?: components["schemas"]["DineroRespuesta"];
+            referencia?: string;
+        };
+        IntentoSistecreditoRespuesta: {
+            monto?: components["schemas"]["DineroRespuesta"];
+            referencia?: string;
+            urlRedireccion?: string;
+        };
+        LineaCarritoRespuesta: {
+            /** Format: int32 */
+            cantidad?: number;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        LineaPedidoRespuesta: {
+            /** Format: int32 */
+            cantidad?: number;
+            /** Format: uuid */
+            id?: string;
+            imagenUrl?: string;
+            nombre?: string;
+            precioUnitario?: components["schemas"]["DineroRespuesta"];
+            sku?: string;
+            tasaIva?: number;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        LineaRequest: {
+            /** Format: int32 */
+            cantidad?: number;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        MapaDelSitioRespuesta: {
+            productos?: components["schemas"]["Producto"][];
+        };
+        MarcaRespuesta: {
             /** Format: uuid */
             id?: string;
             nombre?: string;
-            descripcion?: string;
-            slug?: string;
-            estado?: string;
-            marca?: components["schemas"]["MarcaRespuesta"];
-            categoria?: components["schemas"]["CategoriaRespuesta"];
-            imagenPrincipalUrl?: string;
+        };
+        MedidaDeVarianteRespuesta: {
             /** Format: int32 */
-            totalVariantes?: number;
-            galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
+            altoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            estadoProducto?: string;
+            /** Format: int32 */
+            largoCm?: number;
+            nombreProducto?: string;
+            /** Format: int32 */
+            pesoGramos?: number;
+            /** Format: uuid */
+            productoId?: string;
+            sinMedir?: boolean;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        MedidasRespuesta: {
+            items?: components["schemas"]["MedidaDeVarianteRespuesta"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalSinMedir?: number;
+            /** Format: int32 */
+            totalSinMedirEnPublicados?: number;
+        };
+        MedirVariantePeticion: {
+            /** Format: int32 */
+            altoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            pesoGramos?: number;
+        };
+        MetodosDePagoDisponiblesRequest: {
+            correo?: string;
+            direccion?: components["schemas"]["DireccionRequest"];
+            lineas?: components["schemas"]["LineaRequest"][];
+            tipoEntrega?: string;
+        };
+        PedidoRespuesta: {
+            contacto?: components["schemas"]["ContactoRespuesta"];
+            correo?: string;
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            creadoEn?: string;
+            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            dineroRecibido?: components["schemas"]["DineroRespuesta"];
+            direccion?: components["schemas"]["DireccionRespuesta"];
+            envio?: components["schemas"]["EnvioRespuesta"];
+            estado?: string;
+            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
+            /** Format: uuid */
+            id?: string;
+            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
+            metodoPago?: string;
+            numeroPedido?: string;
+            plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
+            subtotal?: components["schemas"]["DineroRespuesta"];
+            tipoEntrega?: string;
+            total?: components["schemas"]["DineroRespuesta"];
+            /** Format: uuid */
+            usuarioId?: string;
+            yaDevuelto?: components["schemas"]["DineroRespuesta"];
+        };
+        PedidoSeguimientoRespuesta: {
+            contacto?: components["schemas"]["ContactoRespuesta"];
+            correo?: string;
+            costoEnvio?: components["schemas"]["DineroRespuesta"];
+            /** Format: date-time */
+            creadoEn?: string;
+            datosTransferencia?: components["schemas"]["DatosTransferenciaRespuesta"];
+            direccion?: components["schemas"]["DireccionRespuesta"];
+            envio?: components["schemas"]["EnvioPublicoRespuesta"];
+            estado?: string;
+            historial?: components["schemas"]["HistorialPedidoRespuesta"][];
+            /** Format: uuid */
+            id?: string;
+            lineas?: components["schemas"]["LineaPedidoRespuesta"][];
+            metodoPago?: string;
+            numeroPedido?: string;
+            retractos?: components["schemas"]["RetractoPublicoRespuesta"][];
+            subtotal?: components["schemas"]["DineroRespuesta"];
+            tipoEntrega?: string;
+            total?: components["schemas"]["DineroRespuesta"];
         };
         PedidosPaginadosRespuesta: {
             items?: components["schemas"]["PedidoRespuesta"][];
@@ -2115,37 +1778,374 @@ export interface components {
             /** Format: int64 */
             totalPedidos?: number;
         };
-        BandejaDeRevisionRespuesta: {
-            guias?: components["schemas"]["GuiaEnRevisionRespuesta"][];
-            emisiones?: components["schemas"]["EmisionEnRevisionRespuesta"][];
-        };
-        EmisionEnRevisionRespuesta: {
-            emisionId?: string;
-            pedidoId?: string;
-            numeroPedido?: string;
-            transportadora?: string;
-            idTarifa?: string;
-            estado?: string;
-            detalle?: string;
-            enviosEnPlataforma?: string[];
+        PlazoDeEntregaRespuesta: {
             /** Format: date-time */
-            solicitadaEn?: string;
-            actor?: string;
+            avisadoEn?: string;
+            /** Format: date-time */
+            inicio?: string;
+            /** Format: date-time */
+            limite?: string;
+            verdicto?: string;
         };
-        GuiaEnRevisionRespuesta: {
-            guiaId?: string;
-            numeroGuia?: string;
-            transportadora?: string;
-            pedidoId?: string;
-            numeroPedido?: string;
+        Producto: {
+            /** Format: date-time */
+            actualizadoEn?: string;
+            slug?: string;
+        };
+        ProductoAdminDetalleRespuesta: {
+            categoria?: components["schemas"]["CategoriaRespuesta"];
+            descripcion?: string;
             estado?: string;
+            galeria?: components["schemas"]["ImagenDeGaleriaRespuesta"][];
+            /** Format: uuid */
+            id?: string;
+            imagenPrincipalUrl?: string;
+            marca?: components["schemas"]["MarcaRespuesta"];
+            nombre?: string;
+            slug?: string;
+            /** Format: int32 */
+            totalVariantes?: number;
+        };
+        ProductoAdminRespuesta: {
+            categoria?: components["schemas"]["CategoriaRespuesta"];
+            descripcion?: string;
+            estado?: string;
+            /** Format: uuid */
+            id?: string;
+            imagenPrincipalUrl?: string;
+            marca?: components["schemas"]["MarcaRespuesta"];
+            nombre?: string;
+            slug?: string;
+            /** Format: int32 */
+            totalVariantes?: number;
+        };
+        ProductoRespuesta: {
+            categoria?: components["schemas"]["CategoriaRespuesta"];
+            descripcion?: string;
+            galeria?: components["schemas"]["ImagenRespuesta"][];
+            imagenPrincipal?: components["schemas"]["ImagenRespuesta"];
+            marca?: components["schemas"]["MarcaRespuesta"];
+            nombre?: string;
+            rotacion?: components["schemas"]["RotacionRespuesta"];
+            slug?: string;
+            variantes?: components["schemas"]["VarianteRespuesta"][];
+        };
+        ProductosAdminPaginadosRespuesta: {
+            items?: components["schemas"]["ProductoAdminRespuesta"][];
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            totalPaginas?: number;
+            /** Format: int64 */
+            totalProductos?: number;
+        };
+        ProrrogaRespuesta: {
+            /** Format: date-time */
+            avisadaEn?: string;
+            motivo?: string;
+            /** Format: date-time */
+            otorgadaEn?: string;
+            otorgadaPor?: string;
+        };
+        ProrrogarSolicitudRequest: {
+            motivo?: string;
+        };
+        RadicarGarantiaRequest: {
+            descripcionDelFallo?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        RadicarReversionRequest: {
+            causal?: string;
             descripcion?: string;
             /** Format: date-time */
-            ocurrioEn?: string;
+            fechaDeNoticia?: string;
             /** Format: date-time */
-            recibidoEn?: string;
+            recibidaEn?: string;
+        };
+        RadicarSolicitudRequest: {
+            asunto?: string;
+            correo?: string;
+            /** Format: uuid */
+            pedidoId?: string;
             /** Format: date-time */
-            revisadaEn?: string;
+            recibidaEn?: string;
+            tipo?: string;
+        };
+        RechazarEnEntregaRequest: {
+            motivo?: string;
+        };
+        ReclamacionGarantiaRespuesta: {
+            descripcionDelFallo?: string;
+            desenlace?: string;
+            /** Format: date-time */
+            entregadoEn?: string;
+            estado?: string;
+            /** Format: date-time */
+            finDelTermino?: string;
+            id?: string;
+            /** Format: int32 */
+            mesesDeTermino?: number;
+            pedidoId?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            reintegroId?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            resueltaPor?: string;
+            solicitudId?: string;
+            varianteId?: string;
+            vigencia?: string;
+        };
+        ReenviarVerificacionRequest: {
+            correo?: string;
+        };
+        RegistrarGestionRequest: {
+            gestion?: string;
+        };
+        RegistrarIdTransaccionWompiRequest: {
+            idTransaccionWompi?: string;
+        };
+        RegistrarReintegroRequest: {
+            comprobante?: string;
+            medio?: string;
+            medioPreferido?: string;
+            monto?: number;
+        };
+        RegistrarRetractoRequest: {
+            medioPreferido?: string;
+            motivo?: string;
+        };
+        RegistrarUsuarioRequest: {
+            autorizaDatos?: boolean;
+            clave?: string;
+            correo?: string;
+        };
+        ReintegroRespuesta: {
+            comprobante?: string;
+            id?: string;
+            medio?: string;
+            monto?: number;
+            motivo?: string;
+            /** Format: date-time */
+            registradoEn?: string;
+            registradoPor?: string;
+        };
+        ReordenarGaleriaPeticion: {
+            imagenIds: string[];
+        };
+        ResolverEmisionRequest: {
+            enviosEnPlataforma?: string[];
+            nota?: string;
+            veredicto?: string;
+        };
+        ResolverGarantiaRequest: {
+            comprobante?: string;
+            desenlace?: string;
+            medio?: string;
+            monto?: number;
+            resumenParaElComprador?: string;
+        };
+        ResolverReversionRequest: {
+            comprobante?: string;
+            desenlace?: string;
+            medio?: string;
+            monto?: number;
+            resumenParaElComprador?: string;
+        };
+        ResponderSolicitudRequest: {
+            resumen?: string;
+        };
+        RespuestaRespuesta: {
+            /** Format: date-time */
+            respondidaEn?: string;
+            respondidaPor?: string;
+            resumen?: string;
+        };
+        ResultadoPaginadoRespuestaAtributoRespuesta: {
+            cursorSiguiente?: string;
+            items?: components["schemas"]["AtributoRespuesta"][];
+        };
+        ResultadoPaginadoRespuestaCategoriaRespuesta: {
+            cursorSiguiente?: string;
+            items?: components["schemas"]["CategoriaRespuesta"][];
+        };
+        ResultadoPaginadoRespuestaMarcaRespuesta: {
+            cursorSiguiente?: string;
+            items?: components["schemas"]["MarcaRespuesta"][];
+        };
+        ResultadoPaginadoRespuestaProductoRespuesta: {
+            cursorSiguiente?: string;
+            items?: components["schemas"]["ProductoRespuesta"][];
+        };
+        RetractoPublicoRespuesta: {
+            estado?: string;
+            /** Format: date-time */
+            limiteDeReintegro?: string;
+            montoReembolsado?: components["schemas"]["DineroRespuesta"];
+            motivo?: string;
+            /** Format: date-time */
+            productoRecibidoEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            /** Format: date-time */
+            reembolsadoEn?: string;
+        };
+        RotacionRespuesta: {
+            /** Format: int32 */
+            fotogramas?: number;
+            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
+        };
+        SesionRespuesta: {
+            accessToken?: string;
+            rol?: string;
+            /** Format: uuid */
+            usuarioId?: string;
+        };
+        SetRotacionRespuesta: {
+            /** Format: date-time */
+            capturadoEn?: string;
+            capturadoPor?: string;
+            dispositivo?: string;
+            estado?: string;
+            /** Format: int32 */
+            fotogramasPrometidos?: number;
+            /** Format: uuid */
+            id?: string;
+            imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
+            /** Format: uuid */
+            productoId?: string;
+            versionAsistente?: string;
+        };
+        SolicitarRecuperacionRequest: {
+            correo?: string;
+        };
+        SolicitarSubidaDeImagenDeGaleriaPeticion: {
+            contentType?: string;
+        };
+        SolicitarSubidaDeImagenPrincipalPeticion: {
+            contentType?: string;
+        };
+        SolicitarSubidasDeRotacionPeticion: {
+            contentType?: string;
+        };
+        SolicitudAtencionRespuesta: {
+            asunto?: string;
+            correo?: string;
+            estado?: string;
+            id?: string;
+            /** Format: date-time */
+            limiteDeRespuesta?: string;
+            numeroRadicado?: string;
+            pedidoId?: string;
+            prorroga?: components["schemas"]["ProrrogaRespuesta"];
+            /** Format: date-time */
+            radicadaEn?: string;
+            radicadaPor?: string;
+            /** Format: date-time */
+            recibidaEn?: string;
+            respuesta?: components["schemas"]["RespuestaRespuesta"];
+            tipo?: string;
+            verdicto?: string;
+        };
+        SolicitudRetractoRespuesta: {
+            estado?: string;
+            id?: string;
+            /** Format: date-time */
+            limiteDeReintegro?: string;
+            medioPreferido?: string;
+            motivo?: string;
+            pedidoId?: string;
+            preferenciaRespetada?: boolean;
+            /** Format: date-time */
+            productoRecibidoEn?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            radicadaPor?: string;
+            reintegro?: components["schemas"]["ReintegroRespuesta"];
+            verdictoAlRadicar?: string;
+        };
+        SolicitudReversionRespuesta: {
+            causal?: string;
+            desenlace?: string;
+            estado?: string;
+            /** Format: date-time */
+            fechaDeNoticia?: string;
+            gestion?: string;
+            /** Format: date-time */
+            gestionadaEn?: string;
+            gestionadaPor?: string;
+            id?: string;
+            pedidoId?: string;
+            /** Format: date-time */
+            radicadaEn?: string;
+            reintegroId?: string;
+            /** Format: date-time */
+            resueltaEn?: string;
+            solicitudId?: string;
+            verdictoAlRadicar?: string;
+        };
+        SubidaDeFotogramaRespuesta: {
+            objectKey?: string;
+            /** Format: int32 */
+            orden?: number;
+            url?: string;
+        };
+        UrlSubidaRespuesta: {
+            objectKey?: string;
+            url?: string;
+        };
+        ValorAtributoPeticion: {
+            /** Format: uuid */
+            atributoId?: string;
+            colorHex?: string;
+            valor?: string;
+        };
+        VarianteMedidaRespuesta: {
+            /** Format: int32 */
+            altoCm?: number;
+            /** Format: int32 */
+            anchoCm?: number;
+            correccion?: boolean;
+            /** Format: int32 */
+            largoCm?: number;
+            /** Format: int32 */
+            pesoGramos?: number;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        VarianteRespuesta: {
+            atributos?: components["schemas"]["AtributoValorRespuesta"][];
+            disponible: boolean;
+            /** Format: uuid */
+            id?: string;
+            precio?: components["schemas"]["DineroRespuesta"];
+            sku?: string;
+        };
+        VarianteSinMedirRespuesta: {
+            estadoProducto?: string;
+            nombreProducto?: string;
+            /** Format: uuid */
+            productoId?: string;
+            sku?: string;
+            /** Format: uuid */
+            varianteId?: string;
+        };
+        VariantesSinMedirRespuesta: {
+            items?: components["schemas"]["VarianteSinMedirRespuesta"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            totalEnPublicados?: number;
+        };
+        VerificarContraentregaRequest: {
+            motivo?: string;
+        };
+        VerificarCorreoRequest: {
+            token?: string;
         };
     };
     responses: never;
@@ -2156,7 +2156,53 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    reordenarGaleria: {
+    listar_5: {
+        parameters: {
+            query?: {
+                estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    prorrogar: {
         parameters: {
             query?: never;
             header?: never;
@@ -2167,20 +2213,214 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReordenarGaleriaPeticion"];
+                "application/json": components["schemas"]["ProrrogarSolicitudRequest"];
             };
         };
         responses: {
-            /** @description No Content */
-            204: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
             };
         };
     };
-    crear: {
+    responder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResponderSolicitudRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
+                };
+            };
+        };
+    };
+    listar_11: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_10: {
+        parameters: {
+            query?: {
+                maximo?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BandejaDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    acusarEmision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                emisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcusarRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    resolverEmision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                emisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverEmisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EmisionResueltaRespuesta"];
+                };
+            };
+        };
+    };
+    acusarGuia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                numeroGuia: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcusarRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
+                };
+            };
+        };
+    };
+    resolver_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverGarantiaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                };
+            };
+        };
+    };
+    crear_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -2189,7 +2429,57 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CrearPedidoRequest"];
+                "application/json": components["schemas"]["CrearMarcaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MarcaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_9: {
+        parameters: {
+            query?: {
+                pagina?: number;
+                tamano?: number;
+                estado?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
+                };
+            };
+        };
+    };
+    cancelar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelarPedidoRequest"];
             };
         };
         responses: {
@@ -2204,7 +2494,7 @@ export interface operations {
             };
         };
     };
-    reintentarPago: {
+    conciliar: {
         parameters: {
             query?: never;
             header?: never;
@@ -2226,195 +2516,7 @@ export interface operations {
             };
         };
     };
-    metodosDePagoDisponibles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string[];
-                };
-            };
-        };
-    };
-    webhook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Evento de Wompi, tal como lo envía la pasarela. Se valida por firma. */
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    crear_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CrearIntentoSistecreditoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["IntentoSistecreditoRespuesta"];
-                };
-            };
-        };
-    };
-    confirmacion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description Notificación de Sistecrédito, tal como la envía la pasarela. No viene firmada: se verifica consultando la transacción. */
-        requestBody: {
-            content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    crear_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CrearIntentoDePagoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["IntentoDePagoRespuesta"];
-                };
-            };
-        };
-    };
-    webhook_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": string;
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    cotizar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CotizacionEnvioRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CotizacionEnvioRespuesta"];
-                };
-            };
-        };
-    };
-    crear_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CarritoRespuesta"];
-                };
-            };
-        };
-    };
-    agregarLinea: {
+    despachar: {
         parameters: {
             query?: never;
             header?: never;
@@ -2425,7 +2527,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AgregarLineaRequest"];
+                "application/json": components["schemas"]["DespacharPedidoRequest"];
             };
         };
         responses: {
@@ -2435,182 +2537,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CarritoRespuesta"];
+                    "*/*": components["schemas"]["PedidoRespuesta"];
                 };
             };
         };
     };
-    verificacion: {
+    emitirGuia: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerificarCorreoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    reenviarVerificacion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ReenviarVerificacionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    iniciarSesion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IniciarSesionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SesionRespuesta"];
-                };
-            };
-        };
-    };
-    registro: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistrarUsuarioRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    refrescar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                refresco?: string;
-            };
         };
         requestBody?: never;
         responses: {
-            /** @description Sesión refrescada */
-            200: {
+            /** @description Accepted */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SesionRespuesta"];
+                    "*/*": components["schemas"]["EmisionDeGuiaRespuesta"];
                 };
-            };
-            /** @description No hay cookie de refresco: no hay sesión que refrescar */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
-    recuperacion: {
+    marcarEntregado: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SolicitarRecuperacionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    confirmarRecuperacion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmarRecuperacionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    cerrarSesion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                refresco?: string;
-            };
         };
         requestBody?: never;
         responses: {
@@ -2619,20 +2580,146 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
             };
         };
     };
-    crear_4: {
+    conciliarRecaudo: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AgregarVariantePeticion"];
+                "application/json": components["schemas"]["ConciliarRecaudoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    rechazarEnEntrega: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RechazarEnEntregaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    verificar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificarContraentregaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    listarDePedido: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                };
+            };
+        };
+    };
+    listar_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarGarantiaRequest"];
             };
         };
         responses: {
@@ -2642,67 +2729,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["VarianteRespuesta"];
+                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
                 };
             };
         };
     };
-    abrir: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AbrirSetRotacionPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
-                };
-            };
-        };
-    };
-    subidas: {
+    listar_2: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SolicitarSubidasDeRotacionPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SubidaDeFotogramaRespuesta"][];
-                };
-            };
-        };
-    };
-    publicar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
+                pedidoId: string;
             };
             cookie?: never;
         };
@@ -2714,106 +2751,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
+                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
                 };
             };
         };
     };
-    completar: {
+    radicar_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                pedidoId: string;
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["CompletarSetRotacionPeticion"];
+                "application/json": components["schemas"]["RegistrarRetractoRequest"];
             };
         };
         responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SetRotacionRespuesta"];
-                };
-            };
-        };
-    };
-    resolver: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolverReversionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
-                };
-            };
-        };
-    };
-    gestionar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistrarGestionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
-                };
-            };
-        };
-    };
-    reintegrar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistrarReintegroRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2823,12 +2782,12 @@ export interface operations {
             };
         };
     };
-    recibirProducto: {
+    listar_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                pedidoId: string;
             };
             cookie?: never;
         };
@@ -2840,7 +2799,33 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"];
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"][];
+                };
+            };
+        };
+    };
+    radicar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pedidoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RadicarReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
                 };
             };
         };
@@ -2892,7 +2877,7 @@ export interface operations {
             };
         };
     };
-    publicar_1: {
+    ver: {
         parameters: {
             query?: never;
             header?: never;
@@ -2902,6 +2887,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductoAdminDetalleRespuesta"];
+                };
+            };
+        };
+    };
+    editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarProductoPeticion"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -2914,7 +2925,7 @@ export interface operations {
             };
         };
     };
-    despublicar: {
+    agregarImagenDeGaleria: {
         parameters: {
             query?: never;
             header?: never;
@@ -2923,16 +2934,91 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarImagenDeGaleriaPeticion"];
+            };
+        };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
+                    "*/*": components["schemas"]["ImagenDeGaleriaRespuesta"];
                 };
+            };
+        };
+    };
+    reordenarGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReordenarGaleriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    solicitarUrlDeSubidaDeGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitarSubidaDeImagenDeGaleriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UrlSubidaRespuesta"];
+                };
+            };
+        };
+    };
+    quitarImagenDeGaleria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                imagenId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -2988,64 +3074,12 @@ export interface operations {
             };
         };
     };
-    agregarImagenDeGaleria: {
+    publicar_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AgregarImagenDeGaleriaPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ImagenDeGaleriaRespuesta"];
-                };
-            };
-        };
-    };
-    solicitarUrlDeSubidaDeGaleria: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SolicitarSubidaDeImagenDeGaleriaPeticion"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["UrlSubidaRespuesta"];
-                };
-            };
-        };
-    };
-    listar_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pedidoId: string;
             };
             cookie?: never;
         };
@@ -3057,43 +3091,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudReversionRespuesta"][];
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
                 };
             };
         };
     };
-    radicar: {
+    despublicar: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                pedidoId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RadicarReversionRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
-                };
-            };
-        };
-    };
-    listar_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pedidoId: string;
+                id: string;
             };
             cookie?: never;
         };
@@ -3105,28 +3113,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"][];
+                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
                 };
             };
         };
     };
-    radicar_1: {
+    recibirProducto: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                pedidoId: string;
+                id: string;
             };
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["RegistrarRetractoRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Created */
-            201: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3136,16 +3140,20 @@ export interface operations {
             };
         };
     };
-    listar_3: {
+    reintegrar: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                pedidoId: string;
+                id: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarReintegroRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -3153,23 +3161,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"][];
+                    "*/*": components["schemas"]["SolicitudRetractoRespuesta"];
                 };
             };
         };
     };
-    radicar_2: {
+    gestionar: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                pedidoId: string;
+                id: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RadicarGarantiaRequest"];
+                "application/json": components["schemas"]["RegistrarGestionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    resolver: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolverReversionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SolicitudReversionRespuesta"];
+                };
+            };
+        };
+    };
+    abrir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbrirSetRotacionPeticion"];
             };
         };
         responses: {
@@ -3179,12 +3237,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
                 };
             };
         };
     };
-    verificar: {
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    completar: {
         parameters: {
             query?: never;
             header?: never;
@@ -3195,7 +3273,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VerificarContraentregaRequest"];
+                "application/json": components["schemas"]["CompletarSetRotacionPeticion"];
             };
         };
         responses: {
@@ -3205,64 +3283,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
                 };
             };
         };
     };
-    rechazarEnEntrega: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RechazarEnEntregaRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
-                };
-            };
-        };
-    };
-    conciliarRecaudo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConciliarRecaudoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
-                };
-            };
-        };
-    };
-    marcarEntregado: {
+    publicar: {
         parameters: {
             query?: never;
             header?: never;
@@ -3279,34 +3305,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
+                    "*/*": components["schemas"]["SetRotacionRespuesta"];
                 };
             };
         };
     };
-    emitirGuia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Accepted */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["EmisionDeGuiaRespuesta"];
-                };
-            };
-        };
-    };
-    despachar: {
+    subidas: {
         parameters: {
             query?: never;
             header?: never;
@@ -3317,99 +3321,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DespacharPedidoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
-                };
-            };
-        };
-    };
-    conciliar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
-                };
-            };
-        };
-    };
-    cancelar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CancelarPedidoRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoRespuesta"];
-                };
-            };
-        };
-    };
-    listar_4: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
-                };
-            };
-        };
-    };
-    crear_6: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CrearMarcaPeticion"];
+                "application/json": components["schemas"]["SolicitarSubidasDeRotacionPeticion"];
             };
         };
         responses: {
@@ -3419,120 +3331,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["MarcaRespuesta"];
+                    "*/*": components["schemas"]["SubidaDeFotogramaRespuesta"][];
                 };
             };
         };
     };
-    resolver_1: {
+    crear_4: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResolverGarantiaRequest"];
+                "application/json": components["schemas"]["AgregarVariantePeticion"];
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ReclamacionGarantiaRespuesta"];
+                    "*/*": components["schemas"]["VarianteRespuesta"];
                 };
             };
         };
     };
-    acusarGuia: {
+    existencias: {
         parameters: {
             query?: never;
-            header?: never;
-            path: {
-                numeroGuia: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcusarRevisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
-                };
-            };
-        };
-    };
-    resolverEmision: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                emisionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolverEmisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["EmisionResueltaRespuesta"];
-                };
-            };
-        };
-    };
-    acusarEmision: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                emisionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcusarRevisionRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["AcuseDeRevisionRespuesta"];
-                };
-            };
-        };
-    };
-    listar_5: {
-        parameters: {
-            query?: {
-                estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
-            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3545,12 +3375,144 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
+                    "*/*": components["schemas"]["ExistenciasRespuesta"];
                 };
             };
         };
     };
-    radicar_3: {
+    medidas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MedidasRespuesta"];
+                };
+            };
+        };
+    };
+    sinMedir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
+                };
+            };
+        };
+    };
+    ajustarExistencia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AjustarExistenciaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExistenciaAjustadaRespuesta"];
+                };
+            };
+        };
+    };
+    medir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedirVariantePeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VarianteMedidaRespuesta"];
+                };
+            };
+        };
+    };
+    listar_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaAtributoRespuesta"];
+                };
+            };
+        };
+    };
+    cerrarSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresco?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    recuperacion: {
         parameters: {
             query?: never;
             header?: never;
@@ -3559,85 +3521,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RadicarSolicitudRequest"];
-            };
-        };
-        responses: {
-            /** @description Created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
-                };
-            };
-        };
-    };
-    responder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResponderSolicitudRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
-                };
-            };
-        };
-    };
-    prorrogar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProrrogarSolicitudRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"];
-                };
-            };
-        };
-    };
-    registrarIdTransaccion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                referencia: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegistrarIdTransaccionWompiRequest"];
+                "application/json": components["schemas"]["SolicitarRecuperacionRequest"];
             };
         };
         responses: {
@@ -3647,6 +3531,215 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    confirmarRecuperacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmarRecuperacionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    refrescar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                refresco?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sesión refrescada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+            /** @description No hay cookie de refresco: no hay sesión que refrescar */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    registro: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarUsuarioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    iniciarSesion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IniciarSesionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
+            };
+        };
+    };
+    verificacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificarCorreoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reenviarVerificacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReenviarVerificacionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    crear_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    ver_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
+            };
+        };
+    };
+    agregarLinea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgregarLineaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CarritoRespuesta"];
+                };
             };
         };
     };
@@ -3700,107 +3793,7 @@ export interface operations {
             };
         };
     };
-    medir: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MedirVariantePeticion"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VarianteMedidaRespuesta"];
-                };
-            };
-        };
-    };
-    ajustarExistencia: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AjustarExistenciaPeticion"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExistenciaAjustadaRespuesta"];
-                };
-            };
-        };
-    };
-    ver: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProductoAdminDetalleRespuesta"];
-                };
-            };
-        };
-    };
-    editar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EditarProductoPeticion"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProductoAdminRespuesta"];
-                };
-            };
-        };
-    };
-    salud: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3815,7 +3808,309 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": string;
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    cotizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CotizacionEnvioRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CotizacionEnvioRespuesta"];
+                };
+            };
+        };
+    };
+    webhook_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": string;
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ver_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MapaDelSitioRespuesta"];
+                };
+            };
+        };
+    };
+    listar_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                };
+            };
+        };
+    };
+    crear_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearIntentoDePagoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntentoDePagoRespuesta"];
+                };
+            };
+        };
+    };
+    registrarIdTransaccion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                referencia: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegistrarIdTransaccionWompiRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirmacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Notificación de Sistecrédito, tal como la envía la pasarela. No viene firmada: se verifica consultando la transacción. */
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    crear_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearIntentoSistecreditoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntentoSistecreditoRespuesta"];
+                };
+            };
+        };
+    };
+    webhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Evento de Wompi, tal como lo envía la pasarela. Se valida por firma. */
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    crear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearPedidoRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    metodosDePagoDisponibles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetodosDePagoDisponiblesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string[];
+                };
+            };
+        };
+    };
+    reintentarPago: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoRespuesta"];
+                };
+            };
+        };
+    };
+    seguimiento: {
+        parameters: {
+            query: {
+                correo: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoSeguimientoRespuesta"];
                 };
             };
         };
@@ -3872,31 +4167,7 @@ export interface operations {
             };
         };
     };
-    seguimiento: {
-        parameters: {
-            query: {
-                correo: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidoSeguimientoRespuesta"];
-                };
-            };
-        };
-    };
-    listar_6: {
+    salud: {
         parameters: {
             query?: never;
             header?: never;
@@ -3911,279 +4182,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaMarcaRespuesta"];
+                    "*/*": string;
                 };
-            };
-        };
-    };
-    ver_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MapaDelSitioRespuesta"];
-                };
-            };
-        };
-    };
-    listar_7: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
-                };
-            };
-        };
-    };
-    ver_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["CarritoRespuesta"];
-                };
-            };
-        };
-    };
-    listar_8: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaAtributoRespuesta"];
-                };
-            };
-        };
-    };
-    sinMedir: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["VariantesSinMedirRespuesta"];
-                };
-            };
-        };
-    };
-    medidas: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["MedidasRespuesta"];
-                };
-            };
-        };
-    };
-    existencias: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ExistenciasRespuesta"];
-                };
-            };
-        };
-    };
-    listar_9: {
-        parameters: {
-            query?: {
-                pagina?: number;
-                tamano?: number;
-                estado?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["PedidosPaginadosRespuesta"];
-                };
-            };
-        };
-    };
-    listarDePedido: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                pedidoId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["SolicitudAtencionRespuesta"][];
-                };
-            };
-        };
-    };
-    listar_10: {
-        parameters: {
-            query?: {
-                maximo?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BandejaDeRevisionRespuesta"];
-                };
-            };
-        };
-    };
-    listar_11: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ResultadoPaginadoRespuestaCategoriaRespuesta"];
-                };
-            };
-        };
-    };
-    eliminar: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    quitarImagenDeGaleria: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                imagenId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

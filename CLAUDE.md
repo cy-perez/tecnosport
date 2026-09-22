@@ -106,7 +106,8 @@ para y dime por qué antes de escribir el código.
 npm run verificar                        lint + pruebas + build de todo
 npm run dev --workspace=apps/web         frontend en :4200
 npm test --workspace=apps/web            Vitest
-npm run contratos                        regenera el cliente desde el OpenAPI
+npm run contratos                        regenera el cliente desde el OpenAPI guardado
+npm run contratos-al-dia                 ¿el cliente guardado corresponde a ese OpenAPI?
 npm run clases -- <clase>...             ¿esa clase de Tailwind existe de verdad?
 npm run contrastes                       WCAG AA de los pares de color, claro y oscuro
 npm run capas                            ¿alguna dependencia invertida en el frontend?

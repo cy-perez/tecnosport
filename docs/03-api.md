@@ -1,9 +1,10 @@
 # API
 
 REST sobre HTTP, JSON, versionada en la ruta: `/api/v1`. El contrato lo genera
-springdoc desde el código y se publica en `/api/openapi.json`. Ese archivo es la
-fuente del cliente TypeScript de `packages/contratos`. No se escriben interfaces
-de respuesta a mano.
+springdoc desde el código y se publica en `/api/openapi.json`. De ahí sale
+`packages/contratos/openapi.json` —la instantánea guardada, que `ContratoOpenApiTest`
+vigila contra la aplicación de verdad— y de la instantánea sale el cliente
+TypeScript de `packages/contratos`. No se escriben interfaces de respuesta a mano.
 
 ## Convenciones
 

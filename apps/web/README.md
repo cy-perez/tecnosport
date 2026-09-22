@@ -129,7 +129,8 @@ precargar. Detalle en `apps/web/CLAUDE.md`.
 
 ## Cliente de la API
 
-Se genera desde el OpenAPI del backend con `npm run contratos` y queda en
+Se genera con `npm run contratos` desde `packages/contratos/openapi.json` —la
+instantánea del OpenAPI del backend, guardada en el repositorio— y queda en
 `packages/contratos`. No se escriben a mano las interfaces de respuesta.
 
 ## Reglas de código

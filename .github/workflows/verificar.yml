@@ -61,56 +61,20 @@ jobs:
       # trabajo necesita Docker: los ejecutores `ubuntu-latest` ya lo traen, no hay que montarlo.
       - run: node tools/verificar.mjs --solo-api
 
-  # El tercer guardián: que `packages/contratos/src/tipos.ts` corresponda al OpenAPI que el
-  # backend sirve hoy. Se genera desde el backend corriendo (`npm run contratos`), así que la
-  # única forma de comprobarlo es levantarlo aquí: PostgreSQL, `bootRun`, regenerar y exigir que
-  # el diff quede vacío. Atrapa lo que hasta ahora dependía de la memoria — cambiar un DTO y
-  # olvidar regenerar el cliente— y que no se nota hasta que el frontend usa un campo que ya no
-  # existe.
-  contrato:
-    name: contrato · el cliente generado está al día
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: gradle/actions/setup-gradle@v6
 
-      # Todas las variables de `application.yml` tienen valor por omisión y coinciden con el
-      # servicio del compose, así que no hace falta configurar nada más para que arranque.
-      - name: Levantar PostgreSQL
-        run: docker compose up -d postgres
-
-      - name: Levantar la API y esperarla
-        working-directory: apps/api
-        run: |
-          ./gradlew bootRun > /tmp/api.log 2>&1 &
-          for intento in $(seq 1 60); do
-            if curl -sf http://localhost:8080/api/v1/salud > /dev/null; then
-              echo "API arriba al intento $intento"
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "::error::La API no respondió en 5 minutos"
-          cat /tmp/api.log
-          exit 1
-
-      - run: npm run contratos
-
-      - name: ¿El cliente generado quedó al día?
-        run: |
-          if ! git diff --quiet -- packages/contratos/src/tipos.ts; then
-            echo "::error::El OpenAPI cambió y packages/contratos/src/tipos.ts no. Corre 'npm run contratos' con el backend arriba y súbelo en el mismo commit."
-            git diff -- packages/contratos/src/tipos.ts
-            exit 1
-          fi
-          echo "El cliente generado corresponde al OpenAPI que sirve el backend."
+# El contrato ya no tiene trabajo propio, y no porque se haya dejado de vigilar.
+#
+# Aquí hubo un tercer trabajo que levantaba PostgreSQL, arrancaba `bootRun`, esperaba hasta cinco
+# minutos a que respondiera, regeneraba `packages/contratos/src/tipos.ts` y exigía que el diff
+# quedara vacío. Hacía falta porque la única forma de conocer el OpenAPI era pedírselo a un
+# backend vivo. Con la instantánea guardada en `packages/contratos/openapi.json` ya no lo es, y la
+# misma comprobación quedó partida en dos eslabones que corren donde ya se corría todo:
+#
+#   - que la instantánea sea lo que la aplicación sirve de verdad → `ContratoOpenApiTest`, dentro
+#     del build de la API (trabajo `api`), con Testcontainers y sin ningún puerto;
+#   - que el cliente generado corresponda a la instantánea → `tools/verificar-contratos.mjs`,
+#     dentro de `verificar.mjs` (trabajo `web`), sin red y en menos de un segundo.
+#
+# Lo que se gana no es el minuto de ejecutor: es que las dos fallan también en la máquina de quien
+# programa, antes del empujón. Un guardián que solo vive en integración continua avisa cuando el
+# trabajo ya está hecho y la rama ya está subida.

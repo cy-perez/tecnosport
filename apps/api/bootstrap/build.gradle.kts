@@ -31,6 +31,10 @@ dependencies {
     // mismas cuatro de `infrastructure` y no entra ninguna librería nueva al proyecto: lo que
     // cambia es que ahora también `bootstrap` necesita Docker para correr sus pruebas.
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // ContratoOpenApiTest le pide el OpenAPI a la aplicación con MockMvc, y en Spring Boot 4 el
+    // autoconfigure de MockMvc vive en su propio módulo (org.springframework.boot.webmvc.test).
+    // Es la misma que ya usa `presentation` para sus @WebMvcTest: no entra nada nuevo al proyecto.
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
@@ -99,4 +103,18 @@ tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
             logger.lifecycle("bootRun: ${variables.size} variables cargadas de ${archivoEnv.name}.")
         }
     }
+}
+
+// ContratoOpenApiTest compara el OpenAPI servido contra packages/contratos/openapi.json. Con
+// -PactualizarContrato=true reescribe la instantánea en vez de comparar, que es el primero de los
+// dos pasos para mover el contrato a propósito (el segundo es `npm run contratos`).
+//
+// Es una propiedad de Gradle y no una variable de entorno por el mismo motivo que los perfiles de
+// bootRun: una variable exportada en la terminal reescribiría la instantánea sin decir nada, y una
+// instantánea que se actualiza sola no vigila nada.
+tasks.named<Test>("test") {
+    systemProperty(
+        "tecnosport.contrato.actualizar",
+        (project.findProperty("actualizarContrato") as String?) ?: "false"
+    )
 }
