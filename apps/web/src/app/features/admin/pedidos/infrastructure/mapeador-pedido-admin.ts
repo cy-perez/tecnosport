@@ -1,4 +1,5 @@
 import type { components } from '@tecnosport/contratos';
+import type { MismaUnion } from '../../../../core/contratos/misma-union';
 import {
   DatosTransferencia,
   Direccion,
@@ -28,11 +29,24 @@ type EmisionDeGuiaDto = components['schemas']['EmisionDeGuiaRespuesta'];
 
 /**
  * DTO generado -> modelo propio del panel. Mismo criterio que
- * `checkout/infrastructure/mapeador-pedido.ts`: `tipoEntrega`/`metodoPago`/`estado`/`historial[].estado`
- * llegan como `string` en el contrato (springdoc no expone el enum de Java como unión literal); el
+ * `checkout/infrastructure/mapeador-pedido.ts`: `tipoEntrega`/`estado`/`historial[].estado` llegan
+ * como `string` en el contrato (springdoc no expone esos enums de Java como unión literal); el
  * backend garantiza que el valor es exactamente el nombre del enum, así que se afirma el tipo en vez
  * de validarlo a mano.
+ *
+ * `metodoPago` ya no se afirma: el contrato trae la unión y la asignación la comprueba el
+ * compilador. Lo que sostenía la afirmación aquí era falso — el `as MetodoPago` estuvo metiendo
+ * pedidos de Sistecrédito en un tipo que no tenía ese valor, sin una sola señal.
  */
+type MetodoPagoDto = NonNullable<PedidoDto['metodoPago']>;
+
+/**
+ * El mismo eslabón que en el checkout, y aquí fue el que faltaba: esta unión no tenía
+ * `SISTECREDITO` y el `as MetodoPago` de abajo lo tapaba (`docs/09`, deuda 25). Si el backend
+ * agrega o quita un método y nadie toca el dominio del panel, esto no compila.
+ */
+export const METODOS_DE_PAGO_AL_DIA: MismaUnion<MetodoPago, MetodoPagoDto> = true;
+
 export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
   return {
     id: dto.id ?? '',
@@ -45,7 +59,7 @@ export function aPedidoAdmin(dto: PedidoDto): PedidoAdmin {
     lineas: (dto.lineas ?? []).map(aLineaPedido),
     tipoEntrega: (dto.tipoEntrega ?? 'ENVIO_A_DOMICILIO') as TipoEntrega,
     direccion: dto.direccion ? aDireccion(dto.direccion) : null,
-    metodoPago: (dto.metodoPago ?? 'TARJETA') as MetodoPago,
+    metodoPago: dto.metodoPago ?? 'TARJETA',
     estado: (dto.estado ?? 'PAGO_PENDIENTE') as EstadoPedido,
     total: { valor: dto.total?.valor ?? 0, moneda: dto.total?.moneda ?? 'COP' },
     dineroRecibido: {

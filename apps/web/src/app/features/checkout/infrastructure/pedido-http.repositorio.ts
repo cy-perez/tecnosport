@@ -65,10 +65,9 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         direccion: aDireccionRequest(comando.direccion),
       },
     });
-    return desempaquetar(
-      respuesta,
-      'no se pudieron consultar los métodos de pago disponibles',
-    ) as MetodoPago[];
+    // Sin afirmación de tipo: el endpoint publica el enum en el OpenAPI y el cliente generado
+    // devuelve la unión (`docs/09`, deuda 25). Era `as MetodoPago[]` sobre un `string[]`.
+    return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles');
   }
 
   async reintentarPago(pedidoId: string): Promise<Pedido> {

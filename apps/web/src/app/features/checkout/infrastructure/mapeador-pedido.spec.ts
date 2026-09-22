@@ -1,4 +1,4 @@
-import { aDireccion, aPedido } from './mapeador-pedido';
+import { METODOS_DE_PAGO_AL_DIA, aDireccion, aPedido } from './mapeador-pedido';
 
 describe('aPedido', () => {
   it('mapea el DTO completo al modelo de dominio', () => {
@@ -130,6 +130,19 @@ describe('aPedido', () => {
       creadoEn: '',
       datosTransferencia: null,
     });
+  });
+
+  /**
+   * Sistecrédito llegó al enum del backend y el panel se quedó sin él durante días, tapado por un
+   * `as MetodoPago` (`docs/09`, deuda 25). Lo que impide que vuelva a pasar es el compilador —
+   * `METODOS_DE_PAGO_AL_DIA` no compila si las dos uniones se separan—, y esta prueba vigila el
+   * otro lado: que el mapeador pase el valor tal cual y no lo reemplace por el de por omisión.
+   */
+  it('un método que llegó después al enum pasa tal cual, sin caer en el de por omisión', () => {
+    const pedido = aPedido({ metodoPago: 'SISTECREDITO' });
+
+    expect(pedido.metodoPago).toBe('SISTECREDITO');
+    expect(METODOS_DE_PAGO_AL_DIA).toBe(true);
   });
 });
 
