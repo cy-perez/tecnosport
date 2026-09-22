@@ -7060,6 +7060,103 @@ Comprobado rompiendo los dos eslabones a propósito: un campo metido a mano en l
 fallar la prueba de Java, y una línea de más en `tipos.ts` hace fallar el guardián de Node. Los dos
 dicen los dos pasos que hay que correr y en qué orden.
 
+## Las clases de Tailwind dejan de comprobarse de a una (2026-09-21)
+
+La segunda deuda de la lista. `npm run clases -- <clase>` existía desde el stack de UI y tenía
+toda la maquinaria resuelta —el `@source inline(...)` para preguntar por una clase que todavía no
+se usa, y el escapado del selector—, pero había que nombrarle la clase. O sea que la regla dura #8
+la sostenía que alguien se acordara. Ahora, sin argumentos, barre el frontend entero: 2.669 clases
+en menos de dos segundos, dentro de `npm run verificar`.
+
+### El defecto que apareció al barrer, y que estaba en el comprobador de siempre
+
+`css.includes(".m")` **acierta dentro de `.mb-4`**. Con la comprobación por subcadena, cualquier
+palabra corta respondía "existe": `m`, `p`, `a`, `ts`. Preguntando de a una clase casi nunca se
+notaba —nadie pregunta por `m`—, pero es un guardián diciendo que sí a algo que no miró, y el
+barrido lo destapó en la primera corrida porque las palabras sueltas de los mensajes en español
+empezaron a contar como clases válidas. Ahora se extraen los selectores del CSS generado y se
+compara contra ese conjunto.
+
+### Tres intentos de filtro, y el contraejemplo lo puso el propio kit
+
+El problema real del barrido no es encontrar las clases: es no gritar por lo que no lo es. Un
+`class="…"` de una plantilla es inequívoco; un literal de TypeScript no, y de ahí salen los
+`[class]="clases()"` de este proyecto.
+
+1. **"Al menos una palabra del literal es una clase válida"** metió en el informe los 1.100
+   municipios de `geografia-co.datos.ts`.
+2. **Con las palabras acotadas a la forma de una clase** —minúsculas, dígitos y los signos de las
+   variantes— se fueron los municipios y quedó *"no se pudo actualizar la cantidad"*, acusando a
+   `pudo` de clase inexistente. El culpable es el kit: `tokens.css` define `.precio`, `.sku` y
+   `.cantidad`, así que la frase tenía una palabra válida de seis.
+3. **La regla que quedó: la mayoría, y al menos dos.** Una frase en español con una coincidencia
+   suelta no pasa; una lista de clases con una mal escrita, sí. Lo que se pierde a cambio queda
+   dicho en el propio archivo: un literal de dos clases con una mala queda en empate y se salta.
+   Se prefiere ese hueco a un informe que nadie lee.
+
+### Y dos cosas más que el barrido tuvo que aprender
+
+- **El kit no lo genera Tailwind.** `.chaflan` vive en `tokens.css`, fuera de toda capa y a
+  propósito, y la usan seis pantallas: sin mirar las hojas propias, el guardián acusaba de
+  inexistente a la clase más usada del sitio. Se leen del kit y no de la copia de
+  `apps/web/src/assets`, que escribe `copiar-marca` en cada build — una comprobación que depende
+  de un paso previo responde distinto según cuándo se corra.
+- **Los comentarios de este proyecto citan código.** El javadoc de `ts-galeria.ts` dice *"no una
+  base más un `[class.x]`"*, y el barrido acusaba a `x`. Se quitan los comentarios antes de mirar,
+  y solo los de línea completa: así un `https://` en mitad de un literal sigue intacto, que es el
+  error clásico de quitar comentarios con una expresión regular.
+
+### Comprobado rompiéndolo por las tres formas que barre
+
+Una `rounded-lg` metida a propósito en un `class="…"` de `app.html`, en un `[class.rounded-lg]` y
+en el literal de `ts-galeria.ts`. Las tres disparan y nombran el archivo.
+
+**La tercera no disparaba al principio** y arreglarlo mejoró el alcance: el literal es
+`` `${MINIATURA_BASE} border border-ts-borde` `` y la interpolación descartaba la cadena entera.
+Ahora se tiran las palabras sin forma de clase en vez del literal, que es justo como este proyecto
+arma las clases dinámicas. Con eso el barrido pasó de 2.608 candidatos a 2.669.
+
+**De paso, un dato que el encabezado del comprobador daba por sabido y ya no es cierto:**
+`min-h-0` y `min-h-auto` —las dos clases que originaron esta herramienta— **hoy sí existen** en
+esta versión de Tailwind. La anécdota se queda escrita porque explica por qué existe el guardián,
+pero el ejemplo ya no sirve para probarlo.
+
+## El freno del sandbox deja de colgar de la otra pasarela (2026-09-21)
+
+La tercera deuda, y la más corta de las tres: un `TODO` técnico en `ConfiguracionSistecredito`
+pidiendo que el freno del modo sandbox colgara de un perfil de producción "cuando exista uno".
+
+El freno es lo único que separa una prueba de un crédito a nombre de una persona: encendido en
+producción, la pasarela responde `Approved` sin pedirle un peso a nadie, cada pedido queda marcado
+como pagado y la mercancía sale. No falla nada, no aparece nada en ningún registro de error; se
+descubre contando cajas.
+
+Colgaba de `WOMPI_AMBIENTE` —la configuración de **la otra** pasarela— y el motivo estaba escrito
+con todas sus letras: no había perfil de producción, y esa era la única marca por despliegue que
+ya distinguía "esta instancia mueve dinero de verdad".
+
+### Enderezarlo no pedía un perfil nuevo: pedía invertir la pregunta
+
+Ahí estaba lo que se había dado por supuesto. Esperar a "que exista un perfil de producción"
+obliga a que alguien se acuerde de marcar la producción, y eso es un freno que falla **abierto**
+ante un descuido — el mismo defecto de lista negra que este proyecto ya le había corregido a este
+mismo freno el 20 de septiembre.
+
+No se pregunta "¿es producción?". Se pregunta **"¿está declarado como despliegue de pruebas?"**:
+si entre los perfiles activos no hay ninguno de `local`, `dev`, `e2e` o `pruebas`, el arranque se
+niega con el sandbox encendido. Los tres primeros son los que el proyecto ya usa; el cuarto está
+por si algún día alguien nombra así un entorno.
+
+**Y con eso se cierra un agujero que el freno viejo tenía abierto:** un despliegue sin ninguna
+variable fijada. `WOMPI_AMBIENTE` vale `sandbox` por omisión, así que una instancia de producción
+recién montada —el caso más peligroso que hay— pasaba el freno. Sin ningún perfil declarado, ahora
+no arranca. Tiene su prueba, y es la que más vale de las seis.
+
+De paso, `ADR-0048` §4 vuelve a decir la verdad al pie de la letra: prometía que *"el arranque
+falla si viene encendido junto con el perfil de producción"*, y hasta hoy eso se cumplía por otra
+vía. Y `ConfiguracionSistecredito` deja de importar `PropiedadesWompiPublicas`: una configuración
+de pagos menos que sabe de una pasarela que no es la suya.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7080,18 +7177,15 @@ volver a comprobarlo**, que es lo único que no caduca.
    sobre la rama, mientras `npm run verificar` pasaba en verde en local con el cliente viejo.
    **Cerrada el 21 de septiembre**, con el OpenAPI guardado en el repositorio y un eslabón a cada
    lado; el trabajo de CI sobró. Ver la entrada de abajo.
-2. **Las clases de Tailwind se comprueban de a una y a mano.** `npm run clases -- <clase>` tiene
-   toda la maquinaria pero hay que nombrarle la clase; nadie barre las plantillas. La regla dura #8
-   lo declara abierto con todas sus letras: una clase inventada no falla, no hace nada. Pasó con
-   `min-h-0` y con `min-h-auto`. Lo que falta no es el comprobador, es el barrido y decidir qué se
-   deja fuera —lo que arma una concatenación, lo que viene del CDK— sin que el guardián grite por
-   nada.
-   *Comprobar:* `tools/verificar-clases-tailwind.mjs` lee sus clases de `process.argv`.
-3. **No hay perfil de Spring para producción.** El freno de Sistecrédito —el que impide arrancar en
-   producción con el sandbox encendido— cuelga hoy de `WOMPI_AMBIENTE`: una señal prestada de otra
-   pasarela, con el motivo bien escrito y un `TODO` técnico en `ConfiguracionSistecredito`. El día
-   que las dos configuraciones se contradigan, manda la de la pasarela equivocada.
-   *Comprobar:* el javadoc de `ConfiguracionSistecredito`.
+2. ~~**Las clases de Tailwind se comprueban de a una y a mano.**~~ **Cerrada el 21 de
+   septiembre**: `npm run clases` sin argumentos barre las plantillas, los enlaces `[class.x]` y
+   los literales de los `.ts` —2.669 clases en menos de dos segundos— y corre dentro de
+   `npm run verificar`. De paso corrigió el comprobador viejo, que respondía "existe" a cualquier
+   palabra corta. Ver la entrada de arriba.
+3. ~~**No hay perfil de Spring para producción.**~~ **Cerrada el 21 de septiembre, y sin crear el
+   perfil**: el freno pregunta ahora si el despliegue está declarado como de pruebas, no si es
+   producción, así que una instancia sin ninguna variable fijada tampoco arranca con el sandbox
+   encendido — que era el agujero que el freno viejo tenía abierto. Ver la entrada de arriba.
 
 ### Bloque 2. Necesita la clave del panel, y desbloquea en cadena
 
