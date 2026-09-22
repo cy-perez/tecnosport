@@ -119,21 +119,13 @@ public class MapeadorRespuestasCatalogo {
   /** Público: {@code MapeadorRespuestasProductoAdmin} lo reutiliza para la respuesta admin. */
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
-        imagen.url(),
-        imagen.urlWebp(),
-        imagen.ancho(),
-        imagen.alto(),
-        imagen.altEs(),
-        imagen.altEn());
+        imagen.url(), imagen.url(), imagen.ancho(), imagen.alto(), imagen.altEs(), imagen.altEn());
   }
 
   private RotacionRespuesta aRespuesta(SetRotacion setRotacion) {
     List<ImagenRotacionRespuesta> imagenes =
         setRotacion.fotogramas().stream()
-            .map(
-                f ->
-                    new ImagenRotacionRespuesta(
-                        f.orden(), f.url(), f.urlWebp(), f.ancho(), f.alto()))
+            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.url(), f.ancho(), f.alto()))
             .toList();
     return new RotacionRespuesta(imagenes.size(), imagenes);
   }

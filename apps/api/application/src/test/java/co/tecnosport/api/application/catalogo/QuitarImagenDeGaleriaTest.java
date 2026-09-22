@@ -12,6 +12,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
@@ -41,11 +42,9 @@ class QuitarImagenDeGaleriaTest {
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             orden,
-            url,
-            url,
+            List.of(new VarianteDeImagen(2000, url, 120_000)),
+            null,
             2000,
-            2000,
-            120_000,
             new HashContenido("%064x".formatted(orden + 1)),
             "alt es",
             "alt en");
@@ -111,11 +110,11 @@ class QuitarImagenDeGaleriaTest {
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             0,
-            "https://picsum.photos/seed/jbl-charge-6-galeria-1/800/600",
-            "https://picsum.photos/seed/jbl-charge-6-galeria-1/800/600",
-            800,
+            List.of(
+                new VarianteDeImagen(
+                    800, "https://picsum.photos/seed/jbl-charge-6-galeria-1/800/600", 50_000)),
+            null,
             600,
-            50_000,
             new HashContenido("%064x".formatted(5)),
             "alt es",
             "alt en");

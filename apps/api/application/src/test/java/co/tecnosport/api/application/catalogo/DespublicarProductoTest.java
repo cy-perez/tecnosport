@@ -10,8 +10,10 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -80,11 +82,9 @@ class DespublicarProductoTest {
     return ImagenProducto.crear(
         TipoImagen.PRINCIPAL,
         0,
-        "https://x/0.jpg",
-        "https://x/0.webp",
+        List.of(new VarianteDeImagen(2000, "https://x/0.jpg", 1000)),
+        null,
         2000,
-        2000,
-        1000,
         new HashContenido("%064x".formatted(0)),
         "alt es",
         "alt en");

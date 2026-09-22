@@ -3,15 +3,20 @@ package co.tecnosport.api.application.catalogo;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Segundo paso: verifica contra el almacén real que el objeto llegó (no confía en que el navegador
- * terminó el `PUT`), arma la {@code ImagenProducto} y reemplaza la principal del producto. {@code
- * urlWebp} apunta al mismo objeto que {@code url} — sin conversión de formato en este paso, eso lo
- * hace el asistente de captura en Fase 5.
+ * terminó el `PUT`), arma la {@code ImagenProducto} y reemplaza la principal del producto.
+ *
+ * <p><strong>Hoy confirma una sola variante</strong>, la que se acaba de subir. Recibir las demás
+ * —y el JPEG de la vista previa— es el paso siguiente del trabajo de las variantes; mientras tanto
+ * la imagen tiene exactamente el ancho que tenía, y el {@code srcset} que sale de ella es de una
+ * entrada, que es lo mismo que servía antes.
  *
  * <p><strong>La imagen anterior se borra del bucket</strong>, o cada reemplazo dejaría pagando un
  * objeto que ya nadie sirve. Se borra por prefijo —{@code productos/{id}/principal-}— salvo la key
@@ -64,11 +69,9 @@ public final class ConfirmarImagenPrincipal {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            url,
-            url,
-            comando.ancho(),
+            List.of(new VarianteDeImagen(comando.ancho(), url, bytes)),
+            null,
             comando.alto(),
-            bytes,
             new HashContenido(comando.hash()),
             comando.altEs(),
             comando.altEn());

@@ -182,7 +182,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.tipo().name(),
             imagen.orden(),
             imagen.url(),
-            imagen.urlWebp(),
+            // Se va en la V60, con la columna. Hoy guarda lo mismo que guardaba: la misma URL.
+            imagen.url(),
             imagen.ancho(),
             imagen.alto(),
             imagen.bytes(),
@@ -205,7 +206,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.tipo().name(),
             imagen.orden(),
             imagen.url(),
-            imagen.urlWebp(),
+            // Se va en la V60, con la columna. Hoy guarda lo mismo que guardaba: la misma URL.
+            imagen.url(),
             imagen.ancho(),
             imagen.alto(),
             imagen.bytes(),

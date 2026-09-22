@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -276,11 +277,9 @@ public class MapeadorCatalogo {
         i.getId(),
         TipoImagen.valueOf(i.getTipo()),
         i.getOrden(),
-        i.getUrl(),
-        i.getUrlWebp(),
-        i.getAncho(),
+        List.of(new VarianteDeImagen(i.getAncho(), i.getUrl(), i.getBytes())),
+        null,
         i.getAlto(),
-        i.getBytes(),
         new HashContenido(i.getHash()),
         i.getAltEs(),
         i.getAltEn());

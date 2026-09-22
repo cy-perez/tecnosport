@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -653,11 +654,9 @@ class RepositorioProductosJpaTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://cdn/principal-1.webp",
-            "https://cdn/principal-1.webp",
-            1000,
+            List.of(new VarianteDeImagen(1000, "https://cdn/principal-1.webp", 45_000)),
+            null,
             800,
-            45_000,
             new HashContenido("%064x".formatted(1)),
             "alt es 1",
             "alt en 1");
@@ -670,11 +669,9 @@ class RepositorioProductosJpaTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://cdn/principal-2.webp",
-            "https://cdn/principal-2.webp",
-            1200,
+            List.of(new VarianteDeImagen(1200, "https://cdn/principal-2.webp", 60_000)),
+            null,
             900,
-            60_000,
             new HashContenido("%064x".formatted(2)),
             "alt es 2",
             "alt en 2");
@@ -820,11 +817,9 @@ class RepositorioProductosJpaTest {
     return ImagenProducto.crear(
         TipoImagen.GALERIA,
         orden,
-        url,
-        url,
+        List.of(new VarianteDeImagen(2000, url, 120_000)),
+        null,
         2000,
-        2000,
-        120_000,
         new HashContenido("%064x".formatted(semillaDelHash)),
         "alt es",
         "alt en");

@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.Paquete;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -232,11 +233,9 @@ class ArmadorDeBultosTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://cdn.tecnosport.co/img.jpg",
-            "https://cdn.tecnosport.co/img.webp",
-            800,
+            List.of(new VarianteDeImagen(800, "https://cdn.tecnosport.co/img.jpg", 1000)),
+            null,
             600,
-            1000,
             new HashContenido("%064x".formatted(1)),
             "alt es",
             "alt en"));

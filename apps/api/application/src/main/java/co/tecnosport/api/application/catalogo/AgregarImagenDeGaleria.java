@@ -4,7 +4,9 @@ import co.tecnosport.api.domain.catalogo.ImagenDeGaleriaDuplicadaException;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -77,11 +79,9 @@ public final class AgregarImagenDeGaleria {
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             producto.siguienteOrdenDeGaleria(),
-            url,
-            url,
-            comando.ancho(),
+            List.of(new VarianteDeImagen(comando.ancho(), url, bytes)),
+            null,
             comando.alto(),
-            bytes,
             new HashContenido(comando.hash()),
             comando.altEs(),
             comando.altEn());

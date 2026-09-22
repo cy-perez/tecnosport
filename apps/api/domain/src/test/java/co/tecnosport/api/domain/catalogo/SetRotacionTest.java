@@ -57,11 +57,9 @@ class SetRotacionTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://x/0.jpg",
-            "https://x/0.webp",
-            800,
+            List.of(new VarianteDeImagen(800, "https://x/0.jpg", 1000)),
+            null,
             600,
-            1000,
             new HashContenido("%064x".formatted(0)),
             "alt",
             "alt");
@@ -146,10 +144,8 @@ class SetRotacionTest {
     return ImagenProducto.crear(
         TipoImagen.ROTACION,
         orden,
-        "https://x/" + orden + ".jpg",
-        "https://x/" + orden + ".webp",
-        1000,
-        1000,
+        List.of(new VarianteDeImagen(1000, "https://x/" + orden + ".jpg", 1000)),
+        null,
         1000,
         new HashContenido("%064x".formatted(orden)),
         null,

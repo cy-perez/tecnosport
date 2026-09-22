@@ -79,11 +79,9 @@ class ProductoTest {
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             0,
-            "https://x/1.jpg",
-            "https://x/1.webp",
-            800,
+            List.of(new VarianteDeImagen(800, "https://x/1.jpg", 1000)),
+            null,
             600,
-            1000,
             new HashContenido("%064x".formatted(1)),
             "alt",
             "alt");
@@ -147,11 +145,9 @@ class ProductoTest {
     return ImagenProducto.crear(
         TipoImagen.PRINCIPAL,
         0,
-        "https://x/0.jpg",
-        "https://x/0.webp",
-        800,
+        List.of(new VarianteDeImagen(800, "https://x/0.jpg", 1000)),
+        null,
         600,
-        1000,
         new HashContenido("%064x".formatted(0)),
         "alt es",
         "alt en");
@@ -391,11 +387,9 @@ class ProductoTest {
     return ImagenProducto.crear(
         TipoImagen.GALERIA,
         orden,
-        "https://x/galeria-" + orden + ".jpg",
-        "https://x/galeria-" + orden + ".jpg",
+        List.of(new VarianteDeImagen(2000, "https://x/galeria-" + orden + ".jpg", 120_000)),
+        null,
         2000,
-        2000,
-        120_000,
         new HashContenido("%064x".formatted(semillaDelHash)),
         "alt es",
         "alt en");

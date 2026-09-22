@@ -8,6 +8,7 @@ import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacionIncompletoException;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
 import java.util.UUID;
@@ -97,11 +98,9 @@ class SolicitarSubidasDeRotacionTest {
     return ImagenProducto.crear(
         TipoImagen.ROTACION,
         orden,
-        "https://x/" + orden,
-        "https://x/" + orden,
+        List.of(new VarianteDeImagen(1000, "https://x/" + orden, 900)),
+        null,
         1000,
-        1000,
-        900,
         new HashContenido("%064x".formatted(orden)),
         null,
         null);

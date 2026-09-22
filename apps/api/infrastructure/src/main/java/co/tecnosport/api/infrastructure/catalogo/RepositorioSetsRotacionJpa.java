@@ -104,7 +104,8 @@ public class RepositorioSetsRotacionJpa implements RepositorioSetsRotacion {
         fotograma.tipo().name(),
         fotograma.orden(),
         fotograma.url(),
-        fotograma.urlWebp(),
+        // Se va en la V60, con la columna.
+        fotograma.url(),
         fotograma.ancho(),
         fotograma.alto(),
         fotograma.bytes(),

@@ -61,7 +61,7 @@ public class MapeadorRespuestasProductoAdmin {
     return new ImagenDeGaleriaRespuesta(
         imagen.id(),
         imagen.url(),
-        imagen.urlWebp(),
+        imagen.url(),
         imagen.ancho(),
         imagen.alto(),
         imagen.orden(),
