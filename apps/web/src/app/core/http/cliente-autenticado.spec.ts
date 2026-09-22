@@ -19,6 +19,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return this.sesionAlRefrescar;
   }
 
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('no usado en estas pruebas');
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas
   async cerrarSesion(): Promise<void> {}
 }
@@ -30,6 +34,10 @@ class RepositorioSesionQueFalla implements RepositorioSesion {
 
   async refrescar(): Promise<Sesion | null> {
     throw new Error('el servidor no respondió');
+  }
+
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('no usado en estas pruebas');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function -- no usado en estas pruebas

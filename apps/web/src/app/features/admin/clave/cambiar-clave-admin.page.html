@@ -1,0 +1,48 @@
+<ts-pagina-formulario [titulo]="'admin.clave.titulo' | transloco">
+  <p>{{ 'admin.clave.explicacion' | transloco }}</p>
+
+  <form class="flex flex-col gap-16" [formGroup]="form" (submit)="$event.preventDefault(); enviar()">
+    <ts-campo
+      idCampo="admin-clave-actual"
+      tipo="password"
+      [label]="'admin.clave.claveActual' | transloco"
+      formControlName="claveActual"
+    />
+
+    <ts-campo
+      idCampo="admin-clave-nueva"
+      tipo="password"
+      [label]="'admin.clave.claveNueva' | transloco"
+      formControlName="claveNueva"
+    />
+
+    <ts-campo
+      idCampo="admin-clave-confirmar"
+      tipo="password"
+      [label]="'admin.clave.confirmarClave' | transloco"
+      formControlName="confirmarClave"
+      [error]="clavesNoCoinciden() ? ('admin.clave.error_confirmar_clave' | transloco) : null"
+    />
+
+    <!--
+      Region viva permanente y no un `@if` con el parrafo dentro: montar el aviso ya lleno es
+      justo lo que los lectores de pantalla anuncian mal (apps/web/CLAUDE.md). Lo que cambia es
+      el contenido.
+    -->
+    <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+    <p class="m-0" role="status">
+      @if (cambiada()) {
+        {{ 'admin.clave.exito' | transloco }}
+      }
+    </p>
+
+    <ts-boton
+      variante="primario"
+      tipo="submit"
+      [cargando]="enviando()"
+      [etiquetaCargando]="'admin.clave.enviando' | transloco"
+    >
+      {{ 'admin.clave.cambiar' | transloco }}
+    </ts-boton>
+  </form>
+</ts-pagina-formulario>

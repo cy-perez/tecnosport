@@ -4,7 +4,11 @@ import { baseUrl } from '../http/base-url';
 import { desempaquetar } from '../http/respuesta-http';
 import { aSesion } from './mapeador-sesion';
 import { RepositorioSesion } from './repositorio-sesion.puerto';
-import { CorreoSinVerificarError } from './sesion.errores';
+import {
+  ClaveActualIncorrectaError,
+  CorreoSinVerificarError,
+  DemasiadosIntentosError,
+} from './sesion.errores';
 import { Sesion } from './sesion.model';
 
 /**
@@ -43,6 +47,31 @@ export class SesionHttpRepositorio implements RepositorioSesion {
       return null;
     }
     return aSesion(desempaquetar(respuesta, 'no se pudo refrescar la sesión'));
+  }
+
+  /**
+   * La cabecera se pone a mano por lo que dice el puerto: aquí no puede usarse
+   * `crearClienteAutenticado`. El 401 se traduce a {@link ClaveActualIncorrectaError} y no a un
+   * `ErrorHttp` pelado porque en esta petición solo significa una cosa —la clave actual está
+   * mal—: el token viaja recién sacado de la sesión viva, y si estuviera vencido la pantalla ni
+   * se habría podido abrir.
+   */
+  async cambiarClave(
+    accessToken: string,
+    claveActual: string,
+    claveNueva: string,
+  ): Promise<Sesion> {
+    const respuesta = await this.cliente.POST('/api/v1/auth/clave', {
+      body: { claveActual, claveNueva },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (respuesta.response.status === 401) {
+      throw new ClaveActualIncorrectaError();
+    }
+    if (respuesta.response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
+    return aSesion(desempaquetar(respuesta, 'no se pudo cambiar la clave'));
   }
 
   async cerrarSesion(): Promise<void> {

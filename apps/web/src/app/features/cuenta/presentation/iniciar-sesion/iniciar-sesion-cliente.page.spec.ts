@@ -43,6 +43,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
     return this.sesionAlIniciar;
   }
 
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async refrescar(): Promise<Sesion | null> {
     return null;
   }

@@ -75,6 +75,13 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./panel/panel-admin.page').then((m) => m.PanelAdminPage),
       },
       {
+        // Sin proveedores propios: lo unico que necesita es `SesionStore`, que es de raiz.
+        path: 'clave',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./clave/cambiar-clave-admin.page').then((m) => m.CambiarClaveAdminPage),
+      },
+      {
         path: 'pedidos',
         canActivate: [adminGuard],
         // Los paneles de retracto, garantía y reversión viven dentro de la fila expandida de esta
