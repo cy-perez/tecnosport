@@ -7867,10 +7867,28 @@ con la que se entra al panel de dev habría dejado de ser la que es. Queda decla
 infraestructura no describe, el siguiente apply lo deshace**, y esto lo destapó un `plan` de un
 cambio que no tenía nada que ver.
 
-De paso deja una pregunta abierta que no es de este trabajo: la clave de `admin-clave` en Secret
-Manager **no autentica** contra dev, ni con esa cuenta ni con la del valor por omisión. O el secreto
-es anterior a un cambio de clave hecho desde el panel, o la siembra no la usó. Mientras no se
-resuelva, las herramientas que necesitan sesión de panel contra dev piden el token a mano.
+### Y por qué la clave del panel no servía, que resultó ser lo mismo
+
+La clave de `admin-clave` en Secret Manager **no autenticaba** contra dev, ni con esa cuenta ni con
+la del valor por omisión. La causa está escrita en el Javadoc de `SembradorAdmin` y es la misma
+deriva de arriba vista desde otro lado: **crea el `ADMIN` solo si no existe ninguno con ese correo,
+y nunca actualiza uno que ya existe.** Busca por correo, así que cuando `ADMIN_CORREO` pasó de
+`admin@tecnosport.co` a `contacto@tecnosport.co`, el siguiente arranque no encontró ese buzón y
+creó un **segundo** usuario; y la clave de cada uno quedó congelada en la que tenía `ADMIN_CLAVE` el
+día en que nació. Cambiar el secreto después no hace nada.
+
+Se resolvió el 22 de septiembre dejando un solo administrador: cargar la clave nueva en el secreto,
+borrar las filas `ADMIN` y sus hijos —`sesion_refresco`, `token_verificacion_correo` y
+`token_recuperacion_clave`, las tres que apuntan a `usuario` con llave foránea— y dejar que el
+sembrador creara uno. Detalle que conviene recordar: **no hizo falta forzar una revisión**. El
+sembrador es un `ApplicationRunner`, corre en cada arranque de contenedor, así que el primer
+arranque en frío posterior al borrado ya lo recreó — el `gcloud run services update` que se lanzó
+después llegó tarde y no dijo nada, porque el usuario ya existía otra vez.
+
+Dos cosas que costaron intentos por el camino, las dos del entorno y no del proyecto:
+`gcloud secrets versions add --data-file=-` espera que le cierres la entrada, y en Windows eso es
+`Ctrl+Z` y Enter, no `Ctrl+D`; y un `begin;` que aborta en el editor SQL deja la sesión rechazando
+todo con `25P02` hasta que alguien escriba `rollback`.
 
 ### Lo que falta para encenderlo
 
@@ -8129,6 +8147,22 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
     septiembre es la estructura que necesitan, que no es lo mismo.
+
+### Lo que dejó abierto encender Sistecrédito en dev
+
+28. **Rotar la clave de un administrador exige borrar filas en la base de datos.** `SembradorAdmin`
+    crea el `ADMIN` si no existe y **nunca actualiza uno existente** —lo dice su propio Javadoc, y
+    ahí llama al mecanismo que falta "un mecanismo aparte, no construido todavía"—. No hay pantalla
+    en el panel ni endpoint para cambiarla: `/auth/recuperacion` manda el correo de recuperación, y
+    depende de que el buzón reciba de verdad. En dev esto se resolvió borrando las filas `ADMIN` y
+    dejando que el sembrador creara una; **en producción eso es cirugía de base de datos sobre la
+    única cuenta que administra la tienda**, y con una sola cuenta no hay un segundo administrador
+    que pueda ayudar desde dentro. Mientras siga así, perder la clave del panel es un incidente, no
+    un trámite. **Cómo comprobarlo:** buscar en `apps/api` un caso de uso que cambie la clave de un
+    usuario ya existente; mientras el único sea `ConfirmarRecuperacion`, que cuelga del token que
+    llega por correo, la deuda sigue. La salida mínima es un cambio de clave autenticado desde el panel
+    —el usuario con sesión iniciada da la actual y la nueva—, que no depende del correo ni de la
+    base.
 
 ### Lo que dejó abierto el borrado de huérfanos
 
