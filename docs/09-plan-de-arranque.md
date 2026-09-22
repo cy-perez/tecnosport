@@ -7422,6 +7422,97 @@ los 1,3-1,5 s de *render delay* de la portada anotados el 21 se midieron en el e
 máquina. El trabajo sigue siendo real; la cifra que lo justifica hay que volver a tomarla al lado
 del cambio.
 
+## La deuda 19, y que la auditoría que le da nombre apuntaba al sitio equivocado (2026-09-22)
+
+El enunciado decía: *"lo que queda ahí es JavaScript: `Reduce unused JavaScript` pide 600 ms en las
+tres pantallas"*. Con el arnés ya arreglado, lo primero fue mirar el desglose del hilo principal en
+vez de la lista de oportunidades:
+
+| coste | portada |
+|---|---|
+| Evaluación de scripts | 1.139 ms (952 el chunk de Angular) |
+| Estilo y *layout* | 937 ms |
+| **Parse y compilación de JS** | **12 ms** |
+
+Los 93 kB "sin usar" que la auditoría señala son **bytes**, y descargarlos y compilarlos cuesta
+12 ms. El tiempo está en **ejecutar** y en **pintar**, no en descargar. Además, de esos 93 kB la
+mayor parte es Angular: el chunk marcado con 57 % sin usar es `@angular/core` más rxjs y Transloco,
+y eso no se quita quitando código nuestro.
+
+Y al mirar el peso apareció lo que nadie había anotado: **de los 1.006 KiB de la portada, 486 eran
+fuentes**. Cuatro archivos tal como los sube Google, con cirílico, griego y vietnamita dentro.
+
+### Dos cambios, midiendo entre uno y otro
+
+**1. Las tipografías se recortan al alfabeto latino.** `fuentes.py` descargaba y comprimía, pero
+nunca subseteaba. Ahora recorta al rango `latin` + `latin-ext` de Google Fonts antes de comprimir —
+`latin-ext` y no solo `latin` porque el catálogo lo escriben proveedores, y un nombre con una letra
+centroeuropea no puede salir en tofu por ahorrar 8 kB.
+
+| | antes | después |
+|---|---|---|
+| ibmplexsans-variable | 224 kB | **92 kB** |
+| archivo-variable | 185 kB | **139 kB** |
+| ibmplexmono-400 + 500 | 77 kB | **41 kB** |
+| total | 487 kB | **271 kB** (−44 %) |
+
+Va con `--desde-local`, que recorta los woff2 que ya están sin descargar nada. No es comodidad: el
+camino normal se trae la versión de hoy de cada familia, y mezclar eso con el recorte en el mismo
+commit deja sin responder cuál de las dos movió lo que se ve en pantalla.
+
+**2. El pie y la franja de novedades se hidratan al entrar en pantalla.** `provideClientHydration()`
+trae la hidratación incremental activada **por omisión** desde Angular 22 —`withIncrementalHydration`
+está deprecado— y arrastra el *replay* de eventos, así que un clic antes de hidratar no se pierde.
+Lo que faltaba era usarla: el proyecto no tenía un solo `@defer`.
+
+### Las cifras, las tres corridas en la misma sesión
+
+Como manda la regla de ayer: base, cambio, medición, cambio, medición, sin salir de la sesión.
+
+| | base | con las fuentes | y con la hidratación |
+|---|---|---|---|
+| portada | 55 | 61 | **64** |
+| ficha | 66 | 77 | **79** |
+| legales | 70 | 88 | **90** |
+| peso de la portada | 1.006 KiB | 790 KiB | 790 KiB |
+| evaluación de scripts (portada) | — | 908 ms | **748 ms** |
+| evaluación de scripts (legales) | — | 878 ms | **733 ms** |
+
+**Lo que se puede afirmar y lo que no.** Los 216 KiB de menos son un hecho aritmético, no una
+medición: los mismos bytes en cualquier máquina. Los puntajes subieron en las tres pantallas, pero
+una de las corridas trajo 12 puntos de dispersión en legales y otra 13 en la ficha, así que esos
+movimientos de dos y tres puntos están dentro del ruido y **no se pueden cobrar como mejora**.
+
+Lo que sí sostiene el segundo cambio es el mecanismo: **legales solo recibió el `@defer` del pie**,
+porque no tiene franja de novedades, y su evaluación de scripts bajó 145 ms. Esa cifra mide trabajo
+del hilo principal, no el puntaje, y es la que dice que hidratar el pie al cargar costaba justo eso.
+
+### Por qué el `@defer` lleva dos disparadores
+
+`@defer (on immediate; hydrate on viewport)`. El de hidratación solo gobierna el contenido que vino
+del servidor; cuando la plantilla se pinta en el navegador —una navegación dentro de la aplicación—
+manda el normal. Sin un `on immediate` explícito, el pie aparecería tarde en cada navegación y la
+franja de novedades se quedaría vacía un instante. Con él, el camino sin SSR se comporta
+exactamente como antes y lo único que cambia es cuándo se hidrata lo que el servidor ya pintó.
+
+Comprobado en el HTML del servidor, que es la propiedad que importa para quien rastrea: el `<footer>`
+está, los tres enlaces legales están, y las cuatro tarjetas de novedades también.
+
+### La prueba del cascarón había dejado de ver lo que decía cubrir
+
+`TestBed` no dispara los bloques `@defer` por omisión. Ninguna prueba de `app.spec.ts` nombra el pie,
+así que ninguna se puso roja — pero la de axe dice en su comentario que cubre *"encabezado, enlace de
+salto, landmark principal y pie"*, y había dejado de ver el último. Se arregla con
+`deferBlockBehavior: DeferBlockBehavior.Playthrough` y **una prueba nueva que afirme que el pie se
+pinta**, comprobada rompiéndola: cambiando `on immediate` por `on timer(30s)` cae esa y solo esa.
+
+### Y una deuda nueva, que salió de medir
+
+Para comparar el antes y el después hubo que leer los informes a mano **antes** de que la corrida
+siguiente los pisara: el arnés escribe siempre `<pantalla>.json`. Los puntajes sobreviven en
+`resumen.json`, pero el desglose del hilo principal —que es lo único que explicó este trabajo— se
+pierde en cada corrida.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7490,19 +7581,30 @@ El orden no es negociable: cada uno alimenta al siguiente.
     cosas dichas: la portada **no** mejoró porque su LCP nunca fue una imagen, y no se puso
     `srcset` —se sube una sola variante de 1200— porque con el peso ya resuelto eso es afinar, no
     arreglar.
-19. **La portada tarda 1,3–1,5 s en pintar su elemento más grande, y es texto.** Lo que queda ahí
+19. ~~**La portada tarda 1,3–1,5 s en pintar su elemento más grande, y es texto.**~~ **Cerrada el
+    22 de septiembre, y con el enunciado corregido**: la auditoría que le daba nombre apunta a
+    bytes, y el parse de JavaScript cuesta 12 ms. El tiempo estaba en ejecutar y en pintar, y el
+    peso en 486 kB de fuentes sin recortar. Se hicieron las dos cosas —recorte al alfabeto latino
+    (−216 KiB) e hidratación diferida del pie y de las novedades (−145 ms de evaluación de
+    scripts, medidos en legales, que solo recibió el pie)—. Lo que queda abierto de rendimiento ya
+    no es esto: es estilo y *layout*, que sigue en torno a 700 ms y no se ha tocado. Ver la
+    entrada de arriba. Enunciado original, para que se entienda la corrección: «Lo que queda ahí
     es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
     portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
-    y no tiene nada que ver con las fotos. **Matizado el 22 de septiembre**: el pedido de
-    JavaScript se sostiene —450-600 ms con el arnés ya arreglado—, pero los 1,3-1,5 s son de una
-    sesión en la que la máquina estaba cargada; la portada acaba de medir 2,5 s de FCP y 3,3 s de
-    LCP. La cifra que justifique el trabajo se toma al lado del cambio, no de aquí.
+    y no tiene nada que ver con las fotos.»
 
 20. **`url_webp` guarda la URL de un AVIF.** La columna nació esperando una conversión que iba a
     hacer el asistente de captura de la Fase 5 y que nunca existió; siempre apuntó al mismo objeto
     que `url`, y ahora además el nombre dice un formato que no es. Renombrarla cruza el dominio,
     una migración, el DTO y el contrato generado, así que es un trabajo con su plan, no un
     `sed`. Mientras tanto, lo que engaña es el nombre, no el dato.
+
+21. **El arnés de Lighthouse pisa el informe de la corrida anterior.** Escribe siempre
+    `apps/web/lighthouse/<pantalla>.json`, así que comparar el desglose del hilo principal antes y
+    después de un cambio obliga a leerlo a mano entre las dos corridas — y si se olvida, el
+    "antes" ya no existe. Los puntajes sí sobreviven, en `resumen.json`. Una etiqueta por corrida
+    lo resuelve. Salió de usar el arnés para cerrar la deuda 19, no de una revisión.
+
 ### Bloque 3. Decisiones que no toma un script
 
 9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
