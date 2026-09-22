@@ -11,6 +11,7 @@ import {
 import {
   ClaveActualIncorrectaError,
   DemasiadosIntentosError,
+  SesionExpiradaError,
 } from '../../../core/autenticacion/sesion.errores';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
@@ -115,6 +116,18 @@ describe('CambiarClaveAdminPage', () => {
     enviar();
 
     expect(await screen.findByText(/Demasiados intentos/)).toBeTruthy();
+  });
+
+  it('con la sesión vencida no dice que la clave está mal', async () => {
+    // Los dos casos llegan como 401 desde el servidor. Decirle "esa no es tu clave" a quien la
+    // escribió bien lo pone a buscar un problema que no existe.
+    const repositorio = new RepositorioSesionFalso(new SesionExpiradaError());
+    await renderPagina(repositorio);
+
+    llenarFormulario();
+    enviar();
+
+    expect(await screen.findByText(/sesión venció/)).toBeTruthy();
   });
 
   it('si las dos claves nuevas no coinciden, no manda nada', async () => {

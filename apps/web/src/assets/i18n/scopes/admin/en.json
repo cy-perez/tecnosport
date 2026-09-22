@@ -660,6 +660,7 @@
     "error_formulario": "Fill in the three fields and make sure the new password matches.",
     "error_confirmar_clave": "The two passwords do not match.",
     "error_clave_actual": "That is not your current password.",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again."
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
+    "error_sesion_expirada": "Your session expired. Sign in again and repeat the change."
   }
 }

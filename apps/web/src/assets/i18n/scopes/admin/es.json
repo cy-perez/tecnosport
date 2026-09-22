@@ -660,6 +660,7 @@
     "error_formulario": "Completa los tres campos y asegúrate de que la clave nueva coincida.",
     "error_confirmar_clave": "Las dos claves no coinciden.",
     "error_clave_actual": "La clave actual no es correcta.",
-    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar."
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
+    "error_sesion_expirada": "Tu sesión venció. Vuelve a entrar y repite el cambio."
   }
 }

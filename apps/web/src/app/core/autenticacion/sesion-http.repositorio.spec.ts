@@ -1,4 +1,9 @@
 import { ErrorHttp } from '../http/respuesta-http';
+import {
+  ClaveActualIncorrectaError,
+  DemasiadosIntentosError,
+  SesionExpiradaError,
+} from './sesion.errores';
 import { SesionHttpRepositorio } from './sesion-http.repositorio';
 
 /**
@@ -63,5 +68,77 @@ describe('SesionHttpRepositorio.refrescar', () => {
     const error = await repositorio.refrescar().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ErrorHttp);
     expect((error as ErrorHttp).estado).toBe(500);
+  });
+});
+
+/**
+ * `POST /auth/clave` responde **401 por dos motivos distintos**: la clave actual equivocada y el
+ * token de acceso vencido. Los separa el `codigo` del cuerpo, no el estado — si se confundieran,
+ * a quien escribió bien su clave le diriamos que está mal y se pondría a buscar un problema que
+ * no existe.
+ */
+describe('SesionHttpRepositorio.cambiarClave', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function conRespuesta(respuesta: Response): SesionHttpRepositorio {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    return new SesionHttpRepositorio();
+  }
+
+  function problema(estado: number, codigo: string): Response {
+    return new Response(JSON.stringify({ codigo, status: estado }), {
+      status: estado,
+      headers: { 'Content-Type': 'application/problem+json' },
+    });
+  }
+
+  it('devuelve la sesión nueva que abre el servidor', async () => {
+    const repositorio = conRespuesta(
+      new Response(JSON.stringify({ usuarioId: 'u1', rol: 'ADMIN', accessToken: 'jwt.nuevo' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(repositorio.cambiarClave('jwt.viejo', 'vieja', 'nueva')).resolves.toEqual({
+      usuarioId: 'u1',
+      rol: 'ADMIN',
+      accessToken: 'jwt.nuevo',
+    });
+  });
+
+  it('401 con CREDENCIALES_INVALIDAS es la clave actual equivocada', async () => {
+    const repositorio = conRespuesta(problema(401, 'CREDENCIALES_INVALIDAS'));
+
+    await expect(repositorio.cambiarClave('jwt', 'mal', 'nueva')).rejects.toBeInstanceOf(
+      ClaveActualIncorrectaError,
+    );
+  });
+
+  it('401 con NO_AUTENTICADO es la sesión vencida, no la clave', async () => {
+    const repositorio = conRespuesta(problema(401, 'NO_AUTENTICADO'));
+
+    await expect(repositorio.cambiarClave('jwt.vencido', 'vieja', 'nueva')).rejects.toBeInstanceOf(
+      SesionExpiradaError,
+    );
+  });
+
+  it('429 es el límite de intentos', async () => {
+    const repositorio = conRespuesta(problema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO'));
+
+    await expect(repositorio.cambiarClave('jwt', 'vieja', 'nueva')).rejects.toBeInstanceOf(
+      DemasiadosIntentosError,
+    );
+  });
+
+  it('un fallo de servidor sigue siendo ErrorHttp', async () => {
+    const repositorio = conRespuesta(new Response(null, { status: 500 }));
+
+    await expect(repositorio.cambiarClave('jwt', 'vieja', 'nueva')).rejects.toBeInstanceOf(
+      ErrorHttp,
+    );
   });
 });

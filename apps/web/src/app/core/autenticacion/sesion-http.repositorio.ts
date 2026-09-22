@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../http/base-url';
-import { desempaquetar } from '../http/respuesta-http';
+import { desempaquetar, ErrorHttp } from '../http/respuesta-http';
 import { aSesion } from './mapeador-sesion';
 import { RepositorioSesion } from './repositorio-sesion.puerto';
 import {
   ClaveActualIncorrectaError,
   CorreoSinVerificarError,
   DemasiadosIntentosError,
+  SesionExpiradaError,
 } from './sesion.errores';
 import { Sesion } from './sesion.model';
 
@@ -51,10 +52,13 @@ export class SesionHttpRepositorio implements RepositorioSesion {
 
   /**
    * La cabecera se pone a mano por lo que dice el puerto: aquí no puede usarse
-   * `crearClienteAutenticado`. El 401 se traduce a {@link ClaveActualIncorrectaError} y no a un
-   * `ErrorHttp` pelado porque en esta petición solo significa una cosa —la clave actual está
-   * mal—: el token viaja recién sacado de la sesión viva, y si estuviera vencido la pantalla ni
-   * se habría podido abrir.
+   * `crearClienteAutenticado`.
+   *
+   * <p>**Dos cosas distintas responden 401**: la clave actual equivocada
+   * (`CREDENCIALES_INVALIDAS`) y el token que venció (`NO_AUTENTICADO`, que pone el punto de
+   * entrada de la cadena de seguridad). Se separan por el `codigo` del cuerpo, que es el valor
+   * estable del `ProblemDetail`, y no por el estado: confundirlos le diría "esa no es tu clave" a
+   * quien la escribió bien.
    */
   async cambiarClave(
     accessToken: string,
@@ -65,13 +69,23 @@ export class SesionHttpRepositorio implements RepositorioSesion {
       body: { claveActual, claveNueva },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (respuesta.response.status === 401) {
-      throw new ClaveActualIncorrectaError();
+    try {
+      return aSesion(desempaquetar(respuesta, 'no se pudo cambiar la clave'));
+    } catch (error) {
+      if (!(error instanceof ErrorHttp)) {
+        throw error;
+      }
+      if (error.codigo === 'CREDENCIALES_INVALIDAS') {
+        throw new ClaveActualIncorrectaError();
+      }
+      if (error.codigo === 'NO_AUTENTICADO') {
+        throw new SesionExpiradaError();
+      }
+      if (error.estado === 429) {
+        throw new DemasiadosIntentosError();
+      }
+      throw error;
     }
-    if (respuesta.response.status === 429) {
-      throw new DemasiadosIntentosError();
-    }
-    return aSesion(desempaquetar(respuesta, 'no se pudo cambiar la clave'));
   }
 
   async cerrarSesion(): Promise<void> {

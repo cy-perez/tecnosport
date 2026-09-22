@@ -11,3 +11,11 @@ export class ClaveActualIncorrectaError extends Error {}
 
 /** Demasiados intentos seguidos contra la misma cuenta (429, `docs/08-seguridad-legal.md`). */
 export class DemasiadosIntentosError extends Error {}
+
+/**
+ * El token de acceso no sirve o ya vencio (401 con codigo `NO_AUTENTICADO`). Comparte el
+ * codigo HTTP con {@link ClaveActualIncorrectaError} y por eso los dos se distinguen por el
+ * `codigo` del cuerpo y no por el estado: decirle "esa no es tu clave" a quien la escribio
+ * bien, porque lo que vencio fue la sesion, manda a buscar un problema que no existe.
+ */
+export class SesionExpiradaError extends Error {}

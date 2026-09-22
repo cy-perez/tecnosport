@@ -13,6 +13,7 @@ import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import {
   ClaveActualIncorrectaError,
   DemasiadosIntentosError,
+  SesionExpiradaError,
 } from '../../../core/autenticacion/sesion.errores';
 import { TsBoton } from '../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
@@ -96,6 +97,9 @@ export class CambiarClaveAdminPage {
     }
     if (error instanceof DemasiadosIntentosError) {
       return 'admin.clave.error_demasiados_intentos';
+    }
+    if (error instanceof SesionExpiradaError) {
+      return 'admin.clave.error_sesion_expirada';
     }
     return 'comun.error_servidor';
   }
