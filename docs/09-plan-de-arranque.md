@@ -6952,6 +6952,50 @@ pinta de inmediato: con la consulta sin resolver, el aviso no estaba por el moti
 Una aserción de ausencia necesita un ancla que demuestre que los datos ya llegaron. Está en
 `docs/06-testing.md`, junto a las otras dos formas que tiene un doble de mentir.
 
+## El generado que dejó de producirse y seguía commiteado (2026-09-21)
+
+El único pendiente que dejó abierto el bloque de las herramientas, con su motivo escrito: *"sin
+saber cuáles produce `kit_ui.py`, la comprobación dispararía con falsos positivos"*. La lista sí se
+puede saber, y además no hay que mantenerla: lo que hay en el temporal **antes** de generar es, por
+construcción, lo que se acaba de copiar —las entradas—, así que lo que el generador produce se sabe
+restando.
+
+Lo que no se puede derivar es la lista de ayer. Esa es `GENERADOS`, escrita a mano a propósito, con
+las cinco que `kit_ui.py` produce incondicionalmente: `LEEME.md`, `contraste.md`, `index.html`,
+`tipografia.md` y `tokens.css`. La discrepancia entre las dos listas es justo la señal que faltaba:
+un generado que deja de producirse **no cambia de bytes y no falta del repositorio**, así que ni la
+comparación de contenido ni la de "el generador lo produce y no está" lo veían. Se queda ahí,
+idéntico y muerto, y quien lo abre lo lee como vigente.
+
+De ahí los dos avisos nuevos: `produce` cuando el generador escribe algo que `GENERADOS` no nombra,
+y `huérfano` cuando un declarado dejó de producirse y sigue guardado —`se fue` si tampoco está—.
+Los dos dicen qué hacer, porque cuando la salida cambia a propósito el cambio no termina en el
+generador: lo que ya no se produce hay que borrarlo del repositorio, y lo nuevo hay que declararlo.
+
+Comprobado rompiéndolo por los tres caminos: un declarado que el generador no produce y sigue en el
+kit (`manual.md`), uno que no produce y tampoco está (`no-existe.md`), y quitar `tokens.css` de la
+lista para que la salida real quede sin declarar. Los tres disparan y salen con 1.
+
+### El `.pyc` que iba a hacer fallar la CI por el intérprete
+
+`archivosDe` contaba `__pycache__/`. Lo escribe el intérprete al importar un módulo, no el
+generador, y `.gitignore` lo excluye, así que en una máquina limpia no viene en la copia. Hoy no
+rompía **por un pelo**: el `.pyc` aparece al importar `fuentes`, que es el paso siguiente, cuando la
+comparación ya terminó. Basta mover ese paso —o que `kit_ui.py` importe `fuentes` al arrancar, como
+ya hace con `--fuentes`— para que el guardián empiece a fallar en integración continua diciendo que
+el generador produce un `.pyc` que falta del repositorio. Un fallo así no dice nada del kit: dice
+qué intérprete corrió.
+
+Por eso el recuento baja de 29 archivos a 28. Los 29 nunca fueron el kit: eran 28 y el bytecode.
+
+### El resumen dice de qué está hablando
+
+Decía "29 archivos" y ahora dice "5 generados sobre 23 conservados, produce exactamente los 5
+declarados". Un número que suma dos cosas distintas no deja ver cuándo una de las dos cambia: el
+día que el generador dejara de producir uno de los cinco y alguien agregara un logo al kit, el
+total seguiría clavado. Es la misma familia de los tres resúmenes que no cuadraban con sus propias
+filas, encontrados en esta misma revisión y en estas mismas herramientas.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
