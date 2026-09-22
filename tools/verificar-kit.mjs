@@ -247,11 +247,43 @@ try {
     throw new SalidaDelKit(1);
   }
 
+  // Propiedad C, tampoco con red: las tipografías guardadas sirven para escribir este sitio.
+  // Desde que se recortan al alfabeto latino, un recorte de más no rompe nada que se vea: el
+  // navegador dibuja la enye con la fuente de respaldo y la palabra sale con una letra de otra
+  // familia. Ninguna de las dos propiedades anteriores lo ve —el archivo se regenera igual que
+  // como está guardado porque el recorte está en el generador—, así que se mira el contenido.
+  const tipografias = spawnSync(python, ["generador/comprobar_fuentes.py", "fuentes"], {
+    cwd: temporal,
+    encoding: "utf8",
+  });
+  if (tipografias.status === 2) {
+    // Sin fontTools no se comprobó, que no es lo mismo que "está bien". Mismo criterio que con
+    // el intérprete ausente: en integración continua falla, en local avisa.
+    const mensaje =
+      "No se pudieron comprobar las tipografías del kit: falta fontTools.\n" +
+      "       pip install fonttools brotli";
+    if (process.env.CI) {
+      console.error(`ERROR: ${mensaje}`);
+      throw new SalidaDelKit(1);
+    }
+    console.log(`AVISO: ${mensaje}`);
+  } else if (tipografias.status !== 0) {
+    console.error("Las tipografías guardadas no sirven para escribir este sitio.\n");
+    console.error(tipografias.stdout || "");
+    console.error(tipografias.stderr || "");
+    console.error(
+      "\nEl recorte al alfabeto latino vive en `generador/fuentes.py` (RANGO_LATINO). Lo que" +
+        "\nfalte se añade ahí y se vuelve a recortar; nunca se edita el .woff2.",
+    );
+    throw new SalidaDelKit(1);
+  }
+
   const conservados = archivosDe(temporal).length - producidos.length;
   console.log(
     `El kit se regenera igual que como está guardado (${producidos.length} generados sobre` +
       ` ${conservados} conservados, con ${python}), produce exactamente los ${GENERADOS.length}` +
-      " declarados, y se niega a rehacer las tipografías sin con qué comprimirlas.",
+      " declarados, se niega a rehacer las tipografías sin con qué comprimirlas, y las que tiene" +
+      " guardadas escriben lo que este sitio escribe.",
   );
 } catch (error) {
   if (!(error instanceof SalidaDelKit)) throw error;
