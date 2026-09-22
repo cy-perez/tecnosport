@@ -6996,6 +6996,95 @@ día que el generador dejara de producir uno de los cinco y alguien agregara un 
 total seguiría clavado. Es la misma familia de los tres resúmenes que no cuadraban con sus propias
 filas, encontrados en esta misma revisión y en estas mismas herramientas.
 
+## Las deudas que quedan, al 21 de septiembre de 2026
+
+Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
+los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es la
+entrada de arriba. Lo que sigue es lo otro: lo que nunca fue un hallazgo y sigue abierto.
+
+**Cada punto se comprobó contra el código el 21 de septiembre**, no se copió de las entradas de
+este documento. Importa decirlo porque este documento escribe en presente y no se actualiza solo:
+ya pasó que un pendiente se arrastrara nueve entradas después de estar hecho. Cada uno lleva **cómo
+volver a comprobarlo**, que es lo único que no caduca.
+
+### Bloque 1. Código, sin depender de nadie
+
+1. **El contrato generado no tiene guardián.** `packages/contratos/src/tipos.ts` se regenera a mano
+   contra `localhost:8080`, no hay ningún `openapi.json` guardado, y `tools/verificar.mjs` no lo
+   mira. Ya costó una vez en la Fase 7 —cuatro campos nuevos, y "ni el lint ni el build ni las 748
+   pruebas dijeron nada"— y volvió el 21 de septiembre por el otro lado: springdoc publicando
+   `disponible` como opcional, con la tienda entera saliendo agotada el día que ese campo deje de
+   serializarse. Es la más cara de la lista porque **falla en silencio y del lado del comprador**.
+   *Comprobar:* `grep ejecutar tools/verificar.mjs` y `git ls-files | grep openapi`.
+2. **Las clases de Tailwind se comprueban de a una y a mano.** `npm run clases -- <clase>` tiene
+   toda la maquinaria pero hay que nombrarle la clase; nadie barre las plantillas. La regla dura #8
+   lo declara abierto con todas sus letras: una clase inventada no falla, no hace nada. Pasó con
+   `min-h-0` y con `min-h-auto`. Lo que falta no es el comprobador, es el barrido y decidir qué se
+   deja fuera —lo que arma una concatenación, lo que viene del CDK— sin que el guardián grite por
+   nada.
+   *Comprobar:* `tools/verificar-clases-tailwind.mjs` lee sus clases de `process.argv`.
+3. **No hay perfil de Spring para producción.** El freno de Sistecrédito —el que impide arrancar en
+   producción con el sandbox encendido— cuelga hoy de `WOMPI_AMBIENTE`: una señal prestada de otra
+   pasarela, con el motivo bien escrito y un `TODO` técnico en `ConfiguracionSistecredito`. El día
+   que las dos configuraciones se contradigan, manda la de la pasarela equivocada.
+   *Comprobar:* el javadoc de `ConfiguracionSistecredito`.
+
+### Bloque 2. Necesita la clave del panel, y desbloquea en cadena
+
+El orden no es negociable: cada uno alimenta al siguiente.
+
+4. **Reconciliar el registro.** `catalogo/cargados.json` tiene 13 entradas y **ninguna
+   reconciliada**, así que los doce primeros —cargados el 19 con un script de usar y tirar— siguen
+   sin SKU para el registro.
+5. **Rellenar las galerías.** Consecuencia directa del punto anterior: esos doce están publicados
+   con **una** de las cuatro tomas que llevan en el estudio desde el 15 de septiembre.
+6. **Cargar lo que falta.** El cruce del 21 de septiembre da **25 publicables**, 4 de ellos con
+   medidas de empaque y los otros 21 solo con recogida en el punto (`adr/0046`).
+7. **Correr `npm run huerfanos` contra dev.** Informa, no borra, y **nunca se ha corrido**. Con el
+   número delante se decide lo de verdad: mover lo no confirmado a un prefijo `pendientes/` —y
+   entonces sí una regla de ciclo de vida trivial— o dejarlo estar. Sin el número no se decide.
+8. **Repetir Lighthouse.** El pendiente vivo más viejo, y el único que ya sabe exactamente de qué
+   depende: la portada perdió doce puntos de rendimiento por la foto de la banda, que es el nuevo
+   LCP, y eso no se puede medir con propiedad mientras las tarjetas traigan ocho peticiones a
+   `picsum.photos`. O sea, mientras no estén los puntos 4 a 6.
+
+### Bloque 3. Decisiones que no toma un script
+
+9. **Los cuatro publicables que dejan 5 % o menos sobre la venta**, medidos el 21 de septiembre:
+   JBL Flip 7 (0 %), Lenovo Tab Plus 11" (0 %), Lenovo Tab One 7" (2 %) y JBL Grip (3 %).
+   Publicarlos a ese precio es trabajar gratis. Se cargan en BORRADOR hasta que alguien diga que sí.
+10. **La existencia inventada de 5** que llevan los doce primeros en dev.
+11. **`SISTECREDITO_MONTO_MINIMO` sigue sin dato.** Es para la asesora: las dos cifras públicas que
+    se encontraron se contradicen, lo que confirma que varía por comercio. Falla cerrado a
+    propósito —habilitar el método sin el dato no arranca—, así que no hay prisa de seguridad, sí
+    de negocio.
+12. **`MetodoPago.ADDI`.** Sigue apuntando a `WOMPI` a propósito, porque es lo que lo mantiene
+    fuera del checkout; reclasificarlo a `NINGUNO`, que suena más honesto, lo dejaría ofrecido
+    siempre. Las dos salidas razonables están en `docs/11`: integrar Addi de verdad, o sacarlo.
+
+### Bloque 4. Terceros. No se trabajan, se persiguen
+
+13. **Skydropx**, con el trámite mandado el 21 de septiembre: los 74 códigos DANE, retirar la
+    solicitud del 14 y el conector de recolección de Servientrega, caído en ocho intentos. Y dos
+    que no van en ese mensaje: el saldo, que quedó en 388 COP y **bloquea la recolección**, y el
+    host de la cuenta colombiana, que sigue como `TODO` en `PropiedadesSkydropx`.
+14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
+15. **Si la anulación en Credinet notifica a `urlConfirmation`.** No es averiguable por fuera: hay
+    que medirlo. Si no notifica, un pedido puede quedar marcado como pagado con la venta anulada
+    del otro lado y nada avisa.
+
+### Bloque 5. Lo que solo se comprueba con el aparato delante
+
+16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
+    septiembre es la estructura que necesitan, que no es lo mismo.
+
+### Lo que está anotado y no es deuda
+
+`adr/0053` dejó dicho que el orden de la galería **no tiene red en la base de datos** —un `UNIQUE`
+parcial y diferible a la vez no existe en PostgreSQL—, así que la invariante vive solo en el
+agregado. No es un pendiente: es una decisión tomada con sus cuatro alternativas descartadas. Se
+nombra aquí para que nadie la "descubra" dentro de seis meses y la apunte como deuda nueva.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un
