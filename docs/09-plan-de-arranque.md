@@ -7706,16 +7706,25 @@ peso ya resuelto eso es afinar, no arreglar"— y ahora tiene número. Queda com
 `--con-ventana` mide con un Chrome visible en vez del headless. Sin la primera no se ve que Layout
 son 161 ms y no 739; sin la segunda no se descarta el rasterizado por software.
 
-## Las deudas que quedan, al 21 de septiembre de 2026
+## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
-los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es la
-entrada de arriba. Lo que sigue es lo otro: lo que nunca fue un hallazgo y sigue abierto.
+los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es una
+de las entradas de arriba. Lo que sigue es lo otro: lo que nunca fue un hallazgo y sigue abierto.
 
-**Cada punto se comprobó contra el código el 21 de septiembre**, no se copió de las entradas de
-este documento. Importa decirlo porque este documento escribe en presente y no se actualiza solo:
-ya pasó que un pendiente se arrastrara nueve entradas después de estar hecho. Cada uno lleva **cómo
-volver a comprobarlo**, que es lo único que no caduca.
+**Cada punto se comprobó contra el código**, no se copió de las entradas de este documento. Importa
+decirlo porque este documento escribe en presente y no se actualiza solo: ya pasó que un pendiente
+se arrastrara nueve entradas después de estar hecho. Cada uno lleva **cómo volver a comprobarlo**,
+que es lo único que no caduca.
+
+**El 22 de septiembre se cerraron cuatro y se abrieron dos.** Cerradas: la 17 (el arnés medía una
+sola muestra), la 19 (el rendimiento de la portada, con el enunciado corregido: la auditoría que le
+daba nombre apuntaba a bytes), la 21 (el arnés pisaba el informe anterior) y la 22 (los 145 ms del
+pie, que eran 40). Nuevas: la **23**, que son los 211 KiB de imágenes sobredimensionadas de la
+portada, y el límite que quedó escrito sobre el propio arnés —sus cifras absolutas de FCP y LCP no
+describen lo que ve una persona en pantallas con imágenes; sus bytes y sus comparaciones consigo
+mismo sí—. **Sigue abierto todo el Bloque 3 en adelante**, que es donde está lo que no resuelve un
+script: las decisiones de negocio, los terceros y lo que pide el aparato delante.
 
 ### Bloque 1. Código, sin depender de nadie
 
