@@ -41,7 +41,8 @@ Tres consecuencias de forma, cada una con su motivo:
 variante de 1200 el peso baja un 90 %, y lo que queda por ganar afinando tamaños es una fracción
 de lo que queda por ganar en otra parte —el elemento más grande de la portada resultó ser texto
 retrasado 1,3–1,5 s por JavaScript—. Optimizar primero lo segundo grande es cómo se gasta una
-tarde sin mover la aguja.
+tarde sin mover la aguja. *(Se hizo el 22 de septiembre de 2026, cuando la medición le puso
+número: 211 KiB en la portada. Ver `ADR-0057`.)*
 
 **WebP en vez de AVIF.** El procesamiento produce los dos; AVIF pesa ~3× menos al mismo tamaño
 (58 kB contra 175 del JPEG de 1200). El costo es de compatibilidad, abajo.
@@ -67,7 +68,9 @@ hizo antes de que la foto llegara.
   —no hay `browserslist` ni una línea en `docs/00`— y el sitio no envuelve las imágenes en un
   `<picture>`. Quien abra la tienda en un Safari anterior al 16 (2022) no verá la foto. Queda
   dicho aquí y en el javadoc de `TiposDeImagen`.
-- **`url_webp` pasó de ser una promesa a ser un nombre falso**: guarda la URL de un AVIF. Renombrar
+- **`url_webp` pasó de ser una promesa a ser un nombre falso**: guarda la URL de un AVIF. *(Se
+  borró el 22 de septiembre de 2026, junto con el `srcset` que este ADR dejó fuera: `ADR-0057`.)*
+  Renombrar
   la columna cruza dominio, base, DTO y contrato generado; queda anotado como deuda, no hecho.
 - **Lo ya subido no se arregla solo**, de ahí `--rehacer-imagenes`. Sube lo nuevo y **después**
   borra lo viejo: al revés, una corrida cortada a la mitad deja el producto publicado y sin una

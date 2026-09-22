@@ -304,7 +304,7 @@ URL absolutas:
 "rotacion": {
   "fotogramas": 8,
   "imagenes": [
-    { "orden": 0, "url": "...", "urlWebp": "...", "ancho": 1000, "alto": 1000 }
+    { "orden": 0, "url": "...", "ancho": 1000, "alto": 1000 }
   ]
 }
 ```

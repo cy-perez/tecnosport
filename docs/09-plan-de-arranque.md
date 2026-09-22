@@ -881,7 +881,9 @@ Decisiones de diseño de esta pasada, todas explícitas en el plan antes de
 codificar:
 - **Sin conversión dual WebP/JPEG.** `urlWebp` apunta al mismo objeto que
   `url` — la conversión real de formato es del asistente de captura de
-  Fase 5.
+  Fase 5. *(La conversión nunca existió, y la columna se borró el 22 de
+  septiembre de 2026: ver `ADR-0057`. Se deja escrito lo que se decidió
+  entonces, que es de lo que sirve este registro.)*
 - **Ancho y alto se confían al cliente** (metadato presentacional, no
   dinero ni inventario); lo único que se verifica contra el almacén real
   es que el objeto existe y su tamaño en bytes, antes de confirmar.
@@ -7706,6 +7708,73 @@ peso ya resuelto eso es afinar, no arreglar"— y ahora tiene número. Queda com
 `--con-ventana` mide con un Chrome visible en vez del headless. Sin la primera no se ve que Layout
 son 161 ms y no 739; sin la segunda no se descarta el rasterizado por software.
 
+## Una imagen deja de tener una URL y pasa a tener varias (2026-09-22)
+
+Cerró dos deudas de una vez, la 20 y la 23, porque eran la misma superficie: para servir varios
+anchos hay que guardar varios objetos por imagen, y en el momento en que una imagen tiene un
+conjunto de URL, la columna `url_webp` —que guardaba la de un AVIF— no se renombra, desaparece.
+
+El detalle del diseño y las alternativas descartadas están en `ADR-0057`. Lo que va aquí es lo que
+el camino enseñó, que no estaba en el plan.
+
+### Tres hechos que cambiaron el diseño antes de escribir una línea
+
+- **Las variantes ya existían en disco.** El procesamiento de estudio produce AVIF en 2000, 1600,
+  1200, 800, 600 y 480 según lo que diera la toma, y `ANCHOS_WEB` ya las listaba: el cargador
+  elegía **una** y subía esa. No había que generar nada, había que subir más de una.
+- **La escalera no es la misma para todas las tomas.** Censados los 33 productos con material:
+  catorce llegan a 2000, seis a 1200, tres solo tienen 600 y 480, `jbl-partybox-320` solo 480 y
+  `honor-choice-x7e` solo **400** — que ni siquiera está en `ANCHOS_WEB`, así que hoy el cargador
+  se niega a subirlo. Qué anchos hay es un dato de cada imagen.
+- **`NgOptimizedImage` no emite `srcset` sin un *loader*.** Comprobado en el código instalado de
+  `@angular/common` 22.1.4, no de memoria: `shouldGenerateAutomaticSrcset()` devuelve `false`
+  cuando el loader es el de por omisión, y un `ngSrcset` sin loader dispara el aviso 2963 porque
+  cada descriptor pasa igual por `callImageLoader({src, width})`.
+
+### La key no lleva el ancho, y esa fue la simplificación
+
+El plan decía `principal-{uuid}-800.avif`, para que el ancho se viera en el bucket. Eso obliga a
+conocer el ancho **antes** de pedir la URL firmada, y el panel no lo sabe hasta leer el archivo que
+una persona acaba de elegir. Como la URL de cada variante viaja como dato —que era la decisión de
+fondo—, el ancho en la key era decoración. El endpoint de subida no cambió ni una línea: el cliente
+lo llama una vez por variante y solo cambia la confirmación.
+
+### Lo que apareció al ejecutar, y no al leer
+
+Cuatro cosas, todas de las que rompen en producción con las pruebas en verde:
+
+1. **La limpieza por prefijo conservaba una sola key.** `ConfirmarImagenPrincipal` borra el prefijo
+   `principal-` entero menos lo que acaba de subirse, y "lo que acaba de subirse" era una key. Con
+   variantes, las demás se habrían borrado a sí mismas justo después de guardarse: el navegador
+   pidiendo un objeto que ya no existe, y pidiéndolo porque nosotros se lo ofrecimos en el
+   `srcset`.
+2. **`tamanoBytes` se preguntaba dos veces por variante**, una para verificar y otra para armar.
+   Cada consulta es un viaje a Cloud Storage.
+3. **`loaderParams` cambiaba de identidad en cada ciclo de detección.** Un objeto literal en la
+   plantilla es uno nuevo cada vez, y todas las entradas de `NgOptimizedImage` salvo `ngSrc` están
+   congeladas tras inicializar: NG02953 en el primer refresco, con la imagen idéntica. Se memoiza
+   por imagen con un `WeakMap`.
+4. **Al elegir otra miniatura la identidad cambia con razón**, y entonces el `<img>` tiene que
+   nacer de nuevo en vez de actualizarse: un `@for` de una sola entrada con `track` por la URL.
+
+Las dos últimas las atrapó la prueba del clic en una miniatura. Ninguna se ve leyendo el código.
+
+### Y dos afirmaciones que eran falsas y pasaban
+
+- **La prueba del visor 360 comprobaba que servía `r0.webp`.** Lo que dice comprobar —por cuál
+  fotograma empieza— no tiene nada que ver con el formato.
+- **El `og:image` decía servir "el original" por compatibilidad con WhatsApp y Facebook.** Desde
+  `ADR-0056` el original **es** el AVIF, que es justo lo que esos previsualizadores no muestran, así
+  que ese comentario llevaba un mes protegiendo nada. Ahora se sube un JPEG de vista previa y el
+  `og:image` lo usa.
+
+### Lo que falta, y es lo único que puede medir la deuda 23
+
+**Las variantes todavía no existen en el bucket.** La V60 le dio a cada imagen una variante única
+con lo que ya había, así que el sitio sirve hoy exactamente lo mismo que ayer, con un `srcset` de
+una entrada. Hasta correr `node tools/cargar-catalogo.mjs --rehacer-imagenes --escribir` los
+211 KiB de la portada siguen ahí y no hay nada que comparar.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7796,11 +7865,10 @@ El orden no es negociable: cada uno alimenta al siguiente.
     portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
     y no tiene nada que ver con las fotos.»
 
-20. **`url_webp` guarda la URL de un AVIF.** La columna nació esperando una conversión que iba a
-    hacer el asistente de captura de la Fase 5 y que nunca existió; siempre apuntó al mismo objeto
-    que `url`, y ahora además el nombre dice un formato que no es. Renombrarla cruza el dominio,
-    una migración, el DTO y el contrato generado, así que es un trabajo con su plan, no un
-    `sed`. Mientras tanto, lo que engaña es el nombre, no el dato.
+20. ~~**`url_webp` guarda la URL de un AVIF.**~~ **Cerrada el 22 de septiembre, y no se
+    renombró: se borró.** En cuanto una imagen deja de tener una URL y pasa a tener un conjunto de
+    variantes, la columna que miente no tiene ningún trabajo que hacer. Ver `ADR-0057` y la entrada
+    de abajo.
 
 21. ~~**El arnés de Lighthouse pisa el informe de la corrida anterior.**~~ **Cerrada el 22 de
     septiembre**: `--etiqueta` guarda cada corrida en su carpeta con siete métricas por muestra, y
@@ -7815,11 +7883,14 @@ El orden no es negociable: cada uno alimenta al siguiente.
     únicos números que se afirman sin reservas son los bytes: −9 kB en la portada, −4 en legales.
     Ver la entrada de arriba.
 
-23. **La portada carga cuatro AVIF de 1200 px para huecos de 180.** `image-delivery-insight` pide
-    211 KiB en esa pantalla, y son bytes: no dependen de la máquina ni del arnés. Es el `srcset`
-    que `ADR-0056` dejó fuera a propósito —"con el peso ya resuelto eso es afinar"— y que ahora
-    tiene número. Cuesta más que un atributo: hoy solo se sube una variante de 1200, así que hay
-    que generar y subir más anchos, y eso cruza el cargador, la API y el modelo.
+23. ~~**La portada carga cuatro AVIF de 1200 px para huecos de 180.**~~ **El código está hecho el
+    22 de septiembre; el número está sin medir.** Las imágenes se publican en varios anchos y el
+    `srcset` sale de ellos (`ADR-0057`). Lo que falta no es código: **las variantes todavía no
+    existen en el bucket**. La V60 le dio a cada imagen una variante única con lo que ya había, así
+    que hoy el sitio sirve exactamente lo que servía; los anchos de verdad llegan al correr
+    `node tools/cargar-catalogo.mjs --rehacer-imagenes --escribir`. Hasta entonces los 211 KiB
+    siguen ahí, y la comparación con `--etiqueta antes/despues` en la misma sesión no tiene qué
+    comparar.
 
 ### Bloque 3. Decisiones que no toma un script
 
