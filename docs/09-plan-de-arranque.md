@@ -7222,6 +7222,69 @@ por menos de lo que pesa una foto de portada. Se deja como está y se vuelve a m
 catálogo esté completo; lo que sí conviene es borrar esos dieciocho a mano alguna vez, y eso lo
 decide quien mira el bucket, no un script — por eso la herramienta informa y no borra.
 
+## Lighthouse, por fin válido, y lo que estaba tapando (2026-09-21)
+
+El pendiente vivo más viejo del proyecto: desde la Fase 6 se sabía que el rendimiento no
+significaba nada mientras las tarjetas trajeran ocho peticiones a `picsum.photos`, y el 19 de
+septiembre se dejó escrito de qué dependía — de sacar el catálogo real a GCS. Con los doce
+reconciliados, sus galerías y los cuatro últimos cargados, se corrió.
+
+**Cero peticiones a `picsum.photos` en las tres pantallas.** La condición se cumplió y la
+medición por fin habla del sitio.
+
+| | rendimiento (1ª / 2ª) | accesibilidad | buenas prácticas | SEO |
+|---|---|---|---|---|
+| portada | 59 / 59 (era 57) | **100** | **100** | **100** |
+| ficha | 63 / 65 (era 64) | **100** | **100** | **100** |
+| legales | 70 / 89 (era 92) | **100** | **100** | **100** |
+
+Las tres columnas que no dependen de las imágenes siguen en 100, en las dos corridas.
+
+### Se midió dos veces a propósito, y menos mal
+
+La primera corrida daba `legales` en **70**, veintidós puntos por debajo del 92 del 19 de
+septiembre, en una pantalla que no tiene ni una imagen y que nadie tocó. Eso no era un hallazgo:
+era la máquina. La segunda corrida, sobre el mismo build y cinco minutos después, la puso en
+**89**; el FCP pasó de 4,7 s a 2,5 s sin que cambiara un byte.
+
+Portada y ficha, en cambio, repitieron dentro de dos puntos. O sea que el ruido no es parejo: se
+concentra en la pantalla más liviana, que es justo donde un arranque lento del proceso se nota
+entero.
+
+**El arnés toma una sola muestra**, y con esa varianza una sola muestra puede inventar una
+regresión de veintidós puntos o taparla. Es la cuarta vez que este documento anota lo mismo con
+otra herramienta —el proxy de diagnóstico roto, el token caducado a mitad de la sonda, la pestaña
+oculta que no corría `rAF`—: **una herramienta de diagnóstico también es una variable del
+experimento**. Conviene que mida tres veces y se quede con la mediana; queda anotado y no se hizo
+aquí.
+
+### Y lo que la medición válida destapó: se están sirviendo las maestras
+
+El elemento más pesado de la portada **y** de la ficha es la misma foto: **635 kB en JPEG**. No es
+la banda de portada, que era la sospecha escrita el 19 de septiembre; son las fotos de producto.
+
+`material-catalogo.mjs` lee de `catalogo/fotos/estudio/<id>/maestra`, y la maestra es un artefacto
+de archivo, no un recurso web. El mismo procesamiento de estudio ya dejó al lado seis tamaños en
+dos formatos. Para el mismo fotograma del JBL Flip 7:
+
+| | JPEG | AVIF |
+|---|---|---|
+| maestra | 546 kB | — |
+| 2000 | 441 kB | 149 kB |
+| 1600 | 302 kB | 104 kB |
+| 1200 | 175 kB | **58 kB** |
+| 800 | 78 kB | 27 kB |
+| 480 | 28 kB | 8 kB |
+
+La tarjeta de la rejilla pinta esa foto a menos de 400 px de ancho en móvil. Se está mandando
+**diez veces** lo que hace falta, y el LCP de la portada (7,0 s) y el de la ficha (8,1–8,5 s) son
+eso, no otra cosa.
+
+Queda como el siguiente trabajo de rendimiento, y no es "optimizar imágenes" en abstracto: es
+elegir qué variante sube el cargador —y si sube varias con `srcset`—, cambiar el `contentType`
+que hoy está clavado en `image/jpeg`, y volver a subir lo que ya está. Con el número delante, es
+la única cosa de esta lista que vale puntos de verdad.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7269,10 +7332,22 @@ El orden no es negociable: cada uno alimenta al siguiente.
    decisión tomada**: 18 objetos sin reclamar, 5,31 MiB, todos `principal-` de las cargas del 19 y
    el 20. No pagan cambiar la forma de las keys; se deja como está y se vuelve a medir con el
    catálogo completo. Queda pendiente borrarlos a mano alguna vez, que no lo hace ningún script.
-8. **Repetir Lighthouse.** El pendiente vivo más viejo, y el único que ya sabe exactamente de qué
-   depende: la portada perdió doce puntos de rendimiento por la foto de la banda, que es el nuevo
-   LCP, y eso no se puede medir con propiedad mientras las tarjetas traigan ocho peticiones a
-   `picsum.photos`. O sea, mientras no estén los puntos 4 a 6.
+8. ~~**Repetir Lighthouse.**~~ **Hecho el 21 de septiembre, y por fin válido**: cero peticiones a
+   `picsum.photos`. Accesibilidad, buenas prácticas y SEO en 100 en las tres pantallas y en las
+   dos corridas. Deja dos cosas abiertas, las dos nuevas y anotadas en la entrada de arriba: el
+   arnés toma **una sola muestra** y la varianza entre dos corridas del mismo build llegó a 22
+   puntos; y el LCP no era la banda de portada sino que **se están sirviendo las fotos maestras**
+   —635 kB donde el AVIF de 1200 pesa 58—.
+
+### Lo que esta medición dejó abierto, y es nuevo
+
+17. **El arnés de Lighthouse toma una sola muestra.** Con la varianza medida —22 puntos entre dos
+    corridas del mismo build, cinco minutos aparte— una muestra puede inventar una regresión o
+    taparla. Tres corridas y la mediana.
+18. **El sitio sirve las fotos maestras.** `material-catalogo.mjs` lee de `estudio/<id>/maestra` y
+    sube 635 kB donde el AVIF de 1200 px pesa 58. Es el LCP de la portada y el de la ficha. Pide
+    decidir qué variante sube el cargador —y si sube varias con `srcset`—, cambiar el
+    `contentType` clavado en `image/jpeg`, y volver a subir lo que ya está.
 
 ### Bloque 3. Decisiones que no toma un script
 
