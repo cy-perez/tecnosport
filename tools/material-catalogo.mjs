@@ -91,10 +91,41 @@ const ANCHOS_WEB = [1200, 800, 600, 480];
  * defecto que esto viene a corregir, y en silencio.
  */
 function variantePara(id, rutaMaestra) {
+  return variantesPara(id, rutaMaestra)[0] ?? null;
+}
+
+/**
+ * Todas las variantes web de una toma, de mayor a menor ancho.
+ *
+ * <p>**La escalera no es la misma para todas las tomas, y eso es dato.** El procesamiento del
+ * estudio no amplía: de los 33 productos del catálogo, catorce tienen hasta 2000, seis llegan a
+ * 1200, tres solo tienen 600 y 480, y uno solo tiene 480. Lo que existe se mira en disco; no hay
+ * una lista fija que valga para todos.
+ *
+ * <p>El tope sigue siendo 1200 (ADR-0056): la ficha no llega a 700 px y mandar 2000 es pagar ancho
+ * de banda por píxeles que nadie ve.
+ */
+function variantesPara(id, rutaMaestra) {
+  const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
+  return ANCHOS_WEB.map((ancho) => ({
+    ruta: join(ESTUDIO, id, String(ancho), `${base}.avif`),
+    ancho,
+    contentType: "image/avif",
+  })).filter((v) => existsSync(v.ruta));
+}
+
+/**
+ * El JPEG del mayor ancho publicable, para los previsualizadores de enlaces.
+ *
+ * <p>WhatsApp y Facebook no negocian formatos: leen la URL del `og:image` tal cual y con AVIF no
+ * muestran nada. El estudio produce el JPEG de cada ancho al lado del AVIF, así que esto no cuesta
+ * procesamiento — solo un objeto más en el bucket por imagen.
+ */
+function vistaPreviaPara(id, rutaMaestra) {
   const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
   for (const ancho of ANCHOS_WEB) {
-    const ruta = join(ESTUDIO, id, String(ancho), `${base}.avif`);
-    if (existsSync(ruta)) return { ruta, ancho, contentType: "image/avif" };
+    const ruta = join(ESTUDIO, id, String(ancho), `${base}.jpg`);
+    if (existsSync(ruta)) return { ruta, ancho, contentType: "image/jpeg" };
   }
   return null;
 }
@@ -116,7 +147,12 @@ function fotos(id) {
     .sort()
     .map((f) => ({ ruta: join(carpeta, f), ...dimensionesJpeg(join(carpeta, f)) }))
     .filter((f) => f.ancho)
-    .map((f) => ({ ...f, web: variantePara(id, f.ruta) }));
+    .map((f) => ({
+      ...f,
+      web: variantePara(id, f.ruta),
+      variantes: variantesPara(id, f.ruta),
+      vistaPrevia: vistaPreviaPara(id, f.ruta),
+    }));
   const lados = archivos.map((f) => Math.min(f.ancho, f.alto));
   return { archivos, ladoMenor: lados.length ? Math.min(...lados) : 0 };
 }
