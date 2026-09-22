@@ -7775,6 +7775,66 @@ con lo que ya había, así que el sitio sirve hoy exactamente lo mismo que ayer,
 una entrada. Hasta correr `node tools/cargar-catalogo.mjs --rehacer-imagenes --escribir` los
 211 KiB de la portada siguen ahí y no hay nada que comparar.
 
+## Las variantes existen de verdad, y el número que las justificaba bajó (2026-09-22)
+
+`ADR-0057` dejó el código hecho y el número sin medir, porque las variantes no existían todavía en
+el bucket. Ya existen: **29 principales y 62 de galería rehechas**, 277 filas de `variante_imagen`
+y 91 imágenes con su JPEG de vista previa.
+
+### El número
+
+En `image-delivery-insight` de la portada, **211 KiB → 88 KiB**. Y los 88 que quedan no son de esto:
+la auditoría ya **no lista ninguna de las cuatro tarjetas**, solo el hero —`hero.webp`, 130 kB,
+1200×900 en un hueco de 665×499—, que es un archivo estático del repositorio y nunca pasó por las
+variantes. Queda como deuda 27.
+
+En la ficha pide 24 KiB y ahí no hay nada que arreglar: señala una principal de 800 px en un hueco
+de 380, pero con la densidad que emula Lighthouse (~1,75) el navegador necesita unos 665 y elige 800
+porque es el siguiente ancho que existe. **La auditoría compara en píxeles CSS e ignora la
+densidad.** Decirlo importa: es justo el tipo de cifra que invita a "optimizar" algo que ya está
+bien.
+
+**De los puntajes no se dice nada**, y es deliberado: la portada dio 65 con las muestras separadas
+25 puntos. El propio arnés avisa de que una diferencia menor que eso es ruido, y los bytes no
+dependen de la máquina.
+
+### Dónde estaba el catálogo, que no era donde este documento daba a entender
+
+Al ir a rehacer las imágenes contra el ambiente desplegado apareció esto: **la base de dev tenía
+cuatro productos, y eran los de ficción del sembrador**. El catálogo real —33 productos, 115
+imágenes— vive en la **base local**, y sus fotos en el bucket de dev, porque un `bootRun` local usa
+el bucket real (`docs/07`). O sea que el cargador se ha corrido siempre contra `localhost`, que es
+su valor por omisión, y las entradas de este documento que dicen "el catálogo real quedó cargado"
+describen una base local.
+
+No es un error de nadie: es una consecuencia del valor por omisión, y no estaba escrita. Ahora sí.
+
+**Y dev ya lo tiene.** El mismo día se cargaron allí los 25 publicables, en BORRADOR y con
+existencia 0 —los valores por omisión del cargador—, con sus escaleras completas: la galería de
+`samsung-galaxy-s25-ultra-256gb` devuelve `[480, 800, 1200]` y su JPEG de vista previa. Dev pasó de
+cuatro productos de ficción a 29.
+
+Dos consecuencias que conviene tener presentes:
+
+- **El bucket guarda ahora las fotos de los dos ambientes**: 666 objetos donde había 109. Las de
+  local son huérfanas desde el punto de vista de dev y al revés, y el informe de huérfanos no puede
+  distinguirlas de basura real — corre contra una API a la vez. Borrar "lo que sobra" mirando una
+  sola de las dos se llevaría las fotos vivas de la otra.
+- **Los 25 de dev están en BORRADOR**, así que la vitrina pública de dev sigue mostrando solo los
+  de ficción. Publicarlos es una decisión de negocio, no un paso de esta carga.
+
+### Dos defectos que solo aparecen ejecutando
+
+- **`--rehacer-imagenes` reventaba con 409 en el primer producto.** Subía lo nuevo y después
+  borraba lo viejo —para no dejar un producto publicado sin fotos—, y eso funcionaba solo porque
+  cada corrida cambiaba el archivo. Con las variantes el archivo mayor es el mismo que ya está
+  guardado, se manda su mismo hash, y el agregado rechaza el duplicado con razón. Ahora borra la
+  galería antes de volver a subirla; la principal no corre ese riesgo porque se reemplaza en una
+  sola llamada. **La simulación no lo atrapa**: pasa igual con los dos órdenes porque no escribe.
+- **El secreto `admin-clave` termina en un retorno de carro**, y Cloud Run lo inyecta tal cual. La
+  clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
+  Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7883,14 +7943,17 @@ El orden no es negociable: cada uno alimenta al siguiente.
     únicos números que se afirman sin reservas son los bytes: −9 kB en la portada, −4 en legales.
     Ver la entrada de arriba.
 
-23. ~~**La portada carga cuatro AVIF de 1200 px para huecos de 180.**~~ **El código está hecho el
-    22 de septiembre; el número está sin medir.** Las imágenes se publican en varios anchos y el
-    `srcset` sale de ellos (`ADR-0057`). Lo que falta no es código: **las variantes todavía no
-    existen en el bucket**. La V60 le dio a cada imagen una variante única con lo que ya había, así
-    que hoy el sitio sirve exactamente lo que servía; los anchos de verdad llegan al correr
-    `node tools/cargar-catalogo.mjs --rehacer-imagenes --escribir`. Hasta entonces los 211 KiB
-    siguen ahí, y la comparación con `--etiqueta antes/despues` en la misma sesión no tiene qué
-    comparar.
+23. ~~**La portada carga cuatro AVIF de 1200 px para huecos de 180.**~~ **Cerrada y medida el 22
+    de septiembre: 211 KiB → 88 KiB**, y los 88 que quedan no son de este problema. Las 91 imágenes
+    del catálogo se volvieron a subir con sus escaleras —29 principales y 62 de galería, 277 filas
+    de `variante_imagen`— y en `image-delivery-insight` de la portada **las cuatro tarjetas
+    desaparecieron de la lista**. Lo único que sigue señalado es el hero, que es un archivo
+    estático de `public/` y nunca fue parte de esto: ver la deuda 27.
+
+    En la ficha la auditoría todavía pide 24 KiB, y ahí **no hay nada que arreglar**: señala una
+    principal de 800 px en un hueco de 380, pero con la densidad de pantalla que emula Lighthouse
+    (~1,75) el navegador necesita unos 665 y elige 800 porque es el siguiente ancho que existe. La
+    auditoría compara en píxeles CSS e ignora la densidad; el navegador está haciendo lo correcto.
 
 24. ~~**El informe de huérfanos es ciego a las variantes de la imagen principal.**~~ **Abierta y
     cerrada el 22 de septiembre.** La ficha del panel devolvía `imagenPrincipalUrl` —una sola URL—
@@ -7919,6 +7982,14 @@ El orden no es negociable: cada uno alimenta al siguiente.
     un registro escrito en local. El archivo **no está versionado**, así que tampoco hay historial
     del que recuperarlo. **Cómo comprobarlo:** abrir `catalogo/cargados.json` y buscar un campo que
     nombre el ambiente; mientras no exista, la deuda sigue.
+
+27. **El hero de la portada pesa 130 kB y se pinta en un hueco de 665×499.** Es
+    `public/imagenes/portada/hero.webp`, 1200×900, y es **lo único** que sigue señalando
+    `image-delivery-insight` en esa pantalla: 88 de los 88 KiB. No es una imagen de producto, así
+    que no pasa por las variantes ni por el `IMAGE_LOADER` —lleva `disableOptimizedSrcset` a
+    propósito—; es un archivo del repositorio. La salida es recortarlo a los anchos que se pintan y
+    ofrecerlos, o simplemente guardar uno más pequeño. **Cómo comprobarlo:** `image-delivery-insight`
+    en `apps/web/lighthouse/<etiqueta>/portada.json`; mientras el item sea `hero.webp`, sigue.
 
 ### Bloque 3. Decisiones que no toma un script
 
