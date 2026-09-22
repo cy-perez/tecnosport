@@ -7835,6 +7835,52 @@ Dos consecuencias que conviene tener presentes:
   clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
   Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
 
+## El hero de la portada, y por qué un solo archivo no cerraba esto (2026-09-22)
+
+Cerró la deuda 27, que era el único item que le quedaba a `image-delivery-insight` en la portada.
+Se midió tres veces porque las dos primeras no bastaron, y el camino corrige una cuenta que este
+documento venía haciendo mal.
+
+### Las tres medidas
+
+| qué se sirvió | bytes | los que sobran |
+|---|---|---|
+| un archivo de 1200, el que estaba | 130.000 | 90.077 |
+| un archivo de 1000, reencodificado desde `hero.jpg` | 73.444 | 40.965 |
+| la escalera de 480/800/1200, que elige 800 | 53.744 | 16.838 |
+
+**Un archivo único no cierra esto por bien dimensionado que esté**, y esa es la lección. La
+auditoría compara contra el ancho que el **dispositivo** necesita —665×499, que son los 380 px CSS
+del hueco por la densidad 1,75 que emula Lighthouse—, no contra el ancho en CSS. Cualquier archivo
+único sobra en las pantallas de densidad baja o falta en las de densidad alta; el que acierta en
+una, falla en la otra.
+
+### Lo que hacía parecer cara la escalera era un comentario
+
+`cargador-de-imagenes.ts` decía, en su Javadoc, que el hero de la portada era el ejemplo de imagen
+**sin** `loaderParams`, y de ahí salió la estimación de que darle `srcset` exigía tocar el cargador
+o abandonar `NgOptimizedImage`. No exigía ninguna de las dos: `loaderParams` no es exclusivo de las
+imágenes de producto. Las de producto las manda la API y las del hero son archivos del repositorio,
+pero llegan al mismo sitio por el mismo camino. La escalera son tres archivos, una constante con
+sus URL y quitar el `disableOptimizedSrcset` que estaba ahí justamente porque no había escalera.
+
+El comentario queda corregido, porque es el que induce el error.
+
+### Lo que sigue señalado, y no es un defecto
+
+Quedan 16.838 bytes marcados: el navegador necesita 665 y elige 800, que es el siguiente ancho que
+existe. Es **el mismo fenómeno que la deuda 23 ya documentó y descartó** en la ficha. Añadir un
+peldaño de 672 sería afinar contra el dispositivo que emula Lighthouse, no contra los que compran.
+
+### Dos cosas menores que quedaron dichas
+
+- `hero.jpg` **no era un archivo muerto**: es la misma foto (RMS 3,4 contra el WebP viejo) y es la
+  maestra de la que salen los tres anchos. Reencodificar desde ella evita acumular pérdida sobre un
+  WebP que ya la tenía.
+- El `sizes` nuevo vive en `core/imagenes/tamanos-de-imagen.ts`, con los otros dos literales que la
+  regla dura #2 admite, y con la cuenta escrita al lado: desde tableta la imagen es media rejilla de
+  `--ancho-max`, (1200 − 48 − 64) / 2 = 544.
+
 ## Sistecrédito declarado en dev, y una variable que estaba puesta a mano (2026-09-22)
 
 Avanza el punto 11, que no era código: el mínimo del crédito estaba confirmado —50.000— y
@@ -8107,7 +8153,11 @@ El orden no es negociable: cada uno alimenta al siguiente.
     o una contra dev. Comprobado contra los dos: `--rehacer-imagenes` propone 29 principales en
     local y 25 en dev, cada uno con los suyos.
 
-27. **El hero de la portada pesa 130 kB y se pinta en un hueco de 665×499.** Es
+27. ~~**El hero de la portada pesa 130 kB y se pinta en un hueco de 665×499.**~~ **Cerrada el 22
+    de septiembre, y con una escalera, no con un archivo mejor dimensionado**: el navegador
+    descarga 53.744 bytes en vez de 130.000. Lo que sigue señalado —16.838— es el mismo caso que
+    la deuda 23 descartó en la ficha: se necesitan 665 y existe 800. Ver la entrada de arriba.
+    Enunciado original: «El hero de la portada pesa 130 kB y se pinta en un hueco de 665×499.» Es
     `public/imagenes/portada/hero.webp`, 1200×900, y es **lo único** que sigue señalando
     `image-delivery-insight` en esa pantalla: 88 de los 88 KiB. No es una imagen de producto, así
     que no pasa por las variantes ni por el `IMAGE_LOADER` —lleva `disableOptimizedSrcset` a
