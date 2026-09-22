@@ -7188,6 +7188,22 @@ Lo que había que corregir no era el límite sino la forma de pedir la sesión: 
 cuando el token vive quince minutos. Queda anotado para la próxima: pedirlo una vez, cachearlo, y
 pasárselo a las herramientas por `TS_TOKEN_ADMIN` — nunca por `argv`.
 
+### Los cuatro que se venden al costo, cargados sin salir a la vitrina
+
+De los 25 publicables que daba el cruce, 21 ya estaban: **los cuatro que faltaban eran exactamente
+los cuatro que dejan 5 % o menos sobre la venta** —JBL Flip 7 y Lenovo Tab Plus en cero, Tab One
+en 2 %, JBL Grip en 3 %—. Que la única carga pendiente fuera justo la que exigía una decisión no
+es casualidad: el filtro del margen los venía apartando de cada pasada anterior.
+
+Decidido: **entran en BORRADOR y no salen a la vitrina.** Cargados con existencia 0 —el número
+sale de contar la bodega, no de un script (`adr/0049`, `adr/0050`)— y con sus tres tomas de
+galería cada uno, que subieron en la misma pasada. Comprobado por los dos lados: el panel los da
+en `BORRADOR` y la ficha pública responde **404** para los cuatro slugs.
+
+El catálogo queda en 29 productos: 13 publicados y 16 en borrador, con 62 tomas de galería que
+cuadran una a una con los objetos del bucket. Lo que falta para publicar esos cuatro no es
+trabajo: es el precio, y ese se renegocia con el proveedor o no se venden.
+
 ### El informe de huérfanos, por fin corrido
 
 `ADR-0052` dejó anotado que una subida firmada y no confirmada deja un objeto sin reclamar, y las
@@ -7244,10 +7260,11 @@ El orden no es negociable: cada uno alimenta al siguiente.
    de 13 a 25 entradas.
 5. ~~**Rellenar las galerías.**~~ **Hecho el 21 de septiembre**: 36 tomas, tres por cada uno de
    los doce, comprobadas contra el bucket y contra la API.
-6. **Cargar lo que falta.** El cruce del 21 de septiembre da **25 publicables**, 4 de ellos con
-   medidas de empaque y los otros 21 solo con recogida en el punto (`adr/0046`). De la lista del
-   proveedor quedan **71 sin rastro en el catálogo**. Es el único paso del bloque que sigue
-   abierto, y depende del punto 9: cuatro de esos publicables se venden al costo.
+6. ~~**Cargar lo que falta.**~~ **Hecho el 21 de septiembre**: de los 25 publicables ya estaban
+   21, y los 4 que faltaban resultaron ser exactamente los cuatro que se venden al costo. Se
+   cargaron **en BORRADOR** por decisión del punto 9, con existencia 0. De la lista del proveedor
+   siguen 71 sin material para publicar, que no es una carga pendiente sino fotos y precios que
+   no existen.
 7. ~~**Correr `npm run huerfanos` contra dev.**~~ **Hecho el 21 de septiembre, y con eso la
    decisión tomada**: 18 objetos sin reclamar, 5,31 MiB, todos `principal-` de las cargas del 19 y
    el 20. No pagan cambiar la forma de las keys; se deja como está y se vuelve a medir con el
@@ -7259,9 +7276,11 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Bloque 3. Decisiones que no toma un script
 
-9. **Los cuatro publicables que dejan 5 % o menos sobre la venta**, medidos el 21 de septiembre:
-   JBL Flip 7 (0 %), Lenovo Tab Plus 11" (0 %), Lenovo Tab One 7" (2 %) y JBL Grip (3 %).
-   Publicarlos a ese precio es trabajar gratis. Se cargan en BORRADOR hasta que alguien diga que sí.
+9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
+   Tab Plus 11" (0 %), Lenovo Tab One 7" (2 %) y JBL Grip (3 %)—. **Decidido el 21 de septiembre:
+   entran en BORRADOR y no salen a la vitrina.** Están cargados, con sus tres tomas cada uno y
+   existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
+   ese se renegocia con el proveedor o no se venden.
 10. **La existencia inventada de 5** que llevan los doce primeros en dev.
 11. **`SISTECREDITO_MONTO_MINIMO` sigue sin dato.** Es para la asesora: las dos cifras públicas que
     se encontraron se contradicen, lo que confirma que varía por comercio. Falla cerrado a
