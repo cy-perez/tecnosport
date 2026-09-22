@@ -7870,9 +7870,17 @@ cambio que no tenía nada que ver.
 ### Y por qué la clave del panel no servía, que resultó ser lo mismo
 
 La clave de `admin-clave` en Secret Manager **no autenticaba** contra dev, ni con esa cuenta ni con
-la del valor por omisión. La causa está escrita en el Javadoc de `SembradorAdmin` y es la misma
-deriva de arriba vista desde otro lado: **crea el `ADMIN` solo si no existe ninguno con ese correo,
-y nunca actualiza uno que ya existe.** Busca por correo, así que cuando `ADMIN_CORREO` pasó de
+la del valor por omisión. **Y la mitad de la causa ya estaba escrita cinco entradas más arriba, en
+este mismo documento**: ese secreto termina en un retorno de carro y la clave real incluye ese byte,
+así que leerlo con un `.strip()` da 401 y parece una credencial equivocada. Ya había costado tres
+intentos en su día; volvió a costar otros dos hoy, por no releer lo que estaba dicho. Apuntarlo aquí
+no bastó, y probablemente no baste nunca: el dato tendría que vivir donde vive el secreto.
+
+La otra mitad —por qué cargar una clave nueva en el secreto no arreglaba nada— está en el Javadoc de
+`SembradorAdmin`, y es la misma deriva de arriba vista desde otro lado: **crea el `ADMIN` solo si no
+existe ninguno con ese correo, y nunca actualiza uno que ya existe.** Con el hash viejo guardado —el
+de una clave que lleva un byte que nadie puede teclear en un formulario— la cuenta quedaba
+inservible y el único camino era reemplazar la fila. Busca por correo, así que cuando `ADMIN_CORREO` pasó de
 `admin@tecnosport.co` a `contacto@tecnosport.co`, el siguiente arranque no encontró ese buzón y
 creó un **segundo** usuario; y la clave de cada uno quedó congelada en la que tenía `ADMIN_CLAVE` el
 día en que nació. Cambiar el secreto después no hace nada.
