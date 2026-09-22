@@ -7835,6 +7835,52 @@ Dos consecuencias que conviene tener presentes:
   clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
   Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
 
+## Sistecrédito declarado en dev, y una variable que estaba puesta a mano (2026-09-22)
+
+Avanza el punto 11, que no era código: el mínimo del crédito estaba confirmado —50.000— y
+`application.yml` lo deja sin valor por omisión a propósito, pero **`infra/envs/dev/main.tf` no
+declaraba una sola variable `SISTECREDITO_*`**. El método estaba escrito y apagado, y no había
+forma de encenderlo.
+
+### Tres cosas que hubo que decidir y quedan escritas
+
+- **Las tres credenciales son secretas, `store-id` y `vendor-id` incluidos.** Parecen
+  identificadores y no lo son en la práctica: esta cuenta solo tiene credenciales productivas —no
+  hay ambiente de pruebas, lo confirmó la asesora el 20 de septiembre— así que las tres juntas
+  abren un crédito a nombre de una persona de verdad.
+- **Encender el sandbox no evita la llamada real.** `ConfiguracionSistecredito` construye el
+  `SistecreditoClient` en cuanto `habilitado` es `true`, y apunta a `api.credinet.co` también desde
+  dev; `sandboxActivo` solo viaja al caso de uso. El freno lo sostiene el perfil: `dev` está en la
+  lista blanca, y un despliegue sin perfil no arranca con el sandbox encendido.
+- **La URL de confirmación no se puede derivar de `module.api.url`.** Sería el módulo refiriéndose
+  a sí mismo y Terraform lo rechaza como ciclo, así que va por `dominio_publico_api`, que se llena
+  después del primer apply igual que `dominio_publico_web`. Si se queda vacía, el valor por omisión
+  apunta a `localhost` y la notificación no llega a ninguna parte — que es justo lo que las pruebas
+  contra dev vienen a comprobar.
+
+### Y lo que encontró el plan, que no lo buscaba nadie
+
+`ADMIN_CORREO` estaba fijado **a mano en el servicio de Cloud Run** —`contacto@tecnosport.co`— y no
+en la configuración. El primer `terraform apply` que tocara el servicio lo habría borrado, el
+arranque habría vuelto al valor por omisión de `application.yml` —`admin@tecnosport.co`— y la cuenta
+con la que se entra al panel de dev habría dejado de ser la que es. Queda declarado. **Lo que la
+infraestructura no describe, el siguiente apply lo deshace**, y esto lo destapó un `plan` de un
+cambio que no tenía nada que ver.
+
+De paso deja una pregunta abierta que no es de este trabajo: la clave de `admin-clave` en Secret
+Manager **no autentica** contra dev, ni con esa cuenta ni con la del valor por omisión. O el secreto
+es anterior a un cambio de clave hecho desde el panel, o la siembra no la usó. Mientras no se
+resuelva, las herramientas que necesitan sesión de panel contra dev piden el token a mano.
+
+### Lo que falta para encenderlo
+
+Tres pasos, en este orden, y el primero ya está escrito:
+
+1. `terraform apply` con `sistecredito_listo = false` — crea los tres recipientes y no toca el
+   servicio (medido: 6 recursos nuevos, 0 cambios).
+2. Cargar los tres valores desde `.env.local` con `gcloud secrets versions add`.
+3. `sistecredito_listo = true`, `dominio_publico_api` con la URL del servicio, y volver a aplicar.
+
 ## Los huérfanos del bucket, y que el informe contaba de más (2026-09-22)
 
 Cerró el borrado que la deuda 7 dejó pendiente —"queda pendiente borrarlos a mano alguna vez, que
@@ -8056,7 +8102,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
     `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
     cambiar, así que un despliegue que olvide la variable no arranca con el método encendido. Queda
     **declararla en el despliegue de dev y de producción**, que es lo único que falta para poder
-    encender Sistecrédito.
+    encender Sistecrédito. **Dev quedó escrito el 22 de septiembre** —los tres secretos, el mínimo,
+    el freno de sandbox y la URL de confirmación, detrás de `sistecredito_listo`—; falta cargar los
+    valores y aplicar, y falta producción entera. Ver la entrada de arriba.
 12. ~~**`MetodoPago.ADDI`.**~~ **Cerrada el 22 de septiembre: se sacó del enum** (`V61`). Addi se
     integrará cuando el sitio esté en producción —es la condición que ellos ponen para estudiar la
     activación— y volverá con su propio `ProveedorDePago`, no como un valor suelto apuntando a una
