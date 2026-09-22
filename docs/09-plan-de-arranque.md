@@ -7487,10 +7487,10 @@ Lo que sí sostiene el segundo cambio es el mecanismo: **legales solo recibió e
 porque no tiene franja de novedades, y su evaluación de scripts bajó 145 ms. Esa cifra mide trabajo
 del hilo principal, no el puntaje, y es la que dice que hidratar el pie al cargar costaba justo eso.
 
-> **Corregido unas horas después, en la entrada siguiente:** esos 145 ms quedan **por debajo del
-> piso de 200** que midió el control del mismo build, así que la cifra no demuestra lo que este
-> párrafo le hace decir. La frase se deja como se escribió —este documento es una bitácora— con la
-> corrección encima. Lo pendiente es la deuda 22.
+> **Corregido el mismo día, dos entradas más abajo:** esos 145 ms quedan por debajo del piso de
+> 200 que midió el control del mismo build, y al medir el par como toca —cuatro corridas, orden
+> ABBA— **resultaron ser unos 40**. El efecto existe, la cifra no. La frase se deja como se
+> escribió —este documento es una bitácora— con la corrección encima.
 
 ### Por qué el `@defer` lleva dos disparadores
 
@@ -7583,6 +7583,64 @@ máquina.
 No significa que diferir la hidratación no sirva —el trabajo que se ahorra es real y se ve en el
 código—, significa que **la medición que se citó no lo demuestra**. Para demostrarlo hay que medir
 el par otra vez, con etiquetas, y ver si se repite. Queda anotado en la deuda 22.
+
+## Los 145 ms eran 40, y el experimento que lo dice (2026-09-22)
+
+La deuda 22: la entrada de la hidratación diferida se sostenía en que la evaluación de scripts de
+`legales` bajó 145 ms, y esa cifra quedó por debajo del piso de 200 que midió el control del mismo
+build. Había que medir el par de verdad.
+
+### El experimento, y por qué en orden ABBA
+
+Cuatro corridas, dos parejas, **con el orden invertido en la segunda**: `sin` → `con` → `con` →
+`sin`. Cada una con su build de producción y su etiqueta. El orden no es un adorno: si la máquina
+se va calentando o enfriando durante los veinte minutos que dura esto, medir siempre "sin" primero
+le regala la mejora al segundo. Invirtiendo la segunda pareja, un arrastre monótono empuja a las
+dos en sentidos contrarios y se ve.
+
+Las plantillas se traen de los dos commits con `git checkout <commit> -- <archivos>`, así que lo
+único que cambia entre una corrida y la siguiente son los dos `@defer`.
+
+### Lo que dio
+
+| pantalla | pareja | evaluación de scripts | TBT | peso |
+|---|---|---|---|---|
+| portada | 1 | 903 → 733 (**−170**) | −79 | −9 kB |
+| portada | 2 | 880 → 779 (**−101**) | −52 | −9 kB |
+| legales | 1 | 757 → 713 (**−44**) | −48 | −4 kB |
+| legales | 2 | 783 → 745 (**−38**) | −52 | −4 kB |
+
+**Los 145 ms del pie no existen: son 40.** La cifra que se citó salía de comparar dos corridas de
+sesiones distintas, que es justo lo que el arnés ya no deja hacer. Medido como toca, el `@defer`
+del pie le ahorra a `legales` unos 40 ms de evaluación de scripts, no 145.
+
+**Y el efecto es real, aunque ninguna pareja pueda demostrarlo sola.** Las ocho diferencias de
+tiempo —dos métricas, dos pantallas, dos parejas— van **todas** en el mismo sentido: menos trabajo
+con el `@defer`. Cada una por separado cae dentro del ruido o bajo el piso, y la herramienta lo
+dice; lo que las hace creíbles es que se repitan. Con dos parejas independientes coincidiendo en
+signo, la probabilidad de que sea casualidad es una de cada cuatro —el sentido se esperaba antes
+de medir; a ciegas sería una de cada dos—: no es una demostración, es una consistencia.
+Honestamente, es lo máximo que esta máquina da.
+
+**Lo único que se afirma sin reservas son los bytes**: el paquete inicial baja 9 kB en la portada y
+4 en legales, porque el pie y la franja se van a sus propios chunks. Eso no depende del reloj.
+
+### Lo que queda escrito para la próxima
+
+El cambio se queda, y su justificación es la correcta: **se ejecuta menos JavaScript al cargar**, se
+ve en el código y se ve en los bytes. Lo que no se puede seguir diciendo es "bajó 145 ms".
+
+Y la regla de método: **una sola pareja de corridas no decide un tiempo.** Dos parejas en orden
+invertido, y se mira si el signo se repite. Si no se repite, no hubo cambio.
+
+El experimento se montó a mano la primera vez; ahora es `npm run pareja`, que saca del diff los
+archivos que cambian, alterna el orden, restaura el árbol aunque se corte con Ctrl+C y dice de
+cada métrica si el signo se repitió. Escribirlo destapó dos defectos que solo se ven con datos
+reales: una pareja que **no se movió** contaba como acuerdo —`legales` daba "+2" y "=" en
+rendimiento y el veredicto decía "2/2 en el mismo sentido"—, y la probabilidad de casualidad
+depende de si el sentido se esperaba antes de medir: con dos parejas es una de cada dos a ciegas,
+y una de cada cuatro si había hipótesis. La tabla dice el signo; cuál de las dos cuentas aplica lo
+sabe quien hizo el cambio, no el script.
 
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
@@ -7677,13 +7735,12 @@ El orden no es negociable: cada uno alimenta al siguiente.
     experimento de control: medir el mismo build dos veces desmintió la primera versión de la
     comparación, que cantó cuatro mejoras inexistentes. Ver la entrada de arriba.
 
-22. **La atribución de los 145 ms del pie no está demostrada.** La entrada del 22 de septiembre
-    sostenía la hidratación diferida en que la evaluación de scripts de `legales` bajó 145 ms.
-    Ese número quedó **por debajo del piso de 200 ms** que midió el control del mismo build unas
-    horas después, así que no distingue el cambio del ruido entre corridas. Cómo cerrarla:
-    `--etiqueta sin-defer` y `--etiqueta con-defer` sobre los dos builds, y mirar si se repite.
-    El trabajo que se ahorra es real y se ve en el código; lo que falta es la medición que lo
-    demuestre.
+22. ~~**La atribución de los 145 ms del pie no está demostrada.**~~ **Cerrada el 22 de septiembre,
+    y la cifra era falsa**: medido con cuatro corridas en orden ABBA, el `@defer` del pie le
+    ahorra a `legales` unos **40 ms**, no 145. El efecto existe —las ocho diferencias de tiempo
+    van en el mismo sentido en las dos parejas— pero ninguna pareja sola lo demuestra, y los
+    únicos números que se afirman sin reservas son los bytes: −9 kB en la portada, −4 en legales.
+    Ver la entrada de arriba.
 
 ### Bloque 3. Decisiones que no toma un script
 

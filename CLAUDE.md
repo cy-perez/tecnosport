@@ -114,6 +114,8 @@ npm run contrastes                       WCAG AA de los pares de color, claro y 
 npm run lighthouse                       tres muestras y la mediana; pide docker y bootRun arriba
 npm run lighthouse -- --etiqueta X       guarda la corrida con nombre, para poder compararla
 npm run lighthouse -- --comparar X Y     enfrenta dos corridas guardadas; no mide, no pide nada
+npm run pareja -- --antes A --despues B --prefijo P   ¿la diferencia se repite? (4 corridas, ~20 min)
+npm run pareja -- --solo-resumen P       vuelve a sacar el veredicto de un experimento ya medido
 npm run capas                            ¿alguna dependencia invertida en el frontend?
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run kit                              ¿el kit de marca se regenera igual que como está guardado?
