@@ -4,14 +4,28 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.data.domain.Persistable;
 
+/**
+ * Implementa {@link Persistable} para decirle a Spring Data lo que el {@code @Id} asignado le
+ * oculta: que una entidad recién construida es nueva. Sin esto, {@code save} no puede saberlo —no
+ * hay {@code @Version} ni id generado por la base— y cae en {@code merge}, que antes de insertar
+ * hace su propio {@code SELECT}.
+ *
+ * <p>Se puede afirmar sin más que es nueva porque esta tabla es de solo-agregar: un movimiento no
+ * se modifica nunca, así que la única razón para construir una de estas es escribirla por primera
+ * vez. Quien las lee recibe entidades gestionadas por Hibernate, que no pasan por aquí.
+ */
 @Entity
 @Table(name = "movimiento_inventario")
-public class MovimientoInventarioJpaEntity {
+public class MovimientoInventarioJpaEntity implements Persistable<UUID> {
 
   @Id private UUID id;
+
+  @Transient private final boolean nueva;
 
   @Column(name = "inventario_id", nullable = false)
   private UUID inventarioId;
@@ -33,7 +47,10 @@ public class MovimientoInventarioJpaEntity {
 
   private String motivo;
 
-  protected MovimientoInventarioJpaEntity() {}
+  /** El que usa Hibernate al leer: lo que viene de la base no es nuevo. */
+  protected MovimientoInventarioJpaEntity() {
+    this.nueva = false;
+  }
 
   public MovimientoInventarioJpaEntity(
       UUID id,
@@ -44,6 +61,7 @@ public class MovimientoInventarioJpaEntity {
       Instant expiraEn,
       UUID referenciaId,
       String motivo) {
+    this.nueva = true;
     this.id = id;
     this.inventarioId = inventarioId;
     this.tipo = tipo;
@@ -54,8 +72,14 @@ public class MovimientoInventarioJpaEntity {
     this.motivo = motivo;
   }
 
+  @Override
   public UUID getId() {
     return id;
+  }
+
+  @Override
+  public boolean isNew() {
+    return nueva;
   }
 
   public UUID getInventarioId() {
