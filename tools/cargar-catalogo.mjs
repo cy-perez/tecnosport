@@ -52,6 +52,11 @@
 // El SKU y el slug de cada producto quedan anotados en catalogo/cargados.json, que es lo que
 // permite volver a correr esto sin duplicar nada — y lo que faltaba la primera vez, cuando
 // `jbl-extreme-4` terminó publicado como `jbl-xtreme-4` sin que nada guardara la equivalencia.
+//
+// Ese registro está **indexado por la URL de la API**, porque los ids que guarda son de una base
+// concreta. Un mismo catálogo cargado en local y en dev son dos juegos de ids distintos, y hasta
+// el 22 de septiembre de 2026 el archivo solo podía describir uno: cargar el otro lo reescribía y
+// dejaba al primero sin forma de rehacerse. Ahora conviven.
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -86,6 +91,45 @@ const PUBLICAR = bandera("--publicar");
 const EXISTENCIA = Number.parseInt(valor("--existencia", "0"), 10);
 const MARGEN_MINIMO = Number.parseFloat(valor("--margen-minimo", "0"));
 const REGISTRO = join(CATALOGO, "cargados.json");
+
+/**
+ * El registro, **indexado por la API contra la que se cargó**.
+ *
+ * Hasta el 22 de septiembre de 2026 era un mapa plano de `productoId` y no decía de qué base
+ * hablaba. Como `--api` vale `http://localhost:8080` por omisión, el archivo describia la base
+ * local; el dia que alguien cargo el catalogo en dev, el registro paso a describir dev y
+ * `--rehacer-imagenes` contra local empezo a responder 404 por cada producto. No es hipotetico:
+ * paso ese mismo dia, y el archivo **no esta versionado**, asi que tampoco habia historial del que
+ * recuperarlo.
+ *
+ * Ahora cada ambiente tiene su rama y las dos conviven. El nombre del ambiente es la URL de la API,
+ * porque es exactamente lo que distingue una base de otra desde aqui.
+ */
+function leerRegistroCompleto() {
+  const crudo = leerJson(REGISTRO);
+  if (!crudo) return { version: 2, ambientes: {} };
+  if (crudo.version === 2 && crudo.ambientes) return crudo;
+
+  // Un registro viejo NO se migra solo, y es a proposito: no dice de que ambiente es, asi que
+  // adivinarlo es justo el error que esto viene a cerrar. Se convierte a mano, una vez, diciendo
+  // de donde salio.
+  throw new Error(
+    `El registro ${REGISTRO} tiene el formato viejo, que no dice de que ambiente habla.\n` +
+      "No se migra solo porque adivinarlo es el error que esto cierra: el mismo archivo pudo\n" +
+      "escribirlo una carga contra localhost o una contra dev.\n\n" +
+      "Conviertelo a mano envolviendo su contenido bajo la URL de la API que lo escribio:\n" +
+      '  { "version": 2, "ambientes": { "http://localhost:8080": { ...lo que hay ahora... } } }',
+  );
+}
+
+const registroCompleto = leerRegistroCompleto();
+registroCompleto.ambientes[API] ??= {};
+/** Solo el ambiente de esta corrida. Lo que se lee y se escribe en todo el resto del archivo. */
+const registro = registroCompleto.ambientes[API];
+
+function guardarRegistro() {
+  writeFileSync(REGISTRO, `${JSON.stringify(registroCompleto, null, 2)}\n`, "utf8");
+}
 
 // Las ramas salen temprano en orden fijo, así que `--medir X --publicar-sku Y` publicaba y no
 // medía, sin una palabra. Salir temprano está bien; ignorar en silencio lo que se pidió, no.
@@ -468,7 +512,7 @@ async function cargarUno(producto, catalogos, registro) {
     publicado: PUBLICAR,
     imagenesDeGaleria: enGaleria,
   };
-  writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
+  guardarRegistro();
   return registro[producto.id];
 }
 
@@ -480,7 +524,7 @@ const aPublicar = valores("--publicar-sku");
 // —es el escenario que el orden de `cargarUno` busca a propósito—, y sin esto la corrida grande se
 // llena de `FALLÓ undefined`.
 const aRellenarGaleria = bandera("--galeria-todos")
-  ? Object.values(leerJson(REGISTRO) ?? {})
+  ? Object.values(registro)
       .map((anotado) => anotado.sku)
       .filter(Boolean)
   : valores("--galeria");
@@ -563,8 +607,6 @@ async function medir(peticiones) {
   console.log(`\n${ESCRIBIR ? "corregidas" : "se corregirían"}: ${corregidas}`);
 }
 
-// El registro se lee antes de cualquier rama: publicar también lo escribe, no solo cargar.
-const registro = leerJson(REGISTRO) ?? {};
 
 if (REHACER_IMAGENES) {
   if (!TOKEN) {
@@ -724,8 +766,7 @@ async function rellenarGalerias(skus, registro) {
     }
     if (id && subidasDeEste > 0) {
       registro[id] = { ...registro[id], imagenesDeGaleria: subidasDeEste };
-      writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
-`, "utf8");
+      guardarRegistro();
     }
   }
   console.log(`
@@ -838,8 +879,7 @@ async function rehacerImagenes(registro) {
 
     anotado.imagenesDeGaleria = tomas.length;
     anotado.imagenesRehechasEn = new Date().toISOString();
-    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
-`, "utf8");
+    guardarRegistro();
   }
 
   console.log(
@@ -941,7 +981,7 @@ async function reconciliar(registro) {
       publicado: detalle.estado === "PUBLICADO",
       imagenesDeGaleria: enGaleria,
     };
-    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
+    guardarRegistro();
   }
 
   console.log(
@@ -969,7 +1009,7 @@ async function publicarSkus(skus, registro) {
     const id = Object.keys(registro).find((clave) => registro[clave].sku === sku);
     if (!id || registro[id].publicado) return false;
     registro[id] = { ...registro[id], publicado: true, publicadoEn: new Date().toISOString() };
-    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}\n`, "utf8");
+    guardarRegistro();
     return true;
   };
 
