@@ -21,6 +21,7 @@ public final class Inventario {
   private final UUID id;
   private final UUID varianteId;
   private final List<MovimientoInventario> movimientos;
+  private final List<MovimientoInventario> nuevos = new ArrayList<>();
 
   public Inventario(UUID id, UUID varianteId, List<MovimientoInventario> movimientos) {
     this.id = Objects.requireNonNull(id, "El id del inventario no puede ser nulo.");
@@ -42,6 +43,24 @@ public final class Inventario {
 
   public List<MovimientoInventario> movimientos() {
     return List.copyOf(movimientos);
+  }
+
+  /**
+   * Los movimientos que se le agregaron a <b>esta instancia</b>, que es lo mismo que decir los que
+   * todavía no están guardados: un agregado se reconstruye entero en cada lectura, así que lo que
+   * llegó por el constructor ya existe y lo que se agregó después, no.
+   *
+   * <p>Esto no es un detalle de persistencia colado en el dominio, es la consecuencia de que el
+   * libro sea de solo-agregar: un movimiento no se modifica nunca, así que "cuáles son nuevos" es
+   * una pregunta que el agregado puede responder y que nadie más puede.
+   */
+  public List<MovimientoInventario> movimientosNuevos() {
+    return List.copyOf(nuevos);
+  }
+
+  private void agregar(MovimientoInventario movimiento) {
+    movimientos.add(movimiento);
+    nuevos.add(movimiento);
   }
 
   /** Lo que físicamente hay, sin descontar reservas. */
@@ -91,7 +110,7 @@ public final class Inventario {
             expiraEn,
             null,
             null);
-    movimientos.add(reserva);
+    agregar(reserva);
     return reserva;
   }
 
@@ -104,7 +123,7 @@ public final class Inventario {
     if (reserva.expiraEn() != null && !reserva.expiraEn().isAfter(ahora)) {
       throw new ReservaYaProcesadaException(idReserva);
     }
-    movimientos.add(
+    agregar(
         new MovimientoInventario(
             GeneradorIdentificador.nuevo(),
             TipoMovimientoInventario.SALIDA,
@@ -124,7 +143,7 @@ public final class Inventario {
     if (estaResuelta(idReserva)) {
       throw new ReservaYaProcesadaException(idReserva);
     }
-    movimientos.add(
+    agregar(
         new MovimientoInventario(
             GeneradorIdentificador.nuevo(),
             TipoMovimientoInventario.LIBERACION,
@@ -162,7 +181,7 @@ public final class Inventario {
       throw new ReservaYaProcesadaException(idReserva);
     }
     if (tieneSalida(idReserva)) {
-      movimientos.add(
+      agregar(
           new MovimientoInventario(
               GeneradorIdentificador.nuevo(),
               TipoMovimientoInventario.ENTRADA,
@@ -180,7 +199,7 @@ public final class Inventario {
     if (cantidad <= 0) {
       throw new ExcepcionDeDominio("La cantidad de una entrada debe ser mayor que cero.");
     }
-    movimientos.add(
+    agregar(
         new MovimientoInventario(
             GeneradorIdentificador.nuevo(),
             TipoMovimientoInventario.ENTRADA,
@@ -202,7 +221,7 @@ public final class Inventario {
     if (saldoTotal() + cantidad < 0) {
       throw new ExcepcionDeDominio("El ajuste dejaría el saldo total en negativo.");
     }
-    movimientos.add(
+    agregar(
         new MovimientoInventario(
             GeneradorIdentificador.nuevo(),
             TipoMovimientoInventario.AJUSTE,

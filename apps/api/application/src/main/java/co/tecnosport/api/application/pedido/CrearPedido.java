@@ -31,8 +31,10 @@ import co.tecnosport.api.domain.pedido.TipoEntrega;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -142,6 +144,12 @@ public final class CrearPedido {
     // compra, y fallar después habría dejado existencias comprometidas por nada.
     AutorizacionDatos.exigirAutorizacion(comando.autorizaDatos());
 
+    // Por lo mismo, y además porque el bloque de abajo no sabría qué hacer con una variante
+    // repetida: tomaría dos veces el mismo bloqueo y haría dos reservas separadas sobre el mismo
+    // libro. El agregado lo vuelve a exigir al crearse; aquí se adelanta para no reservar nada.
+    Pedido.exigirVariantesSinRepetir(
+        comando.lineas().stream().map(CrearPedidoComando.LineaComando::varianteId).toList());
+
     // La cotización va antes de la comprobación de contraentrega y no al revés: la tarifa que sale
     // de aquí es la misma que decide si hay recaudo y la que después se congela. Antes eran dos
     // cotizaciones con el mismo cuerpo, y si la segunda volvía sin tarifa el comprador recibía un
@@ -167,10 +175,31 @@ public final class CrearPedido {
     }
     Duration vigenciaReserva = vigenciaReserva(comando.metodoPago());
 
-    List<LineaPedido> lineasCongeladas = new ArrayList<>();
-    for (CrearPedidoComando.LineaComando lineaComando : comando.lineas()) {
-      lineasCongeladas.add(congelarLinea(lineaComando, vigenciaReserva, ahora));
-    }
+    // Los bloqueos se toman en orden de `varianteId` y no en el que mandó el cliente. Cada
+    // `congelarLinea` toma un bloqueo pesimista sobre el libro de su variante y no lo suelta hasta
+    // el commit, así que dos compradores con las mismas variantes en distinto orden —A con [X, Y],
+    // B con [Y, X]— se bloqueaban en cruz: Postgres detectaba el interbloqueo y abortaba uno con
+    // `40P01`, que nadie atrapa y que el comprador veía como un 500 con el pago a un clic. Y era
+    // provocable a propósito, porque el orden del arreglo `lineas` lo elige quien postea.
+    //
+    // Un orden total y estable sobre el recurso que se bloquea es lo que lo hace imposible: dos
+    // transacciones que pidan los mismos libros los piden en la misma secuencia, así que la
+    // segunda espera a la primera en el primero que compartan en vez de esperarse mutuamente.
+    Map<UUID, LineaPedido> congeladasPorVariante = new HashMap<>();
+    comando.lineas().stream()
+        .sorted(Comparator.comparing(CrearPedidoComando.LineaComando::varianteId))
+        .forEach(
+            lineaComando ->
+                congeladasPorVariante.put(
+                    lineaComando.varianteId(),
+                    congelarLinea(lineaComando, vigenciaReserva, ahora)));
+
+    // El pedido conserva el orden del comprador: lo que se ordenó fue la toma de bloqueos, no las
+    // líneas que verá en su comprobante.
+    List<LineaPedido> lineasCongeladas =
+        comando.lineas().stream()
+            .map(lineaComando -> congeladasPorVariante.get(lineaComando.varianteId()))
+            .toList();
 
     int anio = ahora.atZone(ZONA_COLOMBIA).getYear();
     NumeroPedido numeroPedido = repositorioPedidos.siguienteNumero(anio);

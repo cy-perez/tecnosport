@@ -17,8 +17,9 @@ export function opcionesExistencias(repositorio: RepositorioProductosAdmin) {
   return {
     queryKey: CLAVE_EXISTENCIAS,
     queryFn: (): Promise<ExistenciasDelCatalogo> => repositorio.listarExistencias(),
-    // Corto, como el de sin-medir: quien acaba de contar una variante espera ver bajar el número
-    // de descuadradas al volver al panel.
+    // Corto, como el de sin-medir: quien acaba de contar una variante espera ver el saldo nuevo
+    // al volver al panel. (Decía "el número de descuadradas", que es una cifra que `ADR-0050`
+    // eliminó junto con la columna.)
     staleTime: 5_000,
   };
 }

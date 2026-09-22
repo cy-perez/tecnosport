@@ -36,6 +36,7 @@ import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../../domain/repositorio-productos-admin.puerto';
+import { esperarSinViolaciones } from '../../../../../../testing/axe';
 import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
@@ -369,22 +370,34 @@ describe('EditarProductoAdminPage', () => {
       ]);
     });
 
-    it('sin completar los textos alternativos, el botón de subir queda deshabilitado', async () => {
-      await renderPagina(new RepositorioProductosAdminFalso());
+    /**
+     * El botón sigue vivo y dice qué falta, en vez de deshabilitarse. Un `<button disabled>` sale
+     * del orden de tabulación: quien navega con teclado no lo encuentra y nada le explica por qué
+     * no pasa nada. Es el criterio que marcas, medidas y existencias ya tenían escrito, y que esta
+     * pantalla contradecía en sus tres formularios.
+     */
+    it('sin completar los textos alternativos, subir dice qué falta y no sube nada', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
       await screen.findByDisplayValue('Morral urbano');
 
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
         target: { files: [archivoValido()] },
       });
-      await vi.waitFor(() =>
-        expect(
-          (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
-        ).toBe(true),
-      );
+      const boton = screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement;
+      expect(boton.disabled).toBe(false);
+
+      fireEvent.click(boton);
+
+      expect(
+        await screen.findByText('Falta el archivo o alguno de los dos textos alternativos.'),
+      ).toBeTruthy();
+      expect(repositorio.llamadasSubirImagen).toEqual([]);
     });
 
-    it('con un tipo de archivo no soportado, muestra un error y no ofrece subirlo', async () => {
-      await renderPagina(new RepositorioProductosAdminFalso());
+    it('con un tipo de archivo no soportado, muestra un error y no sube nada', async () => {
+      const repositorio = new RepositorioProductosAdminFalso();
+      await renderPagina(repositorio);
       await screen.findByDisplayValue('Morral urbano');
 
       fireEvent.change(screen.getByLabelText('Selecciona una imagen (JPEG, PNG o WebP)'), {
@@ -395,9 +408,9 @@ describe('EditarProductoAdminPage', () => {
       expect(
         screen.getByText('Ese tipo de archivo no está soportado. Usa JPEG, PNG o WebP.'),
       ).toBeTruthy();
-      expect(
-        (screen.getByRole('button', { name: 'Subir imagen' }) as HTMLButtonElement).disabled,
-      ).toBe(true);
+      // Y pulsarlo no sube nada: el botón está vivo, la guarda está en el manejador.
+      fireEvent.click(screen.getByRole('button', { name: 'Subir imagen' }));
+      expect(repositorio.llamadasSubirImagen).toEqual([]);
     });
 
     it('con un error del servidor al subir, muestra el mensaje genérico', async () => {
@@ -700,5 +713,14 @@ describe('EditarProductoAdminPage', () => {
         await screen.findByText('No se pudo agregar la imagen. Intenta de nuevo.'),
       ).toBeTruthy();
     });
+  });
+
+  // La pantalla con la galería, las dos subidas y los botones de reordenar tampoco tenía ninguna
+  // comprobación de axe, y es la que más ARIA escribe a mano de todo el panel.
+  it('no tiene violaciones de accesibilidad', async () => {
+    const { container } = await renderPagina(new RepositorioProductosAdminFalso());
+    await screen.findByDisplayValue('Morral urbano');
+
+    await esperarSinViolaciones(container);
   });
 });

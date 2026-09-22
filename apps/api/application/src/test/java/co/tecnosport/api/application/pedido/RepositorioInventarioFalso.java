@@ -2,6 +2,7 @@ package co.tecnosport.api.application.pedido;
 
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.domain.inventario.Inventario;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 final class RepositorioInventarioFalso implements RepositorioInventario {
 
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
+  private final List<UUID> ordenDeConsultas = new ArrayList<>();
   private int consultasConBloqueo;
 
   void conInventario(Inventario inventario) {
@@ -23,7 +25,17 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
   @Override
   public Optional<Inventario> buscarPorVarianteId(UUID varianteId) {
     consultasConBloqueo++;
-    return Optional.ofNullable(porVarianteId.get(varianteId));
+    ordenDeConsultas.add(varianteId);
+    return Optional.ofNullable(porVarianteId.get(varianteId))
+        .map(RepositorioInventarioFalso::reconstituido);
+  }
+
+  /**
+   * En qué orden se pidieron los libros. Cada uno toma un bloqueo pesimista en producción, así que
+   * este orden es el que decide si dos compradores con las mismas variantes pueden abrazarse.
+   */
+  List<UUID> ordenDeConsultas() {
+    return List.copyOf(ordenDeConsultas);
   }
 
   /**
@@ -34,9 +46,15 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
     return consultasConBloqueo;
   }
 
+  /** Abre el libro si no existe, como hace el adaptador real de forma idempotente. */
+  @Override
+  public Inventario abrirLibroConBloqueo(UUID varianteId) {
+    return reconstituido(porVarianteId.computeIfAbsent(varianteId, Inventario::crear));
+  }
+
   @Override
   public void guardar(Inventario inventario) {
-    porVarianteId.put(inventario.varianteId(), inventario);
+    porVarianteId.put(inventario.varianteId(), reconstituido(inventario));
   }
 
   /** No lo usa esta prueba: el listado de existencias tiene la suya. */
@@ -47,6 +65,19 @@ final class RepositorioInventarioFalso implements RepositorioInventario {
 
   @Override
   public List<Inventario> buscarPorVarianteIds(Collection<UUID> varianteIds) {
-    return varianteIds.stream().map(porVarianteId::get).filter(Objects::nonNull).toList();
+    return varianteIds.stream()
+        .map(porVarianteId::get)
+        .filter(Objects::nonNull)
+        .map(RepositorioInventarioFalso::reconstituido)
+        .toList();
+  }
+
+  /**
+   * Cada lectura devuelve un agregado nuevo, igual que {@code RepositorioInventarioJpa} al
+   * reconstruirlo desde sus filas. Devolver la instancia guardada hacía que una mutación sin {@code
+   * guardar} se viera igual que una guardada, y eso en producción es sobreventa.
+   */
+  private static Inventario reconstituido(Inventario inventario) {
+    return new Inventario(inventario.id(), inventario.varianteId(), inventario.movimientos());
   }
 }

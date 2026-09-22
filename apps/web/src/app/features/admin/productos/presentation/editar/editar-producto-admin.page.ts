@@ -15,6 +15,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { usarIdiomaActivo } from '../../../../../core/i18n/traductor';
 import { usarOpcionesFiltro } from '../../../../catalogo/application/listar-opciones-filtro.consulta';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -75,6 +76,7 @@ export class EditarProductoAdminPage {
   private readonly mutacionQuitarDeGaleria = usarQuitarImagenDeGaleriaAdmin();
   private readonly mutacionReordenarGaleria = usarReordenarGaleriaAdmin();
   private readonly esNavegador = isPlatformBrowser(inject(PLATFORM_ID));
+  protected readonly idioma = usarIdiomaActivo();
 
   private readonly paramMap = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -114,11 +116,6 @@ export class EditarProductoAdminPage {
   private readonly valorFormulario = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
-  protected readonly formularioInvalido = computed(() => {
-    this.valorFormulario();
-    return this.form.invalid;
-  });
-
   protected readonly enviando = computed(() => this.mutacion.isPending());
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
@@ -149,11 +146,6 @@ export class EditarProductoAdminPage {
   private dimensionesArchivo: { ancho: number; alto: number } | null = null;
   protected readonly errorImagen = signal<string | null>(null);
 
-  protected readonly imagenListaParaSubir = computed(() => {
-    this.valorFormularioImagen();
-    return this.archivoSeleccionado() !== null && !this.formularioImagen.invalid;
-  });
-
   protected readonly subiendoImagen = computed(() => this.mutacionImagen.isPending());
 
   protected readonly topeDeGaleria = TOPE_DE_GALERIA;
@@ -181,6 +173,8 @@ export class EditarProductoAdminPage {
 
   /** Una sola región viva para los dos anuncios; guarda la clave, no el texto. */
   protected readonly aviso = signal<string | null>(null);
+  /** Aparte del de la galeria: son dos secciones distintas y cada acuse se pinta donde paso. */
+  protected readonly avisoImagen = signal<string | null>(null);
 
   /** El id de la imagen cuya fila está preguntando, como en la lista de productos. */
   protected readonly confirmandoQuitar = signal<string | null>(null);
@@ -192,6 +186,8 @@ export class EditarProductoAdminPage {
    */
   private readonly cajaConfirmacion = viewChild<ElementRef<HTMLElement>>('cajaConfirmacion');
   private readonly avisoGaleria = viewChild<ElementRef<HTMLElement>>('avisoGaleria');
+  private readonly avisoImagenPrincipal =
+    viewChild<ElementRef<HTMLElement>>('avisoImagenPrincipal');
   private readonly filas = viewChildren<ElementRef<HTMLElement>>('filaDeGaleria');
 
   protected readonly galeria = computed<readonly ImagenDeGaleriaAdmin[]>(
@@ -199,13 +195,6 @@ export class EditarProductoAdminPage {
   );
 
   protected readonly galeriaLlena = computed(() => this.galeria().length >= TOPE_DE_GALERIA);
-
-  protected readonly imagenDeGaleriaListaParaSubir = computed(() => {
-    this.valorFormularioGaleria();
-    return (
-      this.archivoDeGaleria() !== null && !this.formularioGaleria.invalid && !this.galeriaLlena()
-    );
-  });
 
   protected readonly agregandoAGaleria = computed(() => this.mutacionGaleria.isPending());
   protected readonly quitandoDeGaleria = computed(() => this.mutacionQuitarDeGaleria.isPending());
@@ -270,6 +259,10 @@ export class EditarProductoAdminPage {
   protected enviar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      // Se dice qué falta en vez de deshabilitar el botón: un `<button disabled>` sale del orden
+      // de tabulación, así que quien borre el nombre no encuentra "Guardar" en ninguna parte y
+      // nada le explica por qué. Mismo criterio que marcas, medidas y existencias.
+      this.error.set(this.transloco.translate('admin.productos.editar.faltanCampos'));
       return;
     }
     this.error.set(null);
@@ -387,6 +380,9 @@ export class EditarProductoAdminPage {
     const archivo = this.archivoDeGaleria();
     if (!archivo || !this.dimensionesGaleria || this.formularioGaleria.invalid) {
       this.formularioGaleria.markAllAsTouched();
+      this.errorGaleria.set(
+        this.transloco.translate('admin.productos.editar.galeria.faltanCampos'),
+      );
       return;
     }
     this.errorGaleria.set(null);
@@ -544,9 +540,13 @@ export class EditarProductoAdminPage {
     const archivo = this.archivoSeleccionado();
     if (!archivo || !this.dimensionesArchivo || this.formularioImagen.invalid) {
       this.formularioImagen.markAllAsTouched();
+      this.errorImagen.set(
+        this.transloco.translate('admin.productos.editar.imagenPrincipal.faltanCampos'),
+      );
       return;
     }
     this.errorImagen.set(null);
+    this.avisoImagen.set(null);
 
     const { altEs, altEn } = this.formularioImagen.getRawValue();
     this.mutacionImagen.mutate(
@@ -564,6 +564,8 @@ export class EditarProductoAdminPage {
           this.archivoSeleccionado.set(null);
           this.dimensionesArchivo = null;
           this.formularioImagen.reset();
+          this.avisoImagen.set('admin.productos.editar.imagenPrincipal.subida');
+          this.enfocarDespuesDePintar(() => this.avisoImagenPrincipal()?.nativeElement);
         },
         onError: () =>
           this.errorImagen.set(

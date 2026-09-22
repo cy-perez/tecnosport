@@ -2,9 +2,11 @@ package co.tecnosport.api.domain.inventario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +18,37 @@ class InventarioTest {
     Inventario inventario = Inventario.crear(UUID.randomUUID());
     inventario.registrarEntrada(cantidad, "siembra de prueba", AHORA);
     return inventario;
+  }
+
+  /**
+   * Un agregado reconstruido no tiene movimientos nuevos, y los que se le agreguen después sí lo
+   * son. Es lo que permite que el repositorio escriba solo lo que falta por escribir en vez de
+   * reescribir el histórico entero.
+   */
+  @Test
+  void loQueLlegaPorElConstructorNoEsNuevoYLoQueSeAgregaDespuesSi() {
+    Inventario reconstruido =
+        new Inventario(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            List.of(
+                new MovimientoInventario(
+                    UUID.randomUUID(),
+                    TipoMovimientoInventario.ENTRADA,
+                    5,
+                    AHORA,
+                    null,
+                    null,
+                    "siembra")));
+
+    assertEquals(1, reconstruido.movimientos().size());
+    assertTrue(reconstruido.movimientosNuevos().isEmpty());
+
+    reconstruido.registrarAjuste(-1, "conteo", AHORA);
+
+    assertEquals(2, reconstruido.movimientos().size());
+    assertEquals(1, reconstruido.movimientosNuevos().size());
+    assertEquals(TipoMovimientoInventario.AJUSTE, reconstruido.movimientosNuevos().get(0).tipo());
   }
 
   @Test
