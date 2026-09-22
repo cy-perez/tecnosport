@@ -454,6 +454,15 @@
             "type" : "array"
           },
           "metodoPago" : {
+            "enum" : [
+              "TARJETA",
+              "PSE",
+              "NEQUI",
+              "BANCOLOMBIA",
+              "SISTECREDITO",
+              "TRANSFERENCIA_MANUAL",
+              "CONTRAENTREGA"
+            ],
             "type" : "string"
           },
           "nombre" : {
@@ -1322,6 +1331,15 @@
             "type" : "array"
           },
           "metodoPago" : {
+            "enum" : [
+              "TARJETA",
+              "PSE",
+              "NEQUI",
+              "BANCOLOMBIA",
+              "SISTECREDITO",
+              "TRANSFERENCIA_MANUAL",
+              "CONTRAENTREGA"
+            ],
             "type" : "string"
           },
           "numeroPedido" : {
@@ -1393,6 +1411,15 @@
             "type" : "array"
           },
           "metodoPago" : {
+            "enum" : [
+              "TARJETA",
+              "PSE",
+              "NEQUI",
+              "BANCOLOMBIA",
+              "SISTECREDITO",
+              "TRANSFERENCIA_MANUAL",
+              "CONTRAENTREGA"
+            ],
             "type" : "string"
           },
           "numeroPedido" : {
@@ -5106,6 +5133,15 @@
               "*/*" : {
                 "schema" : {
                   "items" : {
+                    "enum" : [
+                      "TARJETA",
+                      "PSE",
+                      "NEQUI",
+                      "BANCOLOMBIA",
+                      "SISTECREDITO",
+                      "TRANSFERENCIA_MANUAL",
+                      "CONTRAENTREGA"
+                    ],
                     "type" : "string"
                   },
                   "type" : "array"

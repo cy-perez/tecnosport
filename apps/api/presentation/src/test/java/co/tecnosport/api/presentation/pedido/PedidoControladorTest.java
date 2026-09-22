@@ -148,7 +148,7 @@ class PedidoControladorTest {
       Variante variante,
       String tipoEntrega,
       CrearPedidoRequest.DireccionRequest direccion,
-      String metodoPago) {
+      MetodoPago metodoPago) {
     return new CrearPedidoRequest(
         "cliente@tecnosport.co",
         "Ana Pérez",
@@ -164,7 +164,7 @@ class PedidoControladorTest {
   void crearPedidoDevuelveElPedidoCreadoEnPagoPendiente() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
 
     mockMvc
         .perform(
@@ -187,7 +187,7 @@ class PedidoControladorTest {
   void crearPedidoConLimiteDeIntentosExcedidoDevuelve429() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
     limitadorDeIntentos.denegarSiempre();
 
     mockMvc
@@ -203,7 +203,8 @@ class PedidoControladorTest {
   void crearPedidoConTransferenciaManualDevuelveLosDatosDeLaCuenta() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "TRANSFERENCIA_MANUAL");
+        solicitud(
+            variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.TRANSFERENCIA_MANUAL);
 
     mockMvc
         .perform(
@@ -223,7 +224,7 @@ class PedidoControladorTest {
   void crearPedidoConMetodoDistintoDeTransferenciaNoTraeDatosDeCuenta() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
 
     mockMvc
         .perform(
@@ -238,7 +239,7 @@ class PedidoControladorTest {
   void crearPedidoContraentregaQuedaConfirmadoSinPagoPendiente() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "CONTRAENTREGA");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.CONTRAENTREGA);
 
     mockMvc
         .perform(
@@ -260,7 +261,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoDeRetiroEnPuntoSinDireccion() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, "TARJETA");
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
 
     mockMvc
         .perform(
@@ -290,7 +291,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoConTipoEntregaInvalidoDevuelve422() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "TELETRANSPORTE", null, "TARJETA");
+    CrearPedidoRequest cuerpo = solicitud(variante, "TELETRANSPORTE", null, MetodoPago.TARJETA);
 
     mockMvc
         .perform(
@@ -316,7 +317,7 @@ class PedidoControladorTest {
             List.of(new CrearPedidoRequest.LineaRequest(variante.id(), 1)),
             "RETIRO_EN_PUNTO",
             null,
-            "TARJETA",
+            MetodoPago.TARJETA,
             false);
 
     mockMvc
@@ -348,7 +349,7 @@ class PedidoControladorTest {
   @Test
   void elPedidoCreadoDevuelveElContactoNormalizado() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, "TARJETA");
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
 
     mockMvc
         .perform(
@@ -370,7 +371,7 @@ class PedidoControladorTest {
             List.of(new CrearPedidoRequest.LineaRequest(java.util.UUID.randomUUID(), 1)),
             "RETIRO_EN_PUNTO",
             null,
-            "TARJETA",
+            MetodoPago.TARJETA,
             true);
 
     mockMvc
@@ -385,7 +386,7 @@ class PedidoControladorTest {
   @Test
   void crearPedidoConExistenciaInsuficienteDevuelve409() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(1);
-    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, "TARJETA");
+    CrearPedidoRequest cuerpo = solicitud(variante, "RETIRO_EN_PUNTO", null, MetodoPago.TARJETA);
 
     mockMvc
         .perform(
@@ -400,7 +401,7 @@ class PedidoControladorTest {
   void crearPedidoContraentregaDevuelve409SiNadieRecaudaAhi() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_BOGOTA, "CONTRAENTREGA");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_BOGOTA, MetodoPago.CONTRAENTREGA);
 
     mockMvc
         .perform(
@@ -492,7 +493,7 @@ class PedidoControladorTest {
   void reintentarPagoDeUnPedidoQueNoEstaEnPagoFallidoDevuelve422() throws Exception {
     Variante variante = publicarProductoConVarianteYExistencia(5);
     CrearPedidoRequest cuerpo =
-        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, "NEQUI");
+        solicitud(variante, "ENVIO_A_DOMICILIO", DIRECCION_MEDELLIN, MetodoPago.NEQUI);
     String respuesta =
         mockMvc
             .perform(

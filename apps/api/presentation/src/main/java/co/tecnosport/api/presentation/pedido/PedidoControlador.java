@@ -19,6 +19,7 @@ import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -77,7 +78,7 @@ public class PedidoControlador {
   }
 
   @PostMapping("/metodos-de-pago-disponibles")
-  public List<String> metodosDePagoDisponibles(
+  public List<MetodoPago> metodosDePagoDisponibles(
       @RequestBody MetodosDePagoDisponiblesRequest cuerpo) {
     MetodosDePagoDisponiblesComando comando =
         new MetodosDePagoDisponiblesComando(
@@ -90,7 +91,13 @@ public class PedidoControlador {
             cuerpo.correo(),
             TipoEntrega.valueOf(cuerpo.tipoEntrega()),
             cuerpo.direccion() == null ? null : aDireccion(cuerpo.direccion()));
-    return metodosDePagoDisponibles.ejecutar(comando).stream().map(Enum::name).sorted().toList();
+    // Por NOMBRE y no por el orden del enum. Es lo que hacia `map(Enum::name).sorted()` cuando
+    // la lista viajaba como cadenas, y este es el orden en que el checkout pinta los botones:
+    // dejar que Jackson serialice el enum en su orden de declaracion los habria movido de sitio
+    // sin que nadie lo pidiera.
+    return metodosDePagoDisponibles.ejecutar(comando).stream()
+        .sorted(Comparator.comparing(Enum::name))
+        .toList();
   }
 
   @PostMapping("/{id}/reintentar-pago")
@@ -121,7 +128,7 @@ public class PedidoControlador {
         lineas,
         TipoEntrega.valueOf(cuerpo.tipoEntrega()),
         direccion,
-        MetodoPago.valueOf(cuerpo.metodoPago()),
+        cuerpo.metodoPago(),
         cuerpo.autorizaDatos(),
         direccionIp);
   }

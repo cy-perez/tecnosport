@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.pedido.dto;
 
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +15,7 @@ public record PedidoRespuesta(
     List<LineaPedidoRespuesta> lineas,
     String tipoEntrega,
     DireccionRespuesta direccion,
-    String metodoPago,
+    MetodoPago metodoPago,
     String estado,
     /** Solo las líneas. */
     DineroRespuesta subtotal,

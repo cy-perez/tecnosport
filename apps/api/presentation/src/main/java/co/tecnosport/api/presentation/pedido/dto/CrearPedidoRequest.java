@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.pedido.dto;
 
+import co.tecnosport.api.domain.pedido.MetodoPago;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ public record CrearPedidoRequest(
     List<LineaRequest> lineas,
     String tipoEntrega,
     DireccionRequest direccion,
-    String metodoPago,
+    MetodoPago metodoPago,
     boolean autorizaDatos) {
 
   public CrearPedidoRequest {
@@ -42,7 +43,12 @@ public record CrearPedidoRequest(
     if (tipoEntrega == null || tipoEntrega.isBlank()) {
       throw new IllegalArgumentException("tipoEntrega es obligatorio.");
     }
-    if (metodoPago == null || metodoPago.isBlank()) {
+    // Tipado, no `String`: el OpenAPI publica el enum y el cliente generado lo restringe
+    // (docs/09, deuda 25). La guarda sigue haciendo falta y cambia de forma: un valor que el enum
+    // no tiene lo rechaza Jackson antes de llegar aqui, pero un componente de tipo referencia que
+    // FALTE llega en nulo sin reventar nada (apps/api/CLAUDE.md). Los dos casos salen igual, 422
+    // HTTP_MESSAGE_NOT_READABLE, que es como ya responde cualquier otro enum de esta API.
+    if (metodoPago == null) {
       throw new IllegalArgumentException("metodoPago es obligatorio.");
     }
   }

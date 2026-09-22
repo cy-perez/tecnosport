@@ -1403,7 +1403,8 @@ export interface components {
             correo?: string;
             direccion?: components["schemas"]["DireccionRequest"];
             lineas?: components["schemas"]["LineaRequest"][];
-            metodoPago?: string;
+            /** @enum {string} */
+            metodoPago?: "TARJETA" | "PSE" | "NEQUI" | "BANCOLOMBIA" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
             nombre?: string;
             telefono?: string;
             tipoEntrega?: string;
@@ -1737,7 +1738,8 @@ export interface components {
             /** Format: uuid */
             id?: string;
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
-            metodoPago?: string;
+            /** @enum {string} */
+            metodoPago?: "TARJETA" | "PSE" | "NEQUI" | "BANCOLOMBIA" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
             numeroPedido?: string;
             plazoDeEntrega?: components["schemas"]["PlazoDeEntregaRespuesta"];
             subtotal?: components["schemas"]["DineroRespuesta"];
@@ -1761,7 +1763,8 @@ export interface components {
             /** Format: uuid */
             id?: string;
             lineas?: components["schemas"]["LineaPedidoRespuesta"][];
-            metodoPago?: string;
+            /** @enum {string} */
+            metodoPago?: "TARJETA" | "PSE" | "NEQUI" | "BANCOLOMBIA" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA";
             numeroPedido?: string;
             retractos?: components["schemas"]["RetractoPublicoRespuesta"][];
             subtotal?: components["schemas"]["DineroRespuesta"];
@@ -4073,7 +4076,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": string[];
+                    "*/*": ("TARJETA" | "PSE" | "NEQUI" | "BANCOLOMBIA" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA")[];
                 };
             };
         };
