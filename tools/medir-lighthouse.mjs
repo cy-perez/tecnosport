@@ -11,6 +11,10 @@
 // Este archivo levanta ese proxy y, antes de medir nada, **comprueba que la ficha cargó de verdad**.
 // Un arnés que puede producir una medición inválida en silencio no sirve de arnés.
 //
+// Por la misma razón mide **tres veces cada pantalla y se queda con la mediana**, y dice al lado
+// cuánto se separaron las muestras: una sola corrida del mismo build llegó a moverse 22 puntos de
+// rendimiento, de modo que una cifra suelta puede inventar una regresión o tapar una real.
+//
 // Requiere PostgreSQL y la API arriba:
 //   docker compose up -d && (cd apps/api && gradlew.bat bootRun)
 import { execSync } from "node:child_process";
@@ -28,6 +32,32 @@ const BASE = `http://localhost:${PUERTO_PROXY}`;
 
 const sinBuild = process.argv.includes("--sin-build");
 const procesos = [];
+
+// Se resuelve dentro de `main`, no aquí: un throw en el nivel del módulo sale como volcado de
+// pila, y el resto de los errores de este arnés salen como una frase que se entiende.
+let MUESTRAS = 3;
+
+/**
+ * Tres muestras por pantalla, y la mediana.
+ *
+ * <p>Con una sola muestra el arnés puede inventar una regresión o taparla: entre dos corridas del
+ * mismo build, cinco minutos aparte, el rendimiento de la portada se movió 22 puntos
+ * (docs/09-plan-de-arranque.md). Un instrumento con esa dispersión no permite decir si un cambio
+ * mejoró algo, que es para lo único que se mide.
+ *
+ * <p>Se deja bajar a 1 con `--muestras 1` para probar el arnés mismo —levanta proxy, SSR y Chrome
+ * igual—, no para medir. Cualquier cifra de una sola muestra no significa nada.
+ */
+function leerMuestras() {
+  const posicion = process.argv.indexOf("--muestras");
+  if (posicion === -1) return 3;
+  const pedido = process.argv[posicion + 1];
+  const valor = Number(pedido);
+  if (!Number.isInteger(valor) || valor < 1) {
+    throw new Error(`--muestras pide un entero de 1 en adelante, no '${pedido}'.`);
+  }
+  return valor;
+}
 
 function log(mensaje) {
   console.log(mensaje);
@@ -138,26 +168,63 @@ async function exigirQueLaFichaCargue(url) {
   }
 }
 
-async function medir(url, etiqueta, puertoChrome, lighthouse) {
+async function medirUnaVez(url, puertoChrome, lighthouse) {
   const resultado = await lighthouse(
     url,
     { port: puertoChrome, output: "json", logLevel: "error" },
     undefined,
   );
   const c = resultado.lhr.categories;
-  const fila = {
-    pantalla: etiqueta,
-    rendimiento: Math.round(c.performance.score * 100),
-    accesibilidad: Math.round(c.accessibility.score * 100),
-    "buenas practicas": Math.round(c["best-practices"].score * 100),
-    seo: Math.round(c.seo.score * 100),
+  return {
+    puntajes: {
+      rendimiento: Math.round(c.performance.score * 100),
+      accesibilidad: Math.round(c.accessibility.score * 100),
+      "buenas practicas": Math.round(c["best-practices"].score * 100),
+      seo: Math.round(c.seo.score * 100),
+    },
+    informe: resultado.report,
   };
-  const destino = join(RAIZ, "apps/web/lighthouse", `${etiqueta}.json`);
-  writeFileSync(destino, resultado.report);
-  return fila;
+}
+
+/**
+ * Mide una pantalla `MUESTRAS` veces y devuelve la mediana, con la dispersión al lado.
+ *
+ * <p>La mediana se elige **por rendimiento**, que es la única categoría que se mueve entre
+ * corridas del mismo build: accesibilidad, buenas prácticas y SEO salen del DOM y no del reloj. Y
+ * se guarda esa corrida **entera** en vez de un promedio por categoría, para que el informe del
+ * disco corresponda a una medición que ocurrió de verdad: un promedio deja auditorías que no
+ * cuadran con sus propios puntajes, y quien lo abra dentro de un mes no tiene cómo saberlo.
+ *
+ * <p>La dispersión viaja con la cifra a propósito. Una mediana sola vuelve a ser un número que
+ * parece firme; con el rango delante, quien la lee sabe cuánto pesa.
+ */
+async function medir(url, etiqueta, puertoChrome, lighthouse) {
+  const corridas = [];
+  for (let muestra = 1; muestra <= MUESTRAS; muestra++) {
+    log(`  muestra ${muestra}/${MUESTRAS}`);
+    corridas.push(await medirUnaVez(url, puertoChrome, lighthouse));
+  }
+
+  const ordenadas = [...corridas].sort((a, b) => a.puntajes.rendimiento - b.puntajes.rendimiento);
+  const mediana = ordenadas[Math.floor((ordenadas.length - 1) / 2)];
+  const peor = ordenadas[0].puntajes.rendimiento;
+  const mejor = ordenadas.at(-1).puntajes.rendimiento;
+
+  writeFileSync(join(RAIZ, "apps/web/lighthouse", `${etiqueta}.json`), mediana.informe);
+
+  return {
+    fila: { pantalla: etiqueta, ...mediana.puntajes, "rendimiento (peor-mejor)": `${peor}-${mejor}` },
+    detalle: {
+      pantalla: etiqueta,
+      dispersion: mejor - peor,
+      muestras: corridas.map((corrida) => corrida.puntajes),
+    },
+  };
 }
 
 async function main() {
+  MUESTRAS = leerMuestras();
+
   if (!(await responde(`http://localhost:${PUERTO_API}/api/v1/salud`))) {
     throw new Error(
       `La API no responde en :${PUERTO_API}. Levanta 'docker compose up -d' y 'gradlew.bat bootRun' antes.`,
@@ -188,10 +255,13 @@ async function main() {
   const chrome = await launch({ chromeFlags: ["--headless=new"] });
 
   const filas = [];
+  const detalles = [];
   try {
     for (const [url, etiqueta] of pantallas) {
-      log(`> midiendo ${etiqueta}`);
-      filas.push(await medir(url, etiqueta, chrome.port, lighthouse));
+      log(`> midiendo ${etiqueta} (${MUESTRAS} ${MUESTRAS === 1 ? "muestra" : "muestras"})`);
+      const medicion = await medir(url, etiqueta, chrome.port, lighthouse);
+      filas.push(medicion.fila);
+      detalles.push(medicion.detalle);
     }
   } finally {
     await chrome.kill();
@@ -199,12 +269,33 @@ async function main() {
     for (const proceso of procesos) proceso.kill();
   }
 
-  console.table(filas);
-  log("\nInformes completos en apps/web/lighthouse/");
-  log(
-    "Recuerda: mientras las imagenes de la siembra salgan de picsum.photos, el rendimiento de la\n" +
-      "ficha no significa nada (docs/09-plan-de-arranque.md).",
+  // Las muestras crudas quedan en disco: la dispersión de hoy es el único dato con el que la
+  // medición de mañana se puede comparar sin volver a discutir si el arnés es confiable.
+  const resumen = { fecha: new Date().toISOString(), muestras: MUESTRAS, pantallas: detalles };
+  writeFileSync(
+    join(RAIZ, "apps/web/lighthouse", "resumen.json"),
+    `${JSON.stringify(resumen, null, 2)}\n`,
   );
+
+  console.table(filas);
+  log("\nInformes de la corrida mediana en apps/web/lighthouse/, las muestras en resumen.json");
+
+  if (MUESTRAS === 1) {
+    log(
+      "\nCorriste con --muestras 1: esto prueba el arnes, no mide el sitio. El rendimiento de una\n" +
+        "sola muestra se ha movido hasta 22 puntos entre corridas del mismo build.",
+    );
+    return;
+  }
+
+  const inestables = detalles.filter((detalle) => detalle.dispersion >= 10);
+  for (const { pantalla, dispersion } of inestables) {
+    log(
+      `\nAviso: en ${pantalla} las muestras de rendimiento se separan ${dispersion} puntos. La\n` +
+        `mediana sigue siendo la mejor cifra disponible, pero una diferencia menor que eso frente a\n` +
+        `otra medicion no es una mejora ni una regresion: es ruido.`,
+    );
+  }
 }
 
 main().catch((error) => {

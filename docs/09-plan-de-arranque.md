@@ -7355,6 +7355,73 @@ y que nadie tocó en todo esto, dio 70, 89, 69 y 86 en cuatro corridas. Por eso 
 mira el LCP y no el número grande. La deuda 17 —tres corridas y la mediana— pasa de "estaría bien"
 a "hace falta".
 
+## El arnés deja de creerle a una sola muestra (2026-09-22)
+
+La deuda 17, abierta la noche anterior por la propia medición que la volvió urgente: `legales` —una
+pantalla sin una sola imagen, que nadie había tocado— dio 70, 89, 69 y 86 en cuatro corridas del
+mismo build. Con esa dispersión, una cifra suelta puede inventar una regresión o tapar una real, y
+no hay forma de distinguir las dos cosas mirando el número.
+
+`npm run lighthouse` mide ahora **tres veces cada pantalla y se queda con la mediana**. La corrida
+completa pasó de minuto y medio a **3 min 14 s** con `--sin-build`, que es el precio y es barato.
+
+### Tres decisiones, y la razón de cada una
+
+1. **La mediana se elige por rendimiento, no por categoría.** Accesibilidad, buenas prácticas y SEO
+   salen del DOM y no del reloj: dieron 100 en las nueve corridas sin moverse un punto. La única
+   que oscila es la que depende del tiempo.
+2. **Se guarda la corrida mediana entera, no un promedio.** Un promedio por categoría produce un
+   informe cuyas auditorías no cuadran con sus propios puntajes —el LCP de una corrida junto al
+   rendimiento de otra— y quien lo abra dentro de un mes no tiene cómo saberlo. Lo que queda en
+   `apps/web/lighthouse/portada.json` es una medición que ocurrió de verdad.
+3. **La dispersión viaja pegada a la cifra.** Una mediana sola vuelve a parecer firme. La tabla
+   trae una columna `rendimiento (peor-mejor)`, las muestras crudas quedan en
+   `apps/web/lighthouse/resumen.json`, y si dos muestras de una pantalla se separan 10 puntos o
+   más el arnés lo dice con todas sus letras: una diferencia menor que eso frente a otra medición
+   no es una mejora ni una regresión, es ruido.
+
+`--muestras 1` existe para probar el arnés mismo —levanta proxy, SSR y Chrome igual— y avisa en la
+salida que eso no es una medición. Un `--muestras 0` o `--muestras dos` sale con una frase y código
+1 **antes** de preguntar por la API: si se validara después, un flag mal escrito se reportaría como
+"la API no responde", que es justo la clase de mentira que este archivo existe para evitar.
+
+De paso se cayó el aviso final sobre `picsum.photos`, que llevaba desde el 21 diciendo que el
+rendimiento de la ficha no significaba nada. Dejó de ser cierto cuando se cerró la deuda 18.
+
+### Lo que dijo la primera corrida con tres muestras
+
+| pantalla | rendimiento (mediana) | muestras | LCP | FCP |
+|---|---|---|---|---|
+| portada | **84** | 82 · 84 · 88 | 3,3 s | 2,5 s |
+| ficha | **66** | 66 · 66 · 67 | 5,7 s | 5,0 s |
+| legales | **69** | 69 · 69 · 69 | 5,1 s | 4,7 s |
+
+Accesibilidad, buenas prácticas y SEO: 100 en las tres pantallas y en las nueve corridas.
+
+**Se comprobó que la selección no miente**, que era lo único que podía fallar en silencio: para
+cada pantalla, el puntaje de rendimiento del informe que quedó en disco es exactamente la mediana
+de las tres muestras de `resumen.json`. 84 con muestras 82-84-88, 66 con 66-66-67, 69 con 69-69-69.
+
+### Y la cosa incómoda, que hay que decir antes de que alguien lea la tabla al derecho
+
+**La dispersión que motivó la deuda no era la que este arreglo ataca.** Las tres muestras
+consecutivas de hoy se separaron 6, 1 y 0 puntos. Pero la portada, **con este mismo build y sin un
+solo cambio**, dio 57 anoche a las 23:35 y 84 hoy a las 00:33 — el FCP pasó de 5,4 s a 2,5 s. Lo
+que se mueve 22 puntos no son las corridas seguidas: es el estado de la máquina entre una sesión y
+otra.
+
+Así que sería falso escribir que ahora los números se pueden comparar de un día para otro. Lo que
+la mediana arregla es más modesto y sigue valiendo la pena: la cifra de una sesión ya no depende
+del azar de una sola corrida, y el arnés dice cuánto se movieron sus propias muestras en vez de
+callarlo. **La regla de uso que sale de ahí: se mide antes y después del cambio en la misma
+sesión, seguido. Una tabla de otro día no es una línea base.**
+
+Eso reordena lo que se puede afirmar de la deuda 19: `Reduce unused JavaScript` sigue pidiendo
+450-600 ms en las tres pantallas —eso no se movió entre sesiones, porque no depende del reloj— pero
+los 1,3-1,5 s de *render delay* de la portada anotados el 21 se midieron en el estado malo de la
+máquina. El trabajo sigue siendo real; la cifra que lo justifica hay que volver a tomarla al lado
+del cambio.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7411,9 +7478,13 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Lo que esta medición dejó abierto, y es nuevo
 
-17. **El arnés de Lighthouse toma una sola muestra.** Con la varianza medida —22 puntos entre dos
-    corridas del mismo build, cinco minutos aparte— una muestra puede inventar una regresión o
-    taparla. Tres corridas y la mediana.
+17. ~~**El arnés de Lighthouse toma una sola muestra.**~~ **Cerrada el 22 de septiembre**: tres
+    muestras por pantalla, la mediana por rendimiento, la corrida mediana entera guardada en
+    disco, la dispersión en la tabla y las muestras crudas en `resumen.json`. Lo que la corrida
+    destapó —y no estaba en el enunciado— es que los 22 puntos **no** se mueven entre corridas
+    seguidas (6, 1 y 0 puntos hoy) sino entre sesiones: la misma portada dio 57 anoche y 84 hoy
+    sin un cambio de por medio. Por eso la regla de uso quedó escrita: se compara dentro de la
+    misma sesión, nunca contra una tabla de otro día. Ver la entrada de arriba.
 18. ~~**El sitio sirve las fotos maestras.**~~ **Cerrada el 21 de septiembre**: las 91 imágenes
     pasaron de 22,01 MiB a 2,18 —un 90,1 %— y el LCP de la ficha bajó tres segundos. Deja dos
     cosas dichas: la portada **no** mejoró porque su LCP nunca fue una imagen, y no se puso
@@ -7422,7 +7493,10 @@ El orden no es negociable: cada uno alimenta al siguiente.
 19. **La portada tarda 1,3–1,5 s en pintar su elemento más grande, y es texto.** Lo que queda ahí
     es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
     portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
-    y no tiene nada que ver con las fotos.
+    y no tiene nada que ver con las fotos. **Matizado el 22 de septiembre**: el pedido de
+    JavaScript se sostiene —450-600 ms con el arnés ya arreglado—, pero los 1,3-1,5 s son de una
+    sesión en la que la máquina estaba cargada; la portada acaba de medir 2,5 s de FCP y 3,3 s de
+    LCP. La cifra que justifique el trabajo se toma al lado del cambio, no de aquí.
 
 20. **`url_webp` guarda la URL de un AVIF.** La columna nació esperando una conversión que iba a
     hacer el asistente de captura de la Fase 5 y que nunca existió; siempre apuntó al mismo objeto
