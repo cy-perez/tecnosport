@@ -7487,6 +7487,11 @@ Lo que sí sostiene el segundo cambio es el mecanismo: **legales solo recibió e
 porque no tiene franja de novedades, y su evaluación de scripts bajó 145 ms. Esa cifra mide trabajo
 del hilo principal, no el puntaje, y es la que dice que hidratar el pie al cargar costaba justo eso.
 
+> **Corregido unas horas después, en la entrada siguiente:** esos 145 ms quedan **por debajo del
+> piso de 200** que midió el control del mismo build, así que la cifra no demuestra lo que este
+> párrafo le hace decir. La frase se deja como se escribió —este documento es una bitácora— con la
+> corrección encima. Lo pendiente es la deuda 22.
+
 ### Por qué el `@defer` lleva dos disparadores
 
 `@defer (on immediate; hydrate on viewport)`. El de hidratación solo gobierna el contenido que vino
@@ -7512,6 +7517,72 @@ Para comparar el antes y el después hubo que leer los informes a mano **antes**
 siguiente los pisara: el arnés escribe siempre `<pantalla>.json`. Los puntajes sobreviven en
 `resumen.json`, pero el desglose del hilo principal —que es lo único que explicó este trabajo— se
 pierde en cada corrida.
+
+## El arnés aprende a comparar, y lo primero que hace es desmentirme (2026-09-22)
+
+La deuda 21: el arnés escribía siempre `<pantalla>.json`, así que la corrida siguiente borraba el
+"antes" antes de que nadie lo leyera. Ahora cada corrida puede llevar nombre y dos corridas
+guardadas se comparan sin volver a medir:
+
+```
+npm run lighthouse -- --etiqueta base
+...se hace el cambio...
+npm run lighthouse -- --etiqueta fuentes
+npm run lighthouse -- --comparar base fuentes     (no necesita API, ni build, ni Chrome)
+```
+
+Se guardan además **siete métricas por muestra** —FCP, LCP, TBT, evaluación de scripts, estilo y
+layout, peso y kB de tipografías—, que es exactamente lo que ayer hubo que rescatar a mano del
+informe grande antes de que se perdiera.
+
+### El experimento de control, y lo que encontró
+
+La primera versión de la comparación marcaba una diferencia como real cuando las bandas de las dos
+corridas no se solapaban. Para comprobarla se midió **el mismo build dos veces**, cinco minutos
+aparte, sin tocar una sola línea. Esto dijo:
+
+| métrica (portada) | uno | dos | cambio | veredicto de la primera versión |
+|---|---|---|---|---|
+| rendimiento | 61 (60-62) | 65 (65-66) | +4 | sí |
+| TBT | 358 (345-391) | 251 (235-251) | −107 | sí |
+| evaluación de scripts | 932 (900-974) | 734 (706-743) | **−198** | **sí** |
+| estilo y layout | 777 (719-891) | 643 (642-661) | −134 | sí |
+
+**Cuatro mejoras cantadas sobre un cambio que no existía.** El motivo es que las tres muestras de
+una corrida son consecutivas: comparten el estado de la máquina, así que su banda mide lo que varía
+en treinta segundos, no lo que varía entre dos corridas separadas por un build. Una herramienta que
+certifica mejoras inventadas es peor que no tener herramienta, porque da una cifra que citar.
+
+### Lo que se hizo con eso
+
+Un **piso por métrica**, y sus cifras son las de ese control —el peor movimiento observado sin
+cambio alguno, redondeado hacia arriba—, no un porcentaje elegido a ojo: 5 puntos de rendimiento,
+10 ms de FCP, 60 de LCP, 110 de TBT, 200 de evaluación de scripts, 140 de estilo y layout. Y la
+columna **ya no dice "sí"** para ninguna métrica de tiempo:
+
+- `no: dentro del ruido` — las bandas se solapan.
+- `no: bajo el piso (N)` — se mueve menos que el mismo build consigo mismo.
+- `quizá: repite el par` — es lo más que se puede decir de un tiempo con una sola pareja de
+  corridas. Este arnés mide un build a la vez, así que no puede intercalar A y B, que es lo único
+  que lo resolvería de verdad.
+- `sí: son bytes` — peso y tipografías no dependen del reloj.
+
+Con el piso puesto, el control del mismo build no afirma **nada** en ninguna de las tres pantallas,
+que es la propiedad que se le pedía. Las cinco ramas del veredicto se comprobaron una por una; las
+dos que un control no puede disparar —"quizá" y "son bytes"— con un resumen inventado a propósito
+en el directorio ignorado.
+
+### Y la corrección que esto obliga, del día anterior
+
+La entrada de la deuda 19 dice que la hidratación diferida del pie se sostiene porque la evaluación
+de scripts de `legales` bajó **145 ms**, y que esa pantalla solo recibió ese cambio. La segunda
+mitad sigue siendo cierta. La primera **no se puede afirmar**: 145 ms está por debajo del piso de
+200 que este control acaba de medir, así que esa cifra no distingue el cambio de un mal rato de la
+máquina.
+
+No significa que diferir la hidratación no sirva —el trabajo que se ahorra es real y se ve en el
+código—, significa que **la medición que se citó no lo demuestra**. Para demostrarlo hay que medir
+el par otra vez, con etiquetas, y ver si se repite. Queda anotado en la deuda 22.
 
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
@@ -7585,8 +7656,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
     22 de septiembre, y con el enunciado corregido**: la auditoría que le daba nombre apunta a
     bytes, y el parse de JavaScript cuesta 12 ms. El tiempo estaba en ejecutar y en pintar, y el
     peso en 486 kB de fuentes sin recortar. Se hicieron las dos cosas —recorte al alfabeto latino
-    (−216 KiB) e hidratación diferida del pie y de las novedades (−145 ms de evaluación de
-    scripts, medidos en legales, que solo recibió el pie)—. Lo que queda abierto de rendimiento ya
+    (−216 KiB) e hidratación diferida del pie y de las novedades—. **Ojo con la cifra de los
+    145 ms** que citaba esta entrada para la hidratación: quedó por debajo del piso medido unas
+    horas después, y por eso hay una deuda 22. Lo que queda abierto de rendimiento ya
     no es esto: es estilo y *layout*, que sigue en torno a 700 ms y no se ha tocado. Ver la
     entrada de arriba. Enunciado original, para que se entienda la corrección: «Lo que queda ahí
     es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
@@ -7599,11 +7671,19 @@ El orden no es negociable: cada uno alimenta al siguiente.
     una migración, el DTO y el contrato generado, así que es un trabajo con su plan, no un
     `sed`. Mientras tanto, lo que engaña es el nombre, no el dato.
 
-21. **El arnés de Lighthouse pisa el informe de la corrida anterior.** Escribe siempre
-    `apps/web/lighthouse/<pantalla>.json`, así que comparar el desglose del hilo principal antes y
-    después de un cambio obliga a leerlo a mano entre las dos corridas — y si se olvida, el
-    "antes" ya no existe. Los puntajes sí sobreviven, en `resumen.json`. Una etiqueta por corrida
-    lo resuelve. Salió de usar el arnés para cerrar la deuda 19, no de una revisión.
+21. ~~**El arnés de Lighthouse pisa el informe de la corrida anterior.**~~ **Cerrada el 22 de
+    septiembre**: `--etiqueta` guarda cada corrida en su carpeta con siete métricas por muestra, y
+    `--comparar a b` las enfrenta sin volver a medir. Lo que la cerró de verdad fue el
+    experimento de control: medir el mismo build dos veces desmintió la primera versión de la
+    comparación, que cantó cuatro mejoras inexistentes. Ver la entrada de arriba.
+
+22. **La atribución de los 145 ms del pie no está demostrada.** La entrada del 22 de septiembre
+    sostenía la hidratación diferida en que la evaluación de scripts de `legales` bajó 145 ms.
+    Ese número quedó **por debajo del piso de 200 ms** que midió el control del mismo build unas
+    horas después, así que no distingue el cambio del ruido entre corridas. Cómo cerrarla:
+    `--etiqueta sin-defer` y `--etiqueta con-defer` sobre los dos builds, y mirar si se repite.
+    El trabajo que se ahorra es real y se ve en el código; lo que falta es la medición que lo
+    demuestre.
 
 ### Bloque 3. Decisiones que no toma un script
 
