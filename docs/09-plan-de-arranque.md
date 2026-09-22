@@ -6996,6 +6996,70 @@ día que el generador dejara de producir uno de los cinco y alguien agregara un 
 total seguiría clavado. Es la misma familia de los tres resúmenes que no cuadraban con sus propias
 filas, encontrados en esta misma revisión y en estas mismas herramientas.
 
+## El contrato deja de vigilarse veinte minutos tarde (2026-09-21)
+
+La primera deuda de la lista de arriba, y **el enunciado estaba mal**. Se escribió "el contrato
+generado no tiene guardián" mirando `tools/verificar.mjs`, que efectivamente no lo mira. Lo que no
+se miró antes de escribirlo fue `.github/workflows/verificar.yml`, donde había un trabajo entero
+dedicado justo a eso: levantar PostgreSQL, arrancar `bootRun`, esperar hasta cinco minutos a que
+respondiera, regenerar `tipos.ts` y exigir que el diff quedara vacío. Existía, funcionaba y había
+atrapado por lo menos una vez lo que tenía que atrapar — el `@NotNull` que al quitarse cambió el
+contrato publicado sin cambiar ninguna validación.
+
+Lo que sí era cierto es más estrecho, y sigue siendo caro: **ese guardián solo vivía en
+integración continua**. O sea que avisaba después del empujón y ya sobre la rama, y mientras tanto
+`npm run verificar` pasaba en verde en la máquina de quien programa con el cliente desactualizado.
+Es palabra por palabra la lección que `ContextoBajoPerfilE2eTest` ya tenía escrita en su javadoc:
+*"el único guardián era el flujo de integración continua, seis minutos después del merge y ya
+sobre `main`"*.
+
+### Por qué vivía ahí: no había OpenAPI que mirar sin arrancar la aplicación
+
+Esa es la raíz, y es la que se movió. El contrato solo existía como respuesta de un servidor vivo,
+así que **cualquier** comprobación necesitaba un servidor vivo. Ahora hay una instantánea guardada,
+`packages/contratos/openapi.json`, y con eso la cadena se parte en dos eslabones que se vigilan por
+separado y sin red:
+
+| Qué se vigila | Quién | Dónde corre | Qué necesita |
+|---|---|---|---|
+| Que la instantánea sea lo que la aplicación sirve | `ContratoOpenApiTest` | `gradlew build` | Docker, como el resto de `bootstrap` |
+| Que `tipos.ts` corresponda a la instantánea | `tools/verificar-contratos.mjs` | `npm run verificar` | Nada; tarda menos de un segundo |
+
+Y el trabajo `contrato` de integración continua se fue, porque ya no comprueba nada que estos dos
+no comprueben antes. Lo que se gana no es el minuto de ejecutor: es que las dos fallan donde se
+escribió el error.
+
+### Tres decisiones del camino, y una que se descartó
+
+**No entró ninguna dependencia.** La primera idea era el plugin de Gradle de springdoc, que genera
+el JSON en el build. Se descartó por dos motivos comprobados en la fuente y no de memoria: su
+última versión es 1.9.0, de junio de 2024, y no declara nada sobre Spring Boot 4; y funciona
+arrancando la aplicación entera, que en este proyecto exige PostgreSQL y la configuración
+validada — o sea, el mismo costo que ya tenía la CI. La prueba usa lo que ya había: `MockMvc`
+sobre el contexto completo, con Testcontainers, igual que `ContextoBajoPerfilE2eTest`.
+
+**MockMvc y no un puerto de verdad.** Con `webEnvironment = RANDOM_PORT`, springdoc escribe en
+`servers` la URL por la que le llegó la petición, con el puerto aleatorio dentro: la instantánea
+cambiaría en cada corrida. Aun con MockMvc, `servers` se quita al normalizar, porque dice dónde
+está desplegada la API y no qué contrato tiene.
+
+**Las llaves se ordenan y los saltos de línea son de Unix.** Lo segundo no es cosmético:
+`DefaultPrettyPrinter` usa por omisión el separador del sistema, así que la misma aplicación
+escribiría CRLF en Windows y LF en integración continua y el guardián fallaría según en qué máquina
+corriera. Es el mismo error que `verificar-kit.mjs` ya había pagado, tres días antes y en el
+archivo de al lado.
+
+### Lo que el primer regenerado destapó, y lo que no
+
+El cliente regenerado desde la instantánea da **1.455 líneas distintas de 4.190**, y ninguna es un
+cambio de contrato: ordenadas, las dos versiones son idénticas línea por línea. Era el orden en que
+springdoc emitía los caminos y los esquemas. Comprobarlo importaba más que el diff: si hubiera
+habido una sola diferencia real, el cliente llevaba días mintiéndole al frontend y nadie lo sabía.
+
+Comprobado rompiendo los dos eslabones a propósito: un campo metido a mano en la instantánea hace
+fallar la prueba de Java, y una línea de más en `tipos.ts` hace fallar el guardián de Node. Los dos
+dicen los dos pasos que hay que correr y en qué orden.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7009,13 +7073,13 @@ volver a comprobarlo**, que es lo único que no caduca.
 
 ### Bloque 1. Código, sin depender de nadie
 
-1. **El contrato generado no tiene guardián.** `packages/contratos/src/tipos.ts` se regenera a mano
-   contra `localhost:8080`, no hay ningún `openapi.json` guardado, y `tools/verificar.mjs` no lo
-   mira. Ya costó una vez en la Fase 7 —cuatro campos nuevos, y "ni el lint ni el build ni las 748
-   pruebas dijeron nada"— y volvió el 21 de septiembre por el otro lado: springdoc publicando
-   `disponible` como opcional, con la tienda entera saliendo agotada el día que ese campo deje de
-   serializarse. Es la más cara de la lista porque **falla en silencio y del lado del comprador**.
-   *Comprobar:* `grep ejecutar tools/verificar.mjs` y `git ls-files | grep openapi`.
+1. ~~**El contrato generado no tiene guardián.**~~ **Enunciado mal y corregido el mismo día: el
+   guardián existía, y vivía entero en integración continua** —el trabajo `contrato` de
+   `verificar.yml`, que levantaba PostgreSQL y `bootRun` para regenerar el cliente y mirar el
+   diff—. La deuda real era más estrecha y no por eso menor: avisaba después del empujón y ya
+   sobre la rama, mientras `npm run verificar` pasaba en verde en local con el cliente viejo.
+   **Cerrada el 21 de septiembre**, con el OpenAPI guardado en el repositorio y un eslabón a cada
+   lado; el trabajo de CI sobró. Ver la entrada de abajo.
 2. **Las clases de Tailwind se comprueban de a una y a mano.** `npm run clases -- <clase>` tiene
    toda la maquinaria pero hay que nombrarle la clase; nadie barre las plantillas. La regla dura #8
    lo declara abierto con todas sus letras: una clase inventada no falla, no hace nada. Pasó con
