@@ -8,6 +8,22 @@ import {
   iconoGarantia,
 } from '../../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
+import { TAMANOS_HERO } from '../../../../../core/imagenes/tamanos-de-imagen';
+import { VarianteDeImagen } from '../../../domain/producto.model';
+
+/**
+ * Los anchos que existen en `public/imagenes/portada/`, como dato y no como patrón.
+ *
+ * `cargadorDeImagenes` resuelve cada ancho del `srcset` buscándolo aquí, que es el mismo mecanismo
+ * de las imágenes de producto —solo que las de producto las manda la API y estas son archivos del
+ * repositorio—. Sin esto el hero no puede tener `srcset`: el cargador devuelve el `src` tal cual
+ * cuando no le llegan variantes, y las siete entradas del `srcset` serían el mismo archivo.
+ */
+const VARIANTES_HERO: readonly VarianteDeImagen[] = [
+  { ancho: 480, url: '/imagenes/portada/hero-480.webp' },
+  { ancho: 800, url: '/imagenes/portada/hero-800.webp' },
+  { ancho: 1200, url: '/imagenes/portada/hero-1200.webp' },
+];
 
 /**
  * La banda de portada: lo primero que ve quien llega.
@@ -51,6 +67,9 @@ import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
 export class TsHero {
   /** El prefijo de idioma de la ruta actual: las rutas del sitio lo llevan siempre. */
   readonly idioma = input.required<string>();
+
+  protected readonly variantesHero = VARIANTES_HERO;
+  protected readonly tamanosHero = TAMANOS_HERO;
 
   protected readonly iconoEnvio = iconoEnvio;
   protected readonly iconoContraentrega = iconoContraentrega;

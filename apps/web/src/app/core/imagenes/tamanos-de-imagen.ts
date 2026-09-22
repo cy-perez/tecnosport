@@ -27,3 +27,14 @@ export const TAMANOS_GALERIA = '(min-width: 1024px) 50vw, 100vw';
  * de la imagen grande que ya está arriba: son cuatro imágenes por ficha.
  */
 export const TAMANOS_MINIATURA = '64px';
+
+/**
+ * La banda de portada: una sola columna en móvil —el ancho de la ventana menos el `px-16` de cada
+ * lado— y media rejilla desde tableta, donde `--ancho-max` topa en 1200 y quedan `px-24` a los
+ * lados más un `gap-64` entre columnas: (1200 − 48 − 64) / 2 = 544.
+ *
+ * Los `vw` del tramo intermedio van por encima del ancho real, que es el lado correcto para
+ * equivocarse: de menos, el navegador elegiría una variante demasiado pequeña y se vería borrosa.
+ */
+export const TAMANOS_HERO =
+  '(min-width: 1200px) 544px, (min-width: 1024px) 46vw, calc(100vw - 32px)';
