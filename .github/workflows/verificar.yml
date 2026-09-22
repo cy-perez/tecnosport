@@ -38,6 +38,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Python y fontTools son para el guardián del kit, que desde el recorte de las tipografías
+      # no solo comprueba que se regeneren igual: mira **dentro** de cada woff2 que el sitio
+      # pueda escribir lo que escribe. Sin fontTools esa comprobación no se puede hacer, y
+      # `verificar-kit.mjs` falla aquí a propósito en vez de saltársela —"no comprobado" no es
+      # "está bien"—. El ejecutor trae `python3`, pero no la librería.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --quiet fonttools brotli
       - run: npm ci
       - run: node tools/verificar.mjs --solo-web
 
