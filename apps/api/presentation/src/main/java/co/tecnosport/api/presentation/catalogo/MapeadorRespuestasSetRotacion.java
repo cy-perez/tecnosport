@@ -17,7 +17,7 @@ public class MapeadorRespuestasSetRotacion {
   public SetRotacionRespuesta aRespuesta(SetRotacion set) {
     List<ImagenRotacionRespuesta> imagenes =
         set.fotogramas().stream()
-            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.url(), f.ancho(), f.alto()))
+            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.ancho(), f.alto()))
             .toList();
     return new SetRotacionRespuesta(
         set.id(),

@@ -1606,7 +1606,6 @@ export interface components {
             orden?: number;
             url?: string;
             urlVistaPrevia?: string;
-            urlWebp?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRespuesta: {
@@ -1618,7 +1617,6 @@ export interface components {
             ancho?: number;
             url?: string;
             urlVistaPrevia?: string;
-            urlWebp?: string;
             variantes?: components["schemas"]["VarianteDeImagenRespuesta"][];
         };
         ImagenRotacionRespuesta: {
@@ -1629,7 +1627,6 @@ export interface components {
             /** Format: int32 */
             orden?: number;
             url?: string;
-            urlWebp?: string;
         };
         IniciarSesionRequest: {
             clave?: string;

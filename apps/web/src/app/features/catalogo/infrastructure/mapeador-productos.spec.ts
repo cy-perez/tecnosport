@@ -10,8 +10,11 @@ describe('mapeador-productos', () => {
       marca: { id: 'm1', nombre: 'TecnoSport' },
       categoria: { nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
       imagenPrincipal: {
-        url: 'https://x/0.jpg',
-        urlWebp: 'https://x/0.webp',
+        url: 'https://x/0-800.avif',
+        variantes: [
+          { ancho: 480, url: 'https://x/0-480.avif' },
+          { ancho: 800, url: 'https://x/0-800.avif' },
+        ],
         ancho: 800,
         alto: 600,
         altEs: 'alt es',
@@ -36,7 +39,10 @@ describe('mapeador-productos', () => {
 
     expect(producto.slug).toBe('camiseta-running');
     expect(producto.marca.nombre).toBe('TecnoSport');
-    expect(producto.imagenPrincipal?.url).toBe('https://x/0.jpg');
+    expect(producto.imagenPrincipal?.url).toBe('https://x/0-800.avif');
+    expect(producto.imagenPrincipal?.variantes.map((variante) => variante.ancho)).toEqual([
+      480, 800,
+    ]);
     expect(producto.rotacion).toBeNull();
     expect(producto.variantes).toHaveLength(1);
     expect(producto.variantes[0].id).toBe('v1');
@@ -59,16 +65,39 @@ describe('mapeador-productos', () => {
 
   // El orden de los fotogramas es la rotación: uno fuera de sitio se ve como un salto al girar.
   // Se garantiza aquí, en la frontera, para que ninguna pantalla tenga que volver a saberlo.
+  /**
+   * El contrato declara `variantes` opcional —en el OpenAPI generado todo lo es— y la API nunca
+   * publica una imagen sin ellas. Si aun así llegara vacía, servir la imagen en su único ancho
+   * conocido es exactamente lo que el sitio hacía antes de que existieran las variantes; no
+   * servirla sería peor.
+   */
+  it('sin variantes en el DTO arma una con el ancho y la URL de la imagen', () => {
+    const producto = aProducto({
+      slug: 'camiseta',
+      imagenPrincipal: {
+        url: 'https://x/unica.avif',
+        ancho: 640,
+        alto: 480,
+        altEs: 'alt es',
+        altEn: 'alt en',
+      },
+    });
+
+    expect(producto.imagenPrincipal?.variantes).toEqual([
+      { ancho: 640, url: 'https://x/unica.avif' },
+    ]);
+  });
+
   it('ordena los fotogramas de la rotación por `orden`, llegue como llegue el arreglo', () => {
     const producto = aProducto({
       slug: 'tenis',
       rotacion: {
         fotogramas: 4,
         imagenes: [
-          { orden: 2, url: 'f2.jpg', urlWebp: 'f2.webp', ancho: 1000, alto: 1000 },
-          { orden: 0, url: 'f0.jpg', urlWebp: 'f0.webp', ancho: 1000, alto: 1000 },
-          { orden: 3, url: 'f3.jpg', urlWebp: 'f3.webp', ancho: 1000, alto: 1000 },
-          { orden: 1, url: 'f1.jpg', urlWebp: 'f1.webp', ancho: 1000, alto: 1000 },
+          { orden: 2, url: 'f2.jpg', ancho: 1000, alto: 1000 },
+          { orden: 0, url: 'f0.jpg', ancho: 1000, alto: 1000 },
+          { orden: 3, url: 'f3.jpg', ancho: 1000, alto: 1000 },
+          { orden: 1, url: 'f1.jpg', ancho: 1000, alto: 1000 },
         ],
       },
     });

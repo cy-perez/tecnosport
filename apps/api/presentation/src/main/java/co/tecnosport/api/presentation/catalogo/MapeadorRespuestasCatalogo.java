@@ -121,9 +121,6 @@ public class MapeadorRespuestasCatalogo {
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
         imagen.url(),
-        // `urlWebp`: el mismo objeto que `url`, como siempre. Se va en cuanto el frontend deje de
-        // leerlo.
-        imagen.url(),
         variantesDe(imagen),
         imagen.urlVistaPrevia().orElse(null),
         imagen.ancho(),
@@ -142,7 +139,7 @@ public class MapeadorRespuestasCatalogo {
   private RotacionRespuesta aRespuesta(SetRotacion setRotacion) {
     List<ImagenRotacionRespuesta> imagenes =
         setRotacion.fotogramas().stream()
-            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.url(), f.ancho(), f.alto()))
+            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.ancho(), f.alto()))
             .toList();
     return new RotacionRespuesta(imagenes.size(), imagenes);
   }

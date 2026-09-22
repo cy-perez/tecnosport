@@ -11,7 +11,6 @@ import java.util.UUID;
 public record ImagenDeGaleriaRespuesta(
     UUID id,
     String url,
-    String urlWebp,
     List<VarianteDeImagenRespuesta> variantes,
     String urlVistaPrevia,
     int ancho,

@@ -980,9 +980,6 @@
           "urlVistaPrevia" : {
             "type" : "string"
           },
-          "urlWebp" : {
-            "type" : "string"
-          },
           "variantes" : {
             "items" : {
               "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
@@ -1014,9 +1011,6 @@
           "urlVistaPrevia" : {
             "type" : "string"
           },
-          "urlWebp" : {
-            "type" : "string"
-          },
           "variantes" : {
             "items" : {
               "$ref" : "#/components/schemas/VarianteDeImagenRespuesta"
@@ -1041,9 +1035,6 @@
             "type" : "integer"
           },
           "url" : {
-            "type" : "string"
-          },
-          "urlWebp" : {
             "type" : "string"
           }
         },

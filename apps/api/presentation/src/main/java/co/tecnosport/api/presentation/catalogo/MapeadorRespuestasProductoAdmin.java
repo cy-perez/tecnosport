@@ -62,8 +62,6 @@ public class MapeadorRespuestasProductoAdmin {
     return new ImagenDeGaleriaRespuesta(
         imagen.id(),
         imagen.url(),
-        // `urlWebp`: el mismo objeto que `url`. Se va en cuanto el frontend deje de leerlo.
-        imagen.url(),
         imagen.variantes().stream()
             .map(v -> new VarianteDeImagenRespuesta(v.ancho(), v.url()))
             .toList(),
