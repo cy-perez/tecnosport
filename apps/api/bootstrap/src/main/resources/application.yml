@@ -149,8 +149,9 @@ tecnosport:
     # EL FRENO DE SEGURIDAD. Sin ambiente de pruebas, este booleano es lo unico que separa una
     # prueba de un credito real a nombre de una persona. Encendido, la pasarela simula el estado
     # de abajo sin cobrarle a nadie — y encendido en produccion despacharia mercancia regalada sin
-    # que nada fallara. ConfiguracionSistecredito se niega a arrancar si esta encendido con
-    # WOMPI_AMBIENTE=produccion.
+    # que nada fallara. ConfiguracionSistecredito se niega a arrancar si esta encendido y el
+    # despliegue no declara un perfil de pruebas (local, dev, e2e o pruebas); sin ningun perfil,
+    # tampoco.
     sandbox-activo: ${SISTECREDITO_SANDBOX_ACTIVO:false}
     sandbox-estado: ${SISTECREDITO_SANDBOX_ESTADO:Approved}
     # TODO (dato de negocio, no lo inventes): SISTECREDITO_MONTO_MINIMO. Es el minimo del credito

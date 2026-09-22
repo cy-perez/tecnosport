@@ -36,6 +36,10 @@
 //                   todo lo que anota el registro. Existe porque las cargas anteriores a esto
 //                   solo subían la imagen principal: había cuatro tomas de estudio por producto y
 //                   a la ficha llegaba una.
+//   --rehacer-imagenes   vuelve a subir la principal y la galería de todo lo que anota el
+//                   registro, con la variante web de hoy. Existe porque las cargas anteriores al
+//                   21 de septiembre de 2026 subían la maestra del estudio —635 kB— y eso es el
+//                   elemento más pesado de la portada y de la ficha.
 //   --reconciliar   anota en el registro lo que el catálogo ya tiene y el registro no sabe.
 //                   `cargados.json` nació el 21 de septiembre y los doce primeros productos
 //                   reales se cargaron el 19: para el registro no existen, así que
@@ -237,18 +241,52 @@ async function todosLosProductos() {
 const TOPE_DE_GALERIA = 8;
 
 /**
+ * Lo que se sube de una toma, que **no es la maestra**.
+ *
+ * La maestra del estudio es un artefacto de archivo: 2000 px y medio megabyte. Hasta el 21 de
+ * septiembre de 2026 era lo que llegaba al bucket, y en la primera medición de Lighthouse que
+ * valió algo resultó ser el elemento más pesado de la portada **y** de la ficha, con 635 kB. La
+ * variante web del mismo fotograma —AVIF, 1200 px— pesa 58.
+ *
+ * **Se niega en vez de caer a la maestra** si la variante no está. Caer sería volver al defecto
+ * que esto corrige, y sin decir nada: la carga terminaría "bien" y el sitio seguiría pesando diez
+ * veces lo que debe. El procesamiento del estudio no amplía, así que una toma sin variante es una
+ * foto original demasiado pequeña, y eso se arregla con otra foto.
+ *
+ * El alto se deriva de la proporción de la maestra y no se lee del AVIF: leer su cabecera pide una
+ * dependencia nueva para responder algo que ya se sabe. Comprobado contra el archivo real —las
+ * maestras del estudio son cuadradas y el AVIF de 1200 mide 1200x1200—.
+ */
+function paraLaWeb(foto, dondeSeUsa) {
+  if (!foto.web) {
+    throw new Error(
+      `${dondeSeUsa}: la toma ${foto.ruta} no tiene variante web (AVIF hasta 1200 px).\n` +
+        "No se sube la maestra en su lugar: son 635 kB donde caben 58. Reprocesa el estudio, o " +
+        "la foto original es demasiado pequeña para publicarla.",
+    );
+  }
+  return {
+    ruta: foto.web.ruta,
+    contentType: foto.web.contentType,
+    ancho: foto.web.ancho,
+    alto: Math.round((foto.alto * foto.web.ancho) / foto.ancho),
+  };
+}
+
+/**
  * Sube un archivo a la galería del producto: URL firmada, PUT a Cloud Storage, confirmación.
  * Los mismos tres pasos de la imagen principal, contra el subrecurso `galeria`.
  */
 async function subirAGaleria(productoId, foto, titulo) {
-  const bytes = readFileSync(foto.ruta);
+  const web = paraLaWeb(foto, "galería");
+  const bytes = readFileSync(web.ruta);
   const subida = await pedir(`/api/v1/admin/productos/${productoId}/galeria/url-subida`, {
     method: "POST",
-    body: JSON.stringify({ contentType: "image/jpeg" }),
+    body: JSON.stringify({ contentType: web.contentType }),
   });
   const puesta = await fetch(subida.url, {
     method: "PUT",
-    headers: { "Content-Type": "image/jpeg" },
+    headers: { "Content-Type": web.contentType },
     body: bytes,
   });
   if (!puesta.ok) {
@@ -258,8 +296,8 @@ async function subirAGaleria(productoId, foto, titulo) {
     method: "POST",
     body: JSON.stringify({
       objectKey: subida.objectKey,
-      ancho: foto.ancho,
-      alto: foto.alto,
+      ancho: web.ancho,
+      alto: web.alto,
       hash: createHash("sha256").update(bytes).digest("hex"),
       altEs: `${titulo} sobre fondo gris`,
       altEn: `${titulo} on a grey background`,
@@ -302,8 +340,9 @@ async function cargarUno(producto, catalogos, registro) {
   }
 
   const foto = producto.foto.archivos[0];
-  const bytes = readFileSync(foto.ruta);
-  const hash = createHash("sha256").update(bytes).digest("hex");
+  const web = foto ? paraLaWeb(foto, producto.id) : null;
+  const bytes = web ? readFileSync(web.ruta) : null;
+  const hash = bytes ? createHash("sha256").update(bytes).digest("hex") : null;
   const paquete = producto.empaque;
   const medidas = paquete
     ? `${paquete.pesoGramos} g, ${paquete.largoCm}x${paquete.anchoCm}x${paquete.altoCm} cm`
@@ -332,11 +371,11 @@ async function cargarUno(producto, catalogos, registro) {
 
   const subida = await pedir(`/api/v1/admin/productos/${creado.id}/imagen-principal/url-subida`, {
     method: "POST",
-    body: JSON.stringify({ contentType: "image/jpeg" }),
+    body: JSON.stringify({ contentType: web.contentType }),
   });
   const puesta = await fetch(subida.url, {
     method: "PUT",
-    headers: { "Content-Type": "image/jpeg" },
+    headers: { "Content-Type": web.contentType },
     body: bytes,
   });
   if (!puesta.ok) {
@@ -347,8 +386,8 @@ async function cargarUno(producto, catalogos, registro) {
     method: "POST",
     body: JSON.stringify({
       objectKey: subida.objectKey,
-      ancho: foto.ancho,
-      alto: foto.alto,
+      ancho: web.ancho,
+      alto: web.alto,
       hash,
       altEs: `${producto.titulo} sobre fondo gris`,
       altEn: `${producto.titulo} on a grey background`,
@@ -410,6 +449,7 @@ const aRellenarGaleria = bandera("--galeria-todos")
       .filter(Boolean)
   : valores("--galeria");
 const RECONCILIAR = bandera("--reconciliar");
+const REHACER_IMAGENES = bandera("--rehacer-imagenes");
 const pedidos = bandera("--listos")
   ? productos.filter((p) => p.faltas.length === 0).map((p) => p.id)
   : (valor("--ids") ?? "").split(",").filter(Boolean);
@@ -419,11 +459,12 @@ if (
   mediciones.length === 0 &&
   aPublicar.length === 0 &&
   aRellenarGaleria.length === 0 &&
-  !RECONCILIAR
+  !RECONCILIAR &&
+  !REHACER_IMAGENES
 ) {
   console.error(
     "Hay que decir qué hacer: --ids a,b,c, --listos, --medir SKU=peso,largo,ancho,alto," +
-      " --publicar-sku SKU, --galeria SKU, --galeria-todos o --reconciliar.",
+      " --publicar-sku SKU, --galeria SKU, --galeria-todos, --rehacer-imagenes o --reconciliar.",
   );
   process.exit(1);
 }
@@ -488,6 +529,18 @@ async function medir(peticiones) {
 
 // El registro se lee antes de cualquier rama: publicar también lo escribe, no solo cargar.
 const registro = leerJson(REGISTRO) ?? {};
+
+if (REHACER_IMAGENES) {
+  if (!TOKEN) {
+    console.error(
+      "Rehacer las imágenes es preguntarle al catálogo qué tiene, así que necesita sesión hasta" +
+        " para simularlo. Usa --correo <correo> o --token <jwt>.",
+    );
+    process.exit(1);
+  }
+  await rehacerImagenes(registro);
+  process.exit(process.exitCode ?? 0);
+}
 
 if (RECONCILIAR) {
   if (!TOKEN) {
@@ -656,6 +709,114 @@ ${ESCRIBIR ? "subidas" : "se subirían"}: ${subidas}${fallaronGalerias > 0 ? ` �
  * <p>Anota el SKU <b>del catálogo</b> y no el que tocaría por la regla, porque es el que
  * `--galeria-todos` y `--publicar-sku` van a usar para volver a encontrar el producto.
  */
+/**
+ * Vuelve a subir las imágenes de todo lo que el registro conoce, con la variante web de hoy.
+ *
+ * <p><b>El orden importa y es el contrario del obvio.</b> Primero se suben las nuevas y solo
+ * después se borran las viejas: al revés, una corrida que se corte a la mitad —un 429, la red, un
+ * Ctrl+C— deja el producto publicado y sin una sola foto. Así, lo peor que puede pasar es que
+ * queden las dos tandas y sobren unas cuantas de galería, que se ve a simple vista y se arregla
+ * volviendo a correr esto.
+ *
+ * <p>La principal no necesita borrado: su endpoint reemplaza (adr/0052). La galería acumula, así
+ * que sus viejas hay que quitarlas una por una, y eso además borra el objeto del bucket.
+ */
+async function rehacerImagenes(registro) {
+  const anotados = Object.entries(registro);
+  let principales = 0;
+  let deGaleria = 0;
+  let borradas = 0;
+  let fallaron = 0;
+
+  for (const [id, anotado] of anotados) {
+    const producto = porId.get(id);
+    if (!producto) {
+      console.error(`FALLÓ       ${anotado.sku}: el registro lo anota pero no está en la lista`);
+      process.exitCode = 1;
+      fallaron++;
+      continue;
+    }
+
+    let web;
+    try {
+      web = paraLaWeb(producto.foto.archivos[0], anotado.sku);
+    } catch (error) {
+      console.error(`FALLÓ       ${anotado.sku}: ${error.message.split("\n")[0]}`);
+      process.exitCode = 1;
+      fallaron++;
+      continue;
+    }
+
+    const detalle = await pedir(`/api/v1/admin/productos/${anotado.productoId}`);
+    const viejas = (detalle.galeria ?? []).map((imagen) => imagen.id);
+    const tomas = fotosDeGaleria(producto);
+    const pesoWeb = readFileSync(web.ruta).length;
+
+    console.log(
+      `${ESCRIBIR ? "rehaciendo" : "simulado  "}  ${detalle.nombre ?? anotado.slug}\n` +
+        `            ${anotado.sku} · principal ${web.ancho}px ${Math.round(pesoWeb / 1024)} kB` +
+        ` · galería ${tomas.length} nuevas, ${viejas.length} a borrar`,
+    );
+    // Se cuenta antes del corte de la simulación, no después. Contar dentro de la rama que
+    // escribe deja el resumen diciendo "0" debajo de las líneas que acaban de enumerar lo que
+    // haría, y ese resumen es justo lo que se mira para decidir si vale la pena correrlo de
+    // verdad. Este proyecto ya lo pagó tres veces, y una de ellas en este mismo archivo.
+    principales++;
+    deGaleria += tomas.length;
+    borradas += viejas.length;
+    if (!ESCRIBIR) continue;
+
+    const bytes = readFileSync(web.ruta);
+    const subida = await pedir(
+      `/api/v1/admin/productos/${anotado.productoId}/imagen-principal/url-subida`,
+      { method: "POST", body: JSON.stringify({ contentType: web.contentType }) },
+    );
+    const puesta = await fetch(subida.url, {
+      method: "PUT",
+      headers: { "Content-Type": web.contentType },
+      body: bytes,
+    });
+    if (!puesta.ok) {
+      throw new Error(`La subida de la imagen a Cloud Storage respondió ${puesta.status}`);
+    }
+    await pedir(`/api/v1/admin/productos/${anotado.productoId}/imagen-principal`, {
+      method: "POST",
+      body: JSON.stringify({
+        objectKey: subida.objectKey,
+        ancho: web.ancho,
+        alto: web.alto,
+        hash: createHash("sha256").update(bytes).digest("hex"),
+        altEs: `${producto.titulo} sobre fondo gris`,
+        altEn: `${producto.titulo} on a grey background`,
+      }),
+    });
+
+    for (const toma of tomas) {
+      await subirAGaleria(anotado.productoId, toma, producto.titulo);
+    }
+
+    for (const imagenId of viejas) {
+      await pedir(`/api/v1/admin/productos/${anotado.productoId}/galeria/${imagenId}`, {
+        method: "DELETE",
+      });
+    }
+
+    anotado.imagenesDeGaleria = tomas.length;
+    anotado.imagenesRehechasEn = new Date().toISOString();
+    writeFileSync(REGISTRO, `${JSON.stringify(registro, null, 2)}
+`, "utf8");
+  }
+
+  console.log(
+    `\n${ESCRIBIR ? "rehechas" : "se reharían"}: ${principales} principal(es) y ${deGaleria} de` +
+      ` galería · ${borradas} vieja(s) borrada(s)` +
+      (fallaron > 0 ? ` · ${fallaron} sin variante web` : ""),
+  );
+  if (!ESCRIBIR) {
+    console.log("\nNada de esto pasó: falta --escribir.");
+  }
+}
+
 async function reconciliar(registro) {
   const existencias = (await pedir("/api/v1/admin/variantes/existencias")).items;
   const porSku = new Map(existencias.map((v) => [v.sku, v]));

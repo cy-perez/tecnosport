@@ -65,6 +65,14 @@ del constructor compacto, que es quien de verdad protege, y un
 `@Schema(requiredMode = REQUIRED)`, que no valida nada y solo hace que el contrato
 diga lo que el servidor exige.
 
+**Y desde el 21 de septiembre de 2026 eso falla en la máquina de quien lo escribe.**
+`ContratoOpenApiTest` (en `bootstrap`) compara el OpenAPI que sirve la aplicación
+contra `packages/contratos/openapi.json` dentro de `gradlew build`: cualquier cambio
+de un DTO, de un `@Schema` o de un `@NotNull` que mueva el contrato publicado rompe el
+build ahí mismo. Cuando el cambio es a propósito, la instantánea se reescribe con
+`-PactualizarContrato=true` y el cliente con `npm run contratos`, y los tres archivos
+van en el mismo commit.
+
 `presentation` no depende de `infrastructure`. Si un controlador necesita algo de
 infraestructura, falta un caso de uso.
 

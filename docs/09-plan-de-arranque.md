@@ -6952,6 +6952,522 @@ pinta de inmediato: con la consulta sin resolver, el aviso no estaba por el moti
 Una aserción de ausencia necesita un ancla que demuestre que los datos ya llegaron. Está en
 `docs/06-testing.md`, junto a las otras dos formas que tiene un doble de mentir.
 
+## El generado que dejó de producirse y seguía commiteado (2026-09-21)
+
+El único pendiente que dejó abierto el bloque de las herramientas, con su motivo escrito: *"sin
+saber cuáles produce `kit_ui.py`, la comprobación dispararía con falsos positivos"*. La lista sí se
+puede saber, y además no hay que mantenerla: lo que hay en el temporal **antes** de generar es, por
+construcción, lo que se acaba de copiar —las entradas—, así que lo que el generador produce se sabe
+restando.
+
+Lo que no se puede derivar es la lista de ayer. Esa es `GENERADOS`, escrita a mano a propósito, con
+las cinco que `kit_ui.py` produce incondicionalmente: `LEEME.md`, `contraste.md`, `index.html`,
+`tipografia.md` y `tokens.css`. La discrepancia entre las dos listas es justo la señal que faltaba:
+un generado que deja de producirse **no cambia de bytes y no falta del repositorio**, así que ni la
+comparación de contenido ni la de "el generador lo produce y no está" lo veían. Se queda ahí,
+idéntico y muerto, y quien lo abre lo lee como vigente.
+
+De ahí los dos avisos nuevos: `produce` cuando el generador escribe algo que `GENERADOS` no nombra,
+y `huérfano` cuando un declarado dejó de producirse y sigue guardado —`se fue` si tampoco está—.
+Los dos dicen qué hacer, porque cuando la salida cambia a propósito el cambio no termina en el
+generador: lo que ya no se produce hay que borrarlo del repositorio, y lo nuevo hay que declararlo.
+
+Comprobado rompiéndolo por los tres caminos: un declarado que el generador no produce y sigue en el
+kit (`manual.md`), uno que no produce y tampoco está (`no-existe.md`), y quitar `tokens.css` de la
+lista para que la salida real quede sin declarar. Los tres disparan y salen con 1.
+
+### El `.pyc` que iba a hacer fallar la CI por el intérprete
+
+`archivosDe` contaba `__pycache__/`. Lo escribe el intérprete al importar un módulo, no el
+generador, y `.gitignore` lo excluye, así que en una máquina limpia no viene en la copia. Hoy no
+rompía **por un pelo**: el `.pyc` aparece al importar `fuentes`, que es el paso siguiente, cuando la
+comparación ya terminó. Basta mover ese paso —o que `kit_ui.py` importe `fuentes` al arrancar, como
+ya hace con `--fuentes`— para que el guardián empiece a fallar en integración continua diciendo que
+el generador produce un `.pyc` que falta del repositorio. Un fallo así no dice nada del kit: dice
+qué intérprete corrió.
+
+Por eso el recuento baja de 29 archivos a 28. Los 29 nunca fueron el kit: eran 28 y el bytecode.
+
+### El resumen dice de qué está hablando
+
+Decía "29 archivos" y ahora dice "5 generados sobre 23 conservados, produce exactamente los 5
+declarados". Un número que suma dos cosas distintas no deja ver cuándo una de las dos cambia: el
+día que el generador dejara de producir uno de los cinco y alguien agregara un logo al kit, el
+total seguiría clavado. Es la misma familia de los tres resúmenes que no cuadraban con sus propias
+filas, encontrados en esta misma revisión y en estas mismas herramientas.
+
+## El contrato deja de vigilarse veinte minutos tarde (2026-09-21)
+
+La primera deuda de la lista de arriba, y **el enunciado estaba mal**. Se escribió "el contrato
+generado no tiene guardián" mirando `tools/verificar.mjs`, que efectivamente no lo mira. Lo que no
+se miró antes de escribirlo fue `.github/workflows/verificar.yml`, donde había un trabajo entero
+dedicado justo a eso: levantar PostgreSQL, arrancar `bootRun`, esperar hasta cinco minutos a que
+respondiera, regenerar `tipos.ts` y exigir que el diff quedara vacío. Existía, funcionaba y había
+atrapado por lo menos una vez lo que tenía que atrapar — el `@NotNull` que al quitarse cambió el
+contrato publicado sin cambiar ninguna validación.
+
+Lo que sí era cierto es más estrecho, y sigue siendo caro: **ese guardián solo vivía en
+integración continua**. O sea que avisaba después del empujón y ya sobre la rama, y mientras tanto
+`npm run verificar` pasaba en verde en la máquina de quien programa con el cliente desactualizado.
+Es palabra por palabra la lección que `ContextoBajoPerfilE2eTest` ya tenía escrita en su javadoc:
+*"el único guardián era el flujo de integración continua, seis minutos después del merge y ya
+sobre `main`"*.
+
+### Por qué vivía ahí: no había OpenAPI que mirar sin arrancar la aplicación
+
+Esa es la raíz, y es la que se movió. El contrato solo existía como respuesta de un servidor vivo,
+así que **cualquier** comprobación necesitaba un servidor vivo. Ahora hay una instantánea guardada,
+`packages/contratos/openapi.json`, y con eso la cadena se parte en dos eslabones que se vigilan por
+separado y sin red:
+
+| Qué se vigila | Quién | Dónde corre | Qué necesita |
+|---|---|---|---|
+| Que la instantánea sea lo que la aplicación sirve | `ContratoOpenApiTest` | `gradlew build` | Docker, como el resto de `bootstrap` |
+| Que `tipos.ts` corresponda a la instantánea | `tools/verificar-contratos.mjs` | `npm run verificar` | Nada; tarda menos de un segundo |
+
+Y el trabajo `contrato` de integración continua se fue, porque ya no comprueba nada que estos dos
+no comprueben antes. Lo que se gana no es el minuto de ejecutor: es que las dos fallan donde se
+escribió el error.
+
+### Tres decisiones del camino, y una que se descartó
+
+**No entró ninguna dependencia.** La primera idea era el plugin de Gradle de springdoc, que genera
+el JSON en el build. Se descartó por dos motivos comprobados en la fuente y no de memoria: su
+última versión es 1.9.0, de junio de 2024, y no declara nada sobre Spring Boot 4; y funciona
+arrancando la aplicación entera, que en este proyecto exige PostgreSQL y la configuración
+validada — o sea, el mismo costo que ya tenía la CI. La prueba usa lo que ya había: `MockMvc`
+sobre el contexto completo, con Testcontainers, igual que `ContextoBajoPerfilE2eTest`.
+
+**MockMvc y no un puerto de verdad.** Con `webEnvironment = RANDOM_PORT`, springdoc escribe en
+`servers` la URL por la que le llegó la petición, con el puerto aleatorio dentro: la instantánea
+cambiaría en cada corrida. Aun con MockMvc, `servers` se quita al normalizar, porque dice dónde
+está desplegada la API y no qué contrato tiene.
+
+**Las llaves se ordenan y los saltos de línea son de Unix.** Lo segundo no es cosmético:
+`DefaultPrettyPrinter` usa por omisión el separador del sistema, así que la misma aplicación
+escribiría CRLF en Windows y LF en integración continua y el guardián fallaría según en qué máquina
+corriera. Es el mismo error que `verificar-kit.mjs` ya había pagado, tres días antes y en el
+archivo de al lado.
+
+Todo en `ADR-0055`, con las tres alternativas descartadas.
+
+### Lo que el primer regenerado destapó, y lo que no
+
+El cliente regenerado desde la instantánea da **1.455 líneas distintas de 4.190**, y ninguna es un
+cambio de contrato: ordenadas, las dos versiones son idénticas línea por línea. Era el orden en que
+springdoc emitía los caminos y los esquemas. Comprobarlo importaba más que el diff: si hubiera
+habido una sola diferencia real, el cliente llevaba días mintiéndole al frontend y nadie lo sabía.
+
+Comprobado rompiendo los dos eslabones a propósito: un campo metido a mano en la instantánea hace
+fallar la prueba de Java, y una línea de más en `tipos.ts` hace fallar el guardián de Node. Los dos
+dicen los dos pasos que hay que correr y en qué orden.
+
+## Las clases de Tailwind dejan de comprobarse de a una (2026-09-21)
+
+La segunda deuda de la lista. `npm run clases -- <clase>` existía desde el stack de UI y tenía
+toda la maquinaria resuelta —el `@source inline(...)` para preguntar por una clase que todavía no
+se usa, y el escapado del selector—, pero había que nombrarle la clase. O sea que la regla dura #8
+la sostenía que alguien se acordara. Ahora, sin argumentos, barre el frontend entero: 2.669 clases
+en menos de dos segundos, dentro de `npm run verificar`.
+
+### El defecto que apareció al barrer, y que estaba en el comprobador de siempre
+
+`css.includes(".m")` **acierta dentro de `.mb-4`**. Con la comprobación por subcadena, cualquier
+palabra corta respondía "existe": `m`, `p`, `a`, `ts`. Preguntando de a una clase casi nunca se
+notaba —nadie pregunta por `m`—, pero es un guardián diciendo que sí a algo que no miró, y el
+barrido lo destapó en la primera corrida porque las palabras sueltas de los mensajes en español
+empezaron a contar como clases válidas. Ahora se extraen los selectores del CSS generado y se
+compara contra ese conjunto.
+
+### Tres intentos de filtro, y el contraejemplo lo puso el propio kit
+
+El problema real del barrido no es encontrar las clases: es no gritar por lo que no lo es. Un
+`class="…"` de una plantilla es inequívoco; un literal de TypeScript no, y de ahí salen los
+`[class]="clases()"` de este proyecto.
+
+1. **"Al menos una palabra del literal es una clase válida"** metió en el informe los 1.100
+   municipios de `geografia-co.datos.ts`.
+2. **Con las palabras acotadas a la forma de una clase** —minúsculas, dígitos y los signos de las
+   variantes— se fueron los municipios y quedó *"no se pudo actualizar la cantidad"*, acusando a
+   `pudo` de clase inexistente. El culpable es el kit: `tokens.css` define `.precio`, `.sku` y
+   `.cantidad`, así que la frase tenía una palabra válida de seis.
+3. **La regla que quedó: la mayoría, y al menos dos.** Una frase en español con una coincidencia
+   suelta no pasa; una lista de clases con una mal escrita, sí. Lo que se pierde a cambio queda
+   dicho en el propio archivo: un literal de dos clases con una mala queda en empate y se salta.
+   Se prefiere ese hueco a un informe que nadie lee.
+
+### Y dos cosas más que el barrido tuvo que aprender
+
+- **El kit no lo genera Tailwind.** `.chaflan` vive en `tokens.css`, fuera de toda capa y a
+  propósito, y la usan seis pantallas: sin mirar las hojas propias, el guardián acusaba de
+  inexistente a la clase más usada del sitio. Se leen del kit y no de la copia de
+  `apps/web/src/assets`, que escribe `copiar-marca` en cada build — una comprobación que depende
+  de un paso previo responde distinto según cuándo se corra.
+- **Los comentarios de este proyecto citan código.** El javadoc de `ts-galeria.ts` dice *"no una
+  base más un `[class.x]`"*, y el barrido acusaba a `x`. Se quitan los comentarios antes de mirar,
+  y solo los de línea completa: así un `https://` en mitad de un literal sigue intacto, que es el
+  error clásico de quitar comentarios con una expresión regular.
+
+### Comprobado rompiéndolo por las tres formas que barre
+
+Una `rounded-lg` metida a propósito en un `class="…"` de `app.html`, en un `[class.rounded-lg]` y
+en el literal de `ts-galeria.ts`. Las tres disparan y nombran el archivo.
+
+**La tercera no disparaba al principio** y arreglarlo mejoró el alcance: el literal es
+`` `${MINIATURA_BASE} border border-ts-borde` `` y la interpolación descartaba la cadena entera.
+Ahora se tiran las palabras sin forma de clase en vez del literal, que es justo como este proyecto
+arma las clases dinámicas. Con eso el barrido pasó de 2.608 candidatos a 2.669.
+
+**De paso, un dato que el encabezado del comprobador daba por sabido y ya no es cierto:**
+`min-h-0` y `min-h-auto` —las dos clases que originaron esta herramienta— **hoy sí existen** en
+esta versión de Tailwind. La anécdota se queda escrita porque explica por qué existe el guardián,
+pero el ejemplo ya no sirve para probarlo.
+
+## El freno del sandbox deja de colgar de la otra pasarela (2026-09-21)
+
+La tercera deuda, y la más corta de las tres: un `TODO` técnico en `ConfiguracionSistecredito`
+pidiendo que el freno del modo sandbox colgara de un perfil de producción "cuando exista uno".
+
+El freno es lo único que separa una prueba de un crédito a nombre de una persona: encendido en
+producción, la pasarela responde `Approved` sin pedirle un peso a nadie, cada pedido queda marcado
+como pagado y la mercancía sale. No falla nada, no aparece nada en ningún registro de error; se
+descubre contando cajas.
+
+Colgaba de `WOMPI_AMBIENTE` —la configuración de **la otra** pasarela— y el motivo estaba escrito
+con todas sus letras: no había perfil de producción, y esa era la única marca por despliegue que
+ya distinguía "esta instancia mueve dinero de verdad".
+
+### Enderezarlo no pedía un perfil nuevo: pedía invertir la pregunta
+
+Ahí estaba lo que se había dado por supuesto. Esperar a "que exista un perfil de producción"
+obliga a que alguien se acuerde de marcar la producción, y eso es un freno que falla **abierto**
+ante un descuido — el mismo defecto de lista negra que este proyecto ya le había corregido a este
+mismo freno el 20 de septiembre.
+
+No se pregunta "¿es producción?". Se pregunta **"¿está declarado como despliegue de pruebas?"**:
+si entre los perfiles activos no hay ninguno de `local`, `dev`, `e2e` o `pruebas`, el arranque se
+niega con el sandbox encendido. Los tres primeros son los que el proyecto ya usa; el cuarto está
+por si algún día alguien nombra así un entorno.
+
+**Y con eso se cierra un agujero que el freno viejo tenía abierto:** un despliegue sin ninguna
+variable fijada. `WOMPI_AMBIENTE` vale `sandbox` por omisión, así que una instancia de producción
+recién montada —el caso más peligroso que hay— pasaba el freno. Sin ningún perfil declarado, ahora
+no arranca. Tiene su prueba, y es la que más vale de las seis.
+
+De paso, `ADR-0048` §4 vuelve a decir la verdad al pie de la letra: prometía que *"el arranque
+falla si viene encendido junto con el perfil de producción"*, y hasta hoy eso se cumplía por otra
+vía. Y `ConfiguracionSistecredito` deja de importar `PropiedadesWompiPublicas`: una configuración
+de pagos menos que sabe de una pasarela que no es la suya.
+
+## Los doce que estaban en la vitrina con una foto de cuatro (2026-09-21)
+
+El bloque 2 de la lista de deudas, que no era escribir código sino correr lo que ya estaba
+escrito. Los doce primeros productos reales se cargaron el 19 de septiembre con un script de usar
+y tirar, y `cargados.json` nació el 21: para el registro no existían, así que `--galeria-todos` no
+les podía rellenar nada y llevaban dos días publicados con **una** de las cuatro tomas que tenían
+en el estudio desde el 15.
+
+`--reconciliar` los anotó: doce, sobre trece que ya estaban, y quedan 71 de la lista del proveedor
+sin cargar. Casó ocho por SKU y cuatro por nombre, que es la mitad que importa — `jbl-extreme-4`
+está publicado como `JBL-EXTREME-4` pero se llama "JBL Xtreme 4". Anotó el SKU **del catálogo** y
+no el que tocaría por la regla, porque es el que las pasadas siguientes van a usar.
+
+Después, **36 tomas a la galería**: tres por cada uno de los doce. Comprobado sin creerle al
+registro: 50 tomas anotadas, 50 objetos `galeria-` en el bucket, y tres fichas pedidas a la API
+—`JBL-EXTREME-4`, el Moto G17 y la Tab A11— con tres imágenes de galería cada una.
+
+### El límite de intentos, que hizo exactamente lo que tiene que hacer
+
+Cuatro corridas seguidas —dos simulaciones y dos escrituras, cada una pidiendo su sesión— se
+comieron los cinco intentos por cuenta cada quince minutos de `limite-intentos.auth`, y la quinta
+se fue con un **429**. No es un estorbo: es el freno que `docs/08` pide contra la fuerza bruta,
+funcionando contra el caso que no sabe distinguir —un script propio— igual que contra el que
+importa. Costó dos ventanas de cinco minutos.
+
+Lo que había que corregir no era el límite sino la forma de pedir la sesión: **una por comando**,
+cuando el token vive quince minutos. Queda anotado para la próxima: pedirlo una vez, cachearlo, y
+pasárselo a las herramientas por `TS_TOKEN_ADMIN` — nunca por `argv`.
+
+### Los cuatro que se venden al costo, cargados sin salir a la vitrina
+
+De los 25 publicables que daba el cruce, 21 ya estaban: **los cuatro que faltaban eran exactamente
+los cuatro que dejan 5 % o menos sobre la venta** —JBL Flip 7 y Lenovo Tab Plus en cero, Tab One
+en 2 %, JBL Grip en 3 %—. Que la única carga pendiente fuera justo la que exigía una decisión no
+es casualidad: el filtro del margen los venía apartando de cada pasada anterior.
+
+Decidido: **entran en BORRADOR y no salen a la vitrina.** Cargados con existencia 0 —el número
+sale de contar la bodega, no de un script (`adr/0049`, `adr/0050`)— y con sus tres tomas de
+galería cada uno, que subieron en la misma pasada. Comprobado por los dos lados: el panel los da
+en `BORRADOR` y la ficha pública responde **404** para los cuatro slugs.
+
+El catálogo queda en 29 productos: 13 publicados y 16 en borrador, con 62 tomas de galería que
+cuadran una a una con los objetos del bucket. Lo que falta para publicar esos cuatro no es
+trabajo: es el precio, y ese se renegocia con el proveedor o no se venden.
+
+### El informe de huérfanos, por fin corrido
+
+`ADR-0052` dejó anotado que una subida firmada y no confirmada deja un objeto sin reclamar, y las
+tres deudas chicas del kit dejaron la herramienta escrita y **sin correr nunca**. Ya tiene número:
+
+> 29 productos en el panel reclaman 75 objetos. **18 sin reclamar, 5,31 MiB.**
+
+Los dieciocho son `principal-` del 19 y el 20 de septiembre, o sea de las cargas de aquel script
+de usar y tirar, y **ninguno es de galería**: la pasada de hoy no dejó ni uno suelto. Cuadra con
+el conteo de arriba — 50 objetos `galeria-` en el bucket y 50 reclamados.
+
+Con el número delante, la decisión que la nota dejaba abierta se puede tomar de verdad, y es la
+aburrida: **5,31 MiB no pagan cambiar la forma de las keys**. Mover lo no confirmado a un prefijo
+`pendientes/` para poder escribir una regla de ciclo de vida es tocar el flujo de subida entero
+por menos de lo que pesa una foto de portada. Se deja como está y se vuelve a medir cuando el
+catálogo esté completo; lo que sí conviene es borrar esos dieciocho a mano alguna vez, y eso lo
+decide quien mira el bucket, no un script — por eso la herramienta informa y no borra.
+
+## Lighthouse, por fin válido, y lo que estaba tapando (2026-09-21)
+
+El pendiente vivo más viejo del proyecto: desde la Fase 6 se sabía que el rendimiento no
+significaba nada mientras las tarjetas trajeran ocho peticiones a `picsum.photos`, y el 19 de
+septiembre se dejó escrito de qué dependía — de sacar el catálogo real a GCS. Con los doce
+reconciliados, sus galerías y los cuatro últimos cargados, se corrió.
+
+**Cero peticiones a `picsum.photos` en las tres pantallas.** La condición se cumplió y la
+medición por fin habla del sitio.
+
+| | rendimiento (1ª / 2ª) | accesibilidad | buenas prácticas | SEO |
+|---|---|---|---|---|
+| portada | 59 / 59 (era 57) | **100** | **100** | **100** |
+| ficha | 63 / 65 (era 64) | **100** | **100** | **100** |
+| legales | 70 / 89 (era 92) | **100** | **100** | **100** |
+
+Las tres columnas que no dependen de las imágenes siguen en 100, en las dos corridas.
+
+### Se midió dos veces a propósito, y menos mal
+
+La primera corrida daba `legales` en **70**, veintidós puntos por debajo del 92 del 19 de
+septiembre, en una pantalla que no tiene ni una imagen y que nadie tocó. Eso no era un hallazgo:
+era la máquina. La segunda corrida, sobre el mismo build y cinco minutos después, la puso en
+**89**; el FCP pasó de 4,7 s a 2,5 s sin que cambiara un byte.
+
+Portada y ficha, en cambio, repitieron dentro de dos puntos. O sea que el ruido no es parejo: se
+concentra en la pantalla más liviana, que es justo donde un arranque lento del proceso se nota
+entero.
+
+**El arnés toma una sola muestra**, y con esa varianza una sola muestra puede inventar una
+regresión de veintidós puntos o taparla. Es la cuarta vez que este documento anota lo mismo con
+otra herramienta —el proxy de diagnóstico roto, el token caducado a mitad de la sonda, la pestaña
+oculta que no corría `rAF`—: **una herramienta de diagnóstico también es una variable del
+experimento**. Conviene que mida tres veces y se quede con la mediana; queda anotado y no se hizo
+aquí.
+
+### Y lo que la medición válida destapó: se están sirviendo las maestras
+
+El elemento más pesado de la portada **y** de la ficha es la misma foto: **635 kB en JPEG**. No es
+la banda de portada, que era la sospecha escrita el 19 de septiembre; son las fotos de producto.
+
+`material-catalogo.mjs` lee de `catalogo/fotos/estudio/<id>/maestra`, y la maestra es un artefacto
+de archivo, no un recurso web. El mismo procesamiento de estudio ya dejó al lado seis tamaños en
+dos formatos. Para el mismo fotograma del JBL Flip 7:
+
+| | JPEG | AVIF |
+|---|---|---|
+| maestra | 546 kB | — |
+| 2000 | 441 kB | 149 kB |
+| 1600 | 302 kB | 104 kB |
+| 1200 | 175 kB | **58 kB** |
+| 800 | 78 kB | 27 kB |
+| 480 | 28 kB | 8 kB |
+
+La tarjeta de la rejilla pinta esa foto a menos de 400 px de ancho en móvil. Se está mandando
+**diez veces** lo que hace falta.
+
+*(Dicho el mismo día y corregido en la entrada siguiente: "el elemento más pesado" no es lo mismo
+que "el LCP". Lo era en la ficha; en la portada, no.)*
+
+Queda como el siguiente trabajo de rendimiento, y no es "optimizar imágenes" en abstracto: es
+elegir qué variante sube el cargador —y si sube varias con `srcset`—, cambiar el `contentType`
+que hoy está clavado en `image/jpeg`, y volver a subir lo que ya está. Con el número delante, es
+la única cosa de esta lista que vale puntos de verdad.
+
+## El sitio deja de servir las maestras, y el LCP dice de qué habla (2026-09-21)
+
+La deuda 18, abierta esa misma tarde por la primera medición de Lighthouse que valió algo. El
+cargador subía la foto **maestra** del estudio —2000 px, medio megabyte— porque era lo único que
+la lista blanca de la API dejaba pasar. Las 91 imágenes del catálogo pesaban **22,01 MiB**; las
+mismas 91 en AVIF de 1200 px pesan **2,18 MiB**. Un 90,1 % menos, comprobado archivo por archivo
+en disco y contando el bucket: 91 objetos `.avif` y ni uno `.jpg` de los vivos.
+
+### Tres piezas, y una de ellas era del backend
+
+1. **`image/avif` no existía para la API.** `TiposDeImagen` era una lista blanca de tres tipos, y
+   la extensión de la clave sale de ahí: sin la entrada, el objeto habría quedado en el bucket con
+   la extensión equivocada. Tiene su prueba, y afirma lo que importa —que la clave termine en
+   `.avif`—, no solo que el tipo se acepte.
+2. **Juzgar y subir dejaron de ser lo mismo.** `material-catalogo.mjs` seguía leyendo la maestra
+   para todo, y tenía que seguir haciéndolo para una cosa: la resolución de verdad vive ahí y
+   `dimensionesJpeg` solo sabe leer JPEG. Ahora cada toma lleva además su variante web —el AVIF
+   más grande hasta 1200— resuelta **por nombre de archivo y no por posición**, para que las dos
+   listas no puedan desalinearse en silencio.
+3. **`--rehacer-imagenes`**, porque lo ya subido no se arregla solo. Sube la principal nueva, sube
+   la galería nueva y **después** borra la vieja. El orden es el contrario del obvio a propósito:
+   borrar primero deja el producto publicado y sin una sola foto si la corrida se corta a la
+   mitad, y lo peor que puede pasar con este orden es que sobren unas cuantas, que se ven y se
+   arreglan volviendo a correrlo.
+
+**Se niega en vez de caer a la maestra** cuando la variante no está. Caer sería volver al defecto
+que esto corrige y sin decir nada: la carga terminaría "bien" y el sitio seguiría pesando diez
+veces lo que debe.
+
+Cuatro productos no tienen AVIF de 1200 porque su foto original era más pequeña —el procesamiento
+del estudio no amplía— y suben la mayor que exista: 800 el Honor X7D, 600 el Xtreme 4 y el Boombox
+4, 480 el PartyBox. Son los mismos cuatro que el cruce ya marcaba con la foto por debajo del
+mínimo.
+
+Todo en `ADR-0056`, con las cuatro alternativas descartadas.
+
+### La primera corrida falló, y falló bien
+
+Contra el `bootRun` que estaba levantado, que era el jar de **antes** de aceptar `image/avif`: un
+422 en la primera petición del primer producto, sin subir ni borrar nada. Reiniciar la API y
+repetir. Vale anotarlo porque el orden correcto no es obvio cuando el cambio cruza los dos lados:
+**el backend se reinicia antes de correr la herramienta**, no después de ver el error.
+
+### Lo que la medición dice, que no es lo que se esperaba
+
+| | antes (2 corridas) | después (2 corridas) |
+|---|---|---|
+| LCP ficha | 8,5 s · 8,1 s | **5,7 s · 5,2 s** |
+| LCP portada | 7,0 s · 7,0 s | 6,2 s · 6,9 s |
+| rendimiento ficha | 63 · 65 | 66 · 65 |
+| rendimiento portada | 59 · 59 | 51 · 57 |
+
+**La ficha mejoró tres segundos de LCP, y el desglose explica por qué**: la carga del recurso pasó
+de 128 ms a 54, y el *element render delay* de 1.133 ms a 209. Ahí la foto **sí** era el elemento
+más grande.
+
+**La portada no se movió, y el desglose dice algo más útil todavía**: su LCP **no tiene fases de
+recurso**, ni antes ni después. O sea que el elemento más grande de la portada nunca fue una
+imagen — es texto, y lo que lo retrasa es el *render delay* de 1,3 a 1,5 segundos. La hipótesis
+escrita el 19 de septiembre —"la banda de portada es el nuevo LCP"— era falsa, y la frase que se
+escribió esta misma tarde —"el LCP de la portada es la foto de 635 kB"— también: 635 kB era el
+**recurso más pesado**, que es otra cosa. Lo que queda en la portada es JavaScript, no fotos.
+
+**Y los puntajes siguen sin poder leerse en esta máquina**: `legales`, que no tiene una sola imagen
+y que nadie tocó en todo esto, dio 70, 89, 69 y 86 en cuatro corridas. Por eso la tabla de arriba
+mira el LCP y no el número grande. La deuda 17 —tres corridas y la mediana— pasa de "estaría bien"
+a "hace falta".
+
+## Las deudas que quedan, al 21 de septiembre de 2026
+
+Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
+los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es la
+entrada de arriba. Lo que sigue es lo otro: lo que nunca fue un hallazgo y sigue abierto.
+
+**Cada punto se comprobó contra el código el 21 de septiembre**, no se copió de las entradas de
+este documento. Importa decirlo porque este documento escribe en presente y no se actualiza solo:
+ya pasó que un pendiente se arrastrara nueve entradas después de estar hecho. Cada uno lleva **cómo
+volver a comprobarlo**, que es lo único que no caduca.
+
+### Bloque 1. Código, sin depender de nadie
+
+1. ~~**El contrato generado no tiene guardián.**~~ **Enunciado mal y corregido el mismo día: el
+   guardián existía, y vivía entero en integración continua** —el trabajo `contrato` de
+   `verificar.yml`, que levantaba PostgreSQL y `bootRun` para regenerar el cliente y mirar el
+   diff—. La deuda real era más estrecha y no por eso menor: avisaba después del empujón y ya
+   sobre la rama, mientras `npm run verificar` pasaba en verde en local con el cliente viejo.
+   **Cerrada el 21 de septiembre**, con el OpenAPI guardado en el repositorio y un eslabón a cada
+   lado; el trabajo de CI sobró. Ver la entrada de abajo.
+2. ~~**Las clases de Tailwind se comprueban de a una y a mano.**~~ **Cerrada el 21 de
+   septiembre**: `npm run clases` sin argumentos barre las plantillas, los enlaces `[class.x]` y
+   los literales de los `.ts` —2.669 clases en menos de dos segundos— y corre dentro de
+   `npm run verificar`. De paso corrigió el comprobador viejo, que respondía "existe" a cualquier
+   palabra corta. Ver la entrada de arriba.
+3. ~~**No hay perfil de Spring para producción.**~~ **Cerrada el 21 de septiembre, y sin crear el
+   perfil**: el freno pregunta ahora si el despliegue está declarado como de pruebas, no si es
+   producción, así que una instancia sin ninguna variable fijada tampoco arranca con el sandbox
+   encendido — que era el agujero que el freno viejo tenía abierto. Ver la entrada de arriba.
+
+### Bloque 2. Necesita la clave del panel, y desbloquea en cadena
+
+El orden no es negociable: cada uno alimenta al siguiente.
+
+4. ~~**Reconciliar el registro.**~~ **Hecho el 21 de septiembre**: 12 anotados, el registro pasó
+   de 13 a 25 entradas.
+5. ~~**Rellenar las galerías.**~~ **Hecho el 21 de septiembre**: 36 tomas, tres por cada uno de
+   los doce, comprobadas contra el bucket y contra la API.
+6. ~~**Cargar lo que falta.**~~ **Hecho el 21 de septiembre**: de los 25 publicables ya estaban
+   21, y los 4 que faltaban resultaron ser exactamente los cuatro que se venden al costo. Se
+   cargaron **en BORRADOR** por decisión del punto 9, con existencia 0. De la lista del proveedor
+   siguen 71 sin material para publicar, que no es una carga pendiente sino fotos y precios que
+   no existen.
+7. ~~**Correr `npm run huerfanos` contra dev.**~~ **Hecho el 21 de septiembre, y con eso la
+   decisión tomada**: 18 objetos sin reclamar, 5,31 MiB, todos `principal-` de las cargas del 19 y
+   el 20. No pagan cambiar la forma de las keys; se deja como está y se vuelve a medir con el
+   catálogo completo. Queda pendiente borrarlos a mano alguna vez, que no lo hace ningún script.
+8. ~~**Repetir Lighthouse.**~~ **Hecho el 21 de septiembre, y por fin válido**: cero peticiones a
+   `picsum.photos`. Accesibilidad, buenas prácticas y SEO en 100 en las tres pantallas y en las
+   dos corridas. Deja dos cosas abiertas, las dos nuevas y anotadas en la entrada de arriba: el
+   arnés toma **una sola muestra** y la varianza entre dos corridas del mismo build llegó a 22
+   puntos; y el LCP no era la banda de portada sino que **se están sirviendo las fotos maestras**
+   —635 kB donde el AVIF de 1200 pesa 58—.
+
+### Lo que esta medición dejó abierto, y es nuevo
+
+17. **El arnés de Lighthouse toma una sola muestra.** Con la varianza medida —22 puntos entre dos
+    corridas del mismo build, cinco minutos aparte— una muestra puede inventar una regresión o
+    taparla. Tres corridas y la mediana.
+18. ~~**El sitio sirve las fotos maestras.**~~ **Cerrada el 21 de septiembre**: las 91 imágenes
+    pasaron de 22,01 MiB a 2,18 —un 90,1 %— y el LCP de la ficha bajó tres segundos. Deja dos
+    cosas dichas: la portada **no** mejoró porque su LCP nunca fue una imagen, y no se puso
+    `srcset` —se sube una sola variante de 1200— porque con el peso ya resuelto eso es afinar, no
+    arreglar.
+19. **La portada tarda 1,3–1,5 s en pintar su elemento más grande, y es texto.** Lo que queda ahí
+    es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
+    portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
+    y no tiene nada que ver con las fotos.
+
+20. **`url_webp` guarda la URL de un AVIF.** La columna nació esperando una conversión que iba a
+    hacer el asistente de captura de la Fase 5 y que nunca existió; siempre apuntó al mismo objeto
+    que `url`, y ahora además el nombre dice un formato que no es. Renombrarla cruza el dominio,
+    una migración, el DTO y el contrato generado, así que es un trabajo con su plan, no un
+    `sed`. Mientras tanto, lo que engaña es el nombre, no el dato.
+### Bloque 3. Decisiones que no toma un script
+
+9. ~~**Los cuatro publicables que dejan 5 % o menos sobre la venta**~~ —JBL Flip 7 (0 %), Lenovo
+   Tab Plus 11" (0 %), Lenovo Tab One 7" (2 %) y JBL Grip (3 %)—. **Decidido el 21 de septiembre:
+   entran en BORRADOR y no salen a la vitrina.** Están cargados, con sus tres tomas cada uno y
+   existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
+   ese se renegocia con el proveedor o no se venden.
+10. **La existencia inventada de 5** que llevan los doce primeros en dev.
+11. **`SISTECREDITO_MONTO_MINIMO` sigue sin dato.** Es para la asesora: las dos cifras públicas que
+    se encontraron se contradicen, lo que confirma que varía por comercio. Falla cerrado a
+    propósito —habilitar el método sin el dato no arranca—, así que no hay prisa de seguridad, sí
+    de negocio.
+12. **`MetodoPago.ADDI`.** Sigue apuntando a `WOMPI` a propósito, porque es lo que lo mantiene
+    fuera del checkout; reclasificarlo a `NINGUNO`, que suena más honesto, lo dejaría ofrecido
+    siempre. Las dos salidas razonables están en `docs/11`: integrar Addi de verdad, o sacarlo.
+
+### Bloque 4. Terceros. No se trabajan, se persiguen
+
+13. **Skydropx**, con el trámite mandado el 21 de septiembre: los 74 códigos DANE, retirar la
+    solicitud del 14 y el conector de recolección de Servientrega, caído en ocho intentos. Y dos
+    que no van en ese mensaje: el saldo, que quedó en 388 COP y **bloquea la recolección**, y el
+    host de la cuenta colombiana, que sigue como `TODO` en `PropiedadesSkydropx`.
+14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
+15. **Si la anulación en Credinet notifica a `urlConfirmation`.** No es averiguable por fuera: hay
+    que medirlo. Si no notifica, un pedido puede quedar marcado como pagado con la venta anulada
+    del otro lado y nada avisa.
+
+### Bloque 5. Lo que solo se comprueba con el aparato delante
+
+16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
+    septiembre es la estructura que necesitan, que no es lo mismo.
+
+### Lo que está anotado y no es deuda
+
+`adr/0053` dejó dicho que el orden de la galería **no tiene red en la base de datos** —un `UNIQUE`
+parcial y diferible a la vez no existe en PostgreSQL—, así que la invariante vive solo en el
+agregado. No es un pendiente: es una decisión tomada con sus cuatro alternativas descartadas. Se
+nombra aquí para que nadie la "descubra" dentro de seis meses y la apunte como deuda nueva.
+
 ## Cómo conversar con Claude Code en este proyecto
 
 **Un contexto limpio por tarea.** Cierra la conversación al terminar una fase. Un

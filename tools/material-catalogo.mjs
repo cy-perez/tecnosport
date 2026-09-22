@@ -4,7 +4,7 @@
 // que este proyecto se cansó de encontrar en otras partes.
 
 import { readFileSync, readdirSync, existsSync, openSync, readSync, closeSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const LADO_MINIMO = 1200;
@@ -72,6 +72,42 @@ export function leerJson(ruta) {
   return existsSync(ruta) ? JSON.parse(readFileSync(ruta, "utf8")) : null;
 }
 
+/**
+ * Los anchos de la escala del estudio que sirven para la web, del mayor al menor.
+ *
+ * <p>**Tope en 1200 y no en 2000 a propósito.** La tarjeta de la rejilla pinta la foto a menos de
+ * 400 px en un teléfono y la ficha no llega a 700; mandar 2000 es pagar ancho de banda por píxeles
+ * que nadie ve. Se baja de ahí solo cuando la foto original no daba para más: el procesamiento del
+ * estudio no amplía, así que un producto cuya toma venía a 600 px no tiene carpeta de 1200.
+ */
+const ANCHOS_WEB = [1200, 800, 600, 480];
+
+/**
+ * La variante web de una toma: el AVIF más grande disponible hasta 1200.
+ *
+ * <p>Se busca por el nombre del archivo de la maestra, no por posición, para que el orden de las
+ * dos listas no pueda desalinearse en silencio. Si una toma no tiene ninguna variante, devuelve
+ * `null` y quien suba **tiene que negarse**: subir la maestra en su lugar es exactamente el
+ * defecto que esto viene a corregir, y en silencio.
+ */
+function variantePara(id, rutaMaestra) {
+  const base = basename(rutaMaestra).replace(/\.jpg$/i, "");
+  for (const ancho of ANCHOS_WEB) {
+    const ruta = join(ESTUDIO, id, String(ancho), `${base}.avif`);
+    if (existsSync(ruta)) return { ruta, ancho, contentType: "image/avif" };
+  }
+  return null;
+}
+
+/**
+ * Las tomas de un producto: las maestras para juzgar y sus variantes web para subir.
+ *
+ * <p>**Son dos cosas distintas y por eso son dos listas.** La maestra es el artefacto de archivo:
+ * es donde vive la resolución de verdad, y es la única que `dimensionesJpeg` sabe leer —el AVIF no
+ * tiene una cabecera que se resuelva en veinticinco líneas—. La variante web es lo que se publica.
+ * Confundirlas costó 635 kB por foto en la portada y en la ficha hasta el 21 de septiembre de
+ * 2026.
+ */
 function fotos(id) {
   const carpeta = join(ESTUDIO, id, "maestra");
   if (!existsSync(carpeta)) return { archivos: [], ladoMenor: 0 };
@@ -79,7 +115,8 @@ function fotos(id) {
     .filter((f) => f.toLowerCase().endsWith(".jpg"))
     .sort()
     .map((f) => ({ ruta: join(carpeta, f), ...dimensionesJpeg(join(carpeta, f)) }))
-    .filter((f) => f.ancho);
+    .filter((f) => f.ancho)
+    .map((f) => ({ ...f, web: variantePara(id, f.ruta) }));
   const lados = archivos.map((f) => Math.min(f.ancho, f.alto));
   return { archivos, ladoMenor: lados.length ? Math.min(...lados) : 0 };
 }

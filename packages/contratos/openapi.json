@@ -1,0 +1,5307 @@
+{
+  "components" : {
+    "schemas" : {
+      "AbrirSetRotacionPeticion" : {
+        "properties" : {
+          "dispositivo" : {
+            "type" : "string"
+          },
+          "fotogramas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionAsistente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ActualizarCantidadRequest" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AcusarRevisionRequest" : {
+        "properties" : {
+          "nota" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AcuseDeRevisionRespuesta" : {
+        "properties" : {
+          "actor" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "nota" : {
+            "type" : "string"
+          },
+          "referencia" : {
+            "type" : "string"
+          },
+          "revisadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AgregarImagenDeGaleriaPeticion" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
+          },
+          "objectKey" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AgregarLineaRequest" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AgregarVariantePeticion" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "atributos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ValorAtributoPeticion"
+            },
+            "type" : "array"
+          },
+          "codigoBarras" : {
+            "type" : "string"
+          },
+          "existenciaInicial" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "precio" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "tasaIva" : {
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "AjustarExistenciaPeticion" : {
+        "properties" : {
+          "cantidadContada" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AtributoRespuesta" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          },
+          "unidad" : {
+            "type" : "string"
+          },
+          "valoresPermitidos" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "AtributoValorRespuesta" : {
+        "properties" : {
+          "colorHex" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "unidad" : {
+            "type" : "string"
+          },
+          "valor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "BandejaDeRevisionRespuesta" : {
+        "properties" : {
+          "emisiones" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EmisionEnRevisionRespuesta"
+            },
+            "type" : "array"
+          },
+          "guias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GuiaEnRevisionRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "CancelarPedidoRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "type" : "number"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CarritoRespuesta" : {
+        "properties" : {
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaCarritoRespuesta"
+            },
+            "type" : "array"
+          },
+          "usuarioId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CategoriaRespuesta" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "linea" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CompletarSetRotacionPeticion" : {
+        "properties" : {
+          "fotogramas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FotogramaPeticion"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ConciliarRecaudoRequest" : {
+        "properties" : {
+          "comisionRecaudo" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "modalidadRecaudo" : {
+            "enum" : [
+              "CREDITOS",
+              "BANCO"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "modalidadRecaudo"
+        ],
+        "type" : "object"
+      },
+      "ConfirmarImagenPrincipalPeticion" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
+          },
+          "objectKey" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ConfirmarRecuperacionRequest" : {
+        "properties" : {
+          "claveNueva" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ContactoRespuesta" : {
+        "properties" : {
+          "nombre" : {
+            "type" : "string"
+          },
+          "telefono" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CotizacionEnvioRequest" : {
+        "properties" : {
+          "direccion" : {
+            "$ref" : "#/components/schemas/DireccionRequest"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaRequest"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "CotizacionEnvioRespuesta" : {
+        "properties" : {
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "diasEstimados" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "transportadora" : {
+            "type" : "string"
+          },
+          "venceEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CrearIntentoDePagoRequest" : {
+        "properties" : {
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CrearIntentoSistecreditoRequest" : {
+        "properties" : {
+          "documento" : {
+            "type" : "string"
+          },
+          "idioma" : {
+            "description" : "Idioma al que vuelve el comprador: es o en. Cualquier otro cae en es.",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "tipoDocumento" : {
+            "enum" : [
+              "CC",
+              "TI",
+              "TIE",
+              "NIT"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "documento",
+          "pedidoId",
+          "tipoDocumento"
+        ],
+        "type" : "object"
+      },
+      "CrearMarcaPeticion" : {
+        "properties" : {
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CrearPedidoRequest" : {
+        "properties" : {
+          "autorizaDatos" : {
+            "type" : "boolean"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "direccion" : {
+            "$ref" : "#/components/schemas/DireccionRequest"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaRequest"
+            },
+            "type" : "array"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "telefono" : {
+            "type" : "string"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CrearProductoPeticion" : {
+        "properties" : {
+          "categoriaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "marcaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DatosTransferenciaRespuesta" : {
+        "properties" : {
+          "banco" : {
+            "type" : "string"
+          },
+          "numeroCuenta" : {
+            "type" : "string"
+          },
+          "referencia" : {
+            "type" : "string"
+          },
+          "tipoCuenta" : {
+            "type" : "string"
+          },
+          "titular" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DespacharPedidoRequest" : {
+        "properties" : {
+          "guias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GuiaDespachadaRequest"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "DineroRespuesta" : {
+        "properties" : {
+          "moneda" : {
+            "type" : "string"
+          },
+          "valor" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "DireccionRequest" : {
+        "properties" : {
+          "barrio" : {
+            "type" : "string"
+          },
+          "ciudad" : {
+            "type" : "string"
+          },
+          "codigoDaneCiudad" : {
+            "type" : "string"
+          },
+          "codigoDaneDepartamento" : {
+            "type" : "string"
+          },
+          "departamento" : {
+            "type" : "string"
+          },
+          "direccion" : {
+            "type" : "string"
+          },
+          "indicaciones" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "DireccionRespuesta" : {
+        "properties" : {
+          "barrio" : {
+            "type" : "string"
+          },
+          "ciudad" : {
+            "type" : "string"
+          },
+          "codigoDaneCiudad" : {
+            "type" : "string"
+          },
+          "codigoDaneDepartamento" : {
+            "type" : "string"
+          },
+          "departamento" : {
+            "type" : "string"
+          },
+          "direccion" : {
+            "type" : "string"
+          },
+          "indicaciones" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EditarProductoPeticion" : {
+        "properties" : {
+          "categoriaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "marcaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EmisionDeGuiaRespuesta" : {
+        "properties" : {
+          "cuantosEnvios" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "detalle" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "resueltaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "solicitadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EmisionEnRevisionRespuesta" : {
+        "properties" : {
+          "actor" : {
+            "type" : "string"
+          },
+          "detalle" : {
+            "type" : "string"
+          },
+          "emisionId" : {
+            "type" : "string"
+          },
+          "enviosEnPlataforma" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "idTarifa" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "solicitadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EmisionResueltaRespuesta" : {
+        "properties" : {
+          "detalle" : {
+            "type" : "string"
+          },
+          "emisionId" : {
+            "type" : "string"
+          },
+          "enviosEnPlataforma" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "resueltaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "EnvioPublicoRespuesta" : {
+        "properties" : {
+          "despachadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "guias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GuiaPublicaRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "EnvioRespuesta" : {
+        "properties" : {
+          "comisionRecaudo" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "despachadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "guias" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GuiaRespuesta"
+            },
+            "type" : "array"
+          },
+          "recaudoConciliadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExistenciaAjustadaRespuesta" : {
+        "properties" : {
+          "dejaReservasSinRespaldo" : {
+            "type" : "boolean"
+          },
+          "diferencia" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "saldoAnterior" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "saldoNuevo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sinCambios" : {
+            "type" : "boolean"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "unidadesReservadas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExistenciaDeVarianteRespuesta" : {
+        "properties" : {
+          "disponible" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "estadoProducto" : {
+            "type" : "string"
+          },
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reservadas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "saldoTotal" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExistenciasRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExistenciaDeVarianteRespuesta"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalSinExistencia" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalSinExistenciaEnPublicados" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "FotogramaPeticion" : {
+        "properties" : {
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hash" : {
+            "type" : "string"
+          },
+          "objectKey" : {
+            "type" : "string"
+          },
+          "orden" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "GuiaDespachadaRequest" : {
+        "properties" : {
+          "costoEnvio" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "guia" : {
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GuiaEnRevisionRespuesta" : {
+        "properties" : {
+          "descripcion" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "guiaId" : {
+            "type" : "string"
+          },
+          "numeroGuia" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "ocurrioEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "recibidoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "revisadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GuiaPublicaRespuesta" : {
+        "properties" : {
+          "guia" : {
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GuiaRespuesta" : {
+        "properties" : {
+          "costo" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "guia" : {
+            "type" : "string"
+          },
+          "transportadora" : {
+            "type" : "string"
+          },
+          "urlEtiqueta" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "HistorialPedidoRespuesta" : {
+        "properties" : {
+          "actor" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "fecha" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImagenDeGaleriaRespuesta" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orden" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "urlWebp" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImagenRespuesta" : {
+        "properties" : {
+          "altEn" : {
+            "type" : "string"
+          },
+          "altEs" : {
+            "type" : "string"
+          },
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "urlWebp" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImagenRotacionRespuesta" : {
+        "properties" : {
+          "alto" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ancho" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "orden" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "urlWebp" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "IniciarSesionRequest" : {
+        "properties" : {
+          "clave" : {
+            "type" : "string"
+          },
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "IntentoDePagoRespuesta" : {
+        "properties" : {
+          "ambiente" : {
+            "type" : "string"
+          },
+          "firmaIntegridad" : {
+            "type" : "string"
+          },
+          "llavePublica" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "referencia" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "IntentoSistecreditoRespuesta" : {
+        "properties" : {
+          "monto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "referencia" : {
+            "type" : "string"
+          },
+          "urlRedireccion" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LineaCarritoRespuesta" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LineaPedidoRespuesta" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "imagenUrl" : {
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "precioUnitario" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "tasaIva" : {
+            "type" : "number"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LineaRequest" : {
+        "properties" : {
+          "cantidad" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MapaDelSitioRespuesta" : {
+        "properties" : {
+          "productos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Producto"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "MarcaRespuesta" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "nombre" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MedidaDeVarianteRespuesta" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "estadoProducto" : {
+            "type" : "string"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sinMedir" : {
+            "type" : "boolean"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MedidasRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MedidaDeVarianteRespuesta"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalSinMedir" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalSinMedirEnPublicados" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MedirVariantePeticion" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MetodosDePagoDisponiblesRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "direccion" : {
+            "$ref" : "#/components/schemas/DireccionRequest"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaRequest"
+            },
+            "type" : "array"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PedidoRespuesta" : {
+        "properties" : {
+          "contacto" : {
+            "$ref" : "#/components/schemas/ContactoRespuesta"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "datosTransferencia" : {
+            "$ref" : "#/components/schemas/DatosTransferenciaRespuesta"
+          },
+          "dineroRecibido" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "direccion" : {
+            "$ref" : "#/components/schemas/DireccionRespuesta"
+          },
+          "envio" : {
+            "$ref" : "#/components/schemas/EnvioRespuesta"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "historial" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HistorialPedidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaPedidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "plazoDeEntrega" : {
+            "$ref" : "#/components/schemas/PlazoDeEntregaRespuesta"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "usuarioId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "yaDevuelto" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "type" : "object"
+      },
+      "PedidoSeguimientoRespuesta" : {
+        "properties" : {
+          "contacto" : {
+            "$ref" : "#/components/schemas/ContactoRespuesta"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "costoEnvio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "creadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "datosTransferencia" : {
+            "$ref" : "#/components/schemas/DatosTransferenciaRespuesta"
+          },
+          "direccion" : {
+            "$ref" : "#/components/schemas/DireccionRespuesta"
+          },
+          "envio" : {
+            "$ref" : "#/components/schemas/EnvioPublicoRespuesta"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "historial" : {
+            "items" : {
+              "$ref" : "#/components/schemas/HistorialPedidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lineas" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LineaPedidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "metodoPago" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "type" : "string"
+          },
+          "retractos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RetractoPublicoRespuesta"
+            },
+            "type" : "array"
+          },
+          "subtotal" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "tipoEntrega" : {
+            "type" : "string"
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          }
+        },
+        "type" : "object"
+      },
+      "PedidosPaginadosRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PedidoRespuesta"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalPedidos" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "PlazoDeEntregaRespuesta" : {
+        "properties" : {
+          "avisadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "inicio" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "limite" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "verdicto" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Producto" : {
+        "properties" : {
+          "actualizadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductoAdminDetalleRespuesta" : {
+        "properties" : {
+          "categoria" : {
+            "$ref" : "#/components/schemas/CategoriaRespuesta"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "galeria" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImagenDeGaleriaRespuesta"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "imagenPrincipalUrl" : {
+            "type" : "string"
+          },
+          "marca" : {
+            "$ref" : "#/components/schemas/MarcaRespuesta"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "totalVariantes" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductoAdminRespuesta" : {
+        "properties" : {
+          "categoria" : {
+            "$ref" : "#/components/schemas/CategoriaRespuesta"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "imagenPrincipalUrl" : {
+            "type" : "string"
+          },
+          "marca" : {
+            "$ref" : "#/components/schemas/MarcaRespuesta"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "totalVariantes" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductoRespuesta" : {
+        "properties" : {
+          "categoria" : {
+            "$ref" : "#/components/schemas/CategoriaRespuesta"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "galeria" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImagenRespuesta"
+            },
+            "type" : "array"
+          },
+          "imagenPrincipal" : {
+            "$ref" : "#/components/schemas/ImagenRespuesta"
+          },
+          "marca" : {
+            "$ref" : "#/components/schemas/MarcaRespuesta"
+          },
+          "nombre" : {
+            "type" : "string"
+          },
+          "rotacion" : {
+            "$ref" : "#/components/schemas/RotacionRespuesta"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "variantes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ProductosAdminPaginadosRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+            },
+            "type" : "array"
+          },
+          "pagina" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalPaginas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalProductos" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProrrogaRespuesta" : {
+        "properties" : {
+          "avisadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "motivo" : {
+            "type" : "string"
+          },
+          "otorgadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "otorgadaPor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProrrogarSolicitudRequest" : {
+        "properties" : {
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RadicarGarantiaRequest" : {
+        "properties" : {
+          "descripcionDelFallo" : {
+            "type" : "string"
+          },
+          "recibidaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RadicarReversionRequest" : {
+        "properties" : {
+          "causal" : {
+            "type" : "string"
+          },
+          "descripcion" : {
+            "type" : "string"
+          },
+          "fechaDeNoticia" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "recibidaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RadicarSolicitudRequest" : {
+        "properties" : {
+          "asunto" : {
+            "type" : "string"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "recibidaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "tipo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RechazarEnEntregaRequest" : {
+        "properties" : {
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReclamacionGarantiaRespuesta" : {
+        "properties" : {
+          "descripcionDelFallo" : {
+            "type" : "string"
+          },
+          "desenlace" : {
+            "type" : "string"
+          },
+          "entregadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "finDelTermino" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "mesesDeTermino" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "radicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "reintegroId" : {
+            "type" : "string"
+          },
+          "resueltaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "resueltaPor" : {
+            "type" : "string"
+          },
+          "solicitudId" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "type" : "string"
+          },
+          "vigencia" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReenviarVerificacionRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RegistrarGestionRequest" : {
+        "properties" : {
+          "gestion" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RegistrarIdTransaccionWompiRequest" : {
+        "properties" : {
+          "idTransaccionWompi" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RegistrarReintegroRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          },
+          "medioPreferido" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "RegistrarRetractoRequest" : {
+        "properties" : {
+          "medioPreferido" : {
+            "type" : "string"
+          },
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RegistrarUsuarioRequest" : {
+        "properties" : {
+          "autorizaDatos" : {
+            "type" : "boolean"
+          },
+          "clave" : {
+            "type" : "string"
+          },
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReintegroRespuesta" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "type" : "number"
+          },
+          "motivo" : {
+            "type" : "string"
+          },
+          "registradoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "registradoPor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReordenarGaleriaPeticion" : {
+        "properties" : {
+          "imagenIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "imagenIds"
+        ],
+        "type" : "object"
+      },
+      "ResolverEmisionRequest" : {
+        "properties" : {
+          "enviosEnPlataforma" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "nota" : {
+            "type" : "string"
+          },
+          "veredicto" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ResolverGarantiaRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "desenlace" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "type" : "number"
+          },
+          "resumenParaElComprador" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ResolverReversionRequest" : {
+        "properties" : {
+          "comprobante" : {
+            "type" : "string"
+          },
+          "desenlace" : {
+            "type" : "string"
+          },
+          "medio" : {
+            "type" : "string"
+          },
+          "monto" : {
+            "type" : "number"
+          },
+          "resumenParaElComprador" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ResponderSolicitudRequest" : {
+        "properties" : {
+          "resumen" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RespuestaRespuesta" : {
+        "properties" : {
+          "respondidaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "respondidaPor" : {
+            "type" : "string"
+          },
+          "resumen" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ResultadoPaginadoRespuestaAtributoRespuesta" : {
+        "properties" : {
+          "cursorSiguiente" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AtributoRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ResultadoPaginadoRespuestaCategoriaRespuesta" : {
+        "properties" : {
+          "cursorSiguiente" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CategoriaRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ResultadoPaginadoRespuestaMarcaRespuesta" : {
+        "properties" : {
+          "cursorSiguiente" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MarcaRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ResultadoPaginadoRespuestaProductoRespuesta" : {
+        "properties" : {
+          "cursorSiguiente" : {
+            "type" : "string"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProductoRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "RetractoPublicoRespuesta" : {
+        "properties" : {
+          "estado" : {
+            "type" : "string"
+          },
+          "limiteDeReintegro" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "montoReembolsado" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "motivo" : {
+            "type" : "string"
+          },
+          "productoRecibidoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "radicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "reembolsadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "RotacionRespuesta" : {
+        "properties" : {
+          "fotogramas" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "imagenes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImagenRotacionRespuesta"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "SesionRespuesta" : {
+        "properties" : {
+          "accessToken" : {
+            "type" : "string"
+          },
+          "rol" : {
+            "type" : "string"
+          },
+          "usuarioId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SetRotacionRespuesta" : {
+        "properties" : {
+          "capturadoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "capturadoPor" : {
+            "type" : "string"
+          },
+          "dispositivo" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "fotogramasPrometidos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "imagenes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ImagenRotacionRespuesta"
+            },
+            "type" : "array"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionAsistente" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitarRecuperacionRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitarSubidaDeImagenDeGaleriaPeticion" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitarSubidaDeImagenPrincipalPeticion" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitarSubidasDeRotacionPeticion" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitudAtencionRespuesta" : {
+        "properties" : {
+          "asunto" : {
+            "type" : "string"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "limiteDeRespuesta" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "numeroRadicado" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "prorroga" : {
+            "$ref" : "#/components/schemas/ProrrogaRespuesta"
+          },
+          "radicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "radicadaPor" : {
+            "type" : "string"
+          },
+          "recibidaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "respuesta" : {
+            "$ref" : "#/components/schemas/RespuestaRespuesta"
+          },
+          "tipo" : {
+            "type" : "string"
+          },
+          "verdicto" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitudRetractoRespuesta" : {
+        "properties" : {
+          "estado" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "limiteDeReintegro" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "medioPreferido" : {
+            "type" : "string"
+          },
+          "motivo" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "preferenciaRespetada" : {
+            "type" : "boolean"
+          },
+          "productoRecibidoEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "radicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "radicadaPor" : {
+            "type" : "string"
+          },
+          "reintegro" : {
+            "$ref" : "#/components/schemas/ReintegroRespuesta"
+          },
+          "verdictoAlRadicar" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SolicitudReversionRespuesta" : {
+        "properties" : {
+          "causal" : {
+            "type" : "string"
+          },
+          "desenlace" : {
+            "type" : "string"
+          },
+          "estado" : {
+            "type" : "string"
+          },
+          "fechaDeNoticia" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "gestion" : {
+            "type" : "string"
+          },
+          "gestionadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "gestionadaPor" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "pedidoId" : {
+            "type" : "string"
+          },
+          "radicadaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "reintegroId" : {
+            "type" : "string"
+          },
+          "resueltaEn" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "solicitudId" : {
+            "type" : "string"
+          },
+          "verdictoAlRadicar" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SubidaDeFotogramaRespuesta" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          },
+          "orden" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UrlSubidaRespuesta" : {
+        "properties" : {
+          "objectKey" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ValorAtributoPeticion" : {
+        "properties" : {
+          "atributoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "colorHex" : {
+            "type" : "string"
+          },
+          "valor" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VarianteMedidaRespuesta" : {
+        "properties" : {
+          "altoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "anchoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "correccion" : {
+            "type" : "boolean"
+          },
+          "largoCm" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pesoGramos" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VarianteRespuesta" : {
+        "properties" : {
+          "atributos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AtributoValorRespuesta"
+            },
+            "type" : "array"
+          },
+          "disponible" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "precio" : {
+            "$ref" : "#/components/schemas/DineroRespuesta"
+          },
+          "sku" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "disponible"
+        ],
+        "type" : "object"
+      },
+      "VarianteSinMedirRespuesta" : {
+        "properties" : {
+          "estadoProducto" : {
+            "type" : "string"
+          },
+          "nombreProducto" : {
+            "type" : "string"
+          },
+          "productoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sku" : {
+            "type" : "string"
+          },
+          "varianteId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VariantesSinMedirRespuesta" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VarianteSinMedirRespuesta"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "totalEnPublicados" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "VerificarContraentregaRequest" : {
+        "properties" : {
+          "motivo" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "VerificarCorreoRequest" : {
+        "properties" : {
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/admin/atencion" : {
+      "get" : {
+        "operationId" : "listar_5",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "estado",
+            "required" : false,
+            "schema" : {
+              "enum" : [
+                "RADICADA",
+                "PRORROGADA",
+                "RESPONDIDA"
+              ],
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SolicitudAtencionRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-atencion-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "radicar_3",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RadicarSolicitudRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudAtencionRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-atencion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/atencion/{id}/prorroga" : {
+      "post" : {
+        "operationId" : "prorrogar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProrrogarSolicitudRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudAtencionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-atencion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/atencion/{id}/respuesta" : {
+      "post" : {
+        "operationId" : "responder",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResponderSolicitudRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudAtencionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-atencion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/categorias" : {
+      "get" : {
+        "operationId" : "listar_11",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaCategoriaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-categoria-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/revision" : {
+      "get" : {
+        "operationId" : "listar_10",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "maximo",
+            "required" : false,
+            "schema" : {
+              "default" : 100,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BandejaDeRevisionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-envios-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/acuse" : {
+      "post" : {
+        "operationId" : "acusarEmision",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "emisionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AcusarRevisionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AcuseDeRevisionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-envios-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/revision/emisiones/{emisionId}/resolucion" : {
+      "post" : {
+        "operationId" : "resolverEmision",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "emisionId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResolverEmisionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EmisionResueltaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-envios-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/envios/revision/guias/{numeroGuia}/acuse" : {
+      "post" : {
+        "operationId" : "acusarGuia",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "numeroGuia",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AcusarRevisionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AcuseDeRevisionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-envios-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/garantias/{id}/resolucion" : {
+      "post" : {
+        "operationId" : "resolver_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResolverGarantiaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReclamacionGarantiaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-garantias-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/marcas" : {
+      "get" : {
+        "operationId" : "listar_4",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaMarcaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-marca-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "crear_6",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearMarcaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MarcaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-marca-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos" : {
+      "get" : {
+        "operationId" : "listar_9",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "pagina",
+            "required" : false,
+            "schema" : {
+              "default" : 0,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "tamano",
+            "required" : false,
+            "schema" : {
+              "default" : 20,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "estado",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidosPaginadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/cancelacion" : {
+      "post" : {
+        "operationId" : "cancelar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CancelarPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/conciliar-transferencia" : {
+      "post" : {
+        "operationId" : "conciliar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/despacho" : {
+      "post" : {
+        "operationId" : "despachar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DespacharPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/emitir-guia" : {
+      "post" : {
+        "operationId" : "emitirGuia",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "202" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EmisionDeGuiaRespuesta"
+                }
+              }
+            },
+            "description" : "Accepted"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/entrega" : {
+      "post" : {
+        "operationId" : "marcarEntregado",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/recaudo" : {
+      "post" : {
+        "operationId" : "conciliarRecaudo",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConciliarRecaudoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/rechazo-entrega" : {
+      "post" : {
+        "operationId" : "rechazarEnEntrega",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RechazarEnEntregaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{id}/verificar-contraentrega" : {
+      "post" : {
+        "operationId" : "verificar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerificarContraentregaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-pedidos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{pedidoId}/atencion" : {
+      "get" : {
+        "operationId" : "listarDePedido",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SolicitudAtencionRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-atencion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{pedidoId}/garantias" : {
+      "get" : {
+        "operationId" : "listar_3",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReclamacionGarantiaRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-garantias-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "radicar_2",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RadicarGarantiaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReclamacionGarantiaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-garantias-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{pedidoId}/retractos" : {
+      "get" : {
+        "operationId" : "listar_2",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SolicitudRetractoRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-retractos-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "radicar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarRetractoRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudRetractoRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-retractos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/pedidos/{pedidoId}/reversiones" : {
+      "get" : {
+        "operationId" : "listar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SolicitudReversionRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-reversiones-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "radicar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "pedidoId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RadicarReversionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudReversionRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-reversiones-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos" : {
+      "get" : {
+        "operationId" : "listar",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "pagina",
+            "required" : false,
+            "schema" : {
+              "default" : 0,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "tamano",
+            "required" : false,
+            "schema" : {
+              "default" : 20,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductosAdminPaginadosRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "crear_5",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearProductoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}" : {
+      "get" : {
+        "operationId" : "ver",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminDetalleRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      },
+      "patch" : {
+        "operationId" : "editar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditarProductoPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/galeria" : {
+      "post" : {
+        "operationId" : "agregarImagenDeGaleria",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AgregarImagenDeGaleriaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImagenDeGaleriaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/galeria/orden" : {
+      "put" : {
+        "operationId" : "reordenarGaleria",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReordenarGaleriaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/galeria/url-subida" : {
+      "post" : {
+        "operationId" : "solicitarUrlDeSubidaDeGaleria",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidaDeImagenDeGaleriaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UrlSubidaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/galeria/{imagenId}" : {
+      "delete" : {
+        "operationId" : "quitarImagenDeGaleria",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "imagenId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/imagen-principal" : {
+      "post" : {
+        "operationId" : "confirmarImagenPrincipal",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmarImagenPrincipalPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImagenRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/imagen-principal/url-subida" : {
+      "post" : {
+        "operationId" : "solicitarUrlDeSubida",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidaDeImagenPrincipalPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UrlSubidaRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/productos/{id}/publicacion" : {
+      "delete" : {
+        "operationId" : "despublicar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      },
+      "post" : {
+        "operationId" : "publicar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoAdminRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/retractos/{id}/recepcion" : {
+      "post" : {
+        "operationId" : "recibirProducto",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudRetractoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-retractos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/retractos/{id}/reintegro" : {
+      "post" : {
+        "operationId" : "reintegrar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarReintegroRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudRetractoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-retractos-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/reversiones/{id}/gestion" : {
+      "post" : {
+        "operationId" : "gestionar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarGestionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudReversionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-reversiones-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/reversiones/{id}/resolucion" : {
+      "post" : {
+        "operationId" : "resolver",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ResolverReversionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolicitudReversionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-reversiones-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/sets-rotacion" : {
+      "post" : {
+        "operationId" : "abrir",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AbrirSetRotacionPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-set-rotacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/sets-rotacion/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-set-rotacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/sets-rotacion/{id}/completar" : {
+      "post" : {
+        "operationId" : "completar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CompletarSetRotacionPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-set-rotacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/sets-rotacion/{id}/publicar" : {
+      "post" : {
+        "operationId" : "publicar",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SetRotacionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-set-rotacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/sets-rotacion/{id}/subidas" : {
+      "post" : {
+        "operationId" : "subidas",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarSubidasDeRotacionPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SubidaDeFotogramaRespuesta"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-set-rotacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes" : {
+      "post" : {
+        "operationId" : "crear_4",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AgregarVariantePeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VarianteRespuesta"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/existencias" : {
+      "get" : {
+        "operationId" : "existencias",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExistenciasRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/medidas" : {
+      "get" : {
+        "operationId" : "medidas",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MedidasRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/sin-medir" : {
+      "get" : {
+        "operationId" : "sinMedir",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VariantesSinMedirRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/{id}/existencia" : {
+      "patch" : {
+        "operationId" : "ajustarExistencia",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AjustarExistenciaPeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExistenciaAjustadaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/admin/variantes/{id}/paquete" : {
+      "patch" : {
+        "operationId" : "medir",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MedirVariantePeticion"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/VarianteMedidaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "admin-variante-controlador"
+        ]
+      }
+    },
+    "/api/v1/atributos" : {
+      "get" : {
+        "operationId" : "listar_8",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaAtributoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "atributo-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/cierre" : {
+      "post" : {
+        "operationId" : "cerrarSesion",
+        "parameters" : [
+          {
+            "in" : "cookie",
+            "name" : "refresco",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/recuperacion" : {
+      "post" : {
+        "operationId" : "recuperacion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SolicitarRecuperacionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/recuperacion/confirmar" : {
+      "post" : {
+        "operationId" : "confirmarRecuperacion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmarRecuperacionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/refresco" : {
+      "post" : {
+        "operationId" : "refrescar",
+        "parameters" : [
+          {
+            "in" : "cookie",
+            "name" : "refresco",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "Sesión refrescada"
+          },
+          "204" : {
+            "description" : "No hay cookie de refresco: no hay sesión que refrescar"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/registro" : {
+      "post" : {
+        "operationId" : "registro",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarUsuarioRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/sesion" : {
+      "post" : {
+        "operationId" : "iniciarSesion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IniciarSesionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SesionRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/verificacion" : {
+      "post" : {
+        "operationId" : "verificacion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VerificarCorreoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/auth/verificacion/reenviar" : {
+      "post" : {
+        "operationId" : "reenviarVerificacion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReenviarVerificacionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "autenticacion-controlador"
+        ]
+      }
+    },
+    "/api/v1/carritos" : {
+      "post" : {
+        "operationId" : "crear_3",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
+    "/api/v1/carritos/{id}" : {
+      "get" : {
+        "operationId" : "ver_2",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
+    "/api/v1/carritos/{id}/lineas" : {
+      "post" : {
+        "operationId" : "agregarLinea",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AgregarLineaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
+    "/api/v1/carritos/{id}/lineas/{lineaId}" : {
+      "delete" : {
+        "operationId" : "eliminarLinea",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "lineaId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      },
+      "patch" : {
+        "operationId" : "actualizarCantidad",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "path",
+            "name" : "lineaId",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ActualizarCantidadRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarritoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "carrito-controlador"
+        ]
+      }
+    },
+    "/api/v1/categorias" : {
+      "get" : {
+        "operationId" : "listar_7",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaCategoriaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "categoria-controlador"
+        ]
+      }
+    },
+    "/api/v1/envios/cotizacion" : {
+      "post" : {
+        "operationId" : "cotizar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CotizacionEnvioRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CotizacionEnvioRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "cotizacion-envio-controlador"
+        ]
+      }
+    },
+    "/api/v1/envios/webhook" : {
+      "post" : {
+        "operationId" : "webhook_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "format" : "byte",
+                "type" : "string"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "envio-webhook-controlador"
+        ]
+      }
+    },
+    "/api/v1/mapa-del-sitio" : {
+      "get" : {
+        "operationId" : "ver_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MapaDelSitioRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "mapa-del-sitio-controlador"
+        ]
+      }
+    },
+    "/api/v1/marcas" : {
+      "get" : {
+        "operationId" : "listar_6",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaMarcaRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "marca-controlador"
+        ]
+      }
+    },
+    "/api/v1/pagos/intentos" : {
+      "post" : {
+        "operationId" : "crear_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearIntentoDePagoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntentoDePagoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pago-controlador"
+        ]
+      }
+    },
+    "/api/v1/pagos/intentos/{referencia}" : {
+      "patch" : {
+        "operationId" : "registrarIdTransaccion",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "referencia",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegistrarIdTransaccionWompiRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pago-controlador"
+        ]
+      }
+    },
+    "/api/v1/pagos/sistecredito/confirmacion" : {
+      "post" : {
+        "operationId" : "confirmacion",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "additionalProperties" : true,
+                "type" : "object"
+              }
+            }
+          },
+          "description" : "Notificación de Sistecrédito, tal como la envía la pasarela. No viene firmada: se verifica consultando la transacción.",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "sistecredito-controlador"
+        ]
+      }
+    },
+    "/api/v1/pagos/sistecredito/intentos" : {
+      "post" : {
+        "operationId" : "crear_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearIntentoSistecreditoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntentoSistecreditoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "sistecredito-controlador"
+        ]
+      }
+    },
+    "/api/v1/pagos/webhook" : {
+      "post" : {
+        "operationId" : "webhook",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "additionalProperties" : true,
+                "type" : "object"
+              }
+            }
+          },
+          "description" : "Evento de Wompi, tal como lo envía la pasarela. Se valida por firma.",
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pago-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos" : {
+      "post" : {
+        "operationId" : "crear",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CrearPedidoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos/metodos-de-pago-disponibles" : {
+      "post" : {
+        "operationId" : "metodosDePagoDisponibles",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MetodosDePagoDisponiblesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos/{id}/reintentar-pago" : {
+      "post" : {
+        "operationId" : "reintentarPago",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos/{id}/seguimiento" : {
+      "get" : {
+        "operationId" : "seguimiento",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "correo",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoSeguimientoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/productos" : {
+      "get" : {
+        "operationId" : "buscar",
+        "parameters" : [
+          {
+            "in" : "query",
+            "name" : "categoria",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "marca",
+            "required" : false,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "linea",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "precioMin",
+            "required" : false,
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "precioMax",
+            "required" : false,
+            "schema" : {
+              "format" : "int64",
+              "type" : "integer"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "texto",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "orden",
+            "required" : false,
+            "schema" : {
+              "default" : "RELEVANCIA",
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "cursor",
+            "required" : false,
+            "schema" : {
+              "type" : "string"
+            }
+          },
+          {
+            "in" : "query",
+            "name" : "tamano",
+            "required" : false,
+            "schema" : {
+              "default" : 24,
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultadoPaginadoRespuestaProductoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/productos/{slug}" : {
+      "get" : {
+        "operationId" : "verFicha",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "slug",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProductoRespuesta"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "producto-controlador"
+        ]
+      }
+    },
+    "/api/v1/salud" : {
+      "get" : {
+        "operationId" : "salud",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "salud-controlador"
+        ]
+      }
+    }
+  }
+}

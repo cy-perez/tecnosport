@@ -126,6 +126,9 @@ importa menos de lo que parece: la fuente de verdad sigue siendo `tokens.json`.
   `rounded-lg` no existen. Para saber si una utilidad existe de verdad:
   `npm run clases -- <clase>`. Lo que hay son los tokens: `bg-ts-primario`,
   `text-ts-texto-suave`, `p-16`, `text-2xl`, `shadow-md`, `max-w-formulario`.
+  **Y desde el 21 de septiembre de 2026 no hace falta acordarse de preguntar**:
+  `npm run clases` sin argumentos barre las plantillas, los enlaces `[class.x]` y
+  los literales de clases de los `.ts`, y corre dentro de `npm run verificar`.
 - **`p-16` son 16 px**, no 64 como en Tailwind por omisión. La escala de espacio
   se nombró por el píxel para que la utilidad sea rastreable al token
   (`--esp-16`) de un vistazo.

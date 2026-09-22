@@ -215,8 +215,13 @@ tipo: PRINCIPAL | GALERIA | ROTACION
 Reglas:
 
 - **No hay resolución mínima para publicar, y es deliberado** (19 de septiembre de
-  2026). Ni el dominio ni la API exigen un tamaño: se publica con la maestra que
-  haya en `catalogo/fotos/estudio/{producto}/maestra`, sea de 2000 px o de 480.
+  2026). Ni el dominio ni la API exigen un tamaño: se publica con la foto que
+  haya en `catalogo/fotos/estudio/{producto}`, sea de 2000 px o de 480.
+  **Lo que se sube no es la maestra** (21 de septiembre de 2026): es su variante
+  web, el AVIF más grande hasta 1200 px, y la maestra se queda de archivo. Las 91
+  imágenes del primer catálogo real pasaron así de 22,01 MiB a 2,18. Si una toma
+  no tiene variante, el cargador se niega en vez de subir la maestra: caer sería
+  volver al defecto sin decirlo.
   El listón de 1200 px que usa el retoque es un **criterio de calidad del
   procesamiento**, no una regla del sistema, y confundir los dos dejaría el
   catálogo sin publicar esperando fotos que quizá no lleguen nunca — de los 33
@@ -258,12 +263,19 @@ Reglas:
 - **Imagen principal con URL firmada (Fase 4):** el navegador sube el archivo
   directo a Cloud Storage con un `PUT`, el backend nunca ve los bytes; solo
   verifica que el objeto exista y su tamaño antes de confirmar. `url_webp`
-  todavía apunta al mismo objeto que `url` — la conversión real de formato a
-  WebP es del asistente de captura de la Fase 5, no existe todavía. `ancho` y
+  apunta al mismo objeto que `url`, y **el nombre de la columna quedó
+  mintiendo** (21 de septiembre de 2026): nunca hubo conversión en este paso
+  —iba a hacerla el asistente de captura de la Fase 5— y desde el catálogo
+  real lo que guarda es la URL de un **AVIF**. `ancho` y
   `alto` los declara el cliente y se confían tal cual (metadato
-  presentacional, no una medida verificada contra el archivo real). No se
-  borra el objeto anterior al reemplazar la principal — el bucket tiene
-  versionado (`docs/07-infra-gcp.md`). El tipo de contenido se acepta por una
+  presentacional, no una medida verificada contra el archivo real).
+  **El objeto anterior sí se borra al reemplazar la principal**, y este
+  documento decía lo contrario hasta el 21 de septiembre de 2026:
+  `ConfirmarImagenPrincipal` borra por prefijo `productos/{id}/principal-`
+  todo menos la key recién subida, así que se lleva de paso lo que quedó de
+  subidas que nunca se confirmaron. Comprobado al rehacer las 91 imágenes del
+  catálogo: las 29 principales viejas desaparecieron del bucket sin que nadie
+  las borrara a mano. El tipo de contenido se acepta por una
   lista blanca declarada por el cliente, no verificado contra los bytes
   reales, y no hay tamaño máximo de subida propio — riesgo aceptado mientras
   el panel solo lo use el administrador del negocio (`ADR-0016`).

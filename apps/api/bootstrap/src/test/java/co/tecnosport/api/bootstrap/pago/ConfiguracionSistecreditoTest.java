@@ -8,9 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.tecnosport.api.application.pago.PasarelaSistecredito;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
-import co.tecnosport.api.presentation.pago.PropiedadesWompiPublicas;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.Environment;
+import org.springframework.mock.env.MockEnvironment;
 
 /**
  * El freno de seguridad de {@code adr/0048}, que es lo único de esta integración que puede salir
@@ -22,11 +23,17 @@ class ConfiguracionSistecreditoTest {
   private final ConfiguracionSistecredito configuracion = new ConfiguracionSistecredito();
 
   @Test
-  void elModoSandboxEncendidoEnUnAmbienteDePruebasReconocidoSiArranca() {
+  void elModoSandboxEncendidoEnUnDespliegueDePruebasDeclaradoSiArranca() {
+    for (String perfil : new String[] {"local", "dev", "e2e", "pruebas"}) {
+      assertDoesNotThrow(
+          () -> configuracion.pasarelaSistecredito(propiedades(true, true), conPerfiles(perfil)),
+          "el perfil \"" + perfil + "\" debería dejar encender el sandbox");
+    }
+    // Y con el perfil de pruebas acompañado de otro, que es como se despliegan de verdad.
     assertDoesNotThrow(
-        () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi("sandbox")));
-    assertDoesNotThrow(
-        () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi("pruebas")));
+        () ->
+            configuracion.pasarelaSistecredito(
+                propiedades(true, true), conPerfiles("local", "e2e")));
   }
 
   /**
@@ -36,21 +43,38 @@ class ConfiguracionSistecreditoTest {
    * regalada sin una sola línea de error.
    */
   @Test
-  void unAmbienteQueNoSeReconoceComoDePruebasNoDejaEncenderElSandbox() {
-    for (String ambiente : new String[] {"production", "PRODUCCION", "prod", "produccion", "qa"}) {
+  void unPerfilQueNoSeReconoceComoDePruebasNoDejaEncenderElSandbox() {
+    for (String perfil : new String[] {"production", "PRODUCCION", "prod", "produccion", "qa"}) {
       IllegalStateException error =
           assertThrows(
               IllegalStateException.class,
-              () -> configuracion.pasarelaSistecredito(propiedades(true, true), wompi(ambiente)),
-              "el ambiente \"" + ambiente + "\" no debería dejar encender el sandbox");
+              () ->
+                  configuracion.pasarelaSistecredito(propiedades(true, true), conPerfiles(perfil)),
+              "el perfil \"" + perfil + "\" no debería dejar encender el sandbox");
       assertTrue(error.getMessage().contains("sandbox-activo"));
     }
+  }
+
+  /**
+   * <b>El caso que el freno viejo dejaba pasar</b>, y el motivo de haberlo movido del ambiente de
+   * Wompi al perfil del despliegue: una instancia recién montada donde nadie fijó nada. Con {@code
+   * WOMPI_AMBIENTE} eso valía {@code sandbox} por omisión y el arranque pasaba; sin ningún perfil
+   * declarado, ahora se niega.
+   */
+  @Test
+  void unDespliegueSinNingunPerfilNoDejaEncenderElSandbox() {
+    IllegalStateException error =
+        assertThrows(
+            IllegalStateException.class,
+            () -> configuracion.pasarelaSistecredito(propiedades(true, true), conPerfiles()));
+
+    assertTrue(error.getMessage().contains("ninguno"));
   }
 
   @Test
   void conElMetodoApagadoNoSeConstruyeUnClienteContraLaPasarelaReal() {
     PasarelaSistecredito pasarela =
-        configuracion.pasarelaSistecredito(propiedades(false, false), wompi("sandbox"));
+        configuracion.pasarelaSistecredito(propiedades(false, false), conPerfiles("local"));
 
     assertInstanceOf(SistecreditoApagado.class, pasarela);
   }
@@ -63,7 +87,7 @@ class ConfiguracionSistecreditoTest {
   @Test
   void elMetodoApagadoRevientaSiAlguienIntentaCobrarConEl() {
     PasarelaSistecredito pasarela =
-        configuracion.pasarelaSistecredito(propiedades(false, false), wompi("sandbox"));
+        configuracion.pasarelaSistecredito(propiedades(false, false), conPerfiles("local"));
 
     assertThrows(SistecreditoNoRespondeException.class, () -> pasarela.crear(null));
   }
@@ -71,7 +95,7 @@ class ConfiguracionSistecreditoTest {
   @Test
   void habilitadoYSinSandboxConstruyeElClienteDeVerdad() {
     PasarelaSistecredito pasarela =
-        configuracion.pasarelaSistecredito(propiedades(true, false), wompi("produccion"));
+        configuracion.pasarelaSistecredito(propiedades(true, false), conPerfiles("produccion"));
 
     assertInstanceOf(SistecreditoClient.class, pasarela);
   }
@@ -95,7 +119,9 @@ class ConfiguracionSistecreditoTest {
         habilitado ? new BigDecimal("30000") : null);
   }
 
-  private PropiedadesWompiPublicas wompi(String ambiente) {
-    return new PropiedadesWompiPublicas("pub_test_placeholder", ambiente);
+  private Environment conPerfiles(String... perfiles) {
+    MockEnvironment entorno = new MockEnvironment();
+    entorno.setActiveProfiles(perfiles);
+    return entorno;
   }
 }

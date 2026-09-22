@@ -80,10 +80,19 @@ y no en el código.
 | `infrastructure` | Testcontainers con PostgreSQL 16 | Consultas, migraciones, mapeadores, bloqueos |
 | `presentation` | `@WebMvcTest` | Códigos HTTP, validación, formato de error |
 | Arquitectura | ArchUnit | Las flechas de dependencia. Falla el build |
+| Contrato | `ContratoOpenApiTest` | Que el OpenAPI servido sea `packages/contratos/openapi.json` |
 | Extremo a extremo | Spring Boot Test con Wompi y Skydropx falsos | Los recorridos de `00-producto.md` |
 
 Nunca H2. Si la prueba no corre contra el mismo motor que producción, no prueba
 la consulta que importa.
+
+**La prueba del contrato es una prueba de límite, no de comportamiento**, y por eso está en la
+tabla: lo que rompe no es una regla de negocio, es lo que el frontend cree que va a recibir. El
+21 de septiembre de 2026 el único guardián de eso era un trabajo de integración continua que
+levantaba PostgreSQL y `bootRun` para regenerar el cliente y mirar el diff: correcto, pero
+veinte minutos tarde y ya sobre la rama. Con el OpenAPI guardado en el repositorio, el mismo
+guardián son dos eslabones que corren en la máquina de quien programa —esta prueba en `gradlew
+build`, y `tools/verificar-contratos.mjs` en `npm run verificar`— y el trabajo de CI sobró.
 
 **Y hay un hueco entre capas que solo una prueba de `infrastructure` ve: el mapeo JPA contra la
 migración.** El 19 de septiembre de 2026, al hacer opcional el paquete de la variante
@@ -190,7 +199,8 @@ hay maquetación, así que `color-contrast` y `target-size` no pueden evaluarse
 —nada tiene tamaño ni posición—. Las dos están cubiertas mejor por otra vía: el
 contraste con **`npm run contrastes`**, que calcula los pares reales de
 `tokens.css` en los dos temas; y el objetivo táctil con `min-h-tactil`, que es
-una clase verificable con `npm run clases`.
+una clase verificable con `npm run clases` — que desde el 21 de septiembre de 2026, sin
+argumentos, barre el frontend entero en vez de responder por una clase a la vez.
 
 ### Lo que Vitest no atrapa en la capa visual
 

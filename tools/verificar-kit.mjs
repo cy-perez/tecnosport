@@ -39,6 +39,19 @@ const KIT = join(RAIZ, "packages/marca");
  * regeneraría en un kit vacío, que es otro escenario y no el que se quiere vigilar. */
 const ENTRADAS = ["tokens.json", "generador", "fuentes.css", "fuentes", "logo"];
 
+/** Lo que `kit_ui.py tokens.json --out .` produce, escrito a mano **a propósito**.
+ *
+ * La lista de lo que la corrida produce la deriva este guardián solo; la que no puede derivar es
+ * la de ayer. Esta es esa, y la discrepancia entre las dos es justo la señal que faltaba: un
+ * generado que dejó de producirse y sigue commiteado no cambia de bytes ni falta del
+ * repositorio, así que ninguna de las dos comprobaciones que ya había lo veía. Se queda ahí,
+ * idéntico y muerto, y quien lo abre lo lee como vigente.
+ *
+ * Las cinco son incondicionales en `kit_ui.py`. `fuentes.css` no está porque solo lo escribe
+ * `--fuentes` —sin la bandera el generador lo conserva, que es por lo que entra como entrada— y
+ * `dist/` tampoco: sale de otro camino que este guardián no corre. */
+const GENERADOS = ["LEEME.md", "contraste.md", "index.html", "tipografia.md", "tokens.css"];
+
 /** El intérprete que exista. En Windows `python3` es el alias de la tienda, que no es Python:
  * responde con un cartel y un código de salida distinto de cero, así que se pregunta antes. */
 function buscarPython() {
@@ -68,9 +81,18 @@ function iguales(recien, guardado) {
   return enLineas(recien) === enLineas(guardado);
 }
 
-/** Todos los archivos de un directorio, en rutas relativas a él. */
+/** Todos los archivos de un directorio, en rutas relativas a él, menos el bytecode de Python.
+ *
+ * `__pycache__/` lo escribe el intérprete al importar un módulo, no el generador, y en una
+ * máquina limpia no viene en la copia porque `.gitignore` lo excluye. Hoy no rompía por un pelo:
+ * el `.pyc` aparece al importar `fuentes`, que es el paso siguiente, cuando la comparación ya
+ * terminó. Basta mover ese paso —o que `kit_ui.py` importe `fuentes` al arrancar, como ya hace
+ * con `--fuentes`— para que el guardián empiece a fallar en integración continua diciendo que el
+ * generador produce un `.pyc` que falta del repositorio. Un fallo así no dice nada del kit: dice
+ * qué intérprete corrió. */
 function archivosDe(directorio, base = directorio) {
   return readdirSync(directorio, { withFileTypes: true }).flatMap((entrada) => {
+    if (entrada.isDirectory() && entrada.name === "__pycache__") return [];
     const ruta = join(directorio, entrada.name);
     return entrada.isDirectory()
       ? archivosDe(ruta, base)
@@ -119,6 +141,11 @@ try {
     cpSync(origen, join(temporal, entrada), { recursive: true });
   }
 
+  // Lo que hay antes de generar es, por construcción, lo que se acaba de copiar: las entradas.
+  // Con esa fotografía, lo que el generador produce se sabe restando, y nadie tiene que mantener
+  // aparte la lista de qué archivo del kit sale de dónde.
+  const antesDeGenerar = new Set(archivosDe(temporal));
+
   // El comando exacto que documenta el LEEME del kit, corrido desde dentro del kit. Es el que
   // usa quien lo recibe, y era el que hacía daño: se vigila ese, no una variante nuestra.
   const generado = spawnSync(python, ["generador/kit_ui.py", "tokens.json", "--out", "."], {
@@ -131,6 +158,15 @@ try {
     console.error(generado.stderr || "");
     throw new SalidaDelKit(1);
   }
+
+  const producidos = archivosDe(temporal).filter((archivo) => !antesDeGenerar.has(archivo));
+  // Solo los que además están guardados: si el generador produce algo que el repositorio no
+  // tiene, eso ya lo dice `sobran`, y un informe que nombra el mismo archivo dos veces con dos
+  // etiquetas distintas se lee como dos problemas.
+  const sinDeclarar = producidos.filter(
+    (archivo) => !GENERADOS.includes(archivo) && existsSync(join(KIT, archivo)),
+  );
+  const dejaronDeProducirse = GENERADOS.filter((archivo) => !producidos.includes(archivo));
 
   const diferencias = [];
   const sobran = [];
@@ -150,7 +186,12 @@ try {
     }
   }
 
-  if (diferencias.length > 0 || sobran.length > 0) {
+  if (
+    diferencias.length > 0 ||
+    sobran.length > 0 ||
+    sinDeclarar.length > 0 ||
+    dejaronDeProducirse.length > 0
+  ) {
     console.error("El kit no se regenera igual que como está guardado.\n");
     for (const { archivo, bytes } of diferencias) {
       console.error(`  cambia   packages/marca/${archivo}  (${bytes})`);
@@ -158,10 +199,25 @@ try {
     for (const archivo of sobran) {
       console.error(`  aparece  packages/marca/${archivo}  (el generador lo produce y no está)`);
     }
+    for (const archivo of sinDeclarar) {
+      console.error(
+        `  produce  packages/marca/${archivo}  (lo produce el generador y GENERADOS no lo nombra)`,
+      );
+    }
+    for (const archivo of dejaronDeProducirse) {
+      console.error(
+        existsSync(join(KIT, archivo))
+          ? `  huérfano packages/marca/${archivo}  (dejó de producirse y sigue guardado)`
+          : `  se fue   packages/marca/${archivo}  (dejó de producirse; tampoco está guardado)`,
+      );
+    }
     console.error(
       "\nUna de dos: alguien editó a mano un archivo generado, o el generador dejó de producir" +
         "\nlo que produjo. Las dos se arreglan en el mismo sitio —`tokens.json` y `generador/`—," +
-        "\nnunca editando el archivo que sale.",
+        "\nnunca editando el archivo que sale." +
+        "\n\nSi la salida cambió a propósito, el cambio no termina en el generador: lo que ya no" +
+        "\nse produce hay que borrarlo del repositorio, y lo nuevo hay que declararlo en" +
+        "\n`GENERADOS`. Un generado huérfano no falla nunca y se lee como vigente.",
     );
     throw new SalidaDelKit(1);
   }
@@ -191,10 +247,11 @@ try {
     throw new SalidaDelKit(1);
   }
 
-  const cuantos = archivosDe(temporal).length;
+  const conservados = archivosDe(temporal).length - producidos.length;
   console.log(
-    `El kit se regenera igual que como está guardado (${cuantos} archivos, con ${python}),` +
-      " y se niega a rehacer las tipografías sin con qué comprimirlas.",
+    `El kit se regenera igual que como está guardado (${producidos.length} generados sobre` +
+      ` ${conservados} conservados, con ${python}), produce exactamente los ${GENERADOS.length}` +
+      " declarados, y se niega a rehacer las tipografías sin con qué comprimirlas.",
   );
 } catch (error) {
   if (!(error instanceof SalidaDelKit)) throw error;

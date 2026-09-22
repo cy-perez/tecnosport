@@ -10,14 +10,15 @@ import co.tecnosport.api.application.pago.ProcesarNotificacionSistecredito;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.infrastructure.pago.SistecreditoClient;
-import co.tecnosport.api.presentation.pago.PropiedadesWompiPublicas;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 /**
  * Arma el cliente de Sistecrédito y monta el freno de seguridad del modo sandbox ({@code
@@ -44,22 +45,33 @@ public class ConfiguracionSistecredito {
   private static final Logger log = LoggerFactory.getLogger(ConfiguracionSistecredito.class);
 
   /**
-   * <b>Lista blanca, no lista negra.</b> Los únicos valores de {@code WOMPI_AMBIENTE} que este
-   * repositorio usa para decir "esto no mueve dinero": {@code sandbox} (el valor por omisión de
-   * {@code application.yml}) y {@code pruebas} (el de {@code .env.example}).
+   * <b>Lista blanca, no lista negra.</b> Los perfiles con los que este repositorio declara "este
+   * despliegue no mueve dinero de verdad": los tres que existen —{@code local}, {@code dev} y
+   * {@code e2e}— más {@code pruebas}, por si algún día alguien nombra así un entorno.
    *
    * <p>Estaba escrito al revés —negar el arranque solo si el ambiente era exactamente {@code
    * "produccion"}— y esa forma falla <b>abierta</b>: {@code production}, {@code PRODUCCION}, {@code
    * prod}, un typo, o un despliegue nuevo donde nadie fijó la variable, dejaban pasar el arranque
    * con el sandbox encendido. Es el mismo patrón que la regla dura #1 documenta para el guardián de
    * capas que nunca disparaba: un guardián que falla abierto ante un descuido no es un guardián.
+   *
+   * <p><b>Y desde el 21 de septiembre de 2026 la señal es el perfil y no {@code
+   * WOMPI_AMBIENTE}.</b> Colgaba de la configuración de <i>la otra</i> pasarela por una razón
+   * honesta y escrita —no había perfil de producción y esa era la única marca por despliegue
+   * disponible—, con su {@code TODO} pidiendo enderezarlo. Enderezarlo no exigió inventar un perfil
+   * nuevo: basta con invertir la pregunta. No se pregunta "¿es producción?", que obliga a que
+   * alguien se acuerde de marcarla; se pregunta "¿está declarado como despliegue de pruebas?", y
+   * <b>un despliegue sin ningún perfil ya no arranca con el sandbox encendido</b>. Antes sí lo
+   * hacía, porque {@code WOMPI_AMBIENTE} vale {@code sandbox} por omisión: el caso más peligroso
+   * —producción recién montada, nadie fijó las variables— era justo el que pasaba el freno.
    */
-  private static final Set<String> AMBIENTES_SIN_DINERO_REAL = Set.of("sandbox", "pruebas");
+  private static final Set<String> PERFILES_SIN_DINERO_REAL =
+      Set.of("local", "dev", "e2e", "pruebas");
 
   @Bean
   public PasarelaSistecredito pasarelaSistecredito(
-      PropiedadesSistecredito propiedades, PropiedadesWompiPublicas propiedadesWompi) {
-    exigirSandboxApagadoEnProduccion(propiedades, propiedadesWompi);
+      PropiedadesSistecredito propiedades, Environment entorno) {
+    exigirSandboxApagadoFueraDeUnDespliegueDePruebas(propiedades, entorno);
     avisarDelModoSandbox(propiedades);
     if (!propiedades.habilitado()) {
       // Un cliente que no puede llamar a nadie, para que el contexto levante igual con el método
@@ -133,18 +145,22 @@ public class ConfiguracionSistecredito {
    * y se despacharía mercancía regalada, sin que nada fallara ni apareciera en ningún registro de
    * error. Es el único fallo de esta integración que no se nota hasta que se cuentan las cajas.
    */
-  private void exigirSandboxApagadoEnProduccion(
-      PropiedadesSistecredito propiedades, PropiedadesWompiPublicas propiedadesWompi) {
-    if (propiedades.sandboxActivo()
-        && !AMBIENTES_SIN_DINERO_REAL.contains(propiedadesWompi.ambiente())) {
-      throw new IllegalStateException(
-          "tecnosport.sistecredito.sandbox-activo está encendido y WOMPI_AMBIENTE vale \""
-              + propiedadesWompi.ambiente()
-              + "\", que no es uno de "
-              + AMBIENTES_SIN_DINERO_REAL
-              + ". El modo sandbox aprueba pagos que nadie pagó, así que solo se permite en un"
-              + " despliegue reconocido como de pruebas: apágalo, o corrige el ambiente.");
+  private void exigirSandboxApagadoFueraDeUnDespliegueDePruebas(
+      PropiedadesSistecredito propiedades, Environment entorno) {
+    if (!propiedades.sandboxActivo()) {
+      return;
     }
+    String[] perfiles = entorno.getActiveProfiles();
+    if (Arrays.stream(perfiles).anyMatch(PERFILES_SIN_DINERO_REAL::contains)) {
+      return;
+    }
+    throw new IllegalStateException(
+        "tecnosport.sistecredito.sandbox-activo está encendido y los perfiles activos son "
+            + (perfiles.length == 0 ? "ninguno" : Arrays.toString(perfiles))
+            + ", que no incluyen ninguno de "
+            + PERFILES_SIN_DINERO_REAL
+            + ". El modo sandbox aprueba pagos que nadie pagó, así que solo se permite en un"
+            + " despliegue declarado como de pruebas: apágalo, o declara el perfil.");
   }
 
   private void avisarDelModoSandbox(PropiedadesSistecredito propiedades) {

@@ -1,9 +1,10 @@
 # API
 
 REST sobre HTTP, JSON, versionada en la ruta: `/api/v1`. El contrato lo genera
-springdoc desde el código y se publica en `/api/openapi.json`. Ese archivo es la
-fuente del cliente TypeScript de `packages/contratos`. No se escriben interfaces
-de respuesta a mano.
+springdoc desde el código y se publica en `/api/openapi.json`. De ahí sale
+`packages/contratos/openapi.json` —la instantánea guardada, que `ContratoOpenApiTest`
+vigila contra la aplicación de verdad— y de la instantánea sale el cliente
+TypeScript de `packages/contratos`. No se escriben interfaces de respuesta a mano.
 
 ## Convenciones
 
@@ -242,9 +243,10 @@ se cumple. Es idempotente: publicar lo ya publicado devuelve `200`, porque el re
 se pedía y un `409` obligaría a consultar antes para no chocar.
 
 **Lo que publicar exige y lo que no.** Exige **imagen principal** — es la invariante del dominio y
-la única. **No** exige una resolución mínima de esa imagen: se publica con la maestra que haya, y el
+la única. **No** exige una resolución mínima de esa imagen: se publica con la foto que haya, y el
 listón de 1200 px del procesamiento de fotos es criterio de calidad, no regla del sistema
-(`docs/02`). Y **no** exige el peso ni las medidas del paquete: desde `adr/0046` una variante se
+(`docs/02`). Los tipos que la API acepta al firmar una subida son `image/jpeg`, `image/png`,
+`image/webp` e `image/avif`; el cargador del catálogo usa AVIF desde el 21 de septiembre de 2026. Y **no** exige el peso ni las medidas del paquete: desde `adr/0046` una variante se
 puede cargar sin medir, y entonces su producto se vende solo con recogida en el punto — al cotizar,
 `POST /api/v1/envios/cotizacion` responde `409` con `codigo: "ARTICULO_SIN_MEDIDAS"` y la lista de
 artículos, con la misma forma que `ARTICULO_NO_ASEGURABLE`.
