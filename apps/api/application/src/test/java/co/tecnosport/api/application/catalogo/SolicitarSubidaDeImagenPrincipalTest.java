@@ -41,6 +41,25 @@ class SolicitarSubidaDeImagenPrincipalTest {
     assertTrue(resultado.url().contains(resultado.objectKey()));
   }
 
+  /**
+   * El formato que el cargador del catálogo usa desde el 21 de septiembre de 2026. Está aquí y no
+   * solo en la lista blanca porque lo que importa no es que el tipo se acepte: es que la clave del
+   * objeto termine en {@code .avif}, que es lo que hace que Cloud Storage lo sirva como AVIF y no
+   * como un JPEG con la extensión equivocada.
+   */
+  @Test
+  void avifSeAceptaYLaClaveTerminaEnAvif() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+
+    SolicitudDeSubida resultado =
+        solicitarSubida.ejecutar(
+            new SolicitarSubidaDeImagenPrincipalComando(producto.id(), "image/avif"));
+
+    assertTrue(resultado.objectKey().endsWith(".avif"));
+    assertEquals("image/avif", almacenDeImagenes.ultimoContentTypeFirmado);
+  }
+
   @Test
   void productoInexistenteLanzaProductoNoEncontradoPorId() {
     UUID productoId = UUID.randomUUID();
