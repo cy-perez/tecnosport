@@ -7642,6 +7642,70 @@ depende de si el sentido se esperaba antes de medir: con dos parejas es una de c
 y una de cada cuatro si había hipótesis. La tabla dice el signo; cuál de las dos cuentas aplica lo
 sabe quien hizo el cambio, no el script.
 
+## Los 700 ms de estilo y layout de la portada no existen (2026-09-22)
+
+Era el pendiente que dejó la deuda 19: «estilo y *layout* sigue en torno a 700 ms y no se ha
+tocado». Se fue a buscar de dónde salían y la respuesta es que **de ningún sitio**. Vale la pena
+dejar el camino escrito, porque el número tenía toda la pinta de ser un problema.
+
+### Primero: 739 ms no son 739 ms
+
+El desglose del hilo principal que imprime Lighthouse está **multiplicado por el factor de
+estrangulamiento**. En la traza, la portada gasta 161 ms de *Layout* repartidos en 13 eventos y
+29 ms de *UpdateLayoutTree*: unos 190 ms reales, que a 4× dan los 739 del informe. El DOM son 220
+elementos.
+
+De ahí sale la primera cifra que sí es accionable, aunque no sea la que se buscaba: hay **tres
+relayouts completos del documento** —101 ms, 46 ms y 12 ms—, y el de 101 ms es el primero, antes de
+que se aplique la hoja externa.
+
+### Segundo, y es lo que importa: la portada no tarda en pintar
+
+Lo que decía el informe es más raro que un layout lento: el primer píxel aparecía a **1.431 ms**,
+con el `DOMContentLoaded` en 482 y el `load` en 575. Casi un segundo con el DOM entero y la pantalla
+en blanco. Extrayendo los fotogramas de la traza —no los ocho del *filmstrip*, los 17 que trae
+dentro— se ve que **entre los 337 ms y los 1.568 no hay ni un fotograma**: el compositor no produce
+nada mientras el hilo principal está casi ocioso.
+
+Antes de tocar una línea de CSS se comprobó en un navegador de verdad, con el mismo build de
+producción servido igual:
+
+| dónde | primer píxel |
+|---|---|
+| `npm run dev`, pestaña visible | **344 ms** |
+| build de producción en :4002, pestaña visible | **348 ms** |
+| el mismo build, con la caché del service worker borrada | **432 ms** |
+| el arnés (Lighthouse), once corridas | **1.286 – 1.569 ms** |
+
+**La portada pinta en un tercio de segundo.** El segundo y medio solo ocurre dentro del arnés.
+
+Dos comprobaciones más, para no cerrar en falso:
+
+- **No es un fallo de hidratación.** El servidor de desarrollo lo diría a gritos, y dice lo
+  contrario: *«Angular hydrated 8 component(s) and 193 node(s), 0 component(s) were skipped»*.
+- **No es el modo headless.** Se añadió `--con-ventana` al arnés para medir con un Chrome de
+  verdad y el hueco sigue: 1.340 ms en la portada. Lo que sí cambió fue **la ficha**, que pasó de
+  385 ms a 1.375: el hueco es intermitente y aparece en las pantallas que cargan imágenes.
+  `legales`, que no tiene ni una, pinta siempre en ~250 ms en las once corridas.
+
+No se encontró la causa dentro del arnés, y decirlo es parte del resultado. Lo que queda escrito
+es el límite: **las cifras absolutas de FCP y LCP del arnés no describen lo que ve una persona en
+las pantallas con imágenes.** Lo que sí sirve de ese informe son los bytes, los desgloses de
+trabajo y las comparaciones entre dos corridas suyas, que es para lo que se construyó.
+
+### Lo que sí es real en la portada, y no se ha hecho
+
+La auditoría `image-delivery-insight` pide **211 KiB** en la portada: las cuatro tarjetas cargan el
+AVIF de 1200 px para pintarlo en un hueco de unos 180. Son bytes, no tiempos, así que eso no
+depende de la máquina ni del arnés. Es lo que `ADR-0056` dejó dicho al no poner `srcset` —"con el
+peso ya resuelto eso es afinar, no arreglar"— y ahora tiene número. Queda como deuda 23.
+
+### Dos herramientas nuevas, que son lo que permitió cerrar esto
+
+`--traza` guarda la traza de Chrome junto al informe (7 MB por pantalla, solo si se pide), y
+`--con-ventana` mide con un Chrome visible en vez del headless. Sin la primera no se ve que Layout
+son 161 ms y no 739; sin la segunda no se descarta el rasterizado por software.
+
 ## Las deudas que quedan, al 21 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -7741,6 +7805,12 @@ El orden no es negociable: cada uno alimenta al siguiente.
     van en el mismo sentido en las dos parejas— pero ninguna pareja sola lo demuestra, y los
     únicos números que se afirman sin reservas son los bytes: −9 kB en la portada, −4 en legales.
     Ver la entrada de arriba.
+
+23. **La portada carga cuatro AVIF de 1200 px para huecos de 180.** `image-delivery-insight` pide
+    211 KiB en esa pantalla, y son bytes: no dependen de la máquina ni del arnés. Es el `srcset`
+    que `ADR-0056` dejó fuera a propósito —"con el peso ya resuelto eso es afinar"— y que ahora
+    tiene número. Cuesta más que un atributo: hoy solo se sube una variante de 1200, así que hay
+    que generar y subir más anchos, y eso cruza el cargador, la API y el modelo.
 
 ### Bloque 3. Decisiones que no toma un script
 

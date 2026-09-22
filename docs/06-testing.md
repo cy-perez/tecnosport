@@ -368,6 +368,20 @@ descubrió que los 145 ms que se le habían atribuido eran **40** —el efecto e
 real, la cifra no—. Dos parejas que coinciden en signo no demuestran nada por sí
 solas: hacen creíble lo que cada una por separado no puede afirmar.
 
+**Y hay un límite que conviene saber antes de creerle una cifra absoluta.** El 22 de septiembre se
+fue a por los "700 ms de estilo y layout" de la portada y no existían: ese desglose viene
+multiplicado por el factor de estrangulamiento —en la traza son 190 ms— y, sobre todo, el arnés
+informaba un primer píxel a 1,3-1,6 s en las pantallas con imágenes cuando **el mismo build, en un
+navegador de verdad, pinta en 344 ms**. No se encontró la causa dentro del arnés. Así que:
+
+- **De sus cifras absolutas de FCP y LCP no se puede deducir lo que ve una persona** en pantallas
+  con imágenes. `legales`, sin ninguna, no tiene ese hueco.
+- **Sus bytes, sus desgloses de trabajo y sus comparaciones entre dos corridas suyas sí valen**:
+  todo eso se mide contra sí mismo, que es para lo que se construyó.
+- Cuando una cifra absoluta parezca mala, **compruébala en el navegador antes de optimizar nada**.
+  `--traza` guarda la traza de Chrome junto al informe y `--con-ventana` mide con un Chrome
+  visible; las dos se añadieron ese día, y sin ellas el número falso habría pasado por bueno.
+
 Eso lo hace `npm run pareja` y no hace falta montarlo a mano:
 
 ```
