@@ -1,13 +1,25 @@
-import { urlPreferida } from './producto.model';
+import { descriptoresDe, Imagen } from './producto.model';
 
-describe('urlPreferida', () => {
-  it('prefiere la WebP', () => {
-    expect(urlPreferida({ url: 'foto.jpg', urlWebp: 'foto.webp' })).toBe('foto.webp');
+function imagen(anchos: number[]): Imagen {
+  return {
+    url: `https://x/${anchos[anchos.length - 1]}.avif`,
+    variantes: anchos.map((ancho) => ({ ancho, url: `https://x/${ancho}.avif` })),
+    urlVistaPrevia: null,
+    ancho: anchos[anchos.length - 1],
+    alto: 900,
+    altEs: 'alt es',
+    altEn: 'alt en',
+  };
+}
+
+describe('descriptoresDe', () => {
+  it('escribe un descriptor de ancho por variante', () => {
+    expect(descriptoresDe(imagen([480, 800, 1200]))).toBe('480w, 800w, 1200w');
   });
 
-  // El backend puede no haber generado la WebP de una imagen vieja. Servirla en el formato
-  // anterior es peor que servirla en WebP, y mucho mejor que no servirla.
-  it('cae al original cuando no hay WebP', () => {
-    expect(urlPreferida({ url: 'foto.jpg', urlWebp: '' })).toBe('foto.jpg');
+  // El procesamiento de estudio no amplía, así que hay tomas que solo llegan a 480. Un `srcset` de
+  // una entrada es válido y es exactamente lo que el sitio servía antes de que hubiera variantes.
+  it('funciona con una sola variante', () => {
+    expect(descriptoresDe(imagen([480]))).toBe('480w');
   });
 });

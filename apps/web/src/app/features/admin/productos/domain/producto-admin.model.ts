@@ -78,7 +78,6 @@ export interface AgregarVarianteAdmin {
 
 export interface ImagenAdmin {
   readonly url: string;
-  readonly urlWebp: string;
   readonly ancho: number;
   readonly alto: number;
   readonly altEs: string;
@@ -92,7 +91,6 @@ export interface ImagenAdmin {
 export interface ImagenDeGaleriaAdmin {
   readonly id: string;
   readonly url: string;
-  readonly urlWebp: string;
   readonly ancho: number;
   readonly alto: number;
   readonly orden: number;

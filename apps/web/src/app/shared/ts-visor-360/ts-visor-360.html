@@ -25,16 +25,32 @@
            recorte cuadrado lo decide el CSS. `alt=""`: los fotogramas son decorativos en conjunto,
            la descripción del producto vive en el texto de la ficha. -->
       @if (urlVisible()) {
-        <img class="pointer-events-none object-cover" [ngSrc]="urlVisible()" alt="" fill priority />
+        <img
+          class="pointer-events-none object-cover"
+          [ngSrc]="urlVisible()"
+          alt=""
+          fill
+          priority
+          disableOptimizedSrcset
+        />
       }
 
       @if (pistaVisible()) {
-        <p class="absolute bottom-12 left-1/2 m-0 -translate-x-1/2 whitespace-nowrap bg-ts-marca px-12 py-4 text-sm text-ts-sobre-marca" aria-hidden="true">{{ 'visor360.pista' | transloco }}</p>
+        <p
+          class="absolute bottom-12 left-1/2 m-0 -translate-x-1/2 whitespace-nowrap bg-ts-marca px-12 py-4 text-sm text-ts-sobre-marca"
+          aria-hidden="true"
+        >
+          {{ 'visor360.pista' | transloco }}
+        </p>
       }
     </div>
 
     <div class="flex items-center justify-center gap-16">
-      <ts-boton variante="secundario" [etiquetaAccesible]="'visor360.girar_izquierda' | transloco" (click)="girar(-1)">
+      <ts-boton
+        variante="secundario"
+        [etiquetaAccesible]="'visor360.girar_izquierda' | transloco"
+        (click)="girar(-1)"
+      >
         ‹
       </ts-boton>
 
@@ -44,11 +60,17 @@
         {{ 'visor360.posicion' | transloco: { actual: indiceActual() + 1, total: total() } }}
       </span>
 
-      <ts-boton variante="secundario" [etiquetaAccesible]="'visor360.girar_derecha' | transloco" (click)="girar(1)">
+      <ts-boton
+        variante="secundario"
+        [etiquetaAccesible]="'visor360.girar_derecha' | transloco"
+        (click)="girar(1)"
+      >
         ›
       </ts-boton>
     </div>
 
-    <p class="m-0 text-center text-sm text-ts-texto-suave" [id]="idInstrucciones">{{ 'visor360.instrucciones' | transloco }}</p>
+    <p class="m-0 text-center text-sm text-ts-texto-suave" [id]="idInstrucciones">
+      {{ 'visor360.instrucciones' | transloco }}
+    </p>
   </div>
 }

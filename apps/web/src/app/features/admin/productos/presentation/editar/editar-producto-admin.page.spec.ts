@@ -68,7 +68,6 @@ function imagenDeGaleria(orden: number): ImagenDeGaleriaAdmin {
   return {
     id: 'img' + orden,
     url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/galeria-' + orden + '.jpg',
-    urlWebp: 'https://storage.googleapis.com/tecnosport-dev-imagenes/galeria-' + orden + '.jpg',
     ancho: 2000,
     alto: 2000,
     orden,
@@ -137,7 +136,6 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     }
     return {
       url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/objeto.webp',
-      urlWebp: 'https://storage.googleapis.com/tecnosport-dev-imagenes/objeto.webp',
       ancho: comando.ancho,
       alto: comando.alto,
       altEs: comando.altEs,

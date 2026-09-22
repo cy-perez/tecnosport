@@ -35,7 +35,7 @@ import { TsSelectorVariante } from '../selector-variante/ts-selector-variante';
 import { TsVisor360 } from '../../../../shared/ts-visor-360/ts-visor-360';
 import { usarFichaProducto } from '../../application/buscar-ficha-producto.consulta';
 import { CarritoStore } from '../../../carrito/application/carrito.store';
-import { hayExistencia, Imagen, urlPreferida } from '../../domain/producto.model';
+import { hayExistencia, Imagen } from '../../domain/producto.model';
 import {
   ejesDeAtributos,
   Seleccion,
@@ -101,7 +101,7 @@ export class FichaPage {
 
   /** El visor recibe URL y nada más. Llegan ya ordenadas por `orden` desde el mapeador. */
   protected readonly fotogramas360 = computed<string[]>(() =>
-    (this.producto()?.rotacion?.imagenes ?? []).map(urlPreferida),
+    (this.producto()?.rotacion?.imagenes ?? []).map((fotograma) => fotograma.url),
   );
 
   protected readonly ejes = computed(() => {
@@ -150,12 +150,15 @@ export class FichaPage {
           marca: producto.marca.nombre,
         }),
       indexable: true,
-      // `imagen.url` y no `urlPreferida(imagen)`: la regla de servir WebP con el
-      // original de respaldo (apps/web/CLAUDE.md) vale para el `<img>` del
-      // navegador, que negocia el formato. Aquí quien lee la URL es el
-      // previsualizador de WhatsApp o de Facebook, que no negocia nada y con
-      // WebP muchas veces no muestra imagen. El original es el que siempre se ve.
-      imagen: producto.imagenPrincipal?.url,
+      // La vista previa antes que la imagen del sitio, y esta línea decía lo
+      // contrario. Decía que servía "el original" por compatibilidad con los
+      // previsualizadores — pero desde ADR-0056 el original **es** el AVIF, así
+      // que ese razonamiento dejó de proteger nada: WhatsApp y Facebook no
+      // negocian formatos y con AVIF no muestran imagen. `urlVistaPrevia` es el
+      // JPEG que se sube justo para esto. Mientras una imagen no lo tenga, se
+      // cae a la del sitio: una tarjeta de enlace sin foto es mejor que un
+      // `og:image` vacío.
+      imagen: producto.imagenPrincipal?.urlVistaPrevia ?? producto.imagenPrincipal?.url,
     };
   });
 

@@ -15,8 +15,12 @@ function productoDePrueba(): Producto {
     marca: { id: '1', nombre: 'TecnoSport' },
     categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
     imagenPrincipal: {
-      url: 'https://cdn.example.com/morral.jpg',
-      urlWebp: 'https://cdn.example.com/morral.webp',
+      url: 'https://cdn.example.com/morral-1200.avif',
+      variantes: [
+        { ancho: 480, url: 'https://cdn.example.com/morral-480.avif' },
+        { ancho: 1200, url: 'https://cdn.example.com/morral-1200.avif' },
+      ],
+      urlVistaPrevia: null,
       ancho: 1200,
       alto: 900,
       altEs: 'Morral urbano negro',

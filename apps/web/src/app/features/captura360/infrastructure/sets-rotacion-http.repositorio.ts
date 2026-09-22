@@ -98,7 +98,7 @@ interface SetRotacionDto {
   productoId?: string;
   fotogramasPrometidos?: number;
   estado?: string;
-  imagenes?: { orden?: number; urlWebp?: string }[];
+  imagenes?: { orden?: number; url?: string }[];
 }
 
 /** El modelo del front es del front: el DTO generado no sale de infrastructure. */
@@ -110,7 +110,7 @@ function aSetRotacion(dto: SetRotacionDto): SetRotacionAdmin {
     estado: (dto.estado ?? 'BORRADOR') as SetRotacionAdmin['estado'],
     imagenes: (dto.imagenes ?? []).map((imagen) => ({
       orden: imagen.orden ?? 0,
-      urlWebp: imagen.urlWebp ?? '',
+      url: imagen.url ?? '',
     })),
   };
 }

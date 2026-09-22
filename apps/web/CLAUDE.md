@@ -120,11 +120,24 @@ implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dur
   lo encuentra y nada le explica por qué no pasa nada. Se deja vivo, se valida al
   pulsar y se dice qué falta, con `markAllAsTouched()` más un mensaje de
   Transloco.
-- **Imágenes:** `NgOptimizedImage` siempre, en WebP **con el original de
-  respaldo**. Esa elección es **una sola regla**, `urlPreferida` en el dominio
-  del catálogo, y toda plantilla pasa por ella. No se escribe la expresión
-  suelta en cada plantilla: así fue como el visor terminó sirviendo la WebP y la
-  galería el original sin que nadie lo hubiera decidido.
+- **Imágenes:** `NgOptimizedImage` siempre. Una imagen de producto se publica en
+  **varias resoluciones** (`ADR-0057`) y la plantilla las ofrece todas: `ngSrc`
+  con la mayor, `ngSrcset` con `descriptoresDe(imagen)` —los anchos, no las
+  URL—, `loaderParams` con `{ variantes }` y un `sizes` de
+  `core/imagenes/tamanos-de-imagen.ts`. Quien resuelve la URL de cada ancho es
+  el `IMAGE_LOADER` registrado en `app.config.ts`, que **busca la variante en
+  `loaderParams`** y no la deduce de la forma de la key: ese acoplamiento
+  silencioso es el que produjo `url_webp`.
+  - **Sin loader no hay `srcset`.** `NgOptimizedImage` salta la generación
+    cuando el loader es el de por omisión, y un `ngSrcset` sin loader repetiría
+    la misma URL en todos los descriptores (aviso 2963). Comprobado en la
+    fuente de `@angular/common` instalada.
+  - **Una imagen que se publica en un solo ancho lleva `disableOptimizedSrcset`**
+    —el hero de la portada, la línea del carrito, los fotogramas del visor 360—,
+    o Angular anuncia un 2x que es exactamente el mismo archivo.
+  - Los descriptores viven en **una sola función del dominio**, igual que antes
+    vivía ahí la elección de formato: así fue como el visor terminó sirviendo la
+    WebP y la galería el original sin que nadie lo hubiera decidido.
   - **Con `width` y `height`** cuando la imagen se pinta con la relación de
     aspecto del archivo. **En modo `fill`, dentro de un marco con
     `position: relative` y `aspect-ratio`, cuando el recorte lo decide el CSS**

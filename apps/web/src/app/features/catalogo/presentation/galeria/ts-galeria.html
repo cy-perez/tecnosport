@@ -5,13 +5,24 @@
          reserva el espacio. Es la del LCP de la ficha salvo cuando hay visor
          360, que se queda con esa prioridad. -->
     <div class="relative aspect-square bg-ts-superficie-alt">
-      <img
-        class="object-cover"
-        [ngSrc]="url(imagen)"
-        [alt]="alt(imagen)"
-        fill
-        [priority]="prioritaria()"
-      />
+      <!-- `@for` sobre una lista de una, y no el `<img>` suelto dentro del `@if`: de las entradas
+           de NgOptimizedImage solo `ngSrc` se puede cambiar en caliente, y `ngSrcset` y
+           `loaderParams` están congeladas tras inicializar (NG02953). Elegir otra miniatura cambia
+           las tres a la vez, así que el elemento tiene que **nacer de nuevo**; con `track` por la
+           URL, eso es exactamente lo que hace `@for`. Lo atrapó la prueba del clic en la
+           miniatura. -->
+      @for (activa of [imagen]; track activa.url) {
+        <img
+          class="object-cover"
+          [ngSrc]="activa.url"
+          [ngSrcset]="descriptores(activa)"
+          [loaderParams]="parametros(activa)"
+          [sizes]="TAMANOS"
+          [alt]="alt(activa)"
+          fill
+          [priority]="prioritaria()"
+        />
+      }
     </div>
 
     @if (imagenes().length > 1) {
@@ -24,7 +35,15 @@
             [attr.aria-label]="alt(miniatura)"
             (click)="elegir(indice)"
           >
-            <img class="object-cover" [ngSrc]="url(miniatura)" alt="" fill />
+            <img
+              class="object-cover"
+              [ngSrc]="miniatura.url"
+              [ngSrcset]="descriptores(miniatura)"
+              [loaderParams]="parametros(miniatura)"
+              [sizes]="TAMANOS_MINIATURA"
+              alt=""
+              fill
+            />
           </button>
         }
       </div>

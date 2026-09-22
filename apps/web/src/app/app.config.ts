@@ -1,3 +1,4 @@
+import { IMAGE_LOADER } from '@angular/common';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import {
   ApplicationConfig,
@@ -31,6 +32,7 @@ import { EnvioHttpRepositorio } from './features/checkout/infrastructure/envio-h
 import { PagoHttpRepositorio } from './features/checkout/infrastructure/pago-http.repositorio';
 import { PedidoHttpRepositorio } from './features/checkout/infrastructure/pedido-http.repositorio';
 import { MetadatosSeo } from './core/seo/metadatos.servicio';
+import { cargadorDeImagenes } from './core/imagenes/cargador-de-imagenes';
 import { TranslocoHttpLoader } from './transloco-loader';
 
 export const appConfig: ApplicationConfig = {
@@ -44,6 +46,10 @@ export const appConfig: ApplicationConfig = {
     provideEnvironmentInitializer(() => inject(MetadatosSeo).escuchar()),
     provideClientHydration(),
     provideHttpClient(withFetch()),
+    // Sin esto NgOptimizedImage no emite `srcset`: con el loader por omisión lo salta, y un
+    // `ngSrcset` sin loader repetiría la misma URL en todos los descriptores. Ver el javadoc del
+    // cargador.
+    { provide: IMAGE_LOADER, useValue: cargadorDeImagenes },
     // Un cliente por aplicación (token con fábrica, no `new QueryClient()` aquí: ese objeto lo
     // compartían todos los renders del servidor), y la caché que llenó el SSR viaja al navegador
     // en el TransferState. Así el `resolve` de la ruta no vuelve a pedir el catálogo al hidratar

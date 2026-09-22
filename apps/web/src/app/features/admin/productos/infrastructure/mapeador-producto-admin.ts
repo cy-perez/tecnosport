@@ -65,7 +65,6 @@ export function aImagenDeGaleriaAdmin(dto: ImagenDeGaleriaDto): ImagenDeGaleriaA
   return {
     id: dto.id ?? '',
     url: dto.url ?? '',
-    urlWebp: dto.urlWebp ?? '',
     ancho: dto.ancho ?? 0,
     alto: dto.alto ?? 0,
     orden: dto.orden ?? 0,
@@ -99,7 +98,6 @@ function aCategoria(dto?: CategoriaDto): CategoriaAdmin {
 export function aImagenAdmin(dto: ImagenDto): ImagenAdmin {
   return {
     url: dto.url ?? '',
-    urlWebp: dto.urlWebp ?? '',
     ancho: dto.ancho ?? 0,
     alto: dto.alto ?? 0,
     altEs: dto.altEs ?? '',

@@ -15,7 +15,10 @@
     <div class="relative aspect-square bg-ts-superficie-alt">
       <img
         class="object-cover"
-        [ngSrc]="url(imagen)"
+        [ngSrc]="imagen.url"
+        [ngSrcset]="descriptores(imagen)"
+        [loaderParams]="parametros(imagen)"
+        [sizes]="TAMANOS"
         [alt]="alt()"
         [priority]="prioritaria()"
         fill
