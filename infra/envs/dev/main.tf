@@ -174,6 +174,13 @@ locals {
     "skydropx-client-id",
     "skydropx-client-secret",
     "skydropx-secreto-webhook",
+    # Las tres de Sistecrédito. Las tres son secretas, incluidos el `store-id` y el `vendor-id`
+    # que parecen meros identificadores: esta cuenta **solo tiene credenciales productivas** —no
+    # hay ambiente de pruebas, lo confirmó la asesora el 20 de septiembre de 2026— así que las
+    # tres juntas abren crédito a nombre de una persona de verdad.
+    "sistecredito-llave-suscripcion",
+    "sistecredito-store-id",
+    "sistecredito-vendor-id",
   ]
 }
 
@@ -236,7 +243,13 @@ module "api" {
     SMTP_AUTH           = "true"
     SMTP_USUARIO        = "resend"
     CORREO_REMITENTE    = "no-responder@dev.tecnosport.co"
-    WOMPI_AMBIENTE      = "sandbox"
+    # La cuenta del panel. **Estaba puesta a mano en el servicio y no aquí**, y se descubrió el 22
+    # de septiembre porque el plan de un cambio ajeno proponía borrarla: un `apply` la habría
+    # quitado, el arranque habría vuelto al valor por omisión de `application.yml`
+    # —`admin@tecnosport.co`— y la cuenta con la que se entra al panel de dev habría dejado de ser
+    # la que es. Lo que la infraestructura no describe, el siguiente apply lo deshace.
+    ADMIN_CORREO   = var.correo_admin
+    WOMPI_AMBIENTE = "sandbox"
     # La aplicación **no** migra al arrancar: lo hace el flujo de despliegue, en un paso propio y
     # antes de mover la revisión. Es lo que `docs/07-infra-gcp.md` exige para producción, y dev
     # existe para ensayar producción. Y si el paso se saltara, esto no lo tapa: Hibernate valida
@@ -248,6 +261,29 @@ module "api" {
     # que pasó en el primer despliegue: la API respondía 200 y la tienda estaba vacía. Los
     # sembradores son idempotentes, así que sobrevive a los arranques en frío.
     SPRING_PROFILES_ACTIVE = "dev"
+    }, !var.sistecredito_listo ? {} : {
+    # Sistecrédito encendido en dev, y el freno explícito al lado.
+    #
+    # **`SISTECREDITO_SANDBOX_ACTIVO` no es una comodidad de desarrollo.** Esta cuenta solo tiene
+    # credenciales productivas, así que este booleano es lo único que separa una prueba de un
+    # crédito real a nombre de una persona: la pasarela a la que se apunta es `api.credinet.co`,
+    # la de verdad, también desde aquí. `ConfiguracionSistecredito` deja encenderlo porque este
+    # despliegue declara el perfil `dev`; en uno sin perfil, o con uno que no esté en la lista
+    # blanca, la instancia **no arranca**.
+    SISTECREDITO_HABILITADO     = "true"
+    SISTECREDITO_SANDBOX_ACTIVO = "true"
+    SISTECREDITO_SANDBOX_ESTADO = "Approved"
+    # El mínimo del crédito, confirmado por el dueño del negocio el 22 de septiembre de 2026. No
+    # es público —dos comercios aliados publican 20.000 y 30.000— porque varía por comercio, y por
+    # eso no tiene valor por omisión en `application.yml`: un despliegue que lo olvide tiene que no
+    # arrancar, en vez de cobrar con una cifra que alguien escribió hace meses.
+    SISTECREDITO_MONTO_MINIMO = "50000"
+    # **Tiene que ser pública, y no se puede derivar de `module.api.url` aquí**: sería el módulo
+    # refiriéndose a sí mismo y Terraform lo rechaza como ciclo. Va por variable, que se llena
+    # después del primer apply igual que `dominio_publico_web`. Si se queda vacía, el valor por
+    # omisión de `application.yml` apunta a localhost y la notificación de Sistecrédito no llega a
+    # ninguna parte — que es justo lo que las pruebas contra dev vienen a comprobar.
+    SISTECREDITO_URL_CONFIRMACION = "${var.dominio_publico_api}/api/v1/pagos/sistecredito/confirmacion"
     }, var.wompi_llave_publica == "" ? {} : {
     WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {
@@ -269,7 +305,7 @@ module "api" {
   # una transacción con `Authorization: Bearer <llave pública>` — está verificado en el Javadoc de
   # `WompiClient`. La privada sirve para operar transacciones desde el servidor, que es justo lo que
   # este diseño evita para no ampliar el alcance de PCI (`docs/11-pagos-y-envios.md`).
-  secretos = var.secretos_cargados ? {
+  secretos = merge(var.secretos_cargados ? {
     DB_CLAVE                 = "db-clave"
     JWT_SECRETO              = "jwt-secreto"
     SMTP_CLAVE               = "smtp-clave"
@@ -282,7 +318,11 @@ module "api" {
     SKYDROPX_CLIENT_ID       = "skydropx-client-id"
     SKYDROPX_CLIENT_SECRET   = "skydropx-client-secret"
     SKYDROPX_SECRETO_WEBHOOK = "skydropx-secreto-webhook"
-  } : {}
+    } : {}, var.sistecredito_listo ? {
+    SISTECREDITO_SUBSCRIPTION_KEY = "sistecredito-llave-suscripcion"
+    SISTECREDITO_STORE_ID         = "sistecredito-store-id"
+    SISTECREDITO_VENDOR_ID        = "sistecredito-vendor-id"
+  } : {})
 
   depends_on = [google_project_service.apis]
 }

@@ -7835,6 +7835,78 @@ Dos consecuencias que conviene tener presentes:
   clave real incluye ese byte: leerlo con un `.strip()` da 401 y parece una credencial equivocada.
   Costó tres intentos de los cinco de la ventana antes de medir el payload en bytes.
 
+## Sistecrédito declarado en dev, y una variable que estaba puesta a mano (2026-09-22)
+
+Avanza el punto 11, que no era código: el mínimo del crédito estaba confirmado —50.000— y
+`application.yml` lo deja sin valor por omisión a propósito, pero **`infra/envs/dev/main.tf` no
+declaraba una sola variable `SISTECREDITO_*`**. El método estaba escrito y apagado, y no había
+forma de encenderlo.
+
+### Tres cosas que hubo que decidir y quedan escritas
+
+- **Las tres credenciales son secretas, `store-id` y `vendor-id` incluidos.** Parecen
+  identificadores y no lo son en la práctica: esta cuenta solo tiene credenciales productivas —no
+  hay ambiente de pruebas, lo confirmó la asesora el 20 de septiembre— así que las tres juntas
+  abren un crédito a nombre de una persona de verdad.
+- **Encender el sandbox no evita la llamada real.** `ConfiguracionSistecredito` construye el
+  `SistecreditoClient` en cuanto `habilitado` es `true`, y apunta a `api.credinet.co` también desde
+  dev; `sandboxActivo` solo viaja al caso de uso. El freno lo sostiene el perfil: `dev` está en la
+  lista blanca, y un despliegue sin perfil no arranca con el sandbox encendido.
+- **La URL de confirmación no se puede derivar de `module.api.url`.** Sería el módulo refiriéndose
+  a sí mismo y Terraform lo rechaza como ciclo, así que va por `dominio_publico_api`, que se llena
+  después del primer apply igual que `dominio_publico_web`. Si se queda vacía, el valor por omisión
+  apunta a `localhost` y la notificación no llega a ninguna parte — que es justo lo que las pruebas
+  contra dev vienen a comprobar.
+
+### Y lo que encontró el plan, que no lo buscaba nadie
+
+`ADMIN_CORREO` estaba fijado **a mano en el servicio de Cloud Run** —`contacto@tecnosport.co`— y no
+en la configuración. El primer `terraform apply` que tocara el servicio lo habría borrado, el
+arranque habría vuelto al valor por omisión de `application.yml` —`admin@tecnosport.co`— y la cuenta
+con la que se entra al panel de dev habría dejado de ser la que es. Queda declarado. **Lo que la
+infraestructura no describe, el siguiente apply lo deshace**, y esto lo destapó un `plan` de un
+cambio que no tenía nada que ver.
+
+### Y por qué la clave del panel no servía, que resultó ser lo mismo
+
+La clave de `admin-clave` en Secret Manager **no autenticaba** contra dev, ni con esa cuenta ni con
+la del valor por omisión. **Y la mitad de la causa ya estaba escrita cinco entradas más arriba, en
+este mismo documento**: ese secreto termina en un retorno de carro y la clave real incluye ese byte,
+así que leerlo con un `.strip()` da 401 y parece una credencial equivocada. Ya había costado tres
+intentos en su día; volvió a costar otros dos hoy, por no releer lo que estaba dicho. Apuntarlo aquí
+no bastó, y probablemente no baste nunca: el dato tendría que vivir donde vive el secreto.
+
+La otra mitad —por qué cargar una clave nueva en el secreto no arreglaba nada— está en el Javadoc de
+`SembradorAdmin`, y es la misma deriva de arriba vista desde otro lado: **crea el `ADMIN` solo si no
+existe ninguno con ese correo, y nunca actualiza uno que ya existe.** Con el hash viejo guardado —el
+de una clave que lleva un byte que nadie puede teclear en un formulario— la cuenta quedaba
+inservible y el único camino era reemplazar la fila. Busca por correo, así que cuando `ADMIN_CORREO` pasó de
+`admin@tecnosport.co` a `contacto@tecnosport.co`, el siguiente arranque no encontró ese buzón y
+creó un **segundo** usuario; y la clave de cada uno quedó congelada en la que tenía `ADMIN_CLAVE` el
+día en que nació. Cambiar el secreto después no hace nada.
+
+Se resolvió el 22 de septiembre dejando un solo administrador: cargar la clave nueva en el secreto,
+borrar las filas `ADMIN` y sus hijos —`sesion_refresco`, `token_verificacion_correo` y
+`token_recuperacion_clave`, las tres que apuntan a `usuario` con llave foránea— y dejar que el
+sembrador creara uno. Detalle que conviene recordar: **no hizo falta forzar una revisión**. El
+sembrador es un `ApplicationRunner`, corre en cada arranque de contenedor, así que el primer
+arranque en frío posterior al borrado ya lo recreó — el `gcloud run services update` que se lanzó
+después llegó tarde y no dijo nada, porque el usuario ya existía otra vez.
+
+Dos cosas que costaron intentos por el camino, las dos del entorno y no del proyecto:
+`gcloud secrets versions add --data-file=-` espera que le cierres la entrada, y en Windows eso es
+`Ctrl+Z` y Enter, no `Ctrl+D`; y un `begin;` que aborta en el editor SQL deja la sesión rechazando
+todo con `25P02` hasta que alguien escriba `rollback`.
+
+### Lo que falta para encenderlo
+
+Tres pasos, en este orden, y el primero ya está escrito:
+
+1. `terraform apply` con `sistecredito_listo = false` — crea los tres recipientes y no toca el
+   servicio (medido: 6 recursos nuevos, 0 cambios).
+2. Cargar los tres valores desde `.env.local` con `gcloud secrets versions add`.
+3. `sistecredito_listo = true`, `dominio_publico_api` con la URL del servicio, y volver a aplicar.
+
 ## Los huérfanos del bucket, y que el informe contaba de más (2026-09-22)
 
 Cerró el borrado que la deuda 7 dejó pendiente —"queda pendiente borrarlos a mano alguna vez, que
@@ -8056,7 +8128,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
     `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
     cambiar, así que un despliegue que olvide la variable no arranca con el método encendido. Queda
     **declararla en el despliegue de dev y de producción**, que es lo único que falta para poder
-    encender Sistecrédito.
+    encender Sistecrédito. **Dev quedó escrito el 22 de septiembre** —los tres secretos, el mínimo,
+    el freno de sandbox y la URL de confirmación, detrás de `sistecredito_listo`—; falta cargar los
+    valores y aplicar, y falta producción entera. Ver la entrada de arriba.
 12. ~~**`MetodoPago.ADDI`.**~~ **Cerrada el 22 de septiembre: se sacó del enum** (`V61`). Addi se
     integrará cuando el sitio esté en producción —es la condición que ellos ponen para estudiar la
     activación— y volverá con su propio `ProveedorDePago`, no como un valor suelto apuntando a una
@@ -8081,6 +8155,22 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
     septiembre es la estructura que necesitan, que no es lo mismo.
+
+### Lo que dejó abierto encender Sistecrédito en dev
+
+28. **Rotar la clave de un administrador exige borrar filas en la base de datos.** `SembradorAdmin`
+    crea el `ADMIN` si no existe y **nunca actualiza uno existente** —lo dice su propio Javadoc, y
+    ahí llama al mecanismo que falta "un mecanismo aparte, no construido todavía"—. No hay pantalla
+    en el panel ni endpoint para cambiarla: `/auth/recuperacion` manda el correo de recuperación, y
+    depende de que el buzón reciba de verdad. En dev esto se resolvió borrando las filas `ADMIN` y
+    dejando que el sembrador creara una; **en producción eso es cirugía de base de datos sobre la
+    única cuenta que administra la tienda**, y con una sola cuenta no hay un segundo administrador
+    que pueda ayudar desde dentro. Mientras siga así, perder la clave del panel es un incidente, no
+    un trámite. **Cómo comprobarlo:** buscar en `apps/api` un caso de uso que cambie la clave de un
+    usuario ya existente; mientras el único sea `ConfirmarRecuperacion`, que cuelga del token que
+    llega por correo, la deuda sigue. La salida mínima es un cambio de clave autenticado desde el panel
+    —el usuario con sesión iniciada da la actual y la nueva—, que no depende del correo ni de la
+    base.
 
 ### Lo que dejó abierto el borrado de huérfanos
 

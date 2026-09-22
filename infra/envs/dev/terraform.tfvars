@@ -33,3 +33,19 @@ secretos_cargados = true
 # de pago para abrir el checkout, y además es con esta —no con la privada— con la que el backend
 # consulta el estado de una transacción.
 wompi_llave_publica = "pub_test_TXyoe5ZvJWZKfaCe2riF0NrCFIMvt96R"
+
+# La URL que Cloud Run le asignó al servicio de la API. Mismo caso que `dominio_publico_web` y por
+# el mismo motivo: no se sabe antes de crearlo, y dentro del propio módulo no se puede leer sin que
+# Terraform lo vea como un ciclo. La necesita la URL de confirmación de Sistecrédito, que la
+# pasarela llama desde fuera; con esto vacío apuntaría a localhost y la notificación no llegaría.
+dominio_publico_api = "https://tecnosport-api-sdlqfchkiq-ue.a.run.app"
+
+# Los tres secretos de Sistecrédito tienen versión cargada (22 de septiembre de 2026), así que el
+# servicio puede montarlos y el método puede encenderse. Antes de esto, encenderlo habría hecho que
+# la revisión no arrancara por partida doble: por montar `latest` de un secreto sin versiones, y
+# porque `PropiedadesSistecredito` se niega a habilitar el método sin sus credenciales.
+#
+# **Enciende el sandbox en este ambiente, y eso no es una comodidad**: la pasarela a la que se
+# apunta es `api.credinet.co`, la de verdad, porque esta cuenta no tiene ambiente de pruebas. El
+# booleano del sandbox es lo único que separa una prueba de un crédito real a nombre de una persona.
+sistecredito_listo = true
