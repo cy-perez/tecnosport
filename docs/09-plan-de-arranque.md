@@ -7618,8 +7618,9 @@ del pie le ahorra a `legales` unos 40 ms de evaluación de scripts, no 145.
 tiempo —dos métricas, dos pantallas, dos parejas— van **todas** en el mismo sentido: menos trabajo
 con el `@defer`. Cada una por separado cae dentro del ruido o bajo el piso, y la herramienta lo
 dice; lo que las hace creíbles es que se repitan. Con dos parejas independientes coincidiendo en
-signo, la probabilidad de que sea casualidad es una de cada cuatro por pantalla: no es una
-demostración, es una consistencia. Honestamente, es lo máximo que esta máquina da.
+signo, la probabilidad de que sea casualidad es una de cada cuatro —el sentido se esperaba antes
+de medir; a ciegas sería una de cada dos—: no es una demostración, es una consistencia.
+Honestamente, es lo máximo que esta máquina da.
 
 **Lo único que se afirma sin reservas son los bytes**: el paquete inicial baja 9 kB en la portada y
 4 en legales, porque el pie y la franja se van a sus propios chunks. Eso no depende del reloj.
@@ -7631,6 +7632,15 @@ ve en el código y se ve en los bytes. Lo que no se puede seguir diciendo es "ba
 
 Y la regla de método: **una sola pareja de corridas no decide un tiempo.** Dos parejas en orden
 invertido, y se mira si el signo se repite. Si no se repite, no hubo cambio.
+
+El experimento se montó a mano la primera vez; ahora es `npm run pareja`, que saca del diff los
+archivos que cambian, alterna el orden, restaura el árbol aunque se corte con Ctrl+C y dice de
+cada métrica si el signo se repitió. Escribirlo destapó dos defectos que solo se ven con datos
+reales: una pareja que **no se movió** contaba como acuerdo —`legales` daba "+2" y "=" en
+rendimiento y el veredicto decía "2/2 en el mismo sentido"—, y la probabilidad de casualidad
+depende de si el sentido se esperaba antes de medir: con dos parejas es una de cada dos a ciegas,
+y una de cada cuatro si había hipótesis. La tabla dice el signo; cuál de las dos cuentas aplica lo
+sabe quien hizo el cambio, no el script.
 
 ## Las deudas que quedan, al 21 de septiembre de 2026
 

@@ -21,6 +21,7 @@
     "kit": "node tools/verificar-kit.mjs",
     "iconos-marca": "node tools/generar-iconos-marca.mjs",
     "lighthouse": "node tools/medir-lighthouse.mjs",
+    "pareja": "node tools/medir-pareja.mjs",
     "datos-negocio": "node tools/verificar-datos-de-negocio.mjs",
     "legales-impresos": "node tools/imprimir-legales.mjs",
     "cruce-catalogo": "node tools/cruce-catalogo.mjs",
