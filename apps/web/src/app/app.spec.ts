@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { DeferBlockBehavior, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -6,9 +6,15 @@ import es from '../assets/i18n/es.json';
 import en from '../assets/i18n/en.json';
 import { App } from './app';
 import { Carrito } from './features/carrito/domain/carrito.model';
-import { REPOSITORIO_SESION, RepositorioSesion } from './core/autenticacion/repositorio-sesion.puerto';
+import {
+  REPOSITORIO_SESION,
+  RepositorioSesion,
+} from './core/autenticacion/repositorio-sesion.puerto';
 import { Sesion } from './core/autenticacion/sesion.model';
-import { REPOSITORIO_CARRITO, RepositorioCarrito } from './features/carrito/domain/repositorio-carrito.puerto';
+import {
+  REPOSITORIO_CARRITO,
+  RepositorioCarrito,
+} from './features/carrito/domain/repositorio-carrito.puerto';
 import { esperarSinViolaciones } from '../testing/axe';
 import { proveerAlmacenesCarrito } from '../testing/carrito';
 
@@ -47,6 +53,12 @@ class RepositorioSesionFalso implements RepositorioSesion {
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      // Sin esto, `TestBed` no ejecuta los disparadores de un `@defer` y el pie
+      // —que desde la hidratación diferida vive dentro de uno— no llega al DOM.
+      // Ninguna prueba de aquí lo nombra, así que ninguna se habría puesto roja:
+      // la de axe habría seguido en verde diciendo que cubre "encabezado, enlace
+      // de salto, landmark principal y pie" mientras dejaba de ver el último.
+      deferBlockBehavior: DeferBlockBehavior.Playthrough,
       imports: [
         App,
         TranslocoTestingModule.forRoot({
@@ -56,7 +68,7 @@ describe('App', () => {
         }),
       ],
       providers: [
-      ...proveerAlmacenesCarrito(),
+        ...proveerAlmacenesCarrito(),
         provideRouter([]),
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
@@ -125,6 +137,21 @@ describe('App', () => {
     const principal = (fixture.nativeElement as HTMLElement).querySelector('main');
 
     expect(principal?.className).toContain('min-w-0');
+  });
+
+  // El pie se hidrata al entrar en pantalla (`@defer (hydrate on viewport)` en
+  // `app.html`), pero se pinta siempre: en el servidor va en el HTML, y en una
+  // navegación dentro de la aplicación lo pone `on immediate`. Esta prueba
+  // defiende ese "siempre". Cambiar el disparador normal por uno perezoso —o
+  // quitarlo— dejaría el sitio sin pie en cada navegación, y sin ella nada lo
+  // diría: las otras cuatro pruebas de este archivo pasan igual sin pie.
+  it('el pie se pinta aunque esté dentro de un bloque diferido', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+
+    const pie = (fixture.nativeElement as HTMLElement).querySelector('footer');
+
+    expect(pie).not.toBeNull();
   });
 
   // El cascarón está en todas las pantallas, así que una violación aquí las

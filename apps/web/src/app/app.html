@@ -26,4 +26,21 @@
 <main id="contenido" class="min-w-0 focus:outline-none" tabindex="-1">
   <router-outlet />
 </main>
-<app-pie />
+<!-- El pie se pinta en el servidor como siempre —el HTML sale entero, y con él los
+     enlaces que un rastreador sigue— pero **no se hidrata hasta que entra en
+     pantalla**. Hidratarlo al cargar cuesta parte de los 900 ms de evaluación de
+     scripts que mide Lighthouse, y es trabajo por una franja que la mayoría no
+     llega a ver.
+
+     Los dos disparadores son a propósito. `hydrate on viewport` solo gobierna el
+     contenido que vino del servidor; cuando esta plantilla se pinta en el
+     navegador —una navegación dentro de la aplicación— manda el normal, y ahí
+     `on immediate` deja el comportamiento exactamente como estaba. Sin él, el
+     pie aparecería tarde en cada navegación.
+
+     Un clic antes de hidratar no se pierde: `provideClientHydration()` trae la
+     hidratación incremental por omisión desde Angular 22, y esa arrastra el
+     replay de eventos (comprobado en `@angular/core`, `withIncrementalHydration`). -->
+@defer (on immediate; hydrate on viewport) {
+  <app-pie />
+}

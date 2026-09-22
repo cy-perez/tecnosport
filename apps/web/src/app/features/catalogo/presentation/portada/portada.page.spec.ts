@@ -1,3 +1,4 @@
+import { DeferBlockBehavior } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -72,6 +73,10 @@ async function renderPortada(
   categorias: Categoria[] = TRES_LINEAS,
 ) {
   const resultado = await render(PortadaPage, {
+    // La franja de novedades vive dentro de un `@defer` desde que se hidrata al
+    // entrar en pantalla: sin esto `TestBed` no dispara el bloque y no hay
+    // tarjetas que consultar.
+    deferBlockBehavior: DeferBlockBehavior.Playthrough,
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'catalogo/es': esCatalogo } as never,
@@ -188,6 +193,10 @@ describe('PortadaPage', () => {
     };
 
     await render(PortadaPage, {
+      // La franja de novedades vive dentro de un `@defer` desde que se hidrata al
+      // entrar en pantalla: sin esto `TestBed` no dispara el bloque y no hay
+      // tarjetas que consultar.
+      deferBlockBehavior: DeferBlockBehavior.Playthrough,
       imports: [
         TranslocoTestingModule.forRoot({
           langs: { es, en, 'catalogo/es': esCatalogo } as never,
@@ -213,6 +222,10 @@ describe('PortadaPage', () => {
     };
 
     await render(PortadaPage, {
+      // La franja de novedades vive dentro de un `@defer` desde que se hidrata al
+      // entrar en pantalla: sin esto `TestBed` no dispara el bloque y no hay
+      // tarjetas que consultar.
+      deferBlockBehavior: DeferBlockBehavior.Playthrough,
       imports: [
         TranslocoTestingModule.forRoot({
           langs: { es, en, 'catalogo/es': esCatalogo } as never,
