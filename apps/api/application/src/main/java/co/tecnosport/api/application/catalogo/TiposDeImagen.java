@@ -10,8 +10,8 @@ import java.util.Map;
  * <p><b>{@code image/avif} entró el 21 de septiembre de 2026</b>, y no por gusto: el cargador del
  * catálogo subía la foto <i>maestra</i> del estudio —un artefacto de archivo de 635 kB— porque era
  * lo único que la lista dejaba pasar, y esa foto era el elemento más pesado de la portada y de la
- * ficha en la primera medición de Lighthouse que valió algo. El AVIF de 1200 px del mismo
- * fotograma pesa 58 kB.
+ * ficha en la primera medición de Lighthouse que valió algo. El AVIF de 1200 px del mismo fotograma
+ * pesa 58 kB.
  *
  * <p>Lo que hay que saber antes de apoyarse en esto: <b>este proyecto no declara una matriz de
  * navegadores</b> —no hay `browserslist` ni una línea en `docs/00-producto.md`— y el sitio no
