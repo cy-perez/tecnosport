@@ -73,7 +73,7 @@ export class CapturaStore {
     (this.setSubido()?.imagenes ?? [])
       .slice()
       .sort((uno, otro) => uno.orden - otro.orden)
-      .map((imagen) => imagen.urlWebp),
+      .map((imagen) => imagen.url),
   );
 
   /**

@@ -109,10 +109,11 @@ Sobre `<canvas>`, antes de subir:
 
    **Sin respaldo JPEG**, aunque este documento lo pidiera antes de que existiera
    el backend: `POST /api/v1/admin/sets-rotacion/{id}/subidas` emite **una key por
-   fotograma**, así que el respaldo exigiría 2N objetos y una columna más en el
-   modelo. El visor ya sirve `urlWebp` con `url` de reserva y las dos apuntan al
-   mismo objeto. Si algún día hace falta el respaldo de verdad, se cambia primero
-   el contrato de subida.
+   fotograma**, así que el respaldo exigiría 2N objetos. Un fotograma se publica
+   además **en un solo ancho** (`ADR-0057`): el visor los pinta todos del mismo
+   tamaño, así que un `srcset` no le daría al navegador ninguna elección que
+   hacer. Si algún día hace falta el respaldo de verdad, se cambia primero el
+   contrato de subida.
 5. **Verificación.** Si la detección de fondo falla, el asistente lo dice y ofrece
    recorte manual. Nunca sube un recorte que sabe que salió mal.
 6. **Hash.** De cada fotograma subido, el asistente calcula el SHA-256 con

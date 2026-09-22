@@ -4,6 +4,7 @@ import co.tecnosport.api.domain.catalogo.ImagenProducto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
 import co.tecnosport.api.domain.catalogo.SetRotacionIncompletoException;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import java.util.List;
 import java.util.Objects;
@@ -87,11 +88,12 @@ public final class CompletarSetRotacion {
     return ImagenProducto.crear(
         TipoImagen.ROTACION,
         fotograma.orden(),
-        url,
-        url,
-        fotograma.ancho(),
+        // Un fotograma se publica en un solo ancho: el visor los pinta todos del mismo tamaño y
+        // multiplicar por tres las treinta y seis tomas de un set no le daría al navegador ninguna
+        // elección que hacer. Ver ADR-0057.
+        List.of(new VarianteDeImagen(fotograma.ancho(), url, bytes)),
+        null,
         fotograma.alto(),
-        bytes,
         // El SHA-256 lo calcula el asistente sobre los bytes que subió, igual que en la imagen
         // principal. El backend no puede verificarlo sin descargar el archivo (ADR-0016), pero sí
         // exige que sea un hash bien formado: HashContenido rechaza cualquier otra cosa.

@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -26,6 +27,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.util.Comparator;
 import java.util.List;
@@ -51,6 +53,7 @@ public class MapeadorCatalogo {
   private final VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository;
   private final AtributoJpaRepository atributoJpaRepository;
   private final ImagenProductoJpaRepository imagenProductoJpaRepository;
+  private final VarianteImagenJpaRepository varianteImagenJpaRepository;
   private final SetRotacionJpaRepository setRotacionJpaRepository;
 
   public MapeadorCatalogo(
@@ -61,6 +64,7 @@ public class MapeadorCatalogo {
       VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository,
       AtributoJpaRepository atributoJpaRepository,
       ImagenProductoJpaRepository imagenProductoJpaRepository,
+      VarianteImagenJpaRepository varianteImagenJpaRepository,
       SetRotacionJpaRepository setRotacionJpaRepository) {
     this.productoJpaRepository = productoJpaRepository;
     this.marcaJpaRepository = marcaJpaRepository;
@@ -69,6 +73,7 @@ public class MapeadorCatalogo {
     this.varianteAtributoValorJpaRepository = varianteAtributoValorJpaRepository;
     this.atributoJpaRepository = atributoJpaRepository;
     this.imagenProductoJpaRepository = imagenProductoJpaRepository;
+    this.varianteImagenJpaRepository = varianteImagenJpaRepository;
     this.setRotacionJpaRepository = setRotacionJpaRepository;
   }
 
@@ -117,6 +122,9 @@ public class MapeadorCatalogo {
         imagenProductoJpaRepository.findByProductoIdIn(productoIds).stream()
             .collect(Collectors.groupingBy(ImagenProductoJpaEntity::getProductoId));
 
+    Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen =
+        variantesDe(imagenesPorProducto.values().stream().flatMap(List::stream).toList());
+
     Map<UUID, List<SetRotacionJpaEntity>> setsPorProducto =
         setRotacionJpaRepository.findByProductoIdIn(productoIds).stream()
             .collect(Collectors.groupingBy(SetRotacionJpaEntity::getProductoId));
@@ -135,7 +143,8 @@ public class MapeadorCatalogo {
                             valoresPorVariante,
                             atributosPorId,
                             imagenesPorProducto.getOrDefault(p.getId(), List.of()),
-                            setsPorProducto.getOrDefault(p.getId(), List.of()))));
+                            setsPorProducto.getOrDefault(p.getId(), List.of()),
+                            variantesPorImagen)));
 
     return productoIds.stream().map(productosPorId::get).filter(Objects::nonNull).toList();
   }
@@ -148,7 +157,8 @@ public class MapeadorCatalogo {
       Map<UUID, List<VarianteAtributoValorJpaEntity>> valoresPorVariante,
       Map<UUID, AtributoJpaEntity> atributosPorId,
       List<ImagenProductoJpaEntity> imagenesDelProducto,
-      List<SetRotacionJpaEntity> setsDelProducto) {
+      List<SetRotacionJpaEntity> setsDelProducto,
+      Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
 
     Marca marca = aMarca(marcasPorId.get(p.getMarcaId()));
     Categoria categoria = aCategoria(categoriasPorId.get(p.getCategoriaId()));
@@ -157,14 +167,14 @@ public class MapeadorCatalogo {
         imagenesDelProducto.stream()
             .filter(i -> "PRINCIPAL".equals(i.getTipo()) && i.getVarianteId() == null)
             .findFirst()
-            .map(this::aImagen)
+            .map(i -> aImagen(i, variantesPorImagen))
             .orElse(null);
 
     List<ImagenProducto> galeria =
         imagenesDelProducto.stream()
             .filter(i -> "GALERIA".equals(i.getTipo()) && i.getVarianteId() == null)
             .sorted(Comparator.comparingInt(ImagenProductoJpaEntity::getOrden))
-            .map(this::aImagen)
+            .map(i -> aImagen(i, variantesPorImagen))
             .toList();
 
     // Solo el set PUBLICADO: un producto puede tener varios (el que se está capturando ahora, en
@@ -175,7 +185,7 @@ public class MapeadorCatalogo {
             .filter(s -> s.getVarianteId() == null)
             .filter(MapeadorCatalogo::estaPublicado)
             .findFirst()
-            .map(s -> aSetRotacion(s, imagenesDelProducto))
+            .map(s -> aSetRotacion(s, imagenesDelProducto, variantesPorImagen))
             .orElse(null);
 
     List<Variante> variantes =
@@ -193,7 +203,8 @@ public class MapeadorCatalogo {
                             .filter(s -> v.getId().equals(s.getVarianteId()))
                             .filter(MapeadorCatalogo::estaPublicado)
                             .findFirst(),
-                        imagenesDelProducto))
+                        imagenesDelProducto,
+                        variantesPorImagen))
             .toList();
 
     return new Producto(
@@ -215,7 +226,8 @@ public class MapeadorCatalogo {
       List<VarianteAtributoValorJpaEntity> valoresJpa,
       Map<UUID, AtributoJpaEntity> atributosPorId,
       java.util.Optional<SetRotacionJpaEntity> setJpa,
-      List<ImagenProductoJpaEntity> imagenesDelProducto) {
+      List<ImagenProductoJpaEntity> imagenesDelProducto,
+      Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
 
     List<ValorAtributo> atributos =
         valoresJpa.stream()
@@ -228,7 +240,7 @@ public class MapeadorCatalogo {
             .toList();
 
     SetRotacion setRotacionPropio =
-        setJpa.map(s -> aSetRotacion(s, imagenesDelProducto)).orElse(null);
+        setJpa.map(s -> aSetRotacion(s, imagenesDelProducto, variantesPorImagen)).orElse(null);
 
     return new Variante(
         v.getId(),
@@ -252,11 +264,18 @@ public class MapeadorCatalogo {
    */
   public SetRotacion aSetRotacion(
       SetRotacionJpaEntity s, List<ImagenProductoJpaEntity> imagenesDelProducto) {
+    return aSetRotacion(s, imagenesDelProducto, variantesDe(imagenesDelProducto));
+  }
+
+  private SetRotacion aSetRotacion(
+      SetRotacionJpaEntity s,
+      List<ImagenProductoJpaEntity> imagenesDelProducto,
+      Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
     List<ImagenProducto> fotogramas =
         imagenesDelProducto.stream()
             .filter(i -> s.getId().equals(i.getSetRotacionId()))
             .sorted(Comparator.comparingInt(ImagenProductoJpaEntity::getOrden))
-            .map(this::aImagen)
+            .map(i -> aImagen(i, variantesPorImagen))
             .toList();
 
     return new SetRotacion(
@@ -271,16 +290,38 @@ public class MapeadorCatalogo {
         s.getVersionAsistente());
   }
 
-  private ImagenProducto aImagen(ImagenProductoJpaEntity i) {
+  /** Las variantes de un grupo de imágenes, en una sola consulta y agrupadas por imagen. */
+  private Map<UUID, List<VarianteImagenJpaEntity>> variantesDe(
+      List<ImagenProductoJpaEntity> imagenes) {
+    if (imagenes.isEmpty()) {
+      return Map.of();
+    }
+    return varianteImagenJpaRepository
+        .findByImagenIdIn(imagenes.stream().map(ImagenProductoJpaEntity::getId).toList())
+        .stream()
+        .collect(Collectors.groupingBy(VarianteImagenJpaEntity::getImagenId));
+  }
+
+  private ImagenProducto aImagen(
+      ImagenProductoJpaEntity i, Map<UUID, List<VarianteImagenJpaEntity>> variantesPorImagen) {
+    List<VarianteImagenJpaEntity> variantes = variantesPorImagen.getOrDefault(i.getId(), List.of());
+    if (variantes.isEmpty()) {
+      // No lo puede producir la aplicación: la V60 le dio una variante a cada imagen que existía,
+      // el `on delete cascade` no deja huérfanas y las dos escrituras guardan fila y variantes
+      // juntas. Queda como un SQL a mano, y entonces es mejor que se vea aquí que dejar la ficha
+      // con una imagen sin URL.
+      throw new IllegalStateException(
+          "La imagen " + i.getId() + " no tiene ninguna variante publicada.");
+    }
     return new ImagenProducto(
         i.getId(),
         TipoImagen.valueOf(i.getTipo()),
         i.getOrden(),
-        i.getUrl(),
-        i.getUrlWebp(),
-        i.getAncho(),
+        variantes.stream()
+            .map(v -> new VarianteDeImagen(v.getAncho(), v.getUrl(), v.getBytes()))
+            .toList(),
+        i.getUrlVistaPrevia(),
         i.getAlto(),
-        i.getBytes(),
         new HashContenido(i.getHash()),
         i.getAltEs(),
         i.getAltEn());

@@ -1,3 +1,5 @@
+import { IMAGE_LOADER } from '@angular/common';
+import { cargadorDeImagenes } from '../../../../core/imagenes/cargador-de-imagenes';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-experimental';
@@ -101,7 +103,8 @@ function productoConRotacion(): Producto {
     ...productoDePrueba(),
     imagenPrincipal: {
       url: 'https://imagenes.test/principal.jpg',
-      urlWebp: 'https://imagenes.test/principal.webp',
+      variantes: [{ ancho: 800, url: 'https://imagenes.test/principal.jpg' }],
+      urlVistaPrevia: 'https://imagenes.test/principal-previa.jpg',
       ancho: 800,
       alto: 600,
       altEs: 'Morral de frente',
@@ -114,7 +117,6 @@ function productoConRotacion(): Producto {
       imagenes: [0, 1, 2, 3].map((orden) => ({
         orden,
         url: `https://imagenes.test/r${orden}.jpg`,
-        urlWebp: `https://imagenes.test/r${orden}.webp`,
         ancho: 1000,
         alto: 1000,
       })),
@@ -140,6 +142,7 @@ async function renderFicha(repositorio: RepositorioProductos, slug = 'morral-urb
       }),
     ],
     providers: [
+      { provide: IMAGE_LOADER, useValue: cargadorDeImagenes },
       ...proveerAlmacenesCarrito(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
@@ -166,6 +169,7 @@ async function renderFichaNavegable(repositorio: RepositorioProductos, slugInici
       }),
     ],
     providers: [
+      { provide: IMAGE_LOADER, useValue: cargadorDeImagenes },
       ...proveerAlmacenesCarrito(),
       provideTanStackQuery(queryClient),
       { provide: REPOSITORIO_PRODUCTOS, useValue: repositorio },
@@ -251,7 +255,7 @@ describe('FichaPage', () => {
     await renderFicha(repositorio);
 
     const visor = await screen.findByRole('group', { name: 'Vista 360 del producto' });
-    expect(visor.querySelector('img')?.getAttribute('src')).toContain('r0.webp');
+    expect(visor.querySelector('img')?.getAttribute('src')).toContain('r0.jpg');
     expect(screen.getByText('Fotograma 1 de 4')).toBeTruthy();
   });
 

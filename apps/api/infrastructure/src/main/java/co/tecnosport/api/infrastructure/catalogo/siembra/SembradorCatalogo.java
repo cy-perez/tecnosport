@@ -11,6 +11,7 @@ import co.tecnosport.api.infrastructure.catalogo.MarcaJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.ProductoJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.SetRotacionJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteAtributoValorJpaRepository;
+import co.tecnosport.api.infrastructure.catalogo.VarianteImagenJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.VarianteJpaRepository;
 import co.tecnosport.api.infrastructure.catalogo.entidad.AtributoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
@@ -19,6 +20,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -114,6 +116,7 @@ public class SembradorCatalogo implements ApplicationRunner {
   private final VarianteJpaRepository variantes;
   private final VarianteAtributoValorJpaRepository valoresAtributo;
   private final ImagenProductoJpaRepository imagenes;
+  private final VarianteImagenJpaRepository variantesDeImagen;
   private final SetRotacionJpaRepository setsRotacion;
   private final RepositorioInventario inventarios;
 
@@ -125,6 +128,7 @@ public class SembradorCatalogo implements ApplicationRunner {
       VarianteJpaRepository variantes,
       VarianteAtributoValorJpaRepository valoresAtributo,
       ImagenProductoJpaRepository imagenes,
+      VarianteImagenJpaRepository variantesDeImagen,
       SetRotacionJpaRepository setsRotacion,
       RepositorioInventario inventarios) {
     this.marcas = marcas;
@@ -134,6 +138,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     this.variantes = variantes;
     this.valoresAtributo = valoresAtributo;
     this.imagenes = imagenes;
+    this.variantesDeImagen = variantesDeImagen;
     this.setsRotacion = setsRotacion;
     this.inventarios = inventarios;
   }
@@ -419,23 +424,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     int alto = 600;
     String semilla = producto.getSlug();
     String url = urlDeSiembra(semilla, ancho, alto);
-    imagenes.save(
-        new ImagenProductoJpaEntity(
-            GeneradorIdentificador.nuevo(),
-            producto.getId(),
-            null,
-            null,
-            "PRINCIPAL",
-            0,
-            url,
-            url,
-            ancho,
-            alto,
-            120_000,
-            hashDeSiembra("seed-" + semilla),
-            producto.getNombre(),
-            producto.getNombre(),
-            ahora));
+    sembrarImagen(producto, null, "PRINCIPAL", 0, url, ancho, alto, 120_000, semilla, ahora);
   }
 
   /**
@@ -466,24 +455,46 @@ public class SembradorCatalogo implements ApplicationRunner {
     for (int orden = 0; orden < fotogramas; orden++) {
       String semilla = producto.getSlug() + "-360-" + orden;
       String url = urlDeSiembra(semilla, ancho, alto);
-      imagenes.save(
-          new ImagenProductoJpaEntity(
-              GeneradorIdentificador.nuevo(),
-              producto.getId(),
-              null,
-              setId,
-              "ROTACION",
-              orden,
-              url,
-              url,
-              ancho,
-              alto,
-              180_000,
-              hashDeSiembra("seed-" + semilla),
-              producto.getNombre(),
-              producto.getNombre(),
-              ahora));
+      sembrarImagen(producto, setId, "ROTACION", orden, url, ancho, alto, 180_000, semilla, ahora);
     }
+  }
+
+  /**
+   * Una imagen sembrada y su única variante. Van juntas porque el hidratador no sabe leer una
+   * imagen sin variantes: desde la V60 la escalera de anchos es lo que dice qué se publicó, y una
+   * foto de siembra se publica en un solo ancho.
+   */
+  private void sembrarImagen(
+      ProductoJpaEntity producto,
+      UUID setRotacionId,
+      String tipo,
+      int orden,
+      String url,
+      int ancho,
+      int alto,
+      long bytes,
+      String semilla,
+      Instant ahora) {
+    UUID imagenId = GeneradorIdentificador.nuevo();
+    imagenes.save(
+        new ImagenProductoJpaEntity(
+            imagenId,
+            producto.getId(),
+            null,
+            setRotacionId,
+            tipo,
+            orden,
+            url,
+            null,
+            ancho,
+            alto,
+            bytes,
+            hashDeSiembra("seed-" + semilla),
+            producto.getNombre(),
+            producto.getNombre(),
+            ahora));
+    variantesDeImagen.save(
+        new VarianteImagenJpaEntity(GeneradorIdentificador.nuevo(), imagenId, ancho, url, bytes));
   }
 
   private void guardarGaleria(ProductoJpaEntity producto, Instant ahora) {
@@ -492,23 +503,7 @@ public class SembradorCatalogo implements ApplicationRunner {
     for (int orden = 0; orden < 2; orden++) {
       String semilla = producto.getSlug() + "-galeria-" + orden;
       String url = urlDeSiembra(semilla, ancho, alto);
-      imagenes.save(
-          new ImagenProductoJpaEntity(
-              GeneradorIdentificador.nuevo(),
-              producto.getId(),
-              null,
-              null,
-              "GALERIA",
-              orden,
-              url,
-              url,
-              ancho,
-              alto,
-              120_000,
-              hashDeSiembra("seed-" + semilla),
-              producto.getNombre(),
-              producto.getNombre(),
-              ahora));
+      sembrarImagen(producto, null, "GALERIA", orden, url, ancho, alto, 120_000, semilla, ahora);
     }
   }
 

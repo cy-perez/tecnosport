@@ -168,7 +168,7 @@ class RepositorioSetsFalso implements RepositorioSetsRotacion {
       estado,
       imagenes: Array.from({ length: fotogramas }, (_, orden) => ({
         orden,
-        urlWebp: `https://cdn.test/set-1/${orden}.webp`,
+        url: `https://cdn.test/set-1/${orden}.webp`,
       })),
     };
   }

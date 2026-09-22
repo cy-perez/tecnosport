@@ -35,6 +35,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
@@ -281,7 +282,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":1000,"objectKey":"%s"}],"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isOk())
@@ -301,7 +302,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":1000,"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":1000,"objectKey":"%s"}],"alto":800,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isNotFound());
@@ -337,7 +338,7 @@ class AdminProductoControladorTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+                    {"variantes":[{"ancho":2000,"objectKey":"%s"}],"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
                     """
                         .formatted(objectKey, "%064x".formatted(1))))
         .andExpect(status().isCreated())
@@ -516,7 +517,7 @@ class AdminProductoControladorTest {
 
   private static String cuerpoDeGaleria(String objectKey, String hash) {
     return """
-        {"objectKey":"%s","ancho":2000,"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
+        {"variantes":[{"ancho":2000,"objectKey":"%s"}],"alto":2000,"hash":"%s","altEs":"alt es","altEn":"alt en"}
         """
         .formatted(objectKey, hash);
   }
@@ -529,11 +530,9 @@ class AdminProductoControladorTest {
     return ImagenProducto.crear(
         TipoImagen.GALERIA,
         orden,
-        url,
-        url,
+        List.of(new VarianteDeImagen(2000, url, 120_000)),
+        null,
         2000,
-        2000,
-        120_000,
         new HashContenido("%064x".formatted(semillaDelHash)),
         "alt es",
         "alt en");
@@ -546,11 +545,9 @@ class AdminProductoControladorTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://x/0.jpg",
-            "https://x/0.webp",
-            800,
+            List.of(new VarianteDeImagen(800, "https://x/0.jpg", 1000)),
+            null,
             600,
-            1000,
             new HashContenido("%064x".formatted(0)),
             "alt es",
             "alt en"));

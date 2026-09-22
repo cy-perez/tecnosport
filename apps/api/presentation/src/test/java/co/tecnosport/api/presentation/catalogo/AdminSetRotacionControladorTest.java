@@ -19,9 +19,11 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.SetRotacion;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -258,11 +260,9 @@ class AdminSetRotacionControladorTest {
           co.tecnosport.api.domain.catalogo.ImagenProducto.crear(
               co.tecnosport.api.domain.catalogo.TipoImagen.ROTACION,
               orden,
-              "https://x/" + orden,
-              "https://x/" + orden,
+              List.of(new VarianteDeImagen(1000, "https://x/" + orden, 900)),
+              null,
               1000,
-              1000,
-              900,
               new HashContenido("%064x".formatted(orden)),
               null,
               null));

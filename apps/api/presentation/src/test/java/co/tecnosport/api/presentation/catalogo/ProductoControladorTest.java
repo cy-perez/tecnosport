@@ -18,6 +18,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.time.Instant;
@@ -127,11 +128,9 @@ class ProductoControladorTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://x/0.jpg",
-            "https://x/0.webp",
-            800,
+            List.of(new VarianteDeImagen(800, "https://x/0.jpg", 1000)),
+            null,
             600,
-            1000,
             new HashContenido("%064x".formatted(0)),
             "alt es",
             "alt en"));

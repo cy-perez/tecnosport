@@ -258,18 +258,85 @@ const TOPE_DE_GALERIA = 8;
  * maestras del estudio son cuadradas y el AVIF de 1200 mide 1200x1200—.
  */
 function paraLaWeb(foto, dondeSeUsa) {
-  if (!foto.web) {
+  if (!foto.variantes?.length) {
     throw new Error(
       `${dondeSeUsa}: la toma ${foto.ruta} no tiene variante web (AVIF hasta 1200 px).\n` +
         "No se sube la maestra en su lugar: son 635 kB donde caben 58. Reprocesa el estudio, o " +
         "la foto original es demasiado pequeña para publicarla.",
     );
   }
+  const [mayor] = foto.variantes;
   return {
-    ruta: foto.web.ruta,
-    contentType: foto.web.contentType,
-    ancho: foto.web.ancho,
-    alto: Math.round((foto.alto * foto.web.ancho) / foto.ancho),
+    // De mayor a menor, como vienen del estudio. La primera es la base: de ella salen el alto, el
+    // hash y la URL que se sirve cuando el navegador no elige.
+    variantes: foto.variantes,
+    vistaPrevia: foto.vistaPrevia,
+    ruta: mayor.ruta,
+    contentType: mayor.contentType,
+    ancho: mayor.ancho,
+    alto: Math.round((foto.alto * mayor.ancho) / foto.ancho),
+  };
+}
+
+/**
+ * Sube las variantes de una toma y devuelve el cuerpo de la confirmación.
+ *
+ * Una URL firmada y un `PUT` por cada ancho, más el JPEG de la vista previa si el estudio lo dejó.
+ * Son tres o cuatro viajes donde antes había uno, y es el precio de que el navegador pueda elegir:
+ * la portada pedía 211 KiB de AVIF de 1200 px para pintarlos en huecos de 180.
+ *
+ * El hash y el alto son los de la variante mayor, que es la que el agregado toma como base.
+ */
+async function subirVariantes(endpointDeSubida, web, titulo) {
+  const variantes = [];
+  let hash = null;
+  for (const variante of web.variantes) {
+    const bytes = readFileSync(variante.ruta);
+    const subida = await pedir(endpointDeSubida, {
+      method: "POST",
+      body: JSON.stringify({ contentType: variante.contentType }),
+    });
+    const puesta = await fetch(subida.url, {
+      method: "PUT",
+      headers: { "Content-Type": variante.contentType },
+      body: bytes,
+    });
+    if (!puesta.ok) {
+      throw new Error(
+        `La subida de ${variante.ancho} px a Cloud Storage respondió ${puesta.status}`,
+      );
+    }
+    variantes.push({ ancho: variante.ancho, objectKey: subida.objectKey });
+    if (variante.ancho === web.ancho) {
+      hash = createHash("sha256").update(bytes).digest("hex");
+    }
+  }
+
+  let objectKeyVistaPrevia = null;
+  if (web.vistaPrevia) {
+    const bytes = readFileSync(web.vistaPrevia.ruta);
+    const subida = await pedir(endpointDeSubida, {
+      method: "POST",
+      body: JSON.stringify({ contentType: web.vistaPrevia.contentType }),
+    });
+    const puesta = await fetch(subida.url, {
+      method: "PUT",
+      headers: { "Content-Type": web.vistaPrevia.contentType },
+      body: bytes,
+    });
+    if (!puesta.ok) {
+      throw new Error(`La subida de la vista previa respondió ${puesta.status}`);
+    }
+    objectKeyVistaPrevia = subida.objectKey;
+  }
+
+  return {
+    variantes,
+    objectKeyVistaPrevia,
+    alto: web.alto,
+    hash,
+    altEs: `${titulo} sobre fondo gris`,
+    altEn: `${titulo} on a grey background`,
   };
 }
 
@@ -279,29 +346,14 @@ function paraLaWeb(foto, dondeSeUsa) {
  */
 async function subirAGaleria(productoId, foto, titulo) {
   const web = paraLaWeb(foto, "galería");
-  const bytes = readFileSync(web.ruta);
-  const subida = await pedir(`/api/v1/admin/productos/${productoId}/galeria/url-subida`, {
-    method: "POST",
-    body: JSON.stringify({ contentType: web.contentType }),
-  });
-  const puesta = await fetch(subida.url, {
-    method: "PUT",
-    headers: { "Content-Type": web.contentType },
-    body: bytes,
-  });
-  if (!puesta.ok) {
-    throw new Error(`La subida de la imagen a Cloud Storage respondió ${puesta.status}`);
-  }
+  const cuerpo = await subirVariantes(
+    `/api/v1/admin/productos/${productoId}/galeria/url-subida`,
+    web,
+    titulo,
+  );
   return pedir(`/api/v1/admin/productos/${productoId}/galeria`, {
     method: "POST",
-    body: JSON.stringify({
-      objectKey: subida.objectKey,
-      ancho: web.ancho,
-      alto: web.alto,
-      hash: createHash("sha256").update(bytes).digest("hex"),
-      altEs: `${titulo} sobre fondo gris`,
-      altEn: `${titulo} on a grey background`,
-    }),
+    body: JSON.stringify(cuerpo),
   });
 }
 
@@ -341,8 +393,6 @@ async function cargarUno(producto, catalogos, registro) {
 
   const foto = producto.foto.archivos[0];
   const web = foto ? paraLaWeb(foto, producto.id) : null;
-  const bytes = web ? readFileSync(web.ruta) : null;
-  const hash = bytes ? createHash("sha256").update(bytes).digest("hex") : null;
   const paquete = producto.empaque;
   const medidas = paquete
     ? `${paquete.pesoGramos} g, ${paquete.largoCm}x${paquete.anchoCm}x${paquete.altoCm} cm`
@@ -369,29 +419,15 @@ async function cargarUno(producto, catalogos, registro) {
     }),
   });
 
-  const subida = await pedir(`/api/v1/admin/productos/${creado.id}/imagen-principal/url-subida`, {
-    method: "POST",
-    body: JSON.stringify({ contentType: web.contentType }),
-  });
-  const puesta = await fetch(subida.url, {
-    method: "PUT",
-    headers: { "Content-Type": web.contentType },
-    body: bytes,
-  });
-  if (!puesta.ok) {
-    throw new Error(`La subida de la imagen a Cloud Storage respondió ${puesta.status}`);
-  }
-
   await pedir(`/api/v1/admin/productos/${creado.id}/imagen-principal`, {
     method: "POST",
-    body: JSON.stringify({
-      objectKey: subida.objectKey,
-      ancho: web.ancho,
-      alto: web.alto,
-      hash,
-      altEs: `${producto.titulo} sobre fondo gris`,
-      altEn: `${producto.titulo} on a grey background`,
-    }),
+    body: JSON.stringify(
+      await subirVariantes(
+        `/api/v1/admin/productos/${creado.id}/imagen-principal/url-subida`,
+        web,
+        producto.titulo,
+      ),
+    ),
   });
 
   // La galería va antes que la variante a propósito: si algo falla subiendo fotos, el producto
@@ -754,7 +790,8 @@ async function rehacerImagenes(registro) {
 
     console.log(
       `${ESCRIBIR ? "rehaciendo" : "simulado  "}  ${detalle.nombre ?? anotado.slug}\n` +
-        `            ${anotado.sku} · principal ${web.ancho}px ${Math.round(pesoWeb / 1024)} kB` +
+        `            ${anotado.sku} · principal ${web.variantes.map((v) => v.ancho).join("/")}px` +
+        ` (mayor ${Math.round(pesoWeb / 1024)} kB)${web.vistaPrevia ? " + vista previa" : ""}` +
         ` · galería ${tomas.length} nuevas, ${viejas.length} a borrar`,
     );
     // Se cuenta antes del corte de la simulación, no después. Contar dentro de la rama que
@@ -766,29 +803,15 @@ async function rehacerImagenes(registro) {
     borradas += viejas.length;
     if (!ESCRIBIR) continue;
 
-    const bytes = readFileSync(web.ruta);
-    const subida = await pedir(
-      `/api/v1/admin/productos/${anotado.productoId}/imagen-principal/url-subida`,
-      { method: "POST", body: JSON.stringify({ contentType: web.contentType }) },
-    );
-    const puesta = await fetch(subida.url, {
-      method: "PUT",
-      headers: { "Content-Type": web.contentType },
-      body: bytes,
-    });
-    if (!puesta.ok) {
-      throw new Error(`La subida de la imagen a Cloud Storage respondió ${puesta.status}`);
-    }
     await pedir(`/api/v1/admin/productos/${anotado.productoId}/imagen-principal`, {
       method: "POST",
-      body: JSON.stringify({
-        objectKey: subida.objectKey,
-        ancho: web.ancho,
-        alto: web.alto,
-        hash: createHash("sha256").update(bytes).digest("hex"),
-        altEs: `${producto.titulo} sobre fondo gris`,
-        altEn: `${producto.titulo} on a grey background`,
-      }),
+      body: JSON.stringify(
+        await subirVariantes(
+          `/api/v1/admin/productos/${anotado.productoId}/imagen-principal/url-subida`,
+          web,
+          producto.titulo,
+        ),
+      ),
     });
 
     for (const toma of tomas) {

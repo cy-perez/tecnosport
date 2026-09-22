@@ -23,6 +23,7 @@ import co.tecnosport.api.presentation.catalogo.dto.MarcaRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ProductoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.ResultadoPaginadoRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.RotacionRespuesta;
+import co.tecnosport.api.presentation.catalogo.dto.VarianteDeImagenRespuesta;
 import co.tecnosport.api.presentation.catalogo.dto.VarianteRespuesta;
 import co.tecnosport.api.presentation.compartido.dto.DineroRespuesta;
 import java.util.List;
@@ -120,20 +121,25 @@ public class MapeadorRespuestasCatalogo {
   public ImagenRespuesta aRespuesta(ImagenProducto imagen) {
     return new ImagenRespuesta(
         imagen.url(),
-        imagen.urlWebp(),
+        variantesDe(imagen),
+        imagen.urlVistaPrevia().orElse(null),
         imagen.ancho(),
         imagen.alto(),
         imagen.altEs(),
         imagen.altEn());
   }
 
+  /** Las variantes del dominio, que el agregado ya devuelve de menor a mayor ancho. */
+  private static List<VarianteDeImagenRespuesta> variantesDe(ImagenProducto imagen) {
+    return imagen.variantes().stream()
+        .map(v -> new VarianteDeImagenRespuesta(v.ancho(), v.url()))
+        .toList();
+  }
+
   private RotacionRespuesta aRespuesta(SetRotacion setRotacion) {
     List<ImagenRotacionRespuesta> imagenes =
         setRotacion.fotogramas().stream()
-            .map(
-                f ->
-                    new ImagenRotacionRespuesta(
-                        f.orden(), f.url(), f.urlWebp(), f.ancho(), f.alto()))
+            .map(f -> new ImagenRotacionRespuesta(f.orden(), f.url(), f.ancho(), f.alto()))
             .toList();
     return new RotacionRespuesta(imagenes.size(), imagenes);
   }

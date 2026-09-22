@@ -9,6 +9,7 @@ import {
   TipoAtributo,
   ValorAtributo,
   Variante,
+  VarianteDeImagen,
 } from '../domain/producto.model';
 
 type ProductoDto = components['schemas']['ProductoRespuesta'];
@@ -48,11 +49,33 @@ export function aCategoria(dto?: CategoriaDto): Categoria {
   };
 }
 
+/**
+ * Las variantes de una imagen, de menor a mayor ancho.
+ *
+ * El contrato las declara opcionales —en el OpenAPI generado todo lo es—, pero la API nunca
+ * publica una imagen sin variantes: el agregado exige al menos una. Si aun así llegara vacía, la
+ * imagen se sirve en su único ancho conocido antes que no servirse: un `srcset` de una entrada es
+ * exactamente lo que el sitio tenía antes de este trabajo.
+ */
+function variantesDe(dto: ImagenDto, url: string, ancho: number): VarianteDeImagen[] {
+  const variantes = (dto.variantes ?? [])
+    .map((variante) => ({ ancho: variante.ancho ?? 0, url: variante.url ?? '' }))
+    .filter((variante) => variante.ancho > 0 && variante.url !== '')
+    .sort((uno, otro) => uno.ancho - otro.ancho);
+  return variantes.length > 0 ? variantes : [{ ancho, url }];
+}
+
 function aImagen(dto: ImagenDto): Imagen {
+  const url = dto.url ?? '';
+  const ancho = dto.ancho ?? 0;
   return {
-    url: dto.url ?? '',
-    urlWebp: dto.urlWebp ?? '',
-    ancho: dto.ancho ?? 0,
+    url,
+    // El contrato declara `variantes` opcional —todo lo es en el OpenAPI generado—, pero la API
+    // nunca publica una imagen sin variantes: el agregado exige al menos una. Si llegara vacía, la
+    // imagen se sirve en su único ancho conocido antes que no servirse.
+    variantes: variantesDe(dto, url, ancho),
+    urlVistaPrevia: dto.urlVistaPrevia ?? null,
+    ancho,
     alto: dto.alto ?? 0,
     altEs: dto.altEs ?? '',
     altEn: dto.altEn ?? '',
@@ -71,7 +94,6 @@ function aRotacion(dto: RotacionDto): Rotacion {
       .map((fotograma) => ({
         orden: fotograma.orden ?? 0,
         url: fotograma.url ?? '',
-        urlWebp: fotograma.urlWebp ?? '',
         ancho: fotograma.ancho ?? 0,
         alto: fotograma.alto ?? 0,
       }))

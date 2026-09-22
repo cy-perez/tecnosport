@@ -11,6 +11,7 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.List;
@@ -34,11 +35,9 @@ class ReordenarGaleriaTest {
         ImagenProducto.crear(
             TipoImagen.GALERIA,
             orden,
-            "https://x/galeria-" + orden + ".jpg",
-            "https://x/galeria-" + orden + ".webp",
+            List.of(new VarianteDeImagen(2000, "https://x/galeria-" + orden + ".jpg", 120_000)),
+            null,
             2000,
-            2000,
-            120_000,
             new HashContenido("%064x".formatted(orden + 1)),
             "alt es",
             "alt en");

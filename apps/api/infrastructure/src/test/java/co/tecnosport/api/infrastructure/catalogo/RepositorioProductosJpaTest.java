@@ -20,6 +20,7 @@ import co.tecnosport.api.domain.catalogo.TipoAtributo;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.ValorAtributo;
 import co.tecnosport.api.domain.catalogo.Variante;
+import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -31,6 +32,7 @@ import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.SetRotacionJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -70,6 +72,7 @@ class RepositorioProductosJpaTest {
   @Autowired private VarianteJpaRepository variantes;
   @Autowired private VarianteAtributoValorJpaRepository valoresAtributo;
   @Autowired private ImagenProductoJpaRepository imagenes;
+  @Autowired private VarianteImagenJpaRepository variantesDeImagen;
   @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private jakarta.persistence.EntityManager entityManager;
 
@@ -386,6 +389,79 @@ class RepositorioProductosJpaTest {
   }
 
   @Test
+  void guardarLaImagenPrincipalGuardaSusTresVariantesYVuelvenOrdenadas() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-v1", "BOLSOS");
+    ProductoJpaEntity producto = producto("Morral v1", "morral-v1", "PUBLICADO", marca, categoria);
+
+    repositorio.guardarImagenPrincipal(
+        producto.getId(),
+        ImagenProducto.crear(
+            TipoImagen.PRINCIPAL,
+            0,
+            List.of(
+                new VarianteDeImagen(1200, "https://x/morral-1200.avif", 58_000),
+                new VarianteDeImagen(480, "https://x/morral-480.avif", 12_000),
+                new VarianteDeImagen(800, "https://x/morral-800.avif", 30_000)),
+            "https://x/morral-1200.jpg",
+            900,
+            new HashContenido(hashDePrueba("morral-v1")),
+            "alt es",
+            "alt en"));
+    entityManager.flush();
+    entityManager.clear();
+
+    ImagenProducto imagen =
+        repositorio.buscarPorId(producto.getId()).orElseThrow().imagenPrincipal().orElseThrow();
+
+    assertThat(imagen.variantes().stream().map(VarianteDeImagen::ancho))
+        .containsExactly(480, 800, 1200);
+    // La URL, el ancho y los bytes son los de la mayor, no los de la primera que llegó.
+    assertThat(imagen.url()).isEqualTo("https://x/morral-1200.avif");
+    assertThat(imagen.ancho()).isEqualTo(1200);
+    assertThat(imagen.bytes()).isEqualTo(58_000);
+    assertThat(imagen.urlVistaPrevia()).contains("https://x/morral-1200.jpg");
+  }
+
+  /**
+   * El reemplazo de la principal borra la fila vieja, y la base se lleva sus variantes con el
+   * {@code on delete cascade} de la V60. Sin eso quedarían filas apuntando a objetos que ya nadie
+   * sirve, y nadie volvería a mirarlas.
+   */
+  @Test
+  void reemplazarLaImagenPrincipalSeLlevaLasVariantesDeLaAnterior() {
+    MarcaJpaEntity marca = marca("TecnoSport");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-v2", "BOLSOS");
+    ProductoJpaEntity producto = producto("Morral v2", "morral-v2", "PUBLICADO", marca, categoria);
+
+    repositorio.guardarImagenPrincipal(
+        producto.getId(), imagenCon(List.of(480, 800, 1200), "vieja"));
+    entityManager.flush();
+    repositorio.guardarImagenPrincipal(producto.getId(), imagenCon(List.of(800), "nueva"));
+    entityManager.flush();
+    entityManager.clear();
+
+    ImagenProducto imagen =
+        repositorio.buscarPorId(producto.getId()).orElseThrow().imagenPrincipal().orElseThrow();
+    assertThat(imagen.variantes()).hasSize(1);
+    assertThat(variantesDeImagen.count()).isEqualTo(1);
+  }
+
+  private ImagenProducto imagenCon(List<Integer> anchos, String semilla) {
+    return ImagenProducto.crear(
+        TipoImagen.PRINCIPAL,
+        0,
+        anchos.stream()
+            .map(a -> new VarianteDeImagen(a, "https://x/" + semilla + "-" + a + ".avif", a * 50L))
+            .toList(),
+        null,
+        900,
+        new HashContenido(hashDePrueba(semilla)),
+        "alt es",
+        "alt en");
+  }
+
+  @Test
   void buscarPorIdDevuelveUnProductoEnCualquierEstado() {
     MarcaJpaEntity marca = marca("TecnoSport");
     CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-t10", "BOLSOS");
@@ -653,11 +729,9 @@ class RepositorioProductosJpaTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://cdn/principal-1.webp",
-            "https://cdn/principal-1.webp",
-            1000,
+            List.of(new VarianteDeImagen(1000, "https://cdn/principal-1.webp", 45_000)),
+            null,
             800,
-            45_000,
             new HashContenido("%064x".formatted(1)),
             "alt es 1",
             "alt en 1");
@@ -670,11 +744,9 @@ class RepositorioProductosJpaTest {
         ImagenProducto.crear(
             TipoImagen.PRINCIPAL,
             0,
-            "https://cdn/principal-2.webp",
-            "https://cdn/principal-2.webp",
-            1200,
+            List.of(new VarianteDeImagen(1200, "https://cdn/principal-2.webp", 60_000)),
+            null,
             900,
-            60_000,
             new HashContenido("%064x".formatted(2)),
             "alt es 2",
             "alt en 2");
@@ -820,11 +892,9 @@ class RepositorioProductosJpaTest {
     return ImagenProducto.crear(
         TipoImagen.GALERIA,
         orden,
-        url,
-        url,
+        List.of(new VarianteDeImagen(2000, url, 120_000)),
+        null,
         2000,
-        2000,
-        120_000,
         new HashContenido("%064x".formatted(semillaDelHash)),
         "alt es",
         "alt en");
@@ -934,16 +1004,17 @@ class RepositorioProductosJpaTest {
 
   private void imagenPrincipal(ProductoJpaEntity producto) {
     String url = "https://picsum.photos/seed/" + producto.getSlug() + "/800/600";
+    UUID imagenId = UUID.randomUUID();
     imagenes.save(
         new ImagenProductoJpaEntity(
-            UUID.randomUUID(),
+            imagenId,
             producto.getId(),
             null,
             null,
             "PRINCIPAL",
             0,
             url,
-            url,
+            null,
             800,
             600,
             1000,
@@ -951,20 +1022,23 @@ class RepositorioProductosJpaTest {
             "alt es",
             "alt en",
             Instant.now()));
+    variantesDeImagen.save(
+        new VarianteImagenJpaEntity(UUID.randomUUID(), imagenId, 800, url, 1000));
   }
 
   private void fotogramaRotacion(ProductoJpaEntity producto, SetRotacionJpaEntity set, int orden) {
     String url = "https://picsum.photos/seed/" + producto.getSlug() + "-" + orden + "/800/600";
+    UUID imagenId = UUID.randomUUID();
     imagenes.save(
         new ImagenProductoJpaEntity(
-            UUID.randomUUID(),
+            imagenId,
             producto.getId(),
             null,
             set.getId(),
             "ROTACION",
             orden,
             url,
-            url,
+            null,
             800,
             600,
             1000,
@@ -972,6 +1046,8 @@ class RepositorioProductosJpaTest {
             "",
             "",
             Instant.now()));
+    variantesDeImagen.save(
+        new VarianteImagenJpaEntity(UUID.randomUUID(), imagenId, 800, url, 1000));
   }
 
   /**

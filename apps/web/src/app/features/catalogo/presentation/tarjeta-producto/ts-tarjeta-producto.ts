@@ -3,7 +3,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
-import { hayExistencia, precioDesde, Producto, urlPreferida } from '../../domain/producto.model';
+import {
+  descriptoresDe,
+  hayExistencia,
+  parametrosDe,
+  precioDesde,
+  Producto,
+} from '../../domain/producto.model';
+import { TAMANOS_TARJETA } from '../../../../core/imagenes/tamanos-de-imagen';
 import { TsEtiquetaStock } from '../etiqueta-stock/ts-etiqueta-stock';
 
 /**
@@ -45,7 +52,10 @@ export class TsTarjetaProducto {
   ]);
 
   /** La misma regla que la galería y el visor 360: WebP con el original de respaldo. */
-  protected readonly url = urlPreferida;
+  protected readonly descriptores = descriptoresDe;
+  protected readonly TAMANOS = TAMANOS_TARJETA;
+
+  protected readonly parametros = parametrosDe;
 
   protected readonly precio = computed(() => precioDesde(this.producto()));
   protected readonly disponible = computed(() => hayExistencia(this.producto()));

@@ -19,9 +19,9 @@ const CALIDAD_WEBP = 0.82;
  *
  * **Solo WebP, sin respaldo JPEG.** El documento pedía los dos, pero
  * `POST /api/v1/admin/sets-rotacion/{id}/subidas` emite una key por fotograma: el respaldo
- * exigiría 2N objetos y una columna más en el modelo. El visor ya sirve `urlWebp` con `url` de
- * reserva y ambas apuntan al mismo objeto — ver el registro de esta decisión en
- * docs/09-plan-de-arranque.md.
+ * exigiría 2N objetos. Un fotograma se publica además en un solo ancho —el visor los pinta todos
+ * del mismo tamaño, así que un `srcset` no le daría al navegador ninguna elección que hacer—, ver
+ * ADR-0057 y el registro en docs/09-plan-de-arranque.md.
  */
 @Injectable()
 export class ProcesadorCanvas implements ProcesadorDeFotogramas {

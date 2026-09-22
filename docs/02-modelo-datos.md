@@ -207,7 +207,12 @@ fotogramas ordenados.
 ```
 imagen_producto
   id, producto_id, variante_id (nullable), tipo, orden,
-  url, url_webp, ancho, alto, bytes, hash, alt_es, alt_en, creada_en
+  url, url_vista_previa (nullable), ancho, alto, bytes, hash,
+  alt_es, alt_en, creada_en
+
+variante_imagen
+  id, imagen_id, ancho, url, bytes
+  unique (imagen_id, ancho) · on delete cascade desde imagen_producto
 
 tipo: PRINCIPAL | GALERIA | ROTACION
 ```
@@ -262,17 +267,24 @@ Reglas:
   contenedor.
 - **Imagen principal con URL firmada (Fase 4):** el navegador sube el archivo
   directo a Cloud Storage con un `PUT`, el backend nunca ve los bytes; solo
-  verifica que el objeto exista y su tamaño antes de confirmar. `url_webp`
-  apunta al mismo objeto que `url`, y **el nombre de la columna quedó
-  mintiendo** (21 de septiembre de 2026): nunca hubo conversión en este paso
-  —iba a hacerla el asistente de captura de la Fase 5— y desde el catálogo
-  real lo que guarda es la URL de un **AVIF**. `ancho` y
+  verifica que **cada objeto** exista y su tamaño antes de confirmar. `ancho` y
   `alto` los declara el cliente y se confían tal cual (metadato
   presentacional, no una medida verificada contra el archivo real).
+- **Una imagen se publica en varios anchos** (`ADR-0057`, 22 de septiembre de
+  2026): una fila de `variante_imagen` por ancho, con su URL, y `url`, `ancho` y
+  `bytes` de `imagen_producto` son la variante mayor repetida — las leen el
+  `og:image`, la línea del carrito y el panel. La URL de cada ancho **viaja como
+  dato** y no se deduce del patrón de las keys; ese acoplamiento es el que
+  produjo `url_webp`, la columna que prometía una conversión de formato que nunca
+  existió y que desde `ADR-0056` guardaba la URL de un AVIF. Se borró en la
+  `V60`. `url_vista_previa` es el JPEG que leen los previsualizadores de enlaces,
+  que no negocian formatos, y es nulable: una imagen sin él se ve bien en el
+  sitio y no se ve en una tarjeta de enlace.
   **El objeto anterior sí se borra al reemplazar la principal**, y este
   documento decía lo contrario hasta el 21 de septiembre de 2026:
   `ConfirmarImagenPrincipal` borra por prefijo `productos/{id}/principal-`
-  todo menos la key recién subida, así que se lleva de paso lo que quedó de
+  todo menos **las keys recién subidas** —todas las variantes y la vista previa,
+  no solo la mayor—, así que se lleva de paso lo que quedó de
   subidas que nunca se confirmaron. Comprobado al rehacer las 91 imágenes del
   catálogo: las 29 principales viejas desaparecieron del bucket sin que nadie
   las borrara a mano. El tipo de contenido se acepta por una

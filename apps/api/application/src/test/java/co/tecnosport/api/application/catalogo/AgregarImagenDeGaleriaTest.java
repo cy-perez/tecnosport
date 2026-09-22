@@ -13,6 +13,7 @@ import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +40,13 @@ class AgregarImagenDeGaleriaTest {
     almacenDeImagenes.conObjeto(objectKey, 120_000);
     return agregarImagenDeGaleria.ejecutar(
         new AgregarImagenDeGaleriaComando(
-            producto.id(), objectKey, 2000, 2000, hash(semillaDelHash), "alt es", "alt en"));
+            producto.id(),
+            List.of(new VarianteSubida(2000, objectKey)),
+            null,
+            2000,
+            hash(semillaDelHash),
+            "alt es",
+            "alt en"));
   }
 
   @Test
@@ -118,7 +125,13 @@ class AgregarImagenDeGaleriaTest {
         () ->
             agregarImagenDeGaleria.ejecutar(
                 new AgregarImagenDeGaleriaComando(
-                    producto.id(), objectKey, 100, 100, hash(1), "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(100, objectKey)),
+                    null,
+                    100,
+                    hash(1),
+                    "a",
+                    "b")));
     assertTrue(repositorioProductos.imagenesDeGaleriaGuardadas.isEmpty());
   }
 
@@ -140,7 +153,13 @@ class AgregarImagenDeGaleriaTest {
         () ->
             agregarImagenDeGaleria.ejecutar(
                 new AgregarImagenDeGaleriaComando(
-                    producto.id(), deLaPrincipal, 100, 100, hash(1), "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(100, deLaPrincipal)),
+                    null,
+                    100,
+                    hash(1),
+                    "a",
+                    "b")));
     assertTrue(repositorioProductos.imagenesDeGaleriaGuardadas.isEmpty());
   }
 
@@ -155,14 +174,27 @@ class AgregarImagenDeGaleriaTest {
     String objectKey = "productos/" + producto.id() + "/galeria-uno.jpg";
     almacenDeImagenes.conObjeto(objectKey, 120_000);
     agregarImagenDeGaleria.ejecutar(
-        new AgregarImagenDeGaleriaComando(producto.id(), objectKey, 2000, 2000, hash(1), "a", "b"));
+        new AgregarImagenDeGaleriaComando(
+            producto.id(),
+            List.of(new VarianteSubida(2000, objectKey)),
+            null,
+            2000,
+            hash(1),
+            "a",
+            "b"));
 
     assertThrows(
         ImagenDeGaleriaDuplicadaException.class,
         () ->
             agregarImagenDeGaleria.ejecutar(
                 new AgregarImagenDeGaleriaComando(
-                    producto.id(), objectKey, 2000, 2000, hash(2), "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(2000, objectKey)),
+                    null,
+                    2000,
+                    hash(2),
+                    "a",
+                    "b")));
     assertEquals(1, repositorioProductos.imagenesDeGaleriaGuardadas.size());
   }
 
@@ -178,7 +210,13 @@ class AgregarImagenDeGaleriaTest {
         () ->
             agregarImagenDeGaleria.ejecutar(
                 new AgregarImagenDeGaleriaComando(
-                    producto.id(), ajeno, 100, 100, hash(1), "a", "b")));
+                    producto.id(),
+                    List.of(new VarianteSubida(100, ajeno)),
+                    null,
+                    100,
+                    hash(1),
+                    "a",
+                    "b")));
   }
 
   @Test
@@ -191,11 +229,62 @@ class AgregarImagenDeGaleriaTest {
             agregarImagenDeGaleria.ejecutar(
                 new AgregarImagenDeGaleriaComando(
                     productoId,
-                    "productos/" + productoId + "/galeria-abc.jpg",
-                    100,
+                    List.of(
+                        new VarianteSubida(100, "productos/" + productoId + "/galeria-abc.jpg")),
+                    null,
                     100,
                     hash(1),
                     "a",
                     "b")));
+  }
+
+  @Test
+  void agregaUnaImagenConVariasVariantesYLaMayorEsLaQueVaAGaleria() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/galeria-";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+    almacenDeImagenes.conObjeto(base + "b.avif", 58_000);
+    almacenDeImagenes.conObjeto(base + "previa.jpg", 70_000);
+
+    var imagen =
+        agregarImagenDeGaleria.ejecutar(
+            new AgregarImagenDeGaleriaComando(
+                producto.id(),
+                List.of(
+                    new VarianteSubida(1200, base + "b.avif"),
+                    new VarianteSubida(480, base + "a.avif")),
+                base + "previa.jpg",
+                900,
+                hash(7),
+                "alt es",
+                "alt en"));
+
+    assertEquals(List.of(480, 1200), imagen.variantes().stream().map(v -> v.ancho()).toList());
+    assertTrue(imagen.url().endsWith(base + "b.avif"));
+    assertTrue(imagen.urlVistaPrevia().orElseThrow().endsWith(base + "previa.jpg"));
+  }
+
+  @Test
+  void unaVarianteDeGaleriaQueNuncaLlegoTumbaLaOperacion() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String base = "productos/" + producto.id() + "/galeria-";
+    almacenDeImagenes.conObjeto(base + "a.avif", 12_000);
+
+    assertThrows(
+        ObjetoDeImagenNoEncontradoException.class,
+        () ->
+            agregarImagenDeGaleria.ejecutar(
+                new AgregarImagenDeGaleriaComando(
+                    producto.id(),
+                    List.of(
+                        new VarianteSubida(480, base + "a.avif"),
+                        new VarianteSubida(1200, base + "nunca.avif")),
+                    null,
+                    900,
+                    hash(8),
+                    "alt es",
+                    "alt en")));
   }
 }

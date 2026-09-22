@@ -1,7 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
-import { Imagen, urlPreferida } from '../../domain/producto.model';
+import { descriptoresDe, Imagen, parametrosDe } from '../../domain/producto.model';
+import { TAMANOS_GALERIA, TAMANOS_MINIATURA } from '../../../../core/imagenes/tamanos-de-imagen';
 
 const MINIATURA_BASE =
   'anillo-foco relative size-64 cursor-pointer overflow-hidden bg-transparent p-0';
@@ -53,8 +54,11 @@ export class TsGaleria {
     this.indiceActivo.set(indice);
   }
 
-  /** La misma regla que el visor 360: WebP con el original de respaldo. */
-  protected readonly url = urlPreferida;
+  protected readonly descriptores = descriptoresDe;
+  protected readonly TAMANOS = TAMANOS_GALERIA;
+  protected readonly TAMANOS_MINIATURA = TAMANOS_MINIATURA;
+
+  protected readonly parametros = parametrosDe;
 
   protected alt(imagen: Imagen): string {
     const idioma = this.transloco.activeLang();

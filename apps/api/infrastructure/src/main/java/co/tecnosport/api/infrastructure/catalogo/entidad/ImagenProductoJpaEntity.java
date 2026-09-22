@@ -31,8 +31,9 @@ public class ImagenProductoJpaEntity {
   @Column(nullable = false)
   private String url;
 
-  @Column(name = "url_webp", nullable = false)
-  private String urlWebp;
+  /** Nulable: una imagen sin vista previa se ve bien en el sitio y no se ve en WhatsApp. */
+  @Column(name = "url_vista_previa")
+  private String urlVistaPrevia;
 
   @Column(nullable = false)
   private int ancho;
@@ -65,7 +66,7 @@ public class ImagenProductoJpaEntity {
       String tipo,
       int orden,
       String url,
-      String urlWebp,
+      String urlVistaPrevia,
       int ancho,
       int alto,
       long bytes,
@@ -80,7 +81,7 @@ public class ImagenProductoJpaEntity {
     this.tipo = tipo;
     this.orden = orden;
     this.url = url;
-    this.urlWebp = urlWebp;
+    this.urlVistaPrevia = urlVistaPrevia;
     this.ancho = ancho;
     this.alto = alto;
     this.bytes = bytes;
@@ -127,8 +128,8 @@ public class ImagenProductoJpaEntity {
     return url;
   }
 
-  public String getUrlWebp() {
-    return urlWebp;
+  public String getUrlVistaPrevia() {
+    return urlVistaPrevia;
   }
 
   public int getAncho() {

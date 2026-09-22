@@ -19,6 +19,7 @@ import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ImagenProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteAtributoValorJpaEntity;
+import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteImagenJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.VarianteJpaEntity;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -52,6 +53,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
   private final VarianteJpaRepository varianteJpaRepository;
   private final VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository;
   private final ImagenProductoJpaRepository imagenProductoJpaRepository;
+  private final VarianteImagenJpaRepository varianteImagenJpaRepository;
   private final MapeadorCatalogo mapeadorCatalogo;
   private final NamedParameterJdbcTemplate jdbc;
 
@@ -60,12 +62,14 @@ public class RepositorioProductosJpa implements RepositorioProductos {
       VarianteJpaRepository varianteJpaRepository,
       VarianteAtributoValorJpaRepository varianteAtributoValorJpaRepository,
       ImagenProductoJpaRepository imagenProductoJpaRepository,
+      VarianteImagenJpaRepository varianteImagenJpaRepository,
       MapeadorCatalogo mapeadorCatalogo,
       NamedParameterJdbcTemplate jdbc) {
     this.productoJpaRepository = productoJpaRepository;
     this.varianteJpaRepository = varianteJpaRepository;
     this.varianteAtributoValorJpaRepository = varianteAtributoValorJpaRepository;
     this.imagenProductoJpaRepository = imagenProductoJpaRepository;
+    this.varianteImagenJpaRepository = varianteImagenJpaRepository;
     this.mapeadorCatalogo = mapeadorCatalogo;
     this.jdbc = jdbc;
   }
@@ -173,29 +177,23 @@ public class RepositorioProductosJpa implements RepositorioProductos {
               imagenProductoJpaRepository.delete(existente);
               imagenProductoJpaRepository.flush();
             });
-    imagenProductoJpaRepository.save(
-        new ImagenProductoJpaEntity(
-            imagen.id(),
-            productoId,
-            null,
-            null,
-            imagen.tipo().name(),
-            imagen.orden(),
-            imagen.url(),
-            imagen.urlWebp(),
-            imagen.ancho(),
-            imagen.alto(),
-            imagen.bytes(),
-            imagen.hash().valor(),
-            imagen.altEs(),
-            imagen.altEn(),
-            Instant.now()));
+    guardarFilaYVariantes(productoId, imagen);
   }
 
   @Override
   public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
     // Sin el borrado previo de guardarImagenPrincipal: aquí no hay fila que reemplazar ni índice
     // único que respetar. El orden lo trae ya puesto el agregado.
+    guardarFilaYVariantes(productoId, imagen);
+  }
+
+  /**
+   * La fila de la imagen y las de sus variantes, siempre juntas. Separarlas dejaría, en el hueco
+   * entre las dos escrituras, una imagen sin ninguna variante — y esa el agregado no la sabe leer:
+   * exige al menos una. Las variantes de la fila que se reemplaza no se borran aquí porque las
+   * borra la base con el `on delete cascade` de la V60.
+   */
+  private void guardarFilaYVariantes(UUID productoId, ImagenProducto imagen) {
     imagenProductoJpaRepository.save(
         new ImagenProductoJpaEntity(
             imagen.id(),
@@ -205,7 +203,7 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.tipo().name(),
             imagen.orden(),
             imagen.url(),
-            imagen.urlWebp(),
+            imagen.urlVistaPrevia().orElse(null),
             imagen.ancho(),
             imagen.alto(),
             imagen.bytes(),
@@ -213,6 +211,13 @@ public class RepositorioProductosJpa implements RepositorioProductos {
             imagen.altEs(),
             imagen.altEn(),
             Instant.now()));
+    varianteImagenJpaRepository.saveAll(
+        imagen.variantes().stream()
+            .map(
+                v ->
+                    new VarianteImagenJpaEntity(
+                        GeneradorIdentificador.nuevo(), imagen.id(), v.ancho(), v.url(), v.bytes()))
+            .toList());
   }
 
   /**

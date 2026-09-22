@@ -5,7 +5,7 @@ export interface SetRotacionAdmin {
   readonly productoId: string;
   readonly fotogramasPrometidos: number;
   readonly estado: 'BORRADOR' | 'COMPLETO' | 'PUBLICADO';
-  readonly imagenes: readonly { readonly orden: number; readonly urlWebp: string }[];
+  readonly imagenes: readonly { readonly orden: number; readonly url: string }[];
 }
 
 export interface SubidaDeFotograma {
