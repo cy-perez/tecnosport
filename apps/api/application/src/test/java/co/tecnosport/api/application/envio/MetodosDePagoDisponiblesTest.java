@@ -198,15 +198,20 @@ class MetodosDePagoDisponiblesTest {
    */
   @Test
   void soloSeOfrecenLosMetodosDePasarelaQueLaCuentaTieneActivados() {
-    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS);
+    // La cuenta de hoy los tiene los cuatro activados, así que el caso negativo se construye
+    // quitando uno. Hasta el 22 de septiembre de 2026 ese papel lo hacía ADDI, que existía en el
+    // enum y no estaba en la lista; al quitarlo del enum (V61) dejó de haber un método de pasarela
+    // desactivado por naturaleza, y el que la prueba necesita se declara aquí.
+    Set<MetodoPago> sinBancolombia =
+        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI);
+    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, sinBancolombia);
 
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
     assertTrue(disponibles.contains(MetodoPago.TARJETA));
     assertTrue(disponibles.contains(MetodoPago.PSE));
     assertTrue(disponibles.contains(MetodoPago.NEQUI));
-    assertTrue(disponibles.contains(MetodoPago.BANCOLOMBIA));
-    assertFalse(disponibles.contains(MetodoPago.ADDI));
+    assertFalse(disponibles.contains(MetodoPago.BANCOLOMBIA));
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
   }
 
@@ -285,16 +290,20 @@ class MetodosDePagoDisponiblesTest {
     assertTrue(error.getMessage().contains("monto mínimo"));
   }
 
-  /** El día que Wompi active Addi: una variable de entorno, sin tocar código. */
+  /** El día que la cuenta active un método más: una variable de entorno, sin tocar código. */
   @Test
   void unMetodoDePasarelaSeOfreceEnCuantoLaConfiguracionLoHabilita() {
-    Set<MetodoPago> conAddi = EnumSet.copyOf(HABILITADOS_HOY);
-    conAddi.add(MetodoPago.ADDI);
-    MetodosDePagoDisponibles caso = crear(CRITERIOS_PERMISIVOS, conAddi);
+    Set<MetodoPago> sinNequi =
+        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.BANCOLOMBIA);
+    MetodosDePagoDisponibles apagado = crear(CRITERIOS_PERMISIVOS, sinNequi);
+    assertFalse(
+        apagado.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null)).contains(MetodoPago.NEQUI));
 
-    Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+    MetodosDePagoDisponibles encendido = crear(CRITERIOS_PERMISIVOS, HABILITADOS_HOY);
 
-    assertTrue(disponibles.contains(MetodoPago.ADDI));
+    Set<MetodoPago> disponibles = encendido.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
+
+    assertTrue(disponibles.contains(MetodoPago.NEQUI));
   }
 
   /**
@@ -308,7 +317,7 @@ class MetodosDePagoDisponiblesTest {
     Set<MetodoPago> disponibles = caso.ejecutar(comando(TipoEntrega.RETIRO_EN_PUNTO, null));
 
     assertFalse(disponibles.contains(MetodoPago.TARJETA));
-    assertFalse(disponibles.contains(MetodoPago.ADDI));
+    assertFalse(disponibles.contains(MetodoPago.BANCOLOMBIA));
     assertTrue(disponibles.contains(MetodoPago.TRANSFERENCIA_MANUAL));
   }
 
@@ -338,7 +347,7 @@ class MetodosDePagoDisponiblesTest {
     Set<MetodoPago> habilitados = caso.habilitados();
 
     assertTrue(habilitados.contains(MetodoPago.TARJETA));
-    assertFalse(habilitados.contains(MetodoPago.ADDI));
+    assertFalse(habilitados.contains(MetodoPago.SISTECREDITO));
     assertTrue(habilitados.contains(MetodoPago.CONTRAENTREGA));
   }
 

@@ -102,10 +102,7 @@ class CrearPedidoTest {
     return crear(CRITERIOS_CONTRAENTREGA_PERMISIVOS, true);
   }
 
-  /**
-   * Los mismos que el valor por omisión de {@code application.yml}: Addi fuera hasta que Wompi lo
-   * active (docs/11-pagos-y-envios.md).
-   */
+  /** Los mismos que el valor por omisión de {@code application.yml}. */
   private static final Set<MetodoPago> HABILITADOS_EN_PASARELA =
       EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA);
 
@@ -566,7 +563,8 @@ class CrearPedidoTest {
     publicarProductoConVarianteYExistencia(5);
 
     assertThrows(
-        MetodoDePagoNoHabilitadoException.class, () -> caso.ejecutar(comando(MetodoPago.ADDI, 1)));
+        MetodoDePagoNoHabilitadoException.class,
+        () -> caso.ejecutar(comando(MetodoPago.SISTECREDITO, 1)));
   }
 
   /** Y no reserva inventario al rechazarlo: la comprobación va antes de congelar las líneas. */
@@ -576,7 +574,8 @@ class CrearPedidoTest {
     publicarProductoConVarianteYExistencia(5);
 
     assertThrows(
-        MetodoDePagoNoHabilitadoException.class, () -> caso.ejecutar(comando(MetodoPago.ADDI, 1)));
+        MetodoDePagoNoHabilitadoException.class,
+        () -> caso.ejecutar(comando(MetodoPago.SISTECREDITO, 1)));
 
     assertEquals(
         5, inventarios.buscarPorVarianteId(variante.id()).orElseThrow().saldoDisponible(AHORA));

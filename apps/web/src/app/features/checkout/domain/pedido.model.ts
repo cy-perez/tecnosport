@@ -12,7 +12,6 @@ export type MetodoPago =
   | 'PSE'
   | 'NEQUI'
   | 'BANCOLOMBIA'
-  | 'ADDI'
   | 'SISTECREDITO'
   | 'TRANSFERENCIA_MANUAL'
   | 'CONTRAENTREGA';

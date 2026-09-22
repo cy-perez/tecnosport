@@ -14,8 +14,7 @@ export function esMetodoPagoWompi(metodoPago: MetodoPago): boolean {
     metodoPago === 'TARJETA' ||
     metodoPago === 'PSE' ||
     metodoPago === 'NEQUI' ||
-    metodoPago === 'BANCOLOMBIA' ||
-    metodoPago === 'ADDI'
+    metodoPago === 'BANCOLOMBIA'
   );
 }
 

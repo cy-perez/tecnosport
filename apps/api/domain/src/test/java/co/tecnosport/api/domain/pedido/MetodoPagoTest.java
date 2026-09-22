@@ -2,14 +2,22 @@ package co.tecnosport.api.domain.pedido;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
  * Quién cobra cada método ({@code adr/0048}). Antes de que existieran dos pasarelas esto era un
  * booleano y no tenía prueba propia: no hacía falta, porque "pasa por la pasarela" solo podía
- * querer decir Wompi. Ahora sí, y sobre todo por la última de estas pruebas.
+ * querer decir Wompi.
+ *
+ * <p>La última de estas pruebas era, hasta el 22 de septiembre de 2026, "Addi sigue apuntando a
+ * Wompi y es lo que lo mantiene fuera del checkout". Ese valor salió del enum (V61) y con él la
+ * prueba: lo que queda en su lugar fija qué métodos cobra Wompi, para que sumar uno sea un acto
+ * deliberado y no el efecto lateral de otra cosa — que es exactamente lo que le pasó a Addi.
  */
 class MetodoPagoTest {
 
@@ -36,19 +44,20 @@ class MetodoPagoTest {
   }
 
   /**
-   * <b>La prueba que justifica el archivo.</b> Addi apunta a Wompi aunque Wompi no lo ofrezca, y
-   * eso no es un error pendiente de arreglar: es lo único que lo mantiene fuera del checkout.
-   * {@code MetodosDePagoDisponibles} quita los métodos que cobra una pasarela y no están en su
-   * lista de habilitados; Addi no está en la de Wompi, así que se cae ahí.
-   *
-   * <p>Reclasificarlo a {@code NINGUNO} —que describe mejor la realidad, porque hoy ninguna
-   * pasarela lo cobra— lo sacaría del filtro y lo dejaría <b>ofrecido en todos los pedidos</b>.
-   * Quien venga a "arreglar" esto que lea antes el {@code TODO} de docs/11-pagos-y-envios.md: la
-   * salida es decidir qué se hace con el valor, no cambiarle el proveedor.
+   * Los métodos que cobra Wompi son exactamente estos cuatro. La prueba no es decorativa: un valor
+   * enrutado a una pasarela que no lo ofrece se cuela en el checkout en cuanto alguien toque la
+   * lista de habilitados de esa cuenta, y así estuvo Addi cuatro meses — apuntando a Wompi, donde
+   * no existe, y fuera del checkout solo porque la lista no lo incluía.
    */
   @Test
-  void addiSigueApuntandoAWompiYEsLoQueLoMantieneFueraDelCheckout() {
-    assertEquals(ProveedorDePago.WOMPI, MetodoPago.ADDI.pasarela());
-    assertTrue(MetodoPago.ADDI.laCobraUnaPasarela());
+  void losQueCobraWompiSonExactamenteEsosCuatro() {
+    Set<MetodoPago> deWompi =
+        Arrays.stream(MetodoPago.values())
+            .filter(metodo -> metodo.pasarela() == ProveedorDePago.WOMPI)
+            .collect(Collectors.toCollection(() -> EnumSet.noneOf(MetodoPago.class)));
+
+    assertEquals(
+        EnumSet.of(MetodoPago.TARJETA, MetodoPago.PSE, MetodoPago.NEQUI, MetodoPago.BANCOLOMBIA),
+        deWompi);
   }
 }

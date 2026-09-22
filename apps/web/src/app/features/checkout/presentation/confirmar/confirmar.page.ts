@@ -30,7 +30,6 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   PSE: 'checkout.metodoPago.pse',
   NEQUI: 'checkout.metodoPago.nequi',
   BANCOLOMBIA: 'checkout.metodoPago.bancolombia',
-  ADDI: 'checkout.metodoPago.addi',
   SISTECREDITO: 'checkout.metodoPago.sistecredito',
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
