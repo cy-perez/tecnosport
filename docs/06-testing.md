@@ -344,3 +344,17 @@ mueve el rendimiento más que casi cualquier cambio de código —la misma porta
 con el mismo build, dio 57 y 84 en dos sesiones de la misma noche—. Se mide
 antes y después del cambio **en la misma sesión**. Una tabla de otro día no es
 una línea base. La historia completa está en `docs/09-plan-de-arranque.md`.
+
+Para eso están las etiquetas: `--etiqueta base` guarda la corrida en su propia
+carpeta con siete métricas por muestra, y `--comparar base cambio` enfrenta dos
+guardadas sin volver a medir —no necesita ni API, ni build, ni Chrome—.
+
+**Lo que la comparación nunca dice es "sí" para un tiempo**, y conviene saber
+por qué antes de pelearse con ella. Se midió el mismo build dos veces, cinco
+minutos aparte: la evaluación de scripts de la portada se movió 198 ms y el
+rendimiento 4 puntos **sin que nadie cambiara nada**. Las tres muestras de una
+corrida son consecutivas, así que su dispersión mide lo que varía en treinta
+segundos, no entre dos corridas separadas por un build. De ahí el piso por
+métrica —cifras de ese control, no un porcentaje a ojo— y de ahí que lo más que
+se pueda decir de una mejora de tiempo sea *"quizá: repite el par"*. Los bytes
+sí se afirman: no dependen del reloj.
