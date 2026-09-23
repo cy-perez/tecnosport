@@ -17,13 +17,19 @@ function resultadoConCodigo(estado: number, cuerpo: unknown) {
   return {
     data: undefined,
     error: cuerpo,
-    response: new Response(null, { status: estado, headers: { 'Content-Type': 'application/json' } }),
+    response: new Response(null, {
+      status: estado,
+      headers: { 'Content-Type': 'application/json' },
+    }),
   };
 }
 
 describe('el codigo del ProblemDetail', () => {
   it('viaja en el ErrorHttp para que la pantalla pueda decir que paso', () => {
-    const fallo = resultadoConCodigo(422, { codigo: 'MONTO_DE_REINTEGRO_INVALIDO', detail: 'no cabe' });
+    const fallo = resultadoConCodigo(422, {
+      codigo: 'MONTO_DE_REINTEGRO_INVALIDO',
+      detail: 'no cabe',
+    });
 
     try {
       desempaquetar(fallo, 'no se pudo reintegrar');
@@ -35,7 +41,10 @@ describe('el codigo del ProblemDetail', () => {
 
   it('tambien en las respuestas sin cuerpo, que es donde viven las acciones del panel', () => {
     try {
-      exigirExito(resultadoConCodigo(409, { codigo: 'RETRACTO_YA_RADICADO' }), 'no se pudo radicar');
+      exigirExito(
+        resultadoConCodigo(409, { codigo: 'RETRACTO_YA_RADICADO' }),
+        'no se pudo radicar',
+      );
       expect.unreachable();
     } catch (error) {
       expect((error as ErrorHttp).codigo).toBe('RETRACTO_YA_RADICADO');
@@ -87,7 +96,9 @@ describe('desempaquetar', () => {
   });
 
   it('lanza ErrorHttp ante un 200 sin cuerpo, para que no llegue undefined al mapeador', () => {
-    expect(() => desempaquetar(resultado(undefined, 200), 'respuesta vacía')).toThrowError(ErrorHttp);
+    expect(() => desempaquetar(resultado(undefined, 200), 'respuesta vacía')).toThrowError(
+      ErrorHttp,
+    );
   });
 
   it('no confunde un cuerpo falsy con la ausencia de cuerpo', () => {
@@ -128,5 +139,57 @@ describe('esFalloDelServidor', () => {
     // `fetch` rechaza con TypeError antes de que exista una `Response`; ahí tampoco hay nada
     // que el usuario pueda arreglar escribiendo otra cosa.
     expect(esFalloDelServidor(new TypeError('Failed to fetch'))).toBe(true);
+  });
+});
+
+/**
+ * <b>Las otras propiedades del ProblemDetail.</b> El backend manda `codigoSistecredito` y
+ * `estadoSistecredito` para que la pantalla distinga un rechazo de credito de un fallo cualquiera,
+ * y hasta el 23 de septiembre de 2026 se perdian aqui: `ErrorHttp` solo guardaba `codigo`, asi que
+ * la rama que los leia en `ConfirmarPage` era codigo muerto y todo rechazo salia con el mensaje
+ * generico. Se encontro en la primera compra de verdad con Sistecredito contra dev.
+ */
+describe('los datos del ProblemDetail', () => {
+  it('viajan en el ErrorHttp para que la pantalla pueda afinar el mensaje', () => {
+    const fallo = resultadoConCodigo(409, {
+      codigo: 'SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO',
+      detail: 'no hay url',
+      codigoSistecredito: '4',
+      estadoSistecredito: 'Rejected',
+    });
+
+    try {
+      desempaquetar(fallo, 'no se pudo iniciar el pago');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).datos['codigoSistecredito']).toBe('4');
+      expect((error as ErrorHttp).datos['estadoSistecredito']).toBe('Rejected');
+    }
+  });
+
+  it('no arrastran el texto del backend, que viene en un solo idioma', () => {
+    const fallo = resultadoConCodigo(409, {
+      codigo: 'SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO',
+      detail: 'Sistecredito no entrego una URL de pago para este pedido.',
+      title: 'Sistecredito no entrego la URL de pago',
+      type: 'https://tecnosport.co/errores/sistecredito-no-entrego-la-url',
+      estadoSistecredito: 'Rejected',
+    });
+
+    try {
+      desempaquetar(fallo, 'no se pudo iniciar el pago');
+      expect.unreachable();
+    } catch (error) {
+      expect(Object.keys((error as ErrorHttp).datos)).toEqual(['estadoSistecredito']);
+    }
+  });
+
+  it('sin cuerpo JSON quedan vacios en vez de reventar', () => {
+    try {
+      desempaquetar(resultado(undefined, 502, 'text/html'), 'se cayo');
+      expect.unreachable();
+    } catch (error) {
+      expect((error as ErrorHttp).datos).toEqual({});
+    }
   });
 });

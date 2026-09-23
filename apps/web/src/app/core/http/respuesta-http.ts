@@ -9,12 +9,24 @@
  * saltarse Transloco: la frase del backend viene en un solo idioma y la escribe Java. Puede venir
  * vacío —un 500 en HTML de un balanceador no trae cuerpo—, y entonces la pantalla cae a su mensaje
  * genérico.
+ *
+ * <p>`datos` son las **otras** propiedades del `ProblemDetail`, las que el backend añade para que
+ * la pantalla pueda afinar: `codigoSistecredito`, `estadoSistecredito`. Se guardan solo los valores
+ * de tipo cadena, número o booleano —convertidos a cadena—, por lo mismo que arriba: son códigos y
+ * estados, nunca frases que haya que enseñar.
+ *
+ * <p>Existen desde el 23 de septiembre de 2026, y antes su ausencia dejaba **código muerto**: la
+ * pantalla de confirmar leía `codigoSistecredito` del error para distinguir el `801` del `802`, y
+ * como aquí solo viajaba `codigo`, esa rama no se cumplía nunca. Todo rechazo de crédito se
+ * contaba con el mensaje genérico —"revisa tus datos"—, que además es un consejo falso. Es el mismo
+ * patrón de la deuda 30, encontrado en la primera compra de verdad con Sistecrédito.
  */
 export class ErrorHttp extends Error {
   constructor(
     readonly estado: number,
     detalle: string,
     readonly codigo?: string,
+    readonly datos: Readonly<Record<string, string>> = {},
   ) {
     super(`${detalle} (HTTP ${estado})`);
     this.name = 'ErrorHttp';
@@ -25,6 +37,22 @@ export class ErrorHttp extends Error {
  * El `codigo` del cuerpo de error, si vino y si es una cadena. `openapi-fetch` deja el cuerpo del
  * fallo en `error` solo cuando es JSON, así que aquí no se puede dar nada por hecho.
  */
+function datosDe(cuerpo: unknown): Readonly<Record<string, string>> {
+  if (cuerpo === null || typeof cuerpo !== 'object') {
+    return {};
+  }
+  const datos: Record<string, string> = {};
+  for (const [clave, valor] of Object.entries(cuerpo as Record<string, unknown>)) {
+    if (clave === 'codigo' || clave === 'detail' || clave === 'title' || clave === 'type') {
+      continue;
+    }
+    if (typeof valor === 'string' || typeof valor === 'number' || typeof valor === 'boolean') {
+      datos[clave] = String(valor);
+    }
+  }
+  return datos;
+}
+
 function codigoDe(cuerpo: unknown): string | undefined {
   if (cuerpo === null || typeof cuerpo !== 'object' || !('codigo' in cuerpo)) {
     return undefined;
@@ -58,7 +86,12 @@ interface ResultadoFetch<T> {
  */
 export function desempaquetar<T>(resultado: ResultadoFetch<T>, detalle: string): T {
   if (!resultado.response.ok || resultado.data === undefined) {
-    throw new ErrorHttp(resultado.response.status, detalle, codigoDe(resultado.error));
+    throw new ErrorHttp(
+      resultado.response.status,
+      detalle,
+      codigoDe(resultado.error),
+      datosDe(resultado.error),
+    );
   }
   return resultado.data;
 }
@@ -72,7 +105,12 @@ export function exigirExito(
   detalle: string,
 ): void {
   if (!resultado.response.ok) {
-    throw new ErrorHttp(resultado.response.status, detalle, codigoDe(resultado.error));
+    throw new ErrorHttp(
+      resultado.response.status,
+      detalle,
+      codigoDe(resultado.error),
+      datosDe(resultado.error),
+    );
   }
 }
 
