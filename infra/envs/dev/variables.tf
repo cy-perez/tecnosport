@@ -85,3 +85,29 @@ variable "correo_admin" {
   type        = string
   default     = "contacto@tecnosport.co"
 }
+
+variable "sistecredito_sandbox" {
+  description = "El freno de seguridad, desde Terraform. `true` pide a la pasarela que simule el estado de `estado_simulado_sistecredito` sin cobrarle a nadie; **`false` significa que cada compra con Sistecrédito en dev abre un crédito real a nombre de una persona de verdad**, porque esta cuenta solo tiene credenciales productivas y la pasarela es `api.credinet.co` también desde aquí. Se pone en `false` para una prueba con fecha y se devuelve a `true` el mismo día (adr/0048)."
+  type        = bool
+  default     = true
+}
+
+variable "estado_simulado_sistecredito" {
+  description = "Qué estado simula la pasarela cuando el sandbox está encendido. La lista es la que el propio `SistecreditoClient` sabe interpretar, y se valida aquí porque un valor mal escrito no falla: viaja tal cual y la pasarela hace otra cosa."
+  type        = string
+  default     = "Approved"
+
+  validation {
+    condition = contains(
+      ["Approved", "Rejected", "Cancelled", "Expired", "Abandoned", "Failed", "Pending", "PendingForPaymentMethod"],
+      var.estado_simulado_sistecredito
+    )
+    error_message = "Estado simulado desconocido. Los que el cliente interpreta son Approved, Rejected, Cancelled, Expired, Abandoned, Failed, Pending y PendingForPaymentMethod."
+  }
+}
+
+variable "ruta_confirmacion_sistecredito" {
+  description = "La ruta pública a la que Sistecrédito manda la notificación, colgando de `dominio_publico_api`. Es variable por una sola razón, y no es de producción: apuntarla a una ruta que no existe es la única forma honesta de ensayar que la conciliación recoge un pago cuyo aviso nunca llegó — que es lo que le pasa al comprador que cierra la ventana. Se devuelve a su valor en cuanto la prueba termina."
+  type        = string
+  default     = "/api/v1/pagos/sistecredito/confirmacion"
+}

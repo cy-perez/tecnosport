@@ -356,8 +356,8 @@ module "api" {
     # despliegue declara el perfil `dev`; en uno sin perfil, o con uno que no esté en la lista
     # blanca, la instancia **no arranca**.
     SISTECREDITO_HABILITADO     = "true"
-    SISTECREDITO_SANDBOX_ACTIVO = "true"
-    SISTECREDITO_SANDBOX_ESTADO = "Approved"
+    SISTECREDITO_SANDBOX_ACTIVO = tostring(var.sistecredito_sandbox)
+    SISTECREDITO_SANDBOX_ESTADO = var.estado_simulado_sistecredito
     # El mínimo del crédito, confirmado por el dueño del negocio el 22 de septiembre de 2026. No
     # es público —dos comercios aliados publican 20.000 y 30.000— porque varía por comercio, y por
     # eso no tiene valor por omisión en `application.yml`: un despliegue que lo olvide tiene que no
@@ -368,7 +368,7 @@ module "api" {
     # después del primer apply igual que `dominio_publico_web`. Si se queda vacía, el valor por
     # omisión de `application.yml` apunta a localhost y la notificación de Sistecrédito no llega a
     # ninguna parte — que es justo lo que las pruebas contra dev vienen a comprobar.
-    SISTECREDITO_URL_CONFIRMACION = "${var.dominio_publico_api}/api/v1/pagos/sistecredito/confirmacion"
+    SISTECREDITO_URL_CONFIRMACION = "${var.dominio_publico_api}${var.ruta_confirmacion_sistecredito}"
     }, var.wompi_llave_publica == "" ? {} : {
     WOMPI_LLAVE_PUBLICA = var.wompi_llave_publica
     }, var.db_host == "" ? {} : {
