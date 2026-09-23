@@ -1,12 +1,11 @@
 # ADR-0059 — La tipografía de marca no hace esperar ni cambia a mitad de lectura
 
 **Fecha:** 2026-09-23
-**Estado:** aceptado y medido el 23 de septiembre de 2026. `font-display` pasa de `swap` a
-`optional` en las cuatro caras. Medido con el arnés, tres muestras por pantalla y las dos corridas
-en la misma sesión: **estilo y layout cae de 731 a 461 ms en legales** (bandas 676-739 y 458-478,
-sin solape) **y de 546 a 396 en la ficha** (544-586 y 371-412). En la portada no se puede decir:
-sus muestras cayeron en modos distintos. El veredicto del propio arnés para las dos primeras es
-"quizá: repite el par", que es lo más que dice para un tiempo con una sola pareja de corridas.
+**Estado:** aceptado, medido y **confirmado con el par** el 23 de septiembre de 2026.
+`font-display` pasa de `swap` a `optional` en las cuatro caras. El efecto sobre estilo y layout
+**se repite en las dos parejas** de `npm run pareja` —cuatro corridas en orden alternado— en
+legales y en la ficha; en la portada no se repite. La primera pareja suelta decía más de lo que
+hay: ver "Lo que se midió" abajo.
 
 ## Contexto
 
@@ -56,15 +55,29 @@ de marca y la tomó el dueño del negocio el 23 de septiembre de 2026, con la co
 
 ## Lo que se midió, y lo que la medición no puede decir
 
-| | antes (`swap`) | después (`optional`) |
-|---|---|---|
-| estilo y layout, legales | 731 ms (676-739) | **461 ms** (458-478) |
-| estilo y layout, ficha | 546 ms (544-586) | **396 ms** (371-412) |
-| estilo y layout, portada | 638 ms (603-644) | 590 ms (513-694) — no concluyente |
-| peso, las tres pantallas | igual | igual |
+Primero, una sola pareja de corridas en la misma sesión: estilo y layout de 731 a 461 ms en
+legales y de 546 a 396 en la ficha. El arnés no dice "sí" a un tiempo con una pareja, y hace bien:
+**repetido el par en orden alternado, el efecto sigue ahí pero es más chico.**
 
-Son cifras del simulador, que multiplica el trabajo de CPU por 4: en el reloj son unos 67 ms en
-legales y 37 en la ficha.
+| estilo y layout | pareja 1 | pareja 2 | veredicto del arnés |
+|---|---|---|---|
+| legales | 648 → 475 (**−173**) | 681 → 452 (**−229**) | consistente: 2/2 en el mismo sentido |
+| ficha | 543 → 430 (**−113**) | 513 → 412 (**−101**) | consistente: 2/2 en el mismo sentido |
+| portada | 669 → 635 (−34) | 615 → 654 (**+39**) | NO se repite |
+
+Son cifras del simulador, que multiplica el trabajo de CPU por 4: en el reloj, entre 43 y 57 ms en
+legales y entre 25 y 28 en la ficha. El peso y los bytes de tipografía no se mueven en ninguna
+pareja, como tenía que ser.
+
+**En la portada no se repite, y no es por el artefacto**: las dos mitades de las dos parejas se
+midieron con las cuatro tipografías dentro del FCP, o sea en el mismo modo, y aun así el signo se
+invierte entre una pareja y la otra. Lo que se puede afirmar de la portada es que este cambio no le
+hace nada medible; el suyo es otro problema.
+
+Ninguna otra métrica sobrevive al par. En legales el FCP, el LCP y el TBT repiten signo a favor,
+pero los tres por debajo del piso que la herramienta mide para sí misma; en la ficha el rendimiento
+repite **−1 y −2 puntos** —a la contra, y también bajo el piso de 5— y el FCP **+4 y +7 ms**, bajo
+el de 10. Nada de eso se afirma: lo único que sostiene el par es el estilo y layout.
 
 **Y una cosa que la traza dice y conviene no tapar: sobre `localhost` el relayout no desaparece,
 encoge** —de 10+43 ms a 7+7 en legales—. No podía desaparecer ahí: en localhost las tipografías

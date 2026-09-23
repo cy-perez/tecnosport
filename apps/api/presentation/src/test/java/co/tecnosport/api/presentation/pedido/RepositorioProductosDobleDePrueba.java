@@ -24,6 +24,10 @@ final class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.productos = List.of(productos);
   }
 
+  void limpiar() {
+    this.productos = List.of();
+  }
+
   @Override
   public ResultadoPaginado<Producto> buscar(
       FiltroProductos filtro, OrdenProductos orden, String cursor, int tamanoPagina) {

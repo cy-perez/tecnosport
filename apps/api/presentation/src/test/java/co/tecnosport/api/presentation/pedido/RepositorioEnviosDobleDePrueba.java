@@ -12,6 +12,10 @@ final class RepositorioEnviosDobleDePrueba implements RepositorioEnvios {
 
   private final List<Envio> envios = new ArrayList<>();
 
+  void limpiar() {
+    envios.clear();
+  }
+
   @Override
   public void guardar(Envio envio) {
     envios.removeIf(e -> e.id().equals(envio.id()));

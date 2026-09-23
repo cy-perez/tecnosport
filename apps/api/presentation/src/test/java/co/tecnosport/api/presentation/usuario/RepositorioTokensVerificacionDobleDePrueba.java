@@ -24,4 +24,8 @@ final class RepositorioTokensVerificacionDobleDePrueba implements RepositorioTok
   public void guardar(TokenVerificacionCorreo token) {
     tokens.put(token.id(), token);
   }
+
+  void limpiar() {
+    tokens.clear();
+  }
 }

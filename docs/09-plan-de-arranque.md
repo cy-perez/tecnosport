@@ -8482,6 +8482,15 @@ Para cambiar esa línea sin volver a bajar las familias de Google hubo que añad
 `--rehacer-css`, que reconstruye el CSS leyendo el propio CSS —familia, archivo y peso de cada
 cara— y no toca un `woff2`. `--desde-local` no servía: dice explícitamente que el CSS no cambia.
 
+**Y se repitió el par, que es lo que el propio arnés pedía.** Cuatro corridas en orden alternado
+con el alcance ya arreglado: el signo **se repite en legales** (−173 y −229) **y en la ficha**
+(−113 y −101), y **no se repite en la portada** (−34 y +39). Como pasó con la deuda 22, la pareja
+suelta decía de más: los −270 de legales y los −150 de la ficha eran −173/−229 y −113/−101. El
+efecto es real y es más chico. Y en la portada las cuatro mitades se midieron en el mismo modo —las
+cuatro tipografías dentro del FCP—, así que ahí el "no se repite" no es el artefacto: es que a esa
+pantalla este cambio no le hace nada medible. Ninguna otra métrica sobrevive al par; ver
+`ADR-0059`.
+
 ### Lo que queda dicho, y no se tapó
 
 - **Sobre `localhost` el relayout no desaparece: encoge** —10+43 ms pasan a 7+7 en legales—. No

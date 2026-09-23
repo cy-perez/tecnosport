@@ -32,4 +32,8 @@ final class RepositorioSesionesDobleDePrueba implements RepositorioSesiones {
   public void revocarTodasDeUsuario(UUID usuarioId, Instant ahora) {
     sesiones.stream().filter(s -> s.usuarioId().equals(usuarioId)).forEach(s -> s.revocar(ahora));
   }
+
+  void limpiar() {
+    sesiones.clear();
+  }
 }

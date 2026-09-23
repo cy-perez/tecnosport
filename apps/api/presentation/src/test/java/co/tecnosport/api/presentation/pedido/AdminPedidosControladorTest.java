@@ -106,6 +106,17 @@ class AdminPedidosControladorTest {
         .setAuthentication(new UsernamePasswordAuthenticationToken(UUID.randomUUID(), null));
   }
 
+  /**
+   * Un número distinto por cada pedido sembrado. En el repositorio real el número es único, y dos
+   * pruebas de esta clase siembran más de un pedido: con el mismo número estaban montando un
+   * escenario que no puede existir.
+   */
+  private int pedidosSembrados = 0;
+
+  private NumeroPedido siguienteNumeroDePrueba() {
+    return NumeroPedido.de(2026, ++pedidosSembrados);
+  }
+
   private Pedido pedidoConMetodo(MetodoPago metodoPago) {
     UUID varianteId = UUID.randomUUID();
     Inventario inventario = Inventario.crear(varianteId);
@@ -115,7 +126,7 @@ class AdminPedidosControladorTest {
 
     Pedido pedido =
         Pedido.crear(
-            NumeroPedido.de(2026, 1),
+            siguienteNumeroDePrueba(),
             null,
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(
@@ -149,7 +160,7 @@ class AdminPedidosControladorTest {
 
     Pedido pedido =
         Pedido.crear(
-            NumeroPedido.de(2026, 2),
+            siguienteNumeroDePrueba(),
             null,
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(
@@ -360,7 +371,7 @@ class AdminPedidosControladorTest {
 
     Pedido pedido =
         Pedido.crear(
-            NumeroPedido.de(2026, 1),
+            siguienteNumeroDePrueba(),
             null,
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(
@@ -531,7 +542,7 @@ class AdminPedidosControladorTest {
 
     Pedido pedido =
         Pedido.crear(
-            NumeroPedido.de(2026, 1),
+            siguienteNumeroDePrueba(),
             null,
             new CorreoElectronico("cliente@tecnosport.co"),
             List.of(

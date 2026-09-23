@@ -24,4 +24,8 @@ final class RepositorioTokensRecuperacionDobleDePrueba implements RepositorioTok
   public void guardar(TokenRecuperacionClave token) {
     tokens.put(token.id(), token);
   }
+
+  void limpiar() {
+    tokens.clear();
+  }
 }
