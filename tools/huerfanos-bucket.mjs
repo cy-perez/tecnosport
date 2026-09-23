@@ -390,8 +390,16 @@ if (huerfanos.length === 0) {
     console.log(`  ${objeto.fecha}  ${String(objeto.bytes).padStart(8)}  ${objeto.key}`);
   }
   console.log(
-    `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una subida firmada` +
-      " que nunca se confirmó:\n el objeto quedó en el bucket y la fila nunca se creó.",
+    `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una de dos cosas,` +
+      " y desde aquí se ven igual:\n" +
+      "  · una subida firmada que nunca se confirmó — el objeto quedó en el bucket y la fila" +
+      " nunca se creó;\n" +
+      "  · una sobra de un cambio de la base pública — si la URL guardada apunta a otro" +
+      " bucket, `objectKeyDe` no la reconoce,\n    así que quitar la imagen borró la fila y" +
+      " dejó el objeto en pie.\n" +
+      "El segundo caso solo aparece si este ambiente se mudó de bucket, y eso este informe no" +
+      " lo sabe:\nlo sabe quien lo mudó. Pasó el 23 de septiembre de 2026 con 348 objetos" +
+      " (ADR-0058).",
   );
 }
 

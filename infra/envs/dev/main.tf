@@ -145,18 +145,34 @@ resource "google_storage_bucket" "imagenes" {
   }
 }
 
+# Los dos permisos del bucket, y van con `_iam_binding` y no con `_iam_member` a propósito: el
+# primero es **autoritativo por rol** —la lista de miembros que dice aquí es la lista entera— y el
+# segundo solo añade y nunca quita. Con `_member`, una cuenta agregada a mano se queda para siempre
+# y ningún `plan` la menciona; con `_binding`, aparece como diferencia y el `apply` la retira.
+#
+# No es hipotético: este bucket llevaba un `objectAdmin` de `imagenes-dev@`, una cuenta **ya
+# borrada** de antes de que existiera este Terraform, y otro de la cuenta con la que firmaba local
+# —el que hizo posible que los dos ambientes se pisaran (`ADR-0058`)—. Ninguno de los dos habría
+# salido en un `plan` mientras los permisos fueran aditivos.
+#
+# Los roles heredados del proyecto (`projectOwner`, `projectEditor`, `projectViewer` sobre los
+# `legacy*`) son **otros roles**, así que esto no los toca: lo autoritativo es por rol, no por
+# bucket.
+
 # La ficha de producto sirve las imágenes por URL directa, así que el bucket es de lectura pública.
 # La escritura sigue siendo solo con URL firmada.
-resource "google_storage_bucket_iam_member" "imagenes_lectura_publica" {
-  bucket = google_storage_bucket.imagenes.name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+resource "google_storage_bucket_iam_binding" "imagenes_lectura_publica" {
+  bucket  = google_storage_bucket.imagenes.name
+  role    = "roles/storage.objectViewer"
+  members = ["allUsers"]
 }
 
-resource "google_storage_bucket_iam_member" "api_escribe_imagenes" {
-  bucket = google_storage_bucket.imagenes.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.api.email}"
+# Solo la API de este ambiente escribe aquí. La cuenta de local no: tiene su bucket y su llave, y
+# que no pueda escribir en este es la mitad que importa de la separación.
+resource "google_storage_bucket_iam_binding" "api_escribe_imagenes" {
+  bucket  = google_storage_bucket.imagenes.name
+  role    = "roles/storage.objectAdmin"
+  members = ["serviceAccount:${google_service_account.api.email}"]
 }
 
 # ── Federación de identidad con GitHub ──────────────────────────────────────────────────────────

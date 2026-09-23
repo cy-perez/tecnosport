@@ -8388,6 +8388,28 @@ dev tiene etiquetas puestas a mano (`reinicio=r2`), que Terraform quiere quitar.
 servicio con `gcloud`. Aplicarlo de paso, dentro de un trabajo sobre un bucket, habría sido un
 despliegue no pedido; por eso el `apply` fue con `-target`.
 
+### Las tres sobras, y la que enseñó algo
+
+Cerrar deja tres cosas chicas, y una de ellas cambió una decisión.
+
+**El bucket tenía un `objectAdmin` de una cuenta ya borrada** (`imagenes-dev@`, de antes de que
+existiera este Terraform). Quitarlo a mano habría sido un `gcloud` de dos minutos y el error habría
+podido volver el mes que viene sin que nada avisara: **los permisos estaban declarados con
+`google_storage_bucket_iam_member`, que solo añade**, así que cualquier cuenta agregada por fuera se
+queda para siempre y **ningún `plan` la menciona**. Pasan a `google_storage_bucket_iam_binding`, que
+es autoritativo por rol: la lista del código es la lista entera, y lo que alguien agregue a mano
+aparece como diferencia y se retira en el `apply` siguiente. El `plan` propone exactamente eso, una
+línea: fuera la cuenta borrada. Los roles heredados del proyecto son otros roles y no se tocan.
+
+**La cuenta y la llave viejas de local** (`tecnosport-dev-imagenes@`, y su JSON en `~/.gcp/`) se
+borran: desde que local firma con la suya no sirven para nada, y una llave viva que nadie usa es solo
+superficie.
+
+**Y el informe de huérfanos explicaba cada objeto sin reclamar como "una subida firmada que nunca se
+confirmó"**, que para estos 348 era falso: eran sobras de la mudanza. Ahora dice las dos, y también
+dice lo que no sabe — que el segundo caso solo existe si el ambiente cambió de bucket, y eso no lo
+puede saber un informe que solo ve keys.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:

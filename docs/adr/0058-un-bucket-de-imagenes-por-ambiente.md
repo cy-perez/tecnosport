@@ -52,6 +52,13 @@ del catálogo las hizo el cargador desde Node, que firma sin navegador.
   el último que corrió y nada dice cuál fue.
 - **El CORS de cada bucket es el de su propio ambiente.** El de dev, el origen de su web; el de
   local, `http://localhost:4200` más el túnel del teléfono cuando haga falta.
+- **Los permisos del bucket se declaran autoritativos**, con `google_storage_bucket_iam_binding`
+  y no con `_iam_member`: la lista de miembros que dice el código es la lista entera. Con permisos
+  aditivos, una cuenta agregada a mano se queda para siempre y ningún `plan` la menciona — y este
+  bucket tenía dos así: un `objectAdmin` de `imagenes-dev@`, una cuenta **ya borrada** de antes de
+  que existiera este Terraform, y el de la cuenta con la que firmaba local, que es el que hizo
+  posible que los dos ambientes se pisaran. Lo autoritativo es **por rol**, así que los roles
+  heredados del proyecto (`legacy*` de `projectOwner` y compañía) quedan fuera y no se tocan.
 - **El cruce por ambiente del informe de huérfanos se queda.** Con los buckets separados y las
   sobras borradas, cada informe cruzado contra su propia API sale sin nada "de otro ambiente", y ese
   cero es la comprobación de que la separación sigue en pie. Si más adelante aparece con objetos, no
@@ -96,9 +103,11 @@ de URL, el CORS y el preflight son justo donde aparecen los fallos, y un emulado
   contra la API de dev el informe los declara "de otro ambiente" y no ofrece nada que borrar. Es la
   protección de la deuda 29 aplicada a un caso donde estorba, y no es un defecto — el informe no
   puede saber que local ya se mudó. Medir y borrar, como el 22 de septiembre.
-- Dos llaves JSON en esta máquina mientras la vieja no se borre. La cuenta
-  `tecnosport-dev-imagenes` se queda sin usar en cuanto local firme con la suya, y su binding sobre
-  el bucket de dev se retira — con él se va la posibilidad del error que abrió la deuda 29.
+- La cuenta `tecnosport-dev-imagenes` se queda sin usar en cuanto local firma con la suya, así que
+  se borra junto con su llave JSON de esta máquina; su `objectAdmin` sobre el bucket de dev ya se
+  retiró, y con él se fue la posibilidad del error que abrió la deuda 29. Mientras las dos llaves
+  convivan en `~/.gcp/`, la vieja no firma nada: el backend usa la que diga
+  `GOOGLE_APPLICATION_CREDENTIALS`.
 - El bucket de dev queda con `prevent_destroy`. Borrarlo exige quitar esa línea a mano, que es la
   pausa que se quiere: dentro viven las imágenes del catálogo de dev y un bucket no se recrea con su
   contenido.
@@ -144,3 +153,8 @@ el script se niega a crear nada.
 8. Volver a medir los dos, cada uno contra su propia API. En régimen los dos informes salen limpios
    y sin nada "de otro ambiente"; mientras los 348 sigan en el bucket de dev, esa sección informa de
    ellos con razón.
+9. Y las sobras, que se limpian al final: el `objectAdmin` de la cuenta ya borrada `imagenes-dev@`
+   sale del `apply` de los permisos autoritativos —no de un `gcloud` a mano, que es lo que dejaría el
+   próximo igual de invisible—, y la cuenta vieja `tecnosport-dev-imagenes@` se borra con
+   `gcloud iam service-accounts delete`, junto con su llave JSON de `~/.gcp/`. Borrar la cuenta
+   revoca sus llaves, así que el orden entre esas dos cosas no importa.
