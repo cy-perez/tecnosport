@@ -8246,8 +8246,22 @@ contar a **0**, con su motivo. Quedan seis variantes en cero y **las seis están
 que el aviso del panel las canta y la tienda las muestra agotadas. Eso es cierto: lo que falta ahí
 no es inventario, es despublicar tres productos que nunca fueron de verdad.
 
-**Falta dev**, que es donde vive el enunciado de la deuda, y falta porque hace falta un token de
-administrador de ese ambiente.
+**Dev se asentó esa misma noche**, y ahí el enunciado de la deuda resultó estar caduco: **no
+había ningún 5**. Los 25 del catálogo real estaban en **cero** y los 8 con saldo eran los productos
+sembrados de la Fase 1 —camiseta, morral, tenis y un cuarto que no se había nombrado, el «Celular
+TecnoSport Aurora»—, todos en BORRADOR. O sea que el problema en dev no era una cifra inventada
+sino un catálogo entero sin contar.
+
+Quedó en 25 variantes a 1 y 8 a 0. Y dev quedó **mejor que local** en una cosa que conviene mirar:
+allá los 8 en cero son todos BORRADOR, así que `totalSinExistenciaEnPublicados` es 0 —ni aviso en
+el panel ni nada agotado en la vitrina—, mientras que en local los tres sembrados están publicados
+y sí se ven agotados. Lo que falta ahí no es inventario: es despublicar tres productos que nunca
+fueron mercancía.
+
+El cuarto sembrado se contó a cero por la misma razón que los otros tres y sin preguntar: comparte
+su familia de SKU (`TS-CEL-AUR-`, como `TS-CAM-`, `TS-MOR-` y `UT-TEN-`) y es un teléfono de marca
+propia inventada en un catálogo donde todo lo demás es Samsung, Motorola, JBL, Lenovo, TCL, Honor o
+Nintendo. Si resulta que sí es algo, se deshace con un conteo.
 
 ### Las regiones vivas: 15 de 114, y el freno es deliberado
 
@@ -8323,8 +8337,9 @@ Ver la entrada de arriba.
 Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
 objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
 ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
-por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Avanzaron la **10** —el
-inventario ya tiene su dato y local está asentado; falta dev— y la **16**, que por fin se midió:
+por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Se cerró la **10** —el inventario
+deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y avanzó la
+**16**, que por fin se midió:
 15 regiones vivas corregidas de 114, y las 99 que quedan esperando media hora de NVDA.
 
 ### Bloque 1. Código, sin depender de nadie
@@ -8479,13 +8494,15 @@ El orden no es negociable: cada uno alimenta al siguiente.
    entran en BORRADOR y no salen a la vitrina.** Están cargados, con sus tres tomas cada uno y
    existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
    ese se renegocia con el proveedor o no se venden.
-10. **La existencia inventada de 5** que llevan los doce primeros en dev. **El dato ya existe
-    desde el 22 de septiembre de 2026: una unidad por variante**, dicho por el dueño del negocio, y
-    **local ya está asentado** —37 variantes, conteo físico con motivo, y los tres productos
-    sembrados de la Fase 1 devueltos a 0 porque no son mercancía—. **Falta dev**, que es de lo que
-    habla este punto, y falta solo por el token de administrador de ese ambiente. **Cómo
-    comprobarlo:** `GET /api/v1/admin/variantes/existencias` contra dev; mientras haya variantes en
-    5, la deuda sigue.
+10. ~~**La existencia inventada de 5** que llevan los doce primeros en dev.~~ **Cerrada el 22 de
+    septiembre de 2026, y el enunciado estaba caduco.** El dato lo puso el dueño del negocio —**una
+    unidad por variante**— y se asentó como conteo físico con su motivo, no como un `UPDATE`: cada
+    ajuste queda en el libro de movimientos. Local: 37 variantes. Dev: 33, y allí **no había ningún
+    5** —los 25 del catálogo real estaban en cero y los 8 con saldo eran los sembrados de la Fase 1,
+    todos en BORRADOR—, así que el problema no era una cifra inventada sino un catálogo sin contar.
+    Los sembrados quedaron en 0 en los dos ambientes, porque no son mercancía. **Cómo comprobarlo:**
+    `GET /api/v1/admin/variantes/existencias`; toda variante que no sea de un SKU sembrado
+    (`TS-CAM-`, `TS-MOR-`, `TS-CEL-AUR-`, `UT-TEN-`) debe estar en 1.
 11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 22 de septiembre: son
     $50.000**, confirmado por el dueño del negocio. Sigue sin valor por omisión en
     `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
