@@ -392,6 +392,34 @@ Quien filtra con un lector de pantalla y se queda sin resultados no se entera de
 nada — la rejilla simplemente deja de tener tarjetas. No estaba en las 114
 contadas porque no tiene `role` que contar, que es exactamente por qué no se vio.
 
+#### Lo que se hizo con el resultado, el mismo dia
+
+Los 27 sitios se arreglaron en cinco commits, con tres formas segun lo que la caja pinte:
+
+- **Parrafo sin fondo** → la region se queda y el `@if` se mete dentro. Es lo que ya hacia
+  `cambiar-clave-admin.page.html` antes de la medicion.
+- **Caja con borde o relleno** → un envoltorio permanente alrededor, y la caja sigue condicional.
+  Una caja vacia permanente con `p-16` pintaria una barra de color, y eso jsdom no lo atrapa.
+- **Contenedor `flex` con `gap`** → el envoltorio lleva `contents`, porque un hijo vacio con caja
+  propia abriria un hueco fijo del tamano del `gap`.
+
+**El primer intento del asistente 360 fue una sola region `sr-only` con los textos repetidos, y se
+descarto midiendo**: duplicaba el contenido en el DOM —rompio cinco pruebas que buscaban un texto y
+encontraban dos— y un lector de pantalla lo habria leido dos veces al recorrer la pantalla. Que una
+region viva no duplique contenido visible no es una preferencia de estilo: es lo que evita que todo
+se oiga dos veces.
+
+**Cada pantalla gano una prueba** que afirma que la region existe **antes** de tener algo que decir.
+Se comprobo rompiendola: devolviendo el parrafo adentro del `@if`, falla. Y tres pruebas del panel
+tuvieron que cambiar, porque esperaban la region **por su rol** para saber que los datos habian
+llegado: con la region viviendo siempre, `findByRole('status')` resuelve al instante y vacia. Ahora
+anclan en el contenido, que es mas fuerte que antes.
+
+**El numero "regiones dentro de un `@if`" dejo de ser la medida.** Lo que importa es si la region
+existe antes de que llegue el mensaje: la de una fila desplegada, o la de un `@case`, nacen dentro
+de control de flujo y **si** se anuncian, porque su ambito abre antes de que la persona pulse nada.
+Contarlas como pendientes seria perseguir un numero equivocado.
+
 ### Lo que Vitest no atrapa en la capa visual
 
 Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`). Las tres cosas

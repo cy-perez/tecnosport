@@ -8533,22 +8533,39 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
-16. **Que NVDA anuncie de verdad las regiones vivas: medido el 22 de septiembre de 2026, y la
-    respuesta no era la esperada.** Queda abierta, pero ya no a ciegas y con un tercio del tamaño.
-    Con NVDA 2025.3.3 y el registro en "Entrada/salida" —que anota el texto literal que manda al
-    sintetizador— se corrieron cuatro pruebas y una sonda, y lo que separa los casos **no es nacer
-    dentro del `@if`: es la cortesía**. Un `role="alert"` se anuncia siempre, nazca lleno o se
-    llene después; un `role="status"` se anuncia si la región ya vivía en el DOM y **calla si nace
-    ya llena**. Así que la regla de `apps/web/CLAUDE.md` es cierta solo para las corteses, y de las
-    111 regiones de hoy **hay 31 que arreglar, no 99**: las 74 asertivas ya funcionan y tocarlas
-    sería diff sin efecto. Están concentradas —8 en el asistente de captura 360, 4 en el panel, 3
-    en el panel de retractos—, así que ya no son "una decisión por pantalla en treinta plantillas".
-    Lo que falta es hacerlas. **El guion, el resultado con sus líneas de registro, las dos trampas
-    del método que costaron dos pruebas y el defecto que apareció de paso —el "no encontramos
-    productos" de la rejilla no es una región viva y nadie lo oye— están en `docs/06-testing.md`,
-    "El guion de NVDA, y lo que midió".** **Cómo comprobarlo:** `grep -rn 'role="status"'
-    apps/web/src/app --include=*.html` y mirar cuáles caen dentro de un `@if`, un `@for` o un
-    `@switch`; mientras haya alguna, la deuda sigue. Las asertivas no cuentan.
+16. **Que NVDA anuncie de verdad las regiones vivas: medido y arreglado el 22 de septiembre de
+    2026.** Con NVDA 2025.3.3 y el registro en "Entrada/salida" —que anota el texto literal que
+    manda al sintetizador— se corrieron cuatro pruebas y una sonda, y lo que separa los casos **no
+    es nacer dentro del `@if`: es la cortesía**. Un `role="alert"` se anuncia siempre, nazca lleno
+    o se llene después; un `role="status"` se anuncia si la región ya vivía en el DOM y **calla si
+    nace ya llena**. Así que la regla de `apps/web/CLAUDE.md` valía solo para las corteses, y el
+    trabajo no eran 99 sitios sino 27: las 74 asertivas ya funcionaban y tocarlas habría sido diff
+    sin efecto.
+
+    **Los 27 se cerraron en cinco commits**, con una prueba por pantalla que falla si la región
+    vuelve a nacer dentro de la condición —comprobada rompiéndola—. Tres formas, según lo que la
+    caja pinte: párrafo sin fondo, región permanente con el `@if` dentro; caja con borde o relleno,
+    envoltorio permanente alrededor; y en el asistente de captura 360 el envoltorio lleva
+    `contents`, porque su contenedor es `flex … gap-16` y un hijo vacío con caja propia abriría
+    16 px de hueco. Los márgenes cuelgan del contenido en las que lo llevaban.
+
+    **Tres no se tocaron y esa es la decisión**: el "Cargando" del `@switch` de verificar-correo y
+    los de los dos retornos de pasarela solo existen durante la primera pintura, y una región que
+    ya está en la página cuando termina de cargar **no se anuncia nunca**. Hacerlas permanentes no
+    cambiaría nada; queda dicho en las tres plantillas. Y una cuarta quedó abierta a propósito: el
+    aviso de **obturador bloqueado** del asistente cuelga del acelerómetro y se enciende y se apaga
+    con cada inclinación —anunciarlo en cada cruce del umbral podría volver la pantalla inusable, y
+    callarlo deja sin explicación a quien no ve el nivel—. Se decide con el teléfono en la mano.
+
+    **Lo que falta para cerrarla del todo** son dos comprobaciones con NVDA que no se pudieron
+    hacer en la misma sesión: que `display: contents` no saque la región del árbol de
+    accesibilidad —si lo hiciera, los cinco envoltorios del asistente no anunciarían y la salida es
+    quitar `contents` y aceptar los 16 px—, y una muestra de las pantallas arregladas. **Cómo
+    comprobarlo:** el guion está en `docs/06-testing.md`, "El guion de NVDA, y lo que midió".
+
+    Y un defecto que apareció de paso y **no es de esta deuda**: el "No encontramos productos con
+    estos filtros" de la rejilla del catálogo no es una región viva —es un `<p>` sin `role`—, así
+    que quien filtra con un lector de pantalla y se queda sin resultados no se entera de nada.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 
