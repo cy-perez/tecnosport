@@ -148,6 +148,34 @@ class SistecreditoClientTest {
   }
 
   /**
+   * <b>Medido contra la pasarela de verdad el 23 de septiembre de 2026</b>: una transacción creada
+   * en modo sandbox devuelve {@code "paymentRedirectUrl":"www.mysite.com"}, un marcador de posición
+   * sin esquema. Sin esquema el navegador lo trata como ruta relativa, así que el comprador se
+   * queda dentro del propio sitio y la comodín lo deja en la portada — con el pedido pagado por
+   * notificación y sin un solo error a la vista. Una URL que no se puede abrir se descarta aquí, en
+   * la frontera con el tercero.
+   *
+   * <p>El segundo caso no es teórico tampoco: ese valor termina en {@code location.href}, así que
+   * un {@code javascript:} sería ejecución de código con nuestro dominio delante.
+   */
+  @Test
+  void unaUrlQueElNavegadorNoPuedeAbrirNoEsUnaUrl() throws IOException {
+    URI sinEsquema = servirConsulta(respuestaConsultada("www.mysite.com", null));
+    assertEquals(
+        Optional.empty(),
+        cliente(sinEsquema).consultar("649b4c821b581f96e45b5696").orElseThrow().urlDeRedireccion());
+
+    apagarServidor();
+    URI conEsquemaPeligroso = servirConsulta(respuestaConsultada("javascript:alert(1)", null));
+    assertEquals(
+        Optional.empty(),
+        cliente(conEsquemaPeligroso)
+            .consultar("649b4c821b581f96e45b5696")
+            .orElseThrow()
+            .urlDeRedireccion());
+  }
+
+  /**
    * El {@code 802} llega con HTTP 200 y {@code errorCode: 0}: mirar solo el código HTTP lo daría
    * por bueno. Lo que lo delata es el nodo del medio de pago, y por eso el cliente lo devuelve
    * entero en vez de quedarse con el estado.
