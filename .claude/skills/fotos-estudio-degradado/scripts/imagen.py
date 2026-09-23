@@ -203,6 +203,18 @@ def degradado_ideal(ancho: int, alto: int, centro: str, esquinas: str,
     return c0 + (c1 - c0) * t[..., None]
 
 
+def fondo_plano(cfg: dict) -> bool:
+    """¿El fondo es un color liso? Lo es cuando el centro y las esquinas son el mismo color."""
+    return hex_a_rgb(cfg["fondo_centro"]) == hex_a_rgb(cfg["fondo_esquinas"])
+
+
+def describir_fondo(cfg: dict) -> str:
+    """«#FFFFFF plano» o «#FFFFFF → #A5A5A5», para los mensajes de la terminal."""
+    if fondo_plano(cfg):
+        return f"{cfg['fondo_centro']} plano"
+    return f"{cfg['fondo_centro']} → {cfg['fondo_esquinas']}"
+
+
 def generar_fondo(cfg: dict) -> np.ndarray:
     ancho, alto = cfg["lienzo"]
     ideal = degradado_ideal(ancho, alto, cfg["fondo_centro"], cfg["fondo_esquinas"],
@@ -568,8 +580,9 @@ def solidificar_interior(alfa: np.ndarray, banda_px: float,
     El modelo de recorte devuelve alfa parcial **dentro** del producto cuando su
     superficie se parece al fondo: en una foto del Galaxy A56 el 35,6 % de los
     píxeles interiores tenían alfa < 1, con mínimos de 0,53. Al componer, el gris
-    del estudio se ve a través de esas zonas y la pantalla sale con manchas
-    grises y oliva que no están en la foto original.
+    del estudio se veía a través de esas zonas y la pantalla salía con manchas
+    grises y oliva que no están en la foto original. Con el fondo blanco lo que se
+    filtra es blanco y se nota menos, pero sigue aclarando el interior.
 
     El interior se define por distancia al cero más cercano, no por erosión de la
     silueta, y esa diferencia importa: `distanceTransform` mide también la

@@ -75,6 +75,25 @@ public sealed interface ResultadoCotizacion {
    * <p>No entra aquí todo lo que el proveedor conteste con un {@code 4xx}. Un {@code 401} es
    * despliegue mal configurado y un {@code 429} es el límite de dos peticiones por segundo, que sí
    * se arregla reintentando; el mapeo vive en el adaptador, que es quien ve el código.
+   *
+   * <p><strong>{@code TODO (depende de Skydropx)}: si el rechazo del código postal merece su propio
+   * motivo.</strong> Los 74 municipios de docs/13 §6.18 caen hoy en {@link #DATOS_RECHAZADOS}, y
+   * para ellos la frase de arriba es falsa: el cuerpo está bien y el que no conoce el municipio es
+   * el proveedor —responde {@code 422 postal_code: "no existe"}, que no es {@code no_coverage}—. El
+   * comprador ya ve lo correcto, un 409 y la recogida en el punto; lo que se cobra es el registro,
+   * donde cada compra desde esos municipios escribe un {@code error} que culpa a nuestro cuerpo, y
+   * un canal de error con ruido conocido deja de servir para lo que se creó (adr/0035).
+   *
+   * <p>Queda pendiente a propósito, y no por falta de tiempo: se le pidió a Skydropx su catálogo de
+   * códigos el 23 de septiembre de 2026 (docs/tramites/2026-09-19-skydropx.md), y cruzarlo contra
+   * DIVIPOLA dirá si son esos 74, si son otros y si la lista es estable. Decidirlo antes sería
+   * escribir una regla sobre una medición nuestra en vez de sobre su catálogo. Hay además una
+   * precondición de este lado: {@code Direccion} no valida el código DANE —solo exige que no esté
+   * vacío— y un código postal de seis dígitos devuelve ese mismo {@code 422} (docs/13 §6), así que
+   * hasta que validemos la forma el mensaje es ambiguo y el motivo nuevo sería una inferencia.
+   *
+   * <p><strong>Cómo saber si esta nota ya caducó</strong>: si docs/13 §6.18 trae el resultado del
+   * cruce, sobra.
    */
   enum Motivo {
     SIN_CREDENCIALES,

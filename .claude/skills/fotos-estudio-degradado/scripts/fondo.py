@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Genera o verifica el fondo plantilla (degradado radial gris con tramado).
+Genera o verifica el fondo plantilla (hoy, blanco plano; con fondo_centro distinto de
+fondo_esquinas, un degradado radial con tramado).
 
     python fondo.py --verificar          # compara assets/ con lo que produce config.json
     python fondo.py --generar            # reescribe el archivo de assets
@@ -36,8 +37,9 @@ def main() -> int:
     cfg = imagen.cargar_config(a.config)
     fondo = imagen.generar_fondo(cfg)
     ancho, alto = cfg["lienzo"]
-    print(f"Lienzo {ancho}×{alto} · centro {cfg['fondo_centro']} → esquinas {cfg['fondo_esquinas']} · "
-          f"tramado ±{cfg['dither_niveles']} (semilla {cfg['dither_semilla']})")
+    tramado = (f"tramado ±{cfg['dither_niveles']} (semilla {cfg['dither_semilla']})"
+               if float(cfg["dither_niveles"]) else "sin tramado")
+    print(f"Lienzo {ancho}×{alto} · fondo {imagen.describir_fondo(cfg)} · {tramado}")
     print(f"Centro {tuple(fondo[alto // 2, ancho // 2])} · esquina {tuple(fondo[0, 0])} · "
           f"mitad del lado {tuple(fondo[0, ancho // 2])}")
     print(f"Huella de píxeles: {imagen.huella_pixeles(fondo)}")

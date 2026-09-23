@@ -11,7 +11,7 @@ cumple y 1 si algo falla. Los «✗» son fallos y los «·» son avisos.
 | Maestra | el lienzo del lote —o el del producto, que el reporte guarda foto a foto—, RGB de 8 bits, perfil sRGB, sin EXIF, XMP ni IPTC; avisos si no es progresiva, si no es 4:4:4 o si pesa más de 800 KB |
 | Web | cada archivo se decodifica y mide lo que dice su nombre; las JPEG sin metadatos; aviso si superan su peso objetivo |
 | Encuadre | lado mayor al 85 % del lienzo de la foto (1700 ± 2 px en 2000) y centro a ≤ 2 px, medidos de nuevo sobre la máscara guardada en `.trabajo/mascaras/` |
-| Fondo | esquinas en #A5A5A5 ± 3 niveles |
+| Fondo | esquinas en el color de `fondo_esquinas` ± 3 niveles: hoy #FFFFFF, porque el fondo es blanco plano |
 | Color | Δcroma ≤ 2: distancia media en el plano a*b* (Lab) entre la foto original y la maestra decodificada, dentro del producto |
 | Estados | ampliación ≥ 2× o producto cortado deben ser REPETIR; ampliación ≥ 1,5× no puede ser LISTA sin aprobación; ninguna REPETIR puede tener archivos en las carpetas de entrega |
 | Configuración | aviso si una foto se procesó con parámetros distintos a los del resto |
@@ -52,8 +52,13 @@ Por foto:
 
 ## Mediciones que respaldan los valores por defecto
 
-**Escalones del degradado.** Percentil 99 del error local respecto al degradado
+**Escalones del degradado.** Percentil 99 del error local respecto al fondo
 ideal, en niveles de 8 bits, fuera de una franja alrededor del producto. Umbral: 0,6.
+
+La tabla que sigue se midió con el **degradado gris** que el catálogo usó hasta el
+23/09/2026, y es la que justifica el AVIF a 10 bits, el tramado y el descarte de
+WebP. Con el fondo blanco plano el único degradado que queda es el de la sombra y
+todo baja; lo medido entonces está al final de esta sección.
 
 | Codificación | Escalones | Observación |
 |---|---|---|
@@ -70,6 +75,39 @@ Al reducir una imagen, el tramado del fondo se promedia y el degradado vuelve a
 quedar en escalones al pasar a 8 bits; por eso cada variante se trama de nuevo. La
 zona medida en las variantes se reduce por área, no con Lanczos: con Lanczos, a
 480 px, hasta la imagen sin comprimir marcaba 1,38.
+
+**Fondo blanco plano, y por qué el tramado quedó en 0.** Medido el 23/09/2026 al
+cambiar el fondo, con el JBL Go 5 (`--variantes`, AVIF a 10 bits y JPEG q88):
+
+| Ancho | AVIF con tramado ±1 | AVIF sin tramado | JPEG con tramado ±1 | JPEG sin tramado |
+|---|--:|--:|--:|--:|
+| 480 | 0,57 | 0,56 | 0,33 | 0,24 |
+| 800 | 0,46 | 0,41 | 0,35 | 0,24 |
+| 1200 | 0,42 | 0,36 | 0,36 | 0,28 |
+| 1600 | 0,42 | 0,33 | 0,37 | 0,31 |
+| 2000 | 0,32 | 0,32 | 0,33 | 0,33 |
+
+Sin tramado los escalones son iguales o mejores en todos los anchos —el ruido
+propio del tramado cuenta como error local— y el blanco queda en 255 exacto: con
+tramado, 16 de cada 3600 píxeles de una esquina salían en 254. Los pesos no
+cambian (JPEG 456 → 455 KB, AVIF 156 → 156 KB a 2000 px). Por eso
+`dither_niveles` es 0 mientras el fondo sea plano.
+
+**Qué le pasó a la separación al cambiar de fondo.** Diez fotos del catálogo, las
+peores sobre gris, reprocesadas sobre blanco: la fracción del contorno con
+ΔL* < 3 subió en los productos claros y bajó en los oscuros.
+
+| Foto | Gris | Blanco |
+|---|--:|--:|
+| honor-x8b-11-wifi-4gb-ram-128gb-01 (plateado) | 0,306 | 0,528 |
+| jbl-partybox-320-03 | 0,167 | 0,361 |
+| samsung-galaxy-s25-ultra-256gb-04 | 0,417 | 0,389 |
+| lenovo-tab-plus-11-wifi-8gb-ram-256gb-02 | 0,361 | 0,167 |
+| lenovo-tab-plus-11-wifi-8gb-ram-256gb-04 | 0,278 | 0,056 |
+| jbl-boombox-4-03 | 0,139 | 0,000 |
+
+El umbral (0,25 del contorno) no se movió: sobre blanco marca exactamente la foto
+cuyo contorno depende sólo de la sombra, que es la que hay que mirar al 100 %.
 
 **Fiabilidad del recorte.** En el lote de prueba (15 fotos), el contraste con el
 fondo original falló en el 47 % del contorno del tenis blanco sobre mesa blanca

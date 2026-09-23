@@ -1,15 +1,22 @@
 ---
 name: fotos-estudio-degradado
-description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin retocar su interior —ni color, ni forma, ni brillo, ni logos—, lo escala al 85 % de un lienzo cuadrado de hasta 2000 px, menor cuando la foto no da para más, y lo centra sobre un fondo degradado gris idéntico en todo el catálogo con una sombra de contacto sutil y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Úsala siempre que alguien pida fotos «de estudio», «con fondo gris», «con degradado», «con sombra», «como las de TecnoSport» o que combinen con el catálogo que ya tiene ese estilo, aunque no diga «editar». No la uses para fondo blanco puro o fotos para Mercado Libre y Amazon (eso es fotos-de-producto), para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with grey gradient backgrounds and contact shadow, batch background removal, AVIF export and image QA.
+description: Convierte lotes de fotos de producto en tomas de estudio uniformes con el estilo de TecnoSport — aísla el producto sin retocar su interior —ni color, ni forma, ni brillo, ni logos—, lo escala al 85 % de un lienzo cuadrado de hasta 2000 px, menor cuando la foto no da para más, y lo centra sobre un fondo blanco idéntico en todo el catálogo, con una sombra de contacto sutil que le dibuja el resplandor alrededor, y exporta la maestra JPEG y el AVIF web, con un reporte honesto que marca cada foto como LISTA, REVISAR o REPETIR. Úsala siempre que alguien pida fotos «de estudio», «con fondo blanco», «con sombra», «con resplandor», «como las de TecnoSport» o que combinen con el catálogo, aunque no diga «editar»; también si piden el fondo gris degradado que el catálogo usó antes, que sigue disponible con un ajuste. No la uses para piezas publicitarias (diseno-publicitario) ni para fotogramas del visor 360. Covers studio product photos with pure white backgrounds and contact shadow, batch background removal, AVIF export and image QA.
 ---
 
-# Fotos de estudio con degradado (estilo TecnoSport)
+# Fotos de estudio (estilo TecnoSport)
 
 Actúa como el retocador del estudio de TecnoSport. Llegan fotos tomadas con el
 celular —sobre la cama, una mesa o el piso, a veces reenviadas por WhatsApp— y el
-catálogo necesita que todas se vean iguales: mismo fondo gris degradado, mismo
+catálogo necesita que todas se vean iguales: mismo fondo blanco, mismo
 tamaño de producto, misma sombra. Tu valor no es sólo procesar: es **decir con
 honestidad qué foto sirve, cuál hay que mirar de cerca y cuál hay que repetir**.
+
+**El fondo es blanco plano desde el 23/09/2026** (antes era un degradado radial
+#FFFFFF → #A5A5A5, y el nombre de la carpeta se quedó de esa época). Lo que
+rodea al producto no lo pone el fondo: lo pone la **sombra de contacto**, que es
+la que dibuja el resplandor pegado a la silueta. Por eso la sombra dejó de ser un
+adorno y pasó a ser lo único que separa un producto claro de su fondo: ver
+«El fondo blanco y el resplandor».
 
 **Regla que no se negocia: se cambia el entorno, nunca el producto.** Fondo,
 encuadre y sombra son del catálogo; color, forma, logos y textos son del
@@ -31,8 +38,9 @@ invertidas. `SALIDA` es la carpeta de resultados. Usa `python3` en Linux y macOS
 
 | Pedido | Skill |
 |---|---|
-| Fotos «de estudio», «fondo gris», «con degradado», «con sombra», «como las de la tienda» | esta |
-| Fondo blanco puro, Mercado Libre, Amazon, Instagram Shopping | `fotos-de-producto` |
+| Fotos «de estudio», «fondo blanco», «con sombra», «con resplandor», «como las de la tienda» | esta |
+| El fondo gris degradado de antes | esta, con `--ajuste 'fondo_esquinas=#A5A5A5' --ajuste dither_niveles=1` |
+| Mercado Libre, Amazon, Instagram Shopping | `fotos-de-producto`, que aplica los requisitos de cada canal (márgenes, sombra permitida o no, tamaños); el fondo blanco ya es el mismo, la diferencia es el encuadre y lo que cada uno exige |
 | Volantes, banners, historias o anuncios hechos con las fotos | `diseno-publicitario` |
 | Fotogramas del visor 360 | ninguna: aquí cada foto se recorta y se escala por su cuenta, así que en una secuencia el producto cambiaría de tamaño y el borde temblaría entre fotogramas |
 
@@ -67,6 +75,45 @@ SALIDA/
 escriben nada en `maestras/` ni en `escritorio/`: su vista previa queda en
 `.trabajo/vistas/` para poder mostrarla y explicar el problema.
 
+## El fondo blanco y el resplandor
+
+Decisión del negocio del 23/09/2026. El catálogo se publicaba sobre un degradado
+radial #FFFFFF → #A5A5A5; desde esa fecha el fondo es **blanco plano**, y las dos
+razones son de edición, no de estética:
+
+- **Para no alterar el interior del producto.** El recorte devuelve alfa parcial
+  dentro del producto cuando su superficie se parece al fondo, y al componer, el
+  gris del estudio se veía a través de esas zonas: manchas grises y oliva que no
+  estaban en la foto original (ver «El interior se compone opaco», que existe por
+  eso). Sobre blanco, lo que se filtra por un alfa parcial es blanco, así que la
+  diferencia con el original es mucho menor y más fácil de juzgar a ojo.
+- **Para que un producto blanco no pelee con el fondo.** Sobre el degradado, el
+  borde de un producto claro caía unas veces en la zona blanca del centro y otras
+  en la gris: el mismo producto con dos contornos distintos según dónde quedara.
+
+**El resplandor alrededor del producto se conserva, y ahora lo dibuja entero la
+sombra de contacto** (#000000 al 63 %, σ 58 px, 14 px hacia abajo). Sobre blanco
+esa sombra deja de ser un adorno: es lo único que separa al producto del fondo.
+De ahí dos consecuencias que conviene no deshacer:
+
+- **No le bajes la opacidad ni el sigma** «porque se ve fuerte» en una foto: es el
+  contorno de todo el catálogo.
+- **Los productos claros dan más REVISAR por separación**, y es correcto. Medido
+  al cambiar el fondo, el Honor X8B plateado pasó de fallar el 30,6 % del contorno
+  a fallar el 52,8 %, mientras que el Lenovo Tab mejoró de 36,1 % a 16,7 %. El
+  umbral no se movió: lo que marca es justo la foto donde el contorno depende solo
+  de la sombra, que es la que hay que mirar al 100 %.
+
+El fondo plano también apagó el tramado (`dither_niveles` = 0): sobre un color
+liso no hay degradado que suavizar, y medido en el JBL Go 5 los escalones salen
+iguales o mejores sin él (AVIF 480 px 0,56 contra 0,57; 1200 px 0,36 contra 0,42),
+con el blanco en 255 exacto en vez de salpicado de 254.
+
+Para volver al degradado de antes, en una corrida o en el `config.json`:
+`--ajuste 'fondo_esquinas=#A5A5A5' --ajuste dither_niveles=1`, y regenerar la
+plantilla con `fondo.py --generar`. **El catálogo procesado antes del 23/09/2026
+sigue en gris**: mientras no se reprocese, conviven los dos fondos.
+
 ## El producto sale tal cual la foto original
 
 Decisión del negocio del 19/09/2026, y es la regla que manda sobre los parámetros
@@ -81,10 +128,12 @@ De ahí salen tres ajustes que conviene no deshacer sin leer esto.
 Es el que motivó la regla. El modelo de recorte devuelve **alfa parcial dentro
 del producto** cuando su superficie se parece al fondo: en una foto del Galaxy
 A56, el **35,6 % de los píxeles interiores** tenían alfa < 1, con mínimos de
-0,533. Al componer, el gris del estudio se ve a través de esas zonas y la
-pantalla sale con manchas grises y oliva que **no están en la foto original**.
+0,533. Al componer, el gris del estudio se veía a través de esas zonas y la
+pantalla salía con manchas grises y oliva que **no están en la foto original**.
 Apareció en 21 fotos de un lote de 105, sobre todo en celulares con el fondo de
-pantalla claro.
+pantalla claro. Con el fondo blanco lo que se filtra es blanco y se nota mucho
+menos, pero el arreglo se queda: un alfa parcial sigue aclarando el interior, y
+la regla es que dentro de la silueta van los píxeles del original.
 
 `solidificar_interior()` lo corrige en dos pasos:
 
@@ -201,8 +250,8 @@ más abajo. Dos cosas que esa regla **no** pide y conviene no concederle:
 |---|---|
 | Lienzo | 2000×2000; con `--por-producto`, el mayor escalón de `lienzos_escala` que el material del producto alcance |
 | Encuadre | lado mayor de la caja del producto (alfa ≥ 10 %) al 85 % del lienzo: 1700 ± 2 px, centrado ± 2 px |
-| Fondo | plantilla `assets/fondo-2000x2000.png`: degradado radial #FFFFFF → #A5A5A5, blanco hasta el 26 % del radio y rampa lineal hasta la esquina, con tramado ±1 de semilla fija, idéntico en todo el catálogo |
-| Sombra | #000000 al 63 %, dilatación 6 px, desenfoque σ 58 px, desplazada 14 px hacia abajo, modo normal, siempre debajo del producto |
+| Fondo | plantilla `assets/fondo-2000x2000.png`: blanco #FFFFFF plano, sin tramado, idéntico en todo el catálogo. Con `fondo_esquinas` distinto de `fondo_centro` vuelve a ser un degradado radial (el del catálogo anterior: #FFFFFF → #A5A5A5, blanco hasta el 26 % del radio, rampa lineal hasta la esquina y tramado ±1 de semilla fija) |
+| Sombra | #000000 al 63 %, dilatación 6 px, desenfoque σ 58 px, desplazada 14 px hacia abajo, modo normal, siempre debajo del producto. Sobre el fondo blanco es también el resplandor: lo único que separa al producto del fondo |
 | Recorte | rembg `isnet-general-use` en dos pasadas; islas < 0,5 % descartadas con aviso; borde descontaminado y contraído 1 px |
 | Adornos | se quitan solos los elementos ajenos separados del cuerpo, pequeños (< 15 %) y de un color que no aparece en él (≥ 20 en a*b*): los destellos de «Galaxy AI» y adornos de render parecidos. Las piezas legítimas comparten el color del cuerpo y se conservan |
 | Tono | sólo L*: niveles con recorte ≤ 0,5 %, ganancia ≤ 0,3 EV, microcontraste leve; a* y b* intactos (Δcroma ≤ 2) |
@@ -315,7 +364,9 @@ y centro del producto. Busca:
   cables, etiquetas colgantes. No se borran a mano (ver el paso 5). Los adornos de
   color separados del producto —los destellos de «Galaxy AI»— ya se quitaron solos
   y el reporte lo anota: confirma que no eran parte del producto.
-- **Silueta legible**: un producto claro puede fundirse con el centro del degradado.
+- **Silueta legible**: un producto blanco o plateado sólo se distingue del fondo por
+  la sombra, y por arriba la sombra es más débil que por abajo. Mira el contorno
+  superior a tamaño real antes de aprobarlo.
 - **Nitidez y compresión**, sobre todo en fotos ampliadas o reenviadas por WhatsApp.
 
 Lo que el script no detecta se marca a ojo, con un motivo claro que quedará en el
@@ -420,8 +471,12 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
 - **Filete oscuro**: donde la foto tenía sombra junto al producto puede quedar un
   borde oscuro de pocos píxeles, visible sólo al 100 %. Se evita con luz más
   difusa; recortar más se comería bordes reales del producto.
-- **Producto claro sobre el centro claro del degradado**: la silueta queda suave.
-  El fondo no se oscurece foto por foto porque rompería la uniformidad.
+- **Producto blanco o plateado sobre el fondo blanco**: la silueta la sostiene sólo
+  la sombra, y por el borde de arriba puede quedar muy suave. El reporte lo marca
+  midiendo la separación con el fondo, y suele salir REVISAR. Ni el fondo se
+  oscurece ni la sombra se refuerza foto por foto: rompería la uniformidad del
+  catálogo. Si el producto no se lee, la salida es otra toma, con el producto
+  girado o con más luz de recorte.
 - **Color**: no se corrige a propósito. Si la foto tenía una dominante (luz
   amarilla), el producto la conserva; dilo y sugiere repetir con luz de día.
 - **Varios productos distintos en una foto** se procesan como uno solo: márcala REPETIR.
@@ -436,9 +491,11 @@ bordes poco separados en pocos tramos) son informativas y no cambian el estado.
   es otra foto, no un retoque. El criterio distingue por color, así que un producto
   con una pieza pequeña de un color que no aparece en su cuerpo podría perderla:
   el reporte anota siempre qué se quitó, y `--ajuste adornos_quitar=false` lo apaga.
-- **WebP**: con pérdida deja anillos en este degradado (1,1–1,25 niveles medidos,
-  aun a calidad 100); por eso el respaldo de AVIF es JPEG. Si un sistema exige
-  WebP, `--ajuste 'formatos_web=["avif","webp"]'` lo genera y el reporte lo advierte.
+- **WebP**: con pérdida dejaba anillos en el degradado de antes (1,1–1,25 niveles
+  medidos, aun a calidad 100); por eso el respaldo de AVIF es JPEG. Sobre el fondo
+  blanco hay mucho menos degradado que arruinar —queda el de la sombra—, pero no
+  se ha vuelto a medir. Si un sistema exige WebP,
+  `--ajuste 'formatos_web=["avif","webp"]'` lo genera y el reporte lo advierte.
 - **Modelo de recorte**: `isnet-general-use` por defecto, porque BiRefNet se queda
   sin memoria en un contenedor de 3 GB. En un equipo con RAM holgada puede probarse
   `--ajuste modelo_recorte=birefnet-general-lite`.
@@ -472,7 +529,11 @@ sirve AVIF con JPEG de respaldo:
 ```
 
 Si el almacenamiento de la tienda genera los tamaños al subir, basta con las
-maestras, con una advertencia: un redimensionador genérico promedia el tramado y
-el degradado vuelve a mostrar escalones al codificar a 8 bits. Por eso
-`procesar.py` vuelve a tramar el fondo en cada variante; si los tamaños se generan
-en la nube, ese proceso debe hacer lo mismo o codificar AVIF a 10 bits.
+maestras. Con el fondo blanco la advertencia de antes pesa mucho menos: el único
+degradado que queda es el de la sombra, y medido en el JBL Go 5 los escalones de
+las variantes se quedan entre 0,24 y 0,56 —por debajo del umbral de 0,6— aun sin
+tramar. `procesar.py` sigue tramando cada variante (`cuantizar_tramado`), pero con
+`dither_niveles` en 0 eso no hace nada; si alguna vez vuelve el degradado, el
+tramado vuelve con él y entonces sí: un redimensionador genérico lo promedia y los
+escalones reaparecen, así que el proceso de la nube tendría que tramar igual o
+codificar AVIF a 10 bits.

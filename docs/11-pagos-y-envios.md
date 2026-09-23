@@ -352,10 +352,12 @@ sino porque es el único de los candidatos que autentica con las credenciales de
 sandbox —`api-pro` y `pro` responden `invalid_client`—. Contra él se cotizó, se
 emitieron guías de verdad y se comprobó la firma del webhook.
 
-`TODO: confirmar el host de producción.` La documentación pública muestra
-`pro.skydropx.com` y el panel indica `api-pro.skydropx.com`; **no se puede
-comprobar sin credenciales de producción**, que es justo lo que falta. Va en
-`SKYDROPX_URL_BASE`, nunca incrustado.
+**El host de producción es `api-pro.skydropx.com`**, dicho por el bloque de
+credenciales de su propia documentación (`docs/13` §6.3) —no por el panel, que es a
+quien lo atribuía este párrafo—. Lo que falta no es saberlo sino ejercerlo: las
+credenciales de producción ya están y no se estrenan hasta que exista la
+infraestructura de producción, así que **lo confirma la primera cotización real de
+ese día**. Va en `SKYDROPX_URL_BASE`, nunca incrustado.
 
 ### Cómo se cotiza
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tomas de estudio con el estilo de TecnoSport: fondo degradado gris, sombra de contacto y encuadre fijo.
+Tomas de estudio con el estilo de TecnoSport: fondo blanco, sombra de contacto y encuadre fijo.
 
 Por foto: aísla el producto, corrige sólo su luminancia (con límites), lo escala para que
 su lado mayor ocupe el 85 % del lienzo, lo centra sobre el fondo plantilla con un
@@ -607,7 +607,7 @@ def exportar_web(ctx: Contexto, nombre: str, final: np.ndarray, img8: np.ndarray
         anchos = ", ".join(str(w) for w, _, _ in sorted(fallos, reverse=True))
         bajo, alto = min(b for _, b, _ in fallos), max(b for _, b, _ in fallos)
         rango = f"{bajo:.2f}" if abs(alto - bajo) < 0.005 else f"{bajo:.2f}–{alto:.2f}"
-        texto = (f"{fmt.upper()} {anchos} px: el degradado conserva escalones ({rango} niveles; máximo "
+        texto = (f"{fmt.upper()} {anchos} px: el fondo conserva escalones ({rango} niveles; máximo "
                  f"{cfg['banding_umbral']}) aun con calidad {max(q for _, _, q in fallos)}.")
         if fmt == "webp":
             texto += " Es un límite de WebP con pérdida: usa JPEG como respaldo de AVIF."
@@ -704,7 +704,7 @@ def mostrar_avance(raiz: Path) -> int:
 
 def main() -> int:
     utf8()
-    p = argparse.ArgumentParser(description="Tomas de estudio con fondo degradado gris (TecnoSport)",
+    p = argparse.ArgumentParser(description="Tomas de estudio con fondo blanco (TecnoSport)",
                                 formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     p.add_argument("entradas", nargs="*", help="fotos o carpetas (JPG, PNG, HEIC, WebP)")
     p.add_argument("-o", "--salida", help="carpeta de salida (se reutiliza para reprocesar)")
@@ -895,12 +895,12 @@ def ejecutar(a, raiz: Path, solo: set[str], avance: Path) -> int:
 
     ctx = contexto_de(int(cfg["lienzo"][0]))
     ancho, alto = ctx.ancho, ctx.alto
+    fondo_txt = imagen.describir_fondo(cfg)
     if not por_producto:
-        print(f"Lienzo {ancho}×{alto} · producto al {round(100 * cfg['ocupacion'])} % · fondo {cfg['fondo_centro']} → "
-              f"{cfg['fondo_esquinas']} ({ctx.origen_fondo})")
+        print(f"Lienzo {ancho}×{alto} · producto al {round(100 * cfg['ocupacion'])} % · "
+              f"fondo {fondo_txt} ({ctx.origen_fondo})")
     else:
-        print(f"Producto al {round(100 * cfg['ocupacion'])} % · fondo {cfg['fondo_centro']} → "
-              f"{cfg['fondo_esquinas']} ({ctx.origen_fondo})")
+        print(f"Producto al {round(100 * cfg['ocupacion'])} % · fondo {fondo_txt} ({ctx.origen_fondo})")
     if not ctx.origen_fondo.startswith("assets"):
         print("[aviso] el fondo de assets no coincide con config.json; si el cambio es a propósito, "
               "regenéralo con fondo.py --generar para que todo el catálogo use el mismo")

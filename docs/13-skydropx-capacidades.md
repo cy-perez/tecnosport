@@ -113,7 +113,7 @@ panel, ni en el plan de la fase.
 | Palanca | Estado | Qué permite |
 |---|---|---|
 | Consultar días disponibles | ✅ | `GET /pickups/coverage` responde `200` con fechas desde que el envío lleva barrio (§6.10, §6.11) |
-| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los ocho intentos, tres días y tres horas distintas: el conector de la transportadora está caído, no es la hora (§6.11, §6.14). El endpoint sí responde y valida: con otro envío falla antes, en la dirección (§6.14) |
+| Programar una recolección | ⛔ | `POST /pickups` responde `422 ECONNREFUSED at PICKUP` en los nueve intentos, cuatro días y cuatro horas distintas: el conector de la transportadora está caído, no es la hora (§6.11, §6.14, §6.17). El endpoint sí responde y valida: con otro envío falla antes, en la dirección (§6.14) |
 | Reprogramar | ✅ | `POST /pickups/reschedule` |
 | Consultar el estado | ✅ | `GET /pickups/{id}` |
 | Cuerpo exacto de la petición | ✅ | Confirmado (§6.4) y ejercido contra el sandbox (§6.6): `total_weight` entero y el envío en `success` |
@@ -452,8 +452,11 @@ recortadas, no reescritas— viven como fixtures en
 
 ### Sigue sin confirmarse
 
-- ❌ **El host de producción**, hasta la primera cotización con credenciales de
-  producción.
+- ⚠️ **El host de producción.** Su **nombre** lo cerró §6.3 el 15 de septiembre:
+  `api-pro.skydropx.com`, del bloque de credenciales de la documentación. Lo que
+  falta es ejercerlo, y ya no por falta de credenciales —están— sino porque no se
+  estrenan hasta que exista la infraestructura de producción: lo confirma la
+  primera cotización real de ese día.
 - ✅ **La cobertura de contraentrega, resuelta el 11 de septiembre de 2026 por otra
   vía.** No hay un campo por tarifa que la declare —eso sigue siendo cierto— pero
   **pedir la cotización con `cash_on_delivery: true` sí discrimina**: sin él
@@ -1686,7 +1689,7 @@ horario hábil. Con 8.588 de saldo alcanza.
 >
 > **Y el punto 2 no se cierra con saldo (§6.10, §6.11).** Con el barrio puesto, la
 > cobertura responde `200` con fechas y `POST /pickups` sigue respondiendo
-> `422 ECONNREFUSED at PICKUP` — ocho intentos, tres días, tres horas (§6.11, §6.14). Esta lista pedía una
+> `422 ECONNREFUSED at PICKUP` — nueve intentos, cuatro días, cuatro horas (§6.11, §6.14, §6.17). Esta lista pedía una
 > emisión; lo que falta es que el proveedor levante su conector.
 
 ### 6.7 La guía viva, y el barrio que falta (2026-09-16, sexta parte)
@@ -2769,6 +2772,15 @@ es un catálogo incompleto.
 **Y esto sí es accionable de este lado**, a diferencia de la cobertura real: es una lista concreta de
 74 códigos para pedirle a Skydropx que agregue, con el municipio y el departamento de cada uno — **la petición quedó redactada el 19 de septiembre en `docs/tramites/2026-09-19-skydropx.md`, con el CSV adjunto**. Es
 la primera petición a la plataforma que no depende de que un conector vuelva a funcionar.
+
+**Y el 23 de septiembre se les pidió además el catálogo completo**, no solo que agreguen los 74. La
+razón es que esta lista es *nuestra medición de su catálogo*, no su catálogo: dice qué rechazaron
+1122 preguntas un día concreto contra el sandbox. Con el listado en la mano el cruce contra DIVIPOLA
+se hace de una vez y deja de haber inferencia —cuáles faltan, cuáles agregaron, si la lista se mueve—.
+**Mientras tanto no se escribe código que dependa de los 74**: el `TODO` está en
+`ResultadoCotizacion.Motivo` y dice qué lo desbloquea. Buscado antes de pedirlo: **ningún endpoint
+de los cuarenta y cinco expone ese catálogo**; `GET /office_points` devuelve códigos postales, pero
+son los de sus sucursales y exige un `rate_id`, o sea que ya hay que poder cotizar para llamarlo.
 
 **La contraentrega pierde 40 municipios más que el envío normal**, y la mitad están concentrados en
 Santander (11), Meta (4), Cauca (3) y Guaviare (3). Es la señal de cobertura de recaudo funcionando
