@@ -8123,6 +8123,58 @@ dos veces seguidas. La regla de cierre de este documento —«el recorrido compl
 el navegador»— se cobró aquí su tercera factura, y esta vez el hallazgo valía más que la
 funcionalidad que iba a verificar.
 
+## El informe de huérfanos aprende de qué ambiente es cada objeto (2026-09-22)
+
+Cerró la deuda 29. `tecnosport-dev-imagenes` lo comparten local y dev, y el informe cruzaba contra
+**una** API: todo lo que la otra base reclamaba salía como basura. Medido el 22 de septiembre, la
+lista decía 366 sin reclamar y **348 estaban vivos**.
+
+La separación sale de `catalogo/cargados.json`, que desde el día anterior está indexado por la URL
+de la API (deuda 26). La key de un objeto es `productos/{productoId}/…` y ese registro dice a qué
+ambiente pertenece cada `productoId`. Las dos deudas se sostienen: sin la 26, este cruce no existe.
+
+### Lo medido, antes y después
+
+Contra el mismo bucket y la misma API local, en la misma sesión:
+
+| | objetos |
+|---|---|
+| en el bucket | 648 |
+| reclamados por el panel local | 344 |
+| **de otro ambiente, no juzgables** | **300** |
+| **sin reclamar por nadie** | **4** |
+
+Antes eran **304 sin reclamar**. Los 4 que quedan son huérfanos de verdad y se reconocen: sobras
+del `--rehacer-imagenes` de las 16:51 sobre un producto que sí es local, con la hora del objeto
+igual a la del `imagenesRehechasEn` del registro.
+
+### Lo que el registro prueba, y lo que no
+
+**Prueba de qué ambiente es el producto, no que el objeto esté vivo.** Un objeto de dev puede ser
+igual de huérfano —una subida firmada que allá tampoco se confirmó— y desde aquí no hay forma de
+saberlo. Por eso no se cuentan como reclamados sino como **no juzgables**, la misma categoría que
+ya usaban los fotogramas de `rotacion/`, y el informe dice cómo juzgarlos: correrlo con `--api`
+apuntando a ese ambiente. Contarlos como reclamados habría cambiado un error caro por uno cómodo.
+
+Hay un orden que importa: un objeto es "de otro ambiente" solo si su `productoId` está bajo **otra**
+API y **no** bajo esta. Un producto que esta API cargó y luego borró sigue en el registro de esta
+API, y ese sí es un huérfano de verdad — no puede esconderse detrás de que alguna vez fue nuestro.
+
+### Y si no hay registro
+
+Lo dice en voz alta y sigue: «no puedo separar los ambientes; si este bucket lo comparte otra base,
+sus imágenes vivas van a salir abajo como si no las reclamara nadie». Sin ese aviso el informe
+volvería a ser el de antes y su lista se leería igual de convincente — que es exactamente cómo se
+llega a borrar 348 objetos vivos.
+
+### Cómo se verificó, porque `tools/` no tiene pruebas
+
+`npm run verificar` no mira `tools/*.mjs`: ni lo lintea ni lo prueba. Así que la verificación fue
+correr el informe **dos veces contra el bucket de verdad**, con la API local levantada — una con el
+registro en su sitio (4 sin reclamar) y otra con el registro apartado (304 y el aviso). El registro
+**no está versionado** —`.gitignore` línea 60—, así que antes de apartarlo se copió al scratchpad y
+se comprobó el `md5`, y se restauró comprobándolo otra vez.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8162,6 +8214,9 @@ responder 401**, lo que dejaba muerta la renovación silenciosa del token en tod
 el agravante de que el límite contaba también los inicios de sesión exitosos—. Los dos salieron de
 usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. Se abrió la **30**.
 Ver la entrada de arriba.
+
+Y detrás de esa se cerró la **29**: el informe de huérfanos ya sabe de qué ambiente es cada objeto,
+así que su lista pasó de 304 a 4 contra el mismo bucket.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8375,7 +8430,15 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Lo que dejó abierto el borrado de huérfanos
 
-29. **El informe de huérfanos da por no reclamado lo que reclama el otro ambiente.** Local y dev
+29. ~~**El informe de huérfanos da por no reclamado lo que reclama el otro ambiente.**~~
+    **Cerrada el 22 de septiembre de 2026**, y medida contra el bucket de verdad: de 648 objetos,
+    el panel local reclama 344, **300 son de dev y quedan sin juzgar**, y los **4** que salen como
+    sin reclamar son huérfanos reconocibles —sobras de un `--rehacer-imagenes` de esa misma tarde—.
+    Antes esa lista decía 304. El informe lee `catalogo/cargados.json`, que desde el día anterior
+    está indexado por la URL de la API, y cruza el `productoId` de la key; lo de otro ambiente no
+    pasa a "reclamado" sino a **no juzgable**, porque el registro prueba de qué ambiente es el
+    producto y no que el objeto esté vivo. Sin registro, lo dice en voz alta en vez de callarse.
+    Ver la entrada de arriba. Enunciado original: «Local y dev
     comparten `tecnosport-dev-imagenes`, así que una carga contra `localhost` deja en ese bucket
     objetos con ids que la base de dev nunca tuvo. `npm run huerfanos` cruza contra **una** API —la
     de `--api`— y los cuenta como basura: el 22 de septiembre listó 366 sin reclamar y **348 eran
@@ -8384,7 +8447,8 @@ El orden no es negociable: cada uno alimenta al siguiente.
     correr el informe contra dev con el catálogo local cargado; mientras la cifra de "sin reclamar"
     incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
     salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
-    reclama nadie"; la cara y definitiva es un bucket por ambiente.
+    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y la
+    cara sigue sobre la mesa: un bucket por ambiente haría innecesario todo este cruce.
 
 ### Lo que dejó abierto cerrar la deuda 28
 

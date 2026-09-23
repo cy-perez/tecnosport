@@ -23,6 +23,23 @@
 // expone sus imágenes por ninguna API, así que desde aquí no hay forma de distinguir "es de un
 // set en preparación" de "no lo reclama nadie". Se cuentan aparte y se dice por qué.
 //
+// **Y tampoco juzga lo que es de otro ambiente.** `tecnosport-dev-imagenes` lo comparten local
+// y dev, así que una carga contra `localhost` deja en ese bucket objetos con ids que la base de
+// dev nunca tuvo. Este informe cruza contra **una** API —la de `--api`— y antes los contaba
+// como basura: el 22 de septiembre de 2026 listó 366 sin reclamar y **348 eran las imágenes
+// vivas del catálogo local**. Borrar esa lista no habría roto dev, habría roto local, y el
+// síntoma habría aparecido días después sin relación aparente con nada.
+//
+// La separación sale de `catalogo/cargados.json`, que desde ese mismo día está indexado por la
+// URL de la API. La key de un objeto es `productos/{productoId}/…` y ese registro dice a qué
+// ambiente pertenece cada `productoId`.
+//
+// **Ojo con lo que eso prueba y lo que no**: prueba de qué ambiente es el producto, no que el
+// objeto esté vivo. Un objeto de otro ambiente puede ser igual de huérfano —una subida firmada
+// que allá tampoco se confirmó— y desde aquí no hay forma de saberlo. Por eso no se cuenta
+// como reclamado sino como **no juzgable**, la misma categoría honesta que `rotacion/`: para
+// juzgarlo hay que correr el informe contra esa otra API.
+//
 // Desde ADR-0057 una imagen se publica en **varios anchos**, y se reclaman todos: los de la
 // galería y los de la principal, más los JPEG de vista previa. La ficha del panel devuelve las dos
 // imágenes enteras — la principal empezó devolviendo solo su URL, y con eso este informe daba por
@@ -32,6 +49,9 @@
 // Uso:  node tools/huerfanos-bucket.mjs --bucket <nombre> --correo <correo>
 //       node tools/huerfanos-bucket.mjs --bucket <nombre> --token <jwt> --api <url>
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
 const valor = (nombre, omision = null) => {
@@ -148,6 +168,47 @@ function keyDe(url) {
 }
 
 const enMiB = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
+
+/** El `productoId` de una key `productos/{id}/…`, o null si la key no tiene esa forma. */
+function productoIdDe(key) {
+  const partes = String(key).split("/");
+  return partes[0] === "productos" && partes.length > 2 && partes[1] !== "" ? partes[1] : null;
+}
+
+/**
+ * Qué `productoId` pertenece a qué ambiente, según `catalogo/cargados.json`.
+ *
+ * `porProducto` viene en `null` cuando no hay registro, y quien llama lo dice en voz alta en vez
+ * de seguir como si nada: sin registro este informe vuelve a ser el de antes —el que cuenta como
+ * basura lo del otro ambiente— y eso tiene que verse, no deducirse.
+ */
+function ambientesPorProducto() {
+  const ruta = join(dirname(fileURLToPath(import.meta.url)), "..", "catalogo", "cargados.json");
+  if (!existsSync(ruta)) return { ruta, porProducto: null };
+
+  const crudo = JSON.parse(readFileSync(ruta, "utf8"));
+  // Mismo rechazo que `cargar-catalogo.mjs`, y por el mismo motivo: un registro del formato
+  // viejo no dice de qué ambiente habla, y adivinarlo es justo el error que esto cierra.
+  if (crudo.version !== 2 || !crudo.ambientes) {
+    console.error(
+      `El registro ${ruta} tiene el formato viejo, que no dice de qué ambiente habla.` +
+        "\nSin eso no puedo separar lo que no reclama esta API de lo que no reclama nadie," +
+        " que es justo para lo que lo leo." +
+        "\nConviértelo como indica tools/cargar-catalogo.mjs y vuelve a correr esto.",
+    );
+    process.exit(1);
+  }
+
+  const porProducto = new Map();
+  for (const [ambiente, productos] of Object.entries(crudo.ambientes)) {
+    for (const entrada of Object.values(productos)) {
+      if (!entrada?.productoId) continue;
+      if (!porProducto.has(entrada.productoId)) porProducto.set(entrada.productoId, new Set());
+      porProducto.get(entrada.productoId).add(ambiente.replace(/[/]$/, ""));
+    }
+  }
+  return { ruta, porProducto };
+}
 
 if (CORREO && !TOKEN) {
   const clave = await preguntarClave(`Clave de ${CORREO}: `);
@@ -270,9 +331,28 @@ for (const producto of productos) {
   }
 }
 
+const { ruta: rutaRegistro, porProducto } = ambientesPorProducto();
+
 const deRotacion = objetos.filter((o) => o.key.includes("/rotacion/"));
 const juzgables = objetos.filter((o) => !o.key.includes("/rotacion/"));
-const huerfanos = juzgables.filter((o) => !reclamadas.has(o.key));
+const sinReclamarAqui = juzgables.filter((o) => !reclamadas.has(o.key));
+
+/**
+ * Un objeto es "de otro ambiente" cuando su `productoId` está en el registro bajo **otra** API
+ * y **no** bajo esta. El orden importa: un producto que esta API cargó y luego borró sigue en el
+ * registro de esta API, y ese sí es un huérfano de verdad —no puede esconderse detrás de que
+ * alguna vez fue nuestro—.
+ */
+function otroAmbienteDe(objeto) {
+  if (!porProducto) return null;
+  const id = productoIdDe(objeto.key);
+  const ambientes = id === null ? undefined : porProducto.get(id);
+  if (!ambientes || ambientes.has(API)) return null;
+  return [...ambientes].sort().join(", ");
+}
+
+const deOtroAmbiente = sinReclamarAqui.filter((o) => otroAmbienteDe(o) !== null);
+const huerfanos = sinReclamarAqui.filter((o) => otroAmbienteDe(o) === null);
 const sumar = (lista) => lista.reduce((total, o) => total + o.bytes, 0);
 // La interseccion, no el tamaño del conjunto: `reclamadas` son las keys que el panel dice tener,
 // y una fila que apunte a un objeto ya borrado inflaba el numero hasta poder salir mayor que la
@@ -281,8 +361,18 @@ const reclamadosPresentes = objetos.filter((o) => reclamadas.has(o.key)).length;
 
 console.log(
   `gs://${BUCKET}/productos/ · ${objetos.length} objetos · ${enMiB(sumar(objetos))}\n` +
-    `${productos.length} productos en el panel reclaman ${reclamadosPresentes} de ellos.\n`,
+    `${productos.length} productos del panel de ${API} reclaman ${reclamadosPresentes}.\n`,
 );
+
+if (!porProducto) {
+  // En voz alta y no en silencio: sin registro este informe vuelve a ser el que contaba como
+  // basura lo del otro ambiente, y esa lista se lee igual de convincente.
+  console.log(
+    `No encontré ${rutaRegistro}, así que **no puedo separar los ambientes**: si este bucket` +
+      " lo comparte otra base,\nsus imágenes vivas van a salir abajo como si no las" +
+      " reclamara nadie.\n",
+  );
+}
 
 if (huerfanos.length === 0) {
   console.log("Ningún objeto de 'principal-' ni de 'galeria-' está sin reclamar.");
@@ -295,6 +385,27 @@ if (huerfanos.length === 0) {
   console.log(
     `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una subida firmada` +
       " que nunca se confirmó:\n el objeto quedó en el bucket y la fila nunca se creó.",
+  );
+}
+
+if (deOtroAmbiente.length > 0) {
+  const porAmbiente = new Map();
+  for (const objeto of deOtroAmbiente) {
+    const ambiente = otroAmbienteDe(objeto);
+    if (!porAmbiente.has(ambiente)) porAmbiente.set(ambiente, []);
+    porAmbiente.get(ambiente).push(objeto);
+  }
+  console.log(
+    `\nY ${deOtroAmbiente.length} objetos (${enMiB(sumar(deOtroAmbiente))}) que **este` +
+      ` informe no juzga**\nporque su producto es de otro ambiente, según ${rutaRegistro}:`,
+  );
+  for (const [ambiente, lista] of [...porAmbiente].sort()) {
+    console.log(`  ${lista.length} · ${enMiB(sumar(lista))}  ← ${ambiente}`);
+  }
+  console.log(
+    "\nQue el producto sea de allá **no prueba que el objeto esté vivo**: puede ser una" +
+      " subida firmada\nque allá tampoco se confirmó. Para juzgarlos, corre este informe" +
+      " con --api apuntando a ese ambiente.",
   );
 }
 
