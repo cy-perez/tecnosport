@@ -347,9 +347,17 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
 
 ## CI/CD con GitHub Actions
 
-- **En cada pull request:** compilar, lint, pruebas de backend y frontend,
-  ArchUnit, verificación de claves de i18n y `terraform plan`. Sin eso en verde no
-  se mezcla.
+- **En cada pull request:** `tools/verificar.mjs` entero —capas, contrastes,
+  marcadores, datos de negocio, kit, clases de Tailwind, contratos, lint, pruebas
+  y build de los dos lados— más `gradlew build`, que trae ArchUnit y Spotless. La
+  verificación de claves de i18n va dentro de las pruebas (`claves-i18n.spec.ts`).
+  Sin eso en verde no se mezcla. ~~**y `terraform plan`**~~ **`terraform plan` no
+  corre en ningún flujo**, y esta línea decía que sí desde el primer commit de
+  este documento, el 1 de septiembre de 2026: ninguno de los tres archivos de
+  `.github/workflows/` menciona Terraform. La deriva del ambiente desplegado solo
+  la ve quien corre el `plan` a mano, y por eso una etiqueta puesta con `gcloud`
+  en el servicio de la API sobrevivió once despliegues sin que nada avisara
+  (2026-09-23).
 - **Al mezclar a `main`:** construir imágenes, publicar en Artifact Registry,
   aplicar migraciones Flyway como paso propio, desplegar Cloud Run, verificar
   salud y revertir a la revisión anterior si falla.

@@ -8386,7 +8386,9 @@ entrecomillado. Queda en el runbook con las comillas puestas.
 **Y una deriva ajena que el `plan` destapó y que no se tocó**: el servicio de Cloud Run de la API de
 dev tiene etiquetas puestas a mano (`reinicio=r2`), que Terraform quiere quitar. Alguien reinició el
 servicio con `gcloud`. Aplicarlo de paso, dentro de un trabajo sobre un bucket, habría sido un
-despliegue no pedido; por eso el `apply` fue con `-target`.
+despliegue no pedido; por eso el `apply` fue con `-target`. **Cerrada el 23 de septiembre**, y no
+era una etiqueta sino dos: la entrada «La etiqueta puesta a mano, y la mitad que el `plan` no
+enseña» cuenta por qué el `apply` solo habría hecho la mitad del trabajo.
 
 ### Las tres sobras, y la que enseñó algo
 
@@ -8522,6 +8524,48 @@ pantalla este cambio no le hace nada medible. Ninguna otra métrica sobrevive al
   pinta. Se cazó mirando `performance.getEntriesByType('visibility-state')` antes de creerle a la
   cifra, y es la comprobación que hay que hacer **antes** en cualquier medición de pintado hecha
   desde el navegador.
+
+## La etiqueta puesta a mano, y la mitad que el `plan` no enseña (2026-09-23)
+
+La deriva que el trabajo del bucket destapó y no tocó —`reinicio=r2` en el Cloud Run de la API de
+dev— está cerrada. Lo que enseñó no fue la etiqueta: fue que **un `terraform apply` a secas la
+habría dejado puesta y, encima, invisible**.
+
+Las dos etiquetas de un servicio de Cloud Run se comportan al revés una de la otra. `template.labels`
+es un campo normal y autoritativo: lo que no esté en el código sale en el `plan`. `labels` del
+servicio **no lo es** —el provider solo administra las llaves escritas en el código—, así que la
+que alguien agregó por fuera se queda para siempre y ningún `plan` la vuelve a mencionar. Solo
+aparece con `terraform plan -refresh-only`, dentro de `effective_labels`. Es el mismo trampolín que
+`google_storage_bucket_iam_member` contra `_iam_binding` de la entrada del bucket, y esta vez sin un
+`_binding` al que cambiarse: el campo no tiene modo autoritativo.
+
+Por eso el cierre fueron dos pasos y no uno: `gcloud run services update --remove-labels reinicio`
+—nunca `--clear-labels`, que se llevaría también `goog-terraform-provisioned`, que sí es de
+Terraform— y después el `apply`, que quitó del template **dos** etiquetas y no una. La segunda es
+de Terraform: `--update-labels` no solo puso `reinicio`, arrastró la etiqueta de atribución del
+provider dentro del template de revisión. Que el servicio web no la tenga ahí es la prueba de que
+llegó por la mano y no por el provider.
+
+**Y no sobrevivió por descuido: sobrevivió porque nada la iba a quitar.** Once despliegues, de la
+generación 78 a la 89, y `gcloud run deploy` conserva las etiquetas del servicio. Para reiniciar sin
+residuo se vuelve a desplegar la imagen que ya corre, y eso queda escrito en `infra/README.md`.
+
+Comprobado por lectura y no por el relato de quien corrió los comandos, cotejando el servicio contra
+el volcado de antes: el servicio quedó con `goog-terraform-provisioned` y nada más, el template sin
+ninguna de las dos, **la misma imagen** (`b1af9bf8`, la del último despliegue), límites de CPU y
+memoria idénticos y las **33 variables de entorno una por una** —mismo nombre y mismo valor, o el
+mismo secreto al que apuntan—, con `/api/v1/salud` y `/es` en 200 después del arranque en frío. Y el
+cierre de verdad son las dos lecturas finales: `terraform plan` responde *"No changes"*, y
+`terraform plan -refresh-only` también —que es la que faltaba, porque es la única que veía la mitad
+escondida—.
+
+**De paso, por qué vivió una semana sin que nada avisara.** `docs/07` decía que cada pull request
+corre `terraform plan`. No lo corre: ninguno de los tres flujos de `.github/workflows/` menciona
+Terraform, y esa frase está ahí desde el primer commit del documento, el 1 de septiembre. Un
+guardián que nunca existió, descrito en presente durante veintidós días —la misma forma de mentira
+que ya habían tenido el freno de seguridad y el flujo enganchado a `main`—. La frase queda
+corregida. Engancharlo de verdad es otra decisión, no una nota al pie de esta deuda: pide darle a la
+cuenta de despliegue lectura del bucket de estado y de los recursos.
 
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
