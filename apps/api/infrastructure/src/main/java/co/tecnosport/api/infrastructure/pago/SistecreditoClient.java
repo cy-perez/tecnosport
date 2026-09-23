@@ -280,7 +280,42 @@ public final class SistecreditoClient implements PasarelaSistecredito {
    */
   private String urlDeRedireccion(JsonNode datos, JsonNode respuestaMedio) {
     String enElMedio = texto(respuestaMedio.path("paymentRedirectUrl"));
-    return enElMedio != null ? enElMedio : texto(datos.path("paymentRedirectUrl"));
+    return soloSiSePuedeAbrir(
+        enElMedio != null ? enElMedio : texto(datos.path("paymentRedirectUrl")));
+  }
+
+  /**
+   * Una URL que el navegador no puede abrir no es una URL: se devuelve como "la pasarela no la
+   * dio", que es el caso que el sondeo y {@code CrearIntentoDePagoSistecredito} ya saben contar —
+   * un 409 con su texto, en vez de una redirección a ninguna parte.
+   *
+   * <p>No es una precaución de manual. El 23 de septiembre de 2026 se midió contra la pasarela de
+   * verdad qué devuelve una transacción creada en modo sandbox: {@code paymentRedirectUrl} vale
+   * <b>{@code "www.mysite.com"}</b>, un marcador de posición sin esquema. Sin esquema el navegador
+   * lo trata como una <b>ruta relativa</b>, así que {@code location.href = "www.mysite.com"} deja
+   * al comprador dentro de nuestro propio sitio, la ruta comodín lo redirige a la portada, y el
+   * pedido queda pagado por notificación sin que nada falle a la vista. Lo que separa ese silencio
+   * de un error legible es exactamente este método.
+   */
+  private String soloSiSePuedeAbrir(String url) {
+    if (url == null) {
+      return null;
+    }
+    String limpia = url.trim();
+    try {
+      URI candidata = URI.create(limpia);
+      String esquema = candidata.getScheme();
+      if (candidata.getHost() != null
+          && ("https".equalsIgnoreCase(esquema) || "http".equalsIgnoreCase(esquema))) {
+        return limpia;
+      }
+    } catch (IllegalArgumentException e) {
+      // Ni siquiera es una URI. Cae abajo, que es donde se cuenta.
+    }
+    log.warn(
+        "Sistecrédito devolvió una URL de pago que el navegador no puede abrir y se descarta: {}",
+        limpia);
+    return null;
   }
 
   /**
