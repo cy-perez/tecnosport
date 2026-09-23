@@ -123,9 +123,18 @@ resource "google_storage_bucket" "imagenes" {
     }
   }
 
-  # Sin CORS el `PUT` firmado desde el panel muere en el preflight y no sube ninguna foto.
+  # Sin CORS el `PUT` firmado desde el panel muere en el preflight y no sube ninguna foto, y eso
+  # es lo que pasaba aquí: el único origen admitido era `http://localhost:4200`, que no es de este
+  # ambiente. Nadie lo notó porque las cargas del catálogo las hizo el cargador desde Node, que
+  # firma sin navegador y por eso no pasa por el preflight; subir una foto desde el panel
+  # desplegado, con el ratón, no funcionaba. El origen de este ambiente es el de su web.
+  #
+  # `localhost` no vuelve: el navegador en local siempre habla con la API de local —base relativa
+  # y `proxy.conf.json`—, así que una subida desde `localhost` va al bucket de local y pide el CORS
+  # de ese otro bucket. Si algún día alguien apunta el proxy a esta API, el origen se agrega aquí a
+  # propósito y no por herencia.
   cors {
-    origin          = ["http://localhost:4200"]
+    origin          = [var.dominio_publico_web]
     method          = ["GET", "HEAD", "PUT"]
     response_header = ["Content-Type"]
     max_age_seconds = 3600
