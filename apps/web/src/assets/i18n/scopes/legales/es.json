@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Versión",
-    "version": "2026-09-19",
-    "vigencia": "Vigente desde el 19 de septiembre de 2026.",
+    "version": "2026-09-23",
+    "vigencia": "Vigente desde el 23 de septiembre de 2026.",
     "otros_documentos": "Otros documentos legales",
     "titular_aviso": "Este sitio lo opera Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "Este documento está redactado en castellano, que es el idioma en el que rige. La versión en inglés de este sitio es una traducción de cortesía y no produce efectos legales; en caso de discrepancia, prevalece el texto en castellano."
@@ -53,6 +53,7 @@
         "lista": [
           "De identificación y contacto: nombre, correo electrónico, teléfono y dirección de entrega.",
           "Transaccionales: productos comprados, valores, método de pago elegido, estado del pedido e historial de compras.",
+          "Tipo y número de documento de identidad, únicamente si eliges pagar a cuotas con Sistecrédito: es el dato con el que ellos consultan tu cupo. Se lo enviamos a Sistecrédito para esa compra y no lo conservamos.",
           "De la cuenta, si decides crearla: correo y contraseña, que se almacena cifrada con un algoritmo de un solo sentido y nunca en texto claro.",
           "Técnicos: dirección IP y fecha y hora de las acciones relevantes, como el otorgamiento de esta autorización o los intentos de inicio de sesión.",
           "De navegación: los estrictamente necesarios para que el sitio funcione. Ver la política de cookies."
@@ -61,7 +62,7 @@
       {
         "titulo": "6. Datos de pago",
         "parrafos": [
-          "No almacenamos números de tarjeta ni datos financieros. El pago con tarjeta, PSE, Nequi, Bancolombia o crédito se procesa íntegramente en la plataforma de la pasarela de pagos Wompi, y esos datos nunca pasan por nuestros servidores. Cuando pagas por transferencia manual, conservamos únicamente la referencia del pedido y la confirmación de que el pago llegó."
+          "No almacenamos números de tarjeta ni datos financieros. El pago con tarjeta débito o crédito, PSE, Nequi y Bancolombia se procesa íntegramente en la plataforma de la pasarela de pagos Wompi, y esos datos nunca pasan por nuestros servidores. Si eliges pagar a cuotas con Sistecrédito, el crédito lo estudia y lo otorga Sistecrédito en su propia plataforma: le enviamos tu tipo y número de documento de identidad y los datos de tu pedido, y no conservamos el documento. Cuando pagas por transferencia manual, conservamos únicamente la referencia del pedido y la confirmación de que el pago llegó."
         ]
       },
       {
@@ -88,6 +89,7 @@
         ],
         "lista": [
           "Wompi (Bancolombia S.A.), como pasarela de pagos, para procesar el pago y confirmarlo.",
+          "Sistecrédito, como otorgante del crédito, únicamente si eliges pagar a cuotas con ellos: recibe tu tipo y número de documento de identidad, el número de tu pedido y el valor a financiar. Sistecrédito estudia y otorga el crédito bajo su propia política de tratamiento de datos y su propio contrato contigo.",
           "Google Cloud Platform, como proveedor de infraestructura donde se alojan la aplicación y la base de datos.",
           "Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en Bogotá D.C., como plataforma de logística y envíos, y las empresas de transporte que ella contrata para entregar tu pedido; reciben tu nombre, teléfono, dirección de entrega y ciudad, y el valor a recaudar cuando pagas contra entrega.",
           "Resend, como proveedor de correo transaccional, para enviarte los correos de verificación de cuenta, recuperación de contraseña y estado del pedido."
@@ -150,7 +152,7 @@
       {
         "titulo": "16. Vigencia",
         "parrafos": [
-          "Esta política rige desde el 18 de septiembre de 2026. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
+          "Esta política rige desde la fecha de versión que aparece al comienzo de este documento. Las bases de datos se mantendrán vigentes mientras dure la actividad comercial y por los plazos legales de conservación posteriores. Cualquier cambio sustancial se publicará en esta misma página con una fecha de versión nueva."
         ]
       }
     ]
@@ -249,7 +251,7 @@
         "parrafos": [
           "Canales de orientación, asistencia y radicación de peticiones, quejas y reclamos: contacto@tecnosport.co y WhatsApp +57 313 881 6711.",
           "Nuestros canales atienden todos los días, de 8:00 a.m. a 9:00 p.m., hora de Colombia. El mismo horario aplica a nuestras redes sociales.",
-          "Respondemos toda petición en un plazo máximo de quince (15) días hábiles."
+          "Respondemos tus peticiones, quejas y reclamos en un plazo máximo de quince (15) días hábiles. Las solicitudes sobre tus datos personales —consultas y reclamos— tienen sus propios plazos, más cortos en el caso de la consulta, y están en el numeral 12 de nuestra política de tratamiento de datos personales."
         ]
       },
       {
@@ -291,7 +293,7 @@
       {
         "titulo": "19. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 18 de septiembre de 2026."
+          "Rige la versión indicada al comienzo de este documento, con su fecha. A tu compra se le aplica la versión que estaba vigente el día en que la hiciste."
         ]
       }
     ]
@@ -334,7 +336,7 @@
       {
         "titulo": "5. Vigencia",
         "parrafos": [
-          "Versión vigente desde el 18 de septiembre de 2026."
+          "Rige la versión indicada al comienzo de este documento, con su fecha. Cualquier cambio se publica en esta misma página con una fecha de versión nueva."
         ]
       }
     ]

@@ -1,8 +1,8 @@
 {
   "comun": {
     "version_etiqueta": "Version",
-    "version": "2026-09-19",
-    "vigencia": "In force since 19 September 2026.",
+    "version": "2026-09-23",
+    "vigencia": "In force since 23 September 2026.",
     "otros_documentos": "Other legal documents",
     "titular_aviso": "This site is operated by Cristhian Yurday Pérez Hoyos, NIT 1054994043-9, Carrera 26C # 38B-31, Medellín, Antioquia, Colombia.",
     "traduccion_cortesia": "This is a courtesy translation and has no legal effect. These documents are governed by Colombian law, and the Spanish version available on this site is the one that governs; in case of any discrepancy, the Spanish text prevails."
@@ -53,6 +53,7 @@
         "lista": [
           "Identification and contact: name, email address, phone number, and delivery address.",
           "Transactional: products purchased, amounts, chosen payment method, order status, and purchase history.",
+          "Identity document type and number, only if you choose to pay in instalments with Sistecrédito: it is the data they use to look up your credit limit. We send it to Sistecrédito for that purchase and we do not keep it.",
           "Account data, if you choose to create one: email and password, which is stored using a one-way hash and never in plain text.",
           "Technical: IP address and the date and time of relevant actions, such as granting this authorisation or sign-in attempts.",
           "Browsing: only what is strictly necessary for the site to work. See the cookie policy."
@@ -61,7 +62,7 @@
       {
         "titulo": "6. Payment data",
         "parrafos": [
-          "We do not store card numbers or financial data. Payments by card, PSE, Nequi, Bancolombia, or credit are processed entirely on the Wompi payment gateway platform, and that data never passes through our servers. When you pay by manual bank transfer, we keep only the order reference and the confirmation that the payment arrived."
+          "We do not store card numbers or financial data. Payments by debit or credit card, PSE, Nequi, and Bancolombia are processed entirely on the Wompi payment gateway platform, and that data never passes through our servers. If you choose to pay in instalments with Sistecrédito, the credit is assessed and granted by Sistecrédito on its own platform: we send them your identity document type and number and your order details, and we do not keep the document. When you pay by manual bank transfer, we keep only the order reference and the confirmation that the payment arrived."
         ]
       },
       {
@@ -88,6 +89,7 @@
         ],
         "lista": [
           "Wompi (Bancolombia S.A.), as payment gateway, to process and confirm the payment.",
+          "Sistecrédito, as the credit provider, only if you choose to pay in instalments with them: they receive your identity document type and number, your order number, and the amount to be financed. Sistecrédito assesses and grants the credit under its own data processing policy and its own contract with you.",
           "Google Cloud Platform, as the infrastructure provider hosting the application and the database.",
           "Skydropx S.A.S., a Colombian company with tax ID (NIT) 901.508.804-5 and registered office in Bogotá D.C., as our logistics and shipping platform, and the carrier companies it engages to deliver your order; they receive your name, phone number, delivery address and city, and the amount to be collected when you pay on delivery.",
           "Resend, as our transactional email provider, to send you account verification, password recovery, and order status emails."
@@ -150,7 +152,7 @@
       {
         "titulo": "16. Term",
         "parrafos": [
-          "This policy is in force from 18 September 2026. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
+          "This policy is in force from the version date shown at the top of this document. The databases will remain active for as long as the business operates and for the statutory retention periods thereafter. Any substantial change will be published on this same page with a new version date."
         ]
       }
     ]
@@ -249,7 +251,7 @@
         "parrafos": [
           "Channels for guidance, assistance, and filing requests, complaints, and claims: contacto@tecnosport.co and WhatsApp +57 313 881 6711.",
           "Our channels are available every day, from 8:00 a.m. to 9:00 p.m., Colombian time. The same hours apply to our social media.",
-          "We answer every request within a maximum of fifteen (15) business days."
+          "We answer your requests, complaints, and claims within a maximum of fifteen (15) business days. Requests about your personal data —enquiries and claims— have their own deadlines, shorter in the case of an enquiry, and they are set out in section 12 of our personal data processing policy."
         ]
       },
       {
@@ -291,7 +293,7 @@
       {
         "titulo": "19. Term",
         "parrafos": [
-          "Version in force since 18 September 2026."
+          "The version shown at the top of this document, with its date, is the one in force. Your purchase is governed by the version in force on the day you made it."
         ]
       }
     ]
@@ -334,7 +336,7 @@
       {
         "titulo": "5. Term",
         "parrafos": [
-          "Version in force since 18 September 2026."
+          "The version shown at the top of this document, with its date, is the one in force. Any change is published on this same page with a new version date."
         ]
       }
     ]
