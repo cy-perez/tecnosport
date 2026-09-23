@@ -17,16 +17,22 @@
     <!-- El mensaje de "todo medido" y el de "acabas de medir una" no son el mismo: el segundo
          confirma una acción y el primero describe un estado. Con la lista ya vacía, quien acaba de
          guardar necesita leer que su cambio entró. -->
-    @if (medida(); as sku) {
-      <p class="mb-16 text-ts-exito" role="status">
+    <!-- Permanente y no dentro del `@if`: un `role="status"` que nace ya lleno no se anuncia
+         (medido con NVDA, ver `docs/06-testing.md`). El margen cuelga del contenido, porque un
+         `mb-16` fijo dejaria un hueco donde no hay nada que decir. -->
+    <p class="text-ts-exito" role="status" [class.mb-16]="medida()">
+      @if (medida(); as sku) {
         {{ 'admin.productos.sinMedir.medida' | transloco: { sku: sku } }}
-      </p>
-    }
+      }
+    </p>
 
     @if (total() === 0) {
       <p class="text-ts-texto-suave">{{ 'admin.productos.sinMedir.ninguna' | transloco }}</p>
     } @else {
-      <p class="mb-16" role="status">
+      <!-- Sin `role="status"`: es el resumen estatico de la tabla, y la regla de
+           `apps/web/CLAUDE.md` lo dice — cada revalidacion en segundo plano lo volveria a leer en
+           voz alta. Lo que confirma la accion es el acuse de arriba, que si es una region viva. -->
+      <p class="mb-16">
         {{
           'admin.productos.sinMedir.resumen'
             | transloco: { total: total(), publicados: totalEnPublicados() }

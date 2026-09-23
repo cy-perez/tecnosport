@@ -54,44 +54,46 @@
     >
   </nav>
 
-  @if (haySinExistencia()) {
-    <!-- `role="status"` por lo mismo que el de sin-medir: nada está roto. Lo que hay es algo
-         publicado que nadie puede comprar, y eso se atiende yendo a la bodega, no arreglando
-         código. -->
-    <div class="mb-24 border border-ts-borde-control p-16" role="status">
-      <p class="m-0 mb-8">
-        {{
-          'admin.panel.existencias.aviso'
-            | transloco: { total: totalSinExistencia(), publicados: sinExistenciaEnPublicados() }
-        }}
-      </p>
-      <a
-        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-        routerLink="../productos/existencias"
-        >{{ 'admin.panel.existencias.enlace' | transloco }}</a
-      >
-    </div>
-  }
+  <!-- Una sola region viva permanente para los dos avisos, y envolviendo en vez de siendo la
+       caja: un `role="status"` que nace ya lleno no se anuncia (medido con NVDA, ver
+       `docs/06-testing.md`), y una caja permanente con borde y relleno pintaria una barra vacia.
+       Nada esta roto en ninguno de los dos casos, por eso `status` y no `alert`. -->
+  <div role="status">
+    @if (haySinExistencia()) {
+      <!-- Algo publicado que nadie puede comprar se atiende yendo a la bodega, no arreglando
+           código. -->
+      <div class="mb-24 border border-ts-borde-control p-16">
+        <p class="m-0 mb-8">
+          {{
+            'admin.panel.existencias.aviso'
+              | transloco: { total: totalSinExistencia(), publicados: sinExistenciaEnPublicados() }
+          }}
+        </p>
+        <a
+          class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+          routerLink="../productos/existencias"
+          >{{ 'admin.panel.existencias.enlace' | transloco }}</a
+        >
+      </div>
+    }
 
-  @if (haySinMedir()) {
-    <!-- Un aviso, no una alerta: nada está roto. Lo que hay es una promesa a medias — esas
-         variantes se venden, pero solo con recogida en el punto. Por eso `role="status"` y no
-         `role="alert"`: se anuncia cuando el lector termine lo que está diciendo, sin
-         interrumpir. -->
-    <div class="mb-24 border border-ts-borde-control p-16" role="status">
-      <p class="m-0 mb-8">
-        {{
-          'admin.panel.sinMedir.aviso'
-            | transloco: { total: totalSinMedir(), publicados: sinMedirEnPublicados() }
-        }}
-      </p>
-      <a
-        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-        routerLink="../productos/sin-medir"
-        >{{ 'admin.panel.sinMedir.enlace' | transloco }}</a
-      >
-    </div>
-  }
+    @if (haySinMedir()) {
+      <!-- Una promesa a medias: esas variantes se venden, pero solo con recogida en el punto. -->
+      <div class="mb-24 border border-ts-borde-control p-16">
+        <p class="m-0 mb-8">
+          {{
+            'admin.panel.sinMedir.aviso'
+              | transloco: { total: totalSinMedir(), publicados: sinMedirEnPublicados() }
+          }}
+        </p>
+        <a
+          class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+          routerLink="../productos/sin-medir"
+          >{{ 'admin.panel.sinMedir.enlace' | transloco }}</a
+        >
+      </div>
+    }
+  </div>
 
   <ts-boton variante="secundario" (click)="cerrarSesion()">
     {{ 'admin.panel.cerrar_sesion' | transloco }}
