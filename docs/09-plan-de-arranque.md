@@ -8557,10 +8557,16 @@ El orden no es negociable: cada uno alimenta al siguiente.
     con cada inclinación —anunciarlo en cada cruce del umbral podría volver la pantalla inusable, y
     callarlo deja sin explicación a quien no ve el nivel—. Se decide con el teléfono en la mano.
 
-    **Lo que falta para cerrarla del todo** son dos comprobaciones con NVDA que no se pudieron
-    hacer en la misma sesión: que `display: contents` no saque la región del árbol de
-    accesibilidad —si lo hiciera, los cinco envoltorios del asistente no anunciarían y la salida es
-    quitar `contents` y aceptar los 16 px—, y una muestra de las pantallas arregladas. **Cómo
+    **Comprobado con NVDA sobre el código ya arreglado, la misma noche.** Se repitió la prueba
+    que había salido callada —el acuse del reenvío de verificación— y esta vez el registro escribe
+    el texto entero: `Speaking ['Si ese correo tiene una cuenta sin verificar, le acabamos de
+    enviar un enlace nuevo…']`. Y la sonda que decidía los cinco envoltorios del asistente 360
+    respondió que sí: **`display: contents` no saca la región del árbol de accesibilidad** —un
+    envoltorio vacío con `contents` al que se le mete una caja dentro se anuncia igual—. La
+    pantalla del panel se miró además con los ojos: la caja del aviso conserva su borde y no
+    aparece ningún hueco.
+
+    **Lo único que sigue abierto es la decisión del obturador**, que pide el teléfono. **Cómo
     comprobarlo:** el guion está en `docs/06-testing.md`, "El guion de NVDA, y lo que midió".
 
     Y un defecto que apareció de paso y **no es de esta deuda**: el "No encontramos productos con

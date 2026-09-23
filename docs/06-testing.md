@@ -415,6 +415,12 @@ tuvieron que cambiar, porque esperaban la region **por su rol** para saber que l
 llegado: con la region viviendo siempre, `findByRole('status')` resuelve al instante y vacia. Ahora
 anclan en el contenido, que es mas fuerte que antes.
 
+**Comprobado con NVDA sobre el codigo arreglado**, la misma noche y con el mismo metodo: la
+prueba que habia salido callada —el acuse del reenvio de verificacion— ahora escribe el texto
+entero en el registro, y la sonda del envoltorio confirmo que **`display: contents` no saca la
+region del arbol de accesibilidad**: un envoltorio vacio con `contents` al que se le mete una caja
+dentro se anuncia igual que uno normal. Es lo que sostiene los cinco del asistente 360.
+
 **El numero "regiones dentro de un `@if`" dejo de ser la medida.** Lo que importa es si la region
 existe antes de que llegue el mensaje: la de una fila desplegada, o la de un `@case`, nacen dentro
 de control de flujo y **si** se anuncian, porque su ambito abre antes de que la persona pulse nada.
