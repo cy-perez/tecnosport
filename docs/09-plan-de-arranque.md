@@ -8410,6 +8410,13 @@ confirmó"**, que para estos 348 era falso: eran sobras de la mudanza. Ahora dic
 dice lo que no sabe — que el segundo caso solo existe si el ambiente cambió de bucket, y eso no lo
 puede saber un informe que solo ve keys.
 
+**Las tres quedaron hechas y comprobadas el mismo día**: el `objectAdmin` del bucket de dev es
+**solo** el de la API, la cuenta `tecnosport-dev-imagenes@` ya no existe y en `~/.gcp/` queda una
+sola llave. Y el cierre de verdad es la última lectura: `terraform plan` sobre el bucket y sus dos
+permisos responde **"No changes. Your infrastructure matches the configuration."** — el ambiente
+desplegado y lo que dice el código son la misma cosa, que es lo que no se podía afirmar mientras el
+bucket lo creara un script a mano.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
