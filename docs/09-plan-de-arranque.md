@@ -8533,18 +8533,22 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
-16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
-    septiembre es la estructura que necesitan, que no es lo mismo. **El 22 de septiembre se midió
-    esa estructura y no era la que hace falta**: de las 114 regiones vivas del frontend, 5 vivían
-    siempre en el DOM y 109 nacían dentro del `@if` que las llena, que es el patrón que la regla de
-    `apps/web/CLAUDE.md` prohíbe. Se cerró el caso mecánico —15 sitios, `ts-campo` y `ts-select`
-    incluidos— y **se paró ahí a propósito**: quedan 99 en tres clases (5 de fila, 23 de estado,
-    71 de cargando/listas vacías) que exigen una decisión por pantalla, y hacerlas antes de haber
-    escuchado una sola con un lector de pantalla es refactorizar contra una regla sin medir. **Lo
-    que desbloquea todo lo demás es media hora con NVDA**: el login y una bandeja del panel bastan
-    para saber si el arreglo de la clase A se anuncia y si el de la clase D hace falta. **Cómo
-    comprobarlo:** los dos guiones de clasificación viven en el historial de esta rama; volver a
-    contarlas es `grep -rn 'role="status"\|role="alert"' apps/web/src/app --include=*.html`.
+16. **Que NVDA anuncie de verdad las regiones vivas: medido el 22 de septiembre de 2026, y la
+    respuesta no era la esperada.** Queda abierta, pero ya no a ciegas y con un tercio del tamaño.
+    Con NVDA 2025.3.3 y el registro en "Entrada/salida" —que anota el texto literal que manda al
+    sintetizador— se corrieron cuatro pruebas y una sonda, y lo que separa los casos **no es nacer
+    dentro del `@if`: es la cortesía**. Un `role="alert"` se anuncia siempre, nazca lleno o se
+    llene después; un `role="status"` se anuncia si la región ya vivía en el DOM y **calla si nace
+    ya llena**. Así que la regla de `apps/web/CLAUDE.md` es cierta solo para las corteses, y de las
+    111 regiones de hoy **hay 31 que arreglar, no 99**: las 74 asertivas ya funcionan y tocarlas
+    sería diff sin efecto. Están concentradas —8 en el asistente de captura 360, 4 en el panel, 3
+    en el panel de retractos—, así que ya no son "una decisión por pantalla en treinta plantillas".
+    Lo que falta es hacerlas. **El guion, el resultado con sus líneas de registro, las dos trampas
+    del método que costaron dos pruebas y el defecto que apareció de paso —el "no encontramos
+    productos" de la rejilla no es una región viva y nadie lo oye— están en `docs/06-testing.md`,
+    "El guion de NVDA, y lo que midió".** **Cómo comprobarlo:** `grep -rn 'role="status"'
+    apps/web/src/app --include=*.html` y mirar cuáles caen dentro de un `@if`, un `@for` o un
+    `@switch`; mientras haya alguna, la deuda sigue. Las asertivas no cuentan.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 

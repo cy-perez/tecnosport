@@ -111,10 +111,14 @@ implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dur
   `ts-boton`, que van al `aria-expanded` y al `aria-controls` del `<button>`
   real. Sin ellos, pulsar "Contar las unidades de SKU-X" no anuncia nada y
   descubrir que apareció un formulario es tabular a ciegas.
-- **Una región viva vive siempre en el DOM y lo que cambia es su contenido.**
-  Montarla ya llena con un `@if` es justo lo que los lectores de pantalla
-  anuncian mal. Y al revés: `role="status"` no va en el resumen estático de una
-  tabla — cada revalidación en segundo plano lo vuelve a leer en voz alta.
+- **Una región viva cortés vive siempre en el DOM y lo que cambia es su
+  contenido.** Montar un `role="status"` ya lleno con un `@if` es justo lo que
+  los lectores de pantalla anuncian mal — **medido con NVDA el 22 de septiembre
+  de 2026: calla**. Con `role="alert"` da igual dónde nazca, porque es asertiva y
+  se anuncia siempre; no hay que envolver ni mover las que ya existen. Y al
+  revés: `role="status"` no va en el resumen estático de una tabla — cada
+  revalidación en segundo plano lo vuelve a leer en voz alta. El guion de la
+  medición y sus trampas están en `docs/06-testing.md`.
 - **No se deshabilita un botón para decir que faltan datos.** Un
   `<button disabled>` sale del orden de tabulación: quien navega con teclado no
   lo encuentra y nada le explica por qué no pasa nada. Se deja vivo, se valida al
