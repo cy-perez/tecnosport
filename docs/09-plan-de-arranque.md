@@ -8893,6 +8893,96 @@ que dependa de él**: `POST /pickups` no tiene adaptador en el backend y ningún
 llama. La recolección se pide a mano mientras el conector no responda, y eso no bloquea despachar.
 Queda pedido en el trámite del 21 y ahí se queda.
 
+## La mitad del expediente del abogado no era para un abogado (2026-09-23)
+
+La deuda 14 decía «las cinco consultas de `docs/14`, con el expediente ya redactado», y el primer
+hallazgo fue que **el enunciado estaba mal por partida doble**: no eran cinco y no estaban en un
+documento.
+
+`docs/12` §7 tenía **cinco puntos más** —la reversión y el flete, pactar el plazo de entrega, la
+entidad con la que se contrata Skydropx, el reintegro del flete de ida, y la comisión de recaudo—,
+escritos cuando esas cláusulas eran un borrador y **ya publicadas** desde entonces. `docs/08` tenía
+**dos** que no estaban en ninguna de las dos listas. Mandar el expediente de `docs/14` y pagar la
+hora dejaba las otras dos abiertas, que es la forma cara de no cerrar nada.
+
+### Cuatro de los diez no eran preguntas para un abogado
+
+| Punto | Qué lo contestó |
+|---|---|
+| El registro de la base de datos ante la SIC (`docs/08`) | El **Decreto 090 de 2018**: solo están obligadas las sociedades y entidades sin ánimo de lucro con activos superiores a 100.000 UVT y las personas jurídicas públicas. **Las personas naturales no**, y este sitio lo opera una persona natural — dato que estaba en el aviso del titular de los tres documentos publicados |
+| Pactar un plazo de entrega distinto del supletivo (`docs/12` §7.2) | El texto publicado, que ya tomó la salida segura: «No pactamos contigo un plazo de entrega distinto del legal» |
+| La comisión de recaudo trasladada al comprador (`docs/12` §7.5) | Una medición y una línea de código: la tarifa vale lo mismo con recaudo y sin él (`docs/13` §6.5), y `Pedido.total()` es `subtotal + costoEnvio` |
+| El reintegro del flete de ida (`docs/12` §7.4) | Nada, porque **no es una pregunta de derecho**: el análisis ya está hecho y el texto sostiene la posición segura. Lo que queda es si el negocio quiere asumir la contraria, y eso lo decide el dueño |
+
+Los tres primeros se retiraron **tachados y no borrados**, con la fuente y la fecha. Un punto
+borrado vuelve a nacer en seis meses porque el motivo que lo abrió sigue ahí.
+
+### Y tres textos publicados que se podían cerrar sin abogado
+
+**El primero llevaba cuatro días mal y estaba marcado como "necesita abogado".** Los términos §12
+prometían quince días hábiles para «toda petición», y eso se tragaba la consulta de datos
+personales, que los arts. 14 y 15 de la Ley 1581 atienden en diez. La política ya los decía bien;
+el que sobraba era el «toda petición». Verificado en el SISJUR antes de tocarlo. Ahora los términos
+prometen su plazo y **remiten** al numeral 12 de la política sin repetir los números, porque dos
+copias de un plazo se desincronizan. El código no cambió: `TipoSolicitud` distingue los siete tipos
+y `PlazosDeAtencion` los tres relojes desde que se construyó la bandeja de atención.
+
+**El segundo era un tercero invisible.** `SistecreditoClient` manda `docType` y `document` a
+Sistecrédito, y la política de tratamiento no lo mencionaba en ningún numeral: ni en el 5 —qué
+datos recolectamos—, ni en el 8 —encargados y terceros—, y el 6 atribuía el crédito a Wompi, cierto
+el 8 de septiembre cuando se escribió y falso desde `ADR-0048`. El checkout sí avisaba al lado del
+campo, pero un aviso en contexto no es la política. Entra ahora en los tres numerales, y la
+redacción **describe el hecho sin etiquetarlo** —dice que Sistecrédito estudia y otorga el crédito
+bajo su propia política y su propio contrato— que es lo que permitió cerrarlo sin esperar la
+consulta: informa igual sea encargado o segundo responsable.
+
+**El tercero no lo buscaba nadie y estaba a la vista de cualquiera que leyera hasta el final.** El
+encabezado de los tres documentos sale de `legales.comun.version`, y el numeral «Vigencia» del
+final llevaba la fecha escrita a mano: se quedó en el 18 de septiembre cuando el arreglo de la
+garantía subió la versión al 19. O sea que la misma página mostraba **dos fechas distintas de
+cuándo empezó a regir el texto**, y es justo la fecha que decide qué versión gobierna una compra —
+lo dicen los propios términos—. La regla 3 de `verificar-datos-de-negocio.mjs` no lo vio porque
+compara las cuatro copias de la versión entre sí, y esta quinta copia estaba dentro de la prosa.
+
+Se arregló **quitando la copia**, no actualizándola, y la regla 6 existe para que no vuelva:
+ninguna sección de vigencia puede llevar una fecha escrita dentro. **Verificada rompiéndola a
+propósito en los dos idiomas** —el título es «Vigencia» en castellano y «Term» en inglés, así que
+una sola prueba no habría bastado—.
+
+### El punto 6 nació de un enlace roto
+
+`docs/08` mandaba al abogado la pregunta de si Sistecrédito es encargado nuestro o segundo
+responsable, «con el punto 5 de `docs/14`». El punto 5 nunca la mencionó: sus tres preguntas son
+otras. Nadie borró nada y la pregunta dejó de existir igual. Ahora es el punto 6, con número
+propio, y lo que cuelga de él es concreto: si es segundo responsable, la casilla
+`checkout.autoriza_datos` tiene que decirlo, y con ella cambia la versión que queda guardada en
+cada constancia de `autorizacion_datos`.
+
+### Lo que se le añadió a la skill, y por qué
+
+`vacios-legales-del-sitio` **abre** puntos para abogado en su fase de entrega y no tenía ninguna
+fase para volver a mirarlos. Tiene la 5b para los marcadores `[[ ]]`; para el otro rastro que ella
+misma siembra, nada. Y ese rastro es más callado que un marcador: un marcador al menos afea el
+documento publicado, mientras que un punto para abogado vive en `docs/`, no rompe ninguna prueba y
+**está dirigido a otra persona**, así que nadie cree que le toque cerrarlo.
+
+La **Fase 5c** y `references/cerrar-puntos-de-abogado.md` son eso: reunirlos todos antes de mandar
+ninguno, clasificarlos en cuatro —la norma lo contesta y se puede verificar / la premisa de hecho
+es medible / es decisión del negocio y no de derecho / es riesgo jurídico de verdad—, retirar solo
+con fuente verificada o medición, y exigirle al que sobrevive el mapa de **qué cambia según cada
+respuesta**: archivo y clave exacta, los dos idiomas, la versión y la vigencia. Sin ese mapa, lo
+que vuelve del abogado es una nota que alguien tendrá que interpretar tres semanas después.
+
+De paso se corrigió un puntero que llevaba mal desde que se escribió el expediente: el punto 1 citaba
+`legales.terminos.secciones[10]` y la garantía es la `[9]` — la `[10]` es la reversión del pago.
+
+### Lo que esto no cierra
+
+**La deuda no se cierra: se queda sin trabajo propio.** Lo que falta es conseguir el contrato de
+vinculación de Sistecrédito, contratar al abogado y que conteste. Las hojas para llevar se
+regeneraron —**estaban desfasadas**, eran de la versión `2026-09-18`— y falta imprimirlas, que es
+lo único que puede hacerse sin hablar con nadie.
+
 ## Las deudas que quedan, al 23 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -9156,7 +9246,21 @@ El orden no es negociable: cada uno alimenta al siguiente.
     **El saldo dejó de bloquear**: medido el 22 de septiembre está en **102.238 COP**, no en los
     388 que decía este documento ni en los 10.088 de una nota intermedia. Se consulta con
     `GET /api/v1/finance/credits`, que es de lectura y no gasta — conviene medirlo antes de citarlo.
-14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
+14. **Las consultas del abogado.** Eran «cinco, con el expediente ya redactado» y **el enunciado
+    estaba mal**: había puntos para abogado en tres documentos —`docs/14`, `docs/12` §7 y
+    `docs/08`— y el expediente que iba a mandarse era el de uno. Triados el 23 de septiembre, de
+    los diez **cuatro no eran preguntas para un abogado**: el registro ante la SIC lo contesta el
+    Decreto 090 de 2018, dos de `docs/12` los contestaron el texto publicado y una medición, y el
+    del flete de ida es una decisión del dueño y no de derecho. Otros dos se cerraron cambiando el
+    texto, que era lo que hacía falta y no una consulta. Quedan **seis puntos en `docs/14` y dos en
+    `docs/12` §7**, cada uno con el mapa de qué archivo y qué clave cambian según la respuesta.
+    **No se trabaja, se persigue**, y lo que queda no es código: el contrato de vinculación de
+    Sistecrédito —que bloquea los puntos 5 y 6—, contratar al abogado, y que conteste. Las hojas
+    para llevar ya se regeneraron; falta imprimirlas.
+    **Cómo comprobarlo:** `grep -rn "abogado" docs/*.md` sigue devolviendo líneas fuera de esos dos
+    documentos, y ninguna es un punto abierto: en `docs/07` está tachada y en `docs/08` son
+    narración de lo cerrado o remisiones a `docs/14`. Y `npm run datos-negocio` cubre desde hoy que
+    ningún numeral de vigencia lleve su fecha escrita dentro — el defecto que destapó el triaje.
 15. ~~**Si la anulación en Credinet notifica a `urlConfirmation`.**~~ **Medida el 23 de septiembre
     de 2026 con un crédito real, y contestada en negativo por partida doble: ni notifica ni se ve.**
     Se compró de verdad —pedido `TS-2026-000006`, $227.402, autorizado con documento y OTP— y se

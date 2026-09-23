@@ -100,8 +100,17 @@ No es opcional y hay que resolverlo antes de abrir.
   previamente, con enlace a la política. Se guarda fecha, versión del texto e IP.
 - Canal para ejercer derechos: consultar, actualizar, rectificar y suprimir, con
   respuesta en los plazos de ley.
-- Evaluar el registro de la base de datos ante la SIC. Aplica según los activos
-  del responsable: **consultarlo con un contador o abogado**, no asumirlo.
+- **El registro de la base de datos ante la SIC no aplica hoy, y es la norma la
+  que lo dice, no una estimación nuestra.** El Decreto 090 de 2018 dejó obligadas
+  solo a las sociedades y entidades sin ánimo de lucro con activos superiores a
+  100.000 UVT y a las personas jurídicas de naturaleza pública; **las personas
+  naturales no están obligadas**, y este sitio lo opera una persona natural —así
+  lo dice el propio aviso del titular en los tres documentos publicados—.
+  Verificado el 23 de septiembre de 2026 en la SIC, que es la autoridad del
+  registro. **Lo único que lo cambiaría es constituir sociedad**, y aun así solo
+  por encima de ese umbral de activos. Estuvo abierto como "consultarlo con un
+  contador o abogado": no lo era. **Y no estar obligado a registrar no exime de
+  cumplir la Ley 1581**, que aplica igual.
 - Finalidad declarada y limitada. Los datos del checkout no se usan para
   publicidad sin autorización aparte.
 
@@ -160,7 +169,11 @@ completo, con las cláusulas redactadas y la auditoría del sistema, en
   (`ADR-0022`).
 - **Los costos de transporte de la devolución los cubre el consumidor** (art. 47),
   pero eso no alcanza al flete de ida que ya pagó ni a los costos financieros del
-  reintegro. Es un punto para abogado y está marcado como tal.
+  reintegro. **El texto publicado ya tomó esa posición —la segura— y la dice
+  expresamente** (`legales.terminos.secciones[8]`): reintegra el flete de ida y
+  asume los costos financieros. Lo que queda no es una pregunta de derecho sino
+  si el negocio quiere sostener otra posición; está en `docs/12` §7, punto 4,
+  mudado a la lista de lo que decide el dueño.
 - **Skydropx es un encargado nuevo** que recibe nombre, teléfono y dirección de
   entrega de cada comprador. Hay que declararlo en la política de datos, y
   analizar la transferencia internacional: es una plataforma mexicana, y México
@@ -172,12 +185,19 @@ completo, con las cláusulas redactadas y la auditoría del sistema, en
   de datos y en la casilla de autorización: el dato se transmite aunque **no se
   guarde** en este sistema —viaja del checkout a la pasarela y ahí termina—, y el
   deber de informar no depende de que lo conservemos.
-  **Y hay una pregunta que este expediente no puede responder:** si Sistecrédito
-  es un *encargado* nuestro o un **segundo responsable**. Trata el documento para
-  su propia finalidad —decidir y otorgar un crédito, con su propio contrato con
-  esa persona—, lo que apunta a lo segundo, y de eso depende qué tiene que decir
-  exactamente la autorización. Va al abogado con el punto 5 de
-  `docs/14-consultas-al-abogado.md`.
+  **Declarado en la política el 23 de septiembre de 2026** (versión `2026-09-23`):
+  Sistecrédito entra en el numeral 5 —qué datos recolectamos—, en el 6 —datos de
+  pago, que antes atribuía el crédito a Wompi— y en el 8 —encargados y
+  terceros—. El texto describe el hecho sin etiquetarlo, que es lo que permitía
+  cerrarlo sin esperar al abogado.
+  **Y sigue abierta la pregunta que este expediente no puede responder:** si
+  Sistecrédito es un *encargado* nuestro o un **segundo responsable**. Trata el
+  documento para su propia finalidad —decidir y otorgar un crédito, con su propio
+  contrato con esa persona—, lo que apunta a lo segundo, y de eso depende qué
+  tiene que decir exactamente la **casilla de autorización**, que hoy no lo
+  menciona. Es el **punto 6** de `docs/14-consultas-al-abogado.md`, con número
+  propio: estuvo remitido al punto 5 y el punto 5 nunca lo mencionó, que es la
+  forma de perder una pregunta sin que nadie la borre.
 
 **Fotografías de producto.** Las imágenes son del negocio, tomadas por el negocio.
 No se usan fotos de proveedores, de fabricantes ni de otras tiendas sin
@@ -238,6 +258,14 @@ cada una. Hasta entonces eran tres preguntas sueltas dentro de una entrada del
 plan de arranque, que es una forma de no entregárselas a nadie. La cuarta nació
 al medir la cobertura real de envío.
 
+**Y viven en dos sitios, no en uno.** `docs/12` §7 conserva dos puntos que son
+suyos —si la reversión del pago alcanza el flete, y con qué entidad se contrata
+Skydropx— porque pertenecen al análisis de envío que los abrió. Los otros tres de
+esa sección se retiraron el 23 de septiembre de 2026, tachados y con su motivo.
+El expediente de `docs/14` lo dice en su cabecera y remite: lo que no puede
+volver a pasar es que alguien mande una de las dos listas creyendo que es la
+entera, que es exactamente lo que estuvo a punto de ocurrir.
+
 **Datos personales en reposo que no estaban en esta lista:** desde `adr/0045` la
 tabla `correo_pendiente` guarda el cuerpo de cada correo transaccional hasta que
 sale, y el cuerpo lleva el nombre de quien compró, su pedido y a veces su
@@ -245,12 +273,36 @@ dirección. Se purga a los treinta días — el mismo criterio que el carrito—
 purga corre en la misma tarea que drena la bandeja, no en una aparte que alguien
 pueda apagar sin darse cuenta.
 
-**Una contradicción entre documentos publicados, pendiente de corregir en el
-texto:** los términos prometen quince días hábiles para "toda petición" y la
+**La contradicción entre documentos publicados, corregida el 23 de septiembre de
+2026.** Los términos prometían quince días hábiles para "toda petición" y la
 política de datos promete diez para una consulta, y las dos frases apuntan al
-mismo correo. El sistema cumple el plazo más corto que corresponda a cada tipo,
-que es lo único defendible; ajustar el texto es tarea de
-`textos-legales-comerciales` y necesita revisión de abogado.
+mismo correo. **No necesitaba abogado y estuvo marcada como si lo necesitara**:
+los arts. 14 y 15 de la Ley 1581 fijan los plazos —diez hábiles prorrogables por
+cinco para la consulta, quince prorrogables por ocho para el reclamo— y la
+política ya los decía bien; el que sobraba era el "toda petición" de los
+términos. Verificado en el texto vigente antes de tocarlo. Ahora
+`legales.terminos.secciones[11]` promete el plazo para peticiones, quejas y
+reclamos y remite al numeral 12 de la política para lo que sea de datos
+personales, sin repetir los números —dos copias de un plazo se desincronizan—.
+**El código ya lo hacía bien y no cambia**: `TipoSolicitud` distingue los siete
+tipos y `PlazosDeAtencion` los tres relojes, con los valores en
+`application.yml` (`tecnosport.atencion.*`).
+
+**Los documentos decían dos fechas de vigencia distintas, y se corrigió el 23 de
+septiembre de 2026.** El encabezado que pinta la plantilla sale de
+`legales.comun.version` y decía la versión vigente; el numeral "Vigencia" del
+final de cada documento —los tres, en los dos idiomas— llevaba la fecha escrita a
+mano y se había quedado en el 18 de septiembre, cuatro días atrás. La fecha no es
+un adorno: los propios términos dicen que a cada compra se le aplica la versión
+vigente el día en que se hizo, así que es el dato que decide qué texto gobierna
+una reclamación.
+
+Se arregló **quitando la copia**, no actualizándola: los tres numerales remiten
+ahora al encabezado. Y como una regla que solo vive en la cabeza de quien la
+escribió no es una regla, `tools/verificar-datos-de-negocio.mjs` gana una sexta
+comprobación —ninguna sección de vigencia puede llevar una fecha escrita dentro—,
+**verificada rompiéndola a propósito en los dos idiomas**, que es la única forma
+de saber que un guardián dispara.
 
 **Y algo que quedó desactualizado el 8 de septiembre de 2026, a propósito:** los
 tres documentos publicados dicen que el precio incluye el envío y que no hay

@@ -7,7 +7,35 @@ colegiado las resuelva en una hora en vez de leerse el sitio entero.
 `docs/09-plan-de-arranque.md` las venía arrastrando desde el 10 de septiembre de
 2026 como tres preguntas sueltas dentro de una entrada. Así no se le entregan a
 nadie. Cada una lleva aquí lo mismo: **qué dice hoy el texto publicado, qué hace
-el sistema, qué dice la norma verificada, y qué recomienda este proyecto.**
+el sistema, qué dice la norma verificada, qué recomienda este proyecto, y qué
+cambia en el código según cada respuesta.** Lo último se añadió el 23 de
+septiembre de 2026 y es lo que separa una respuesta de un commit: sin eso, lo que
+vuelve del abogado es una nota que alguien tendrá que interpretar tres semanas
+después.
+
+### Esta es la lista entera, y no lo era
+
+**El 23 de septiembre de 2026 había puntos para abogado en tres documentos**, y
+el expediente que iba a mandarse era el de uno. `docs/12` §7 tenía cinco más,
+sobre cláusulas **ya publicadas**, y `docs/08` tenía dos que no estaban aquí.
+Pagar la hora con una de las tres listas deja las otras dos abiertas.
+
+Se triaron todos, y el resultado fue que **la mitad no eran preguntas para un
+abogado**:
+
+| De dónde | Qué pasó |
+|---|---|
+| `docs/08`, registro ante la SIC | **Retirado.** El Decreto 090 de 2018 lo contesta: las personas naturales no están obligadas al RNBD |
+| `docs/08`, la contradicción de plazos | **Cerrado con el texto.** Los arts. 14 y 15 de la Ley 1581 fijan los plazos; sobraba el "toda petición" de los términos |
+| `docs/08`, Sistecrédito en la política | **Cerrado con el texto.** Lo que quedaba de derecho es el punto 6 de aquí |
+| `docs/12` §7.2, pactar el plazo de entrega | **Retirado.** El texto publicado ya tomó la salida segura |
+| `docs/12` §7.4, el flete de ida | **Mudado al dueño.** El análisis jurídico ya está hecho; queda una decisión de riesgo del negocio |
+| `docs/12` §7.5, la comisión de recaudo | **Retirado.** La premisa de hecho es falsa, medida |
+| `docs/12` §7.1 y §7.3 | **Siguen abiertos**, y van con este expediente |
+
+Lo que queda para el abogado son **seis puntos aquí y dos en `docs/12` §7**. El
+procedimiento está en la Fase 5c de la skill `vacios-legales-del-sitio`, que
+nació ese día porque la skill abría puntos y no tenía con qué volver a mirarlos.
 
 Las normas se verificaron contra el texto vigente en el SISJUR de la Alcaldía de
 Bogotá el 19 de septiembre de 2026, no de memoria, y la lista de países con nivel
@@ -17,6 +45,11 @@ también es un dato. Donde la fuente no se dejó leer —el Título V consolidad
 PDF escaneado— queda dicho en el punto que lo necesita, en vez de citarlo como si
 se hubiera leído.
 
+**Lo verificado el 23 de septiembre de 2026**, para el triaje de arriba: los
+arts. 14 y 15 de la Ley 1581 —los plazos de consulta y reclamo— en el SISJUR de
+la Alcaldía de Bogotá, y el Decreto 090 de 2018 —quién está obligado al RNBD— en
+la SIC, que es la autoridad del registro.
+
 ---
 
 ## 1. "Desgaste normal" como exclusión de la garantía
@@ -25,7 +58,8 @@ se hubiera leído.
 > texto publicado y la lista se alineó con el art. 16. Lo que sigue abierto es la
 > reformulación en positivo, que es donde hace falta criterio profesional.
 
-**Qué decía.** `legales.terminos.secciones[10]`, en los dos idiomas:
+**Qué decía.** `legales.terminos.secciones[9]` —el numeral **10** del documento;
+aquí decía `[10]`, que es la reversión del pago—, en los dos idiomas:
 
 > La garantía no cubre el daño causado por uso indebido, modificación no
 > autorizada, desgaste normal ni fuerza mayor.
@@ -97,6 +131,13 @@ nombre. Es **cómo se dice lo que sí es cierto**, y hay dos salidas:
 Hoy el texto está en la opción 2, porque es la que no requiere criterio
 profesional para sostenerse.
 
+**Qué cambia según la respuesta:** la opción 1 añade un párrafo a
+`legales.terminos.secciones[9]` en `es.json` y en `en.json`, sube la versión y la
+vigencia del documento en sus cuatro copias —las dos de i18n, `.env.example` y
+`application.yml`, que es lo que comprueba `npm run datos-negocio`— y no toca una
+línea de código: no hay enum de motivos de rechazo que ajustar. La opción 2 no
+cambia nada.
+
 **Lo que decide el abogado:** cuál de las dos, y si elige la primera, con qué
 redacción exacta. La decisión no es de estilo: la frontera entre "informar que el
 desgaste no es un defecto" y "excluir el desgaste" es justo donde se juega si la
@@ -112,7 +153,7 @@ a propósito.
 
 ## 2. Nombrar o no a las transportadoras que subcontrata Skydropx
 
-**Dónde está.** `legales.privacidad.secciones[7]`, la lista de a quién se le
+**Dónde está.** `legales.privacidad.secciones[7]` —el numeral **8**—, la lista de a quién se le
 comunican los datos:
 
 > Skydropx S.A.S., sociedad colombiana con NIT 901.508.804-5 y domicilio en
@@ -162,6 +203,12 @@ avisa.
 obliga, y añadir una frase que diga que la lista vigente de transportadoras se
 puede consultar escribiendo al correo de atención. Así la información existe y es
 exigible sin convertir el documento en algo que caduca solo.
+
+**Qué cambia según la respuesta:** las dos salidas tocan la misma viñeta de
+`legales.privacidad.secciones[7]` en los dos idiomas, con su subida de versión. La
+diferencia está después: la lista nombrada crea una tarea recurrente —cotejarla
+contra las tarifas que devuelve cada cotización— que la remisión al correo no
+crea.
 
 **Lo que decide el abogado:** si esa remisión al correo satisface el deber de
 información, o si prefiere la lista nombrada asumiendo el compromiso de
@@ -265,13 +312,23 @@ caduca.
    lista no la contesta: **a qué datos alcanzan**. Por los correos pasan nombre,
    dirección de entrega y detalle de lo comprado.
 
+**Qué cambia según la respuesta:** nombrar el país es una frase en
+`legales.privacidad.secciones[8]` —el numeral **9**— en los dos idiomas, con su
+subida de versión. Lo de los subencargados de IA puede no cambiar el texto y
+sí el proveedor: si la respuesta es que hace falta más que la mención genérica y
+Resend no puede acotar a qué datos alcanzan, lo que cambia es de dónde sale el
+correo transaccional, que es un adaptador de `infrastructure` y no un párrafo.
+
+**Qué hay que tener delante:** nada más. El contrato y la lista de subencargados
+ya están leídos y citados arriba.
+
 **Cerrado de este lado el 19 de septiembre de 2026.** Ya hay consulta que hacer.
 
 ---
 
 ## 4. "Despachamos a todo el territorio nacional"
 
-**Dónde está.** `legales.terminos.secciones[7]`, primer párrafo:
+**Dónde está.** `legales.terminos.secciones[7]` —el numeral **8**—, primer párrafo:
 
 > Despachamos a todo el territorio nacional a través de empresas de transporte, y
 > también puedes recoger tu pedido sin costo en nuestro punto de Medellín.
@@ -317,6 +374,11 @@ nacional" encuentre la excepción en la misma frase y no dos párrafos más abaj
 No hace falta reescribir la afirmación ni publicar una lista de municipios, que
 además caducaría sola.
 
+**Qué cambia según la respuesta:** acercar el matiz es reordenar los párrafos de
+`legales.terminos.secciones[7]` en los dos idiomas. Cambiar la afirmación es
+reescribir el primero. Las dos suben la versión; ninguna toca el código, que ya
+ofrece solo la recogida cuando nadie cotiza.
+
 **Lo que decide el abogado:** si con un 93 % medido y el matiz contiguo la
 afirmación deja de ser "insuficiente" para el art. 5.13, o si prefiere una
 formulación que no diga "todo".
@@ -350,10 +412,63 @@ ejerce el derecho; el dinero, sin embargo, lo tiene un tercero.
 2. Qué plazo nos obliga a nosotros cuando el trámite depende de la respuesta de
    un tercero, y qué hay que decirle al comprador mientras tanto.
 3. Si los términos y condiciones publicados tienen que nombrar a Sistecrédito y
-   explicar que el crédito lo otorga y lo anula él — hoy no lo hacen.
+   explicar que el crédito lo otorga y lo anula él — hoy no lo hacen. **La
+   política de datos sí, desde el 23 de septiembre de 2026** (numerales 5, 6 y
+   8): lo que falta es la parte contractual, no la de datos.
+
+**Qué cambia según la respuesta:** la 1 y la 2 no tocan texto publicado sino la
+operación —quién adelanta el dinero y en cuánto tiempo— y, si nos obliga un
+plazo propio, un reloj como el de `PlazosDeAtencion`, que hoy no distingue este
+caso. La 3 añade un numeral a `legales.terminos` en los dos idiomas, con su
+subida de versión.
 
 **Lo que este expediente no puede resolver solo:** el contrato con Sistecrédito
 no está leído en este punto. Antes de la consulta hay que tenerlo a la mano.
+
+---
+
+## 6. Si Sistecrédito es un encargado nuestro o un segundo responsable
+
+> **Nació con número propio el 23 de septiembre de 2026.** Estuvo escrito en
+> `docs/08` remitido "al punto 5 de `docs/14`", y el punto 5 nunca lo mencionó:
+> una pregunta que se pierde sin que nadie la borre.
+
+**El hecho.** Al pagar a cuotas, el checkout le manda a Sistecrédito el tipo y el
+número de documento de quien compra —`SistecreditoClient.java:258-259`, `docType`
+y `document`—. El dato **no se guarda** de nuestro lado: viaja en el comando y
+termina ahí (`CrearIntentoDePagoSistecreditoComando`).
+
+**Qué dice el texto publicado.** Desde el 23 de septiembre de 2026 la política lo
+declara en tres sitios —el numeral 5, el 6 y el 8— y describe el hecho **sin
+etiquetarlo**: dice que Sistecrédito estudia y otorga el crédito bajo su propia
+política de tratamiento y su propio contrato contigo. Esa redacción informa al
+titular igual en las dos hipótesis, y por eso el deber de informar se pudo cerrar
+sin esperar la consulta.
+
+**La pregunta.** Trata el documento para **su** finalidad —decidir y otorgar un
+crédito, con su propio contrato con esa persona—, lo que apunta a segundo
+responsable y no a encargado. La distinción no es académica: un encargado trata
+por cuenta nuestra y lo que hace falta es un contrato de transmisión; un segundo
+responsable trata por cuenta propia y entonces la **autorización** tiene que
+cubrir esa comunicación con esa finalidad.
+
+**Qué hace el sistema con la autorización hoy.** La casilla del checkout dice
+"Autorizo el tratamiento de mis datos personales para procesar y entregar este
+pedido" y no menciona el crédito. Al lado del campo del documento sí hay un aviso
+en contexto —"Sistecrédito necesita tu documento para encontrar tu cupo. Se lo
+enviamos a ellos para esta compra y no lo guardamos"—, que informa pero no es la
+autorización.
+
+**Lo que decide el abogado:** cuál de las dos figuras es, y si la casilla tiene
+que decirlo.
+
+**Qué cambia según la respuesta:** si es encargado, nada en el sitio y sí en el
+contrato con Sistecrédito. Si es segundo responsable, cambia la clave
+`checkout.autoriza_datos` en los dos idiomas —y con ella la versión de la
+política que queda guardada en cada constancia de `autorizacion_datos`, porque lo
+que se probó el día de la compra es el texto de esa versión—.
+
+**Qué hay que tener delante:** el contrato de vinculación, el mismo del punto 5.
 
 ---
 
@@ -365,17 +480,33 @@ no está leído en este punto. Antes de la consulta hay que tenerlo a la mano.
       SIC, así que la transferencia no depende de la autorización del titular.
 - [x] ~~Anotar en el punto 4 el porcentaje de cobertura.~~ Medido el 19 de
       septiembre de 2026: 93,0 % con envío a domicilio.
-- [ ] **Llevar el contrato de vinculación con Sistecrédito**, que el punto 5
-      necesita y que este expediente no ha leído. De ahí salen además tres datos
-      que el código espera: el monto mínimo del crédito, la comisión y quién la
-      asume, y si exigen alguna leyenda o logo en el checkout.
-- [ ] Llevar impresos los dos textos legales publicados, en su versión vigente y
-      con su fecha, no una transcripción. **Las hojas ya se generan solas**:
-      `npm run legales-impresos` las escribe en `docs/tramites/impresos/` leyendo
-      los mismos JSON que pinta el sitio, con la versión y la fecha en la cabecera
-      y en el nombre del archivo. Falta imprimirlas.
+- [ ] **Llevar el contrato de vinculación con Sistecrédito**, que los puntos 5 y 6
+      necesitan y que este expediente no ha leído. De ahí salen además **dos**
+      datos que el código espera: la comisión y quién la asume, y si exigen alguna
+      leyenda o logo en el checkout. Eran tres: **el monto mínimo ya es dato**
+      —$50.000, confirmado por el dueño— y sigue sin valor por omisión en
+      `application.yml` a propósito, para que un despliegue que olvide la variable
+      no arranque con el método encendido.
+- [x] ~~Generar las hojas de los textos publicados en su versión vigente.~~
+      Regeneradas el 23 de septiembre de 2026 con `npm run legales-impresos`:
+      `docs/tramites/impresos/*-2026-09-23.html`, seis hojas. **Estaban
+      desfasadas** —las que había eran de la versión `2026-09-18` y lo publicado
+      era `2026-09-19`—, que es lo que pasa cuando la lista dice "falta
+      imprimirlas" y el texto cambia debajo. **Falta imprimirlas**, y eso es lo
+      único: se generan solas desde los mismos JSON que pinta el sitio, con la
+      versión y la fecha en la cabecera y en el nombre del archivo.
+- [ ] **Confirmar la razón social y el NIT de Sistecrédito** si se quiere
+      nombrarlo en la política como se nombra a Skydropx. Hoy aparece solo con su
+      nombre comercial, que es lo que está verificado; el NIT sale del mismo
+      contrato de vinculación de la línea anterior. No es obligatorio: el art. 13
+      del Decreto 1377 no exige enumerar destinatarios.
 
-Este expediente lo preparó el proyecto, no un abogado. Los cuatro puntos son
-decisiones de riesgo y las cuatro recomendaciones son un punto de partida para la
-discusión, no una conclusión: **antes de cambiar una sola línea de los textos
-publicados, esto lo revisa un abogado colegiado.**
+Este expediente lo preparó el proyecto, no un abogado. Los seis puntos de aquí y
+los dos de `docs/12` §7 son decisiones de riesgo, y cada recomendación es un punto
+de partida para la discusión, no una conclusión: **antes de cambiar una sola
+línea de los textos publicados, esto lo revisa un abogado colegiado.**
+
+Los cambios de texto del 23 de septiembre de 2026 —la contradicción de plazos y la
+declaración de Sistecrédito— no son una excepción a esa regla: en los dos, lo que
+se publicó es lo que la norma verificada dice o el hecho que el código ejecuta, no
+una decisión de riesgo. Entran igual en la revisión, pero no la esperaban.
