@@ -8735,6 +8735,73 @@ con `/es/checkout/sistecredito/estado` escrito en el error; la de la URL falla d
 se ha visto fallar no es un guardián, y las tres vienen de un defecto que las pruebas verdes de este
 repositorio no vieron.
 
+## El rechazo, la conciliación, y tres 4xx disfrazados de 5xx (2026-09-23)
+
+Cerró lo que quedaba de la 33 salvo el crédito real, y decidió la 34. Dos corridas más contra dev,
+cada una con su `terraform apply` por delante, y las dos midiendo algo que nunca se había visto
+funcionar.
+
+### El rechazo, con `SISTECREDITO_SANDBOX_ESTADO = Rejected`
+
+Pedido **TS-2026-000004**. La transacción quedó `Rejected` en la pasarela —`codeResponse = 4`—, la
+notificación lo aplicó, el pago quedó `RECHAZADO`, el pedido en **Pago fallido** y **la reserva de
+inventario se liberó**: el JBL Go 5 volvió a estar disponible. Tres cosas quedaron medidas de paso:
+
+- **El sondeo para en seco cuando el estado es terminal.** Creación a las 19:08:02.13, notificación
+  aplicada a las 19:08:02.93 — menos de un segundo, imposible con diez intentos de 700 ms. El
+  contraste está en la corrida siguiente, con `Approved`: ahí sí agotó los diez y lo dijo por
+  escrito.
+- **El arreglo del duplicado aguanta fuera de las pruebas.** Sistecrédito volvió a notificar dos
+  veces; el aviso del índice está en el registro y **no hay "Error inesperado sin manejar" ni
+  traza**. La pasarela recibió 200.
+- **La validación de la URL se ve trabajando**, con su aviso por cada consulta:
+  "Sistecrédito devolvió una URL de pago que el navegador no puede abrir y se descarta:
+  www.mysite.com".
+
+Lo que este documento predijo y salió distinto: el pedido **no** se queda en `PAGO_PENDIENTE`, pasa
+a `PAGO_FALLIDO`. Es mejor así — el rechazo queda registrado y `reintentarPago` lo admite.
+
+### La conciliación, con la URL de confirmación apuntada al vacío
+
+Pedido **TS-2026-000005**, y **es la primera vez que la red de seguridad se ejercita**. La pasarela
+notificó dos veces contra una ruta que no existe, a las 19:44:45. A las **19:52:07** la tarea
+programada cantó *"Conciliación Sistecrédito: 1 revisados, 1 conciliados, 0 sin novedad"*, y el
+pedido pasó a *Pagado* y a *En preparación* **sin que ninguna notificación llegara nunca**. Siete
+minutos, consistentes con los parámetros de dev: cada diez, y solo pagos de más de cinco.
+
+**Lo que eso mide de la 34, dicho con precisión:** la instancia estuvo despierta todo el rato —31
+peticiones, todas 200, entre las 19:42:45 y las 19:53:09—, así que lo demostrado es que *la tarea
+funciona cuando la instancia está viva*. El caso contrario no se midió: pedía otros quince minutos
+para observar una ausencia, y es justo el que dev acepta por decisión.
+
+### Tres 4xx disfrazados de 5xx, y uno de ellos es código muerto
+
+Los tres salieron de estas dos corridas, ninguno se buscaba, y los tres están arreglados.
+
+**El rechazo de crédito se le contaba al comprador como "Revisa tus datos e intenta de nuevo".** Ese
+consejo es falso dos veces: los datos no tienen nada que ver con una decisión de crédito, y volver a
+pulsar tampoco sirve —cuando la notificación llega, el pedido queda en `PAGO_FALLIDO` y abrir otro
+intento exige `PAGO_PENDIENTE`—. Ahora la pantalla dice lo que pasó y ofrece la única salida que
+hay, elegir otro medio de pago.
+
+**Y debajo había algo peor: la rama que distinguía el `801` del `802` era código muerto.** El
+backend manda `codigoSistecredito` y `estadoSistecredito` en el `ProblemDetail`, pero `ErrorHttp`
+solo guardaba `codigo`, así que la pantalla leía una propiedad que nunca existía. Ninguno de los dos
+mensajes específicos podía enseñarse jamás. **Es el mismo patrón de la deuda 30** —una rama de error
+que las pruebas daban por cubierta porque sus dobles eran más correctos que el código real—, y por
+eso el arreglo va en `ErrorHttp`, con las propiedades del `ProblemDetail` que no son frases.
+
+**Una ruta que no existe respondía 500**, y eso fue lo que recibió Sistecrédito al notificar contra
+la ruta falsa. Para una pasarela que reintenta ante 5xx, una URL mal configurada se vuelve un bucle
+en vez de un fallo claro; para las alertas de 5xx que `docs/07` promete en producción, es ruido que
+tapa lo que importa.
+
+**Y un parámetro de consulta obligatorio que falta también salía 500.** Encontrado pidiendo
+`GET /pedidos/{id}/seguimiento` sin `correo`; con el parámetro puesto y un pedido inexistente la
+respuesta ya era el 404 correcto, así que lo único que fallaba era eso.
+
+Los cuatro arreglos se comprobaron quitándolos, uno por uno, antes de darlos por buenos.
+
 ## Las deudas que quedan, al 23 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -9163,13 +9230,18 @@ El orden no es negociable: cada uno alimenta al siguiente.
     comprobante — pedidos **TS-2026-000002** y **TS-2026-000003** en dev. Y contestó de paso la
     pregunta del dominio: la notificación llega a `tecnosport-api-….a.run.app` sin que a la pasarela
     le importe que el dominio registrado sea `tecnosport.co`. Los tres defectos están arreglados y
-    contados en la entrada de arriba. **Queda abierto lo que no se pudo tocar**: el estado
-    `Rejected` —fijo en `main.tf`, pide un `apply`— y el caso de cerrar la ventana, que depende de
-    la conciliación y por tanto de la 34. **Cómo comprobarlo:** en el panel de dev, los dos pedidos
-    con su historial *Pago pendiente → Pagado → En preparación*; y en el código, las pruebas que
-    nacieron de cada defecto (`retorno-sistecredito.page.spec.ts` navegando de verdad,
-    `SistecreditoClientTest.unaUrlQueElNavegadorNoPuedeAbrirNoEsUnaUrl`,
-    `SistecreditoControladorTest.unaNotificacionDuplicadaEnCarreraNoSeLeContestaConUn500`).
+    contados en la entrada de arriba. **Y esa misma tarde se cerraron los dos tramos que
+    faltaban**, cada uno con su `terraform apply`: el estado `Rejected` —pedido TS-2026-000004,
+    pago rechazado, pedido en *Pago fallido*, reserva liberada y sondeo parando en seco— y el caso
+    de cerrar la ventana, ensayado apuntando la URL de confirmación al vacío: la conciliación
+    recogió el pago **sin que llegara ninguna notificación** (TS-2026-000005, siete minutos). De
+    esas dos corridas salieron tres defectos más, los tres arreglados y contados en la entrada de
+    abajo. **Lo único que queda de Sistecrédito es el crédito real, que es la deuda 15.**
+    **Cómo comprobarlo:** en el panel de dev, los cuatro pedidos con su historial; y en el código,
+    las pruebas que nacieron de cada defecto (`retorno-sistecredito.page.spec.ts` navegando de
+    verdad, `SistecreditoClientTest.unaUrlQueElNavegadorNoPuedeAbrirNoEsUnaUrl`,
+    `SistecreditoControladorTest.unaNotificacionDuplicadaEnCarreraNoSeLeContestaConUn500`,
+    `ManejadorDeErroresTest`, y las tres de `confirmar.page.spec.ts` sobre el rechazo).
 34. ~~**Las tareas programadas no corren cuando el servicio no atiende peticiones.**~~ **Decidida
     el 23 de septiembre de 2026, y son dos decisiones distintas.** El hecho no cambia: las once
     tareas son `@Scheduled` dentro de la aplicación y el módulo de Cloud Run fija CPU solo durante
@@ -9183,7 +9255,10 @@ El orden no es negociable: cada uno alimenta al siguiente.
     cambio es **"No changes"** contra dev. Cloud Scheduler queda descartado mientras las tareas
     vivan dentro de la aplicación — pediría un endpoint interno autenticado por tarea y sacar el
     `@Scheduled`, y solo se justifica si la API de producción llega a escalar a cero. Lo que queda
-    no es deuda: es un renglón el día que exista `envs/prod`. **Y lo que sí se arregló es la
+    no es deuda: es un renglón el día que exista `envs/prod`. **Medido esa misma tarde**, de
+    rebote: con la instancia despierta a propósito —31 peticiones seguidas— la conciliación corrió
+    a su hora y aplicó un pago. Lo que no se midió es el caso contrario, que es el que dev
+    acepta. **Y lo que sí se arregló es la
     página**: `docs/07` prometía un Cloud Scheduler que nadie usa, desde el primer commit del
     documento — la tercera frase de ese archivo que describía en presente algo que no existe.
 

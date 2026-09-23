@@ -22,6 +22,7 @@ import { usarCotizacionEnvio } from '../../application/cotizacion-envio.consulta
 import { CotizarEnvioComando } from '../../domain/envio.model';
 import { CrearPedidoComando } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido } from '../../domain/pedido.model';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { esMetodoPagoSistecredito, esMetodoPagoWompi } from '../../domain/reglas-pedido';
 import { urlWebCheckoutWompi } from '../../domain/wompi';
 
@@ -34,6 +35,13 @@ const CLAVE_ETIQUETA: Record<MetodoPago, string> = {
   TRANSFERENCIA_MANUAL: 'checkout.metodoPago.transferencia_manual',
   CONTRAENTREGA: 'checkout.metodoPago.contraentrega',
 };
+
+/**
+ * Los estados de Sistecredito de los que un pedido ya no sale (guia `G-ALI-08`). Todos significan
+ * lo mismo para quien compra: ese credito no se abrio y reintentar el mismo no lleva a ninguna
+ * parte. La lista es la misma que `SistecreditoClient` trata como terminal.
+ */
+const ESTADOS_DE_RECHAZO = new Set(['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed']);
 
 /**
  * Tercer y último paso antes de que exista el pedido (Fase 3, paso 4c de
@@ -67,6 +75,15 @@ export class ConfirmarPage {
   protected readonly checkout = inject(CheckoutStore);
 
   protected readonly error = signal<string | null>(null);
+
+  /**
+   * Un crédito rechazado no se arregla reintentando: la pantalla ofrece la única salida que hay,
+   * que es pagar con otro medio. Sin esto, el texto genérico invitaba a volver a pulsar
+   * "Confirmar pedido" y ese botón ya no puede funcionar — cuando la notificación de la pasarela
+   * llega, el pedido queda en `PAGO_FALLIDO` y el backend exige `PAGO_PENDIENTE` para abrir otro
+   * intento.
+   */
+  protected readonly rechazoDeCredito = signal(false);
 
   /**
    * La misma cotización que ya calculó el resumen. Comparte clave de consulta con aquella —ciudad
@@ -332,22 +349,42 @@ export class ConfirmarPage {
    * de `confirmar()` deja al comprador sin forma de volver a intentarlo.
    */
   /**
-   * El backend manda `codigoSistecredito` en el cuerpo del error justamente para esto: el `801`
-   * ("esa persona ya tiene una solicitud en curso") y el `802` ("el monto no alcanza") piden
-   * cosas distintas del comprador, y un mensaje genérico no le dice si vale la pena reintentar.
+   * El backend manda `codigoSistecredito` y `estadoSistecredito` en el cuerpo del error justamente
+   * para esto: el `801` ("esa persona ya tiene una solicitud en curso") y el `802` ("el monto no
+   * alcanza") piden cosas distintas del comprador, y un mensaje genérico no le dice si vale la
+   * pena reintentar.
    *
    * <p>El texto del proveedor no llega y no debe llegar: el del 801 habla del estado crediticio
    * de una persona. Lo que llega es el código, y el texto lo pone Transloco.
+   *
+   * <p><b>Se decide además por el estado, y no solo por el código</b>, porque los códigos de
+   * rechazo no son dos: la primera prueba con rechazo simulado contra dev, el 23 de septiembre de
+   * 2026, devolvió `codeResponse = 4`, que caía en el genérico —"revisa tus datos e intenta de
+   * nuevo"—. Ese consejo es falso dos veces: revisar los datos no cambia una decisión de crédito,
+   * y volver a pulsar tampoco sirve.
+   *
+   * <p>Y hasta ese día ni siquiera el `801` llegaba: `ErrorHttp` solo guardaba `codigo`, así que
+   * esta rama era código muerto. Ver `core/http/respuesta-http.ts`.
    */
   private mensajeDeError(error: unknown): string {
-    const codigo =
-      typeof error === 'object' && error !== null && 'codigoSistecredito' in error
-        ? String((error as { codigoSistecredito: unknown }).codigoSistecredito)
-        : null;
+    const datos = error instanceof ErrorHttp ? error.datos : {};
+    const codigo = datos['codigoSistecredito'] ?? null;
     if (codigo === '801' || codigo === '802') {
+      this.rechazoDeCredito.set(true);
       return this.transloco.translate(`checkout.confirmar.sistecredito_${codigo}`);
     }
+    if (ESTADOS_DE_RECHAZO.has(datos['estadoSistecredito'] ?? '')) {
+      this.rechazoDeCredito.set(true);
+      return this.transloco.translate('checkout.confirmar.sistecredito_rechazado');
+    }
+    this.rechazoDeCredito.set(false);
     return this.transloco.translate('checkout.confirmar.error');
+  }
+
+  /** A donde se manda a quien tiene que elegir otro medio, por el mismo camino que ya se usa
+   * cuando el documento se perdio en un refresh: una sola forma de llegar ahi. */
+  protected elegirOtroMetodo(): void {
+    void this.router.navigate(['../metodo-pago'], { relativeTo: this.route });
   }
 
   private async continuarSegunMetodoPago(pedido: Pedido): Promise<boolean> {

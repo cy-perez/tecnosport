@@ -96,7 +96,9 @@
     "envio_no_calculado": "We couldn't work out the shipping cost, so we cannot create this order yet. Try again in a few minutes, or go back and choose to pick it up at our Medellín location.",
     "envio_rechazado": "We can't send this order for home delivery, so we cannot create it with delivery. Go back and choose to pick it up at our Medellín location.",
     "sistecredito_801": "Sistecrédito already has a credit application in progress for that ID. Wait a few minutes and try again, or choose another payment method.",
-    "sistecredito_802": "Your purchase is below the minimum amount Sistecrédito finances. Add something to your cart or choose another payment method."
+    "sistecredito_802": "Your purchase is below the minimum amount Sistecrédito finances. Add something to your cart or choose another payment method.",
+    "sistecredito_rechazado": "Sistecrédito did not approve the credit for this purchase. Your order was saved; to pay for it, choose another payment method.",
+    "elegir_otro_metodo": "Choose another payment method"
   },
   "retornoWompi": {
     "verificando": "Checking your payment…",

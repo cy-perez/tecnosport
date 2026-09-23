@@ -138,6 +138,12 @@
       {{ error() }}
     </p>
 
+    @if (rechazoDeCredito()) {
+      <ts-boton class="mb-16 block" variante="secundario" (click)="elegirOtroMetodo()">
+        {{ 'checkout.confirmar.elegir_otro_metodo' | transloco }}
+      </ts-boton>
+    }
+
     <ts-boton
       class="block"
       variante="primario"

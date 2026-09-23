@@ -15,7 +15,8 @@ import {
 import { CarritoStore } from '../../../carrito/application/carrito.store';
 import { CheckoutStore } from '../../application/checkout.store';
 import { IntentoDePago } from '../../domain/intento-pago.model';
-import { IntentoSistecredito } from '../../domain/intento-sistecredito.model';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
+import { DocumentoComprador, IntentoSistecredito } from '../../domain/intento-sistecredito.model';
 import { CrearPedidoComando, DatosEntrega } from '../../domain/pedido.comandos';
 import { MetodoPago, Pedido, Seguimiento } from '../../domain/pedido.model';
 import { REPOSITORIO_PAGOS, RepositorioPagos } from '../../domain/repositorio-pagos.puerto';
@@ -130,6 +131,29 @@ class RepositorioPagosQueFalla implements RepositorioPagos {
   }
 }
 
+/**
+ * La pasarela rechazando el credito, con la forma exacta que el backend traduce: un 409 con
+ * `estadoSistecredito` y `codigoSistecredito` en el cuerpo. El codigo es `4` y no `801` ni `802`
+ * a proposito — es el que devolvio de verdad la prueba con rechazo simulado contra dev el 23 de
+ * septiembre de 2026, y es el que caia en el mensaje generico.
+ */
+class RepositorioPagosQueRechazaElCredito implements RepositorioPagos {
+  async crearIntento(): Promise<IntentoDePago> {
+    throw new Error('no usado en esta prueba');
+  }
+
+  async crearIntentoSistecredito(): Promise<IntentoSistecredito> {
+    throw new ErrorHttp(409, 'sin url de pago', 'SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO', {
+      codigoSistecredito: '4',
+      estadoSistecredito: 'Rejected',
+    });
+  }
+
+  async registrarIdTransaccion(): Promise<void> {
+    throw new Error('no usado en esta prueba');
+  }
+}
+
 class RepositorioPagosFalso implements RepositorioPagos {
   llamadasCrearIntento = 0;
 
@@ -200,7 +224,11 @@ function snapshotDePrueba(varianteId: string) {
 /** Mismo motivo que en `metodo-pago.page.spec.ts`: el guardia corre en el
  * primer `effect()`, así que los datos tienen que existir antes de que
  * `ConfirmarPage` se construya. */
-function anfitrionConDatos(metodoPago: MetodoPago, datos: DatosEntrega = DATOS_ENTREGA) {
+function anfitrionConDatos(
+  metodoPago: MetodoPago,
+  datos: DatosEntrega = DATOS_ENTREGA,
+  documento: DocumentoComprador | null = null,
+) {
   @Component({
     selector: 'app-anfitrion-de-prueba',
     imports: [ConfirmarPage],
@@ -212,6 +240,9 @@ function anfitrionConDatos(metodoPago: MetodoPago, datos: DatosEntrega = DATOS_E
     constructor() {
       this.checkout.guardarDatosEntrega(datos);
       this.checkout.elegirMetodoPago(metodoPago);
+      // Sin documento, la pantalla de Sistecredito se va a pedirlo y nunca llama a la pasarela:
+      // vive solo en memoria y no sobrevive a una recarga, a proposito.
+      this.checkout.anotarDocumentoComprador(documento);
     }
   }
   return AnfitrionDePrueba;
@@ -259,8 +290,9 @@ async function renderConDatos(
   pagos: RepositorioPagos = new RepositorioPagosFalso(),
   datos: DatosEntrega = DATOS_ENTREGA,
   envios: RepositorioEnvios = new RepositorioEnviosFalso(),
+  documento: DocumentoComprador | null = null,
 ) {
-  return render(anfitrionConDatos(metodoPago, datos), {
+  return render(anfitrionConDatos(metodoPago, datos, documento), {
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'checkout/es': esCheckout } as never,
@@ -696,5 +728,83 @@ describe('ConfirmarPage', () => {
     ).toBeTruthy();
     expect(carrito.carritoId()).toBe('carrito-1');
     expect(new CarritoIdLocalStorageAlmacen().leer()).toBe('carrito-1');
+  });
+
+  /**
+   * <b>Lo que ve quien pide un credito y se lo niegan.</b> Medido contra dev el 23 de septiembre
+   * de 2026 con el rechazo simulado: la pasarela devolvio `codeResponse = 4` y la pantalla dijo
+   * "No se pudo confirmar el pedido. Revisa tus datos e intenta de nuevo". Las dos mitades de ese
+   * consejo son falsas —los datos no tienen nada que ver con una decision de credito, y volver a
+   * pulsar tampoco sirve porque el pedido queda en PAGO_FALLIDO en cuanto llega la notificacion—.
+   */
+  it('un credito rechazado se cuenta como lo que es y ofrece la unica salida que hay', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'SISTECREDITO',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'SISTECREDITO' })),
+      new RepositorioPagosQueRechazaElCredito(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      { tipoDocumento: 'CC', documento: '1017254896' },
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.sistecredito_rechazado)).toBeTruthy();
+    expect(screen.queryByText(esCheckout.confirmar.error)).toBeFalsy();
+    expect(
+      screen.getByRole('button', { name: esCheckout.confirmar.elegir_otro_metodo }),
+    ).toBeTruthy();
+  });
+
+  /** Y la salida lleva a donde se elige el medio, por el mismo camino que usa el resto del archivo. */
+  it('la salida del rechazo lleva a elegir otro medio de pago', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'SISTECREDITO',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosFalso(pedidoDePrueba({ metodoPago: 'SISTECREDITO' })),
+      new RepositorioPagosQueRechazaElCredito(),
+      DATOS_ENTREGA,
+      new RepositorioEnviosFalso(),
+      { tipoDocumento: 'CC', documento: '1017254896' },
+    );
+    await esperarCarritoCargado(fixture);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+    await screen.findByText(esCheckout.confirmar.sistecredito_rechazado);
+
+    const router = fixture.debugElement.injector.get(Router);
+    const navegar = vi.spyOn(router, 'navigate');
+    fireEvent.click(screen.getByRole('button', { name: esCheckout.confirmar.elegir_otro_metodo }));
+
+    await vi.waitFor(() =>
+      expect(navegar).toHaveBeenCalledWith(['../metodo-pago'], expect.anything()),
+    );
+  });
+
+  /** Un fallo que no es un rechazo se queda con el texto de siempre, y sin salida que ofrecer. */
+  it('un fallo cualquiera no se disfraza de rechazo de credito', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+
+    const { fixture } = await renderConDatos(
+      'NEQUI',
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioPedidosQueFalla(),
+    );
+    await esperarCarritoCargado(fixture);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar pedido' }));
+
+    expect(await screen.findByText(esCheckout.confirmar.error)).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: esCheckout.confirmar.elegir_otro_metodo }),
+    ).toBeFalsy();
   });
 });
