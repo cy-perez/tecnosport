@@ -336,4 +336,17 @@ describe('BandejaRevisionPage', () => {
 
     await esperarSinViolaciones(container);
   });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. La region tiene que estar en el DOM antes de
+   * tener algo que decir, asi que esta prueba falla si alguien la vuelve a meter dentro de la
+   * condicion que la llena.
+   */
+  it('deja la region viva en su sitio aunque no tenga nada que decir', async () => {
+    await renderBandeja({ guias: [guia()] });
+    await screen.findByText(/034054505967/);
+
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
+  });
 });

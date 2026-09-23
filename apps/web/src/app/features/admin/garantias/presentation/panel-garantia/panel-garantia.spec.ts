@@ -73,10 +73,7 @@ class RepositorioGarantiasFalso implements RepositorioGarantias {
   }
 }
 
-async function renderPanel(
-  reclamaciones: ReclamacionGarantia[] = [],
-  estadoPedido = 'ENTREGADO',
-) {
+async function renderPanel(reclamaciones: ReclamacionGarantia[] = [], estadoPedido = 'ENTREGADO') {
   const repositorio = new RepositorioGarantiasFalso(reclamaciones);
   const resultado = await render(PanelGarantia, {
     inputs: {
@@ -205,5 +202,18 @@ describe('PanelGarantia', () => {
     await screen.findByRole('button', { name: 'Resolver garantía' });
 
     await esperarSinViolaciones(container);
+  });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. La region tiene que estar en el DOM antes de
+   * tener algo que decir, asi que esta prueba falla si alguien la vuelve a meter dentro de la
+   * condicion que la llena.
+   */
+  it('deja la region viva en su sitio aunque no tenga nada que decir', async () => {
+    await renderPanel([]);
+    await screen.findByRole('button', { name: 'Radicar garantía' });
+
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
   });
 });
