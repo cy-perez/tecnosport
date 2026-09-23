@@ -54,11 +54,9 @@ public final class IniciarSesion {
 
     CorreoElectronico correo = new CorreoElectronico(comando.correo());
     Instant ahora = reloj.ahora();
+    String llaveDelLimite = "cuenta:iniciar-sesion:" + correo.valor();
     if (!limitadorDeIntentos.permitir(
-        "cuenta:iniciar-sesion:" + correo.valor(),
-        maximoIntentosPorCuenta,
-        ventanaIntentosPorCuenta,
-        ahora)) {
+        llaveDelLimite, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
       throw new LimiteDeIntentosExcedidoException();
     }
 
@@ -67,6 +65,14 @@ public final class IniciarSesion {
             .buscarPorCorreo(correo)
             .filter(u -> codificadorDeClaves.verificar(comando.claveTextoPlano(), u.claveHash()))
             .orElseThrow(CredencialesInvalidasException::new);
+
+    // El límite cuenta intentos fallidos SEGUIDOS. Sin esta línea contaba intentos a secas,
+    // aciertos incluidos —`permitir` cuenta antes de verificar, porque contar y comprobar en una
+    // sola sentencia es lo que cierra la carrera—, así que entrar, salir y volver a entrar tres
+    // veces agotaba los cinco sin que nadie se equivocara una sola vez. Medido el 22 de
+    // septiembre de 2026 probando el cambio de clave del panel: trece intentos contados, la clave
+    // correcta todas las veces, y la cuenta bloqueada quince minutos.
+    limitadorDeIntentos.olvidar(llaveDelLimite);
 
     if (!usuario.correoVerificado()) {
       throw new CorreoSinVerificarException();

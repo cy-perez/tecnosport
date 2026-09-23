@@ -64,6 +64,33 @@ class IniciarSesionTest {
   }
 
   @Test
+  void unLoginExitosoOlvidaElConteoDeIntentos() {
+    // El límite cuenta intentos fallidos SEGUIDOS, no intentos a secas. `permitir` cuenta antes
+    // de verificar —contar y comprobar en una sola sentencia es lo que cierra la carrera—, así
+    // que sin este olvido entrar, salir y volver a entrar agota los cinco sin un solo error.
+    IniciarSesion caso = crear();
+    conUsuarioAdmin("clave-correcta");
+
+    caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-correcta"));
+
+    assertEquals(
+        java.util.List.of("cuenta:iniciar-sesion:admin@tecnosport.co"),
+        limitadorDeIntentos.olvidadas());
+  }
+
+  @Test
+  void unaClaveEquivocadaNoOlvidaNada() {
+    IniciarSesion caso = crear();
+    conUsuarioAdmin("clave-correcta");
+
+    assertThrows(
+        CredencialesInvalidasException.class,
+        () -> caso.ejecutar(new IniciarSesionComando("admin@tecnosport.co", "clave-incorrecta")));
+
+    assertEquals(java.util.List.of(), limitadorDeIntentos.olvidadas());
+  }
+
+  @Test
   void correoInexistenteLanzaCredencialesInvalidas() {
     IniciarSesion caso = crear();
 

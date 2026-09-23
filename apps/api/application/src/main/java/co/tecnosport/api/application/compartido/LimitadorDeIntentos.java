@@ -18,4 +18,22 @@ public interface LimitadorDeIntentos {
    * no hay dinero ni existencia en juego.
    */
   boolean permitir(String clave, int maximoIntentos, Duration ventana, Instant ahora);
+
+  /**
+   * Borra el conteo de una llave. La llaman los casos de uso que verifican un secreto —{@code
+   * IniciarSesion} y {@code CambiarClave}— en cuanto ese secreto resulta correcto, para que el
+   * límite cuente intentos <b>fallidos seguidos</b> y no intentos a secas.
+   *
+   * <p>Hace falta porque {@link #permitir} cuenta y comprueba en la misma sentencia atómica, y eso
+   * es a propósito: preguntar primero y contar después reabre la carrera que esa sentencia cierra.
+   * El precio es que el acierto también suma, y el precio se paga aquí, después de saber que
+   * acertó.
+   *
+   * <p>No la llaman {@code RegistrarUsuario}, {@code SolicitarRecuperacion} ni {@code CrearPedido}:
+   * ahí un "acierto" no prueba que quien llama conozca ningún secreto, así que borrar el conteo
+   * dejaría el límite sin efecto — que es justo lo que esos tres frenan.
+   *
+   * <p>Idempotente: borrar un conteo que no existe no hace nada.
+   */
+  void olvidar(String clave);
 }

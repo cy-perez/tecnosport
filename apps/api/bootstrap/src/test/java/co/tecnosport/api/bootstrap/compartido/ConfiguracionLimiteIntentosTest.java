@@ -68,8 +68,23 @@ class ConfiguracionLimiteIntentosTest {
     assertTrue(rutas.contains("/api/v1/auth/sesion"));
   }
 
+  /**
+   * Clase anónima y no una lambda: el puerto dejó de ser una interfaz funcional el día que sumó
+   * {@code olvidar}. Esta prueba mira qué rutas llevan techo, así que le da igual qué responda.
+   */
   private LimitadorDeIntentos limitador() {
-    return (llave, maximo, ventana, ahora) -> true;
+    return new LimitadorDeIntentos() {
+      @Override
+      public boolean permitir(
+          String clave, int maximoIntentos, java.time.Duration ventana, Instant ahora) {
+        return true;
+      }
+
+      @Override
+      public void olvidar(String clave) {
+        // Sin efecto: esta prueba no mira el conteo.
+      }
+    };
   }
 
   private co.tecnosport.api.application.compartido.Reloj reloj() {

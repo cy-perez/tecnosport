@@ -152,4 +152,42 @@ class LimitadorDeIntentosJpaTest {
     assertThat(limitador.permitir(claveA, 1, VENTANA, ahora)).isFalse();
     assertThat(limitador.permitir(claveB, 1, VENTANA, ahora)).isTrue();
   }
+
+  @Test
+  void olvidarDevuelveElPresupuestoEntero() {
+    Instant ahora = Instant.now();
+    String clave = claveNueva();
+    limitador.permitir(clave, 2, VENTANA, ahora);
+    limitador.permitir(clave, 2, VENTANA, ahora);
+    assertThat(limitador.permitir(clave, 2, VENTANA, ahora)).isFalse();
+
+    limitador.olvidar(clave);
+
+    // Entero y no uno menos: el conteo se borra, no se decrementa. Es lo que convierte el
+    // limite en "fallidos seguidos".
+    assertThat(limitador.permitir(clave, 2, VENTANA, ahora)).isTrue();
+    assertThat(limitador.permitir(clave, 2, VENTANA, ahora)).isTrue();
+    assertThat(limitador.permitir(clave, 2, VENTANA, ahora)).isFalse();
+  }
+
+  @Test
+  void olvidarUnaClaveQueNoExisteNoHaceNada() {
+    // Idempotente: lo dice el puerto, y hace falta porque IniciarSesion olvida en cada acierto
+    // sin mirar si habia algo que olvidar.
+    limitador.olvidar(claveNueva());
+  }
+
+  @Test
+  void olvidarNoTocaElPresupuestoDeOtraClave() {
+    Instant ahora = Instant.now();
+    String claveA = claveNueva();
+    String claveB = claveNueva();
+    limitador.permitir(claveA, 1, VENTANA, ahora);
+    limitador.permitir(claveB, 1, VENTANA, ahora);
+
+    limitador.olvidar(claveA);
+
+    assertThat(limitador.permitir(claveA, 1, VENTANA, ahora)).isTrue();
+    assertThat(limitador.permitir(claveB, 1, VENTANA, ahora)).isFalse();
+  }
 }

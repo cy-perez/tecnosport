@@ -65,11 +65,9 @@ public final class CambiarClave {
     // Por cuenta y no por IP: el atacante que importa aquí es quien ya se sentó delante de una
     // sesión abierta y prueba claves actuales para quedarse con la cuenta, y ese llega siempre
     // desde la misma máquina que el dueño.
+    String llaveDelLimite = "cuenta:cambiar-clave:" + comando.usuarioId();
     if (!limitadorDeIntentos.permitir(
-        "cuenta:cambiar-clave:" + comando.usuarioId(),
-        maximoIntentosPorCuenta,
-        ventanaIntentosPorCuenta,
-        ahora)) {
+        llaveDelLimite, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
       throw new LimiteDeIntentosExcedidoException();
     }
 
@@ -79,6 +77,9 @@ public final class CambiarClave {
             .filter(
                 u -> codificadorDeClaves.verificar(comando.claveActualTextoPlano(), u.claveHash()))
             .orElseThrow(CredencialesInvalidasException::new);
+
+    // Intentos fallidos seguidos, igual que en IniciarSesion y por el mismo motivo.
+    limitadorDeIntentos.olvidar(llaveDelLimite);
 
     usuario.cambiarClave(codificadorDeClaves.codificar(comando.claveNuevaTextoPlano()));
     repositorioUsuarios.guardar(usuario);

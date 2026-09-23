@@ -99,6 +99,17 @@ class CambiarClaveTest {
   }
 
   @Test
+  void unCambioExitosoOlvidaElConteoDeIntentos() {
+    CambiarClave caso = crear();
+    Usuario usuario = conAdmin("clave-vieja");
+
+    caso.ejecutar(new CambiarClaveComando(usuario.id(), "clave-vieja", "clave-nueva"));
+
+    assertEquals(
+        java.util.List.of("cuenta:cambiar-clave:" + usuario.id()), limitadorDeIntentos.olvidadas());
+  }
+
+  @Test
   void laClaveActualIncorrectaNoCambiaNadaNiCierraSesiones() {
     CambiarClave caso = crear();
     Usuario usuario = conAdmin("clave-vieja");
