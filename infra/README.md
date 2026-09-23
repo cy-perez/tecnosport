@@ -60,6 +60,46 @@ terraform apply
   contenido: lo que se le pasa por variable acaba escrito en el estado, y el estado está en un
   bucket. Las versiones se cargan con `gcloud secrets versions add`.
 
+## Reiniciar un servicio sin dejar deriva
+
+`gcloud run services update ... --update-labels reinicio=r2` reinicia, sí, y deja una etiqueta
+puesta a mano que **no se va nunca sola**. La que hubo en la API de dev sobrevivió once despliegues
+—de la generación 78 a la 89— porque `gcloud run deploy` conserva las etiquetas del servicio: no
+fue que nadie aplicara Terraform, fue que nada la iba a quitar.
+
+Para forzar una revisión nueva sin residuo se vuelve a desplegar la imagen que ya corre:
+
+```
+imagen=$(gcloud run services describe tecnosport-api --region us-east1 --format='value(spec.template.spec.containers[0].image)')
+gcloud run deploy tecnosport-api --region us-east1 --image "$imagen"
+```
+
+`spec.template.spec.containers` y no `template.containers`: `describe` devuelve el objeto al estilo
+Knative, no la forma de la API v2 que usa Terraform. El mismo detalle que ya tropezó el paso de
+migraciones del despliegue.
+
+### Las etiquetas del servicio no salen en el `plan`
+
+Las dos etiquetas de un servicio de Cloud Run se comportan al revés una de la otra:
+
+- **`template.labels` es autoritativo**, como cualquier campo normal: lo que no esté en el código
+  sale en el `plan` y el `apply` lo retira.
+- **`labels` del servicio no lo es.** El provider solo administra las llaves escritas en el código,
+  así que una agregada por fuera se queda para siempre y **ningún `terraform plan` la menciona**
+  —el mismo trampolín que `google_storage_bucket_iam_member`, que solo añade y nunca quita, y esta
+  vez sin un `_binding` al que cambiarse: el campo no tiene modo autoritativo.
+
+Para ver lo que la mano dejó y el `plan` esconde, en `envs/dev`:
+
+```
+terraform plan -refresh-only
+```
+
+Ahí aparece dentro de `effective_labels`. Quitarlo exige gcloud —`--remove-labels reinicio`, nunca
+`--clear-labels`, que se llevaría también `goog-terraform-provisioned`, que sí es de Terraform— y
+después un `apply`, para que Terraform tenga la última palabra. Cerrado así el 23 de septiembre de
+2026.
+
 ## Autenticación
 
 GitHub Actions se autentica con Workload Identity Federation. No existe ninguna llave JSON de
