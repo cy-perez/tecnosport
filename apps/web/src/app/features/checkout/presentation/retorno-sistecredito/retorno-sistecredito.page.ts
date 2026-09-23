@@ -49,8 +49,16 @@ export class RetornoSistecreditoPage {
     // A la pantalla de estado, que es la que consulta la verdad. Lo que trae la pasarela en la
     // URL (`paymentRef`, `transactionId`, `orderId`) no se usa para nada: no decide un pago, y el
     // backend ya guardó el id de la transacción al crear el intento.
-    void this.router.navigate(['../../../estado'], {
-      relativeTo: this.route,
+    //
+    // **Relativo al padre —la ruta `checkout`— y no a esta.** Esta ruta consume cuatro segmentos
+    // (`sistecredito/retorno/:pedidoId/:correo`), así que un camino relativo a ella hay que
+    // contarlo, y contarlo mal no falla ruidosamente: sube a una ruta que no existe, la comodín
+    // redirige a `/es` y el comprador aterriza en la portada justo después de pagar. Pasó —se
+    // midió contra dev el 23 de septiembre de 2026 con `['../../../estado']`, que dejaba
+    // `/es/checkout/sistecredito/estado`—. Desde el padre no hay nada que contar, y el prefijo de
+    // idioma viaja solo porque ya está en su URL.
+    void this.router.navigate(['estado'], {
+      relativeTo: this.route.parent,
       queryParams: { pedidoId, correo },
     });
   }
