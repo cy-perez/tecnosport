@@ -8298,6 +8298,73 @@ pasado con cualquier alerta en pantalla.
 la cortesía y no el `@if`—. Ver la entrada de abajo y la deuda 16, ya cerrada. Esta clasificación
 queda como lo que era: el mapa con el que se paró a tiempo.
 
+## El bucket deja de ser uno para dos ambientes (2026-09-23)
+
+La deuda 29 se cerró el 22 por la vía barata: el informe de huérfanos aprendió a leer
+`catalogo/cargados.json` y a decir "esto es de otro ambiente, no lo juzgo" en vez de proponerlo para
+borrar. Ahí quedó escrito que la vía cara seguía sobre la mesa. Esta entrada es la vía cara, y lo
+primero que hizo fue corregir el enunciado de por qué existía el problema.
+
+### No era `.env.local`: era un valor por omisión
+
+`application.yml` caía en `tecnosport-dev-imagenes` cuando no había variable — el bucket del
+**ambiente desplegado**. Así que un `bootRun` en esta máquina sin `.env.local`, o con el `.env.local`
+copiado del ejemplo, escribía allá sin que nadie lo hubiera decidido. El reparto medido el 23: **648
+objetos, 348 de los 29 productos de local y 300 de los 25 de dev**, todos bajo `productos/` y
+**ninguno bajo `rotacion/`** — ese cero es el que dice que la migración cabe entera en
+`--rehacer-imagenes` y que no hay ningún set de fotos fuera de ese camino.
+
+El valor por omisión pasa a ser el de local, y el argumento es corto: describe dónde corre el proceso
+que lo lee por omisión, que es esta máquina. El ambiente desplegado fija sus variables desde
+Terraform y nunca dependió de esa línea.
+
+### Un dueño por bucket, y un script que se niega
+
+`infra/dev/bucket-imagenes.mjs` pasa a `infra/local/bucket-imagenes.mjs` —no es dev, es la máquina de
+quien programa— y **rechaza** `tecnosport-dev-imagenes` y `tecnosport-prod-imagenes` en vez de
+obedecer. Lo que ese script hace es configuración de ambiente: CORS, ciclo de vida, lectura pública,
+una cuenta con `objectAdmin`. Con el nombre saliendo de `.env.local`, correrlo con la variable
+apuntando a dev le reconfiguraba el CORS al ambiente desplegado, y eso no debe poder pasar sin
+querer.
+
+El del ambiente desplegado pasa a Terraform, importado **tal como estaba**. El `plan` después de
+importar no propuso ni un cambio, y eso es lo único que prueba que la declaración es fiel; si hubiera
+propuesto reemplazo, se habría llevado las 300 imágenes vivas de dev. Lleva `prevent_destroy`.
+
+### Lo que apareció al declararlo, y no al leerlo
+
+**El CORS del bucket de dev admitía `http://localhost:4200` y no el origen de su propia web.** Subir
+una foto desde el panel desplegado, con el ratón, moría en el preflight. Llevaba así desde que el
+bucket existe y nadie lo notó porque **las cargas del catálogo las hizo el cargador desde Node**, que
+firma sin navegador y por eso nunca pasa por un preflight. Es la misma forma de fallo que el proyecto
+ya conoce: lo que solo se usa por una herramienta no se prueba por donde lo usa una persona.
+
+`localhost` no vuelve a ese bucket. El navegador en local siempre habla con la API de local —base
+relativa y `proxy.conf.json`—, así que una subida desde `localhost` va al bucket de local y pide el
+CORS del otro bucket.
+
+### Lo que no se borró
+
+**El cruce por ambiente del informe de huérfanos se queda.** Con los buckets separados tiene que
+informar cero, y ese cero es la comprobación de que la separación sigue en pie; si algún día aparece
+con objetos, no es información, es que alguien volvió a apuntar local al bucket de dev. Quitar el
+guardián justo después de arreglar lo que vigilaba deja el informe listo para volver a proponer el
+borrado que rompe el otro lado.
+
+### Lo que queda por ejecutar, y por qué no está hecho
+
+El código y la declaración están escritos; los cuatro pasos que tocan GCP y el disco no se
+ejecutaron en esta sesión —el `.env.local` lo edita el dueño de la máquina y los dos comandos que
+escriben en GCP quedaron denegados—. El runbook completo, con su orden y el motivo de cada paso, está
+en `ADR-0058`: crear el bucket de local, aplicar el CORS de dev con `-target`, retirarle a la cuenta
+vieja el `objectAdmin` sobre el bucket de dev, rehacer las imágenes de local y borrar los 348 viejos
+con el informe.
+
+**Y una deriva ajena que el `plan` destapó y que no se tocó**: el servicio de Cloud Run de la API de
+dev tiene etiquetas puestas a mano (`reinicio=r2`), que Terraform quiere quitar. Alguien reinició el
+servicio con `gcloud`. Aplicarlo de paso, dentro de un trabajo sobre un bucket, habría sido un
+despliegue no pedido; por eso el `apply` va con `-target`.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8339,7 +8406,8 @@ usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. S
 Ver la entrada de arriba.
 
 Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
-objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
+objeto, así que su lista pasó de 304 a 4 contra el mismo bucket; el 23 se cerró además por la vía
+cara, con un bucket por ambiente— y la **30**, que al abrirla resultó
 ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
 por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Se cerró la **10** —el inventario
 deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y **se cerró la
@@ -8644,8 +8712,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
     correr el informe contra dev con el catálogo local cargado; mientras la cifra de "sin reclamar"
     incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
     salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
-    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y la
-    cara sigue sobre la mesa: un bucket por ambiente haría innecesario todo este cruce.
+    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y **la
+    cara se tomó el 23 de septiembre**: hay un bucket por ambiente (`ADR-0058`), y el cruce se queda
+    de todas formas como la comprobación de que siguen separados. Ver la entrada de arriba.
 
 ### Lo que dejó abierto cerrar la deuda 28
 
