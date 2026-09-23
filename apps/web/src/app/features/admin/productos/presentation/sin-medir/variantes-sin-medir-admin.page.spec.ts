@@ -137,4 +137,18 @@ describe('VariantesSinMedirAdminPage', () => {
 
     await esperarSinViolaciones(fixture.nativeElement);
   });
+
+  /**
+   * El acuse vive siempre en el DOM y lo que cambia es su contenido: un `role="status"` que nace
+   * ya lleno no lo anuncia NVDA (`docs/06-testing.md`). Y el resumen de la tabla ya no es una
+   * region viva, porque cada revalidacion en segundo plano lo volveria a leer en voz alta.
+   */
+  it('deja el acuse en su sitio aunque no haya nada medido, y el resumen fuera de la region', async () => {
+    await renderPagina([sinMedir()]);
+    await screen.findByText('Moto G17');
+
+    const regiones = screen.getAllByRole('status');
+    expect(regiones).toHaveLength(1);
+    expect(regiones[0].textContent?.trim()).toBe('');
+  });
 });

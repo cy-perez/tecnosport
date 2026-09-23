@@ -214,6 +214,218 @@ contraste con **`npm run contrastes`**, que calcula los pares reales de
 una clase verificable con `npm run clases` — que desde el 21 de septiembre de 2026, sin
 argumentos, barre el frontend entero en vez de responder por una clase a la vez.
 
+### El guion de NVDA, y lo que midió
+
+La regla de `apps/web/CLAUDE.md` dice que una región viva vive siempre en el DOM
+y lo que cambia es su contenido. El 22 de septiembre de 2026 se midió: de las
+114 regiones del frontend cumplían 5, se cerró la clase A —15 sitios, los que
+preguntan por la misma señal que el párrafo pinta, `ts-campo` y `ts-select`
+incluidos— y **se paró ahí a propósito**. Las 99 que quedan son de tres clases
+distintas, treinta plantillas, y se harían para satisfacer una regla **cuyo
+efecto real nadie ha observado nunca**: eso es refactorizar contra una creencia.
+
+Este guion era la observación que faltaba. **Se corrió el 22 de septiembre de
+2026 y el resultado está al final**: no fue el que se esperaba, y encogió el
+trabajo pendiente a un tercio. Queda escrito porque hay que repetirlo cada vez
+que se toque una región viva, y porque las dos trampas que costó descubrir se
+repiten igual.
+
+Son **treinta minutos con NVDA** y cinco pruebas, cada una sobre una pantalla que
+ya existe. **Ninguna gasta dinero ni escribe nada**: no emite guías, no cuenta
+inventario, no manda correos.
+
+#### El montaje, que es la mitad del trabajo
+
+1. **NVDA** de `nvaccess.org`, gratis. La versión portable no instala nada y
+   sirve igual.
+2. **El visor de voz encendido**: menú de NVDA (`NVDA+N`) → Herramientas →
+   Visor de voz. Es **el instrumento**, no una comodidad: convierte "me pareció
+   oír algo" en un registro de texto que se copia y se pega aquí. Sin él, el
+   resultado de esta sesión es un recuerdo.
+3. La tecla `NVDA` es `Insert` (o `Bloq Mayús`, si así quedó configurada).
+   `Ctrl` calla la voz cuando estorbe; `NVDA+Espacio` alterna modo navegación y
+   modo foco.
+4. **Chrome, con la pestaña visible y con el foco.** Una pestaña en segundo
+   plano no corre `requestAnimationFrame`, así que todo lo que dependa del foco
+   da falso negativo — el mismo tropiezo ya documentado para las comprobaciones
+   de foco a mano.
+5. El sitio arriba: `npm run dev --workspace=apps/web` y `gradlew.bat bootRun`,
+   o directamente el ambiente `dev`.
+6. **Estrangula la red** en las herramientas de desarrollo (pestaña Red, el
+   desplegable de "Sin limitación" a la opción más lenta) **antes de las pruebas
+   3 y 5**. En local un estado de carga dura cincuenta milisegundos y no hay
+   nada que oír: la prueba saldría negativa por la máquina, no por el código.
+
+**La prueba de control va primero**: abre `/es` y baja con las flechas. Si el
+visor de voz no escribe nada, lo que falla es el montaje y ninguna de las cinco
+pruebas siguientes significa nada.
+
+#### Las cinco pruebas
+
+Cada una trae **qué se hace**, **qué mirar** y **qué decide**. Anota la línea
+del visor de voz, o su ausencia, que es un dato igual de bueno.
+
+**1. La clase A, ya arreglada, sin foco de por medio** — `/es/admin/iniciar-sesion`.
+Escribe el correo y una clave equivocada, y pulsa Entrar **una sola vez** (el
+limitador cuenta intentos fallidos seguidos; a la quinta bloquea).
+El `<p role="alert">` de esa pantalla vive siempre en el DOM y pasa de vacío a
+lleno, que es exactamente el patrón que se aplicó en los 15 sitios.
+**Qué mirar:** si el visor escribe el mensaje de error **sin que el foco se haya
+movido** — se queda en el botón.
+**Qué decide:** si no se anuncia, el arreglo de la clase A **no sirvió** y la
+deuda 16 se reabre con otro enunciado, porque el problema no sería el `@if`.
+
+**2. La clase C, un estado de pantalla entero** — `/es/cuenta/verificar-correo?token=nosirve`.
+El `@switch` pasa por `cargando` y cae en `error`: dos regiones que **nacen ya
+llenas**, una `role="status"` y otra `role="alert"`, más un `<h1>` que no está
+en ninguna región y sirve de contraste.
+**Qué mirar:** el paso de una a la otra. **El "Cargando" de esta pantalla no
+cuenta** —se pinta mientras la página todavía está cargando, y ahí ninguna región
+viva se anuncia—; lo que mide es si el mensaje de error, que aparece después, se
+lee solo. Si además se lee el `<h1>`, es porque NVDA leyó el bloque entero por
+otra razón y hay que anotarlo.
+**Qué decide:** las 23 de la clase C.
+
+**3. La clase D, el "cargando" que nadie ha oído** — `/es/admin/atencion`, con la
+red estrangulada. **No recargues con `F5`**: una región viva que ya está en la
+página cuando termina de cargar no se anuncia nunca, por especificación, y la
+prueba saldría negativa por el método. Se pulsa uno de los filtros de arriba
+—Pendientes, Respondidas—, que relanza la consulta sin recargar la página.
+Es un `<p role="status">Cargando…</p>` dentro del `@if` que lo llena, y el
+"no hay solicitudes" del `@else if` es otro: el patrón que la regla prohíbe, en
+el sitio donde más se repite.
+**Qué mirar:** si dice "Cargando" antes de decir el resultado, si dice solo el
+resultado, o si no dice nada.
+**Qué decide:** las 71 de la clase D, que son las que más diff valen.
+
+**4. La clase B, una región que es de la fila y no de la pantalla** —
+`/es/admin/productos/existencias`. Abre "Contar" en cualquier fila y pulsa
+guardar **con el formulario vacío**: sale `faltanCampos`, que llena un
+`role="alert"` que vive dentro del `@for`. No manda nada al servidor y no
+registra ningún movimiento de inventario.
+**Qué mirar:** si se anuncia, y si al repetirlo en una segunda fila se vuelve a
+anunciar o NVDA lo trata como la misma región.
+**Qué decide:** las 5 de la clase B, y de paso si la salida es una región de
+página en vez de cinco de fila.
+
+**5. El contraste que separa la región viva del foco** — `/es/admin/productos`,
+publicar o retirar un producto (reversible, y en `dev`).
+El acuse `#avisoLista` es permanente **y además recibe el foco**.
+**Qué mirar:** se va a anunciar, casi seguro. La pregunta es otra: **cuando el
+foco se mueve a un nodo, NVDA lo lee por el foco, no por `role="status"`.**
+**Qué decide:** nada por sí sola — sirve para no confundir las dos causas al
+leer las otras cuatro. Es la prueba que evita concluir de más. **No se corrió el
+22 de septiembre**: publicar escribe, y la sonda del final ya contrastó lo mismo
+sin tocar datos.
+
+#### Lo que se midió, el 22 de septiembre de 2026
+
+NVDA 2025.3.3 portable, nivel de registro en "Entrada/salida", Chrome al frente,
+el sitio en local contra la API local. Cada prueba se aisló marcando el registro
+antes de actuar y leyendo solo las líneas nuevas. **El registro no dice lo que
+una persona oyó: dice lo que NVDA mandó al sintetizador.** Para esta pregunta es
+mejor, porque da el texto literal y no depende de la memoria de nadie.
+
+Las cuatro pruebas dieron un resultado que **no es el que el plan daba por
+probable**, y que se ordena solo en cuanto se separa la cortesía de la
+permanencia:
+
+| | región permanente, cambia el contenido | nace ya llena dentro del `@if` |
+|---|---|---|
+| `role="alert"` (asertiva) | **se anuncia** | **se anuncia** |
+| `role="status"` (cortés) | **se anuncia** | **calla** |
+
+Las líneas que lo sostienen:
+
+- **Prueba 1**, login del panel con la clave equivocada — `Speaking ['Correo o
+  clave incorrectos. ']`, sin que el foco se moviera.
+- **Prueba 2**, `verificar-correo` con un token inválido — `Speaking ['alert',
+  'El enlace no es válido o ya venció…']`, y esa región **nace ya llena** dentro
+  del `@switch`.
+- **Prueba 4**, guardar un conteo con el formulario vacío — `Speaking ['alert',
+  'Faltan las unidades contadas o el motivo…']`, una región que nace dentro de un
+  `@if` **dentro de un `@for`**.
+- **Prueba 3**, el acuse de reenvío de verificación — el `role="status"` aparece
+  en el árbol de accesibilidad y el registro **no escribe una sola línea**.
+- **La sonda**, que es la celda que ninguna pantalla ofrece limpia: se insertó un
+  `<p role="status">` vacío, se dejó asentar tres segundos y se le puso texto →
+  `Speaking ['sonda permanente cortes llenada despues ']`. La misma región
+  insertada **ya con texto** → silencio. Sin foco de por medio en ninguno de los
+  dos casos.
+
+#### Lo que esto decide
+
+**La regla de `apps/web/CLAUDE.md` es cierta, y solo para las regiones
+corteses.** Para un `role="alert"` da exactamente igual dónde nazca: el lector lo
+anuncia igual. Y eso **encoge el trabajo pendiente a un tercio**: de las 111
+regiones vivas de hoy, 74 son `role="alert"` y no hay nada que hacerles. De las
+37 corteses, 6 ya son permanentes por construcción y **31 nacen dentro de un
+`@if`, un `@for` o un `@switch`** — esas son las que hay que arreglar, no 99.
+Están concentradas: 8 en el asistente de captura 360, 4 en el panel, 3 en el
+panel de retractos, 2 en cada bandeja.
+
+Tocar las de `role="alert"` sería diff sin efecto, que es justo lo que este
+guion existía para evitar.
+
+#### Dos trampas del método, que costaron dos pruebas
+
+- **NVDA lee la página entera al cargarla** ("say all" automático, que viene
+  encendido de fábrica) y ese modo **se traga los anuncios corteses que lleguen
+  mientras lee**. Dos intentos de la prueba 3 salieron en blanco por esto antes
+  de entender qué pasaba. Hay que dejar que termine, o medir sobre una acción y
+  no sobre una carga.
+- **Una región viva que ya está en la página cuando termina de cargar no se
+  anuncia nunca**, por especificación. Por eso la prueba 3 se hace pulsando algo,
+  nunca con `F5`, y por eso el "Cargando" de `verificar-correo` no cuenta como
+  medición.
+
+Y una tercera que no es del método sino de la máquina: en local un estado de
+carga dura cincuenta milisegundos. Las dos bandejas que se intentaron tenían
+datos y el "Cargando" no llegó a existir el tiempo suficiente. Para medir ese
+caso en concreto hay que estrangular la red antes.
+
+#### Un defecto que apareció de paso, y no es de las 111
+
+En la rejilla del catálogo, el mensaje **"No encontramos productos con estos
+filtros"** no es una región viva: es un `<p>` sin `role`. NVDA calló con razón.
+Quien filtra con un lector de pantalla y se queda sin resultados no se entera de
+nada — la rejilla simplemente deja de tener tarjetas. No estaba en las 114
+contadas porque no tiene `role` que contar, que es exactamente por qué no se vio.
+
+#### Lo que se hizo con el resultado, el mismo dia
+
+Los 27 sitios se arreglaron en cinco commits, con tres formas segun lo que la caja pinte:
+
+- **Parrafo sin fondo** → la region se queda y el `@if` se mete dentro. Es lo que ya hacia
+  `cambiar-clave-admin.page.html` antes de la medicion.
+- **Caja con borde o relleno** → un envoltorio permanente alrededor, y la caja sigue condicional.
+  Una caja vacia permanente con `p-16` pintaria una barra de color, y eso jsdom no lo atrapa.
+- **Contenedor `flex` con `gap`** → el envoltorio lleva `contents`, porque un hijo vacio con caja
+  propia abriria un hueco fijo del tamano del `gap`.
+
+**El primer intento del asistente 360 fue una sola region `sr-only` con los textos repetidos, y se
+descarto midiendo**: duplicaba el contenido en el DOM —rompio cinco pruebas que buscaban un texto y
+encontraban dos— y un lector de pantalla lo habria leido dos veces al recorrer la pantalla. Que una
+region viva no duplique contenido visible no es una preferencia de estilo: es lo que evita que todo
+se oiga dos veces.
+
+**Cada pantalla gano una prueba** que afirma que la region existe **antes** de tener algo que decir.
+Se comprobo rompiendola: devolviendo el parrafo adentro del `@if`, falla. Y tres pruebas del panel
+tuvieron que cambiar, porque esperaban la region **por su rol** para saber que los datos habian
+llegado: con la region viviendo siempre, `findByRole('status')` resuelve al instante y vacia. Ahora
+anclan en el contenido, que es mas fuerte que antes.
+
+**Comprobado con NVDA sobre el codigo arreglado**, la misma noche y con el mismo metodo: la
+prueba que habia salido callada —el acuse del reenvio de verificacion— ahora escribe el texto
+entero en el registro, y la sonda del envoltorio confirmo que **`display: contents` no saca la
+region del arbol de accesibilidad**: un envoltorio vacio con `contents` al que se le mete una caja
+dentro se anuncia igual que uno normal. Es lo que sostiene los cinco del asistente 360.
+
+**El numero "regiones dentro de un `@if`" dejo de ser la medida.** Lo que importa es si la region
+existe antes de que llegue el mensaje: la de una fila desplegada, o la de un `@case`, nacen dentro
+de control de flujo y **si** se anuncian, porque su ambito abre antes de que la persona pulse nada.
+Contarlas como pendientes seria perseguir un numero equivocado.
+
 ### Lo que Vitest no atrapa en la capa visual
 
 Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`). Las tres cosas

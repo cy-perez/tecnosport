@@ -8,6 +8,10 @@
     </a>
   } @else {
     <ts-esqueleto />
+    <!-- Igual que el "cargando" de verificar-correo: esta region solo existe durante la primera
+         pintura -la pantalla se va sola en cuanto la pasarela responde-, y una region viva que ya
+         esta en la pagina cuando termina de cargar no se anuncia nunca. Hacerla permanente no
+         cambiaria nada; queda dicho para que nadie lo intente. Ver `docs/06-testing.md`. -->
     <p class="mt-16 text-ts-texto-suave" role="status">
       {{ 'checkout.retornoWompi.verificando' | transloco }}
     </p>

@@ -620,4 +620,21 @@ describe('Captura360Page', () => {
     expect(almacenLocal.olvidados).toEqual(['s1']);
     expect(screen.getByText('Antes de empezar')).toBeTruthy();
   });
+
+  /**
+   * Las regiones vivas de esta pantalla son envoltorios permanentes con `contents`, no las cajas:
+   * un `role="status"` que nace ya lleno no se anuncia (medido con NVDA el 22 de septiembre de
+   * 2026, `docs/06-testing.md`), y envolver con caja propia abriria un hueco de 16 px en un padre
+   * `flex ... gap-16`.
+   *
+   * <p>Esta prueba falla si alguien devuelve el `role` a la caja de adentro: entonces la region ya
+   * no estaria en el DOM antes de tener algo que decir.
+   */
+  it('deja vivas las regiones de anuncio desde el primer render, y vacias', async () => {
+    await renderCaptura();
+
+    const regiones = screen.getAllByRole('status');
+    expect(regiones.length).toBeGreaterThan(0);
+    expect(regiones.every((region) => region.textContent?.trim() === '')).toBe(true);
+  });
 });

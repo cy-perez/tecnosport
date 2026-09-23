@@ -105,9 +105,10 @@ describe('PanelAdminPage', () => {
       items: [],
     });
 
-    const aviso = await screen.findByRole('status');
-    expect(aviso.textContent).toContain('8');
-    expect(screen.getByRole('link', { name: esAdmin.panel.sinMedir.enlace })).toBeTruthy();
+    // Se ancla en el enlace y no en el rol: la region vive siempre en el DOM desde el primer
+    // render, asi que `findByRole('status')` resolveria al instante y vacia, antes de los datos.
+    expect(await screen.findByRole('link', { name: esAdmin.panel.sinMedir.enlace })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('8');
   });
 
   /**
@@ -123,9 +124,10 @@ describe('PanelAdminPage', () => {
       items: [],
     });
 
-    const aviso = await screen.findByRole('status');
-    expect(aviso.textContent).toContain('3');
-    expect(screen.getByRole('link', { name: esAdmin.panel.existencias.enlace })).toBeTruthy();
+    expect(
+      await screen.findByRole('link', { name: esAdmin.panel.existencias.enlace }),
+    ).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('3');
   });
 
   /**
@@ -150,7 +152,9 @@ describe('PanelAdminPage', () => {
     await renderPanel();
 
     await screen.findByRole('button', { name: 'Cerrar sesión' });
-    expect(screen.queryByRole('status')).toBeNull();
+    // La region vive siempre en el DOM, asi que lo que se afirma es que calla y no que no exista:
+    // un `role="status"` que nace ya lleno no lo anuncia NVDA (`docs/06-testing.md`).
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
     expect(screen.queryByRole('link', { name: esAdmin.panel.sinMedir.enlace })).toBeNull();
   });
 
@@ -184,5 +188,21 @@ describe('PanelAdminPage', () => {
     await screen.findByRole('button', { name: 'Cerrar sesión' });
 
     await esperarSinViolaciones(container);
+  });
+
+  /**
+   * La region envuelve las dos cajas en vez de ser cada caja: un `role="status"` que nace ya lleno
+   * no lo anuncia NVDA (medido el 22 de septiembre de 2026, `docs/06-testing.md`), y una caja
+   * permanente con borde y relleno pintaria una barra vacia. Esta prueba falla si alguien devuelve
+   * el `role` a la caja de adentro.
+   */
+  it('la region viva envuelve el aviso y no es el aviso', async () => {
+    await renderPanel({ total: 8, totalEnPublicados: 8, items: [] });
+
+    await screen.findByRole('link', { name: esAdmin.panel.sinMedir.enlace });
+
+    const region = screen.getByRole('status');
+    expect(region.textContent).toContain('8');
+    expect(region.querySelector('.border')).toBeTruthy();
   });
 });

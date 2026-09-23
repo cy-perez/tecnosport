@@ -3,32 +3,39 @@
 
   <h1 class="m-0 font-display font-fuerte">{{ 'captura360.titulo' | transloco }}</h1>
 
-  @if (store.sesionRecuperable(); as pendiente) {
-    <div
-      class="flex flex-col gap-8 border border-ts-borde-control bg-ts-superficie p-12 [&_p]:m-0 [&_p]:leading-texto"
-      role="status"
-    >
-      <p>
-        {{
-          'captura360.recuperacion.hay_una' | transloco: { total: pendiente.fotogramasPrometidos }
-        }}
-      </p>
-      <div class="flex flex-wrap gap-8">
-        <ts-boton (click)="store.recuperar()">
-          {{ 'captura360.recuperacion.continuar' | transloco }}
-        </ts-boton>
-        <ts-boton variante="secundario" (click)="store.descartarRecuperable()">
-          {{ 'captura360.recuperacion.empezar_de_nuevo' | transloco }}
-        </ts-boton>
+  <!-- La region viva es este envoltorio permanente y no la caja de adentro: un `role="status"`
+       que nace ya lleno no se anuncia (medido con NVDA el 22 de septiembre de 2026, ver
+       `docs/06-testing.md`). `contents` a proposito: el padre es `flex ... gap-16` y un hijo vacio
+       con caja propia abriria 16 px de hueco, mientras que sin caja la maqueta no cambia nada. -->
+  <div role="status" class="contents">
+    @if (store.sesionRecuperable(); as pendiente) {
+      <div
+        class="flex flex-col gap-8 border border-ts-borde-control bg-ts-superficie p-12 [&_p]:m-0 [&_p]:leading-texto"
+      >
+        <p>
+          {{
+            'captura360.recuperacion.hay_una' | transloco: { total: pendiente.fotogramasPrometidos }
+          }}
+        </p>
+        <div class="flex flex-wrap gap-8">
+          <ts-boton (click)="store.recuperar()">
+            {{ 'captura360.recuperacion.continuar' | transloco }}
+          </ts-boton>
+          <ts-boton variante="secundario" (click)="store.descartarRecuperable()">
+            {{ 'captura360.recuperacion.empezar_de_nuevo' | transloco }}
+          </ts-boton>
+        </div>
       </div>
-    </div>
-  }
+    }
+  </div>
 
-  @if (store.guardadoLocalFallo()) {
-    <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="status">
-      {{ 'captura360.sin_respaldo_local' | transloco }}
-    </p>
-  }
+  <div role="status" class="contents">
+    @if (store.guardadoLocalFallo()) {
+      <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto">
+        {{ 'captura360.sin_respaldo_local' | transloco }}
+      </p>
+    }
+  </div>
 
   @if (store.errorDelCierre(); as clave) {
     <p class="m-0 px-12 py-8 leading-texto bg-ts-error text-ts-sobre-primario" role="alert">
@@ -36,52 +43,48 @@
     </p>
   }
 
-  @switch (store.fase()) {
-    @case ('PROCESANDO') {
-      <p
-        class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
-        role="status"
-        aria-live="polite"
-      >
-        {{
-          'captura360.procesando'
-            | transloco: { hechos: store.avance().hechos, total: store.avance().total }
-        }}
-      </p>
-    }
+  <div role="status" class="contents">
+    @switch (store.fase()) {
+      @case ('PROCESANDO') {
+        <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto">
+          {{
+            'captura360.procesando'
+              | transloco: { hechos: store.avance().hechos, total: store.avance().total }
+          }}
+        </p>
+      }
 
-    @case ('SUBIENDO') {
-      <p
-        class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
-        role="status"
-        aria-live="polite"
-      >
-        {{
-          'captura360.subiendo'
-            | transloco: { hechos: store.avance().hechos, total: store.avance().total }
-        }}
-      </p>
-    }
+      @case ('SUBIENDO') {
+        <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto">
+          {{
+            'captura360.subiendo'
+              | transloco: { hechos: store.avance().hechos, total: store.avance().total }
+          }}
+        </p>
+      }
 
-    @case ('REVISANDO') {
-      <div class="flex flex-col gap-12 [&_p]:m-0 [&_p]:leading-texto [&_p]:text-ts-texto-suave">
-        <h2 class="m-0 font-display font-medio">{{ 'captura360.revision.titulo' | transloco }}</h2>
-        <p>{{ 'captura360.revision.ayuda' | transloco }}</p>
-        <ts-visor-360 [imagenes]="store.rotacionParaRevisar()" />
-        <div class="flex flex-wrap gap-8">
-          <ts-boton (click)="store.publicar()">{{
-            'captura360.revision.publicar' | transloco
-          }}</ts-boton>
+      @case ('REVISANDO') {
+        <div class="flex flex-col gap-12 [&_p]:m-0 [&_p]:leading-texto [&_p]:text-ts-texto-suave">
+          <h2 class="m-0 font-display font-medio">
+            {{ 'captura360.revision.titulo' | transloco }}
+          </h2>
+          <p>{{ 'captura360.revision.ayuda' | transloco }}</p>
+          <ts-visor-360 [imagenes]="store.rotacionParaRevisar()" />
+          <div class="flex flex-wrap gap-8">
+            <ts-boton (click)="store.publicar()">{{
+              'captura360.revision.publicar' | transloco
+            }}</ts-boton>
+          </div>
         </div>
-      </div>
-    }
+      }
 
-    @case ('PUBLICADO') {
-      <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario" role="status">
-        {{ 'captura360.publicado' | transloco }}
-      </p>
+      @case ('PUBLICADO') {
+        <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario">
+          {{ 'captura360.publicado' | transloco }}
+        </p>
+      }
     }
-  }
+  </div>
 
   @if (store.fase() === 'CAPTURANDO' && store.sesionRecuperable() === null) {
     @switch (store.permisoCamara()) {
@@ -166,11 +169,13 @@
           </ts-boton>
         }
 
-        @if (store.permisoSensor() === 'NEGADO' || store.permisoSensor() === 'NO_DISPONIBLE') {
-          <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="status">
-            {{ 'captura360.permisos.sin_nivel' | transloco }}
-          </p>
-        }
+        <div role="status" class="contents">
+          @if (store.permisoSensor() === 'NEGADO' || store.permisoSensor() === 'NO_DISPONIBLE') {
+            <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto">
+              {{ 'captura360.permisos.sin_nivel' | transloco }}
+            </p>
+          }
+        </div>
 
         @if (errorCaptura(); as clave) {
           <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto" role="alert">
@@ -178,10 +183,16 @@
           </p>
         }
 
+        <!-- Solo el mensaje entra en la region: los botones de abajo no son un anuncio. -->
+        <div role="status" class="contents">
+          @if (store.termino()) {
+            <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario">
+              {{ 'captura360.set_completo' | transloco: { total: store.fotogramasPrometidos() } }}
+            </p>
+          }
+        </div>
+
         @if (store.termino()) {
-          <p class="m-0 px-12 py-8 leading-texto bg-ts-exito text-ts-sobre-primario" role="status">
-            {{ 'captura360.set_completo' | transloco: { total: store.fotogramasPrometidos() } }}
-          </p>
           <div class="flex flex-wrap gap-8">
             <ts-boton (click)="store.procesarYSubir()">
               {{ 'captura360.procesar_y_subir' | transloco }}
@@ -212,6 +223,11 @@
             }
           </div>
 
+          <!-- El unico que NO se hace permanente, y es una decision pendiente: este mensaje
+               cuelga del acelerometro y se enciende y se apaga cada vez que el telefono se
+               inclina. Anunciarlo en cada cruce del umbral podria volver la pantalla inusable con
+               un lector de pantalla, y callarlo deja sin explicacion a quien no ve el nivel. Se
+               queda como estaba hasta medirlo con el telefono en la mano. -->
           @if (!store.nivel().puedeDisparar) {
             <p
               class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"

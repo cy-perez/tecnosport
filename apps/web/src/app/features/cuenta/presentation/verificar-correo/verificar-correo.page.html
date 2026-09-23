@@ -1,6 +1,10 @@
 <section class="mx-auto my-32 max-w-formulario px-16 text-center">
   @switch (estado()) {
     @case ('cargando') {
+      <!-- Esta region no se puede anunciar y hacerla permanente no cambiaria nada: solo existe
+           durante la primera pintura, y una region viva que ya esta en la pagina cuando termina de
+           cargar no se anuncia nunca (por especificacion, comprobado el 22 de septiembre de 2026).
+           Lo que si se anuncia es el paso a `error`, que es un `role="alert"`. -->
       <p role="status">{{ 'cuenta.verificarCorreo.cargando' | transloco }}</p>
     }
     @case ('exito') {
@@ -27,11 +31,16 @@
       </h1>
       <p role="alert">{{ 'cuenta.verificarCorreo.error_mensaje' | transloco }}</p>
 
-      @if (reenviado()) {
-        <p class="mt-24" role="status">
+      <!-- Esta es la region que se midio: nacia ya llena dentro del `@if` y NVDA no decia nada
+           (22 de septiembre de 2026, `docs/06-testing.md`). Ahora vive siempre y lo que cambia es
+           su contenido; el margen cuelga del contenido para no dejar un hueco fijo. -->
+      <p role="status" [class.mt-24]="reenviado()">
+        @if (reenviado()) {
           {{ 'cuenta.verificarCorreo.reenvio_exito' | transloco }}
-        </p>
-      } @else {
+        }
+      </p>
+
+      @if (!reenviado()) {
         <form
           class="mt-24 flex flex-col gap-16 text-left"
           [formGroup]="form"

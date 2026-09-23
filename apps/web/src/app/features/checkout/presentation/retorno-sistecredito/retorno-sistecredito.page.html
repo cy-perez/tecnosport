@@ -13,6 +13,10 @@
     <h1 class="m-0 mb-16 font-display text-2xl">
       {{ 'checkout.retornoSistecredito.titulo' | transloco }}
     </h1>
+    <!-- Igual que el "cargando" de verificar-correo: esta region solo existe durante la primera
+         pintura -la pantalla se va sola en cuanto la pasarela responde-, y una region viva que ya
+         esta en la pagina cuando termina de cargar no se anuncia nunca. Hacerla permanente no
+         cambiaria nada; queda dicho para que nadie lo intente. Ver `docs/06-testing.md`. -->
     <p class="mb-24 text-ts-texto-suave" role="status">
       {{ 'checkout.retornoSistecredito.procesando' | transloco }}
     </p>

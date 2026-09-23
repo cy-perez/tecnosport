@@ -8294,6 +8294,10 @@ Tres pruebas hubo que ajustar, y el ajuste las mejoró: afirmaban «existe algun
 los párrafos vacíos siguen en el DOM encontraban varias. Pasan a afirmar el texto. Antes habrían
 pasado con cualquier alerta en pantalla.
 
+**Esa media hora se hizo esa misma noche, y las 99 resultaron ser 27** —lo que separa los casos es
+la cortesía y no el `@if`—. Ver la entrada de abajo y la deuda 16, ya cerrada. Esta clasificación
+queda como lo que era: el mapa con el que se paró a tiempo.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8338,9 +8342,11 @@ Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qu
 objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
 ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
 por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Se cerró la **10** —el inventario
-deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y avanzó la
-**16**, que por fin se midió:
-15 regiones vivas corregidas de 114, y las 99 que quedan esperando media hora de NVDA.
+deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y **se cerró la
+16**, que era la más vieja del tablero: se midió con NVDA, y la medición desmintió el enunciado
+—lo que separa los casos es la cortesía y no el `@if`—, así que el trabajo no eran 99 sitios sino
+27. Los 27 quedaron hechos y comprobados el mismo día. De ella nace la **32**, que es lo único que
+no se pudo hacer sin el teléfono.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8533,18 +8539,67 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
-16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
-    septiembre es la estructura que necesitan, que no es lo mismo. **El 22 de septiembre se midió
-    esa estructura y no era la que hace falta**: de las 114 regiones vivas del frontend, 5 vivían
-    siempre en el DOM y 109 nacían dentro del `@if` que las llena, que es el patrón que la regla de
-    `apps/web/CLAUDE.md` prohíbe. Se cerró el caso mecánico —15 sitios, `ts-campo` y `ts-select`
-    incluidos— y **se paró ahí a propósito**: quedan 99 en tres clases (5 de fila, 23 de estado,
-    71 de cargando/listas vacías) que exigen una decisión por pantalla, y hacerlas antes de haber
-    escuchado una sola con un lector de pantalla es refactorizar contra una regla sin medir. **Lo
-    que desbloquea todo lo demás es media hora con NVDA**: el login y una bandeja del panel bastan
-    para saber si el arreglo de la clase A se anuncia y si el de la clase D hace falta. **Cómo
-    comprobarlo:** los dos guiones de clasificación viven en el historial de esta rama; volver a
-    contarlas es `grep -rn 'role="status"\|role="alert"' apps/web/src/app --include=*.html`.
+16. ~~**Que NVDA o VoiceOver anuncien de verdad las regiones vivas.**~~ **Cerrada el 22 de
+    septiembre de 2026, y la medición desmintió el enunciado.** Con NVDA 2025.3.3 y el registro en
+    "Entrada/salida" —que anota el texto literal que manda al sintetizador, así que la medición no
+    depende de la memoria de nadie— se corrieron cuatro pruebas y una sonda. Lo que separa los
+    casos **no es nacer dentro del `@if`: es la cortesía**. Un `role="alert"` se anuncia siempre,
+    nazca lleno o se llene después; un `role="status"` se anuncia si la región ya vivía en el DOM y
+    **calla si nace ya llena**. Así que la regla de `apps/web/CLAUDE.md` valía solo para las
+    corteses, y el trabajo no eran 99 sitios sino **27**: las 74 asertivas ya funcionaban y
+    tocarlas habría sido diff sin efecto.
+
+    **Los 27 se cerraron el mismo día, en cinco commits**, con una prueba por pantalla que falla si
+    la región vuelve a nacer dentro de la condición —comprobada rompiéndola—. Tres formas, según lo
+    que la caja pinte: párrafo sin fondo, región permanente con el `@if` dentro; caja con borde o
+    relleno, envoltorio permanente alrededor; y donde el contenedor es `flex … gap-16`, el
+    envoltorio lleva `contents`, porque un hijo vacío con caja propia abriría un hueco fijo. Los
+    márgenes cuelgan del contenido en las que lo llevaban.
+
+    **Tres no se tocaron y esa es la decisión**: el "Cargando" del `@switch` de verificar-correo y
+    los de los dos retornos de pasarela solo existen durante la primera pintura, y una región que
+    ya está en la página cuando termina de cargar **no se anuncia nunca**. Hacerlas permanentes no
+    cambiaría nada; queda dicho en las tres plantillas.
+
+    **Comprobado con NVDA sobre el código ya arreglado**, que es lo que la cierra: se repitió la
+    prueba que había salido callada —el acuse del reenvío de verificación— y esta vez el registro
+    escribe el texto entero. Y la sonda que decidía los cinco envoltorios del asistente 360
+    respondió que sí: **`display: contents` no saca la región del árbol de accesibilidad**. El
+    panel se miró además con los ojos: la caja del aviso conserva su borde y no aparece hueco.
+
+    **Lo que esta deuda enseñó y no estaba en su enunciado**, que es lo que de verdad vale: una
+    región viva **no puede duplicar contenido visible** —el primer intento en el asistente fue una
+    región `sr-only` con los textos repetidos, y se descartó midiendo: rompió cinco pruebas que
+    buscaban un texto y encontraban dos, y un lector de pantalla lo habría leído dos veces—; y
+    **"regiones dentro de un `@if`" dejó de ser la medida**, porque lo que importa es si la región
+    existe antes de que llegue el mensaje, y la de una fila desplegada nace dentro de control de
+    flujo y sí se anuncia. Contarlas sería perseguir un número equivocado.
+
+    **Cómo comprobarlo:** el guion, el resultado con sus líneas de registro y las dos trampas del
+    método están en `docs/06-testing.md`, "El guion de NVDA, y lo que midió". Enunciado original:
+    «Que NVDA o VoiceOver anuncien de verdad las regiones vivas. Lo que se verificó el 21 de
+    septiembre es la estructura que necesitan, que no es lo mismo. Lo que desbloquea todo lo demás
+    es media hora con NVDA.»
+
+32. **El asistente de captura 360, con el teléfono delante.** Nace de la 16 y no es ella: es
+    aparato, no código. Dos cosas, y la primera es una decisión que no toma un script.
+
+    **El aviso de "obturador bloqueado" cuelga del acelerómetro**, así que se enciende y se apaga
+    con cada inclinación. Es el único de los 27 que se dejó como estaba, a propósito: anunciarlo en
+    cada cruce del umbral puede volver la pantalla inusable con un lector de pantalla, y callarlo
+    deja sin explicación a quien no ve el nivel y no entiende por qué el botón no dispara. Las
+    salidas plausibles son tres —dejarlo mudo, anunciarlo solo al primer bloqueo de cada toma, o
+    anunciarlo con retardo para que el temblor no cuente— y cuál sirve depende de cómo se comporta
+    el nivel de verdad, con la mano temblando y el teléfono girando.
+
+    **Y recorrer el asistente entero con un lector de pantalla**, que nunca se ha hecho: los cinco
+    envoltorios se apoyan en la sonda de `display: contents`, que es el mecanismo, no la pantalla.
+    Hace falta la cámara, un producto y un set completo — es la pantalla que más lo necesita,
+    porque se usa con el teléfono en la mano y sin mirar.
+
+    **Cómo comprobarlo:** `apps/web/src/app/features/captura360/presentation/captura-360.page.html`;
+    el comentario que explica por qué el obturador no se tocó está junto a su `@if`. El guion de
+    NVDA sirve igual en el teléfono con TalkBack.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 

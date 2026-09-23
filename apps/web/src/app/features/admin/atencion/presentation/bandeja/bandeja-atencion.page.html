@@ -8,12 +8,10 @@
     <p role="alert" class="mb-16 text-ts-error">{{ mensaje }}</p>
   }
 
-  <form
-    class="mb-32"
-    [formGroup]="formularioRadicar"
-    (submit)="$event.preventDefault(); radicar()"
-  >
-    <h2 class="mt-0 mb-8 text-base font-medio">{{ 'admin.atencion.radicar.titulo' | transloco }}</h2>
+  <form class="mb-32" [formGroup]="formularioRadicar" (submit)="$event.preventDefault(); radicar()">
+    <h2 class="mt-0 mb-8 text-base font-medio">
+      {{ 'admin.atencion.radicar.titulo' | transloco }}
+    </h2>
     <p class="mt-0 mb-16 text-ts-texto-suave">
       {{ 'admin.atencion.radicar.ayuda' | transloco }}
     </p>
@@ -47,11 +45,12 @@
     </ts-boton>
   </form>
 
-  <div class="mb-16 flex gap-8" role="group" [attr.aria-label]="'admin.atencion.filtros' | transloco">
-    <ts-boton
-      [variante]="filtro() === null ? 'primario' : 'secundario'"
-      (click)="filtrar(null)"
-    >
+  <div
+    class="mb-16 flex gap-8"
+    role="group"
+    [attr.aria-label]="'admin.atencion.filtros' | transloco"
+  >
+    <ts-boton [variante]="filtro() === null ? 'primario' : 'secundario'" (click)="filtrar(null)">
       {{ 'admin.atencion.filtro_abiertas' | transloco }}
     </ts-boton>
     <ts-boton
@@ -62,11 +61,18 @@
     </ts-boton>
   </div>
 
-  @if (consulta.isPending()) {
-    <p role="status" class="text-ts-texto-suave">{{ 'admin.atencion.cargando' | transloco }}</p>
-  } @else if (solicitudes().length === 0) {
-    <p role="status" class="text-ts-texto-suave">{{ 'admin.atencion.vacia' | transloco }}</p>
-  } @else {
+  <!-- Una sola region viva permanente para los mensajes de estado: un `role="status"` que nace
+       ya lleno dentro del `@if` no se anuncia — medido con NVDA el 22 de septiembre de 2026, ver
+       `docs/06-testing.md`. Lo que cambia es el contenido, no la existencia del nodo. -->
+  <p role="status" class="m-0 text-ts-texto-suave">
+    @if (consulta.isPending()) {
+      {{ 'admin.atencion.cargando' | transloco }}
+    } @else if (solicitudes().length === 0) {
+      {{ 'admin.atencion.vacia' | transloco }}
+    }
+  </p>
+
+  @if (!consulta.isPending() && solicitudes().length > 0) {
     <ul class="m-0 list-none p-0">
       @for (solicitud of solicitudes(); track solicitud.id) {
         <li class="mb-16 border-b border-ts-borde pb-16">

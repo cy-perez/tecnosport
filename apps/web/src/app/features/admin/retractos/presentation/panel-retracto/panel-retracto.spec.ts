@@ -175,11 +175,7 @@ describe('PanelRetracto', () => {
 
     expect(await screen.findByText('Plazo indeterminado')).toBeTruthy();
     expect(screen.queryByText('Fuera de plazo')).toBeNull();
-    expect(
-      screen.getByText(
-        esAdmin.retractos.verdicto.indeterminado_ayuda,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(esAdmin.retractos.verdicto.indeterminado_ayuda)).toBeTruthy();
   });
 
   it('con el producto recibido, registra el reintegro con el medio elegido', async () => {
@@ -212,9 +208,7 @@ describe('PanelRetracto', () => {
 
   it('al radicar, manda el medio que pidio el comprador', async () => {
     const { repositorio } = await renderPanel([]);
-    const preferido = await screen.findByLabelText(
-      esAdmin.retractos.acciones.medio_preferido,
-    );
+    const preferido = await screen.findByLabelText(esAdmin.retractos.acciones.medio_preferido);
 
     fireEvent.change(preferido, { target: { value: 'EFECTIVO' } });
     fireEvent.click(screen.getByRole('button', { name: 'Radicar retracto' }));
@@ -249,7 +243,9 @@ describe('PanelRetracto', () => {
 
     const monto = screen.getByLabelText(esAdmin.retractos.acciones.monto);
     fireEvent.input(monto, { target: { value: '50000' } });
-    fireEvent.click(screen.getByRole('button', { name: esAdmin.retractos.acciones.registrar_reintegro }));
+    fireEvent.click(
+      screen.getByRole('button', { name: esAdmin.retractos.acciones.registrar_reintegro }),
+    );
 
     await vi.waitFor(() => expect(repositorio.reintegros).toHaveLength(1));
   });
@@ -297,9 +293,7 @@ describe('PanelRetracto', () => {
       }),
     ]);
 
-    expect(
-      await screen.findByText(esAdmin.retractos.plazo_vencido),
-    ).toBeTruthy();
+    expect(await screen.findByText(esAdmin.retractos.plazo_vencido)).toBeTruthy();
   });
 
   /**
@@ -324,9 +318,7 @@ describe('PanelRetracto', () => {
       }),
     ]);
 
-    expect(
-      await screen.findByText(esAdmin.retractos.plazo_vencido),
-    ).toBeTruthy();
+    expect(await screen.findByText(esAdmin.retractos.plazo_vencido)).toBeTruthy();
   });
 
   /** Y con el plazo vivo dice cuánto queda, que es la otra mitad y no tenía prueba propia. */
@@ -424,5 +416,39 @@ describe('PanelRetracto', () => {
     await screen.findByLabelText('Monto a reembolsar');
 
     await esperarSinViolaciones(container);
+  });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. La region tiene que estar en el DOM antes de
+   * tener algo que decir, asi que esta prueba falla si alguien la vuelve a meter dentro de la
+   * condicion que la llena.
+   */
+  it('deja la region viva en su sitio aunque no tenga nada que decir', async () => {
+    await renderPanel([]);
+    await screen.findByRole('button', { name: 'Radicar retracto' });
+
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
+  });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. El acuse llega despues de pulsar, con la region
+   * ya viva, y esta prueba falla si alguien la devuelve adentro de la condicion.
+   */
+  it('deja vivas las regiones del plazo y del dinero aunque no tengan nada que decir', async () => {
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2026-09-16T15:00:00Z',
+        limiteDeReintegro: '2026-10-02T05:00:00Z',
+      }),
+    ]);
+    await screen.findByLabelText('Monto a reembolsar');
+
+    const vacias = screen
+      .getAllByRole('status')
+      .filter((region) => region.textContent?.trim() === '');
+    expect(vacias.length).toBeGreaterThan(0);
   });
 });
