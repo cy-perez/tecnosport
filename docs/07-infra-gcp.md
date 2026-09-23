@@ -361,8 +361,16 @@ producción y no está en Terraform, no existe. Estructura en `infra/README.md`.
 - **Al mezclar a `main`:** construir imágenes, publicar en Artifact Registry,
   aplicar migraciones Flyway como paso propio, desplegar Cloud Run, verificar
   salud y revertir a la revisión anterior si falla.
-- **Detección por ruta:** un cambio que solo toca `apps/web` no reconstruye el
-  backend. Las pruebas de contrato corren siempre.
+- ~~**Detección por ruta:** un cambio que solo toca `apps/web` no reconstruye el
+  backend.~~ **No hay filtros por ruta, y es deliberado**: con `paths:`, el
+  trabajo que no aplica no se salta —se queda *pendiente para siempre*— y una
+  comprobación obligatoria pendiente bloquea el merge sin decir por qué. Los dos
+  trabajos corren siempre y en paralelo, el repositorio es público —o sea que
+  los minutos no se cobran— y con la caché puesta el que sobra cuesta reloj, no
+  dinero. El motivo está escrito en `verificar.yml`, que además nombra a este
+  documento como el que pedía los filtros. Si algún día molesta la espera, se
+  resuelve con un trabajo que decida por ruta y reporte éxito cuando no aplica,
+  no con `paths:`. Las pruebas de contrato corren siempre (2026-09-23).
 - **Autenticación con Workload Identity Federation.** Nunca una llave JSON de
   cuenta de servicio guardada como secreto de GitHub.
 
