@@ -88,15 +88,54 @@ function exigirArbolLimpio(archivos) {
   }
 }
 
-/** Los archivos que de verdad cambian entre las dos versiones, dentro del frontend.
+/**
+ * Lo que entra al build del frontend, que es lo unico que puede cambiar una medicion.
  *
- * Se deriva en vez de pedirse para que nadie se deje uno fuera y mida dos veces lo mismo sin
- * enterarse — pero se imprime siempre, porque un experimento cuyo contenido no se ve no vale. Se
- * acota a `apps/web/src` a propósito: un cambio en `docs/` o en `tools/` no entra en el build, y
- * cambiarlo de sitio entre corrida y corrida solo añade ruido. */
+ * <p>Empezo siendo solo `apps/web/src`, y eso dejaba fuera dos carpetas que si entran, las dos
+ * descubiertas el 23 de septiembre de 2026:
+ *
+ * <ul>
+ *   <li><b>`packages/marca`</b>, porque `prebuild` corre `copiar-marca.mjs` y mete el kit dentro
+ *       de `apps/web/src/assets/marca` y de `apps/web/public` en <b>cada</b> build. Un cambio del
+ *       kit —el `font-display` de `fuentes.css`, ese dia— se intercambiaba en la copia y
+ *       `prebuild` la volvia a pisar con la del arbol: las dos mitades del experimento salian del
+ *       mismo build, y nada lo decia.
+ *   <li><b>`apps/web/public`</b>, que no esta bajo `src` y pesa lo que pesa: ahi vive el hero de
+ *       la portada. El experimento del hero, el 22 de septiembre, no se habria podido montar con
+ *       esta herramienta.
+ * </ul>
+ *
+ * <p>Lo que sigue fuera lo sigue estando a proposito: un cambio en `docs/` o en `tools/` no entra
+ * en el build, y moverlo entre corrida y corrida solo anade ruido.
+ */
+const RUTAS_DEL_BUILD = ["apps/web/src", "apps/web/public", "packages/marca"];
+
 function archivosQueCambian(antes, despues) {
-  const salida = git("diff", "--name-only", antes, despues, "--", "apps/web/src");
+  const salida = git("diff", "--name-only", antes, despues, "--", ...RUTAS_DEL_BUILD);
   return salida ? salida.split("\n").filter(Boolean) : [];
+}
+
+/**
+ * El caso que el alcance nuevo no arregla solo: una copia del kit que cambio <b>sin</b> su
+ * original.
+ *
+ * <p>`apps/web/src/assets/marca/` es copia entera de `packages/marca`, y `prebuild` la reescribe
+ * antes de construir. Si el diff la toca y no toca el kit, intercambiarla no sirve de nada: las
+ * dos corridas saldrian del mismo build. Ocurre cuando alguien edita a mano un archivo generado,
+ * que es justo lo que prohibe la regla 3 del `CLAUDE.md`, asi que el experimento se niega y dice
+ * donde esta el original.
+ */
+function exigirQueLasCopiasTraiganSuOriginal(archivos) {
+  const copias = archivos.filter((a) => a.startsWith("apps/web/src/assets/marca/"));
+  const hayKit = archivos.some((a) => a.startsWith("packages/marca/"));
+  if (copias.length && !hayKit) {
+    throw new Error(
+      "Estos archivos son copias que `prebuild` reescribe desde packages/marca en cada build:\n" +
+        copias.map((c) => `  ${c}`).join("\n") +
+        "\n\nIntercambiarlos no cambia el build: las dos corridas medirian lo mismo. El" +
+        " original\nesta en packages/marca — cambialo ahi y regenera (ver docs/04-ui-marca.md).",
+    );
+  }
 }
 
 function medianaDe(valores) {
@@ -236,7 +275,7 @@ async function main() {
   const archivos = lista("--archivos") ?? archivosQueCambian(antes, despues);
   if (archivos.length === 0) {
     throw new Error(
-      `Entre ${antes} y ${despues} no cambia ningun archivo de apps/web/src.\n` +
+      `Entre ${antes} y ${despues} no cambia ningun archivo de ${RUTAS_DEL_BUILD.join(", ")}.\n` +
         "No hay nada que medir: los dos builds saldrian identicos.",
     );
   }
@@ -248,6 +287,9 @@ async function main() {
     `\n${parejas} pareja(s), en orden alternado, ${parejas * 2} corridas de Lighthouse.\n` +
       "Cada una construye el frontend entero: cuenta unos cinco minutos por corrida.\n",
   );
+
+  // Antes de `--simular` a proposito: negarse tambien es parte de "que haria".
+  exigirQueLasCopiasTraiganSuOriginal(archivos);
 
   if (simular) {
     for (let i = 1; i <= parejas; i++) {
