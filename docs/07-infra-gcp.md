@@ -526,11 +526,14 @@ ROTACION_TOLERANCIA_GRADOS
 Las de `SKYDROPX_*` son la cotización, la emisión de guía y el seguimiento
 (`docs/11-pagos-y-envios.md`). Dos notas que ahorran una tarde:
 
-- **`SKYDROPX_URL_BASE` es variable a propósito y todavía no está confirmada.**
-  La documentación pública muestra `pro.skydropx.com` (producción) y
-  `sb-pro.skydropx.com` (pruebas), y según la fuente aparecen también
-  `api-pro.skydropx.com` y `app.skydropx.com.co`. `TODO: confirmar el host de la
-  cuenta colombiana en el panel, Conexiones > API.`
+- **`SKYDROPX_URL_BASE` es variable a propósito, y de los dos hosts solo uno está
+  ejercido.** El de pruebas es `sb-pro.skydropx.com`, y se sabe por medición: es el
+  único de los candidatos que autentica con las credenciales del sandbox —`api-pro`
+  y `pro` responden `invalid_client`—. El de producción es `api-pro.skydropx.com`,
+  dicho por el bloque de credenciales de su propia documentación (`docs/13` §6.3).
+  Las credenciales de producción **ya están**; no se estrenan hasta que exista la
+  infraestructura de producción, y ese día **la primera cotización real confirma el
+  host**. Hasta entonces el valor por omisión apunta al sandbox a propósito.
 - **`ORIGEN_*` es la dirección de despacho del negocio**, la que va como origen de
   cada cotización y de cada recolección. Es la misma del punto de recogida, y por
   eso no se duplica en el código: si el negocio se muda, se cambia una vez.

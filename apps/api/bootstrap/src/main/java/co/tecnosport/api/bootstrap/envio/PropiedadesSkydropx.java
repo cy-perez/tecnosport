@@ -5,12 +5,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * {@code SKYDROPX_*} de docs/07-infra-gcp.md.
  *
- * <p>{@code urlBase} es variable a propósito y <strong>todavía no está confirmada</strong>: la
- * documentación pública muestra {@code pro.skydropx.com} y {@code sb-pro.skydropx.com}, y según la
- * fuente aparecen también {@code api-pro.skydropx.com} y {@code app.skydropx.com}. Por eso es
- * configuración y no una constante con dos ambientes como en {@code WompiClient}: ahí los dos hosts
- * están documentados y aquí no. {@code TODO: confirmar el host de la cuenta colombiana en el panel,
- * Conexiones > API.}
+ * <p>{@code urlBase} es configuración y no una constante con dos ambientes como en {@code
+ * WompiClient}, y la razón no es que el host se desconozca: es que de los dos solo uno está
+ * ejercido. El de <strong>pruebas</strong> es {@code sb-pro.skydropx.com}, y no por lectura sino
+ * porque es el único de los candidatos que autentica con las credenciales del sandbox —{@code
+ * api-pro} y {@code pro} responden {@code invalid_client}—; contra él se cotiza, se emitieron guías
+ * reales y se verificó la firma del webhook (docs/13 §6). El de <strong>producción</strong> es
+ * {@code api-pro.skydropx.com}, dicho por el bloque de credenciales de su propia documentación
+ * (docs/13 §6.3). Las credenciales de producción ya están y no se estrenan hasta que exista la
+ * infraestructura de producción, así que lo confirma la primera cotización real de ese día. En
+ * {@code WompiClient} los dos hosts están documentados y ejercidos; aquí uno de los dos todavía no.
  *
  * <p>El tope y los intentos del sondeo son parámetros técnicos, no datos de negocio: la cotización
  * es asíncrona y hay que decidir cuánto se espera antes de darla por fallida.

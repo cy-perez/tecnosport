@@ -8855,6 +8855,44 @@ caen; si no, hay que decidir entre vigilar Credinet a mano o aceptar el riesgo p
 **Que esto se supiera costó un crédito real y su anulación.** Suponerlo habría costado un pedido
 despachado sin venta, y eso no se anula.
 
+## El host de Skydropx era una deuda caduca, y la recolección no es nuestra (2026-09-23)
+
+La deuda 13 juntaba dos cosas que no se parecen: un trámite abierto con un tercero y un `TODO` en
+`PropiedadesSkydropx`. El trámite sigue abierto y no hay nada que hacerle. El `TODO` **no estaba
+abierto: estaba caduco**, que es el mismo defecto que ya se cobró la deuda 11 —este documento
+escribe en presente y no se actualiza solo—.
+
+El `TODO` pedía «confirmar el host de la cuenta colombiana en el panel, Conexiones > API». Eso ya
+se había hecho, dos veces, y las dos están medidas en `docs/13`:
+
+| Host | Cuál es | Cómo se supo |
+|---|---|---|
+| Pruebas | `sb-pro.skydropx.com` | Medición del 11 de septiembre: es el único de los candidatos que autentica; `api-pro` y `pro` responden `invalid_client` |
+| Producción | `api-pro.skydropx.com` | El bloque de credenciales de su propia documentación, 15 de septiembre (§6.3) |
+
+Lo que quedaba no era una tarea olvidada sino **un pendiente con llave ajena**, y escrito como
+`TODO` invitaba a resolverlo mirando otra vez el panel —justo lo que ya se había mirado—. Hoy la
+llave cambió de dueño: **las credenciales de producción ya están**. No se estrenan hasta que exista
+la infraestructura de producción, así que el host lo confirma la primera cotización real de ese día
+y no hay forma de adelantarlo.
+
+**Había cuatro copias del dato y solo una estaba al día.** `application.yml` lo contaba bien;
+`docs/11` también, y aun así encabezaba con un `TODO` que su propio párrafo desmentía tres líneas
+después; `PropiedadesSkydropx` y `docs/07` seguían enumerando cuatro candidatos indistintos, sin
+separar pruebas de producción. Ahora las cuatro dicen lo mismo. De paso: `docs/07` escribía
+`app.skydropx.com.co` y `PropiedadesSkydropx` escribía `app.skydropx.com` para el mismo sitio, que
+además no es un host de API sino el portal de documentación. Ya no figura como candidato en
+ninguno de los dos.
+
+**Y el conector de recolección de Servientrega se cierra sin arreglarse**, que es distinto de
+cerrarse resuelto. Van **nueve intentos en cuatro días y cuatro horas distintas**, todos
+`422 ECONNREFUSED at PICKUP`, el mismo mensaje carácter por carácter, con `GET /pickups/coverage`
+respondiendo `200` con fechas reales un paso antes (§6.11, §6.14, §6.17). Lo que lo cierra no es
+una medición nueva —repetirla solo agregaría un décimo idéntico— sino que **no hay nada nuestro
+que dependa de él**: `POST /pickups` no tiene adaptador en el backend y ningún caso de uso lo
+llama. La recolección se pide a mano mientras el conector no responda, y eso no bloquea despachar.
+Queda pedido en el trámite del 21 y ahí se queda.
+
 ## Las deudas que quedan, al 23 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -9101,9 +9139,20 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Bloque 4. Terceros. No se trabajan, se persiguen
 
-13. **Skydropx**, con el trámite mandado el 21 de septiembre: los 74 códigos DANE, retirar la
-    solicitud del 14 y el conector de recolección de Servientrega, caído en ocho intentos. Y el
-    host de la cuenta colombiana, que sigue como `TODO` en `PropiedadesSkydropx`.
+13. **Skydropx**, con el trámite mandado el 21 de septiembre y sin respuesta: los 74 códigos DANE,
+    retirar la solicitud del 14 y el conector de recolección de Servientrega. **No se trabaja, se
+    persigue**, y lo único que puede cerrarlo es que contesten.
+    **El host dejó de ser deuda el 23 de septiembre, y era una deuda caduca**: el `TODO` pedía
+    mirar el panel y el panel ya se había mirado. Pruebas es `sb-pro.skydropx.com` por medición;
+    producción es `api-pro.skydropx.com` por el bloque de credenciales de su documentación
+    (`docs/13` §6.3). Las credenciales de producción ya están y no se estrenan hasta que exista la
+    infraestructura de producción: **la primera cotización real de ese día lo confirma**, y ese es
+    el único cierre que le queda.
+    **El conector de recolección también se cierra, y sin arreglarse**: van nueve intentos en
+    cuatro días y **ningún código nuestro depende de él** —`POST /pickups` no tiene adaptador—, así
+    que la recolección se pide a mano y eso no bloquea despachar.
+    **Cómo comprobarlo:** `grep -rn "TODO" apps/api --include=*.java | grep -i skydropx` no
+    devuelve nada, y `pickups` no aparece fuera de javadoc en `apps/api/*/src/main`.
     **El saldo dejó de bloquear**: medido el 22 de septiembre está en **102.238 COP**, no en los
     388 que decía este documento ni en los 10.088 de una nota intermedia. Se consulta con
     `GET /api/v1/finance/credits`, que es de lectura y no gasta — conviene medirlo antes de citarlo.
@@ -9319,6 +9368,28 @@ El orden no es negociable: cada uno alimenta al siguiente.
     acepta. **Y lo que sí se arregló es la
     página**: `docs/07` prometía un Cloud Scheduler que nadie usa, desde el primer commit del
     documento — la tercera frase de ese archivo que describía en presente algo que no existe.
+
+### Lo que dejó abierto cerrar la deuda 13
+
+35. **Un `422` del proveedor se registra como defecto nuestro, y para 74 municipios no lo es.**
+    `postal_code: "no existe"` cae hoy en `DATOS_RECHAZADOS`, el motivo que existe para decir "el
+    proveedor contestó que **nuestro** cuerpo está mal". Para los 74 de `docs/13` §6.18 es al revés:
+    el cuerpo está bien y el que no conoce el municipio es él. **El comprador no lo sufre** —ve el
+    mismo 409 y la recogida en el punto, que es lo correcto—; lo sufre el registro, donde cada
+    compra desde Chocó o Vaupés escribe un `error` culpando a nuestra petición. Y ese canal está
+    puesto ahí a propósito, por `adr/0035`, para enterarse temprano de una venta que no ocurre: con
+    ruido conocido deja de servir para eso.
+    **Pendiente a propósito, y esperando a un tercero.** El 23 de septiembre se le pidió a Skydropx
+    **su catálogo de códigos** en vez de escribir la regla sobre una medición nuestra
+    (`docs/tramites/2026-09-19-skydropx.md`, seguimiento). Cruzarlo contra la DIVIPOLA vendorizada
+    dirá si son 74, si son otros y si la lista se mueve. Decidirlo antes sería tallar en código el
+    resultado de cuatro horas de sondeo de un día concreto.
+    **Arrastra una precondición que sí es nuestra y no espera a nadie:** `Direccion` no valida el
+    código DANE —solo exige que no esté vacío— y un código postal de seis dígitos devuelve ese
+    mismo `422` (`docs/13` §6). Mientras la forma no se valide, el mensaje del proveedor es ambiguo
+    y cualquier motivo nuevo sería una inferencia.
+    **Cómo comprobarlo:** el `TODO` vive en `ResultadoCotizacion.Motivo` y dice qué lo desbloquea;
+    si `docs/13` §6.18 ya trae el resultado del cruce, esta deuda caducó.
 
 ### Lo que está anotado y no es deuda
 
