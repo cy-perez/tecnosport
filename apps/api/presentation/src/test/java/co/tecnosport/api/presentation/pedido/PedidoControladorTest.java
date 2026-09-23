@@ -87,9 +87,15 @@ class PedidoControladorTest {
   @Autowired private LimitadorDeIntentosDobleDePrueba limitadorDeIntentos;
 
   @BeforeEach
-  void reiniciarLimitadorDeIntentos() {
-    // Bean compartido por todo el contexto de @WebMvcTest: sin esto, denegarSiempre() de una
-    // prueba contaminaría a las que corran después en la misma clase.
+  void reiniciarElEstadoCompartido() {
+    // Los dobles son beans del contexto de @WebMvcTest, uno solo para todos los métodos de esta
+    // clase: sin esto, lo que monta una prueba sobrevive a la siguiente. Cuatro pruebas siembran
+    // pedidos con el número TS-2026-000001 y varias repiten el correo del comprador, que es
+    // justo lo que miran la paginación del panel y tieneRechazoEnEntrega.
+    pedidos.limpiar();
+    envios.limpiar();
+    inventarios.limpiar();
+    productos.limpiar();
     limitadorDeIntentos.reiniciar();
   }
 

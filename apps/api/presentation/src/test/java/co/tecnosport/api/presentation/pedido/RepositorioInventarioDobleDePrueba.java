@@ -14,6 +14,10 @@ final class RepositorioInventarioDobleDePrueba implements RepositorioInventario 
 
   private final Map<UUID, Inventario> porVarianteId = new HashMap<>();
 
+  void limpiar() {
+    porVarianteId.clear();
+  }
+
   void conInventario(Inventario inventario) {
     porVarianteId.put(inventario.varianteId(), inventario);
   }
