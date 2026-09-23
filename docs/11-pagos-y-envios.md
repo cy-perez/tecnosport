@@ -204,10 +204,40 @@ falta.** Varía por comercio y puede cambiar; un despliegue que olvide la variab
 tiene que no arrancar con el método encendido, en vez de cobrar con una cifra que
 alguien escribió aquí hace meses.
 
-**Lo que todavía no se sabe y hay que medir:** si una anulación hecha en Credinet
-dispara una notificación a `urlConfirmation`. Si no la dispara, un pedido puede
-quedar marcado como pagado mientras la venta está anulada del otro lado y nada
-avisa.
+**Medido el 23 de septiembre de 2026 con un crédito real, y el resultado es peor
+que la sospecha: la anulación ni notifica ni se ve.**
+
+La prueba fue un crédito de verdad —pedido `TS-2026-000006`, $227.402, autorizado
+por el dueño del negocio con su documento y su OTP— anulado en Credinet 8 minutos
+después. Lo que se midió:
+
+- **Ninguna notificación.** El registro de peticiones de Cloud Run tiene tres
+  llamadas a `/pagos/sistecredito/confirmacion`, las tres del momento de la
+  aprobación, y **ninguna** después de la anulación. No llegó y falló: no llegó.
+- **`GetTransactionResponse` sigue diciendo `Approved`**, con el mismo
+  `codeResponse: 2` y la misma descripción, en trece consultas repartidas entre
+  el minuto 1 y el minuto 22 después de anular. **Y ese es el endpoint del que
+  depende la conciliación**, así que aunque revisara pagos ya aprobados —hoy solo
+  mira los `PENDIENTE`— tampoco se enteraría.
+- **El `paymentId` de la URL de autorización no es una segunda puerta**:
+  consultarlo devuelve `errorCode 708, TransactionNotFound`.
+
+Consecuencia, y es de operación y no de código: **una anulación en Credinet solo
+existe en Credinet**. El pedido se queda en `EN_PREPARACION`, con su guía lista
+para emitir y sin venta detrás.
+
+**Mientras esto siga así, la regla es:**
+
+1. Quien anule una venta en Credinet **cancela el pedido a mano** en el panel, en
+   el mismo acto. No hay nada que lo haga por él.
+2. **Ningún pedido de Sistecrédito se despacha sin cruzarlo antes contra
+   Credinet.** El estado del panel no basta para ese método de pago.
+
+**Y queda una pregunta para la asesora**, que ninguna de las cinco guías entregadas
+responde: si existe un endpoint de anulaciones o un estado consultable que
+`GetTransactionResponse` no expone. Si existe, la conciliación puede cubrir esto y
+las dos reglas de arriba se caen; si no existe, hay que decidir si se vigila la
+anulación desde el panel de Credinet a mano o se acepta el riesgo por escrito.
 
 ## Inventario y reintento de pago
 

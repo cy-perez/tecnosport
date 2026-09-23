@@ -8802,6 +8802,59 @@ respuesta ya era el 404 correcto, así que lo único que fallaba era eso.
 
 Los cuatro arreglos se comprobaron quitándolos, uno por uno, antes de darlos por buenos.
 
+## El crédito real, y una anulación que no existe fuera de Credinet (2026-09-23)
+
+Cierra la 15, que era la última de Sistecrédito, y lo hace de la única forma en que se podía: con
+un crédito de verdad. Pedido **TS-2026-000006**, JBL Go 5 con envío a Medellín, **$227.402**,
+autorizado por el dueño del negocio con su documento y su OTP, y anulado en Credinet ocho minutos
+después. El freno del sandbox estuvo quitado exactamente lo que duró la prueba: `apply` para
+apagarlo, compra, anulación, `apply` para devolverlo.
+
+### Lo que el sandbox nunca pudo enseñar, y salió bien
+
+**El comprador sale del sitio de verdad.** La pasarela devolvió una URL absoluta
+—`mediodepago.sistecredito.com/security/authorization?paymentId=…`—, la validación nueva la dejó
+pasar y el navegador se fue. En sandbox eso era imposible de comprobar: ahí la URL es siempre el
+marcador `www.mysite.com`, que es lo que originó el arreglo de la mañana.
+
+**Y el retorno arreglado funciona con alguien de verdad volviendo de un dominio externo.** Al
+autorizar el crédito, el comprador aterrizó en
+`/es/checkout/estado?pedidoId=…&correo=…`, con su pedido en pantalla. Antes de hoy eso era la
+portada, y el pedido quedaba invisible justo después de pagar.
+
+El resto del camino se comportó como en las pruebas simuladas: dos notificaciones de un estado
+intermedio a las 20:55, la definitiva a las 20:56, el pedido en firme y el comprobante enviado
+doce segundos después.
+
+### Lo que se fue a medir, y el resultado
+
+**Ni notifica ni se ve.** El registro de peticiones de Cloud Run tiene **tres** llamadas a
+`/pagos/sistecredito/confirmacion`, las tres del minuto de la aprobación, y **ninguna** después de
+la anulación. No es que llegara y fallara: no llegó.
+
+Y lo que el enunciado de la 15 no preveía: **`GetTransactionResponse` sigue diciendo `Approved`**,
+con el mismo `codeResponse: 2` y la misma descripción, en trece consultas repartidas entre el
+minuto 1 y el minuto 22 después de anular. Ese es el endpoint que usa la conciliación, así que la
+puerta que parecía quedar abierta —"que la conciliación revise también los pagos aprobados"— no
+lleva a ninguna parte: preguntaría y le dirían que está aprobado. El `paymentId` de la URL de
+autorización tampoco es una segunda puerta: responde `errorCode 708, TransactionNotFound`.
+
+### Lo que eso cambia, y no es código
+
+Una anulación en Credinet **solo existe en Credinet**. El pedido `TS-2026-000006` sigue en dev *En
+preparación*, por 227.402, con su guía lista para emitir y sin venta detrás — y ahí se queda, como
+evidencia y sin despachar.
+
+De eso salen dos reglas de operación, escritas en `docs/11`: quien anule una venta en Credinet
+**cancela el pedido a mano** en el mismo acto, y **ningún pedido de Sistecrédito se despacha sin
+cruzarlo antes contra Credinet**. Y una pregunta para la asesora, que ninguna de las cinco guías
+entregadas responde: si existe un endpoint de anulaciones o un estado consultable que
+`GetTransactionResponse` no expone. Si existe, la conciliación puede cubrirlo y las dos reglas se
+caen; si no, hay que decidir entre vigilar Credinet a mano o aceptar el riesgo por escrito.
+
+**Que esto se supiera costó un crédito real y su anulación.** Suponerlo habría costado un pedido
+despachado sin venta, y eso no se anula.
+
 ## Las deudas que quedan, al 23 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -9055,16 +9108,21 @@ El orden no es negociable: cada uno alimenta al siguiente.
     388 que decía este documento ni en los 10.088 de una nota intermedia. Se consulta con
     `GET /api/v1/finance/credits`, que es de lectura y no gasta — conviene medirlo antes de citarlo.
 14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
-15. **Si la anulación en Credinet notifica a `urlConfirmation`.** No es averiguable por fuera: hay
-    que medirlo. Si no notifica, un pedido puede quedar marcado como pagado con la venta anulada
-    del otro lado y nada avisa. **Decidido el 23 de septiembre: lo medimos nosotros**, con una
-    transacción real y el sandbox apagado —un crédito de verdad a nombre de una persona de verdad y
-    su anulación después—, así que deja de ser algo que se le pregunta a un tercero y pasa a ser una
-    prueba con fecha. **No hace falta producción**: la pasarela es la misma desde dev. **Y no es por
-    el mínimo de 50.000**: el crédito se abre por el precio de lo que se compre, y el producto
-    publicado más barato el 23 de septiembre valía **219.900** — decidido ese día que se usa ese, en
-    vez de publicar uno de prueba. Va detrás de la 33, que comprueba que el camino entero funciona
-    antes de gastar un crédito real en medir este tramo.
+15. ~~**Si la anulación en Credinet notifica a `urlConfirmation`.**~~ **Medida el 23 de septiembre
+    de 2026 con un crédito real, y contestada en negativo por partida doble: ni notifica ni se ve.**
+    Se compró de verdad —pedido `TS-2026-000006`, $227.402, autorizado con documento y OTP— y se
+    anuló en Credinet ocho minutos después. Ninguna notificación llegó: el registro de peticiones
+    tiene tres llamadas a `/confirmacion`, las tres de la aprobación, y **ninguna** después de
+    anular. Y lo que el enunciado no preveía: **`GetTransactionResponse` sigue respondiendo
+    `Approved`** —trece consultas entre el minuto 1 y el 22— que es justo el endpoint del que
+    depende la conciliación. El `paymentId` de la URL de autorización tampoco sirve:
+    `errorCode 708, TransactionNotFound`.
+    **Lo que deja abierto no es esta deuda sino una regla de operación y una pregunta**, las dos en
+    `docs/11`: quien anule en Credinet cancela el pedido a mano, ningún pedido de Sistecrédito se
+    despacha sin cruzarlo contra Credinet, y hay que preguntarle a la asesora si existe un endpoint
+    de anulaciones que las cinco guías entregadas no mencionan. **Cómo comprobarlo:** el pedido
+    `TS-2026-000006` sigue en dev *En preparación*, por 227.402, con la venta anulada del otro lado
+    — es la evidencia viva, y por eso no se despacha.
 
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
