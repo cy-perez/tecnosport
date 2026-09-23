@@ -48,7 +48,7 @@ tienen que conocerla:
 
   ```
   GCS_ORIGENES_CORS=http://localhost:4200,https://algo-aleatorio.trycloudflare.com \
-    node infra/dev/bucket-imagenes.mjs
+    node infra/local/bucket-imagenes.mjs
   ```
 
   Esa corrida solo reemplaza la configuración de CORS; el bucket, la cuenta de

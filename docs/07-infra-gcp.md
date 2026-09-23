@@ -26,7 +26,7 @@ cámara y los sensores no funcionan sobre HTTP fuera de `localhost`. Se resuelve
 con un túnel o con un certificado local. Está documentado en el README de
 `apps/web`.
 
-**Imágenes en dev: bucket real de Cloud Storage, no un emulador.** Proyecto
+**Imágenes en local: bucket real de Cloud Storage, no un emulador.** Proyecto
 GCP separado (`tecnosport-dev`, nunca `tecnosport-prod`) con un bucket en la
 capa gratuita (5 GB-mes, clase Standard, regiones `us-central1`/`us-east1`/
 `us-west1`) y una cuenta de servicio propia con `roles/storage.objectAdmin`
@@ -34,12 +34,24 @@ para firmar URLs — decisión del proyecto: dev usa solo servicios de GCP sin
 costo, los servicios pagos se activan al pasar a producción. CORS configurado
 para el origen de `apps/web` en local (`http://localhost:4200`).
 
-Todo eso lo crea `node infra/dev/bucket-imagenes.mjs`, idempotente, con la llave
-de la cuenta de servicio en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`. Sin esa
-llave el backend arranca igual —el bean `Storage` se construye sin credenciales—
-pero firmar falla: `POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500
-con `Signing key was not provided and could not be derived`, y con él se cae todo
-lo que sigue del asistente de captura.
+**Un bucket por ambiente** (`ADR-0058`): `tecnosport-local-imagenes` para esta
+máquina, `tecnosport-dev-imagenes` para el ambiente desplegado, y el de
+producción cuando exista. Hasta el 23 de septiembre de 2026 había uno solo y lo
+compartían local y dev, porque el valor por omisión de `application.yml` era el
+del ambiente desplegado: un `bootRun` sin variables escribía allá. Llegó a tener
+648 objetos, 348 de local y 300 de dev, y el informe de huérfanos tuvo que
+aprender a distinguirlos para no proponer borrar las imágenes vivas del otro
+lado. El valor por omisión es ahora el de local, que es donde corre el proceso
+que lo lee.
+
+El de local lo crea `node infra/local/bucket-imagenes.mjs`, idempotente, con la
+llave de la cuenta de servicio en la ruta de `GOOGLE_APPLICATION_CREDENTIALS`.
+Sin esa llave el backend arranca igual —el bean `Storage` se construye sin
+credenciales— pero firmar falla:
+`POST /api/v1/admin/sets-rotacion/{id}/subidas` responde 500 con
+`Signing key was not provided and could not be derived`, y con él se cae todo lo
+que sigue del asistente de captura. El del ambiente desplegado lo declara
+Terraform, y ese script se niega a tocarlo.
 
 ## Producción en GCP
 

@@ -67,7 +67,7 @@ function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): Produc
 function imagenDeGaleria(orden: number): ImagenDeGaleriaAdmin {
   return {
     id: 'img' + orden,
-    url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/galeria-' + orden + '.jpg',
+    url: 'https://storage.googleapis.com/tecnosport-imagenes-de-prueba/galeria-' + orden + '.jpg',
     ancho: 2000,
     alto: 2000,
     orden,
@@ -135,7 +135,7 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
       throw new Error('falló');
     }
     return {
-      url: 'https://storage.googleapis.com/tecnosport-dev-imagenes/objeto.webp',
+      url: 'https://storage.googleapis.com/tecnosport-imagenes-de-prueba/objeto.webp',
       ancho: comando.ancho,
       alto: comando.alto,
       altEs: comando.altEs,

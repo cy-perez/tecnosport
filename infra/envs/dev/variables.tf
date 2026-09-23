@@ -23,7 +23,7 @@ variable "rama_que_despliega" {
 }
 
 variable "bucket_imagenes" {
-  description = "Bucket de imágenes de producto que ya existe, creado por infra/dev/bucket-imagenes.mjs. Aquí solo se le dan permisos a la API."
+  description = "Bucket de imágenes de producto de este ambiente, declarado y administrado aquí desde el 23 de septiembre de 2026 (ADR-0058). El de local es otro y lo crea infra/local/bucket-imagenes.mjs: compartirlos dejó 348 objetos de esa máquina aquí dentro."
   type        = string
   default     = "tecnosport-dev-imagenes"
 }

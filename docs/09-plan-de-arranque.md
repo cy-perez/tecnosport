@@ -8298,6 +8298,125 @@ pasado con cualquier alerta en pantalla.
 la cortesía y no el `@if`—. Ver la entrada de abajo y la deuda 16, ya cerrada. Esta clasificación
 queda como lo que era: el mapa con el que se paró a tiempo.
 
+## El bucket deja de ser uno para dos ambientes (2026-09-23)
+
+La deuda 29 se cerró el 22 por la vía barata: el informe de huérfanos aprendió a leer
+`catalogo/cargados.json` y a decir "esto es de otro ambiente, no lo juzgo" en vez de proponerlo para
+borrar. Ahí quedó escrito que la vía cara seguía sobre la mesa. Esta entrada es la vía cara, y lo
+primero que hizo fue corregir el enunciado de por qué existía el problema.
+
+### No era `.env.local`: era un valor por omisión
+
+`application.yml` caía en `tecnosport-dev-imagenes` cuando no había variable — el bucket del
+**ambiente desplegado**. Así que un `bootRun` en esta máquina sin `.env.local`, o con el `.env.local`
+copiado del ejemplo, escribía allá sin que nadie lo hubiera decidido. El reparto medido el 23: **648
+objetos, 348 de los 29 productos de local y 300 de los 25 de dev**, todos bajo `productos/` y
+**ninguno bajo `rotacion/`** — ese cero es el que dice que la migración cabe entera en
+`--rehacer-imagenes` y que no hay ningún set de fotos fuera de ese camino.
+
+El valor por omisión pasa a ser el de local, y el argumento es corto: describe dónde corre el proceso
+que lo lee por omisión, que es esta máquina. El ambiente desplegado fija sus variables desde
+Terraform y nunca dependió de esa línea.
+
+### Un dueño por bucket, y un script que se niega
+
+`infra/dev/bucket-imagenes.mjs` pasa a `infra/local/bucket-imagenes.mjs` —no es dev, es la máquina de
+quien programa— y **rechaza** `tecnosport-dev-imagenes` y `tecnosport-prod-imagenes` en vez de
+obedecer. Lo que ese script hace es configuración de ambiente: CORS, ciclo de vida, lectura pública,
+una cuenta con `objectAdmin`. Con el nombre saliendo de `.env.local`, correrlo con la variable
+apuntando a dev le reconfiguraba el CORS al ambiente desplegado, y eso no debe poder pasar sin
+querer.
+
+El del ambiente desplegado pasa a Terraform, importado **tal como estaba**. El `plan` después de
+importar no propuso ni un cambio, y eso es lo único que prueba que la declaración es fiel; si hubiera
+propuesto reemplazo, se habría llevado las 300 imágenes vivas de dev. Lleva `prevent_destroy`.
+
+### Lo que apareció al declararlo, y no al leerlo
+
+**El CORS del bucket de dev admitía `http://localhost:4200` y no el origen de su propia web.** Subir
+una foto desde el panel desplegado, con el ratón, moría en el preflight. Llevaba así desde que el
+bucket existe y nadie lo notó porque **las cargas del catálogo las hizo el cargador desde Node**, que
+firma sin navegador y por eso nunca pasa por un preflight. Es la misma forma de fallo que el proyecto
+ya conoce: lo que solo se usa por una herramienta no se prueba por donde lo usa una persona.
+
+`localhost` no vuelve a ese bucket. El navegador en local siempre habla con la API de local —base
+relativa y `proxy.conf.json`—, así que una subida desde `localhost` va al bucket de local y pide el
+CORS del otro bucket.
+
+### Lo que no se borró
+
+**El cruce por ambiente del informe de huérfanos se queda.** Con los buckets separados tiene que
+informar cero, y ese cero es la comprobación de que la separación sigue en pie; si algún día aparece
+con objetos, no es información, es que alguien volvió a apuntar local al bucket de dev. Quitar el
+guardián justo después de arreglar lo que vigilaba deja el informe listo para volver a proponer el
+borrado que rompe el otro lado.
+
+### Ejecutado y medido, y el paso que estaba escrito al revés
+
+El runbook se corrió el mismo día. Comprobado contra los dos buckets, no contra lo que dijo quien lo
+corrió: **local tiene su bucket con sus 344 objetos** y una cuenta de servicio que solo puede
+escribir ahí; **el bucket de dev perdió el `objectAdmin` de la cuenta de local** —con él se fue la
+posibilidad del error que abrió la deuda 29— y su CORS es el origen de su propia web.
+
+Lo que no pasó fue el borrado, y el motivo era **un paso mal escrito del runbook, no un olvido**. El
+paso 6 decía cruzar el bucket de dev contra la API **de dev**, y así los 348 objetos viejos caen en
+"de otro ambiente, no los juzgo": son de productos de local, y esa es la protección de la deuda 29
+haciendo exactamente su trabajo. El informe no ofreció nada que borrar, y hacía bien. Para listarlos
+hay que cruzar ese bucket contra la API **de local**, que ya no los reclama porque su base apunta al
+bucket nuevo — y el propio informe lo dice en la última línea de esa sección cuando la llena. Estaba
+escrito en la herramienta desde el 22 de septiembre, y aun así hizo falta ejecutarlo para verlo.
+
+**De paso, el reparto quedó medido con precisión**: de los 348 objetos de local que había en el
+bucket de dev, local solo reclamaba **344**. Los otros cuatro son los huérfanos que el informe ya
+había encontrado el 22 de septiembre.
+
+**Los 348 se borraron, y el borrado se comprobó por dos vías además del recuento.** Antes de
+ejecutarlo, las 348 keys se cruzaron contra `cargados.json` —348 de 348 de productos de local,
+ninguna de dev, ninguna sin registro— y contra el listado del bucket de local, donde ninguna existe:
+ni equivocando el bucket se habría tocado algo vivo. Después, el bucket de dev es **key por key el de
+antes menos esas 348**, sin nada que sobre ni nada que falte, y las 32 URL de imagen que publica su
+catálogo responden 200. **Dev quedó en 300 objetos y local en 344**, cada uno solo con lo suyo. El
+informe se corrió con `--token` y no con `--correo`, porque la clave se pide sin eco y eso no
+funciona desde la línea de comandos de esta conversación.
+
+Y una tercera cosa, chica y del oficio: `terraform apply -target=…` sin comillas llega a Terraform
+como `google_storage_bucket` a secas y responde `Invalid target`, un error que no menciona el
+entrecomillado. Queda en el runbook con las comillas puestas.
+
+**Y una deriva ajena que el `plan` destapó y que no se tocó**: el servicio de Cloud Run de la API de
+dev tiene etiquetas puestas a mano (`reinicio=r2`), que Terraform quiere quitar. Alguien reinició el
+servicio con `gcloud`. Aplicarlo de paso, dentro de un trabajo sobre un bucket, habría sido un
+despliegue no pedido; por eso el `apply` fue con `-target`.
+
+### Las tres sobras, y la que enseñó algo
+
+Cerrar deja tres cosas chicas, y una de ellas cambió una decisión.
+
+**El bucket tenía un `objectAdmin` de una cuenta ya borrada** (`imagenes-dev@`, de antes de que
+existiera este Terraform). Quitarlo a mano habría sido un `gcloud` de dos minutos y el error habría
+podido volver el mes que viene sin que nada avisara: **los permisos estaban declarados con
+`google_storage_bucket_iam_member`, que solo añade**, así que cualquier cuenta agregada por fuera se
+queda para siempre y **ningún `plan` la menciona**. Pasan a `google_storage_bucket_iam_binding`, que
+es autoritativo por rol: la lista del código es la lista entera, y lo que alguien agregue a mano
+aparece como diferencia y se retira en el `apply` siguiente. El `plan` propone exactamente eso, una
+línea: fuera la cuenta borrada. Los roles heredados del proyecto son otros roles y no se tocan.
+
+**La cuenta y la llave viejas de local** (`tecnosport-dev-imagenes@`, y su JSON en `~/.gcp/`) se
+borran: desde que local firma con la suya no sirven para nada, y una llave viva que nadie usa es solo
+superficie.
+
+**Y el informe de huérfanos explicaba cada objeto sin reclamar como "una subida firmada que nunca se
+confirmó"**, que para estos 348 era falso: eran sobras de la mudanza. Ahora dice las dos, y también
+dice lo que no sabe — que el segundo caso solo existe si el ambiente cambió de bucket, y eso no lo
+puede saber un informe que solo ve keys.
+
+**Las tres quedaron hechas y comprobadas el mismo día**: el `objectAdmin` del bucket de dev es
+**solo** el de la API, la cuenta `tecnosport-dev-imagenes@` ya no existe y en `~/.gcp/` queda una
+sola llave. Y el cierre de verdad es la última lectura: `terraform plan` sobre el bucket y sus dos
+permisos responde **"No changes. Your infrastructure matches the configuration."** — el ambiente
+desplegado y lo que dice el código son la misma cosa, que es lo que no se podía afirmar mientras el
+bucket lo creara un script a mano.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8339,7 +8458,8 @@ usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. S
 Ver la entrada de arriba.
 
 Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
-objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
+objeto, así que su lista pasó de 304 a 4 contra el mismo bucket; el 23 se cerró además por la vía
+cara, con un bucket por ambiente— y la **30**, que al abrirla resultó
 ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
 por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Se cerró la **10** —el inventario
 deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y **se cerró la
@@ -8644,8 +8764,9 @@ El orden no es negociable: cada uno alimenta al siguiente.
     correr el informe contra dev con el catálogo local cargado; mientras la cifra de "sin reclamar"
     incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
     salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
-    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y la
-    cara sigue sobre la mesa: un bucket por ambiente haría innecesario todo este cruce.
+    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y **la
+    cara se tomó el 23 de septiembre**: hay un bucket por ambiente (`ADR-0058`), y el cruce se queda
+    de todas formas como la comprobación de que siguen separados. Ver la entrada de arriba.
 
 ### Lo que dejó abierto cerrar la deuda 28
 

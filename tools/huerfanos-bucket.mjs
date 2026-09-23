@@ -23,12 +23,19 @@
 // expone sus imágenes por ninguna API, así que desde aquí no hay forma de distinguir "es de un
 // set en preparación" de "no lo reclama nadie". Se cuentan aparte y se dice por qué.
 //
-// **Y tampoco juzga lo que es de otro ambiente.** `tecnosport-dev-imagenes` lo comparten local
-// y dev, así que una carga contra `localhost` deja en ese bucket objetos con ids que la base de
-// dev nunca tuvo. Este informe cruza contra **una** API —la de `--api`— y antes los contaba
-// como basura: el 22 de septiembre de 2026 listó 366 sin reclamar y **348 eran las imágenes
-// vivas del catálogo local**. Borrar esa lista no habría roto dev, habría roto local, y el
-// síntoma habría aparecido días después sin relación aparente con nada.
+// **Y tampoco juzga lo que es de otro ambiente.** Esto nació porque `tecnosport-dev-imagenes` lo
+// compartían local y dev: una carga contra `localhost` dejaba en ese bucket objetos con ids que la
+// base de dev nunca tuvo. Este informe cruza contra **una** API —la de `--api`— y antes los
+// contaba como basura: el 22 de septiembre de 2026 listó 366 sin reclamar y **348 eran las
+// imágenes vivas del catálogo local**. Borrar esa lista no habría roto dev, habría roto local, y
+// el síntoma habría aparecido días después sin relación aparente con nada.
+//
+// **Desde el 23 de septiembre de 2026 hay un bucket por ambiente** (`ADR-0058`), así que lo normal
+// es que esta categoría salga en cero: un objeto de local ya no vive en el bucket de dev. El cruce
+// **se queda de todas formas**, y no por nostalgia — es lo que avisa si alguien vuelve a apuntar
+// local al bucket de dev, y quitar el guardián justo después de arreglar lo que vigilaba deja el
+// informe listo para volver a proponer un borrado que rompe el otro lado. Si esta sección aparece
+// con objetos, no es información: es que la separación se deshizo en alguna parte.
 //
 // La separación sale de `catalogo/cargados.json`, que desde ese mismo día está indexado por la
 // URL de la API. La key de un objeto es `productos/{productoId}/…` y ese registro dice a qué
@@ -383,8 +390,16 @@ if (huerfanos.length === 0) {
     console.log(`  ${objeto.fecha}  ${String(objeto.bytes).padStart(8)}  ${objeto.key}`);
   }
   console.log(
-    `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una subida firmada` +
-      " que nunca se confirmó:\n el objeto quedó en el bucket y la fila nunca se creó.",
+    `\nEl más viejo es del ${ordenados[0].fecha.slice(0, 10)}. Cada uno es una de dos cosas,` +
+      " y desde aquí se ven igual:\n" +
+      "  · una subida firmada que nunca se confirmó — el objeto quedó en el bucket y la fila" +
+      " nunca se creó;\n" +
+      "  · una sobra de un cambio de la base pública — si la URL guardada apunta a otro" +
+      " bucket, `objectKeyDe` no la reconoce,\n    así que quitar la imagen borró la fila y" +
+      " dejó el objeto en pie.\n" +
+      "El segundo caso solo aparece si este ambiente se mudó de bucket, y eso este informe no" +
+      " lo sabe:\nlo sabe quien lo mudó. Pasó el 23 de septiembre de 2026 con 348 objetos" +
+      " (ADR-0058).",
   );
 }
 

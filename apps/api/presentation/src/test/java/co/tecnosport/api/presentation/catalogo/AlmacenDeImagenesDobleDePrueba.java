@@ -13,7 +13,7 @@ import java.util.Set;
 class AlmacenDeImagenesDobleDePrueba implements AlmacenDeImagenes {
 
   private static final String BASE_PUBLICA =
-      "https://storage.googleapis.com/tecnosport-dev-imagenes/";
+      "https://storage.googleapis.com/tecnosport-imagenes-de-prueba/";
 
   private final Map<String, Long> objetosExistentes = new HashMap<>();
   final List<String> objetosEliminados = new ArrayList<>();

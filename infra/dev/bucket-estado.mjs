@@ -14,7 +14,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// `.env.local` manda sobre los valores por omisión, igual que en bucket-imagenes.mjs.
+// `.env.local` manda sobre los valores por omisión, igual que en
+// infra/local/bucket-imagenes.mjs.
 const local = {};
 const archivoLocal = resolve(fileURLToPath(import.meta.url), '../../../.env.local');
 if (existsSync(archivoLocal)) {
