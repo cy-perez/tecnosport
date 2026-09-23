@@ -10,7 +10,7 @@ esperar.
 | Cantidad | hasta 4 por producto, y ninguna de relleno |
 | Maestra | 2000 × 2000 px, cuadrada (1:1), sRGB, sin EXIF, JPEG q92 |
 | Variantes | 480, 800, 1200, 1600 y 2000 px, en AVIF con JPEG de respaldo |
-| Fondo | degradado gris del catálogo, **idéntico en todos los productos** |
+| Fondo | blanco plano del catálogo, **idéntico en todos los productos**, con la sombra de contacto que dibuja el resplandor alrededor (hasta el 23/09/2026 fue un degradado gris; los productos procesados antes siguen así hasta que se reprocesen) |
 | Encuadre | producto centrado ocupando el 85 % del lienzo |
 | Nombre | `<id-del-producto>-01` … `-04`, con la extensión del formato |
 | Carpetas | `imagenes/<id>/<ancho>/<nombre>.<ext>` |
@@ -300,6 +300,6 @@ retoque lo hace `fotos-estudio-degradado`.
 Si un producto queda sin fotos, su carpeta en el ZIP incluye un
 `FOTOS-PENDIENTES.md` que dice cuántas faltan.
 
-El retoque —fondo degradado, encuadre al 85 %, resplandor, maestra y variantes—
+El retoque —fondo blanco, encuadre al 85 %, resplandor, maestra y variantes—
 lo hace la skill `fotos-estudio-degradado`, que es la que define el estilo de
 todas las imágenes del ecommerce.

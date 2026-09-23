@@ -142,7 +142,7 @@ LEEME = """FOTOS DE PRODUCTO — tres pasos
 
    Quita los pictogramas y las fotos donde el producto sale cortado, y deja lo
    descartado en descartadas/ con el motivo. El retoque al estándar de estudio
-   —fondo degradado, 2000x2000 y variantes— lo hace la skill
+   —fondo blanco, 2000x2000 y variantes— lo hace la skill
    `fotos-estudio-degradado`.
 """
 

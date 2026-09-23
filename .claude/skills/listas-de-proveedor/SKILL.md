@@ -350,8 +350,8 @@ partners si la tienda es revendedor autorizado, o fotos propias.
 
 **Esta skill no retoca imágenes.** Todas las fotos del ecommerce pasan por
 `fotos-estudio-degradado`, que es la que define el estilo del catálogo: fondo
-degradado gris, producto al 85 % del lienzo, sombra de contacto, maestra JPEG y
-AVIF web. Que el estilo lo decida un solo lugar es justamente el punto: si cada
+blanco, producto al 85 % del lienzo, sombra de contacto —que es la que le pone el
+resplandor alrededor—, maestra JPEG y AVIF web. Que el estilo lo decida un solo lugar es justamente el punto: si cada
 skill recortara a su manera, el catálogo dejaría de verse parejo.
 
 ```bash
