@@ -2,8 +2,9 @@
 #
 # Lo que NO está aquí, y es deliberado:
 #   - La base de datos: es Neon, fuera de GCP, porque Cloud SQL no tiene capa gratuita.
-#   - El bucket de imágenes y su cuenta: los creó `infra/dev/bucket-imagenes.mjs` antes de que
-#     existiera este Terraform. Aquí solo se le dan permisos; no se administran desde aquí.
+#   - El bucket de imágenes **de local** y su cuenta: los crea `infra/local/bucket-imagenes.mjs`,
+#     porque no son de este ambiente sino de la máquina de quien programa (`ADR-0058`). El de este
+#     ambiente sí está aquí, abajo.
 #   - Los valores de los secretos: se cargan con gcloud. Terraform crea el recipiente y nunca ve
 #     el contenido, que si no acabaría escrito en el estado.
 
@@ -84,8 +85,67 @@ resource "google_service_account_iam_member" "api_firma_por_si_misma" {
   member             = "serviceAccount:${google_service_account.api.email}"
 }
 
+# ── El bucket de imágenes de este ambiente ──────────────────────────────────────────────────────
+# Existía antes que este Terraform, creado a mano por un script, y por eso el CORS de abajo se
+# quedó a medias sin que nada lo notara: admite el origen de `localhost` y no el de la web de este
+# ambiente. Se importó al estado el 23 de septiembre de 2026 (`ADR-0058`) declarándolo **tal como
+# estaba** —ese `plan` sin cambios es lo que prueba que la declaración es fiel— y el origen se
+# corrige en el commit siguiente, no en el mismo.
+#
+# `prevent_destroy` porque aquí viven las imágenes del catálogo de dev: un `terraform destroy` o un
+# cambio que forzara reemplazo se las llevaría, y un bucket no se recrea con su contenido. Para
+# borrarlo de verdad hay que quitar esta línea a mano, que es exactamente la pausa que se quiere.
+resource "google_storage_bucket" "imagenes" {
+  name          = var.bucket_imagenes
+  location      = "US-EAST1"
+  storage_class = "STANDARD"
+
+  # Los permisos se dan por IAM, nunca por ACL de objeto.
+  uniform_bucket_level_access = true
+
+  # La red de la que depende el borrado de un set de rotación: `EliminarSetRotacion` borra los
+  # objetos, y sin versionado eso sería irreversible — quince fotos que hay que volver a tomar.
+  versioning {
+    enabled = true
+  }
+
+  # Sin esto las versiones no vigentes se acumulan y el espacio no se reclama nunca, que era justo
+  # el problema que el versionado creaba.
+  # TODO(negocio): DIAS_RETENCION_VERSIONES_IMAGEN. 30 días es un valor de arranque, no una
+  # decisión tomada: es el plazo para darse cuenta de que se borró un set por error. Confirmar
+  # antes de producción. Mismo TODO que en infra/local/bucket-imagenes.mjs.
+  lifecycle_rule {
+    action {
+      type = "Delete"
+    }
+    condition {
+      days_since_noncurrent_time = 30
+    }
+  }
+
+  # Sin CORS el `PUT` firmado desde el panel muere en el preflight y no sube ninguna foto.
+  cors {
+    origin          = ["http://localhost:4200"]
+    method          = ["GET", "HEAD", "PUT"]
+    response_header = ["Content-Type"]
+    max_age_seconds = 3600
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# La ficha de producto sirve las imágenes por URL directa, así que el bucket es de lectura pública.
+# La escritura sigue siendo solo con URL firmada.
+resource "google_storage_bucket_iam_member" "imagenes_lectura_publica" {
+  bucket = google_storage_bucket.imagenes.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
 resource "google_storage_bucket_iam_member" "api_escribe_imagenes" {
-  bucket = var.bucket_imagenes
+  bucket = google_storage_bucket.imagenes.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.api.email}"
 }
