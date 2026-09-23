@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -52,6 +53,14 @@ class PagoControladorTest {
   @Autowired private MockMvc mockMvc;
   @Autowired private RepositorioPedidosDobleDePrueba pedidos;
   @Autowired private RepositorioPagosDobleDePrueba pagos;
+
+  @BeforeEach
+  void reiniciarElEstadoCompartido() {
+    // Los dobles son beans del contexto de @WebMvcTest, uno solo para todos los métodos de
+    // esta clase: sin esto, los pedidos y pagos de una prueba siguen visibles en la siguiente.
+    pedidos.limpiar();
+    pagos.limpiar();
+  }
 
   private final ObjectMapper json = new ObjectMapper();
 
