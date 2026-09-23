@@ -7,6 +7,7 @@ Nada se crea a mano en la consola. Si existe y no está aquí, no existe.
 ## Estructura
 
 ```
+local/                lo que la máquina de quien programa necesita en GCP (scripts de Node)
 dev/                  arranque en frío del proyecto de desarrollo (scripts de Node)
 modules/cloud-run/    un servicio de Cloud Run
 envs/dev/             el ambiente de desarrollo desplegado, entero
@@ -52,8 +53,9 @@ terraform apply
 ## Lo que Terraform no administra, a propósito
 
 - **La base de datos.** En dev es Neon, fuera de GCP, porque Cloud SQL no tiene capa gratuita.
-- **El bucket de imágenes y su cuenta**, creados por `dev/bucket-imagenes.mjs` antes de que
-  existiera este Terraform. Se les dan permisos desde aquí; no se administran desde aquí.
+- **El bucket de imágenes de local y su cuenta**, que crea `local/bucket-imagenes.mjs`. No es
+  un ambiente desplegado: es la máquina de quien programa, y cada quien crea el suyo. El del
+  ambiente desplegado sí está aquí (`ADR-0058`).
 - **Los valores de los secretos.** Terraform crea el recipiente en Secret Manager y nunca ve el
   contenido: lo que se le pasa por variable acaba escrito en el estado, y el estado está en un
   bucket. Las versiones se cargan con `gcloud secrets versions add`.

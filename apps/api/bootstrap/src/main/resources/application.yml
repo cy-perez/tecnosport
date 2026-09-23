@@ -87,11 +87,20 @@ tecnosport:
       retraso-inicial-minutos: ${PEDIDO_COMPROBANTES_RETRASO_INICIAL_MINUTOS:1}
   gcs:
     # bucket-imagenes y url-publica no son secretos (docs/07-infra-gcp.md los documenta), por eso
-    # sí llevan default real de dev — a diferencia de los placeholders de Wompi de abajo, que son
-    # secretos y nunca deben tener un valor real por defecto (regla dura #5). Las credenciales para
-    # firmar las resuelve el SDK vía GOOGLE_APPLICATION_CREDENTIALS, fuera de este bloque.
-    bucket-imagenes: ${GCS_BUCKET_IMAGENES:tecnosport-dev-imagenes}
-    url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/tecnosport-dev-imagenes}
+    # sí llevan default real — a diferencia de los placeholders de Wompi de abajo, que son secretos
+    # y nunca deben tener un valor real por defecto (regla dura #5). Las credenciales para firmar
+    # las resuelve el SDK vía GOOGLE_APPLICATION_CREDENTIALS, fuera de este bloque.
+    #
+    # **El valor por omisión es el bucket de local, y eso es la corrección, no un detalle.** Hasta
+    # el 23 de septiembre de 2026 era `tecnosport-dev-imagenes`, el del ambiente desplegado: un
+    # `bootRun` en esta máquina sin variables escribía en el bucket de dev, y así los dos ambientes
+    # acabaron compartiéndolo — 648 objetos, 348 de local y 300 de dev, y un informe de huérfanos
+    # que tuvo que aprender a distinguirlos para no proponer borrar las imágenes vivas del otro
+    # lado (deuda 29, ADR-0058). Un valor por omisión describe dónde corre el proceso por omisión,
+    # que es esta máquina; el ambiente desplegado fija sus variables desde Terraform y no depende
+    # de esta línea.
+    bucket-imagenes: ${GCS_BUCKET_IMAGENES:tecnosport-local-imagenes}
+    url-publica: ${GCS_URL_PUBLICA:https://storage.googleapis.com/tecnosport-local-imagenes}
     minutos-url-firmada: ${GCS_MINUTOS_URL_FIRMADA:15}
   wompi:
     # Sin valor por defecto que sea una llave real (regla dura #5): los de abajo son placeholders

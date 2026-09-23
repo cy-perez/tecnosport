@@ -1,13 +1,22 @@
 #!/usr/bin/env node
-// Crea el bucket de imágenes de desarrollo y la cuenta de servicio que firma las
-// URL de subida (docs/07-infra-gcp.md: "Imágenes en dev: bucket real de Cloud
-// Storage, no un emulador").
+// Crea el bucket de imágenes de **esta máquina** y la cuenta de servicio que firma
+// las URL de subida (docs/07-infra-gcp.md: "Imágenes en local: bucket real de
+// Cloud Storage, no un emulador").
 //
 // Es idempotente: correrlo dos veces no rompe nada ni duplica la llave.
 //
-//   node infra/dev/bucket-imagenes.mjs
+//   node infra/local/bucket-imagenes.mjs
 //
-// Requiere `gcloud` autenticado (`gcloud auth login`) sobre un proyecto de
+// **Un bucket por ambiente, y este script administra uno solo: el de local**
+// (ADR-0058). El del ambiente desplegado lo administra Terraform, en
+// `infra/envs/dev`, con su CORS, su versionado y su ciclo de vida declarados
+// allí. Hasta el 23 de septiembre de 2026 este script administraba los dos y el
+// nombre del bucket salía de `.env.local`, así que correrlo con la variable
+// apuntando a dev le reconfiguraba el CORS y el ciclo de vida al ambiente
+// desplegado sin que nadie lo hubiera pedido. Por eso ahora se niega: ver
+// BUCKETS_DESPLEGADOS más abajo.
+//
+// Requiere `gcloud` autenticado (`gcloud auth login`) sobre el proyecto de
 // desarrollo con facturación habilitada. Nada de esto toca producción: el
 // proyecto es otro, y así se queda.
 import { execFileSync } from 'node:child_process';
@@ -29,10 +38,32 @@ if (existsSync(archivoLocal)) {
 const config = (clave) => process.env[clave] || local[clave];
 
 const PROYECTO = config('GCP_PROYECTO_DEV') ?? 'tecnosport-dev';
-const BUCKET = config('GCS_BUCKET_IMAGENES') ?? 'tecnosport-dev-imagenes';
+const BUCKET = config('GCS_BUCKET_IMAGENES') ?? 'tecnosport-local-imagenes';
+
+// Los buckets de los ambientes desplegados. Este script los rechaza, y no por
+// prudencia de más: lo que hace abajo —CORS, ciclo de vida, lectura pública, una
+// cuenta de servicio con objectAdmin— es configuración del ambiente, y la del
+// desplegado la declara Terraform. Dos dueños de la misma línea es peor que
+// ninguno: el último que corre gana, y nada dice cuál corrió.
+const BUCKETS_DESPLEGADOS = ['tecnosport-dev-imagenes', 'tecnosport-prod-imagenes'];
+if (BUCKETS_DESPLEGADOS.includes(BUCKET)) {
+  console.error(`
+${BUCKET} es el bucket de un ambiente desplegado, y lo administra Terraform
+(infra/envs/dev). Este script solo administra el de local.
+
+Suele significar que GCS_BUCKET_IMAGENES de .env.local quedó apuntando al
+ambiente desplegado — que es justo lo que hizo que los dos ambientes
+compartieran un bucket durante un mes (ADR-0058). El valor de local es
+tecnosport-local-imagenes.`);
+  process.exit(1);
+}
+
 // Capa gratuita: Standard en us-central1, us-east1 o us-west1 (docs/07-infra-gcp.md).
-// Solo se usa al crear el bucket: si ya existe, su región no se puede cambiar.
-const REGION = config('GCP_REGION_DEV') ?? 'us-central1';
+// us-east1 porque ahí está el bucket del ambiente desplegado y los 5 GB-mes gratuitos
+// son del proyecto, no del bucket: tenerlos en la misma región no cuesta nada y no
+// hay que recordar dos. Solo se usa al crear el bucket: si ya existe, su región no se
+// puede cambiar.
+const REGION = config('GCP_REGION_DEV') ?? 'us-east1';
 // El mismo nombre del bucket, para que nadie tenga que adivinar cuál cuenta
 // firma cuál cosa.
 const CUENTA = config('GCP_CUENTA_IMAGENES') ?? BUCKET;
@@ -148,7 +179,7 @@ if (existe(['iam', 'service-accounts', 'describe', correo, '--format=value(email
 } else {
   gcloud([
     'iam', 'service-accounts', 'create', CUENTA,
-    '--display-name=Imagenes de producto (dev)',
+    '--display-name=Imagenes de producto (local)',
   ]);
 }
 
