@@ -14,7 +14,5 @@
     (input)="manejarEntrada($any($event.target).value)"
     (blur)="manejarSalida()"
   />
-  @if (error()) {
-    <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
-  }
+  <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
 </div>

@@ -48,9 +48,7 @@
         formControlName="categoriaId"
       />
 
-      @if (error()) {
-        <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
-      }
+      <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
 
       <ts-boton
         variante="primario"
@@ -113,9 +111,7 @@
         formControlName="altEn"
       />
 
-      @if (errorImagen()) {
-        <p class="m-0 text-ts-error" role="alert">{{ errorImagen() }}</p>
-      }
+      <p class="m-0 text-ts-error" role="alert">{{ errorImagen() }}</p>
 
       <!-- Subir la imagen principal no dejaba ningun rastro: el formulario se limpiaba y ya. Para
            quien usa lector de pantalla eso era indistinguible de no haber hecho nada. -->

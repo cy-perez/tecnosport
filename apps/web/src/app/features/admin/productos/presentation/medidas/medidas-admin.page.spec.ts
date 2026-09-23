@@ -153,7 +153,7 @@ describe('MedidasAdminPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.medidas.guardar }));
 
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(await screen.findByText(esAdmin.productos.medidas.faltanCampos)).toBeTruthy();
     expect(repositorio.medidas).toEqual([]);
   });
 

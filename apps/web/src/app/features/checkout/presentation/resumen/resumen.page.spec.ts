@@ -290,7 +290,7 @@ describe('ResumenPage', () => {
     fireEvent.click(screen.getByRole('checkbox'));
 
     expect(await screen.findByText(/Portátil para diseño/)).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('supera el máximo');
+    expect(screen.getByText(/supera el máximo/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
