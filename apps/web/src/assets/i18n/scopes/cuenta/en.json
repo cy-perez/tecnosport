@@ -10,7 +10,8 @@
     "no_es_cliente": "This account belongs to the admin panel, not a customer account.",
     "olvidaste_clave": "Forgot your password?",
     "sin_cuenta": "Don't have an account?",
-    "crear_cuenta": "Create account"
+    "crear_cuenta": "Create account",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem."
   },
   "registro": {
     "titulo": "Create account",

@@ -29,7 +29,8 @@
     "entrar": "Entrar",
     "enviando": "Entrando…",
     "error": "Correo o clave incorrectos.",
-    "no_es_admin": "Esta cuenta no tiene acceso al panel."
+    "no_es_admin": "Esta cuenta no tiene acceso al panel.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema."
   },
   "panel": {
     "titulo": "Panel administrativo",

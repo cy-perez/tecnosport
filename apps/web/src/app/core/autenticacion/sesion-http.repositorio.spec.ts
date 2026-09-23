@@ -77,6 +77,46 @@ describe('SesionHttpRepositorio.refrescar', () => {
  * a quien escribió bien su clave le diriamos que está mal y se pondría a buscar un problema que
  * no existe.
  */
+describe('SesionHttpRepositorio.iniciarSesion', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function conRespuesta(respuesta: Response): SesionHttpRepositorio {
+    vi.stubGlobal('window', undefined);
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta));
+    return new SesionHttpRepositorio();
+  }
+
+  it('el 429 del limitador no se confunde con credenciales malas', async () => {
+    // Antes caia en `ErrorHttp` y la pantalla lo pintaba como "correo o clave incorrectos", que
+    // es lo contrario de lo que pasa: la clave esta bien y lo que hay que hacer es esperar.
+    const repositorio = conRespuesta(
+      new Response(JSON.stringify({ codigo: 'LIMITE_DE_INTENTOS_EXCEDIDO' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    );
+
+    await expect(repositorio.iniciarSesion('admin@tecnosport.co', 'la-buena')).rejects.toBeInstanceOf(
+      DemasiadosIntentosError,
+    );
+  });
+
+  it('el 401 de verdad sigue siendo un ErrorHttp', async () => {
+    const repositorio = conRespuesta(
+      new Response(JSON.stringify({ codigo: 'CREDENCIALES_INVALIDAS' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    );
+
+    await expect(repositorio.iniciarSesion('admin@tecnosport.co', 'mala')).rejects.toBeInstanceOf(
+      ErrorHttp,
+    );
+  });
+});
+
 describe('SesionHttpRepositorio.cambiarClave', () => {
   afterEach(() => {
     vi.unstubAllGlobals();

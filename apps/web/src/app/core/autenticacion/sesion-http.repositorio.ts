@@ -33,6 +33,13 @@ export class SesionHttpRepositorio implements RepositorioSesion {
     if (respuesta.response.status === 403) {
       throw new CorreoSinVerificarError();
     }
+    // 429 y no un `ErrorHttp` pelado: quien llega al límite tiene la clave bien, y dejar que la
+    // pantalla lo pinte como "correo o clave incorrectos" manda a cambiar una clave que no tiene
+    // nada de malo. Los dos límites responden 429 —el de la cuenta, en `IniciarSesion`, y el de
+    // la IP, en `FiltroLimiteIntentos`— y para quien mira la pantalla son lo mismo: espera.
+    if (respuesta.response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
     return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión'));
   }
 

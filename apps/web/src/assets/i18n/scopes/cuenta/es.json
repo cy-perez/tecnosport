@@ -10,7 +10,8 @@
     "no_es_cliente": "Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.",
     "olvidaste_clave": "¿Olvidaste tu clave?",
     "sin_cuenta": "¿No tienes cuenta?",
-    "crear_cuenta": "Crear cuenta"
+    "crear_cuenta": "Crear cuenta",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema."
   },
   "registro": {
     "titulo": "Crear cuenta",

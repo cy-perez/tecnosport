@@ -29,7 +29,8 @@
     "entrar": "Sign in",
     "enviando": "Signing in…",
     "error": "Incorrect email or password.",
-    "no_es_admin": "This account doesn't have access to the panel."
+    "no_es_admin": "This account doesn't have access to the panel.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem."
   },
   "panel": {
     "titulo": "Admin panel",

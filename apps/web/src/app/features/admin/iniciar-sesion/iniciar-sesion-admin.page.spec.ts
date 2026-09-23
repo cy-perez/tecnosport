@@ -10,6 +10,7 @@ import {
   RepositorioSesion,
 } from '../../../core/autenticacion/repositorio-sesion.puerto';
 import { ErrorHttp } from '../../../core/http/respuesta-http';
+import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
 import { Sesion } from '../../../core/autenticacion/sesion.model';
 import { IniciarSesionAdminPage } from './iniciar-sesion-admin.page';
 
@@ -17,7 +18,11 @@ class RepositorioSesionFalso implements RepositorioSesion {
   llamadasCerrar = 0;
 
   constructor(
-    private sesionAlIniciar: Sesion | { error: true } | { falloServidor: true } = {
+    private sesionAlIniciar:
+      | Sesion
+      | { error: true }
+      | { falloServidor: true }
+      | { limitado: true } = {
       usuarioId: 'u1',
       rol: 'ADMIN',
       accessToken: 'jwt',
@@ -29,6 +34,9 @@ class RepositorioSesionFalso implements RepositorioSesion {
     // doble imita esa forma para que la pantalla se pruebe contra el fallo de verdad.
     if ('error' in this.sesionAlIniciar) {
       throw new ErrorHttp(401, 'no se pudo iniciar sesión');
+    }
+    if ('limitado' in this.sesionAlIniciar) {
+      throw new DemasiadosIntentosError();
     }
     if ('falloServidor' in this.sesionAlIniciar) {
       throw new ErrorHttp(500, 'no se pudo iniciar sesión');
@@ -154,5 +162,18 @@ describe('IniciarSesionAdminPage', () => {
     await llenarYEnviar();
 
     expect(await screen.findByText('Correo o clave incorrectos.')).toBeTruthy();
+  });
+
+  it('con el límite de intentos agotado dice que espere, no que la clave está mal', async () => {
+    // Esto pasó de verdad el 22 de septiembre de 2026 probando el cambio de clave del panel:
+    // entrar, salir y volver a entrar agota los cinco intentos por cuenta —el limitador cuenta
+    // también los exitosos, porque pide permiso antes de verificar— y la pantalla respondía
+    // "Correo o clave incorrectos." con la clave perfectamente bien.
+    await renderPagina(new RepositorioSesionFalso({ limitado: true }));
+
+    await llenarYEnviar();
+
+    expect(await screen.findByText(/Demasiados intentos/)).toBeTruthy();
+    expect(screen.queryByText('Correo o clave incorrectos.')).toBeNull();
   });
 });
