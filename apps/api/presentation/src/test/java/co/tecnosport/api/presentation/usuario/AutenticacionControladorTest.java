@@ -65,6 +65,7 @@ class AutenticacionControladorTest {
   @Autowired private RepositorioSesionesDobleDePrueba sesiones;
   @Autowired private RepositorioTokensVerificacionDobleDePrueba tokensVerificacion;
   @Autowired private RepositorioTokensRecuperacionDobleDePrueba tokensRecuperacion;
+  @Autowired private RepositorioAutorizacionesDobleDePrueba autorizaciones;
   @Autowired private LimitadorDeIntentosDobleDePrueba limitadorDeIntentos;
 
   private final ObjectMapper json = new ObjectMapper();
@@ -88,9 +89,16 @@ class AutenticacionControladorTest {
   }
 
   @BeforeEach
-  void reiniciarLimitadorDeIntentos() {
-    // Bean compartido por todo el contexto de @WebMvcTest: sin esto, denegarSiempre() de una
-    // prueba contaminaría a las que corran después en la misma clase.
+  void reiniciarElEstadoCompartido() {
+    // Los dobles son beans del contexto de @WebMvcTest: uno solo para los 26 métodos de esta
+    // clase, así que lo que monta una prueba sobrevive a la siguiente. Doce pruebas usan el mismo
+    // correo y buscarPorCorreo resolvía el empate según el orden de iteración de un HashMap con
+    // llaves UUID v7, distinto en cada corrida: el fallo salía una de cada tantas veces.
+    usuarios.limpiar();
+    sesiones.limpiar();
+    tokensVerificacion.limpiar();
+    tokensRecuperacion.limpiar();
+    autorizaciones.limpiar();
     limitadorDeIntentos.reiniciar();
   }
 
@@ -597,7 +605,7 @@ class AutenticacionControladorTest {
     }
 
     @Bean
-    RepositorioAutorizaciones repositorioAutorizaciones() {
+    RepositorioAutorizacionesDobleDePrueba repositorioAutorizaciones() {
       return new RepositorioAutorizacionesDobleDePrueba();
     }
 
