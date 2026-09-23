@@ -68,9 +68,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Un solo formato de error, {@code application/problem+json} (RFC 9457), ver docs/03-api.md. {@code
@@ -504,10 +506,38 @@ public class ManejadorDeErrores {
     return problema(HttpStatus.UNAUTHORIZED, "Sesión comprometida", excepcion);
   }
 
+  /**
+   * <b>Una ruta que no existe es un 404, no un error nuestro.</b> Sin esto caía en el manejador de
+   * abajo: 500, con traza en el registro y {@code ERROR_INTERNO} en el cuerpo. Medido contra dev el
+   * 23 de septiembre de 2026, y el daño no es cosmético en ninguno de sus tres lados. Una pasarela
+   * que reintenta ante 5xx —Sistecrédito y Wompi lo hacen— convierte una URL mal configurada en un
+   * bucle de reintentos en vez de en un fallo claro; las alertas de 5xx que {@code docs/07} promete
+   * para producción se llenan de ruido que tapa los errores de verdad; y cualquiera que teclee mal
+   * una dirección deja una traza en los registros.
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ProblemDetail rutaNoEncontrada(NoResourceFoundException excepcion) {
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Esta dirección no existe.");
+    problema.setTitle("Ruta no encontrada");
+    problema.setProperty("codigo", "RUTA_NO_ENCONTRADA");
+    problema.setType(URI.create("https://tecnosport.co/errores/ruta-no-encontrada"));
+    return problema;
+  }
+
+  /**
+   * {@code MissingServletRequestParameterException} entró en esta lista el 23 de septiembre de
+   * 2026: un parámetro de consulta obligatorio que falta salía como 500. Se encontró pidiendo
+   * {@code GET /pedidos/{id}/seguimiento} sin {@code correo} — con el parámetro puesto y un pedido
+   * inexistente la respuesta ya era el 404 correcto, así que lo que fallaba era solo esto. Va con
+   * los demás 422 y no con un 400 por lo mismo que el tipo que no convierte: la petición se
+   * entiende, lo que no se puede es procesarla.
+   */
   @ExceptionHandler({
     ExcepcionDeDominio.class,
     IllegalArgumentException.class,
     MethodArgumentTypeMismatchException.class,
+    MissingServletRequestParameterException.class,
     HttpMessageNotReadableException.class
   })
   public ProblemDetail solicitudInvalida(Exception excepcion) {
