@@ -1,9 +1,11 @@
 # ADR-0058 — Un bucket de imágenes por ambiente
 
 **Fecha:** 2026-09-23
-**Estado:** aceptado. El código y la declaración de Terraform están escritos; la migración de los
-348 objetos de local, el borrado de los viejos y los dos cambios en GCP quedan por ejecutar, con el
-runbook del final.
+**Estado:** aceptado y ejecutado el 23 de septiembre de 2026, salvo el borrado. Comprobado contra
+los buckets: local tiene su bucket con sus 344 objetos y una cuenta que solo puede escribir ahí, el
+de dev perdió el `objectAdmin` de la cuenta de local y su CORS es el de su propia web. Quedan en el
+bucket de dev los **348 objetos viejos de local**, que el paso 6 del runbook no supo listar la
+primera vez — ver ese paso, corregido.
 
 ## Contexto
 
@@ -48,9 +50,10 @@ del catálogo las hizo el cargador desde Node, que firma sin navegador.
   el último que corrió y nada dice cuál fue.
 - **El CORS de cada bucket es el de su propio ambiente.** El de dev, el origen de su web; el de
   local, `http://localhost:4200` más el túnel del teléfono cuando haga falta.
-- **El cruce por ambiente del informe de huérfanos se queda.** Con los buckets separados debería
-  informar cero, y ese cero es la comprobación de que la separación sigue en pie. Si algún día
-  aparece con objetos, no es información: es que alguien volvió a apuntar local al bucket de dev.
+- **El cruce por ambiente del informe de huérfanos se queda.** Con los buckets separados y las
+  sobras borradas, cada informe cruzado contra su propia API sale sin nada "de otro ambiente", y ese
+  cero es la comprobación de que la separación sigue en pie. Si más adelante aparece con objetos, no
+  es información: es que alguien volvió a apuntar un ambiente al bucket del otro.
 
 ## Alternativas descartadas
 
@@ -86,9 +89,11 @@ de URL, el CORS y el preflight son justo donde aparecen los fallos, y un emulado
   `QuitarImagenDeGaleria` devuelve entonces "salió de la galería sin borrar ningún objeto" con su
   aviso en el registro. Estaba escrito "para el día que la URL pública cambie por un CDN"; este es
   ese día. Lo que queda son objetos sin reclamar, y para eso está el informe.
-- Los 348 objetos viejos de local se quedan en el bucket de dev hasta que se borren, y ahora sí
-  salen como **sin reclamar por nadie** en vez de "de otro ambiente": es el mismo flujo del 22 de
-  septiembre, medir y borrar.
+- Los 348 objetos viejos de local se quedan en el bucket de dev hasta que se borren, y para
+  listarlos hay que cruzar ese bucket contra la API **de local**: son de productos de local, así que
+  contra la API de dev el informe los declara "de otro ambiente" y no ofrece nada que borrar. Es la
+  protección de la deuda 29 aplicada a un caso donde estorba, y no es un defecto — el informe no
+  puede saber que local ya se mudó. Medir y borrar, como el 22 de septiembre.
 - Dos llaves JSON en esta máquina mientras la vieja no se borre. La cuenta
   `tecnosport-dev-imagenes` se queda sin usar en cuanto local firme con la suya, y su binding sobre
   el bucket de dev se retira — con él se va la posibilidad del error que abrió la deuda 29.
@@ -110,9 +115,11 @@ el script se niega a crear nada.
    `GOOGLE_APPLICATION_CREDENTIALS` a la llave nueva.
 2. `node infra/local/bucket-imagenes.mjs` — crea el bucket, la cuenta, la llave, el CORS y el ciclo
    de vida.
-3. En `infra/envs/dev`, `terraform apply -target=google_storage_bucket.imagenes` para el CORS del
+3. En `infra/envs/dev`, `terraform apply "-target=google_storage_bucket.imagenes"` para el CORS del
    ambiente desplegado. Con `-target` a propósito: el estado trae una deriva ajena en el servicio de
-   Cloud Run —etiquetas puestas a mano, `reinicio=r2`— y aplicarla de paso no es parte de esto.
+   Cloud Run —etiquetas puestas a mano, `reinicio=r2`— y aplicarla de paso no es parte de esto. **Y
+   con la bandera entre comillas**: sin ellas, en PowerShell llega `google_storage_bucket` a secas y
+   Terraform responde `Invalid target`, que es un error que no menciona el entrecomillado.
 4. Quitarle a la cuenta vieja el acceso al bucket de dev, con
    `gcloud storage buckets remove-iam-policy-binding` sobre
    `serviceAccount:tecnosport-dev-imagenes@tecnosport-dev.iam.gserviceaccount.com` y
@@ -121,6 +128,17 @@ el script se niega a crear nada.
 5. `gradlew.bat bootRun`, y `node tools/cargar-catalogo.mjs --rehacer-imagenes` primero en
    simulación y luego con `--escribir`. Comprobar en el navegador que la vitrina y una ficha pintan
    desde el host nuevo.
-6. `npm run huerfanos -- --bucket tecnosport-dev-imagenes --api <la api de dev>`: la sección "de otro
-   ambiente" tiene que salir **en cero** y los 348 viejos como sin reclamar. Borrarlos.
-7. Volver a medir contra el bucket de local, que debe reclamar sus 348 y no juzgar nada de dev.
+6. `npm run huerfanos -- --bucket tecnosport-dev-imagenes --api http://localhost:8080`, con
+   `bootRun` arriba. **La API es la de local, no la de dev**, y esto se escribió al revés la primera
+   vez: los 348 objetos viejos son de productos **de local**, así que cruzándolos contra la API de
+   dev caen en "de otro ambiente, no los juzgo" —la protección de la deuda 29 haciendo su trabajo— y
+   el informe no ofrece nada que borrar. Contra la API de local salen como **sin reclamar por
+   nadie**, que es lo que son: local ya apunta al bucket nuevo. El informe lo dice él mismo en su
+   última línea cuando llena esa sección ("para juzgarlos, corre este informe con --api apuntando a
+   ese ambiente"), y aun así hubo que ejecutarlo para verlo.
+7. Borrar esa lista del bucket de dev, que debe quedar en **300** objetos: los 348 viejos incluyen
+   los **4** huérfanos que ya estaban ahí desde el 22 de septiembre, y por eso local reclama 344 y
+   no 348.
+8. Volver a medir los dos, cada uno contra su propia API. En régimen los dos informes salen limpios
+   y sin nada "de otro ambiente"; mientras los 348 sigan en el bucket de dev, esa sección informa de
+   ellos con razón.

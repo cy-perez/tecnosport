@@ -8351,19 +8351,33 @@ con objetos, no es información, es que alguien volvió a apuntar local al bucke
 guardián justo después de arreglar lo que vigilaba deja el informe listo para volver a proponer el
 borrado que rompe el otro lado.
 
-### Lo que queda por ejecutar, y por qué no está hecho
+### Ejecutado y medido, y el paso que estaba escrito al revés
 
-El código y la declaración están escritos; los cuatro pasos que tocan GCP y el disco no se
-ejecutaron en esta sesión —el `.env.local` lo edita el dueño de la máquina y los dos comandos que
-escriben en GCP quedaron denegados—. El runbook completo, con su orden y el motivo de cada paso, está
-en `ADR-0058`: crear el bucket de local, aplicar el CORS de dev con `-target`, retirarle a la cuenta
-vieja el `objectAdmin` sobre el bucket de dev, rehacer las imágenes de local y borrar los 348 viejos
-con el informe.
+El runbook se corrió el mismo día. Comprobado contra los dos buckets, no contra lo que dijo quien lo
+corrió: **local tiene su bucket con sus 344 objetos** y una cuenta de servicio que solo puede
+escribir ahí; **el bucket de dev perdió el `objectAdmin` de la cuenta de local** —con él se fue la
+posibilidad del error que abrió la deuda 29— y su CORS es el origen de su propia web.
+
+Lo que no pasó fue el borrado, y el motivo era **un paso mal escrito del runbook, no un olvido**. El
+paso 6 decía cruzar el bucket de dev contra la API **de dev**, y así los 348 objetos viejos caen en
+"de otro ambiente, no los juzgo": son de productos de local, y esa es la protección de la deuda 29
+haciendo exactamente su trabajo. El informe no ofreció nada que borrar, y hacía bien. Para listarlos
+hay que cruzar ese bucket contra la API **de local**, que ya no los reclama porque su base apunta al
+bucket nuevo — y el propio informe lo dice en la última línea de esa sección cuando la llena. Estaba
+escrito en la herramienta desde el 22 de septiembre, y aun así hizo falta ejecutarlo para verlo.
+
+**De paso, el reparto quedó medido con precisión**: de los 348 objetos de local que había en el
+bucket de dev, local solo reclamaba **344**. Los otros cuatro son los huérfanos que el informe ya
+había encontrado el 22 de septiembre. El bucket de dev tiene que quedar en **300**.
+
+Y una tercera cosa, chica y del oficio: `terraform apply -target=…` sin comillas llega a Terraform
+como `google_storage_bucket` a secas y responde `Invalid target`, un error que no menciona el
+entrecomillado. Queda en el runbook con las comillas puestas.
 
 **Y una deriva ajena que el `plan` destapó y que no se tocó**: el servicio de Cloud Run de la API de
 dev tiene etiquetas puestas a mano (`reinicio=r2`), que Terraform quiere quitar. Alguien reinició el
 servicio con `gcloud`. Aplicarlo de paso, dentro de un trabajo sobre un bucket, habría sido un
-despliegue no pedido; por eso el `apply` va con `-target`.
+despliegue no pedido; por eso el `apply` fue con `-target`.
 
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
