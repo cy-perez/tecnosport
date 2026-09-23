@@ -316,6 +316,44 @@ def procesar(familia, pesos_pedidos, destino, comprimir, recortar=True):
             continue
     return caras
 
+def escribir_texto(ruta, texto):
+    """Escribe con LF, tambien en Windows.
+
+    `Path.write_text` traduce ahi cada salto de linea al par retorno-mas-salto, y el archivo
+    generado entra al repositorio con los finales cambiados de golpe: un diff de todas las
+    lineas por un cambio de una, y el fallo aparece lejos de aqui.
+    """
+    with open(str(ruta), "w", encoding="utf-8", newline="") as f:
+        f.write(texto)
+
+def caras_desde_css(texto):
+    """Reconstruye familia, archivo y peso leyendo el `fuentes.css` que ya existe.
+
+    No adivina nada: el propio CSS es el registro de que es cada woff2 de la carpeta, y sin esto
+    no habia forma de **regenerar** el archivo sin volver a bajar las familias de Google. Hace
+    falta porque `fuentes.css` no se edita a mano (regla 3 del CLAUDE.md): cambiar una linea del
+    `@font-face` tiene que pasar por el generador.
+    """
+    caras, actual = [], None
+    for linea in texto.splitlines():
+        t = linea.strip()
+        if t.startswith("@font-face"):
+            actual = {}
+        elif actual is None:
+            continue
+        elif t.startswith("font-family:"):
+            actual["familia"] = t.split(":", 1)[1].strip().rstrip(";").strip().strip('"')
+        elif t.startswith("src:") and "url(" in t:
+            dentro = t.split("url(", 1)[1].split(")", 1)[0].strip()
+            actual["archivo"] = dentro.strip("'").strip('"').split("/")[-1]
+        elif t.startswith("font-weight:"):
+            actual["peso"] = t.split(":", 1)[1].strip().rstrip(";").strip()
+        elif t.startswith("}"):
+            if all(k in actual for k in ("familia", "archivo", "peso")):
+                caras.append(actual)
+            actual = None
+    return caras
+
 def formato_de(nombre):
     """El `format()` que le toca al archivo que de verdad se escribio.
 
@@ -329,8 +367,14 @@ def formato_de(nombre):
 
 def css_fuentes(caras, carpeta="fuentes"):
     L = ["/* Tipografias autoalojadas. Enlaza este archivo ANTES de tokens.css.",
-         "   font-display: swap hace que el texto se vea con la fuente de respaldo",
-         "   mientras descarga, en vez de quedar invisible. */", ""]
+         "   font-display: optional. El texto NUNCA queda invisible esperando una",
+         "   tipografia: si no esta lista a tiempo se pinta con la de respaldo y esa",
+         "   visita se queda con ella; la de marca entra desde la cache en la",
+         "   siguiente. Era swap, que tambien pinta el respaldo pero luego cambia, y",
+         "   ese cambio obliga a rehacer el layout de la pagina entera.",
+         "   Medido el 23 de septiembre de 2026, portada: el cambio costaba 46 ms de",
+         "   relayout, y los 273 KiB compitiendo con el primer pintado movian el",
+         "   rendimiento de Lighthouse entre dos modos, 66-72 y 89-90. */", ""]
     for c in caras:
         L += ["@font-face {",
               '  font-family: "{}";'.format(c["familia"]),
@@ -338,7 +382,7 @@ def css_fuentes(caras, carpeta="fuentes"):
                   carpeta, c["archivo"], formato_de(c["archivo"])),
               "  font-weight: {};".format(c["peso"]),
               "  font-style: normal;",
-              "  font-display: swap;",
+              "  font-display: optional;",
               "}", ""]
     return "\n".join(L)
 
@@ -352,7 +396,26 @@ def main():
                     help="Recorta los woff2 que ya estan en --out, sin descargar nada")
     ap.add_argument("--completas", action="store_true",
                     help="No recorta: deja cada familia con todos sus alfabetos")
+    ap.add_argument("--rehacer-css", action="store_true",
+                    help="Reescribe fuentes.css desde el que ya hay, sin red y sin tocar los woff2")
     a = ap.parse_args()
+
+    if a.rehacer_css:
+        destino = Path(a.out)
+        css = destino.parent / "fuentes.css"
+        if not css.exists():
+            raise SystemExit("No hay {} que rehacer.".format(css))
+        caras = caras_desde_css(css.read_text(encoding="utf-8"))
+        if not caras:
+            raise SystemExit(
+                "No se reconocio ningun @font-face en {}: no se reescribe nada.".format(css))
+        faltan = [c["archivo"] for c in caras if not (destino / c["archivo"]).exists()]
+        if faltan:
+            raise SystemExit(
+                "El CSS nombra archivos que no estan en '{}': {}".format(a.out, ", ".join(faltan)))
+        escribir_texto(css, css_fuentes(caras, destino.name))
+        print("Rehecho {} con {} cara(s). Los woff2 no se tocaron.".format(css, len(caras)))
+        return
 
     if a.desde_local:
         if a.completas:
@@ -404,7 +467,7 @@ def main():
 
     if caras:
         css = destino.parent / "fuentes.css"
-        css.write_text(css_fuentes(caras, destino.name), encoding="utf-8")
+        escribir_texto(css, css_fuentes(caras, destino.name))
         total = sum(c["kb"] for c in caras)
         print("\n{} archivo(s), {} KB en total.".format(len(caras), total))
         print("Generado {} — enlazalo antes de tokens.css.".format(css))

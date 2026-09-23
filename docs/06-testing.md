@@ -629,6 +629,25 @@ navegador de verdad, pinta en 344 ms**. No se encontró la causa dentro del arn�
   `--traza` guarda la traza de Chrome junto al informe y `--con-ventana` mide con un Chrome
   visible; las dos se añadieron ese día, y sin ellas el número falso habría pasado por bueno.
 
+**Ese hueco tiene consecuencia medible, y desde el 23 de septiembre el arnés la etiqueta.** La
+causa del fotograma retenido sigue sin encontrarse —no se reproduce en un navegador normal, ni
+frío ni caliente, y va y viene entre muestras de la misma corrida—, pero lo que le hace al puntaje
+sí está medido: cuando el fotograma se retiene, las tipografías **alcanzan a terminar de bajar
+antes del primer pintado**, y el simulador le cobra al FCP todo byte que terminó antes que él. Son
+273 KiB a 184 KB/s: **1,45 s de FCP y unos 22 puntos**. Seis muestras seguidas, seis aciertos.
+
+Por eso cada muestra lleva ahora dos cifras más en `resumen.json`: `fcp observado` —el reloj, no el
+modelo— y `tipografias antes del fcp`. Leerlas cambia el diagnóstico de una corrida:
+
+- Muestras con el mismo número: la dispersión que quede es ruido de verdad.
+- Muestras con números distintos: **no se midió tres veces, se midieron dos cosas**, y la mediana
+  no lo arregla porque el artefacto **solo suma**. El arnés lo dice en voz alta al terminar, y
+  `--comparar` marca esa fila con "ojo: midieron en modos distintos".
+- Las muestras con más tipografías dentro miden el fotograma retenido, no la página.
+
+Esto **no arregla** la retención: la hace visible. Una corrida cuya portada cayó entera del lado
+retenido sigue sin poder compararse con otra que no.
+
 Eso lo hace `npm run pareja` y no hace falta montarlo a mano:
 
 ```
@@ -636,10 +655,27 @@ npm run pareja -- --antes <commit> --despues <commit> --prefijo defer
 npm run pareja -- --solo-resumen defer     # el veredicto otra vez, sin medir
 ```
 
-Saca del diff los archivos de `apps/web/src` que cambian entre los dos commits
-—y los imprime, porque un experimento cuyo contenido no se ve no vale—, alterna
-el orden, y al final dice de cada métrica si el signo **se repitió**. Se niega a
-empezar si hay cambios sin confirmar en esos archivos (los sobrescribe) o si la
-API no responde, que después de veinte minutos de corridas duele más. Y devuelve
-el árbol a su sitio aunque se corte a la mitad con Ctrl+C, que es justo lo que
-uno hace cuando ve venir un resultado malo.
+Saca del diff los archivos que cambian entre los dos commits **dentro de lo que
+entra al build** —y los imprime, porque un experimento cuyo contenido no se ve no
+vale—, alterna el orden, y al final dice de cada métrica si el signo **se
+repitió**. Se niega a empezar si hay cambios sin confirmar en esos archivos (los
+sobrescribe) o si la API no responde, que después de veinte minutos de corridas
+duele más. Y devuelve el árbol a su sitio aunque se corte a la mitad con Ctrl+C,
+que es justo lo que uno hace cuando ve venir un resultado malo.
+
+**Lo que entra al build son tres carpetas, y durante un tiempo fue una.** Hasta
+el 23 de septiembre de 2026 solo miraba `apps/web/src`, y así dos clases de
+cambio quedaban fuera **sin que nada lo dijera**:
+
+- **`packages/marca`**, el kit. `prebuild` corre `copiar-marca.mjs` y lo copia
+  dentro de `apps/web/src/assets/marca` y de `apps/web/public` en cada build, así
+  que intercambiar la copia no servía de nada: `prebuild` la volvía a pisar y las
+  dos mitades del experimento salían del mismo build.
+- **`apps/web/public`**, que no está bajo `src` y es donde vive el hero de la
+  portada. El experimento del hero del 22 de septiembre no se habría podido
+  montar con esta herramienta.
+
+Y queda un guardián para el caso que el alcance no arregla solo: si el diff toca
+`apps/web/src/assets/marca/` **sin** tocar `packages/marca`, se niega y dice
+dónde está el original. Eso solo pasa si alguien editó a mano un archivo
+generado, que es lo que prohíbe la regla 3 del `CLAUDE.md`.

@@ -15,6 +15,16 @@
 // cuánto se separaron las muestras: una sola corrida del mismo build llegó a moverse 22 puntos de
 // rendimiento, de modo que una cifra suelta puede inventar una regresión o tapar una real.
 //
+// Esos 22 puntos **no eran la máquina teniendo un mal rato**, y eso se midió el 23 de septiembre
+// de 2026: la portada tiene dos modos —66-72 y 89-90— y lo que decide en cuál cae una muestra es
+// si las tipografías alcanzaron a terminar de bajar **antes del primer pintado**. El simulador le
+// cobra al FCP todo byte que terminó antes que él, y 273 KiB a 184 KB/s son 1,48 s: la diferencia
+// medida entre los dos modos fue 1,45 s. Seis muestras, seis aciertos.
+//
+// Por eso cada muestra dice ahora en qué modo cayó (`tipografias antes del fcp`). La mediana no
+// quita ese artefacto, porque **solo suma**: una mediana de tres con dos muestras cobradas es una
+// muestra cobrada. Y comparar dos corridas que cayeron en modos distintos no compara dos builds.
+//
 // Cada corrida puede guardarse con nombre, y dos corridas guardadas se comparan sin volver a
 // medir — con la banda de sus propias muestras al lado, que es lo que distingue una mejora de la
 // máquina teniendo un mal rato:
@@ -255,14 +265,27 @@ async function medirUnaVez(url, puertoChrome, lighthouse) {
  */
 function metricasDe(lhr) {
   const a = lhr.audits ?? {};
+  const observadas = a["metrics"]?.details?.items?.[0] ?? {};
   const ms = (id) => (typeof a[id]?.numericValue === "number" ? Math.round(a[id].numericValue) : null);
   const grupo = (nombre) => {
     const fila = a["mainthread-work-breakdown"]?.details?.items?.find((i) => i.group === nombre);
     return fila ? Math.round(fila.duration) : null;
   };
-  const tipografias = (a["network-requests"]?.details?.items ?? [])
-    .filter((i) => i.resourceType === "Font")
-    .reduce((suma, i) => suma + (i.transferSize ?? 0), 0);
+  const peticionesDeFuente = (a["network-requests"]?.details?.items ?? []).filter(
+    (i) => i.resourceType === "Font",
+  );
+  const tipografias = peticionesDeFuente.reduce((suma, i) => suma + (i.transferSize ?? 0), 0);
+  // En qué modo cayó esta muestra, que es la cifra que convierte "se separan 22 puntos, es ruido"
+  // en una frase con causa. Es un acantilado y no una pendiente —entran las cuatro tipografías o
+  // no entra ninguna—, y por eso se cuentan peticiones y no milisegundos.
+  const fcpObservado =
+    typeof observadas.observedFirstContentfulPaint === "number"
+      ? observadas.observedFirstContentfulPaint
+      : null;
+  const tipografiasAntesDelFcp =
+    fcpObservado === null
+      ? null
+      : peticionesDeFuente.filter((i) => (i.networkEndTime ?? Infinity) <= fcpObservado).length;
   return {
     fcp: ms("first-contentful-paint"),
     lcp: ms("largest-contentful-paint"),
@@ -271,6 +294,11 @@ function metricasDe(lhr) {
     "estilo y layout": grupo("styleLayout"),
     "peso kB": Math.round((a["total-byte-weight"]?.numericValue ?? 0) / 1024) || null,
     "fuentes kB": Math.round(tipografias / 1024) || null,
+    // Observado, no simulado: es el reloj de la corrida y no el modelo. Va al lado del modo
+    // porque es lo que lo explica — con el fotograma retenido sube a 1,3 s y arrastra las
+    // tipografías a la cuenta del FCP; sin retener se queda en 0,3 s y quedan fuera.
+    "fcp observado": fcpObservado,
+    "tipografias antes del fcp": tipografiasAntesDelFcp,
   };
 }
 
@@ -329,6 +357,7 @@ const COMPARABLES = [
   "estilo y layout",
   "peso kB",
   "fuentes kB",
+  "tipografias antes del fcp",
 ];
 
 /**
@@ -384,6 +413,9 @@ function bandaDe(valores) {
  */
 function veredicto(metrica, delta, seSolapan) {
   if (delta === 0) return "sin cambio";
+  // El modo no es una métrica del sitio: es en qué condiciones se midió. Si cambió, las dos
+  // corridas no midieron lo mismo, y el resto de la tabla se lee con eso delante.
+  if (metrica === "tipografias antes del fcp") return "ojo: midieron en modos distintos";
   if (!(metrica in PISO)) return "sí: son bytes";
   if (seSolapan) return "no: dentro del ruido";
   if (Math.abs(delta) <= PISO[metrica]) return `no: bajo el piso (${PISO[metrica]})`;
@@ -580,6 +612,24 @@ async function main() {
       `\nAviso: en ${pantalla} las muestras de rendimiento se separan ${dispersion} puntos. La\n` +
         `mediana sigue siendo la mejor cifra disponible, pero una diferencia menor que eso frente a\n` +
         `otra medicion no es una mejora ni una regresion: es ruido.`,
+    );
+  }
+
+  // Y cuando el motivo de esa separacion se conoce, decirlo. Una pantalla cuyas muestras cayeron
+  // en modos distintos no se midio tres veces: se midieron dos cosas distintas.
+  for (const { pantalla, muestras } of detalles) {
+    const modos = [
+      ...new Set(
+        muestras.map((m) => m["tipografias antes del fcp"]).filter((v) => typeof v === "number"),
+      ),
+    ].sort((x, y) => x - y);
+    if (modos.length <= 1) continue;
+    log(
+      `\nOjo: en ${pantalla} las muestras no midieron lo mismo. Las tipografias terminaron de bajar\n` +
+        `antes del primer pintado en unas y despues en otras (${modos.join(" y ")} peticiones), y el\n` +
+        `simulador le cobra al FCP todo lo que termino antes que el. La mediana NO lo quita, porque\n` +
+        `el artefacto solo suma: las muestras con mas tipografias dentro miden el fotograma\n` +
+        `retenido, no la pagina.`,
     );
   }
 }

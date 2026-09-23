@@ -98,6 +98,33 @@ va `python3 generador/fuentes.py --out fuentes --desde-local`: así el cambio no
 arrastra además la versión de hoy de cada familia, que es otra cosa y se mezcla
 mal en el mismo commit.
 
+Y cuando lo que cambia es una **línea del `@font-face`** y no los archivos, va
+`python3 generador/fuentes.py --out fuentes --rehacer-css`: reescribe
+`fuentes.css` leyendo el que ya hay —de ahí saca familia, archivo y peso de cada
+cara— y no toca un solo `woff2` ni abre la red. Existe porque `fuentes.css` no se
+edita a mano y `--desde-local` dice explícitamente que el CSS no cambia: sin esta
+bandera, cambiar una línea obligaba a volver a bajar las familias enteras.
+
+## Las tipografías no hacen esperar ni cambian a mitad de lectura
+
+Desde el 23 de septiembre de 2026 las cuatro caras llevan
+**`font-display: optional`**, no `swap`. La diferencia se ve en una frase: con
+`swap` el navegador pinta con la fuente de respaldo y **cambia** cuando llega la
+de marca; con `optional`, si no llegó a tiempo, esa visita se queda con el
+respaldo y la de marca entra desde la caché en la siguiente.
+
+El motivo es medido, no estético. Cada tipografía que aterriza con `swap` obliga
+a **rehacer el layout de la página entera**: en la traza de legales, Archivo
+termina de bajar en `t+445,7` y 1,7 ms después hay un `Layout` de 10 ms con 278
+de 285 objetos sucios; IBM Plex Sans termina en `t+460,6` y 0,8 ms después hay
+otro de 43 ms. Al cambiar a `optional`, el estilo y layout de esa pantalla pasó
+de 731 a 461 ms, y el de la ficha de 546 a 396 — sin solape entre las bandas de
+las dos corridas.
+
+**Lo que cuesta:** en una primera visita lenta el sitio se ve con la familia de
+respaldo, no con Archivo. Es una decisión de marca tomada con esa contrapartida
+delante. Ver `ADR-0059`.
+
 ## Lo que no se toca
 
 - **`tokens.css` y `fuentes.css` son generados.** Se edita `tokens.json` y se
