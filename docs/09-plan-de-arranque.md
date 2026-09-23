@@ -8417,6 +8417,103 @@ permisos responde **"No changes. Your infrastructure matches the configuration."
 desplegado y lo que dice el código son la misma cosa, que es lo que no se podía afirmar mientras el
 bucket lo creara un script a mano.
 
+## Los 22 puntos de dispersión tenían causa, y eran las tipografías (2026-09-23)
+
+La entrada del 22 dejó dos cosas a medias, y las dos a propósito: que los "700 ms de estilo y
+layout" son **190 ms multiplicados por 4**, y que el arnés retiene el primer fotograma más de un
+segundo en las pantallas con imágenes **sin que se encontrara la causa**. Esto retoma desde ahí. No
+se encontró la causa de la retención —sigue sin encontrarse— pero sí **qué le hace al puntaje**, y
+eso resultó ser lo caro.
+
+### El puntaje no tiene una cifra: tiene dos modos
+
+El simulador le cobra al FCP **todo byte que terminó de bajar antes del FCP observado**. Cuando el
+fotograma se retiene, las cuatro tipografías —273 KiB— alcanzan a terminar; cuando no, no. Seis
+muestras seguidas de la misma portada, mismo build, mismo Chrome:
+
+| muestra | ¿las 4 tipografías bajaron antes del FCP? | rendimiento | FCP simulado |
+|---|---|---|---|
+| 1 | sí | 72 | 3.976 |
+| 2 | no | 89 | 2.621 |
+| 3 | sí | 66 | 4.096 |
+| 4 | sí | 66 | 4.080 |
+| 5 | no | 90 | 2.629 |
+| 6 | no | 89 | 2.635 |
+
+273 KiB ÷ 184 KB/s = 1,48 s. La diferencia medida entre los dos modos es 1,45 s. Seis de seis.
+
+**Así que los 22 puntos que el arnés avisa en cada corrida no son "la máquina teniendo un mal
+rato".** Son dos modos con causa conocida, y **la mediana no los quita**, porque el artefacto solo
+suma: una mediana de tres con dos muestras cobradas es una muestra cobrada. Ese mismo día una
+corrida dio portada 67 / 67 / **89**, y la mediana cayó en una cobrada. `legales`, que nunca se
+retiene, tuvo dispersión 1.
+
+El aviso que el arnés imprimía —"una diferencia menor que eso es ruido"— era verdad y era
+insuficiente: invitaba a esperar a que el ruido se promediara, y esto no se promedia.
+
+### Y de los 190 ms reales, lo recuperable tenía nombre
+
+La entrada del 22 contó tres relayouts completos en la portada —101, 46 y 12 ms— sin decir de qué
+eran. El de 46 cae **0,4 ms después de que termina de bajar la última tipografía**. En legales, con
+la traza al lado, se ve uno por archivo:
+
+- Archivo termina en `t+445,7`; en `t+447,4`, `Layout` de **10 ms**, 278 de 285 objetos sucios.
+- IBM Plex Sans termina en `t+460,6`; en `t+461,4`, otro de **43 ms**, 276 de 285.
+
+Dos relayouts de la página entera, en una pantalla que no tiene una sola imagen. Es lo que
+`font-display: swap` hace por definición: pinta con el respaldo y luego cambia.
+
+### Lo aplicado
+
+**Uno: el arnés etiqueta cada muestra.** `fcp observado` y `tipografias antes del fcp` en
+`resumen.json`; un aviso al terminar cuando las muestras de una pantalla cayeron en modos distintos;
+y una fila en `--comparar` que dice "ojo: midieron en modos distintos". **No arregla la retención:
+la hace visible**, que es lo que faltaba para que la dispersión dejara de leerse como ruido de
+fondo. Estrenó el mismo día avisando en la ficha, con muestras de 0 y 3 tipografías.
+
+**Dos: `font-display: optional`** en las cuatro caras, cambiado en
+`packages/marca/generador/fuentes.py` y regenerado (`ADR-0059`). Con tres muestras por pantalla y
+las dos corridas en la misma sesión: **estilo y layout cae de 731 a 461 ms en legales** (bandas
+676-739 y 458-478, sin solape) **y de 546 a 396 en la ficha** (544-586 y 371-412). En la portada no
+se puede decir nada: sus muestras cayeron en modos distintos, que es justo lo que la etiqueta nueva
+sirve para ver.
+
+Para cambiar esa línea sin volver a bajar las familias de Google hubo que añadirle al generador
+`--rehacer-css`, que reconstruye el CSS leyendo el propio CSS —familia, archivo y peso de cada
+cara— y no toca un `woff2`. `--desde-local` no servía: dice explícitamente que el CSS no cambia.
+
+### Lo que queda dicho, y no se tapó
+
+- **Sobre `localhost` el relayout no desaparece: encoge** —10+43 ms pasan a 7+7 en legales—. No
+  podía desaparecer ahí: en localhost las tipografías llegan dentro de la ventana de `optional`, así
+  que se aplican igual, y aplicarlas cuesta un relayout. Desaparece donde no llegan a tiempo, que es
+  la conexión que el arnés no reproduce y el comprador sí tiene. Lo medido es **el piso** de la
+  mejora, no el techo.
+- **`optional` no arregla el acantilado.** Los 273 KiB se siguen descargando, así que una muestra
+  con el fotograma retenido los sigue metiendo delante del FCP. Nunca se pretendió: son dos
+  problemas que compartían las mismas tipografías.
+- **La contrapartida de marca es real**: en una primera visita lenta el sitio se ve con la familia
+  de respaldo y no con Archivo. La decisión la tomó el dueño del negocio con eso delante.
+- **`npm run pareja` no podía confirmar este cambio, y se arregló el mismo día.** Sacaba del diff
+  los archivos de `apps/web/src` y hacía `checkout` de ellos, pero `prebuild` corre `copiar-marca` y
+  **sobrescribe** `apps/web/src/assets/marca/fuentes.css` con el de `packages/marca`: las dos
+  mitades del experimento habrían salido del mismo build, en silencio. Buscando eso apareció un
+  segundo hueco de la misma forma y más viejo: **`apps/web/public` tampoco entraba**, y ahí vive el
+  hero — el experimento del hero del 22 de septiembre habría intercambiado sus plantillas y dejado
+  las imágenes del árbol. El alcance pasa a ser `apps/web/src`, `apps/web/public` y
+  `packages/marca`, comprobado contra el commit del hero: antes listaba 5 archivos y ahora lista los
+  9 que tocó de verdad. Y queda un guardián para lo que el alcance no arregla solo: si el diff toca
+  la copia del kit **sin** tocar el kit, el experimento se niega y dice dónde está el original.
+  Comprobado haciéndolo fallar.
+- **Adelgazar las tipografías está medido y descartado**: fijar las variables a estáticas engorda
+  —Archivo 138,6 → 167,6 KiB con tres pesos, IBM Plex Sans 91,9 → 147,8— porque `font-display` se
+  usa en 400, 500 y 700.
+- **Y una trampa propia, que casi cuela un número falso.** La primera medición en vivo dio un FCP
+  de 3.572 ms y no medía nada: la pestaña estuvo oculta hasta los 3.467. Una pestaña que no se ve no
+  pinta. Se cazó mirando `performance.getEntriesByType('visibility-state')` antes de creerle a la
+  cifra, y es la comprobación que hay que hacer **antes** en cualquier medición de pintado hecha
+  desde el navegador.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8533,8 +8630,11 @@ El orden no es negociable: cada uno alimenta al siguiente.
     peso en 486 kB de fuentes sin recortar. Se hicieron las dos cosas —recorte al alfabeto latino
     (−216 KiB) e hidratación diferida del pie y de las novedades—. **Ojo con la cifra de los
     145 ms** que citaba esta entrada para la hidratación: quedó por debajo del piso medido unas
-    horas después, y por eso hay una deuda 22. Lo que queda abierto de rendimiento ya
-    no es esto: es estilo y *layout*, que sigue en torno a 700 ms y no se ha tocado. Ver la
+    horas después, y por eso hay una deuda 22. ~~Lo que queda abierto de rendimiento ya
+    no es esto: es estilo y *layout*, que sigue en torno a 700 ms y no se ha tocado.~~ **Esa frase
+    se quedo escrita despues de que la propia entrada del 22 la desmintiera** —los 700 ms son 190
+    multiplicados por 4— y el 23 se cerro lo que de ellos era recuperable: el relayout que costaba
+    cada tipografia al aterrizar. Ver la entrada del 23 y `ADR-0059`. Ver la
     entrada de arriba. Enunciado original, para que se entienda la corrección: «Lo que queda ahí
     es JavaScript: `Reduce unused JavaScript` pide 600 ms en las tres pantallas, y el FCP de la
     portada no se movió en ninguna de las cuatro corridas. Es el siguiente trabajo de rendimiento
