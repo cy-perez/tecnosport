@@ -312,10 +312,16 @@
                         >
                           {{ 'admin.pedidos.acciones.emitir_guia' | transloco }}
                         </ts-boton>
-                        @if (emisionDe(pedido.id); as emision) {
-                          <!-- `role="status"` y no una alerta: es un acuse, no un problema. Un
-                               lector de pantalla lo anuncia sin interrumpir lo que esté leyendo. -->
-                          <p class="mt-8 text-ts-texto-suave" role="status">
+                        <!-- `role="status"` y no una alerta: es un acuse, no un problema. La
+                             region vive mientras la fila este desplegada y el acuse llega despues,
+                             al pulsar emitir: una que naciera ya llena no se anunciaria (medido con
+                             NVDA, ver `docs/06-testing.md`). El margen cuelga del contenido. -->
+                        <p
+                          class="text-ts-texto-suave"
+                          role="status"
+                          [class.mt-8]="emisionDe(pedido.id) !== null"
+                        >
+                          @if (emisionDe(pedido.id); as emision) {
                             {{
                               'admin.pedidos.acciones.emision_en_curso'
                                 | transloco
@@ -324,8 +330,8 @@
                                       paquetes: emision.cuantosEnvios,
                                     }
                             }}
-                          </p>
-                        }
+                          }
+                        </p>
                         <h3 class="mt-16 mb-8 text-base font-medio">
                           {{ 'admin.pedidos.acciones.guia_por_fuera' | transloco }}
                         </h3>

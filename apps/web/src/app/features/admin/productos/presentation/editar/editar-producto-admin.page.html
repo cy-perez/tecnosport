@@ -288,13 +288,16 @@
         }
       </p>
 
-      @if (galeriaLlena()) {
-        <!-- Un input deshabilitado no es enfocable: sin esto, quien navega con teclado o con lector
-             de pantalla no encuentra el formulario y nada le dice por que. -->
-        <p class="m-0 text-ts-texto-suave" role="status">
+      <!-- Un input deshabilitado no es enfocable: sin esto, quien navega con teclado o con lector
+           de pantalla no encuentra el formulario y nada le dice por que. La region es permanente
+           porque el mensaje aparece al subir la ultima foto, con la pantalla ya abierta. -->
+      <p class="m-0 text-ts-texto-suave" role="status">
+        @if (galeriaLlena()) {
           {{ 'admin.errores.galeria_llena' | transloco }}
-        </p>
-      } @else {
+        }
+      </p>
+
+      @if (!galeriaLlena()) {
         <div class="flex flex-col gap-16" [formGroup]="formularioGaleria">
           @if (previsualizacionGaleria(); as previsualizacion) {
             <img

@@ -430,4 +430,25 @@ describe('PanelRetracto', () => {
 
     expect(screen.getByRole('status').textContent?.trim()).toBe('');
   });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. El acuse llega despues de pulsar, con la region
+   * ya viva, y esta prueba falla si alguien la devuelve adentro de la condicion.
+   */
+  it('deja vivas las regiones del plazo y del dinero aunque no tengan nada que decir', async () => {
+    await renderPanel([
+      solicitud({
+        estado: 'PRODUCTO_RECIBIDO',
+        productoRecibidoEn: '2026-09-16T15:00:00Z',
+        limiteDeReintegro: '2026-10-02T05:00:00Z',
+      }),
+    ]);
+    await screen.findByLabelText('Monto a reembolsar');
+
+    const vacias = screen
+      .getAllByRole('status')
+      .filter((region) => region.textContent?.trim() === '');
+    expect(vacias.length).toBeGreaterThan(0);
+  });
 });

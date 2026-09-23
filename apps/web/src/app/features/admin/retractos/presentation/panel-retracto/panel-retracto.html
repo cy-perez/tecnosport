@@ -67,13 +67,16 @@
       }
 
       @case ('PRODUCTO_RECIBIDO') {
-        @if (hayPlazoDeReintegro()) {
-          <p
-            role="status"
-            class="mb-8"
-            [class.text-ts-error]="plazoVencido()"
-            [class.text-ts-texto-suave]="!plazoVencido()"
-          >
+        <!-- La condicion se pliega dentro de la region en vez de envolverla: el plazo cambia de
+             texto mientras la pantalla esta abierta -al vencerse, o al quedar un dia- y eso es lo
+             que hay que anunciar. El margen cuelga del contenido. -->
+        <p
+          role="status"
+          [class.mb-8]="hayPlazoDeReintegro()"
+          [class.text-ts-error]="plazoVencido()"
+          [class.text-ts-texto-suave]="!plazoVencido()"
+        >
+          @if (hayPlazoDeReintegro()) {
             @if (plazoVencido()) {
               {{ 'admin.retractos.plazo_vencido' | transloco }}
             } @else if (diasParaReintegrar() === 1) {
@@ -83,8 +86,8 @@
             } @else {
               {{ 'admin.retractos.plazo_restante' | transloco: { dias: diasParaReintegrar() } }}
             }
-          </p>
-        }
+          }
+        </p>
 
         <!-- Las tres cifras que hacen falta para escribir un monto con criterio. La de "sin entrar"
              advierte y no bloquea: quien pago en efectivo tiene derecho a que se le devuelva aunque
@@ -97,11 +100,11 @@
             {{ 'admin.retractos.queda' | transloco }} <ts-precio [valor]="quedaPorDevolver()" />
           </dd>
         </dl>
-        @if (dineroSinEntrar()) {
-          <p role="status" class="mb-8 text-ts-error">
+        <p role="status" class="text-ts-error" [class.mb-8]="dineroSinEntrar()">
+          @if (dineroSinEntrar()) {
             {{ 'admin.retractos.dinero_sin_entrar' | transloco }}
-          </p>
-        }
+          }
+        </p>
 
         <form
           [formGroup]="formularioReintegro"

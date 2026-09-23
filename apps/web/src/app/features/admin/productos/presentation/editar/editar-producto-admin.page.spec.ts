@@ -721,4 +721,17 @@ describe('EditarProductoAdminPage', () => {
 
     await esperarSinViolaciones(container);
   });
+
+  /**
+   * Un `role="status"` que nace ya lleno dentro de un `@if` no lo anuncia NVDA: medido el 22 de
+   * septiembre de 2026, ver `docs/06-testing.md`. El acuse llega despues de pulsar, con la region
+   * ya viva, y esta prueba falla si alguien la devuelve adentro de la condicion.
+   */
+  it('deja viva la region de la galeria llena aunque todavia quepan fotos', async () => {
+    await renderPagina(new RepositorioProductosAdminFalso());
+    await screen.findByDisplayValue('Morral urbano');
+
+    const regiones = screen.getAllByRole('status');
+    expect(regiones.some((region) => region.textContent?.trim() === '')).toBe(true);
+  });
 });
