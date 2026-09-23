@@ -144,4 +144,18 @@ describe('VerificarCorreoPage', () => {
     await vi.waitFor(() => expect(repositorio.llamadasVerificar).toEqual([]));
     expect(screen.getByText('Enlace no válido')).toBeTruthy();
   });
+
+  /**
+   * Esta es la region que se midio con NVDA el 22 de septiembre de 2026 y estaba callada: nacia ya
+   * llena dentro del `@if`, y un `role="status"` asi no se anuncia (`docs/06-testing.md`). Tiene
+   * que existir con el formulario todavia en pantalla, antes de tener nada que decir.
+   */
+  it('deja viva la region del acuse antes de pedir el enlace', async () => {
+    const repositorio = new RepositorioCuentaFalso(422);
+    await renderPagina(repositorio, 'token-vencido');
+    await screen.findByText('Enlace no válido');
+
+    const acuse = screen.getAllByRole('status').find((region) => region.textContent?.trim() === '');
+    expect(acuse).toBeTruthy();
+  });
 });
