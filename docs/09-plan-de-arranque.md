@@ -8225,6 +8225,61 @@ revelar si esa cuenta existe— pero un 429 y un 500 no dicen nada de ninguna cu
 aquí y no se arregla de paso porque cambia lo que ve quien pide recuperar la clave y necesita su
 propio texto: es la deuda 31.
 
+## El conteo de inventario, y las regiones vivas que nadie ha escuchado todavía (2026-09-22)
+
+Dos frentes de la misma tarde, y los dos quedan a medias **a propósito**.
+
+### El inventario deja de estar inventado
+
+La existencia de 5 que llevaban los doce primeros era un número de relleno, y ahora hay un dato:
+**una unidad por variante**, dicho por el dueño del negocio. Se asentó como lo que es —un conteo
+físico, con su motivo, por `PATCH /admin/variantes/{id}/existencia` (`adr/0049`)— y no como un
+`UPDATE` a la brava: cada ajuste queda en el libro de movimientos, que es lo que permite auditar
+mañana de dónde salió cada cifra.
+
+En local: 37 variantes, 36 asentadas y 1 que ya estaba. Ninguna tenía unidades reservadas, así que
+ningún conteo dejó reservas sin respaldo.
+
+Y una corrección del mismo día: **los tres productos sembrados de la Fase 1** —camiseta, morral y
+tenis— habían entrado en el conteo con una unidad cada uno, y no son mercancía. Se volvieron a
+contar a **0**, con su motivo. Quedan seis variantes en cero y **las seis están publicadas**, así
+que el aviso del panel las canta y la tienda las muestra agotadas. Eso es cierto: lo que falta ahí
+no es inventario, es despublicar tres productos que nunca fueron de verdad.
+
+**Falta dev**, que es donde vive el enunciado de la deuda, y falta porque hace falta un token de
+administrador de ese ambiente.
+
+### Las regiones vivas: 15 de 114, y el freno es deliberado
+
+La regla de `apps/web/CLAUDE.md` dice que una región viva vive siempre en el DOM y lo que cambia es
+su contenido; montarla ya llena con un `@if` es justo lo que los lectores de pantalla anuncian mal.
+Se contaron las 114 del frontend: **cumplían 5**.
+
+Pero no son 109 veces el mismo problema. Clasificadas:
+
+| clase | sitios | qué es | arreglo |
+|---|---|---|---|
+| A | 14 | el `@if` pregunta por la **misma señal** que el párrafo pinta | mecánico |
+| B | 5 | dentro de un `@for`: la región es de la fila | una región de página, no cinco de fila |
+| C | 23 | dentro de un `@switch`: es un estado de pantalla entero | envolver el switch |
+| D | 71 | cargando, listas vacías, avisos de negocio | región permanente + señal derivada |
+
+La clase A está cerrada: 15 sitios, dos de ellos `ts-campo` y `ts-select`, que son los que más
+pesan porque los usa cada formulario del sitio. Donde el párrafo llevaba margen, el margen pasa a
+depender del contenido — `m-0` deja un párrafo vacío a cero de alto, pero un `mb-16` permanente
+habría dejado un hueco fijo donde no hay nada que decir.
+
+**Y ahí se para, a propósito.** Las clases B, C y D son 99 sitios en 30 plantillas, cada uno con una
+decisión de diseño propia, y se harían para satisfacer una regla **cuyo efecto real nadie ha
+observado nunca** — que es, literalmente, la deuda 16. Mucho diff en pantallas que nadie ha
+reportado rotas, con riesgo visual que jsdom no atrapa (regla dura #8), antes de tener una sola
+medición. La secuencia correcta es al revés: se comprueba con NVDA que las 15 de ahora se anuncian
+y que las de clase D no, y con esa evidencia se hacen las 99 sabiendo que sirven.
+
+Tres pruebas hubo que ajustar, y el ajuste las mejoró: afirmaban «existe alguna alerta» y ahora que
+los párrafos vacíos siguen en el DOM encontraban varias. Pasan a afirmar el texto. Antes habrían
+pasado con cualquier alerta en pantalla.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8268,7 +8323,9 @@ Ver la entrada de arriba.
 Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
 objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
 ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
-por cubiertas. Se abrió la **31**.
+por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Avanzaron la **10** —el
+inventario ya tiene su dato y local está asentado; falta dev— y la **16**, que por fin se midió:
+15 regiones vivas corregidas de 114, y las 99 que quedan esperando media hora de NVDA.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8422,7 +8479,13 @@ El orden no es negociable: cada uno alimenta al siguiente.
    entran en BORRADOR y no salen a la vitrina.** Están cargados, con sus tres tomas cada uno y
    existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
    ese se renegocia con el proveedor o no se venden.
-10. **La existencia inventada de 5** que llevan los doce primeros en dev.
+10. **La existencia inventada de 5** que llevan los doce primeros en dev. **El dato ya existe
+    desde el 22 de septiembre de 2026: una unidad por variante**, dicho por el dueño del negocio, y
+    **local ya está asentado** —37 variantes, conteo físico con motivo, y los tres productos
+    sembrados de la Fase 1 devueltos a 0 porque no son mercancía—. **Falta dev**, que es de lo que
+    habla este punto, y falta solo por el token de administrador de ese ambiente. **Cómo
+    comprobarlo:** `GET /api/v1/admin/variantes/existencias` contra dev; mientras haya variantes en
+    5, la deuda sigue.
 11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 22 de septiembre: son
     $50.000**, confirmado por el dueño del negocio. Sigue sin valor por omisión en
     `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
@@ -8454,7 +8517,17 @@ El orden no es negociable: cada uno alimenta al siguiente.
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
 16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
-    septiembre es la estructura que necesitan, que no es lo mismo.
+    septiembre es la estructura que necesitan, que no es lo mismo. **El 22 de septiembre se midió
+    esa estructura y no era la que hace falta**: de las 114 regiones vivas del frontend, 5 vivían
+    siempre en el DOM y 109 nacían dentro del `@if` que las llena, que es el patrón que la regla de
+    `apps/web/CLAUDE.md` prohíbe. Se cerró el caso mecánico —15 sitios, `ts-campo` y `ts-select`
+    incluidos— y **se paró ahí a propósito**: quedan 99 en tres clases (5 de fila, 23 de estado,
+    71 de cargando/listas vacías) que exigen una decisión por pantalla, y hacerlas antes de haber
+    escuchado una sola con un lector de pantalla es refactorizar contra una regla sin medir. **Lo
+    que desbloquea todo lo demás es media hora con NVDA**: el login y una bandeja del panel bastan
+    para saber si el arreglo de la clase A se anuncia y si el de la clase D hace falta. **Cómo
+    comprobarlo:** los dos guiones de clasificación viven en el historial de esta rama; volver a
+    contarlas es `grep -rn 'role="status"\|role="alert"' apps/web/src/app --include=*.html`.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 
@@ -8530,8 +8603,13 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Lo que dejó abierto cerrar la deuda 30
 
-31. **`solicitarRecuperacion` se traga todos los fallos, y la pantalla dice que revises tu correo.**
-    El adaptador llama a `POST /auth/recuperacion` y no mira la respuesta, a propósito: el backend
+31. ~~**`solicitarRecuperacion` se traga todos los fallos, y la pantalla dice que revises tu
+    correo.**~~ **Abierta y cerrada el 22 de septiembre de 2026**, en el mismo día que la 30 la
+    destapó: se propagan el 429 y el 5xx —que no dicen nada de ninguna cuenta— y el 204 se queda
+    exactamente como estaba, que es lo que impide decir qué correos están registrados.
+    `RecuperarClavePage` tiene su texto para el límite de intentos, y el adaptador su prueba contra
+    `fetch`. Enunciado original: «El adaptador llama a `POST /auth/recuperacion` y no mira la
+    respuesta, a propósito: el backend
     contesta 204 exista o no una cuenta con ese correo, y distinguir revelaría cuáles existen. Pero
     esa ruta **lleva techo por IP**, así que un 429 —o un 500— se traga igual, y quien pidió el
     enlace se queda mirando el buzón de un correo que nunca salió. El 204-siempre protege contra
@@ -8539,7 +8617,7 @@ El orden no es negociable: cada uno alimenta al siguiente.
     **Cómo comprobarlo:** en `cuenta-http.repositorio.ts`, mientras `solicitarRecuperacion` no mire
     `response.status`, la deuda sigue. La salida es propagar solo lo que no distingue cuentas —el
     429 y el 5xx— y dejar el 204 como está; necesita su propio texto en `RecuperarClavePage`, que
-    es lo que hizo que no se arreglara de paso.
+    es lo que hizo que no se arreglara de paso.»
 
 ### Lo que está anotado y no es deuda
 
