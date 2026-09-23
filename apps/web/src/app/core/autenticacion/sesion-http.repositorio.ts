@@ -1,10 +1,15 @@
 import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../http/base-url';
-import { desempaquetar } from '../http/respuesta-http';
+import { desempaquetar, ErrorHttp } from '../http/respuesta-http';
 import { aSesion } from './mapeador-sesion';
 import { RepositorioSesion } from './repositorio-sesion.puerto';
-import { CorreoSinVerificarError } from './sesion.errores';
+import {
+  ClaveActualIncorrectaError,
+  CorreoSinVerificarError,
+  DemasiadosIntentosError,
+  SesionExpiradaError,
+} from './sesion.errores';
 import { Sesion } from './sesion.model';
 
 /**
@@ -28,6 +33,13 @@ export class SesionHttpRepositorio implements RepositorioSesion {
     if (respuesta.response.status === 403) {
       throw new CorreoSinVerificarError();
     }
+    // 429 y no un `ErrorHttp` pelado: quien llega al límite tiene la clave bien, y dejar que la
+    // pantalla lo pinte como "correo o clave incorrectos" manda a cambiar una clave que no tiene
+    // nada de malo. Los dos límites responden 429 —el de la cuenta, en `IniciarSesion`, y el de
+    // la IP, en `FiltroLimiteIntentos`— y para quien mira la pantalla son lo mismo: espera.
+    if (respuesta.response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
     return aSesion(desempaquetar(respuesta, 'no se pudo iniciar sesión'));
   }
 
@@ -43,6 +55,44 @@ export class SesionHttpRepositorio implements RepositorioSesion {
       return null;
     }
     return aSesion(desempaquetar(respuesta, 'no se pudo refrescar la sesión'));
+  }
+
+  /**
+   * La cabecera se pone a mano por lo que dice el puerto: aquí no puede usarse
+   * `crearClienteAutenticado`.
+   *
+   * <p>**Dos cosas distintas responden 401**: la clave actual equivocada
+   * (`CREDENCIALES_INVALIDAS`) y el token que venció (`NO_AUTENTICADO`, que pone el punto de
+   * entrada de la cadena de seguridad). Se separan por el `codigo` del cuerpo, que es el valor
+   * estable del `ProblemDetail`, y no por el estado: confundirlos le diría "esa no es tu clave" a
+   * quien la escribió bien.
+   */
+  async cambiarClave(
+    accessToken: string,
+    claveActual: string,
+    claveNueva: string,
+  ): Promise<Sesion> {
+    const respuesta = await this.cliente.POST('/api/v1/auth/clave', {
+      body: { claveActual, claveNueva },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    try {
+      return aSesion(desempaquetar(respuesta, 'no se pudo cambiar la clave'));
+    } catch (error) {
+      if (!(error instanceof ErrorHttp)) {
+        throw error;
+      }
+      if (error.codigo === 'CREDENCIALES_INVALIDAS') {
+        throw new ClaveActualIncorrectaError();
+      }
+      if (error.codigo === 'NO_AUTENTICADO') {
+        throw new SesionExpiradaError();
+      }
+      if (error.estado === 429) {
+        throw new DemasiadosIntentosError();
+      }
+      throw error;
+    }
   }
 
   async cerrarSesion(): Promise<void> {

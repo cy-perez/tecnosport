@@ -10,7 +10,8 @@
     "no_es_cliente": "This account belongs to the admin panel, not a customer account.",
     "olvidaste_clave": "Forgot your password?",
     "sin_cuenta": "Don't have an account?",
-    "crear_cuenta": "Create account"
+    "crear_cuenta": "Create account",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem."
   },
   "registro": {
     "titulo": "Create account",
@@ -42,7 +43,10 @@
     "reenvio_enviar": "Send a new link",
     "reenvio_enviando": "Sending the link…",
     "reenvio_exito": "If that email has an unverified account, we have just sent it a new link. Check your inbox and your spam folder.",
-    "reenvio_error": "We could not send the link. Please try again in a moment."
+    "reenvio_error": "We could not send the link. Please try again in a moment.",
+    "limitado_titulo": "Too many attempts",
+    "limitado_mensaje": "There were too many attempts in a row from this connection. Wait a few minutes and open the link again — the one you have still works.",
+    "reenvio_error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and ask again."
   },
   "recuperarClave": {
     "titulo": "Recover password",
@@ -52,7 +56,8 @@
     "enviando": "Sending…",
     "exito_titulo": "Check your email",
     "exito_mensaje": "If an account exists with that email, a password recovery link was sent to it.",
-    "error_generico": "We couldn't process the request. Try again."
+    "error_generico": "We couldn't process the request. Try again.",
+    "error_demasiados_intentos": "Too many attempts in a row from this connection. Wait a few minutes and ask again."
   },
   "restablecerClave": {
     "titulo": "Choose a new password",
@@ -64,6 +69,7 @@
     "exito_titulo": "Password reset",
     "exito_mensaje": "You can now sign in with your new password.",
     "error_titulo": "Invalid link",
-    "error_token_invalido": "The link is invalid or expired. Request a new one."
+    "error_token_invalido": "The link is invalid or expired. Request a new one.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your link still works."
   }
 }

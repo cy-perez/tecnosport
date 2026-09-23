@@ -41,10 +41,25 @@ public class LimitadorDeIntentosJpa implements LimitadorDeIntentos {
       returning contador
       """;
 
+  private static final String BORRAR = "delete from limite_intentos where clave = ?1";
+
   private final EntityManager entityManager;
 
   public LimitadorDeIntentosJpa(EntityManager entityManager) {
     this.entityManager = Objects.requireNonNull(entityManager);
+  }
+
+  /**
+   * {@code REQUIRES_NEW} por lo mismo que {@link #permitir}: el borrado tiene que quedar
+   * comprometido pase lo que pase con la transacción de negocio que lo llamó. {@code IniciarSesion}
+   * olvida el conteo en cuanto la clave resulta correcta, y después puede lanzar {@code
+   * CorreoSinVerificarException} y revertir — quien acertó su clave no merece arrastrar el conteo
+   * por eso.
+   */
+  @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void olvidar(String clave) {
+    entityManager.createNativeQuery(BORRAR).setParameter(1, clave).executeUpdate();
   }
 
   @Override

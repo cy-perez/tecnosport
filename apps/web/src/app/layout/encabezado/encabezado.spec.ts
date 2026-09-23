@@ -26,6 +26,10 @@ class RepositorioSesionFalso {
   async iniciarSesion() {
     throw new Error('No usado en estas pruebas.');
   }
+  async cambiarClave() {
+    throw new Error('No usado en estas pruebas.');
+  }
+
   async cerrarSesion() {
     return undefined;
   }

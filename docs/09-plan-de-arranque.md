@@ -8040,6 +8040,260 @@ el error caro". La diferencia es que aquel caso sí lo cubre y este no.
 El informe tiene la mitad del cruce hecho —el bucket— y le falta la otra mitad cuando el bucket
 sirve a dos ambientes.
 
+## Cambiar la clave del panel, y los dos defectos que solo aparecieron al usarla (2026-09-22)
+
+Cerró la deuda 28. Hasta esa tarde, el único camino para cambiar la clave de un usuario que ya
+existe era `ConfirmarRecuperacion`, que cuelga del token que llega al buzón: `SembradorAdmin` crea
+el `ADMIN` si no existe y **nunca actualiza uno existente**. Con una sola cuenta administrando la
+tienda, perder esa clave era cirugía de base de datos.
+
+Ahora hay `CambiarClave`: pide la clave actual, no depende del correo, y **revoca todas las
+sesiones del usuario abriendo una nueva en el mismo acto** — en ese orden, porque al revés "todas"
+incluiría la recién creada y dejaría fuera a quien acaba de cambiar su propia clave. La pantalla
+vive en `/admin/clave` y se alcanza con un clic desde el panel.
+
+El endpoint es **la única ruta de `/api/v1/auth` que exige sesión iniciada**, y eso hubo que
+declararlo: `ConfiguracionSeguridad` termina en `anyRequest().permitAll()`, así que una ruta nueva
+bajo ese prefijo nace pública y habría llegado al controlador sin principal. Es el único punto de
+todo el trabajo donde un olvido no falla ruidosamente — solo deja la puerta abierta.
+
+### Lo que encontró el recorrido en el navegador, y era mejor que el trabajo que iba a verificar
+
+Las pruebas pasaban, la API respondía bien a los doce pasos de un recorrido con `curl`, y aun así
+usar la pantalla con las manos destapó **dos defectos que venían de antes y que ninguna prueba
+tenía cómo ver**.
+
+**El primero: sin token, la API respondía 403.** Spring Security usaba su punto de entrada por
+omisión, que contesta 403 —el código de "sé quién eres y aun así no puedes"— para el caso
+contrario, en el que no sabe quién es nadie. Pasaba desde que existe `/api/v1/admin/**`. Y no era
+cosmética: el frontend renueva el token de acceso —quince minutos de vigencia— **solo al recibir un
+401** (`crearClienteAutenticado`), así que esa renovación silenciosa **no disparaba nunca** y
+cualquier pantalla del panel abierta ese rato mostraba un error en vez de renovar sola. Se declaró
+`PuntoDeEntradaNoAutenticado`. El 403 no desaparece, cambia de sitio: un `CLIENTE` autenticado
+llamando al panel pasa por el manejador de acceso denegado y sigue recibiendo 403, que es lo
+correcto.
+
+`CadenaDeSeguridadTest` lo vigila contra **la cadena de verdad**, no contra un `@WebMvcTest` —que
+no monta `ConfiguracionSeguridad`, porque vive en `bootstrap`—. Esa es justamente la razón de que
+el 403 pudiera quedarse ahí meses: ninguna prueba miraba la cadena completa. Comprobado quitando la
+línea: caen tres de las cinco, y las dos que siguen en verde son las que deben.
+
+**El segundo apareció usando la pantalla, y es el que más enseña.** Tras cambiar la clave, cerrar
+sesión y volver a entrar un par de veces, el panel empezó a responder **«Correo o clave
+incorrectos.»** con la clave nueva perfectamente bien. No era la clave: era el limitador, y la
+pantalla mentía sobre el motivo.
+
+Dos cosas se juntaron:
+
+1. `esFalloDelServidor` solo es cierto para un **5xx**, así que cualquier 4xx compartía el texto de
+   credenciales malas. El **429 del limitador se leía como una clave equivocada**, en las dos
+   pantallas de login.
+2. `IniciarSesion` le pide permiso al limitador **antes** de verificar, así que **los inicios de
+   sesión exitosos también consumían cupo**. Entrar, salir y volver a entrar —justo lo que pide
+   probar un cambio de clave— agotaba los cinco sin que nadie se equivocara una sola vez.
+
+Medido en la base al terminar: `cuenta:iniciar-sesion:contacto@tecnosport.co` en **13 intentos**
+contados, la clave correcta todas las veces, la cuenta bloqueada quince minutos.
+
+En producción eso es peor que una molestia: a un administrador frenado se le dice que su clave está
+mal, se va a «recuperar contraseña», y sigue sin entrar **porque la clave nunca fue el problema**.
+Es la historia de la deuda 28 otra vez, por otra puerta.
+
+Los dos se arreglaron. El 429 tiene ahora su propio error y su propio mensaje en las dos pantallas
+de login. Y el límite pasó a contar **intentos fallidos seguidos**: el puerto suma `olvidar(clave)`
+y la llaman los dos casos de uso que verifican un secreto —`IniciarSesion` y `CambiarClave`— en
+cuanto ese secreto resulta correcto.
+
+**Por qué `olvidar` y no "preguntar primero y contar después".** `permitir` cuenta y comprueba en
+la misma sentencia atómica a propósito: es lo que cierra la carrera que documenta
+`LimitadorDeIntentosJpa`. Separarlas la reabre. El precio de esa atomicidad es que el acierto
+también suma, y el precio se paga ahora donde corresponde — después de saber que acertó.
+
+**Y no la llaman los otros tres.** `RegistrarUsuario`, `SolicitarRecuperacion` y `CrearPedido` no
+verifican ningún secreto, así que borrarles el conteo al "acertar" dejaría su límite sin efecto,
+que es justo lo que esos tres frenan. Sus dobles de prueba **lanzan** si alguien llama a `olvidar`,
+para que ese límite quede escrito donde se nota y no solo en un comentario.
+
+### Lo que esto enseña
+
+Las tres cosas que salieron mal estaban **detrás de una sesión iniciada**, y las tres se veían solo
+usando el sistema como lo usa una persona: entrar, hacer algo, salir, volver. El recorrido con
+`curl` pasó los doce pasos sin destapar ninguna, porque un guion no se equivoca de clave ni entra
+dos veces seguidas. La regla de cierre de este documento —«el recorrido completo hecho de verdad en
+el navegador»— se cobró aquí su tercera factura, y esta vez el hallazgo valía más que la
+funcionalidad que iba a verificar.
+
+## El informe de huérfanos aprende de qué ambiente es cada objeto (2026-09-22)
+
+Cerró la deuda 29. `tecnosport-dev-imagenes` lo comparten local y dev, y el informe cruzaba contra
+**una** API: todo lo que la otra base reclamaba salía como basura. Medido el 22 de septiembre, la
+lista decía 366 sin reclamar y **348 estaban vivos**.
+
+La separación sale de `catalogo/cargados.json`, que desde el día anterior está indexado por la URL
+de la API (deuda 26). La key de un objeto es `productos/{productoId}/…` y ese registro dice a qué
+ambiente pertenece cada `productoId`. Las dos deudas se sostienen: sin la 26, este cruce no existe.
+
+### Lo medido, antes y después
+
+Contra el mismo bucket y la misma API local, en la misma sesión:
+
+| | objetos |
+|---|---|
+| en el bucket | 648 |
+| reclamados por el panel local | 344 |
+| **de otro ambiente, no juzgables** | **300** |
+| **sin reclamar por nadie** | **4** |
+
+Antes eran **304 sin reclamar**. Los 4 que quedan son huérfanos de verdad y se reconocen: sobras
+del `--rehacer-imagenes` de las 16:51 sobre un producto que sí es local, con la hora del objeto
+igual a la del `imagenesRehechasEn` del registro.
+
+### Lo que el registro prueba, y lo que no
+
+**Prueba de qué ambiente es el producto, no que el objeto esté vivo.** Un objeto de dev puede ser
+igual de huérfano —una subida firmada que allá tampoco se confirmó— y desde aquí no hay forma de
+saberlo. Por eso no se cuentan como reclamados sino como **no juzgables**, la misma categoría que
+ya usaban los fotogramas de `rotacion/`, y el informe dice cómo juzgarlos: correrlo con `--api`
+apuntando a ese ambiente. Contarlos como reclamados habría cambiado un error caro por uno cómodo.
+
+Hay un orden que importa: un objeto es "de otro ambiente" solo si su `productoId` está bajo **otra**
+API y **no** bajo esta. Un producto que esta API cargó y luego borró sigue en el registro de esta
+API, y ese sí es un huérfano de verdad — no puede esconderse detrás de que alguna vez fue nuestro.
+
+### Y si no hay registro
+
+Lo dice en voz alta y sigue: «no puedo separar los ambientes; si este bucket lo comparte otra base,
+sus imágenes vivas van a salir abajo como si no las reclamara nadie». Sin ese aviso el informe
+volvería a ser el de antes y su lista se leería igual de convincente — que es exactamente cómo se
+llega a borrar 348 objetos vivos.
+
+### Cómo se verificó, porque `tools/` no tiene pruebas
+
+`npm run verificar` no mira `tools/*.mjs`: ni lo lintea ni lo prueba. Así que la verificación fue
+correr el informe **dos veces contra el bucket de verdad**, con la API local levantada — una con el
+registro en su sitio (4 sin reclamar) y otra con el registro apartado (304 y el aviso). El registro
+**no está versionado** —`.gitignore` línea 60—, así que antes de apartarlo se copió al scratchpad y
+se comprobó el `md5`, y se restauró comprobándolo otra vez.
+
+## El doble de prueba era más correcto que el código real (2026-09-22)
+
+Cerró la deuda 30, y el enunciado con el que nació se quedaba corto. Decía que `esFalloDelServidor`
+solo distingue el 5xx y que el resto del frontend seguía usándolo. Cierto, pero lo que había debajo
+en `features/cuenta` era peor: **dos ramas de error que nadie podía alcanzar en producción**.
+
+`CuentaHttpRepositorio` lanzaba `new Error(...)` en vez de `ErrorHttp`. Y `esFalloDelServidor`
+cuenta como fallo del servidor **todo lo que no sea un `ErrorHttp` de 4xx**, así que respondía
+`true` siempre. Resultado: en `RestablecerClavePage` y en `VerificarCorreoPage`, un enlace vencido
+—el fallo más común de las dos pantallas— se anunciaba como «no pudimos conectarnos con el
+servidor». El texto que dice «pide uno nuevo» no se mostraba nunca, y el que sí se mostraba manda a
+reintentar lo que no va a funcionar.
+
+### Por qué las pruebas no lo vieron
+
+**Sus dobles sí lanzaban `ErrorHttp`.** Hay una prueba llamada «con un token que el servidor
+rechaza, muestra el error correspondiente» y pasaba en verde: ejercitaba una rama que en producción
+nadie alcanzaba, porque el doble y el adaptador real no se parecían en lo único que la pantalla
+mira. El doble era **más correcto que el código**, que es la forma más cara de tener una prueba —da
+confianza exacta sobre un comportamiento que no existe.
+
+No había ninguna prueba del adaptador real: `cuenta-http.repositorio.ts` era el único archivo de su
+carpeta. Ahora tiene su `.spec.ts`, contra `fetch` y no contra un doble, y se comprobó que sirve
+devolviendo un método al código viejo: caen dos.
+
+Es la misma lección que ya dejó escrita `CadenaDeSeguridadTest` unas horas antes, por otra puerta:
+lo que ninguna prueba mira es exactamente donde se esconde un defecto durante meses. Allá era la
+cadena de seguridad, que vive en `bootstrap` y no la monta un `@WebMvcTest`. Aquí es el adaptador,
+que ninguna prueba de pantalla toca porque todas lo sustituyen.
+
+### Lo que cambió
+
+`exigirExito` **ya existía** y hacía exactamente lo que faltaba —comprueba el código y lanza
+`ErrorHttp` con el `codigo` del `ProblemDetail`—; el adaptador simplemente no la usaba. Ahora sí, y
+con eso las dos ramas muertas vuelven a la vida sin tocar una línea de las pantallas.
+
+Encima va el 429, que era el enunciado original de la deuda. Las cuatro rutas de esta funcionalidad
+llevan techo por IP (`ConfiguracionLimiteIntentos`), así que un enlace perfectamente válido abierto
+tras varios intentos se leía como enlace malo — y el remedio que sugería la pantalla, pedir otro,
+tampoco iba a servir. `VerificarCorreoPage` gana un estado `limitado` y `RestablecerClavePage` su
+propio mensaje; los dos dicen lo mismo: espera, tu enlace sigue sirviendo.
+
+### Lo que queda dicho y no se tocó
+
+`solicitarRecuperacion` **se traga todos los fallos**, incluidos un 429 y un 500, y la pantalla dice
+«revisa tu correo» aunque no se haya mandado nada. El 204-siempre del backend es deliberado —no
+revelar si esa cuenta existe— pero un 429 y un 500 no dicen nada de ninguna cuenta. Se deja anotado
+aquí y no se arregla de paso porque cambia lo que ve quien pide recuperar la clave y necesita su
+propio texto: es la deuda 31.
+
+## El conteo de inventario, y las regiones vivas que nadie ha escuchado todavía (2026-09-22)
+
+Dos frentes de la misma tarde, y los dos quedan a medias **a propósito**.
+
+### El inventario deja de estar inventado
+
+La existencia de 5 que llevaban los doce primeros era un número de relleno, y ahora hay un dato:
+**una unidad por variante**, dicho por el dueño del negocio. Se asentó como lo que es —un conteo
+físico, con su motivo, por `PATCH /admin/variantes/{id}/existencia` (`adr/0049`)— y no como un
+`UPDATE` a la brava: cada ajuste queda en el libro de movimientos, que es lo que permite auditar
+mañana de dónde salió cada cifra.
+
+En local: 37 variantes, 36 asentadas y 1 que ya estaba. Ninguna tenía unidades reservadas, así que
+ningún conteo dejó reservas sin respaldo.
+
+Y una corrección del mismo día: **los tres productos sembrados de la Fase 1** —camiseta, morral y
+tenis— habían entrado en el conteo con una unidad cada uno, y no son mercancía. Se volvieron a
+contar a **0**, con su motivo. Quedan seis variantes en cero y **las seis están publicadas**, así
+que el aviso del panel las canta y la tienda las muestra agotadas. Eso es cierto: lo que falta ahí
+no es inventario, es despublicar tres productos que nunca fueron de verdad.
+
+**Dev se asentó esa misma noche**, y ahí el enunciado de la deuda resultó estar caduco: **no
+había ningún 5**. Los 25 del catálogo real estaban en **cero** y los 8 con saldo eran los productos
+sembrados de la Fase 1 —camiseta, morral, tenis y un cuarto que no se había nombrado, el «Celular
+TecnoSport Aurora»—, todos en BORRADOR. O sea que el problema en dev no era una cifra inventada
+sino un catálogo entero sin contar.
+
+Quedó en 25 variantes a 1 y 8 a 0. Y dev quedó **mejor que local** en una cosa que conviene mirar:
+allá los 8 en cero son todos BORRADOR, así que `totalSinExistenciaEnPublicados` es 0 —ni aviso en
+el panel ni nada agotado en la vitrina—, mientras que en local los tres sembrados están publicados
+y sí se ven agotados. Lo que falta ahí no es inventario: es despublicar tres productos que nunca
+fueron mercancía.
+
+El cuarto sembrado se contó a cero por la misma razón que los otros tres y sin preguntar: comparte
+su familia de SKU (`TS-CEL-AUR-`, como `TS-CAM-`, `TS-MOR-` y `UT-TEN-`) y es un teléfono de marca
+propia inventada en un catálogo donde todo lo demás es Samsung, Motorola, JBL, Lenovo, TCL, Honor o
+Nintendo. Si resulta que sí es algo, se deshace con un conteo.
+
+### Las regiones vivas: 15 de 114, y el freno es deliberado
+
+La regla de `apps/web/CLAUDE.md` dice que una región viva vive siempre en el DOM y lo que cambia es
+su contenido; montarla ya llena con un `@if` es justo lo que los lectores de pantalla anuncian mal.
+Se contaron las 114 del frontend: **cumplían 5**.
+
+Pero no son 109 veces el mismo problema. Clasificadas:
+
+| clase | sitios | qué es | arreglo |
+|---|---|---|---|
+| A | 14 | el `@if` pregunta por la **misma señal** que el párrafo pinta | mecánico |
+| B | 5 | dentro de un `@for`: la región es de la fila | una región de página, no cinco de fila |
+| C | 23 | dentro de un `@switch`: es un estado de pantalla entero | envolver el switch |
+| D | 71 | cargando, listas vacías, avisos de negocio | región permanente + señal derivada |
+
+La clase A está cerrada: 15 sitios, dos de ellos `ts-campo` y `ts-select`, que son los que más
+pesan porque los usa cada formulario del sitio. Donde el párrafo llevaba margen, el margen pasa a
+depender del contenido — `m-0` deja un párrafo vacío a cero de alto, pero un `mb-16` permanente
+habría dejado un hueco fijo donde no hay nada que decir.
+
+**Y ahí se para, a propósito.** Las clases B, C y D son 99 sitios en 30 plantillas, cada uno con una
+decisión de diseño propia, y se harían para satisfacer una regla **cuyo efecto real nadie ha
+observado nunca** — que es, literalmente, la deuda 16. Mucho diff en pantallas que nadie ha
+reportado rotas, con riesgo visual que jsdom no atrapa (regla dura #8), antes de tener una sola
+medición. La secuencia correcta es al revés: se comprueba con NVDA que las 15 de ahora se anuncian
+y que las de clase D no, y con esa evidencia se hacen las 99 sabiendo que sirven.
+
+Tres pruebas hubo que ajustar, y el ajuste las mejoró: afirmaban «existe alguna alerta» y ahora que
+los párrafos vacíos siguen en el DOM encontraban varias. Pasan a afirmar el texto. Antes habrían
+pasado con cualquier alerta en pantalla.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8071,6 +8325,22 @@ Se abrieron dos, y las dos salieron de hacer el trabajo, no de buscarlas: la **2
 de un administrador exige borrar filas en la base de datos— y la **29** —el informe de huérfanos
 cuenta como basura lo que reclama el otro ambiente—. Y algo que no es deuda pero sí el mismo
 síntoma: `docs/07` describía un freno de seguridad que había cambiado tres días antes.
+
+**Y el día siguió otra vez.** La **28** se cerró esa misma noche, y cerrarla destapó dos defectos
+anteriores que ninguna prueba veía y que se arreglaron con ella: la API respondía **403 donde debía
+responder 401**, lo que dejaba muerta la renovación silenciosa del token en todo el panel, y el
+**429 del limitador se leía como «correo o clave incorrectos»** en las dos pantallas de login —con
+el agravante de que el límite contaba también los inicios de sesión exitosos—. Los dos salieron de
+usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. Se abrió la **30**.
+Ver la entrada de arriba.
+
+Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
+objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
+ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
+por cubiertas. La **31** se abrió y se cerró detrás, el mismo día. Se cerró la **10** —el inventario
+deja de estar inventado en los dos ambientes, y el enunciado resultó estar caduco— y avanzó la
+**16**, que por fin se midió:
+15 regiones vivas corregidas de 114, y las 99 que quedan esperando media hora de NVDA.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8224,7 +8494,15 @@ El orden no es negociable: cada uno alimenta al siguiente.
    entran en BORRADOR y no salen a la vitrina.** Están cargados, con sus tres tomas cada uno y
    existencia 0, y la ficha pública responde 404. Lo que queda no es una carga: es el precio, y
    ese se renegocia con el proveedor o no se venden.
-10. **La existencia inventada de 5** que llevan los doce primeros en dev.
+10. ~~**La existencia inventada de 5** que llevan los doce primeros en dev.~~ **Cerrada el 22 de
+    septiembre de 2026, y el enunciado estaba caduco.** El dato lo puso el dueño del negocio —**una
+    unidad por variante**— y se asentó como conteo físico con su motivo, no como un `UPDATE`: cada
+    ajuste queda en el libro de movimientos. Local: 37 variantes. Dev: 33, y allí **no había ningún
+    5** —los 25 del catálogo real estaban en cero y los 8 con saldo eran los sembrados de la Fase 1,
+    todos en BORRADOR—, así que el problema no era una cifra inventada sino un catálogo sin contar.
+    Los sembrados quedaron en 0 en los dos ambientes, porque no son mercancía. **Cómo comprobarlo:**
+    `GET /api/v1/admin/variantes/existencias`; toda variante que no sea de un SKU sembrado
+    (`TS-CAM-`, `TS-MOR-`, `TS-CEL-AUR-`, `UT-TEN-`) debe estar en 1.
 11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 22 de septiembre: son
     $50.000**, confirmado por el dueño del negocio. Sigue sin valor por omisión en
     `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
@@ -8256,11 +8534,29 @@ El orden no es negociable: cada uno alimenta al siguiente.
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
 16. **Que NVDA o VoiceOver anuncien de verdad las regiones vivas.** Lo que se verificó el 21 de
-    septiembre es la estructura que necesitan, que no es lo mismo.
+    septiembre es la estructura que necesitan, que no es lo mismo. **El 22 de septiembre se midió
+    esa estructura y no era la que hace falta**: de las 114 regiones vivas del frontend, 5 vivían
+    siempre en el DOM y 109 nacían dentro del `@if` que las llena, que es el patrón que la regla de
+    `apps/web/CLAUDE.md` prohíbe. Se cerró el caso mecánico —15 sitios, `ts-campo` y `ts-select`
+    incluidos— y **se paró ahí a propósito**: quedan 99 en tres clases (5 de fila, 23 de estado,
+    71 de cargando/listas vacías) que exigen una decisión por pantalla, y hacerlas antes de haber
+    escuchado una sola con un lector de pantalla es refactorizar contra una regla sin medir. **Lo
+    que desbloquea todo lo demás es media hora con NVDA**: el login y una bandeja del panel bastan
+    para saber si el arreglo de la clase A se anuncia y si el de la clase D hace falta. **Cómo
+    comprobarlo:** los dos guiones de clasificación viven en el historial de esta rama; volver a
+    contarlas es `grep -rn 'role="status"\|role="alert"' apps/web/src/app --include=*.html`.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 
-28. **Rotar la clave de un administrador exige borrar filas en la base de datos.** `SembradorAdmin`
+28. ~~**Rotar la clave de un administrador exige borrar filas en la base de datos.**~~ **Cerrada
+    el 22 de septiembre de 2026**, y el recorrido en el navegador se hizo de verdad: se cambió la
+    clave del panel, se cerró sesión y se volvió a entrar con la nueva. `CambiarClave` pide la
+    clave actual, no depende del correo, y revoca todas las sesiones abriendo una nueva en el
+    mismo acto, así que quien rota su clave sigue dentro y cualquier otro dispositivo queda fuera.
+    La pantalla es `/admin/clave`, enlazada desde el panel. **Cerrarla destapó dos defectos
+    anteriores** —el 403 por 401 y el 429 disfrazado de clave equivocada— que se arreglaron en la
+    misma rama; ver la entrada de arriba y la deuda 30. Enunciado original, para que se entienda
+    qué cerró: «`SembradorAdmin`
     crea el `ADMIN` si no existe y **nunca actualiza uno existente** —lo dice su propio Javadoc, y
     ahí llama al mecanismo que falta "un mecanismo aparte, no construido todavía"—. No hay pantalla
     en el panel ni endpoint para cambiarla: `/auth/recuperacion` manda el correo de recuperación, y
@@ -8272,11 +8568,19 @@ El orden no es negociable: cada uno alimenta al siguiente.
     usuario ya existente; mientras el único sea `ConfirmarRecuperacion`, que cuelga del token que
     llega por correo, la deuda sigue. La salida mínima es un cambio de clave autenticado desde el panel
     —el usuario con sesión iniciada da la actual y la nueva—, que no depende del correo ni de la
-    base.
+    base.»
 
 ### Lo que dejó abierto el borrado de huérfanos
 
-29. **El informe de huérfanos da por no reclamado lo que reclama el otro ambiente.** Local y dev
+29. ~~**El informe de huérfanos da por no reclamado lo que reclama el otro ambiente.**~~
+    **Cerrada el 22 de septiembre de 2026**, y medida contra el bucket de verdad: de 648 objetos,
+    el panel local reclama 344, **300 son de dev y quedan sin juzgar**, y los **4** que salen como
+    sin reclamar son huérfanos reconocibles —sobras de un `--rehacer-imagenes` de esa misma tarde—.
+    Antes esa lista decía 304. El informe lee `catalogo/cargados.json`, que desde el día anterior
+    está indexado por la URL de la API, y cruza el `productoId` de la key; lo de otro ambiente no
+    pasa a "reclamado" sino a **no juzgable**, porque el registro prueba de qué ambiente es el
+    producto y no que el objeto esté vivo. Sin registro, lo dice en voz alta en vez de callarse.
+    Ver la entrada de arriba. Enunciado original: «Local y dev
     comparten `tecnosport-dev-imagenes`, así que una carga contra `localhost` deja en ese bucket
     objetos con ids que la base de dev nunca tuvo. `npm run huerfanos` cruza contra **una** API —la
     de `--api`— y los cuenta como basura: el 22 de septiembre listó 366 sin reclamar y **348 eran
@@ -8285,7 +8589,52 @@ El orden no es negociable: cada uno alimenta al siguiente.
     correr el informe contra dev con el catálogo local cargado; mientras la cifra de "sin reclamar"
     incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
     salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
-    reclama nadie"; la cara y definitiva es un bucket por ambiente.
+    reclama nadie"; la cara y definitiva es un bucket por ambiente.» **Se tomó la barata**, y la
+    cara sigue sobre la mesa: un bucket por ambiente haría innecesario todo este cruce.
+
+### Lo que dejó abierto cerrar la deuda 28
+
+30. ~~**`esFalloDelServidor` solo distingue el 5xx, y el resto del frontend sigue usándolo.**~~
+    **Cerrada el 22 de septiembre de 2026, y el enunciado se quedaba corto**: en `features/cuenta`
+    el adaptador lanzaba `Error` en vez de `ErrorHttp`, así que `esFalloDelServidor` respondía
+    `true` siempre y las ramas de 4xx de dos pantallas eran **código muerto** —un enlace vencido se
+    anunciaba como servidor caído—. Las pruebas no lo vieron porque sus dobles sí lanzaban
+    `ErrorHttp`: el doble era más correcto que el código real. Se arregló usando `exigirExito`,
+    que ya existía, y se añadió `cuenta-http.repositorio.spec.ts`, que prueba el adaptador contra
+    `fetch`. Las cuatro pantallas que usaban la función a pelo quedan cubiertas: las dos de login
+    el 22 de septiembre y estas dos ahora. Ver la entrada de arriba y la deuda 31. Enunciado
+    original: «La
+    función responde `true` únicamente para un error de transporte o un 5xx, así que **todo 4xx
+    comparte el mensaje genérico de la pantalla que la llama**. Eso fue exactamente lo que hizo que
+    un 429 se leyera como «correo o clave incorrectos» durante meses. El 22 de septiembre se
+    corrigieron **las dos pantallas de login** —que es donde el daño era concreto— dándole al 429
+    su propio error y su propio texto, pero la función sigue igual y la usan más pantallas: cada
+    una elige entre «error del servidor» y su mensaje propio sin mirar de qué 4xx se trata. Un 409
+    de conflicto, un 422 de cuerpo inválido y un 429 de límite se cuentan todos como el mismo
+    problema. **Cómo comprobarlo:** `grep -rn "esFalloDelServidor" apps/web/src`; mientras haya
+    llamadas que solo elijan entre dos claves de Transloco sin mirar el `codigo` del
+    `ProblemDetail`, la deuda sigue. La salida no es borrar la función —para el 5xx está bien—
+    sino que cada pantalla que pueda recibir un 4xx con significado propio lo traduzca por su
+    `codigo`, como ya hacen `mensaje-de-error.ts`, la pantalla de cambio de clave y ahora las dos
+    de login.»
+
+### Lo que dejó abierto cerrar la deuda 30
+
+31. ~~**`solicitarRecuperacion` se traga todos los fallos, y la pantalla dice que revises tu
+    correo.**~~ **Abierta y cerrada el 22 de septiembre de 2026**, en el mismo día que la 30 la
+    destapó: se propagan el 429 y el 5xx —que no dicen nada de ninguna cuenta— y el 204 se queda
+    exactamente como estaba, que es lo que impide decir qué correos están registrados.
+    `RecuperarClavePage` tiene su texto para el límite de intentos, y el adaptador su prueba contra
+    `fetch`. Enunciado original: «El adaptador llama a `POST /auth/recuperacion` y no mira la
+    respuesta, a propósito: el backend
+    contesta 204 exista o no una cuenta con ese correo, y distinguir revelaría cuáles existen. Pero
+    esa ruta **lleva techo por IP**, así que un 429 —o un 500— se traga igual, y quien pidió el
+    enlace se queda mirando el buzón de un correo que nunca salió. El 204-siempre protege contra
+    revelar la existencia de una cuenta; un 429 y un 500 no dicen nada de ninguna cuenta.
+    **Cómo comprobarlo:** en `cuenta-http.repositorio.ts`, mientras `solicitarRecuperacion` no mire
+    `response.status`, la deuda sigue. La salida es propagar solo lo que no distingue cuentas —el
+    429 y el 5xx— y dejar el 204 como está; necesita su propio texto en `RecuperarClavePage`, que
+    es lo que hizo que no se arreglara de paso.»
 
 ### Lo que está anotado y no es deuda
 

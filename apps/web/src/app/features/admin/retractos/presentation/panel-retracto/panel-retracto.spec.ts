@@ -243,7 +243,9 @@ describe('PanelRetracto', () => {
     const medio = await screen.findByLabelText(esAdmin.retractos.acciones.medio);
     fireEvent.change(medio, { target: { value: 'EFECTIVO' } });
 
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    // Por un fragmento estable y no por el mensaje entero: la parte interpolada es el medio que
+    // pidio el COMPRADOR, no el que se acaba de elegir en el desplegable.
+    expect(await screen.findByText(/incumple la Ley 2439/)).toBeTruthy();
 
     const monto = screen.getByLabelText(esAdmin.retractos.acciones.monto);
     fireEvent.input(monto, { target: { value: '50000' } });

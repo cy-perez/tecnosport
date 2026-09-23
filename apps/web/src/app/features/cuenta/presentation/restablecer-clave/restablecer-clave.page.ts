@@ -11,6 +11,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
+import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
@@ -65,6 +66,20 @@ export class RestablecerClavePage {
     return !!this.form.errors?.['clavesNoCoinciden'];
   });
 
+  /**
+   * El límite de intentos va aparte: `/auth/recuperacion/confirmar` lleva techo por IP, y sin esta
+   * rama un 429 se anuncia como "el enlace no es válido", que manda a pedir un enlace nuevo que
+   * tampoco se va a poder usar hasta que pase la ventana.
+   */
+  private claveDelError(error: unknown): string {
+    if (error instanceof DemasiadosIntentosError) {
+      return 'cuenta.restablecerClave.error_demasiados_intentos';
+    }
+    return esFalloDelServidor(error)
+      ? 'comun.error_servidor'
+      : 'cuenta.restablecerClave.error_token_invalido';
+  }
+
   protected async enviar(): Promise<void> {
     if (this.form.invalid || !this.token) {
       this.form.markAllAsTouched();
@@ -77,13 +92,7 @@ export class RestablecerClavePage {
       await this.repositorio.restablecerClave(this.token, this.form.controls.claveNueva.value);
       this.restablecida.set(true);
     } catch (error) {
-      this.error.set(
-        this.transloco.translate(
-          esFalloDelServidor(error)
-            ? 'comun.error_servidor'
-            : 'cuenta.restablecerClave.error_token_invalido',
-        ),
-      );
+      this.error.set(this.transloco.translate(this.claveDelError(error)));
     } finally {
       this.enviando.set(false);
     }

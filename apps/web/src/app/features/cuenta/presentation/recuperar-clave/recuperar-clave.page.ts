@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -50,8 +51,16 @@ export class RecuperarClavePage {
     try {
       await this.repositorio.solicitarRecuperacion(this.form.controls.correo.value);
       this.enviado.set(true);
-    } catch {
-      this.error.set(this.transloco.translate('cuenta.recuperarClave.error_generico'));
+    } catch (error) {
+      // Solo llegan aquí el límite de intentos y una caída: el 204 —exista o no la cuenta— se
+      // resuelve sin error, que es el contrato que impide decir qué correos están registrados.
+      this.error.set(
+        this.transloco.translate(
+          error instanceof DemasiadosIntentosError
+            ? 'cuenta.recuperarClave.error_demasiados_intentos'
+            : 'cuenta.recuperarClave.error_generico',
+        ),
+      );
     } finally {
       this.enviando.set(false);
     }

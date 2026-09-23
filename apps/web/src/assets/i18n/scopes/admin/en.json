@@ -29,7 +29,8 @@
     "entrar": "Sign in",
     "enviando": "Signing in…",
     "error": "Incorrect email or password.",
-    "no_es_admin": "This account doesn't have access to the panel."
+    "no_es_admin": "This account doesn't have access to the panel.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem."
   },
   "panel": {
     "titulo": "Admin panel",
@@ -49,7 +50,8 @@
       "aviso": "{{total}} catalog variant(s) have not a single unit in the inventory ledger, {{publicados}} of them on published products. Anyone seeing them in the shop sees them sold out.",
       "enlace": "Review stock and count"
     },
-    "ir_a_medidas": "Package measurements"
+    "ir_a_medidas": "Package measurements",
+    "ir_a_clave": "Change my password"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -646,5 +648,20 @@
     "errorLista": "Couldn't load the list of brands.",
     "ninguna": "There are no brands yet.",
     "listaTitulo": "In the catalogue ({{total}})"
+  },
+  "clave": {
+    "titulo": "Change my password",
+    "explicacion": "Changing it signs out every other device. This one stays signed in.",
+    "claveActual": "Current password",
+    "claveNueva": "New password",
+    "confirmarClave": "Repeat the new password",
+    "cambiar": "Change password",
+    "enviando": "Changing password…",
+    "exito": "Password changed. All other sessions were signed out.",
+    "error_formulario": "Fill in the three fields and make sure the new password matches.",
+    "error_confirmar_clave": "The two passwords do not match.",
+    "error_clave_actual": "That is not your current password.",
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
+    "error_sesion_expirada": "Your session expired. Sign in again and repeat the change."
   }
 }

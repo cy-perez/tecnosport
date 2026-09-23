@@ -8,6 +8,7 @@ import { TsPaginaFormulario } from '../../../shared/ui/pagina-formulario/ts-pagi
 import { TsCampo } from '../../../shared/ui/campo/ts-campo';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { esFalloDelServidor } from '../../../core/http/respuesta-http';
+import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
 
 /**
  * Solo para `ADMIN` — el login de `CLIENTE` es `features/cuenta/`, todavía
@@ -63,6 +64,19 @@ export class IniciarSesionAdminPage {
     return esRutaDeEsteSitio && destino.includes('/admin/') ? destino : panel;
   }
 
+  /**
+   * El límite de intentos tiene su propio mensaje. Antes caía en "correo o clave incorrectos"
+   * —`esFalloDelServidor` solo es cierto para un 5xx, así que cualquier 4xx compartía texto— y
+   * eso le dice a quien escribió bien su clave que la escribió mal: se va a recuperarla, y sigue
+   * sin entrar, porque la clave nunca fue el problema.
+   */
+  private claveDelError(error: unknown): string {
+    if (error instanceof DemasiadosIntentosError) {
+      return 'admin.iniciarSesion.error_demasiados_intentos';
+    }
+    return esFalloDelServidor(error) ? 'comun.error_servidor' : 'admin.iniciarSesion.error';
+  }
+
   protected async enviar(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -84,11 +98,7 @@ export class IniciarSesionAdminPage {
       const idioma = this.transloco.activeLang();
       void this.router.navigateByUrl(this.destinoTrasIniciar(idioma));
     } catch (error) {
-      this.error.set(
-        this.transloco.translate(
-          esFalloDelServidor(error) ? 'comun.error_servidor' : 'admin.iniciarSesion.error',
-        ),
-      );
+      this.error.set(this.transloco.translate(this.claveDelError(error)));
     } finally {
       this.enviando.set(false);
     }

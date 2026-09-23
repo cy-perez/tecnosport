@@ -5,6 +5,7 @@ import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.Reloj;
 import co.tecnosport.api.application.compartido.TextosDeCorreo;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
+import co.tecnosport.api.application.usuario.CambiarClave;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
@@ -75,6 +76,32 @@ public class ConfiguracionUsuario {
       LimitadorDeIntentos limitadorDeIntentos,
       PropiedadesLimiteAuth propiedadesLimite) {
     return new IniciarSesion(
+        repositorioUsuarios,
+        repositorioSesiones,
+        codificadorDeClaves,
+        generadorDeTokens,
+        reloj,
+        Duration.ofDays(propiedades.diasRefresco()),
+        limitadorDeIntentos,
+        propiedadesLimite.cuentaMaximo(),
+        Duration.ofMinutes(propiedadesLimite.cuentaMinutos()));
+  }
+
+  /**
+   * Mismos limites que el login: el abuso que frena es el mismo -probar claves- y la ventana no
+   * tiene por que ser otra.
+   */
+  @Bean
+  public CambiarClave cambiarClave(
+      RepositorioUsuarios repositorioUsuarios,
+      RepositorioSesiones repositorioSesiones,
+      CodificadorDeClaves codificadorDeClaves,
+      GeneradorDeTokens generadorDeTokens,
+      Reloj reloj,
+      PropiedadesJwt propiedades,
+      LimitadorDeIntentos limitadorDeIntentos,
+      PropiedadesLimiteAuth propiedadesLimite) {
+    return new CambiarClave(
         repositorioUsuarios,
         repositorioSesiones,
         codificadorDeClaves,

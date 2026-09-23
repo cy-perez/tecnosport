@@ -29,7 +29,8 @@
     "entrar": "Entrar",
     "enviando": "Entrando…",
     "error": "Correo o clave incorrectos.",
-    "no_es_admin": "Esta cuenta no tiene acceso al panel."
+    "no_es_admin": "Esta cuenta no tiene acceso al panel.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema."
   },
   "panel": {
     "titulo": "Panel administrativo",
@@ -49,7 +50,8 @@
       "aviso": "{{total}} variante(s) no tienen una sola unidad en el libro de inventario, {{publicados}} de ellas en productos publicados. Quien las vea en la tienda las ve agotadas.",
       "enlace": "Ver las existencias y contar"
     },
-    "ir_a_medidas": "Medidas del paquete"
+    "ir_a_medidas": "Medidas del paquete",
+    "ir_a_clave": "Cambiar mi clave"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -646,5 +648,20 @@
     "errorLista": "No se pudo cargar la lista de marcas.",
     "ninguna": "Todavía no hay ninguna marca.",
     "listaTitulo": "En el catálogo ({{total}})"
+  },
+  "clave": {
+    "titulo": "Cambiar mi clave",
+    "explicacion": "Al cambiarla se cierran todas las sesiones abiertas en otros dispositivos. Esta se mantiene.",
+    "claveActual": "Clave actual",
+    "claveNueva": "Clave nueva",
+    "confirmarClave": "Repite la clave nueva",
+    "cambiar": "Cambiar la clave",
+    "enviando": "Cambiando la clave…",
+    "exito": "Clave cambiada. Las demás sesiones quedaron cerradas.",
+    "error_formulario": "Completa los tres campos y asegúrate de que la clave nueva coincida.",
+    "error_confirmar_clave": "Las dos claves no coinciden.",
+    "error_clave_actual": "La clave actual no es correcta.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
+    "error_sesion_expirada": "Tu sesión venció. Vuelve a entrar y repite el cambio."
   }
 }

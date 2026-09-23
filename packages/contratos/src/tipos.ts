@@ -788,6 +788,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/clave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cambiarClave"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/recuperacion": {
         parameters: {
             query?: never;
@@ -1321,6 +1337,10 @@ export interface components {
         BandejaDeRevisionRespuesta: {
             emisiones?: components["schemas"]["EmisionEnRevisionRespuesta"][];
             guias?: components["schemas"]["GuiaEnRevisionRespuesta"][];
+        };
+        CambiarClaveRequest: {
+            claveActual: string;
+            claveNueva: string;
         };
         CancelarPedidoRequest: {
             comprobante?: string;
@@ -3521,6 +3541,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    cambiarClave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CambiarClaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SesionRespuesta"];
+                };
             };
         };
     };

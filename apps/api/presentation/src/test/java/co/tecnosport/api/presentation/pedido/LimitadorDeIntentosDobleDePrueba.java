@@ -22,6 +22,12 @@ final class LimitadorDeIntentosDobleDePrueba implements LimitadorDeIntentos {
 
   @Override
   public boolean permitir(String clave, int maximoIntentos, Duration ventana, Instant ahora) {
+    // CrearPedido no llama a olvidar a proposito: ahi un "acierto" no prueba ningun secreto.
     return permitirSiempre;
+  }
+
+  @Override
+  public void olvidar(String clave) {
+    throw new UnsupportedOperationException("CrearPedido no deberia llamar a olvidar.");
   }
 }

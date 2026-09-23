@@ -13,9 +13,9 @@
     />
   </div>
 
-  @if (errorAccion()) {
-    <p class="mb-16 text-ts-error" role="alert">{{ errorAccion() }}</p>
-  }
+  <p class="text-ts-error" [class.mb-16]="errorAccion()" role="alert">
+    {{ errorAccion() }}
+  </p>
 
   @if (consulta.isPending()) {
     <ts-esqueleto />

@@ -23,4 +23,10 @@ final class LimitadorDeIntentosFalso implements LimitadorDeIntentos {
     this.ultimaClave = clave;
     return permitirSiguiente;
   }
+
+  @Override
+  public void olvidar(String clave) {
+    // El filtro por IP no olvida nada: no sabe si la peticion acerto.
+    throw new UnsupportedOperationException("FiltroLimiteIntentos no deberia llamar a olvidar.");
+  }
 }

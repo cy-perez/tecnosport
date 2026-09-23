@@ -3,7 +3,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { CorreoSinVerificarError } from '../../../../core/autenticacion/sesion.errores';
+import {
+  CorreoSinVerificarError,
+  DemasiadosIntentosError,
+} from '../../../../core/autenticacion/sesion.errores';
 import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
 import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -65,6 +68,12 @@ export class IniciarSesionClientePage {
     } catch (error) {
       if (error instanceof CorreoSinVerificarError) {
         this.error.set(this.transloco.translate('cuenta.iniciarSesion.error_sin_verificar'));
+      } else if (error instanceof DemasiadosIntentosError) {
+        // Mismo motivo que en el login del panel: sin esta rama, el límite de intentos se lee
+        // como una clave equivocada.
+        this.error.set(
+          this.transloco.translate('cuenta.iniciarSesion.error_demasiados_intentos'),
+        );
       } else if (esFalloDelServidor(error)) {
         this.error.set(this.transloco.translate('comun.error_servidor'));
       } else {

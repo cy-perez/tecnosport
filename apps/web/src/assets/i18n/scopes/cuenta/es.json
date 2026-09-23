@@ -10,7 +10,8 @@
     "no_es_cliente": "Esta cuenta pertenece al panel administrativo, no a una cuenta de cliente.",
     "olvidaste_clave": "¿Olvidaste tu clave?",
     "sin_cuenta": "¿No tienes cuenta?",
-    "crear_cuenta": "Crear cuenta"
+    "crear_cuenta": "Crear cuenta",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema."
   },
   "registro": {
     "titulo": "Crear cuenta",
@@ -42,7 +43,10 @@
     "reenvio_enviar": "Enviar enlace nuevo",
     "reenvio_enviando": "Enviando el enlace…",
     "reenvio_exito": "Si ese correo tiene una cuenta sin verificar, le acabamos de enviar un enlace nuevo. Revisa tu bandeja de entrada y la carpeta de correo no deseado.",
-    "reenvio_error": "No pudimos enviar el enlace. Inténtalo de nuevo en un momento."
+    "reenvio_error": "No pudimos enviar el enlace. Inténtalo de nuevo en un momento.",
+    "limitado_titulo": "Demasiados intentos",
+    "limitado_mensaje": "Hubo demasiados intentos seguidos desde esta conexión. Espera unos minutos y vuelve a abrir el enlace: el que tienes sigue sirviendo.",
+    "reenvio_error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a pedirlo."
   },
   "recuperarClave": {
     "titulo": "Recuperar clave",
@@ -52,7 +56,8 @@
     "enviando": "Enviando…",
     "exito_titulo": "Revisa tu correo",
     "exito_mensaje": "Si existe una cuenta con ese correo, te llegó un enlace para recuperar tu clave.",
-    "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo."
+    "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos desde esta conexión. Espera unos minutos y vuelve a pedirlo."
   },
   "restablecerClave": {
     "titulo": "Elige una clave nueva",
@@ -64,6 +69,7 @@
     "exito_titulo": "Clave restablecida",
     "exito_mensaje": "Ya puedes iniciar sesión con tu clave nueva.",
     "error_titulo": "Enlace no válido",
-    "error_token_invalido": "El enlace no es válido o ya venció. Pide uno nuevo."
+    "error_token_invalido": "El enlace no es válido o ya venció. Pide uno nuevo.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a intentarlo: tu enlace sigue sirviendo."
   }
 }

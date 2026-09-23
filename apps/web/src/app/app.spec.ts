@@ -45,6 +45,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
   async refrescar(): Promise<Sesion | null> {
     return null;
   }
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('no usado en esta prueba');
+  }
+
   async cerrarSesion(): Promise<void> {
     // Sin sesión en estas pruebas: no hay nada que cerrar.
   }

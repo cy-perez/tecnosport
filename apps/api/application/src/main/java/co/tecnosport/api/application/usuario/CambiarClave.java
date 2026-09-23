@@ -3,9 +3,7 @@ package co.tecnosport.api.application.usuario;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.compartido.Reloj;
-import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
-import co.tecnosport.api.domain.usuario.CorreoSinVerificarException;
 import co.tecnosport.api.domain.usuario.SesionRefresco;
 import co.tecnosport.api.domain.usuario.Usuario;
 import java.time.Duration;
@@ -13,10 +11,21 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Mismo error genérico si el correo no existe o si la clave es incorrecta
- * (docs/08-seguridad-legal.md, OWASP: no se filtra cuál de los dos fue).
+ * Cambio de clave de quien ya tiene sesión iniciada: pide la actual y no depende del correo, a
+ * diferencia de {@link ConfirmarRecuperacion}, que cuelga de un token que llega al buzón. Mientras
+ * este camino no existió, perder la clave del panel —una sola cuenta ADMIN, creada por el
+ * sembrador, que nunca actualiza una existente— se resolvía borrando filas en la base de datos.
+ *
+ * <p>Se revocan <b>todas</b> las sesiones del usuario y se abre una nueva en el mismo acto: quien
+ * cambia su clave sigue dentro, y cualquier otro dispositivo que la tuviera queda fuera — que es
+ * justo el motivo por el que alguien rota una clave.
+ *
+ * <p>Mismo {@link CredencialesInvalidasException} que {@link IniciarSesion} si la clave actual no
+ * coincide. Aquí no hay nada que ocultar —quien pregunta ya está autenticado— pero el error de
+ * "esta no es tu clave" es literalmente el mismo, y darle un tipo propio solo obligaría a
+ * traducirlo otra vez en presentation.
  */
-public final class IniciarSesion {
+public final class CambiarClave {
 
   private final RepositorioUsuarios repositorioUsuarios;
   private final RepositorioSesiones repositorioSesiones;
@@ -28,7 +37,7 @@ public final class IniciarSesion {
   private final int maximoIntentosPorCuenta;
   private final Duration ventanaIntentosPorCuenta;
 
-  public IniciarSesion(
+  public CambiarClave(
       RepositorioUsuarios repositorioUsuarios,
       RepositorioSesiones repositorioSesiones,
       CodificadorDeClaves codificadorDeClaves,
@@ -49,12 +58,14 @@ public final class IniciarSesion {
     this.ventanaIntentosPorCuenta = Objects.requireNonNull(ventanaIntentosPorCuenta);
   }
 
-  public TokensDeSesion ejecutar(IniciarSesionComando comando) {
+  public TokensDeSesion ejecutar(CambiarClaveComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
 
-    CorreoElectronico correo = new CorreoElectronico(comando.correo());
     Instant ahora = reloj.ahora();
-    String llaveDelLimite = "cuenta:iniciar-sesion:" + correo.valor();
+    // Por cuenta y no por IP: el atacante que importa aquí es quien ya se sentó delante de una
+    // sesión abierta y prueba claves actuales para quedarse con la cuenta, y ese llega siempre
+    // desde la misma máquina que el dueño.
+    String llaveDelLimite = "cuenta:cambiar-clave:" + comando.usuarioId();
     if (!limitadorDeIntentos.permitir(
         llaveDelLimite, maximoIntentosPorCuenta, ventanaIntentosPorCuenta, ahora)) {
       throw new LimiteDeIntentosExcedidoException();
@@ -62,21 +73,20 @@ public final class IniciarSesion {
 
     Usuario usuario =
         repositorioUsuarios
-            .buscarPorCorreo(correo)
-            .filter(u -> codificadorDeClaves.verificar(comando.claveTextoPlano(), u.claveHash()))
+            .buscarPorId(comando.usuarioId())
+            .filter(
+                u -> codificadorDeClaves.verificar(comando.claveActualTextoPlano(), u.claveHash()))
             .orElseThrow(CredencialesInvalidasException::new);
 
-    // El límite cuenta intentos fallidos SEGUIDOS. Sin esta línea contaba intentos a secas,
-    // aciertos incluidos —`permitir` cuenta antes de verificar, porque contar y comprobar en una
-    // sola sentencia es lo que cierra la carrera—, así que entrar, salir y volver a entrar tres
-    // veces agotaba los cinco sin que nadie se equivocara una sola vez. Medido el 22 de
-    // septiembre de 2026 probando el cambio de clave del panel: trece intentos contados, la clave
-    // correcta todas las veces, y la cuenta bloqueada quince minutos.
+    // Intentos fallidos seguidos, igual que en IniciarSesion y por el mismo motivo.
     limitadorDeIntentos.olvidar(llaveDelLimite);
 
-    if (!usuario.correoVerificado()) {
-      throw new CorreoSinVerificarException();
-    }
+    usuario.cambiarClave(codificadorDeClaves.codificar(comando.claveNuevaTextoPlano()));
+    repositorioUsuarios.guardar(usuario);
+
+    // Antes de abrir la nueva, no después: revocar "todas las del usuario" incluiría la recién
+    // creada y dejaría fuera a quien acaba de cambiar su propia clave.
+    repositorioSesiones.revocarTodasDeUsuario(usuario.id(), ahora);
 
     SesionRefresco sesion =
         SesionRefresco.crear(usuario.id(), GeneradorIdentificador.nuevo(), ahora, vigenciaRefresco);

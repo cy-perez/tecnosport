@@ -175,9 +175,9 @@
       }
     }
 
-    @if (error()) {
-      <p class="mb-16 text-ts-error" role="alert">{{ error() }}</p>
-    }
+    <p class="text-ts-error" [class.mb-16]="error()" role="alert">
+      {{ error() }}
+    </p>
 
     @if (puedeReintentar()) {
       <ts-boton

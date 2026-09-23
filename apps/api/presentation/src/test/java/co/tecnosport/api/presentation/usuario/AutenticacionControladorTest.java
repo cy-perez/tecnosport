@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import co.tecnosport.api.application.compartido.EnviadorDeCorreo;
 import co.tecnosport.api.application.compartido.LimitadorDeIntentos;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
+import co.tecnosport.api.application.usuario.CambiarClave;
 import co.tecnosport.api.application.usuario.CerrarSesion;
 import co.tecnosport.api.application.usuario.CodificadorDeClaves;
 import co.tecnosport.api.application.usuario.ConfirmarRecuperacion;
@@ -30,6 +31,7 @@ import co.tecnosport.api.domain.usuario.TokenRecuperacionClave;
 import co.tecnosport.api.domain.usuario.TokenVerificacionCorreo;
 import co.tecnosport.api.domain.usuario.Usuario;
 import co.tecnosport.api.presentation.compartido.TextosDeCorreoDobleDePrueba;
+import co.tecnosport.api.presentation.usuario.dto.CambiarClaveRequest;
 import co.tecnosport.api.presentation.usuario.dto.ConfirmarRecuperacionRequest;
 import co.tecnosport.api.presentation.usuario.dto.IniciarSesionRequest;
 import co.tecnosport.api.presentation.usuario.dto.ReenviarVerificacionRequest;
@@ -40,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +51,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -69,6 +74,18 @@ class AutenticacionControladorTest {
   private static final String VERSION_POLITICA = "2026-09-07";
   private static final int MAXIMO_INTENTOS_POR_CUENTA = 5;
   private static final Duration VENTANA_INTENTOS_POR_CUENTA = Duration.ofMinutes(15);
+
+  @AfterEach
+  void limpiarContextoDeSeguridad() {
+    // El contexto de seguridad es un ThreadLocal: sin esto, la sesión simulada de una prueba
+    // seguiría puesta en la siguiente que corra en el mismo hilo.
+    SecurityContextHolder.clearContext();
+  }
+
+  private void autenticarComo(Usuario usuario) {
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken(usuario.id(), null));
+  }
 
   @BeforeEach
   void reiniciarLimitadorDeIntentos() {
@@ -456,6 +473,57 @@ class AutenticacionControladorTest {
         .andExpect(cookie().maxAge("refresco", 0));
   }
 
+  @Test
+  void cambiarClaveDevuelveSesionNuevaYCookieNueva() throws Exception {
+    Usuario usuario = conUsuarioAdmin("admin@tecnosport.co", "clave-vieja");
+    autenticarComo(usuario);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/clave")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(new CambiarClaveRequest("clave-vieja", "clave-nueva"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.rol").value("ADMIN"))
+        .andExpect(jsonPath("$.accessToken").exists())
+        .andExpect(cookie().exists("refresco"))
+        .andExpect(cookie().httpOnly("refresco", true));
+  }
+
+  @Test
+  void cambiarClaveConLaActualEquivocadaDevuelve401() throws Exception {
+    Usuario usuario = conUsuarioAdmin("admin@tecnosport.co", "clave-vieja");
+    autenticarComo(usuario);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/clave")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        new CambiarClaveRequest("no-es-mi-clave", "clave-nueva"))))
+        .andExpect(status().isUnauthorized());
+  }
+
+  /**
+   * Quien de verdad rechaza esto en producción es {@code ConfiguracionSeguridad} (bootstrap), que
+   * no está en el contexto de un {@code @WebMvcTest}. La prueba cubre lo que pasa si esa línea
+   * desaparece: 401, no un 500 por leer un principal que no está.
+   */
+  @Test
+  void cambiarClaveSinSesionDevuelve401() throws Exception {
+    conUsuarioAdmin("admin@tecnosport.co", "clave-vieja");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/clave")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(new CambiarClaveRequest("clave-vieja", "clave-nueva"))))
+        .andExpect(status().isUnauthorized());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -531,6 +599,25 @@ class AutenticacionControladorTest {
     @Bean
     RepositorioAutorizaciones repositorioAutorizaciones() {
       return new RepositorioAutorizacionesDobleDePrueba();
+    }
+
+    @Bean
+    CambiarClave cambiarClave(
+        RepositorioUsuarios repositorioUsuarios,
+        RepositorioSesiones repositorioSesiones,
+        CodificadorDeClaves codificadorDeClaves,
+        GeneradorDeTokens generadorDeTokens,
+        LimitadorDeIntentos limitadorDeIntentos) {
+      return new CambiarClave(
+          repositorioUsuarios,
+          repositorioSesiones,
+          codificadorDeClaves,
+          generadorDeTokens,
+          Instant::now,
+          VIGENCIA,
+          limitadorDeIntentos,
+          MAXIMO_INTENTOS_POR_CUENTA,
+          VENTANA_INTENTOS_POR_CUENTA);
     }
 
     @Bean

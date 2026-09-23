@@ -13,6 +13,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { esFalloDelServidor } from '../../../../core/http/respuesta-http';
+import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
@@ -21,8 +22,11 @@ import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
  * `error` es "el enlace no sirve" y `fallo_servidor` es "no llegamos a preguntarlo". Se separan
  * porque el texto de `error` le dice a quien llega que pida un enlace nuevo, y decirle eso cuando
  * el servidor está caído lo manda a gastar el que ya tenía, que sí era válido.
+ *
+ * `limitado` es el tercero y por el mismo razonamiento: esta ruta lleva techo por IP, y un 429
+ * tampoco dice nada del enlace — el que hay sigue sirviendo, lo que hay que hacer es esperar.
  */
-type EstadoVerificacion = 'cargando' | 'exito' | 'error' | 'fallo_servidor';
+type EstadoVerificacion = 'cargando' | 'exito' | 'error' | 'fallo_servidor' | 'limitado';
 
 /**
  * El token es de un solo uso (docs/08-seguridad-legal.md) — si el servidor lo consumiera durante
@@ -89,6 +93,10 @@ export class VerificarCorreoPage {
       await this.repositorio.verificarCorreo(token);
       this.estado.set('exito');
     } catch (error) {
+      if (error instanceof DemasiadosIntentosError) {
+        this.estado.set('limitado');
+        return;
+      }
       this.estado.set(esFalloDelServidor(error) ? 'fallo_servidor' : 'error');
     }
   }
@@ -110,8 +118,14 @@ export class VerificarCorreoPage {
     try {
       await this.repositorio.reenviarVerificacion(this.form.controls.correo.value);
       this.reenviado.set(true);
-    } catch {
-      this.errorReenvio.set(this.transloco.translate('cuenta.verificarCorreo.reenvio_error'));
+    } catch (error) {
+      this.errorReenvio.set(
+        this.transloco.translate(
+          error instanceof DemasiadosIntentosError
+            ? 'cuenta.verificarCorreo.reenvio_error_demasiados_intentos'
+            : 'cuenta.verificarCorreo.reenvio_error',
+        ),
+      );
     } finally {
       this.reenviando.set(false);
     }

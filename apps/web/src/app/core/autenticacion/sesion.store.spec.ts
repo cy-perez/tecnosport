@@ -5,16 +5,27 @@ import { Sesion } from './sesion.model';
 import { SesionStore } from './sesion.store';
 
 const SESION_DE_PRUEBA: Sesion = { usuarioId: 'usuario-1', rol: 'ADMIN', accessToken: 'jwt.valido' };
+const SESION_TRAS_CAMBIAR: Sesion = {
+  usuarioId: 'usuario-1',
+  rol: 'ADMIN',
+  accessToken: 'jwt.nuevo',
+};
 
 class RepositorioSesionFalso implements RepositorioSesion {
   llamadasIniciar = 0;
   llamadasCerrar = 0;
+  tokenRecibido: string | null = null;
 
   constructor(private sesionAlRefrescar: Sesion | null = null) {}
 
   async iniciarSesion(): Promise<Sesion> {
     this.llamadasIniciar++;
     return SESION_DE_PRUEBA;
+  }
+
+  async cambiarClave(accessToken: string): Promise<Sesion> {
+    this.tokenRecibido = accessToken;
+    return SESION_TRAS_CAMBIAR;
   }
 
   async refrescar(): Promise<Sesion | null> {
@@ -29,6 +40,10 @@ class RepositorioSesionFalso implements RepositorioSesion {
 class RepositorioSesionQueFalla implements RepositorioSesion {
   async iniciarSesion(): Promise<Sesion> {
     throw new Error('correo o clave incorrectos');
+  }
+
+  async cambiarClave(): Promise<Sesion> {
+    throw new Error('la clave actual no es correcta');
   }
 
   async refrescar(): Promise<Sesion | null> {
@@ -89,6 +104,30 @@ describe('SesionStore', () => {
     expect(repositorio.llamadasIniciar).toBe(1);
     expect(store.sesion()).toEqual(sesion);
     expect(store.esAdmin()).toBe(true);
+  });
+
+  it('al cambiar la clave, reemplaza la sesión por la que devuelve el servidor', async () => {
+    const repositorio = new RepositorioSesionFalso(SESION_DE_PRUEBA);
+    const { store } = await renderConRepositorio(repositorio);
+    await store.listo;
+
+    await store.cambiarClave('clave-vieja', 'clave-nueva');
+
+    // El servidor revoca todas las sesiones del usuario y abre una nueva. Quedarse con el token
+    // viejo dejaría la pantalla con una sesión que el servidor ya no reconoce.
+    expect(store.sesion()).toEqual(SESION_TRAS_CAMBIAR);
+    expect(repositorio.tokenRecibido).toBe('jwt.valido');
+  });
+
+  it('sin sesión abierta no manda nada al servidor', async () => {
+    const repositorio = new RepositorioSesionFalso(null);
+    const { store } = await renderConRepositorio(repositorio);
+    await store.listo;
+
+    await expect(store.cambiarClave('clave-vieja', 'clave-nueva')).rejects.toThrow();
+
+    expect(repositorio.tokenRecibido).toBeNull();
+    expect(store.sesion()).toBeNull();
   });
 
   it('cerrarSesion llama al repositorio y limpia la sesión', async () => {

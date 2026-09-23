@@ -24,4 +24,9 @@ final class LimitadorDeIntentosDobleDePrueba implements LimitadorDeIntentos {
   public boolean permitir(String clave, int maximoIntentos, Duration ventana, Instant ahora) {
     return permitirSiempre;
   }
+
+  @Override
+  public void olvidar(String clave) {
+    // Sin estado que llevar: estas pruebas miran codigos HTTP, no el conteo.
+  }
 }

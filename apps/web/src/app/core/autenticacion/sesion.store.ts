@@ -60,6 +60,20 @@ export class SesionStore {
     return sesion;
   }
 
+  /**
+   * La sesión que vuelve reemplaza a la de antes: el servidor revocó todas las del usuario -la
+   * cookie de refresco incluida- y abrió una nueva en el mismo acto. Sin este `set`, la pantalla
+   * seguiría con un token que ya no sirve.
+   */
+  async cambiarClave(claveActual: string, claveNueva: string): Promise<void> {
+    const accessToken = this.sesion()?.accessToken;
+    if (!accessToken) {
+      throw new Error('No hay sesión: nada que cambiar.');
+    }
+    const sesion = await this.repositorio.cambiarClave(accessToken, claveActual, claveNueva);
+    this.sesion.set(sesion);
+  }
+
   async cerrarSesion(): Promise<void> {
     await this.repositorio.cerrarSesion();
     this.sesion.set(null);
