@@ -8368,7 +8368,16 @@ escrito en la herramienta desde el 22 de septiembre, y aun así hizo falta ejecu
 
 **De paso, el reparto quedó medido con precisión**: de los 348 objetos de local que había en el
 bucket de dev, local solo reclamaba **344**. Los otros cuatro son los huérfanos que el informe ya
-había encontrado el 22 de septiembre. El bucket de dev tiene que quedar en **300**.
+había encontrado el 22 de septiembre.
+
+**Los 348 se borraron, y el borrado se comprobó por dos vías además del recuento.** Antes de
+ejecutarlo, las 348 keys se cruzaron contra `cargados.json` —348 de 348 de productos de local,
+ninguna de dev, ninguna sin registro— y contra el listado del bucket de local, donde ninguna existe:
+ni equivocando el bucket se habría tocado algo vivo. Después, el bucket de dev es **key por key el de
+antes menos esas 348**, sin nada que sobre ni nada que falte, y las 32 URL de imagen que publica su
+catálogo responden 200. **Dev quedó en 300 objetos y local en 344**, cada uno solo con lo suyo. El
+informe se corrió con `--token` y no con `--correo`, porque la clave se pide sin eco y eso no
+funciona desde la línea de comandos de esta conversación.
 
 Y una tercera cosa, chica y del oficio: `terraform apply -target=…` sin comillas llega a Terraform
 como `google_storage_bucket` a secas y responde `Invalid target`, un error que no menciona el

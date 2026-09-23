@@ -1,11 +1,13 @@
 # ADR-0058 — Un bucket de imágenes por ambiente
 
 **Fecha:** 2026-09-23
-**Estado:** aceptado y ejecutado el 23 de septiembre de 2026, salvo el borrado. Comprobado contra
-los buckets: local tiene su bucket con sus 344 objetos y una cuenta que solo puede escribir ahí, el
-de dev perdió el `objectAdmin` de la cuenta de local y su CORS es el de su propia web. Quedan en el
-bucket de dev los **348 objetos viejos de local**, que el paso 6 del runbook no supo listar la
-primera vez — ver ese paso, corregido.
+**Estado:** aceptado y ejecutado entero el 23 de septiembre de 2026. Comprobado contra los buckets,
+no contra el relato: **dev quedó en 300 objetos y local en 344**, y cada uno tiene solo lo suyo —el
+cruce contra `cargados.json` no encuentra una sola key del otro ambiente en ninguno de los dos—. El
+borrado de los 348 fue exacto: el bucket de dev de ahora es, key por key, el de antes menos esas 348,
+sin nada que sobre ni nada que falte, y las 32 URL de imagen que publica el catálogo de dev responden
+200. El paso 6 del runbook estaba escrito al revés y se corrigió antes de borrar nada — ver ese
+paso.
 
 ## Contexto
 
