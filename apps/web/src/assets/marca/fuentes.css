@@ -1,13 +1,19 @@
 /* Tipografias autoalojadas. Enlaza este archivo ANTES de tokens.css.
-   font-display: swap hace que el texto se vea con la fuente de respaldo
-   mientras descarga, en vez de quedar invisible. */
+   font-display: optional. El texto NUNCA queda invisible esperando una
+   tipografia: si no esta lista a tiempo se pinta con la de respaldo y esa
+   visita se queda con ella; la de marca entra desde la cache en la
+   siguiente. Era swap, que tambien pinta el respaldo pero luego cambia, y
+   ese cambio obliga a rehacer el layout de la pagina entera.
+   Medido el 23 de septiembre de 2026, portada: el cambio costaba 46 ms de
+   relayout, y los 273 KiB compitiendo con el primer pintado movian el
+   rendimiento de Lighthouse entre dos modos, 66-72 y 89-90. */
 
 @font-face {
   font-family: "Archivo";
   src: url('./fuentes/archivo-variable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -15,7 +21,7 @@
   src: url('./fuentes/ibmplexsans-variable.woff2') format('woff2');
   font-weight: 100 700;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -23,7 +29,7 @@
   src: url('./fuentes/ibmplexmono-500.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -31,5 +37,5 @@
   src: url('./fuentes/ibmplexmono-400.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
