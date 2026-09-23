@@ -8567,7 +8567,175 @@ que ya habían tenido el freno de seguridad y el flujo enganchado a `main`—. L
 corregida. Engancharlo de verdad es otra decisión, no una nota al pie de esta deuda: pide darle a la
 cuenta de despliegue lectura del bucket de estado y de los recursos.
 
-## Las deudas que quedan, al 22 de septiembre de 2026
+## La deuda 11 estaba caduca, y revisarla destapó lo que nadie ha ejercitado (2026-09-23)
+
+La ficha decía «falta producción entera», y con eso se quedaba: una deuda que **ningún trabajo de
+Sistecrédito podía cerrar**, porque su mitad pendiente no era Sistecrédito sino el lanzamiento.
+Comprobado hoy contra el código y contra el ambiente: `sistecredito_listo = true`, los tres secretos
+con versión del 22 de septiembre, y el servicio de dev con `SISTECREDITO_HABILITADO`, el mínimo en
+50.000 y la URL de confirmación apuntando a la URL real del servicio
+(`infra/envs/dev/main.tf:358-371` y `:406-409`, `terraform.tfvars:41`). Lo que la deuda 11 pedía
+—el dato y su declaración en el despliegue— está hecho.
+
+**Producción no entra aquí, y no por descuido.** `infra/envs/prod/` no existe a propósito;
+`infra/README.md` dice cuándo nace y con qué. El día que exista, declarar estas variables es la
+última línea de ese trabajo. Arrastrarlo dentro de una deuda de Sistecrédito solo conseguía que el
+tablero llevara una ficha que nadie podía cerrar.
+
+### Lo que sí quedaba, y no estaba escrito en ninguna parte
+
+**Sistecrédito lleva un día encendido en dev y nunca se ha ejercitado.** La entrada del 22 dejó
+dicho que la URL de confirmación es «justo lo que las pruebas contra dev vienen a comprobar», y
+después de eso este documento no registra ninguna corrida. Nace la deuda **33**.
+
+Conviene saber qué es esa prueba antes de correrla, porque el nombre engaña: **el sandbox no es un
+simulador local.** `SistecreditoClient` mete `sandbox.isActive` en el cuerpo de la petición a
+`api.credinet.co` (`SistecreditoClient.java:249-252`), así que una corrida en dev usa las
+credenciales productivas de verdad, el sondeo de verdad y la notificación de verdad; lo único
+simulado es el estado que la pasarela devuelve. No hay nada que «probar antes en local»: local no
+recibe notificaciones, y por eso el ambiente de la prueba es dev.
+
+### La conciliación no corre entre visitas, y eso no estaba dicho
+
+`TareaConciliacionSistecredito` es un `@Scheduled` dentro de la aplicación, y el módulo de Cloud Run
+fija `cpu_idle = true` con `min_instance_count = 0` (`infra/modules/cloud-run/main.tf:41-51`). Con
+CPU solo durante la petición y sin instancias en reposo, **la red de seguridad no corre justo cuando
+hace falta**: cuando nadie está usando el sitio. Y hace más falta que la de Wompi —lo dice el propio
+`application.yml`—, porque si el comprador cierra la ventana en vez de pulsar «volver al comercio»
+la confirmación puede tardar tres minutos. Vale para las **once** tareas programadas, no solo para
+esta. De paso, `docs/07` promete Cloud Scheduler para «conciliar pagos» y el código lo resuelve con
+`@Scheduled`: otra frase en presente que describe algo que no existe. Nace la deuda **34**.
+
+### Dos cosas que dejaron de ser preguntas
+
+**El dominio ya está registrado ante Sistecrédito**, y es `tecnosport.co`, el del sitio. Lo que abre
+es una pregunta más estrecha para la prueba de la 33: dev no habla desde ese dominio sino desde
+`tecnosport-api-….a.run.app`, así que si la pasarela valida el origen o el destino de la
+notificación contra lo registrado, la corrida fallará por eso y no por el código. Es averiguable
+midiendo, y el primer intento lo dirá.
+
+**Y la 15 deja de ser de terceros.** Si la anulación en Credinet notifica a `urlConfirmation` se
+mide con una transacción real nuestra —sandbox apagado, un crédito de verdad a nombre de una persona
+de verdad, y la anulación después—. No hace falta producción: la pasarela es la misma desde dev. Lo
+que hace falta es planearlo como lo que es —un crédito real por el importe del producto publicado
+más barato, que el 23 de septiembre eran **219.900**, no los 50.000 del mínimo de la pasarela— y
+correrlo detrás de la 33, para no gastarlo averiguando algo que una corrida en sandbox ya contesta.
+
+## La primera compra con Sistecrédito, y los tres defectos que enseñó (2026-09-23)
+
+Se ejercitó la 33: dos compras completas contra el despliegue de dev, con el checkout en el
+navegador de punta a punta —ficha, carrito, dirección, cotización de envío, método, documento y
+confirmar—. Salieron los pedidos **TS-2026-000002** ($217.701, retiro en el punto) y
+**TS-2026-000003** ($227.402, JBL Go 5 con envío a domicilio cotizado en 7.502 con Coordinadora a
+un día). Los dos quedaron en firme.
+
+### Lo que quedó comprobado que funciona
+
+- **La notificación llega y se aplica.** El historial de los dos pedidos, en el panel: *Pago
+  pendiente → Pagado (evento de pago: APROBADO) → En preparación*, todo dentro del mismo minuto, y
+  el comprobante de compra salió detrás.
+- **El dominio registrado no estorba.** Sistecrédito notifica a `tecnosport-api-….a.run.app` sin
+  pedir que el origen sea `tecnosport.co`, que era la pregunta que la ficha dejaba abierta.
+- **La pantalla de estado hace su trabajo** cuando se llega a ella con la ruta correcta: pedido,
+  líneas, envío y total.
+
+### Defecto 1: el comprador aterriza en la portada justo después de pagar
+
+`retorno-sistecredito.page.ts` navegaba a `['../../../estado']`, pero su propia ruta consume
+**cuatro** segmentos (`sistecredito/retorno/:pedidoId/:correo`), así que subía uno de menos, la ruta
+resultante no existe y la comodín dejaba al comprador en `/es`. Medido dos veces: el `referrer` de
+la portada era `/es/checkout/confirmar`, y abriendo a mano la URL de retorno que la pasarela tiene
+guardada se llega a `/es?pedidoId=…&correo=…`.
+
+**Es el mismo daño que la entrada del 20 de septiembre creyó haber cerrado, por otra causa.** Allá
+faltaban los datos en la URL; aquí sobraba un segmento al volver. El síntoma que ve quien compra es
+idéntico.
+
+**Y la prueba no podía verlo**: afirmaba `toHaveBeenCalledWith(['../../../estado'], …)`, que es
+copiar la implementación. Ahora navega de verdad contra un árbol de rutas con el prefijo de idioma,
+el segmento `checkout` y el envoltorio sin segmento, y afirma **dónde termina el navegador**. Contra
+el código viejo falla; se comprobó antes de arreglar nada. El arreglo no cuenta segmentos: navega
+relativo al padre —la ruta `checkout`—, que además hace viajar solo el prefijo de idioma.
+
+### Defecto 2: la URL que manda la pasarela no se valida
+
+La consulta a `api.credinet.co` por la transacción de la segunda compra lo dijo sin ambigüedad:
+
+```
+data.paymentMethodResponse.paymentRedirectUrl = "www.mysite.com"
+```
+
+**En modo sandbox la URL de pago es un marcador de posición sin esquema**, y sin esquema el
+navegador lo trata como ruta relativa: `location.href = "www.mysite.com"` mete al comprador en
+nuestro propio sitio. Ni el cliente ni la pantalla comprobaban que fuera absoluta, así que lo
+inservible se convertía en una navegación silenciosa en vez de en un error legible.
+
+Se resuelve en la frontera con el tercero: `SistecreditoClient` descarta una URL que el navegador no
+pueda abrir y la devuelve como "la pasarela no la dio", que es un caso que el caso de uso ya sabe
+contar — un 409 con su texto. **Lo que eso cambia en dev, y conviene saberlo**: con el sandbox
+encendido el checkout termina ahora en ese 409 mientras el pedido se paga igual por notificación.
+Es más honesto que la portada silenciosa, y describe exactamente lo que el sandbox es: un simulador
+que nunca entrega una página de pago. En producción, con el freno apagado, la URL es de verdad.
+
+La prueba cubre además `javascript:alert(1)`, que no es teórico: ese valor termina en
+`location.href`, así que un esquema ejecutable sería código corriendo con nuestro dominio delante.
+
+### Defecto 3: dos notificaciones a la vez, y la segunda contesta 500
+
+Sistecrédito mandó la notificación **por duplicado en las dos corridas**. La guarda del caso de uso
+—un pago que ya no está `PENDIENTE` no admite más transiciones— cubre las repeticiones en serie,
+pero no las simultáneas: las dos copias leyeron el pago pendiente, las dos lo aplicaron y la segunda
+chocó contra el índice único de `evento_pago`, saliendo por `Error inesperado sin manejar` con un
+**500 para la pasarela** — justo la respuesta que la hace reintentar.
+
+El índice es lo que protege los datos y no se toca. Lo que faltaba era traducirlo:
+`RepositorioPagosJpa` vuelca los eventos en el propio `guardar` —si el choque sale al confirmar la
+transacción, sale ya sin nombre— y lo convierte en `EventoDePagoYaRegistradoException`, que los dos
+controladores atrapan **fuera** del `TransactionTemplate` (dentro, la transacción ya está marcada
+para deshacer) y contestan 200 como "ya procesado". **Los dos, no solo el de Sistecrédito**: el
+webhook de Wompi comparte aplicador e índice, reintenta sus eventos, y tenía el mismo agujero sin
+haberlo enseñado todavía.
+
+De paso nació `SistecreditoControladorTest`, que no existía: **el endpoint que cobra con la segunda
+pasarela no tenía ni una prueba de su capa**.
+
+### Lo que la corrida dejó dicho y no venía a buscar
+
+- **La notificación llega sin `invoice` ni `transactionStatus`** donde los busca
+  `LectorNotificacionSistecredito` — por eso el registro decía "referencia=null, estado=null". El
+  contraste se sostiene igual, y ahí está lo que vale: **lo que se aplica no sale del cuerpo sino de
+  la consulta**, y el pago se ata por `idTransaccionPasarela` y por monto. La línea de registro
+  ahora lleva el id de la transacción, que es el único de los tres que siempre viene.
+- **El catálogo de dev no se puede comprar a domicilio con cualquier producto**: el único publicado
+  esa tarde no tenía medidas de empaque y `POST /envios/cotizacion` respondía `409
+  ARTICULO_SIN_MEDIDAS`. El checkout lo dice bien ("Falta el costo de envío"). Los JBL sí cotizan.
+- **Una compra agota el catálogo de dev**: con una unidad por variante, el primer pedido dejó su
+  producto en "Agotado" y no hubo con qué repetir hasta reponer.
+
+### Lo que se decidió con lo que la corrida enseñó
+
+La 34 —las tareas que solo avanzan mientras alguien usa el sitio— se cerró **decidiendo**, no
+programando: dev se queda como está y producción llevará CPU asignada entre peticiones, donde la
+instancia ya se paga. El módulo de Cloud Run lo expone como `cpu_siempre_asignada` con el valor de
+dev por omisión, y el `plan` contra dev dice **"No changes"**: la decisión queda escrita sin mover
+un solo recurso.
+
+Y quedaron tres variables nuevas en `envs/dev`, las tres para poder **probar sin editar `main.tf`**,
+que es como nació la deriva de la etiqueta del Cloud Run: `estado_simulado_sistecredito` —con su
+lista válida, porque un estado mal escrito no falla, viaja tal cual—,
+`ruta_confirmacion_sistecredito` —apuntarla a una ruta que no existe es la única forma honesta de
+ensayar que la conciliación recoge un pago cuyo aviso nunca llegó— y `sistecredito_sandbox`, que es
+el freno: en `false`, cada compra en dev abre un crédito real.
+
+### El método, que es lo que hace que esto valga
+
+Los tres arreglos se comprobaron **quitándolos**: la prueba del retorno falla contra el código viejo
+con `/es/checkout/sistecredito/estado` escrito en el error; la de la URL falla devolviendo
+`www.mysite.com`; la del duplicado falla con la violación del índice sin traducir. Una prueba que no
+se ha visto fallar no es un guardián, y las tres vienen de un defecto que las pruebas verdes de este
+repositorio no vieron.
+
+## Las deudas que quedan, al 23 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
 los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es una
@@ -8617,6 +8785,14 @@ deja de estar inventado en los dos ambientes, y el enunciado resultó estar cadu
 —lo que separa los casos es la cortesía y no el `@if`—, así que el trabajo no eran 99 sitios sino
 27. Los 27 quedaron hechos y comprobados el mismo día. De ella nace la **32**, que es lo único que
 no se pudo hacer sin el teléfono.
+
+**Y el 23 de septiembre se revisó la 11 entera**, que llevaba un día diciendo «falta producción
+entera». Se cerró —el dato y su declaración en dev están hechos, y lo de producción es el
+lanzamiento y no esta deuda— y de revisarla nacieron dos: la **33**, que Sistecrédito lleva
+encendido en dev sin que nadie lo haya ejercitado, y la **34**, que las once tareas programadas solo
+avanzan mientras alguien usa el sitio. La **15** sigue abierta pero cambió de naturaleza: deja de
+ser algo que se le persigue a un tercero y pasa a medirse con una transacción real nuestra. Ver la
+entrada de arriba.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8782,14 +8958,20 @@ El orden no es negociable: cada uno alimenta al siguiente.
     Los sembrados quedaron en 0 en los dos ambientes, porque no son mercancía. **Cómo comprobarlo:**
     `GET /api/v1/admin/variantes/existencias`; toda variante que no sea de un SKU sembrado
     (`TS-CAM-`, `TS-MOR-`, `TS-CEL-AUR-`, `UT-TEN-`) debe estar en 1.
-11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 22 de septiembre: son
-    $50.000**, confirmado por el dueño del negocio. Sigue sin valor por omisión en
-    `application.yml`, y eso ahora es una decisión y no una falta: varía por comercio y puede
-    cambiar, así que un despliegue que olvide la variable no arranca con el método encendido. Queda
-    **declararla en el despliegue de dev y de producción**, que es lo único que falta para poder
-    encender Sistecrédito. **Dev quedó escrito el 22 de septiembre** —los tres secretos, el mínimo,
-    el freno de sandbox y la URL de confirmación, detrás de `sistecredito_listo`—; falta cargar los
-    valores y aplicar, y falta producción entera. Ver la entrada de arriba.
+11. ~~**`SISTECREDITO_MONTO_MINIMO` sigue sin dato.**~~ **Cerrada el 23 de septiembre de 2026**, y
+    el 22 se había cerrado solo la mitad. El dato son **$50.000**, confirmado por el dueño del
+    negocio, y sigue sin valor por omisión en `application.yml` a propósito: varía por comercio y
+    puede cambiar, así que un despliegue que olvide la variable no arranca con el método encendido.
+    La otra mitad —declararlo en el despliegue— está hecha en dev: los tres secretos con versión, el
+    mínimo, el freno de sandbox y la URL de confirmación, detrás de `sistecredito_listo`. **Lo que
+    la ficha arrastraba —«falta producción entera»— no era esta deuda**: `infra/envs/prod/` no
+    existe todavía y `infra/README.md` dice cuándo nace, así que declarar allí estas variables es la
+    última línea del lanzamiento y no un trabajo de Sistecrédito. Una deuda que ningún trabajo suyo
+    puede cerrar está mal enunciada, y esa es la corrección. **Cómo comprobarlo:**
+    `grep -n SISTECREDITO infra/envs/dev/main.tf` da el bloque de variables y los tres secretos, y
+    `terraform.tfvars` tiene `sistecredito_listo = true` con `dominio_publico_api` lleno — si esa
+    URL quedara vacía, la de confirmación apunta a `localhost` y la notificación no llega a ninguna
+    parte. Lo que queda de Sistecrédito no es esta deuda sino ejercitarlo: la 33, la 34 y la 15.
 12. ~~**`MetodoPago.ADDI`.**~~ **Cerrada el 22 de septiembre: se sacó del enum** (`V61`). Addi se
     integrará cuando el sitio esté en producción —es la condición que ellos ponen para estudiar la
     activación— y volverá con su propio `ProveedorDePago`, no como un valor suelto apuntando a una
@@ -8808,7 +8990,14 @@ El orden no es negociable: cada uno alimenta al siguiente.
 14. **Las cinco consultas del abogado** de `docs/14`, con el expediente ya redactado.
 15. **Si la anulación en Credinet notifica a `urlConfirmation`.** No es averiguable por fuera: hay
     que medirlo. Si no notifica, un pedido puede quedar marcado como pagado con la venta anulada
-    del otro lado y nada avisa.
+    del otro lado y nada avisa. **Decidido el 23 de septiembre: lo medimos nosotros**, con una
+    transacción real y el sandbox apagado —un crédito de verdad a nombre de una persona de verdad y
+    su anulación después—, así que deja de ser algo que se le pregunta a un tercero y pasa a ser una
+    prueba con fecha. **No hace falta producción**: la pasarela es la misma desde dev. **Y no es por
+    el mínimo de 50.000**: el crédito se abre por el precio de lo que se compre, y el producto
+    publicado más barato el 23 de septiembre valía **219.900** — decidido ese día que se usa ese, en
+    vez de publicar uno de prueba. Va detrás de la 33, que comprueba que el camino entero funciona
+    antes de gastar un crédito real en medir este tramo.
 
 ### Bloque 5. Lo que solo se comprueba con el aparato delante
 
@@ -8964,6 +9153,39 @@ El orden no es negociable: cada uno alimenta al siguiente.
     `response.status`, la deuda sigue. La salida es propagar solo lo que no distingue cuentas —el
     429 y el 5xx— y dejar el 204 como está; necesita su propio texto en `RecuperarClavePage`, que
     es lo que hizo que no se arreglara de paso.»
+
+### Lo que dejó abierto revisar la deuda 11
+
+33. ~~**Sistecrédito está encendido en dev y nunca se ha ejercitado.**~~ **Ejercitado el 23 de
+    septiembre de 2026, dos veces, y encontró tres defectos con todo en verde.** Lo que quedó
+    comprobado: el checkout entero, la cotización real de envío (JBL Go 5, 7.502 con Coordinadora),
+    el intento, el sondeo, la notificación entrante en la URL pública y el pedido en firme con su
+    comprobante — pedidos **TS-2026-000002** y **TS-2026-000003** en dev. Y contestó de paso la
+    pregunta del dominio: la notificación llega a `tecnosport-api-….a.run.app` sin que a la pasarela
+    le importe que el dominio registrado sea `tecnosport.co`. Los tres defectos están arreglados y
+    contados en la entrada de arriba. **Queda abierto lo que no se pudo tocar**: el estado
+    `Rejected` —fijo en `main.tf`, pide un `apply`— y el caso de cerrar la ventana, que depende de
+    la conciliación y por tanto de la 34. **Cómo comprobarlo:** en el panel de dev, los dos pedidos
+    con su historial *Pago pendiente → Pagado → En preparación*; y en el código, las pruebas que
+    nacieron de cada defecto (`retorno-sistecredito.page.spec.ts` navegando de verdad,
+    `SistecreditoClientTest.unaUrlQueElNavegadorNoPuedeAbrirNoEsUnaUrl`,
+    `SistecreditoControladorTest.unaNotificacionDuplicadaEnCarreraNoSeLeContestaConUn500`).
+34. ~~**Las tareas programadas no corren cuando el servicio no atiende peticiones.**~~ **Decidida
+    el 23 de septiembre de 2026, y son dos decisiones distintas.** El hecho no cambia: las once
+    tareas son `@Scheduled` dentro de la aplicación y el módulo de Cloud Run fija CPU solo durante
+    la petición, así que la conciliación de las dos pasarelas, las cinco de envíos, la purga de
+    carritos, la bandeja de correo y las dos de pedidos solo avanzan mientras alguien usa el sitio.
+    **En dev se acepta**: lo que dev ensaya es producción, no su disponibilidad, y cuando una prueba
+    necesite que una tarea corra se mantiene la instancia despierta con peticiones mientras dure.
+    **En producción la API irá con CPU asignada también entre peticiones**, que ahí no cuesta una
+    instancia nueva —`min-instances = 1` ya estaba decidido— sino solo la CPU. El módulo lo expone
+    como `cpu_siempre_asignada`, con el valor de dev por omisión: medido con `terraform plan`, el
+    cambio es **"No changes"** contra dev. Cloud Scheduler queda descartado mientras las tareas
+    vivan dentro de la aplicación — pediría un endpoint interno autenticado por tarea y sacar el
+    `@Scheduled`, y solo se justifica si la API de producción llega a escalar a cero. Lo que queda
+    no es deuda: es un renglón el día que exista `envs/prod`. **Y lo que sí se arregló es la
+    página**: `docs/07` prometía un Cloud Scheduler que nadie usa, desde el primer commit del
+    documento — la tercera frase de ese archivo que describía en presente algo que no existe.
 
 ### Lo que está anotado y no es deuda
 
