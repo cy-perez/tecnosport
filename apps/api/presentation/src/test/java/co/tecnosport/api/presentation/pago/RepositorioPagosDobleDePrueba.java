@@ -1,5 +1,6 @@
 package co.tecnosport.api.presentation.pago;
 
+import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.domain.pago.EstadoPago;
 import co.tecnosport.api.domain.pago.Pago;
@@ -13,9 +14,21 @@ import java.util.UUID;
 final class RepositorioPagosDobleDePrueba implements RepositorioPagos {
 
   private final List<Pago> pagos = new ArrayList<>();
+  private boolean elEventoYaLoRegistroOtro;
 
   void limpiar() {
     pagos.clear();
+    elEventoYaLoRegistroOtro = false;
+  }
+
+  /**
+   * La carrera que el repositorio real resuelve contra el índice único de {@code evento_pago}: dos
+   * notificaciones de la misma transacción entran a la vez, las dos leen el pago pendiente y la
+   * segunda choca al escribir el evento. Aquí no hay base de datos, así que se pide explícitamente
+   * — lo que la prueba mira es qué hace el controlador con ese choque, no cómo se produce.
+   */
+  void simularQueOtraNotificacionYaRegistroElEvento() {
+    this.elEventoYaLoRegistroOtro = true;
   }
 
   @Override
@@ -40,6 +53,11 @@ final class RepositorioPagosDobleDePrueba implements RepositorioPagos {
   @Override
   public void guardar(Pago pago) {
     rechazarSiLaReferenciaYaEsDeOtro(pago);
+    if (elEventoYaLoRegistroOtro && !pago.eventos().isEmpty()) {
+      elEventoYaLoRegistroOtro = false;
+      throw new EventoDePagoYaRegistradoException(
+          pago.referencia().valor(), pago.eventos().get(pago.eventos().size() - 1).idEvento());
+    }
     pagos.removeIf(p -> p.id().equals(pago.id()));
     pagos.add(pago);
   }

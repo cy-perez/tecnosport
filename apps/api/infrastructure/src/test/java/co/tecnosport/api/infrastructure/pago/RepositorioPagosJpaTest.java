@@ -1,7 +1,9 @@
 package co.tecnosport.api.infrastructure.pago;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -177,6 +179,45 @@ class RepositorioPagosJpaTest {
     Optional<Pago> encontrado = repositorio.buscarPorReferencia(new ReferenciaPago("no-existe"));
 
     assertThat(encontrado).isEmpty();
+  }
+
+  /**
+   * <b>El índice único de {@code evento_pago} sale de aquí con nombre, no como un 500.</b> Lo que
+   * lo dispara en producción son dos notificaciones simultáneas de la misma transacción: las dos
+   * leen el pago pendiente, las dos lo aplican y la segunda choca al volcar. Pasó el 23 de
+   * septiembre de 2026 en las dos corridas de prueba contra dev, y la pasarela recibió un 500 por
+   * "Error inesperado sin manejar" — que es justo lo que la hace reintentar.
+   *
+   * <p><b>El límite de esta prueba, dicho en voz alta:</b> esa carrera necesita dos transacciones a
+   * la vez y no se puede forzar desde una sola conexión sin dejar una prueba que a veces no choca.
+   * Lo que se prueba aquí es lo mismo que la carrera produce —el mismo índice violado en el mismo
+   * {@code guardar}— por el único camino determinista que hay: un pago que trae el mismo evento dos
+   * veces. Si alguien quita la traducción, esto se vuelve rojo.
+   */
+  @Test
+  void unEventoRepetidoChocaConNombrePropioYNoComoUnErrorDeJpa() {
+    UUID pedidoId = crearYGuardarPedido();
+    ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
+    EventoPago mismoEvento =
+        new EventoPago("6ab40fd77705464e7c900c70:Approved", EstadoPago.APROBADO, Instant.now());
+    Pago pagoConElEventoDosVeces =
+        new Pago(
+            UUID.randomUUID(),
+            pedidoId,
+            referencia,
+            MetodoPago.SISTECREDITO,
+            Dinero.deCop(100_000),
+            EstadoPago.APROBADO,
+            List.of(mismoEvento, mismoEvento),
+            Instant.now(),
+            Instant.now(),
+            "6ab40fd77705464e7c900c70",
+            "sistecredito");
+
+    assertThatThrownBy(() -> repositorio.guardar(pagoConElEventoDosVeces))
+        .isInstanceOf(EventoDePagoYaRegistradoException.class)
+        .hasMessageContaining("6ab40fd77705464e7c900c70:Approved")
+        .hasMessageContaining(referencia.valor());
   }
 
   @Test

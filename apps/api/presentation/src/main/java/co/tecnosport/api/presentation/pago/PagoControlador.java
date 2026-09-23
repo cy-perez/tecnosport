@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pago;
 
 import co.tecnosport.api.application.pago.CrearIntentoDePago;
 import co.tecnosport.api.application.pago.CrearIntentoDePagoComando;
+import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
 import co.tecnosport.api.application.pago.IntentoDePago;
 import co.tecnosport.api.application.pago.ProcesarEventoDePago;
 import co.tecnosport.api.application.pago.ProcesarEventoDePagoComando;
@@ -114,10 +115,26 @@ public class PagoControlador {
             LectorEventoWompi.valoresDePropiedadesFirmadas(cuerpo),
             LectorEventoWompi.timestamp(cuerpo),
             LectorEventoWompi.checksum(cuerpo));
-    ResultadoEventoDePago resultado =
-        transaccion.execute(estado -> procesarEventoDePago.ejecutar(comando));
+    ResultadoEventoDePago resultado = aplicar(comando);
     registrar(resultado, comando);
     return ResponseEntity.ok().build();
+  }
+
+  /**
+   * Wompi reintenta sus eventos, así que dos copias del mismo pueden entrar a la vez: las dos leen
+   * el pago pendiente, las dos lo aplican y la segunda choca contra el índice único de {@code
+   * evento_pago}. Es el mismo caso que se midió con Sistecrédito el 23 de septiembre de 2026 —el
+   * webhook de aquí no lo había enseñado todavía, pero comparte el aplicador y el índice—, y la
+   * respuesta correcta es la misma: el estado ya lo dejó la gemela, esto es un "ya procesado" y se
+   * contesta 200. El {@code catch} va fuera del {@code TransactionTemplate}, o confirmar la
+   * transacción marcada para deshacer reventaría igual con otro nombre.
+   */
+  private ResultadoEventoDePago aplicar(ProcesarEventoDePagoComando comando) {
+    try {
+      return transaccion.execute(estado -> procesarEventoDePago.ejecutar(comando));
+    } catch (EventoDePagoYaRegistradoException e) {
+      return ResultadoEventoDePago.YA_PROCESADO;
+    }
   }
 
   private void registrar(ResultadoEventoDePago resultado, ProcesarEventoDePagoComando comando) {

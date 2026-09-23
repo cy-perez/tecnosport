@@ -2,6 +2,7 @@ package co.tecnosport.api.presentation.pago;
 
 import co.tecnosport.api.application.pago.CrearIntentoDePagoSistecredito;
 import co.tecnosport.api.application.pago.CrearIntentoDePagoSistecreditoComando;
+import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
 import co.tecnosport.api.application.pago.IntentoDePagoSistecredito;
 import co.tecnosport.api.application.pago.ProcesarNotificacionSistecredito;
 import co.tecnosport.api.application.pago.ProcesarNotificacionSistecreditoComando;
@@ -97,10 +98,29 @@ public class SistecreditoControlador {
             LectorNotificacionSistecredito.idTransaccion(cuerpo),
             LectorNotificacionSistecredito.referencia(cuerpo),
             LectorNotificacionSistecredito.estado(cuerpo));
-    ResultadoNotificacionSistecredito resultado =
-        transaccion.execute(estado -> procesarNotificacion.ejecutar(comando));
+    ResultadoNotificacionSistecredito resultado = aplicar(comando);
     registrar(resultado, comando);
     return ResponseEntity.ok().build();
+  }
+
+  /**
+   * <b>El {@code catch} va fuera del {@code TransactionTemplate} y no dentro</b>: atraparlo dentro
+   * dejaría la transacción marcada para deshacer y confirmarla reventaría igual, con otro nombre.
+   *
+   * <p>Que dos copias de la misma notificación entren a la vez no es un error: Sistecrédito lo hizo
+   * en las dos corridas de prueba del 23 de septiembre de 2026. La guarda del caso de uso —un pago
+   * que ya no está pendiente no admite más transiciones— cubre las repeticiones en serie; las
+   * simultáneas las para el índice único de {@code evento_pago}, y lo que llega aquí es ese choque
+   * con nombre. El estado ya quedó aplicado por la gemela, así que esto es un "ya procesado" y se
+   * responde 200: un 500 solo conseguiría que la pasarela reintentara en bucle.
+   */
+  private ResultadoNotificacionSistecredito aplicar(
+      ProcesarNotificacionSistecreditoComando comando) {
+    try {
+      return transaccion.execute(estado -> procesarNotificacion.ejecutar(comando));
+    } catch (EventoDePagoYaRegistradoException e) {
+      return ResultadoNotificacionSistecredito.YA_PROCESADO;
+    }
   }
 
   private void registrar(
@@ -139,9 +159,15 @@ public class SistecreditoControlador {
               comando.referencia());
       case YA_PROCESADO ->
           log.debug("Notificación de Sistecrédito repetida, referencia={}", comando.referencia());
+      // El id de la transacción va primero y no al final: medido contra dev el 23 de septiembre de
+      // 2026, las notificaciones de verdad llegan **sin** `invoice` ni `transactionStatus` donde el
+      // lector los busca, así que esta línea decía "referencia=null, estado=null" y no servía para
+      // auditar nada. El id es el único de los tres que siempre viene — es con lo que el caso de
+      // uso consulta la verdad— y es lo que permite cruzar esto con el registro de la pasarela.
       case APLICADO ->
           log.info(
-              "Notificación de Sistecrédito aplicada, referencia={}, estado={}",
+              "Notificación de Sistecrédito aplicada, transaccion={}, referencia={}, estado={}",
+              comando.idTransaccion(),
               comando.referencia(),
               comando.estado());
       case APLICADO_SIN_CONFIRMAR_INVENTARIO ->
