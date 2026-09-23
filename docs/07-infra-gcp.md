@@ -65,10 +65,37 @@ Terraform, y ese script se niega a tocarlo.
 | Secret Manager | Llaves de Wompi, las tres credenciales de Sistecrédito, credenciales y secreto de webhook de Skydropx, secreto JWT, credenciales SMTP |
 | Cloud Load Balancing | Dominio, TLS y enrutamiento: `/api` a la API, el resto a la web |
 | Cloud Logging y Monitoring | Registros, métricas, alertas de 5xx y de latencia |
-| Cloud Scheduler | Liberar reservas vencidas, conciliar pagos, conciliar seguimiento de envíos, generar sitemap |
-
 Cloud Run con mínimo de instancias en 1 para la API: el arranque en frío de una
 JVM se siente. CRaC o imagen nativa solo si el costo aprieta, no de entrada.
+
+### Las tareas programadas corren dentro de la aplicación, no en Cloud Scheduler
+
+**Esta tabla listaba un Cloud Scheduler que nadie usa** —"liberar reservas vencidas, conciliar
+pagos, conciliar seguimiento de envíos, generar sitemap"— y la frase llevaba ahí desde el primer
+commit del documento. Las once tareas son `@Scheduled` dentro de la API (`grep -rln "@Scheduled"
+apps/api/bootstrap/src/main/java`). Es la tercera frase de este documento que describía en presente
+algo que no existía, después del freno de seguridad y del `terraform plan` de cada pull request.
+
+Eso tiene una consecuencia que no estaba dicha en ninguna parte y que se midió el 23 de septiembre
+de 2026: el módulo de Cloud Run fija `cpu_idle = true` —CPU solo durante la petición— así que **una
+tarea programada solo avanza mientras alguien está usando el sitio**. En dev, con
+`min_instance_count = 0` además, la conciliación de pagos no corre justo cuando hace falta: cuando
+no hay nadie.
+
+**Decidido el 23 de septiembre de 2026, y son dos decisiones distintas:**
+
+- **Dev se queda como está.** La red de seguridad no existe ahí y eso es aceptable: lo que dev
+  ensaya es producción, no su disponibilidad. Cuando una prueba necesite que una tarea corra
+  —comprobar la conciliación, por ejemplo— se mantiene la instancia despierta con peticiones
+  mientras dure. Lo que se arregla no es el diseño: es esta página.
+- **En producción, `cpu_idle = false` para la API.** Ahí ya está decidido `min-instances = 1`, así
+  que la instancia se paga de todas formas; lo que se añade es CPU asignada también entre
+  peticiones, que es lo único que hace que `@Scheduled` sea de fiar. El módulo lo expone como
+  variable (`cpu_siempre_asignada`), con el valor de dev por omisión.
+
+**Cloud Scheduler queda descartado mientras las tareas vivan dentro de la aplicación.** Usarlo
+pediría un endpoint interno autenticado por tarea y sacar el `@Scheduled`; solo se justifica el día
+que la API de producción escale a cero, que hoy no es el caso.
 
 Las imágenes se suben directo a Cloud Storage con URL firmada desde el panel y
 desde el asistente de captura. No pasan por el backend. El bucket de imágenes es

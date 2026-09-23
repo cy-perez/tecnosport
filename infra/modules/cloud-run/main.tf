@@ -48,7 +48,9 @@ resource "google_cloud_run_v2_service" "este" {
         # el otro extremo: no basta con que no haya instancias en reposo si cada instancia que
         # despierta cobra CPU hasta que Cloud Run la apaga varios minutos después. Una visita
         # aislada por hora bastaba para gastar la capa gratuita.
-        cpu_idle = true
+        # Invertido a propósito: la variable se llama por lo que el servicio hace, no por lo que
+        # Cloud Run apaga. Su valor por omisión deja esto en `true`, que es lo de dev.
+        cpu_idle = !var.cpu_siempre_asignada
 
         # El arranque en frío de una JVM con CPU limitada es doloroso; este impulso solo se cobra
         # durante el arranque.
