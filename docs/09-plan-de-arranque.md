@@ -8175,6 +8175,56 @@ registro en su sitio (4 sin reclamar) y otra con el registro apartado (304 y el 
 **no está versionado** —`.gitignore` línea 60—, así que antes de apartarlo se copió al scratchpad y
 se comprobó el `md5`, y se restauró comprobándolo otra vez.
 
+## El doble de prueba era más correcto que el código real (2026-09-22)
+
+Cerró la deuda 30, y el enunciado con el que nació se quedaba corto. Decía que `esFalloDelServidor`
+solo distingue el 5xx y que el resto del frontend seguía usándolo. Cierto, pero lo que había debajo
+en `features/cuenta` era peor: **dos ramas de error que nadie podía alcanzar en producción**.
+
+`CuentaHttpRepositorio` lanzaba `new Error(...)` en vez de `ErrorHttp`. Y `esFalloDelServidor`
+cuenta como fallo del servidor **todo lo que no sea un `ErrorHttp` de 4xx**, así que respondía
+`true` siempre. Resultado: en `RestablecerClavePage` y en `VerificarCorreoPage`, un enlace vencido
+—el fallo más común de las dos pantallas— se anunciaba como «no pudimos conectarnos con el
+servidor». El texto que dice «pide uno nuevo» no se mostraba nunca, y el que sí se mostraba manda a
+reintentar lo que no va a funcionar.
+
+### Por qué las pruebas no lo vieron
+
+**Sus dobles sí lanzaban `ErrorHttp`.** Hay una prueba llamada «con un token que el servidor
+rechaza, muestra el error correspondiente» y pasaba en verde: ejercitaba una rama que en producción
+nadie alcanzaba, porque el doble y el adaptador real no se parecían en lo único que la pantalla
+mira. El doble era **más correcto que el código**, que es la forma más cara de tener una prueba —da
+confianza exacta sobre un comportamiento que no existe.
+
+No había ninguna prueba del adaptador real: `cuenta-http.repositorio.ts` era el único archivo de su
+carpeta. Ahora tiene su `.spec.ts`, contra `fetch` y no contra un doble, y se comprobó que sirve
+devolviendo un método al código viejo: caen dos.
+
+Es la misma lección que ya dejó escrita `CadenaDeSeguridadTest` unas horas antes, por otra puerta:
+lo que ninguna prueba mira es exactamente donde se esconde un defecto durante meses. Allá era la
+cadena de seguridad, que vive en `bootstrap` y no la monta un `@WebMvcTest`. Aquí es el adaptador,
+que ninguna prueba de pantalla toca porque todas lo sustituyen.
+
+### Lo que cambió
+
+`exigirExito` **ya existía** y hacía exactamente lo que faltaba —comprueba el código y lanza
+`ErrorHttp` con el `codigo` del `ProblemDetail`—; el adaptador simplemente no la usaba. Ahora sí, y
+con eso las dos ramas muertas vuelven a la vida sin tocar una línea de las pantallas.
+
+Encima va el 429, que era el enunciado original de la deuda. Las cuatro rutas de esta funcionalidad
+llevan techo por IP (`ConfiguracionLimiteIntentos`), así que un enlace perfectamente válido abierto
+tras varios intentos se leía como enlace malo — y el remedio que sugería la pantalla, pedir otro,
+tampoco iba a servir. `VerificarCorreoPage` gana un estado `limitado` y `RestablecerClavePage` su
+propio mensaje; los dos dicen lo mismo: espera, tu enlace sigue sirviendo.
+
+### Lo que queda dicho y no se tocó
+
+`solicitarRecuperacion` **se traga todos los fallos**, incluidos un 429 y un 500, y la pantalla dice
+«revisa tu correo» aunque no se haya mandado nada. El 204-siempre del backend es deliberado —no
+revelar si esa cuenta existe— pero un 429 y un 500 no dicen nada de ninguna cuenta. Se deja anotado
+aquí y no se arregla de paso porque cambia lo que ve quien pide recuperar la clave y necesita su
+propio texto: es la deuda 31.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8215,8 +8265,10 @@ el agravante de que el límite contaba también los inicios de sesión exitosos�
 usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. Se abrió la **30**.
 Ver la entrada de arriba.
 
-Y detrás de esa se cerró la **29**: el informe de huérfanos ya sabe de qué ambiente es cada objeto,
-así que su lista pasó de 304 a 4 contra el mismo bucket.
+Y detrás de esa se cerraron la **29** —el informe de huérfanos ya sabe de qué ambiente es cada
+objeto, así que su lista pasó de 304 a 4 contra el mismo bucket— y la **30**, que al abrirla resultó
+ser más grande de lo escrito: dos ramas de error inalcanzables en producción que las pruebas daban
+por cubiertas. Se abrió la **31**.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8452,7 +8504,16 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Lo que dejó abierto cerrar la deuda 28
 
-30. **`esFalloDelServidor` solo distingue el 5xx, y el resto del frontend sigue usándolo.** La
+30. ~~**`esFalloDelServidor` solo distingue el 5xx, y el resto del frontend sigue usándolo.**~~
+    **Cerrada el 22 de septiembre de 2026, y el enunciado se quedaba corto**: en `features/cuenta`
+    el adaptador lanzaba `Error` en vez de `ErrorHttp`, así que `esFalloDelServidor` respondía
+    `true` siempre y las ramas de 4xx de dos pantallas eran **código muerto** —un enlace vencido se
+    anunciaba como servidor caído—. Las pruebas no lo vieron porque sus dobles sí lanzaban
+    `ErrorHttp`: el doble era más correcto que el código real. Se arregló usando `exigirExito`,
+    que ya existía, y se añadió `cuenta-http.repositorio.spec.ts`, que prueba el adaptador contra
+    `fetch`. Las cuatro pantallas que usaban la función a pelo quedan cubiertas: las dos de login
+    el 22 de septiembre y estas dos ahora. Ver la entrada de arriba y la deuda 31. Enunciado
+    original: «La
     función responde `true` únicamente para un error de transporte o un 5xx, así que **todo 4xx
     comparte el mensaje genérico de la pantalla que la llama**. Eso fue exactamente lo que hizo que
     un 429 se leyera como «correo o clave incorrectos» durante meses. El 22 de septiembre se
@@ -8465,7 +8526,20 @@ El orden no es negociable: cada uno alimenta al siguiente.
     `ProblemDetail`, la deuda sigue. La salida no es borrar la función —para el 5xx está bien—
     sino que cada pantalla que pueda recibir un 4xx con significado propio lo traduzca por su
     `codigo`, como ya hacen `mensaje-de-error.ts`, la pantalla de cambio de clave y ahora las dos
-    de login.
+    de login.»
+
+### Lo que dejó abierto cerrar la deuda 30
+
+31. **`solicitarRecuperacion` se traga todos los fallos, y la pantalla dice que revises tu correo.**
+    El adaptador llama a `POST /auth/recuperacion` y no mira la respuesta, a propósito: el backend
+    contesta 204 exista o no una cuenta con ese correo, y distinguir revelaría cuáles existen. Pero
+    esa ruta **lleva techo por IP**, así que un 429 —o un 500— se traga igual, y quien pidió el
+    enlace se queda mirando el buzón de un correo que nunca salió. El 204-siempre protege contra
+    revelar la existencia de una cuenta; un 429 y un 500 no dicen nada de ninguna cuenta.
+    **Cómo comprobarlo:** en `cuenta-http.repositorio.ts`, mientras `solicitarRecuperacion` no mire
+    `response.status`, la deuda sigue. La salida es propagar solo lo que no distingue cuentas —el
+    429 y el 5xx— y dejar el 204 como está; necesita su propio texto en `RecuperarClavePage`, que
+    es lo que hizo que no se arreglara de paso.
 
 ### Lo que está anotado y no es deuda
 
