@@ -8040,6 +8040,89 @@ el error caro". La diferencia es que aquel caso sí lo cubre y este no.
 El informe tiene la mitad del cruce hecho —el bucket— y le falta la otra mitad cuando el bucket
 sirve a dos ambientes.
 
+## Cambiar la clave del panel, y los dos defectos que solo aparecieron al usarla (2026-09-22)
+
+Cerró la deuda 28. Hasta esa tarde, el único camino para cambiar la clave de un usuario que ya
+existe era `ConfirmarRecuperacion`, que cuelga del token que llega al buzón: `SembradorAdmin` crea
+el `ADMIN` si no existe y **nunca actualiza uno existente**. Con una sola cuenta administrando la
+tienda, perder esa clave era cirugía de base de datos.
+
+Ahora hay `CambiarClave`: pide la clave actual, no depende del correo, y **revoca todas las
+sesiones del usuario abriendo una nueva en el mismo acto** — en ese orden, porque al revés "todas"
+incluiría la recién creada y dejaría fuera a quien acaba de cambiar su propia clave. La pantalla
+vive en `/admin/clave` y se alcanza con un clic desde el panel.
+
+El endpoint es **la única ruta de `/api/v1/auth` que exige sesión iniciada**, y eso hubo que
+declararlo: `ConfiguracionSeguridad` termina en `anyRequest().permitAll()`, así que una ruta nueva
+bajo ese prefijo nace pública y habría llegado al controlador sin principal. Es el único punto de
+todo el trabajo donde un olvido no falla ruidosamente — solo deja la puerta abierta.
+
+### Lo que encontró el recorrido en el navegador, y era mejor que el trabajo que iba a verificar
+
+Las pruebas pasaban, la API respondía bien a los doce pasos de un recorrido con `curl`, y aun así
+usar la pantalla con las manos destapó **dos defectos que venían de antes y que ninguna prueba
+tenía cómo ver**.
+
+**El primero: sin token, la API respondía 403.** Spring Security usaba su punto de entrada por
+omisión, que contesta 403 —el código de "sé quién eres y aun así no puedes"— para el caso
+contrario, en el que no sabe quién es nadie. Pasaba desde que existe `/api/v1/admin/**`. Y no era
+cosmética: el frontend renueva el token de acceso —quince minutos de vigencia— **solo al recibir un
+401** (`crearClienteAutenticado`), así que esa renovación silenciosa **no disparaba nunca** y
+cualquier pantalla del panel abierta ese rato mostraba un error en vez de renovar sola. Se declaró
+`PuntoDeEntradaNoAutenticado`. El 403 no desaparece, cambia de sitio: un `CLIENTE` autenticado
+llamando al panel pasa por el manejador de acceso denegado y sigue recibiendo 403, que es lo
+correcto.
+
+`CadenaDeSeguridadTest` lo vigila contra **la cadena de verdad**, no contra un `@WebMvcTest` —que
+no monta `ConfiguracionSeguridad`, porque vive en `bootstrap`—. Esa es justamente la razón de que
+el 403 pudiera quedarse ahí meses: ninguna prueba miraba la cadena completa. Comprobado quitando la
+línea: caen tres de las cinco, y las dos que siguen en verde son las que deben.
+
+**El segundo apareció usando la pantalla, y es el que más enseña.** Tras cambiar la clave, cerrar
+sesión y volver a entrar un par de veces, el panel empezó a responder **«Correo o clave
+incorrectos.»** con la clave nueva perfectamente bien. No era la clave: era el limitador, y la
+pantalla mentía sobre el motivo.
+
+Dos cosas se juntaron:
+
+1. `esFalloDelServidor` solo es cierto para un **5xx**, así que cualquier 4xx compartía el texto de
+   credenciales malas. El **429 del limitador se leía como una clave equivocada**, en las dos
+   pantallas de login.
+2. `IniciarSesion` le pide permiso al limitador **antes** de verificar, así que **los inicios de
+   sesión exitosos también consumían cupo**. Entrar, salir y volver a entrar —justo lo que pide
+   probar un cambio de clave— agotaba los cinco sin que nadie se equivocara una sola vez.
+
+Medido en la base al terminar: `cuenta:iniciar-sesion:contacto@tecnosport.co` en **13 intentos**
+contados, la clave correcta todas las veces, la cuenta bloqueada quince minutos.
+
+En producción eso es peor que una molestia: a un administrador frenado se le dice que su clave está
+mal, se va a «recuperar contraseña», y sigue sin entrar **porque la clave nunca fue el problema**.
+Es la historia de la deuda 28 otra vez, por otra puerta.
+
+Los dos se arreglaron. El 429 tiene ahora su propio error y su propio mensaje en las dos pantallas
+de login. Y el límite pasó a contar **intentos fallidos seguidos**: el puerto suma `olvidar(clave)`
+y la llaman los dos casos de uso que verifican un secreto —`IniciarSesion` y `CambiarClave`— en
+cuanto ese secreto resulta correcto.
+
+**Por qué `olvidar` y no "preguntar primero y contar después".** `permitir` cuenta y comprueba en
+la misma sentencia atómica a propósito: es lo que cierra la carrera que documenta
+`LimitadorDeIntentosJpa`. Separarlas la reabre. El precio de esa atomicidad es que el acierto
+también suma, y el precio se paga ahora donde corresponde — después de saber que acertó.
+
+**Y no la llaman los otros tres.** `RegistrarUsuario`, `SolicitarRecuperacion` y `CrearPedido` no
+verifican ningún secreto, así que borrarles el conteo al "acertar" dejaría su límite sin efecto,
+que es justo lo que esos tres frenan. Sus dobles de prueba **lanzan** si alguien llama a `olvidar`,
+para que ese límite quede escrito donde se nota y no solo en un comentario.
+
+### Lo que esto enseña
+
+Las tres cosas que salieron mal estaban **detrás de una sesión iniciada**, y las tres se veían solo
+usando el sistema como lo usa una persona: entrar, hacer algo, salir, volver. El recorrido con
+`curl` pasó los doce pasos sin destapar ninguna, porque un guion no se equivoca de clave ni entra
+dos veces seguidas. La regla de cierre de este documento —«el recorrido completo hecho de verdad en
+el navegador»— se cobró aquí su tercera factura, y esta vez el hallazgo valía más que la
+funcionalidad que iba a verificar.
+
 ## Las deudas que quedan, al 22 de septiembre de 2026
 
 Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
@@ -8071,6 +8154,14 @@ Se abrieron dos, y las dos salieron de hacer el trabajo, no de buscarlas: la **2
 de un administrador exige borrar filas en la base de datos— y la **29** —el informe de huérfanos
 cuenta como basura lo que reclama el otro ambiente—. Y algo que no es deuda pero sí el mismo
 síntoma: `docs/07` describía un freno de seguridad que había cambiado tres días antes.
+
+**Y el día siguió otra vez.** La **28** se cerró esa misma noche, y cerrarla destapó dos defectos
+anteriores que ninguna prueba veía y que se arreglaron con ella: la API respondía **403 donde debía
+responder 401**, lo que dejaba muerta la renovación silenciosa del token en todo el panel, y el
+**429 del limitador se leía como «correo o clave incorrectos»** en las dos pantallas de login —con
+el agravante de que el límite contaba también los inicios de sesión exitosos—. Los dos salieron de
+usar la pantalla con las manos, no de las pruebas ni del recorrido con `curl`. Se abrió la **30**.
+Ver la entrada de arriba.
 
 ### Bloque 1. Código, sin depender de nadie
 
@@ -8260,7 +8351,15 @@ El orden no es negociable: cada uno alimenta al siguiente.
 
 ### Lo que dejó abierto encender Sistecrédito en dev
 
-28. **Rotar la clave de un administrador exige borrar filas en la base de datos.** `SembradorAdmin`
+28. ~~**Rotar la clave de un administrador exige borrar filas en la base de datos.**~~ **Cerrada
+    el 22 de septiembre de 2026**, y el recorrido en el navegador se hizo de verdad: se cambió la
+    clave del panel, se cerró sesión y se volvió a entrar con la nueva. `CambiarClave` pide la
+    clave actual, no depende del correo, y revoca todas las sesiones abriendo una nueva en el
+    mismo acto, así que quien rota su clave sigue dentro y cualquier otro dispositivo queda fuera.
+    La pantalla es `/admin/clave`, enlazada desde el panel. **Cerrarla destapó dos defectos
+    anteriores** —el 403 por 401 y el 429 disfrazado de clave equivocada— que se arreglaron en la
+    misma rama; ver la entrada de arriba y la deuda 30. Enunciado original, para que se entienda
+    qué cerró: «`SembradorAdmin`
     crea el `ADMIN` si no existe y **nunca actualiza uno existente** —lo dice su propio Javadoc, y
     ahí llama al mecanismo que falta "un mecanismo aparte, no construido todavía"—. No hay pantalla
     en el panel ni endpoint para cambiarla: `/auth/recuperacion` manda el correo de recuperación, y
@@ -8272,7 +8371,7 @@ El orden no es negociable: cada uno alimenta al siguiente.
     usuario ya existente; mientras el único sea `ConfirmarRecuperacion`, que cuelga del token que
     llega por correo, la deuda sigue. La salida mínima es un cambio de clave autenticado desde el panel
     —el usuario con sesión iniciada da la actual y la nueva—, que no depende del correo ni de la
-    base.
+    base.»
 
 ### Lo que dejó abierto el borrado de huérfanos
 
@@ -8286,6 +8385,23 @@ El orden no es negociable: cada uno alimenta al siguiente.
     incluya productos que están en `catalogo/cargados.json` bajo otro ambiente, la deuda sigue. La
     salida barata es que el informe lea ese registro y separe "no lo reclama esta API" de "no lo
     reclama nadie"; la cara y definitiva es un bucket por ambiente.
+
+### Lo que dejó abierto cerrar la deuda 28
+
+30. **`esFalloDelServidor` solo distingue el 5xx, y el resto del frontend sigue usándolo.** La
+    función responde `true` únicamente para un error de transporte o un 5xx, así que **todo 4xx
+    comparte el mensaje genérico de la pantalla que la llama**. Eso fue exactamente lo que hizo que
+    un 429 se leyera como «correo o clave incorrectos» durante meses. El 22 de septiembre se
+    corrigieron **las dos pantallas de login** —que es donde el daño era concreto— dándole al 429
+    su propio error y su propio texto, pero la función sigue igual y la usan más pantallas: cada
+    una elige entre «error del servidor» y su mensaje propio sin mirar de qué 4xx se trata. Un 409
+    de conflicto, un 422 de cuerpo inválido y un 429 de límite se cuentan todos como el mismo
+    problema. **Cómo comprobarlo:** `grep -rn "esFalloDelServidor" apps/web/src`; mientras haya
+    llamadas que solo elijan entre dos claves de Transloco sin mirar el `codigo` del
+    `ProblemDetail`, la deuda sigue. La salida no es borrar la función —para el 5xx está bien—
+    sino que cada pantalla que pueda recibir un 4xx con significado propio lo traduzca por su
+    `codigo`, como ya hacen `mensaje-de-error.ts`, la pantalla de cambio de clave y ahora las dos
+    de login.
 
 ### Lo que está anotado y no es deuda
 
