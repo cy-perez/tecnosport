@@ -56,7 +56,8 @@
     "enviando": "Sending…",
     "exito_titulo": "Check your email",
     "exito_mensaje": "If an account exists with that email, a password recovery link was sent to it.",
-    "error_generico": "We couldn't process the request. Try again."
+    "error_generico": "We couldn't process the request. Try again.",
+    "error_demasiados_intentos": "Too many attempts in a row from this connection. Wait a few minutes and ask again."
   },
   "restablecerClave": {
     "titulo": "Choose a new password",

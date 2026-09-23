@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { crearClienteContratos } from '@tecnosport/contratos';
 import { baseUrl } from '../../../core/http/base-url';
 import { DemasiadosIntentosError } from '../../../core/autenticacion/sesion.errores';
-import { exigirExito } from '../../../core/http/respuesta-http';
+import { ErrorHttp, exigirExito } from '../../../core/http/respuesta-http';
 import { CorreoYaRegistradoError } from '../domain/cuenta.errores';
 import { RepositorioCuenta } from '../domain/repositorio-cuenta.puerto';
 
@@ -64,10 +64,24 @@ export class CuentaHttpRepositorio implements RepositorioCuenta {
     exigirExito(resultado, 'no se pudo reenviar el correo de verificación');
   }
 
+  /**
+   * El 204 se resuelve sin mirar nada, exista o no una cuenta con ese correo: distinguirlos diría
+   * desde fuera qué correos tienen cuenta aquí, y ese es el contrato del backend.
+   *
+   * **Pero el 429 y el 5xx sí se propagan**, y hasta el 22 de septiembre de 2026 no: se tragaban
+   * como todo lo demás, así que quien pedía el enlace se quedaba mirando el buzón de un correo que
+   * nunca salió. El 204-siempre protege contra revelar la existencia de una cuenta; un límite de
+   * intentos por IP y una caída del servidor **no dicen nada de ninguna cuenta**, así que callarlos
+   * no protege nada y sí engaña.
+   */
   async solicitarRecuperacion(correo: string): Promise<void> {
-    // Siempre resuelve — el propio backend responde 204 exista o no una cuenta con ese correo, así
-    // que no hay nada que distinguir ni propagar aquí.
-    await this.cliente.POST('/api/v1/auth/recuperacion', { body: { correo } });
+    const { response } = await this.cliente.POST('/api/v1/auth/recuperacion', { body: { correo } });
+    if (response.status === 429) {
+      throw new DemasiadosIntentosError();
+    }
+    if (response.status >= 500) {
+      throw new ErrorHttp(response.status, 'no se pudo pedir el enlace de recuperación');
+    }
   }
 
   async restablecerClave(token: string, claveNueva: string): Promise<void> {

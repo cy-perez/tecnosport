@@ -105,6 +105,28 @@ describe('CuentaHttpRepositorio', () => {
     });
   });
 
+  describe('solicitarRecuperacion', () => {
+    it('el 204 resuelve, exista o no la cuenta: ese es el contrato', async () => {
+      const repositorio = conRespuesta(new Response(null, { status: 204 }));
+
+      await expect(repositorio.solicitarRecuperacion('nadie@tecnosport.co')).resolves.toBeUndefined();
+    });
+
+    it('el 429 se propaga: un limite por IP no dice nada de ninguna cuenta', async () => {
+      const repositorio = conRespuesta(problema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO'));
+
+      await expect(repositorio.solicitarRecuperacion('a@b.co')).rejects.toBeInstanceOf(
+        DemasiadosIntentosError,
+      );
+    });
+
+    it('el 500 se propaga: quien pidio el enlace tiene que saber que no salio', async () => {
+      const repositorio = conRespuesta(new Response(null, { status: 500 }));
+
+      await expect(repositorio.solicitarRecuperacion('a@b.co')).rejects.toBeInstanceOf(ErrorHttp);
+    });
+  });
+
   describe('reenviarVerificacion', () => {
     it('el 429 sale como DemasiadosIntentosError', async () => {
       const repositorio = conRespuesta(problema(429, 'LIMITE_DE_INTENTOS_EXCEDIDO'));

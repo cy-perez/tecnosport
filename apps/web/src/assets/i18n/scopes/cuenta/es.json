@@ -56,7 +56,8 @@
     "enviando": "Enviando…",
     "exito_titulo": "Revisa tu correo",
     "exito_mensaje": "Si existe una cuenta con ese correo, te llegó un enlace para recuperar tu clave.",
-    "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo."
+    "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo.",
+    "error_demasiados_intentos": "Demasiados intentos seguidos desde esta conexión. Espera unos minutos y vuelve a pedirlo."
   },
   "restablecerClave": {
     "titulo": "Elige una clave nueva",
