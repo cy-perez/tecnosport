@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { EstadoDeNivel, Nivel } from '../../domain/nivel-360';
+import { AnuncioDeNivel, EstadoDeNivel, Nivel } from '../../domain/nivel-360';
 
 // Sobre la vista de cámara hace falta un fondo propio: el contraste del vídeo
 // no se controla (docs/10-captura-360.md).
@@ -38,6 +38,24 @@ export class TsIndicadorNivel {
   /** La primera toma no se compara con nada: es la que fija la referencia del resto del set. */
   readonly fijandoReferencia = input(false);
 
+  /**
+   * Qué dice la región viva, que **no es lo que pinta el texto de arriba**: llega ya asentado, con
+   * los grados congelados del momento en que el estado se sostuvo. Por eso habla unas pocas veces
+   * por minuto en vez de veinte por segundo. Quién lo asienta es el store, con el reloj que traen
+   * las propias lecturas del sensor.
+   *
+   * `null` mientras no haya nada que decir todavía, y entonces la región vive vacía.
+   */
+  readonly anuncio = input<AnuncioDeNivel | null>(null);
+
+  /** El anuncio solo cuando de verdad hay algo dicho: sin esto la región pintaría `nivel.null`. */
+  protected readonly dicho = computed(() => {
+    const anuncio = this.anuncio();
+    return anuncio === null || anuncio.clave === null
+      ? null
+      : { clave: anuncio.clave, grados: anuncio.grados };
+  });
+
   protected readonly estado = computed<EstadoDeNivel>(() => this.nivel().estado);
 
   protected readonly clases = computed(() =>
@@ -69,8 +87,7 @@ export class TsIndicadorNivel {
   /** Cuántos grados y hacia dónde, sobre el eje que más lejos está. */
   protected readonly correccion = computed(() => {
     const nivel = this.nivel();
-    const desviacion =
-      nivel.ejeDominante === 'GAMMA' ? nivel.desviacionGamma : nivel.desviacionBeta;
+    const desviacion = nivel.ejeDominante === 'GIRAR' ? nivel.girar : nivel.inclinar;
     return {
       grados: Math.abs(Math.round(desviacion)),
       eje: nivel.ejeDominante,
@@ -90,7 +107,7 @@ export class TsIndicadorNivel {
     }
 
     const { eje, signo } = this.correccion();
-    if (eje === 'GAMMA') {
+    if (eje === 'GIRAR') {
       return signo > 0 ? 'captura360.nivel.gira_derecha' : 'captura360.nivel.gira_izquierda';
     }
     return signo > 0 ? 'captura360.nivel.inclina_atras' : 'captura360.nivel.inclina_adelante';

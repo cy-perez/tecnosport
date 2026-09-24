@@ -426,6 +426,106 @@ existe antes de que llegue el mensaje: la de una fila desplegada, o la de un `@c
 de control de flujo y **si** se anuncian, porque su ambito abre antes de que la persona pulse nada.
 Contarlas como pendientes seria perseguir un numero equivocado.
 
+### El guion de TalkBack para el asistente de captura 360
+
+El asistente es la pantalla que más lo necesita y la única que **no se puede
+comprobar en el computador**: se usa con el teléfono en la mano, apuntando a un
+producto, y la mitad de su contenido depende de la cámara y del acelerómetro. El
+guion de NVDA de arriba sirve igual aquí, con TalkBack en vez de NVDA, y con un
+montaje que cuesta más.
+
+Esto es la segunda mitad de la deuda 32 del plan. La primera —cada cuánto habla
+el nivel— se decidió midiendo, y está en `nivel-360.ts`.
+
+#### El montaje
+
+```
+docker compose up -d                                   # desde la raíz
+gradlew.bat bootRun                                    # en apps/api
+npm run dev --workspace=apps/web -- --allowed-hosts    # desde la raíz
+cloudflared tunnel --url http://localhost:4200
+```
+
+La bandera `--allowed-hosts` no es opcional: sin ella el dev server rechaza el
+host efímero del túnel. El detalle está en `apps/web/README.md`, junto con el
+motivo por el que hace falta HTTPS —la cámara, el sensor y `crypto.subtle` solo
+existen en contexto seguro— y la advertencia de que mientras el túnel esté arriba
+la aplicación de desarrollo, panel incluido, es accesible desde internet.
+
+Hace falta además lo que ninguna herramienta sustituye: **la cámara, un producto
+y luz**. Y TalkBack encendido antes de abrir la pantalla, no después.
+
+Si el recorrido va a llegar hasta publicar el set, el bucket necesita conocer el
+host del túnel o el `PUT` firmado muere en el preflight de CORS — el comando está
+en `apps/web/README.md`. Para la parte de accesibilidad no hace falta: los pasos
+1 a 6 del asistente no suben nada.
+
+#### Las cinco comprobaciones
+
+Con TalkBack, el gesto de explorar es **deslizar a derecha e izquierda** para ir
+al siguiente elemento y **doble toque** para activar. Anota lo que oigas, o su
+ausencia, que es un dato igual de bueno.
+
+**1. La pantalla se puede recorrer sin verla.** Desliza desde arriba hasta abajo
+antes de tocar nada.
+**Qué mirar:** que las condiciones mínimas —fondo, luz, centrado, distancia— se
+oigan, que los botones de cantidad de fotogramas digan cuántos son, y que el
+botón de la cámara diga qué va a hacer.
+**Qué decide:** si algo no se oye, no está en el árbol de accesibilidad.
+
+**2. El permiso de la cámara.** Doble toque en "Permitir la cámara".
+**Qué mirar:** que al volver del diálogo del sistema se anuncie el cambio de
+estado, y que aparezca el botón de disparar.
+
+**3. El nivel, que es el corazón de la deuda.** Con la cámara abierta y el nivel
+activado, sostén el teléfono apuntando al producto y muévelo despacio dentro y
+fuera de la tolerancia.
+**Qué mirar:** cuántas veces habla. Tiene que decir frases como «Inclina el
+teléfono 7 grados hacia adelante» y **quedarse callado mientras el estado no
+cambie**, no recitar cada grado. La cuenta esperada es de unos pocos anuncios por
+minuto.
+**Qué decide:** si habla sin parar, el asentamiento del anuncio no está llegando
+a la región — el `aria-hidden` del texto visible y el `role="status"` de la
+región viva están en `ts-indicador-nivel.html`.
+
+**4. El obturador bloqueado.** Tuércelo hasta que el botón se deshabilite.
+**Qué mirar:** que el aviso **no** se anuncie por su cuenta —eso es
+deliberado, lo explica el nivel— y que el botón de disparar se anuncie como
+deshabilitado cuando se le llega deslizando.
+**Qué decide:** si el aviso habla además del nivel, se está diciendo lo mismo dos
+veces.
+
+**5. El set completo.** Captura las tomas prometidas, aceptando cada una.
+**Qué mirar:** que el progreso se oiga al cambiar de toma, que el acuse de "listas
+las N tomas" se anuncie, y que al final el visor de revisión sea alcanzable.
+
+#### Lo que se corrió, el 23 de septiembre de 2026
+
+Se hizo el recorrido entero en un Android con TalkBack, con la cámara, el
+producto y el set completo, sobre el código ya arreglado. **Las cinco
+comprobaciones pasaron y no apareció ninguna anomalía.** Con eso queda cerrada la
+mitad de la deuda 32 que pedía el aparato delante.
+
+**Cómo se anotó, que importa para saber cuánto vale.** Esta medición **no tiene
+registro**: es lo que oyó una persona, no un archivo de texto que se pueda pegar
+aquí. La de NVDA de más arriba sí lo tiene, porque el visor de voz escribe lo que
+manda al sintetizador y TalkBack no ofrece un equivalente cómodo. Así que esta
+vale para lo que vale — un «suena bien» de quien usa la pantalla — y lo que
+sostiene la conducta entre corrida y corrida son las pruebas de
+`nivel-360.spec.ts` y `ts-indicador-nivel.spec.ts`, que fallan si el anuncio
+vuelve a hablar en cada grado o si el texto visible deja de estar oculto al
+lector.
+
+Si algún día hace falta un registro literal, la vía es TalkBack con la salida de
+desarrollo activada y `adb logcat`, que no se probó.
+
+#### Lo que ya se sabe sin encender TalkBack
+
+Los cinco envoltorios de `display: contents` del asistente se apoyan en una sonda
+que respondió que sí —esa propiedad no saca la región del árbol de
+accesibilidad—, y eso es el mecanismo, no la pantalla. Este guion es lo que
+convierte el mecanismo en una observación.
+
 ### Lo que Vitest no atrapa en la capa visual
 
 Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`). Las tres cosas

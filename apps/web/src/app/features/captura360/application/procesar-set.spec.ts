@@ -43,7 +43,7 @@ function capturado(orden: number): FotogramaCapturado {
     ancho: 1920,
     alto: 1920,
   };
-  return { orden, imagen, inclinacion: null };
+  return { orden, imagen, gravedad: null };
 }
 
 const CUATRO = [capturado(0), capturado(1), capturado(2), capturado(3)];

@@ -23,7 +23,16 @@
     "inclina_adelante": "Tilt the phone {{grados}}° forward.",
     "inclina_atras": "Tilt the phone {{grados}}° back.",
     "gira_izquierda": "Turn the phone {{grados}}° to the left.",
-    "gira_derecha": "Turn the phone {{grados}}° to the right."
+    "gira_derecha": "Turn the phone {{grados}}° to the right.",
+    "anuncio": {
+      "en_rango": "Level is correct.",
+      "fijando_referencia": "This shot sets the reference tilt.",
+      "sin_sensor": "No level: the shutter stays enabled.",
+      "inclina_adelante": "Tilt the phone {{grados}} degrees forward.",
+      "inclina_atras": "Tilt the phone {{grados}} degrees back.",
+      "gira_izquierda": "Turn the phone {{grados}} degrees to the left.",
+      "gira_derecha": "Turn the phone {{grados}} degrees to the right."
+    }
   },
   "toma": {
     "frontal": "Front",

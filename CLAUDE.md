@@ -126,6 +126,9 @@ npm run lighthouse -- --con-ventana      mide con un Chrome visible en vez del h
 npm run pareja -- --antes A --despues B --prefijo P   ¿la diferencia se repite? (4 corridas, ~20 min)
 npm run pareja -- --solo-resumen P       vuelve a sacar el veredicto de un experimento ya medido
 npm run capas                            ¿alguna dependencia invertida en el frontend?
+npm run nivel-360                        reproduce una grabación del sensor contra el nivelador real;
+                                         --todas, --archivo X, --histeresis y --retardo. Graba con
+                                         node tools/sonda-nivel-360.mjs, desde el teléfono y por el túnel
 npm run marcadores                       ¿quedó algún [[ ]] en un texto que se publica?
 npm run kit                              ¿el kit se regenera igual, y sus tipografías aún escriben
                                          lo que el sitio escribe? (pide pip install fonttools brotli)

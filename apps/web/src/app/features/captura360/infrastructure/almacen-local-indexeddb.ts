@@ -6,7 +6,15 @@ import {
 } from '../domain/almacen-local-capturas.puerto';
 
 const BASE = 'tecnosport-captura360';
-const VERSION = 1;
+/**
+ * Sube a 2 el 23 de septiembre de 2026: la referencia de nivel de una sesión pasó de ser un par
+ * `beta`/`gamma` a ser un vector de gravedad (`nivel-360.ts`). Una sesión guardada con la forma
+ * vieja no se puede leer con la nueva —los campos ni siquiera se llaman igual— y arrastrarla
+ * daría una referencia inventada, que es peor que perder la sesión a medias. Por eso la subida
+ * **borra lo guardado** en vez de migrarlo: el asistente todavía no ha capturado un set en
+ * producción, y lo que se pierde es una captura a medias de desarrollo.
+ */
+const VERSION = 2;
 const SESIONES = 'sesiones';
 const FOTOGRAMAS = 'fotogramas';
 
@@ -80,8 +88,17 @@ export class AlmacenLocalIndexedDb implements AlmacenLocalDeCapturas {
   private abrir(): Promise<IDBDatabase> {
     return new Promise((resolver, rechazar) => {
       const peticion = indexedDB.open(BASE, VERSION);
-      peticion.onupgradeneeded = () => {
+      peticion.onupgradeneeded = (evento) => {
         const base = peticion.result;
+        // De la versión 1 a la 2 cambió la forma de la referencia de nivel: lo guardado no se
+        // puede leer, así que se tira. Ver el comentario de `VERSION`.
+        if (evento.oldVersion > 0 && evento.oldVersion < 2) {
+          for (const nombre of [SESIONES, FOTOGRAMAS]) {
+            if (base.objectStoreNames.contains(nombre)) {
+              base.deleteObjectStore(nombre);
+            }
+          }
+        }
         if (!base.objectStoreNames.contains(SESIONES)) {
           const sesiones = base.createObjectStore(SESIONES, { keyPath: 'sesionId' });
           sesiones.createIndex('productoId', 'productoId');

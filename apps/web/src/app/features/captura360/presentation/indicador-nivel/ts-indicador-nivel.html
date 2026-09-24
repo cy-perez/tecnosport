@@ -1,6 +1,24 @@
-<p [class]="clases()" aria-live="polite">
-  <span [class]="clasesGlifo()" aria-hidden="true">{{ glifo() }}</span>
+<!-- `aria-hidden` a propósito, y no es un descuido: este texto lleva los grados y cambia con cada
+     uno de ellos —lo que hace falta para el ojo— así que anunciarlo volvería la pantalla inusable
+     con un lector de pantalla. Quien habla es la región de abajo, que dice lo mismo pero solo
+     cuando el estado se asienta. Duplicarlo en las dos sería leerlo dos veces: es el error que la
+     deuda 16 ya midió. Ver `nivel-360.ts` y la deuda 32. -->
+<p [class]="clases()" aria-hidden="true">
+  <span [class]="clasesGlifo()">{{ glifo() }}</span>
   <span>
     {{ claveDeMensaje() | transloco: { grados: correccion().grados } }}
   </span>
+</p>
+
+<!-- Región viva permanente: el `@if` va dentro, no alrededor, porque un `role="status"` que nace
+     ya lleno no se anuncia (medido con NVDA el 22 de septiembre de 2026). Los grados que trae son
+     los del instante en que el estado se asentó, no los de ahora.
+
+     Y lleva **textos propios**, no los del indicador de arriba, por dos razones: el símbolo `°`
+     lo leen distinto los lectores de pantalla —o no lo leen— y escrito "grados" siempre se oye
+     bien; y una cadena idéntica en dos sitios es lo que rompió cinco pruebas en la deuda 16. -->
+<p class="sr-only" role="status">
+  @if (dicho(); as anuncio) {
+    {{ 'captura360.nivel.anuncio.' + anuncio.clave | transloco: { grados: anuncio.grados } }}
+  }
 </p>

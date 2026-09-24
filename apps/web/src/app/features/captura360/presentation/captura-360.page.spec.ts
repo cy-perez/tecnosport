@@ -575,7 +575,7 @@ describe('Captura360Page', () => {
         sesionId: 's1',
         productoId: PRODUCTO,
         fotogramasPrometidos: 4,
-        objetivo: { beta: 90, gamma: 0 },
+        objetivo: { x: 0, y: -1, z: 0 },
         actualizadaEn: 1,
       });
       for (let orden = 0; orden < 2; orden++) {
@@ -585,7 +585,7 @@ describe('Captura360Page', () => {
           blob: new Blob([`vieja-${orden}`], { type: 'image/webp' }),
           ancho: 1920,
           alto: 1920,
-          inclinacion: { beta: 90, gamma: 0 },
+          gravedad: { x: 0, y: -1, z: 0 },
         });
       }
     });

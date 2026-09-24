@@ -76,13 +76,50 @@ y abrir como una app.
 ### Nivelador digital
 
 - Lectura de `DeviceOrientationEvent` con suavizado, porque el dato crudo tiembla
-  y un indicador nervioso es inutilizable.
-- Tolerancia por omisión: 3 grados en `beta` y en `gamma`, configurable.
+  y un indicador nervioso es inutilizable. **Lo que se suaviza es el vector de
+  gravedad, no los ángulos** — ver abajo.
+- Tolerancia por omisión: 3 grados de desviación total, configurable. Más 2
+  grados de **histéresis** para salir de rango una vez dentro: sin ella el
+  obturador se habilita y se deshabilita varias veces por segundo sobre el
+  umbral, y tocar el botón justo en un parpadeo no dispara.
 - Estado visible en tres niveles: fuera de rango, cerca, en rango. Nunca solo por
   color: también por texto y por forma, porque el color solo no es accesible.
 - Fuera de tolerancia, el obturador se deshabilita y se dice por qué, en texto.
 - **Modo degradado** sin sensor: obturador siempre habilitado, aviso permanente de
   que no hay nivel, y la guía visual sigue funcionando.
+
+**No se restan ángulos de Euler, se comparan vectores de gravedad.** Este
+documento pedía "3 grados en `beta` y en `gamma`" y así se construyó, hasta que
+se midió con un teléfono el 23 de septiembre de 2026. La pose de trabajo del
+asistente —el aparato casi vertical, apuntando a un producto sobre una mesa— cae
+justo encima de la singularidad de esos ángulos: sostenido quieto con la mano,
+con `beta` en 82,6° y una desviación real de 1,14°, el `gamma` medido barría
+54,9°, porque ahí se acopla con la brújula y se amplifica por `1/cos(beta)`
+—teórico 7,8×, medido 10,2×—. Entre dos lecturas seguidas, 16 ms, se vio un salto
+de `gamma` de 178,6°.
+
+Con ese nivel, el obturador quedaba bloqueado **el 69 % del tiempo con el
+teléfono quieto** y **el 92 % de una vuelta completa a un producto**. Era
+inusable, y ninguna prueba lo veía porque todas alimentaban `beta` y `gamma`
+inventados.
+
+Lo que sí es estable es hacia dónde cae la gravedad vista desde el teléfono. Sale
+de `beta` y `gamma`, no tiene singularidad —en aquel salto de 178,6° se movió
+1,1°— y **no necesita la brújula**, así que dar la vuelta al producto sigue sin
+contar como desnivel: en la grabación de la vuelta completa la brújula barrió
+469° y el nivel no lo tomó por desnivel ni una vez.
+
+El precio, que conviene saber: la gravedad no ve el giro alrededor del eje
+vertical. En la pose vertical del asistente eso no quita nada —el giro del
+encuadre se observa entero—, pero en una toma cenital, con el teléfono plano
+apuntando hacia abajo, parte de ese giro deja de ser visible para el nivel.
+
+**Cómo se mide.** `tools/sonda-nivel-360.mjs` graba las lecturas crudas del
+sensor desde el teléfono —hace falta el túnel, ver `apps/web/README.md`— y
+`npm run nivel-360` las reproduce contra el dominio real. Se graba una vez y se
+reproduce con cuantos candidatos haga falta, en vez de volver al teléfono por
+cada número. Las lecturas del caso decisivo quedaron versionadas como fixture en
+`lecturas-de-telefono-quieto.ts`, y hay pruebas que fallan si el defecto vuelve.
 
 ### Procesamiento local
 

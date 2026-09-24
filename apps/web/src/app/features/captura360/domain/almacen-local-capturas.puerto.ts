@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import { Inclinacion } from './nivel-360';
+import { Gravedad } from './nivel-360';
 
 /**
  * Una toma aceptada, guardada en disco del navegador mientras el set no se ha subido.
@@ -13,7 +13,7 @@ export interface FotogramaGuardado {
   readonly blob: Blob;
   readonly ancho: number;
   readonly alto: number;
-  readonly inclinacion: Inclinacion | null;
+  readonly gravedad: Gravedad | null;
 }
 
 /** Lo que hace falta para retomar una captura donde se quedó. */
@@ -21,7 +21,7 @@ export interface SesionGuardada {
   readonly sesionId: string;
   readonly productoId: string;
   readonly fotogramasPrometidos: number;
-  readonly objetivo: Inclinacion | null;
+  readonly objetivo: Gravedad | null;
   readonly actualizadaEn: number;
 }
 

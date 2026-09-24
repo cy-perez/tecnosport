@@ -3,23 +3,28 @@ import { render, screen } from '@testing-library/angular';
 import esCaptura from '../../../../../assets/i18n/scopes/captura360/es.json';
 import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
-import { Nivel } from '../../domain/nivel-360';
+import { AnuncioDeNivel, Nivel } from '../../domain/nivel-360';
 import { TsIndicadorNivel } from './ts-indicador-nivel';
 
 function nivel(parcial: Partial<Nivel>): Nivel {
   return {
     estado: 'EN_RANGO',
-    desviacionBeta: 0,
-    desviacionGamma: 0,
-    ejeDominante: 'BETA',
+    desviacion: 0,
+    inclinar: 0,
+    girar: 0,
+    ejeDominante: 'INCLINAR',
     puedeDisparar: true,
     ...parcial,
   };
 }
 
-async function renderIndicador(valor: Nivel, fijandoReferencia = false) {
+async function renderIndicador(
+  valor: Nivel,
+  fijandoReferencia = false,
+  anuncio: AnuncioDeNivel | null = null,
+) {
   return render(TsIndicadorNivel, {
-    inputs: { nivel: valor, fijandoReferencia },
+    inputs: { nivel: valor, fijandoReferencia, anuncio },
     imports: [
       TranslocoTestingModule.forRoot({
         langs: { es, en, 'captura360/es': esCaptura } as never,
@@ -41,8 +46,8 @@ describe('TsIndicadorNivel', () => {
     await renderIndicador(
       nivel({
         estado: 'FUERA_DE_RANGO',
-        desviacionBeta: -7,
-        ejeDominante: 'BETA',
+        inclinar: -7,
+        ejeDominante: 'INCLINAR',
         puedeDisparar: false,
       }),
     );
@@ -52,7 +57,7 @@ describe('TsIndicadorNivel', () => {
 
   it('distingue el eje: gamma se corrige girando, no inclinando', async () => {
     await renderIndicador(
-      nivel({ estado: 'CERCA', desviacionGamma: 5, ejeDominante: 'GAMMA', puedeDisparar: false }),
+      nivel({ estado: 'CERCA', girar: 5, ejeDominante: 'GIRAR', puedeDisparar: false }),
     );
 
     expect(screen.getByText('Gira el teléfono 5° hacia la derecha.')).toBeTruthy();
@@ -81,11 +86,59 @@ describe('TsIndicadorNivel', () => {
   });
 
   it('y el glifo de fuera de rango no es el mismo que el de en rango', async () => {
-    await renderIndicador(
-      nivel({ estado: 'FUERA_DE_RANGO', desviacionBeta: -20, puedeDisparar: false }),
-    );
+    await renderIndicador(nivel({ estado: 'FUERA_DE_RANGO', inclinar: -20, puedeDisparar: false }));
 
     expect(screen.getByText('○')).toBeTruthy();
     expect(screen.queryByText('●')).toBeNull();
+  });
+});
+
+describe('lo que oye un lector de pantalla', () => {
+  it('el texto visible no se anuncia: cambia con cada grado y volvería la pantalla inusable', async () => {
+    const { container } = await renderIndicador(
+      nivel({ estado: 'FUERA_DE_RANGO', inclinar: -7, puedeDisparar: false }),
+    );
+
+    const visible = container.querySelector('p:not([role])');
+    expect(visible?.getAttribute('aria-hidden')).toBe('true');
+    expect(visible?.hasAttribute('aria-live')).toBe(false);
+  });
+
+  it('la región viva vive siempre en el DOM, también sin nada que decir', async () => {
+    // Un `role="status"` que nace ya lleno no se anuncia: medido con NVDA el 22 de septiembre.
+    const { container } = await renderIndicador(nivel({ estado: 'EN_RANGO' }));
+
+    const region = container.querySelector('[role="status"]');
+    expect(region).toBeTruthy();
+    expect(region?.textContent?.trim()).toBe('');
+  });
+
+  it('anuncia lo asentado, con los grados escritos y no con el símbolo', async () => {
+    // El `°` lo leen distinto los lectores de pantalla, o no lo leen.
+    await renderIndicador(
+      nivel({ estado: 'FUERA_DE_RANGO', inclinar: -7, puedeDisparar: false }),
+      false,
+      {
+        clave: 'inclina_adelante',
+        grados: 7,
+        candidata: 'inclina_adelante',
+        desde: 0,
+      },
+    );
+
+    expect(screen.getByRole('status').textContent).toContain('7 grados hacia adelante');
+  });
+
+  it('el texto anunciado no repite el visible, para que no se lea dos veces', async () => {
+    const { container } = await renderIndicador(nivel({ estado: 'EN_RANGO' }), false, {
+      clave: 'en_rango',
+      grados: 0,
+      candidata: 'en_rango',
+      desde: 0,
+    });
+
+    const visible = container.querySelector('p:not([role])')?.textContent?.trim();
+    const anunciado = screen.getByRole('status').textContent?.trim();
+    expect(visible).not.toBe(anunciado);
   });
 });
