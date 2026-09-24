@@ -97,8 +97,7 @@ public final class Inventario {
     }
     int disponible = saldoDisponible(ahora);
     if (cantidad > disponible) {
-      throw new ExistenciaInsuficienteException(
-          "Quedan " + disponible + " unidades disponibles de la variante " + varianteId + ".");
+      throw new ExistenciaInsuficienteException(varianteId, disponible, cantidad);
     }
     Instant expiraEn = vigencia == null ? null : ahora.plus(vigencia);
     MovimientoInventario reserva =
