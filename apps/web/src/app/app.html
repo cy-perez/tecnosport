@@ -8,6 +8,10 @@
   href="#contenido"
   >{{ 'app.saltar_al_contenido' | transloco }}</a
 >
+<!-- Antes que el encabezado en el orden del documento, y es deliberado: es el landmark de
+     navegación principal del sitio, así que quien recorre la página con lector de pantalla lo
+     encuentra donde lo espera. Visualmente no importa el orden —es `fixed`—. -->
+<app-menu-lateral />
 <app-encabezado />
 <!-- `outline-none` es aquí la excepción documentada a "el anillo de foco no se
      elimina jamás": este landmark recibe foco **por programa** desde el enlace

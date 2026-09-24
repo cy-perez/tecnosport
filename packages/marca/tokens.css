@@ -89,6 +89,8 @@
   --ancho-formulario: 384px;
   --ancho-formulario-lg: 512px;
   --ancho-filtro: 320px;
+  --ancho-menu-riel: 72px;
+  --ancho-menu-lateral: 288px;
   --ancho-min-filtro: 160px;
   --ancho-min-eje: 200px;
   --ancho-min-tarjeta: 220px;
@@ -98,6 +100,7 @@
   --imagen-miniatura: 96px;
   --mov-rapida: 120ms;
   --mov-media: 160ms;
+  --mov-panel: 300ms;
   --mov-lenta: 1400ms;
   --curva-entrada: cubic-bezier(0, 0, 0.2, 1);
   --curva-salida: cubic-bezier(0.4, 0, 1, 1);

@@ -85,7 +85,11 @@ public class MapeadorRespuestasCatalogo {
 
   public CategoriaRespuesta aRespuesta(Categoria categoria) {
     return new CategoriaRespuesta(
-        categoria.id(), categoria.nombre(), categoria.slug().valor(), categoria.linea().name());
+        categoria.id(),
+        categoria.nombre(),
+        categoria.slug().valor(),
+        categoria.linea().name(),
+        categoria.padreId().orElse(null));
   }
 
   public ResultadoPaginadoRespuesta<AtributoRespuesta> aRespuestaDeAtributos(

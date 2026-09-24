@@ -8,6 +8,7 @@ import es from '../../../assets/i18n/es.json';
 import { REPOSITORIO_SESION } from '../../core/autenticacion/repositorio-sesion.puerto';
 import { REPOSITORIO_CARRITO } from '../../features/carrito/domain/repositorio-carrito.puerto';
 import { Encabezado } from './encabezado';
+import { MenuLateralStore } from '../menu-lateral/menu-lateral.store';
 import { proveerAlmacenesCarrito } from '../../../testing/carrito';
 
 // Una ruta comodín, porque las pruebas hacen clic en `routerLink` de verdad:
@@ -127,17 +128,49 @@ describe('Encabezado', () => {
     expect(document.getElementById('menu-movil')).toBeNull();
   });
 
-  // Los enlaces se definen una sola vez en un `ng-template` y se instancian en
-  // la barra y en el panel. Con el menú abierto hay dos copias de cada uno, y
-  // eso es correcto: una sola está visible según el ancho.
-  it('el mismo enlace existe en la barra y en el panel, sin duplicar la plantilla', async () => {
+  /**
+   * Esta prueba afirmaba que "Catálogo" salía **dos** veces con el menú abierto: una en la barra de
+   * escritorio y otra en el panel, las dos desde el mismo `ng-template`. La barra de escritorio se
+   * fue al menú lateral el 24 de septiembre de 2026, así que ahora el enlace existe en un solo
+   * sitio del encabezado — y solo cuando el panel está abierto.
+   *
+   * Lo que se comprueba sigue siendo lo mismo de fondo: que el enlace del teléfono no se perdió al
+   * mudar el de escritorio. Es justo lo que se podía romper sin que nadie lo notara, porque en
+   * escritorio el menú lateral lo tapa.
+   */
+  it('en el teléfono el catálogo sigue estando, y solo dentro del panel', async () => {
     const { fixture } = await renderEncabezado();
-    expect(screen.getAllByRole('link', { name: 'Catálogo' })).toHaveLength(1);
+    expect(screen.queryByRole('link', { name: 'Catálogo' })).toBeNull();
 
     fireEvent.click(botonMenu());
     await fixture.whenStable();
 
-    expect(screen.getAllByRole('link', { name: 'Catálogo' })).toHaveLength(2);
+    const enlace = screen.getByRole('link', { name: 'Catálogo' });
+    expect(enlace.closest('#menu-movil')).not.toBeNull();
+  });
+
+  /**
+   * El panel del menú lateral crece de 72 a 288 px **encima** del contenido, así que sin esto el
+   * logo —el primer elemento del encabezado, y el que dice en qué sitio estás— quedaría detrás cada
+   * vez que el puntero roza el borde izquierdo. Se corre lo mismo que crece el panel.
+   *
+   * Solo cuando está encima: fijado no hace falta, porque ahí el hueco lo reserva `app-root` y el
+   * encabezado entero ya se corrió.
+   */
+  it('el logo se corre cuando el menú se despliega encima, y no cuando queda fijado', async () => {
+    const { fixture } = await renderEncabezado();
+    const store = fixture.debugElement.injector.get(MenuLateralStore);
+    const logo = screen.getByRole('link', { name: 'Ir a la portada' });
+
+    expect(logo.className).not.toContain('translate-x-menu-asoma');
+
+    store.abrirPorElGesto();
+    await fixture.whenStable();
+    expect(logo.className).toContain('desde-movil:translate-x-menu-asoma');
+
+    store.alternarFijado();
+    await fixture.whenStable();
+    expect(logo.className).not.toContain('translate-x-menu-asoma');
   });
 
   it('el carrito se queda en la barra, no baja al menú', async () => {

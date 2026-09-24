@@ -1,0 +1,249 @@
+<!-- `aria-label` y no un `<h2>` oculto: es el landmark de navegación del sitio, y con dos `<nav>`
+     en la página —este y el del encabezado— cada uno tiene que decir cuál es. -->
+<nav
+  #panel
+  class="fixed inset-y-0 start-0 z-40 flex flex-col overflow-x-hidden overflow-y-auto border-e border-ts-borde bg-ts-superficie py-16 transition-[width] ease-[var(--curva-suave)]"
+  [class.w-menu-riel]="!desplegado()"
+  [class.w-menu-lateral]="desplegado()"
+  [class.shadow-lg]="desplegado()"
+  [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
+  [attr.aria-label]="'encabezado.menu_lateral' | transloco"
+  (mouseenter)="abrir()"
+  (mouseleave)="cerrar()"
+  (focusin)="abrir()"
+  (focusout)="alSalirElFoco($event, panel)"
+>
+  <!-- ══ Fijar ═════════════════════════════════════════════════════════════════════════ -->
+  <!-- `aria-pressed` y no `aria-expanded`: esto no abre una región, cambia un modo. Es un
+       interruptor de dos estados y así se anuncia.
+
+       Va dentro del menú y no en el encabezado —que es donde lo pone el sitio de referencia—
+       porque en el encabezado sería un control que en el teléfono no significa nada: ahí no hay
+       menú lateral que fijar. Aquí desaparece con él, sin condiciones extra. -->
+  <button
+    class="anillo-foco mb-8 flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-16 border-0 bg-transparent px-24 text-start font-texto text-sm text-ts-texto-suave hover:bg-ts-superficie-alt"
+    type="button"
+    [attr.aria-pressed]="menu.fijado()"
+    [attr.aria-label]="
+      (menu.fijado() ? 'encabezado.soltar_menu' : 'encabezado.fijar_menu') | transloco
+    "
+    (click)="alternarFijado()"
+  >
+    <span class="shrink-0" [class.text-ts-primario]="menu.fijado()">
+      <ts-icono [icono]="iconoFijar" />
+    </span>
+    <span class="grow truncate transition-opacity" [class.opacity-0]="!desplegado()">
+      {{ (menu.fijado() ? 'encabezado.soltar_menu' : 'encabezado.fijar_menu') | transloco }}
+    </span>
+  </button>
+
+  <!-- ══ Catálogo ══════════════════════════════════════════════════════════════════════ -->
+  <ng-container
+    [ngTemplateOutlet]="grupo"
+    [ngTemplateOutletContext]="{
+      clave: 'catalogo',
+      icono: iconoCatalogo,
+      etiqueta: 'encabezado.catalogo' | transloco,
+      contenido: contenidoCatalogo,
+    }"
+  />
+
+  <!-- ══ Panel ═════════════════════════════════════════════════════════════════════════ -->
+  @if (sesion.esAdmin()) {
+    <ng-container
+      [ngTemplateOutlet]="grupo"
+      [ngTemplateOutletContext]="{
+        clave: 'panel',
+        icono: iconoPanel,
+        etiqueta: 'encabezado.panel' | transloco,
+        contenido: contenidoPanel,
+      }"
+    />
+  }
+</nav>
+
+<!-- Un grupo de primer nivel: el botón que lo pliega y la región que pliega.
+     `aria-expanded` y `aria-controls` son lo que lo convierte en un *disclosure* anunciable; sin
+     ellos es un botón que un lector de pantalla no puede explicar. -->
+<ng-template
+  #grupo
+  let-clave="clave"
+  let-icono="icono"
+  let-etiqueta="etiqueta"
+  let-contenido="contenido"
+>
+  <button
+    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-16 border-0 bg-transparent px-24 text-start font-texto text-sm text-ts-texto hover:bg-ts-superficie-alt"
+    type="button"
+    [attr.aria-expanded]="estaAbierto(clave)"
+    [attr.aria-controls]="'menu-grupo-' + clave"
+    (click)="alternar(clave)"
+  >
+    <!-- El icono no encoge: es lo único que se ve con el menú recogido. -->
+    <span class="shrink-0"><ts-icono [icono]="icono" /></span>
+    <!-- La etiqueta y el chevron **se quedan en el DOM** con el menú recogido, y lo que los tapa es
+         la opacidad y no un `hidden`: quien usa lector de pantalla tiene que oír "Catálogo" esté el
+         panel desplegado o no, y un `display: none` lo sacaría también del orden de tabulación,
+         que es justo lo que haría el menú inservible con teclado.
+
+         Y es opacidad y no solo el recorte del riel, que fue el primer intento: a 72 px de ancho,
+         "Catálogo" y "Ver todo el catálogo" asomaban cortados a mitad de palabra —"Cat", "Ver"— y
+         el riel se leía como una columna rota, no como una de iconos. Medido en el navegador. -->
+    <span class="grow truncate transition-opacity" [class.opacity-0]="!desplegado()">{{
+      etiqueta
+    }}</span>
+    <span
+      class="shrink-0 transition-[transform,opacity] ease-[var(--curva-suave)]"
+      [class.rotate-180]="estaAbierto(clave)"
+      [class.opacity-0]="!desplegado()"
+      [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+      aria-hidden="true"
+    >
+      <ts-icono [icono]="iconoChevron" />
+    </span>
+  </button>
+
+  <!-- El plegado anima de 0fr a 1fr y no de `max-height` a un valor adivinado: la rejilla resuelve
+       sola la altura del contenido, así que la transición es exacta con dos categorías o con
+       trece. `overflow-hidden` en el hijo es lo que hace que el recorte ocurra.
+
+       Con el menú recogido la rama entera se desvanece **y se pliega**, aunque el grupo siga
+       marcado como abierto. Lo primero, por lo mismo que la etiqueta de arriba: sus filas no llevan
+       icono, así que del riel solo asomaría el primer cuarto de cada palabra. Lo segundo, porque
+       una rama invisible seguía ocupando su alto y empujaba el icono de "Panel" media pantalla
+       hacia abajo — el riel tiene que leerse como una columna de iconos, no como dos iconos
+       separados por un hueco que nadie explica. `estaAbierto` no se toca: quien vuelve a acercar el
+       puntero encuentra la rama donde la dejó. -->
+  <div
+    class="grid w-menu-lateral shrink-0 transition-[grid-template-rows,opacity] ease-[var(--curva-suave)]"
+    [id]="'menu-grupo-' + clave"
+    [class.opacity-0]="!desplegado()"
+    [style.gridTemplateRows]="desplegado() && estaAbierto(clave) ? '1fr' : '0fr'"
+    [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+  >
+    <div class="overflow-hidden">
+      <ng-container [ngTemplateOutlet]="contenido" />
+    </div>
+  </div>
+</ng-template>
+
+<!-- ══ El árbol del catálogo ═══════════════════════════════════════════════════════════════ -->
+<ng-template #contenidoCatalogo>
+  <a
+    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 items-center ps-48 pe-16 text-sm text-ts-texto no-underline hover:bg-ts-superficie-alt"
+    [routerLink]="['/', idiomaActual(), 'productos']"
+    routerLinkActive="text-ts-primario font-medio"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    <span class="truncate">{{ 'encabezado.ver_todo' | transloco }}</span>
+  </a>
+
+  <!-- Las cuatro líneas salen siempre, tengan o no categorías cargadas: el menú es una promesa de
+       surtido, y una rama que desaparece porque hoy no hay nada dice que el negocio no vende eso.
+       Mientras la consulta está en vuelo, `ramas()` ya trae las cuatro con la lista vacía. -->
+  @for (rama of ramas(); track rama.linea) {
+    <button
+      class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-8 border-0 bg-transparent ps-48 pe-16 text-start font-texto text-sm text-ts-texto hover:bg-ts-superficie-alt"
+      type="button"
+      [attr.aria-expanded]="estaAbierto(rama.linea)"
+      [attr.aria-controls]="'menu-linea-' + rama.linea"
+      (click)="alternar(rama.linea)"
+    >
+      <span class="grow truncate">{{ 'lineas.' + rama.linea.toLowerCase() | transloco }}</span>
+      <span
+        class="shrink-0 transition-transform ease-[var(--curva-suave)]"
+        [class.rotate-180]="estaAbierto(rama.linea)"
+        [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+        aria-hidden="true"
+      >
+        <ts-icono [icono]="iconoChevron" />
+      </span>
+    </button>
+
+    <div
+      class="grid transition-[grid-template-rows] ease-[var(--curva-suave)]"
+      [id]="'menu-linea-' + rama.linea"
+      [style.gridTemplateRows]="estaAbierto(rama.linea) ? '1fr' : '0fr'"
+      [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+    >
+      <div class="overflow-hidden">
+        @for (nodo of rama.nodos; track nodo.categoria.id) {
+          <!-- Una rama con hojas no enlaza: pliega. De ella no cuelga ningún producto —lo defiende
+               el backend—, así que un enlace a "Dama" llevaría a una rejilla vacía siempre. -->
+          @if (tieneHijas(nodo)) {
+            <button
+              class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-8 border-0 bg-transparent ps-64 pe-16 text-start font-texto text-sm text-ts-texto-suave hover:bg-ts-superficie-alt"
+              type="button"
+              [attr.aria-expanded]="estaAbierto(nodo.categoria.id)"
+              [attr.aria-controls]="'menu-rama-' + nodo.categoria.id"
+              (click)="alternar(nodo.categoria.id)"
+            >
+              <span class="grow truncate">{{ nodo.categoria.nombre }}</span>
+              <span
+                class="shrink-0 transition-transform ease-[var(--curva-suave)]"
+                [class.rotate-180]="estaAbierto(nodo.categoria.id)"
+                [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+                aria-hidden="true"
+              >
+                <ts-icono [icono]="iconoChevron" />
+              </span>
+            </button>
+
+            <div
+              class="grid transition-[grid-template-rows] ease-[var(--curva-suave)]"
+              [id]="'menu-rama-' + nodo.categoria.id"
+              [style.gridTemplateRows]="estaAbierto(nodo.categoria.id) ? '1fr' : '0fr'"
+              [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-media)'"
+            >
+              <div class="overflow-hidden">
+                @for (hoja of nodo.hijas; track hoja.categoria.id) {
+                  <a
+                    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 items-center ps-96 pe-16 text-sm text-ts-texto-suave no-underline hover:bg-ts-superficie-alt"
+                    [routerLink]="['/', idiomaActual(), 'productos']"
+                    [queryParams]="{ categoria: hoja.categoria.slug }"
+                    routerLinkActive="text-ts-primario font-medio"
+                    [routerLinkActiveOptions]="coincidenciaExacta"
+                  >
+                    <span class="truncate">{{ hoja.categoria.nombre }}</span>
+                  </a>
+                }
+              </div>
+            </div>
+          } @else {
+            <a
+              class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 items-center ps-64 pe-16 text-sm text-ts-texto-suave no-underline hover:bg-ts-superficie-alt"
+              [routerLink]="['/', idiomaActual(), 'productos']"
+              [queryParams]="{ categoria: nodo.categoria.slug }"
+              routerLinkActive="text-ts-primario font-medio"
+              [routerLinkActiveOptions]="coincidenciaExacta"
+            >
+              <span class="truncate">{{ nodo.categoria.nombre }}</span>
+            </a>
+          }
+        }
+      </div>
+    </div>
+  }
+</ng-template>
+
+<!-- ══ Las secciones del panel ═════════════════════════════════════════════════════════════ -->
+<ng-template #contenidoPanel>
+  <a
+    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 items-center ps-48 pe-16 text-sm text-ts-texto no-underline hover:bg-ts-superficie-alt"
+    [routerLink]="['/', idiomaActual(), 'admin']"
+    routerLinkActive="text-ts-primario font-medio"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    <span class="truncate">{{ 'encabezado.menu_panel.inicio' | transloco }}</span>
+  </a>
+
+  @for (seccion of seccionesDelPanel; track seccion.clave) {
+    <a
+      class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 items-center ps-48 pe-16 text-sm text-ts-texto-suave no-underline hover:bg-ts-superficie-alt"
+      [routerLink]="['/', idiomaActual(), 'admin', seccion.segmentos[0]]"
+      routerLinkActive="text-ts-primario font-medio"
+    >
+      <span class="truncate">{{ seccion.clave | transloco }}</span>
+    </a>
+  }
+</ng-template>

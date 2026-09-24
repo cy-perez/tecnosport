@@ -22,7 +22,20 @@
     "cerrar_sesion": "Cerrar sesión",
     "abrir_menu": "Abrir el menú",
     "cerrar_menu": "Cerrar el menú",
-    "menu": "Menú"
+    "menu": "Menú",
+    "menu_lateral": "Menú del sitio",
+    "ver_todo": "Ver todo el catálogo",
+    "menu_panel": {
+      "inicio": "Inicio del panel",
+      "pedidos": "Pedidos",
+      "productos": "Productos",
+      "categorias": "Categorías",
+      "marcas": "Marcas",
+      "atencion": "Atención al cliente",
+      "envios": "Envíos"
+    },
+    "fijar_menu": "Fijar el menú abierto",
+    "soltar_menu": "Soltar el menú"
   },
   "pie": {
     "nombre_comercial": "Tecno Sport",
@@ -155,5 +168,11 @@
   "comun": {
     "error_servidor_titulo": "No pudimos conectarnos",
     "error_servidor": "No pudimos conectarnos con el servidor. Intenta de nuevo en unos minutos."
+  },
+  "lineas": {
+    "tecnologia": "Tecnología",
+    "ropa": "Ropa",
+    "calzado": "Calzado deportivo",
+    "bolsos": "Bolsos"
   }
 }

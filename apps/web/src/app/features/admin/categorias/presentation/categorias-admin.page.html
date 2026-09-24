@@ -1,0 +1,159 @@
+<section class="mx-auto max-w-contenido px-16 py-32">
+  <ts-migas [ruta]="migas()" />
+
+  <h1 class="m-0 mb-16 font-display text-2xl">{{ 'admin.categorias.titulo' | transloco }}</h1>
+
+  <p class="mb-24 text-ts-texto-suave">{{ 'admin.categorias.explicacion' | transloco }}</p>
+
+  <!-- El mismo formulario para crear y para editar: el título y el botón cambian con `editando()`.
+       Dos formularios con los mismos cuatro campos serían dos sitios donde arreglar lo mismo. -->
+  <form
+    class="mb-32 flex flex-col gap-16"
+    [formGroup]="form"
+    (submit)="$event.preventDefault(); enviar()"
+  >
+    <h2 class="m-0 font-display text-xl">
+      @if (editando(); as categoria) {
+        {{ 'admin.categorias.editandoTitulo' | transloco: { nombre: categoria.nombre } }}
+      } @else {
+        {{ 'admin.categorias.crearTitulo' | transloco }}
+      }
+    </h2>
+
+    <ts-campo
+      idCampo="categoria-nombre"
+      [label]="'admin.categorias.nombre' | transloco"
+      formControlName="nombre"
+    />
+
+    <!-- El slug es opcional al crear —se deriva del nombre, con el del padre delante— y al editar
+         se deja quieto si no lo tocan: está en URLs que la gente comparte y que los buscadores
+         indexaron, así que corregir una tilde del nombre no puede romperlas. -->
+    <ts-campo
+      idCampo="categoria-slug"
+      [label]="'admin.categorias.slug' | transloco"
+      [ayuda]="'admin.categorias.slugAyuda' | transloco"
+      formControlName="slug"
+    />
+
+    <ts-select
+      idCampo="categoria-padre"
+      [label]="'admin.categorias.padre' | transloco"
+      [placeholder]="'admin.categorias.sinPadre' | transloco"
+      [ayuda]="'admin.categorias.padreAyuda' | transloco"
+      [opciones]="opcionesPadre()"
+      formControlName="padreId"
+    />
+
+    <!-- Solo cuenta si no hay madre: con madre, la línea se hereda. Se deja visible en vez de
+         ocultarse para que quien mira entienda por qué no la puede elegir. -->
+    <ts-select
+      idCampo="categoria-linea"
+      [label]="'admin.categorias.linea' | transloco"
+      [placeholder]="'admin.categorias.elegirLinea' | transloco"
+      [ayuda]="'admin.categorias.lineaAyuda' | transloco"
+      [opciones]="opcionesLinea()"
+      formControlName="linea"
+    />
+
+    @if (error(); as mensaje) {
+      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+    }
+
+    <!-- El rechazo es un error y el guardado un aviso de estado: no se anuncian igual. Uno
+         interrumpe porque hay algo que corregir; el otro espera turno. -->
+    <p class="m-0 text-ts-exito" role="status">
+      @if (aviso(); as mensaje) {
+        {{ mensaje }}
+      }
+    </p>
+
+    <div class="flex flex-wrap gap-16">
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [ocupado]="enviando()"
+        [etiquetaCargando]="'admin.categorias.enviando' | transloco"
+      >
+        @if (editando()) {
+          {{ 'admin.categorias.guardar' | transloco }}
+        } @else {
+          {{ 'admin.categorias.crear' | transloco }}
+        }
+      </ts-boton>
+
+      @if (editando()) {
+        <ts-boton variante="texto" tipo="button" (click)="cancelar()">
+          {{ 'admin.categorias.cancelar' | transloco }}
+        </ts-boton>
+      }
+    </div>
+  </form>
+
+  @if (consulta.isPending()) {
+    <ts-esqueleto />
+  } @else if (consulta.isError()) {
+    <p class="text-ts-error" role="alert">{{ 'admin.categorias.errorLista' | transloco }}</p>
+  } @else {
+    @for (rama of ramas(); track rama.linea) {
+      <h2 class="m-0 mt-24 mb-8 font-display text-xl">
+        {{ 'lineas.' + rama.linea.toLowerCase() | transloco }}
+      </h2>
+
+      @if (rama.filas.length === 0) {
+        <p class="m-0 text-ts-texto-suave">{{ 'admin.categorias.lineaVacia' | transloco }}</p>
+      } @else {
+        <ul class="m-0 list-none p-0">
+          @for (fila of rama.filas; track fila.categoria.id) {
+            <!-- La sangría sale de la escala de espacio, no de un píxel suelto: `ps-*` y no `pl-*`
+                 para que el árbol se sangre por el lado correcto si algún día hay un idioma de
+                 derecha a izquierda. -->
+            <li
+              class="flex flex-wrap items-center justify-between gap-8 border-b border-ts-borde py-8"
+              [class.ps-24]="fila.nivel === 1"
+              [class.ps-48]="fila.nivel === 2"
+            >
+              <span>
+                {{ fila.categoria.nombre }}
+                <span class="text-sm text-ts-texto-suave">{{ fila.categoria.slug }}</span>
+                @if (!fila.esHoja) {
+                  <!-- Marcar la rama importa: de una rama no cuelgan productos, y quien va a cargar
+                       uno necesita saber a cuál apuntar sin probar y que se lo rechacen. -->
+                  <span class="text-sm text-ts-texto-suave">{{
+                    'admin.categorias.esRama' | transloco
+                  }}</span>
+                }
+              </span>
+
+              <span class="flex gap-8">
+                <ts-boton variante="texto" tipo="button" (click)="editar(fila.categoria)">
+                  {{ 'admin.categorias.editar' | transloco }}
+                </ts-boton>
+                <!-- El texto del botón es lo que dice en qué paso va, y por eso el nombre de la
+                     categoría entra en la etiqueta accesible: con varias filas abiertas, "Confirmar"
+                     a secas no dice cuál se está a punto de borrar. -->
+                <ts-boton
+                  variante="peligro"
+                  tipo="button"
+                  [etiquetaAccesible]="
+                    (porBorrar() === fila.categoria.id
+                      ? 'admin.categorias.confirmarBorradoDe'
+                      : 'admin.categorias.borrarCategoria'
+                    ) | transloco: { nombre: fila.categoria.nombre }
+                  "
+                  (click)="borrar(fila.categoria)"
+                >
+                  @if (porBorrar() === fila.categoria.id) {
+                    {{ 'admin.categorias.confirmarBorrado' | transloco }}
+                  } @else {
+                    {{ 'admin.categorias.borrar' | transloco }}
+                  }
+                </ts-boton>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+</section>

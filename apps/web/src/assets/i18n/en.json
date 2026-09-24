@@ -22,7 +22,20 @@
     "cerrar_sesion": "Sign out",
     "abrir_menu": "Open menu",
     "cerrar_menu": "Close menu",
-    "menu": "Menu"
+    "menu": "Menu",
+    "menu_lateral": "Site menu",
+    "ver_todo": "Browse the whole catalogue",
+    "menu_panel": {
+      "inicio": "Dashboard home",
+      "pedidos": "Orders",
+      "productos": "Products",
+      "categorias": "Categories",
+      "marcas": "Brands",
+      "atencion": "Customer service",
+      "envios": "Shipments"
+    },
+    "fijar_menu": "Keep the menu open",
+    "soltar_menu": "Release the menu"
   },
   "pie": {
     "nombre_comercial": "Tecno Sport",
@@ -155,5 +168,11 @@
   "comun": {
     "error_servidor_titulo": "We couldn't connect",
     "error_servidor": "We couldn't reach the server. Please try again in a few minutes."
+  },
+  "lineas": {
+    "tecnologia": "Technology",
+    "ropa": "Clothing",
+    "calzado": "Sports footwear",
+    "bolsos": "Bags"
   }
 }

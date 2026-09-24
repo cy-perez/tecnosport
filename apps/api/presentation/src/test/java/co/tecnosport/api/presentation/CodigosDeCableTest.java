@@ -4,6 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.CategoriaConHijasException;
+import co.tecnosport.api.application.catalogo.CategoriaConProductosException;
+import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
+import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
+import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
+import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
 import co.tecnosport.api.application.envio.ArticuloNoAsegurableException;
@@ -55,17 +61,30 @@ class CodigosDeCableTest {
 
   /** Los que decide un adaptador del frontend, no una traducción. */
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_ADAPTADORES =
-      Map.of(
-          ArticuloSinMedidasException.class, "ARTICULO_SIN_MEDIDAS",
-          ArticuloNoAsegurableException.class, "ARTICULO_NO_ASEGURABLE",
-          EnvioSinCoberturaException.class, "ENVIO_SIN_COBERTURA",
-          CotizacionRechazadaException.class, "COTIZACION_RECHAZADA",
-          ExistenciaInsuficienteException.class, "EXISTENCIA_INSUFICIENTE",
-          CredencialesInvalidasException.class, "CREDENCIALES_INVALIDAS",
-          SesionDeRefrescoInvalidaException.class, "SESION_DE_REFRESCO_INVALIDA",
-          LimiteDeIntentosExcedidoException.class, "LIMITE_DE_INTENTOS_EXCEDIDO",
-          SistecreditoNoEntregoLaUrlDePagoException.class, "SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO",
-          MontoDeReintegroInvalidoException.class, "MONTO_DE_REINTEGRO_INVALIDO");
+      Map.ofEntries(
+          Map.entry(ArticuloSinMedidasException.class, "ARTICULO_SIN_MEDIDAS"),
+          Map.entry(ArticuloNoAsegurableException.class, "ARTICULO_NO_ASEGURABLE"),
+          Map.entry(EnvioSinCoberturaException.class, "ENVIO_SIN_COBERTURA"),
+          Map.entry(CotizacionRechazadaException.class, "COTIZACION_RECHAZADA"),
+          Map.entry(ExistenciaInsuficienteException.class, "EXISTENCIA_INSUFICIENTE"),
+          Map.entry(CredencialesInvalidasException.class, "CREDENCIALES_INVALIDAS"),
+          Map.entry(SesionDeRefrescoInvalidaException.class, "SESION_DE_REFRESCO_INVALIDA"),
+          Map.entry(LimiteDeIntentosExcedidoException.class, "LIMITE_DE_INTENTOS_EXCEDIDO"),
+          Map.entry(
+              SistecreditoNoEntregoLaUrlDePagoException.class,
+              "SISTECREDITO_NO_ENTREGO_LA_URL_DE_PAGO"),
+          Map.entry(MontoDeReintegroInvalidoException.class, "MONTO_DE_REINTEGRO_INVALIDO"),
+          // Los seis rechazos del árbol de categorías, que `categorias-admin-http.repositorio.ts`
+          // traduce a un resultado con nombre para que la pantalla diga qué hacer: "mueve primero
+          // sus productos", "borra antes sus subcategorías". Sin esto, renombrar la excepción deja
+          // el panel enseñando el fallo genérico y la suite en verde.
+          Map.entry(CategoriaSlugYaExisteException.class, "CATEGORIA_SLUG_YA_EXISTE"),
+          Map.entry(CategoriaConProductosException.class, "CATEGORIA_CON_PRODUCTOS"),
+          Map.entry(CategoriaConHijasException.class, "CATEGORIA_CON_HIJAS"),
+          Map.entry(CategoriaNoEsHojaException.class, "CATEGORIA_NO_ES_HOJA"),
+          Map.entry(
+              ProfundidadDeCategoriaExcedidaException.class, "PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA"),
+          Map.entry(CicloDeCategoriasException.class, "CICLO_DE_CATEGORIAS"));
 
   /** Los que tienen una clave de traducción en `admin.errores.*`. */
   private static final Map<Class<? extends Exception>, String> CABLEADOS_EN_TRADUCCIONES =

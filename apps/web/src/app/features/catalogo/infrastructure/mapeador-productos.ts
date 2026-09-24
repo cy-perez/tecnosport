@@ -46,6 +46,10 @@ export function aCategoria(dto?: CategoriaDto): Categoria {
     nombre: dto?.nombre ?? '',
     slug: dto?.slug ?? '',
     linea: dto?.linea ?? '',
+    // `?? null` y no `?? ''`: una categoría de primer nivel **no tiene** padre, y la cadena vacía
+    // sería un id que no existe. `construirArbolDeCategorias` distingue las dos cosas para saber
+    // qué va en la raíz.
+    padreId: dto?.padreId ?? null,
   };
 }
 

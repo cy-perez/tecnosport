@@ -22,16 +22,27 @@ public class CategoriaJpaEntity {
   @Column(nullable = false)
   private String linea;
 
+  /**
+   * El padre en el árbol, nulo en las categorías de primer nivel. Es el id y no una
+   * {@code @ManyToOne} a propósito: nada de lo que hace el catálogo necesita navegar al padre desde
+   * la entidad —el árbol se arma en memoria con la lista completa, que son treinta filas—, y una
+   * relación aquí solo traería carga perezosa y proxies a un sitio que no los pide.
+   */
+  @Column(name = "padre_id")
+  private UUID padreId;
+
   @Column(name = "creado_en", nullable = false)
   private Instant creadoEn;
 
   protected CategoriaJpaEntity() {}
 
-  public CategoriaJpaEntity(UUID id, String nombre, String slug, String linea, Instant creadoEn) {
+  public CategoriaJpaEntity(
+      UUID id, String nombre, String slug, String linea, UUID padreId, Instant creadoEn) {
     this.id = id;
     this.nombre = nombre;
     this.slug = slug;
     this.linea = linea;
+    this.padreId = padreId;
     this.creadoEn = creadoEn;
   }
 
@@ -49,6 +60,10 @@ public class CategoriaJpaEntity {
 
   public String getLinea() {
     return linea;
+  }
+
+  public UUID getPadreId() {
+    return padreId;
   }
 
   public Instant getCreadoEn() {

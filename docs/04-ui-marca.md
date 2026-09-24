@@ -173,9 +173,17 @@ delante. Ver `ADR-0059`.
 | Puntos de quiebre | 640 / 1024 / 1280 | `--bp-*` |
 | Header escritorio y móvil | 72 y 60 px, fijo | `--header-alto-*` |
 | Logo en el header | 34 y 30 px | `--header-alto-logo*` |
+| Menú lateral recogido y desplegado | 72 y 288 px | `--ancho-menu-*` |
 | Objetivo táctil mínimo | 44 x 44 px | `--control-tactil` |
 | Insignia del contador | 20 x 20 px | `--control-insignia` |
 | Radio de la interfaz | 6 / 8 / 12 px y píldora | `--radio-*` |
+
+El menú lateral entró el 24 de septiembre de 2026 (`ADR-0062`). Los 72 px del riel
+son el objetivo táctil más 14 a cada lado —es lo único que se ve recogido— y los
+288 el ancho donde cabe la etiqueta más larga del árbol sin partirse; 288 y no 290
+porque es múltiplo de 4, como el resto de la rejilla. La transición entre los dos
+dura `--mov-panel` (300 ms), que es una duración nueva para lo que recorre mucha
+distancia: a 160 ms ese salto se lee como un parpadeo y no como un despliegue.
 
 El objetivo táctil fue durante un tiempo el único valor de esta tabla sin token:
 el SCSS lo escribía como `min-height: 44px` literal en cada control. Se pidió al

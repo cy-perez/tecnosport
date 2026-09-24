@@ -78,6 +78,14 @@ export interface Categoria {
   readonly nombre: string;
   readonly slug: string;
   readonly linea: string;
+  /**
+   * La categoría de la que cuelga, o `null` si cuelga directamente de la línea.
+   *
+   * Llega plano y no anidado desde la API a propósito: el menú necesita el árbol, el desplegable
+   * del filtro necesita la lista, y anidar en el contrato obligaría al segundo a aplanar lo que el
+   * primero va a colgar. Lo cuelga `construirArbolDeCategorias`.
+   */
+  readonly padreId: string | null;
 }
 
 export interface Producto {

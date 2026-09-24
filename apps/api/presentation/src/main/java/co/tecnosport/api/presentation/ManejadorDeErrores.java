@@ -3,12 +3,18 @@ package co.tecnosport.api.presentation;
 import co.tecnosport.api.application.atencion.SolicitudAtencionNoEncontradaException;
 import co.tecnosport.api.application.carrito.CarritoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.AtributoNoEncontradoException;
+import co.tecnosport.api.application.catalogo.CategoriaConHijasException;
+import co.tecnosport.api.application.catalogo.CategoriaConProductosException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEncontradaException;
+import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
+import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
+import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
 import co.tecnosport.api.application.catalogo.SkuYaEnUsoException;
@@ -230,6 +236,46 @@ public class ManejadorDeErrores {
   @ExceptionHandler(SkuYaEnUsoException.class)
   public ProblemDetail skuYaEnUso(SkuYaEnUsoException excepcion) {
     return problema(HttpStatus.CONFLICT, "SKU ya en uso", excepcion);
+  }
+
+  @ExceptionHandler(CategoriaSlugYaExisteException.class)
+  public ProblemDetail categoriaSlugYaExiste(CategoriaSlugYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Slug de categoría ya en uso", excepcion);
+  }
+
+  /**
+   * Los tres rechazos del árbol de categorías son {@code 409} y no {@code 422} por el mismo motivo
+   * que la marca repetida: lo que mandaron es válido —un nombre, un padre que existe—, y lo que lo
+   * rechaza es el estado del catálogo. Cambiar ese estado, moviendo los productos o borrando las
+   * subcategorías, hace que la misma petición pase.
+   */
+  @ExceptionHandler(CategoriaConHijasException.class)
+  public ProblemDetail categoriaConHijas(CategoriaConHijasException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La categoría tiene subcategorías", excepcion);
+  }
+
+  @ExceptionHandler(CategoriaNoEsHojaException.class)
+  public ProblemDetail categoriaNoEsHoja(CategoriaNoEsHojaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La categoría no es una hoja", excepcion);
+  }
+
+  @ExceptionHandler(CategoriaConProductosException.class)
+  public ProblemDetail categoriaConProductos(CategoriaConProductosException excepcion) {
+    return problema(HttpStatus.CONFLICT, "La categoría tiene productos", excepcion);
+  }
+
+  @ExceptionHandler(ProfundidadDeCategoriaExcedidaException.class)
+  public ProblemDetail profundidadDeCategoria(ProfundidadDeCategoriaExcedidaException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Profundidad de categoría excedida", excepcion);
+  }
+
+  /**
+   * {@code 422} y no {@code 409}, a diferencia de sus tres vecinas de arriba: colgar una categoría
+   * de sí misma no lo arregla ningún cambio del catálogo. La petición está mal, no a destiempo.
+   */
+  @ExceptionHandler(CicloDeCategoriasException.class)
+  public ProblemDetail cicloDeCategorias(CicloDeCategoriasException excepcion) {
+    return problema(HttpStatus.UNPROCESSABLE_CONTENT, "Ciclo de categorías", excepcion);
   }
 
   @ExceptionHandler(TasaIvaNoPermitidaException.class)

@@ -7,14 +7,16 @@ import co.tecnosport.api.application.catalogo.AlmacenDeImagenes;
 import co.tecnosport.api.application.catalogo.BuscarProductos;
 import co.tecnosport.api.application.catalogo.CompletarSetRotacion;
 import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
+import co.tecnosport.api.application.catalogo.CrearCategoria;
 import co.tecnosport.api.application.catalogo.CrearMarca;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
+import co.tecnosport.api.application.catalogo.EditarCategoria;
 import co.tecnosport.api.application.catalogo.EditarProducto;
+import co.tecnosport.api.application.catalogo.EliminarCategoria;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
-import co.tecnosport.api.application.catalogo.ListarCategoriasAdmin;
 import co.tecnosport.api.application.catalogo.ListarMapaDelSitio;
 import co.tecnosport.api.application.catalogo.ListarMarcas;
 import co.tecnosport.api.application.catalogo.ListarMarcasAdmin;
@@ -143,11 +145,6 @@ public class ConfiguracionCatalogo {
   }
 
   @Bean
-  public ListarCategoriasAdmin listarCategoriasAdmin(RepositorioCategorias repositorioCategorias) {
-    return new ListarCategoriasAdmin(repositorioCategorias);
-  }
-
-  @Bean
   public ListarMarcasAdmin listarMarcasAdmin(RepositorioMarcas repositorioMarcas) {
     return new ListarMarcasAdmin(repositorioMarcas);
   }
@@ -155,6 +152,21 @@ public class ConfiguracionCatalogo {
   @Bean
   public CrearMarca crearMarca(RepositorioMarcas repositorioMarcas) {
     return new CrearMarca(repositorioMarcas);
+  }
+
+  @Bean
+  public CrearCategoria crearCategoria(RepositorioCategorias repositorioCategorias) {
+    return new CrearCategoria(repositorioCategorias);
+  }
+
+  @Bean
+  public EditarCategoria editarCategoria(RepositorioCategorias repositorioCategorias) {
+    return new EditarCategoria(repositorioCategorias);
+  }
+
+  @Bean
+  public EliminarCategoria eliminarCategoria(RepositorioCategorias repositorioCategorias) {
+    return new EliminarCategoria(repositorioCategorias);
   }
 
   @Bean

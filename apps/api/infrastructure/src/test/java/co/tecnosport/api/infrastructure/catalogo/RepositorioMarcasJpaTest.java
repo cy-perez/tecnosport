@@ -128,7 +128,12 @@ class RepositorioMarcasJpaTest {
     CategoriaJpaEntity categoria =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Celulares TC", "celulares-tc-marcas", "TECNOLOGIA", AHORA));
+                UUID.randomUUID(),
+                "Celulares TC",
+                "celulares-tc-marcas",
+                "TECNOLOGIA",
+                null,
+                AHORA));
     MarcaJpaEntity conPublicado =
         marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Con publicado", AHORA));
     MarcaJpaEntity soloBorrador =
@@ -151,7 +156,12 @@ class RepositorioMarcasJpaTest {
     CategoriaJpaEntity categoria =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Celulares TC2", "celulares-tc2-marcas", "TECNOLOGIA", AHORA));
+                UUID.randomUUID(),
+                "Celulares TC2",
+                "celulares-tc2-marcas",
+                "TECNOLOGIA",
+                null,
+                AHORA));
     MarcaJpaEntity marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Repetida", AHORA));
 
     guardarProducto(marca.getId(), categoria.getId(), "PUBLICADO", "rep-uno");

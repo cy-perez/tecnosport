@@ -41,12 +41,19 @@ import { EditarProductoAdminPage } from './editar-producto-admin.page';
 
 const MARCA: Marca = { id: 'm1', nombre: 'TecnoSport' };
 const OTRA_MARCA: Marca = { id: 'm2', nombre: 'Under Trail' };
-const CATEGORIA: Categoria = { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' };
+const CATEGORIA: Categoria = {
+  id: 'c1',
+  nombre: 'Bolsos',
+  slug: 'bolsos',
+  linea: 'BOLSOS',
+  padreId: null,
+};
 const OTRA_CATEGORIA: Categoria = {
   id: 'c2',
   nombre: 'Celulares',
   slug: 'celulares',
   linea: 'TECNOLOGIA',
+  padreId: null,
 };
 
 function productoDePrueba(galeria: readonly ImagenDeGaleriaAdmin[] = []): ProductoAdminDetalle {

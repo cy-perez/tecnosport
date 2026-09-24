@@ -832,29 +832,4 @@ class AdminProductoControladorTest {
       return marcas.stream().filter(marca -> marca.id().equals(id)).findFirst();
     }
   }
-
-  static class RepositorioCategoriasDobleDePrueba implements RepositorioCategorias {
-
-    private List<Categoria> categorias = List.of();
-
-    void conCategorias(Categoria... categorias) {
-      this.categorias = List.of(categorias);
-    }
-
-    @Override
-    public List<Categoria> listarTodas() {
-      return categorias;
-    }
-
-    /** Este controlador no lo usa; aquí solo cumple el contrato del puerto. */
-    @Override
-    public List<Categoria> listarConProductosPublicados() {
-      return categorias;
-    }
-
-    @Override
-    public Optional<Categoria> buscarPorId(UUID id) {
-      return categorias.stream().filter(categoria -> categoria.id().equals(id)).findFirst();
-    }
-  }
 }

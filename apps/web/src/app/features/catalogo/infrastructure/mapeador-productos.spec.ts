@@ -8,7 +8,7 @@ describe('mapeador-productos', () => {
       nombre: 'Camiseta running',
       descripcion: 'Camiseta transpirable',
       marca: { id: 'm1', nombre: 'TecnoSport' },
-      categoria: { nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
+      categoria: { nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA' },
       imagenPrincipal: {
         url: 'https://x/0-800.avif',
         variantes: [

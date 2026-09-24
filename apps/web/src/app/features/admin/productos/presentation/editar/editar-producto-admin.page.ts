@@ -22,6 +22,9 @@ import { TsPaginaFormulario } from '../../../../../shared/ui/pagina-formulario/t
 import { TsCampo } from '../../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
+import { usarTraductor } from '../../../../../core/i18n/traductor';
+import { hojasConRuta } from '../../../../catalogo/domain/arbol-categorias';
+import { claveDeLinea } from '../../../../catalogo/domain/filtro-productos.model';
 import { OpcionSelect, TsSelect } from '../../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../../shared/ui/select/ts-select-control';
 import { usarMigasAdmin } from '../../../migas-admin';
@@ -126,12 +129,24 @@ export class EditarProductoAdminPage {
     })),
   );
 
-  protected readonly opcionesCategoria = computed<OpcionSelect[]>(() =>
-    (this.opciones.categorias.data() ?? []).map((categoria) => ({
-      valor: categoria.id,
-      etiqueta: categoria.nombre,
-    })),
-  );
+  /**
+   * Solo las **hojas** del árbol, etiquetadas con su ruta ("Ropa › Dama › Camisas").
+   *
+   * Las hojas, porque un producto no cuelga de una rama: si "Camisas" tuviera productos y también
+   * subcategorías, "lo que hay en Camisas" tendría dos respuestas distintas. Lo rechaza el backend
+   * (`CategoriaNoEsHojaException`) y ofrecerlo aquí sería proponer lo que se va a rechazar.
+   *
+   * Y la ruta, porque sin ella el desplegable tiene entradas que no se distinguen: "Busos" aparece
+   * bajo Dama y bajo Caballero, y "Dama" en tres líneas.
+   */
+  private readonly traducir = usarTraductor();
+
+  protected readonly opcionesCategoria = computed<OpcionSelect[]>(() => {
+    const traducir = this.traducir();
+    return hojasConRuta(this.opciones.categorias.data() ?? [], (linea) =>
+      traducir(claveDeLinea(linea)),
+    ).map((hoja) => ({ valor: hoja.categoria.id, etiqueta: hoja.ruta }));
+  });
 
   protected readonly formularioImagen = new FormGroup({
     altEs: new FormControl('', { nonNullable: true, validators: [Validators.required] }),

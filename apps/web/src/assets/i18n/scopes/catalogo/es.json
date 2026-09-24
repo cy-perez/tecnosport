@@ -18,11 +18,6 @@
     "orden_label": "Ordenar por",
     "todas": "Todas",
     "limpiar": "Limpiar filtros",
-    "linea": {
-      "ropa_y_calzado": "Ropa y calzado",
-      "bolsos": "Bolsos",
-      "tecnologia": "Tecnología"
-    },
     "orden": {
       "relevancia": "Relevancia",
       "precio_asc": "Precio: menor a mayor",

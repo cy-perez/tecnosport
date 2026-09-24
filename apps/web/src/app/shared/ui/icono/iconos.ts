@@ -38,3 +38,12 @@ export { ShieldCheck as iconoGarantia } from 'lucide';
 // anuncia a qué tema lleva el clic, no en cuál estás. En claro se ve la luna, en oscuro el sol.
 export { Moon as iconoTemaOscuro } from 'lucide';
 export { Sun as iconoTemaClaro } from 'lucide';
+// Los pidió el menú lateral: recogido solo caben iconos, así que cada rama de primer nivel
+// necesita el suyo — sin ellos el riel es una columna de cuadrados vacíos. El chevron es el que
+// dice si una rama está desplegada, y gira con la misma curva que el panel.
+export { LayoutGrid as iconoCatalogo } from 'lucide';
+export { LayoutDashboard as iconoPanel } from 'lucide';
+export { ChevronDown as iconoChevron } from 'lucide';
+// Lo pidió el botón que fija el menú lateral abierto. `PanelLeft` y no una chincheta: el icono
+// tiene que decir qué queda fijo —el panel de la izquierda—, no con qué se sujeta.
+export { PanelLeft as iconoFijar } from 'lucide';

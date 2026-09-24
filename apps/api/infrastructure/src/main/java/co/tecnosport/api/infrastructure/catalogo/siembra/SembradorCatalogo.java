@@ -154,27 +154,19 @@ public class SembradorCatalogo implements ApplicationRunner {
     MarcaJpaEntity tecnosport = guardarMarca("TecnoSport", ahora);
     MarcaJpaEntity underTrail = guardarMarca("Under Trail", ahora);
 
-    CategoriaJpaEntity ropaDeportiva =
-        guardarCategoria("Ropa deportiva", "ropa-deportiva", "ROPA_Y_CALZADO", ahora);
-    CategoriaJpaEntity calzadoDeportivo =
-        guardarCategoria("Calzado deportivo", "calzado-deportivo", "ROPA_Y_CALZADO", ahora);
-    CategoriaJpaEntity bolsos = guardarCategoria("Bolsos", "bolsos", "BOLSOS", ahora);
-    // "Celulares" es la única categoría tecnológica que este sembrador toca, porque es la única con
-    // un producto de ejemplo detrás. Las otras siete —relojes, audífonos, parlantes…— viven en
-    // V38__linea_tecnologia.sql y no aquí: son dato real del negocio, y este sembrador solo corre
-    // con la tabla de productos vacía, así que nada que se ponga aquí llega a una base que ya
-    // tiene datos. Se comprobó poniéndolas aquí primero, y no aparecieron en ninguna parte.
+    // Las cuatro son **hojas del árbol** que carga `V63`, y se buscan en vez de crearse: desde el
+    // 24 de septiembre de 2026 el catálogo no es una lista plana por línea sino un árbol de
+    // treinta categorías, y todas entran por migración porque son dato real que toda instalación
+    // necesita. Este sembrador solo amuebla productos de ejemplo encima.
     //
-    // La **busca** en vez de crearla, y ese cambio es del 24 de septiembre de 2026. Hasta V62 esta
-    // línea era la única que creaba "Celulares" en todo el sistema: una de las ocho categorías
-    // publicables era siembra de desarrollo mientras las otras siete eran migración, que es
-    // exactamente la distinción que V38 dejó escrita y no aplicó a esta. V62 la metió por
-    // migración; si aquí siguiera un `save` con id nuevo, el arranque sobre una base recién
-    // migrada reventaría contra el índice único de `slug`.
-    CategoriaJpaEntity celulares =
-        categorias
-            .findBySlug("celulares")
-            .orElseGet(() -> guardarCategoria("Celulares", "celulares", "TECNOLOGIA", ahora));
+    // El mismo cambio que `V62` le hizo a "Celulares", y por el mismo motivo: aquí se creaban
+    // "Ropa deportiva", "Calzado deportivo" y "Bolsos", tres categorías que solo existían en las
+    // bases de quien hubiera sembrado. `V63` las borra, así que un `save` con id nuevo reventaría
+    // contra el índice único de `slug` en cuanto alguien arrancara sobre una base migrada.
+    CategoriaJpaEntity ropaCamisetas = categoriaPorSlug("ropa-caballero-camisetas");
+    CategoriaJpaEntity calzadoUnisex = categoriaPorSlug("calzado-unisex");
+    CategoriaJpaEntity bolsosMorrales = categoriaPorSlug("bolsos-dama-morrales");
+    CategoriaJpaEntity celulares = categoriaPorSlug("celulares");
 
     AtributoJpaEntity tallaRopa =
         guardarAtributo("Talla", "TEXTO", List.of("S", "M", "L", "XL"), ahora);
@@ -206,7 +198,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             "Camiseta de entrenamiento en tejido ligero de secado rápido. Corte regular, cuello"
                 + " redondo y costuras planas para evitar el roce en distancias largas.",
             tecnosport,
-            ropaDeportiva,
+            ropaCamisetas,
             ahora);
     guardarVariante(
         camiseta,
@@ -238,7 +230,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             "Calzado para sendero con suela de tacos profundos, puntera reforzada y mediasuela"
                 + " amortiguada. Pensado para terreno irregular y subidas con piedra suelta.",
             underTrail,
-            calzadoDeportivo,
+            calzadoUnisex,
             ahora);
     guardarVariante(
         tenis,
@@ -270,7 +262,7 @@ public class SembradorCatalogo implements ApplicationRunner {
             "Morral de 25 litros con compartimento acolchado para portátil de hasta 15 pulgadas,"
                 + " bolsillo frontal con organizador y espaldar ventilado.",
             tecnosport,
-            bolsos,
+            bolsosMorrales,
             ahora);
     guardarVariante(
         morral,
@@ -345,10 +337,20 @@ public class SembradorCatalogo implements ApplicationRunner {
     return marcas.save(new MarcaJpaEntity(GeneradorIdentificador.nuevo(), nombre, ahora));
   }
 
-  private CategoriaJpaEntity guardarCategoria(
-      String nombre, String slug, String linea, Instant ahora) {
-    return categorias.save(
-        new CategoriaJpaEntity(GeneradorIdentificador.nuevo(), nombre, slug, linea, ahora));
+  /**
+   * La categoría que {@code V63} ya dejó en la tabla. Revienta si no está, y eso es lo correcto:
+   * significaría que la migración no corrió o que alguien le cambió el slug a una hoja del árbol, y
+   * seguir sembrando productos sin categoría solo traslada el fallo a un sitio más lejano.
+   */
+  private CategoriaJpaEntity categoriaPorSlug(String slug) {
+    return categorias
+        .findBySlug(slug)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "La siembra necesita la categoría '"
+                        + slug
+                        + "', que carga V63__arbol_de_categorias.sql."));
   }
 
   private AtributoJpaEntity guardarAtributo(

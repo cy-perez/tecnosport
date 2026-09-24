@@ -18,11 +18,6 @@
     "orden_label": "Sort by",
     "todas": "All",
     "limpiar": "Clear filters",
-    "linea": {
-      "ropa_y_calzado": "Apparel and footwear",
-      "bolsos": "Bags",
-      "tecnologia": "Technology"
-    },
     "orden": {
       "relevancia": "Relevance",
       "precio_asc": "Price: low to high",

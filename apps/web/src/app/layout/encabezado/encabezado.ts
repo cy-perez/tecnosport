@@ -8,6 +8,7 @@ import { iconoCarrito, iconoCerrar, iconoMenu } from '../../shared/ui/icono/icon
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { TsAlternadorIdioma } from '../../shared/ts-alternador-idioma/ts-alternador-idioma';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
+import { MenuLateralStore } from '../menu-lateral/menu-lateral.store';
 
 /**
  * Red de seguridad, no la duración de la animación: esa la decide el CSS
@@ -65,6 +66,8 @@ export class Encabezado {
   private readonly transloco = inject(TranslocoService);
   protected readonly carrito = inject(CarritoStore);
   protected readonly sesion = inject(SesionStore);
+  /** Para correr el logo cuando el menú lateral se despliega encima. Ver la plantilla. */
+  protected readonly menu = inject(MenuLateralStore);
 
   protected readonly idiomaActual = this.transloco.activeLang;
 

@@ -48,7 +48,7 @@ class RepositorioMapaDelSitioJpaTest {
   @Test
   void soloDevuelveLosProductosPublicados() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-mapa", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-mapa", "ROPA");
     producto("Publicado", "publicado-mapa", "PUBLICADO", marca, categoria, Instant.now());
     producto("Borrador", "borrador-mapa", "BORRADOR", marca, categoria, Instant.now());
 
@@ -61,7 +61,7 @@ class RepositorioMapaDelSitioJpaTest {
   @Test
   void devuelveLaFechaDeUltimaActualizacionDelProducto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-fecha", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-fecha", "ROPA");
     Instant actualizado = Instant.parse("2026-03-04T15:30:00Z");
     producto("Con fecha", "con-fecha-mapa", "PUBLICADO", marca, categoria, actualizado);
 
@@ -79,7 +79,7 @@ class RepositorioMapaDelSitioJpaTest {
   @Test
   void ordenaPorMasRecientementeActualizadoPrimero() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-orden", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-orden", "ROPA");
     Instant ahora = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     producto("Viejo", "viejo-mapa", "PUBLICADO", marca, categoria, ahora.minusSeconds(3600));
     producto("Nuevo", "nuevo-mapa", "PUBLICADO", marca, categoria, ahora);
@@ -94,7 +94,7 @@ class RepositorioMapaDelSitioJpaTest {
   @Test
   void respetaElLimiteQueLePasaElCasoDeUso() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-limite", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa", "ropa-limite", "ROPA");
     Instant ahora = Instant.now();
     producto("Uno", "uno-mapa", "PUBLICADO", marca, categoria, ahora);
     producto("Dos", "dos-mapa", "PUBLICADO", marca, categoria, ahora.minusSeconds(60));
@@ -124,7 +124,7 @@ class RepositorioMapaDelSitioJpaTest {
 
   private CategoriaJpaEntity categoria(String nombre, String slug, String linea) {
     return categorias.save(
-        new CategoriaJpaEntity(UUID.randomUUID(), nombre, slug, linea, Instant.now()));
+        new CategoriaJpaEntity(UUID.randomUUID(), nombre, slug, linea, null, Instant.now()));
   }
 
   private ProductoJpaEntity producto(

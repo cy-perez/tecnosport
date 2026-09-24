@@ -56,7 +56,8 @@
       "enlace": "Ver las existencias y contar"
     },
     "ir_a_medidas": "Medidas del paquete",
-    "ir_a_clave": "Cambiar mi clave"
+    "ir_a_clave": "Cambiar mi clave",
+    "ir_a_categorias": "Categorías"
   },
   "pedidos": {
     "titulo": "Pedidos",
@@ -668,5 +669,43 @@
     "error_clave_actual": "La clave actual no es correcta.",
     "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.",
     "error_sesion_expirada": "Tu sesión venció. Vuelve a entrar y repite el cambio."
+  },
+  "categorias": {
+    "titulo": "Categorías",
+    "explicacion": "El árbol del catálogo. Cada línea de negocio abre hasta dos niveles: una rama —Dama, Caballero— y sus prendas. Los productos cuelgan siempre de una hoja, nunca de una rama.",
+    "crearTitulo": "Crear una categoría",
+    "editandoTitulo": "Editando «{{nombre}}»",
+    "nombre": "Nombre",
+    "slug": "Slug",
+    "slugAyuda": "Opcional. Si lo dejas vacío se deriva del nombre. Al editar, vacío significa «déjalo como está»: el slug está en enlaces que ya se compartieron.",
+    "padre": "Cuelga de",
+    "padreAyuda": "Vacío la deja en el primer nivel, colgando directamente de la línea.",
+    "sinPadre": "De la línea (primer nivel)",
+    "linea": "Línea",
+    "lineaAyuda": "Solo cuenta si no eligió una categoría madre: con madre, la línea se hereda de ella.",
+    "elegirLinea": "Elige una línea",
+    "crear": "Crear categoría",
+    "guardar": "Guardar cambios",
+    "cancelar": "Cancelar",
+    "enviando": "Guardando…",
+    "editar": "Editar",
+    "borrar": "Borrar",
+    "borrarCategoria": "Borrar «{{nombre}}»",
+    "confirmarBorrado": "Confirmar",
+    "confirmarBorradoDe": "Confirmar el borrado de «{{nombre}}»",
+    "esRama": "(rama)",
+    "lineaVacia": "Esta línea todavía no tiene categorías.",
+    "creada": "Se creó «{{nombre}}».",
+    "editada": "Se guardó «{{nombre}}».",
+    "borrada": "Se borró «{{nombre}}».",
+    "faltaNombre": "Escribe el nombre de la categoría.",
+    "faltaLinea": "Elige una línea, o una categoría de la que cuelgue.",
+    "slugRepetido": "Ya hay otra categoría con ese slug. Escribe uno distinto.",
+    "tieneProductos": "Esa categoría tiene productos. Muévelos a otra antes de seguir.",
+    "tieneSubcategorias": "Esa categoría tiene subcategorías. Bórralas o muévelas antes de seguir.",
+    "demasiadoProfunda": "El catálogo llega hasta dos niveles bajo la línea. Elige una categoría de primer nivel.",
+    "ciclo": "Una categoría no puede colgar de sí misma ni de una de sus hijas.",
+    "error": "No pudimos guardar el cambio. Inténtalo de nuevo.",
+    "errorLista": "No pudimos cargar las categorías."
   }
 }

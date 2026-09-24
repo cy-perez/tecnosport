@@ -116,7 +116,7 @@ class VerFichaDeProductoTest {
   private static Producto productoDePrueba() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     return Producto.crear(
         "Camiseta running Dry-Fit", new Slug("camiseta-running-dry-fit"), "", marca, categoria);
   }
