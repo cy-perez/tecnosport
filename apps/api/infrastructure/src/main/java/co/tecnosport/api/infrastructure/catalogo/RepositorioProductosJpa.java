@@ -164,6 +164,14 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     varianteAtributoValorJpaRepository.saveAll(atributos);
   }
 
+  /**
+   * {@code @Transactional} y no por costumbre: sin él, el borrado de la fila existente, el insert
+   * de la nueva y los de sus variantes son <b>tres transacciones distintas</b>, porque cada {@code
+   * save}/{@code delete} de {@code SimpleJpaRepository} abre y confirma la suya y {@code
+   * spring.jpa.open-in-view} está en {@code false}. Y aquí el borrado va primero: si lo de después
+   * falla, el producto se queda sin imagen principal y con una fila rota, sin nada que revierta.
+   */
+  @Transactional
   @Override
   public void guardarImagenPrincipal(UUID productoId, ImagenProducto imagen) {
     // Hibernate ejecuta los EntityDeleteAction después de los EntityInsertAction dentro de un
@@ -180,6 +188,8 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     guardarFilaYVariantes(productoId, imagen);
   }
 
+  /** Ver {@link #guardarImagenPrincipal}: la fila y sus variantes, en una sola transacción. */
+  @Transactional
   @Override
   public void guardarImagenDeGaleria(UUID productoId, ImagenProducto imagen) {
     // Sin el borrado previo de guardarImagenPrincipal: aquí no hay fila que reemplazar ni índice
@@ -192,6 +202,16 @@ public class RepositorioProductosJpa implements RepositorioProductos {
    * entre las dos escrituras, una imagen sin ninguna variante — y esa el agregado no la sabe leer:
    * exige al menos una. Las variantes de la fila que se reemplaza no se borran aquí porque las
    * borra la base con el `on delete cascade` de la V60.
+   *
+   * <p><b>Lo de "siempre juntas" lo decía este javadoc y no lo sostenía nada</b>, hasta que los dos
+   * métodos que llaman aquí se marcaron {@code @Transactional}: el {@code save} de la fila
+   * confirmaba por su cuenta antes de que el {@code saveAll} de las variantes empezara, así que un
+   * choque contra {@code uq_variante_imagen_ancho} o una conexión caída dejaban confirmada una
+   * imagen con cero variantes. `MapeadorCatalogo` no la sabe leer y lanza, y como `hidratar` la usa
+   * en `buscarPorSlug` y en `buscar`, una sola fila así devolvía 500 en la ficha pública <b>y en el
+   * catálogo entero</b>, para siempre, hasta tocar la base a mano. No lo veía ninguna prueba porque
+   * la de Testcontainers es {@code @Transactional} entera y ahí todo cae dentro de una sola
+   * transacción — la misma trampa que este archivo ya documenta dos veces más abajo.
    */
   private void guardarFilaYVariantes(UUID productoId, ImagenProducto imagen) {
     imagenProductoJpaRepository.save(

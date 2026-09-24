@@ -1,11 +1,13 @@
 package co.tecnosport.api.bootstrap;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
 class ArquitecturaTest {
 
@@ -109,6 +111,37 @@ class ArquitecturaTest {
         .dependOnClassesThat()
         .resideInAnyPackage(FRAMEWORKS)
         .allowEmptyShould(true)
+        .check(clases);
+  }
+
+  /**
+   * Guardar una imagen escribe <b>dos tablas</b> —{@code imagen_producto} y {@code
+   * variante_imagen}—, y el reemplazo de la principal además borra la fila anterior antes. Sin
+   * {@code @Transactional} cada {@code save}/{@code delete} de {@code SimpleJpaRepository} confirma
+   * la suya, porque {@code spring.jpa.open-in-view} está en {@code false}, y entre una y otra cabe
+   * una imagen confirmada con cero variantes. El agregado no sabe leer esa fila: {@code
+   * MapeadorCatalogo} lanza, y como {@code hidratar} se usa en {@code buscarPorSlug} y en {@code
+   * buscar}, una sola devuelve 500 en la ficha <b>y en el catálogo entero</b> hasta que alguien
+   * toque la base a mano.
+   *
+   * <p><b>Es una regla y no una prueba de comportamiento, y conviene saber por qué.</b> Para
+   * provocar el fallo a media escritura haría falta inyectarlo en el repositorio de JPA, y aquí no
+   * hay framework de simulación en el classpath —decisión del proyecto: dobles escritos a mano—.
+   * Las de Testcontainers tampoco lo verían: esa clase es {@code @Transactional} entera, así que en
+   * verde todo cae dentro de una sola transacción, que es la trampa que {@code
+   * RepositorioProductosJpa} ya documenta dos veces. Esto no demuestra que la atomicidad funcione;
+   * demuestra que nadie quita la anotación sin enterarse, que es lo que pasó.
+   */
+  @Test
+  void guardarUnaImagenAbreSuPropiaTransaccion() {
+    methods()
+        .that()
+        .areDeclaredInClassesThat()
+        .haveSimpleName("RepositorioProductosJpa")
+        .and()
+        .haveNameMatching("guardarImagen.*")
+        .should()
+        .beAnnotatedWith(Transactional.class)
         .check(clases);
   }
 }
