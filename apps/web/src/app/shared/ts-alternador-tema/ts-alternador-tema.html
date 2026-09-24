@@ -1,6 +1,9 @@
-<!-- Cuadrado y no redondo. El botón de referencia era un círculo; aquí manda
-     "radio 0 en todo, ninguna esquina redondeada en ningún componente"
-     (docs/04-ui-marca.md) — no hay un solo `rounded-` en todo el frontend.
+<!-- Redondo, como el botón de referencia. Fue cuadrado hasta el 24 de
+     septiembre de 2026, cuando el sistema declaraba "radio 0 en todo": ese día
+     el chaflán se reservó a la marca y la interfaz pasó a redondear
+     (`ADR-0060`). `rounded-completo` son los 9999 px de `--radio-completo`, que
+     en una caja cuadrada de 44 px es exactamente un círculo — el radio se
+     detiene solo en la mitad del lado, así que no hay que calcular 22.
      `size-tactil` son los 44 px del objetivo táctil de la tabla de medidas.
 
      El nombre del botón es fijo y dice la acción, no el destino. La tentación
@@ -11,7 +14,7 @@
      servidor hasta hidratar. "Cambiar el tema" es cierto en los dos estados.
      El destino lo dice el icono, que sí se puede resolver sin JavaScript. -->
 <button
-  class="anillo-foco flex size-tactil cursor-pointer items-center justify-center border border-ts-borde bg-ts-superficie p-0 text-ts-texto transition-colors hover:bg-ts-superficie-alt"
+  class="anillo-foco flex size-tactil cursor-pointer items-center justify-center rounded-completo border border-ts-borde bg-ts-superficie p-0 text-ts-texto transition-colors hover:bg-ts-superficie-alt"
   type="button"
   [attr.aria-label]="etiqueta()"
   (click)="alternar()"

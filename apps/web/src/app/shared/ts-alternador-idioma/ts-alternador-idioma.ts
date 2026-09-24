@@ -19,11 +19,13 @@ const CLAVE_DE_ACCION: Record<Idioma, string> = {
  * el primer segmento de la URL (`docs/05-i18n.md`), así que el control lleva a
  * la misma página con el otro prefijo — nunca a la portada.
  *
- * Fue un `<select>` sobre `ts-select` y ahora es un control segmentado, para
- * que haga juego con `ts-alternador-tema`: mismo borde, mismo alto de 44 px y
- * el mismo radio 0. Con dos idiomas y nada más, mostrar los dos cuesta 44 px
- * de ancho y ahorra la ambigüedad de un código suelto — "EN" tanto puede
- * leerse como "estás en inglés" como "ve al inglés".
+ * Fue un `<select>` sobre `ts-select` y ahora es un control segmentado, con la
+ * forma del de la plantilla de referencia: una pista con una pastilla encima
+ * marcando el activo. Comparte con `ts-alternador-tema`, que va justo al lado,
+ * el alto de 44 px y la escala de radios; no el borde, que esta forma no lleva.
+ * Con dos idiomas y nada más, mostrar los dos cuesta 44 px de ancho y ahorra la
+ * ambigüedad de un código suelto — "EN" tanto puede leerse como "estás en
+ * inglés" como "ve al inglés".
  *
  * **El idioma activo no es interactivo**, y eso es el patrón de `ts-migas`: un
  * `<span>` con `aria-current`, no un control que no lleva a ninguna parte. Así

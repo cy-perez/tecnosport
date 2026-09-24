@@ -97,13 +97,16 @@ para y dime por qué antes de escribir el código.
 7. **El servidor no confía en el cliente** para precio, existencia, costo de
    envío ni estado de pago. Nunca.
 8. **Nada se da por terminado sin pruebas** que fallen si la lógica se rompe.
-   En el frontend hay tres cosas que las pruebas **no** atrapan y hay que
+   En el frontend hay cuatro cosas que las pruebas **no** atrapan y hay que
    verificar en el navegador: que una clase de Tailwind exista de verdad (una
    inventada no falla, no hace nada); el foco — `:focus-visible` y la trampa de
-   foco del CDK no se reproducen en jsdom; y **cuál variante de imagen descarga
-   el navegador**, porque jsdom no evalúa `srcset` ni `sizes`: la prueba puede
+   foco del CDK no se reproducen en jsdom; **cuál variante de imagen descarga
+   el navegador**, porque jsdom no evalúa `srcset` ni `sizes` — la prueba puede
    comprobar que el atributo está bien escrito y no que se eligió el ancho
-   correcto. Ver `docs/06-testing.md`.
+   correcto; y **si un `oscuro:` dejó la relación de color al revés**, porque la
+   paleta oscura no es la clara invertida: la clase existe, el CSS es correcto y
+   aun así la pieza elevada puede quedar más oscura que su fondo.
+   Ver `docs/06-testing.md`.
 9. **No inventes la API de una versión.** Java 21, Spring Boot 4.1.0 y Angular
    22.5 son recientes. Si no estás seguro de una firma, una anotación o un
    builder, dilo y consúltalo. Una alucinación de API cuesta más que una pregunta.

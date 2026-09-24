@@ -392,12 +392,33 @@ nada más, un desplegable cobra dos clics por lo que un control directo resuelve
 en uno. El tema es un botón que alterna; el idioma, un grupo segmentado que
 muestra los dos códigos con el activo marcado.
 
-Los dos comparten caja a propósito —borde, 44 px de alto, radio 0— porque van
-uno al lado del otro en el encabezado. Y los dos dicen **a dónde lleva el
-clic**, no dónde estás: la luna aparece en tema claro, y el botón "EN" aparece
-cuando el sitio está en español. El idioma además muestra el actual, marcado
-con `aria-current` y sin ser un control, que es el patrón de `ts-migas` para la
-página en la que ya estás.
+Los dos comparten los 44 px de alto porque van uno al lado del otro en el
+encabezado, y desde el 24 de septiembre de 2026 los dos redondean: el tema es un
+círculo (`rounded-completo` sobre una caja cuadrada de 44 px) y el idioma una
+pista de `rounded-md` con la pastilla del activo encima, que es el control
+segmentado de la plantilla de referencia. El idioma perdió el borde y el
+`border-l` que separaba los segmentos: esa forma no los lleva.
+
+**Lo único de la referencia que no se copió es el relleno de 2 px** que deja la
+pastilla flotando dentro de la pista. Allá la pista mide 40 px y los segmentos
+36; aquí la pista mide los 44 del objetivo táctil, así que ese relleno saldría
+de los segmentos —dejándolos por debajo del mínimo de la tabla de medidas— o
+empujaría el grupo a 52 px y lo descuadraría con el botón del tema. Con relleno
+0 y el mismo radio en pista y pastilla, las esquinas encajan sin dejar un filo a
+la vista.
+
+**Y la pastilla lleva los dos fondos, uno por tema.** Cuál de las dos superficies
+"sube" cambia con el tema: en claro la que brilla es `superficie` (blanco) sobre
+`superficie-alt` (gris), y en oscuro el orden se invierte —`fondo` < `superficie`
+< `superficie-alt`—, así que con un solo par la pastilla quedaba más oscura que
+la pista y el activo se leía hundido, con el inactivo pareciendo el
+seleccionado. De ahí los dos `oscuro:`. **Ninguna prueba lo atrapa**: es de la
+lista de la regla dura #8, se ve en el navegador o no se ve.
+
+Y los dos dicen **a dónde lleva el clic**, no dónde estás: la luna aparece en
+tema claro, y el botón "EN" aparece cuando el sitio está en español. El idioma
+además muestra el actual, marcado con `aria-current` y sin ser un control, que
+es el patrón de `ts-migas` para la página en la que ya estás.
 
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto
