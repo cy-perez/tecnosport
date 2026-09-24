@@ -7,7 +7,7 @@ import { CarritoStore } from '../../features/carrito/application/carrito.store';
 import { iconoCarrito, iconoCerrar, iconoMenu } from '../../shared/ui/icono/iconos';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { TsSelectorIdioma } from '../../shared/ts-selector-idioma/ts-selector-idioma';
-import { TsSelectorTema } from '../../shared/ts-selector-tema/ts-selector-tema';
+import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
 
 /**
  * Red de seguridad, no la duración de la animación: esa la decide el CSS
@@ -38,7 +38,14 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
  */
 @Component({
   selector: 'app-encabezado',
-  imports: [TranslocoPipe, NgTemplateOutlet, RouterLink, TsIcono, TsSelectorIdioma, TsSelectorTema],
+  imports: [
+    TranslocoPipe,
+    NgTemplateOutlet,
+    RouterLink,
+    TsIcono,
+    TsSelectorIdioma,
+    TsAlternadorTema,
+  ],
   templateUrl: './encabezado.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // El `relative` que ancla el panel desplegable va en el `<header>` de la

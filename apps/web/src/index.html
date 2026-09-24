@@ -11,12 +11,14 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <script>
-      // El servidor ya resuelve claro/oscuro explícitos vía cookie (server.ts).
-      // "sistema" (o sin cookie) se resuelve aquí, antes del primer pintado,
-      // para no parpadear.
+      // Quien ya eligió tema trae cookie, y esa la resuelve el servidor
+      // (server.ts): el HTML llega con `data-tema` puesto y aquí no se toca.
+      // Quien llega por primera vez no tiene cookie y hay que decidirle un
+      // tema: manda el del sistema operativo, resuelto aquí antes del primer
+      // pintado para no parpadear. Es un valor inicial, no una preferencia
+      // guardada — en cuanto toque el botón, manda la cookie.
       (function () {
-        var tema = document.documentElement.getAttribute('data-tema');
-        if (!tema || tema === 'sistema') {
+        if (!document.documentElement.getAttribute('data-tema')) {
           var oscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
           document.documentElement.setAttribute('data-tema', oscuro ? 'oscuro' : 'claro');
         }

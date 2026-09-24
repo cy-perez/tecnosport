@@ -4,10 +4,7 @@
     "saltar_al_contenido": "Saltar al contenido"
   },
   "tema": {
-    "etiqueta": "Tema",
-    "claro": "Claro",
-    "oscuro": "Oscuro",
-    "sistema": "Sistema"
+    "alternar": "Cambiar el tema"
   },
   "idioma": {
     "etiqueta": "Idioma"

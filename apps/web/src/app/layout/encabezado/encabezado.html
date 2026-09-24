@@ -69,17 +69,23 @@
     </nav>
 
     <div class="flex items-center gap-16">
-      <!-- `items-end`, no `items-center`: los selectores de idioma y tema son
-           etiqueta encima de control, así que su centro vertical queda en el
-           borde superior del control. Centrar los enlaces de sesión contra esa
-           caja los dejaba flotando a la altura de las etiquetas "Idioma" y
-           "Tema" — se veía en escritorio como un escalón entre "Cerrar sesión"
-           y los dos selectores. Alineados por la base, el texto de los enlaces
-           queda a la altura del texto de los selectores. -->
-      <div class="hidden items-end gap-16 desde-movil:flex">
+      <!-- `items-center` desde que el tema dejó de ser un `<select>`. Fue
+           `items-end` mientras idioma y tema eran dos controles con la etiqueta
+           encima: alinearlos por la base ponía el texto de los enlaces de
+           sesión a la altura del texto de los selectores, y centrarlos los
+           dejaba flotando a la altura de las etiquetas "Idioma" y "Tema".
+           Con el tema convertido en un botón de 44 px eso se invierte: la
+           columna del idioma mide 74 px —etiqueta, control y el `<p>` de error
+           vacío que `ts-select` siempre pinta— en un encabezado de 72, así que
+           por la base el botón quedaba pegado al borde inferior (29 a 73)
+           mientras el carrito de al lado estaba centrado (14 a 58). Medido en
+           el navegador. Centrados, el botón, el carrito y los enlaces caen
+           todos en 14-58; el `<select>` queda un poco más abajo porque arrastra
+           ese `<p>` vacío, que es cosa suya y no de esta fila. -->
+      <div class="hidden items-center gap-16 desde-movil:flex">
         <ng-container [ngTemplateOutlet]="controlesSesion" />
         <ts-selector-idioma />
-        <ts-selector-tema />
+        <ts-alternador-tema />
       </div>
 
       <!-- El carrito se queda en la barra también en móvil: es la acción
@@ -158,7 +164,7 @@
 
       <div class="flex flex-wrap items-center gap-16">
         <ts-selector-idioma />
-        <ts-selector-tema />
+        <ts-alternador-tema />
       </div>
     </div>
   }

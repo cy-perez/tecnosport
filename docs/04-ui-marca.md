@@ -301,7 +301,7 @@ SCSS con los mismos valores.
 
 **En `shared/` — compartidos de verdad, pero no tontos:** `ts-precio` (necesita
 el idioma activo para formatear la moneda) · `ts-esqueleto` · `ts-migas` ·
-`ts-paginador` · `ts-selector-idioma` · `ts-selector-tema` · `ts-visor-360`.
+`ts-paginador` · `ts-selector-idioma` · `ts-alternador-tema` · `ts-visor-360`.
 
 **No queda una sola línea de SCSS en el frontend**, salvo `src/styles.scss`, que
 conserva la regla global de reducción de movimiento disparada por
@@ -369,11 +369,13 @@ la Fase 2 sin consumidor, por petición explícita. `eliminar(setId)` existe en 
 puerto y el repositorio de `captura360`, pero ninguna pantalla lo dispara
 todavía, así que el diálogo no se alcanza desde ningún sitio del sitio.
 
-`ts-selector-idioma` y `ts-selector-tema` no dibujan su propio `<select>`: se
-apoyan en `ts-select`, que ya resuelve el `<label>` real, el anillo de foco, el
-objetivo táctil de 44 px y el `min-inline-size: 0` que evita que la opción más
-larga ensanche su columna. Un componente compartido que envuelve un control
-nativo se construye una vez.
+`ts-selector-idioma` no dibuja su propio `<select>`: se apoya en `ts-select`,
+que ya resuelve el `<label>` real, el anillo de foco, el objetivo táctil de
+44 px y el `min-inline-size: 0` que evita que la opción más larga ensanche su
+columna. Un componente compartido que envuelve un control nativo se construye
+una vez. `ts-alternador-tema` lo hizo hasta que el tema pasó de tres opciones a
+dos: un botón de alternar no es un control nativo que envolver, así que dibuja
+su propio `<button>` y no pasa por `ts-select`.
 
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto
@@ -443,22 +445,48 @@ La decisión, del 10 de septiembre de 2026, está en `ADR-0026`. En corto:
 
 ## Modo oscuro
 
-Atributo `data-tema="oscuro"` en `<html>`. Tres opciones para el usuario: claro,
-oscuro y seguir al sistema. La preferencia se persiste en una cookie. Claro y
-oscuro explícitos se resuelven en el servidor durante el SSR. "Seguir al
-sistema" no se puede resolver en el servidor —no hay forma de saber la
-preferencia de `prefers-color-scheme` del visitante ahí—, así que se resuelve
-en un script inline antes del primer pintado, en el `<head>`, para que no haya
-destello.
+Atributo `data-tema="oscuro"` en `<html>`. **Dos opciones para el usuario:
+claro y oscuro**, alternadas con un botón. La preferencia se persiste en una
+cookie y se resuelve en el servidor durante el SSR.
+
+Hubo una tercera opción, "seguir al sistema", que guardaba esa intención en la
+cookie y se resolvía tarde. Se quitó el 24 de septiembre de 2026 al pasar el
+control de `<select>` a botón de alternar. **El `prefers-color-scheme` no se fue
+con ella**: sigue decidiendo qué ve quien llega sin cookie, en el script inline
+del `<head>`, antes del primer pintado y sin destello. La diferencia es que
+ahora es un valor inicial y no una preferencia que se persiste — en cuanto
+alguien toca el botón, manda la cookie.
+
+La cookie dura un año, así que quien eligió "Sistema" cuando existía la sigue
+trayendo. No se migra ni se limpia: `leerTema` la ignora por no ser un tema
+válido, el script inline resuelve por `prefers-color-scheme` —que es justo lo
+que esa persona pidió— y el primer clic la reemplaza. Hay una prueba en
+`tema-ssr.spec.ts` que lo fija.
 
 **El dueño de esa política es `core/tema/ServicioTema`** (Fase 1 del stack de
-UI): lee la cookie, la persiste y escribe el atributo. Antes vivía dentro de
+UI): persiste la cookie y escribe el atributo. Antes vivía dentro de
 `shared/ts-selector-tema`, que así cargaba con dibujar un select, escribir una
 cookie y tocar el DOM del documento a la vez. Un componente compartido no decide
 la política de persistencia del sitio. El servicio se reparte el trabajo con
-`tema-ssr.ts` (el servidor) y el script inline de `index.html` (el caso
-"sistema"); cuando el servicio corre, **ya hay un tema aplicado** y su trabajo al
-arrancar es reflejarlo, no volver a decidirlo.
+`tema-ssr.ts` (el servidor, cuando hay cookie) y el script inline de
+`index.html` (cuando no la hay); cuando el servicio corre, **ya hay un tema
+aplicado**.
+
+**El control no guarda estado, y no es una omisión.** `shared/ts-alternador-tema`
+no tiene señal del tema actual ni `afterNextRender` que la corrija: `data-tema`
+en `<html>` *es* el estado aplicado, lo escriben tres sitios distintos, y una
+señal sería una segunda copia que puede separarse de la primera. Al pulsar, el
+servicio lee el atributo y escribe el contrario. Qué icono se ve lo decide el
+CSS con el variant `oscuro:` —los dos iconos están siempre en el DOM y uno se
+tapa—, el mismo patrón que el logo positivo y negativo del encabezado. El motivo
+es concreto: `conTemaAplicado` inyecta `data-tema` por reemplazo de cadena sobre
+el HTML **ya construido**, así que el servidor no conoce el tema mientras
+renderiza y cualquier cosa atada a una señal parpadearía al hidratar.
+
+Por lo mismo el botón se llama "Cambiar el tema" y no "Activar modo oscuro": el
+nombre accesible sí lo pinta Angular, y uno que dependiera del tema saldría
+mintiendo del servidor hasta hidratar. El destino lo dice el icono, que se
+resuelve sin JavaScript.
 
 **Tailwind no añade un segundo mecanismo.** El variant propio se llama `oscuro:`
 y se cuelga del mismo `data-tema`, nunca de una clase `.dark`. Y en la práctica

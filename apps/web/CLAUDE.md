@@ -85,8 +85,12 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
   Transloco, TanStack Query ni dominio**: los textos llegan traducidos por quien
   la usa. `shared/` a secas guarda lo que todavía traduce o conoce un modelo.
   Un componente nuevo de sistema de diseño va en `shared/ui/`.
-- **Modo oscuro:** atributo `data-tema` en `<html>`, tres opciones (claro, oscuro,
-  sistema), persistido y resuelto en el servidor para no parpadear al hidratar.
+- **Modo oscuro:** atributo `data-tema` en `<html>`, dos opciones (claro y oscuro)
+  alternadas con un botón, persistido en cookie y resuelto en el servidor para no
+  parpadear al hidratar. Sin cookie manda el `prefers-color-scheme`, resuelto en
+  el script inline de `index.html` — valor inicial, no preferencia guardada.
+  **El control no guarda estado**: `data-tema` es el estado aplicado y el icono
+  lo decide el CSS, porque el servidor no conoce el tema mientras renderiza.
 - **Accesibilidad no es una fase final.** Todo control alcanzable por teclado, el
   anillo de foco no se elimina jamás, diálogos con el CDK y trampa de foco,
   imágenes con `alt` traducido, `label` real en cada campo.

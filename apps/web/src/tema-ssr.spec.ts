@@ -10,7 +10,11 @@ describe('leerTema', () => {
     expect(leerTema('')).toBeUndefined();
   });
 
-  it('"sistema" no se resuelve en el servidor: lo termina el script de index.html', () => {
+  // La cookie dura un año, así que quien eligió "Sistema" cuando esa opción
+  // existía la sigue trayendo. No se migra ni se limpia: se ignora, el script
+  // en línea resuelve por `prefers-color-scheme` —que es lo que esa persona
+  // pidió— y el primer clic en el botón la reemplaza por un tema válido.
+  it('la cookie "sistema", de cuando había tres opciones, se ignora', () => {
     expect(leerTema('ts-tema=sistema')).toBeUndefined();
   });
 
