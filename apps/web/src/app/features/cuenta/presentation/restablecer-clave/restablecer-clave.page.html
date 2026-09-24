@@ -17,6 +17,8 @@
         idCampo="restablecer-clave-nueva"
         tipo="password"
         [label]="'cuenta.restablecerClave.claveNueva' | transloco"
+        [obligatorio]="true"
+        [error]="errorClaveNueva()"
         formControlName="claveNueva"
       />
 
@@ -24,9 +26,13 @@
         idCampo="restablecer-confirmar-clave"
         tipo="password"
         [label]="'cuenta.restablecerClave.confirmarClave' | transloco"
+        [obligatorio]="true"
         formControlName="confirmarClave"
         [error]="
-          clavesNoCoinciden() ? ('cuenta.restablecerClave.error_confirmar_clave' | transloco) : null
+          errorConfirmarClave() ??
+          (clavesNoCoinciden()
+            ? ('cuenta.restablecerClave.error_confirmar_clave' | transloco)
+            : null)
         "
       />
 
@@ -35,7 +41,6 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [deshabilitado]="formularioInvalido()"
         [cargando]="enviando()"
         [etiquetaCargando]="'cuenta.restablecerClave.enviando' | transloco"
       >

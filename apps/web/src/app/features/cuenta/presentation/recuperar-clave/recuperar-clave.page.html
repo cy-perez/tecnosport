@@ -15,6 +15,8 @@
         idCampo="recuperar-correo"
         tipo="email"
         [label]="'cuenta.recuperarClave.correo' | transloco"
+        [obligatorio]="true"
+        [error]="errorCorreo()"
         formControlName="correo"
       />
 
@@ -23,7 +25,6 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [deshabilitado]="formularioInvalido()"
         [cargando]="enviando()"
         [etiquetaCargando]="'cuenta.recuperarClave.enviando' | transloco"
       >

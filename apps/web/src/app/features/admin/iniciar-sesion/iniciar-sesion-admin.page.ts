@@ -45,6 +45,43 @@ export class IniciarSesionAdminPage {
   protected readonly formularioInvalido = computed(() => this.estadoFormulario() === 'INVALID');
 
   /**
+   * El mensaje de cada campo, que es lo que sustituye al boton deshabilitado.
+   *
+   * `apps/web/CLAUDE.md`: "No se deshabilita un boton para decir que faltan datos. Un `<button
+   * disabled>` sale del orden de tabulacion: quien navega con teclado no lo encuentra y nada le
+   * explica por que no pasa nada". Estas cinco pantallas lo hacian igual, y ademas sin un solo
+   * `[error]` enganchado, asi que el `markAllAsTouched()` que ya llamaba `enviar()` no pintaba
+   * nada. Mismo patron que `resumen.page.ts`: el `tick` del control es lo que hace que el
+   * `computed` se recalcule cuando cambia su estado.
+   */
+  private readonly tickCorreo = toSignal(this.form.controls.correo.events, {
+    initialValue: null,
+  });
+  protected readonly errorCorreo = computed(() => {
+    this.tickCorreo();
+    const control = this.form.controls.correo;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return this.transloco.translate('admin.iniciarSesion.errores.correo_requerido');
+    }
+    return this.transloco.translate('admin.iniciarSesion.errores.correo_invalido');
+  });
+
+  private readonly tickClave = toSignal(this.form.controls.clave.events, {
+    initialValue: null,
+  });
+  protected readonly errorClave = computed(() => {
+    this.tickClave();
+    const control = this.form.controls.clave;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return this.transloco.translate('admin.iniciarSesion.errores.clave_requerida');
+  });
+
+  /**
    * A dónde ir después de iniciar sesión: lo que puso `adminGuard` al mandar
    * aquí, o el panel si se llegó por la puerta principal.
    *

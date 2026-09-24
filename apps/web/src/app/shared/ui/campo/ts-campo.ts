@@ -55,6 +55,26 @@ export class TsCampo implements ControlValueAccessor {
   readonly label = input.required<string>();
   readonly tipo = input<TipoCampo>('text');
   readonly error = input<string | null>(null);
+
+  /**
+   * Si el campo es obligatorio. Pinta un asterisco junto a la etiqueta y, lo que de verdad importa,
+   * declara `aria-required="true"`.
+   *
+   * **Faltaba en todo el sitio**: hay 65 `Validators.required` en el frontend y no habia un solo
+   * `required` ni `aria-required` en ninguna plantilla. Con lector de pantalla, quien entraba a
+   * "Iniciar sesion" oia "Correo, editar" y "Clave, editar" —sin "obligatorio"—, llegaba a un boton
+   * anunciado como no disponible y no habia nada en la pagina que explicara que faltaba. WCAG 3.3.2.
+   *
+   * Es `aria-required` y no el `required` nativo a proposito: el `required` del navegador dispara
+   * su propia burbuja de validacion, sin traducir y fuera del sistema visual, y este proyecto ya
+   * valida al enviar con sus mensajes de Transloco. Lo que hace falta es que la tecnologia de apoyo
+   * lo sepa, no que el navegador se meta.
+   *
+   * El asterisco va `aria-hidden`: el nombre accesible del campo ya lo lleva `aria-required`, y
+   * leerlo ademas como "asterisco" seria ruido.
+   */
+  readonly obligatorio = input(false);
+
   /**
    * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
    *

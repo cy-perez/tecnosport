@@ -9,6 +9,7 @@
     <ts-campo
       idCampo="variante-sku"
       [label]="'admin.productos.agregarVariante.sku' | transloco"
+      [obligatorio]="true"
       formControlName="sku"
     />
 
@@ -36,6 +37,7 @@
       idCampo="variante-existencia-inicial"
       tipo="number"
       [label]="'admin.productos.agregarVariante.existenciaInicial' | transloco"
+      [obligatorio]="true"
       formControlName="existenciaInicial"
     />
 
@@ -94,6 +96,7 @@
             [label]="'admin.productos.agregarVariante.atributo' | transloco"
             [opciones]="opcionesAtributo()"
             [placeholder]="'admin.productos.agregarVariante.seleccionar' | transloco"
+            [obligatorio]="true"
             formControlName="atributoId"
           />
 

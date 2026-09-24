@@ -8,6 +8,8 @@
       idCampo="admin-correo"
       tipo="email"
       [label]="'admin.iniciarSesion.correo' | transloco"
+      [obligatorio]="true"
+      [error]="errorCorreo()"
       formControlName="correo"
     />
 
@@ -15,6 +17,8 @@
       idCampo="admin-clave"
       tipo="password"
       [label]="'admin.iniciarSesion.clave' | transloco"
+      [obligatorio]="true"
+      [error]="errorClave()"
       formControlName="clave"
     />
 
@@ -23,7 +27,6 @@
     <ts-boton
       variante="primario"
       tipo="submit"
-      [deshabilitado]="formularioInvalido()"
       [cargando]="enviando()"
       [etiquetaCargando]="'admin.iniciarSesion.enviando' | transloco"
     >

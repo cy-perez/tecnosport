@@ -61,6 +61,35 @@ export class RestablecerClavePage {
     this.valorFormulario();
     return this.form.invalid;
   });
+
+  /**
+   * Los mensajes de campo vacio, que es lo que sustituye al boton deshabilitado (`apps/web/CLAUDE.md`:
+   * "No se deshabilita un boton para decir que faltan datos"). La confirmacion ya tenia el suyo
+   * para el caso de que las dos claves no coincidan; lo que faltaba era decir que el campo esta
+   * vacio, que es el caso normal de quien pulsa "Enviar" sin escribir nada.
+   */
+  private readonly tickClaveNueva = toSignal(this.form.controls.claveNueva.events, {
+    initialValue: null,
+  });
+  protected readonly errorClaveNueva = computed(() => {
+    this.tickClaveNueva();
+    const control = this.form.controls.claveNueva;
+    return control.touched && control.hasError('required')
+      ? this.transloco.translate('cuenta.restablecerClave.errores.clave_requerida')
+      : null;
+  });
+
+  private readonly tickConfirmarClave = toSignal(this.form.controls.confirmarClave.events, {
+    initialValue: null,
+  });
+  protected readonly errorConfirmarClave = computed(() => {
+    this.tickConfirmarClave();
+    const control = this.form.controls.confirmarClave;
+    return control.touched && control.hasError('required')
+      ? this.transloco.translate('cuenta.restablecerClave.errores.confirmar_requerida')
+      : null;
+  });
+
   protected readonly clavesNoCoinciden = computed(() => {
     this.valorFormulario();
     return !!this.form.errors?.['clavesNoCoinciden'];

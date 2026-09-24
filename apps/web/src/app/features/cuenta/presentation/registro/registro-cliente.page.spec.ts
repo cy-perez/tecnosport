@@ -81,12 +81,21 @@ describe('RegistroClientePage', () => {
     expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toBeTruthy();
   });
 
-  it('el botón crear cuenta arranca deshabilitado con el formulario vacío', async () => {
+  /**
+   * El boton ya no arranca deshabilitado: se pulsa, se marcan los campos y se dice que falta. Un
+   * `<button disabled>` sale del orden de tabulacion, asi que quien navega con teclado no lo
+   * encuentra y nada le explica por que no pasa nada (`apps/web/CLAUDE.md`). Mismo criterio que
+   * `crear-producto-admin`.
+   */
+  it('con el formulario vacío dice qué falta y no envía nada', async () => {
     await renderPagina(new RepositorioCuentaFalso());
 
-    expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const boton = screen.getByRole('button', { name: 'Crear cuenta' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(await screen.findByText('Escribe tu correo.')).toBeTruthy();
   });
 
   it('registrar exitosamente muestra el mensaje de revisa tu correo', async () => {
@@ -128,20 +137,36 @@ describe('RegistroClientePage', () => {
     fireEvent.input(screen.getByLabelText('Clave'), { target: { value: 'clave-segura' } });
     fireEvent.input(screen.getByLabelText('Confirmar clave'), { target: { value: 'otra-clave' } });
     expect(await screen.findByText('Las claves no coinciden.')).toBeTruthy();
+    // El boton ya no se deshabilita: lo que impide enviar es la guarda de `enviar()`, y lo
+    // que lo explica es el mensaje de arriba.
     expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(
-      true,
+      false,
     );
   });
 
   // La autorización es un consentimiento aparte y sin él no hay cuenta (Ley 1581 de 2012). El
   // servidor lo exige igual; esto es para que el comprador no llegue hasta el 422.
-  it('sin marcar la autorización de datos, el botón sigue deshabilitado', async () => {
-    await renderPagina(new RepositorioCuentaFalso());
+  /**
+   * La autorizacion ya no se exige deshabilitando el boton: se pulsa y se dice que falta. Es el
+   * mismo arreglo que el checkout ya recibio una vez —"Sin marcar la casilla, «Continuar» no hacia
+   * nada y no decia por que"— y que aqui seguia pendiente.
+   */
+  it('sin marcar la autorización de datos, dice que falta y no registra nada', async () => {
+    const repositorio = new RepositorioCuentaFalso();
+    await renderPagina(repositorio);
     llenarCampos();
 
-    expect(screen.getByRole('button', { name: 'Crear cuenta' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const boton = screen.getByRole('button', { name: 'Crear cuenta' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(
+      await screen.findByText(
+        'Para crear la cuenta hay que autorizar el tratamiento de los datos.',
+      ),
+    ).toBeTruthy();
+    expect(repositorio.llamadasRegistrar).toEqual([]);
   });
 
   it('la casilla de autorización nunca arranca marcada', async () => {

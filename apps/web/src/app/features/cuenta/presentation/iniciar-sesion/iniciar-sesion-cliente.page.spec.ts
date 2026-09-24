@@ -78,10 +78,21 @@ async function llenarYEnviar() {
 }
 
 describe('IniciarSesionClientePage', () => {
-  it('el botón entrar arranca deshabilitado con el formulario vacío', async () => {
+  /**
+   * El boton ya no arranca deshabilitado: se pulsa, se marcan los campos y se dice que falta. Un
+   * `<button disabled>` sale del orden de tabulacion, asi que quien navega con teclado no lo
+   * encuentra y nada le explica por que no pasa nada (`apps/web/CLAUDE.md`). Mismo criterio que
+   * `crear-producto-admin`.
+   */
+  it('con el formulario vacío dice qué falta y no envía nada', async () => {
     await renderPagina(new RepositorioSesionFalso());
 
-    expect(screen.getByRole('button', { name: 'Entrar' }).hasAttribute('disabled')).toBe(true);
+    const boton = screen.getByRole('button', { name: 'Entrar' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(await screen.findByText('Escribe tu correo.')).toBeTruthy();
   });
 
   it('con credenciales válidas de CLIENTE, navega a la portada', async () => {

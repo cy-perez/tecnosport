@@ -23,6 +23,7 @@
       <ts-campo
         idCampo="editar-producto-nombre"
         [label]="'admin.productos.editar.nombre' | transloco"
+        [obligatorio]="true"
         formControlName="nombre"
       />
 
@@ -37,6 +38,7 @@
         [label]="'admin.productos.editar.marca' | transloco"
         [opciones]="opcionesMarca()"
         [placeholder]="'admin.productos.editar.seleccionar' | transloco"
+        [obligatorio]="true"
         formControlName="marcaId"
       />
 
@@ -102,6 +104,7 @@
       <ts-campo
         idCampo="editar-producto-imagen-alt-es"
         [label]="'admin.productos.editar.imagenPrincipal.altEs' | transloco"
+        [obligatorio]="true"
         formControlName="altEs"
       />
 
@@ -327,6 +330,7 @@
           <ts-campo
             idCampo="editar-producto-galeria-alt-en"
             [label]="'admin.productos.editar.galeria.altEn' | transloco"
+            [obligatorio]="true"
             formControlName="altEn"
           />
 
