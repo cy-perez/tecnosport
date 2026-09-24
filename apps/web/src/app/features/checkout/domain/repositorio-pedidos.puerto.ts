@@ -5,7 +5,11 @@ import { MetodoPago, Pedido, Seguimiento } from './pedido.model';
 export interface RepositorioPedidos {
   crear(comando: CrearPedidoComando): Promise<Pedido>;
   metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]>;
-  reintentarPago(pedidoId: string): Promise<Pedido>;
+  /**
+   * El `correo` no es un dato más: es lo que autoriza el reintento, igual que en el seguimiento.
+   * El servidor trata el que no coincide como si el pedido no existiera.
+   */
+  reintentarPago(pedidoId: string, correo: string): Promise<Pedido>;
   /** `GET /pedidos/{id}/seguimiento`, sin sesión (`docs/03-api.md`): el
    * correo hace de token. `null` si el id no existe o el correo no coincide
    * — el servidor no distingue los dos casos, para no filtrar si el id

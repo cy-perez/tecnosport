@@ -18,6 +18,7 @@ import co.tecnosport.api.presentation.pedido.dto.CrearPedidoRequest;
 import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest;
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
+import co.tecnosport.api.presentation.pedido.dto.ReintentarPagoRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
 import java.util.List;
@@ -101,9 +102,11 @@ public class PedidoControlador {
   }
 
   @PostMapping("/{id}/reintentar-pago")
-  public PedidoRespuesta reintentarPago(@PathVariable UUID id) {
+  public PedidoRespuesta reintentarPago(
+      @PathVariable UUID id, @RequestBody ReintentarPagoRequest cuerpo) {
     Pedido pedido =
-        transaccion.execute(estado -> reintentarPago.ejecutar(new ReintentarPagoComando(id)));
+        transaccion.execute(
+            estado -> reintentarPago.ejecutar(new ReintentarPagoComando(id, cuerpo.correo())));
     return mapeador.aRespuesta(pedido);
   }
 

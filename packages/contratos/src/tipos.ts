@@ -1955,6 +1955,9 @@ export interface components {
             registradoEn?: string;
             registradoPor?: string;
         };
+        ReintentarPagoRequest: {
+            correo: string;
+        };
         ReordenarGaleriaPeticion: {
             imagenIds: string[];
         };
@@ -4134,7 +4137,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReintentarPagoRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

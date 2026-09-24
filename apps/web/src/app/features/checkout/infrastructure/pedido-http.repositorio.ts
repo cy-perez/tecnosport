@@ -70,9 +70,10 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles');
   }
 
-  async reintentarPago(pedidoId: string): Promise<Pedido> {
+  async reintentarPago(pedidoId: string, correo: string): Promise<Pedido> {
     const respuesta = await this.cliente.POST('/api/v1/pedidos/{id}/reintentar-pago', {
       params: { path: { id: pedidoId } },
+      body: { correo },
     });
     return aPedido(desempaquetar(respuesta, 'no se pudo reintentar el pago'));
   }

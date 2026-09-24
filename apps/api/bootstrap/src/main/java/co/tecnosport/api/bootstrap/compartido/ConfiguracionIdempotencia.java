@@ -33,6 +33,10 @@ public class ConfiguracionIdempotencia {
         "/api/v1/pedidos",
         "/api/v1/pagos/intentos",
         "/api/v1/pagos/sistecredito/intentos",
+        // El reintento vuelve a reservar inventario, asi que movia inventario desde fuera de esta
+        // lista: dos llamadas simultaneas sobre un pedido en PAGO_FALLIDO reservaban las dos y el
+        // pedido se quedaba con un solo idReserva, dejando la otra reserva huerfana media hora.
+        "/api/v1/pedidos/*/reintentar-pago",
         // El ajuste por conteo escribe un movimiento de inventario desde el panel, así que entra
         // por la regla de apps/api/CLAUDE.md aunque su daño sea menor que el de los otros tres:
         // el comando es un conteo absoluto, no un delta, y dos envíos de "hay 3" dan el mismo
