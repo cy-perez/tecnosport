@@ -103,8 +103,8 @@ class ConciliarPagosPendientesTest {
   void conciliaUnPagoAprobadoYPropagaAlPedido() {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
-    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    pasarela.conEstadoDeTransaccion("wompi-tx-1", "APPROVED");
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conTransaccionDe("wompi-tx-1", "APPROVED", pago);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -124,7 +124,7 @@ class ConciliarPagosPendientesTest {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
     Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    pasarela.conTransaccion("wompi-tx-1", "APPROVED", "CARD");
+    pasarela.conTransaccionDe("wompi-tx-1", "APPROVED", "CARD", pago);
 
     caso.ejecutar();
 
@@ -136,8 +136,8 @@ class ConciliarPagosPendientesTest {
   void unPagoMasNuevoQueElUmbralNoSeRevisa() {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
-    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(5)));
-    pasarela.conEstadoDeTransaccion("wompi-tx-1", "APPROVED");
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(5)));
+    pasarela.conTransaccionDe("wompi-tx-1", "APPROVED", pago);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -162,7 +162,7 @@ class ConciliarPagosPendientesTest {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
     pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    // Sin conEstadoDeTransaccion: la pasarela responde Optional.empty().
+    // Sin configurar la transaccion: la pasarela responde Optional.empty().
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -173,8 +173,8 @@ class ConciliarPagosPendientesTest {
   void unEstadoTodaviaPendienteEnWompiCuentaComoSinNovedad() {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
-    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    pasarela.conEstadoDeTransaccion("wompi-tx-1", "PENDING");
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conTransaccionDe("wompi-tx-1", "PENDING", pago);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
@@ -187,12 +187,55 @@ class ConciliarPagosPendientesTest {
   void unEstadoVoidedCuentaComoSinNovedad() {
     ConciliarPagosPendientes caso = crear();
     Pedido pedido = pedidoNuevo();
-    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    pasarela.conEstadoDeTransaccion("wompi-tx-1", "VOIDED");
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conTransaccionDe("wompi-tx-1", "VOIDED", pago);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 
     assertEquals(new ResultadoConciliacion(1, 0, 1), resultado);
+  }
+
+  /**
+   * El id con el que esta tarea consulta lo estampa {@code PATCH /pagos/intentos/{referencia}}, que
+   * es publico y anonimo porque el Web Checkout devuelve el id en la URL de retorno del navegador.
+   * Quien pago una vez conoce un id aprobado; si la conciliacion se fiara de el, bastaria con
+   * estamparlo sobre un pedido nuevo y sin pagar para que quince minutos despues saliera a
+   * despacho. Por eso se compara contra lo que la pasarela dice de esa transaccion.
+   */
+  @Test
+  void unaTransaccionAprobadaDeOtroPagoNoConciliaNada() {
+    ConciliarPagosPendientes caso = crear();
+    Pedido pedido = pedidoNuevo();
+    pagoPendiente(pedido, "wompi-tx-ajena", AHORA.minus(Duration.ofMinutes(20)));
+    // Aprobada de verdad en Wompi, pero es la compra de otro: otra referencia y otro monto.
+    pasarela.conTransaccionAjena(
+        "wompi-tx-ajena", "APPROVED", "TS-2026-000999-1", Dinero.deCop(20_000));
+
+    ResultadoConciliacion resultado = caso.ejecutar();
+
+    assertEquals(new ResultadoConciliacion(1, 0, 1), resultado);
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
+  }
+
+  /**
+   * La misma referencia pero por menos dinero. No es un ataque sino el caso del cupo tope, y es la
+   * guarda que {@code ProcesarNotificacionSistecredito} ya tenia por el otro camino: aplicarlo como
+   * pago completo convertiria la diferencia en perdida invisible.
+   */
+  @Test
+  void unaTransaccionPorMenosDeLoPedidoNoConciliaNada() {
+    ConciliarPagosPendientes caso = crear();
+    Pedido pedido = pedidoNuevo();
+    Pago pago = pagoPendiente(pedido, "wompi-tx-corta", AHORA.minus(Duration.ofMinutes(20)));
+    Dinero mitad = Dinero.deCop(pago.monto().valor().divide(java.math.BigDecimal.TWO));
+    pasarela.conTransaccionAjena("wompi-tx-corta", "APPROVED", pago.referencia().valor(), mitad);
+
+    ResultadoConciliacion resultado = caso.ejecutar();
+
+    assertEquals(new ResultadoConciliacion(1, 0, 1), resultado);
+    assertEquals(
+        EstadoPedido.PAGO_PENDIENTE, pedidos.buscarPorId(pedido.id()).orElseThrow().estado());
   }
 
   @Test
@@ -228,8 +271,8 @@ class ConciliarPagosPendientesTest {
             "cliente@tecnosport.co",
             AHORA);
     pedidos.conPedido(pedido);
-    pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
-    pasarela.conEstadoDeTransaccion("wompi-tx-1", "APPROVED");
+    Pago pago = pagoPendiente(pedido, "wompi-tx-1", AHORA.minus(Duration.ofMinutes(20)));
+    pasarela.conTransaccionDe("wompi-tx-1", "APPROVED", pago);
 
     ResultadoConciliacion resultado = caso.ejecutar();
 

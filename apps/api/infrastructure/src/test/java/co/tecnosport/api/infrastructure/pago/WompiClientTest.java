@@ -220,7 +220,10 @@ class WompiClientTest {
 
   @Test
   void consultarTransaccionDevuelveElEstadoSiLaRespuestaEs200() throws IOException {
-    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200);
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":10000000}}",
+            200);
 
     Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
@@ -235,7 +238,9 @@ class WompiClientTest {
   @Test
   void consultarTransaccionDevuelveTambienElMedioConElQueSeCobro() throws IOException {
     WompiClient cliente =
-        clienteContra("{\"data\":{\"status\":\"APPROVED\",\"payment_method_type\":\"CARD\"}}", 200);
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"payment_method_type\":\"CARD\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":10000000}}",
+            200);
 
     Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
@@ -245,7 +250,10 @@ class WompiClientTest {
   /** Sin medio la respuesta sigue sirviendo: el estado es lo que la conciliación necesita. */
   @Test
   void consultarTransaccionDevuelveMedioNuloSiWompiNoLoManda() throws IOException {
-    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200);
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":10000000}}",
+            200);
 
     Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
@@ -255,7 +263,11 @@ class WompiClientTest {
   @Test
   void consultarTransaccionEnviaLaLlavePublicaComoBearer() throws IOException {
     AtomicReference<String> cabecera = new AtomicReference<>();
-    WompiClient cliente = clienteContra("{\"data\":{\"status\":\"APPROVED\"}}", 200, cabecera);
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":10000000}}",
+            200,
+            cabecera);
 
     cliente.consultarTransaccion("wompi-tx-1");
 
@@ -278,6 +290,42 @@ class WompiClientTest {
     Optional<TransaccionDePasarela> transaccion = cliente.consultarTransaccion("wompi-tx-1");
 
     assertEquals(Optional.empty(), transaccion);
+  }
+
+  /**
+   * La referencia y el monto son lo que ata la transaccion consultada a un pago nuestro. Sin ellos
+   * la conciliacion no puede comprobar nada y el id que le llega —estampado por un endpoint publico
+   * y anonimo— se convierte en una orden de dar por pagado lo que sea.
+   */
+  @Test
+  void consultarTransaccionDevuelveLaReferenciaYElMontoEnPesos() throws IOException {
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\",\"amount_in_cents\":10000000}}",
+            200);
+
+    TransaccionDePasarela transaccion = cliente.consultarTransaccion("wompi-tx-1").orElseThrow();
+
+    assertEquals("TS-2026-000001-1", transaccion.referencia());
+    // 10.000.000 centavos son 100.000 pesos. Sin `double` por el camino.
+    assertEquals(Dinero.deCop(100_000), transaccion.monto());
+  }
+
+  @Test
+  void consultarTransaccionDevuelveVacioSiElCuerpoNoTraeLaReferencia() throws IOException {
+    WompiClient cliente =
+        clienteContra("{\"data\":{\"status\":\"APPROVED\",\"amount_in_cents\":10000000}}", 200);
+
+    assertEquals(Optional.empty(), cliente.consultarTransaccion("wompi-tx-1"));
+  }
+
+  @Test
+  void consultarTransaccionDevuelveVacioSiElCuerpoNoTraeElMonto() throws IOException {
+    WompiClient cliente =
+        clienteContra(
+            "{\"data\":{\"status\":\"APPROVED\",\"reference\":\"TS-2026-000001-1\"}}", 200);
+
+    assertEquals(Optional.empty(), cliente.consultarTransaccion("wompi-tx-1"));
   }
 
   @Test
