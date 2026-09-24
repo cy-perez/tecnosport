@@ -82,8 +82,8 @@ export class Pie {
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
       this.sistemaPideReducir.set(delSistema);
       // Lo guardado manda sobre el sistema, y "guardado en falso" no es lo mismo que "sin guardar":
-      // de ahí que la lectura devuelva `null` cuando no hay nada. Mismo criterio que el tema, donde
-      // "sistema" es un valor y no la ausencia de valor.
+      // de ahí que la lectura devuelva `null` cuando no hay nada. El tema hacía la misma distinción
+      // con su opción "sistema"; ya no, porque pasó a ser un botón de dos estados.
       const reducido = this.preferenciaGuardada() ?? delSistema;
       this.movimientoReducido.set(reducido);
       if (reducido) {

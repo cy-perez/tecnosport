@@ -69,17 +69,19 @@
     </nav>
 
     <div class="flex items-center gap-16">
-      <!-- `items-end`, no `items-center`: los selectores de idioma y tema son
-           etiqueta encima de control, así que su centro vertical queda en el
-           borde superior del control. Centrar los enlaces de sesión contra esa
-           caja los dejaba flotando a la altura de las etiquetas "Idioma" y
-           "Tema" — se veía en escritorio como un escalón entre "Cerrar sesión"
-           y los dos selectores. Alineados por la base, el texto de los enlaces
-           queda a la altura del texto de los selectores. -->
-      <div class="hidden items-end gap-16 desde-movil:flex">
+      <!-- `items-center`. Fue `items-end` mientras idioma y tema eran dos
+           `<select>` con la etiqueta encima: por la base, el texto de los
+           enlaces de sesión quedaba a la altura del texto de los selectores.
+           Ya no hay etiquetas ni columnas — los dos controles son cajas de
+           44 px, como el objetivo táctil de los enlaces—, así que centrarlos
+           los alinea con el carrito de al lado sin más. Con `items-end` el
+           alternador de tema quedaba pegado al borde inferior del encabezado
+           (29 a 73 en 72 px de alto) mientras el carrito estaba en 14-58.
+           Medido en el navegador. -->
+      <div class="hidden items-center gap-16 desde-movil:flex">
         <ng-container [ngTemplateOutlet]="controlesSesion" />
-        <ts-selector-idioma />
-        <ts-selector-tema />
+        <ts-alternador-idioma />
+        <ts-alternador-tema />
       </div>
 
       <!-- El carrito se queda en la barra también en móvil: es la acción
@@ -157,8 +159,8 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-16">
-        <ts-selector-idioma />
-        <ts-selector-tema />
+        <ts-alternador-idioma />
+        <ts-alternador-tema />
       </div>
     </div>
   }

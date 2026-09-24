@@ -4,9 +4,9 @@
  *
  * El cliente persiste el tema elegido en una cookie (no en `localStorage`: el
  * servidor no puede leerlo, y el punto es resolver el tema aquí para no
- * parpadear al hidratar). "sistema" no se resuelve en el servidor —no hay forma
- * confiable de saber la preferencia del sistema operativo del visitante— y se
- * deja para el script en línea de `index.html`.
+ * parpadear al hidratar). Quien no trae cookie todavía no ha elegido: ese caso
+ * no se resuelve aquí —el servidor no puede saber el `prefers-color-scheme` del
+ * visitante— y se deja para el script en línea de `index.html`.
  */
 
 const TEMAS_VALIDOS = new Set(['claro', 'oscuro']);

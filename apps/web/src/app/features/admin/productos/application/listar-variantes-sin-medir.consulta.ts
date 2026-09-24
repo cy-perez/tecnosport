@@ -2,6 +2,10 @@ import { inject } from '@angular/core';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { InventarioSinMedir } from '../domain/producto-admin.model';
 import {
+  PRECARGA_NO_BLOQUEANTE,
+  sinBloquearLaNavegacion,
+} from '../../../../core/consultas/precarga';
+import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../domain/repositorio-productos-admin.puerto';
@@ -32,5 +36,10 @@ export function precargarVariantesSinMedir(
   queryClient: QueryClient,
   repositorio: RepositorioProductosAdmin,
 ) {
-  return queryClient.prefetchQuery(opcionesVariantesSinMedir(repositorio));
+  return sinBloquearLaNavegacion(
+    queryClient.prefetchQuery({
+      ...opcionesVariantesSinMedir(repositorio),
+      ...PRECARGA_NO_BLOQUEANTE,
+    }),
+  );
 }

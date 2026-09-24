@@ -4,13 +4,12 @@
     "saltar_al_contenido": "Skip to content"
   },
   "tema": {
-    "etiqueta": "Theme",
-    "claro": "Light",
-    "oscuro": "Dark",
-    "sistema": "System"
+    "alternar": "Switch theme"
   },
   "idioma": {
-    "etiqueta": "Language"
+    "etiqueta": "Language",
+    "ver_en_espanol": "View the site in Spanish",
+    "ver_en_ingles": "View the site in English"
   },
   "encabezado": {
     "carrito_cantidad": "Cart, {{cantidad}} items",

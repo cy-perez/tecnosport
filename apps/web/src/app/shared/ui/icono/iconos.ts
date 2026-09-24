@@ -34,3 +34,7 @@ export { Truck as iconoEnvio } from 'lucide';
 // cada una. Sin icono, las tres se leen como una lista de texto corrido y ninguna destaca.
 export { Banknote as iconoContraentrega } from 'lucide';
 export { ShieldCheck as iconoGarantia } from 'lucide';
+// Los pidió `ts-alternador-tema`, que dibuja los dos a la vez y deja que el CSS tape uno: el icono
+// anuncia a qué tema lleva el clic, no en cuál estás. En claro se ve la luna, en oscuro el sol.
+export { Moon as iconoTemaOscuro } from 'lucide';
+export { Sun as iconoTemaClaro } from 'lucide';
