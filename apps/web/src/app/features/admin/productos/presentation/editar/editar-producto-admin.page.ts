@@ -30,6 +30,7 @@ import { usarSubirImagenPrincipalAdmin } from '../../application/subir-imagen-pr
 import { usarSubirImagenDeGaleriaAdmin } from '../../application/subir-imagen-de-galeria-admin.mutacion';
 import { usarQuitarImagenDeGaleriaAdmin } from '../../application/quitar-imagen-de-galeria-admin.mutacion';
 import { usarReordenarGaleriaAdmin } from '../../application/reordenar-galeria-admin.mutacion';
+import { usarFoco } from '../../../../../shared/foco/foco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { ImagenDeGaleriaAdmin } from '../../domain/producto-admin.model';
 import { usarVerProductoAdmin } from '../../application/ver-producto-admin.consulta';
@@ -436,13 +437,13 @@ export class EditarProductoAdminPage {
   /**
    * El elemento se enfoca en el siguiente cuadro: en el momento de la llamada todavía no existe
    * —lo acaba de crear un `@if`— o está a punto de dejar de existir.
+   *
+   * <p>Es `shared/foco/foco.ts`, que **nació de este código**: las otras tres pantallas del panel
+   * copiaron la interacción y no el arreglo, así que se extrajo para que la siguiente tuviera a
+   * mano la solución. Esta se quedó con su copia, que es exactamente la forma de que las dos se
+   * separen con el tiempo.
    */
-  private enfocarDespuesDePintar(elemento: () => HTMLElement | null | undefined): void {
-    if (!this.esNavegador) {
-      return;
-    }
-    requestAnimationFrame(() => elemento()?.focus());
-  }
+  private readonly enfocarDespuesDePintar = usarFoco();
 
   private botonQuitarDe(imagenId: string | null): HTMLElement | null {
     if (!imagenId) {

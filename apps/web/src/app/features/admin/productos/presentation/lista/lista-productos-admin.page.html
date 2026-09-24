@@ -118,6 +118,8 @@
                     class="flex flex-col gap-16 border border-ts-borde-control p-16"
                     role="group"
                     [attr.aria-labelledby]="'pregunta-' + producto.id"
+                    [attr.data-caja]="producto.id"
+                    tabindex="-1"
                     (keydown.escape)="cancelar(producto.id)"
                   >
                     <p class="m-0" [id]="'pregunta-' + producto.id">

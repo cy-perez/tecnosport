@@ -102,6 +102,18 @@ export class MedidasAdminPage {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }
 
+  /** El primer campo de las medidas, que es donde tiene que entrar el foco al abrirlas. */
+  private primerCampoDe(varianteId: string): HTMLElement | null {
+    return this.raiz.nativeElement.querySelector<HTMLElement>(`#medida-peso-${varianteId}`);
+  }
+
+  /**
+   * Al abrir, el foco entra en la caja. **Faltaba, y sin eso el `(keydown.escape)` del formulario
+   * no recibe nunca la tecla**: el foco se queda en el botón que lo abrió, que vive en la fila
+   * anterior, así que Escape no cancelaba nada. `editar` sí lo hacía; estas tres copiaron la
+   * interacción y solo media vuelta del arreglo —el retorno del foco al cancelar—, que es
+   * exactamente lo que `shared/foco/foco.ts` documenta que pasó con este patrón.
+   */
   protected abrir(variante: MedidaDeVariante): void {
     this.form.reset({
       pesoGramos: variante.pesoGramos,
@@ -112,6 +124,7 @@ export class MedidasAdminPage {
     this.error.set(null);
     this.guardada.set(null);
     this.midiendo.set(variante.varianteId);
+    this.enfocarDespuesDePintar(() => this.primerCampoDe(variante.varianteId));
   }
 
   /**
