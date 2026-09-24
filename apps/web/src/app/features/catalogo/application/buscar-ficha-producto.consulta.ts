@@ -1,7 +1,11 @@
 import { inject } from '@angular/core';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { Producto } from '../domain/producto.model';
-import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../domain/repositorio-productos.puerto';
+import {
+  REPOSITORIO_PRODUCTOS,
+  RepositorioProductos,
+} from '../domain/repositorio-productos.puerto';
+import { PRECARGA_NO_BLOQUEANTE, sinBloquearLaNavegacion } from '../../../core/consultas/precarga';
 
 /**
  * Mismas opciones para el componente y para el prefetch del resolver de ruta
@@ -26,11 +30,15 @@ export function usarFichaProducto(slug: () => string) {
  * Calienta la caché ANTES de que exista el componente — mismo motivo que
  * `precargarProductos`: sin esto el SSR no es determinista.
  * `prefetchQuery` traga errores, así que un slug inexistente no rompe la
- * navegación: la página igual se activa y muestra su propio estado.
+ * navegación: la página igual se activa y muestra su propio estado. Tragar el
+ * error no basta, además tiene que **terminar** — de eso se encarga
+ * `PRECARGA_NO_BLOQUEANTE`.
  */
 export function precargarFichaProducto(slug: string): Promise<void> {
   const repositorio = inject(REPOSITORIO_PRODUCTOS);
   const queryClient = inject(QueryClient);
 
-  return queryClient.prefetchQuery(opcionesFicha(repositorio, slug));
+  return sinBloquearLaNavegacion(
+    queryClient.prefetchQuery({ ...opcionesFicha(repositorio, slug), ...PRECARGA_NO_BLOQUEANTE }),
+  );
 }

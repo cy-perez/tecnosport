@@ -2,6 +2,10 @@ import { inject } from '@angular/core';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { ExistenciasDelCatalogo } from '../domain/producto-admin.model';
 import {
+  PRECARGA_NO_BLOQUEANTE,
+  sinBloquearLaNavegacion,
+} from '../../../../core/consultas/precarga';
+import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../domain/repositorio-productos-admin.puerto';
@@ -33,5 +37,7 @@ export function precargarExistencias(
   queryClient: QueryClient,
   repositorio: RepositorioProductosAdmin,
 ) {
-  return queryClient.prefetchQuery(opcionesExistencias(repositorio));
+  return sinBloquearLaNavegacion(
+    queryClient.prefetchQuery({ ...opcionesExistencias(repositorio), ...PRECARGA_NO_BLOQUEANTE }),
+  );
 }

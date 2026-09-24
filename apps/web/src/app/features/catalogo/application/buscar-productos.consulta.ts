@@ -2,8 +2,12 @@ import { inject } from '@angular/core';
 import { injectInfiniteQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { FiltroProductos } from '../domain/filtro-productos.model';
 import { Producto } from '../domain/producto.model';
-import { REPOSITORIO_PRODUCTOS, RepositorioProductos } from '../domain/repositorio-productos.puerto';
+import {
+  REPOSITORIO_PRODUCTOS,
+  RepositorioProductos,
+} from '../domain/repositorio-productos.puerto';
 import { ResultadoPaginado } from '../domain/resultado-paginado.model';
+import { PRECARGA_NO_BLOQUEANTE, sinBloquearLaNavegacion } from '../../../core/consultas/precarga';
 
 /**
  * Mismas opciones para el componente y para el prefetch del resolver de ruta
@@ -38,10 +42,18 @@ export function usarBusquedaProductos(filtro: () => FiltroProductos) {
  * sincrónico con el primer render). `prefetchInfiniteQuery` nunca lanza —
  * si el backend falla, el componente igual reintenta y muestra su propio
  * estado de error.
+ *
+ * Que no lance no basta: también tiene que **terminar**, o el resolver que la
+ * espera deja la navegación colgada. De eso se encarga `PRECARGA_NO_BLOQUEANTE`.
  */
 export function precargarProductos(filtro: FiltroProductos = {}): Promise<void> {
   const repositorio = inject(REPOSITORIO_PRODUCTOS);
   const queryClient = inject(QueryClient);
 
-  return queryClient.prefetchInfiniteQuery(opcionesBusqueda(repositorio, filtro));
+  return sinBloquearLaNavegacion(
+    queryClient.prefetchInfiniteQuery({
+      ...opcionesBusqueda(repositorio, filtro),
+      ...PRECARGA_NO_BLOQUEANTE,
+    }),
+  );
 }

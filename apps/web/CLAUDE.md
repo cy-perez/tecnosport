@@ -268,6 +268,24 @@ escrito para no repetirlo. Detalle completo en ADR-0011.
   `query()`/`infiniteQuery()`, pero se usan a propósito: son los únicos que
   tragan errores (`.then(noop).catch(noop)`), así que un backend caído no
   rompe la navegación — el componente igual reintenta y muestra su error.
+  - **Que no lancen no significa que terminen, y esa confusión costó un
+    cuelgue.** TanStack *pausa* un fetch —sin conexión, o antes de un reintento
+    con la pestaña sin foco— y una precarga pausada deja su promesa pendiente
+    para siempre. El resolver que la espera para la navegación en
+    `ResolveStart`: sin `ResolveEnd`, sin `NavigationCancel`, sin error, y con
+    el `urlUpdateStrategy` en `deferred` **ni siquiera cambia la URL**. La
+    aplicación se queda congelada en la página anterior, muda.
+  - Por eso **toda precarga de un resolver pasa por `core/consultas/precarga.ts`**:
+    `PRECARGA_NO_BLOQUEANTE` en las opciones y la llamada envuelta en
+    `sinBloquearLaNavegacion(...)`. Hacen falta las dos. Las opciones solo valen
+    si la consulta está `idle`: con un fetch ya en vuelo, `Query.fetch` devuelve
+    **ese** y descarta las que le pasas — y el que está en vuelo suele ser el
+    del componente en pantalla, con los valores por omisión. La que garantiza el
+    arreglo es la espera acotada, que en el servidor no se aplica.
+  - Y una trampa de medición encima: **si la pestaña está en segundo plano esto
+    se reproduce aunque el código esté bien**, porque `canContinue()` exige
+    foco antes de cada reintento. Mirar `document.visibilityState` antes de
+    declarar un cuelgue.
 - **Un nombre de `input()` no puede ser `id`.** Angular no lo renombra en el
   DOM: el elemento host del componente termina con el mismo `id` que el
   control interno, dos elementos con el mismo id, y `getByLabelText`

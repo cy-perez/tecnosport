@@ -2,6 +2,10 @@ import { inject } from '@angular/core';
 import { injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 import { MedidasDelCatalogo } from '../domain/producto-admin.model';
 import {
+  PRECARGA_NO_BLOQUEANTE,
+  sinBloquearLaNavegacion,
+} from '../../../../core/consultas/precarga';
+import {
   REPOSITORIO_PRODUCTOS_ADMIN,
   RepositorioProductosAdmin,
 } from '../domain/repositorio-productos-admin.puerto';
@@ -30,5 +34,7 @@ export function usarMedidas() {
 }
 
 export function precargarMedidas(queryClient: QueryClient, repositorio: RepositorioProductosAdmin) {
-  return queryClient.prefetchQuery(opcionesMedidas(repositorio));
+  return sinBloquearLaNavegacion(
+    queryClient.prefetchQuery({ ...opcionesMedidas(repositorio), ...PRECARGA_NO_BLOQUEANTE }),
+  );
 }

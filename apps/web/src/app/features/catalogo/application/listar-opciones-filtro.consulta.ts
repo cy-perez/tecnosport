@@ -5,6 +5,7 @@ import {
   RepositorioCategorias,
 } from '../domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../domain/repositorio-marcas.puerto';
+import { PRECARGA_NO_BLOQUEANTE, sinBloquearLaNavegacion } from '../../../core/consultas/precarga';
 
 /**
  * Categorías y marcas para poblar los filtros. No cambian durante la sesión
@@ -53,9 +54,12 @@ export function usarCategorias() {
 
 export function precargarCategorias(): Promise<void> {
   const repositorio = inject(REPOSITORIO_CATEGORIAS);
-  return inject(QueryClient)
-    .prefetchQuery(opcionesCategorias(repositorio))
-    .then(() => undefined);
+  return sinBloquearLaNavegacion(
+    inject(QueryClient).prefetchQuery({
+      ...opcionesCategorias(repositorio),
+      ...PRECARGA_NO_BLOQUEANTE,
+    }),
+  );
 }
 
 /**
@@ -68,8 +72,16 @@ export function precargarOpcionesFiltro(): Promise<void> {
   const repositorioMarcas = inject(REPOSITORIO_MARCAS);
   const queryClient = inject(QueryClient);
 
-  return Promise.all([
-    queryClient.prefetchQuery(opcionesCategorias(repositorioCategorias)),
-    queryClient.prefetchQuery(opcionesMarcas(repositorioMarcas)),
-  ]).then(() => undefined);
+  return sinBloquearLaNavegacion(
+    Promise.all([
+      queryClient.prefetchQuery({
+        ...opcionesCategorias(repositorioCategorias),
+        ...PRECARGA_NO_BLOQUEANTE,
+      }),
+      queryClient.prefetchQuery({
+        ...opcionesMarcas(repositorioMarcas),
+        ...PRECARGA_NO_BLOQUEANTE,
+      }),
+    ]),
+  ).then(() => undefined);
 }
