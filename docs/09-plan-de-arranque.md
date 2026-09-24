@@ -9321,8 +9321,50 @@ El orden no es negociable: cada uno alimenta al siguiente.
     septiembre es la estructura que necesitan, que no es lo mismo. Lo que desbloquea todo lo demás
     es media hora con NVDA.»
 
-32. **El asistente de captura 360, con el teléfono delante.** Nace de la 16 y no es ella: es
-    aparato, no código. Dos cosas, y la primera es una decisión que no toma un script.
+32. ~~**El asistente de captura 360, con el teléfono delante.**~~ **Cerrada el 23 de septiembre
+    de 2026**, y la medición encontró por el camino un defecto que el enunciado no sospechaba.
+
+    **Al ir a medir la primera, el teléfono destapó algo más gordo, y eso ya se arregló el 23 de
+    septiembre de 2026.** El nivelador restaba ángulos de Euler, y la pose de trabajo del
+    asistente cae encima de su singularidad: con el aparato sostenido quieto —`beta` en 82,6°,
+    desviación real de 1,14°— el `gamma` medido barría 54,9°, amplificado por `1/cos(beta)`.
+    Bloqueaba el obturador **el 69 % del tiempo quieto y el 92 % de una vuelta completa a un
+    producto**. Ahora compara vectores de gravedad, que no tienen singularidad y siguen sin usar
+    la brújula: sobre la misma vuelta, el bloqueo baja al 34 %. Ver `docs/10-captura-360.md`,
+    "Nivelador digital", y la cabecera de `nivel-360.ts`.
+
+    Quedó de eso: `tools/sonda-nivel-360.mjs` graba el sensor desde el teléfono y
+    `npm run nivel-360` reproduce la grabación contra el dominio real —se graba una vez y se
+    reproduce con cuantos candidatos haga falta—; las lecturas del caso decisivo están
+    versionadas en `lecturas-de-telefono-quieto.ts` con pruebas que fallan si el defecto vuelve.
+
+    **Y la decisión que la deuda pedía se tomó midiendo, no a ojo.** El aviso de "obturador
+    bloqueado" **no se anuncia**: lo que explica por qué el botón no dispara es el indicador de
+    nivel, que además trae la instrucción concreta, y anunciar los dos sería decir lo mismo dos
+    veces. El aviso se queda como explicación visible mientras el bloqueo dure.
+
+    Lo que sí cambió es el indicador, que **no estaba en el enunciado y era el que más hablaba**:
+    su texto lleva los grados y cambiaba con cada grado entero — sobre la vuelta completa, 84,5
+    anuncios por minuto. Ahora ese texto va `aria-hidden` y habla una región `role="status"`
+    permanente que solo dice algo cuando el estado lleva **600 ms** sostenido, con los grados
+    congelados de ese instante. El número salió de la rejilla: sin retardo son 20,5 anuncios por
+    minuto; con 600 ms, 9,2 con un 7 % de desajuste; con 1 s, 2,6 con un 8 %. Más allá la región
+    se queda casi muda y el desajuste sube sin que el conteo mejore.
+
+    La región lleva **textos propios** y no los del indicador, por dos razones que se descubrieron
+    escribiéndolo: el símbolo `°` lo leen distinto los lectores de pantalla, y escrito "grados"
+    siempre se oye bien; y una cadena idéntica en dos sitios es exactamente lo que rompió cinco
+    pruebas en la deuda 16.
+
+    **El recorrido con TalkBack se hizo el 23 de septiembre de 2026**, en un Android, con la
+    cámara, un producto y el set completo: las cinco comprobaciones pasaron sin anomalías. El
+    guion está en `docs/06-testing.md`, junto con la advertencia de que esa corrida **no dejó
+    registro** —es lo que oyó una persona, no un log— y que lo que sostiene la conducta entre
+    corridas son las pruebas de `nivel-360.spec.ts` y `ts-indicador-nivel.spec.ts`.
+
+    Enunciado original: «El asistente de captura 360, con el teléfono delante. Nace de la 16 y no
+    es ella: es aparato, no código. Dos cosas, y la primera es una decisión que no toma un
+    script.»
 
     **El aviso de "obturador bloqueado" cuelga del acelerómetro**, así que se enciende y se apaga
     con cada inclinación. Es el único de los 27 que se dejó como estaba, a propósito: anunciarlo en
