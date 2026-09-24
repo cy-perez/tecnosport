@@ -56,7 +56,8 @@
       "enlace": "Review stock and count"
     },
     "ir_a_medidas": "Package measurements",
-    "ir_a_clave": "Change my password"
+    "ir_a_clave": "Change my password",
+    "ir_a_categorias": "Categories"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -668,5 +669,43 @@
     "error_clave_actual": "That is not your current password.",
     "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again.",
     "error_sesion_expirada": "Your session expired. Sign in again and repeat the change."
+  },
+  "categorias": {
+    "titulo": "Categories",
+    "explicacion": "The catalogue tree. Each business line opens up to two levels: a branch —Women, Men— and its garments. Products always hang from a leaf, never from a branch.",
+    "crearTitulo": "Create a category",
+    "editandoTitulo": "Editing “{{nombre}}”",
+    "nombre": "Name",
+    "slug": "Slug",
+    "slugAyuda": "Optional. Leave it empty and it is derived from the name. When editing, empty means “leave it as it is”: the slug is in links people already shared.",
+    "padre": "Hangs from",
+    "padreAyuda": "Empty leaves it at the first level, hanging directly from the line.",
+    "sinPadre": "From the line (first level)",
+    "linea": "Line",
+    "lineaAyuda": "Only counts if you did not pick a parent category: with a parent, the line is inherited from it.",
+    "elegirLinea": "Pick a line",
+    "crear": "Create category",
+    "guardar": "Save changes",
+    "cancelar": "Cancel",
+    "enviando": "Saving…",
+    "editar": "Edit",
+    "borrar": "Delete",
+    "borrarCategoria": "Delete “{{nombre}}”",
+    "confirmarBorrado": "Confirm",
+    "confirmarBorradoDe": "Confirm deleting “{{nombre}}”",
+    "esRama": "(branch)",
+    "lineaVacia": "This line has no categories yet.",
+    "creada": "“{{nombre}}” was created.",
+    "editada": "“{{nombre}}” was saved.",
+    "borrada": "“{{nombre}}” was deleted.",
+    "faltaNombre": "Enter the category name.",
+    "faltaLinea": "Pick a line, or a category for it to hang from.",
+    "slugRepetido": "Another category already uses that slug. Enter a different one.",
+    "tieneProductos": "That category has products. Move them elsewhere first.",
+    "tieneSubcategorias": "That category has subcategories. Delete or move them first.",
+    "demasiadoProfunda": "The catalogue goes two levels below the line. Pick a first-level category.",
+    "ciclo": "A category cannot hang from itself or from one of its children.",
+    "error": "We could not save the change. Please try again.",
+    "errorLista": "We could not load the categories."
   }
 }

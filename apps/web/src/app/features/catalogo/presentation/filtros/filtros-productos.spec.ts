@@ -23,14 +23,18 @@ import {
 import { REPOSITORIO_MARCAS, RepositorioMarcas } from '../../domain/repositorio-marcas.puerto';
 import { FiltrosProductos } from './filtros-productos';
 
-// Las tres líneas representadas, porque el selector de línea se deduce de aquí: sin una categoría
-// de ropa, "Ropa y calzado" deja de ofrecerse y la prueba de i18n de más abajo no tendría qué leer.
+/**
+ * Un árbol pequeño pero con las tres formas que importan: una hoja de primer nivel (Celulares), una
+ * rama con hojas debajo (Dama › Blusas, Dama › Busos) y una línea sin nada (Bolsos).
+ */
 class RepositorioCategoriasFalso implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
     return [
-      { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
-      { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
+      { id: 'd0', nombre: 'Dama', slug: 'ropa-dama', linea: 'ROPA', padreId: null },
+      { id: 'd1', nombre: 'Blusas', slug: 'ropa-dama-blusas', linea: 'ROPA', padreId: 'd0' },
+      { id: 'd2', nombre: 'Busos', slug: 'ropa-dama-busos', linea: 'ROPA', padreId: 'd0' },
+      { id: 'u0', nombre: 'Unisex', slug: 'calzado-unisex', linea: 'CALZADO', padreId: null },
     ];
   }
 }
@@ -38,7 +42,9 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 /** Solo tecnología: el catálogo que este negocio va a tener el día que abra. */
 class RepositorioCategoriasSoloTecnologia implements RepositorioCategorias {
   async listarTodas(): Promise<Categoria[]> {
-    return [{ id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' }];
+    return [
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
+    ];
   }
 }
 
@@ -134,28 +140,59 @@ describe('FiltrosProductos', () => {
   // `desde-movil:hidden`, que jsdom no evalúa), así que aquí se prueba el
   // contrato del *disclosure*: el estado anunciado, a qué región apunta y que
   // el clic lo alterna.
-  it('el selector de línea solo ofrece las líneas que tienen categorías con productos', async () => {
+  /**
+   * Esta prueba afirmaba lo contrario —que una línea sin categorías cargadas no se ofrecía—, y la
+   * decisión se invirtió el 24 de septiembre de 2026 con el árbol: el menú lateral pinta las cuatro
+   * ramas siempre, y un desplegable que ofrece tres mientras el menú ofrece cuatro son dos
+   * respuestas distintas a la misma pregunta en la misma pantalla. La rejilla ya sabe decir que no
+   * encontró nada con esos filtros.
+   */
+  it('el selector de línea ofrece las cuatro aunque el catálogo sea de pura tecnología', async () => {
     await renderFiltros(RepositorioCategoriasSoloTecnologia);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Filtrar y ordenar' }));
     const linea = await selectConOpciones('Línea');
 
-    // "Ropa y calzado" y "Bolsos" existen en el modelo y no en el catálogo. Ofrecerlas manda a una
-    // rejilla vacía, que quien compra lee como "se agotó" y no como "no vendemos eso".
-    expect(etiquetasDe(linea)).not.toContain('Ropa y calzado');
-    expect(etiquetasDe(linea)).not.toContain('Bolsos');
+    expect(etiquetasDe(linea)).toContain('Ropa');
+    expect(etiquetasDe(linea)).toContain('Calzado deportivo');
+    expect(etiquetasDe(linea)).toContain('Bolsos');
     expect(etiquetasDe(linea)).toContain('Tecnología');
   });
 
-  it('con categorías de las tres líneas, las ofrece las tres y en el orden del modelo', async () => {
+  it('las cuatro líneas salen en el orden del modelo, no en el alfabético', async () => {
     await renderFiltros();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Filtrar y ordenar' }));
     const linea = await selectConOpciones('Línea');
-    await vi.waitFor(() => expect(etiquetasDe(linea)).toHaveLength(4));
+    await vi.waitFor(() => expect(etiquetasDe(linea)).toHaveLength(5));
 
     // Sin el placeholder: el orden es el de LINEAS, que es el del negocio y no el alfabético.
-    expect(etiquetasDe(linea).slice(-3)).toEqual(['Ropa y calzado', 'Bolsos', 'Tecnología']);
+    expect(etiquetasDe(linea).slice(-4)).toEqual([
+      'Tecnología',
+      'Ropa',
+      'Calzado deportivo',
+      'Bolsos',
+    ]);
+  });
+
+  /**
+   * De una rama no cuelga ningún producto —lo defiende el backend—, así que ofrecer "Dama" en el
+   * filtro sería ofrecer un camino que siempre lleva a una rejilla vacía. Y la ruta en la etiqueta
+   * no es adorno: "Busos" existe bajo Dama y bajo Caballero, y sin ella el desplegable tiene dos
+   * entradas idénticas.
+   */
+  it('el selector de categoría ofrece solo hojas, con su ruta completa', async () => {
+    await renderFiltros();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtrar y ordenar' }));
+    const categoria = await selectConOpciones('Categoría');
+    await vi.waitFor(() => expect(etiquetasDe(categoria).length).toBeGreaterThan(1));
+
+    const etiquetas = etiquetasDe(categoria);
+    expect(etiquetas).toContain('Ropa › Dama › Blusas');
+    expect(etiquetas).toContain('Tecnología › Celulares');
+    // "Dama" tiene hojas debajo: no se ofrece ella misma.
+    expect(etiquetas).not.toContain('Ropa › Dama');
   });
 
   it('sin filtros en la URL, arranca plegado y el botón lo despliega', async () => {
@@ -246,7 +283,7 @@ describe('FiltrosProductos', () => {
     const linea = await screen.findByLabelText('Línea');
     const orden = await screen.findByLabelText('Ordenar por');
 
-    expect(etiquetasDe(linea)).toContain('Ropa y calzado');
+    expect(etiquetasDe(linea)).toContain('Ropa');
     expect(etiquetasDe(orden)).toContain('Relevancia');
 
     // Ni la clave cruda ni la etiqueta vacía: los dos síntomas de leer una

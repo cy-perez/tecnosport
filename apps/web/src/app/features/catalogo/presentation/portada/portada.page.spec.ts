@@ -25,7 +25,7 @@ function productoDePrueba(slug: string): Producto {
     nombre: `Producto ${slug}`,
     descripcion: '',
     marca: { id: '1', nombre: 'TecnoSport' },
-    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
+    categoria: { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null },
     imagenPrincipal: null,
     galeria: [],
     rotacion: null,
@@ -63,9 +63,9 @@ class RepositorioCategoriasFalso implements RepositorioCategorias {
 }
 
 const TRES_LINEAS: Categoria[] = [
-  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA_Y_CALZADO' },
-  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS' },
-  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
+  { id: 'c0', nombre: 'Ropa deportiva', slug: 'ropa-deportiva', linea: 'ROPA', padreId: null },
+  { id: 'c1', nombre: 'Bolsos', slug: 'bolsos', linea: 'BOLSOS', padreId: null },
+  { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
 ];
 
 async function renderPortada(
@@ -143,11 +143,12 @@ describe('PortadaPage', () => {
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {
     await renderPortada();
 
-    // `findBy*` y no `getBy*`: las baldosas ya no salen de una constante, salen de la consulta de
-    // categorías, y `whenStable()` no espera a que TanStack Query resuelva (apps/web/CLAUDE.md).
-    expect((await screen.findByRole('link', { name: 'Ropa y calzado' })).getAttribute('href')).toBe(
-      '/es/productos?linea=ROPA_Y_CALZADO',
+    expect((await screen.findByRole('link', { name: 'Ropa' })).getAttribute('href')).toBe(
+      '/es/productos?linea=ROPA',
     );
+    expect(
+      (await screen.findByRole('link', { name: 'Calzado deportivo' })).getAttribute('href'),
+    ).toBe('/es/productos?linea=CALZADO');
     expect((await screen.findByRole('link', { name: 'Bolsos' })).getAttribute('href')).toBe(
       '/es/productos?linea=BOLSOS',
     );
@@ -156,25 +157,31 @@ describe('PortadaPage', () => {
     );
   });
 
-  it('una línea sin categorías con productos no se ofrece', async () => {
+  /**
+   * Las dos pruebas que había aquí afirmaban lo contrario: que una línea sin categorías cargadas no
+   * se ofrecía, y que sin ninguna la sección entera desaparecía. El argumento era bueno —enlazar a
+   * una rejilla vacía desde la primera pantalla del sitio se lee como "se agotó"— y aun así la
+   * decisión se invirtió el 24 de septiembre de 2026, con el árbol: el menú lateral pinta las
+   * cuatro ramas siempre, y una portada que ofrece dos mientras el menú ofrece cuatro se contradice
+   * a sí misma en la misma pantalla. Las baldosas son las líneas del negocio, que es un dato del
+   * modelo y no de lo que hoy haya cargado.
+   */
+  it('las cuatro baldosas salen aunque el catálogo sea de pura tecnología', async () => {
     await renderPortada(new RepositorioProductosFalso(), [
-      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA' },
+      { id: 'c2', nombre: 'Celulares', slug: 'celulares', linea: 'TECNOLOGIA', padreId: null },
     ]);
 
     await screen.findByRole('link', { name: 'Tecnología' });
 
-    // Enlazar a una rejilla vacía desde la portada es peor que en el filtro: es la primera
-    // pantalla del sitio, y quien la abre lee "se agotó" donde dice "no vendemos eso".
-    expect(screen.queryByRole('link', { name: 'Ropa y calzado' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Bolsos' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Ropa' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Calzado deportivo' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Bolsos' })).toBeTruthy();
   });
 
-  it('sin ninguna línea con productos, la sección entera desaparece', async () => {
+  it('la sección de líneas se pinta incluso con el catálogo vacío', async () => {
     await renderPortada(new RepositorioProductosFalso(), []);
 
-    // El estado de una tienda recién desplegada, antes de publicar el primer producto. Un
-    // encabezado "Nuestras líneas" con nada debajo informa peor que no estar.
-    expect(screen.queryByRole('heading', { name: 'Nuestras líneas' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Nuestras líneas' })).toBeTruthy();
   });
 
   it('muestra las novedades pidiéndolas por fecha, no por relevancia', async () => {

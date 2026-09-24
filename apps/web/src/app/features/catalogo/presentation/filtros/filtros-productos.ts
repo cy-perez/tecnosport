@@ -15,10 +15,13 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
+import { usarTraductor } from '../../../../core/i18n/traductor';
 import { usarOpcionesFiltro } from '../../application/listar-opciones-filtro.consulta';
+import { hojasConRuta } from '../../domain/arbol-categorias';
 import {
   FiltroProductos,
   hayFiltrosActivos,
+  claveDeLinea,
   LINEAS,
   ORDEN_POR_DEFECTO,
   OrdenProductos,
@@ -131,40 +134,54 @@ export class FiltrosProductos {
   // `translateObjectSignal` sí se resuscribe a esa carga y al cambio de idioma.
   // La clave va relativa al scope: Transloco le antepone `catalogo.` por
   // `scopes.autoPrefixKeys`, que viene en `true` por defecto.
-  private readonly etiquetasLinea = translateObjectSignal('filtros.linea', undefined, {
-    scope: 'catalogo',
-  });
+  // Los nombres de línea viven en el diccionario **raíz** desde que los leen además el menú
+  // lateral, la pantalla de categorías del panel y los desplegables de crear y editar producto:
+  // ninguno de esos tres carga el scope de catálogo, así que los tres pintaban la clave cruda.
+  //
+  // Y se leen con `usarTraductor` y no con `translateObjectSignal`, que es lo que hacían: ese
+  // antepone el scope activo a la clave (`scopes.autoPrefixKeys`), así que una clave de la raíz
+  // leída desde este componente se convertía en `catalogo.lineas` y no existía.
+  private readonly traducir = usarTraductor();
 
   private readonly etiquetasOrden = translateObjectSignal('filtros.orden', undefined, {
     scope: 'catalogo',
   });
 
   /**
-   * Las líneas que de verdad tienen algo detrás, no las tres que existen en el modelo.
+   * Las cuatro líneas del modelo, siempre.
    *
-   * `LINEAS` es una constante, así que este selector ofrecía "Ropa y calzado" y "Bolsos" aunque no
-   * hubiera un solo producto publicado de ninguna de las dos — el mismo defecto que el 19 de
-   * septiembre de 2026 se arregló para categorías y marcas, pero un nivel más arriba y del lado del
-   * cliente, donde el servidor no podía verlo.
+   * <b>Esto afirmaba lo contrario hasta el 24 de septiembre de 2026</b>: se deducían de las
+   * categorías que el servidor devolvía, que entonces eran solo las que tenían algo publicado
+   * detrás, para no ofrecer un filtro que lleva a una rejilla en blanco. El endpoint dejó de
+   * esconderlas al llegar el árbol —lo razona `ListarCategorias`—, así que aquel cálculo ya no
+   * filtra nada y solo queda el efecto de fondo: <b>el filtro tiene que ofrecer lo mismo que el
+   * menú</b>. Un menú que enseña "Calzado deportivo" y un desplegable que no lo tiene son dos
+   * respuestas distintas a la misma pregunta en la misma pantalla.
    *
-   * Se deduce de las categorías, que ya llegan filtradas por el servidor: si una línea no tiene
-   * ninguna categoría con productos publicados, no tiene productos. Se recorre `LINEAS` y no el
-   * conjunto para conservar el orden canónico del modelo, que es el del negocio y no el alfabético.
+   * Se recorre `LINEAS` para conservar el orden canónico del modelo, que es el del negocio y no el
+   * alfabético — el mismo en el que el menú pinta las ramas.
    */
   protected readonly opcionesLinea = computed<OpcionSelect[]>(() => {
-    const etiquetas = this.etiquetasLinea();
-    const conProductos = new Set((this.opciones.categorias.data() ?? []).map((c) => c.linea));
-    return LINEAS.filter((linea) => conProductos.has(linea)).map((linea) => ({
-      valor: linea,
-      etiqueta: etiquetaDe(etiquetas, linea.toLowerCase()),
-    }));
+    const traducir = this.traducir();
+    return LINEAS.map((linea) => ({ valor: linea, etiqueta: traducir(claveDeLinea(linea)) }));
   });
 
+  /**
+   * Solo las <b>hojas</b>, con la ruta completa como etiqueta.
+   *
+   * Las dos cosas son consecuencia del árbol. Las hojas, porque de una rama no cuelga ningún
+   * producto —lo defiende el backend—, así que filtrar por "Dama" daría siempre una rejilla vacía.
+   * Y la ruta, porque sin ella el desplegable tiene entradas que no se distinguen: "Busos" sale dos
+   * veces, una por Dama y otra por Caballero, y "Dama" tres veces, una por línea.
+   */
   protected readonly opcionesCategoria = computed<OpcionSelect[]>(() => {
+    const traducir = this.traducir();
     const todas = this.opciones.categorias.data() ?? [];
     const linea = this.lineaSeleccionada();
-    const filtradas = linea ? todas.filter((categoria) => categoria.linea === linea) : todas;
-    return filtradas.map((categoria) => ({ valor: categoria.slug, etiqueta: categoria.nombre }));
+    const hojas = hojasConRuta(todas, (valor) => traducir(claveDeLinea(valor)));
+    return hojas
+      .filter((hoja) => !linea || hoja.categoria.linea === linea)
+      .map((hoja) => ({ valor: hoja.categoria.slug, etiqueta: hoja.ruta }));
   });
 
   protected readonly opcionesMarca = computed<OpcionSelect[]>(() =>
