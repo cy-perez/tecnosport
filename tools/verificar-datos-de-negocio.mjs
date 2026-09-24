@@ -108,7 +108,7 @@ const reglas = [
     // publicar. Un guardián que dispara pero no donde importa es el problema del plugin de capas
     // otra vez.
     nombre: "dirección del punto",
-    patron: /(?:Cra\.?|Carrera)\s*26C[^,)\n"]*/g,
+    patron: /(?:Cra\.?|Carrera)\s*26C[^,)<\n"]*/g,
     normaliza: (valor) => calleNormalizada(valor),
     canonico: calleNormalizada(calleCanonica),
   },
@@ -124,11 +124,31 @@ const CORREOS = [
   join(RAIZ, "apps/api/infrastructure/src/main/resources/correos_en.properties"),
 ];
 
-for (const ruta of [...jsons(TEXTOS), ...CORREOS]) {
+// Y el kit de marca, que es la tercera copia y la que nadie miraba. Llevaba un celular y un correo
+// **que no son los del negocio** —`310 420 9655` y `contact@` sin la o—, con sus enlaces `wa.me`,
+// `tel:` y `mailto:` vivos. Es una maqueta, sí, pero el numero tiene forma de movil colombiano real
+// y el correo repite exactamente la errata que el pie del sitio ya tuvo que corregir una vez. Un
+// guardian que mira dos de las tres copias es medio guardian.
+const KIT = [
+  join(RAIZ, "packages/marca/index.html"),
+  join(RAIZ, "packages/marca/generador/_plantilla_kit.html"),
+].filter((ruta) => existsSync(ruta));
+
+for (const ruta of [...jsons(TEXTOS), ...CORREOS, ...KIT]) {
   const contenido = readFileSync(ruta, "utf8");
   contenido.split("\n").forEach((linea, indice) => {
+    // Dos limpiezas antes de comparar, las dos por el kit, que es HTML y no JSON:
+    //
+    // - El `placeholder` de un campo ensena la **forma** de un dato, no el dato. El kit tiene
+    //   `placeholder="300 000 0000"` en su maqueta de cotizacion, y exigirle que coincida obligaria
+    //   a poner el numero real dentro de un campo vacio, que es peor.
+    // Lo que **no** se hace es barrer las etiquetas: el primer intento las quitaba enteras para
+    // que la direccion no arrastrara su `<br>`, y con eso desaparecian tambien los
+    // `href="mailto:..."` y `href="tel:..."`, que son justo los enlaces vivos que hay que vigilar.
+    // El `<br>` pegado a la direccion se resuelve en el patron de esa regla, no aqui.
+    const limpia = linea.replace(/placeholder="[^"]*"/g, "");
     for (const { nombre, patron, normaliza, canonico } of reglas) {
-      for (const encontrado of linea.match(patron) ?? []) {
+      for (const encontrado of limpia.match(patron) ?? []) {
         if (nombre === "NIT" && NITS_DE_TERCEROS.has(normaliza(encontrado))) {
           continue;
         }
