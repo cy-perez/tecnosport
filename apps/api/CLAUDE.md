@@ -98,6 +98,16 @@ infraestructura, falta un caso de uso.
 - **Nada de `@Autowired` en campos.** Constructor, siempre.
 - **Excepciones:** de negocio en `domain`, traducidas a HTTP en `presentation`.
   Ninguna excepción de JPA sale de `infrastructure`.
+  - **El `codigo` sale del nombre de la clase**, y por eso renombrar una excepción
+    cambia el contrato publicado sin tocar una sola cadena. El frontend los cablea
+    como literales —`envio-http.repositorio.ts` decide con ellos si ofrece la
+    recogida en el punto— y el panel tiene una clave de traducción por código.
+    `CodigosDeCableTest` fija los 27 que el frontend conoce: si el renombrado es a
+    propósito, se cambia ahí y en los JSON de i18n, en el mismo commit.
+  - **El `detail` publica `getMessage()`**, así que el mensaje de una excepción es
+    texto que sale al cliente. El de las nuestras está escrito para leerse; el de
+    las del framework describe nuestras clases y no sale (`solicitudMalFormada`), y
+    el de un tercero tampoco (`sistecreditoNoResponde`, Ley 1266).
 - **Idempotencia obligatoria** en todo lo que mueva dinero o inventario: crear
   pedido, crear intento de pago, recibir webhook. Llave persistida 24 horas.
 - **Bloqueo pesimista** al reservar inventario. Dos compradores por la última

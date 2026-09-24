@@ -8983,9 +8983,130 @@ vinculación de Sistecrédito, contratar al abogado y que conteste. Las hojas pa
 regeneraron —**estaban desfasadas**, eran de la versión `2026-09-18`— y falta imprimirlas, que es
 lo único que puede hacerse sin hablar con nadie.
 
-## Las deudas que quedan, al 23 de septiembre de 2026
+## La segunda revisión adversarial, y los cuatro guardianes que miraban al lado (2026-09-24)
 
-Con el bloque del kit cerrado no queda **ningún hallazgo de la revisión adversarial sin atender**:
+167 commits desde la anterior (`acab10d9`, 21 de septiembre): 330 archivos, ~18.400 líneas. Cuatro
+revisores en paralelo —dinero e inventario, capas y diseño, accesibilidad y sistema visual, pruebas
+falsas y secretos— más una pasada sobre los guardianes. **43 hallazgos, todo en verde.**
+
+Lo que hay que sacar de esta entrada no es la lista: es que **los cuatro guardianes que este
+proyecto construyó para no repetir errores estaban mirando a un lado del sitio donde el error ya
+había vuelto a ocurrir**. Es la tercera vez que pasa —el plugin de capas que no aplicaba sus
+reglas, el arnés de Lighthouse que medía una sola muestra— y el patrón no es que los guardianes
+fallen: es que **el alcance de un guardián envejece más rápido que su lógica**.
+
+### Lo que le creímos a quien no debíamos
+
+**La conciliación de Wompi le creía a un id que pone cualquiera.** `PATCH
+/api/v1/pagos/intentos/{referencia}` es público y anónimo —tiene que serlo: el Web Checkout
+devuelve el id de transacción en la URL de retorno del navegador— y estampa
+`pago.id_transaccion_pasarela` con lo que traiga el cuerpo. `TransaccionDePasarela` llevaba solo
+`(estado, medio)`, así que la tarea de conciliación **no tenía con qué** comprobar que la
+transacción consultada fuera la de ese pago.
+
+El recorrido entero: se compra algo de $20.000, se paga de verdad, y se guarda el `id` de la propia
+URL de retorno. Se crea después un pedido de $3.900.000, no se paga, y se le estampa ese mismo id.
+A los quince minutos la conciliación le pregunta a Wompi, recibe `APPROVED`, marca el pago
+aprobado, el pedido `PAGADO`, encadena `EN_PREPARACION` y confirma el inventario. **El pedido sale
+a despacho.** Nada falla y nada se registra.
+
+Lo que hace que esto duela más que un defecto cualquiera: **la guarda existía**, en el camino de al
+lado. `esDeEstePago` se le puso a la notificación de Sistecrédito el 23 de septiembre, un día
+antes, con el comentario que explica que `orElse(true)` era "acepta cualquiera". Se arregló el
+camino que se estaba midiendo y no el que corre solo.
+
+`PasarelaDePagosFalsa` se reescribió para que **sepa mentir**. Antes no existía el concepto de "una
+transacción que no es la de este pago", y un doble que no puede mentir no puede demostrar que a
+alguien se le cree. Es la misma lección que la deuda 30 dejó escrita con otras palabras —el doble
+era más correcto que el código real— y que esta revisión volvió a encontrar en tres sitios más.
+
+### Los cuatro guardianes, y por dónde se les escapaba
+
+| Guardián | Miraba | No miraba | Lo que se le escapó |
+|---|---|---|---|
+| `npm run capas` | `features/*/` y `shared/` | `core/`, "como antes" decía el comentario | El `IMAGE_LOADER` global importaba el `domain` de `catalogo` |
+| `npm run contrastes` | pares declarados | combinaciones reales de plantilla | Ámbar sobre ámbar, 1,00:1, en el nivel del 360 |
+| `npm run datos-negocio` | i18n y los dos `correos_*.properties` | `packages/marca` | Un celular y un correo que no son los del negocio, con enlaces vivos |
+| *(ninguno)* | — | los códigos de cable | Renombrar una excepción cambia el contrato publicado sin tocar una cadena |
+
+Los cuatro se ampliaron, y **cada uno se comprobó metiendo a propósito el defecto que antes se le
+escapaba**. Dos decisiones de alcance que conviene no volver a discutir:
+
+- **`layout/` se queda fuera del grafo de capas, a propósito.** Componer funcionalidades es
+  literalmente su trabajo: la insignia del encabezado tiene que ver el mismo carrito que la ficha,
+  y `apps/web/CLAUDE.md` ya documenta ese `CarritoStore` singleton como la excepción correcta.
+  Meterlo en la regla convertiría un diseño decidido en un aviso permanente, que es la forma más
+  rápida de que un guardián deje de leerse.
+- **El barrido de `datos-negocio` no quita las etiquetas HTML.** El primer intento las quitaba para
+  que la dirección no arrastrara su `<br>`, y con eso desaparecían también los `href="mailto:"` y
+  `href="tel:"` — justo los enlaces que hay que vigilar. El `<br>` se resuelve en el patrón de esa
+  regla; el `placeholder` de un campo sí queda fuera, porque enseña la forma de un dato y no el
+  dato.
+
+### Lo que se rompió a propósito
+
+Cada prueba nueva se comprobó **quitando el arreglo y viéndola fallar** —esa y solo esa—, no con
+una corrida verde. Son 15 arreglos con prueba de ese tipo. Tres cambios fueron sin prueba, y los
+tres lo dicen en su commit con el motivo:
+
+- **La transacción de la imagen y sus variantes** lleva una regla de ArchUnit y no una prueba de
+  comportamiento: provocar el fallo a media escritura pide inyectarlo en el repositorio de JPA, y
+  aquí no hay framework de simulación en el classpath —dobles escritos a mano, por decisión— ni se
+  agrega una dependencia sin preguntar. La regla no demuestra que la atomicidad funcione; demuestra
+  que nadie quita la anotación sin enterarse, que es lo que pasó.
+- **El foco de las tres pantallas del panel** no se prueba porque en jsdom no se reproduce, como
+  `apps/web/CLAUDE.md` ya dice. Queda en la lista de lo que hay que mirar con el navegador
+  delante.
+- **Dos diferencias de los dobles se documentan en vez de arreglarse**: la guarda de variante
+  `ACTIVA` de `CrearPedido` es redundante por construcción —quien lo impide es el filtro de
+  `MapeadorCatalogo`, probado contra Postgres real— y los dobles de pedido devuelven la instancia
+  guardada en vez de reconstruirla. Copiar a mano un agregado de catorce campos con varios
+  opcionales es una copia que puede dejarse uno fuera en silencio, y eso es peor que lo que vendría
+  a proteger. El día que haga falta esa red, va un método de copia en el agregado, no un
+  constructor repetido en cuatro dobles.
+
+### El hallazgo que no estaba en ningún informe
+
+Salió de arreglar otro. Para que la notificación de Sistecrédito dejara de gastar una consulta con
+credenciales productivas en cada petición anónima, el pago pasó a buscarse por id de transacción en
+vez de por la factura del cuerpo. Con eso **se abría un hueco**: una notificación que declara otra
+factura sí encuentra pago. `coincide()` no lo cubría, y ahí está lo que enseña — **compara la
+pasarela contra el cuerpo, que lo escribe quien manda la petición**, no contra lo que tenemos
+guardado. La revisión ya lo había señalado como "contraste débil" sin llegar a este caso. Ahora
+`esDeEstePago` exige además que la factura que reporta la pasarela sea la de ese pago.
+
+Dos pruebas existentes cambiaron de significado a propósito, y el commit lo dice: una factura ajena
+sobre nuestra transacción ya no es "pago no encontrado" sino `DISCREPANCIA_CON_LA_PASARELA`, que es
+lo que de verdad pasa y se registra como error.
+
+### Lo que quedó sin tocar, y por qué
+
+De los 43, **36 se cerraron**. Los siete que quedan no son deuda de código:
+
+- **Cuatro piden una decisión del negocio**: el total del checkout sale de `localStorage`
+  —`confirmar.page.ts:242-250`, art. 50 de la Ley 1480, y el arreglo es del tamaño de una
+  funcionalidad—; el historial de rechazos de contraentrega solo mira el correo cuando `docs/11`
+  dice "un correo **o un teléfono**"; el set de rotación publicado no tiene índice único; y no hay
+  política de clave en todo el backend, así que `"a"` es hoy una clave de ADMIN válida.
+- **Tres piden el aparato delante**: dos regiones vivas del checkout que nacen ya llenas, el
+  obturador del 360 que se deshabilita 12,3 veces por minuto y tira el foco, y el "−" del carrito
+  al bajar a 1. Las tres se deciden midiendo, que es la lección de la deuda 16 y no se repite a
+  ojo.
+- Y una que es de gusto: la portada enseña **tres cosas ámbar a la vez** en tema claro contra la
+  regla de "una sola por pantalla". Cuál se queda con el ámbar es una decisión de diseño, no un
+  defecto con una respuesta correcta.
+
+## Las deudas que quedan, al 24 de septiembre de 2026
+
+**El 24 de septiembre entró la segunda revisión adversarial** —43 hallazgos sobre 167 commits, con
+todo en verde— y cerró 36. Lo que dejó son las deudas **36 a la 42**, al final de esta sección:
+cuatro decisiones del negocio y tres cosas que se deciden con el aparato delante. Ninguna es deuda
+de código. La entrada de arriba cuenta lo que enseñó, que no es la lista sino que los cuatro
+guardianes de este proyecto estaban mirando al lado del sitio donde el error ya había vuelto a
+ocurrir.
+
+Con el bloque del kit cerrado no queda **ningún hallazgo de la primera revisión adversarial sin
+atender**:
 los cuatro bloques se resolvieron y el último pendiente que dejaron —el generado huérfano— es una
 de las entradas de arriba. Lo que sigue es lo otro: lo que nunca fue un hallazgo y sigue abierto.
 
@@ -9536,6 +9657,72 @@ El orden no es negociable: cada uno alimenta al siguiente.
     y cualquier motivo nuevo sería una inferencia.
     **Cómo comprobarlo:** el `TODO` vive en `ResultadoCotizacion.Motivo` y dice qué lo desbloquea;
     si `docs/13` §6.18 ya trae el resultado del cruce, esta deuda caducó.
+
+### Lo que dejó la segunda revisión adversarial (2026-09-24)
+
+De sus 43 hallazgos se cerraron 36. Los siete que quedan **no son deuda de código**: cuatro piden
+una decisión del negocio y tres piden el aparato delante. Ninguno se arregla leyendo más código.
+
+36. **El total que el comprador acepta lo calcula el navegador desde `localStorage`.**
+    `GET /carritos/{id}` no devuelve precios, así que el "Total a pagar" de la pantalla donde se
+    finaliza la transacción se arma con el `snapshot` que se escribió **cuando se agregó el
+    artículo** —y el carrito vive 30 días—. Si el precio cambió en el panel, la pantalla enseña el
+    viejo y la pasarela cobra el nuevo; si el snapshot se perdió —cuota del navegador, otro
+    dispositivo—, esa línea suma **cero**. Y después de `crearPedido` la página salta directo a la
+    pasarela, así que el comprador **nunca ve el total del servidor antes de que se le cobre**.
+    Es el art. 50 de la Ley 1480: el precio total tiene que verse antes de finalizar la
+    transacción. **El código del servidor está bien**; lo que falla es que la cifra que la ley
+    obliga a mostrar no viene de él.
+    **Es una decisión de forma, no de si hacerlo**: precios en `GET /carritos/{id}`, o una
+    previsualización del pedido en el servidor. La segunda reaprovecha el cálculo que ya existe en
+    `CrearPedido` y no le da al carrito una responsabilidad de precios que hoy no tiene.
+    **Cómo comprobarlo:** `confirmar.page.ts:242-250` y `resumen.page.ts:78-86`; mientras el total
+    salga de `snapshotDeLinea`, la deuda sigue.
+37. **El historial de rechazos de contraentrega solo mira el correo.** `docs/11` dice "si un correo
+    **o un teléfono** ya rechazó pedidos en la entrega, no se le ofrece más", y el código solo
+    consulta `existsByCorreoAndEstado`. El teléfono está en `Contacto` y se persiste desde `V36`;
+    no lo consulta nadie. Cambiar de correo con el mismo teléfono vuelve a habilitar contraentrega,
+    y según el propio documento esta es "la regla que más pérdida evita".
+    **Media hora de trabajo, pero es una regla del negocio**: falta confirmar que el teléfono
+    cuenta como identidad para este propósito, que es lo que decide si se consulta con `OR` o si se
+    exige que coincidan los dos. **Cómo comprobarlo:**
+    `MetodosDePagoDisponibles.java:191`.
+38. **El set de rotación publicado no tiene índice único.** `PublicarSetRotacion` es un
+    lee-comprueba-escribe sin transacción, y `V1__esquema_inicial.sql:97` solo declara un índice
+    normal. Dos peticiones concurrentes dejan **dos filas `PUBLICADO`**, y a partir de ahí
+    `findByProductoIdAndVarianteIdIsNullAndEstado` devuelve un `Optional` sobre dos filas:
+    `IncorrectResultSizeDataAccessException`, una excepción de JPA saliendo de `infrastructure`
+    —contra la regla de `apps/api/CLAUDE.md`— que sale como 500. Y el estado queda pegado: cada
+    intento posterior de publicar ese producto vuelve a reventar.
+    **Pide una migración**, y por eso es decisión: `adr/0053` ya discute los límites de los únicos
+    parciales en PostgreSQL para el orden de la galería, y conviene decidir las dos con el mismo
+    criterio. **Cómo comprobarlo:** `PublicarSetRotacion.java:32-41`.
+39. **No hay política de clave en ninguna parte del backend.** Ni los DTO ni `Usuario.cambiarClave`
+    miran longitud: exigen no-vacío. `"a"` es hoy una clave de `ADMIN` válida.
+    `docs/08-seguridad-legal.md` no la pide, así que **esto no incumple nada escrito** — es una
+    decisión que no se ha tomado, no un requisito incumplido. Si se toma, el sitio es
+    `domain/usuario` y no el DTO. **Cómo comprobarlo:** `CambiarClaveRequest.java:17-24`.
+
+#### Y tres que solo se deciden con el aparato delante
+
+40. **Dos regiones vivas del checkout se quedaron fuera de las 27.** `resumen.page.html:80` y
+    `confirmar.page.html:78`: `aria-live="polite"` que nace ya lleno, que es exactamente el caso
+    que NVDA midió como mudo el 22 de septiembre. Y no son de primera pintura como los dos retornos
+    de pasarela: aparecen **después** de que la persona escribe la dirección, que es cuando hace
+    falta.
+    **No se tocan a ciegas.** La lección de la deuda 16 es que estas se deciden midiendo y no
+    razonando: la medición desmintió el enunciado y el trabajo resultó ser 27 sitios y no 99. El
+    guion está en `docs/06-testing.md`; es media hora con el lector puesto.
+41. **El obturador del 360 se deshabilita 12,3 veces por minuto y cada vez tira el foco al
+    `<body>`.** `captura-360.page.html:211`, con la cifra que `nivel-360.ts:44-46` ya midió. Es el
+    defecto que `ts-boton` describe al justificar su entrada `ocupado` y que costó dos correcciones
+    en una semana. **La salida se sabe** —mantener el botón habilitado y rechazar el disparo en
+    `capturar()`, con el aviso que ya existe como explicación— pero conviene verla con el teléfono
+    en la mano antes de fijarla: es la pantalla que se usa sin mirar.
+42. **El carrito no anuncia la cantidad al cambiarla, y el "−" se deshabilita bajo el dedo.**
+    `linea-carrito.html:46` y `:40`. `ts-paginador` y `ts-visor-360` sí llevan su `aria-live`; la
+    regla se aplicó en dos de tres sitios. Mismo mecanismo de foco perdido que la 41, y por eso van
+    juntas: se miran en la misma sesión.
 
 ### Lo que está anotado y no es deuda
 
