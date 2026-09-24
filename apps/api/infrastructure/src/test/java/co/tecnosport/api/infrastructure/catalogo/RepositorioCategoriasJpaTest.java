@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.LineaCatalogo;
+import co.tecnosport.api.domain.compartido.Slug;
 import co.tecnosport.api.infrastructure.catalogo.entidad.CategoriaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.MarcaJpaEntity;
 import co.tecnosport.api.infrastructure.catalogo.entidad.ProductoJpaEntity;
@@ -38,30 +39,74 @@ class RepositorioCategoriasJpaTest {
   private static final Instant AHORA = Instant.parse("2026-09-19T15:00:00Z");
 
   /**
-   * Aquí sí se puede afirmar el contenido exacto, y esa es la diferencia con {@code listarTodas}:
-   * {@code V38} sembró diez categorías tecnológicas pero ninguna con un producto detrás, así que la
-   * lista filtrada arranca vacía y solo contiene lo que esta prueba publica.
+   * El listado filtrado que esta prueba cubría —{@code listarConProductosPublicados}— desapareció
+   * del puerto el 24 de septiembre de 2026: la vitrina muestra el árbol completo. Lo que queda de
+   * aquella pregunta es {@code tieneProductos}, que ahora sirve para otra cosa —defender que nadie
+   * borre una categoría con productos detrás— y que mira <b>todos</b> los estados, borradores
+   * incluidos. Ese cambio de criterio es justo lo que hay que afirmar.
    */
   @Test
-  void listarConProductosPublicadosIgnoraLasVaciasYLasQueSoloTienenBorradores() {
+  void tieneProductosVeTambienLosBorradores() {
     MarcaJpaEntity marca = marcas.save(new MarcaJpaEntity(UUID.randomUUID(), "Marca TC", AHORA));
     CategoriaJpaEntity conPublicado =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Con publicado", "con-publicado-cat", "TECNOLOGIA", AHORA));
+                UUID.randomUUID(),
+                "Con publicado",
+                "con-publicado-cat",
+                "TECNOLOGIA",
+                null,
+                AHORA));
     CategoriaJpaEntity soloBorrador =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Solo borrador", "solo-borrador-cat", "TECNOLOGIA", AHORA));
-    categorias.save(
-        new CategoriaJpaEntity(UUID.randomUUID(), "Sin nada", "sin-nada-cat", "TECNOLOGIA", AHORA));
+                UUID.randomUUID(),
+                "Solo borrador",
+                "solo-borrador-cat",
+                "TECNOLOGIA",
+                null,
+                AHORA));
+    CategoriaJpaEntity sinNada =
+        categorias.save(
+            new CategoriaJpaEntity(
+                UUID.randomUUID(), "Sin nada", "sin-nada-cat", "TECNOLOGIA", null, AHORA));
 
     guardarProducto(marca.getId(), conPublicado.getId(), "PUBLICADO", "pub-cat");
     guardarProducto(marca.getId(), soloBorrador.getId(), "BORRADOR", "bor-cat");
 
-    List<Categoria> resultado = repositorio.listarConProductosPublicados();
+    assertThat(repositorio.tieneProductos(conPublicado.getId())).isTrue();
+    assertThat(repositorio.tieneProductos(soloBorrador.getId())).isTrue();
+    assertThat(repositorio.tieneProductos(sinNada.getId())).isFalse();
+  }
 
-    assertThat(resultado).extracting(Categoria::nombre).containsExactly("Con publicado");
+  /** El árbol de ida y vuelta: se guarda una hija y se lee con su padre puesto. */
+  @Test
+  void guardarYLeerUnaCategoriaHija() {
+    Categoria dama = Categoria.crear("Dama TC", new Slug("ropa-dama-tc-arbol"), LineaCatalogo.ROPA);
+    Categoria faldas = Categoria.crearBajo(dama, "Faldas TC", new Slug("ropa-dama-tc-faldas"));
+
+    repositorio.guardar(dama);
+    repositorio.guardar(faldas);
+
+    assertThat(repositorio.hijasDe(dama.id()))
+        .extracting(Categoria::nombre)
+        .containsExactly("Faldas TC");
+    assertThat(repositorio.buscarPorSlug(new Slug("ropa-dama-tc-faldas")).orElseThrow().padreId())
+        .contains(dama.id());
+    // La hija hereda la línea del padre, y eso tiene que sobrevivir al viaje por la base.
+    assertThat(repositorio.buscarPorId(faldas.id()).orElseThrow().linea())
+        .isEqualTo(LineaCatalogo.ROPA);
+  }
+
+  /** Una categoría de primer nivel no tiene padre, y eso también se afirma. */
+  @Test
+  void unaCategoriaDePrimerNivelNoTienePadre() {
+    Categoria raiz =
+        Categoria.crear("Raíz TC", new Slug("raiz-tc-arbol"), LineaCatalogo.TECNOLOGIA);
+    repositorio.guardar(raiz);
+
+    assertThat(repositorio.buscarPorId(raiz.id()).orElseThrow().esRaiz()).isTrue();
+    assertThat(repositorio.hijasDe(raiz.id())).isEmpty();
   }
 
   private void guardarProducto(UUID marcaId, UUID categoriaId, String estado, String slug) {
@@ -91,10 +136,10 @@ class RepositorioCategoriasJpaTest {
   void listarTodasDevuelveLasCategoriasOrdenadasPorNombre() {
     categorias.save(
         new CategoriaJpaEntity(
-            UUID.randomUUID(), "Zzz última", "zzz-ultima-tc1", "TECNOLOGIA", Instant.now()));
+            UUID.randomUUID(), "Zzz última", "zzz-ultima-tc1", "TECNOLOGIA", null, Instant.now()));
     categorias.save(
         new CategoriaJpaEntity(
-            UUID.randomUUID(), "Aaa primera", "aaa-primera-tc1", "BOLSOS", Instant.now()));
+            UUID.randomUUID(), "Aaa primera", "aaa-primera-tc1", "BOLSOS", null, Instant.now()));
 
     List<Categoria> resultado = repositorio.listarTodas();
 
@@ -117,7 +162,7 @@ class RepositorioCategoriasJpaTest {
     CategoriaJpaEntity guardada =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Bolsos", "bolsos-tc2", "BOLSOS", Instant.now()));
+                UUID.randomUUID(), "Bolsos", "bolsos-tc2", "BOLSOS", null, Instant.now()));
 
     Optional<Categoria> resultado = repositorio.buscarPorId(guardada.getId());
 

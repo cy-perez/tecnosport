@@ -77,7 +77,7 @@ class RepositorioInventarioJpaTest {
     CategoriaJpaEntity categoria =
         categorias.save(
             new CategoriaJpaEntity(
-                UUID.randomUUID(), "Categoría de prueba", slug, "BOLSOS", ahora));
+                UUID.randomUUID(), "Categoría de prueba", slug, "BOLSOS", null, ahora));
     ProductoJpaEntity producto =
         productos.save(
             new ProductoJpaEntity(

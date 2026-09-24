@@ -20,6 +20,11 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
  * Aplicada tal cual, un proyector habría viajado declarado como telefonía móvil. De ahí que el
  * {@code switch} sea <b>exhaustivo y sin {@code default}</b>: una línea nueva no compila hasta que
  * alguien decida qué dice su etiqueta, que es la pregunta que el documento no supo hacer.
+ *
+ * <p>Y el {@code switch} sin {@code default} cobró su primera pieza el 24 de septiembre de 2026, al
+ * partir {@code ROPA_Y_CALZADO} en dos: la frase "Ropa y calzado deportivo" declaraba calzado en la
+ * guía de una camiseta y ropa en la de unos tenis, y eso es declarar de más en las dos. Ahora cada
+ * línea dice lo suyo, que es más barato de defender ante una reclamación.
  */
 public final class ContenidoDeclarado {
 
@@ -38,7 +43,8 @@ public final class ContenidoDeclarado {
    */
   public static String de(LineaCatalogo linea) {
     return switch (linea) {
-      case ROPA_Y_CALZADO -> "Ropa y calzado deportivo";
+      case ROPA -> "Ropa deportiva";
+      case CALZADO -> "Calzado deportivo";
       case BOLSOS -> "Bolsos y morrales";
       case TECNOLOGIA -> "Electrónica y accesorios";
     };

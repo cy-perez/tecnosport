@@ -72,6 +72,23 @@ class CategoriasDeTecnologiaTest {
   }
 
   /**
+   * Las ocho cuelgan de la línea y de nadie más, y eso hay que afirmarlo desde que {@code V63}
+   * convirtió el catálogo en un árbol: la lista de slugs de arriba pasaría igual si alguien colgara
+   * "Tablets" bajo "Celulares", y el menú la pintaría dentro en vez de al lado. A diferencia de
+   * ropa y bolsos, tecnología no abre ramas — no hay "Celulares › Gama alta" y no se quiere.
+   */
+  @Test
+  void lasOchoCuelganDeLaLineaYNoUnaDeOtra() {
+    assertThat(categorias.findAll())
+        .filteredOn(c -> "TECNOLOGIA".equals(c.getLinea()))
+        .allSatisfy(
+            categoria ->
+                assertThat(categoria.getPadreId())
+                    .as("%s no debería colgar de otra categoría", categoria.getSlug())
+                    .isNull());
+  }
+
+  /**
    * Explícita sobre las tres que {@code V62} borró. Es redundante con la anterior y se queda a
    * propósito: cuando falle, el mensaje nombra el caso concreto en vez de dejar una diferencia de
    * conjuntos que hay que leer dos veces.

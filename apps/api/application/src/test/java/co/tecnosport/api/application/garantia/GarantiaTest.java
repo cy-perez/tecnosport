@@ -85,7 +85,8 @@ class GarantiaTest {
                   UUID.randomUUID(),
                   categoriaSlug,
                   new Slug(categoriaSlug),
-                  LineaCatalogo.ROPA_Y_CALZADO)));
+                  LineaCatalogo.ROPA,
+                  null)));
     }
     return pedido;
   }

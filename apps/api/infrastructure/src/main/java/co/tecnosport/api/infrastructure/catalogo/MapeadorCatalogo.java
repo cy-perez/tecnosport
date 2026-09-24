@@ -333,7 +333,11 @@ public class MapeadorCatalogo {
 
   private Categoria aCategoria(CategoriaJpaEntity c) {
     return new Categoria(
-        c.getId(), c.getNombre(), new Slug(c.getSlug()), LineaCatalogo.valueOf(c.getLinea()));
+        c.getId(),
+        c.getNombre(),
+        new Slug(c.getSlug()),
+        LineaCatalogo.valueOf(c.getLinea()),
+        c.getPadreId());
   }
 
   private Atributo aAtributo(AtributoJpaEntity a) {

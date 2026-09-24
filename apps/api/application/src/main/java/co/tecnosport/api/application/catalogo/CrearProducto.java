@@ -39,12 +39,25 @@ public final class CrearProducto {
             .buscarPorId(comando.categoriaId())
             .orElseThrow(() -> new CategoriaNoEncontradaException(comando.categoriaId()));
 
+    exigirQueSeaHoja(categoria);
+
     Slug slug = slugDisponible(Slug.generarDesde(comando.nombre()));
 
     Producto producto =
         Producto.crear(comando.nombre(), slug, comando.descripcion(), marca, categoria);
     repositorioProductos.guardar(producto);
     return producto;
+  }
+
+  /**
+   * Un producto cuelga de una hoja, nunca de una rama. Lo razona {@link
+   * CategoriaNoEsHojaException}; se comprueba aquí y no en {@code Producto} porque saber si una
+   * categoría tiene hijas exige leer la tabla, y el agregado no la ve.
+   */
+  private void exigirQueSeaHoja(Categoria categoria) {
+    if (!repositorioCategorias.hijasDe(categoria.id()).isEmpty()) {
+      throw new CategoriaNoEsHojaException(categoria.nombre());
+    }
   }
 
   private Slug slugDisponible(Slug candidato) {

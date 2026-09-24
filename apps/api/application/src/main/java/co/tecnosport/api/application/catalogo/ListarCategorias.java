@@ -5,14 +5,21 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Las categorías del filtro de la vitrina: solo las que tienen algo publicado detrás.
+ * El árbol de categorías completo, para el menú del sitio, el filtro de la vitrina y el panel.
  *
- * <p>Desde que {@code V38} llenó la línea de tecnología de categorías —once entonces, ocho desde
- * que {@code V62} quitó las tres que ninguna lista de proveedor puede llenar—, la vitrina ofrecía
- * "Proyectores" y "Computadores" con la rejilla vacía detrás. Que sean ocho no cambia el problema:
- * mientras haya una categoría sin producto, filtrarlas sigue siendo el trabajo de este caso de uso.
- * El panel usa {@link ListarCategoriasAdmin}, que sí las ve todas — si no, no habría forma de
- * cargar el primer proyector.
+ * <p><b>Devuelve también las vacías</b>, y eso es un cambio del 24 de septiembre de 2026. Antes
+ * llamaba a {@code listarConProductosPublicados()} para no ofrecer un filtro que lleva a una
+ * rejilla en blanco, y el argumento era bueno mientras el catálogo era una lista plana. Con el
+ * árbol dejó de serlo: el menú pinta "Ropa › Dama" con sus nueve prendas, y saltarse "Faldas"
+ * porque hoy no hay ninguna le dice al comprador que no vendemos faldas, que es una afirmación más
+ * cara que una rejilla vacía. La rejilla ya sabe decir que no encontró nada con esos filtros.
+ *
+ * <p>Con eso desapareció la razón de ser de {@code ListarCategoriasAdmin}, que existía solo para
+ * que el panel viera lo que la vitrina escondía. Un caso de uso menos.
+ *
+ * <p>Sin ordenar por jerarquía: devuelve la lista plana ordenada por nombre y quien la recibe la
+ * cuelga. Armar el árbol aquí obligaría a inventar un tipo "nodo" en {@code application} que solo
+ * sirve para viajar, y el frontend lo tendría que deshacer para pintarlo.
  */
 public final class ListarCategorias {
 
@@ -25,6 +32,6 @@ public final class ListarCategorias {
   }
 
   public List<Categoria> ejecutar() {
-    return repositorioCategorias.listarConProductosPublicados();
+    return repositorioCategorias.listarTodas();
   }
 }

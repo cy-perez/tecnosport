@@ -19,7 +19,8 @@ class ContenidoDeclaradoTest {
   private static final Map<LineaCatalogo, String> ESPERADOS = new EnumMap<>(LineaCatalogo.class);
 
   static {
-    ESPERADOS.put(LineaCatalogo.ROPA_Y_CALZADO, "Ropa y calzado deportivo");
+    ESPERADOS.put(LineaCatalogo.ROPA, "Ropa deportiva");
+    ESPERADOS.put(LineaCatalogo.CALZADO, "Calzado deportivo");
     ESPERADOS.put(LineaCatalogo.BOLSOS, "Bolsos y morrales");
     ESPERADOS.put(LineaCatalogo.TECNOLOGIA, "Electrónica y accesorios");
   }

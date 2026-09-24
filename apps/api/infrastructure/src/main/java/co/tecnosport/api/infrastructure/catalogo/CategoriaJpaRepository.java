@@ -12,10 +12,20 @@ public interface CategoriaJpaRepository extends JpaRepository<CategoriaJpaEntity
 
   Optional<CategoriaJpaEntity> findBySlug(String slug);
 
-  /** Mismo criterio y mismo porqué que {@code MarcaJpaRepository#findConProductosEnEstado}. */
+  /** Las hijas directas de una categoría del árbol. */
+  List<CategoriaJpaEntity> findByPadreIdOrderByNombreAsc(UUID padreId);
+
+  /**
+   * ¿Cuelga algún producto de esta categoría? Sin filtrar por estado a propósito: un borrador
+   * también se rompe si le borran la categoría por debajo.
+   *
+   * <p>{@code findConProductosEnEstado} vivía aquí y se fue el 24 de septiembre de 2026 con el
+   * árbol de categorías: servía para esconder de la vitrina las categorías vacías, y un menú que se
+   * salta "Faldas" porque hoy no hay ninguna le dice al comprador que no vendemos faldas. El
+   * equivalente de marcas sí sigue en pie — una marca sin productos no es una promesa de surtido.
+   */
   @Query(
-      "select c from CategoriaJpaEntity c where exists "
-          + "(select 1 from ProductoJpaEntity p where p.categoriaId = c.id and p.estado = :estado) "
-          + "order by c.nombre")
-  List<CategoriaJpaEntity> findConProductosEnEstado(@Param("estado") String estado);
+      "select case when count(p) > 0 then true else false end "
+          + "from ProductoJpaEntity p where p.categoriaId = :categoriaId")
+  boolean existeProductoEnCategoria(@Param("categoriaId") UUID categoriaId);
 }

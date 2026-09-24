@@ -79,8 +79,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarPorSlugHidrataUnProductoCompletoConAtributosEImagenesYSetDeRotacion() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria =
-        categoria("Ropa deportiva", "ropa-deportiva-t1", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t1", "ROPA");
     AtributoJpaEntity color = atributo("Color", "COLOR");
     ProductoJpaEntity producto =
         producto("Camiseta test", "camiseta-test-1", "PUBLICADO", marca, categoria);
@@ -111,7 +110,7 @@ class RepositorioProductosJpaTest {
     Producto p = encontrado.orElseThrow();
     assertThat(p.nombre()).isEqualTo("Camiseta test");
     assertThat(p.marca().nombre()).isEqualTo("TecnoSport");
-    assertThat(p.categoria().linea()).isEqualTo(LineaCatalogo.ROPA_Y_CALZADO);
+    assertThat(p.categoria().linea()).isEqualTo(LineaCatalogo.ROPA);
     assertThat(p.variantes()).hasSize(1);
     assertThat(p.variantes().get(0).sku().valor()).isEqualTo("SKU-TEST-1");
     assertThat(p.variantes().get(0).atributos().get(0).colorHex()).isEqualTo("#1E3A8A");
@@ -239,7 +238,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarFiltraPorCategoriaYPorLinea() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity ropa = categoria("Ropa deportiva", "ropa-deportiva-t4", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity ropa = categoria("Ropa deportiva", "ropa-deportiva-t4", "ROPA");
     CategoriaJpaEntity bolsos = categoria("Bolsos", "bolsos-t4", "BOLSOS");
     ProductoJpaEntity productoRopa =
         producto("Camiseta t4", "camiseta-t4", "PUBLICADO", marca, ropa);
@@ -312,8 +311,7 @@ class RepositorioProductosJpaTest {
   @Test
   void buscarConTextoEncuentraPorSimilitudAunqueNoSeaSubstringExacto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria =
-        categoria("Ropa deportiva", "ropa-deportiva-t6", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t6", "ROPA");
     ProductoJpaEntity camiseta =
         producto("Camiseta running Dry-Fit", "camiseta-t6", "PUBLICADO", marca, categoria);
     variante(camiseta, "SKU-T6-CAM", "89900");
@@ -375,7 +373,7 @@ class RepositorioProductosJpaTest {
             "Descripción",
             new Marca(marca.getId(), "TecnoSport"),
             new Categoria(
-                categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS));
+                categoria.getId(), "Bolsos", new Slug("bolsos-t9"), LineaCatalogo.BOLSOS, null));
 
     repositorio.guardar(producto);
 
@@ -497,7 +495,8 @@ class RepositorioProductosJpaTest {
                 nuevaCategoria.getId(),
                 "Celulares",
                 new Slug("celulares-t11"),
-                LineaCatalogo.TECNOLOGIA));
+                LineaCatalogo.TECNOLOGIA,
+                null));
     // Producto.crear() genera un id nuevo, el update tiene que ir contra el id ya existente.
     Producto productoConIdExistente =
         new Producto(
@@ -536,8 +535,7 @@ class RepositorioProductosJpaTest {
   @Test
   void agregarVarianteLaPersisteConSusAtributosYQuedaLegibleAlHidratarElProducto() {
     MarcaJpaEntity marca = marca("TecnoSport");
-    CategoriaJpaEntity categoria =
-        categoria("Ropa deportiva", "ropa-deportiva-t12", "ROPA_Y_CALZADO");
+    CategoriaJpaEntity categoria = categoria("Ropa deportiva", "ropa-deportiva-t12", "ROPA");
     ProductoJpaEntity productoJpa =
         producto("Camiseta t12", "camiseta-t12", "BORRADOR", marca, categoria);
     AtributoJpaEntity colorJpa = atributo("Color", "COLOR");
@@ -906,7 +904,7 @@ class RepositorioProductosJpaTest {
 
   private CategoriaJpaEntity categoria(String nombre, String slug, String linea) {
     return categorias.save(
-        new CategoriaJpaEntity(UUID.randomUUID(), nombre, slug, linea, Instant.now()));
+        new CategoriaJpaEntity(UUID.randomUUID(), nombre, slug, linea, null, Instant.now()));
   }
 
   private AtributoJpaEntity atributo(String nombre, String tipo) {

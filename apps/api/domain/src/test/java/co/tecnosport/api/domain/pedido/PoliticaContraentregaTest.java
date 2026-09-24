@@ -27,7 +27,7 @@ class PoliticaContraentregaTest {
   void disponibleCuandoCumpleTodasLasReglas() {
     assertTrue(
         PoliticaContraentrega.disponible(
-            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   @Test
@@ -43,28 +43,28 @@ class PoliticaContraentregaTest {
   void noDisponibleSiLaCiudadNoEstaCubierta() {
     assertFalse(
         PoliticaContraentrega.disponible(
-            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), false, false));
+            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA), false, false));
   }
 
   @Test
   void noDisponibleSiElCompradorTieneUnRechazoPrevio() {
     assertFalse(
         PoliticaContraentrega.disponible(
-            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, true));
+            CRITERIOS, Dinero.deCop(200_000), Set.of(LineaCatalogo.ROPA), true, true));
   }
 
   @Test
   void noDisponibleSiElTotalSuperaElMontoMaximo() {
     assertFalse(
         PoliticaContraentrega.disponible(
-            CRITERIOS, Dinero.deCop(1_000_001), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CRITERIOS, Dinero.deCop(1_000_001), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   @Test
   void elTotalIgualAlMontoMaximoSiEstaDisponible() {
     assertTrue(
         PoliticaContraentrega.disponible(
-            CRITERIOS, Dinero.deCop(1_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CRITERIOS, Dinero.deCop(1_000_000), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   @Test
@@ -73,7 +73,7 @@ class PoliticaContraentregaTest {
         PoliticaContraentrega.disponible(
             CRITERIOS,
             Dinero.deCop(200_000),
-            Set.of(LineaCatalogo.ROPA_Y_CALZADO, LineaCatalogo.TECNOLOGIA),
+            Set.of(LineaCatalogo.ROPA, LineaCatalogo.TECNOLOGIA),
             true,
             false));
   }
@@ -87,7 +87,7 @@ class PoliticaContraentregaTest {
   void noDisponibleSiElTotalNoLlegaAlMontoMinimo() {
     assertFalse(
         PoliticaContraentrega.disponible(
-            CON_PISO, Dinero.deCop(1_999), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CON_PISO, Dinero.deCop(1_999), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   /** Los dos extremos son inclusivos, y se afirman los dos: el techo ya lo estaba. */
@@ -95,7 +95,7 @@ class PoliticaContraentregaTest {
   void elTotalIgualAlMontoMinimoSiEstaDisponible() {
     assertTrue(
         PoliticaContraentrega.disponible(
-            CON_PISO, Dinero.deCop(2_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CON_PISO, Dinero.deCop(2_000), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   /**
@@ -113,7 +113,7 @@ class PoliticaContraentregaTest {
   void elTotalPorEncimaDelMaximoNoCalificaAunqueSupereElMinimo() {
     assertFalse(
         PoliticaContraentrega.disponible(
-            CON_PISO, Dinero.deCop(2_000_001), Set.of(LineaCatalogo.ROPA_Y_CALZADO), true, false));
+            CON_PISO, Dinero.deCop(2_000_001), Set.of(LineaCatalogo.ROPA), true, false));
   }
 
   /**

@@ -11,7 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_5"];
+        get: operations["listar_6"];
         put?: never;
         post: operations["radicar_3"];
         delete?: never;
@@ -59,10 +59,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_11"];
+        get: operations["listar_5"];
         put?: never;
-        post?: never;
+        post: operations["crear_7"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/categorias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["editar"];
+        post?: never;
+        delete: operations["eliminar"];
         options?: never;
         head?: never;
         patch?: never;
@@ -75,7 +91,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_10"];
+        get: operations["listar_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -171,7 +187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_9"];
+        get: operations["listar_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -401,7 +417,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["editar"];
+        patch: operations["editar_1"];
         trace?: never;
     };
     "/api/v1/admin/productos/{id}/galeria": {
@@ -606,7 +622,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["eliminar"];
+        delete: operations["eliminar_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -763,7 +779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_8"];
+        get: operations["listar_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -987,7 +1003,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_7"];
+        get: operations["listar_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1051,7 +1067,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["listar_6"];
+        get: operations["listar_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1362,6 +1378,8 @@ export interface components {
             id?: string;
             linea?: string;
             nombre?: string;
+            /** Format: uuid */
+            padreId?: string;
             slug?: string;
         };
         CompletarSetRotacionPeticion: {
@@ -1401,6 +1419,13 @@ export interface components {
             transportadora?: string;
             /** Format: date-time */
             venceEn?: string;
+        };
+        CrearCategoriaPeticion: {
+            linea?: string;
+            nombre?: string;
+            /** Format: uuid */
+            padreId?: string;
+            slug?: string;
         };
         CrearIntentoDePagoRequest: {
             /** Format: uuid */
@@ -1469,6 +1494,13 @@ export interface components {
             departamento?: string;
             direccion?: string;
             indicaciones?: string;
+        };
+        EditarCategoriaPeticion: {
+            linea?: string;
+            nombre?: string;
+            /** Format: uuid */
+            padreId?: string;
+            slug?: string;
         };
         EditarProductoPeticion: {
             /** Format: uuid */
@@ -2191,7 +2223,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    listar_5: {
+    listar_6: {
         parameters: {
             query?: {
                 estado?: "RADICADA" | "PRORROGADA" | "RESPONDIDA";
@@ -2289,7 +2321,7 @@ export interface operations {
             };
         };
     };
-    listar_11: {
+    listar_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2309,7 +2341,77 @@ export interface operations {
             };
         };
     };
-    listar_10: {
+    crear_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CrearCategoriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    editar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditarCategoriaPeticion"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CategoriaRespuesta"];
+                };
+            };
+        };
+    };
+    eliminar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listar_11: {
         parameters: {
             query?: {
                 maximo?: number;
@@ -2479,7 +2581,7 @@ export interface operations {
             };
         };
     };
-    listar_9: {
+    listar_10: {
         parameters: {
             query?: {
                 pagina?: number;
@@ -2934,7 +3036,7 @@ export interface operations {
             };
         };
     };
-    editar: {
+    editar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3277,7 +3379,7 @@ export interface operations {
             };
         };
     };
-    eliminar: {
+    eliminar_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3507,7 +3609,7 @@ export interface operations {
             };
         };
     };
-    listar_8: {
+    listar_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3852,7 +3954,7 @@ export interface operations {
             };
         };
     };
-    listar_7: {
+    listar_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3938,7 +4040,7 @@ export interface operations {
             };
         };
     };
-    listar_6: {
+    listar_7: {
         parameters: {
             query?: never;
             header?: never;

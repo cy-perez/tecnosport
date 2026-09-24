@@ -159,7 +159,7 @@ class CrearPedidoTest {
   private Variante publicarSegundaVarianteConExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Pantaloneta running",
@@ -212,7 +212,7 @@ class CrearPedidoTest {
   private void publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Camiseta running Dry-Fit",
@@ -620,7 +620,7 @@ class CrearPedidoTest {
   void contraentregaSeRechazaSiLaCategoriaEstaExcluida() {
     CriteriosContraentrega sinRopaYCalzado =
         new CriteriosContraentrega(
-            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA));
     CrearPedido caso = crear(sinRopaYCalzado, true);
     publicarProductoConVarianteYExistencia(5);
 
@@ -759,7 +759,7 @@ class CrearPedidoTest {
   void productoSinPublicarLanzaVarianteNoEncontrada() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     Producto productoEnBorrador =
         Producto.crear(
             "Camiseta sin publicar", new Slug("camiseta-sin-publicar"), "", marca, categoria);

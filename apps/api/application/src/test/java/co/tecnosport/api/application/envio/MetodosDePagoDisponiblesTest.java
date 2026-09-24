@@ -83,7 +83,7 @@ class MetodosDePagoDisponiblesTest {
   private void publicarProductoConVariante() {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Camiseta running Dry-Fit",
@@ -543,7 +543,7 @@ class MetodosDePagoDisponiblesTest {
   void contraentregaNoDisponibleSiLaCategoriaDelCarritoEstaExcluida() {
     CriteriosContraentrega sinRopaYCalzado =
         new CriteriosContraentrega(
-            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA_Y_CALZADO));
+            true, Dinero.deCop(1), Dinero.deCop(10_000_000), Set.of(LineaCatalogo.ROPA));
     MetodosDePagoDisponibles caso = crear(sinRopaYCalzado);
     cotizador.conTarifaQueRecauda();
 

@@ -114,7 +114,7 @@ class PedidoControladorTest {
   private Variante publicarProductoConVarianteYExistencia(int existencia) {
     Marca marca = Marca.crear("TecnoSport");
     Categoria categoria =
-        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA_Y_CALZADO);
+        Categoria.crear("Ropa deportiva", new Slug("ropa-deportiva"), LineaCatalogo.ROPA);
     Producto producto =
         Producto.crear(
             "Camiseta running Dry-Fit",

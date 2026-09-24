@@ -1,5 +1,6 @@
-package co.tecnosport.api.application.catalogo;
+package co.tecnosport.api.presentation.catalogo;
 
+import co.tecnosport.api.application.catalogo.RepositorioCategorias;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.compartido.Slug;
 import java.util.ArrayList;
@@ -8,17 +9,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md.
+ * Doble de categorías para las pruebas de controlador, escrito a mano (docs/06-testing.md).
  *
- * <p>Guarda una sola lista, y eso es nuevo: hasta el 24 de septiembre de 2026 tenía dos —todas y
- * las que tenían productos publicados— porque el puerto tenía dos métodos de listado. Desde que la
- * vitrina muestra el árbol completo solo queda uno, y el doble se simplificó con él.
- *
- * <p>{@code conProductos} es un conjunto de ids aparte y no una lista de categorías: lo que las
- * reglas del árbol preguntan es "¿cuelga algo de esta?", y darle al doble la forma de la pregunta
- * evita que cada prueba tenga que montar productos que no está probando.
+ * <p>Estaba copiado como clase anidada en {@code CategoriaControladorTest}, {@code
+ * AdminCategoriaControladorTest} y {@code AdminProductoControladorTest}, con tres implementaciones
+ * distintas del mismo puerto. Al ganar el puerto los cinco métodos del árbol había que escribirlos
+ * tres veces, y ese fue el momento de juntarlos: tres dobles del mismo puerto que divergen es la
+ * forma barata de que una prueba pase por un motivo que la de al lado no admite.
  */
-final class RepositorioCategoriasFalso implements RepositorioCategorias {
+class RepositorioCategoriasDobleDePrueba implements RepositorioCategorias {
 
   private final List<Categoria> todas = new ArrayList<>();
   private final List<UUID> conProductos = new ArrayList<>();
@@ -28,7 +27,6 @@ final class RepositorioCategoriasFalso implements RepositorioCategorias {
     todas.addAll(List.of(categorias));
   }
 
-  /** Marca esas categorías como "tiene productos colgando", sin montar ningún producto. */
   void conProductosEn(Categoria... categorias) {
     conProductos.clear();
     for (Categoria categoria : categorias) {

@@ -40,8 +40,21 @@ public final class EditarProducto {
             .buscarPorId(comando.categoriaId())
             .orElseThrow(() -> new CategoriaNoEncontradaException(comando.categoriaId()));
 
+    exigirQueSeaHoja(categoria);
+
     producto.actualizarDatosBasicos(comando.nombre(), comando.descripcion(), marca, categoria);
     repositorioProductos.actualizar(producto);
     return producto;
+  }
+
+  /**
+   * Un producto cuelga de una hoja, nunca de una rama. Lo razona {@link
+   * CategoriaNoEsHojaException}; se comprueba aquí y no en {@code Producto} porque saber si una
+   * categoría tiene hijas exige leer la tabla, y el agregado no la ve.
+   */
+  private void exigirQueSeaHoja(Categoria categoria) {
+    if (!repositorioCategorias.hijasDe(categoria.id()).isEmpty()) {
+      throw new CategoriaNoEsHojaException(categoria.nombre());
+    }
   }
 }
