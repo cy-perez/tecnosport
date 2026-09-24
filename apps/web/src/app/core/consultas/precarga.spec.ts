@@ -1,7 +1,11 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { focusManager, onlineManager, QueryClient } from '@tanstack/angular-query-experimental';
-import { PRECARGA_NO_BLOQUEANTE, sinBloquearLaNavegacion } from './precarga';
+import {
+  ESPERA_MAXIMA_EN_EL_NAVEGADOR_MS,
+  PRECARGA_NO_BLOQUEANTE,
+  sinBloquearLaNavegacion,
+} from './precarga';
 
 /**
  * Lo que se mide aquí no es el valor que devuelve la promesa, es **si termina**.
@@ -145,21 +149,23 @@ describe('PRECARGA_NO_BLOQUEANTE', () => {
         sinBloquearLaNavegacion(precargaDelResolver(cliente)),
       );
 
-      // Por encima del límite de la precarga, para darle tiempo a vencer.
-      expect(await termina(acotada, 2500)).toBe(true);
+      // Colgado del propio límite y no de un número repetido: si alguien lo
+      // sube, la prueba lo sigue en vez de ponerse roja por nada.
+      expect(await termina(acotada, ESPERA_MAXIMA_EN_EL_NAVEGADOR_MS + 500)).toBe(true);
     });
 
-    it('en el servidor no se acota: ahí la precarga es el motivo del SSR', async () => {
+    // Por identidad y no por reloj: esperar a que *no* pase nada durante más
+    // del límite son cinco segundos de prueba para comprobar algo que se ve en
+    // una línea. Que devuelva la misma promesa **es** no haber carrera.
+    it('en el servidor devuelve la promesa tal cual: ahí no se acota', () => {
       TestBed.configureTestingModule({
         providers: [{ provide: PLATFORM_ID, useValue: 'server' }],
       });
-      const cliente = await conUnFetchAjenoYaPausado();
+      const precarga = Promise.resolve();
 
-      const sinAcotar = TestBed.runInInjectionContext(() =>
-        sinBloquearLaNavegacion(precargaDelResolver(cliente)),
-      );
+      const resultado = TestBed.runInInjectionContext(() => sinBloquearLaNavegacion(precarga));
 
-      expect(await termina(sinAcotar, 2500)).toBe(false);
+      expect(resultado).toBe(precarga);
     });
   });
 });

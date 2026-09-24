@@ -37,8 +37,15 @@ export const PRECARGA_NO_BLOQUEANTE = {
  * la caché. Con la API sana esto no se alcanza nunca —una respuesta local tarda
  * decenas de milisegundos—; existe para que un backend caído, lento o
  * inalcanzable cueste una pantalla de carga y no una aplicación congelada.
+ *
+ * Cinco segundos y no dos: el valor no está medido, está elegido, y de los dos
+ * errores posibles este es el barato. Pasarse de corto le quita datos al primer
+ * pintado de una navegación que iba a llegar —móvil con mala señal, un arranque
+ * en frío— y devuelve esqueletos sin necesidad; pasarse de largo solo alarga un
+ * caso que ya está roto. Se exporta para que las pruebas cuelguen de él en vez
+ * de repetir el número.
  */
-const ESPERA_MAXIMA_EN_EL_NAVEGADOR_MS = 2000;
+export const ESPERA_MAXIMA_EN_EL_NAVEGADOR_MS = 5000;
 
 /**
  * Acota lo que un resolver espera por una precarga. **Es la pieza que de verdad
