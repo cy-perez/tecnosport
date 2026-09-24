@@ -263,6 +263,39 @@ if (enYmlIva === "false") {
   }
 }
 
+// --- 6. Ningún documento legal puede llevar por dentro su propia fecha de vigencia.
+//
+// Pasó y duró cuatro días: el 19 de septiembre de 2026 se subió `legales.comun.version` para
+// corregir la garantía, y el numeral "Vigencia" de los tres documentos siguió diciendo "18 de
+// septiembre de 2026". O sea que la misma página mostraba dos fechas distintas de cuándo empezó a
+// regir el texto, y es justo la fecha que decide qué versión gobierna una compra — la que el propio
+// documento dice que se aplica. La regla 3 no lo vio porque compara las cuatro copias de la versión
+// entre sí, y esa quinta copia estaba dentro de la prosa.
+//
+// El arreglo fue quitar la copia: los numerales de vigencia remiten al encabezado, que sale de
+// `legales.comun.version`. Esta regla existe para que no vuelva a aparecer una fecha suelta ahí.
+const FECHA_ES = /\b\d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de \d{4}\b/gi;
+const FECHA_EN = /\b\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b/gi;
+
+for (const [idioma, legales] of [
+  ["es", legalesEs],
+  ["en", legalesEn],
+]) {
+  for (const [documento, contenido] of Object.entries(legales)) {
+    if (documento === "comun" || !contenido?.secciones) continue;
+    for (const seccion of contenido.secciones) {
+      const esVigencia = /vigencia|^\d+\.\s*term$/i.test(seccion.titulo ?? "");
+      if (!esVigencia) continue;
+      const prosa = JSON.stringify(seccion);
+      for (const fecha of [...(prosa.match(FECHA_ES) ?? []), ...(prosa.match(FECHA_EN) ?? [])]) {
+        problemas.push(
+          `legales/${idioma}.json, ${documento} "${seccion.titulo}": lleva la fecha "${fecha}" escrita dentro del documento. La vigencia se muestra en el encabezado, desde legales.comun.version (hoy ${version}); una segunda copia aquí se desincroniza y el documento acaba diciendo dos fechas distintas.`,
+        );
+      }
+    }
+  }
+}
+
 if (problemas.length > 0) {
   console.error(`\n${problemas.length} dato(s) del negocio que no coinciden:\n`);
   for (const problema of problemas) {

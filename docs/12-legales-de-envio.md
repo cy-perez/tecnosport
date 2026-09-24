@@ -626,28 +626,65 @@ así se sabe qué no hay que volver a mirar:
 
 ## 7. Puntos para revisión de abogado
 
+> **Triados el 23 de septiembre de 2026.** Los cinco se escribieron cuando estas
+> cláusulas eran un borrador. Ya están publicadas, así que tres de ellos los
+> contestó el propio texto o una medición, y quedan dos. Van tachados y no
+> borrados: el motivo que los abrió sigue siendo cierto y sin la razón escrita
+> vuelven a nacer.
+
+**Siguen abiertos, y van al abogado:**
+
 1. **¿La reversión del pago (art. 51) alcanza el costo del envío?** El decreto que
    la reglamenta contempla la reversión parcial cuando la compra fue de varios
    productos, pero no encontramos texto oficial que resuelva expresamente qué pasa
    con el flete. La redacción propuesta no toca el numeral 11 y deja la pregunta
    abierta a propósito.
-2. **¿Se puede pactar un plazo de entrega distinto del supletivo de 30 días
-   mostrando el estimado del transportador en el checkout?** La norma pide
-   aceptación expresa y previa del plazo pactado. Mostrar un estimado no parece
-   equivalente a pactar, y de ahí la cláusula que los distingue. Confirmar si hace
-   falta una aceptación explícita del plazo para poder oponerlo.
-3. **La entidad con la que se contrata Skydropx y el régimen de la transferencia.**
+   **Qué cambia según la respuesta:** si alcanza al flete,
+   `legales.terminos.secciones[10]` gana una frase en los dos idiomas y el cálculo
+   del reintegro por reversión tiene que incluirlo; si no alcanza, nada se toca.
+2. **La entidad con la que se contrata Skydropx y el régimen de la transferencia.**
    México está en la lista de nivel adecuado de la SIC, pero si el contrato es con
    una filial colombiana el análisis es otro, y si hay subencargados en otros
    países hay que mirarlos. Punto para abogado con el contrato firmado a la vista.
-4. **Reintegro del flete de ida en el retracto.** La redacción propuesta lo
-   reintegra, por la lectura estricta del art. 47: el consumidor solo asume los
-   costos de la devolución. Es la posición favorable al consumidor y la más segura;
-   confirmar si el negocio quiere sostener otra, sabiendo que la duda se interpreta
-   a favor del consumidor.
-5. **Cobrar contra entrega el flete además de la mercancía** cuando la
-   transportadora suma su propia comisión de recaudo: confirmar que no se está
-   trasladando al comprador un cargo que no se le informó como tal.
+   **Qué hay que tener delante:** el contrato firmado con Skydropx. Sin él la
+   pregunta no se puede contestar, y hoy no está leído.
+   **Qué cambia según la respuesta:** `legales.privacidad.secciones[8]`, que hoy
+   dice que la plataforma logística es una sociedad colombiana y remite a su
+   política.
+
+**Retirados, con lo que los contestó:**
+
+3. ~~**¿Se puede pactar un plazo de entrega distinto del supletivo de 30 días
+   mostrando el estimado del transportador en el checkout?**~~ **Retirado el 23 de
+   septiembre de 2026: el texto publicado ya tomó la salida segura**, que era una
+   de las dos que el punto planteaba. `legales.terminos.secciones[7]` dice "No
+   pactamos contigo un plazo de entrega distinto del legal, así que aplica el
+   término de treinta (30) días calendario", y distingue expresamente la fecha
+   estimada del transportador. No hay nada que decidir mientras el sitio no quiera
+   pactar plazos más cortos; el día que lo quiera, el punto vuelve a abrirse y
+   entonces sí necesita la respuesta sobre la aceptación expresa.
+4. ~~**Reintegro del flete de ida en el retracto.**~~ **No era una pregunta de
+   derecho: es una decisión del dueño, y pasa a la lista de él.** El análisis
+   jurídico ya está hecho y dice cuál es la posición segura —reintegrarlo, por la
+   lectura estricta del art. 47— y el texto publicado la sostiene
+   (`legales.terminos.secciones[8]`: "Lo que te reintegramos es todo lo que
+   pagaste por la compra, incluido el costo del envío que te cobramos al
+   comprar"). Lo único que queda es si el negocio quiere asumir el riesgo de la
+   posición contraria, sabiendo que la duda se interpreta a favor del consumidor.
+   Eso no lo contesta un abogado.
+5. ~~**Cobrar contra entrega el flete además de la mercancía** cuando la
+   transportadora suma su propia comisión de recaudo.~~ **Retirado el 23 de
+   septiembre de 2026: la premisa de hecho es falsa, medida.** No hay ningún cargo
+   de recaudo que trasladar, por dos vías independientes:
+   - **La cotización no sube por pedir recaudo.** La tarifa de 99 minutes vale
+     19.465 con recaudo y sin él (`docs/13` §6.5), así que la comisión no viaja
+     dentro del flete que se le cobra al comprador.
+   - **El total no la suma.** `Pedido.total()` es `subtotal + costoEnvio`, y la
+     comisión vive aparte, en `Envio.comisionRecaudo`, que se concilia **después**
+     de la entrega y es un costo del negocio, no un cargo del comprador.
+
+   Si algún día la cotización con recaudo deja de valer lo mismo que sin él, la
+   premisa vuelve a ser cierta y el punto se reabre.
 
 ---
 
@@ -666,7 +703,9 @@ así se sabe qué no hay que volver a mirar:
 - [ ] El seguimiento público ya no expone costo real ni comisión de recaudo.
 - [ ] `axe` en verde en las tres páginas legales y en el checkout, que es donde
       alguien va a leer esto justo cuando tiene un problema.
-- [ ] Un abogado colegiado revisó los cinco puntos de la sección 7.
+- [ ] Un abogado colegiado revisó los **dos** puntos que quedan abiertos en la
+      sección 7. Eran cinco; tres se retiraron el 23 de septiembre de 2026 y ahí
+      está dicho por qué.
 - [ ] **Un contador revisó `adr/0040`** — el IVA del flete cobrado. No bloquea
       desplegar: no hay nada que construir ni que deshacer, y el sistema ya hace lo
       decidido. Está aquí porque es lo único del proyecto que se decidió **contra** la

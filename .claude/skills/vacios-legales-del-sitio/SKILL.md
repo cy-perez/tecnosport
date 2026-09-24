@@ -91,7 +91,7 @@ produce asesoría jurídica ni texto legal.
 
 ---
 
-## El flujo: verificar → inventariar → rastrear → cotejar el plazo → contrastar → clasificar → cerrar
+## El flujo: verificar → inventariar → rastrear → cotejar el plazo → contrastar → clasificar → cerrar → revisar el expediente
 
 ### Fase 0 — Verifica la obligación antes de auditarla
 
@@ -347,6 +347,38 @@ con su prueba, que cambia de sentido y no solo de valor.
 
 ---
 
+### Fase 5c — Revisa los puntos para abogado que dejaron las auditorías anteriores
+
+La Fase 6 **abre** puntos para abogado. Esta los vuelve a mirar, y es la otra
+mitad del mismo trabajo: una skill que solo abre puntos produce un expediente que
+crece siempre y no se manda nunca.
+
+Un punto para abogado es más silencioso que un marcador `[[ ]]`. El marcador al
+menos afea el documento publicado; el punto vive en `docs/`, no rompe ninguna
+prueba, y tiene una propiedad que lo vuelve inmortal: **está dirigido a otra
+persona**, así que nadie cree que le toque cerrarlo.
+
+Tres reglas, y el detalle en `references/cerrar-puntos-de-abogado.md`:
+
+1. **Reúnelos todos, de todos los documentos, antes de mandar ninguno.** La lista
+   se dispersa: una parte en el expediente del abogado, otra en el documento de la
+   funcionalidad que la abrió, otra en un ADR. Mandar una sola y pagar la hora
+   deja las otras abiertas. Un `grep` por "abogado" sobre `docs/` es el inventario.
+2. **Clasifica antes de mandar.** La norma lo contesta y se puede verificar / la
+   premisa de hecho es medible / es una decisión del negocio y no de derecho / es
+   de verdad una decisión de riesgo jurídico. Solo la cuarta clase se manda. La
+   tercera no se cierra: **se muda** a la lista de lo que decide el dueño.
+3. **Un punto se retira con una fuente verificada o una medición, nunca porque
+   parezca improbable.** Y se tacha, no se borra, con la razón y la fecha — si se
+   borra, vuelve a nacer en seis meses, porque el motivo que lo abrió sigue ahí.
+
+El punto que sobrevive no se deja como estaba: se le exige el mapa de **qué cambia
+según cada respuesta** —archivo y clave exacta, los dos idiomas, la versión y la
+vigencia del documento— y **qué hay que tener delante** para contestarlo. Sin eso,
+la respuesta llega y hay que traducirla desde cero.
+
+---
+
 ### Fase 6 — Entrega
 
 Usa `assets/plantilla-inventario-vacios.md`. Lleva cinco bloques:
@@ -358,7 +390,11 @@ Usa `assets/plantilla-inventario-vacios.md`. Lleva cinco bloques:
    bug / decisión de negocio / hueco de la ley.
 4. **Datos del negocio que faltan**, marcados `[[ ]]`.
 5. **Puntos para revisión de abogado**: las decisiones de riesgo, con la
-   disyuntiva explicada y sin resolverla.
+   disyuntiva explicada y sin resolverla. Cada uno con **qué cambia según
+   cada respuesta** —archivo y clave exacta, no el número del apartado que se
+   lee en pantalla— y con qué hay que tener delante para contestarlo. Un punto
+   sin eso no está listo para mandarse. Y antes de añadir ninguno, pasa la
+   Fase 5c sobre los que ya estaban: la lista que se manda es una, no tres.
 
 Lo que **no** va en la entrega: hallazgos sin verificar contra el código.
 "Probablemente no exista el flujo de garantía" no es un hallazgo. Ábrelo, míralo,
@@ -405,6 +441,12 @@ y escribe lo que hay.
   cuelgue de él.
 - **Auditar una sola vez.** El inventario se rehace cuando cambia un texto legal
   o cuando entra un flujo que toca dinero, datos o entrega.
+- **Mandar al abogado una pregunta que la norma contesta.** No es prudencia:
+  gasta la hora que necesitan los puntos que sí la merecen, y enseña a quien
+  recibe el expediente que la lista no está filtrada.
+- **Abrir puntos para abogado y no volver a mirarlos.** Caducan como los
+  marcadores y más callados: el texto publicado ya tomó una de las dos salidas,
+  o la premisa de hecho se midió y era falsa. Fase 5c.
 
 ## Índice de recursos
 
@@ -415,6 +457,9 @@ y escribe lo que hay.
   mencione, y qué exige del código
 - `cerrar-marcadores.md` — la operación inversa: cómo se cierra un `[[ ]]` que ya
   existe, por qué no se publica nunca, y qué arrastra cerrarlo
+- `cerrar-puntos-de-abogado.md` — la otra operación inversa: cómo se revisa un
+  punto para abogado abierto por una auditoría anterior, cuáles se retiran y qué
+  tiene que llevar el que sobrevive
 
 De la skill hermana `textos-legales-comerciales`:
 - `references/marco-normativo.md` — mapa de normas y fuentes oficiales para
