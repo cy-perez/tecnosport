@@ -1,9 +1,12 @@
 package co.tecnosport.api.presentation;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -60,6 +63,40 @@ class ManejadorDeErroresTest {
         .andExpect(status().isOk());
   }
 
+  /**
+   * El mensaje de {@code MissingServletRequestParameterException} lo escribe el framework y habla
+   * de nuestras clases: el tipo del parámetro, el nombre del método. Iba al {@code detail} tal
+   * cual, así que cualquiera que mandara una petición incompleta recibía de vuelta estructura
+   * interna. Lo que el frontend usa es el {@code codigo}, que no cambia.
+   */
+  @Test
+  void unaSolicitudMalFormadaNoPublicaElDetalleInternoDelFramework() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/con-parametro"))
+        .andExpect(status().isUnprocessableContent())
+        .andExpect(jsonPath("$.codigo").value("MISSING_SERVLET_REQUEST_PARAMETER"))
+        .andExpect(jsonPath("$.detail").value(not(containsString("String"))))
+        .andExpect(jsonPath("$.detail").value(not(containsString("parameter"))));
+  }
+
+  /**
+   * La fuga que el manejador de al lado bloquea a conciencia citando la Ley 1266, y que salía
+   * entera por este: el mensaje de esta excepción lleva concatenado el {@code message} del
+   * proveedor para que el registro sirva, y {@code problema(...)} lo publicaba en el {@code
+   * detail}.
+   */
+  @Test
+  void elTextoCrudoDeSistecreditoNoLlegaAlComprador() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/sistecredito-caido"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.codigo").value("SISTECREDITO_NO_RESPONDE"))
+        .andExpect(
+            jsonPath("$.detail")
+                .value(not(containsString("ya tiene una solicitud de credito en curso"))))
+        .andExpect(jsonPath("$.detail").value(not(containsString("errorCode"))));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -79,6 +116,14 @@ class ManejadorDeErroresTest {
     @GetMapping("/api/v1/prueba-de-errores/con-parametro")
     String conParametro(@RequestParam String correo) {
       return correo;
+    }
+
+    /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */
+    @GetMapping("/api/v1/prueba-de-errores/sistecredito-caido")
+    String sistecreditoCaido() {
+      throw new SistecreditoNoRespondeException(
+          "Sistecredito rechazo la creacion: HTTP 400, errorCode=801, "
+              + "message=El cliente ya tiene una solicitud de credito en curso");
     }
   }
 }

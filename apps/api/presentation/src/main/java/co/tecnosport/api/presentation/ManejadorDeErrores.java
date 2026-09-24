@@ -430,11 +430,29 @@ public class ManejadorDeErrores {
     return detalle;
   }
 
-  // La pasarela no contestó. 503 y no 409: no es una respuesta de negocio, es una caída, y el
-  // comprador puede reintentar o elegir otro medio.
+  /**
+   * La pasarela no contestó. 503 y no 409: no es una respuesta de negocio, es una caída, y el
+   * comprador puede reintentar o elegir otro medio.
+   *
+   * <p><b>Aquí tampoco sale el texto crudo de Sistecrédito, y esa es la corrección.</b> El mensaje
+   * de esta excepción lleva concatenado el {@code message} del proveedor —{@code
+   * SistecreditoClient} lo compone así para que el registro del servidor sirva para diagnosticar— y
+   * {@code problema(...)} publicaba {@code getMessage()} tal cual en el {@code detail}. O sea que
+   * la misma fuga que el manejador de arriba bloquea a conciencia, citando la Ley 1266, salía
+   * entera por el manejador de al lado. Se queda en el registro, que es donde sirve; el frontend
+   * elige su texto por el {@code codigo}, como todos los demás.
+   */
   @ExceptionHandler(SistecreditoNoRespondeException.class)
   public ProblemDetail sistecreditoNoResponde(SistecreditoNoRespondeException excepcion) {
-    return problema(HttpStatus.SERVICE_UNAVAILABLE, "Sistecrédito no responde", excepcion);
+    log.error("Sistecrédito no respondió.", excepcion);
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "No pudimos comunicarnos con Sistecrédito en este momento.");
+    problema.setTitle("Sistecrédito no responde");
+    problema.setProperty("codigo", "SISTECREDITO_NO_RESPONDE");
+    problema.setType(URI.create("https://tecnosport.co/errores/sistecredito-no-responde"));
+    return problema;
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo
@@ -533,17 +551,45 @@ public class ManejadorDeErrores {
    * los demás 422 y no con un 400 por lo mismo que el tipo que no convierte: la petición se
    * entiende, lo que no se puede es procesarla.
    */
-  @ExceptionHandler({
-    ExcepcionDeDominio.class,
-    IllegalArgumentException.class,
-    MethodArgumentTypeMismatchException.class,
-    MissingServletRequestParameterException.class,
-    HttpMessageNotReadableException.class
-  })
+  @ExceptionHandler({ExcepcionDeDominio.class, IllegalArgumentException.class})
   public ProblemDetail solicitudInvalida(Exception excepcion) {
     ProblemDetail problema =
         problema(HttpStatus.UNPROCESSABLE_CONTENT, "Solicitud inválida", excepcion);
     problema.setProperty("campos", List.of());
+    return problema;
+  }
+
+  /**
+   * Las dos de arriba son nuestras y su mensaje está escrito para que alguien lo lea; estas tres
+   * las escribe el framework y su mensaje describe <b>nuestras clases</b>: el nombre con paquete
+   * completo del DTO, la cadena de referencia que Jackson recorrió, la posición del parser. Iban en
+   * la misma lista, así que cualquiera que mandara un JSON mal formado recibía de vuelta la
+   * estructura interna del servidor.
+   *
+   * <p>El {@code codigo} no cambia —{@code HTTP_MESSAGE_NOT_READABLE}, {@code
+   * METHOD_ARGUMENT_TYPE_MISMATCH}, {@code MISSING_SERVLET_REQUEST_PARAMETER}— y es lo único que el
+   * frontend usa: {@code mensaje-de-error.ts} traduce por código y nunca por {@code detail},
+   * precisamente porque la frase de Java viene en un solo idioma y fuera de Transloco. Así que
+   * tapar el detalle no le quita nada a nadie salvo a quien estaba sondeando.
+   */
+  @ExceptionHandler({
+    MethodArgumentTypeMismatchException.class,
+    MissingServletRequestParameterException.class,
+    HttpMessageNotReadableException.class
+  })
+  public ProblemDetail solicitudMalFormada(Exception excepcion) {
+    log.warn("Solicitud mal formada: {}", excepcion.toString());
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "La solicitud no se pudo leer: revisa el cuerpo y los parámetros.");
+    problema.setTitle("Solicitud inválida");
+    String codigo = codigoDesde(excepcion);
+    problema.setProperty("codigo", codigo);
+    problema.setProperty("campos", List.of());
+    problema.setType(
+        URI.create(
+            "https://tecnosport.co/errores/" + codigo.toLowerCase(Locale.ROOT).replace('_', '-')));
     return problema;
   }
 
