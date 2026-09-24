@@ -267,8 +267,11 @@ armar la rejilla (`p.estado = 'PUBLICADO'`), no uno parecido: si algún día la
 rejilla exigiera además variante activa, este tendría que moverse con ella.
 
 Hasta el 19 de septiembre de 2026 devolvían la tabla entera, y desde que
-`V38__linea_tecnologia.sql` dejó la línea de tecnología con once categorías, la
-vitrina ofrecía "Proyectores" y "Computadores" sin un solo producto detrás.
+`V38__linea_tecnologia.sql` llenó la línea de tecnología de categorías —once
+entonces, ocho desde que `V62__categorias_sin_suministro.sql` quitó las tres que
+ninguna lista de proveedor puede llenar—, la vitrina ofrecía "Proyectores" y
+"Computadores" sin un solo producto detrás. Que hoy sean ocho no cambia nada de
+esto: basta una categoría vacía para que el filtro mienta.
 
 El panel necesita lo contrario —la categoría vacía es justo la que hace falta
 para cargarle el primer producto—, y por eso existen `GET /api/v1/admin/marcas`

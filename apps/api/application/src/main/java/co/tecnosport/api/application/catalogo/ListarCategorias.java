@@ -7,10 +7,12 @@ import java.util.Objects;
 /**
  * Las categorías del filtro de la vitrina: solo las que tienen algo publicado detrás.
  *
- * <p>Desde que {@code V38} dejó la línea de tecnología con once categorías, la vitrina ofrecía
- * "Proyectores" y "Computadores" con la rejilla vacía detrás. El panel usa {@link
- * ListarCategoriasAdmin}, que sí las ve todas — si no, no habría forma de cargar el primer
- * proyector.
+ * <p>Desde que {@code V38} llenó la línea de tecnología de categorías —once entonces, ocho desde
+ * que {@code V62} quitó las tres que ninguna lista de proveedor puede llenar—, la vitrina ofrecía
+ * "Proyectores" y "Computadores" con la rejilla vacía detrás. Que sean ocho no cambia el problema:
+ * mientras haya una categoría sin producto, filtrarlas sigue siendo el trabajo de este caso de uso.
+ * El panel usa {@link ListarCategoriasAdmin}, que sí las ve todas — si no, no habría forma de
+ * cargar el primer proyector.
  */
 public final class ListarCategorias {
 

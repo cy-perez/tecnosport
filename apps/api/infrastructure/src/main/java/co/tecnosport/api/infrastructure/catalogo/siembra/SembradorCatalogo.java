@@ -159,12 +159,22 @@ public class SembradorCatalogo implements ApplicationRunner {
     CategoriaJpaEntity calzadoDeportivo =
         guardarCategoria("Calzado deportivo", "calzado-deportivo", "ROPA_Y_CALZADO", ahora);
     CategoriaJpaEntity bolsos = guardarCategoria("Bolsos", "bolsos", "BOLSOS", ahora);
-    // "Celulares" es la única categoría tecnológica que se siembra, porque es la única con un
-    // producto de ejemplo detrás. Las otras diez —relojes, audífonos, cargadores…— viven en
+    // "Celulares" es la única categoría tecnológica que este sembrador toca, porque es la única con
+    // un producto de ejemplo detrás. Las otras siete —relojes, audífonos, parlantes…— viven en
     // V38__linea_tecnologia.sql y no aquí: son dato real del negocio, y este sembrador solo corre
     // con la tabla de productos vacía, así que nada que se ponga aquí llega a una base que ya
     // tiene datos. Se comprobó poniéndolas aquí primero, y no aparecieron en ninguna parte.
-    CategoriaJpaEntity celulares = guardarCategoria("Celulares", "celulares", "TECNOLOGIA", ahora);
+    //
+    // La **busca** en vez de crearla, y ese cambio es del 24 de septiembre de 2026. Hasta V62 esta
+    // línea era la única que creaba "Celulares" en todo el sistema: una de las ocho categorías
+    // publicables era siembra de desarrollo mientras las otras siete eran migración, que es
+    // exactamente la distinción que V38 dejó escrita y no aplicó a esta. V62 la metió por
+    // migración; si aquí siguiera un `save` con id nuevo, el arranque sobre una base recién
+    // migrada reventaría contra el índice único de `slug`.
+    CategoriaJpaEntity celulares =
+        categorias
+            .findBySlug("celulares")
+            .orElseGet(() -> guardarCategoria("Celulares", "celulares", "TECNOLOGIA", ahora));
 
     AtributoJpaEntity tallaRopa =
         guardarAtributo("Talla", "TEXTO", List.of("S", "M", "L", "XL"), ahora);

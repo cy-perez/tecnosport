@@ -8,9 +8,10 @@ import { crearClienteAutenticado } from '../../../../core/http/cliente-autentica
 import { desempaquetar } from '../../../../core/http/respuesta-http';
 
 /**
- * Mismo motivo que `MarcasAdminHttpRepositorio`, y aquí pesa más: la migración `V38` dejó la línea de
- * tecnología con once categorías y casi todas siguen sin un solo producto. Por el endpoint público
- * no sale ninguna de ellas, que es lo correcto para la vitrina y lo inservible para el panel.
+ * Mismo motivo que `MarcasAdminHttpRepositorio`, y aquí pesa más: la línea de tecnología tiene ocho
+ * categorías —once dejó `V38`, hasta que `V62` quitó las tres que ninguna lista de proveedor puede
+ * llenar— y casi todas siguen sin un solo producto. Por el endpoint público no sale ninguna de
+ * ellas, que es lo correcto para la vitrina y lo inservible para el panel.
  *
  * Con cliente autenticado desde el 19 de septiembre de 2026: `/api/v1/admin/**` exige rol ADMIN en
  * `ConfiguracionSeguridad`, y con el cliente sin token esta consulta respondía 403 y dejaba el

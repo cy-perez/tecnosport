@@ -11,6 +11,11 @@ package co.tecnosport.api.domain.catalogo;
  * ese nombre habría sido una mentira de modelo que se paga en cada consulta y en cada URL. Son
  * <b>categorías</b> dentro de {@code TECNOLOGIA}, que es para lo que existe {@link Categoria}.
  *
+ * <p>Y esa decisión ya se cobró: el 24 de septiembre de 2026 el negocio dejó de vender cables,
+ * cargadores y power banks, y {@code V62} lo resolvió con un {@code delete} de tres filas. Con
+ * trece valores de enum habría sido un cambio de código, de traducciones, de pruebas y del filtro
+ * que ve el comprador. El nivel grueso sigue siendo de tres.
+ *
  * <p>Por eso este enum sigue teniendo tres valores y no trece: <b>una línea nueva es un cambio de
  * código, de traducciones, de pruebas y del filtro que ve el comprador; una categoría nueva es una
  * fila</b>. Si algo se puede modelar como fila, no se modela como valor de enum.
