@@ -76,6 +76,10 @@ const PARES = [
   // El borde de las cajas de confirmacion en linea, que es lo unico que las separa de la fila de
   // arriba. `--color-borde` da 1,19:1 sobre el lienzo y era invisible.
   ["--color-borde-control", "--color-fondo", UMBRAL_GRANDE, "borde de una caja de confirmacion"],
+  // El borde de hover de las baldosas de la portada. Llevaba `--color-acento`, que sobre blanco da
+  // 1,85:1 y contra `--color-borde` salta 1,44:1: en tema claro no habia afordancia de hover
+  // ninguna. El guardian no lo veia porque no existia ningun par de `acento` como linea.
+  ["--color-primario", "--color-borde", UMBRAL_GRANDE, "borde de hover de las baldosas de linea"],
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],
   ["--color-sobre-primario", "--color-exito", UMBRAL_TEXTO, "aviso de éxito de la captura"],

@@ -71,12 +71,21 @@ describe('RestablecerClavePage', () => {
     expect(screen.queryByLabelText('Clave nueva')).toBeNull();
   });
 
-  it('el botón arranca deshabilitado con el formulario vacío', async () => {
+  /**
+   * El boton ya no arranca deshabilitado: se pulsa, se marcan los campos y se dice que falta. Un
+   * `<button disabled>` sale del orden de tabulacion, asi que quien navega con teclado no lo
+   * encuentra y nada le explica por que no pasa nada (`apps/web/CLAUDE.md`). Mismo criterio que
+   * `crear-producto-admin`.
+   */
+  it('con el formulario vacío dice qué falta y no envía nada', async () => {
     await renderPagina(new RepositorioCuentaFalso(), 'token-valido');
 
-    expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    const boton = screen.getByRole('button', { name: 'Restablecer clave' });
+    expect(boton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(boton);
+
+    expect(await screen.findByText('Escribe la clave nueva.')).toBeTruthy();
   });
 
   it('con un token válido, restablece y muestra el mensaje de éxito', async () => {
@@ -121,8 +130,10 @@ describe('RestablecerClavePage', () => {
     fireEvent.input(screen.getByLabelText('Clave nueva'), { target: { value: 'clave-segura' } });
     fireEvent.input(screen.getByLabelText('Confirmar clave'), { target: { value: 'otra-clave' } });
     expect(await screen.findByText('Las claves no coinciden.')).toBeTruthy();
+    // El boton ya no se deshabilita: lo que impide enviar es la guarda de `enviar()`, y lo
+    // que lo explica es el mensaje de arriba.
     expect(screen.getByRole('button', { name: 'Restablecer clave' }).hasAttribute('disabled')).toBe(
-      true,
+      false,
     );
   });
 });

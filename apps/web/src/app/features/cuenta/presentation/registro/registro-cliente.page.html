@@ -13,6 +13,8 @@
         idCampo="registro-correo"
         tipo="email"
         [label]="'cuenta.registro.correo' | transloco"
+        [obligatorio]="true"
+        [error]="errorCorreo()"
         formControlName="correo"
       />
 
@@ -20,6 +22,8 @@
         idCampo="registro-clave"
         tipo="password"
         [label]="'cuenta.registro.clave' | transloco"
+        [obligatorio]="true"
+        [error]="errorClave()"
         formControlName="clave"
       />
 
@@ -27,8 +31,12 @@
         idCampo="registro-confirmar-clave"
         tipo="password"
         [label]="'cuenta.registro.confirmarClave' | transloco"
+        [obligatorio]="true"
         formControlName="confirmarClave"
-        [error]="clavesNoCoinciden() ? ('cuenta.registro.error_confirmar_clave' | transloco) : null"
+        [error]="
+          errorConfirmarClave() ??
+          (clavesNoCoinciden() ? ('cuenta.registro.error_confirmar_clave' | transloco) : null)
+        "
       />
 
       <!--
@@ -49,6 +57,10 @@
           [routerLink]="['/', idioma(), 'legales', 'privacidad']"
           >{{ 'cuenta.registro.ver_politica' | transloco }}</a
         >
+        <!-- Region permanente con el `@if` dentro, no un `@if` alrededor: un `role="alert"` se
+             anuncia nazca donde nazca, pero el patron de las 27 regiones vivas es este y mantenerlo
+             uniforme es lo que evita que la proxima se haga de la otra forma. -->
+        <p class="m-0 text-sm text-ts-error" role="alert">{{ errorAutorizacion() }}</p>
       </div>
 
       <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
@@ -56,7 +68,6 @@
       <ts-boton
         variante="primario"
         tipo="submit"
-        [deshabilitado]="formularioInvalido()"
         [cargando]="enviando()"
         [etiquetaCargando]="'cuenta.registro.enviando' | transloco"
       >

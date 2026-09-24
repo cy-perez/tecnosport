@@ -27,6 +27,17 @@ inyecta el puerto declarado en `domain`, y el proveedor de la ruta decide la
 implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dura
 #1 de `CLAUDE.md` para saber por qué.
 
+**`core/` entra en ese grafo desde el 24 de septiembre de 2026, con la misma
+regla que `shared/`**: lo usa la aplicación entera, así que no puede depender de
+una funcionalidad. Si necesita un tipo, lo declara él —el cargador de imágenes lo
+hace con `VarianteDeImagen`—. Estuvo fuera del grafo desde el principio, y ahí
+viven la sesión, el HTTP, el i18n, el SEO y el `IMAGE_LOADER` global, que
+importaba el modelo de `catalogo`.
+
+**`layout/` sigue fuera, y es una decisión.** Componer funcionalidades es su
+trabajo: la insignia del encabezado tiene que ver el mismo carrito que la ficha.
+Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
+
 ## Reglas concretas
 
 - **Todo componente es standalone, `OnPush`, y usa `signal`, `computed`,
@@ -124,6 +135,22 @@ implementación. Lo verifica **`npm run capas`**, no ESLint — ver la regla dur
   lo encuentra y nada le explica por qué no pasa nada. Se deja vivo, se valida al
   pulsar y se dice qué falta, con `markAllAsTouched()` más un mensaje de
   Transloco.
+  - **`markAllAsTouched()` sin un `[error]` enganchado no pinta nada.** Las cinco
+    pantallas de autenticación ya lo llamaban y ninguna tenía un solo `[error]`,
+    así que el marcado no se veía por ninguna parte y el botón deshabilitado era
+    la única pista. Las dos mitades van juntas o no va ninguna.
+- **Un campo obligatorio lo declara: `[obligatorio]="true"` en `ts-campo` o
+  `ts-select`.** Pinta el asterisco y, lo que importa, pone `aria-required="true"`.
+  Había 65 `Validators.required` en el frontend y **cero** `required` o
+  `aria-required` en las plantillas: con lector de pantalla, "Correo, editar" no
+  dice que haga falta.
+  - Es `aria-required` y **no** el `required` nativo: el nativo dispara la burbuja
+    del navegador, sin traducir y fuera del sistema visual, y aquí se valida al
+    enviar con mensajes de Transloco.
+  - **El asterisco va fuera del `<label>`.** Dentro, aunque lleve `aria-hidden`
+    —que lo saca del nombre accesible de verdad—, se cuela en el `textContent` de
+    la etiqueta y `getByLabelText('Correo electrónico')` deja de encontrar el
+    campo. Lo destaparon nueve pruebas al primer intento.
 - **Imágenes:** `NgOptimizedImage` siempre. Una imagen de producto se publica en
   **varias resoluciones** (`ADR-0057`) y la plantilla las ofrece todas: `ngSrc`
   con la mayor, `ngSrcset` con `descriptoresDe(imagen)` —los anchos, no las

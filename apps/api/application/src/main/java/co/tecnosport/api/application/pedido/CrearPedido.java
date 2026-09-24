@@ -339,6 +339,20 @@ public final class CrearPedido {
     return producto;
   }
 
+  /**
+   * <b>La segunda comprobación es redundante hoy, y queda dicho para que nadie la lea como la
+   * guarda que protege esto.</b> Quien de verdad impide comprar una variante dada de baja es {@code
+   * MapeadorCatalogo}, que filtra las que no están {@code ACTIVA} <em>antes</em> de construir el
+   * agregado: con el adaptador real, una inactiva no está en la lista y el {@code orElseThrow} de
+   * arriba es el que dispara. Está probado donde se aplica, contra Postgres real, en {@code
+   * RepositorioProductosJpaTest}.
+   *
+   * <p>Se queda igual: no cuesta nada, las dos salidas son la misma excepción —a propósito, para no
+   * confirmarle a nadie que esa variante existe— y el día que otro adaptador no filtre, esto lo
+   * sostiene. Lo que no hay que hacer es creer que una prueba de caso de uso la ejercita: los
+   * dobles devuelven el {@code Producto} tal como lo arma la prueba, sin filtrar, así que ahí
+   * reproducen un estado que el adaptador real no produce.
+   */
   private Variante buscarVarianteVendible(Producto producto, UUID varianteId) {
     Variante variante =
         producto.variantes().stream()

@@ -139,7 +139,28 @@ class ProcesarNotificacionSistecreditoTest {
    * reteniendo además una conexión hasta que la pasarela respondiera.
    */
   @Test
-  void unaNotificacionConUnaFacturaQueNoExisteNoLlegaAPreguntarle() {
+  void unaNotificacionInventadaNoLlegaAPreguntarle() {
+    ProcesarNotificacionSistecredito caso = crear();
+    pasarela.responder(laPasarelaDice("Approved"));
+
+    // Ni la transaccion ni la factura son de ningun pago nuestro: es lo que manda quien sondea el
+    // endpoint, que es publico y anonimo. No se gasta una consulta con credenciales productivas.
+    assertEquals(
+        ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
+        caso.ejecutar(
+            new ProcesarNotificacionSistecreditoComando(
+                "000000000000000000000000", "TS-2026-000999-1", "Approved")));
+    assertEquals(0, pasarela.consultas());
+  }
+
+  /**
+   * Y el caso que de verdad se recorre en produccion: <b>sin factura en el cuerpo</b>, que es como
+   * llegan las notificaciones de verdad (medido el 23 de septiembre de 2026). Antes este era el
+   * unico camino y era justo el que preguntaba antes de mirar nada local, o sea que la proteccion
+   * que el comentario de la clase describia no existia en produccion.
+   */
+  @Test
+  void unaNotificacionSinFacturaYConUnaTransaccionAjenaTampocoLlegaAPreguntarle() {
     ProcesarNotificacionSistecredito caso = crear();
     pasarela.responder(laPasarelaDice("Approved"));
 
@@ -147,7 +168,7 @@ class ProcesarNotificacionSistecreditoTest {
         ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
         caso.ejecutar(
             new ProcesarNotificacionSistecreditoComando(
-                ID_TRANSACCION, "TS-2026-000999-1", "Approved")));
+                "000000000000000000000000", null, "Approved")));
     assertEquals(0, pasarela.consultas());
   }
 
@@ -283,17 +304,31 @@ class ProcesarNotificacionSistecreditoTest {
         ResultadoNotificacionSistecredito.YA_PROCESADO, caso.ejecutar(notificacion("Approved")));
   }
 
+  /**
+   * Nuestra transaccion, pero la pasarela dice que esa transaccion es de <b>otra factura</b>. No es
+   * "pago no encontrado" —el pago esta, y es el que registro ese id— sino una discrepancia: lo que
+   * el tercero tiene guardado no cuadra con lo nuestro, y eso se registra como error y no aplica
+   * nada.
+   *
+   * <p>Esta comprobacion faltaba y no se notaba: el pago se buscaba por la referencia del cuerpo,
+   * asi que una factura ajena simplemente no encontraba nada. Buscando por id de transaccion —que
+   * es lo que evita gastar una consulta por peticion anonima— si encuentra, y entonces el contraste
+   * tiene que ser contra lo guardado. `coincide` no sirve para eso: compara la pasarela contra el
+   * cuerpo, que lo escribe quien manda la peticion.
+   */
   @Test
-  void unaReferenciaSinPagoPropioNoEsUnError() {
+  void unaFacturaAjenaSobreNuestraTransaccionEsUnaDiscrepancia() {
     ProcesarNotificacionSistecredito caso = crear();
     pasarela.responder(
         new TransaccionSistecredito(
             ID_TRANSACCION, "TS-2026-000777-1", "Approved", null, null, null, null));
 
     assertEquals(
-        ResultadoNotificacionSistecredito.PAGO_NO_ENCONTRADO,
+        ResultadoNotificacionSistecredito.DISCREPANCIA_CON_LA_PASARELA,
         caso.ejecutar(
             new ProcesarNotificacionSistecreditoComando(
                 ID_TRANSACCION, "TS-2026-000777-1", "Approved")));
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().estado());
   }
 }

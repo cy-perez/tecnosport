@@ -1888,6 +1888,17 @@
         },
         "type" : "object"
       },
+      "ReintentarPagoRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo"
+        ],
+        "type" : "object"
+      },
       "ReordenarGaleriaPeticion" : {
         "properties" : {
           "imagenIds" : {
@@ -5215,6 +5226,16 @@
             }
           }
         ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReintentarPagoRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

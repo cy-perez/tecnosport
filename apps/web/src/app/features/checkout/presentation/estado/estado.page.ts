@@ -132,7 +132,7 @@ export class EstadoPage {
     this.error.set(null);
     this.reintentando.set(true);
     try {
-      const actualizado = await this.checkout.reintentarPago(pedido.id);
+      const actualizado = await this.checkout.reintentarPago(pedido.id, pedido.correo);
       // Sistecrédito antes que Wompi, con su propia rama. Este `if` era el único del archivo
       // porque hasta ahora solo un pedido de Wompi podía llegar a PAGO_FALLIDO. Ya no —los
       // estados Rejected/Cancelled/Expired/Abandoned de Sistecrédito también llevan ahí— y sin

@@ -9,6 +9,7 @@
     <ts-campo
       idCampo="crear-producto-nombre"
       [label]="'admin.productos.crear.nombre' | transloco"
+      [obligatorio]="true"
       formControlName="nombre"
     />
 
@@ -23,6 +24,7 @@
       [label]="'admin.productos.crear.marca' | transloco"
       [opciones]="opcionesMarca()"
       [placeholder]="'admin.productos.crear.seleccionar' | transloco"
+      [obligatorio]="true"
       formControlName="marcaId"
     />
 

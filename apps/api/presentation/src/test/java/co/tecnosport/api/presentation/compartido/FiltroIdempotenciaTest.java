@@ -116,13 +116,23 @@ class FiltroIdempotenciaTest {
   }
 
   @Test
-  void unaLlaveYaReclamadaPeroSinCompletarDejaPasarLaPeticion() throws Exception {
+  void unaLlaveYaReclamadaPeroSinCompletarSeRechazaConUn409() throws Exception {
     repositorio.reclamar("llave-5", "POST", "/api/v1/pedidos", AHORA);
     AtomicInteger llamadasACadena = new AtomicInteger();
+    MockHttpServletResponse respuesta = new MockHttpServletResponse();
 
-    filtro.doFilter(
-        peticion("llave-5"), new MockHttpServletResponse(), cadenaContando(llamadasACadena, 200));
+    filtro.doFilter(peticion("llave-5"), respuesta, cadenaContando(llamadasACadena, 200));
 
-    assertThat(llamadasACadena.get()).isEqualTo(1);
+    // Lo que importa: la peticion **no llega al controlador**. Antes si, y por eso la llave no
+    // protegia del caso que la justifica: dos peticiones simultaneas con la misma llave se
+    // ejecutaban las dos, o sea dos pedidos con dos reservas del mismo inventario, o dos
+    // solicitudes de credito a nombre de una persona.
+    assertThat(llamadasACadena.get()).isZero();
+    assertThat(respuesta.getStatus()).isEqualTo(409);
+    assertThat(respuesta.getContentType()).startsWith("application/problem+json");
+    assertThat(respuesta.getContentAsString()).contains("PETICION_EN_CURSO");
+    // Con tilde y bien codificada: este filtro corre antes del DispatcherServlet y arma el cuerpo a
+    // mano, que es donde este proyecto ya se comio las tildes una vez.
+    assertThat(respuesta.getContentAsString()).contains("Petición en curso");
   }
 }

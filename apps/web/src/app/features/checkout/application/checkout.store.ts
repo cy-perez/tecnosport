@@ -87,7 +87,8 @@ export class CheckoutStore {
   }));
 
   private readonly mutacionReintentar = injectMutation(() => ({
-    mutationFn: (pedidoId: string) => this.repositorio.reintentarPago(pedidoId),
+    mutationFn: ({ pedidoId, correo }: { pedidoId: string; correo: string }) =>
+      this.repositorio.reintentarPago(pedidoId, correo),
   }));
 
   private readonly mutacionCrearIntento = injectMutation(() => ({
@@ -124,8 +125,8 @@ export class CheckoutStore {
     return pedido;
   }
 
-  async reintentarPago(pedidoId: string): Promise<Pedido> {
-    const pedido = await this.mutacionReintentar.mutateAsync(pedidoId);
+  async reintentarPago(pedidoId: string, correo: string): Promise<Pedido> {
+    const pedido = await this.mutacionReintentar.mutateAsync({ pedidoId, correo });
     this.pedido.set(pedido);
     return pedido;
   }

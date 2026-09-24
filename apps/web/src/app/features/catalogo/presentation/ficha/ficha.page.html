@@ -19,10 +19,18 @@
       @if (fotogramas360().length > 1) {
         <div class="flex flex-col gap-24">
           <ts-visor-360 [imagenes]="fotogramas360()" />
-          <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="false" />
+          <ts-galeria
+            [imagenes]="imagenesGaleria()"
+            [nombreProducto]="p.nombre"
+            [prioritaria]="false"
+          />
         </div>
       } @else {
-        <ts-galeria [imagenes]="imagenesGaleria()" [prioritaria]="true" />
+        <ts-galeria
+          [imagenes]="imagenesGaleria()"
+          [nombreProducto]="p.nombre"
+          [prioritaria]="true"
+        />
       }
 
       <div class="flex flex-col gap-8">

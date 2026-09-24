@@ -62,7 +62,16 @@ public class TransporteDeCorreoSpringMail implements TransporteDeCorreo {
       helper.setText(cuerpoHtml, true);
       mailSender.send(mensaje);
     } catch (MessagingException | MailException excepcion) {
-      log.error("No se pudo enviar un correo transaccional.", excepcion);
+      // Sin volcar la excepción entera, y sin su mensaje crudo: un rechazo de SMTP repite la
+      // dirección —`550 5.1.1 <cliente@ejemplo.com>: Recipient address rejected`— y el javadoc de
+      // arriba promete que el registro no lleva el correo del destinatario. La promesa escrita era
+      // más fuerte que el código. Lo que sirve para diagnosticar es el código del rechazo, y ese
+      // se queda; el detalle completo vive en la columna `ultimo_error` de la bandeja, que es una
+      // tabla y no un registro, y ahí el destinatario ya está en su propia columna.
+      log.error(
+          "No se pudo enviar un correo transaccional: {}",
+          RedaccionDeCorreos.sinCorreos(
+              excepcion.getClass().getSimpleName() + ": " + excepcion.getMessage()));
       throw new CorreoNoEnviadoException(excepcion);
     }
   }

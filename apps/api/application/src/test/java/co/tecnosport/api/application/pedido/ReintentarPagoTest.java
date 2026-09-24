@@ -82,7 +82,8 @@ class ReintentarPagoTest {
     Pedido pedido = pedidoFallidoConInventario(5);
     UUID reservaOriginal = pedido.lineas().get(0).idReserva();
 
-    Pedido reintentado = caso.ejecutar(new ReintentarPagoComando(pedido.id()));
+    Pedido reintentado =
+        caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
 
     assertEquals(EstadoPedido.PAGO_PENDIENTE, reintentado.estado());
     assertEquals(3, reintentado.historial().size());
@@ -95,7 +96,7 @@ class ReintentarPagoTest {
     ReintentarPago caso = crear();
     Pedido pedido = pedidoFallidoConInventario(5);
 
-    caso.ejecutar(new ReintentarPagoComando(pedido.id()));
+    caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co"));
 
     Inventario inventario = inventarios.buscarPorVarianteId(varianteId).orElseThrow();
     assertEquals(4, inventario.saldoDisponible(AHORA));
@@ -108,7 +109,7 @@ class ReintentarPagoTest {
 
     assertThrows(
         ExistenciaInsuficienteException.class,
-        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id())));
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
   }
 
   @Test
@@ -117,7 +118,42 @@ class ReintentarPagoTest {
 
     assertThrows(
         PedidoNoEncontradoException.class,
-        () -> caso.ejecutar(new ReintentarPagoComando(UUID.randomUUID())));
+        () -> caso.ejecutar(new ReintentarPagoComando(UUID.randomUUID(), "cliente@tecnosport.co")));
+  }
+
+  /**
+   * El correo autoriza, igual que en el seguimiento. Sin esto, cualquiera con el id del pedido —que
+   * viaja en la URL de retorno de la pasarela y en el correo de confirmación— podía volver a
+   * reservar inventario y leerse el pedido entero: correo, teléfono, dirección e historial.
+   *
+   * <p>Y la respuesta es 404 y no 403 a propósito: un 403 confirmaría que ese id corresponde a una
+   * compra real, que es justo lo que no hay que confirmarle a quien prueba identificadores.
+   */
+  @Test
+  void unCorreoQueNoEsElDelPedidoSeTrataComoSiElPedidoNoExistiera() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+    UUID reservaOriginal = pedido.lineas().get(0).idReserva();
+
+    assertThrows(
+        PedidoNoEncontradoException.class,
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "otro@tecnosport.co")));
+
+    // Y no tocó nada: ni el estado, ni la reserva.
+    assertEquals(EstadoPedido.PAGO_FALLIDO, pedido.estado());
+    assertEquals(reservaOriginal, pedido.lineas().get(0).idReserva());
+  }
+
+  /** El correo se normaliza igual que en el seguimiento: espacios y mayúsculas no descalifican. */
+  @Test
+  void elCorreoAutorizaAunqueVengaConEspaciosYEnMayusculas() {
+    ReintentarPago caso = crear();
+    Pedido pedido = pedidoFallidoConInventario(5);
+
+    Pedido reintentado =
+        caso.ejecutar(new ReintentarPagoComando(pedido.id(), "  CLIENTE@TecnoSport.CO  "));
+
+    assertEquals(EstadoPedido.PAGO_PENDIENTE, reintentado.estado());
   }
 
   @Test
@@ -130,7 +166,7 @@ class ReintentarPagoTest {
 
     assertThrows(
         TransicionDeEstadoInvalidaException.class,
-        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id())));
+        () -> caso.ejecutar(new ReintentarPagoComando(pedido.id(), "cliente@tecnosport.co")));
 
     // La transición inválida se detecta antes de reservar: el intento fallido no dejó ninguna
     // reserva nueva, el disponible sigue en la existencia completa.

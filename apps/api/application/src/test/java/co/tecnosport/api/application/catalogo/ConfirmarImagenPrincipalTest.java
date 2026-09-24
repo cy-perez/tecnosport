@@ -102,6 +102,84 @@ class ConfirmarImagenPrincipalTest {
                     "b")));
   }
 
+  /**
+   * La prueba que faltaba: la de "otro producto" ya estaba, pero la key peligrosa es la del
+   * <b>mismo</b> producto y otro tipo. Con el prefijo corto pasaba las tres guardas —empieza por el
+   * id, el objeto existe, tiene URL pública— y entonces la limpieza borraba los objetos {@code
+   * principal-} de verdad, que no están en la lista de claves confirmadas. Pérdida irreversible, y
+   * la principal apuntando a un objeto de galería que su propio borrado se lleva después.
+   */
+  @Test
+  void unaKeyDeGaleriaDelMismoProductoNoSePuedeConfirmarComoPrincipal() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String keyDeGaleria = "productos/" + producto.id() + "/galeria-abc.webp";
+    almacenDeImagenes.conObjeto(keyDeGaleria, 1000);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(100, keyDeGaleria)),
+                    null,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
+  }
+
+  /** Lo mismo con un fotograma del set de rotación, que se borra por prefijo entero. */
+  @Test
+  void unaKeyDeRotacionDelMismoProductoNoSePuedeConfirmarComoPrincipal() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String keyDeRotacion =
+        "productos/" + producto.id() + "/rotacion/" + UUID.randomUUID() + "/0.webp";
+    almacenDeImagenes.conObjeto(keyDeRotacion, 1000);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(100, keyDeRotacion)),
+                    null,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
+  }
+
+  /**
+   * Y la vista previa entra por la misma puerta: es una clave más de la lista, así que colarla por
+   * ahí tendría el mismo efecto que colarla como variante.
+   */
+  @Test
+  void unaVistaPreviaQueNoEsDeLaPrincipalTampocoSeAcepta() {
+    Producto producto = productoDePrueba();
+    repositorioProductos.conProductos(producto);
+    String keyBuena = "productos/" + producto.id() + "/principal-abc.webp";
+    String vistaPreviaDeGaleria = "productos/" + producto.id() + "/galeria-xyz.jpg";
+    almacenDeImagenes.conObjeto(keyBuena, 1000);
+    almacenDeImagenes.conObjeto(vistaPreviaDeGaleria, 500);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            confirmarImagenPrincipal.ejecutar(
+                new ConfirmarImagenPrincipalComando(
+                    producto.id(),
+                    List.of(new VarianteSubida(100, keyBuena)),
+                    vistaPreviaDeGaleria,
+                    100,
+                    HASH,
+                    "a",
+                    "b")));
+  }
+
   @Test
   void objetoInexistenteEnElAlmacenLanzaObjetoDeImagenNoEncontrado() {
     Producto producto = productoDePrueba();

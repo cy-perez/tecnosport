@@ -15,6 +15,16 @@ public interface RepositorioPagos {
   List<Pago> buscarPorPedidoId(UUID pedidoId);
 
   /**
+   * El pago que registró ese id de transacción de la pasarela, si hay exactamente uno.
+   *
+   * <p>Existe para que la notificación de Sistecrédito —pública y anónima— pueda decidir si hay
+   * algo local que tocar <b>sin preguntarle antes al tercero</b>. La columna no lleva {@code
+   * unique}, así que si dos pagos comparten el id la respuesta es vacía: con dos candidatos no se
+   * puede elegir, y elegir mal movería dinero del pedido equivocado.
+   */
+  Optional<Pago> buscarPorIdTransaccionPasarela(String idTransaccionPasarela);
+
+  /**
    * {@code PENDIENTE}, con {@code idTransaccionPasarela} registrado, creados antes de {@code
    * creadosAntesDe} — el universo de la conciliación programada (docs/11-pagos-y-envios.md). Un
    * pago sin ese id no aparece aquí: no hay cómo consultarlo en la API de Wompi.

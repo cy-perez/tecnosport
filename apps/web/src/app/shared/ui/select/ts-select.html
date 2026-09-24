@@ -1,5 +1,16 @@
 <div class="flex flex-col gap-4">
-  <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+  <!-- El asterisco va **fuera** del `<label>`, no dentro. Dentro, aunque lleve `aria-hidden` —que
+       lo saca del nombre accesible de verdad—, se cuela en el `textContent` de la etiqueta, y con
+       eso cualquier consulta por texto deja de encontrar el campo: `getByLabelText('Correo
+       electrónico')` pasa a buscar "Correo electrónico *". Fuera, la etiqueta conserva
+       exactamente su texto y el marcador sigue al lado. Quien de verdad anuncia que el campo es
+       obligatorio es el `aria-required` del control. -->
+  <div class="flex items-baseline gap-4">
+    <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+    @if (obligatorio()) {
+      <span class="text-ts-texto-suave" aria-hidden="true">*</span>
+    }
+  </div>
   @if (ayuda(); as textoDeAyuda) {
     <p [class]="clasesAyuda" [id]="idCampo() + '-ayuda'">{{ textoDeAyuda }}</p>
   }
@@ -14,6 +25,7 @@
     [class]="clasesControl"
     [id]="idCampo()"
     [disabled]="deshabilitado()"
+    [attr.aria-required]="obligatorio() ? 'true' : null"
     [attr.aria-invalid]="error() ? 'true' : null"
     [attr.aria-describedby]="descripcion()"
     (change)="manejarCambio($any($event.target).value)"
@@ -22,7 +34,9 @@
       <option value="" [selected]="valor() === ''">{{ placeholder() }}</option>
     }
     @for (opcion of opciones(); track opcion.valor) {
-      <option [value]="opcion.valor" [selected]="opcion.valor === valor()">{{ opcion.etiqueta }}</option>
+      <option [value]="opcion.valor" [selected]="opcion.valor === valor()">
+        {{ opcion.etiqueta }}
+      </option>
     }
   </select>
   <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>

@@ -77,6 +77,17 @@ public final class ConciliarPagosPendientes {
     if (transaccion.isEmpty()) {
       return false;
     }
+    // La contraprueba, y es lo único que impide que esta tarea le regale un pedido a cualquiera.
+    // El id con el que acabamos de consultar lo estampó `PATCH /pagos/intentos/{referencia}`, que
+    // es público y anónimo —el Web Checkout devuelve el id en la URL de retorno del navegador, así
+    // que quien pagó una vez lo conoce—. Sin comparar la referencia y el monto que Wompi reporta
+    // contra los de este pago, el id de una transacción aprobada ajena estampado sobre un pedido
+    // nuevo se conciliaba como pago bueno quince minutos después: mercancía completa por el precio
+    // de otra compra. Es la misma guarda que `esDeEstePago` le puso a la notificación de
+    // Sistecrédito; el camino que corre solo se había quedado sin ella.
+    if (!transaccion.get().correspondeA(pago.referencia().valor(), pago.monto())) {
+      return false;
+    }
     String estadoWompi = transaccion.get().estado();
     EstadoPago nuevoEstado = EstadosWompi.aEstadoPago(estadoWompi);
     if (nuevoEstado == null) {

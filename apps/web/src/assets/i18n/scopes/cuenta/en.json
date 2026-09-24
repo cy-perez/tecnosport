@@ -11,7 +11,12 @@
     "olvidaste_clave": "Forgot your password?",
     "sin_cuenta": "Don't have an account?",
     "crear_cuenta": "Create account",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem."
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your password is not the problem.",
+    "errores": {
+      "correo_requerido": "Enter your email.",
+      "correo_invalido": "That email address isn't valid.",
+      "clave_requerida": "Enter your password."
+    }
   },
   "registro": {
     "titulo": "Create account",
@@ -28,7 +33,14 @@
     "autoriza_datos": "I authorise the processing of my personal data to create my account.",
     "ver_politica": "Read the personal data policy",
     "ya_tienes_cuenta": "Already have an account?",
-    "iniciar_sesion": "Sign in"
+    "iniciar_sesion": "Sign in",
+    "errores": {
+      "correo_requerido": "Enter your email.",
+      "correo_invalido": "That email address isn't valid.",
+      "clave_requerida": "Enter a password.",
+      "confirmar_requerida": "Repeat the password.",
+      "autorizacion_requerida": "To create the account you must authorize the processing of your data."
+    }
   },
   "verificarCorreo": {
     "titulo": "Verifying your email",
@@ -57,7 +69,11 @@
     "exito_titulo": "Check your email",
     "exito_mensaje": "If an account exists with that email, a password recovery link was sent to it.",
     "error_generico": "We couldn't process the request. Try again.",
-    "error_demasiados_intentos": "Too many attempts in a row from this connection. Wait a few minutes and ask again."
+    "error_demasiados_intentos": "Too many attempts in a row from this connection. Wait a few minutes and ask again.",
+    "errores": {
+      "correo_requerido": "Enter your email.",
+      "correo_invalido": "That email address isn't valid."
+    }
   },
   "restablecerClave": {
     "titulo": "Choose a new password",
@@ -70,6 +86,10 @@
     "exito_mensaje": "You can now sign in with your new password.",
     "error_titulo": "Invalid link",
     "error_token_invalido": "The link is invalid or expired. Request a new one.",
-    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your link still works."
+    "error_demasiados_intentos": "Too many attempts in a row. Wait a few minutes and try again — your link still works.",
+    "errores": {
+      "clave_requerida": "Enter the new password.",
+      "confirmar_requerida": "Repeat the new password."
+    }
   }
 }

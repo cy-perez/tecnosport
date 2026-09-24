@@ -44,8 +44,11 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
     return ['TARJETA', 'CONTRAENTREGA'];
   }
 
-  async reintentarPago(): Promise<Pedido> {
+  correoDelUltimoReintento: string | null = null;
+
+  async reintentarPago(_pedidoId: string, correo: string): Promise<Pedido> {
     this.llamadasReintentar++;
+    this.correoDelUltimoReintento = correo;
     this.pedido = { ...this.pedido, estado: 'PAGO_PENDIENTE' };
     return this.pedido;
   }
@@ -127,11 +130,14 @@ describe('CheckoutStore', () => {
     const { store } = await renderConRepositorio(repositorio);
     await store.crearPedido(comandoDePrueba());
 
-    const resultado = await store.reintentarPago('pedido-1');
+    const resultado = await store.reintentarPago('pedido-1', 'cliente@tecnosport.co');
 
     expect(repositorio.llamadasReintentar).toBe(1);
     expect(store.pedido()?.estado).toBe('PAGO_PENDIENTE');
     expect(resultado.estado).toBe('PAGO_PENDIENTE');
+    // El correo autoriza el reintento en el servidor, así que tiene que llegar hasta el
+    // repositorio: si se queda por el camino, el backend responde 404 y el botón no hace nada.
+    expect(repositorio.correoDelUltimoReintento).toBe('cliente@tecnosport.co');
   });
 
   it('pedido arranca en null antes de crear nada', async () => {

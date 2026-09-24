@@ -38,6 +38,12 @@ para y dime por qué antes de escribir el código.
    `*.routes.ts` sí puede importar `infrastructure` —es el proveedor de la ruta
    el que elige la implementación— y los `*.spec.ts` se informan aparte sin
    fallar, porque montar un escenario no es desplegar código.
+   **Y el alcance importa tanto como la lógica**: `capaDe` devolvía `null` para
+   todo lo que no fuera `features/*/` o `shared/`, así que `core/` —la sesión, el
+   HTTP, el i18n, el SEO y el `IMAGE_LOADER` global— estaba fuera del grafo, y
+   ahí dentro el cargador de imágenes importaba el `domain` de `catalogo`. Desde
+   el 24 de septiembre de 2026 `core/` entra con la misma regla que `shared/`.
+   `layout/` sigue fuera **a propósito**: componer funcionalidades es su trabajo.
    **No queda ninguna violación en producción**, y por eso `npm run capas` ya
    corre dentro de `npm run verificar` — es el primer paso, antes del lint. Las
    tres que hubo estaban en el carrito, leyendo `localStorage` desde

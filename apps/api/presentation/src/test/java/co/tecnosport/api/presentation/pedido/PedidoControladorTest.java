@@ -490,9 +490,21 @@ class PedidoControladorTest {
     pedidos.guardar(pedido);
 
     mockMvc
-        .perform(post("/api/v1/pedidos/{id}/reintentar-pago", pedido.id()))
+        .perform(
+            post("/api/v1/pedidos/{id}/reintentar-pago", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"cliente@tecnosport.co\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.estado").value("PAGO_PENDIENTE"));
+
+    // Y con el correo de otro, el mismo endpoint se comporta como si el pedido no existiera: es la
+    // simetria que le faltaba con `GET /pedidos/{id}/seguimiento`, que si preguntaba quien llama.
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/{id}/reintentar-pago", pedido.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"correo\":\"otro@tecnosport.co\"}"))
+        .andExpect(status().isNotFound());
   }
 
   @Test

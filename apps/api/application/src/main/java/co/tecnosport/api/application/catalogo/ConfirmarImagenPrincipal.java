@@ -60,7 +60,10 @@ public final class ConfirmarImagenPrincipal {
       throw new IllegalArgumentException("Hay que confirmar al menos una variante de la imagen.");
     }
 
-    String prefijoEsperado = "productos/" + comando.productoId() + "/";
+    // El prefijo completo, no el del producto. Con el corto, una key de `galeria-` o de
+    // `rotacion/` del mismo producto pasaba las tres guardas y la limpieza de abajo borraba los
+    // objetos `principal-` de verdad. Ver `ClavesDePrincipal`.
+    String prefijoEsperado = ClavesDePrincipal.prefijoDe(comando.productoId());
     List<String> claves =
         new ArrayList<>(variantes.stream().map(VarianteSubida::objectKey).toList());
     if (comando.objectKeyVistaPrevia() != null && !comando.objectKeyVistaPrevia().isBlank()) {
@@ -73,7 +76,11 @@ public final class ConfirmarImagenPrincipal {
     for (String clave : claves) {
       if (clave == null || !clave.startsWith(prefijoEsperado)) {
         throw new IllegalArgumentException(
-            "El objeto '" + clave + "' no pertenece al producto " + comando.productoId() + ".");
+            "El objeto '"
+                + clave
+                + "' no es una imagen principal del producto "
+                + comando.productoId()
+                + ".");
       }
       // Que exista de verdad, una por una. El almacén es la única fuente que no miente aquí: el
       // cliente puede reportar una key que nunca subió, y hasta hacerlo sin mala intención si un
@@ -118,8 +125,7 @@ public final class ConfirmarImagenPrincipal {
       // Todas las claves recién confirmadas, no solo la primera: la limpieza borra el prefijo
       // entero, así que una variante que no estuviera en esta lista se borraría a sí misma justo
       // después de guardarse.
-      int borrados =
-          almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado + "principal-", Set.copyOf(claves));
+      int borrados = almacenDeImagenes.eliminarPorPrefijo(prefijoEsperado, Set.copyOf(claves));
       return new ConfirmacionDeImagenPrincipal(imagen, borrados, false);
     } catch (RuntimeException e) {
       // La imagen ya está guardada y la ficha ya la muestra: propagar esto sería reportar como

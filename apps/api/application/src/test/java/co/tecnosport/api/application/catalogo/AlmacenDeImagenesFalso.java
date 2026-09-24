@@ -44,11 +44,21 @@ final class AlmacenDeImagenesFalso implements AlmacenDeImagenes {
     return BASE_PUBLICA + objectKey;
   }
 
+  /**
+   * Con la misma guarda que el adaptador real: una URL que es exactamente la base, sin objeto
+   * detrás, no es una key.
+   *
+   * <p>Sin ella el doble devolvía {@code Optional.of("")} y la rama de "URL de nuestro bucket pero
+   * sin objeto" no la ejercitaba nadie — {@code QuitarImagenDeGaleria} acabaría pidiendo {@code
+   * eliminar("")}, que en el bucket de verdad no borra nada y aquí parecía que sí.
+   */
   @Override
   public Optional<String> objectKeyDe(String urlPublica) {
-    return urlPublica.startsWith(BASE_PUBLICA)
-        ? Optional.of(urlPublica.substring(BASE_PUBLICA.length()))
-        : Optional.empty();
+    if (!urlPublica.startsWith(BASE_PUBLICA)) {
+      return Optional.empty();
+    }
+    String key = urlPublica.substring(BASE_PUBLICA.length());
+    return key.isBlank() ? Optional.empty() : Optional.of(key);
   }
 
   @Override

@@ -55,6 +55,14 @@ public final class ReintentarPago {
         repositorioPedidos
             .buscarPorId(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
+    // El correo autoriza, y un correo que no es el del pedido se trata como si el pedido no
+    // existiera —mismo criterio que `ConsultarSeguimientoPedido`—: un 403 confirmaría que ese id
+    // corresponde a una compra real, que es justo lo que no hay que confirmarle a quien prueba ids.
+    String correoNormalizado =
+        comando.correo() == null ? "" : comando.correo().trim().toLowerCase();
+    if (!pedido.correo().valor().equals(correoNormalizado)) {
+      throw new PedidoNoEncontradoException(comando.pedidoId());
+    }
     // Se valida antes de reservar: si el pedido no estaba en PAGO_FALLIDO, reservar de todos modos
     // dejaría una reserva huérfana que nadie libera.
     if (!pedido.estado().puedeTransicionarA(EstadoPedido.PAGO_PENDIENTE)) {

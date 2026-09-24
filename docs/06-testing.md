@@ -53,6 +53,29 @@ Fase 5 entera y encontró cosas que ninguna corrida verde encontró:
   real reconstruye el agregado —y cualquiera que mapee de filas a objetos lo
   hace—, devolver la instancia guardada convierte "olvidé persistir" en algo
   indistinguible de "persistí". Ver `adr/0054`.
+- **Y la cuarta variante, de la segunda revisión adversarial (24 de septiembre):
+  un doble que no sabe mentir.** `PasarelaDePagosFalsa` devolvía `(estado, medio)`
+  de la transacción que le pidieran, así que en ese doble **no existía el concepto
+  de "una transacción que no es la de este pago"**. La conciliación de Wompi
+  aplicaba lo que la pasarela dijera sin comprobar que la transacción fuera suya
+  —y el id lo estampa un endpoint público y anónimo—, o sea que se le podía
+  regalar un pedido a cualquiera; y ninguna prueba podía verlo, porque el doble no
+  tenía forma de representar el caso.
+
+  La regla que se saca: **un doble tiene que poder representar el escenario del
+  que el código se defiende**. Si solo sabe responder lo correcto, lo que prueba
+  es que el camino feliz funciona. Se nota preguntándose "¿cómo escribo aquí la
+  respuesta maliciosa?" antes de escribir la prueba amable.
+- **Un código de cable que nadie fija se lo lleva un renombrado.**
+  `ManejadorDeErrores` deriva el `codigo` del **nombre de la clase** de la
+  excepción —decisión buena, evita un catálogo paralelo—, y el frontend los cablea
+  como literales: `envio-http.repositorio.ts` decide con ellos si ofrece la
+  recogida en el punto, y el panel tiene una clave de traducción por código.
+  Renombrar `ArticuloSinMedidasException` a `ArticuloSinMedirException` compila,
+  deja la suite entera en verde y rompe el contrato publicado. `CodigosDeCableTest`
+  fija los 27 que el frontend conoce. La forma general: **cuando un valor cruza el
+  cable y de un lado se deriva en vez de escribirse, hace falta una prueba que lo
+  clave.**
 - **Afirmar que algo NO está en pantalla no afirma nada si no se esperó a que la
   pantalla tuviera datos.** La primera versión de la prueba de "el aviso no se
   enciende con solo borradores" pasaba igual con el defecto puesto: esperaba al

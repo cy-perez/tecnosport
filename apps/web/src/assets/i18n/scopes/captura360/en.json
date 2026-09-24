@@ -66,6 +66,7 @@
   },
   "publicado": "Set published. The product page now shows the 360 viewer.",
   "error_subida": "The set could not be uploaded. The shots are still saved on this device: try again.",
+  "error_subida_rechazada": "The server rejected this set's shots. Capture it again: retrying will not change the result.",
   "error_publicar": "The set could not be published. The product may already have one published: delete that one first.",
   "error_proceso": {
     "IMAGEN_INVALIDA": "One of the shots could not be read. Capture the set again.",

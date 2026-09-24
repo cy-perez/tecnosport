@@ -1,6 +1,7 @@
 package co.tecnosport.api.domain.inventario;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,6 +69,32 @@ class InventarioTest {
     assertThrows(
         ExistenciaInsuficienteException.class,
         () -> inventario.reservar(3, Duration.ofMinutes(30), AHORA));
+  }
+
+  /**
+   * El mensaje de una excepción de dominio viaja tal cual en el {@code detail} del 409 —{@code
+   * ManejadorDeErrores} publica {@code getMessage()}—, así que este decía cuántas unidades quedan y
+   * de qué variante. Con eso, pedir un pedido de 9.999 unidades era una forma de leer el inventario
+   * exacto, y repetirlo, de saber cuándo otro comprador acaba de reservar una. {@code docs/02}
+   * decidió que el catálogo público publica un booleano por variante, no un número.
+   */
+  @Test
+  void elMensajeDeExistenciaInsuficienteNoPublicaElSaldoNiLaVariante() {
+    Inventario inventario = conExistencia(2);
+
+    ExistenciaInsuficienteException excepcion =
+        assertThrows(
+            ExistenciaInsuficienteException.class,
+            () -> inventario.reservar(3, Duration.ofMinutes(30), AHORA));
+
+    assertFalse(excepcion.getMessage().contains("2"), "el mensaje delata el saldo disponible");
+    assertFalse(
+        excepcion.getMessage().contains(inventario.varianteId().toString()),
+        "el mensaje delata el identificador interno de la variante");
+    // Los datos siguen disponibles para quien los necesite de este lado.
+    assertEquals(2, excepcion.disponible());
+    assertEquals(3, excepcion.pedida());
+    assertEquals(inventario.varianteId(), excepcion.varianteId());
   }
 
   @Test

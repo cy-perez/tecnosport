@@ -13,14 +13,19 @@
     (docs/10-captura-360.md): la línea clara lleva siempre una sombra oscura
     detrás, para que se vea igual sobre fondo blanco que sobre fondo negro. El
     ámbar de marca no se usa como línea fina sobre imagen.
+
+    Eso lo decía este comentario y en tema oscuro pasaba lo contrario, porque
+    `sobre-primario` y `primario` se intercambian entre temas: la línea salía
+    casi negra y el halo, ámbar. `sobre-marca` es claro en los dos temas y
+    `marca` oscuro en los dos, que es lo que el párrafo de arriba describe.
   -->
   <div
-    class="relative aspect-square h-[min(100%,100vw)] max-w-full border border-ts-sobre-primario drop-shadow-[0_0_1px_var(--color-primario)]"
+    class="relative aspect-square h-[min(100%,100vw)] max-w-full border border-ts-sobre-marca drop-shadow-[0_0_1px_var(--color-marca)]"
   >
-    <span class="absolute bg-ts-sobre-primario opacity-60 w-px h-full left-1/3"></span>
-    <span class="absolute bg-ts-sobre-primario opacity-60 w-px h-full left-2/3"></span>
-    <span class="absolute bg-ts-sobre-primario opacity-60 h-px w-full top-1/3"></span>
-    <span class="absolute bg-ts-sobre-primario opacity-60 h-px w-full top-2/3"></span>
+    <span class="absolute bg-ts-sobre-marca opacity-60 w-px h-full left-1/3"></span>
+    <span class="absolute bg-ts-sobre-marca opacity-60 w-px h-full left-2/3"></span>
+    <span class="absolute bg-ts-sobre-marca opacity-60 h-px w-full top-1/3"></span>
+    <span class="absolute bg-ts-sobre-marca opacity-60 h-px w-full top-2/3"></span>
 
     <!-- La marca de centro: el producto va centrado en todas las tomas, no solo
          dentro del marco. El SCSS le ponía `border-radius: var(--radio-completo)`
@@ -28,7 +33,7 @@
          todo"), así que siempre fue un cuadrado. Se deja como está: el valor
          que manda es el del sistema. -->
     <span
-      class="absolute top-1/2 left-1/2 size-24 -translate-x-1/2 -translate-y-1/2 border border-ts-sobre-primario opacity-80"
+      class="absolute top-1/2 left-1/2 size-24 -translate-x-1/2 -translate-y-1/2 border border-ts-sobre-marca opacity-80"
     ></span>
   </div>
 </div>

@@ -27,15 +27,29 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
   private readonly cliente = crearClienteContratos(baseUrl());
 
   /**
+   * La llave de la compra en curso, que **sobrevive a un intento fallido**.
+   *
+   * La premisa de antes era "una invocación = un intento real de confirmar", y por eso se generaba
+   * un UUID nuevo dentro de `crear`. Esa premisa es falsa justo en el caso que la llave existe para
+   * cubrir: la petición sale, la red se corta antes de la respuesta —el móvil en el ascensor, el
+   * caso canónico—, el servidor ya creó el pedido y reservó el inventario, y quien compra ve un
+   * error y vuelve a pulsar. Esa segunda pulsación es **el mismo intento**, no uno nuevo, y con
+   * llave nueva creaba un segundo pedido con una segunda reserva sobre las mismas unidades. En
+   * contraentrega esa reserva además no vence: `CrearPedido.vigenciaReserva` devuelve `null`.
+   *
+   * Se limpia al completarse de verdad, que es cuando el intento siguiente sí es otro.
+   */
+  private llaveDeCreacion: string | null = null;
+
+  /**
    * `Idempotency-Key` obligatoria (`docs/03-api.md`): crea un pedido nuevo en
    * cada llamada, así que sin ella un reintento de red duplicaría el pedido
-   * y su reserva de inventario. Un UUID por intento del usuario, no por
-   * reintento HTTP — se genera una vez aquí, por cada vez que este método se
-   * invoca (una invocación = un intento real de confirmar).
+   * y su reserva de inventario.
    */
   async crear(comando: CrearPedidoComando): Promise<Pedido> {
+    this.llaveDeCreacion ??= crypto.randomUUID();
     const respuesta = await this.cliente.POST('/api/v1/pedidos', {
-      headers: { 'Idempotency-Key': crypto.randomUUID() },
+      headers: { 'Idempotency-Key': this.llaveDeCreacion },
       body: {
         correo: comando.correo,
         nombre: comando.contacto.nombre,
@@ -50,7 +64,11 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
         autorizaDatos: comando.autorizaDatos,
       },
     });
-    return aPedido(desempaquetar(respuesta, 'no se pudo crear el pedido'));
+    const pedido = aPedido(desempaquetar(respuesta, 'no se pudo crear el pedido'));
+    // Solo aquí, y no en un `finally`: si `desempaquetar` lanza, el intento no se completó y la
+    // llave tiene que seguir siendo la misma para que el reintento sea idempotente de verdad.
+    this.llaveDeCreacion = null;
+    return pedido;
   }
 
   async metodosDePagoDisponibles(comando: MetodosDePagoDisponiblesComando): Promise<MetodoPago[]> {
@@ -70,9 +88,10 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     return desempaquetar(respuesta, 'no se pudieron consultar los métodos de pago disponibles');
   }
 
-  async reintentarPago(pedidoId: string): Promise<Pedido> {
+  async reintentarPago(pedidoId: string, correo: string): Promise<Pedido> {
     const respuesta = await this.cliente.POST('/api/v1/pedidos/{id}/reintentar-pago', {
       params: { path: { id: pedidoId } },
+      body: { correo },
     });
     return aPedido(desempaquetar(respuesta, 'no se pudo reintentar el pago'));
   }

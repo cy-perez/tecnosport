@@ -40,6 +40,19 @@ import tools.jackson.databind.json.JsonMapper;
  * Las URL base de sandbox y producción son las que Wompi documenta para cada ambiente; cualquier
  * valor de {@code ambiente} que no sea exactamente {@code "produccion"} usa sandbox, para que un
  * valor de configuración mal escrito nunca apunte por accidente a producción.
+ *
+ * <p><b>Y por qué esos dos literales no son la regla dura #5, cuando {@code
+ * PropiedadesSistecredito} argumenta justo lo contrario para su URL.</b> La regla existe para que
+ * una dirección no quede clavada donde tendría que variar por ambiente; aquí varía, y lo que se
+ * configura es <em>cuál de los dos ambientes</em>, no la dirección. La diferencia no es de estilo:
+ * con la URL abierta a configuración, una variable mal escrita —o ausente— manda las peticiones a
+ * donde diga esa variable, y este es el cliente que cobra. Con dos constantes documentadas y un
+ * interruptor, el peor caso de un valor equivocado es apuntar a sandbox, que no cobra a nadie.
+ *
+ * <p>Sistecrédito es el caso contrario y por eso decide distinto: su guía publica un solo host —no
+ * hay sandbox— y el freno de seguridad vive en {@code sandboxActivo}, no en la dirección. Los dos
+ * razonamientos son correctos para su caso; lo que faltaba era que uno de los dos lo dijera, porque
+ * leídos juntos parecen contradecirse.
  */
 public final class WompiClient implements PasarelaDePagos {
 
@@ -130,7 +143,23 @@ public final class WompiClient implements PasarelaDePagos {
       // El medio puede faltar sin que la respuesta sea inservible: el estado es lo que la
       // conciliación necesita para cerrar el pago, el medio es evidencia añadida.
       String medio = datos.path("payment_method_type").asString();
-      return Optional.of(new TransaccionDePasarela(estado, medio.isBlank() ? null : medio));
+      // La referencia y el monto, en cambio, son la contraprueba de que esta transacción es la de
+      // nuestro pago, y sin ellas la conciliación no puede aplicar nada (ver
+      // `TransaccionDePasarela`). Son los mismos dos campos que el webhook ya lee de
+      // `data.transaction` y sobre los que se calcula la firma de integridad al crear la
+      // transacción; aquí cuelgan de `data` directamente, como `status`. Una respuesta sin ellos se
+      // trata igual que no haber podido consultar: se reintenta en la próxima corrida. Negarse a
+      // conciliar es lo correcto cuando falta con qué comprobar.
+      String referencia = datos.path("reference").asString();
+      JsonNode centavos = datos.path("amount_in_cents");
+      if (referencia.isBlank() || !centavos.isNumber()) {
+        return Optional.empty();
+      }
+      // Dividir por 100 es exacto siempre —corre la coma, no aproxima— y `Dinero` normaliza a
+      // escala 0. Nada de `double` por el camino (regla dura #6).
+      Dinero monto = Dinero.deCop(new BigDecimal(centavos.asString()).divide(CENTAVOS_POR_PESO));
+      return Optional.of(
+          new TransaccionDePasarela(estado, medio.isBlank() ? null : medio, referencia, monto));
     } catch (IOException e) {
       return Optional.empty();
     } catch (InterruptedException e) {

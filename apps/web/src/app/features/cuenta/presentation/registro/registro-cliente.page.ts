@@ -25,7 +25,15 @@ function clavesCoincidenValidador(control: AbstractControl): ValidationErrors | 
 
 @Component({
   selector: 'app-registro-cliente',
-  imports: [TsPaginaFormulario, ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsCheckbox, RouterLink],
+  imports: [
+    TsPaginaFormulario,
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsCheckbox,
+    RouterLink,
+  ],
   templateUrl: './registro-cliente.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -69,6 +77,63 @@ export class RegistroClientePage {
     this.valorFormulario();
     return this.form.invalid;
   });
+
+  /**
+   * Los mensajes de campo vacio, que es lo que sustituye al boton deshabilitado (`apps/web/CLAUDE.md`:
+   * "No se deshabilita un boton para decir que faltan datos"). La confirmacion ya tenia el suyo
+   * para el caso de que las dos claves no coincidan; lo que faltaba era decir que el campo esta
+   * vacio, que es el caso normal de quien pulsa "Enviar" sin escribir nada.
+   */
+  private readonly tickClave = toSignal(this.form.controls.clave.events, {
+    initialValue: null,
+  });
+  protected readonly errorClave = computed(() => {
+    this.tickClave();
+    const control = this.form.controls.clave;
+    return control.touched && control.hasError('required')
+      ? this.transloco.translate('cuenta.registro.errores.clave_requerida')
+      : null;
+  });
+
+  private readonly tickConfirmarClave = toSignal(this.form.controls.confirmarClave.events, {
+    initialValue: null,
+  });
+  protected readonly errorConfirmarClave = computed(() => {
+    this.tickConfirmarClave();
+    const control = this.form.controls.confirmarClave;
+    return control.touched && control.hasError('required')
+      ? this.transloco.translate('cuenta.registro.errores.confirmar_requerida')
+      : null;
+  });
+
+  private readonly tickCorreo = toSignal(this.form.controls.correo.events, {
+    initialValue: null,
+  });
+  protected readonly errorCorreo = computed(() => {
+    this.tickCorreo();
+    const control = this.form.controls.correo;
+    return control.touched && control.hasError('required')
+      ? this.transloco.translate('cuenta.registro.errores.correo_requerido')
+      : null;
+  });
+
+  /**
+   * La autorizacion de datos era un boton deshabilitado, y eso la dejaba sin explicacion: quien no
+   * marcaba la casilla veia un boton que no hacia nada. Es ademas el mismo defecto que ya se
+   * corrigio una vez en el checkout —"Sin marcar la casilla, «Continuar» no hacia nada y no decia
+   * por que"—, repetido aqui.
+   */
+  private readonly tickAutorizacion = toSignal(this.form.controls.autorizaDatos.events, {
+    initialValue: null,
+  });
+  protected readonly errorAutorizacion = computed(() => {
+    this.tickAutorizacion();
+    const control = this.form.controls.autorizaDatos;
+    return control.touched && control.invalid
+      ? this.transloco.translate('cuenta.registro.errores.autorizacion_requerida')
+      : null;
+  });
+
   protected readonly clavesNoCoinciden = computed(() => {
     this.valorFormulario();
     return !!this.form.errors?.['clavesNoCoinciden'];

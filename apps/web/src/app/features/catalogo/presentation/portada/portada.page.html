@@ -9,9 +9,15 @@
       class="grid grid-cols-[repeat(auto-fit,minmax(var(--ancho-min-eje),1fr))] gap-16"
       [attr.aria-label]="'portada.lineas' | transloco"
     >
+      <!-- `hover:border-ts-primario` y no `acento`: el ambar sobre blanco da 1,85:1, y el salto
+           desde `--color-borde` es de 1,44:1, asi que la afordancia de hover de estas baldosas
+           simplemente no existia en tema claro. En oscuro si se veia —9,03:1— y por eso nadie lo
+           noto. `docs/04-ui-marca.md` lo dice sin rodeos: el ambar es relleno con texto grafito
+           encima, nunca linea ni icono sobre fondo claro. `--color-primario` es grafito en claro y
+           ambar en oscuro, que es lo que este borde necesita en cada tema. -->
       @for (linea of lineas(); track linea) {
         <a
-          class="anillo-foco chaflan border border-ts-borde bg-ts-superficie p-24 text-ts-texto no-underline hover:border-ts-acento"
+          class="anillo-foco chaflan border border-ts-borde bg-ts-superficie p-24 text-ts-texto no-underline hover:border-ts-primario"
           [routerLink]="['/', idioma(), 'productos']"
           [queryParams]="{ linea }"
         >

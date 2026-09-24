@@ -33,6 +33,7 @@ import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoExceptio
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
@@ -430,11 +431,43 @@ public class ManejadorDeErrores {
     return detalle;
   }
 
-  // La pasarela no contestó. 503 y no 409: no es una respuesta de negocio, es una caída, y el
-  // comprador puede reintentar o elegir otro medio.
+  /**
+   * Dos peticiones de intento de pago sobre el mismo pedido calcularon el mismo número —sale de
+   * contar los pagos del pedido— y la segunda chocó contra el {@code unique} de {@code
+   * pago.referencia}. 409 y no 500: la petición es válida, lo que pasa es que llegó tarde, y quien
+   * la mandó puede volver a pedir el intento y obtener el número siguiente.
+   *
+   * <p>Antes este choque no llegaba aquí: {@code RepositorioPagosJpa} lo traducía a "evento ya
+   * registrado", que por el camino del webhook se contesta con un 200.
+   */
+  @ExceptionHandler(ReferenciaDePagoYaExisteException.class)
+  public ProblemDetail referenciaDePagoYaExiste(ReferenciaDePagoYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Referencia de pago ya existe", excepcion);
+  }
+
+  /**
+   * La pasarela no contestó. 503 y no 409: no es una respuesta de negocio, es una caída, y el
+   * comprador puede reintentar o elegir otro medio.
+   *
+   * <p><b>Aquí tampoco sale el texto crudo de Sistecrédito, y esa es la corrección.</b> El mensaje
+   * de esta excepción lleva concatenado el {@code message} del proveedor —{@code
+   * SistecreditoClient} lo compone así para que el registro del servidor sirva para diagnosticar— y
+   * {@code problema(...)} publicaba {@code getMessage()} tal cual en el {@code detail}. O sea que
+   * la misma fuga que el manejador de arriba bloquea a conciencia, citando la Ley 1266, salía
+   * entera por el manejador de al lado. Se queda en el registro, que es donde sirve; el frontend
+   * elige su texto por el {@code codigo}, como todos los demás.
+   */
   @ExceptionHandler(SistecreditoNoRespondeException.class)
   public ProblemDetail sistecreditoNoResponde(SistecreditoNoRespondeException excepcion) {
-    return problema(HttpStatus.SERVICE_UNAVAILABLE, "Sistecrédito no responde", excepcion);
+    log.error("Sistecrédito no respondió.", excepcion);
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            "No pudimos comunicarnos con Sistecrédito en este momento.");
+    problema.setTitle("Sistecrédito no responde");
+    problema.setProperty("codigo", "SISTECREDITO_NO_RESPONDE");
+    problema.setType(URI.create("https://tecnosport.co/errores/sistecredito-no-responde"));
+    return problema;
   }
 
   // contraentrega ya no es elegible para este pedido (cobertura, monto, categoría o rechazo
@@ -533,17 +566,45 @@ public class ManejadorDeErrores {
    * los demás 422 y no con un 400 por lo mismo que el tipo que no convierte: la petición se
    * entiende, lo que no se puede es procesarla.
    */
-  @ExceptionHandler({
-    ExcepcionDeDominio.class,
-    IllegalArgumentException.class,
-    MethodArgumentTypeMismatchException.class,
-    MissingServletRequestParameterException.class,
-    HttpMessageNotReadableException.class
-  })
+  @ExceptionHandler({ExcepcionDeDominio.class, IllegalArgumentException.class})
   public ProblemDetail solicitudInvalida(Exception excepcion) {
     ProblemDetail problema =
         problema(HttpStatus.UNPROCESSABLE_CONTENT, "Solicitud inválida", excepcion);
     problema.setProperty("campos", List.of());
+    return problema;
+  }
+
+  /**
+   * Las dos de arriba son nuestras y su mensaje está escrito para que alguien lo lea; estas tres
+   * las escribe el framework y su mensaje describe <b>nuestras clases</b>: el nombre con paquete
+   * completo del DTO, la cadena de referencia que Jackson recorrió, la posición del parser. Iban en
+   * la misma lista, así que cualquiera que mandara un JSON mal formado recibía de vuelta la
+   * estructura interna del servidor.
+   *
+   * <p>El {@code codigo} no cambia —{@code HTTP_MESSAGE_NOT_READABLE}, {@code
+   * METHOD_ARGUMENT_TYPE_MISMATCH}, {@code MISSING_SERVLET_REQUEST_PARAMETER}— y es lo único que el
+   * frontend usa: {@code mensaje-de-error.ts} traduce por código y nunca por {@code detail},
+   * precisamente porque la frase de Java viene en un solo idioma y fuera de Transloco. Así que
+   * tapar el detalle no le quita nada a nadie salvo a quien estaba sondeando.
+   */
+  @ExceptionHandler({
+    MethodArgumentTypeMismatchException.class,
+    MissingServletRequestParameterException.class,
+    HttpMessageNotReadableException.class
+  })
+  public ProblemDetail solicitudMalFormada(Exception excepcion) {
+    log.warn("Solicitud mal formada: {}", excepcion.toString());
+    ProblemDetail problema =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.UNPROCESSABLE_CONTENT,
+            "La solicitud no se pudo leer: revisa el cuerpo y los parámetros.");
+    problema.setTitle("Solicitud inválida");
+    String codigo = codigoDesde(excepcion);
+    problema.setProperty("codigo", codigo);
+    problema.setProperty("campos", List.of());
+    problema.setType(
+        URI.create(
+            "https://tecnosport.co/errores/" + codigo.toLowerCase(Locale.ROOT).replace('_', '-')));
     return problema;
   }
 
@@ -571,7 +632,22 @@ public class ManejadorDeErrores {
   }
 
   private String codigoDesde(Exception excepcion) {
-    String nombre = excepcion.getClass().getSimpleName().replace("Exception", "");
+    return codigoDesde(excepcion.getClass());
+  }
+
+  /**
+   * El código de cable que se deriva de una clase de excepción.
+   *
+   * <p><b>Visible para pruebas, y hace falta que lo sea.</b> El frontend cablea estos códigos como
+   * literales —{@code envio-http.repositorio.ts} decide con ellos si ofrece la recogida en el
+   * punto, y los JSON del panel tienen una clave de traducción por código—, pero del lado del
+   * servidor no los escribe nadie: salen del <b>nombre de la clase</b>. O sea que renombrar una
+   * excepción cambia el contrato publicado sin tocar una sola cadena, y la suite entera se queda en
+   * verde mientras el comprador empieza a ver un fallo genérico. {@code CodigosDeCableTest} los
+   * fija uno a uno.
+   */
+  static String codigoDesde(Class<? extends Exception> clase) {
+    String nombre = clase.getSimpleName().replace("Exception", "");
     StringBuilder codigo = new StringBuilder();
     for (int i = 0; i < nombre.length(); i++) {
       char letra = nombre.charAt(i);

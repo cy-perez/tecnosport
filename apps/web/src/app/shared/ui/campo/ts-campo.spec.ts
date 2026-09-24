@@ -49,7 +49,13 @@ describe('TsCampo con tipo password', () => {
 @Component({
   imports: [ReactiveFormsModule, TsCampo],
   template: `
-    <ts-campo idCampo="correo" label="Correo" tipo="email" [error]="error()" [formControl]="control" />
+    <ts-campo
+      idCampo="correo"
+      label="Correo"
+      tipo="email"
+      [error]="error()"
+      [formControl]="control"
+    />
   `,
 })
 class AnfitrionConError {
@@ -144,5 +150,49 @@ describe('TsCampo con ayuda', () => {
     expect(screen.getByLabelText('Fecha en que llegó').getAttribute('aria-describedby')).toBe(
       'fecha-ayuda fecha-error',
     );
+  });
+});
+
+@Component({
+  imports: [ReactiveFormsModule, TsCampo],
+  template: `
+    <ts-campo idCampo="correo" label="Correo" [obligatorio]="true" [formControl]="control" />
+  `,
+})
+class AnfitrionObligatorio {
+  readonly control = new FormControl('');
+}
+
+/**
+ * Hay 65 `Validators.required` en el frontend y no había un solo `required` ni `aria-required` en
+ * ninguna plantilla. Con lector de pantalla, quien entraba a "Iniciar sesión" oía "Correo, editar"
+ * —sin "obligatorio"—, llegaba a un botón anunciado como no disponible, y no había nada en la
+ * página que explicara qué faltaba. WCAG 3.3.2.
+ */
+describe('TsCampo obligatorio', () => {
+  it('declara aria-required en el control', async () => {
+    await render(AnfitrionObligatorio);
+
+    expect(screen.getByLabelText('Correo').getAttribute('aria-required')).toBe('true');
+  });
+
+  /**
+   * El asterisco es la señal visual y va `aria-hidden`, porque quien lo anuncia es `aria-required`
+   * y leerlo además como "asterisco" sería ruido. Y va **fuera** del `<label>`: dentro se cuela en
+   * el `textContent` de la etiqueta y `getByLabelText('Correo')` deja de encontrar el campo, que
+   * es exactamente lo que pasó al escribir esto.
+   */
+  it('marca el campo a la vista sin ensuciar el nombre accesible', async () => {
+    await render(AnfitrionObligatorio);
+
+    expect(screen.getByLabelText('Correo')).toBeTruthy();
+    const asterisco = screen.getByText('*');
+    expect(asterisco.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('sin obligatorio no declara nada, que es el caso de un campo opcional', async () => {
+    await render(AnfitrionDePrueba);
+
+    expect(screen.getByLabelText('Precio').getAttribute('aria-required')).toBeNull();
   });
 });

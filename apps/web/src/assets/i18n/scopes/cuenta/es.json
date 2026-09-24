@@ -11,7 +11,12 @@
     "olvidaste_clave": "¿Olvidaste tu clave?",
     "sin_cuenta": "¿No tienes cuenta?",
     "crear_cuenta": "Crear cuenta",
-    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema."
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar: tu clave no es el problema.",
+    "errores": {
+      "correo_requerido": "Escribe tu correo.",
+      "correo_invalido": "Ese correo no tiene una forma válida.",
+      "clave_requerida": "Escribe tu clave."
+    }
   },
   "registro": {
     "titulo": "Crear cuenta",
@@ -28,7 +33,14 @@
     "autoriza_datos": "Autorizo el tratamiento de mis datos personales para crear mi cuenta.",
     "ver_politica": "Leer la política de tratamiento de datos",
     "ya_tienes_cuenta": "¿Ya tienes cuenta?",
-    "iniciar_sesion": "Iniciar sesión"
+    "iniciar_sesion": "Iniciar sesión",
+    "errores": {
+      "correo_requerido": "Escribe tu correo.",
+      "correo_invalido": "Ese correo no tiene una forma válida.",
+      "clave_requerida": "Escribe una clave.",
+      "confirmar_requerida": "Repite la clave.",
+      "autorizacion_requerida": "Para crear la cuenta hay que autorizar el tratamiento de los datos."
+    }
   },
   "verificarCorreo": {
     "titulo": "Verificando tu correo",
@@ -57,7 +69,11 @@
     "exito_titulo": "Revisa tu correo",
     "exito_mensaje": "Si existe una cuenta con ese correo, te llegó un enlace para recuperar tu clave.",
     "error_generico": "No se pudo procesar la solicitud. Intenta de nuevo.",
-    "error_demasiados_intentos": "Demasiados intentos seguidos desde esta conexión. Espera unos minutos y vuelve a pedirlo."
+    "error_demasiados_intentos": "Demasiados intentos seguidos desde esta conexión. Espera unos minutos y vuelve a pedirlo.",
+    "errores": {
+      "correo_requerido": "Escribe tu correo.",
+      "correo_invalido": "Ese correo no tiene una forma válida."
+    }
   },
   "restablecerClave": {
     "titulo": "Elige una clave nueva",
@@ -70,6 +86,10 @@
     "exito_mensaje": "Ya puedes iniciar sesión con tu clave nueva.",
     "error_titulo": "Enlace no válido",
     "error_token_invalido": "El enlace no es válido o ya venció. Pide uno nuevo.",
-    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a intentarlo: tu enlace sigue sirviendo."
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a intentarlo: tu enlace sigue sirviendo.",
+    "errores": {
+      "clave_requerida": "Escribe la clave nueva.",
+      "confirmar_requerida": "Repite la clave nueva."
+    }
   }
 }

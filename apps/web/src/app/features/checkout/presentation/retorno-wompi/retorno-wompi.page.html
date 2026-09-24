@@ -1,5 +1,12 @@
 <section class="mx-auto max-w-contenido px-16 py-32 text-center">
+  <!-- El `h1` de cada rama, como en el retorno de Sistecredito. Esta era la unica pantalla del
+       sitio sin encabezado de nivel 1: las demas que no lo escriben literal lo reciben de
+       `ts-pagina-formulario` o de `ts-hero`, y esta no usa ninguno de los dos. Sin el, quien navega
+       por encabezados con un lector de pantalla no tiene donde aterrizar. -->
   @if (sinDatos()) {
+    <h1 class="m-0 mb-16 font-display text-2xl">
+      {{ 'checkout.retornoWompi.sin_datos_titulo' | transloco }}
+    </h1>
     <p class="mb-16 text-ts-error" role="alert">
       {{ 'checkout.retornoWompi.sin_datos' | transloco }}
     </p>
@@ -7,6 +14,9 @@
       {{ 'checkout.resumen.ir_al_catalogo' | transloco }}
     </a>
   } @else {
+    <h1 class="m-0 mb-16 font-display text-2xl">
+      {{ 'checkout.retornoWompi.titulo' | transloco }}
+    </h1>
     <ts-esqueleto />
     <!-- Igual que el "cargando" de verificar-correo: esta region solo existe durante la primera
          pintura -la pantalla se va sola en cuanto la pasarela responde-, y una region viva que ya

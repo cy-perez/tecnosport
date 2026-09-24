@@ -15,6 +15,7 @@ import co.tecnosport.api.domain.catalogo.TipoImagen;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
 import co.tecnosport.api.domain.compartido.HashContenido;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,63 @@ class QuitarImagenDeGaleriaTest {
             "alt en");
     producto.agregarImagenGaleria(imagen);
     return imagen;
+  }
+
+  /**
+   * Una imagen como las que de verdad sube {@code tools/cargar-catalogo.mjs}: cuatro anchos más el
+   * JPEG de vista previa, cada uno su propio objeto en el bucket.
+   */
+  private ImagenProducto imagenConVariantesEnLaGaleria(
+      Producto producto, String sufijo, int orden) {
+    List<VarianteDeImagen> variantes = new ArrayList<>();
+    for (int ancho : new int[] {400, 800, 1200, 2000}) {
+      String objectKey =
+          "productos/" + producto.id() + "/galeria-" + sufijo + "-" + ancho + ".avif";
+      almacenDeImagenes.conObjeto(objectKey, 20_000);
+      variantes.add(new VarianteDeImagen(ancho, almacenDeImagenes.urlPublica(objectKey), 20_000));
+    }
+    String keyVistaPrevia = "productos/" + producto.id() + "/galeria-" + sufijo + "-previa.jpg";
+    almacenDeImagenes.conObjeto(keyVistaPrevia, 9_000);
+
+    ImagenProducto imagen =
+        ImagenProducto.crear(
+            TipoImagen.GALERIA,
+            orden,
+            variantes,
+            almacenDeImagenes.urlPublica(keyVistaPrevia),
+            2000,
+            new HashContenido("%064x".formatted(orden + 40)),
+            "alt es",
+            "alt en");
+    producto.agregarImagenGaleria(imagen);
+    return imagen;
+  }
+
+  /**
+   * Desde {@code ADR-0057} una imagen no tiene una URL sino varias. Este caso de uso seguía
+   * borrando {@code quitada.url()}, que es la variante mayor: las otras cuatro se quedaban en el
+   * bucket para siempre, porque aquí no se puede limpiar por prefijo —{@code galeria-} lo comparten
+   * las hermanas publicadas— y {@code npm run huerfanos} informa pero no borra.
+   */
+  @Test
+  void borraTodasLasVariantesDeLaImagenYSuVistaPrevia() {
+    Producto producto = productoDePrueba();
+    ImagenProducto imagen = imagenConVariantesEnLaGaleria(producto, "uno", 0);
+    repositorioProductos.conProductos(producto);
+
+    quitarImagenDeGaleria.ejecutar(new QuitarImagenDeGaleriaComando(producto.id(), imagen.id()));
+
+    assertEquals(5, almacenDeImagenes.objetosEliminados.size());
+    for (VarianteDeImagen variante : imagen.variantes()) {
+      assertTrue(
+          almacenDeImagenes.objetosEliminados.contains(
+              almacenDeImagenes.objectKeyDe(variante.url()).orElseThrow()),
+          "no se borró la variante de " + variante.ancho() + " px");
+    }
+    assertTrue(
+        almacenDeImagenes.objetosEliminados.contains(
+            almacenDeImagenes.objectKeyDe(imagen.urlVistaPrevia().orElseThrow()).orElseThrow()),
+        "no se borró la vista previa");
   }
 
   @Test
