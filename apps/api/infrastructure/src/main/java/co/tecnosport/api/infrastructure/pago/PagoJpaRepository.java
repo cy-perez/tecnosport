@@ -13,6 +13,10 @@ public interface PagoJpaRepository extends JpaRepository<PagoJpaEntity, UUID> {
 
   List<PagoJpaEntity> findByPedidoId(UUID pedidoId);
 
+  // Lista y no Optional: la columna no lleva `unique`, y un `Optional` sobre dos filas revienta con
+  // IncorrectResultSizeDataAccessException, que es una excepcion de JPA saliendo de infrastructure.
+  List<PagoJpaEntity> findByIdTransaccionPasarela(String idTransaccionPasarela);
+
   List<PagoJpaEntity> findByEstadoAndIdTransaccionPasarelaIsNotNullAndCreadoEnBefore(
       String estado, Instant creadoEn);
 }

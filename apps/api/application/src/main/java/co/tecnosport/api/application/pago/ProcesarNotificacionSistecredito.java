@@ -115,22 +115,38 @@ public final class ProcesarNotificacionSistecredito {
   }
 
   /**
-   * El pago que esta notificacion dice tocar, buscado por la referencia que trae el cuerpo.
+   * El pago que esta notificacion dice tocar, buscado <b>siempre en local</b>: por el id de
+   * transaccion, que el intento ya registro al crearse, y si no por la referencia cuando el cuerpo
+   * la trae.
    *
    * <p>Se usa el dato de entrada <b>solo para decidir si vale la pena preguntar</b>; lo que se
-   * aplica despues sale de la consulta. Si la notificacion no trae factura --la guia la marca
-   * opcional-- no hay por donde buscar y se pregunta igual, que es el camino raro.
+   * aplica despues sale de la consulta a la pasarela.
+   *
+   * <p><b>Aqui habia una rama que llamaba a la pasarela, y era la unica que se recorria en
+   * produccion.</b> El comentario de {@code ejecutar} dice "PRIMERO lo local, y solo despues la
+   * pasarela", con el motivo: este endpoint es publico y anonimo, y consultar antes de mirar si la
+   * referencia siquiera existe convierte cada peticion inventada en una llamada a Sistecredito con
+   * nuestras credenciales productivas. Pero cuando el cuerpo no traia factura se preguntaba igual
+   * --se llamaba "el camino raro"-- y lo medido el 23 de septiembre de 2026 es que las
+   * notificaciones de verdad llegan **sin** `invoice` (docs/11-pagos-y-envios.md,
+   * `SistecreditoControlador`). O sea que el camino raro era el unico, la proteccion que el
+   * comentario describia no existia, y con pago se consultaba dos veces: seis
+   * `GetTransactionResponse` por pago, con las tres notificaciones por aprobacion que se midieron.
+   *
+   * <p>El id de transaccion sirve para buscar porque {@code CrearIntentoDePagoSistecredito} lo
+   * guarda en el pago en cuanto la pasarela lo devuelve. Un id que no corresponde a ningun pago
+   * nuestro sale por {@code PAGO_NO_ENCONTRADO} sin gastar una sola llamada.
    */
   private Optional<Pago> pagoDeLaNotificacion(ProcesarNotificacionSistecreditoComando comando) {
+    Optional<Pago> porTransaccion =
+        repositorioPagos.buscarPorIdTransaccionPasarela(comando.idTransaccion());
+    if (porTransaccion.isPresent()) {
+      return porTransaccion;
+    }
     if (comando.referencia() != null && !comando.referencia().isBlank()) {
       return repositorioPagos.buscarPorReferencia(new ReferenciaPago(comando.referencia()));
     }
-    return pasarela
-        .consultar(comando.idTransaccion())
-        .map(TransaccionSistecredito::referencia)
-        .filter(referencia -> referencia != null && !referencia.isBlank())
-        .flatMap(
-            referencia -> repositorioPagos.buscarPorReferencia(new ReferenciaPago(referencia)));
+    return Optional.empty();
   }
 
   private boolean coincide(
@@ -163,7 +179,23 @@ public final class ProcesarNotificacionSistecredito {
     if (pago.metodoPago().pasarela() != ProveedorDePago.SISTECREDITO) {
       return false;
     }
-    return pago.idTransaccionPasarela().map(verdad.id()::equals).orElse(false);
+    if (!pago.idTransaccionPasarela().map(verdad.id()::equals).orElse(false)) {
+      return false;
+    }
+    // Y la factura que **la pasarela** dice de esa transaccion tiene que ser la de este pago.
+    //
+    // Esto faltaba, y hasta ahora no se notaba porque el pago se buscaba por la referencia del
+    // cuerpo: con la busqueda por id de transaccion —que es lo que evita gastar una consulta por
+    // cada peticion anonima— una notificacion que declara otra factura si encuentra pago, y sin
+    // esta linea se le aplicaria. `coincide` no cubre el hueco: compara la pasarela contra el
+    // **cuerpo**, que lo escribe quien manda la peticion, no contra lo que tenemos guardado.
+    //
+    // Se salta si la pasarela no manda `invoice`, por lo mismo que en el resto de este archivo: la
+    // guia la marca opcional y negarse a aplicar un pago aprobado por un campo que quiza no venga
+    // seria peor que el riesgo que cubre.
+    return verdad.referencia() == null
+        || verdad.referencia().isBlank()
+        || verdad.referencia().equals(pago.referencia().valor());
   }
 
   /**

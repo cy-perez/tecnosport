@@ -19,6 +19,19 @@ final class RepositorioPagosFalso implements RepositorioPagos {
     return pagos.stream().filter(p -> p.referencia().equals(referencia)).findFirst();
   }
 
+  /** Como el real: exactamente uno o ninguno, porque la columna no lleva `unique`. */
+  @Override
+  public Optional<Pago> buscarPorIdTransaccionPasarela(String idTransaccionPasarela) {
+    if (idTransaccionPasarela == null || idTransaccionPasarela.isBlank()) {
+      return Optional.empty();
+    }
+    List<Pago> candidatos =
+        pagos.stream()
+            .filter(p -> p.idTransaccionPasarela().map(idTransaccionPasarela::equals).orElse(false))
+            .toList();
+    return candidatos.size() == 1 ? Optional.of(candidatos.get(0)) : Optional.empty();
+  }
+
   @Override
   public List<Pago> buscarPorPedidoId(UUID pedidoId) {
     return pagos.stream().filter(p -> p.pedidoId().equals(pedidoId)).toList();

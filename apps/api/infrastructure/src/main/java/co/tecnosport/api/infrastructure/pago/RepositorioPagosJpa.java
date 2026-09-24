@@ -56,6 +56,17 @@ public class RepositorioPagosJpa implements RepositorioPagos {
         .toList();
   }
 
+  @Override
+  public Optional<Pago> buscarPorIdTransaccionPasarela(String idTransaccionPasarela) {
+    if (idTransaccionPasarela == null || idTransaccionPasarela.isBlank()) {
+      return Optional.empty();
+    }
+    List<PagoJpaEntity> candidatos = pagos.findByIdTransaccionPasarela(idTransaccionPasarela);
+    // Exactamente uno o ninguno: la columna no lleva `unique` y con dos candidatos no se puede
+    // elegir sin arriesgarse a mover el dinero del pedido equivocado.
+    return candidatos.size() == 1 ? Optional.of(aPago(candidatos.get(0))) : Optional.empty();
+  }
+
   /**
    * <b>Se vuelca aquí y no al confirmar, a propósito.</b> El índice único de {@code evento_pago}
    * —{@code (pago_id, id_evento)}— es lo que impide aplicar dos veces la misma notificación, y
