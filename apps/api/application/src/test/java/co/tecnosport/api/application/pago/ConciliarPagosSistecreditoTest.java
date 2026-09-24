@@ -143,6 +143,61 @@ class ConciliarPagosSistecreditoTest {
   }
 
   /**
+   * El caso del cupo tope, que es justo lo que hace un prestamista: aprueba por menos de lo pedido.
+   * {@code ProcesarNotificacionSistecredito} ya lo rechazaba por el camino de la notificación, con
+   * el motivo escrito —"la diferencia sería pérdida invisible"—; este camino, que es el que se
+   * recorre cuando el comprador cierra la ventana, lo aplicaba como pago completo.
+   */
+  @Test
+  void unCreditoAprobadoPorMenosDeLoPedidoNoSeConcilia() {
+    ConciliarPagosSistecredito caso = crear();
+    Pago pago = pagoPendienteCon(MetodoPago.SISTECREDITO, "id-sistecredito", 1);
+    long dosTercios = pago.monto().valor().longValueExact() * 2 / 3;
+    pasarela.responder(
+        new TransaccionSistecredito(
+            "id-sistecredito",
+            pago.referencia().valor(),
+            "Approved",
+            dosTercios,
+            null,
+            null,
+            null));
+
+    ResultadoConciliacion resultado = caso.ejecutar();
+
+    assertEquals(1, resultado.revisados());
+    assertEquals(0, resultado.conciliados());
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(pago.referencia()).orElseThrow().estado());
+  }
+
+  /**
+   * El id de transacción lo estampa un endpoint público y anónimo, igual que en Wompi. Si la
+   * factura que la pasarela reporta no es la nuestra, la transacción es de otra compra.
+   */
+  @Test
+  void unaTransaccionAprobadaDeOtraFacturaNoSeConcilia() {
+    ConciliarPagosSistecredito caso = crear();
+    Pago pago = pagoPendienteCon(MetodoPago.SISTECREDITO, "id-sistecredito", 1);
+    pasarela.responder(
+        new TransaccionSistecredito(
+            "id-sistecredito",
+            "TS-2026-000999-1",
+            "Approved",
+            pago.monto().valor().longValueExact(),
+            null,
+            null,
+            null));
+
+    ResultadoConciliacion resultado = caso.ejecutar();
+
+    assertEquals(1, resultado.revisados());
+    assertEquals(0, resultado.conciliados());
+    assertEquals(
+        EstadoPago.PENDIENTE, pagos.buscarPorReferencia(pago.referencia()).orElseThrow().estado());
+  }
+
+  /**
    * Si la conciliación resuelve el pago y la notificación llega después, el agregado la reconoce
    * como repetida porque los dos caminos componen el mismo id de evento. Sin eso, la notificación
    * tardía intentaría aplicar un estado sobre un pago ya final.
