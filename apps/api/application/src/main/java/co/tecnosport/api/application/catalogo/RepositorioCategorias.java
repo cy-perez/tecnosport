@@ -19,7 +19,8 @@ public interface RepositorioCategorias {
    * Solo las que tienen al menos un producto {@code PUBLICADO}, que es el mismo criterio con el que
    * la vitrina arma su rejilla.
    *
-   * <p>Desde {@code V38__linea_tecnologia.sql} existen once categorías de tecnología y el catálogo
+   * <p>Desde {@code V38__linea_tecnologia.sql} existen varias categorías de tecnología —ocho desde
+   * que {@code V62} quitó las tres que ninguna lista de proveedor puede llenar— y el catálogo
    * sembrado solo llena unas pocas, así que la vitrina llevaba ofreciendo filtros que llevan a una
    * rejilla vacía. Ver {@code RepositorioMarcas#listarConProductosPublicados()}.
    */

@@ -317,6 +317,38 @@ desde que entran computadores y proyectores describía un contrato más estrecho
 venta real. La redacción nueva enumera **"entre ellos"**, no de forma taxativa: una
 categoría más no vuelve a falsear el numeral, que es justo lo que acaba de pasar.
 
+**Y diez días después pasó al revés.** El 24 de septiembre de 2026 el negocio dejó de
+vender cargadores, cables de carga y baterías portátiles —se venden aparte del equipo,
+con margen bajo y rotación lenta, y ninguna lista de proveedor los repone—, así que
+salieron de la enumeración del numeral 2 y del catálogo (`V62__categorias_sin_suministro.sql`).
+El "entre ellos" aguantó el movimiento en las dos direcciones, que era para lo que se
+escribió así.
+
+**La versión legal no subió, y esa fue una decisión, no un olvido.**
+`legales.comun.version` sigue en `2026-09-23`. Está encadenada a
+`POLITICA_DATOS_VERSION` y a la constancia de autorización de cada usuario, así que
+subirla habría dejado a todas las autorizaciones existentes apuntando a una versión de
+la política de datos que nadie leyó —la política de datos no cambió una palabra—.
+La SIC define el cambio sustancial que obliga a comunicar y a pedir **nueva
+autorización** por dos causas: **cambio de responsable** y **cambio de la finalidad
+inicialmente autorizada**. Ninguna de las dos ocurrió: cambió qué mercancía se ofrece,
+no quién trata los datos ni para qué. Y del lado del consumidor tampoco se movió ningún
+derecho: la lista es enunciativa, no cambia plazo, precio, garantía ni retracto, y quien
+compró un cargador antes conserva la garantía por el numeral 10, que habla de "todo
+producto nuevo" sin distinguir categoría.
+Fuente verificada el 24/09/2026: [Cambios sustanciales en política de tratamientos de
+datos personales](https://www.sic.gov.co/boletin/juridico/habeas-data/cambios-sustanciales-en-pol%C3%ADtica-de-tratamientos-de-datos-personales),
+boletín jurídico de la SIC.
+
+**Aquí hay un acoplamiento que conviene ver antes de que estorbe.** Una sola versión
+cubre los tres documentos —términos, privacidad y cookies— y además sella la constancia
+de habeas data. Mientras los cambios sean de este tamaño se resuelve no subiéndola, pero
+el día que los términos cambien de verdad y la política de datos no, habrá que elegir
+entre sellar una autorización falsa o dejar los términos sin fecha nueva. La salida es
+separar la versión de los términos de la de la política de datos; no se hace hoy porque
+`autorizacion_datos` ya tiene filas apuntando a la versión compartida y migrarlas es un
+trabajo propio.
+
 **Numeral 10 (garantía).** Decía "ese mismo término de un año aplica a los teléfonos
 celulares nuevos", herencia de cuando se cerró `[[GARANTÍA DE CELULARES]]`. Con el
 catálogo ampliado, singularizar el celular insinuaba que lo demás tiene otro régimen.

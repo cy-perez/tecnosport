@@ -40,13 +40,19 @@ DIGITOS_PRECIO_COMPLETO = 6
 # y por eso hubo que sacar "accesorios_consola" de aquí. Se deja la categoría viva
 # en ENCABEZADOS y en VINETAS_CATEGORIA a propósito: así el control cae en
 # descartados con su motivo a la vista, y no en "sin clasificar".
+# Los cargadores y las power bank salieron el 24/09/2026, por lo mismo que ya
+# había sacado a los cables y a los accesorios sueltos: se venden aparte del
+# equipo, con margen bajo y rotación lenta, y cada uno obliga a investigar un
+# precio de mercado propio para muy poca venta. Lo que se vende junto al equipo
+# entra; lo que alimenta al equipo, no. Quedan vivas en ENCABEZADOS y en
+# VINETAS_CATEGORIA por la misma razón que accesorios_consola: así el cubo de
+# 25 W y la power bank de 20.000 mAh caen en descartados con su motivo y no en
+# "sin clasificar".
 CATEGORIAS_INCLUIDAS = {
     "celulares",
     "tablets",
     "relojes",
     "audifonos",
-    "cargadores",
-    "power_bank",
     "consolas",
     "computadores",
     "proyectores",
@@ -57,7 +63,7 @@ CATEGORIAS_INCLUIDAS = {
 CONDICIONES_PUBLICABLES = {"nuevo"}
 
 # Un celular por debajo de este precio de proveedor no entra al análisis.
-# Los demás productos (relojes, audífonos, cargadores...) no tienen mínimo.
+# Los demás productos (relojes, audífonos, parlantes...) no tienen mínimo.
 PRECIO_MINIMO_CELULAR_COP = 500_000
 
 # Marcas que no se analizan, en NINGUNA categoría (decisión del negocio,

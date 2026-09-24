@@ -16,9 +16,13 @@ contact@tecnosport.co. Dominio tecnosport.co.
 Sí entra:
 
 - Catálogo de tres líneas: ropa y calzado deportivo, bolsos, tecnología. Dentro de
-  tecnología hay categorías: celulares, relojes, audífonos, cargadores, cables de
-  cargador, power banks, consolas, parlantes, computadores, tablets y proyectores
-  (ampliado el 14 de septiembre de 2026). **Tres líneas y no trece**: la línea es el
+  tecnología hay ocho categorías: celulares, relojes, audífonos, consolas,
+  parlantes, computadores, tablets y proyectores (ampliado el 14 de septiembre de
+  2026 a once; el 24 de septiembre salieron cargadores, power banks y cables de
+  cargador, que se venden aparte del equipo y ninguna lista de proveedor puede
+  reponer). Son **exactamente** las que la skill `listas-de-proveedor` publica, y
+  eso no se sostiene solo: lo afirma `CategoriasDeTecnologiaTest`.
+  **Tres líneas y no trece**: la línea es el
   nivel grueso —un control en el filtro principal, un valor del enum, traducciones y
   pruebas— y la categoría es una fila. Lo que se pueda modelar como fila no se modela
   como código.
@@ -106,8 +110,8 @@ identifica al comprador, aunque sea solo por correo.
   una de contraentrega dura hasta el despacho.
 - **Los celulares se manejan por unidad serializada.** Cada equipo tiene IMEI y se
   asocia al pedido en el despacho, no antes. Es una regla del **producto**, no de la
-  línea: el resto de lo tecnológico —un cargador, un cable— no se serializa, y la
-  serialización se decide por variante y no por pertenecer a `TECNOLOGIA`. Cuando
+  línea: el resto de lo tecnológico —unos audífonos, un parlante— no se serializa,
+  y la serialización se decide por variante y no por pertenecer a `TECNOLOGIA`. Cuando
   entren consolas o computadores habrá que decidir cuáles llevan serie, y esa
   decisión no se hereda de la línea.
 - **Un producto no se publica sin imagen principal.** El set 360 es opcional, pero

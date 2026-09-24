@@ -26,9 +26,15 @@ public final class ContenidoDeclarado {
   private ContenidoDeclarado() {}
 
   /**
-   * "Electrónica y accesorios" y no "Equipo electrónico": un cable y un cargador no son equipo, y
-   * las once categorías de la línea tienen que caber en la misma frase sin que ninguna quede
-   * declarada de menos.
+   * "Electrónica y accesorios" y no "Equipo electrónico": las categorías de la línea tienen que
+   * caber en la misma frase sin que ninguna quede declarada de menos.
+   *
+   * <p>La frase se eligió cuando la línea tenía once categorías y tres de ellas —cables, cargadores
+   * y power banks— no eran equipo sino accesorio. {@code V62} las quitó del catálogo el 24 de
+   * septiembre de 2026 y las ocho que quedan sí son equipo, así que "accesorios" ya no está
+   * cubriendo a nadie. <b>Se deja igual a propósito.</b> Lo declarado de más no tumba una
+   * reclamación por pérdida; lo declarado de menos, sí, y estrechar la frase solo la vuelve a dejar
+   * corta el día que entre la primera funda o el primer soporte.
    */
   public static String de(LineaCatalogo linea) {
     return switch (linea) {

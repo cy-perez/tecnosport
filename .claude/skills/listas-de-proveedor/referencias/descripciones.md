@@ -33,9 +33,9 @@ lo distingue de su versión anterior o de su competencia directa.]
 - [garantía, condición del equipo, aclaraciones de eSIM o compatibilidad]
 ```
 
-Los atributos de la ficha cambian por categoría: un power bank lleva capacidad,
-potencia de entrada y salida y número de puertos; un portátil lleva pantalla,
-procesador, RAM, almacenamiento, gráficos, puertos y peso.
+Los atributos de la ficha cambian por categoría: un parlante lleva potencia,
+autonomía, resistencia al agua y versión de Bluetooth; un portátil lleva
+pantalla, procesador, RAM, almacenamiento, gráficos, puertos y peso.
 
 ## Metadatos
 
@@ -59,8 +59,8 @@ comparó en tres sitios: lo que convence es el dato exacto, no el adjetivo.
 
 - **Equipos activados**: decir que la garantía del fabricante ya está corriendo y
   desde cuándo, si se sabe.
-- **Accesorios compatibles**: si el cargador o el accesorio no es de la marca del
-  equipo, la ficha dice "compatible con", nunca la marca a secas.
+- **Accesorios compatibles**: si el accesorio no es de la marca del equipo con el
+  que se usa, la ficha dice "compatible con", nunca la marca a secas.
 - **eSIM**: si el equipo no tiene bandeja física, decirlo en la apertura, no en la
   ficha. Es el reclamo más común en equipos importados.
 - **RAM extendida**: si la lista trae `(8+8+256)`, la ficha dice 8 GB de RAM y

@@ -31,13 +31,16 @@ adornos.
 | Tablets | Marca + modelo + pantalla + capacidad + conectividad | `Apple iPad Air 11" 256GB Wi-Fi` |
 | Relojes | Marca + modelo + tamaño de caja | `Samsung Galaxy Watch 8 Classic 46mm` |
 | Audífonos | Marca + línea + modelo | `Samsung Galaxy Buds Core` |
-| Cargadores | Marca + tipo + potencia | `Samsung Cargador de Pared 45W USB-C` |
-| Cables | Cable + extremos + longitud | `Cable USB-C a Lightning 1m 60W` |
-| Power bank | Marca + capacidad + potencia | `Xiaomi Power Bank 10.000 mAh 165W` |
 | Consolas | Marca + consola + capacidad o bundle | `Sony PlayStation 5 1TB` |
-| Accesorios de consola | Marca + accesorio + compatibilidad | `Sony Control DualSense PS5` |
 | Computadores | Tipo + marca + pantalla + procesador + RAM + disco | `Portátil Asus 15.6" Ryzen 5 7520U 8GB RAM 512GB SSD` |
 | Proyectores | Marca + modelo + resolución | `Xiaomi Proyector L1 Full HD` |
+| Parlantes | Marca + línea + modelo | `JBL Charge 6` |
+
+Las categorías que el parser reconoce pero **no se publican** —cargadores,
+cables, power bank y accesorios de consola— no llevan patrón de título: nunca
+llegan a una ficha. Su nombre se deja tal como lo escribió el proveedor, que es
+como se le muestra en la hoja de descartados para que sepa de qué línea se está
+hablando. Ver las reglas 5, 14 y 17 del `SKILL.md`.
 
 ## Confirmar el nombre antes de titular
 
@@ -108,5 +111,5 @@ confirma **siempre** contra la ficha oficial antes de titular:
 | `XIAOMI PAD 2 PRO 11"` | 12,1" |
 
 Cuando el proveedor no da para identificar la referencia exacta —pasa con
-cargadores genéricos, proyectores y relojes económicos— no inventes el modelo:
+proyectores, parlantes y relojes económicos— no inventes el modelo:
 deja el producto marcado y pregunta. Un título inventado genera devoluciones.

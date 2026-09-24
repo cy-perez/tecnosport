@@ -23,7 +23,7 @@ export const ORDEN_POR_DEFECTO: OrdenProductos = 'RELEVANCIA';
 
 /**
  * Las tres líneas de negocio de docs/00-producto.md. Siguen siendo tres: lo tecnológico se amplió
- * el 14 de septiembre de 2026 —relojes, audífonos, cargadores, consolas, computadores, tablets…—
+ * el 14 de septiembre de 2026 —relojes, audífonos, parlantes, consolas, computadores, tablets…—
  * y todo eso entró como **categoría** dentro de `TECNOLOGIA`, no como línea propia. Una línea más
  * es un control más en este filtro; una categoría más es una fila en base de datos.
  */

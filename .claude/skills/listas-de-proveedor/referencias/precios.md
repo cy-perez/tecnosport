@@ -130,7 +130,10 @@ Ninguno de los dos hace ruido: el número sale, parece razonable y está mal.
 2. **La potencia no es una capacidad.** `Xiaomi Power Bank 10.000 mAh 165W`
    emparejaba con una Awei de 10000 mAh 22.5W y con una Xiaomi Magnetic de
    5000 mAh: la mediana daba 119.900 cuando la vitrina la vende a **249.900**.
-   En cargadores y power bank, los vatios y los miliamperios mandan.
+   Donde el título trae vatios o miliamperios, mandan ellos y no la capacidad.
+   Las power bank dejaron de publicarse el 24/09/2026, pero la regla se quedó:
+   nunca fue de esa categoría —los vatios identifican un parlante igual que
+   identificaban un cargador—.
 
 ## El precio de Alkosto ancla, porque se verificó a mano
 

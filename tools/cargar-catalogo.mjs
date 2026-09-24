@@ -146,16 +146,22 @@ if (MODOS.length > 1) {
 
 
 
-/** Las categorías de la lista del proveedor y su slug en el catálogo. */
+/**
+ * Las categorías de la lista del proveedor y su slug en el catálogo. Son las ocho de
+ * `CATEGORIAS_INCLUIDAS` en la skill `listas-de-proveedor`, y las ocho que `V62` dejó en la línea
+ * `TECNOLOGIA`. Las tres listas tienen que decir lo mismo; del lado del catálogo lo afirma
+ * `CategoriasDeTecnologiaTest`.
+ *
+ * Tenía además `cargadores` y `power_bank`, que salieron el 24/09/2026 junto con sus categorías:
+ * se venden aparte del equipo, con margen bajo y rotación lenta.
+ */
 const CATEGORIAS = {
   celulares: "celulares",
   tablets: "tablets",
   parlantes: "parlantes",
   relojes: "relojes",
   audifonos: "audifonos",
-  cargadores: "cargadores",
   consolas: "consolas",
-  power_bank: "power-banks",
   proyectores: "proyectores",
   computadores: "computadores",
 };

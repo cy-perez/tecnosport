@@ -1,9 +1,9 @@
 # TecnoSport — contexto del proyecto
 
 Ecommerce propio de TecnoSport (tecnosport.co): ropa y calzado deportivo, bolsos
-y tecnología —celulares, relojes, audífonos, cargadores y cables, power banks,
-consolas, parlantes, computadores, tablets y proyectores—. Venta al detal, pago en
-línea y contraentrega, envío nacional.
+y tecnología —celulares, relojes, audífonos, consolas, parlantes, computadores,
+tablets y proyectores—. Venta al detal, pago en línea y contraentrega, envío
+nacional.
 Medellín, Colombia. Un solo desarrollador. El sitio web es la fase 1; la app
 móvil viene después y por eso el backend nunca asume que su único cliente es la
 web.
