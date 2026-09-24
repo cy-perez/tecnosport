@@ -48,7 +48,7 @@ frontend, así que no sigue la convención JSON del resto del contrato.
 ```
 GET  /api/v1/productos                      filtros, orden, cursor
 GET  /api/v1/productos/{slug}               incluye imágenes y set de rotación
-GET  /api/v1/categorias                     solo las que tienen algo publicado
+GET  /api/v1/categorias                     el árbol completo, con `padreId`; incluye las vacías
 GET  /api/v1/marcas                         solo las que tienen algo publicado
 POST /api/v1/carritos
 GET  /api/v1/carritos/{id}
@@ -259,34 +259,42 @@ No hay endpoint para despublicar, y la ausencia es deliberada: retirar algo que 
 los pedidos en curso, los enlaces compartidos y el sitemap indexado, y ninguna de esas tres cosas
 está decidida.
 
-**`/categorias` y `/marcas` no son "todas": son las que tienen al menos un
-producto `PUBLICADO`.** No es una optimización, es lo que el endpoint significa —
-alimenta el filtro de la vitrina, y un filtro que lleva a una rejilla vacía es una
-promesa rota en dos clics. El criterio es *el mismo* que usa `/productos` para
-armar la rejilla (`p.estado = 'PUBLICADO'`), no uno parecido: si algún día la
-rejilla exigiera además variante activa, este tendría que moverse con ella.
+**`/marcas` no son "todas": son las que tienen al menos un producto `PUBLICADO`.** No es
+una optimización, es lo que el endpoint significa — alimenta el filtro de la vitrina, y un
+filtro que lleva a una rejilla vacía es una promesa rota en dos clics. El criterio es *el
+mismo* que usa `/productos` para armar la rejilla (`p.estado = 'PUBLICADO'`), no uno
+parecido: si algún día la rejilla exigiera además variante activa, este tendría que
+moverse con ella. Hasta el 19 de septiembre de 2026 devolvía la tabla entera.
 
-Hasta el 19 de septiembre de 2026 devolvían la tabla entera, y desde que
-`V38__linea_tecnologia.sql` llenó la línea de tecnología de categorías —once
-entonces, ocho desde que `V62__categorias_sin_suministro.sql` quitó las tres que
-ninguna lista de proveedor puede llenar—, la vitrina ofrecía "Proyectores" y
-"Computadores" sin un solo producto detrás. Que hoy sean ocho no cambia nada de
-esto: basta una categoría vacía para que el filtro mienta.
+**`/categorias` sí las devuelve todas, y eso cambió el 24 de septiembre de 2026.**
+Filtraba por el mismo criterio y por el mismo motivo, y con el árbol (`ADR-0061`) dejó de
+valer: el menú del sitio pinta la rama entera, y saltarse "Faldas" porque hoy no hay
+ninguna le dice al comprador **que no vendemos faldas**, que es una afirmación mucho más
+cara que una rejilla vacía — y la rejilla ya sabe decir que no encontró nada con esos
+filtros. La diferencia con marcas no es incoherencia: una marca sin productos no es una
+promesa de surtido, y una categoría del menú sí.
 
-El panel necesita lo contrario —la categoría vacía es justo la que hace falta
-para cargarle el primer producto—, y por eso existen `GET /api/v1/admin/marcas`
-y `GET /api/v1/admin/categorias`. Son dos preguntas distintas con dos audiencias
-distintas, y se separan en dos endpoints en vez de un parámetro: con un
-parámetro, el cliente elegiría qué ve y la vitrina quedaría a un carácter de
-volver a ofrecer filtros vacíos.
+Con eso, `GET /api/v1/admin/categorias` devuelve lo mismo que el público. Se queda
+igualmente: el panel pide sus datos bajo `/admin/**` con el token de admin, y colgarlo del
+endpoint público lo ataría a una decisión de la vitrina que ya cambió una vez.
 
-**Las marcas, además, se crean desde el panel** (`ADR-0047`, 20 de septiembre de
-2026). Las doce de `V54` siguen entrando por migración —eran el arranque, y una
-instalación nueva las necesita—, pero la marca trece llega en la lista del
-proveedor del lunes y no merece un despliegue. Las **categorías no**: son la
-taxonomía de la tienda, cambian casi nunca, y una nueva arrastra una decisión
-—¿línea propia o cuelga de tecnología?— que merece quedar escrita en su
-migración, como quedó la de `V38`.
+Cada categoría viaja con `padreId` —nulo en el primer nivel— y la lista es **plana**. El
+árbol lo arma quien pinta: el menú lo necesita colgado y el desplegable del filtro lo
+necesita plano, así que anidar en el contrato obligaría al segundo a deshacer el trabajo
+del primero.
+
+**Las marcas y las categorías se crean desde el panel** (`ADR-0047` y `ADR-0061`). Las
+doce marcas de `V54` y las treinta categorías de `V63` siguen entrando por migración
+—eran el arranque, y una instalación nueva las necesita—, pero la marca trece y la
+subcategoría que pide el proveedor del lunes no merecen un despliegue.
+
+Las categorías, además, se editan y se borran, cosa que las marcas no: mover "Bodis" de
+rama o corregir un nombre es operación, y borrar una hoja vacía no arrastra nada. Los
+rechazos del árbol llegan con `codigo` propio —`CATEGORIA_SLUG_YA_EXISTE`,
+`CATEGORIA_CON_HIJAS`, `CATEGORIA_CON_PRODUCTOS`, `CATEGORIA_NO_ES_HOJA`,
+`PROFUNDIDAD_DE_CATEGORIA_EXCEDIDA`, `CICLO_DE_CATEGORIAS`— y los fija
+`CodigosDeCableTest`: el panel los traduce a una salida concreta ("mueve primero sus
+productos"), no a un fallo genérico.
 
 No hay `PATCH` ni `DELETE` de marca, y las dos ausencias son deliberadas:
 renombrar cambia lo que ve quien compra en la ficha y en el filtro, y borrar
@@ -344,7 +352,10 @@ Rol `ADMIN`.
 ```
 GET /api/v1/admin/marcas                                     todas, incluidas las que no tienen productos
 POST /api/v1/admin/marcas                                    crea una marca; 409 si el nombre ya existe, sin distinguir mayúsculas
-GET /api/v1/admin/categorias                                 todas, incluidas las que no tienen productos
+GET /api/v1/admin/categorias                                 el árbol completo, con `padreId`
+POST /api/v1/admin/categorias                                crea una categoría; 409 si el slug ya existe o si el árbol la rechaza
+PUT /api/v1/admin/categorias/{id}                            renombra y/o mueve; 409 por profundidad o productos, 422 por ciclo
+DELETE /api/v1/admin/categorias/{id}                         borra una hoja vacía; 409 si tiene hijas o productos
 GET /api/v1/admin/productos                                  paginado por página, todos los estados
 POST /api/v1/admin/productos                                 crea en BORRADOR, sin variantes ni imágenes
 GET/PATCH /api/v1/admin/productos/{id}                       detalle —con la galería— y edición de nombre/descripción/marca/categoría

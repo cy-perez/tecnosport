@@ -15,17 +15,39 @@ contact@tecnosport.co. Dominio tecnosport.co.
 
 Sí entra:
 
-- Catálogo de tres líneas: ropa y calzado deportivo, bolsos, tecnología. Dentro de
-  tecnología hay ocho categorías: celulares, relojes, audífonos, consolas,
-  parlantes, computadores, tablets y proyectores (ampliado el 14 de septiembre de
-  2026 a once; el 24 de septiembre salieron cargadores, power banks y cables de
-  cargador, que se venden aparte del equipo y ninguna lista de proveedor puede
-  reponer). Son **exactamente** las que la skill `listas-de-proveedor` publica, y
-  eso no se sostiene solo: lo afirma `CategoriasDeTecnologiaTest`.
-  **Tres líneas y no trece**: la línea es el
-  nivel grueso —un control en el filtro principal, un valor del enum, traducciones y
-  pruebas— y la categoría es una fila. Lo que se pueda modelar como fila no se modela
-  como código.
+- Catálogo de **cuatro líneas** —tecnología, ropa, calzado deportivo y bolsos— y, dentro
+  de cada una, un **árbol de hasta dos niveles** de categorías (`ADR-0061`, 24 de
+  septiembre de 2026):
+
+  ```
+  Tecnología    celulares · tablets · relojes · audífonos · consolas de videojuegos ·
+                computadores · proyectores · parlantes
+  Ropa          Dama      → camisas, blusas, busos, pantalones, faldas, shorts, bodis,
+                            licras, sudaderas
+                Caballero → camisetas, busos, sudaderas, pantalonetas
+  Calzado       Dama · Caballero · Unisex
+  Bolsos        Dama      → bolsos de mano, manos libres, morrales
+  ```
+
+  Las ocho de tecnología son **exactamente** las que la skill `listas-de-proveedor`
+  publica, y eso no se sostiene solo: lo afirma `CategoriasDeTecnologiaTest`. El árbol
+  completo lo afirma `ArbolDeCategoriasTest`, forma incluida: una prueba que solo mirara
+  que "Faldas" existe pasaría igual con "Faldas" colgando de la línea en vez de de
+  "Dama", y el menú la pintaría en el sitio equivocado.
+
+  Lo tecnológico se amplió el 14 de septiembre de 2026 a once categorías; el 24 salieron
+  cargadores, power banks y cables de cargador, que se venden aparte del equipo y ninguna
+  lista de proveedor puede reponer. Ese mismo día `ROPA_Y_CALZADO` se partió en dos, y es
+  la única línea que ha cambiado: no comparten talla, ni proveedor, ni lo que se declara
+  en la guía de envío.
+
+  **Cuatro líneas y no treinta**: la línea es el nivel grueso —un valor del enum, un
+  control en el filtro, una rama del menú, una etiqueta en la guía, traducciones y
+  pruebas— y la categoría es una fila que se crea **desde el panel**. Lo que se pueda
+  modelar como fila no se modela como código.
+
+  **Un producto cuelga siempre de una hoja**, nunca de una rama: si "Camisas" tuviera
+  productos y además subcategorías, "lo que hay en Camisas" tendría dos respuestas.
 - Búsqueda, filtros y orden.
 - Ficha de producto con imagen principal, galería y **visor de rotación 360**.
 - **Asistente de captura de fotos** para producir los fotogramas del visor desde
