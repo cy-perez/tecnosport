@@ -36,6 +36,13 @@ final class RepositorioProductosFalso implements RepositorioProductos {
     return productos.stream().filter(producto -> producto.slug().equals(slug)).findFirst();
   }
 
+  /**
+   * <b>Este doble no reproduce el filtro del adaptador real.</b> {@code MapeadorCatalogo} descarta
+   * las variantes que no están {@code ACTIVA} antes de construir el {@code Producto}; aquí se
+   * devuelve el agregado tal como lo armó la prueba. O sea que una prueba que meta una variante
+   * inactiva está montando un escenario que producción no produce, y lo que compruebe de ahí no
+   * dice nada del comportamiento real. Ver {@code CrearPedido.buscarVarianteVendible}.
+   */
   @Override
   public Optional<Producto> buscarPorVarianteId(UUID varianteId) {
     return productos.stream()

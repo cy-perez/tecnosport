@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +98,26 @@ class ManejadorDeErroresTest {
         .andExpect(jsonPath("$.detail").value(not(containsString("errorCode"))));
   }
 
+  /**
+   * Los dos datos con los que `confirmar.page.ts` decide qué se le dice al comprador cuando
+   * Sistecrédito no entrega la URL: el `801` es "ya tienes una solicitud en curso" y el `802` es
+   * "el monto no alcanza", y son consejos opuestos. Nadie los fijaba de este lado —
+   * `ManejadorDeErroresTest` no tocaba este manejador y las pruebas del frontend afirman sobre un
+   * cuerpo JSON que ellas mismas escriben—, así que renombrar la propiedad aquí dejaba la rama
+   * muerta con todo en verde.
+   *
+   * <p>Pesa porque **ya estuvo muerta una vez**: lo documentan `respuesta-http.ts:18-22` y
+   * `confirmar.page.ts:366-367`, y se descubrió en la primera compra real con Sistecrédito.
+   */
+  @Test
+  void elCodigoYElEstadoDeSistecreditoViajanAlCliente() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/prueba-de-errores/sistecredito-sin-url"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigoSistecredito").value("801"))
+        .andExpect(jsonPath("$.estadoSistecredito").value("Rejected"));
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -116,6 +137,12 @@ class ManejadorDeErroresTest {
     @GetMapping("/api/v1/prueba-de-errores/con-parametro")
     String conParametro(@RequestParam String correo) {
       return correo;
+    }
+
+    @GetMapping("/api/v1/prueba-de-errores/sistecredito-sin-url")
+    String sistecreditoSinUrl() {
+      throw new SistecreditoNoEntregoLaUrlDePagoException(
+          "Rejected", "801", "El cliente ya tiene una solicitud de credito en curso");
     }
 
     /** Con el mensaje tal como lo compone `SistecreditoClient`, texto del proveedor incluido. */

@@ -17,6 +17,18 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     pedidos.put(pedido.id(), pedido);
   }
 
+  /**
+   * <b>Devuelve la instancia guardada, no una reconstruida</b>, a diferencia de los dobles de
+   * inventario — y queda dicho porque la diferencia importa: {@code Pedido} es mutable, así que una
+   * mutación sin {@code guardar} se ve aquí igual que una guardada. Los de inventario reconstituyen
+   * en cada lectura a propósito, y su javadoc explica por qué: ahí el equivalente es sobreventa.
+   *
+   * <p>No se copia por una razón concreta, no por olvido: {@code Pedido} tiene catorce campos,
+   * varios opcionales, y una copia a mano que se deje uno fuera falla en silencio y es peor que lo
+   * que vendría a proteger. Hoy ningún caso de uso se olvida el {@code guardar}; el día que haga
+   * falta la red, la forma de tenderla es un método de copia en el propio agregado, no un
+   * constructor repetido en cuatro dobles.
+   */
   @Override
   public Optional<Pedido> buscarPorId(UUID id) {
     return Optional.ofNullable(pedidos.get(id));

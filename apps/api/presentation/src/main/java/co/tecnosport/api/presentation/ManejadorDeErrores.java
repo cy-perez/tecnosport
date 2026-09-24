@@ -632,7 +632,22 @@ public class ManejadorDeErrores {
   }
 
   private String codigoDesde(Exception excepcion) {
-    String nombre = excepcion.getClass().getSimpleName().replace("Exception", "");
+    return codigoDesde(excepcion.getClass());
+  }
+
+  /**
+   * El código de cable que se deriva de una clase de excepción.
+   *
+   * <p><b>Visible para pruebas, y hace falta que lo sea.</b> El frontend cablea estos códigos como
+   * literales —{@code envio-http.repositorio.ts} decide con ellos si ofrece la recogida en el
+   * punto, y los JSON del panel tienen una clave de traducción por código—, pero del lado del
+   * servidor no los escribe nadie: salen del <b>nombre de la clase</b>. O sea que renombrar una
+   * excepción cambia el contrato publicado sin tocar una sola cadena, y la suite entera se queda en
+   * verde mientras el comprador empieza a ver un fallo genérico. {@code CodigosDeCableTest} los
+   * fija uno a uno.
+   */
+  static String codigoDesde(Class<? extends Exception> clase) {
+    String nombre = clase.getSimpleName().replace("Exception", "");
     StringBuilder codigo = new StringBuilder();
     for (int i = 0; i < nombre.length(); i++) {
       char letra = nombre.charAt(i);
