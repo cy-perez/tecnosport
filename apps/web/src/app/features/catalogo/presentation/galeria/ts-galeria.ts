@@ -31,6 +31,19 @@ export class TsGaleria {
   readonly imagenes = input.required<readonly Imagen[]>();
 
   /**
+   * El nombre del producto, que es a lo que cae el `alt` cuando la imagen no trae uno.
+   *
+   * Lo tenían `ts-tarjeta-producto` y la ficha desde siempre; esta galería caía a cadena vacía, y
+   * eso no es "sin texto alternativo": en el `<img>` grande declara la foto **decorativa**, y en el
+   * `<button>` de la miniatura deja el control **sin nombre accesible ninguno** —Angular solo quita
+   * el atributo con `null`, no con `''`, y el `<img>` de dentro ya es `alt=""`—. Con lector de
+   * pantalla la tira se anunciaba "botón, botón, botón". Un catálogo cargado por proveedor sin
+   * `alt` es el caso normal, no el raro: `mapeador-productos.ts` normaliza el nulo del backend a
+   * `''`.
+   */
+  readonly nombreProducto = input.required<string>();
+
+  /**
    * Quién es la candidata a LCP lo sabe la pantalla, no el componente — mismo criterio que
    * `ts-tarjeta-producto`. En una ficha con visor 360 la prioritaria es el fotograma frontal del
    * visor, y esta deja de serlo: priorizar las dos es no priorizar ninguna.
@@ -62,6 +75,6 @@ export class TsGaleria {
 
   protected alt(imagen: Imagen): string {
     const idioma = this.transloco.activeLang();
-    return (idioma === 'en' ? imagen.altEn : imagen.altEs) || '';
+    return (idioma === 'en' ? imagen.altEn : imagen.altEs) || this.nombreProducto();
   }
 }

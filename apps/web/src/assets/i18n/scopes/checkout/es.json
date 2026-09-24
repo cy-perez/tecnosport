@@ -101,6 +101,8 @@
     "elegir_otro_metodo": "Elegir otro medio de pago"
   },
   "retornoWompi": {
+    "titulo": "Volviendo de Wompi",
+    "sin_datos_titulo": "No pudimos identificar tu pago",
     "verificando": "Verificando tu pago…",
     "sin_datos": "No encontramos los datos de este pago."
   },

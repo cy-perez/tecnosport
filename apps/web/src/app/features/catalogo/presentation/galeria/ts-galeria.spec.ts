@@ -27,9 +27,14 @@ function imagen(seed: string, altEs: string): Imagen {
  * por omisión del componente no lo ejercitaría nadie y la prueba que lo cubre pasaría igual con el
  * defecto cambiado — comprobado mutándolo.
  */
+const NOMBRE_PRODUCTO = 'Parlante JBL Go 5';
+
 async function renderGaleria(imagenes: Imagen[], prioritaria?: boolean) {
   return render(TsGaleria, {
-    inputs: prioritaria === undefined ? { imagenes } : { imagenes, prioritaria },
+    inputs:
+      prioritaria === undefined
+        ? { imagenes, nombreProducto: NOMBRE_PRODUCTO }
+        : { imagenes, nombreProducto: NOMBRE_PRODUCTO, prioritaria },
     // El mismo loader que registra `app.config.ts`. Sin él NgOptimizedImage no emite `srcset`, así
     // que una prueba sin esta línea pasaría con el `srcset` vacío y no diría nada.
     providers: [{ provide: IMAGE_LOADER, useValue: cargadorDeImagenes }],
@@ -109,5 +114,30 @@ describe('TsGaleria', () => {
     );
     expect(principal.getAttribute('src')).toBe('https://imagenes.test/a-800.avif');
     expect(principal.getAttribute('sizes')).toContain('vw');
+  });
+
+  /**
+   * El caso real, no el raro: el catálogo cargado por proveedor viene sin `alt`, y
+   * `mapeador-productos.ts` normaliza el nulo del backend a cadena vacía. Con eso, el `<img>`
+   * grande se declaraba decorativo y el `<button>` de la miniatura se quedaba sin nombre accesible
+   * —Angular solo quita el atributo con `null`, no con `''`—: la tira entera se anunciaba "botón,
+   * botón, botón". Los fixtures de este archivo siempre traían `alt`, así que nadie lo veía.
+   */
+  it('cae al nombre del producto cuando la imagen no trae alt', async () => {
+    const sinAlt: Imagen = {
+      url: 'https://imagenes.test/sin-alt-800.avif',
+      variantes: [{ ancho: 800, url: 'https://imagenes.test/sin-alt-800.avif' }],
+      urlVistaPrevia: null,
+      ancho: 800,
+      alto: 600,
+      altEs: '',
+      altEn: '',
+    };
+
+    await renderGaleria([sinAlt, imagen('dos', 'Foto dos')]);
+
+    expect(screen.getByRole('img', { name: NOMBRE_PRODUCTO })).toBeTruthy();
+    // Y la miniatura es un control con nombre, no un "botón" a secas.
+    expect(screen.getByRole('button', { name: NOMBRE_PRODUCTO })).toBeTruthy();
   });
 });

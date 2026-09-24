@@ -4,20 +4,20 @@ import { AnuncioDeNivel, EstadoDeNivel, Nivel } from '../../domain/nivel-360';
 
 // Sobre la vista de cámara hace falta un fondo propio: el contraste del vídeo
 // no se controla (docs/10-captura-360.md).
+//
+// **`marca` y no `primario`, y es una corrección.** `--color-primario` no es el mismo color en los
+// dos temas: grafito en claro, ámbar en oscuro. Este chip vive sobre una vista de cámara, no sobre
+// una superficie del tema, así que el tema no debería moverlo — y moviéndolo, los tres colores de
+// estado de abajo quedaban pintados sobre un fondo que cambia bajo ellos. `--color-marca` es
+// oscuro en los dos temas y `--color-sobre-marca` claro en los dos.
 const BASE = 'm-0 flex items-center gap-8 px-12 py-8 font-texto font-medio';
-const CON_SENSOR = `${BASE} bg-ts-primario text-ts-sobre-primario`;
+const CON_SENSOR = `${BASE} bg-ts-marca text-ts-sobre-marca`;
 const SIN_SENSOR = `${BASE} bg-ts-superficie-alt text-ts-texto`;
 
 // `text-base` y no la escala de espacio: el SCSS usaba `var(--esp-16)` para un
 // tamaño de fuente. Son los mismos 16 px, pero ahora sale del token
 // tipográfico, que es el que corresponde.
 const GLIFO = 'text-base leading-none';
-
-const COLOR_POR_ESTADO: Partial<Record<EstadoDeNivel, string>> = {
-  EN_RANGO: 'text-ts-exito',
-  CERCA: 'text-ts-acento',
-  FUERA_DE_RANGO: 'text-ts-error',
-};
 
 /**
  * El estado del nivel, en tres niveles más su ausencia (`docs/10-captura-360.md`).
@@ -63,13 +63,23 @@ export class TsIndicadorNivel {
   );
 
   /**
-   * El color acompaña al texto y al glifo, nunca los reemplaza: los tres
-   * estados se distinguen sin ver un solo color.
+   * El glifo hereda el color del chip, y **ya no lleva uno por estado**.
+   *
+   * Lo llevaba —`exito`, `acento`, `error`— y estaba roto en los dos temas, porque esos tres
+   * tokens están calibrados contra `fondo`/`superficie` y aquí se pintaban sobre `primario`: en
+   * claro, verde y rojo sobre grafito quedaban por debajo del 3:1 que pide un elemento gráfico; en
+   * oscuro, `acento` es ámbar y `primario` también, o sea el glifo de "CERCA" era invisible. No lo
+   * veía `npm run contrastes` porque prueba pares declarados —`sobre-primario` sobre `primario`— y
+   * no combinaciones reales de plantilla.
+   *
+   * La información no se pierde: el estado ya se distingue por la forma del glifo (●, ◐, ○) y por
+   * el texto de al lado, que además dice hacia dónde inclinar y cuántos grados. El color siempre
+   * fue el canal redundante, y este componente lo dice desde su primera versión.
+   *
+   * Devolverle el color pide un trío de estados *sobre marca* en el kit (regla dura #2: si falta un
+   * valor, se añade al `tokens.json` y se regenera), no una clase de escape aquí.
    */
-  protected readonly clasesGlifo = computed(() => {
-    const color = COLOR_POR_ESTADO[this.estado()];
-    return color ? `${GLIFO} ${color}` : GLIFO;
-  });
+  protected readonly clasesGlifo = computed(() => GLIFO);
 
   protected readonly glifo = computed(() => {
     switch (this.estado()) {
