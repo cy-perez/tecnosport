@@ -1,35 +1,15 @@
 # Revisión de la lista
 
 - Fecha de la lista: 2026-09-12
-- Productos para publicar: 53
-- Descartados: 80
+- Productos para publicar: 37
+- Descartados: 96
 - Duplicados fusionados: 0
-- Productos con algún supuesto aplicado: 0
+- Productos con algún supuesto aplicado: 7
 - Líneas sin clasificar: 0
 
 ## Productos para publicar
-- **Apple iPhone 17 Pro Max 1TB eSIM** — celulares — sin precio COP
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 17 Pro Max 512GB eSIM** — celulares — sin precio COP
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 17 Pro Max 256GB eSIM** — celulares — sin precio COP
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 17 Pro 512GB eSIM** — celulares — sin precio COP
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 17 Pro 256GB eSIM** — celulares — sin precio COP
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 17 256GB eSIM** — celulares — sin precio COP — colores: Blanco
-  - ⚠️ la lista no trae precio de proveedor
-- **Apple iPhone 16e 128GB eSIM** — celulares — sin precio COP — colores: Negro
-  - ⚠️ la lista no trae precio de proveedor
 - **Apple Watch Ultra 3 49mm** — relojes — 2.700.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Galaxy S25 Ultra 12GB RAM 512GB** — celulares — sin precio COP — colores: Azul claro, Gris
-  - ⚠️ la lista no trae precio de proveedor
-- **Samsung Galaxy S25 Ultra 12GB RAM 256GB** — celulares — sin precio COP — colores: Negro, Morado
-  - ⚠️ la lista no trae precio de proveedor
-- **Samsung Galaxy S26 Ultra 12GB RAM 256GB** — celulares — sin precio COP — colores: Morado
-  - ⚠️ la lista no trae precio de proveedor
 - **Samsung Band Fit 3** — relojes — 125.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Honor 2i** — relojes — 130.000 COP
@@ -38,15 +18,19 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 9 Active** — relojes — 85.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Band 10** — relojes — 160.000 COP
+- **Xiaomi Smart Band 10** — relojes — 160.000 COP
+  - · asumido: Xiaomi publica esta banda como «Smart Band»; la lista omitía «Smart»
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Band 11 Active** — relojes — 105.000 COP
+- **Xiaomi Smart Band 11 Active** — relojes — 105.000 COP
+  - · asumido: Xiaomi publica esta banda como «Smart Band»; la lista omitía «Smart»
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Smart Band 10 Pro** — relojes — 245.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Watch 5 Active** — relojes — 125.000 COP
+- **Xiaomi Redmi Watch 5 Active** — relojes — 125.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Watch 5 Lite** — relojes — 175.000 COP
+- **Xiaomi Redmi Watch 5 Lite** — relojes — 175.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Xiaomi Watch S4 41mm** — relojes — 510.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
@@ -54,13 +38,14 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Samsung Galaxy Watch 8 40mm** — relojes — 900.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Infinix Buds** — audifonos — 70.000 COP
+- **Xiaomi Redmi Buds 6 Play** — audifonos — 45.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Buds 6 Play** — audifonos — 45.000 COP
+- **Xiaomi Redmi Buds 6 Active** — audifonos — 65.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Buds 6 Active** — audifonos — 65.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Buds 8 Active** — audifonos — 70.000 COP
+- **Xiaomi Redmi Buds 8 Active** — audifonos — 70.000 COP
+  - · asumido: el proveedor lo escribe bajo Xiaomi, pero el fabricante publica esta referencia en la línea Redmi: el título usa el nombre comercial real
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **JBL Endurance Pace** — audifonos — 210.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
@@ -72,57 +57,38 @@
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Samsung Buds 4** — audifonos — 600.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Cubo Beclad para Samsung** — cargadores — 40.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Cubo 25W** — cargadores — 60.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Cargador 25W** — cargadores — 100.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Samsung Cargador 45W** — cargadores — 140.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Apple Cubo iPhone 20W** — cargadores — 90.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Apple Cubo iPhone 40W** — cargadores — 190.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Cubo 33W** — cargadores — 60.000 COP
-  - ⚠️ cargadores: confirmar si es original de la marca o compatible; publicarlo mal es riesgo de reclamo por publicidad engañosa
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Cable USB-C a Lightning** — cables — 45.000 COP
-  - ⚠️ cable: falta longitud, potencia soportada y si es original o compatible; son los tres datos por los que se devuelve un cable
-- **Cable USB-C a USB-C** — cables — 50.000 COP
-  - ⚠️ cable: falta longitud, potencia soportada y si es original o compatible; son los tres datos por los que se devuelve un cable
-- **Xiaomi Power Bank 10.000 mAh 165W** — power_bank — 155.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Xiaomi Power Bank 20.000 mAh 33W** — power_bank — 100.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
-- **Sony Control** — accesorios_consola — 300.000 COP
-  - ⚠️ confirmar nombre comercial oficial del modelo
 - **Nintendo Switch 2 Mario Kart** — consolas — 2.150.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
 - **Sony PlayStation 5 1TB** — consolas — 2.550.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Go 5** — parlantes — 190.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Grip** — parlantes — 290.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Flip 7** — parlantes — 450.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Charge 6** — parlantes — 650.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Barra De Sonido Cinema Sb 180** — parlantes — 750.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Barra De Sonido Cinema Sb580** — parlantes — 1.100.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Party Box Encore 2** — parlantes — 1.000.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL On The Go Essential + Mic** — parlantes — 1.200.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Extreme 4** — parlantes — 1.100.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Extreme 5** — parlantes — 1.200.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Boombox 4** — parlantes — 1.700.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **JBL Partybox 320** — parlantes — 1.900.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
+- **Bose S1 Pro** — parlantes — 2.750.000 COP
+  - ⚠️ confirmar nombre comercial oficial del modelo
 - **Proyector L1** — proyectores — 750.000 COP
   - ⚠️ confirmar nombre comercial oficial del modelo
-- **Portátil HP 14" Athlon 7120U 8GB RAM 512GB SSD** — computadores — 1.150.000 COP
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
-- **Portátil Asus 15.6" Ryzen 5 7520U 8GB RAM 512GB SSD** — computadores — 1.600.000 COP
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
-- **Portátil Asus Ryzen 5 7520U 8GB RAM 512GB SSD incluye bolso** — computadores — 1.700.000 COP
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
-- **Portátil Asus 15.6" Intel i5 1334U 12GB RAM 512GB SSD** — computadores — 1.850.000 COP
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
-- **Todo en Uno Ryzen 3 7320U 8GB RAM 512GB SSD** — computadores — 1.750.000 COP
-  - ⚠️ computador sin marca en la lista: confirmarla antes de publicar
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
-- **Todo en Uno Ryzen 5 7520U 8GB RAM 512GB SSD** — computadores — 1.950.000 COP
-  - ⚠️ computador sin marca en la lista: confirmarla antes de publicar
-  - ⚠️ confirmar referencia exacta del equipo con el proveedor
 
 ## Descartados
 - 17 256 *ACTIVO* 🩵🖤 — condición no publicable: nuevo_activado
@@ -157,19 +123,18 @@
 - TV CORN 43" $750 — categoría no publicable: televisores
 - TV CORN 50" $1.000 — categoría no publicable: televisores
 - TV CORN 65" $1.700 — categoría no publicable: televisores
-- JBL GO 5 $190 — categoría no publicable: parlantes
-- JBL GRIP $290 — categoría no publicable: parlantes
-- JBL FLIP 7 $450 — categoría no publicable: parlantes
-- JBL CHARGE 6 $650 — categoría no publicable: parlantes
-- JBL BARRA DE SONIDO CINEMA SB 180 $750 — categoría no publicable: parlantes
-- JBL BARRA DE SONIDO CINEMA SB580 $1.100 — categoría no publicable: parlantes
-- JBL PARTY BOX ENCORE 2 $1.000 — categoría no publicable: parlantes
-- JBL ON THE GO ESSENTIAL + MIC $1.200 — categoría no publicable: parlantes
-- JBL EXTREME 4 $1.100 — categoría no publicable: parlantes
-- JBL EXTREME 5 $1.200 — categoría no publicable: parlantes
-- JBL BOOMBOX 4 $1.700 — categoría no publicable: parlantes
-- JBL PARTYBOX 320 $1.900 — categoría no publicable: parlantes
-- BOSE S1 PRO + $2.750 — categoría no publicable: parlantes
+- CUBO BECLAD (SAMSUNG)$40 — categoría no publicable: cargadores
+- CUBO SAMSUNG 25W $60 — categoría no publicable: cargadores
+- CARGADOR SAMSUNG 25W $100 — categoría no publicable: cargadores
+- CARGADOR SAMSUNG 45W $140 — categoría no publicable: cargadores
+- CUBO IPHONE 20W$90 — categoría no publicable: cargadores
+- CUBO IPHONE 40W $190 — categoría no publicable: cargadores
+- CUBO XIAOMI 33W $60 — categoría no publicable: cargadores
+- TIPO C - LIGHTNING $45 — categoría no publicable: cables
+- TIPO C - C $50 — categoría no publicable: cables
+- 10.000mAh 165W $155 — categoría no publicable: power_bank
+- 20.000mAh 33w $100 — categoría no publicable: power_bank
+- CONTROL $300 — categoría no publicable: accesorios_consola
 - TENDA C6 1200  $75 — categoría no publicable: routers
 - TENDA AC8 120 $95 — categoría no publicable: routers
 - TP-LINK AX12 $125 — categoría no publicable: routers
@@ -205,3 +170,20 @@
 - EPSON 524 127ML $100 — categoría no publicable: tintas
 - CANON 11$50 NEGRO — categoría no publicable: tintas
 - CANON 11$45 COLORES — categoría no publicable: tintas
+- 17 PRO MAX 1 TERA *ESIM* — sin precio de proveedor
+- 17 PRO MAX 512 *ESIM* — sin precio de proveedor
+- 17 PRO MAX 256 *ESIM* — sin precio de proveedor
+- 17 PRO 512 *ESIM* — sin precio de proveedor
+- 17 PRO 256 *ESIM* — sin precio de proveedor
+- 17 256 *ESIM*  🤍 — sin precio de proveedor
+- 16E 128 *ESIM* ⚫ — sin precio de proveedor
+- S25 ULTRA 12/512 🩵🩶 — sin precio de proveedor
+- S25 ULTRA 12/256🖤💜 — sin precio de proveedor
+- S26 ULTRA 12/256  💜 — sin precio de proveedor
+- INFINIX BUDS  $70 — marca excluida (Infinix): sin precio de mercado admisible en Colombia
+- *LAPTO HP* *ATHLON 7120U* *(8+512) 14" $1.150* — computador sin referencia en la lista
+- *LAPTOP ASUS  RYZEN 5 7520U (8 RAM DDR5 + 512 GB SSD) 15.6"  — computador sin referencia en la lista
+- *LAPTOP ASUS RYZEN 5 7520U (8 RAM DDR5 +512GB SSD)  $1.700 + — computador sin referencia en la lista
+- *LAPTOP ASUS INTEL i5 1334U (12 DDR4 +512 SSD) 15.6" $1.850* — computador sin referencia en la lista
+- *COMPUTADOR TODO EN UNO RYZEN 3 7320U* °8RAM / °512GB *$1.75 — computador sin marca ni referencia en la lista
+- *COMPUTADOR TODO EN UNO RYZEN 5 7520U* °8RAM / °512GB *$1.95 — computador sin marca ni referencia en la lista

@@ -21,13 +21,14 @@ la sección:
 | ⚠️ | celular nuevo con la garantía ya activada |
 | 🚀 | celular nuevo (Samsung) |
 | 📲 | celular usado → se descarta |
-| ⌚ 🎧 🔌 🪫 | reloj, audífono, cargador, power bank |
-| 🔥 | cable (va en la sección `*CABLE*`, debajo de cargadores) |
+| ⌚ 🎧 | reloj, audífono |
+| 🔌 🪫 🔋 | cargador, power bank → **no se publican**, caen en descartados |
+| 🔥 | cable (va en la sección `*CABLE*`, debajo de cargadores) → **no se publica** |
 
 Las viñetas ✔️, ⚠️ y 📲 solo indican la condición: la categoría la pone la sección
 (`*TABLET SAMSUNG*`) o el propio texto de la línea. Un encabezado de solo marca
 (`*ZTE*`, `*HONOR*`) cambia la marca y deja que las líneas definan la categoría.
-| 🎮 👾 | accesorio de consola, consola |
+| 🎮 👾 | accesorio de consola (**no se publica**), consola |
 | 💻 🖥️ | portátil, todo en uno |
 | 📽️ | proyector |
 | ✔️ 🚀 📲 en sección de tablets | tablet: la sección manda sobre la viñeta |

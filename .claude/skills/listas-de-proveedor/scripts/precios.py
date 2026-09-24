@@ -218,11 +218,14 @@ def coincide(nombre, titulo):
         if halladas and pedida not in halladas:
             return False
 
-    # 4.b En cargadores y power bank el número que identifica el producto no es
-    #     una capacidad de disco sino la potencia y los miliamperios. Sin esta
-    #     regla, «Xiaomi Power Bank 10.000 mAh 165W» empareja con una Awei de
+    # 4.b Hay productos donde el número que identifica no es una capacidad de
+    #     disco sino la potencia o los miliamperios. Se descubrió en las power
+    #     bank —«Xiaomi Power Bank 10.000 mAh 165W» emparejaba con una Awei de
     #     10000 mAh 22.5W y con una Xiaomi Magnetic de 5000 mAh, y la mediana
-    #     termina en 119.900 cuando la vitrina la vende a 249.900.
+    #     terminaba en 119.900 cuando la vitrina la vende a 249.900—, que desde
+    #     el 24/09/2026 ya no se publican. La regla se queda porque nunca fue de
+    #     esa categoría: es genérica, y los vatios siguen identificando a un
+    #     parlante igual que identificaban a un cargador.
     for patron in (r"(\d{2,3})\s*W\b", r"([\d.]+)\s*mAh\b"):
         pedidos = {m.group(1).replace(".", "") for m in re.finditer(patron, t, re.I)}
         if not pedidos:

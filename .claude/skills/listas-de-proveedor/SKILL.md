@@ -23,9 +23,9 @@ Están al inicio de `scripts/parsear_lista.py` y se cambian ahí:
 | Regla | Valor |
 |---|---|
 | Precios | `$1.850` = **1.850.000 COP**; `$1.960.000` se toma tal cual (6 dígitos o más) |
-| Categorías que se publican | celulares, tablets, relojes, audífonos, cargadores, power bank, consolas, computadores, proyectores, parlantes |
+| Categorías que se publican | celulares, tablets, relojes, audífonos, consolas, computadores, proyectores, parlantes |
 | Condición publicable | solo `nuevo`, es decir sellado y sin activar |
-| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
+| Se descartan siempre | usados, "NUEVOS ACTIVOS", "IPH CON CAJA", cables, cargadores, power bank, accesorios sueltos (control de consola, pencil táctil, rastreador tipo tag), lo que quede sin precio, los celulares por debajo de 500.000 COP, los computadores sin marca o sin referencia y **todo** lo de Krono, BMAX, itel, ZTE, Infinix y Tecno |
 
 Estas ya están decididas por el negocio y no se vuelven a preguntar en cada
 lista:
@@ -43,14 +43,17 @@ lista:
    Ahí caen las "flechas" (Nokia, Alcatel, Fly, Corn) y la gama de entrada. El
    mínimo es `PRECIO_MINIMO_CELULAR_COP` y solo aplica a celulares.
 5. **Los cables quedan por fuera.** La lista solo trae los extremos, y sin
-   longitud, potencia ni marca no se publica un cable. Los cargadores sí entran.
+   longitud, potencia ni marca no se publica un cable. Los cargadores tampoco
+   entran, pero por otra razón: ver la regla 17.
 6. **"ORIGINAL" en la sección es la palabra del proveedor.** Si el encabezado dice
-   `CARGADORES ORIGINAL` o `AUDIFONOS ORIGINALES`, los productos se toman como
-   originales de su marca y no se vuelve a preguntar. Cuando la línea trae otra
-   marca entre paréntesis —`CUBO BECLAD (SAMSUNG)`— la marca es la de afuera
-   (Beclad) y el paréntesis es compatibilidad: en la descripción va "compatible
-   con Samsung", nunca en el título. Solo se pregunta cuando la sección no dice
-   "original".
+   `AUDIFONOS ORIGINALES`, los productos se toman como originales de su marca y
+   no se vuelve a preguntar. Cuando la línea trae otra marca entre paréntesis
+   —`BUDS BECLAD (SAMSUNG)`— la marca es la de afuera (Beclad) y el paréntesis es
+   compatibilidad: en la descripción va "compatible con Samsung", nunca en el
+   título. Solo se pregunta cuando la sección no dice "original".
+   El parser sigue aplicando esto a `CARGADORES ORIGINAL` aunque esa sección ya
+   no se publique: la marca y la autenticidad quedan bien leídas en la hoja de
+   descartados, que es lo que se le muestra al proveedor.
 7. **Si el mismo equipo aparece con dos precios, vale el menor.** Queda en
    `supuestos` con los dos valores, para que se vea de dónde salió.
 8. **Las tablets entran** como categoría propia (iPad, Galaxy Tab, Redmi Pad).
@@ -78,7 +81,7 @@ lista:
     de mercado admisible contra el cual calcular margen, y un margen sin fuente
     no se puede defender ante el negocio. Están en `MARCAS_EXCLUIDAS` y la
     regla se aplica por marca, sin mirar la categoría: si la lista trae unos
-    audífonos Infinix o un cargador Tecno, también quedan fuera.
+    audífonos Infinix o un parlante Tecno, también quedan fuera.
     La regla nació acotada a celulares, se amplió a tablets y terminó cubriendo
     todo el surtido el mismo día, al confirmarse que el problema no era la
     categoría sino que el retail no vende la marca. Es una decisión de dónde
@@ -145,6 +148,27 @@ lista:
     El corte sigue existiendo, y eso es a propósito: `marcar.py --aprobar` no
     levanta un `REPETIR`, así que lo que queda retenido va al pedido de fotos al
     proveedor y no al catálogo. Ver `referencias/imagenes.md`.
+
+17. **Los cargadores y las power bank no se publican** (decisión del negocio,
+    24/09/2026). Es la misma regla que ya había sacado a los cables y a los
+    accesorios sueltos, aplicada hasta el final: **lo que se vende junto al
+    equipo entra; lo que alimenta al equipo, no.** Un cubo de 25 W y una batería
+    portátil se venden solos, con margen bajo y rotación lenta, y cada
+    referencia obliga a investigar un precio de mercado propio —los vatios y los
+    miliamperios identifican el producto, así que no hay atajo— para muy poca
+    venta. Con esto la lista autorizada queda en **ocho**: celulares, tablets,
+    relojes, audífonos, consolas, computadores, proyectores y parlantes.
+    Las dos categorías siguen vivas en el parser, igual que
+    `accesorios_consola`: así el cubo y la power bank caen en la hoja de
+    descartados con su motivo a la vista y no en `sin_clasificar`. Si algún día
+    se quieren vender, se vuelven a meter `cargadores` y `power_bank` en
+    `CATEGORIAS_INCLUIDAS` y hay que devolver sus categorías al catálogo del
+    sitio, que las perdió en la misma decisión —`V62__categorias_sin_suministro.sql`
+    borró `cargadores`, `power-banks` y `cables-de-cargador`, y una prueba de
+    infraestructura afirma que la línea `TECNOLOGIA` tiene exactamente esas
+    ocho—. Publicar una categoría que esta skill no puede llenar es lo que había
+    pasado con los cables: nacieron en el catálogo el mismo día en que la regla 5
+    decidió que nunca entrarían.
 
 Si el negocio cambia de opinión, se ajustan `CATEGORIAS_INCLUIDAS`,
 `CONDICIONES_PUBLICABLES`, `PRECIO_MINIMO_CELULAR_COP`, `DESCARTAR_SIN_PRECIO`,
