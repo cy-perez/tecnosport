@@ -56,6 +56,20 @@ public final class ProcesarEventoDePago {
       return ResultadoEventoDePago.PAGO_NO_ENCONTRADO;
     }
 
+    // Un pago ya resuelto no admite más transiciones, y sin esto el webhook contesta 422 a algo que
+    // la pasarela va a reintentar. La desduplicación por `idEvento` no cubre este caso: el id es el
+    // `checksum`, así que un webhook que llega tarde —después de que la conciliación resolvió el
+    // pago con su propio id de evento— trae uno distinto, `aplicarEvento` lo ve nuevo, la máquina
+    // de estados declara `APROBADO` sin salidas y salta `TransicionDePagoInvalidaException`, que
+    // `ManejadorDeErrores` traduce a 422. El javadoc del controlador promete que el webhook siempre
+    // responde 200; hoy era falso, y ante un no-2xx Wompi reintenta en bucle.
+    //
+    // Es la misma guarda que `ProcesarNotificacionSistecredito` recibió el 23 de septiembre, por
+    // exactamente el mismo motivo. Se quedó sin portar al otro camino.
+    if (pagoEncontrado.get().estado() != EstadoPago.PENDIENTE) {
+      return ResultadoEventoDePago.YA_PROCESADO;
+    }
+
     EstadoPago nuevoEstado = EstadosWompi.aEstadoPago(comando.estadoWompi());
     if (nuevoEstado == null) {
       return ResultadoEventoDePago.ESTADO_NO_SOPORTADO;

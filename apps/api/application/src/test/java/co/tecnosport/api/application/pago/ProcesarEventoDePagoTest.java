@@ -134,8 +134,17 @@ class ProcesarEventoDePagoTest {
   }
 
   private ProcesarEventoDePagoComando comando(String estadoWompi, String medioWompi) {
+    return comandoConChecksum(estadoWompi, medioWompi, CHECKSUM);
+  }
+
+  /**
+   * El checksum es el id de evento, así que cambiarlo es lo que distingue "el mismo webhook
+   * repetido" de "otro webhook sobre el mismo pago".
+   */
+  private ProcesarEventoDePagoComando comandoConChecksum(
+      String estadoWompi, String medioWompi, String checksum) {
     return new ProcesarEventoDePagoComando(
-        REFERENCIA.valor(), estadoWompi, medioWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, CHECKSUM);
+        REFERENCIA.valor(), estadoWompi, medioWompi, VALORES_FIRMA, TIMESTAMP_FIRMA, checksum);
   }
 
   /**
@@ -252,6 +261,29 @@ class ProcesarEventoDePagoTest {
     ResultadoEventoDePago segundaVez = caso.ejecutar(comando("APPROVED"));
 
     assertEquals(ResultadoEventoDePago.YA_PROCESADO, segundaVez);
+    assertEquals(1, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().eventos().size());
+  }
+
+  /**
+   * El webhook que no estaba perdido sino tarde. La conciliación ya resolvió el pago con su propio
+   * id de evento —{@code conciliacion:<id>:APPROVED}— y ahora llega el de Wompi, cuyo id es el
+   * checksum: otro distinto. La desduplicación por id no lo reconoce, y sin la guarda de estado la
+   * máquina de estados salta con una excepción de dominio que sale como 422 al endpoint que promete
+   * no devolver nunca otra cosa que 200. Ante un no-2xx la pasarela reintenta, así que el mismo
+   * evento volvía indefinidamente.
+   */
+  @Test
+  void unWebhookTardioSobreUnPagoYaResueltoSeCuentaComoProcesadoYNoRevienta() {
+    ProcesarEventoDePago caso = crear();
+    Pedido pedido = pedidoConMetodo(MetodoPago.NEQUI);
+    pagoPendienteParaElPedido(pedido);
+    caso.ejecutar(comando("APPROVED"));
+
+    ResultadoEventoDePago tardio =
+        caso.ejecutar(comandoConChecksum("APPROVED", null, "otro-checksum-de-wompi"));
+
+    assertEquals(ResultadoEventoDePago.YA_PROCESADO, tardio);
+    // Y no se le añadió un segundo evento al pago.
     assertEquals(1, pagos.buscarPorReferencia(REFERENCIA).orElseThrow().eventos().size());
   }
 
