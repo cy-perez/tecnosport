@@ -23,7 +23,16 @@
     "inclina_adelante": "Inclina el teléfono {{grados}}° hacia adelante.",
     "inclina_atras": "Inclina el teléfono {{grados}}° hacia atrás.",
     "gira_izquierda": "Gira el teléfono {{grados}}° hacia la izquierda.",
-    "gira_derecha": "Gira el teléfono {{grados}}° hacia la derecha."
+    "gira_derecha": "Gira el teléfono {{grados}}° hacia la derecha.",
+    "anuncio": {
+      "en_rango": "Nivel correcto.",
+      "fijando_referencia": "Esta toma fija la inclinación de referencia.",
+      "sin_sensor": "Sin nivel: el obturador queda habilitado.",
+      "inclina_adelante": "Inclina el teléfono {{grados}} grados hacia adelante.",
+      "inclina_atras": "Inclina el teléfono {{grados}} grados hacia atrás.",
+      "gira_izquierda": "Gira el teléfono {{grados}} grados hacia la izquierda.",
+      "gira_derecha": "Gira el teléfono {{grados}} grados hacia la derecha."
+    }
   },
   "toma": {
     "frontal": "Frontal",

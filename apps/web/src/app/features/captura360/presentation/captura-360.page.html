@@ -160,6 +160,7 @@
           <ts-indicador-nivel
             [nivel]="store.nivel()"
             [fijandoReferencia]="store.fijandoReferencia()"
+            [anuncio]="store.anuncioDeNivel()"
           />
         </div>
 
@@ -223,16 +224,13 @@
             }
           </div>
 
-          <!-- El unico que NO se hace permanente, y es una decision pendiente: este mensaje
-               cuelga del acelerometro y se enciende y se apaga cada vez que el telefono se
-               inclina. Anunciarlo en cada cruce del umbral podria volver la pantalla inusable con
-               un lector de pantalla, y callarlo deja sin explicacion a quien no ve el nivel. Se
-               queda como estaba hasta medirlo con el telefono en la mano. -->
+          <!-- Decidido el 23 de septiembre de 2026, midiendo: este aviso **no es region viva**.
+               Cuelga del acelerometro, y quien ya explica por que el boton no dispara es el
+               indicador de nivel, que trae la instruccion concreta y anuncia solo cuando el
+               estado se asienta. Anunciar los dos seria decir lo mismo dos veces. Aqui se queda
+               como explicacion visible, permanente mientras el bloqueo dure. Ver la deuda 32. -->
           @if (!store.nivel().puedeDisparar) {
-            <p
-              class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto"
-              role="status"
-            >
+            <p class="m-0 px-12 py-8 leading-texto bg-ts-superficie-alt text-ts-texto">
               {{ 'captura360.obturador_bloqueado' | transloco }}
             </p>
           }

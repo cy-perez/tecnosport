@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, linkedSignal, signal } from '@angular/core';
 import { sha256Hex } from '../../../core/hash/sha256';
 import { ALMACEN_LOCAL_DE_CAPTURAS } from '../domain/almacen-local-capturas.puerto';
 import { CAMARA, FotogramaCrudo } from '../domain/camara.puerto';
@@ -9,7 +9,16 @@ import {
 } from '../domain/repositorio-sets-rotacion.puerto';
 import { LADO_SALIDA_PX } from '../domain/recorte-360';
 import { procesarSet } from './procesar-set';
-import { evaluarNivel, Inclinacion, Nivel, suavizar } from '../domain/nivel-360';
+import {
+  ANUNCIO_EN_BLANCO,
+  AnuncioDeNivel,
+  asentarAnuncio,
+  claveDeNivel,
+  evaluarNivel,
+  Gravedad,
+  Nivel,
+  suavizar,
+} from '../domain/nivel-360';
 import { PANTALLA_DESPIERTA } from '../domain/pantalla-despierta.puerto';
 import { SENSOR_ORIENTACION } from '../domain/sensor-orientacion.puerto';
 import { SesionGuardada } from '../domain/almacen-local-capturas.puerto';
@@ -52,7 +61,12 @@ export class CapturaStore {
   readonly fotogramasPrometidos = signal<number>(FOTOGRAMAS_RECOMENDADOS);
   readonly capturados = signal<readonly FotogramaCapturado[]>([]);
   readonly pendiente = signal<FotogramaCrudo | null>(null);
-  readonly inclinacion = signal<Inclinacion | null>(null);
+  /**
+   * Hacia dónde cae la gravedad, ya suavizada. **Se guarda el vector y no los ángulos del
+   * sensor**: cerca de la vertical —la pose de trabajo del asistente— `gamma` se dispara sin que
+   * el teléfono se mueva, y suavizar eso es promediar ruido. Ver `nivel-360.ts`.
+   */
+  readonly gravedadActual = signal<Gravedad | null>(null);
 
   /** Una captura a medias de este mismo producto, encontrada al entrar. */
   readonly sesionRecuperable = signal<SesionGuardada | null>(null);
@@ -81,7 +95,7 @@ export class CapturaStore {
    * demás tienen que igualarla. Pedirle al operador que calibre a ojo antes de empezar sería
    * pedirle que adivine.
    */
-  readonly objetivo = signal<Inclinacion | null>(null);
+  readonly objetivo = signal<Gravedad | null>(null);
 
   readonly siguienteOrden = computed(() => this.capturados().length);
   readonly termino = computed(() => this.siguienteOrden() >= this.fotogramasPrometidos());
@@ -93,12 +107,32 @@ export class CapturaStore {
     return capturados.length === 0 ? null : capturados[capturados.length - 1].imagen.url;
   });
 
-  readonly nivel = computed<Nivel>(() => {
-    const inclinacion = this.inclinacion();
-    const objetivo = this.objetivo();
-    // Sin referencia todavía, cualquier inclinación está bien: esta toma es la que la fija.
-    return evaluarNivel(inclinacion, objetivo ?? inclinacion ?? { beta: 0, gamma: 0 });
+  /**
+   * El nivel, que es lo único de aquí que necesita mirar su propio pasado: la histéresis ensancha
+   * la tolerancia cuando ya se está en rango, y sin eso el obturador parpadea sobre el umbral.
+   *
+   * De ahí el `linkedSignal` en vez de un `computed`: recalcula igual cuando cambia la lectura o
+   * la referencia, pero le pasa a la función pura el estado anterior.
+   */
+  readonly nivel = linkedSignal<{ actual: Gravedad | null; objetivo: Gravedad | null }, Nivel>({
+    source: () => ({ actual: this.gravedadActual(), objetivo: this.objetivo() }),
+    computation: ({ actual, objetivo }, anterior) =>
+      // Sin referencia todavía, cualquier inclinación está bien: esta toma es la que la fija.
+      evaluarNivel(actual, objetivo, anterior?.value.estado ?? null),
   });
+
+  /**
+   * Lo que un lector de pantalla oye del nivel, que **no es lo que el indicador pinta**.
+   *
+   * El texto visible cambia con cada grado y tiene que seguir haciéndolo: quien mira la pantalla
+   * necesita el número al instante. Anunciarlo con esa cadencia es otra cosa — sobre la vuelta
+   * completa grabada serían 84,5 anuncios por minuto, que vuelve la pantalla inusable con un
+   * lector. Así que lo que se anuncia es la clave sin grados, y solo cuando lleva sostenida
+   * `RETARDO_DE_ANUNCIO_MS`. Ver la deuda 32 en `docs/09-plan-de-arranque.md`.
+   *
+   * Lo avanza cada lectura del sensor, no un temporizador: el reloj ya viene en el flujo.
+   */
+  readonly anuncioDeNivel = signal<AnuncioDeNivel>(ANUNCIO_EN_BLANCO);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.terminar());
@@ -136,7 +170,7 @@ export class CapturaStore {
           ancho: guardado.ancho,
           alto: guardado.alto,
         },
-        inclinacion: guardado.inclinacion,
+        gravedad: guardado.gravedad,
       })),
     );
     this.sesionRecuperable.set(null);
@@ -190,9 +224,18 @@ export class CapturaStore {
     }
 
     this.permisoSensor.set('CONCEDIDO');
-    this.dejarDeEscuchar = this.sensor.escuchar((lectura) =>
-      this.inclinacion.set(suavizar(this.inclinacion(), lectura)),
-    );
+    this.dejarDeEscuchar = this.sensor.escuchar((lectura) => {
+      this.gravedadActual.set(suavizar(this.gravedadActual(), lectura));
+      const nivel = this.nivel();
+      this.anuncioDeNivel.update((anterior) =>
+        asentarAnuncio(
+          anterior,
+          claveDeNivel(nivel, this.fijandoReferencia()),
+          Math.abs(Math.round(nivel.ejeDominante === 'GIRAR' ? nivel.girar : nivel.inclinar)),
+          Date.now(),
+        ),
+      );
+    });
   }
 
   streamActual(): MediaStream | null {
@@ -219,25 +262,25 @@ export class CapturaStore {
       return;
     }
 
-    const inclinacion = this.inclinacion();
-    if (this.objetivo() === null && inclinacion !== null) {
-      this.objetivo.set(inclinacion);
+    const gravedad = this.gravedadActual();
+    if (this.objetivo() === null && gravedad !== null) {
+      this.objetivo.set(gravedad);
     }
     if (this.sesionId() === '') {
       this.sesionId.set(nuevoId());
     }
 
     const orden = this.capturados().length;
-    this.capturados.update((capturados) => [...capturados, { orden, imagen, inclinacion }]);
+    this.capturados.update((capturados) => [...capturados, { orden, imagen, gravedad }]);
     this.pendiente.set(null);
 
-    await this.guardarEnDisco(orden, imagen, inclinacion);
+    await this.guardarEnDisco(orden, imagen, gravedad);
   }
 
   private async guardarEnDisco(
     orden: number,
     imagen: FotogramaCrudo,
-    inclinacion: Inclinacion | null,
+    gravedad: Gravedad | null,
   ): Promise<void> {
     if (!this.almacenLocal.disponible()) {
       return;
@@ -250,7 +293,7 @@ export class CapturaStore {
         blob: imagen.blob,
         ancho: imagen.ancho,
         alto: imagen.alto,
-        inclinacion,
+        gravedad,
       });
       await this.almacenLocal.guardarSesion({
         sesionId: this.sesionId(),

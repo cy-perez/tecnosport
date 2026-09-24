@@ -1,5 +1,5 @@
 import { FotogramaCrudo } from './camara.puerto';
-import { Inclinacion } from './nivel-360';
+import { Gravedad } from './nivel-360';
 
 export type EstadoPermiso = 'DESCONOCIDO' | 'CONCEDIDO' | 'NEGADO' | 'NO_DISPONIBLE';
 
@@ -7,7 +7,7 @@ export type EstadoPermiso = 'DESCONOCIDO' | 'CONCEDIDO' | 'NEGADO' | 'NO_DISPONI
 export interface FotogramaCapturado {
   readonly orden: number;
   readonly imagen: FotogramaCrudo;
-  readonly inclinacion: Inclinacion | null;
+  readonly gravedad: Gravedad | null;
 }
 
 /**
