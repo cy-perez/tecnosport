@@ -25,6 +25,8 @@ import { REPOSITORIO_CARRITO } from './features/carrito/domain/repositorio-carri
 import { CarritoIdLocalStorageAlmacen } from './features/carrito/infrastructure/carrito-id.almacen';
 import { SnapshotLineasLocalStorageAlmacen } from './features/carrito/infrastructure/snapshot-lineas.almacen';
 import { CarritoHttpRepositorio } from './features/carrito/infrastructure/carrito-http.repositorio';
+import { REPOSITORIO_CATEGORIAS } from './features/catalogo/domain/repositorio-categorias.puerto';
+import { CategoriasHttpRepositorio } from './features/catalogo/infrastructure/categorias-http.repositorio';
 import { REPOSITORIO_ENVIOS } from './features/checkout/domain/repositorio-envios.puerto';
 import { REPOSITORIO_PAGOS } from './features/checkout/domain/repositorio-pagos.puerto';
 import { REPOSITORIO_PEDIDOS } from './features/checkout/domain/repositorio-pedidos.puerto';
@@ -66,6 +68,17 @@ export const appConfig: ApplicationConfig = {
     // a invertir la dependencia, ahora escondida dentro de `domain`.
     { provide: ALMACEN_CARRITO_ID, useClass: CarritoIdLocalStorageAlmacen },
     { provide: ALMACEN_SNAPSHOT_LINEAS, useClass: SnapshotLineasLocalStorageAlmacen },
+    // El puerto de categorías sube aquí desde `catalogo.routes.ts` por el mismo motivo que el
+    // carrito, y esta vez el motivo es estructural y no de comodidad: `app-menu-lateral` se pinta
+    // en `app.html`, **fuera** del `<router-outlet>`, así que el inyector de una ruta no lo
+    // alcanza. Provisto solo en la ruta del catálogo, el menú se caía con `NullInjectorError` en
+    // toda pantalla que no fuera la vitrina.
+    //
+    // La implementación es la **pública**, y eso importa: el menú lo ve cualquiera, con sesión o
+    // sin ella, así que no puede colgar de `/api/v1/admin/**`. Las rutas del panel siguen
+    // sustituyéndola por la suya dentro de su propio inyector, que es lo que hace falta para que
+    // el formulario de producto siga viendo lo que ve.
+    { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasHttpRepositorio },
     // Mismo criterio que REPOSITORIO_CARRITO: SesionStore es compartido
     // (`core/autenticacion/`, no atado a ninguna funcionalidad), lo va a
     // necesitar tanto el guardia de rutas de admin como, más adelante,

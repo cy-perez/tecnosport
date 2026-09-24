@@ -5,6 +5,7 @@ import { provideTanStackQuery, QueryClient } from '@tanstack/angular-query-exper
 import es from '../assets/i18n/es.json';
 import en from '../assets/i18n/en.json';
 import { App } from './app';
+import { MenuLateralStore } from './layout/menu-lateral/menu-lateral.store';
 import { Carrito } from './features/carrito/domain/carrito.model';
 import {
   REPOSITORIO_SESION,
@@ -15,6 +16,11 @@ import {
   REPOSITORIO_CARRITO,
   RepositorioCarrito,
 } from './features/carrito/domain/repositorio-carrito.puerto';
+import { Categoria } from './features/catalogo/domain/producto.model';
+import {
+  REPOSITORIO_CATEGORIAS,
+  RepositorioCategorias,
+} from './features/catalogo/domain/repositorio-categorias.puerto';
 import { esperarSinViolaciones } from '../testing/axe';
 import { proveerAlmacenesCarrito } from '../testing/carrito';
 
@@ -33,6 +39,18 @@ class RepositorioCarritoFalso implements RepositorioCarrito {
   }
   eliminarLinea(): Promise<Carrito> {
     return Promise.reject(new Error('no usado en esta prueba'));
+  }
+}
+
+/**
+ * El menú lateral vive en `app.html`, así que el cascarón entero necesita el puerto de categorías.
+ * Devuelve la lista vacía porque estas pruebas miran el cascarón —los landmarks, el logo, el
+ * enlace de salto— y no el contenido del árbol: el menú pinta igual sus cuatro líneas, que salen
+ * de `LINEAS` y no de la respuesta.
+ */
+class RepositorioCategoriasFalso implements RepositorioCategorias {
+  async listarTodas(): Promise<Categoria[]> {
+    return [];
   }
 }
 
@@ -77,6 +95,7 @@ describe('App', () => {
         provideTanStackQuery(new QueryClient()),
         { provide: REPOSITORIO_CARRITO, useClass: RepositorioCarritoFalso },
         { provide: REPOSITORIO_SESION, useClass: RepositorioSesionFalso },
+        { provide: REPOSITORIO_CATEGORIAS, useClass: RepositorioCategoriasFalso },
       ],
     }).compileComponents();
   });
@@ -103,6 +122,34 @@ describe('App', () => {
     // decide cuál se ve.
     expect(fuentes).toContain('assets/marca/logo/isotipo-negativo.svg');
     expect(fuentes).toContain('assets/marca/logo/logo-mono-negativo.svg');
+  });
+
+  /**
+   * El hueco de la izquierda lo reserva `app-root` con una variable, y el valor es el del riel
+   * salvo con el menú fijado: ahí el panel deja de pintarse encima y el contenido se corre de
+   * verdad. Con dos clases alternas no se podría —el nombre de una utilidad con variante no se liga
+   * con `[class.…]` sin pelearse con los dos puntos—, así que lo que se comprueba es que la
+   * variable esté puesta y apunte al token, no a un píxel suelto.
+   */
+  it('reserva el hueco del menú lateral con el ancho del riel', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const raiz = fixture.nativeElement as HTMLElement;
+
+    expect(raiz.className).toContain('desde-movil:ps-[var(--ancho-menu-actual)]');
+    expect(raiz.style.getPropertyValue('--ancho-menu-actual')).toBe('var(--ancho-menu-riel)');
+  });
+
+  it('con el menú fijado, el hueco pasa a ser el del panel entero', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+
+    TestBed.inject(MenuLateralStore).alternarFijado();
+    await fixture.whenStable();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).style.getPropertyValue('--ancho-menu-actual'),
+    ).toBe('var(--ancho-menu-lateral)');
   });
 
   it('el enlace de salto apunta al landmark principal', async () => {

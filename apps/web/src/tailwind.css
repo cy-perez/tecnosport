@@ -217,6 +217,19 @@
   --spacing-tactil: var(--control-tactil);
   --spacing-insignia: var(--control-insignia);
 
+  /* Los dos anchos del menú lateral. Van a `--spacing-*` y no a `--container-*`
+     porque lo que hace falta es `w-` y `ps-`, no `max-w-`: el riel reserva su
+     ancho en la rejilla de la página y el panel desplegado se pinta encima. */
+  --spacing-menu-riel: var(--ancho-menu-riel);
+  --spacing-menu-lateral: var(--ancho-menu-lateral);
+  /* Cuánto asoma el menú al desplegarse, que es lo que se corre el logo del
+     encabezado para no quedar debajo. Se **deriva** de los dos de arriba en vez
+     de pedirle al kit un tercer número: 216 es 288 menos 72, y escribirlo a mano
+     sería garantizar que el día que uno de los dos cambie, el logo se corra lo
+     que ya no mide. No va en `tokens.json` porque no es una decisión de diseño
+     independiente: es una resta. */
+  --spacing-menu-asoma: calc(var(--ancho-menu-lateral) - var(--ancho-menu-riel));
+
   /* RADIO — la escala del kit, no la de Tailwind. `sm` (6px) es el segmento de
      dentro de un grupo; `md` (8px) el control suelto, que es el caso común;
      `lg` (12px) la superficie que contiene controles. `completo` son 9999px y

@@ -13,8 +13,21 @@
          tamaño del isotipo. Crece la caja pulsable, no el dibujo — el ancla no
          pinta fondo ni borde, así que no se ve ningún cambio. Cabe de sobra en
          los 60 px de alto del encabezado móvil. -->
+    <!-- **El logo se corre cuando el menú lateral se despliega encima.** El panel pasa de 72 a
+         288 px y se pinta sobre el contenido, así que sin esto el logo quedaría detrás: el primer
+         elemento del encabezado, y el que dice en qué sitio estás, tapado cada vez que el puntero
+         roza el borde. Se desplaza los mismos 216 px que crece el panel, con la misma duración y la
+         misma curva, para que las dos cosas se lean como un solo movimiento.
+
+         `translate` y no un margen: no reflowea nada: la caja del ancla se queda donde está y solo
+         se mueve lo pintado, así que el resto de la barra no se entera.
+
+         Solo cuando el panel está **encima** (`superpuesto`). Fijado no hace falta: ahí el hueco lo
+         reserva `app-root` y el encabezado entero ya se corrió. -->
     <a
-      class="anillo-foco inline-flex min-h-tactil min-w-tactil shrink-0 items-center justify-center"
+      class="anillo-foco inline-flex min-h-tactil min-w-tactil shrink-0 items-center justify-center transition-transform ease-[var(--curva-suave)]"
+      [class.desde-movil:translate-x-menu-asoma]="menu.superpuesto()"
+      [style.transitionDuration]="menu.sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
       [routerLink]="['/', idiomaActual()]"
       [attr.aria-label]="'encabezado.ir_a_portada' | transloco"
     >
@@ -60,13 +73,13 @@
       </span>
     </a>
 
-    <!-- Navegación de escritorio. En móvil no desaparece: baja al panel. -->
-    <nav
-      class="hidden gap-16 desde-movil:flex"
-      [attr.aria-label]="'encabezado.navegacion' | transloco"
-    >
-      <ng-container [ngTemplateOutlet]="enlacesNav" />
-    </nav>
+    <!-- Aquí había una `<nav>` de escritorio con "Catálogo" y "Panel". Se fue el 24 de septiembre
+         de 2026 al menú lateral, que es donde ahora cuelga el árbol entero del catálogo: tener el
+         mismo destino en dos sitios de la misma pantalla no es redundancia inofensiva, es dos
+         landmarks de navegación que dicen cosas distintas.
+
+         En móvil no hay menú lateral —no hay puntero que acercar—, así que los enlaces siguen
+         bajando al panel desplegable de abajo, que es de donde nunca se fueron. -->
 
     <div class="flex items-center gap-16">
       <!-- `items-center`. Fue `items-end` mientras idioma y tema eran dos
