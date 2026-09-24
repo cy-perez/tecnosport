@@ -55,9 +55,13 @@ para y dime por qué antes de escribir el código.
    incompleto: se añade al `tokens.json` del kit y se regenera.
    Desde `ADR-0020` la vía es una utilidad de Tailwind mapeada a un token
    (`bg-ts-primario`, `p-16`), no SCSS a mano. Las escalas por omisión de
-   Tailwind están borradas, así que `bg-red-500` y `rounded-lg` **no existen**.
-   Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
-   todo" lo sostiene la regla, no el compilador.
+   Tailwind están borradas, así que `bg-red-500` y `rounded-xl` **no existen**.
+   El radio es el caso que hay que tener claro: fue 0 en todo hasta el 24 de
+   septiembre de 2026, y hoy `rounded-sm/md/lg` y `rounded-completo` **sí**
+   existen porque salen de `--radio-*` — el chaflán a 45° se reservó a la marca
+   y la interfaz redondea (`ADR-0060`). Lo que la regla sigue prohibiendo es el
+   literal, `rounded-[10px]`, que sobrevive al borrado por ser estático de
+   Tailwind: ahí lo sostiene la regla, no el compilador.
    La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
    Quedan **dos** literales, y los dos por la misma limitación, no por decisión:
    los puntos de quiebre, porque una media query no puede leer una propiedad

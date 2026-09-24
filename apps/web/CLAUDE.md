@@ -68,9 +68,15 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
 - **Estilos: Tailwind, no SCSS** (`ADR-0020`). Las escalas por omisión están
   borradas: solo existen utilidades mapeadas a `tokens.css` — `bg-ts-primario`,
   `text-ts-texto-suave`, `p-16` (que son **16 px**, no 64), `max-w-formulario`.
-  `rounded-*` no existe, y ese es el "radio 0 en todo". El chaflán sigue siendo
-  la clase `.chaflan` de `tokens.css`. Un `.scss` nuevo por componente es un
-  olor: si hace falta, dilo antes de escribirlo.
+  `rounded-sm/md/lg` y `rounded-completo` **sí** existen desde el 24 de
+  septiembre de 2026 y salen de `--radio-*` (6, 8, 12 px y la píldora); lo que
+  no existe es `rounded-xl` ni ningún literal tipo `rounded-[10px]`. El chaflán
+  sigue siendo la clase `.chaflan` de `tokens.css`, y ya **no** es el patrón de
+  la interfaz: quedó reservado a la marca (`ADR-0060`). Las superficies que
+  todavía lo llevan —`ts-boton`, `ts-tarjeta-producto`, `ts-dialogo`, el hero y
+  el enlace de salto— están pendientes de migrar.
+  Un `.scss` nuevo por componente es un olor: si hace falta, dilo antes de
+  escribirlo.
   - **Una clase que no existe no falla, no hace nada.** No hay linter que avise.
     Pasó con `min-h-0` y `min-h-auto`, que no existen porque la escala de
     espacio está borrada. Al usar una utilidad de la que no estés seguro,

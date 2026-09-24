@@ -81,20 +81,28 @@
 @custom-variant oscuro (&:where([data-tema='oscuro'], [data-tema='oscuro'] *));
 
 /* Se borran las escalas por omisión de Tailwind. Sin esto seguirían
-   existiendo `bg-red-500`, `p-7`, `rounded-lg` y `text-8xl`: valores que el
+   existiendo `bg-red-500`, `p-7`, `rounded-xl` y `text-8xl`: valores que el
    kit de marca no aprobó. Borrarlas es lo que mantiene verificable el
    espíritu de la regla dura #2 — una utilidad que no existe no se puede usar.
 
-   Con un límite, y aquí estaba escrito de más. Comprobado con
-   `npm run clases`, no de memoria: borrar `--radius-*` sí mata toda la escala
-   nombrada (`rounded-sm/md/lg/xl`) y las esquinas a secas (`rounded-t`,
-   `rounded-s`), porque dependen de ella. Pero sobreviven `rounded`,
-   `rounded-none`, `rounded-full`, los valores arbitrarios (`rounded-[8px]`) y
-   cualquier esquina combinada con esos tres (`rounded-t-full`,
-   `rounded-tl-none`, `rounded-t-[8px]`): no salen de la escala sino de valores
-   estáticos de Tailwind. Así que "radio 0 en todo" lo impone el compilador en
-   el camino normal y la regla en el resto.
-   Para auditarlo: `grep -rn "rounded-" apps/web/src`. Ver ADR-0020. */
+   El radio es el caso interesante de esta lista. Se borra la escala igual que
+   las demás, pero **no para que no existan radios**: para que los que existan
+   salgan del kit. Abajo se vuelven a declarar cuatro —`--radius-sm/md/lg` y
+   `--radius-completo`— apuntando a `--radio-*`, así que `rounded-md` es un
+   token y `rounded-xl` sigue sin existir. Hasta el 24 de septiembre de 2026
+   los cuatro tokens valían 0 y la regla era "radio 0 en todo"; hoy la marca se
+   queda el chaflán y la interfaz redondea (`ADR-0060`).
+
+   No hay colisión de nombres como en el color: el token es `--radio-md` y lo
+   que Tailwind lee es `--radius-md`, así que estos no necesitan el prefijo
+   `ts-` que sí necesitan `--color-ts-*`.
+
+   Y el borrado sigue sin ser total, que es bueno saberlo antes de fiarse de
+   él. Comprobado con `npm run clases`, no de memoria: sobreviven `rounded`,
+   `rounded-none`, `rounded-full` y los valores arbitrarios (`rounded-[8px]`),
+   porque son estáticos de Tailwind y no salen de la escala. La regla dura #2
+   los prohíbe igual: un radio literal es un píxel suelto. Para auditarlo:
+   `grep -rn "rounded-\[" apps/web/src`. Ver ADR-0020. */
 @theme {
   --color-*: initial;
   --spacing: initial;
@@ -208,6 +216,17 @@
      como cualquier otra medida, y aquí solo se les cuelga una utilidad. */
   --spacing-tactil: var(--control-tactil);
   --spacing-insignia: var(--control-insignia);
+
+  /* RADIO — la escala del kit, no la de Tailwind. `sm` (6px) es el segmento de
+     dentro de un grupo; `md` (8px) el control suelto, que es el caso común;
+     `lg` (12px) la superficie que contiene controles. `completo` son 9999px y
+     no un valor exacto a propósito: un radio mayor que la mitad del lado corto
+     redondea hasta el semicírculo y ahí se detiene, así que el mismo token
+     hace circular un botón de 44px y pastilla una insignia de 20. */
+  --radius-sm: var(--radio-sm);
+  --radius-md: var(--radio-md);
+  --radius-lg: var(--radio-lg);
+  --radius-completo: var(--radio-completo);
 
   /* SOMBRA */
   --shadow-sm: var(--sombra-sm);

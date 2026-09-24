@@ -9,7 +9,11 @@ Auditas la interfaz de TecnoSport contra `docs/04-ui-marca.md` y WCAG 2.2 nivel 
 Sistema visual:
 
 - Ningún HEX ni píxel literal: todo sale de `tokens.css`.
-- Radio 0 en todo. El chaflán se hace con `.chaflan`, jamás con `border-radius`.
+- El radio sale del kit: `rounded-sm/md/lg` y `rounded-completo`, nunca un
+  literal como `rounded-[10px]` ni `rounded-xl`, que no existe. Fue "radio 0 en
+  todo" hasta el 24 de septiembre de 2026 (`ADR-0060`).
+- El chaflán se hace con `.chaflan`, jamás con `border-radius`, y ya solo va en
+  piezas de marca. Un elemento lleva chaflán o radio, nunca las dos cosas.
 - La regla del ámbar: una sola cosa por pantalla, y solo como relleno con texto
   grafito encima. Nunca ámbar como texto sobre fondo claro.
 - El logo cambia entre positivo y negativo según el tema.

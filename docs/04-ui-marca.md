@@ -132,17 +132,29 @@ delante. Ver `ADR-0059`.
 - **Los `.woff2` también son generados**, y desde el recorte no basta con que se
   regeneren igual: tienen que seguir escribiendo lo que el sitio escribe. Ver
   arriba.
-- **Radio 0 en todo.** Ninguna esquina redondeada, en ningún componente. Desde
-  `ADR-0020`, la escala de radios de Tailwind está borrada, así que
-  `rounded-sm/md/lg/xl` no existen y una plantilla que los use no compila nada.
-  **No cubre todos los casos:** `rounded`, `rounded-full`, las variantes por
-  esquina y los valores arbitrarios sobreviven porque son estáticos de Tailwind,
-  no valores de la escala. En el camino normal lo impide el compilador; en el
-  resto, la regla. Se audita con `grep -rn "rounded-" apps/web/src`.
+- **La marca corta; la interfaz redondea.** Fue "radio 0 en todo, ninguna
+  esquina redondeada en ningún componente" hasta el 24 de septiembre de 2026.
+  Hoy el chaflán se reserva a la marca y los controles y superficies del sitio
+  redondean con la escala del kit — `rounded-sm` (6 px, el segmento de dentro
+  de un grupo), `rounded-md` (8 px, el control suelto: botón, campo,
+  alternador), `rounded-lg` (12 px, la superficie que contiene controles) y
+  `rounded-completo` (la píldora y el botón circular). **Un elemento lleva una
+  cosa o la otra, nunca las dos.** El porqué y lo que cuesta están en
+  `ADR-0060`.
+  Las cuatro utilidades salen de `--radio-*`, no de la escala de Tailwind, que
+  sigue borrada: `rounded-xl` no existe. Lo que sobrevive y la regla sigue
+  prohibiendo es el literal, `rounded-[10px]`, porque es un píxel suelto. Se
+  audita con `grep -rn "rounded-\[" apps/web/src`. Y `rounded-full` sobrevive
+  también —es estática de Tailwind, no sale de la escala— pero se escribe
+  `rounded-completo`: hacen lo mismo y solo una es rastreable al token.
+  **La migración está a medias y a propósito**: el cambio entró por los dos
+  alternadores del encabezado, y `ts-boton`, `ts-tarjeta-producto`,
+  `ts-dialogo`, el hero de la portada y el enlace de salto siguen con
+  `.chaflan`. Se migran cuando se toquen, no de una sentada.
 - **El chaflán a 45 grados** en la esquina superior izquierda y la inferior
   derecha es la firma de la marca. Se aplica con la clase `.chaflan`, y `--ch`
-  controla el tamaño. Va en botones, tarjetas de producto, etiquetas de precio y
-  recortes de fotografía.
+  controla el tamaño. Va en el logo y en las piezas gráficas — banners,
+  portadas de redes, papelería, empaque, recortes de fotografía.
 - **El chaflán se desactiva en `:focus-visible`** porque `clip-path` recorta el
   anillo de foco. Está resuelto en `tokens.css` y es deliberado.
 - **La regla del ámbar:** `#F5B301` es una sola cosa por pantalla y solo como
@@ -163,6 +175,7 @@ delante. Ver `ADR-0059`.
 | Logo en el header | 34 y 30 px | `--header-alto-logo*` |
 | Objetivo táctil mínimo | 44 x 44 px | `--control-tactil` |
 | Insignia del contador | 20 x 20 px | `--control-insignia` |
+| Radio de la interfaz | 6 / 8 / 12 px y píldora | `--radio-*` |
 
 El objetivo táctil fue durante un tiempo el único valor de esta tabla sin token:
 el SCSS lo escribía como `min-height: 44px` literal en cada control. Se pidió al
@@ -183,7 +196,7 @@ importa menos de lo que parece: la fuente de verdad sigue siendo `tokens.json`.
   `tailwind.config.ts`. Todo está en `apps/web/src/tailwind.css`, un archivo con
   más comentario que código a propósito.
 - **Las escalas por omisión están borradas.** `bg-red-500`, `p-7`, `text-8xl` y
-  `rounded-lg` no existen. Para saber si una utilidad existe de verdad:
+  `rounded-xl` no existen. Para saber si una utilidad existe de verdad:
   `npm run clases -- <clase>`. Lo que hay son los tokens: `bg-ts-primario`,
   `text-ts-texto-suave`, `p-16`, `text-2xl`, `shadow-md`, `max-w-formulario`.
   **Y desde el 21 de septiembre de 2026 no hace falta acordarse de preguntar**:

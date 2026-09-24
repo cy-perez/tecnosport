@@ -254,7 +254,7 @@ if (preguntadas.length > 0) {
     console.error(
       "\nUna clase que Tailwind no genera se queda en el HTML sin ningún estilo detrás, y" +
         "\nnada falla: ni el lint, ni las pruebas, ni el build. Las escalas por omisión están" +
-        "\nborradas a propósito (ADR-0020), así que `rounded-lg` o `bg-red-500` están en este" +
+        "\nborradas a propósito (ADR-0020), así que `rounded-xl` o `bg-red-500` están en este" +
         "\ncaso. Si el valor hace falta, se agrega al kit y se regenera; si es un error de" +
         "\nescritura, se corrige. La única escapatoria es `h-[var(--token)]`.",
     );
