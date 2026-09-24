@@ -1,6 +1,7 @@
 package co.tecnosport.api.infrastructure.pago;
 
 import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
+import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.RepositorioPagos;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.GeneradorIdentificador;
@@ -69,7 +70,19 @@ public class RepositorioPagosJpa implements RepositorioPagos {
    */
   @Override
   public void guardar(Pago pago) {
-    pagos.save(aEntidad(pago));
+    // El pago se vuelca **aparte y primero**, y esa separación es la corrección. Antes era un
+    // `save` a secas: solo programaba el `insert`, y quien lo ejecutaba de verdad era el
+    // `saveAllAndFlush` de los eventos, que vuelca la sesión entera. O sea que una violación del
+    // `unique` de `pago.referencia` —la que ocurre cuando dos peticiones de intento calculan el
+    // mismo número— caía en el `catch` de abajo y salía como "el evento X ya estaba registrado",
+    // con el id de evento "desconocido". Dos daños distintos: un 500 que mandaba a buscar un
+    // evento duplicado que no existe, y —por el webhook, donde `PagoControlador` atrapa esa
+    // excepción— un 200 "ya procesado" para una escritura que había fallado por otro motivo.
+    try {
+      pagos.saveAndFlush(aEntidad(pago));
+    } catch (DataIntegrityViolationException e) {
+      throw new ReferenciaDePagoYaExisteException(pago.referencia().valor(), e);
+    }
 
     eventos.deleteByPagoId(pago.id());
     try {

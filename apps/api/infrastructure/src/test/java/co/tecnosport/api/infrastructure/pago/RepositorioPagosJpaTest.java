@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import co.tecnosport.api.application.pago.EventoDePagoYaRegistradoException;
+import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.domain.compartido.CorreoElectronico;
 import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.Sku;
@@ -217,6 +218,55 @@ class RepositorioPagosJpaTest {
     assertThatThrownBy(() -> repositorio.guardar(pagoConElEventoDosVeces))
         .isInstanceOf(EventoDePagoYaRegistradoException.class)
         .hasMessageContaining("6ab40fd77705464e7c900c70:Approved")
+        .hasMessageContaining(referencia.valor());
+  }
+
+  /**
+   * El hermano de la prueba de arriba, y el que faltaba. Dos peticiones de intento sobre el mismo
+   * pedido calculan el mismo número —sale de contar los pagos— y construyen la misma referencia.
+   * Esa violación es del {@code unique} de {@code pago}, no del de {@code evento_pago}, y salía con
+   * el nombre del otro: {@code guardar} programaba el {@code insert} del pago con un {@code save} a
+   * secas y quien lo ejecutaba era el {@code saveAllAndFlush} de los eventos, dentro del {@code
+   * try}. Con eso, una referencia repetida se reportaba como "el evento X ya estaba registrado" con
+   * un id "desconocido" —un 500 que manda a buscar algo que no existe— y por el webhook, donde
+   * {@code PagoControlador} atrapa esa excepción, se contestaba <b>200 "ya procesado"</b> a una
+   * escritura que había fallado.
+   */
+  @Test
+  void unaReferenciaRepetidaChocaConSuPropioNombreYNoConElDelEvento() {
+    UUID pedidoId = crearYGuardarPedido();
+    ReferenciaPago referencia = new ReferenciaPago("TS-" + UUID.randomUUID());
+    repositorio.guardar(
+        new Pago(
+            UUID.randomUUID(),
+            pedidoId,
+            referencia,
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            EstadoPago.PENDIENTE,
+            List.of(),
+            Instant.now(),
+            Instant.now(),
+            null,
+            null));
+
+    // El segundo intento: otro pago, del mismo pedido, con la referencia que el otro ya ocupó.
+    Pago elQuePerdioLaCarrera =
+        new Pago(
+            UUID.randomUUID(),
+            pedidoId,
+            referencia,
+            MetodoPago.NEQUI,
+            Dinero.deCop(100_000),
+            EstadoPago.PENDIENTE,
+            List.of(),
+            Instant.now(),
+            Instant.now(),
+            null,
+            null);
+
+    assertThatThrownBy(() -> repositorio.guardar(elQuePerdioLaCarrera))
+        .isInstanceOf(ReferenciaDePagoYaExisteException.class)
         .hasMessageContaining(referencia.valor());
   }
 

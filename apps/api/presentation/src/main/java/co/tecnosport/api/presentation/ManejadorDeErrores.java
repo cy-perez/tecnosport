@@ -33,6 +33,7 @@ import co.tecnosport.api.application.pago.MetodoDePagoNoEsDeSistecreditoExceptio
 import co.tecnosport.api.application.pago.MetodoDePagoNoSoportadoPorWompiException;
 import co.tecnosport.api.application.pago.PagoNoEncontradoException;
 import co.tecnosport.api.application.pago.PedidoNoEstaEnPagoPendienteException;
+import co.tecnosport.api.application.pago.ReferenciaDePagoYaExisteException;
 import co.tecnosport.api.application.pago.SistecreditoNoEntregoLaUrlDePagoException;
 import co.tecnosport.api.application.pago.SistecreditoNoRespondeException;
 import co.tecnosport.api.application.pedido.ContraentregaNoDisponibleException;
@@ -428,6 +429,20 @@ public class ManejadorDeErrores {
     detalle.setProperty("codigoSistecredito", excepcion.codigo());
     detalle.setProperty("estadoSistecredito", excepcion.estado());
     return detalle;
+  }
+
+  /**
+   * Dos peticiones de intento de pago sobre el mismo pedido calcularon el mismo número —sale de
+   * contar los pagos del pedido— y la segunda chocó contra el {@code unique} de {@code
+   * pago.referencia}. 409 y no 500: la petición es válida, lo que pasa es que llegó tarde, y quien
+   * la mandó puede volver a pedir el intento y obtener el número siguiente.
+   *
+   * <p>Antes este choque no llegaba aquí: {@code RepositorioPagosJpa} lo traducía a "evento ya
+   * registrado", que por el camino del webhook se contesta con un 200.
+   */
+  @ExceptionHandler(ReferenciaDePagoYaExisteException.class)
+  public ProblemDetail referenciaDePagoYaExiste(ReferenciaDePagoYaExisteException excepcion) {
+    return problema(HttpStatus.CONFLICT, "Referencia de pago ya existe", excepcion);
   }
 
   /**
