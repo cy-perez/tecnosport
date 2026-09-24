@@ -1,5 +1,6 @@
 import { computed, DestroyRef, inject, Injectable, linkedSignal, signal } from '@angular/core';
 import { sha256Hex } from '../../../core/hash/sha256';
+import { ErrorHttp } from '../../../core/http/respuesta-http';
 import { ALMACEN_LOCAL_DE_CAPTURAS } from '../domain/almacen-local-capturas.puerto';
 import { CAMARA, FotogramaCrudo } from '../domain/camara.puerto';
 import { PROCESADOR_DE_FOTOGRAMAS } from '../domain/procesador-fotogramas.puerto';
@@ -324,7 +325,20 @@ export class CapturaStore {
    *
    * El set se abre **después** de procesar: si el recorte falla, no queda un BORRADOR huérfano en
    * la base de datos.
+   *
+   * <p>Eso cubría el fallo del recorte, no el de la red, que es el que de verdad pasa en un
+   * teléfono. Un `subirFotograma` que falla en la toma 20 de 36 dejaba el set abierto en BORRADOR
+   * con 19 objetos en el bucket, y **volver a intentar abría otro**: `AbrirSetRotacion` no
+   * comprueba nada, guarda un set nuevo. Un BORRADOR huérfano por reintento, y
+   * `tools/huerfanos-bucket.mjs` declara esos fotogramas "no juzgables", así que nadie los
+   * reclama. Ahora el set abierto se recuerda y el reintento lo reutiliza.
    */
+  /**
+   * El set que ya se abrió en el backend, mientras no se haya completado. Null antes de abrirlo y
+   * después de completarlo, que es cuando el siguiente intento sí es otro set.
+   */
+  private setAbierto: SetRotacionAdmin | null = null;
+
   async procesarYSubir(): Promise<void> {
     if (this.fase() !== 'CAPTURANDO' || !this.termino()) {
       return;
@@ -344,12 +358,15 @@ export class CapturaStore {
     this.fase.set('SUBIENDO');
     this.avance.set({ hechos: 0, total: resultado.fotogramas.length });
     try {
-      const set = await this.repositorio.abrir({
-        productoId: this.productoId(),
-        fotogramas: this.fotogramasPrometidos(),
-        dispositivo: navigator.userAgent,
-        versionAsistente: VERSION_ASISTENTE,
-      });
+      const set =
+        this.setAbierto ??
+        (await this.repositorio.abrir({
+          productoId: this.productoId(),
+          fotogramas: this.fotogramasPrometidos(),
+          dispositivo: navigator.userAgent,
+          versionAsistente: VERSION_ASISTENTE,
+        }));
+      this.setAbierto = set;
 
       const subidas = await this.repositorio.urlsDeSubida(set.id, 'image/webp');
       const subidos = [];
@@ -373,10 +390,19 @@ export class CapturaStore {
 
       this.setSubido.set(await this.repositorio.completar(set.id, subidos));
       this.fase.set('REVISANDO');
+      // Completado: el siguiente set es otro.
+      this.setAbierto = null;
       // Ya está a salvo en el servidor: lo de disco deja de hacer falta.
       await this.olvidarLoGuardado();
-    } catch {
-      this.errorDelCierre.set('captura360.error_subida');
+    } catch (error) {
+      // "No hay red" y "el backend rechazó el fotograma por no ser de 1000 px" no son lo mismo:
+      // el primero se resuelve reintentando y el segundo repitiendo el set. El `catch` vacío de
+      // antes mostraba el mismo texto para los dos, y quien opera se quedaba reintentando algo
+      // que no iba a funcionar nunca.
+      const rechazado = error instanceof ErrorHttp && error.estado >= 400 && error.estado < 500;
+      this.errorDelCierre.set(
+        rechazado ? 'captura360.error_subida_rechazada' : 'captura360.error_subida',
+      );
       this.fase.set('CAPTURANDO');
     }
   }

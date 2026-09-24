@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import type { components } from '@tecnosport/contratos';
 import { SesionStore } from '../../../core/autenticacion/sesion.store';
 import { baseUrl } from '../../../core/http/base-url';
 import { crearClienteAutenticado } from '../../../core/http/cliente-autenticado';
@@ -93,13 +94,19 @@ export class SetsRotacionHttpRepositorio implements RepositorioSetsRotacion {
   }
 }
 
-interface SetRotacionDto {
-  id?: string;
-  productoId?: string;
-  fotogramasPrometidos?: number;
-  estado?: string;
-  imagenes?: { orden?: number; url?: string }[];
-}
+/**
+ * Del contrato generado, no escrito a mano.
+ *
+ * Lo estaba, con todos los campos opcionales, y eso lo convertía en una copia que nadie mantenía:
+ * si el backend renombra `fotogramasPrometidos` o `imagenes`, la asignación estructural **sigue
+ * compilando** y `aSetRotacion` devuelve `0` y `[]` en silencio. El asistente mostraría "0
+ * fotogramas prometidos" y un visor de revisión vacío, sin un solo error. Es el mismo modo de fallo
+ * que `misma-union.ts` documenta como su razón de existir, al revés.
+ *
+ * Ni `npm run contratos-al-dia` ni `ContratoOpenApiTest` lo veían: los dos comparan el OpenAPI con
+ * el cliente generado, y este archivo no usaba el cliente generado.
+ */
+type SetRotacionDto = components['schemas']['SetRotacionRespuesta'];
 
 /** El modelo del front es del front: el DTO generado no sale de infrastructure. */
 function aSetRotacion(dto: SetRotacionDto): SetRotacionAdmin {

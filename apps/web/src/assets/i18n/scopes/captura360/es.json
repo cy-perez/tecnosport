@@ -66,6 +66,7 @@
   },
   "publicado": "Set publicado. La ficha del producto ya muestra el visor 360.",
   "error_subida": "No se pudo subir el set. Las tomas siguen guardadas en este dispositivo: intenta de nuevo.",
+  "error_subida_rechazada": "El servidor no aceptó las tomas de este set. Repite la captura: reintentar no va a cambiar el resultado.",
   "error_publicar": "No se pudo publicar el set. Puede que el producto ya tenga uno publicado: bórralo primero.",
   "error_proceso": {
     "IMAGEN_INVALIDA": "Una de las tomas no se pudo leer. Repite el set.",
