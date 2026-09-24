@@ -3,8 +3,6 @@ import { ErrorHttp } from '../../../core/http/respuesta-http';
 import {
   ALMACEN_LOCAL_DE_CAPTURAS,
   AlmacenLocalDeCapturas,
-  FotogramaGuardado,
-  SesionGuardada,
 } from '../domain/almacen-local-capturas.puerto';
 import { CAMARA, Camara, FotogramaCrudo } from '../domain/camara.puerto';
 import { PANTALLA_DESPIERTA, PantallaDespierta } from '../domain/pantalla-despierta.puerto';
@@ -12,7 +10,7 @@ import {
   PROCESADOR_DE_FOTOGRAMAS,
   ProcesadorDeFotogramas,
 } from '../domain/procesador-fotogramas.puerto';
-import { ColorRgb, DeteccionDeRecorte, EncuadreDelSet, Rectangulo } from '../domain/recorte-360';
+import { ColorRgb, DeteccionDeRecorte, Rectangulo } from '../domain/recorte-360';
 import {
   AbrirSetRotacion,
   FotogramaSubido,
@@ -45,12 +43,7 @@ describe('CapturaStore: el cierre del set', () => {
       return { ok: true, rectangulo, fondo: FONDO };
     }
 
-    async renderizar(
-      _toma: Blob,
-      _rectangulo: Rectangulo,
-      _encuadre: EncuadreDelSet,
-      _fondo: ColorRgb,
-    ): Promise<Blob> {
+    async renderizar(): Promise<Blob> {
       return new Blob(['procesado']);
     }
   }
@@ -110,34 +103,50 @@ describe('CapturaStore: el cierre del set', () => {
       };
     }
 
-    async eliminar(): Promise<void> {}
+    async eliminar(): Promise<void> {
+      // Este recorrido no borra nada.
+    }
   }
 
   const camaraFalsa: Camara = {
     disponible: () => false,
     abrir: async () => ({}) as MediaStream,
-    cerrar: () => {},
+    cerrar: () => {
+      // No se abre ninguna cámara en este recorrido.
+    },
     capturar: async () => ({}) as FotogramaCrudo,
-    liberar: () => {},
+    liberar: () => {
+      // Los fotogramas los arma la prueba, no la cámara.
+    },
   };
 
   const almacenFalso: AlmacenLocalDeCapturas = {
     disponible: () => false,
-    guardarSesion: async (_sesion: SesionGuardada) => {},
+    guardarSesion: async () => {
+      // El almacén local no está disponible en este recorrido: `disponible()` es false.
+    },
     sesionDe: async () => null,
-    guardarFotograma: async (_fotograma: FotogramaGuardado) => {},
+    guardarFotograma: async () => {
+      // Ídem.
+    },
     fotogramasDe: async () => [],
-    olvidar: async () => {},
+    olvidar: async () => {
+      // Ídem.
+    },
   };
 
   const sensorFalso: SensorOrientacion = {
     disponible: () => false,
     pedirPermiso: async () => false,
-    escuchar: () => () => {},
+    escuchar: () => () => {
+      // Nada que dejar de escuchar: el sensor no está disponible.
+    },
   };
 
   const pantallaFalsa: PantallaDespierta = {
-    mantener: async () => () => {},
+    mantener: async () => () => {
+      // Nada que soltar.
+    },
   };
 
   function capturado(orden: number): FotogramaCapturado {
