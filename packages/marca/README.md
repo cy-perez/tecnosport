@@ -44,8 +44,10 @@ va completa, con sus licencias: distribuirlas es condición de la SIL OFL 1.1.
 
 ## Reglas que no cambian
 
-- Radio 0 en todo. La firma de la marca es el chaflán a 45 grados en la esquina
-  superior izquierda y la inferior derecha, aplicado con la clase `.chaflan`.
+- El chaflán a 45 grados en la esquina superior izquierda y la inferior derecha
+  es la firma de la marca, aplicado con la clase `.chaflan`. Va en el logo y en
+  las piezas gráficas. **No va en la interfaz del sitio**, que redondea con la
+  escala `--radio-*`: 6, 8, 12 px y la píldora. Ver `docs/adr/0060`.
 - El ámbar `#F5B301` es una sola cosa por pantalla y solo como relleno con texto
   grafito encima. Sobre blanco da 1.85:1 y no es legible.
 - El logo es monocromo y tiene versión positiva y negativa; el tema decide cuál
