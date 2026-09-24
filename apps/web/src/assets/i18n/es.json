@@ -7,7 +7,9 @@
     "alternar": "Cambiar el tema"
   },
   "idioma": {
-    "etiqueta": "Idioma"
+    "etiqueta": "Idioma",
+    "ver_en_espanol": "Ver el sitio en español",
+    "ver_en_ingles": "Ver el sitio en inglés"
   },
   "encabezado": {
     "carrito_cantidad": "Carrito, {{cantidad}} artículos",

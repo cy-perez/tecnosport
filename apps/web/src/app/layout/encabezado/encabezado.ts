@@ -6,7 +6,7 @@ import { SesionStore } from '../../core/autenticacion/sesion.store';
 import { CarritoStore } from '../../features/carrito/application/carrito.store';
 import { iconoCarrito, iconoCerrar, iconoMenu } from '../../shared/ui/icono/iconos';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
-import { TsSelectorIdioma } from '../../shared/ts-selector-idioma/ts-selector-idioma';
+import { TsAlternadorIdioma } from '../../shared/ts-alternador-idioma/ts-alternador-idioma';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
 
 /**
@@ -43,7 +43,7 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
     NgTemplateOutlet,
     RouterLink,
     TsIcono,
-    TsSelectorIdioma,
+    TsAlternadorIdioma,
     TsAlternadorTema,
   ],
   templateUrl: './encabezado.html',

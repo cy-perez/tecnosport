@@ -27,11 +27,9 @@ import { iconoTemaClaro, iconoTemaOscuro } from '../ui/icono/iconos';
   imports: [TsIcono],
   templateUrl: './ts-alternador-tema.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // `inline-flex` y no el `block w-fit` de `ts-selector-idioma`: ese existe
-  // para domar el `inline-size: 100%` que `ts-select` le pone a su `<select>`,
-  // y aquí no hay select. Lo que hay que evitar es el `display: inline` por
-  // omisión del elemento propio, que le sumaría el interlineado a un botón de
-  // 44 px si algún día cuelga de un padre que no sea flex.
+  // `inline-flex` para que el elemento propio no herede el `display: inline`,
+  // que le sumaría el interlineado a un botón de 44 px si algún día cuelga de
+  // un padre que no sea flex. Mismo host que `ts-alternador-idioma`.
   host: { class: 'inline-flex' },
 })
 export class TsAlternadorTema {

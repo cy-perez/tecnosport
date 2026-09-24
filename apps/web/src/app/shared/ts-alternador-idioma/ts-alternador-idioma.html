@@ -1,0 +1,49 @@
+<!-- `role="group"` y no `<nav>`: sí lleva a otra URL, pero dentro sólo hay un
+     control —el activo es un `<span>`— y un landmark de navegación más en el
+     encabezado, al lado del que ya existe, es ruido para quien los recorre.
+     El nombre del grupo sí hace falta: "ES" y "EN" no dicen de qué son.
+
+     Mismo borde, mismo alto y mismo radio 0 que `ts-alternador-tema`, que va
+     justo al lado. `items-stretch` para que cada segmento llene los 44 px de
+     alto sin repetir la medida. -->
+<div
+  class="inline-flex h-tactil items-stretch border border-ts-borde bg-ts-superficie text-sm"
+  role="group"
+  [attr.aria-label]="etiquetaDelGrupo()"
+>
+  @for (idioma of idiomas; track idioma; let primero = $first) {
+    <!-- El separador entre los dos segmentos es el borde izquierdo del
+         segundo. Ojo con la tentación de escribir `border-0` en el botón para
+         quitarle el borde del navegador: no hace falta —el preflight ya pone
+         `border: 0 solid` en todo— y además competiría con este `border-l`
+         por la misma propiedad, que es el conflicto silencioso de siempre.
+         `border-ts-borde` va suelto: un color de borde con ancho 0 no pinta. -->
+    <!-- `box-border` en los dos y no solo en uno: un `<button>` ya viene con
+         `box-sizing: border-box` del navegador y un `<span>` no, así que sin
+         esto el `px-8` se le sumaba al `min-w-tactil` del activo y el
+         segmento medía 60 px contra los 44 del otro. Medido en el navegador.
+         El preflight de este proyecto no resetea `box-sizing`. -->
+    <!-- El código en mayúscula se lee igual en los dos idiomas: no se traduce.
+         Quien sí se traduce es el `aria-label` del botón, porque "EN" no dice
+         a dónde lleva. El activo no lo necesita: `aria-current` ya lo explica,
+         y ahí el texto visible sí es el nombre accesible. -->
+    @if (idioma === idiomaActivo()) {
+      <span
+        class="box-border inline-flex min-w-tactil items-center justify-center border-ts-borde bg-ts-superficie-alt px-8 font-medio text-ts-texto"
+        [class.border-l]="!primero"
+        aria-current="true"
+        >{{ idioma.toUpperCase() }}</span
+      >
+    } @else {
+      <button
+        class="anillo-foco box-border inline-flex min-w-tactil cursor-pointer items-center justify-center border-ts-borde bg-transparent px-8 font-texto text-sm text-ts-texto-suave transition-colors hover:bg-ts-superficie-alt hover:text-ts-texto"
+        [class.border-l]="!primero"
+        type="button"
+        [attr.aria-label]="accion(idioma)"
+        (click)="navegarA(idioma)"
+      >
+        {{ idioma.toUpperCase() }}
+      </button>
+    }
+  }
+</div>

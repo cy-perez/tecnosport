@@ -301,7 +301,7 @@ SCSS con los mismos valores.
 
 **En `shared/` — compartidos de verdad, pero no tontos:** `ts-precio` (necesita
 el idioma activo para formatear la moneda) · `ts-esqueleto` · `ts-migas` ·
-`ts-paginador` · `ts-selector-idioma` · `ts-alternador-tema` · `ts-visor-360`.
+`ts-paginador` · `ts-alternador-idioma` · `ts-alternador-tema` · `ts-visor-360`.
 
 **No queda una sola línea de SCSS en el frontend**, salvo `src/styles.scss`, que
 conserva la regla global de reducción de movimiento disparada por
@@ -369,13 +369,22 @@ la Fase 2 sin consumidor, por petición explícita. `eliminar(setId)` existe en 
 puerto y el repositorio de `captura360`, pero ninguna pantalla lo dispara
 todavía, así que el diálogo no se alcanza desde ningún sitio del sitio.
 
-`ts-selector-idioma` no dibuja su propio `<select>`: se apoya en `ts-select`,
-que ya resuelve el `<label>` real, el anillo de foco, el objetivo táctil de
-44 px y el `min-inline-size: 0` que evita que la opción más larga ensanche su
-columna. Un componente compartido que envuelve un control nativo se construye
-una vez. `ts-alternador-tema` lo hizo hasta que el tema pasó de tres opciones a
-dos: un botón de alternar no es un control nativo que envolver, así que dibuja
-su propio `<button>` y no pasa por `ts-select`.
+`ts-alternador-idioma` y `ts-alternador-tema` **no pasan por `ts-select`**, y
+los dos lo hicieron hasta el 24 de septiembre de 2026. `ts-select` envuelve un
+control nativo —resuelve el `<label>` real, el anillo de foco, el objetivo
+táctil de 44 px y el `min-inline-size: 0` que evita que la opción más larga
+ensanche su columna— y eso sigue valiendo para los once formularios que lo usan.
+Lo que cambió es que estos dos dejaron de ser un `<select>`: con dos opciones y
+nada más, un desplegable cobra dos clics por lo que un control directo resuelve
+en uno. El tema es un botón que alterna; el idioma, un grupo segmentado que
+muestra los dos códigos con el activo marcado.
+
+Los dos comparten caja a propósito —borde, 44 px de alto, radio 0— porque van
+uno al lado del otro en el encabezado. Y los dos dicen **a dónde lleva el
+clic**, no dónde estás: la luna aparece en tema claro, y el botón "EN" aparece
+cuando el sitio está en español. El idioma además muestra el actual, marcado
+con `aria-current` y sin ser un control, que es el patrón de `ts-migas` para la
+página en la que ya estás.
 
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto
