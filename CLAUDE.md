@@ -55,9 +55,13 @@ para y dime por qué antes de escribir el código.
    incompleto: se añade al `tokens.json` del kit y se regenera.
    Desde `ADR-0020` la vía es una utilidad de Tailwind mapeada a un token
    (`bg-ts-primario`, `p-16`), no SCSS a mano. Las escalas por omisión de
-   Tailwind están borradas, así que `bg-red-500` y `rounded-lg` **no existen**.
-   Ojo: `rounded-full` y los valores arbitrarios sí sobreviven; ahí "radio 0 en
-   todo" lo sostiene la regla, no el compilador.
+   Tailwind están borradas, así que `bg-red-500` y `rounded-xl` **no existen**.
+   El radio es el caso que hay que tener claro: fue 0 en todo hasta el 24 de
+   septiembre de 2026, y hoy `rounded-sm/md/lg` y `rounded-completo` **sí**
+   existen porque salen de `--radio-*` — el chaflán a 45° se reservó a la marca
+   y la interfaz redondea (`ADR-0060`). Lo que la regla sigue prohibiendo es el
+   literal, `rounded-[10px]`, que sobrevive al borrado por ser estático de
+   Tailwind: ahí lo sostiene la regla, no el compilador.
    La única escapatoria es `h-[var(--token)]`; `h-[72px]` no.
    Quedan **dos** literales, y los dos por la misma limitación, no por decisión:
    los puntos de quiebre, porque una media query no puede leer una propiedad
@@ -93,13 +97,16 @@ para y dime por qué antes de escribir el código.
 7. **El servidor no confía en el cliente** para precio, existencia, costo de
    envío ni estado de pago. Nunca.
 8. **Nada se da por terminado sin pruebas** que fallen si la lógica se rompe.
-   En el frontend hay tres cosas que las pruebas **no** atrapan y hay que
+   En el frontend hay cuatro cosas que las pruebas **no** atrapan y hay que
    verificar en el navegador: que una clase de Tailwind exista de verdad (una
    inventada no falla, no hace nada); el foco — `:focus-visible` y la trampa de
-   foco del CDK no se reproducen en jsdom; y **cuál variante de imagen descarga
-   el navegador**, porque jsdom no evalúa `srcset` ni `sizes`: la prueba puede
+   foco del CDK no se reproducen en jsdom; **cuál variante de imagen descarga
+   el navegador**, porque jsdom no evalúa `srcset` ni `sizes` — la prueba puede
    comprobar que el atributo está bien escrito y no que se eligió el ancho
-   correcto. Ver `docs/06-testing.md`.
+   correcto; y **si un `oscuro:` dejó la relación de color al revés**, porque la
+   paleta oscura no es la clara invertida: la clase existe, el CSS es correcto y
+   aun así la pieza elevada puede quedar más oscura que su fondo.
+   Ver `docs/06-testing.md`.
 9. **No inventes la API de una versión.** Java 21, Spring Boot 4.1.0 y Angular
    22.5 son recientes. Si no estás seguro de una firma, una anotación o un
    builder, dilo y consúltalo. Una alucinación de API cuesta más que una pregunta.

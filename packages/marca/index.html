@@ -109,7 +109,8 @@ tr.grupo td{background:var(--color-marca);color:var(--color-sobre-marca);
 .campo-check input{width:24px;height:24px;min-height:0;margin:0;accent-color:var(--color-primario);flex:0 0 auto}
 .campo-check label{font-size:var(--texto-sm);font-weight:var(--peso-regular);margin:0}
 
-/* Tarjetas. El chaflan es la firma: nunca una esquina redondeada. */
+/* Tarjetas. Esta guia conserva el chaflan porque es una pieza de marca; en la
+   interfaz del sitio las superficies redondean con --radio-lg. Ver ADR-0060. */
 .tarjeta{background:var(--color-superficie);border:1px solid var(--color-borde);padding:var(--esp-24)}
 .tarjeta-producto{background:var(--color-superficie);border:1px solid var(--color-borde);
   display:flex;flex-direction:column;height:100%}
@@ -326,11 +327,13 @@ tr.grupo td{background:var(--color-marca);color:var(--color-sobre-marca);
   <div class="cols-2" style="margin-top:var(--esp-24)">
     <div class="tarjeta chaflan">
       <span class="eyebrow">01 · Geometría</span>
-      <h3 style="margin-top:8px">Ninguna esquina se redondea</h3>
-      <p class="nota">La firma de la marca es el corte a 45° en la esquina superior
-      izquierda y la inferior derecha, heredado del isotipo. Va en botones, tarjetas
-      de producto, etiquetas de precio y recortes de foto. Está resuelto en la clase
-      <code>.chaflan</code>: no lo reimplementes.</p>
+      <h3 style="margin-top:8px">El chaflán es marca; la interfaz redondea</h3>
+      <p class="nota">La firma es el corte a 45° en la esquina superior izquierda y la
+      inferior derecha, heredado del isotipo, y desde el 24 de septiembre de 2026 vive
+      donde vive la marca: logo, piezas gráficas, redes, impresos. Está resuelto en la
+      clase <code>.chaflan</code>: no lo reimplementes. Los controles y las superficies
+      del sitio redondean con <code>--radio-sm/md/lg/completo</code> — 6, 8, 12 px y la
+      píldora. Un botón no lleva las dos cosas.</p>
     </div>
     <div class="tarjeta chaflan">
       <span class="eyebrow">02 · Color</span>

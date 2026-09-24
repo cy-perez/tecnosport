@@ -345,9 +345,11 @@ def css(d, tip, esp, rad, tipo, extra=None, fuentes_ok=False):
         L.append("  --color-{}: {};".format(k, d[v]))
     L += ["}", ""]
     if extra.get("chaflan_px"):
-        L += ["/* LA FIRMA DE LA MARCA. Ninguna esquina se redondea: se corta a 45 grados,",
-              "   siempre en la superior izquierda y la inferior derecha. Aplicala a",
-              "   botones, tarjetas, etiquetas de precio y recortes de fotografia. */",
+        L += ["/* LA FIRMA DE LA MARCA: la esquina no se redondea, se corta a 45 grados,",
+              "   siempre la superior izquierda y la inferior derecha. Es el corte del",
+              "   isotipo, y desde el 24 de septiembre de 2026 vive donde vive la marca --",
+              "   logo, piezas graficas, redes-- y no en los controles de la interfaz, que",
+              "   redondean con --radio-*. Ver ADR-0060. */",
               ".chaflan {",
               "  --ch: var(--chaflan-md);",
               "  border-radius: 0;",

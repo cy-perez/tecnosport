@@ -108,8 +108,10 @@ Las tres son libres: **no hay que comprar ninguna licencia**. Van dentro del kit
 `fuentes/`, así que el sitio no depende de Google Fonts. Las licencias OFL viajan
 con los archivos porque distribuirlas es obligatorio.
 
-**Geometría:** radio 0 en todo. La firma es el **chaflán a 45°** en la esquina
-superior izquierda y la inferior derecha, resuelto en la clase `.chaflan`.
+**Geometría:** la firma es el **chaflán a 45°** en la esquina superior izquierda
+y la inferior derecha, resuelto en la clase `.chaflan`, y va en el logo y en las
+piezas gráficas. La interfaz del sitio no lo usa: redondea con la escala
+`--radio-*` — 6, 8, 12 px y la píldora.
 
 ---
 

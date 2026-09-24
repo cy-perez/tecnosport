@@ -31,7 +31,17 @@ const INTERLINEADOS = ['titulares', 'texto'];
 const ANCHOS = ['contenido', 'formulario', 'formulario-lg', 'filtro'];
 
 const fusionar = extendTailwindMerge({
+  // `radius` es una **escala de tema**, no un grupo de clases, y por eso va
+  // aquí y no abajo: declarándola así, `rounded-completo` compite con
+  // `rounded-md` y además lo hacen solas todas las variantes por esquina
+  // (`rounded-t-completo`, `rounded-bl-completo`), que como grupo de clases
+  // habría que enumerar una por una. `sm`, `md` y `lg` ya los conoce
+  // `tailwind-merge` de su escala por omisión; el que no existía en ninguna
+  // parte es `completo`, el nombre del token de la píldora.
   extend: {
+    theme: {
+      radius: ['completo'],
+    },
     classGroups: {
       'font-family': [{ font: FAMILIAS }],
       'font-weight': [{ font: PESOS }],

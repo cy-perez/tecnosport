@@ -132,17 +132,29 @@ delante. Ver `ADR-0059`.
 - **Los `.woff2` también son generados**, y desde el recorte no basta con que se
   regeneren igual: tienen que seguir escribiendo lo que el sitio escribe. Ver
   arriba.
-- **Radio 0 en todo.** Ninguna esquina redondeada, en ningún componente. Desde
-  `ADR-0020`, la escala de radios de Tailwind está borrada, así que
-  `rounded-sm/md/lg/xl` no existen y una plantilla que los use no compila nada.
-  **No cubre todos los casos:** `rounded`, `rounded-full`, las variantes por
-  esquina y los valores arbitrarios sobreviven porque son estáticos de Tailwind,
-  no valores de la escala. En el camino normal lo impide el compilador; en el
-  resto, la regla. Se audita con `grep -rn "rounded-" apps/web/src`.
+- **La marca corta; la interfaz redondea.** Fue "radio 0 en todo, ninguna
+  esquina redondeada en ningún componente" hasta el 24 de septiembre de 2026.
+  Hoy el chaflán se reserva a la marca y los controles y superficies del sitio
+  redondean con la escala del kit — `rounded-sm` (6 px, el segmento de dentro
+  de un grupo), `rounded-md` (8 px, el control suelto: botón, campo,
+  alternador), `rounded-lg` (12 px, la superficie que contiene controles) y
+  `rounded-completo` (la píldora y el botón circular). **Un elemento lleva una
+  cosa o la otra, nunca las dos.** El porqué y lo que cuesta están en
+  `ADR-0060`.
+  Las cuatro utilidades salen de `--radio-*`, no de la escala de Tailwind, que
+  sigue borrada: `rounded-xl` no existe. Lo que sobrevive y la regla sigue
+  prohibiendo es el literal, `rounded-[10px]`, porque es un píxel suelto. Se
+  audita con `grep -rn "rounded-\[" apps/web/src`. Y `rounded-full` sobrevive
+  también —es estática de Tailwind, no sale de la escala— pero se escribe
+  `rounded-completo`: hacen lo mismo y solo una es rastreable al token.
+  **La migración está a medias y a propósito**: el cambio entró por los dos
+  alternadores del encabezado, y `ts-boton`, `ts-tarjeta-producto`,
+  `ts-dialogo`, el hero de la portada y el enlace de salto siguen con
+  `.chaflan`. Se migran cuando se toquen, no de una sentada.
 - **El chaflán a 45 grados** en la esquina superior izquierda y la inferior
   derecha es la firma de la marca. Se aplica con la clase `.chaflan`, y `--ch`
-  controla el tamaño. Va en botones, tarjetas de producto, etiquetas de precio y
-  recortes de fotografía.
+  controla el tamaño. Va en el logo y en las piezas gráficas — banners,
+  portadas de redes, papelería, empaque, recortes de fotografía.
 - **El chaflán se desactiva en `:focus-visible`** porque `clip-path` recorta el
   anillo de foco. Está resuelto en `tokens.css` y es deliberado.
 - **La regla del ámbar:** `#F5B301` es una sola cosa por pantalla y solo como
@@ -163,6 +175,7 @@ delante. Ver `ADR-0059`.
 | Logo en el header | 34 y 30 px | `--header-alto-logo*` |
 | Objetivo táctil mínimo | 44 x 44 px | `--control-tactil` |
 | Insignia del contador | 20 x 20 px | `--control-insignia` |
+| Radio de la interfaz | 6 / 8 / 12 px y píldora | `--radio-*` |
 
 El objetivo táctil fue durante un tiempo el único valor de esta tabla sin token:
 el SCSS lo escribía como `min-height: 44px` literal en cada control. Se pidió al
@@ -183,7 +196,7 @@ importa menos de lo que parece: la fuente de verdad sigue siendo `tokens.json`.
   `tailwind.config.ts`. Todo está en `apps/web/src/tailwind.css`, un archivo con
   más comentario que código a propósito.
 - **Las escalas por omisión están borradas.** `bg-red-500`, `p-7`, `text-8xl` y
-  `rounded-lg` no existen. Para saber si una utilidad existe de verdad:
+  `rounded-xl` no existen. Para saber si una utilidad existe de verdad:
   `npm run clases -- <clase>`. Lo que hay son los tokens: `bg-ts-primario`,
   `text-ts-texto-suave`, `p-16`, `text-2xl`, `shadow-md`, `max-w-formulario`.
   **Y desde el 21 de septiembre de 2026 no hace falta acordarse de preguntar**:
@@ -379,12 +392,33 @@ nada más, un desplegable cobra dos clics por lo que un control directo resuelve
 en uno. El tema es un botón que alterna; el idioma, un grupo segmentado que
 muestra los dos códigos con el activo marcado.
 
-Los dos comparten caja a propósito —borde, 44 px de alto, radio 0— porque van
-uno al lado del otro en el encabezado. Y los dos dicen **a dónde lleva el
-clic**, no dónde estás: la luna aparece en tema claro, y el botón "EN" aparece
-cuando el sitio está en español. El idioma además muestra el actual, marcado
-con `aria-current` y sin ser un control, que es el patrón de `ts-migas` para la
-página en la que ya estás.
+Los dos comparten los 44 px de alto porque van uno al lado del otro en el
+encabezado, y desde el 24 de septiembre de 2026 los dos redondean: el tema es un
+círculo (`rounded-completo` sobre una caja cuadrada de 44 px) y el idioma una
+pista de `rounded-md` con la pastilla del activo encima, que es el control
+segmentado de la plantilla de referencia. El idioma perdió el borde y el
+`border-l` que separaba los segmentos: esa forma no los lleva.
+
+**Lo único de la referencia que no se copió es el relleno de 2 px** que deja la
+pastilla flotando dentro de la pista. Allá la pista mide 40 px y los segmentos
+36; aquí la pista mide los 44 del objetivo táctil, así que ese relleno saldría
+de los segmentos —dejándolos por debajo del mínimo de la tabla de medidas— o
+empujaría el grupo a 52 px y lo descuadraría con el botón del tema. Con relleno
+0 y el mismo radio en pista y pastilla, las esquinas encajan sin dejar un filo a
+la vista.
+
+**Y la pastilla lleva los dos fondos, uno por tema.** Cuál de las dos superficies
+"sube" cambia con el tema: en claro la que brilla es `superficie` (blanco) sobre
+`superficie-alt` (gris), y en oscuro el orden se invierte —`fondo` < `superficie`
+< `superficie-alt`—, así que con un solo par la pastilla quedaba más oscura que
+la pista y el activo se leía hundido, con el inactivo pareciendo el
+seleccionado. De ahí los dos `oscuro:`. **Ninguna prueba lo atrapa**: es de la
+lista de la regla dura #8, se ve en el navegador o no se ve.
+
+Y los dos dicen **a dónde lleva el clic**, no dónde estás: la luna aparece en
+tema claro, y el botón "EN" aparece cuando el sitio está en español. El idioma
+además muestra el actual, marcado con `aria-current` y sin ser un control, que
+es el patrón de `ts-migas` para la página en la que ya estás.
 
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto

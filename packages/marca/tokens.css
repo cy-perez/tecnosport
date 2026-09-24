@@ -65,10 +65,10 @@
   --esp-48: 48px;
   --esp-64: 64px;
   --esp-96: 96px;
-  --radio-sm: 0px;
-  --radio-md: 0px;
-  --radio-lg: 0px;
-  --radio-completo: 0px;
+  --radio-sm: 6px;
+  --radio-md: 8px;
+  --radio-lg: 12px;
+  --radio-completo: 9999px;
   --chaflan-sm: 8px;
   --chaflan-md: 12px;
   --chaflan-lg: 20px;
@@ -132,9 +132,11 @@
   --color-foco: #F5B301;
 }
 
-/* LA FIRMA DE LA MARCA. Ninguna esquina se redondea: se corta a 45 grados,
-   siempre en la superior izquierda y la inferior derecha. Aplicala a
-   botones, tarjetas, etiquetas de precio y recortes de fotografia. */
+/* LA FIRMA DE LA MARCA: la esquina no se redondea, se corta a 45 grados,
+   siempre la superior izquierda y la inferior derecha. Es el corte del
+   isotipo, y desde el 24 de septiembre de 2026 vive donde vive la marca --
+   logo, piezas graficas, redes-- y no en los controles de la interfaz, que
+   redondean con --radio-*. Ver ADR-0060. */
 .chaflan {
   --ch: var(--chaflan-md);
   border-radius: 0;

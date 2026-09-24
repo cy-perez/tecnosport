@@ -7,8 +7,8 @@ al mayor y al detal. La marca no habla como una tienda de barrio: habla como un
 **distribuidor confiable con diez años de oficio**, que sabe surtir tanto al que
 compra un equipo como al que compra cien.
 
-De ahí sale todo el sistema: geometría rígida, un solo ángulo, ninguna curva
-decorativa, y una sola cosa que llama la atención en cada pieza.
+De ahí sale todo el sistema: geometría rígida, un solo ángulo, y una sola cosa
+que llama la atención en cada pieza.
 
 ---
 
@@ -22,13 +22,20 @@ Una **T** calada dentro de un bloque cortado a 45° en dos esquinas opuestas.
 - Los **dos cortes a 45°** son la firma de la marca. Leen a la vez como un
   bisel mecanizado (tecnología, hardware, precisión) y como el corte de una caja
   en perspectiva (distribución, bodega, despacho).
-- No hay una sola curva ni una sola esquina redondeada en todo el sistema.
-  Esa disciplina es lo que lo hace reconocible.
+- La marca no redondea: donde hay una esquina, hay un corte a 45°. Esa
+  disciplina es lo que la hace reconocible a 16 px y en un bordado.
 
-**El chaflán a 45° se repite en todo:** botones, tarjetas de producto, etiquetas
-de precio, recortes de fotografía, banners. Siempre las mismas dos esquinas —
-superior izquierda e inferior derecha. Está resuelto en `tokens.css` con la
-clase `.chaflan`.
+**El chaflán a 45° se repite en todas las piezas de marca:** banners, portadas
+de redes, papelería, empaque, impresos, recortes de fotografía. Siempre las
+mismas dos esquinas — superior izquierda e inferior derecha. Está resuelto en
+`tokens.css` con la clase `.chaflan`.
+
+**Dónde no va: en la interfaz del sitio.** Hasta el 24 de septiembre de 2026 el
+chaflán era también el patrón de los botones, las tarjetas de producto y las
+etiquetas de precio, y el sistema declaraba radio 0 en todo. Ya no: los
+controles y las superficies del sitio redondean con la escala `--radio-*`
+—6, 8, 12 px y la píldora—, y el chaflán se reserva a la marca. Un elemento
+lleva una cosa o la otra, nunca las dos. El porqué está en `ADR-0060`.
 
 ---
 
@@ -76,7 +83,8 @@ encoge el lockup hasta que "SPORT" deje de leerse.
 - No añadir sombras, contornos, degradados ni brillos.
 - No reordenar el lockup ni cambiar la separación entre isotipo y palabra.
 - No poner el logo sobre fotos con poco contraste. Sobre foto va el **mono negativo**, y si la foto es clara, se oscurece la zona.
-- No redondear las esquinas del bloque. El chaflán a 45° es la marca.
+- No redondear las esquinas del bloque del logo. Ahí el chaflán a 45° es la
+  marca, y la escala de radios de la interfaz no lo alcanza.
 - No encerrar el logo en un círculo, escudo u otra forma ajena al sistema.
 
 ---

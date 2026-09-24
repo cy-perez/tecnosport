@@ -29,9 +29,14 @@
 
     <!-- La marca de centro: el producto va centrado en todas las tomas, no solo
          dentro del marco. El SCSS le ponía `border-radius: var(--radio-completo)`
-         esperando un círculo, pero ese token vale 0 en el kit ("radio 0 en
-         todo"), así que siempre fue un cuadrado. Se deja como está: el valor
-         que manda es el del sistema. -->
+         esperando un círculo; el token valía 0 ("radio 0 en todo"), así que
+         siempre fue un cuadrado, y se dejó cuadrado porque mandaba el sistema.
+         **Desde el 24 de septiembre de 2026 ese token vale 9999 px**
+         (`ADR-0060`), así que el círculo que se quiso ya se puede tener con
+         `rounded-completo`. No se cambia aquí: el cambio entró por los dos
+         alternadores del encabezado y esta pantalla se migra cuando se toque.
+         Queda escrito para que nadie vuelva a leer el comentario de arriba y
+         concluya que el sistema sigue prohibiendo la curva. -->
     <span
       class="absolute top-1/2 left-1/2 size-24 -translate-x-1/2 -translate-y-1/2 border border-ts-sobre-marca opacity-80"
     ></span>

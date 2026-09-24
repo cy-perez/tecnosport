@@ -79,6 +79,15 @@ describe('cn con los nombres de token del proyecto', () => {
 
   // Lo que ya funcionaba sin configurar, fijado para que la configuración
   // nueva no lo rompa.
+  it('dos radios compiten entre sí, también el de la píldora', () => {
+    expect(cn('rounded-md', 'rounded-completo')).toBe('rounded-completo');
+    expect(cn('rounded-completo', 'rounded-sm')).toBe('rounded-sm');
+  });
+
+  it('el radio de una esquina no compite con el de otra', () => {
+    expect(cn('rounded-t-completo', 'rounded-b-sm')).toBe('rounded-t-completo rounded-b-sm');
+  });
+
   it('el color del borde y su ancho son cosas distintas', () => {
     const resultado = cn('border-ts-borde', 'border-0');
 

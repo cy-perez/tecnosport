@@ -551,8 +551,8 @@ convierte el mecanismo en una observación.
 
 ### Lo que Vitest no atrapa en la capa visual
 
-Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`). Las tres cosas
-pasaron de verdad y ninguna prueba las vio.
+Encontrado en la Fase 2 del stack de UI (2026-09-07, `ADR-0020`), y ampliado
+después. Las cinco cosas pasaron de verdad y ninguna prueba las vio.
 
 - **Una clase de Tailwind que no existe no falla: no hace nada.** Las escalas por
   omisión están borradas, así que `min-h-0` y `min-h-auto` no existen — y una
@@ -583,6 +583,17 @@ pasaron de verdad y ninguna prueba las vio.
   NgOptimizedImage no emite el atributo con el loader por omisión, así que la
   aserción pasaría sobre un `srcset` vacío. Las pruebas que lo miran registran el
   mismo loader que `app.config.ts`.
+
+- **Un `oscuro:` puede generar el CSS correcto y la relación de color
+  equivocada.** La paleta no se limita a invertirse entre temas: en claro la
+  superficie que "sube" es `superficie` (blanco) sobre `superficie-alt` (gris),
+  y en oscuro el orden es `fondo` < `superficie` < `superficie-alt`, así que el
+  mismo par de tokens deja la pieza elevada **por debajo** de su fondo. Le pasó
+  al alternador de idioma el 24 de septiembre de 2026: la pastilla del activo se
+  leía hundida y el segmento inactivo parecía el seleccionado. Las clases
+  existen, `npm run clases` las da por buenas y la prueba de componente no mira
+  color. **Se ve abriendo el sitio y alternando el tema**, que es lo que hay que
+  hacer con cualquier patrón de "pista y pastilla" o de superficie elevada.
 
 ### Esperas en las pruebas de componente
 

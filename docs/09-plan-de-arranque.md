@@ -7113,7 +7113,9 @@ El problema real del barrido no es encontrar las clases: es no gritar por lo que
 ### Comprobado rompiéndolo por las tres formas que barre
 
 Una `rounded-lg` metida a propósito en un `class="…"` de `app.html`, en un `[class.rounded-lg]` y
-en el literal de `ts-galeria.ts`. Las tres disparan y nombran el archivo.
+en el literal de `ts-galeria.ts`. Las tres disparan y nombran el archivo. (Para repetir la
+comprobación hoy hay que cambiar de clase: desde `ADR-0060` `rounded-lg` **sí** existe, porque
+apunta a `--radio-lg`. Sirve `rounded-xl`, que sigue sin existir.)
 
 **La tercera no disparaba al principio** y arreglarlo mejoró el alcance: el literal es
 `` `${MINIATURA_BASE} border border-ts-borde` `` y la interpolación descartaba la cadena entera.

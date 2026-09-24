@@ -1,6 +1,10 @@
 # ADR 0020. Tailwind sobre los tokens de marca, no en lugar de ellos
 
-Fecha: 2026-09-07. Estado: aceptada.
+Fecha: 2026-09-07. Estado: aceptada, **con la parte de "radio 0 en todo"
+superada por `ADR-0060`** el 24 de septiembre de 2026: el chaflán se reservó a
+la marca y la interfaz redondea con `--radio-*`. Todo lo demás de este documento
+sigue vigente, y el borrado de `--radius-*` también — lo que cambió es que ahora
+cuatro radios se vuelven a declarar apuntando al kit, en vez de ninguno.
 
 ## Contexto
 

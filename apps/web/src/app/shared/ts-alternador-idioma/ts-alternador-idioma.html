@@ -3,21 +3,30 @@
      encabezado, al lado del que ya existe, es ruido para quien los recorre.
      El nombre del grupo sí hace falta: "ES" y "EN" no dicen de qué son.
 
-     Mismo borde, mismo alto y mismo radio 0 que `ts-alternador-tema`, que va
-     justo al lado. `items-stretch` para que cada segmento llene los 44 px de
-     alto sin repetir la medida. -->
+     La forma es la del control segmentado de la plantilla de referencia: una
+     pista de fondo suave con una pastilla encima marcando el activo, sin borde
+     y sin divisor entre los segmentos. Hasta el 24 de septiembre de 2026 era
+     una caja de esquinas vivas con borde y un `border-l` de separador, porque
+     el sistema declaraba "radio 0 en todo"; ese día el chaflán se reservó a la
+     marca y la interfaz pasó a redondear (`ADR-0060`).
+
+     **Lo único que no se copió de la referencia es el relleno de 2 px** que
+     deja la pastilla flotando dentro de la pista. Allá la pista mide 40 px y
+     los segmentos 36; aquí la pista mide los 44 del objetivo táctil, así que
+     ese relleno saldría de los segmentos y los dejaría en 36 px de alto —por
+     debajo del mínimo de la tabla de medidas— o empujaría el grupo a 52 y lo
+     descuadraría con el botón circular del tema, que va justo al lado. Con
+     relleno 0 y el mismo radio en pista y pastilla, las esquinas encajan sin
+     dejar un filo de pista a la vista.
+
+     `items-stretch` para que cada segmento llene los 44 px de alto sin repetir
+     la medida. -->
 <div
-  class="inline-flex h-tactil items-stretch border border-ts-borde bg-ts-superficie text-sm"
+  class="inline-flex h-tactil items-stretch rounded-md bg-ts-superficie-alt text-sm oscuro:bg-ts-fondo"
   role="group"
   [attr.aria-label]="etiquetaDelGrupo()"
 >
-  @for (idioma of idiomas; track idioma; let primero = $first) {
-    <!-- El separador entre los dos segmentos es el borde izquierdo del
-         segundo. Ojo con la tentación de escribir `border-0` en el botón para
-         quitarle el borde del navegador: no hace falta —el preflight ya pone
-         `border: 0 solid` en todo— y además competiría con este `border-l`
-         por la misma propiedad, que es el conflicto silencioso de siempre.
-         `border-ts-borde` va suelto: un color de borde con ancho 0 no pinta. -->
+  @for (idioma of idiomas; track idioma) {
     <!-- `box-border` en los dos y no solo en uno: un `<button>` ya viene con
          `box-sizing: border-box` del navegador y un `<span>` no, así que sin
          esto el `px-8` se le sumaba al `min-w-tactil` del activo y el
@@ -28,16 +37,27 @@
          a dónde lleva. El activo no lo necesita: `aria-current` ya lo explica,
          y ahí el texto visible sí es el nombre accesible. -->
     @if (idioma === idiomaActivo()) {
+      <!-- La pastilla del activo tiene que **subir** sobre la pista, y cuál de
+           las dos superficies está arriba cambia con el tema: en claro la que
+           brilla es `superficie` (blanco) sobre `superficie-alt` (gris); en
+           oscuro el orden se invierte —`fondo` 0E1217 < `superficie` 191E26 <
+           `superficie-alt` 242A34— y con el mismo par la pastilla quedaba más
+           oscura que la pista: el activo se leía hundido y el inactivo
+           seleccionado. Se vio en el navegador, no en una prueba. De ahí los
+           dos `oscuro:`, que es justo para lo que existe el variant. La pista
+           baja a `fondo` y no se queda en `superficie`, que es el color del
+           encabezado y la dejaría invisible. -->
       <span
-        class="box-border inline-flex min-w-tactil items-center justify-center border-ts-borde bg-ts-superficie-alt px-8 font-medio text-ts-texto"
-        [class.border-l]="!primero"
+        class="box-border inline-flex min-w-tactil items-center justify-center rounded-md bg-ts-superficie px-8 font-medio text-ts-texto shadow-sm oscuro:bg-ts-superficie-alt"
         aria-current="true"
         >{{ idioma.toUpperCase() }}</span
       >
     } @else {
+      <!-- El inactivo no pinta fondo: la pista ya es `superficie-alt`, así que
+           el `hover:bg-ts-superficie-alt` que tenía la versión con borde aquí
+           no haría nada. El hover se ve en el color del texto. -->
       <button
-        class="anillo-foco box-border inline-flex min-w-tactil cursor-pointer items-center justify-center border-ts-borde bg-transparent px-8 font-texto text-sm text-ts-texto-suave transition-colors hover:bg-ts-superficie-alt hover:text-ts-texto"
-        [class.border-l]="!primero"
+        class="anillo-foco box-border inline-flex min-w-tactil cursor-pointer items-center justify-center rounded-md bg-transparent px-8 font-texto text-sm text-ts-texto-suave transition-colors hover:text-ts-texto"
         type="button"
         [attr.aria-label]="accion(idioma)"
         (click)="navegarA(idioma)"
