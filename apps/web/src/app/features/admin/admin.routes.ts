@@ -4,7 +4,8 @@ import { REPOSITORIO_ATRIBUTOS } from '../catalogo/domain/repositorio-atributos.
 import { REPOSITORIO_CATEGORIAS } from '../catalogo/domain/repositorio-categorias.puerto';
 import { REPOSITORIO_MARCAS } from '../catalogo/domain/repositorio-marcas.puerto';
 import { AtributosHttpRepositorio } from '../catalogo/infrastructure/atributos-http.repositorio';
-import { CategoriasAdminHttpRepositorio } from './productos/infrastructure/categorias-admin-http.repositorio';
+import { CategoriasAdminHttpRepositorio } from './categorias/infrastructure/categorias-admin-http.repositorio';
+import { REPOSITORIO_CATEGORIAS_ADMIN } from './categorias/domain/repositorio-categorias-admin.puerto';
 import { MarcasAdminHttpRepositorio } from './marcas/infrastructure/marcas-admin-http.repositorio';
 import { REPOSITORIO_MARCAS_ADMIN } from './marcas/domain/repositorio-marcas-admin.puerto';
 import { adminGuard } from './admin.guard';
@@ -115,6 +116,20 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('./envios/presentation/bandeja/bandeja-revision.page').then(
             (m) => m.BandejaRevisionPage,
+          ),
+      },
+      {
+        path: 'categorias',
+        canActivate: [adminGuard],
+        // Los dos puertos: esta pantalla lee el árbol entero y lo escribe. El de la vitrina hace
+        // falta porque el formulario de la pantalla ofrece las madres posibles, que salen del
+        // mismo listado.
+        providers: [
+          { provide: REPOSITORIO_CATEGORIAS_ADMIN, useClass: CategoriasAdminHttpRepositorio },
+        ],
+        loadComponent: () =>
+          import('./categorias/presentation/categorias-admin.page').then(
+            (m) => m.CategoriasAdminPage,
           ),
       },
       {
