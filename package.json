@@ -16,6 +16,7 @@
     "contratos-al-dia": "node tools/verificar-contratos.mjs",
     "clases": "node tools/verificar-clases-tailwind.mjs",
     "contrastes": "node tools/verificar-contrastes.mjs",
+    "nivel-360": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/analizar-nivel-360.mjs",
     "capas": "node tools/verificar-capas.mjs",
     "marcadores": "node tools/verificar-marcadores.mjs",
     "kit": "node tools/verificar-kit.mjs",

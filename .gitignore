@@ -44,6 +44,8 @@ tecno-sport-marca/
 apps/web/test-results/
 apps/web/playwright-report/
 apps/web/lighthouse/
+# Sonda del nivel 360: lecturas crudas de un telefono, de una corrida.
+apps/web/nivel-360/
 
 # Icecat
 catalogo/icecat/*.gz
