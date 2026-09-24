@@ -34,7 +34,18 @@ function capaDe(rutaRelativa) {
   const m = p.match(/^features\/[^/]+\/(domain|application|infrastructure|presentation)\//);
   if (m) return m[1];
   if (p.startsWith("shared/")) return "shared";
-  return null; // core, layout, la raíz: fuera del grafo, como antes
+  // core/ es transversal: lo usa la aplicación entera, así que no puede depender de una
+  // funcionalidad concreta. Estaba fuera del grafo —"como antes", decía esta línea— y con eso el
+  // guardián tenía un agujero justo donde viven la sesión, el HTTP, el i18n, el SEO y el cargador
+  // de imágenes global, que importaba el modelo de `catalogo`.
+  //
+  // `layout/` se queda fuera a propósito, y no por descuido: componer funcionalidades es
+  // literalmente su trabajo. La insignia del encabezado tiene que ver el mismo carrito que la ficha
+  // y la página del carrito, y `apps/web/CLAUDE.md` documenta ese `CarritoStore` singleton como la
+  // excepción correcta. Meterlo en la regla convertiría un diseño decidido en un aviso permanente,
+  // que es la forma más rápida de que un guardián deje de leerse.
+  if (p.startsWith("core/")) return "transversal";
+  return null; // layout/ y la raíz (app.config, app.routes): fuera del grafo
 }
 
 // Qué NO puede importar cada capa. Mismas reglas que `eslint.config.js`
@@ -52,6 +63,11 @@ const PROHIBIDO = {
     capas: ["infrastructure"],
     motivo:
       "presentation inyecta el puerto declarado en domain; el proveedor de la ruta decide la implementación de infrastructure.",
+  },
+  transversal: {
+    capas: ["domain", "application", "infrastructure", "presentation"],
+    motivo:
+      "core/ lo usa la aplicación entera: no puede depender de una funcionalidad. Si hace falta un tipo, se declara aquí — el cargador de imágenes lo hace con VarianteDeImagen.",
   },
   shared: {
     capas: ["domain", "application", "infrastructure", "presentation"],

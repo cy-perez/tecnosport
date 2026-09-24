@@ -1,6 +1,25 @@
 import { ImageLoader, ImageLoaderConfig } from '@angular/common';
 
-import { VarianteDeImagen } from '../../features/catalogo/domain/producto.model';
+/**
+ * Lo único que este cargador necesita saber de una variante: qué ancho es y dónde está.
+ *
+ * **Se declara aquí y no se importa de `catalogo`, y esa es la corrección.** Este cargador se
+ * registra como `IMAGE_LOADER` global en `app.config.ts`, así que lo usan la portada, la tarjeta,
+ * la galería y el visor: la infraestructura de imágenes de toda la aplicación colgaba del `domain`
+ * de una funcionalidad concreta, un ciclo `catalogo/presentation → core/imagenes → catalogo/domain`
+ * a nivel de carpeta. `npm run capas` no lo podía ver, porque deja `core/` fuera del grafo a
+ * propósito, así que el guardián tenía un agujero del tamaño de `core/` — que es donde viven la
+ * sesión, el HTTP, el i18n y el SEO.
+ *
+ * Es la misma regla que `verificar-capas.mjs` escribe para `shared/`: "si es compartido de verdad,
+ * recibe entradas primitivas en vez del tipo del dominio". `core/` es moralmente lo mismo y no
+ * tenía esa regla. El tipo de `catalogo` es estructuralmente compatible, así que nadie tiene que
+ * convertir nada.
+ */
+export interface VarianteDeImagen {
+  readonly ancho: number;
+  readonly url: string;
+}
 
 /**
  * Resuelve la URL de cada ancho del `srcset` **buscándola entre las variantes de esa imagen**, que
