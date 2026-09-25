@@ -160,6 +160,16 @@ delante. Ver `ADR-0059`.
 - **La regla del ámbar:** `#F5B301` es una sola cosa por pantalla y solo como
   relleno con texto grafito encima. Sobre blanco da 1.85:1. Nunca como texto ni
   como ícono sobre fondo claro.
+  **Tiene una excepción, y solo una: la banda de portada** (`ADR-0063`). Ahí el
+  ámbar se despliega en cuatro pasos —`--color-acento`, `--color-acento-2`,
+  `-3` y `-4`, que el generador deriva aclarando hacia la superficie un 14 %
+  cada uno— para dar un botón a cada línea de negocio. Sigue siendo el mismo
+  ámbar: los cuatro llevan el mismo `--color-sobre-acento` encima, la escala
+  tiene exactamente cuatro pasos porque hay exactamente cuatro líneas, y aclara
+  en vez de oscurecer para no chocar con los estados de `hover`. Fuera de esa
+  banda, una sola cosa por pantalla. Se apunta aquí y no solo en el ADR porque
+  una regla cuya excepción vive en otro archivo es una regla que alguien va a
+  romper en otro sitio creyendo que también vale ahí.
 - **El logo es monocromo** y va en versión positiva y negativa; el tema decide
   cuál se ve, con `.logo-pos` y `.logo-neg`. En móvil, isotipo.
 - **Área de respeto:** un cuarto del alto del isotipo por los cuatro lados.
@@ -314,6 +324,23 @@ plantilla, y cuatro en `admin`—. Las migas se colocan encima del titular por u
 `ng-content select="ts-migas"`, así que quien lo usa solo tiene que ponerlas
 dentro. `verificar-correo` no lo usa a propósito: es una pantalla de estado con
 tres ramas y una de ellas no tiene título.
+
+**El ancla dentro del campo y la etiqueta escondida.** Desde el 24 de septiembre
+de 2026 `ts-campo` y `ts-select` aceptan `icono` —un glifo dentro del control, a
+la izquierda, que corre el relleno a `ps-48`— y `etiquetaOculta`, que manda la
+etiqueta a `sr-only`. La segunda **tiene un precio y no es gratis**: el
+placeholder desaparece al primer carácter, así que quien vuelve a un formulario a
+medio llenar ya no tiene en pantalla el nombre del campo, solo el ancla. Vale en
+un formulario corto de campos evidentes —entrar, crear cuenta, la barra de
+búsqueda del catálogo— y **no** en el checkout, en el panel ni en ningún
+formulario largo, donde la etiqueta se sigue viendo. El icono nunca es el nombre
+accesible: `ts-icono` pinta `aria-hidden`, y quien nombra el control es la
+etiqueta, que sigue existiendo aunque no se vea.
+
+Y **todo `<select>` del sitio va con `appearance-none` y su propia punta de
+flecha**. La del navegador no se puede estilar, así que un `<input>` y un
+`<select>` uno al lado del otro se veían distintos por más que compartieran
+`clases-control.ts` — que es justo lo que ese archivo existe para evitar.
 
 `ts-campo` y `ts-select` envuelven controles nativos distintos pero tienen que
 verse idénticos, así que su borde, relleno, objetivo táctil, anillo de foco y
@@ -627,6 +654,17 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
 
 Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
 entera. Vive en `features/catalogo/presentation/portada/hero/`.
+
+**Un botón por línea de negocio, cada uno con su paso de la escala de ámbar.** Lo
+decide una tabla en `ts-hero.ts`, no la plantilla, y el porqué de que la regla
+del ámbar ceda justo aquí está en `ADR-0063`. El orden de la banda —ropa,
+calzado, bolsos, tecnología— no es el canónico de `LINEAS`: en la banda, la
+primera posición y el tono más saturado van juntos.
+
+**El párrafo de apoyo dice qué se vende, no cómo se compra.** Las condiciones
+—envío cotizado, contraentrega donde está habilitada, garantía legal— las lleva
+la tira de confianza que va justo debajo, y hasta el 24 de septiembre de 2026
+estaban dichas dos veces, palabra por palabra, en los dos sitios.
 
 **Tres tokens nuevos, y ninguno es una excepción a la regla dura #2.** El kit que
 entregó diseño el 18 de septiembre de 2026 traía un `.scss` de componente con
