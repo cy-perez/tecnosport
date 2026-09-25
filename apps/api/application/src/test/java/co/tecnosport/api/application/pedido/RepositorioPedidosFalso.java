@@ -150,4 +150,9 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
                 p.estado() == EstadoPedido.RECHAZADO_EN_ENTREGA
                     && p.correo().valor().equals(correo));
   }
+
+  @Override
+  public boolean hayLineasDeAlgunaVariante(Collection<UUID> varianteIds) {
+    throw new UnsupportedOperationException();
+  }
 }

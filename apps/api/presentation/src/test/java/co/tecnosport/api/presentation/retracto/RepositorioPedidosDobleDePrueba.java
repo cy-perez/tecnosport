@@ -5,6 +5,7 @@ import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.pedido.EstadoPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.Pedido;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -94,4 +95,9 @@ final class RepositorioPedidosDobleDePrueba implements RepositorioPedidos {
 
   @Override
   public void liberarAvisoDePlazo(UUID pedidoId) {}
+
+  @Override
+  public boolean hayLineasDeAlgunaVariante(Collection<UUID> varianteIds) {
+    throw new UnsupportedOperationException();
+  }
 }

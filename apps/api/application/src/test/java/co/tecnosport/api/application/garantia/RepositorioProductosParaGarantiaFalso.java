@@ -119,4 +119,8 @@ final class RepositorioProductosParaGarantiaFalso implements RepositorioProducto
   }
 
   /** No lo usa esta prueba: ajustar existencia tiene la suya. */
+  @Override
+  public void eliminar(UUID productoId) {
+    throw new UnsupportedOperationException();
+  }
 }

@@ -172,4 +172,19 @@ final class RepositorioProductosFalso implements RepositorioProductos {
   }
 
   /** Lo llama el ajuste de existencia, que vive en el paquete de inventario y trae el suyo. */
+
+  /** Lo que de verdad se borró, para poder afirmar que el rechazo no borró nada. */
+  final List<UUID> productosEliminados = new ArrayList<>();
+
+  /**
+   * Se reasigna en vez de usar `removeIf`: `conProductos` deja aquí una lista inmutable, y mutarla
+   * revienta con `UnsupportedOperationException` desde dentro del caso de uso — un fallo que se lee
+   * como un método del puerto sin implementar y no lo es.
+   */
+  @Override
+  public void eliminar(UUID productoId) {
+    this.productosEliminados.add(productoId);
+    this.productos =
+        this.productos.stream().filter(producto -> !producto.id().equals(productoId)).toList();
+  }
 }

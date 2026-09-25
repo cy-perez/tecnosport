@@ -135,4 +135,9 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   void conRechazoEnEntrega(String correo) {
     correosConRechazoEnEntrega.add(correo);
   }
+
+  @Override
+  public boolean hayLineasDeAlgunaVariante(Collection<UUID> varianteIds) {
+    throw new UnsupportedOperationException();
+  }
 }

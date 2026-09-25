@@ -2,10 +2,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import type { IconNode } from 'lucide';
 import {
   iconoContraentrega,
   iconoEnvio,
   iconoGarantia,
+  iconoMediosDePago,
 } from '../../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
 import { TAMANOS_HERO } from '../../../../../core/imagenes/tamanos-de-imagen';
@@ -27,51 +29,60 @@ const VARIANTES_HERO: readonly VarianteDeImagen[] = [
 ];
 
 /**
- * Lo que comparten los cuatro botones de línea. Lo único que cambia entre ellos es el fondo.
+ * Las clases de los cuatro botones de línea, que hoy son **las mismas para los cuatro**.
  *
- * Va en una constante y no repetido en la plantilla porque `anillo-foco-sobre-acento` es
- * obligatorio en los cuatro y cuatro copias de una lista de clases son cuatro sitios donde se
- * puede caer una. Es el mismo criterio de `ts-boton`, que compone sus clases en el componente.
+ * <p>Hasta el 24 de septiembre de 2026 cada uno llevaba su propio paso de la escala de ámbar
+ * —`bg-ts-acento`, `-2`, `-3` y `-4`— y esa era la única excepción admitida a la regla de "una
+ * sola cosa por pantalla" de `docs/04-ui-marca.md`. Se retiró: los cuatro van en el ámbar de marca
+ * y del mismo tamaño, así que la regla vuelve a no tener excepciones (`ADR-0063`, sustituido por
+ * `ADR-0064`). Con cuatro tonos, el más claro parecía un estado deshabilitado del primero, y
+ * "Ver tecnología" —la línea que el negocio quiere delante— era el que menos pesaba de los cuatro.
  *
- * `hover:brightness-110` y no un token de hover por tono: aclarar un 10 % es la respuesta al ratón
- * que ya usa la variante `peligro` de `ts-boton`, y pedirle al kit cuatro `hover` más sería cuatro
- * tokens para un estado que ningún otro sitio consume. El botón de portada **no tenía ninguno**
- * hasta ahora.
+ * <p>Sigue siendo una constante y no texto repetido en la plantilla por lo de siempre:
+ * `anillo-foco-sobre-acento` es obligatorio en los cuatro y cuatro copias de una lista de clases
+ * son cuatro sitios donde se puede caer una. Es el mismo criterio de `ts-boton`.
+ *
+ * <p>`px-24` y no `px-32`: el ancho ya no lo pone el relleno sino la columna de la rejilla, que es
+ * lo que iguala los cuatro. Con `px-32`, "Ver calzado deportivo" —el más largo de los cuatro—
+ * fijaba una columna innecesariamente ancha y los otros tres se quedaban con el texto nadando en
+ * el centro.
+ *
+ * <p>`hover:brightness-110` y no un token de hover: aclarar un 10 % es la respuesta al ratón que ya
+ * usa la variante `peligro` de `ts-boton`, y pedirle al kit un `hover` más sería un token para un
+ * estado que ningún otro sitio consume.
  */
 const CLASES_BOTON_LINEA =
   'anillo-foco-sobre-acento chaflan inline-flex min-h-tactil items-center justify-center ' +
-  'px-32 font-medio text-ts-sobre-acento no-underline hover:brightness-110';
+  'bg-ts-acento px-24 text-center font-medio text-ts-sobre-acento no-underline ' +
+  'hover:brightness-110';
 
 /**
- * Las cuatro líneas de negocio con su paso de la escala de ámbar, **en el orden de la banda**.
+ * Las cuatro líneas de negocio, **en el orden de la banda**.
  *
- * No es el orden canónico de `LINEAS` —ahí tecnología va primera, por rotación— y la diferencia es
- * deliberada: en esta banda la primera posición y el tono más saturado van juntos, y quien decide
- * qué línea encabeza la portada es el negocio, no el modelo. El menú lateral y el filtro siguen
- * ofreciendo las mismas cuatro en su orden.
- *
- * El tono es un dato de esta lista y no un cálculo: `bg-ts-acento-2` tiene que aparecer escrito
- * tal cual en el código o Tailwind no lo genera —las clases se descubren leyendo el fuente, y una
- * armada con plantillas de cadena no existe—. `npm run clases` es lo que vigila que las cuatro
- * existan de verdad.
+ * <p>No es el orden canónico de `LINEAS` —ahí tecnología va primera, por rotación— y la diferencia
+ * es deliberada: quien decide qué línea encabeza la portada es el negocio, no el modelo. El menú
+ * lateral y el filtro siguen ofreciendo las mismas cuatro en su orden.
  */
-const BOTONES_DE_LINEA: readonly { linea: Linea; clave: string; clases: string }[] = [
-  { linea: 'ROPA', clave: 'portada.hero.cta.ropa', clases: CLASES_BOTON_LINEA + ' bg-ts-acento' },
-  {
-    linea: 'CALZADO',
-    clave: 'portada.hero.cta.calzado',
-    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-2',
-  },
-  {
-    linea: 'BOLSOS',
-    clave: 'portada.hero.cta.bolsos',
-    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-3',
-  },
-  {
-    linea: 'TECNOLOGIA',
-    clave: 'portada.hero.cta.tecnologia',
-    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-4',
-  },
+const BOTONES_DE_LINEA: readonly { linea: Linea; clave: string }[] = [
+  { linea: 'ROPA', clave: 'portada.hero.cta.ropa' },
+  { linea: 'CALZADO', clave: 'portada.hero.cta.calzado' },
+  { linea: 'BOLSOS', clave: 'portada.hero.cta.bolsos' },
+  { linea: 'TECNOLOGIA', clave: 'portada.hero.cta.tecnologia' },
+];
+
+/**
+ * Los cuatro sellos de la tira de confianza: lo que el sitio sí puede prometer.
+ *
+ * <p>Eran tres hasta el 24 de septiembre de 2026 y entró "Diversas opciones de pago", que es lo
+ * único de los cuatro que habla del *cómo se paga* y no del *cómo llega*. Van como dato y no
+ * escritos cuatro veces en la plantilla por lo mismo que los botones: cuatro copias de
+ * `flex items-start gap-8` con su `size-16` son cuatro sitios donde se puede desalinear uno.
+ */
+const SELLOS_DE_CONFIANZA: readonly { clave: string; icono: IconNode }[] = [
+  { clave: 'portada.hero.confianza.envio', icono: iconoEnvio },
+  { clave: 'portada.hero.confianza.contraentrega', icono: iconoContraentrega },
+  { clave: 'portada.hero.confianza.pago', icono: iconoMediosDePago },
+  { clave: 'portada.hero.confianza.garantia', icono: iconoGarantia },
 ];
 
 /**
@@ -118,10 +129,8 @@ export class TsHero {
   readonly idioma = input.required<string>();
 
   protected readonly botonesDeLinea = BOTONES_DE_LINEA;
+  protected readonly clasesBotonLinea = CLASES_BOTON_LINEA;
+  protected readonly sellosDeConfianza = SELLOS_DE_CONFIANZA;
   protected readonly variantesHero = VARIANTES_HERO;
   protected readonly tamanosHero = TAMANOS_HERO;
-
-  protected readonly iconoEnvio = iconoEnvio;
-  protected readonly iconoContraentrega = iconoContraentrega;
-  protected readonly iconoGarantia = iconoGarantia;
 }

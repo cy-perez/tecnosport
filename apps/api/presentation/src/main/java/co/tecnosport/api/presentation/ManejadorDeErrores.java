@@ -12,8 +12,10 @@ import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
 import co.tecnosport.api.application.catalogo.MarcaNoEncontradaException;
 import co.tecnosport.api.application.catalogo.MarcaYaExisteException;
 import co.tecnosport.api.application.catalogo.ObjetoDeImagenNoEncontradoException;
+import co.tecnosport.api.application.catalogo.ProductoConVentasException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoException;
 import co.tecnosport.api.application.catalogo.ProductoNoEncontradoPorIdException;
+import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.catalogo.SetRotacionNoEncontradoException;
 import co.tecnosport.api.application.catalogo.SetRotacionPublicadoExistenteException;
@@ -262,6 +264,22 @@ public class ManejadorDeErrores {
   @ExceptionHandler(CategoriaConProductosException.class)
   public ProblemDetail categoriaConProductos(CategoriaConProductosException excepcion) {
     return problema(HttpStatus.CONFLICT, "La categoría tiene productos", excepcion);
+  }
+
+  /**
+   * Los dos rechazos del borrado de un producto, {@code 409} por el mismo motivo que los del árbol
+   * de categorías: el id que mandaron es válido y lo que lo rechaza es el estado del catálogo. El
+   * primero se arregla retirando el producto y la misma petición pasa; el segundo no se arregla
+   * nunca, y ahí el {@code detail} es lo que explica que la salida es retirar, no borrar.
+   */
+  @ExceptionHandler(ProductoPublicadoException.class)
+  public ProblemDetail productoPublicado(ProductoPublicadoException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto está publicado", excepcion);
+  }
+
+  @ExceptionHandler(ProductoConVentasException.class)
+  public ProblemDetail productoConVentas(ProductoConVentasException excepcion) {
+    return problema(HttpStatus.CONFLICT, "El producto tiene ventas", excepcion);
   }
 
   @ExceptionHandler(ProfundidadDeCategoriaExcedidaException.class)

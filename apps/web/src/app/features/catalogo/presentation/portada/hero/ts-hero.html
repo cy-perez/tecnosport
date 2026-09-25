@@ -17,14 +17,23 @@
         {{ 'portada.hero.apoyo' | transloco }}
       </p>
 
-      <!-- Un boton por linea de negocio, cada uno a la rejilla ya filtrada. El tono lo trae el
-           dato (`ts-hero.ts`) y no lo decide la plantilla: son cuatro enlaces identicos salvo por
-           su destino y su paso de la escala, y escribirlos a mano seria cuatro sitios donde se
-           puede olvidar el `anillo-foco-sobre-acento`. -->
-      <div class="mb-48 flex flex-wrap gap-12">
+      <!-- Un boton por linea de negocio, cada uno a la rejilla ya filtrada. Los cuatro del mismo
+           tamano y del mismo ambar, y eso lo hace la rejilla: con `flex-wrap` el ancho de cada uno
+           lo ponia la longitud de su texto, asi que "Ver bolsos" quedaba a la mitad de "Ver calzado
+           deportivo". En `grid-cols-2` las cuatro celdas miden lo mismo —lo que pida la mas
+           larga— y los cuatro botones se estiran a su celda. Dos columnas y no cuatro: en
+           escritorio esta banda ocupa media rejilla, y cuatro columnas ahi dejarian cada boton mas
+           estrecho que su propia etiqueta.
+           La lista y las clases viven en `ts-hero.ts` y no aqui: `anillo-foco-sobre-acento` es
+           obligatorio en los cuatro, y cuatro copias son cuatro sitios donde se puede olvidar. -->
+      <!-- `auto-rows-fr` es lo que hace que "del mismo tamaño" valga tambien en un telefono:
+           a 390 px la celda mide ~173 px y "Ver calzado deportivo" ocupa dos lineas, asi que sin
+           filas iguales la primera fila creceria y la segunda no. Con `fr`, las cuatro celdas
+           miden lo mismo de alto y de ancho pase lo que pase con el texto. -->
+      <div class="mb-48 grid auto-rows-fr grid-cols-2 gap-12">
         @for (boton of botonesDeLinea; track boton.linea) {
           <a
-            [class]="boton.clases"
+            [class]="clasesBotonLinea"
             [routerLink]="['/', idioma(), 'productos']"
             [queryParams]="{ linea: boton.linea }"
           >
@@ -33,21 +42,22 @@
         }
       </div>
 
+      <!-- Rejilla y no `flex-wrap`, por lo mismo que los botones y con una razon de mas: al pasar
+           de tres sellos a cuatro, el cuarto caia solo a una segunda linea y quedaba colgando bajo
+           el primero. En rejilla son dos filas de dos en telefono y una fila de cuatro desde
+           tableta, y las columnas empiezan todas en el mismo sitio.
+           `items-start` con el icono corrido `mt-4`: cuando un sello ocupa dos lineas —"Opcion de
+           pago contraentrega" a dos columnas lo hace— el icono tiene que quedar junto a la primera,
+           no centrado entre las dos. -->
       <ul
-        class="m-0 flex list-none flex-wrap gap-24 border-t border-ts-sobre-marca p-0 pt-24 text-sm"
+        class="m-0 grid list-none grid-cols-2 gap-16 border-t border-ts-sobre-marca p-0 pt-24 text-sm desde-tableta:grid-cols-4"
       >
-        <li class="flex items-center gap-8">
-          <ts-icono [icono]="iconoEnvio" clase="size-16" />
-          {{ 'portada.hero.confianza.envio' | transloco }}
-        </li>
-        <li class="flex items-center gap-8">
-          <ts-icono [icono]="iconoContraentrega" clase="size-16" />
-          {{ 'portada.hero.confianza.contraentrega' | transloco }}
-        </li>
-        <li class="flex items-center gap-8">
-          <ts-icono [icono]="iconoGarantia" clase="size-16" />
-          {{ 'portada.hero.confianza.garantia' | transloco }}
-        </li>
+        @for (sello of sellosDeConfianza; track sello.clave) {
+          <li class="flex items-start gap-8">
+            <ts-icono [icono]="sello.icono" clase="size-16 mt-4" />
+            {{ sello.clave | transloco }}
+          </li>
+        }
       </ul>
     </div>
 

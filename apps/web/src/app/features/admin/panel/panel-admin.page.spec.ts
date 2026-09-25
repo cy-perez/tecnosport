@@ -131,16 +131,16 @@ describe('PanelAdminPage', () => {
   });
 
   /**
-   * El enlace de existencias es permanente y el de sin-medir no, y la diferencia no es un olvido:
-   * la lista de existencias nunca está vacía mientras haya catálogo, así que lleva siempre a algo.
-   * Lo que desaparece cuando no falta existencia en ningún lado es el aviso.
+   * Lo que desaparece cuando no falta existencia en ningún lado es el aviso, no el acceso a la
+   * lista: esa se alcanza siempre desde la barra de secciones, y quien lo vigila desde el 25 de
+   * septiembre de 2026 es `marco/pestanas-admin.spec.ts`. Hasta entonces el enlace permanente
+   * vivía en esta pantalla y esta prueba comprobaba las dos cosas a la vez.
    */
-  it('con todo con existencia no hay aviso, pero el enlace a existencias sigue ahí', async () => {
+  it('con todo con existencia no hay aviso', async () => {
     await renderPanel();
 
     await screen.findByRole('button', { name: 'Cerrar sesión' });
     expect(screen.queryByText(esAdmin.panel.existencias.enlace)).toBeNull();
-    expect(screen.getByRole('link', { name: esAdmin.panel.ir_a_existencias })).toBeTruthy();
   });
 
   /**

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { cn } from '../cn';
 
-export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro';
+export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro' | 'acento';
 
 /**
  * Estilos por variante. Fuera de la clase a propósito: son datos, no estado,
@@ -29,6 +29,18 @@ const VARIANTES: Record<VarianteBoton, string> = {
   // fácil de acertar con el pulgar. Las cuatro variantes lo llevan ahora.
   texto: 'min-h-tactil bg-transparent text-ts-primario px-12 py-8 not-disabled:hover:underline',
   peligro: 'min-h-tactil bg-ts-error text-ts-sobre-primario not-disabled:hover:brightness-110',
+  // El ámbar de marca como relleno, con grafito encima — la única forma en que
+  // `docs/04-ui-marca.md` admite este color. Existe como variante y no como un
+  // `clase="bg-ts-acento"` de quien llama por el anillo de foco: en tema oscuro
+  // `--color-foco` y `--color-acento` son los dos `#F5B301`, así que el anillo
+  // que trae `BASE` sería invisible justo sobre este fondo. Aquí se cambia a
+  // `--color-sobre-acento`, que es grafito en los dos temas; `cn` descarta el
+  // de `BASE` porque `tailwind-merge` agrupa `outline-*` por prefijo.
+  // Y sigue rigiendo "una sola cosa por pantalla": esta variante es para *la*
+  // acción de la pantalla, no para repartir ámbar por ella.
+  acento:
+    'min-h-tactil bg-ts-acento text-ts-sobre-acento focus-visible:outline-ts-sobre-acento ' +
+    'not-disabled:hover:bg-ts-acento-hover not-disabled:active:bg-ts-acento-pressed',
 };
 
 /**

@@ -16,6 +16,18 @@ public interface RepositorioPedidos {
   void guardar(Pedido pedido);
 
   /**
+   * ¿Alguna de estas variantes aparece en una línea de pedido?
+   *
+   * <p>Lo pregunta el borrado de un producto del catálogo, y lo pregunta <b>aquí</b> y no al
+   * repositorio de productos porque quien sabe de pedidos es este: la línea guarda el id de la
+   * variante sin llave foránea (V4), así que solo mirando el lado del pedido se puede responder.
+   *
+   * <p>Una sola consulta con la lista entera y no una por variante: un producto de veinte tallas
+   * serían veinte viajes a la base para responder que sí en el primero.
+   */
+  boolean hayLineasDeAlgunaVariante(Collection<UUID> varianteIds);
+
+  /**
    * Reserva de forma atómica el siguiente secuencial del número legible para {@code anio}
    * (apps/api/CLAUDE.md: {@code TS-2026-000123}). Cada año arranca su propio contador en 1.
    */

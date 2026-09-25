@@ -361,6 +361,7 @@ POST /api/v1/admin/productos                                 crea en BORRADOR, s
 GET/PATCH /api/v1/admin/productos/{id}                       detalle —con la galería— y edición de nombre/descripción/marca/categoría
 POST /api/v1/admin/productos/{id}/publicacion                BORRADOR -> PUBLICADO; 409 si no tiene imagen principal
 DELETE /api/v1/admin/productos/{id}/publicacion              PUBLICADO -> BORRADOR: lo saca de la vitrina sin tocar los pedidos
+DELETE /api/v1/admin/productos/{id}                          borra el producto entero; 204. 409 si está publicado o si alguna variante se vendió
 POST /api/v1/admin/variantes                                 crea una variante (con atributos) e inventario inicial
 GET /api/v1/admin/variantes/sin-medir                        las activas sin paquete, con el total y cuántas ya están publicadas
 GET /api/v1/admin/variantes/medidas                          las activas **con** su paquete, tengan o no: la lista que permite corregir

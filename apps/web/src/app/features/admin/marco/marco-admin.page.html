@@ -1,0 +1,8 @@
+<!-- Su propio contenedor y no el de la pagina de abajo: cada pantalla del panel trae ya su
+     `max-w-contenido px-16 py-32`, y meter las pestañas dentro de una de ellas obligaria a
+     repetirlo en las diez. Aqui solo se alinea con ellas. -->
+<div class="mx-auto max-w-contenido px-16 pt-32">
+  <app-pestanas-admin />
+</div>
+
+<router-outlet />

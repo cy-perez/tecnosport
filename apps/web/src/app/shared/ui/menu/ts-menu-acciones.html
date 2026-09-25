@@ -1,0 +1,30 @@
+<button
+  type="button"
+  [class]="clasesDisparador"
+  [cdkMenuTriggerFor]="panel"
+  [attr.aria-label]="etiqueta()"
+>
+  <ts-icono [icono]="iconoAcciones" clase="size-16" />
+</button>
+
+<ng-template #panel>
+  <div [class]="clasesPanel" cdkMenu>
+    @for (accion of acciones(); track accion.id) {
+      @if (accion.enlace; as destino) {
+        <!-- `<a>` y no un boton que navega: asi se puede abrir en otra pestaña. -->
+        <a cdkMenuItem [class]="clasesDe(accion)" [routerLink]="destino">{{ accion.etiqueta }}</a>
+      } @else {
+        <!-- `(cdkMenuItemTriggered)` y no `(click)`: tambien lo emite Enter y Espacio, que es como
+             se usa un menu con el teclado, y ademas cierra el menu al emitirlo. -->
+        <button
+          type="button"
+          cdkMenuItem
+          [class]="clasesDe(accion)"
+          (cdkMenuItemTriggered)="elegida.emit(accion.id)"
+        >
+          {{ accion.etiqueta }}
+        </button>
+      }
+    }
+  </div>
+</ng-template>

@@ -57,6 +57,23 @@ public interface RepositorioProductos {
   void actualizar(Producto producto);
 
   /**
+   * Borra el producto y todo lo que cuelga de él: sus variantes con sus atributos y su inventario,
+   * sus imágenes y sus sets de rotación. Quien llama ya comprobó que se puede borrar — ver {@code
+   * EliminarProducto}, que es el único sitio donde esa decisión está escrita.
+   *
+   * <p><b>En cascada explícita y no confiando en la base</b>, porque la base no la tiene: las
+   * foráneas de {@code variante}, {@code inventario} e {@code imagen_producto} se declararon sin
+   * {@code on delete cascade} a propósito (V1 y V2), que es lo que hasta hoy impedía que un borrado
+   * accidental se llevara medio catálogo por delante. La cascada vive aquí, escrita, donde se puede
+   * leer.
+   *
+   * <p>Lo que <b>no</b> se toca es {@code linea_carrito}, aunque apunte a las variantes borradas:
+   * no tiene foránea justo porque agregar al carrito no valida que la variante exista (V3), y el
+   * checkout ya sabe rechazar una línea que no se puede reservar.
+   */
+  void eliminar(UUID productoId);
+
+  /**
    * Persiste una variante nueva (con sus atributos) para un producto ya existente. Quien llama debe
    * haber validado antes que el producto existe y que el SKU no está en uso.
    */

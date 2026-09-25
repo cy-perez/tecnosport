@@ -58,3 +58,11 @@ export { Lock as iconoClave } from 'lucide';
 // El de "Ordenar por", que es el único de los cuatro filtros que no nombra un atributo del
 // producto: sin ancla, "Relevancia" suelto al lado de "Marca" se lee como una marca más.
 export { ArrowUpDown as iconoOrden } from 'lucide';
+// Lo pidió el cuarto sello de la banda de portada: "Diversas opciones de pago". `CreditCard` y no
+// un emoji, aunque la petición lo mencionara: los otros tres sellos son Lucide con el mismo trazo
+// y el mismo tamaño, y un emoji lo dibuja la fuente del sistema —cambia de forma, de color y de
+// alto en cada plataforma—, así que la fila dejaría de leerse como una familia.
+export { CreditCard as iconoMediosDePago } from 'lucide';
+// Lo pidió el menú de acciones de una fila (`shared/ui/menu`): los tres puntos que abren lo que no
+// cabe en la fila. Horizontal y no vertical porque es lo que ocupa menos alto en una tabla densa.
+export { MoreHorizontal as iconoAcciones } from 'lucide';

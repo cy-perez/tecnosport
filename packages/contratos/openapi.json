@@ -3727,6 +3727,28 @@
       }
     },
     "/api/v1/admin/productos/{id}" : {
+      "delete" : {
+        "operationId" : "eliminar_1",
+        "parameters" : [
+          {
+            "in" : "path",
+            "name" : "id",
+            "required" : true,
+            "schema" : {
+              "format" : "uuid",
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [
+          "admin-producto-controlador"
+        ]
+      },
       "get" : {
         "operationId" : "ver",
         "parameters" : [
@@ -4273,7 +4295,7 @@
     },
     "/api/v1/admin/sets-rotacion/{id}" : {
       "delete" : {
-        "operationId" : "eliminar_1",
+        "operationId" : "eliminar_2",
         "parameters" : [
           {
             "in" : "path",

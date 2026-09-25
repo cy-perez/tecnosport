@@ -91,6 +91,9 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
 
   readonly retirados: string[] = [];
 
+  readonly eliminados: string[] = [];
+  fallaAlEliminar: Error | null = null;
+
   async despublicar(id: string): Promise<ProductoAdmin> {
     this.retirados.push(id);
     this.items = this.items.map((p) => (p.id === id ? { ...p, estado: 'BORRADOR' } : p));
@@ -100,9 +103,16 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
   async publicar(id: string): Promise<ProductoAdmin> {
     if (this.fallaAlPublicar) throw this.fallaAlPublicar;
     this.publicados.push(id);
-    // Como el servidor: la fila vuelve publicada, así que el botón desaparece de esa fila.
+    // Como el servidor: la fila vuelve publicada, así que el menú de esa fila ofrece lo contrario.
     this.items = this.items.map((p) => (p.id === id ? { ...p, estado: 'PUBLICADO' } : p));
     return this.items.find((p) => p.id === id)!;
+  }
+
+  async eliminar(id: string): Promise<void> {
+    if (this.fallaAlEliminar) throw this.fallaAlEliminar;
+    this.eliminados.push(id);
+    // Como el servidor: la fila desaparece de la siguiente lectura de la lista.
+    this.items = this.items.filter((p) => p.id !== id);
   }
 
   medirVariante(): Promise<VarianteMedida> {
@@ -149,19 +159,58 @@ async function renderLista(items: ProductoAdmin[], totalPaginas = 1) {
   return { ...resultado, repositorio };
 }
 
+/**
+ * Abre el menú de tres puntos de una fila. Es el paso previo de casi todo lo de abajo desde que
+ * las acciones viven ahí, y el menú se pinta en un portal del CDK a nivel de `body` — por eso las
+ * opciones se buscan con `screen` y no dentro del contenedor del componente.
+ */
+async function abrirMenuDe(nombre: string) {
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: esAdmin.productos.acciones.menu.replace('{{nombre}}', nombre),
+    }),
+  );
+}
+
+function opcion(nombre: string) {
+  return screen.getByRole('menuitem', { name: nombre });
+}
+
 describe('ListaProductosAdminPage', () => {
   /**
-   * Las dos transiciones preguntan antes, y esta prueba comprueba lo que de verdad importa de esa
-   * pregunta: que un solo clic **no** cambia nada.
+   * Las cuatro acciones de una fila, y que son exactamente cuatro: si alguien añade una quinta sin
+   * decidir dónde va, esta prueba lo para. Editar y capturar son enlaces —se abren en otra
+   * pestaña—, las otras dos abren una confirmación.
    */
-  it('publicar pregunta antes, y el primer clic no publica', async () => {
-    const { repositorio } = await renderLista([productoDePrueba()]);
+  it('el menú de una fila ofrece las cuatro acciones, y publicar cuando está en borrador', async () => {
+    await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
 
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    );
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
+    expect(opcion(esAdmin.productos.editarEnlace).tagName).toBe('A');
+    expect(opcion(esAdmin.productos.capturar360).tagName).toBe('A');
+    expect(opcion(esAdmin.productos.publicar.accion)).toBeTruthy();
+    expect(opcion(esAdmin.productos.acciones.eliminar)).toBeTruthy();
+  });
+
+  /** Un producto publicado ofrece lo contrario: retirarlo, no publicarlo otra vez. */
+  it('un producto publicado ofrece retirar y no publicar', async () => {
+    await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
+    await abrirMenuDe('Morral urbano');
+
+    expect(screen.queryByRole('menuitem', { name: esAdmin.productos.publicar.accion })).toBeNull();
+    expect(opcion(esAdmin.productos.publicar.accionRetirar)).toBeTruthy();
+  });
+
+  /**
+   * Las tres transiciones preguntan antes, y esta prueba comprueba lo que de verdad importa de esa
+   * pregunta: que elegir la opción **no** cambia nada.
+   */
+  it('publicar pregunta antes, y elegir la opción no publica', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+
+    fireEvent.click(opcion(esAdmin.productos.publicar.accion));
 
     expect(
       screen.getByText(esAdmin.productos.publicar.confirmar.replace('{{nombre}}', 'Morral urbano')),
@@ -172,12 +221,9 @@ describe('ListaProductosAdminPage', () => {
 
   it('al confirmar publica y lo dice', async () => {
     const { repositorio } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.publicar.accion));
 
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    );
     fireEvent.click(
       screen.getByRole('button', { name: esAdmin.productos.publicar.confirmarAccion }),
     );
@@ -192,12 +238,9 @@ describe('ListaProductosAdminPage', () => {
 
   it('cancelar cierra la pregunta sin publicar', async () => {
     const { repositorio } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.publicar.accion));
 
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    );
     fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.publicar.cancelar }));
 
     expect(
@@ -208,35 +251,14 @@ describe('ListaProductosAdminPage', () => {
     expect(repositorio.publicados).toEqual([]);
   });
 
-  /** Un producto publicado ofrece lo contrario: retirarlo, no publicarlo otra vez. */
-  it('un producto publicado ofrece retirar y no publicar', async () => {
-    await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
-
-    await screen.findByText('Morral urbano');
-    expect(
-      screen.queryByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    ).toBeNull();
-    expect(
-      screen.getByRole('button', {
-        name: esAdmin.productos.publicar.retirarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    ).toBeTruthy();
-  });
-
   /**
    * Retirar arrastra más que publicar —el enlace pasa a 404, sale del sitemap— y hay una cosa que
    * **no** arrastra y conviene que se lea antes de pulsar: los pedidos ya hechos siguen su curso.
    */
   it('al retirar dice qué se lleva por delante y qué no', async () => {
     const { repositorio } = await renderLista([productoDePrueba({ estado: 'PUBLICADO' })]);
-
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.retirarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    );
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.publicar.accionRetirar));
 
     expect(screen.getByText(esAdmin.productos.publicar.loQueImplicaRetirar)).toBeTruthy();
     expect(repositorio.retirados).toEqual([]);
@@ -254,18 +276,65 @@ describe('ListaProductosAdminPage', () => {
   });
 
   /**
+   * El borrado es lo único de esta pantalla que no tiene vuelta, así que la pregunta dice qué más
+   * se lleva —variantes, inventario, fotos y visor— antes de que alguien pulse.
+   */
+  it('eliminar pregunta antes y dice todo lo que se lleva', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+
+    fireEvent.click(opcion(esAdmin.productos.acciones.eliminar));
+
+    expect(
+      screen.getByText(esAdmin.productos.eliminar.confirmar.replace('{{nombre}}', 'Morral urbano')),
+    ).toBeTruthy();
+    expect(screen.getByText(esAdmin.productos.eliminar.loQueImplica)).toBeTruthy();
+    expect(repositorio.eliminados).toEqual([]);
+  });
+
+  it('al confirmar elimina y lo dice', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.acciones.eliminar));
+
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.eliminar.accion }));
+
+    expect(
+      await screen.findByText(
+        esAdmin.productos.eliminar.hecho.replace('{{nombre}}', 'Morral urbano'),
+      ),
+    ).toBeTruthy();
+    expect(repositorio.eliminados).toEqual(['p1']);
+  });
+
+  /**
+   * Los dos rechazos del servidor llevan instrucciones distintas —"retíralo primero" y "tiene
+   * ventas"— y el panel no puede adelantar ninguno de los dos: no ve los pedidos. Con el mensaje
+   * genérico, quien borra no sabría cuál de las dos le tocó.
+   */
+  it('si el producto tiene ventas lo dice con sus palabras, no con el error genérico', async () => {
+    const { repositorio } = await renderLista([productoDePrueba()]);
+    repositorio.fallaAlEliminar = new ErrorHttp(409, 'tiene ventas', 'PRODUCTO_CON_VENTAS');
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.acciones.eliminar));
+
+    fireEvent.click(screen.getByRole('button', { name: esAdmin.productos.eliminar.accion }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      esAdmin.errores.producto_con_ventas,
+    );
+  });
+
+  /**
    * El 409 de "sin imagen principal" es accionable: hay que subir la foto. Decir "no se pudo
    * completar la acción" mandaría a mirar el sitio equivocado.
    */
   it('si falta la imagen principal lo dice con sus palabras, no con el error genérico', async () => {
     const { repositorio } = await renderLista([productoDePrueba()]);
     repositorio.fallaAlPublicar = new ErrorHttp(409, 'sin imagen', 'PRODUCTO_SIN_IMAGEN_PRINCIPAL');
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.publicar.accion));
 
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', 'Morral urbano'),
-      }),
-    );
     fireEvent.click(
       screen.getByRole('button', { name: esAdmin.productos.publicar.confirmarAccion }),
     );
@@ -279,9 +348,36 @@ describe('ListaProductosAdminPage', () => {
     await renderLista([productoDePrueba()]);
 
     expect(await screen.findByText('Morral urbano')).toBeTruthy();
+    expect(screen.getByText('morral-urbano')).toBeTruthy();
     expect(screen.getByText('TecnoSport')).toBeTruthy();
     expect(screen.getByText('Bolsos')).toBeTruthy();
     expect(screen.getByRole('cell', { name: 'Borrador' })).toBeTruthy();
+  });
+
+  /**
+   * La miniatura es decorativa —el nombre del producto va al lado, en texto— así que su `alt` va
+   * vacío: repetirlo haría que un lector de pantalla leyera dos veces lo mismo por fila.
+   */
+  it('pinta la miniatura del producto cuando tiene imagen principal', async () => {
+    const { container } = await renderLista([
+      productoDePrueba({ imagenPrincipalUrl: 'https://cdn.tecnosport.co/p1.avif' }),
+    ]);
+    await screen.findByText('Morral urbano');
+
+    const miniatura = container.querySelector('img')!;
+    expect(miniatura.getAttribute('src')).toBe('https://cdn.tecnosport.co/p1.avif');
+    expect(miniatura.getAttribute('alt')).toBe('');
+  });
+
+  /**
+   * Y sin imagen no deja el hueco vacío: un producto sin imagen principal no se puede publicar, así
+   * que la ausencia es un dato que hay que poder leer, no un espacio en blanco.
+   */
+  it('sin imagen principal lo dice en vez de dejar el hueco', async () => {
+    await renderLista([productoDePrueba()]);
+    await screen.findByText('Morral urbano');
+
+    expect(screen.getByText(esAdmin.productos.sinImagen)).toBeTruthy();
   });
 
   it('sin productos lo dice en vez de dejar una tabla vacía', async () => {
@@ -292,7 +388,7 @@ describe('ListaProductosAdminPage', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull();
-    // El enlace de crear sigue arriba, fuera de la rama vacía: es la salida.
+    // El botón de crear sigue arriba, fuera de la rama vacía: es la salida.
     expect(screen.getByRole('link', { name: 'Nuevo producto' })).toBeTruthy();
   });
 
@@ -302,40 +398,6 @@ describe('ListaProductosAdminPage', () => {
 
     expect(screen.getByRole('button', { name: 'Anterior' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true);
-  });
-
-  // Los dos enlaces de acción se pintaban pegados ("EditarCapturar 360"): entre
-  // dos elementos en línea sin espacio en el HTML no hay nada que separe. Estaba
-  // anotado como pendiente cosmético desde la Fase 5 y sobrevivió entero a la
-  // migración a Tailwind, porque ninguna prueba miraba separaciones.
-  //
-  // Se afirma sobre el padre común y no sobre el texto renderizado: en jsdom
-  // `innerText` no existe y `textContent` concatena igual estén separados o no,
-  // así que la única forma de que esta prueba falle si alguien quita el `flex`
-  // es mirar las clases que producen la separación.
-  it('los enlaces de acción de una fila van separados, no pegados', async () => {
-    await renderLista([productoDePrueba()]);
-    await screen.findByText('Morral urbano');
-
-    const editar = screen.getByRole('link', { name: 'Editar' });
-    const capturar = screen.getByRole('link', { name: 'Capturar 360' });
-    const contenedor = editar.parentElement!;
-
-    expect(capturar.parentElement).toBe(contenedor);
-    expect(contenedor.className).toContain('flex');
-    expect(contenedor.className).toContain('gap-16');
-  });
-
-  // El anillo de foco de la marca, no el del navegador. Encontrado recorriendo
-  // el sitio: este enlace y otros cinco no lo llevaban y caían al `outline: auto`
-  // por omisión — visible en Chrome, pero no es el del sistema y cada navegador
-  // dibuja el suyo. Que `anillo-foco` exista como clase lo garantiza
-  // `npm run clases`; que esté puesta, esta prueba.
-  it('"Nuevo producto" lleva el anillo de foco de la marca', async () => {
-    await renderLista([productoDePrueba()]);
-    await screen.findByText('Morral urbano');
-
-    expect(screen.getByRole('link', { name: 'Nuevo producto' }).className).toContain('anillo-foco');
   });
 
   it('"Siguiente" queda habilitado cuando hay más páginas y navega con el query param', async () => {
@@ -361,15 +423,11 @@ describe('ListaProductosAdminPage', () => {
     await esperarSinViolaciones(container);
   });
 
-  it('tampoco con la confirmación de publicar abierta', async () => {
-    const producto = productoDePrueba({ estado: 'BORRADOR' });
-    const { container } = await renderLista([producto]);
-    fireEvent.click(
-      await screen.findByRole('button', {
-        name: esAdmin.productos.publicar.publicarProducto.replace('{{nombre}}', producto.nombre),
-      }),
-    );
-    await screen.findByRole('button', { name: esAdmin.productos.publicar.confirmarAccion });
+  it('tampoco con la confirmación de eliminar abierta', async () => {
+    const { container } = await renderLista([productoDePrueba()]);
+    await abrirMenuDe('Morral urbano');
+    fireEvent.click(opcion(esAdmin.productos.acciones.eliminar));
+    await screen.findByRole('button', { name: esAdmin.productos.eliminar.accion });
 
     await esperarSinViolaciones(container);
   });

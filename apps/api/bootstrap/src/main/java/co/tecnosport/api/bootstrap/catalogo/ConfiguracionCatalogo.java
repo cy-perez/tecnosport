@@ -14,6 +14,7 @@ import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarCategoria;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EliminarCategoria;
+import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.EliminarSetRotacion;
 import co.tecnosport.api.application.catalogo.ListarAtributos;
 import co.tecnosport.api.application.catalogo.ListarCategorias;
@@ -44,6 +45,7 @@ import co.tecnosport.api.application.inventario.AjustarExistencia;
 import co.tecnosport.api.application.inventario.DisponibilidadDeVariantes;
 import co.tecnosport.api.application.inventario.ListarExistencias;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
+import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.bootstrap.negocio.PropiedadesNegocio;
 import co.tecnosport.api.infrastructure.catalogo.AlmacenDeImagenesGcs;
 import com.google.cloud.storage.Storage;
@@ -177,6 +179,14 @@ public class ConfiguracionCatalogo {
   @Bean
   public DespublicarProducto despublicarProducto(RepositorioProductos repositorioProductos) {
     return new DespublicarProducto(repositorioProductos);
+  }
+
+  @Bean
+  public EliminarProducto eliminarProducto(
+      RepositorioProductos repositorioProductos,
+      RepositorioPedidos repositorioPedidos,
+      AlmacenDeImagenes almacenDeImagenes) {
+    return new EliminarProducto(repositorioProductos, repositorioPedidos, almacenDeImagenes);
   }
 
   @Bean

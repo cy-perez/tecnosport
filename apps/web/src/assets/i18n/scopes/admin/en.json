@@ -20,7 +20,9 @@
     "producto_sin_imagen_principal": "This product has no main image, and it cannot be published without one.",
     "galeria_llena": "The gallery is full. Remove an image before adding another one.",
     "imagen_de_galeria_duplicada": "That same image is already in the gallery.",
-    "imagen_de_galeria_no_encontrada": "That image is no longer in the gallery."
+    "imagen_de_galeria_no_encontrada": "That image is no longer in the gallery.",
+    "producto_publicado": "It is published: take it off the storefront before deleting it.",
+    "producto_con_ventas": "It has sales, so it cannot be deleted. Take it off the storefront instead: orders, warranties and withdrawals still need it."
   },
   "iniciarSesion": {
     "titulo": "Admin panel",
@@ -57,7 +59,9 @@
     },
     "ir_a_medidas": "Package measurements",
     "ir_a_clave": "Change my password",
-    "ir_a_categorias": "Categories"
+    "ir_a_categorias": "Categories",
+    "ir_a_panel": "Overview",
+    "navegacion": "Panel sections"
   },
   "pedidos": {
     "titulo": "Orders",
@@ -178,7 +182,8 @@
       "marca": "Brand",
       "categoria": "Category",
       "estado": "Status",
-      "variantes": "Variants"
+      "variantes": "Variants",
+      "producto": "Product"
     },
     "estados": {
       "borrador": "Draft",
@@ -381,7 +386,20 @@
       "confirmarRetirarAccion": "Yes, take it down",
       "retirado": "{{nombre}} is out of the shop.",
       "errorRetirar": "We could not take the product down. Please try again."
-    }
+    },
+    "sinImagen": "No image",
+    "acciones": {
+      "menu": "Actions for {{nombre}}",
+      "eliminar": "Delete"
+    },
+    "eliminar": {
+      "confirmar": "Delete “{{nombre}}” from the catalog? This cannot be undone.",
+      "loQueImplica": "Its variants, stock, photos and 360° viewer go with it. Only a draft product that has never been sold can be deleted.",
+      "accion": "Yes, delete",
+      "hecho": "{{nombre}} was deleted from the catalog.",
+      "error": "We couldn't delete the product. Please try again."
+    },
+    "total": "{{total}} product(s) in the catalog"
   },
   "retractos": {
     "titulo": "Withdrawal",

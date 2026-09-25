@@ -75,6 +75,7 @@ class RepositorioProductosJpaTest {
   @Autowired private VarianteImagenJpaRepository variantesDeImagen;
   @Autowired private SetRotacionJpaRepository setsRotacion;
   @Autowired private jakarta.persistence.EntityManager entityManager;
+  @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
   @Test
   void buscarPorSlugHidrataUnProductoCompletoConAtributosEImagenesYSetDeRotacion() {
@@ -910,6 +911,93 @@ class RepositorioProductosJpaTest {
   private AtributoJpaEntity atributo(String nombre, String tipo) {
     return atributos.save(
         new AtributoJpaEntity(UUID.randomUUID(), nombre, tipo, List.of(), Instant.now()));
+  }
+
+  /**
+   * La cascada del borrado, contra Postgres de verdad y con las siete tablas pobladas.
+   *
+   * <p>Es la única forma de comprobarla: las foráneas de {@code variante}, {@code inventario} e
+   * {@code imagen_producto} no llevan {@code on delete cascade}, así que un orden equivocado no
+   * borra de más — revienta con una violación de integridad, y eso solo pasa con una base real. Un
+   * doble de prueba diría que sí a cualquier orden.
+   */
+  @Test
+  void eliminarSeLlevaVariantesAtributosInventarioImagenesYSetsDeRotacion() {
+    MarcaJpaEntity marca = marca("Marca a borrar");
+    CategoriaJpaEntity categoria = categoria("Parlantes", "parlantes-borrado", "TECNOLOGIA");
+    AtributoJpaEntity color = atributo("Color borrado", "COLOR");
+    ProductoJpaEntity producto =
+        producto("JBL a borrar", "jbl-a-borrar", "BORRADOR", marca, categoria);
+    VarianteJpaEntity variante = variante(producto, "SKU-BORRADO", "289000");
+    valoresAtributo.save(
+        new VarianteAtributoValorJpaEntity(
+            UUID.randomUUID(), variante.getId(), color.getId(), "Negro", "#000000"));
+    imagenPrincipal(producto);
+    SetRotacionJpaEntity set =
+        setsRotacion.save(
+            new SetRotacionJpaEntity(
+                UUID.randomUUID(),
+                producto.getId(),
+                null,
+                2,
+                "PUBLICADO",
+                "admin",
+                Instant.now(),
+                "iPhone 14",
+                "v1"));
+    fotogramaRotacion(producto, set, 0);
+    fotogramaRotacion(producto, set, 1);
+    // Volcado antes de los `insert` por JDBC: la variante todavía vive en el contexto de
+    // persistencia, y la foránea de `inventario` la busca en la tabla.
+    entityManager.flush();
+    UUID inventarioId = UUID.randomUUID();
+    jdbc.update(
+        "insert into inventario (id, variante_id) values (?, ?)", inventarioId, variante.getId());
+    jdbc.update(
+        "insert into movimiento_inventario (id, inventario_id, tipo, cantidad, motivo)"
+            + " values (?, ?, 'ENTRADA', 5, 'siembra')",
+        UUID.randomUUID(),
+        inventarioId);
+
+    repositorio.eliminar(producto.getId());
+    // Y sin limpiar, las consultas de abajo leerían las entidades vivas en el contexto de
+    // persistencia en vez de la base — el mismo recuento que este archivo ya documenta dos veces.
+    entityManager.clear();
+
+    assertThat(cuantas("producto", "id", producto.getId())).isZero();
+    assertThat(cuantas("variante", "producto_id", producto.getId())).isZero();
+    assertThat(cuantas("imagen_producto", "producto_id", producto.getId())).isZero();
+    assertThat(cuantas("set_rotacion", "producto_id", producto.getId())).isZero();
+    assertThat(cuantas("variante_atributo_valor", "variante_id", variante.getId())).isZero();
+    assertThat(cuantas("inventario", "variante_id", variante.getId())).isZero();
+    assertThat(cuantas("movimiento_inventario", "inventario_id", inventarioId)).isZero();
+    // La V60 se lleva estas con su `on delete cascade`, y por eso no aparecen en el adaptador.
+    assertThat(jdbc.queryForObject("select count(*) from variante_imagen", Integer.class)).isZero();
+  }
+
+  /** El producto de al lado no se toca: la cascada filtra por id, no borra la tabla. */
+  @Test
+  void eliminarNoTocaOtrosProductos() {
+    MarcaJpaEntity marca = marca("Marca vecina");
+    CategoriaJpaEntity categoria = categoria("Bolsos", "bolsos-vecino", "BOLSOS");
+    ProductoJpaEntity victima =
+        producto("El que se borra", "el-que-se-borra", "BORRADOR", marca, categoria);
+    variante(victima, "SKU-VICTIMA", "100000");
+    ProductoJpaEntity vecino =
+        producto("El que se queda", "el-que-se-queda", "BORRADOR", marca, categoria);
+    VarianteJpaEntity delVecino = variante(vecino, "SKU-VECINO", "100000");
+    entityManager.flush();
+
+    repositorio.eliminar(victima.getId());
+    entityManager.clear();
+
+    assertThat(cuantas("producto", "id", vecino.getId())).isOne();
+    assertThat(cuantas("variante", "id", delVecino.getId())).isOne();
+  }
+
+  private int cuantas(String tabla, String columna, UUID valor) {
+    return jdbc.queryForObject(
+        "select count(*) from " + tabla + " where " + columna + " = ?", Integer.class, valor);
   }
 
   private ProductoJpaEntity producto(
