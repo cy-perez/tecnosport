@@ -12,6 +12,7 @@ import { SesionStore } from '../../../../core/autenticacion/sesion.store';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
 
 /**
  * Solo para `CLIENTE` — el login de `ADMIN` es `features/admin/`. Un correo/clave válidos pero de
@@ -28,6 +29,10 @@ export class IniciarSesionClientePage {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   protected readonly sesionStore = inject(SesionStore);
+
+  /** Las anclas de los campos, igual que en crear cuenta: nunca el nombre accesible. */
+  protected readonly iconoCorreo = iconoCorreo;
+  protected readonly iconoClave = iconoClave;
 
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);

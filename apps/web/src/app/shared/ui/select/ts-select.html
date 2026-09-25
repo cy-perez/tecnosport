@@ -5,7 +5,9 @@
        electrónico')` pasa a buscar "Correo electrónico *". Fuera, la etiqueta conserva
        exactamente su texto y el marcador sigue al lado. Quien de verdad anuncia que el campo es
        obligatorio es el `aria-required` del control. -->
-  <div class="flex items-baseline gap-4">
+  <!-- `sr-only` en el contenedor, no en el `<label>`: mismo motivo que en `ts-campo`, el
+       asterisco es su pareja visual. Escondida, la etiqueta sigue nombrando el control. -->
+  <div class="flex items-baseline gap-4" [class.sr-only]="etiquetaOculta()">
     <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
     @if (obligatorio()) {
       <span class="text-ts-texto-suave" aria-hidden="true">*</span>
@@ -21,23 +23,43 @@
        editar producto), no hay ninguna `<option>` que enganche y el control se
        queda en el placeholder para siempre. Además `[value]` no serializa a
        HTML, así que el SSR salía siempre con la primera opción marcada. -->
-  <select
-    [class]="clasesControl"
-    [id]="idCampo()"
-    [disabled]="deshabilitado()"
-    [attr.aria-required]="obligatorio() ? 'true' : null"
-    [attr.aria-invalid]="error() ? 'true' : null"
-    [attr.aria-describedby]="descripcion()"
-    (change)="manejarCambio($any($event.target).value)"
-  >
-    @if (placeholder()) {
-      <option value="" [selected]="valor() === ''">{{ placeholder() }}</option>
+  <!-- El `<select>` va con `appearance-none` y su propia punta de flecha (ver `clases-control.ts`),
+       así que esta envoltura no es decorativa: es de donde cuelgan la punta y, cuando lo hay, el
+       ancla de la izquierda. -->
+  <div class="relative">
+    @if (icono(); as glifo) {
+      <ts-icono
+        class="pointer-events-none absolute start-16 top-1/2 -translate-y-1/2 text-ts-texto-suave"
+        [icono]="glifo"
+        clase="size-16"
+      />
     }
-    @for (opcion of opciones(); track opcion.valor) {
-      <option [value]="opcion.valor" [selected]="opcion.valor === valor()">
-        {{ opcion.etiqueta }}
-      </option>
-    }
-  </select>
+    <select
+      [class]="clasesControl()"
+      [id]="idCampo()"
+      [disabled]="deshabilitado()"
+      [attr.aria-required]="obligatorio() ? 'true' : null"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="descripcion()"
+      (change)="manejarCambio($any($event.target).value)"
+    >
+      @if (placeholder()) {
+        <option value="" [selected]="valor() === ''">{{ placeholder() }}</option>
+      }
+      @for (opcion of opciones(); track opcion.valor) {
+        <option [value]="opcion.valor" [selected]="opcion.valor === valor()">
+          {{ opcion.etiqueta }}
+        </option>
+      }
+    </select>
+    <!-- La punta la pinta el componente porque `appearance-none` borra la del navegador. Es
+         `aria-hidden` por `ts-icono` y `pointer-events-none` porque el clic tiene que llegar al
+         `<select>`, que es lo que de verdad despliega la lista. -->
+    <ts-icono
+      class="pointer-events-none absolute end-12 top-1/2 -translate-y-1/2 text-ts-texto-suave"
+      [icono]="iconoChevron"
+      clase="size-16"
+    />
+  </div>
   <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
 </div>

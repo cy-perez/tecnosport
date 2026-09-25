@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import type { IconNode } from 'lucide';
+import { cn } from '../cn';
 import { CLASES_AYUDA, CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
+import { iconoChevron } from '../icono/iconos';
+import { TsIcono } from '../icono/ts-icono';
 
 export interface OpcionSelect {
   readonly valor: string;
@@ -16,6 +20,7 @@ export interface OpcionSelect {
  */
 @Component({
   selector: 'ts-select',
+  imports: [TsIcono],
   templateUrl: './ts-select.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // `min-w-0` en el host, y no es un detalle. Un ítem de grid o de flex
@@ -26,8 +31,13 @@ export interface OpcionSelect {
   host: { class: 'block min-w-0' },
 })
 export class TsSelect {
-  protected readonly clasesControl = CLASES_CONTROL;
+  /** `pe-48` siempre: la punta de flecha que pinta el componente ocupa ese sitio en todos los
+   * selects, tengan ancla o no. `ps-48` solo cuando hay ancla. */
+  protected readonly clasesControl = computed(() =>
+    cn(CLASES_CONTROL, 'appearance-none pe-48', this.icono() ? 'ps-48' : ''),
+  );
   protected readonly clasesEtiqueta = CLASES_ETIQUETA;
+  protected readonly iconoChevron = iconoChevron;
   protected readonly clasesError = CLASES_ERROR;
   protected readonly clasesAyuda = CLASES_AYUDA;
 
@@ -56,6 +66,22 @@ export class TsSelect {
    * leerlo ademas como "asterisco" seria ruido.
    */
   readonly obligatorio = input(false);
+
+  /**
+   * Un icono dentro del control, a la izquierda, como ancla de qué se elige ahí. Igual que en
+   * `ts-campo`: nunca es el nombre accesible, y cuando lo hay el relleno se corre a `ps-48`.
+   */
+  readonly icono = input<IconNode | null>(null);
+
+  /**
+   * Esconde la etiqueta a la vista, dejándola para la tecnología de apoyo.
+   *
+   * En un `<select>` el precio es más bajo que en un `<input>`: lo que se ve no es un placeholder
+   * que se borra, es la opción elegida, que se queda. Aun así solo vale cuando esa opción se
+   * explica sola —"Relevancia", o un `placeholder` que sea el nombre del filtro—, y no cuando el
+   * valor por sí mismo no dice de qué es.
+   */
+  readonly etiquetaOculta = input(false);
 
   /**
    * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.

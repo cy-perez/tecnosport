@@ -331,4 +331,36 @@ describe('FiltrosProductos', () => {
 
     expect(navegar).toHaveBeenCalledWith([], expect.objectContaining({ queryParams: {} }));
   });
+
+  /**
+   * El rango de precio salió de la barra el 24 de septiembre de 2026, y con él salió del modelo
+   * entero (`filtro-productos.model.ts` explica por qué no bastaba con quitar los dos controles).
+   * Se comprueba por tipo de control y no solo por etiqueta: un `<input type="number">` que
+   * sobreviva sin etiqueta es exactamente el resto que esta prueba tiene que ver.
+   */
+  it('ya no hay controles de precio', async () => {
+    const { container } = await renderFiltros();
+
+    expect(screen.queryByLabelText('Precio mínimo')).toBeNull();
+    expect(screen.queryByLabelText('Precio máximo')).toBeNull();
+    expect(container.querySelectorAll('input[type="number"]')).toHaveLength(0);
+  });
+
+  /**
+   * Las etiquetas de la barra ya no se ven —el nombre del filtro lo dice la opción elegida, y el
+   * de la búsqueda su placeholder—, pero siguen existiendo. Es justo la propiedad que se paga con
+   * `etiquetaOculta` y la que hay que vigilar: `sr-only` esconde a la vista, no del árbol de
+   * accesibilidad, y confundir las dos cosas es la forma fácil de dejar cuatro controles sin
+   * nombre.
+   */
+  it('los controles conservan su etiqueta aunque no se vea, y la búsqueda su placeholder', async () => {
+    await renderFiltros();
+
+    for (const etiqueta of ['Línea', 'Categoría', 'Marca', 'Ordenar por']) {
+      expect(await screen.findByLabelText(etiqueta)).toBeTruthy();
+    }
+
+    const busqueda = await screen.findByLabelText('Buscar');
+    expect(busqueda.getAttribute('placeholder')).toBe('Buscar productos…');
+  });
 });

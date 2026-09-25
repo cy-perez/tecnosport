@@ -1,12 +1,19 @@
 export type OrdenProductos = 'RELEVANCIA' | 'PRECIO_ASC' | 'PRECIO_DESC' | 'MAS_RECIENTES';
 
-/** Todo campo ausente significa "sin ese filtro" — mismo criterio que el backend. */
+/**
+ * Todo campo ausente significa "sin ese filtro" — mismo criterio que el backend.
+ *
+ * <b>Sin rango de precio desde el 24 de septiembre de 2026.</b> El backend lo sigue aceptando; lo
+ * que se quitó es el par de controles y, con ellos, todo el camino del frontend. Quitar solo los
+ * controles habría dejado una trampa: un `?precioMin=` que llega por la URL filtra la primera
+ * rejilla, y al tocar cualquier otro filtro el formulario reescribe los query params sin él y el
+ * rango se evapora sin que nada lo diga. Un filtro que no se ve, no se puede quitar y desaparece
+ * solo es peor que no tenerlo.
+ */
 export interface FiltroProductos {
   readonly categoria?: string;
   readonly marca?: string;
   readonly linea?: string;
-  readonly precioMin?: number;
-  readonly precioMax?: number;
   readonly texto?: string;
   readonly orden?: OrdenProductos;
   readonly tamano?: number;
@@ -68,8 +75,6 @@ export function hayFiltrosActivos(filtro: FiltroProductos): boolean {
     filtro.categoria !== undefined ||
     filtro.marca !== undefined ||
     filtro.linea !== undefined ||
-    filtro.precioMin !== undefined ||
-    filtro.precioMax !== undefined ||
     filtro.texto !== undefined
   );
 }

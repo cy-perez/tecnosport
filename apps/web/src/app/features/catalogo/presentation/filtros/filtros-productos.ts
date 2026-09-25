@@ -13,6 +13,7 @@ import { Translation, TranslocoPipe, translateObjectSignal } from '@jsverse/tran
 import { debounceTime } from 'rxjs';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { iconoBuscar, iconoOrden } from '../../../../shared/ui/icono/iconos';
 import { OpcionSelect, TsSelect } from '../../../../shared/ui/select/ts-select';
 import { TsSelectControl } from '../../../../shared/ui/select/ts-select-control';
 import { usarTraductor } from '../../../../core/i18n/traductor';
@@ -32,8 +33,6 @@ interface ValoresFormularioFiltros {
   categoria: string;
   marca: string;
   linea: string;
-  precioMin: number | null;
-  precioMax: number | null;
   texto: string;
   orden: string;
 }
@@ -57,8 +56,6 @@ function datosFormularioDesdeFiltro(filtro: FiltroProductos): ValoresFormularioF
     categoria: filtro.categoria ?? '',
     marca: filtro.marca ?? '',
     linea: filtro.linea ?? '',
-    precioMin: filtro.precioMin ?? null,
-    precioMax: filtro.precioMax ?? null,
     texto: filtro.texto ?? '',
     // Sin `orden` en la URL el backend ordena por relevancia igual, así que el
     // control lo muestra en vez de quedarse en el vacío: `''` no corresponde a
@@ -73,8 +70,6 @@ function filtroDesdeFormulario(valores: ValoresFormularioFiltros): FiltroProduct
     categoria: valores.categoria || undefined,
     marca: valores.marca || undefined,
     linea: valores.linea || undefined,
-    precioMin: valores.precioMin ?? undefined,
-    precioMax: valores.precioMax ?? undefined,
     texto: valores.texto || undefined,
     orden: (valores.orden || undefined) as OrdenProductos | undefined,
   };
@@ -99,6 +94,9 @@ export class FiltrosProductos {
 
   protected readonly opciones = usarOpcionesFiltro();
 
+  protected readonly iconoBuscar = iconoBuscar;
+  protected readonly iconoOrden = iconoOrden;
+
   /**
    * Solo cuenta por debajo del primer punto de quiebre, donde el formulario va
    * tras un botón (ver la plantilla). Arranca abierto si la URL ya trae algún
@@ -114,8 +112,6 @@ export class FiltrosProductos {
     categoria: new FormControl('', { nonNullable: true }),
     marca: new FormControl('', { nonNullable: true }),
     linea: new FormControl('', { nonNullable: true }),
-    precioMin: new FormControl<number | null>(null),
-    precioMax: new FormControl<number | null>(null),
     texto: new FormControl('', { nonNullable: true }),
     // Arranca en el orden por defecto, no en vacío: así también `limpiar()`
     // (`form.reset()`, que vuelve al valor inicial del control) deja el select

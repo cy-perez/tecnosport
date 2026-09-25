@@ -13,6 +13,7 @@ import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
+import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
 import { RouterLink } from '@angular/router';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
@@ -43,6 +44,11 @@ export class RegistroClientePage {
 
   /** Mismo patrón que el pie: las rutas viven bajo /:lang. */
   protected readonly idioma = this.transloco.activeLang;
+
+  /** Las anclas de los campos. No son el nombre accesible —`ts-icono` pinta `aria-hidden`—: son
+   * lo unico que queda en pantalla diciendo que se escribe cuando el placeholder desaparece. */
+  protected readonly iconoCorreo = iconoCorreo;
+  protected readonly iconoClave = iconoClave;
 
   protected readonly error = signal<string | null>(null);
   protected readonly enviando = signal(false);

@@ -101,7 +101,7 @@ describe('PortadaPage', () => {
 
     const titulos = screen.getAllByRole('heading', { level: 1 });
     expect(titulos).toHaveLength(1);
-    expect(screen.getByRole('link', { name: 'Ver el catálogo' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Ver todo el catálogo' }).getAttribute('href')).toBe(
       '/es/productos',
     );
   });
@@ -118,13 +118,23 @@ describe('PortadaPage', () => {
     expect(titulo.textContent?.trim()).toBe('Todo lo que necesitas para moverte.');
   });
 
-  /** Y el segundo botón lleva a tecnología, que es la línea que existe: CELULARES dejó de serlo. */
-  it('la banda ofrece el catálogo completo y la línea de tecnología', async () => {
+  /**
+   * Un botón por línea de negocio, cada uno a su rejilla ya filtrada.
+   *
+   * Hasta el 24 de septiembre de 2026 eran dos —"Ver el catálogo" y "Ver tecnología"— y la banda
+   * no decía qué se vende: había que entrar al catálogo para enterarse. Se comprueban los cuatro
+   * `href` y no que existan cuatro enlaces, porque el fallo que importa es el silencioso: un tono
+   * copiado de la línea de al lado se lleva el `queryParams` con él.
+   */
+  it.each([
+    ['Ver ropa', '/es/productos?linea=ROPA'],
+    ['Ver calzado deportivo', '/es/productos?linea=CALZADO'],
+    ['Ver bolsos', '/es/productos?linea=BOLSOS'],
+    ['Ver tecnología', '/es/productos?linea=TECNOLOGIA'],
+  ])('la banda lleva a la línea de %s', async (nombre, destino) => {
     await renderPortada();
 
-    expect(screen.getByRole('link', { name: 'Ver tecnología' }).getAttribute('href')).toBe(
-      '/es/productos?linea=TECNOLOGIA',
-    );
+    expect(screen.getByRole('link', { name: nombre }).getAttribute('href')).toBe(destino);
   });
 
   /**

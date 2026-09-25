@@ -9,8 +9,6 @@ describe('hayFiltrosActivos', () => {
     ['categoría', { categoria: 'bolsos' }],
     ['marca', { marca: 'm1' }],
     ['línea', { linea: 'BOLSOS' }],
-    ['precio mínimo', { precioMin: 10_000 }],
-    ['precio máximo', { precioMax: 90_000 }],
     ['texto', { texto: 'morral' }],
   ])('cualquier filtro por sí solo cuenta: %s', (_nombre, filtro) => {
     expect(hayFiltrosActivos(filtro)).toBe(true);
@@ -24,7 +22,12 @@ describe('hayFiltrosActivos', () => {
     expect(hayFiltrosActivos(FILTRO_NOVEDADES)).toBe(false);
   });
 
-  it('un precio mínimo de cero es un filtro, no la ausencia de uno', () => {
-    expect(hayFiltrosActivos({ precioMin: 0 })).toBe(true);
+  /**
+   * Quedaba una prueba de "un precio mínimo de cero es un filtro": el rango de precio salió del
+   * modelo, y con él esa. Lo que decía sigue valiendo para cualquier campo que llegue vacío pero
+   * presente, y lo cubre el caso de texto.
+   */
+  it('una cadena vacía presente cuenta como filtro, porque presente es presente', () => {
+    expect(hayFiltrosActivos({ texto: '' })).toBe(true);
   });
 });

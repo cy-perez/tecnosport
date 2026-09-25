@@ -61,6 +61,14 @@ const PARES = [
   ["--color-primario", "--color-superficie", UMBRAL_TEXTO, "botón secundario y enlaces"],
   ["--color-primario", "--color-fondo", UMBRAL_TEXTO, "enlaces sobre el lienzo"],
   ["--color-sobre-acento", "--color-acento", UMBRAL_TEXTO, "CTA ámbar y contador del carrito"],
+  // Los tres pasos de la escala de ámbar de la banda de portada (`ADR-0063`). Van con el mismo
+  // `sobre-acento` que el tono 1 y no con uno propio, así que lo que hay que vigilar es justo eso:
+  // que el grafito siga alcanzando en el tono más claro. Aclarar solo puede subir el contraste
+  // contra un texto oscuro, pero el día que la escala cambie de dirección el guardián lo dirá aquí
+  // en vez de en el navegador.
+  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "botón de línea, tono 2"],
+  ["--color-sobre-acento", "--color-acento-3", UMBRAL_TEXTO, "botón de línea, tono 3"],
+  ["--color-sobre-acento", "--color-acento-4", UMBRAL_TEXTO, "botón de línea, tono 4"],
   ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie, franjas de marca y pista del visor 360"],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],

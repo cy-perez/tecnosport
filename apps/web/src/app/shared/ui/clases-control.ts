@@ -7,6 +7,14 @@
  * deshabilitado. Estaban duplicados en dos SCSS con los mismos valores, que es
  * exactamente la forma de que un día dejen de coincidir.
  *
+ * `rounded-md` entró el 24 de septiembre de 2026 y cambia el aspecto de todos
+ * los campos del sitio a la vez, que es justo el motivo de que esté aquí: los
+ * controles redondean o no redondean, no a medias según la pantalla. Es la
+ * misma decisión de `ADR-0060` —la marca corta a 45 grados y la interfaz
+ * redondea— aplicada al último sitio donde faltaba. `md` y no `lg`: `lg` es el
+ * radio de la superficie que *contiene* controles, y un campo dentro de una
+ * tarjeta con el mismo radio que la tarjeta se lee como un recorte de ella.
+ *
  * `box-border` no es opcional: el proyecto no tiene reset global —Preflight
  * está deliberadamente fuera, ver `src/tailwind.css`— y sin él el relleno
  * sumaría por fuera del 100 %. Y sin `w-full`, un `<input>` toma su ancho del
@@ -14,7 +22,7 @@
  * columnas de la misma rejilla terminaban de tamaños distintos.
  */
 export const CLASES_CONTROL =
-  'box-border w-full min-h-tactil p-12 border border-ts-borde-control ' +
+  'box-border w-full min-h-tactil p-12 rounded-md border border-ts-borde-control ' +
   'bg-ts-superficie text-ts-texto font-texto text-base ' +
   'anillo-foco ' +
   'disabled:bg-ts-superficie-alt disabled:text-ts-deshabilitado disabled:cursor-not-allowed ' +
