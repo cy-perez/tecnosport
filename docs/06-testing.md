@@ -567,6 +567,20 @@ después. Las cinco cosas pasaron de verdad y ninguna prueba las vio.
   podía verlo — se encontró recorriendo el sitio en el navegador. Los grupos
   están declarados en `cn.ts` con pruebas de regresión, y ahí hay que registrar
   cada token nuevo con nombre no numérico.
+- **La captura de puntero tampoco existe en jsdom**, y esa ausencia esconde un
+  defecto entero. `setPointerCapture` redirige al elemento que captura todos los
+  eventos que le quedan al puntero, **`click` incluido**: un arrastre que captura
+  en el `pointerdown` se come el clic de lo que haya debajo, y eso dejó sin
+  navegar el botón del carrusel de portada el 25 de septiembre de 2026. En jsdom
+  el arrastre pasa igual con captura y sin ella, así que la prueba da verde en los
+  dos casos. Se mira en el navegador registrando `pointerdown`, `pointerup` y
+  `click` y leyendo el `target` de cada uno; con el defecto puesto sale
+  `pointerdown` en el `<a>` y los otros dos en el `<div>`.
+  Lo que sí se puede probar de esa familia es el `pointercancel`, porque el evento
+  se dispara a mano: que un gesto cancelado **no decida nada** lo fija
+  `ts-carrusel-hero.spec.ts`, y también hacía falta — al arrastrar desde un enlace,
+  Chrome cancela el puntero con coordenadas que no son las del dedo y el carrusel
+  saltaba al lado contrario.
 - **El foco no se prueba en jsdom.** Las utilidades `focus-visible:` solo aplican
   cuando el navegador considera el foco "visible", y eso depende de la modalidad:
   con Tab sí, con clic en un `<input>` no siempre. Y la trampa de foco del CDK
