@@ -1,0 +1,30 @@
+<!-- La caja que se desplaza es esta, no la pagina: una barra que arrastra el documento entero deja
+     el resto del panel corrido en horizontal. La lista va en `w-max` para que el riel gris llegue
+     hasta la ultima pestaña y no se corte en el borde visible. -->
+<nav class="overflow-x-auto" [attr.aria-label]="'admin.panel.navegacion' | transloco">
+  <!-- El riel lleva sus dos fondos, uno por tema, y no es adorno: cual de las superficies "sube"
+       se invierte con el tema. En claro brilla `superficie` (blanco) sobre `superficie-alt`
+       (gris); en oscuro el orden es `fondo` < `superficie` < `superficie-alt`. Con un solo par,
+       la pestaña activa quedaria mas oscura que el riel en tema oscuro y se leeria hundida,
+       con las inactivas pareciendo la seleccionada. Es exactamente lo que le paso a
+       `ts-alternador-idioma` y lo que `docs/04-ui-marca.md` advierte que ninguna prueba
+       atrapa. El riel usa `superficie` en oscuro y no `fondo` —que es lo que usa el
+       alternador— porque esta barra se pinta sobre el lienzo de la pagina, que ya es `fondo`:
+       con ese par el riel desapareceria. -->
+  <ul
+    class="m-0 flex w-max list-none gap-4 rounded-lg bg-ts-superficie-alt p-4 oscuro:bg-ts-superficie"
+  >
+    @for (pestana of pestanas; track pestana.clave) {
+      <li>
+        <!-- `aria-current="page"` es lo que de verdad dice cual es la actual: el color y la sombra
+             no los ve quien navega con lector de pantalla. -->
+        <a
+          [class]="clasesDe(pestana)"
+          [routerLink]="destino(pestana)"
+          [attr.aria-current]="esActiva(pestana) ? 'page' : null"
+          >{{ pestana.clave | transloco }}</a
+        >
+      </li>
+    }
+  </ul>
+</nav>

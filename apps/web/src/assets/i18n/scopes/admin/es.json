@@ -57,7 +57,9 @@
     },
     "ir_a_medidas": "Medidas del paquete",
     "ir_a_clave": "Cambiar mi clave",
-    "ir_a_categorias": "Categorías"
+    "ir_a_categorias": "Categorías",
+    "ir_a_panel": "Resumen",
+    "navegacion": "Secciones del panel"
   },
   "pedidos": {
     "titulo": "Pedidos",

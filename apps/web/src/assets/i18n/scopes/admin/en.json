@@ -57,7 +57,9 @@
     },
     "ir_a_medidas": "Package measurements",
     "ir_a_clave": "Change my password",
-    "ir_a_categorias": "Categories"
+    "ir_a_categorias": "Categories",
+    "ir_a_panel": "Overview",
+    "navegacion": "Panel sections"
   },
   "pedidos": {
     "titulo": "Orders",

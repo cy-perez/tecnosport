@@ -64,172 +64,179 @@ export const adminRoutes: Routes = [
             (m) => m.IniciarSesionAdminPage,
           ),
       },
+      // El marco con la barra de secciones, y con el `adminGuard` una sola vez. Las nueve
+      // pantallas de abajo lo declaraban cada una por su cuenta —la misma condición escrita nueve
+      // veces— y `iniciar-sesion` se queda fuera a propósito: es hermana de este nodo, no hija,
+      // porque ni tiene sesión que proteger ni sitio a donde llevar desde las pestañas.
       {
-        path: 'panel',
+        path: '',
         canActivate: [adminGuard],
-        // El panel necesita el puerto de productos por el aviso de variantes sin medir. Es la
-        // única consulta que hace, y va aquí y no en `productos` porque el aviso vive en esta
-        // pantalla: el enlace a la lista es lo que lleva a la otra rama, que trae el suyo.
-        providers: [
-          { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
-        ],
-        loadComponent: () => import('./panel/panel-admin.page').then((m) => m.PanelAdminPage),
-      },
-      {
-        // Sin proveedores propios: lo unico que necesita es `SesionStore`, que es de raiz.
-        path: 'clave',
-        canActivate: [adminGuard],
-        loadComponent: () =>
-          import('./clave/cambiar-clave-admin.page').then((m) => m.CambiarClaveAdminPage),
-      },
-      {
-        path: 'pedidos',
-        canActivate: [adminGuard],
-        // Los paneles de retracto, garantía y reversión viven dentro de la fila expandida de esta
-        // lista, así que sus puertos se proveen en la misma ruta y no en una propia.
-        providers: [
-          { provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio },
-          { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
-          { provide: REPOSITORIO_GARANTIAS, useClass: GarantiasHttpRepositorio },
-          { provide: REPOSITORIO_REVERSIONES, useClass: ReversionesHttpRepositorio },
-        ],
-        loadComponent: () =>
-          import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
-            (m) => m.ListaPedidosAdminPage,
-          ),
-      },
-      {
-        path: 'atencion',
-        canActivate: [adminGuard],
-        providers: [{ provide: REPOSITORIO_ATENCION, useClass: AtencionHttpRepositorio }],
-        loadComponent: () =>
-          import('./atencion/presentation/bandeja/bandeja-atencion.page').then(
-            (m) => m.BandejaAtencionPage,
-          ),
-      },
-      {
-        path: 'envios',
-        canActivate: [adminGuard],
-        providers: [
-          { provide: REPOSITORIO_REVISION_ENVIOS, useClass: RevisionEnviosHttpRepositorio },
-        ],
-        loadComponent: () =>
-          import('./envios/presentation/bandeja/bandeja-revision.page').then(
-            (m) => m.BandejaRevisionPage,
-          ),
-      },
-      {
-        path: 'categorias',
-        canActivate: [adminGuard],
-        // Los dos puertos: esta pantalla lee el árbol entero y lo escribe. El de la vitrina hace
-        // falta porque el formulario de la pantalla ofrece las madres posibles, que salen del
-        // mismo listado.
-        providers: [
-          { provide: REPOSITORIO_CATEGORIAS_ADMIN, useClass: CategoriasAdminHttpRepositorio },
-        ],
-        loadComponent: () =>
-          import('./categorias/presentation/categorias-admin.page').then(
-            (m) => m.CategoriasAdminPage,
-          ),
-      },
-      {
-        path: 'marcas',
-        canActivate: [adminGuard],
-        // Solo el puerto de admin: esta pantalla lista y crea. El de la vitrina lo siguen
-        // proveyendo las rutas del formulario de producto, que es donde hace falta leer marcas.
-        providers: [{ provide: REPOSITORIO_MARCAS_ADMIN, useClass: MarcasAdminHttpRepositorio }],
-        loadComponent: () =>
-          import('./marcas/presentation/marcas-admin.page').then((m) => m.MarcasAdminPage),
-      },
-      {
-        path: 'productos',
-        canActivate: [adminGuard],
-        providers: [
-          { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
-        ],
+        loadComponent: () => import('./marco/marco-admin.page').then((m) => m.MarcoAdminPage),
         children: [
           {
-            path: '',
-            loadComponent: () =>
-              import('./productos/presentation/lista/lista-productos-admin.page').then(
-                (m) => m.ListaProductosAdminPage,
-              ),
-          },
-          {
-            path: 'sin-medir',
-            loadComponent: () =>
-              import('./productos/presentation/sin-medir/variantes-sin-medir-admin.page').then(
-                (m) => m.VariantesSinMedirAdminPage,
-              ),
-          },
-          {
-            path: 'medidas',
-            loadComponent: () =>
-              import('./productos/presentation/medidas/medidas-admin.page').then(
-                (m) => m.MedidasAdminPage,
-              ),
-          },
-          {
-            path: 'existencias',
-            loadComponent: () =>
-              import('./productos/presentation/existencias/existencias-admin.page').then(
-                (m) => m.ExistenciasAdminPage,
-              ),
-          },
-          {
-            path: 'crear',
+            path: 'panel',
+            // El panel necesita el puerto de productos por el aviso de variantes sin medir. Es la
+            // única consulta que hace, y va aquí y no en `productos` porque el aviso vive en esta
+            // pantalla: el enlace a la lista es lo que lleva a la otra rama, que trae el suyo.
             providers: [
-              // Los del panel y no los de la vitrina: el endpoint público solo devuelve
-              // marcas y categorías con productos publicados, así que el desplegable no
-              // ofrecería nunca aquella a la que hay que cargarle el primero.
-              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
-              { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+              { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+            ],
+            loadComponent: () => import('./panel/panel-admin.page').then((m) => m.PanelAdminPage),
+          },
+          {
+            // Sin proveedores propios: lo unico que necesita es `SesionStore`, que es de raiz.
+            path: 'clave',
+            loadComponent: () =>
+              import('./clave/cambiar-clave-admin.page').then((m) => m.CambiarClaveAdminPage),
+          },
+          {
+            path: 'pedidos',
+            // Los paneles de retracto, garantía y reversión viven dentro de la fila expandida de esta
+            // lista, así que sus puertos se proveen en la misma ruta y no en una propia.
+            providers: [
+              { provide: REPOSITORIO_PEDIDOS_ADMIN, useClass: PedidosAdminHttpRepositorio },
+              { provide: REPOSITORIO_RETRACTOS, useClass: RetractosHttpRepositorio },
+              { provide: REPOSITORIO_GARANTIAS, useClass: GarantiasHttpRepositorio },
+              { provide: REPOSITORIO_REVERSIONES, useClass: ReversionesHttpRepositorio },
             ],
             loadComponent: () =>
-              import('./productos/presentation/crear/crear-producto-admin.page').then(
-                (m) => m.CrearProductoAdminPage,
+              import('./pedidos/presentation/lista/lista-pedidos-admin.page').then(
+                (m) => m.ListaPedidosAdminPage,
               ),
           },
           {
-            path: ':id/editar',
+            path: 'atencion',
+            providers: [{ provide: REPOSITORIO_ATENCION, useClass: AtencionHttpRepositorio }],
+            loadComponent: () =>
+              import('./atencion/presentation/bandeja/bandeja-atencion.page').then(
+                (m) => m.BandejaAtencionPage,
+              ),
+          },
+          {
+            path: 'envios',
             providers: [
-              // Los del panel y no los de la vitrina: el endpoint público solo devuelve
-              // marcas y categorías con productos publicados, así que el desplegable no
-              // ofrecería nunca aquella a la que hay que cargarle el primero.
-              { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
-              { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+              { provide: REPOSITORIO_REVISION_ENVIOS, useClass: RevisionEnviosHttpRepositorio },
             ],
             loadComponent: () =>
-              import('./productos/presentation/editar/editar-producto-admin.page').then(
-                (m) => m.EditarProductoAdminPage,
+              import('./envios/presentation/bandeja/bandeja-revision.page').then(
+                (m) => m.BandejaRevisionPage,
               ),
           },
           {
-            path: ':productoId/captura-360',
-            // Scope propio y no una sección más de `admin`: el asistente es su propio bundle y
-            // sus textos no le hacen falta a nadie más del panel.
+            path: 'categorias',
+            // Los dos puertos: esta pantalla lee el árbol entero y lo escribe. El de la vitrina hace
+            // falta porque el formulario de la pantalla ofrece las madres posibles, que salen del
+            // mismo listado.
             providers: [
-              provideTranslocoScope('captura360'),
-              { provide: ALMACEN_LOCAL_DE_CAPTURAS, useClass: AlmacenLocalIndexedDb },
-              { provide: CAMARA, useClass: CamaraNavegador },
-              { provide: PROCESADOR_DE_FOTOGRAMAS, useClass: ProcesadorCanvas },
-              { provide: REPOSITORIO_SETS_ROTACION, useClass: SetsRotacionHttpRepositorio },
-              { provide: SENSOR_ORIENTACION, useClass: SensorOrientacionNavegador },
-              { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
-              CapturaStore,
+              { provide: REPOSITORIO_CATEGORIAS_ADMIN, useClass: CategoriasAdminHttpRepositorio },
             ],
-            data: { seo: { clave: 'seo.captura360' } },
-            resolve: { _i18nCaptura: () => Promise.all([precargarScopeI18n('captura360')]) },
             loadComponent: () =>
-              import('../captura360/presentation/captura-360.page').then((m) => m.Captura360Page),
+              import('./categorias/presentation/categorias-admin.page').then(
+                (m) => m.CategoriasAdminPage,
+              ),
           },
           {
-            path: ':productoId/variantes/crear',
-            providers: [{ provide: REPOSITORIO_ATRIBUTOS, useClass: AtributosHttpRepositorio }],
+            path: 'marcas',
+            // Solo el puerto de admin: esta pantalla lista y crea. El de la vitrina lo siguen
+            // proveyendo las rutas del formulario de producto, que es donde hace falta leer marcas.
+            providers: [
+              { provide: REPOSITORIO_MARCAS_ADMIN, useClass: MarcasAdminHttpRepositorio },
+            ],
             loadComponent: () =>
-              import('./productos/presentation/variantes/agregar-variante-admin.page').then(
-                (m) => m.AgregarVarianteAdminPage,
-              ),
+              import('./marcas/presentation/marcas-admin.page').then((m) => m.MarcasAdminPage),
+          },
+          {
+            path: 'productos',
+            providers: [
+              { provide: REPOSITORIO_PRODUCTOS_ADMIN, useClass: ProductosAdminHttpRepositorio },
+            ],
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./productos/presentation/lista/lista-productos-admin.page').then(
+                    (m) => m.ListaProductosAdminPage,
+                  ),
+              },
+              {
+                path: 'sin-medir',
+                loadComponent: () =>
+                  import('./productos/presentation/sin-medir/variantes-sin-medir-admin.page').then(
+                    (m) => m.VariantesSinMedirAdminPage,
+                  ),
+              },
+              {
+                path: 'medidas',
+                loadComponent: () =>
+                  import('./productos/presentation/medidas/medidas-admin.page').then(
+                    (m) => m.MedidasAdminPage,
+                  ),
+              },
+              {
+                path: 'existencias',
+                loadComponent: () =>
+                  import('./productos/presentation/existencias/existencias-admin.page').then(
+                    (m) => m.ExistenciasAdminPage,
+                  ),
+              },
+              {
+                path: 'crear',
+                providers: [
+                  // Los del panel y no los de la vitrina: el endpoint público solo devuelve
+                  // marcas y categorías con productos publicados, así que el desplegable no
+                  // ofrecería nunca aquella a la que hay que cargarle el primero.
+                  { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+                  { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                ],
+                loadComponent: () =>
+                  import('./productos/presentation/crear/crear-producto-admin.page').then(
+                    (m) => m.CrearProductoAdminPage,
+                  ),
+              },
+              {
+                path: ':id/editar',
+                providers: [
+                  // Los del panel y no los de la vitrina: el endpoint público solo devuelve
+                  // marcas y categorías con productos publicados, así que el desplegable no
+                  // ofrecería nunca aquella a la que hay que cargarle el primero.
+                  { provide: REPOSITORIO_CATEGORIAS, useClass: CategoriasAdminHttpRepositorio },
+                  { provide: REPOSITORIO_MARCAS, useClass: MarcasAdminHttpRepositorio },
+                ],
+                loadComponent: () =>
+                  import('./productos/presentation/editar/editar-producto-admin.page').then(
+                    (m) => m.EditarProductoAdminPage,
+                  ),
+              },
+              {
+                path: ':productoId/captura-360',
+                // Scope propio y no una sección más de `admin`: el asistente es su propio bundle y
+                // sus textos no le hacen falta a nadie más del panel.
+                providers: [
+                  provideTranslocoScope('captura360'),
+                  { provide: ALMACEN_LOCAL_DE_CAPTURAS, useClass: AlmacenLocalIndexedDb },
+                  { provide: CAMARA, useClass: CamaraNavegador },
+                  { provide: PROCESADOR_DE_FOTOGRAMAS, useClass: ProcesadorCanvas },
+                  { provide: REPOSITORIO_SETS_ROTACION, useClass: SetsRotacionHttpRepositorio },
+                  { provide: SENSOR_ORIENTACION, useClass: SensorOrientacionNavegador },
+                  { provide: PANTALLA_DESPIERTA, useClass: PantallaDespiertaNavegador },
+                  CapturaStore,
+                ],
+                data: { seo: { clave: 'seo.captura360' } },
+                resolve: { _i18nCaptura: () => Promise.all([precargarScopeI18n('captura360')]) },
+                loadComponent: () =>
+                  import('../captura360/presentation/captura-360.page').then(
+                    (m) => m.Captura360Page,
+                  ),
+              },
+              {
+                path: ':productoId/variantes/crear',
+                providers: [{ provide: REPOSITORIO_ATRIBUTOS, useClass: AtributosHttpRepositorio }],
+                loadComponent: () =>
+                  import('./productos/presentation/variantes/agregar-variante-admin.page').then(
+                    (m) => m.AgregarVarianteAdminPage,
+                  ),
+              },
+            ],
           },
         ],
       },

@@ -5,59 +5,9 @@
     <p>{{ 'admin.panel.bienvenida' | transloco: { rol: sesion.rol } }}</p>
   }
 
-  <!--
-    Fila propia para los destinos, y el cierre de sesion aparte. Con los tres enlaces en linea y el
-    boton detras, el host de `ts-boton` —que es `display: inline`— se montaba encima del ultimo
-    enlace: el margen inferior de los `inline-block` no separa a un hermano en la misma linea. Se
-    veia solo en el navegador, con los tres enlaces puestos; con dos cabia por poco.
-  -->
-  <nav class="mb-24 flex flex-wrap gap-16">
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../pedidos"
-      >{{ 'admin.panel.ir_a_pedidos' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../productos"
-      >{{ 'admin.panel.ir_a_productos' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../marcas"
-      >{{ 'admin.panel.ir_a_marcas' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../categorias"
-      >{{ 'admin.panel.ir_a_categorias' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../atencion"
-      >{{ 'admin.panel.ir_a_atencion' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../envios"
-      >{{ 'admin.panel.ir_a_envios' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../productos/existencias"
-      >{{ 'admin.panel.ir_a_existencias' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../productos/medidas"
-      >{{ 'admin.panel.ir_a_medidas' | transloco }}</a
-    >
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
-      routerLink="../clave"
-      >{{ 'admin.panel.ir_a_clave' | transloco }}</a
-    >
-  </nav>
+  <!-- Los enlaces a las secciones vivian aqui y se fueron a `marco/pestanas-admin`: una lista de
+       destinos que solo existe en la pantalla de la que se sale es un menu, no unas pestañas. Lo
+       que se queda en el panel es lo que solo el panel sabe — los dos vigilantes de abajo. -->
 
   <!-- Una sola region viva permanente para los dos avisos, y envolviendo en vez de siendo la
        caja: un `role="status"` que nace ya lleno no se anuncia (medido con NVDA, ver
@@ -100,7 +50,7 @@
     }
   </div>
 
-  <ts-boton variante="secundario" (click)="cerrarSesion()">
+  <ts-boton variante="acento" (click)="cerrarSesion()">
     {{ 'admin.panel.cerrar_sesion' | transloco }}
   </ts-boton>
 </section>
