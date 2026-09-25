@@ -681,84 +681,140 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   tenga su primer consumidor.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 
-## La banda de portada
+## El carrusel de portada
 
 Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
-entera. Vive en `features/catalogo/presentation/portada/hero/`.
+entera de borde a borde. Vive en `features/catalogo/presentation/portada/hero/`,
+en `ts-carrusel-hero`.
 
-**Un botón por línea de negocio, los cuatro en el mismo ámbar y del mismo
-tamaño** (`ADR-0064`). El tamaño lo iguala la rejilla —`grid-cols-2`, celdas
-iguales— y no el relleno: con `flex-wrap`, cada botón tomaba el ancho de su
-etiqueta y "Ver bolsos" era la mitad de "Ver calzado deportivo". La lista y las
-clases viven en `ts-hero.ts` y son **una sola cadena para los cuatro**: cuatro
-copias son cuatro sitios donde se puede caer el `anillo-foco-sobre-acento`. El
-orden de la banda —ropa, calzado, bolsos, tecnología— no es el canónico de
-`LINEAS`: qué línea encabeza la portada lo decide el negocio, no el modelo.
+**Cuatro piezas, una por línea de negocio**, que pasan solas cada cinco segundos.
+Sustituyó el 25 de septiembre de 2026 a la banda de una sola fotografía con
+cuatro botones bajo el mismo titular: el referente es gotrendier.com.co, donde la
+imagen sangra hasta el borde de la ventana, y el del carrusel es el bloque "With
+indicators" de TailAdmin. El orden —ropa, calzado, bolsos, tecnología— no es el
+canónico de `LINEAS`: qué línea encabeza la portada lo decide el negocio, no el
+modelo.
 
-**El párrafo de apoyo dice qué se vende, no cómo se compra.** Las condiciones
-—envíos, contraentrega, medios de pago, garantía legal— las lleva la tira de
-confianza que va justo debajo, y hasta el 24 de septiembre de 2026 estaban dichas
-dos veces, palabra por palabra, en los dos sitios.
+**Sin Swiper.** El bloque de referencia está montado sobre esa librería, y no
+entra: cada dependencia nueva es deuda, y lo que hace falta de ella —cuatro
+diapositivas, unas viñetas y un temporizador— son cincuenta líneas de señales.
+Lo que sí se copia es el aspecto: viñetas tipo píldora abajo al centro, la activa
+tres veces más ancha, y el paso cada cinco segundos.
 
-**La tira son cuatro sellos en rejilla**, no tres en un `flex-wrap`: entró
-"Diversas opciones de pago" el 25 de septiembre de 2026 y el cuarto caía solo a
-una segunda línea, colgando bajo el primero. Dos columnas en teléfono y cuatro
-desde tableta, con el icono alineado a la primera línea del texto (`items-start`
-más `mt-4`) porque a dos columnas hay sellos que ocupan dos líneas. Los cuatro
-iconos son de Lucide, con el mismo trazo y el mismo tamaño: **un emoji no vale**
-aunque se pida —lo dibuja la fuente del sistema, cambia de forma y de color en
-cada plataforma, y la fila deja de leerse como una familia—.
+**El arte lo entrega el ZIP `hero-tecnosport/`**, con cada pieza en dos
+versiones: `con-texto/`, con el titular y el botón incrustados en los píxeles, y
+`limpio/`, sin ellos. Se usa `limpio/` y el texto lo pone el HTML, que es lo que
+recomienda el propio `LEEME.md` del ZIP y lo que exige la regla dura #4 — texto
+dentro de una imagen no se traduce, no lo lee un lector de pantalla, no escala y,
+en el caso del botón, parece pulsable sin serlo.
 
-**Tres tokens nuevos, y ninguno es una excepción a la regla dura #2.** El kit que
-entregó diseño el 18 de septiembre de 2026 traía un `.scss` de componente con
-treinta y tantos literales —`13px`, `52px`, `clamp(40px, 5.4vw, 72px)`,
-`rgb(255 255 255 / 62%)`—. Lo que de verdad hacía falta eran tres longitudes, y
-esas entraron por donde entran las longitudes:
+**Un solo juego de arte para los dos temas.** El ZIP trae `claro/` y `oscuro/`, y
+entre las dos carpetas solo cambia el color del lienzo: `#1B1F26` contra
+`#191E26`, dos unidades de rojo y una de verde. Servir las dos costaba caro de
+verdad —un `<img>` con `display:none` se descarga igual en Chrome, o sea el doble
+de bytes justo en la imagen del LCP— y elegir en tiempo de ejecución no se puede,
+porque el servidor no conoce el tema mientras renderiza. Solo se publica el juego
+claro; la franja que rodea al arte sí cambia de tema, porque es `bg-ts-marca`.
 
-| Token | Valor | Qué es |
+### Una utilidad donde había tres
+
+`corte-hero` y `chaflan-hero` se fueron con la banda anterior. Dibujaban a mano el
+corte a 45° de la esquina inferior derecha y el chaflán del marco de la foto, y el
+carrusel no tiene marco que chaflanar. **La firma de la marca no se perdió**: la
+traen los propios archivos, cuya tarjeta de producto ya viene cortada a 34 px en
+las dos esquinas. Un `clip-path` de cinco pares de coordenadas que nadie aplica es
+peor que ninguno, porque parece vigente al leerlo.
+
+`alto-hero` sobrevive con otro nombre y con el signo cambiado: es
+`alto-carrusel`, y es un **máximo** donde era un mínimo.
+
+| Token | Valor | Qué es hoy |
 |---|---|---|
-| `--hero-corte` | 120 px | El corte a 45° de la esquina inferior derecha de la banda |
-| `--hero-alto-min` | 620 px | El alto mínimo, usado como `min(token, 82vh)` |
-| `--chaflan-hero` | 72 px | El chaflán del marco de la foto |
+| `--hero-alto-min` | 620 px | El techo del carrusel, usado como `max(min(token, 70vh))` |
+| `--hero-corte` | 120 px | Sin consumidor desde el carrusel |
+| `--chaflan-hero` | 72 px | Sin consumidor desde el carrusel |
 
-Los tres salen de `tokens.json` (`hero_px` y `chaflan_px.hero`) y se usan desde
-tres utilidades de `tailwind.css`: `corte-hero`, `alto-hero` y `chaflan-hero`.
-No hay `.scss` de componente: `ADR-0020`.
+La diferencia entre mínimo y máximo es la que hay entre las dos piezas: la banda
+vieja era texto sobre color y necesitaba un alto que llenara la primera pantalla;
+el carrusel es una imagen de 1440 × 592 a todo el ancho, y a 1900 px de ventana su
+proporción natural pediría 780 px de alto, más que la pantalla entera de un
+portátil. Se recorta con `object-cover`, y el recorte es seguro porque el arte
+tiene margen: la tarjeta de producto ocupa de y 48 a y 544 de sus 592, así que al
+techo de 620 se pierden cuatro filas por arriba y cinco por abajo —medido en el
+navegador leyendo los píxeles, no estimado—.
 
-**El corte y el chaflán se encogen solos** con `min(token, 18vw)` y
-`min(token, 12vw)`. El kit lo resolvía con tres media queries; un `min()` hace lo
-mismo sin puntos de quiebre y sin escalones — en un teléfono de 390 px el corte
-baja a ~70 px en vez de comerse la esquina entera.
+### Dos formas, no dos tamaños
 
-### Dos cosas que solo se vieron en el navegador
+La pieza ancha deja libre la mitad izquierda para el texto. A 390 px de ventana
+esa mitad mide 175 px y el titular se vuelve una mancha, así que **en teléfono va
+la tarjeta cuadrada** de 1000 × 1000 —el mismo set de producto, sin la banda— y el
+texto debajo, no encima.
 
-**1. `chaflan-hero` no podía componerse con `chaflan`.** La idea natural era
-`class="chaflan chaflan-hero"`, con la segunda cambiando solo `--ch`. No
-funciona: `.chaflan` vive en `tokens.css`, **fuera de toda capa**, y una
-declaración sin capa le gana a cualquier utilidad de Tailwind aunque el selector
-empate. El marco salía con el chaflán de un botón, `npm run clases` daba la clase
-por buena —existe— y no hacía nada. `chaflan-hero` repite el `clip-path` entero y
-se usa sola.
+Eso se resuelve con `<picture>` y un `<source media>`, **no con
+`NgOptimizedImage`**, que `apps/web/CLAUDE.md` pide "siempre". Es la excepción que
+esa regla no contempla: `NgOptimizedImage` no admite dirección de arte, y aquí no
+son dos tamaños de la misma foto sino dos composiciones distintas. La alternativa
+—dos `<img>` y tapar uno con CSS— descarga los dos. El único literal es el `media`,
+y vive con los otros de su clase en `core/imagenes/tamanos-de-imagen.ts`, por el
+mismo motivo: lo lee el navegador antes de aplicar una sola hoja de estilos, así
+que no puede referirse a `--breakpoint-desde-movil`.
 
-**2. La banda va en `--color-marca`, no en `--color-primario`.** En tema oscuro
+El `sizes` es `100vw` en las dos formas, que es un porcentaje de la ventana y no
+un píxel: ahí no hace falta ningún permiso de la regla dura #2. Por eso desapareció
+`TAMANOS_HERO`, que existía cuando la foto ocupaba media rejilla de `--ancho-max`.
+
+### Las viñetas y el movimiento
+
+Las viñetas salen de `--color-sobre-marca` en los dos estados, y **no cambian con
+el tema** aunque vivan encima de una imagen: el arte es oscuro siempre. La
+inactiva fue `bg-ts-marca-alt` durante un rato y daba **1,38:1** contra el fondo
+del arte, por debajo del 3:1 que WCAG 1.4.11 pide de un control; al 50 % del blanco
+sube a 4,6:1 y se sigue leyendo como "apagada" frente a la activa.
+
+Son botones con `aria-current`, **no `role="tablist"` con `role="tab"`**: el patrón
+de pestañas de la APG obliga además a que cada diapositiva sea un `tabpanel`
+etiquetado por su pestaña y a mover el foco con las flechas dentro de la tira, y a
+medio implementar anuncia una estructura que no existe.
+
+Del patrón de carrusel de la APG sí se toma todo lo demás:
+`aria-roledescription="carousel"` con su nombre, un `group` por diapositiva con su
+«N de 4», `inert` en las tres que no tocan —para que su botón salga del orden de
+tabulación—, y `aria-live` en `off` mientras rota sola y `polite` cuando alguien la
+detuvo. **El movimiento se detiene con el puntero encima y con el foco dentro**, y
+con menos movimiento pedido no arranca siquiera: ahí no basta con acortar la
+animación, hay que no programar el temporizador.
+
+### La tira de confianza
+
+Los cuatro sellos van **bajo el carrusel y no dentro de cada pieza**: son ciertos
+para las cuatro líneas, así que repetirlos cuatro veces sería decir cuatro veces lo
+mismo. Son cuatro en rejilla, no tres en un `flex-wrap`: entró "Diversas opciones
+de pago" el 25 de septiembre de 2026 y el cuarto caía solo a una segunda línea,
+colgando bajo el primero. Dos columnas en teléfono y cuatro desde tableta, con el
+icono alineado a la primera línea del texto (`items-start` más `mt-4`) porque a dos
+columnas hay sellos que ocupan dos líneas. Los cuatro iconos son de Lucide, con el
+mismo trazo y el mismo tamaño: **un emoji no vale** aunque se pida —lo dibuja la
+fuente del sistema, cambia de forma y de color en cada plataforma, y la fila deja
+de leerse como una familia—.
+
+**El párrafo de apoyo de cada pieza dice qué se vende, no cómo se compra.** Las
+condiciones —envíos, contraentrega, medios de pago, garantía legal— las lleva esta
+tira, y hasta el 24 de septiembre de 2026 estaban dichas dos veces, palabra por
+palabra, en los dos sitios.
+
+### Una cosa que solo se vio en el navegador
+
+**La banda va en `--color-marca`, no en `--color-primario`.** En tema oscuro
 `primario` **es el ámbar**: la banda entera se teñía y el botón de acento
 desaparecía dentro de ella. Es exactamente lo que este documento ya decía en
 "Modo oscuro" —las franjas grandes no se vuelven ámbar— y el pie ya usaba el par
-correcto, `bg-ts-marca` con `text-ts-sobre-marca`. Ninguna prueba lo habría
-dicho.
+correcto, `bg-ts-marca` con `text-ts-sobre-marca`. Ninguna prueba lo habría dicho.
 
-### La foto
-
-1200×900, WebP con JPEG de respaldo, en `public/imagenes/portada/`. Es la única
-imagen de la portada con `priority`: al entrar ella, las cuatro tarjetas de
-novedades lo pierden — priorizar cinco imágenes es no priorizar ninguna.
-
-**Se recortó del archivo que entregó el negocio**, y el motivo vale para la
-próxima vez: el archivo era un banner terminado, con el titular, el subtítulo y un
-botón "COMPRAR AHORA" incrustados en los píxeles. Texto dentro de una imagen no se
-traduce, no lo lee un lector de pantalla, no escala en un teléfono y no es un
-encabezado para nada; el botón, además, parecía pulsable sin serlo. Se recortó la
-fotografía —la escena, sin la franja de texto— y el texto lo pone el HTML.
+(La otra que vivía aquí era por qué `chaflan-hero` no podía componerse con
+`chaflan` —`.chaflan` vive en `tokens.css`, fuera de toda capa, y le gana a
+cualquier utilidad de Tailwind aunque el selector empate—. Se queda escrita
+aunque la utilidad ya no exista: el mecanismo sigue ahí para la próxima que lo
+intente.)
 
 ### Lo que el texto puede decir
 
@@ -775,6 +831,10 @@ traía el kit se revisaron una por una contra lo que el sistema puede sostener:
 
 Lo que queda —envío cotizado, contraentrega donde esté disponible, garantía
 legal— es lo mismo que prometen los términos publicados.
+
+El copy de las cuatro piezas sale de la tabla de `hero-tecnosport/LEEME.md` y
+pasa el mismo filtro: dice qué hay en cada línea y no promete plazo, precio ni
+cobertura.
 
 ## Imágenes del catálogo
 

@@ -107,47 +107,48 @@ describe('PortadaPage', () => {
   });
 
   /**
-   * El titular de la banda es el h1 de la portada, y sale de Transloco. Importa porque el archivo
-   * que entregó diseño traía ese mismo titular <b>incrustado en los píxeles de la imagen</b>: ahí no
-   * lo traduce nadie, no lo lee un lector de pantalla y no es un encabezado para nada.
+   * El titular de la primera pieza del carrusel es el h1 de la portada, y sale de Transloco.
+   * Importa porque el arte que entregó diseño trae ese mismo titular <b>incrustado en los píxeles
+   * de la imagen</b> —la carpeta `con-texto/` del ZIP—: ahí no lo traduce nadie, no lo lee un
+   * lector de pantalla y no es un encabezado para nada. Se usa la pieza `limpio/` y el texto lo
+   * pone el HTML.
    */
   it('el titular de la banda es texto de verdad, no parte de la imagen', async () => {
     await renderPortada();
 
     const titulo = screen.getByRole('heading', { level: 1 });
-    expect(titulo.textContent?.trim()).toBe('Todo lo que necesitas para moverte.');
+    expect(titulo.textContent?.trim()).toBe('Vístete para moverte');
   });
 
   /**
-   * Un botón por línea de negocio, cada uno a su rejilla ya filtrada.
+   * Que la banda ofrezca las cuatro líneas, cada una a su rejilla filtrada, lo comprueba
+   * `ts-carrusel-hero.spec.ts` con los cuatro `href`. Aquí solo se afirma que la portada monta el
+   * carrusel: repetir los cuatro destinos en las dos pruebas es dos sitios que actualizar cuando
+   * cambie uno.
    *
-   * Hasta el 24 de septiembre de 2026 eran dos —"Ver el catálogo" y "Ver tecnología"— y la banda
-   * no decía qué se vende: había que entrar al catálogo para enterarse. Se comprueban los cuatro
-   * `href` y no que existan cuatro enlaces, porque el fallo que importa es el silencioso: un tono
-   * copiado de la línea de al lado se lleva el `queryParams` con él.
+   * Se busca **dentro** del carrusel y no en la página entera: las baldosas de "Nuestras líneas"
+   * llevan a esos mismos cuatro destinos, así que un `getAllByRole` global devuelve ocho enlaces y
+   * la prueba pasaría o fallaría por el motivo equivocado.
    */
-  it.each([
-    ['Ver ropa', '/es/productos?linea=ROPA'],
-    ['Ver calzado deportivo', '/es/productos?linea=CALZADO'],
-    ['Ver bolsos', '/es/productos?linea=BOLSOS'],
-    ['Ver tecnología', '/es/productos?linea=TECNOLOGIA'],
-  ])('la banda lleva a la línea de %s', async (nombre, destino) => {
-    await renderPortada();
+  it('monta el carrusel con las cuatro piezas del catálogo', async () => {
+    const { container } = await renderPortada();
 
-    expect(screen.getByRole('link', { name: nombre }).getAttribute('href')).toBe(destino);
+    const carrusel = container.querySelector('ts-carrusel-hero');
+    expect(carrusel).toBeTruthy();
+    expect(carrusel!.querySelectorAll('a[href^="/es/productos?linea="]')).toHaveLength(4);
   });
 
   /**
-   * La foto de la banda es la candidata a LCP, así que es la única con `priority` — y las cuatro
-   * novedades, que lo llevaban cuando la portada no tenía imagen de hero, lo pierden. Priorizar
-   * cinco imágenes es no priorizar ninguna.
+   * La primera pieza del carrusel es la candidata a LCP, así que es la única con `fetchpriority` —
+   * y las cuatro novedades, que lo llevaban cuando la portada no tenía imagen de hero, lo pierden.
+   * Priorizar cinco imágenes es no priorizar ninguna.
    */
-  it('solo la foto de la banda va priorizada', async () => {
+  it('solo la primera pieza de la banda va priorizada', async () => {
     const { container } = await renderPortada();
 
     const conPrioridad = container.querySelectorAll('img[fetchpriority="high"]');
     expect(conPrioridad).toHaveLength(1);
-    expect(conPrioridad[0].getAttribute('alt')).toContain('bolsos');
+    expect(conPrioridad[0].getAttribute('alt')).toContain('prendas deportivas');
   });
 
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {

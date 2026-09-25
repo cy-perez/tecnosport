@@ -73,23 +73,48 @@
     "ver_todo": "See the full catalog",
     "sin_novedades": "No published products yet.",
     "hero": {
-      "eyebrow": "A shop in Medellín",
-      "titular": "Everything you need to keep moving.",
-      "apoyo": "Tech, bags, sportswear and footwear in one place, with shipping across the country.",
-      "cta": {
-        "ropa": "Browse clothing",
-        "calzado": "Browse sports footwear",
-        "bolsos": "Browse bags",
-        "tecnologia": "Browse technology"
+      "carrusel": "Featured catalog highlights",
+      "slide_n": "Slide {{n}} of {{total}}",
+      "indicadores": "Go to a catalog highlight",
+      "slides": {
+        "ropa": {
+          "eyebrow": "Sportswear · women and men",
+          "titular": "Dress to move",
+          "apoyo": "Tops, leggings, skirts and shorts to train, run and go out.",
+          "cta": "Browse clothing",
+          "indicador": "Clothing",
+          "alt": "Five pieces of women's and men's sportswear on the catalog's studio background"
+        },
+        "calzado": {
+          "eyebrow": "Sports footwear",
+          "titular": "Shoes for every pace",
+          "apoyo": "Running, training and street: find the pair that matches your stride.",
+          "cta": "Browse sports footwear",
+          "indicador": "Sports footwear",
+          "alt": "Five pairs of sports shoes on the catalog's studio background"
+        },
+        "bolsos": {
+          "eyebrow": "Bags",
+          "titular": "Carry it all with you",
+          "apoyo": "Handbags, crossbody bags and backpacks for the gym, the office and travel.",
+          "cta": "Browse bags",
+          "indicador": "Bags",
+          "alt": "Three bags — a handbag, a crossbody bag and a backpack — on the catalog's studio background"
+        },
+        "tecnologia": {
+          "eyebrow": "Technology",
+          "titular": "New, sealed and unactivated",
+          "apoyo": "Phones, tablets, watches, headphones, consoles, computers, projectors and speakers.",
+          "cta": "Browse technology",
+          "indicador": "Technology",
+          "alt": "A phone, a smartwatch and a pair of headphones on the catalog's studio background"
+        }
       },
       "confianza": {
         "envio": "Shipping across the country",
         "contraentrega": "Cash on delivery available",
         "pago": "Several ways to pay",
         "garantia": "Statutory warranty on everything"
-      },
-      "imagen": {
-        "alt": "Two people with bags, a laptop, a phone, a tablet, a speaker and headphones on a table, on a rooftop at sunset"
       }
     }
   },

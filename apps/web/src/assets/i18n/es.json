@@ -73,23 +73,48 @@
     "ver_todo": "Ver todo el catálogo",
     "sin_novedades": "Todavía no hay productos publicados.",
     "hero": {
-      "eyebrow": "Tienda en Medellín",
-      "titular": "Todo lo que necesitas para moverte.",
-      "apoyo": "Tecnología, bolsos, ropa y calzado deportivo en un solo lugar con envío a todo el país.",
-      "cta": {
-        "ropa": "Ver ropa",
-        "calzado": "Ver calzado deportivo",
-        "bolsos": "Ver bolsos",
-        "tecnologia": "Ver tecnología"
+      "carrusel": "Piezas destacadas del catálogo",
+      "slide_n": "Pieza {{n}} de {{total}}",
+      "indicadores": "Ir a una pieza del catálogo",
+      "slides": {
+        "ropa": {
+          "eyebrow": "Ropa deportiva · dama y caballero",
+          "titular": "Vístete para moverte",
+          "apoyo": "Blusas, licras, faldas y pantalonetas para entrenar, correr y salir.",
+          "cta": "Ver ropa",
+          "indicador": "Ropa deportiva",
+          "alt": "Cinco prendas deportivas de dama y caballero sobre el fondo de estudio del catálogo"
+        },
+        "calzado": {
+          "eyebrow": "Calzado deportivo",
+          "titular": "Tenis para cada ritmo",
+          "apoyo": "Running, entrenamiento y calle: encuentra el par que va con tu paso.",
+          "cta": "Ver calzado deportivo",
+          "indicador": "Calzado deportivo",
+          "alt": "Cinco pares de tenis deportivos sobre el fondo de estudio del catálogo"
+        },
+        "bolsos": {
+          "eyebrow": "Bolsos",
+          "titular": "Lleva todo contigo",
+          "apoyo": "De mano, manos libres y morrales para el gimnasio, la oficina y el viaje.",
+          "cta": "Ver bolsos",
+          "indicador": "Bolsos",
+          "alt": "Tres bolsos —de mano, manos libres y morral— sobre el fondo de estudio del catálogo"
+        },
+        "tecnologia": {
+          "eyebrow": "Tecnología",
+          "titular": "Nuevo, sellado y sin activar",
+          "apoyo": "Celulares, tablets, relojes, audífonos, consolas, computadores, proyectores y parlantes.",
+          "cta": "Ver tecnología",
+          "indicador": "Tecnología",
+          "alt": "Un celular, un reloj inteligente y unos audífonos sobre el fondo de estudio del catálogo"
+        }
       },
       "confianza": {
         "envio": "Envíos a todo el país",
         "contraentrega": "Opción de pago contraentrega",
         "pago": "Diversas opciones de pago",
         "garantia": "Garantía legal en todo"
-      },
-      "imagen": {
-        "alt": "Dos personas con bolsos, un portátil, un celular, una tablet, un parlante y audífonos sobre una mesa, en una terraza al atardecer"
       }
     }
   },
