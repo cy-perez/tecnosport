@@ -152,6 +152,7 @@ describe('TsBoton', () => {
       secundario: 'bg-transparent',
       texto: 'bg-transparent',
       peligro: 'bg-ts-error',
+      acento: 'bg-ts-acento',
     };
     const { fixture } = await render(Anfitrion);
 
@@ -180,15 +181,30 @@ describe('TsBoton', () => {
   // revisarla; medida en el navegador a 380 px producía "Limpiar filtros" en
   // 126 x 37 y "Eliminar" del carrito en 85 x 37.
   // `docs/04-ui-marca.md` pide 44 px sin distinguir variantes.
-  it('las cuatro variantes cumplen el objetivo táctil mínimo', async () => {
+  it('las cinco variantes cumplen el objetivo táctil mínimo', async () => {
     const { fixture } = await render(Anfitrion);
 
-    for (const variante of ['primario', 'secundario', 'texto', 'peligro'] as const) {
+    for (const variante of ['primario', 'secundario', 'texto', 'peligro', 'acento'] as const) {
       fixture.componentInstance.variante.set(variante);
       await fixture.whenStable();
 
       expect(boton().className, `variante ${variante}`).toContain('min-h-tactil');
     }
+  });
+
+  /**
+   * El motivo de que `acento` sea una variante y no un `clase="bg-ts-acento"` de quien llama: en
+   * tema oscuro `--color-foco` y `--color-acento` son el mismo ámbar, así que el anillo de `BASE`
+   * sería invisible justo sobre este fondo. Que `cn` descarte el de la base y deje este es lo que
+   * la prueba fija; que el color contraste de verdad lo vigila `npm run contrastes`.
+   */
+  it('la variante de acento cambia el anillo de foco al color de encima del ámbar', async () => {
+    const { fixture } = await render(Anfitrion);
+    fixture.componentInstance.variante.set('acento');
+    await fixture.whenStable();
+
+    expect(boton().className).toContain('focus-visible:outline-ts-sobre-acento');
+    expect(boton().className).not.toContain('focus-visible:outline-ts-foco');
   });
 
   it('la variante secundaria pinta el borde con el color de control', async () => {
@@ -204,10 +220,10 @@ describe('TsBoton', () => {
   // secundaria, la opción elegida del selector de variante (primaria) medía
   // 44 px y las demás 46, un escalón en la misma fila. El borde de 1 px es
   // de todas las variantes; solo cambia su color.
-  it('las cuatro variantes llevan el mismo borde de 1 px, pintado o transparente', async () => {
+  it('las cinco variantes llevan el mismo borde de 1 px, pintado o transparente', async () => {
     const { fixture } = await render(Anfitrion);
 
-    for (const variante of ['primario', 'secundario', 'texto', 'peligro'] as const) {
+    for (const variante of ['primario', 'secundario', 'texto', 'peligro', 'acento'] as const) {
       fixture.componentInstance.variante.set(variante);
       await fixture.whenStable();
 

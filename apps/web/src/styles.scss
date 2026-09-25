@@ -1,5 +1,17 @@
 /* You can add global styles to this file, and also import other style files */
 
+// La hoja de posicionamiento del CDK, y hace falta desde que el panel tiene un menu de acciones
+// (`shared/ui/menu`). No es una dependencia nueva —`@angular/cdk` ya estaba— sino el requisito
+// documentado de su overlay: sin ella, `.cdk-overlay-container` es un `<div>` suelto al final del
+// `<body>` sin `position` ni `z-index`, y el panel del menu se pinta al pie del documento en vez
+// de junto al boton que lo abrio.
+//
+// `ts-dialogo` funcionaba sin ella porque se posiciona solo —su contenido es `fixed inset-0`— y
+// por eso nadie la habia echado de menos. Con la hoja puesta, ademas, el contenedor sube a
+// `z-index: 1000` y el dialogo deja de depender de que ningun ancestro cree un contexto de
+// apilamiento, que es justo lo que su propio javadoc dice que el portal existe para evitar.
+@use '@angular/cdk/overlay-prebuilt.css';
+
 // Control manual de "reducir movimiento" (docs/04-ui-marca.md, layout/pie/pie.ts):
 // misma regla exacta que tokens.css aplica automático bajo
 // `@media (prefers-reduced-motion: reduce)`, pero disparada por el atributo

@@ -97,6 +97,18 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
   el script inline de `index.html` — valor inicial, no preferencia guardada.
   **El control no guarda estado**: `data-tema` es el estado aplicado y el icono
   lo decide el CSS, porque el servidor no conoce el tema mientras renderiza.
+- **Un `overlay` del CDK necesita su hoja de posicionamiento.** `src/styles.scss`
+  importa `@angular/cdk/overlay-prebuilt.css` desde que existe
+  `shared/ui/menu`: sin ella `.cdk-overlay-container` es un `<div>` al final del
+  `<body>` sin `position` ni `z-index`, y lo que se abra ahí se pinta al pie del
+  documento en vez de junto a su disparador. `ts-dialogo` funcionaba sin ella
+  porque su contenido es `fixed inset-0` y se posiciona solo — por eso el hueco
+  sobrevivió sin que nadie lo notara.
+  Y **las opciones de un `CdkMenu` no se proyectan con `<ng-content>`**: las
+  encuentra con una consulta de contenido, y lo que entra por el `ng-content` de
+  un componente de envoltura no es contenido suyo. `ts-menu-acciones` las recibe
+  como dato por eso, no por gusto: proyectadas, el menú se pinta sin una sola
+  opción navegable y no falla nada.
 - **Accesibilidad no es una fase final.** Todo control alcanzable por teclado, el
   anillo de foco no se elimina jamás, diálogos con el CDK y trampa de foco,
   imágenes con `alt` traducido, `label` real en cada campo.
