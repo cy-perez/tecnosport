@@ -2,6 +2,8 @@ import en from '../../../assets/i18n/en.json';
 import es from '../../../assets/i18n/es.json';
 import enAdmin from '../../../assets/i18n/scopes/admin/en.json';
 import esAdmin from '../../../assets/i18n/scopes/admin/es.json';
+import enAyuda from '../../../assets/i18n/scopes/ayuda/en.json';
+import esAyuda from '../../../assets/i18n/scopes/ayuda/es.json';
 import enCarrito from '../../../assets/i18n/scopes/carrito/en.json';
 import esCarrito from '../../../assets/i18n/scopes/carrito/es.json';
 import enCatalogo from '../../../assets/i18n/scopes/catalogo/en.json';
@@ -69,5 +71,14 @@ describe('claves de i18n', () => {
 
   it('el scope captura360 tiene las mismas claves en los dos idiomas', () => {
     expect(clavesOrdenadas(esCaptura360)).toEqual(clavesOrdenadas(enCaptura360));
+  });
+
+  // `ayuda` nació el 25 de septiembre de 2026 y llegó a esta lista con un día de retraso: la rama
+  // que creó las dos páginas no añadió su comparación, y lo levantó la revisión de arquitectura.
+  // Es el mismo descuido que el comentario de arriba describe para `legales` y `captura360`, en el
+  // mismo archivo que lo advierte — y pesa más aquí que en ningún otro scope, porque estas dos
+  // páginas son texto puro: ninguna otra prueba mira su contenido.
+  it('el scope ayuda tiene las mismas claves en los dos idiomas', () => {
+    expect(clavesOrdenadas(esAyuda)).toEqual(clavesOrdenadas(enAyuda));
   });
 });

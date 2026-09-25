@@ -43,6 +43,8 @@ export class TsCargando {
   readonly clase = input('');
 
   protected readonly clases = computed(() =>
-    cn('girando inline-block size-16 shrink-0', this.clase()),
+    // Sin `inline-block`: el host es `inline-flex`, así que el `display` de este hijo se
+    // blockifica y la utilidad no hacía nada.
+    cn('girando size-16 shrink-0', this.clase()),
   );
 }

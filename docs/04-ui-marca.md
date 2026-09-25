@@ -149,8 +149,11 @@ delante. Ver `ADR-0059`.
   `rounded-completo`: hacen lo mismo y solo una es rastreable al token.
   **La migración está a medias y a propósito**: el cambio entró por los dos
   alternadores del encabezado, y `ts-boton`, `ts-tarjeta-producto`,
-  `ts-dialogo`, el hero de la portada y el enlace de salto siguen con
-  `.chaflan`. Se migran cuando se toquen, no de una sentada.
+  `ts-dialogo` y el enlace de salto siguen con `.chaflan`. Se migran cuando se
+  toquen, no de una sentada. El hero salió de esta lista el 25 de septiembre de
+  2026 sin migrarse: el carrusel que lo sustituyó **no lleva chaflán de ninguna
+  clase**, ni el del marco de la foto ni el corte de la banda. Una deuda que ya
+  no existe en una lista de pendientes envía a alguien a buscar lo que no está.
 - **El chaflán a 45 grados** en la esquina superior izquierda y la inferior
   derecha es la firma de la marca. Se aplica con la clase `.chaflan`, y `--ch`
   controla el tamaño. Va en el logo y en las piezas gráficas — banners,

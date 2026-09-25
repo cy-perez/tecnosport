@@ -255,9 +255,15 @@ export class TsCarruselHero {
   }
 
   /**
-   * Las dos preferencias de menos movimiento que el sitio respeta: la del sistema operativo y la
-   * que el propio sitio escribió en `<html>`. Es el mismo par que `src/tailwind.css` apaga para el
+   * Las dos preferencias de menos movimiento que el sitio respeta: la del sistema operativo y el
+   * atributo `data-movimiento` de `<html>`. Es el mismo par que `src/tailwind.css` apaga para el
    * brillo de carga; aquí no basta con acortar la animación, hay que no programar el temporizador.
+   *
+   * <p><b>Hoy nada del sitio escribe ese atributo</b>: la casilla del pie que lo ponía se quitó el
+   * 25 de septiembre de 2026. La lectura se queda —igual que los ganchos de CSS— porque es lo que
+   * haría falta el día que el control vuelva, y porque una prueba de este componente la ejercita
+   * poniendo el atributo a mano. Si estás depurando por qué el carrusel no se detiene, mira
+   * `prefers-reduced-motion` antes que esta rama.
    */
   private sistemaPideMenosMovimiento(): boolean {
     const delSistema = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;

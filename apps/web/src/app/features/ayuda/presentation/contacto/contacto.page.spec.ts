@@ -31,14 +31,19 @@ describe('ContactoPage', () => {
   it('ofrece WhatsApp, correo y teléfono, cada uno a su protocolo', async () => {
     await renderContacto();
 
-    expect(screen.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe(
-      'https://wa.me/573138816711',
+    // Los valores salen de `es.pie.*` y **no escritos aquí**, que es como estaban y fue un hallazgo
+    // de la revisión: `npm run datos-negocio` solo recorre los JSON de i18n, así que tres cadenas
+    // con el celular y el correo en un `.spec.ts` son tres copias que la herramienta no vigila —
+    // exactamente lo que existe para impedir. Y el javadoc de abajo ya decía que se comparaba
+    // contra el JSON raíz, cosa que era cierta de la otra prueba y no de esta.
+    expect(screen.getByRole('link', { name: es.pie.whatsapp }).getAttribute('href')).toBe(
+      `https://wa.me/${es.pie.whatsapp_numero}`,
     );
-    expect(screen.getByRole('link', { name: 'contacto@tecnosport.co' }).getAttribute('href')).toBe(
-      'mailto:contacto@tecnosport.co',
+    expect(screen.getByRole('link', { name: es.pie.correo }).getAttribute('href')).toBe(
+      `mailto:${es.pie.correo}`,
     );
-    expect(screen.getByRole('link', { name: '+57 313 881 6711' }).getAttribute('href')).toBe(
-      'tel:+573138816711',
+    expect(screen.getByRole('link', { name: es.pie.telefono }).getAttribute('href')).toBe(
+      `tel:${es.pie.telefono_e164}`,
     );
   });
 

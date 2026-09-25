@@ -1,5 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.compartido.CorreoElectronicoInvalidoException;
 import co.tecnosport.api.domain.pedido.NumeroPedido;
 import co.tecnosport.api.domain.pedido.NumeroPedidoInvalidoException;
 import co.tecnosport.api.domain.pedido.Pedido;
@@ -80,8 +82,25 @@ public final class ConsultarSeguimientoPorNumero {
     }
   }
 
-  /** Igual que en {@link ConsultarSeguimientoPedido}: el correo se guarda normalizado. */
+  /**
+   * Normaliza el correo <b>con el objeto de valor que lo escribe</b>, y no con una copia de su
+   * línea.
+   *
+   * <p>Había tres implementaciones de esto —{@link CorreoElectronico}, {@link
+   * ConsultarSeguimientoPedido} y esta— y ya habían divergido: el {@code Locale.ROOT} estaba en las
+   * copias y no en el original, que es justo el que guarda el dato contra el que se compara. Con la
+   * configuración turca un correo con {@code I} se guardaba con la i sin punto y se buscaba con la
+   * otra, y la persona recibía el mismo 404 indistinguible que un número inexistente. Lo levantó la
+   * revisión de arquitectura.
+   *
+   * <p>Un correo con formato imposible da el mismo 404 que todo lo demás, por el mismo motivo que
+   * un número mal escrito: distinguirlo sería un oráculo para quien prueba a ciegas.
+   */
   private String normalizarCorreo(String crudo) {
-    return crudo == null ? "" : crudo.trim().toLowerCase(Locale.ROOT);
+    try {
+      return new CorreoElectronico(crudo).valor();
+    } catch (CorreoElectronicoInvalidoException excepcion) {
+      throw PedidoNoEncontradoException.porSeguimiento();
+    }
   }
 }

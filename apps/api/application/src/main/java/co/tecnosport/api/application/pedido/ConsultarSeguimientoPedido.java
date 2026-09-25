@@ -1,5 +1,7 @@
 package co.tecnosport.api.application.pedido;
 
+import co.tecnosport.api.domain.compartido.CorreoElectronico;
+import co.tecnosport.api.domain.compartido.CorreoElectronicoInvalidoException;
 import co.tecnosport.api.domain.pedido.Pedido;
 import java.util.Objects;
 
@@ -28,11 +30,23 @@ public final class ConsultarSeguimientoPedido {
         repositorioPedidos
             .buscarPorId(comando.pedidoId())
             .orElseThrow(() -> new PedidoNoEncontradoException(comando.pedidoId()));
-    String correoNormalizado =
-        comando.correo() == null ? "" : comando.correo().trim().toLowerCase();
-    if (!pedido.correo().valor().equals(correoNormalizado)) {
+    // Se normaliza con el objeto de valor que escribe el dato, no con una copia de su línea: eran
+    // tres implementaciones de lo mismo y habían divergido en el locale, que es lo que decide si
+    // una `I` baja a `i` o a `ı`. Ver el javadoc de `CorreoElectronico`.
+    if (!pedido.correo().valor().equals(normalizarCorreo(comando.correo()))) {
       throw new PedidoNoEncontradoException(comando.pedidoId());
     }
     return pedido;
+  }
+
+  /**
+   * Un correo con formato imposible no coincide con ninguno guardado: se trata como el que no es.
+   */
+  private static String normalizarCorreo(String crudo) {
+    try {
+      return new CorreoElectronico(crudo).valor();
+    } catch (CorreoElectronicoInvalidoException excepcion) {
+      return "";
+    }
   }
 }
