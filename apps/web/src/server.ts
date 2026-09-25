@@ -102,6 +102,11 @@ const VIGENCIA_LEGAL = new Date(`${legalesEs.comun.version}T00:00:00Z`).toISOStr
 const PAGINAS_FIJAS: readonly PaginaDelSitio[] = [
   { ruta: '' },
   { ruta: '/productos' },
+  // Las dos de ayuda, sin `lastmod` por lo mismo que la portada: no sabemos cuándo cambiaron de
+  // verdad. Van en el sitemap porque son justo el tipo de página a la que se llega desde un
+  // buscador —"cuánto tarda un envío de Tecno Sport"— y sus rutas declaran `indexable: true`.
+  { ruta: '/ayuda/preguntas-frecuentes' },
+  { ruta: '/ayuda/contacto' },
   { ruta: '/legales/terminos', lastmod: VIGENCIA_LEGAL },
   { ruta: '/legales/privacidad', lastmod: VIGENCIA_LEGAL },
   { ruta: '/legales/cookies', lastmod: VIGENCIA_LEGAL },
