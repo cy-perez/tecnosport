@@ -1,9 +1,11 @@
 # ADR-0063 — La línea elige su tono de ámbar
 
 **Fecha:** 2026-09-24
-**Estado:** aceptado. Matiza la regla del ámbar de `docs/04-ui-marca.md` —una
-sola cosa por pantalla— para un sitio concreto y nombrado; fuera de él la regla
-sigue entera.
+**Estado:** **sustituido por `ADR-0064`** el 25 de septiembre de 2026, un día
+después. Se queda escrito porque el razonamiento es correcto y la escala sigue
+existiendo en el kit: lo que no sobrevivió fue verlo en pantalla. En el cuarto
+paso el ámbar parece un botón deshabilitado, y cuatro tonos ordenan cuatro líneas
+que valen lo mismo. La regla del ámbar vuelve a no tener excepciones.
 
 ## Contexto
 

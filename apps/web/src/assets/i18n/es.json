@@ -75,7 +75,7 @@
     "hero": {
       "eyebrow": "Tienda en Medellín",
       "titular": "Todo lo que necesitas para moverte.",
-      "apoyo": "Ropa y calzado deportivo, bolsos y tecnología —celulares, relojes, audífonos, consolas, parlantes, computadores, tablets y proyectores— en un solo sitio. Compra en línea desde Medellín, con envío a todo el país.",
+      "apoyo": "Tecnología, bolsos, ropa y calzado deportivo en un solo lugar con envío a todo el país.",
       "cta": {
         "ropa": "Ver ropa",
         "calzado": "Ver calzado deportivo",
@@ -83,8 +83,9 @@
         "tecnologia": "Ver tecnología"
       },
       "confianza": {
-        "envio": "Envío cotizado a tu ciudad",
-        "contraentrega": "Contraentrega donde esté disponible",
+        "envio": "Envíos a todo el país",
+        "contraentrega": "Opción de pago contraentrega",
+        "pago": "Diversas opciones de pago",
         "garantia": "Garantía legal en todo"
       },
       "imagen": {

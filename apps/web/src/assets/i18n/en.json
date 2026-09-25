@@ -75,7 +75,7 @@
     "hero": {
       "eyebrow": "A shop in Medellín",
       "titular": "Everything you need to keep moving.",
-      "apoyo": "Sportswear and footwear, bags and tech —phones, watches, headphones, consoles, speakers, computers, tablets and projectors— all in one place. Shop online from Medellín, with shipping across the country.",
+      "apoyo": "Tech, bags, sportswear and footwear in one place, with shipping across the country.",
       "cta": {
         "ropa": "Browse clothing",
         "calzado": "Browse sports footwear",
@@ -83,8 +83,9 @@
         "tecnologia": "Browse technology"
       },
       "confianza": {
-        "envio": "Shipping quoted for your city",
-        "contraentrega": "Cash on delivery where available",
+        "envio": "Shipping across the country",
+        "contraentrega": "Cash on delivery available",
+        "pago": "Several ways to pay",
         "garantia": "Statutory warranty on everything"
       },
       "imagen": {
