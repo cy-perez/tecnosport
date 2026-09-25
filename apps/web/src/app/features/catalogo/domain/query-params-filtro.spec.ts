@@ -6,8 +6,6 @@ describe('filtroDesdeQueryParams', () => {
       categoria: 'bolsos',
       marca: '01a0-abc',
       linea: 'BOLSOS',
-      precioMin: '50000',
-      precioMax: '200000',
       texto: 'morral',
       orden: 'PRECIO_ASC',
     });
@@ -16,8 +14,6 @@ describe('filtroDesdeQueryParams', () => {
       categoria: 'bolsos',
       marca: '01a0-abc',
       linea: 'BOLSOS',
-      precioMin: 50000,
-      precioMax: 200000,
       texto: 'morral',
       orden: 'PRECIO_ASC',
     });
@@ -28,26 +24,34 @@ describe('filtroDesdeQueryParams', () => {
       categoria: undefined,
       marca: undefined,
       linea: undefined,
-      precioMin: undefined,
-      precioMax: undefined,
       texto: undefined,
       orden: undefined,
     });
   });
 
-  it('ignora un precio no numérico y un orden desconocido', () => {
-    const filtro = filtroDesdeQueryParams({ precioMin: 'no-es-numero', orden: 'INVENTADO' });
+  it('ignora un orden desconocido', () => {
+    expect(filtroDesdeQueryParams({ orden: 'INVENTADO' }).orden).toBeUndefined();
+  });
 
-    expect(filtro.precioMin).toBeUndefined();
-    expect(filtro.orden).toBeUndefined();
+  /**
+   * El rango de precio salió del filtro el 24 de septiembre de 2026 y de aquí también: una URL
+   * vieja con `?precioMin=` no vuelve a entrar por esta puerta. Se comprueba porque el fallo
+   * natural al quitar un campo es dejar el parseo puesto "por si acaso", y entonces el filtro
+   * lleva una clave que ya nadie sabe quitar.
+   */
+  it('un precio en la URL ya no entra al filtro', () => {
+    const filtro = filtroDesdeQueryParams({ precioMin: '50000', precioMax: '200000' });
+
+    expect(filtro).not.toHaveProperty('precioMin');
+    expect(filtro).not.toHaveProperty('precioMax');
   });
 });
 
 describe('queryParamsDesdeFiltro', () => {
   it('solo incluye los campos presentes del filtro', () => {
-    const params = queryParamsDesdeFiltro({ linea: 'TECNOLOGIA', precioMax: 500000 });
+    const params = queryParamsDesdeFiltro({ linea: 'TECNOLOGIA', texto: 'morral' });
 
-    expect(params).toEqual({ linea: 'TECNOLOGIA', precioMax: 500000 });
+    expect(params).toEqual({ linea: 'TECNOLOGIA', texto: 'morral' });
   });
 
   it('un filtro vacío produce un objeto de params vacío', () => {
@@ -59,8 +63,6 @@ describe('queryParamsDesdeFiltro', () => {
       categoria: 'bolsos',
       marca: '01a0-abc',
       linea: 'BOLSOS',
-      precioMin: 50000,
-      precioMax: 200000,
       texto: 'morral',
       orden: 'PRECIO_ASC' as const,
     };

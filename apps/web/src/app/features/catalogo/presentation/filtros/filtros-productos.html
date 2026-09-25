@@ -1,6 +1,6 @@
-<!-- En el teléfono, siete controles apilados ocupaban la primera pantalla
-     entera y el primer producto quedaba a 780 px de desplazamiento. Por debajo
-     del primer punto de quiebre los filtros van plegados tras un *disclosure*
+<!-- En el teléfono, los controles apilados ocupaban la primera pantalla entera
+     y el primer producto quedaba a 780 px de desplazamiento. Por debajo del
+     primer punto de quiebre los filtros van plegados tras un *disclosure*
      (`aria-expanded` + `aria-controls`, el mismo patrón del menú móvil), y
      arrancan abiertos solo si la URL ya trae un filtro: un filtro aplicado que
      no se ve es peor que uno que hay que abrir. Desde `desde-movil:` el botón
@@ -18,67 +18,76 @@
   </ts-boton>
 </div>
 
+<!-- La búsqueda a un lado y los cuatro desplegables al otro, no siete controles
+     en una rejilla de columnas iguales. El cambio es de jerarquía, no de estilo:
+     escribir qué se busca y acotar lo que ya salió son dos gestos distintos, y
+     con todos del mismo tamaño la caja de texto no se distinguía de un filtro
+     más. Ninguno lleva etiqueta a la vista: la búsqueda la sustituye por su
+     ancla y su placeholder, y cada desplegable se explica con la opción que
+     tiene elegida —"Todas las marcas" ya dice que es el filtro de marca—. Las
+     etiquetas siguen ahí para quien navega con lector de pantalla. -->
 <form
   id="filtros-productos"
-  class="mx-auto max-w-contenido grid-cols-[repeat(auto-fill,minmax(var(--ancho-min-filtro),1fr))] items-end gap-16 px-16 pb-24 desde-movil:grid"
-  [class.grid]="abierto()"
+  class="mx-auto max-w-contenido flex-col gap-12 px-16 pb-24 desde-movil:flex desde-tableta:flex-row desde-tableta:items-center desde-tableta:justify-between"
+  [class.flex]="abierto()"
   [class.hidden]="!abierto()"
   [formGroup]="form"
   (submit)="$event.preventDefault()"
 >
-  <ts-select
-    idCampo="filtro-linea"
-    [label]="'catalogo.filtros.linea_label' | transloco"
-    [placeholder]="'catalogo.filtros.todas' | transloco"
-    [opciones]="opcionesLinea()"
-    formControlName="linea"
-  />
-
-  <ts-select
-    idCampo="filtro-categoria"
-    [label]="'catalogo.filtros.categoria' | transloco"
-    [placeholder]="'catalogo.filtros.todas' | transloco"
-    [opciones]="opcionesCategoria()"
-    formControlName="categoria"
-  />
-
-  <ts-select
-    idCampo="filtro-marca"
-    [label]="'catalogo.filtros.marca' | transloco"
-    [placeholder]="'catalogo.filtros.todas' | transloco"
-    [opciones]="opcionesMarca()"
-    formControlName="marca"
-  />
-
   <ts-campo
-    idCampo="filtro-precio-min"
-    [label]="'catalogo.filtros.precio_min' | transloco"
-    tipo="number"
-    formControlName="precioMin"
-  />
-
-  <ts-campo
-    idCampo="filtro-precio-max"
-    [label]="'catalogo.filtros.precio_max' | transloco"
-    tipo="number"
-    formControlName="precioMax"
-  />
-
-  <ts-campo
+    class="desde-tableta:w-filtro"
     idCampo="filtro-texto"
     [label]="'catalogo.filtros.texto' | transloco"
+    [placeholder]="'catalogo.filtros.texto_placeholder' | transloco"
+    [icono]="iconoBuscar"
+    [etiquetaOculta]="true"
     tipo="search"
     formControlName="texto"
   />
 
-  <ts-select
-    idCampo="filtro-orden"
-    [label]="'catalogo.filtros.orden_label' | transloco"
-    [opciones]="opcionesOrden()"
-    formControlName="orden"
-  />
+  <div
+    class="flex flex-col gap-12 desde-movil:flex-row desde-movil:flex-wrap desde-movil:items-center"
+  >
+    <ts-select
+      idCampo="filtro-linea"
+      [label]="'catalogo.filtros.linea_label' | transloco"
+      [placeholder]="'catalogo.filtros.todas_lineas' | transloco"
+      [opciones]="opcionesLinea()"
+      [etiquetaOculta]="true"
+      formControlName="linea"
+    />
 
-  <ts-boton variante="texto" tipo="button" (click)="limpiar()">
-    {{ 'catalogo.filtros.limpiar' | transloco }}
-  </ts-boton>
+    <ts-select
+      idCampo="filtro-categoria"
+      [label]="'catalogo.filtros.categoria' | transloco"
+      [placeholder]="'catalogo.filtros.todas_categorias' | transloco"
+      [opciones]="opcionesCategoria()"
+      [etiquetaOculta]="true"
+      formControlName="categoria"
+    />
+
+    <ts-select
+      idCampo="filtro-marca"
+      [label]="'catalogo.filtros.marca' | transloco"
+      [placeholder]="'catalogo.filtros.todas_marcas' | transloco"
+      [opciones]="opcionesMarca()"
+      [etiquetaOculta]="true"
+      formControlName="marca"
+    />
+
+    <!-- El único de los cuatro que no nombra un atributo del producto, y por eso el único con
+         ancla: sin ella, "Relevancia" al lado de "Todas las marcas" se lee como una marca. -->
+    <ts-select
+      idCampo="filtro-orden"
+      [label]="'catalogo.filtros.orden_label' | transloco"
+      [opciones]="opcionesOrden()"
+      [icono]="iconoOrden"
+      [etiquetaOculta]="true"
+      formControlName="orden"
+    />
+
+    <ts-boton variante="texto" tipo="button" (click)="limpiar()">
+      {{ 'catalogo.filtros.limpiar' | transloco }}
+    </ts-boton>
+  </div>
 </form>

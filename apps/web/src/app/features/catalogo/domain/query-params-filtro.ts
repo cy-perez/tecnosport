@@ -12,14 +12,6 @@ function esOrdenValido(valor: unknown): valor is OrdenProductos {
   return typeof valor === 'string' && (ORDENES_VALIDOS as readonly string[]).includes(valor);
 }
 
-function numeroOIndefinido(valor: unknown): number | undefined {
-  if (valor === undefined || valor === null || valor === '') {
-    return undefined;
-  }
-  const numero = Number(valor);
-  return Number.isNaN(numero) ? undefined : numero;
-}
-
 /**
  * Params del router -> FiltroProductos. Comparten esta función el resolver de
  * la ruta y la página, para no parsear los query params dos veces con reglas
@@ -30,8 +22,6 @@ export function filtroDesdeQueryParams(params: Params): FiltroProductos {
     categoria: params['categoria'] || undefined,
     marca: params['marca'] || undefined,
     linea: params['linea'] || undefined,
-    precioMin: numeroOIndefinido(params['precioMin']),
-    precioMax: numeroOIndefinido(params['precioMax']),
     texto: params['texto'] || undefined,
     orden: esOrdenValido(params['orden']) ? params['orden'] : undefined,
   };
@@ -48,12 +38,6 @@ export function queryParamsDesdeFiltro(filtro: FiltroProductos): Params {
   }
   if (filtro.linea) {
     params['linea'] = filtro.linea;
-  }
-  if (filtro.precioMin !== undefined && filtro.precioMin !== null) {
-    params['precioMin'] = filtro.precioMin;
-  }
-  if (filtro.precioMax !== undefined && filtro.precioMax !== null) {
-    params['precioMax'] = filtro.precioMax;
   }
   if (filtro.texto) {
     params['texto'] = filtro.texto;

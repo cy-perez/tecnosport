@@ -12,15 +12,16 @@ import { aProducto } from './mapeador-productos';
 export class ProductosHttpRepositorio implements RepositorioProductos {
   private readonly cliente = crearClienteContratos(baseUrl());
 
-  async buscar(filtro: FiltroProductos, cursor: string | null): Promise<ResultadoPaginado<Producto>> {
+  async buscar(
+    filtro: FiltroProductos,
+    cursor: string | null,
+  ): Promise<ResultadoPaginado<Producto>> {
     const respuesta = await this.cliente.GET('/api/v1/productos', {
       params: {
         query: {
           categoria: filtro.categoria,
           marca: filtro.marca,
           linea: filtro.linea,
-          precioMin: filtro.precioMin,
-          precioMax: filtro.precioMax,
           texto: filtro.texto,
           orden: filtro.orden,
           cursor: cursor ?? undefined,

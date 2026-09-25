@@ -12,11 +12,12 @@
     "linea_label": "Línea",
     "categoria": "Categoría",
     "marca": "Marca",
-    "precio_min": "Precio mínimo",
-    "precio_max": "Precio máximo",
     "texto": "Buscar",
+    "texto_placeholder": "Buscar productos…",
     "orden_label": "Ordenar por",
-    "todas": "Todas",
+    "todas_lineas": "Todas las líneas",
+    "todas_categorias": "Todas las categorías",
+    "todas_marcas": "Todas las marcas",
     "limpiar": "Limpiar filtros",
     "orden": {
       "relevancia": "Relevancia",
@@ -36,7 +37,7 @@
   "seo": {
     "rejilla": {
       "titulo": "Catálogo · Tecno Sport",
-      "descripcion": "Ropa y calzado deportivo, bolsos y tecnología. Filtra por línea, categoría, marca y precio, y compra con envío a todo Colombia."
+      "descripcion": "Ropa y calzado deportivo, bolsos y tecnología. Filtra por línea, categoría y marca, y compra con envío a todo Colombia."
     },
     "ficha": {
       "titulo": "Producto · Tecno Sport",

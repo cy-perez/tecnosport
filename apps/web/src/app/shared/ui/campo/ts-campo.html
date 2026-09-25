@@ -5,7 +5,11 @@
        electrónico')` pasa a buscar "Correo electrónico *". Fuera, la etiqueta conserva
        exactamente su texto y el marcador sigue al lado. Quien de verdad anuncia que el campo es
        obligatorio es el `aria-required` del control. -->
-  <div class="flex items-baseline gap-4">
+  <!-- `sr-only` va en el contenedor y no en el `<label>`: el asterisco es su pareja visual y
+       esconder uno sin el otro deja un asterisco huerfano flotando sobre el campo. Escondida, la
+       etiqueta sigue estando —la lee el lector de pantalla y la encuentra `getByLabelText`—, y
+       quien anuncia que el campo es obligatorio sigue siendo el `aria-required` del control. -->
+  <div class="flex items-baseline gap-4" [class.sr-only]="etiquetaOculta()">
     <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
     @if (obligatorio()) {
       <span class="text-ts-texto-suave" aria-hidden="true">*</span>
@@ -14,17 +18,31 @@
   @if (ayuda(); as textoDeAyuda) {
     <p [class]="clasesAyuda" [id]="idCampo() + '-ayuda'">{{ textoDeAyuda }}</p>
   }
-  <input
-    [class]="clasesControl"
-    [id]="idCampo()"
-    [type]="tipo()"
-    [value]="valorMostrado()"
-    [disabled]="deshabilitado()"
-    [attr.aria-required]="obligatorio() ? 'true' : null"
-    [attr.aria-invalid]="error() ? 'true' : null"
-    [attr.aria-describedby]="descripcion()"
-    (input)="manejarEntrada($any($event.target).value)"
-    (blur)="manejarSalida()"
-  />
+  <!-- `relative` solo para colgar el ancla. Sin icono el `<div>` no hace nada y no estorba:
+       envolver siempre es preferible a dos ramas de plantilla que hay que mantener iguales. -->
+  <div class="relative">
+    @if (icono(); as glifo) {
+      <!-- `pointer-events-none` o el ancla se come el clic justo en el borde izquierdo del campo,
+           que es donde la gente pincha para empezar a escribir. -->
+      <ts-icono
+        class="pointer-events-none absolute start-16 top-1/2 -translate-y-1/2 text-ts-texto-suave"
+        [icono]="glifo"
+        clase="size-16"
+      />
+    }
+    <input
+      [class]="clasesControl()"
+      [id]="idCampo()"
+      [type]="tipo()"
+      [attr.placeholder]="placeholder()"
+      [value]="valorMostrado()"
+      [disabled]="deshabilitado()"
+      [attr.aria-required]="obligatorio() ? 'true' : null"
+      [attr.aria-invalid]="error() ? 'true' : null"
+      [attr.aria-describedby]="descripcion()"
+      (input)="manejarEntrada($any($event.target).value)"
+      (blur)="manejarSalida()"
+    />
+  </div>
   <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
 </div>

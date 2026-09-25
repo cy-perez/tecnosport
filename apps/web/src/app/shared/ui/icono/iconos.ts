@@ -47,3 +47,14 @@ export { ChevronDown as iconoChevron } from 'lucide';
 // Lo pidió el botón que fija el menú lateral abierto. `PanelLeft` y no una chincheta: el icono
 // tiene que decir qué queda fijo —el panel de la izquierda—, no con qué se sujeta.
 export { PanelLeft as iconoFijar } from 'lucide';
+// Los pidió el ancla dentro del control: desde el 24 de septiembre de 2026 los campos de búsqueda
+// y los de identidad llevan su icono dentro, a la izquierda, y el nombre del campo vive en el
+// placeholder. El icono no es decoración ahí — es lo único que queda en pantalla diciendo qué se
+// escribe cuando el placeholder desaparece al primer carácter. Nunca es el nombre accesible: ese
+// lo pone la etiqueta, que sigue existiendo aunque esté en `sr-only`.
+export { Search as iconoBuscar } from 'lucide';
+export { User as iconoUsuario } from 'lucide';
+export { Lock as iconoClave } from 'lucide';
+// El de "Ordenar por", que es el único de los cuatro filtros que no nombra un atributo del
+// producto: sin ancla, "Relevancia" suelto al lado de "Marca" se lee como una marca más.
+export { ArrowUpDown as iconoOrden } from 'lucide';

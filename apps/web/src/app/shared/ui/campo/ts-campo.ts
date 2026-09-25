@@ -7,7 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import type { IconNode } from 'lucide';
+import { cn } from '../cn';
 import { CLASES_AYUDA, CLASES_CONTROL, CLASES_ERROR, CLASES_ETIQUETA } from '../clases-control';
+import { TsIcono } from '../icono/ts-icono';
 
 /**
  * `datetime-local` entró con la bandeja de atención: quien radica una PQR escribe la fecha en que
@@ -34,6 +37,7 @@ function sinOperacion(): void {}
  */
 @Component({
   selector: 'ts-campo',
+  imports: [TsIcono],
   templateUrl: './ts-campo.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block min-w-0' },
@@ -76,6 +80,33 @@ export class TsCampo implements ControlValueAccessor {
   readonly obligatorio = input(false);
 
   /**
+   * Un icono dentro del campo, a la izquierda, como ancla de qué se escribe ahí.
+   *
+   * Cuando lo hay, el relleno del control se corre a `ps-48` para que el texto no lo pise. Nunca
+   * es el nombre accesible —`ts-icono` pinta `aria-hidden`—: eso sigue siendo la etiqueta.
+   */
+  readonly icono = input<IconNode | null>(null);
+
+  /**
+   * El texto de sugerencia del control.
+   *
+   * Existe desde que las pantallas de cuenta esconden la etiqueta (`etiquetaOculta`): ahí el
+   * placeholder es lo único que queda en pantalla nombrando el campo, así que es obligatorio
+   * ponerlo. Donde la etiqueta se ve, es opcional y suele sobrar.
+   */
+  readonly placeholder = input<string | null>(null);
+
+  /**
+   * Esconde la etiqueta a la vista, dejándola para la tecnología de apoyo.
+   *
+   * **No es gratis y conviene saber qué se paga**: el placeholder desaparece al primer carácter,
+   * así que quien vuelve al formulario a medio llenar ya no tiene en pantalla el nombre del campo
+   * —solo el icono—. Se usa donde el formulario es corto y los campos son obvios (entrar, crear
+   * cuenta); en el checkout, en el panel y en cualquier formulario largo, la etiqueta se ve.
+   */
+  readonly etiquetaOculta = input(false);
+
+  /**
    * Texto de apoyo debajo de la etiqueta, atado al control con `aria-describedby`.
    *
    * Entró porque escribirlo como un `<p>` suelto antes del componente lo deja visualmente pegado al
@@ -84,7 +115,11 @@ export class TsCampo implements ControlValueAccessor {
    */
   readonly ayuda = input<string | null>(null);
 
-  protected readonly clasesControl = CLASES_CONTROL;
+  /** `p-12` de la base y `ps-48` encima cuando hay ancla: `cn` resuelve el conflicto de relleno
+   * inicial a favor de lo último, que es justo lo que hace falta. */
+  protected readonly clasesControl = computed(() =>
+    cn(CLASES_CONTROL, this.icono() ? 'ps-48' : ''),
+  );
   protected readonly clasesEtiqueta = CLASES_ETIQUETA;
   protected readonly clasesError = CLASES_ERROR;
   protected readonly clasesAyuda = CLASES_AYUDA;

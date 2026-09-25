@@ -12,11 +12,12 @@
     "linea_label": "Category group",
     "categoria": "Category",
     "marca": "Brand",
-    "precio_min": "Min price",
-    "precio_max": "Max price",
     "texto": "Search",
+    "texto_placeholder": "Search products…",
     "orden_label": "Sort by",
-    "todas": "All",
+    "todas_lineas": "All lines",
+    "todas_categorias": "All categories",
+    "todas_marcas": "All brands",
     "limpiar": "Clear filters",
     "orden": {
       "relevancia": "Relevance",
@@ -36,7 +37,7 @@
   "seo": {
     "rejilla": {
       "titulo": "Catalog · Tecno Sport",
-      "descripcion": "Sportswear, footwear, bags and tech. Filter by line, category, brand and price, and buy with shipping across Colombia."
+      "descripcion": "Sportswear, footwear, bags and tech. Filter by line, category and brand, and buy with shipping across Colombia."
     },
     "ficha": {
       "titulo": "Product · Tecno Sport",
