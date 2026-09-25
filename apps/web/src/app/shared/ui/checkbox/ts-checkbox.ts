@@ -35,7 +35,10 @@ import { TsIcono } from '../icono/ts-icono';
  * este componente estuvo esperando no ser. Se añade el día que una casilla
  * entre en un formulario.
  */
-const CAJA = 'col-start-1 row-start-1 size-24 appearance-none border';
+// `rounded-sm` y no `md`: dentro de un formulario cuyos campos van a `rounded-md`, una caja de
+// 24 px con el mismo radio que un control de 44 se ve desproporcionadamente redonda. `sm` es el
+// radio del segmento pequeno, que es justo lo que esto es.
+const CAJA = 'col-start-1 row-start-1 size-24 rounded-sm appearance-none border';
 
 /** Sobre una superficie normal: borde de control, relleno primario al marcar. */
 const CAJA_NORMAL =

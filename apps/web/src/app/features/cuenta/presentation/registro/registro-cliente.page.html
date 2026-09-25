@@ -9,10 +9,20 @@
       [formGroup]="form"
       (submit)="$event.preventDefault(); enviar()"
     >
+      <!-- Los tres campos con el nombre dentro y un ancla a la izquierda: tres etiquetas apiladas
+           sobre un formulario de 384 px eran mas texto que campos. El `placeholder` repite la
+           **misma clave** que el `label` a proposito — son el mismo texto y dos claves para un
+           solo texto es garantizar que un dia digan cosas distintas. Lo que se paga con
+           `etiquetaOculta` esta escrito en `ts-campo`: al primer caracter el nombre desaparece y
+           solo queda el ancla. Se acepta aqui porque son tres campos evidentes; en el checkout y
+           en el panel las etiquetas se siguen viendo. -->
       <ts-campo
         idCampo="registro-correo"
         tipo="email"
         [label]="'cuenta.registro.correo' | transloco"
+        [placeholder]="'cuenta.registro.correo' | transloco"
+        [icono]="iconoCorreo"
+        [etiquetaOculta]="true"
         [obligatorio]="true"
         [error]="errorCorreo()"
         formControlName="correo"
@@ -22,6 +32,9 @@
         idCampo="registro-clave"
         tipo="password"
         [label]="'cuenta.registro.clave' | transloco"
+        [placeholder]="'cuenta.registro.clave' | transloco"
+        [icono]="iconoClave"
+        [etiquetaOculta]="true"
         [obligatorio]="true"
         [error]="errorClave()"
         formControlName="clave"
@@ -31,6 +44,9 @@
         idCampo="registro-confirmar-clave"
         tipo="password"
         [label]="'cuenta.registro.confirmarClave' | transloco"
+        [placeholder]="'cuenta.registro.confirmarClave' | transloco"
+        [icono]="iconoClave"
+        [etiquetaOculta]="true"
         [obligatorio]="true"
         formControlName="confirmarClave"
         [error]="
@@ -44,6 +60,12 @@
         consentimiento distinto del de los términos, y meterlos juntos lo invalida. El enlace a la
         política va al lado y no dentro del <label>, porque un enlace dentro de la etiqueta se pelea
         con el objetivo de clic de la casilla.
+
+        **No comparte fila con el botón**, que es lo que hace la referencia de la que salen estos
+        campos. Ahí la casilla dice "Remember me", dos palabras; aquí dice una frase legal de
+        setenta caracteres, y la columna mide 384 px. Al lado del botón, o se parte en tres líneas
+        o lo empuja fuera. La casilla en sí sí se rehízo: caja redondeada, del tamaño del objetivo
+        táctil, relleno de marca al marcar.
       -->
       <div class="flex flex-col gap-4">
         <ts-checkbox

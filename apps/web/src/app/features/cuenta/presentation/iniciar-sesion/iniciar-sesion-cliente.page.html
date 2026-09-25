@@ -4,10 +4,16 @@
     [formGroup]="form"
     (submit)="$event.preventDefault(); enviar()"
   >
+    <!-- Mismo tratamiento que crear cuenta, y por el mismo motivo: dos campos evidentes en una
+         columna de 384 px. El `placeholder` reusa la clave del `label`; el precio de esconder la
+         etiqueta esta escrito en `ts-campo`. -->
     <ts-campo
       idCampo="cuenta-correo"
       tipo="email"
       [label]="'cuenta.iniciarSesion.correo' | transloco"
+      [placeholder]="'cuenta.iniciarSesion.correo' | transloco"
+      [icono]="iconoCorreo"
+      [etiquetaOculta]="true"
       [obligatorio]="true"
       [error]="errorCorreo()"
       formControlName="correo"
@@ -17,6 +23,9 @@
       idCampo="cuenta-clave"
       tipo="password"
       [label]="'cuenta.iniciarSesion.clave' | transloco"
+      [placeholder]="'cuenta.iniciarSesion.clave' | transloco"
+      [icono]="iconoClave"
+      [etiquetaOculta]="true"
       [obligatorio]="true"
       [error]="errorClave()"
       formControlName="clave"
@@ -24,21 +33,27 @@
 
     <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
 
-    <a
-      class="anillo-foco inline-flex min-h-tactil items-center self-start text-ts-primario no-underline hover:underline"
-      [routerLink]="['../recuperar-clave']"
-    >
-      {{ 'cuenta.iniciarSesion.olvidaste_clave' | transloco }}
-    </a>
+    <!-- El enlace de recuperar y el boton comparten fila, que es la forma que tiene la fila de
+         cierre de la referencia (alli la ocupan una casilla y el boton; aqui no hay casilla). Con
+         `flex-wrap`, en cuanto la columna no da se apilan: a 384 px caben, pero el enlace lo
+         escribe Transloco y en otro idioma puede no caber. -->
+    <div class="flex flex-wrap items-center justify-between gap-12">
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario no-underline hover:underline"
+        [routerLink]="['../recuperar-clave']"
+      >
+        {{ 'cuenta.iniciarSesion.olvidaste_clave' | transloco }}
+      </a>
 
-    <ts-boton
-      variante="primario"
-      tipo="submit"
-      [cargando]="enviando()"
-      [etiquetaCargando]="'cuenta.iniciarSesion.enviando' | transloco"
-    >
-      {{ 'cuenta.iniciarSesion.entrar' | transloco }}
-    </ts-boton>
+      <ts-boton
+        variante="primario"
+        tipo="submit"
+        [cargando]="enviando()"
+        [etiquetaCargando]="'cuenta.iniciarSesion.enviando' | transloco"
+      >
+        {{ 'cuenta.iniciarSesion.entrar' | transloco }}
+      </ts-boton>
+    </div>
 
     <!-- Quien llega aquí sin cuenta no tenía por dónde crearla: el enlace de
          registro solo estaba en el encabezado. Los dos formularios se apuntan
