@@ -79,3 +79,9 @@ lista-productos.txt
 # ignora porque vive en la raíz del repositorio, que es donde lo deja quien lo genera, y un
 # `git add -A` distraído lo mete entero y para siempre.
 hero-tecnosport.zip
+
+# Las fotografías de origen del carrusel de portada, 12 MB de originales de 5.000 a 8.000 px.
+# Mismo criterio que el ZIP del arte anterior: se versiona el resultado —las doce .webp de
+# apps/web/public/imagenes/portada/hero/— y el encuadre, que vive en tools/recortar-hero.py.
+# No el material de origen, que vive en la raíz porque es donde lo deja quien lo baja.
+Imgs/
