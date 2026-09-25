@@ -137,6 +137,14 @@
   --color-ts-acento-pressed: var(--color-acento-pressed);
   --color-ts-sobre-acento: var(--color-sobre-acento);
 
+  /* La escala de ámbar: el mismo acento aclarado en tres pasos, uno por línea
+     de negocio en la banda de portada (`ADR-0063`). No son colores nuevos y no
+     tienen `sobre-` propio: los cuatro llevan el mismo grafito encima, que es
+     justo lo que los mantiene siendo el ámbar y no cuatro amarillos. */
+  --color-ts-acento-2: var(--color-acento-2);
+  --color-ts-acento-3: var(--color-acento-3);
+  --color-ts-acento-4: var(--color-acento-4);
+
   --color-ts-marca: var(--color-marca);
   --color-ts-marca-alt: var(--color-marca-alt);
   --color-ts-marca-fuerte: var(--color-marca-fuerte);
