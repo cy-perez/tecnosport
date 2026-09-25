@@ -64,6 +64,11 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   async consultarSeguimiento(): Promise<Seguimiento | null> {
     return this.seguimiento;
   }
+
+  /** El mismo pedido por los dos caminos: lo que cambia en el servidor es por dónde se entra. */
+  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
+    return this.seguimiento;
+  }
 }
 
 class RepositorioPagosFalso implements RepositorioPagos {

@@ -20,7 +20,8 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
   PropiedadesLimiteAuth.class,
   PropiedadesLimitePedidos.class,
-  PropiedadesLimiteCotizacion.class
+  PropiedadesLimiteCotizacion.class,
+  PropiedadesLimiteSeguimiento.class
 })
 public class ConfiguracionLimiteIntentos {
 
@@ -98,6 +99,35 @@ public class ConfiguracionLimiteIntentos {
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns(
         "/api/v1/envios/cotizacion", "/api/v1/pedidos/metodos-de-pago-disponibles");
+    return registro;
+  }
+
+  /**
+   * El seguimiento por número legible, y es el perfil más estrecho de los cuatro: es el único
+   * endpoint público cuyo identificador se puede recorrer. Los números van del {@code 000001} hacia
+   * arriba dentro de cada año, así que lo único que protege el pedido es que el correo coincida —y
+   * quien ya conozca el correo de una persona puede probar números hasta dar con uno suyo.
+   *
+   * <p>El hermano que entra por {@code id} no está aquí y no hace falta: ese id es un UUID v7, y
+   * recorrerlo no es una opción. Es exactamente la misma distinción que separa los dos casos de
+   * uso.
+   *
+   * <p>Ruta exacta, como todas las de este archivo: un patrón exacto no cubre subrutas, y ese
+   * descuido ya dejó dos endpoints sin límite.
+   */
+  @Bean
+  public FilterRegistrationBean<FiltroLimiteIntentos> filtroLimiteIntentosSeguimiento(
+      LimitadorDeIntentos limitadorDeIntentos,
+      Reloj reloj,
+      PropiedadesLimiteSeguimiento propiedades) {
+    FilterRegistrationBean<FiltroLimiteIntentos> registro =
+        new FilterRegistrationBean<>(
+            new FiltroLimiteIntentos(
+                limitadorDeIntentos,
+                reloj,
+                propiedades.ipMaximo(),
+                Duration.ofMinutes(propiedades.ipMinutos())));
+    registro.addUrlPatterns("/api/v1/pedidos/seguimiento");
     return registro;
   }
 }

@@ -38,7 +38,7 @@ export class TransferenciaPage {
     const parametros = this.route.snapshot.queryParamMap;
     const pedidoId = parametros.get('pedidoId');
     const correo = parametros.get('correo');
-    return pedidoId && correo ? { pedidoId, correo } : null;
+    return pedidoId && correo ? { tipo: 'ID', pedidoId, correo } : null;
   });
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());

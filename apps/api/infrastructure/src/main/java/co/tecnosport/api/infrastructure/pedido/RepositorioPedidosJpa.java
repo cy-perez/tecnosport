@@ -92,6 +92,24 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
                     historial.findByPedidoIdOrderByFechaAsc(entidad.getId())));
   }
 
+  /**
+   * Misma reconstrucción que {@link #buscarPorId}, cambiando solo por dónde se entra. Se repite el
+   * mapeo en vez de delegar una en otra porque lo único que comparten es la cola: la búsqueda por
+   * número devuelve la entidad y a partir de ahí el camino es idéntico, así que encadenarlas
+   * ahorraría tres líneas a cambio de un salto más al leer.
+   */
+  @Override
+  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
+    return pedidos
+        .findByNumeroPedido(numero.valor())
+        .map(
+            entidad ->
+                aPedido(
+                    entidad,
+                    lineas.findByPedidoId(entidad.getId()),
+                    historial.findByPedidoIdOrderByFechaAsc(entidad.getId())));
+  }
+
   @Override
   public void guardar(Pedido pedido) {
     pedidos.save(aEntidad(pedido));

@@ -35,6 +35,15 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
     return Optional.ofNullable(pedidos.get(id));
   }
 
+  /**
+   * Recorre lo guardado en vez de llevar un segundo indice por numero: son unos pocos pedidos por
+   * prueba, y un mapa mas seria un sitio mas donde los dos pueden separarse.
+   */
+  @Override
+  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
+    return pedidos.values().stream().filter(p -> p.numeroPedido().equals(numero)).findFirst();
+  }
+
   @Override
   public void guardar(Pedido pedido) {
     pedidos.put(pedido.id(), pedido);

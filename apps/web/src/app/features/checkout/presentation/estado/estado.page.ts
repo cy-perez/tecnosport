@@ -2,10 +2,12 @@ import { NgOptimizedImage } from '@angular/common';
 import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
+import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsPrecio } from '../../../../shared/ts-precio/ts-precio';
 import { CheckoutStore } from '../../application/checkout.store';
@@ -49,7 +51,16 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
  */
 @Component({
   selector: 'app-estado',
-  imports: [NgOptimizedImage, TranslocoPipe, TsBoton, TsEsqueleto, TsIcono, TsPrecio],
+  imports: [
+    NgOptimizedImage,
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsEsqueleto,
+    TsIcono,
+    TsPrecio,
+  ],
   templateUrl: './estado.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -74,6 +85,25 @@ export class EstadoPage {
 
   protected readonly error = signal<string | null>(null);
 
+  /**
+   * Lo que el formulario pidió, cuando se pidió. Vacío mientras nadie lo haya enviado: sin esto la
+   * consulta arrancaría con el formulario en blanco y la pantalla diría "no encontramos tu pedido"
+   * antes de que nadie escribiera nada.
+   */
+  private readonly consultado = signal<{ numeroPedido: string; correo: string } | null>(null);
+
+  protected readonly form = inject(FormBuilder).nonNullable.group({
+    numeroPedido: ['', [Validators.required]],
+    correo: ['', [Validators.required, Validators.email]],
+  });
+
+  /**
+   * De dónde sale el pedido, por orden: el store —lo acaba de crear esta misma visita—, los
+   * parámetros del enlace del correo, y lo que se haya consultado en el formulario.
+   *
+   * <p>El formulario va el último a propósito: quien llega desde el enlace de su correo no tiene
+   * que volver a escribir nada.
+   */
   protected readonly criteriosSeguimiento = computed<CriteriosSeguimiento | null>(() => {
     if (this.checkout.pedido() !== null) {
       return null;
@@ -81,8 +111,53 @@ export class EstadoPage {
     const parametros = this.route.snapshot.queryParamMap;
     const pedidoId = parametros.get('pedidoId');
     const correo = parametros.get('correo');
-    return pedidoId && correo ? { pedidoId, correo } : null;
+    if (pedidoId && correo) {
+      return { tipo: 'ID', pedidoId, correo };
+    }
+    const delFormulario = this.consultado();
+    return delFormulario === null
+      ? null
+      : {
+          tipo: 'NUMERO',
+          numeroPedido: delFormulario.numeroPedido,
+          correo: delFormulario.correo,
+        };
   });
+
+  /**
+   * El formulario se pinta mientras no haya por dónde consultar, y **también** cuando lo que se
+   * consultó no existe: así quien se equivocó de número lo corrige ahí mismo, en vez de quedarse
+   * mirando un error sin salida.
+   */
+  protected readonly pidiendoDatos = computed(
+    () => this.criteriosSeguimiento() === null || this.noEncontrado(),
+  );
+
+  /**
+   * `null` es "el servidor dijo que no existe", que es distinto de `undefined` —todavía no se ha
+   * preguntado—. El adaptador traduce el 404 a `null` precisamente para poder distinguirlos aquí.
+   */
+  protected readonly noEncontrado = computed(
+    () => this.consulta.isSuccess() && this.consulta.data() === null,
+  );
+
+  protected consultarPorNumero(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.error.set(this.traducir()('checkout.estado.consulta.faltan_datos'));
+      return;
+    }
+    this.error.set(null);
+    const { numeroPedido, correo } = this.form.getRawValue();
+    this.consultado.set({ numeroPedido: numeroPedido.trim(), correo: correo.trim() });
+  }
+
+  /** Vuelve al formulario en blanco, para consultar otro pedido. */
+  protected otraConsulta(): void {
+    this.consultado.set(null);
+    this.form.reset();
+    this.error.set(null);
+  }
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
 

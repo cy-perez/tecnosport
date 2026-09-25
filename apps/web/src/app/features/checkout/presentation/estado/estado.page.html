@@ -189,10 +189,63 @@
         {{ 'checkout.estado.reintentar' | transloco }}
       </ts-boton>
     }
-  } @else if (criteriosSeguimiento() === null) {
-    <p class="mb-16 text-ts-error" role="alert">{{ 'checkout.estado.sin_datos' | transloco }}</p>
-  } @else if (consulta.isPending()) {
+  } @else if (consulta.isPending() && !pidiendoDatos()) {
     <ts-esqueleto />
+  } @else if (pidiendoDatos()) {
+    <!-- El formulario, y es lo que esta pantalla no tenía: sin parámetros en la URL solo sabía
+         decir "No encontramos este pedido", que es adonde llevaba el enlace del pie. El comprador
+         no conoce el `id` —es un UUID—, así que se consulta por el número del comprobante.
+         También se pinta cuando la consulta no encontró nada, para poder corregir el número sin
+         salir de aquí. -->
+    <div class="mx-auto max-w-formulario">
+      <h1 class="m-0 mb-8 font-display text-2xl">
+        {{ 'checkout.estado.consulta.titulo' | transloco }}
+      </h1>
+      <p class="m-0 mb-24 text-ts-texto-suave">
+        {{ 'checkout.estado.consulta.entradilla' | transloco }}
+      </p>
+
+      <form
+        class="flex flex-col gap-16"
+        [formGroup]="form"
+        (submit)="$event.preventDefault(); consultarPorNumero()"
+      >
+        <ts-campo
+          idCampo="seguimiento-numero"
+          [label]="'checkout.estado.consulta.numero' | transloco"
+          [ayuda]="'checkout.estado.consulta.numero_ayuda' | transloco"
+          [obligatorio]="true"
+          formControlName="numeroPedido"
+        />
+
+        <ts-campo
+          idCampo="seguimiento-correo"
+          tipo="email"
+          [label]="'checkout.estado.consulta.correo' | transloco"
+          [obligatorio]="true"
+          formControlName="correo"
+        />
+
+        <!-- Región viva permanente: un `role="alert"` que nace ya lleno dentro de un `@if` no se
+             anuncia (docs/06-testing.md). Lo que cambia es el contenido, no el nodo. -->
+        <p class="m-0 text-ts-error" role="alert">
+          @if (noEncontrado()) {
+            {{ 'checkout.estado.consulta.no_encontrado' | transloco }}
+          } @else {
+            {{ error() }}
+          }
+        </p>
+
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="consulta.isFetching()"
+          [etiquetaCargando]="'checkout.estado.consulta.buscando' | transloco"
+        >
+          {{ 'checkout.estado.consulta.buscar' | transloco }}
+        </ts-boton>
+      </form>
+    </div>
   } @else {
     <p class="mb-16 text-ts-error" role="alert">{{ 'checkout.estado.sin_datos' | transloco }}</p>
   }

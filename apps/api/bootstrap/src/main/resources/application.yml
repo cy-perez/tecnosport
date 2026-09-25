@@ -431,6 +431,13 @@ tecnosport:
     cotizacion:
       ip-maximo: ${LIMITE_COTIZACION_IP_MAXIMO:60}
       ip-minutos: ${LIMITE_COTIZACION_IP_MINUTOS:30}
+    # El seguimiento por número legible es el único endpoint público con un identificador
+    # adivinable —los números van del 000001 hacia arriba—, así que el correo es lo único que
+    # protege el pedido. El tope es el más estrecho de los cuatro: consultar el propio pedido unas
+    # pocas veces al día cabe de sobra, recorrer números no.
+    seguimiento:
+      ip-maximo: ${LIMITE_SEGUIMIENTO_IP_MAXIMO:10}
+      ip-minutos: ${LIMITE_SEGUIMIENTO_IP_MINUTOS:10}
     pedidos:
       ip-maximo: ${LIMITE_PEDIDOS_IP_MAXIMO:30}
       ip-minutos: ${LIMITE_PEDIDOS_IP_MINUTOS:60}

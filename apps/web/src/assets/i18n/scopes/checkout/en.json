@@ -151,6 +151,18 @@
       "despachado_en": "Shipped on",
       "paquete": "Package",
       "varios_paquetes": "Your order ships in {{cuantos}} packages. They travel separately and may arrive on different days."
+    },
+    "consulta": {
+      "titulo": "Check your order",
+      "entradilla": "Enter your order number and the email address you used. Both are on the receipt we sent you.",
+      "numero": "Order number",
+      "numero_ayuda": "It looks like TS-2026-000123.",
+      "correo": "Order email address",
+      "buscar": "Check",
+      "buscando": "Checking…",
+      "faltan_datos": "Enter the order number and the email address you used.",
+      "no_encontrado": "We could not find an order with that number and that email address. Check them on your receipt; if they still do not work, write to us.",
+      "otra_consulta": "Check another order"
     }
   },
   "transferencia": {

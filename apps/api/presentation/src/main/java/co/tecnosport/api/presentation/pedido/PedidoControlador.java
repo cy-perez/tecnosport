@@ -4,6 +4,8 @@ import co.tecnosport.api.application.envio.MetodosDePagoDisponibles;
 import co.tecnosport.api.application.envio.MetodosDePagoDisponiblesComando;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedidoComando;
+import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
+import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumeroComando;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.CrearPedidoComando;
 import co.tecnosport.api.application.pedido.ReintentarPago;
@@ -19,6 +21,7 @@ import co.tecnosport.api.presentation.pedido.dto.MetodosDePagoDisponiblesRequest
 import co.tecnosport.api.presentation.pedido.dto.PedidoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.PedidoSeguimientoRespuesta;
 import co.tecnosport.api.presentation.pedido.dto.ReintentarPagoRequest;
+import co.tecnosport.api.presentation.pedido.dto.SeguimientoPorNumeroRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Comparator;
 import java.util.List;
@@ -49,6 +52,7 @@ public class PedidoControlador {
   private final MetodosDePagoDisponibles metodosDePagoDisponibles;
   private final ReintentarPago reintentarPago;
   private final ConsultarSeguimientoPedido consultarSeguimientoPedido;
+  private final ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero;
   private final MapeadorRespuestasPedido mapeador;
   private final MapeadorSeguimiento mapeadorSeguimiento;
   private final TransactionTemplate transaccion;
@@ -58,6 +62,7 @@ public class PedidoControlador {
       MetodosDePagoDisponibles metodosDePagoDisponibles,
       ReintentarPago reintentarPago,
       ConsultarSeguimientoPedido consultarSeguimientoPedido,
+      ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero,
       MapeadorRespuestasPedido mapeador,
       MapeadorSeguimiento mapeadorSeguimiento,
       PlatformTransactionManager transactionManager) {
@@ -66,6 +71,7 @@ public class PedidoControlador {
     this.metodosDePagoDisponibles = Objects.requireNonNull(metodosDePagoDisponibles);
     this.reintentarPago = Objects.requireNonNull(reintentarPago);
     this.consultarSeguimientoPedido = Objects.requireNonNull(consultarSeguimientoPedido);
+    this.consultarSeguimientoPorNumero = Objects.requireNonNull(consultarSeguimientoPorNumero);
     this.mapeador = Objects.requireNonNull(mapeador);
     this.transaccion = new TransactionTemplate(Objects.requireNonNull(transactionManager));
   }
@@ -115,6 +121,31 @@ public class PedidoControlador {
       @PathVariable UUID id, @RequestParam String correo) {
     Pedido pedido =
         consultarSeguimientoPedido.ejecutar(new ConsultarSeguimientoPedidoComando(id, correo));
+    return mapeadorSeguimiento.aRespuesta(pedido);
+  }
+
+  /**
+   * El mismo seguimiento, entrando por el número legible del pedido: es el único identificador que
+   * el comprador tiene, porque el {@code id} es un UUID que no aparece en nada que una persona lea.
+   * Es lo que sostiene el formulario de "Estado del pedido" del pie.
+   *
+   * <p>{@code POST} aunque no cree nada, y la ruta es literal —{@code /seguimiento}, sin {@code
+   * &#123;id&#125;} delante—, así que no compite con el {@code GET} de arriba. Lo de POST es por el
+   * cuerpo: ver {@link SeguimientoPorNumeroRequest}, el correo no viaja en la URL.
+   *
+   * <p>Sin {@code TransactionTemplate}: es una lectura, y las lecturas de este controlador no abren
+   * transacción propia — el hermano de arriba tampoco.
+   *
+   * <p><b>Va detrás del límite de intentos por IP</b>, con su propio presupuesto y más estrecho que
+   * el de los demás ({@code ConfiguracionLimiteIntentos}): el número es secuencial y adivinable, y
+   * lo único que protege el pedido es el correo.
+   */
+  @PostMapping("/seguimiento")
+  public PedidoSeguimientoRespuesta seguimientoPorNumero(
+      @RequestBody SeguimientoPorNumeroRequest cuerpo) {
+    Pedido pedido =
+        consultarSeguimientoPorNumero.ejecutar(
+            new ConsultarSeguimientoPorNumeroComando(cuerpo.numeroPedido(), cuerpo.correo()));
     return mapeadorSeguimiento.aRespuesta(pedido);
   }
 

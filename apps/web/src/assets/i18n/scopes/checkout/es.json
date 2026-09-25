@@ -151,6 +151,18 @@
       "despachado_en": "Despachado el",
       "paquete": "Paquete",
       "varios_paquetes": "Tu pedido viaja en {{cuantos}} paquetes. Van por separado y pueden llegar en días distintos."
+    },
+    "consulta": {
+      "titulo": "Consulta tu pedido",
+      "entradilla": "Escribe el número de tu pedido y el correo con el que lo hiciste. Los dos están en el comprobante que te enviamos.",
+      "numero": "Número del pedido",
+      "numero_ayuda": "Tiene la forma TS-2026-000123.",
+      "correo": "Correo del pedido",
+      "buscar": "Consultar",
+      "buscando": "Consultando…",
+      "faltan_datos": "Escribe el número del pedido y el correo con el que lo hiciste.",
+      "no_encontrado": "No encontramos un pedido con ese número y ese correo. Revísalos en tu comprobante; si siguen sin funcionar, escríbenos.",
+      "otra_consulta": "Consultar otro pedido"
     }
   },
   "transferencia": {

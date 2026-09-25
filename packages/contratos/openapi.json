@@ -2135,6 +2135,22 @@
         },
         "type" : "object"
       },
+      "SeguimientoPorNumeroRequest" : {
+        "properties" : {
+          "correo" : {
+            "type" : "string"
+          },
+          "numeroPedido" : {
+            "example" : "TS-2026-000123",
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "correo",
+          "numeroPedido"
+        ],
+        "type" : "object"
+      },
       "SesionRespuesta" : {
         "properties" : {
           "accessToken" : {
@@ -5354,6 +5370,36 @@
                     "type" : "string"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "pedido-controlador"
+        ]
+      }
+    },
+    "/api/v1/pedidos/seguimiento" : {
+      "post" : {
+        "operationId" : "seguimientoPorNumero",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeguimientoPorNumeroRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PedidoSeguimientoRespuesta"
                 }
               }
             },

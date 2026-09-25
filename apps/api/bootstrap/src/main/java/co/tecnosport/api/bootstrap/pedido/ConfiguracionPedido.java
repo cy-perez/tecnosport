@@ -17,6 +17,7 @@ import co.tecnosport.api.application.pedido.CancelarPedido;
 import co.tecnosport.api.application.pedido.ConciliarRecaudo;
 import co.tecnosport.api.application.pedido.ConciliarTransferencia;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
+import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.DespacharPedido;
 import co.tecnosport.api.application.pedido.EnviarComprobantesDeCompra;
@@ -191,6 +192,12 @@ public class ConfiguracionPedido {
   public ConsultarSeguimientoPedido consultarSeguimientoPedido(
       RepositorioPedidos repositorioPedidos) {
     return new ConsultarSeguimientoPedido(repositorioPedidos);
+  }
+
+  @Bean
+  public ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero(
+      RepositorioPedidos repositorioPedidos) {
+    return new ConsultarSeguimientoPorNumero(repositorioPedidos);
   }
 
   @Bean

@@ -13,6 +13,15 @@ public interface RepositorioPedidos {
 
   Optional<Pedido> buscarPorId(UUID id);
 
+  /**
+   * Por el número legible ({@code TS-2026-000123}), que es el único identificador del pedido que el
+   * comprador conoce: es el que lleva su comprobante y el que anuncia el correo de despacho. El id
+   * es un UUID y no aparece en ninguna parte que una persona lea.
+   *
+   * <p>La columna es {@code unique} desde V6, así que devuelve como mucho uno.
+   */
+  Optional<Pedido> buscarPorNumero(NumeroPedido numero);
+
   void guardar(Pedido pedido);
 
   /**

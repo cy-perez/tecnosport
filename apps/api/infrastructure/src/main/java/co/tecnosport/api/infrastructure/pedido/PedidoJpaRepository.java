@@ -4,6 +4,7 @@ import co.tecnosport.api.infrastructure.pedido.entidad.PedidoJpaEntity;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,8 @@ import org.springframework.data.repository.query.Param;
 public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID> {
 
   boolean existsByCorreoAndEstado(String correo, String estado);
+
+  Optional<PedidoJpaEntity> findByNumeroPedido(String numeroPedido);
 
   Page<PedidoJpaEntity> findByEstado(String estado, Pageable pageable);
 

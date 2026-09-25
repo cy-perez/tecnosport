@@ -78,6 +78,10 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   async consultarSeguimiento(): Promise<Seguimiento | null> {
     throw new Error('no usado en esta prueba');
   }
+
+  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
+    throw new Error('no usado en esta prueba');
+  }
 }
 
 const CARRITO_CON_LINEAS: Carrito = {

@@ -79,6 +79,11 @@ class RepositorioPedidosFalso implements RepositorioPedidos {
   async consultarSeguimiento(): Promise<Seguimiento | null> {
     return this.seguimiento;
   }
+
+  /** El mismo pedido por los dos caminos: lo que cambia en el servidor es por dónde se entra. */
+  async consultarSeguimientoPorNumero(): Promise<Seguimiento | null> {
+    return this.seguimiento;
+  }
 }
 
 class RepositorioPagosFalso implements RepositorioPagos {
@@ -208,9 +213,62 @@ describe('EstadoPage', () => {
     expect(screen.getByText('Pagado')).toBeTruthy();
   });
 
-  it('sin pedido en memoria ni datos en la URL, muestra el mensaje de no encontrado', async () => {
+  /**
+   * <b>Esto afirmaba lo contrario hasta el 25 de septiembre de 2026</b>, y afirmaba un defecto: sin
+   * pedido en memoria ni parámetros en la URL la pantalla decía "No encontramos este pedido", que
+   * es exactamente adonde llevaba el enlace "Estado del pedido" del pie. El comprador no conoce el
+   * `id` —es un UUID— así que no tenía forma de llegar con parámetros. Ahora se le pregunta por el
+   * número de su comprobante.
+   */
+  it('sin pedido en memoria ni datos en la URL, pide el número y el correo', async () => {
     await renderConProviders(new RepositorioPedidosFalso(), new RepositorioPagosFalso());
-    expect(await screen.findByText('No encontramos este pedido.')).toBeTruthy();
+
+    expect(await screen.findByRole('heading', { name: 'Consulta tu pedido' })).toBeTruthy();
+    expect(screen.getByLabelText('Número del pedido')).toBeTruthy();
+    expect(screen.getByLabelText('Correo del pedido')).toBeTruthy();
+    expect(screen.queryByText('No encontramos este pedido.')).toBeNull();
+  });
+
+  it('el formulario consulta por número y pinta el pedido encontrado', async () => {
+    const pedidos = new RepositorioPedidosFalso(
+      seguimientoDePrueba({ estado: 'PAGADO', metodoPago: 'TARJETA' }),
+    );
+    await renderConProviders(pedidos, new RepositorioPagosFalso());
+
+    fireEvent.input(screen.getByLabelText('Número del pedido'), {
+      target: { value: 'TS-2026-000001' },
+    });
+    fireEvent.input(screen.getByLabelText('Correo del pedido'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+
+    expect(await screen.findByText('Pedido TS-2026-000001')).toBeTruthy();
+  });
+
+  /**
+   * Lo que no existe se dice **sin sacar a nadie del formulario**: quien se equivocó de número lo
+   * corrige ahí mismo. Antes de que el formulario existiera, este camino era una pantalla muerta.
+   */
+  it('un número que no existe deja el formulario puesto y lo dice', async () => {
+    // Sin seguimiento: el doble devuelve `null`, que es como el adaptador traduce el 404.
+    const pedidos = new RepositorioPedidosFalso();
+    await renderConProviders(pedidos, new RepositorioPagosFalso());
+
+    fireEvent.input(screen.getByLabelText('Número del pedido'), {
+      target: { value: 'TS-2026-999999' },
+    });
+    fireEvent.input(screen.getByLabelText('Correo del pedido'), {
+      target: { value: 'cliente@tecnosport.co' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar' }));
+
+    expect(
+      await screen.findByText(
+        'No encontramos un pedido con ese número y ese correo. Revísalos en tu comprobante; si siguen sin funcionar, escríbenos.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Número del pedido')).toBeTruthy();
   });
 
   it('un pedido PAGO_FALLIDO muestra el botón de reintentar; uno confirmado no', async () => {

@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Doble de prueba escrito a mano, sin Mockito, ver docs/06-testing.md.
  *
- * <p>De las doce operaciones del puerto, el borrado de un producto usa una. Las otras once lanzan
+ * <p>De las trece operaciones del puerto, el borrado de un producto usa una. Las otras doce lanzan
  * en vez de devolver un vacío educado: si un cambio futuro las llama desde aquí, que se note.
  */
 final class RepositorioPedidosParaBorradoFalso implements RepositorioPedidos {
@@ -38,6 +38,11 @@ final class RepositorioPedidosParaBorradoFalso implements RepositorioPedidos {
 
   @Override
   public Optional<Pedido> buscarPorId(UUID id) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
     throw new UnsupportedOperationException();
   }
 
