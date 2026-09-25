@@ -79,7 +79,9 @@ export class Encabezado {
 
   /**
    * Las dos vías del proyecto: la preferencia del sistema operativo y el
-   * control del pie, que escribe `data-movimiento` en `<html>`.
+   * atributo `data-movimiento` de `<html>`. El atributo hoy **no lo escribe nadie**: la casilla del pie que lo ponía se quitó el 25 de
+   * septiembre de 2026. La lectura se queda porque es lo que haría falta el día que el control
+   * vuelva; `prefers-reduced-motion` sigue funcionando igual.
    */
   private prefiereMenosMovimiento(): boolean {
     const documento = this.documento;

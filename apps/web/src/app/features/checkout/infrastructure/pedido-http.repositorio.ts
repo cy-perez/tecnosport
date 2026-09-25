@@ -105,4 +105,27 @@ export class PedidoHttpRepositorio implements RepositorioPedidos {
     }
     return aSeguimiento(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
   }
+
+  /**
+   * `POST` y no `GET`, que es lo que desentona en esta clase: el correo va en el cuerpo para que no
+   * acabe en los registros de acceso ni en el historial del navegador. El hermano de arriba lo
+   * lleva en la URL porque a él se llega desde el enlace de un correo.
+   *
+   * El 404 se traduce a `null` como en el hermano. Y el 429 **no**: el límite de intentos por IP de
+   * este endpoint es más estrecho que el de los demás —el número es adivinable— y confundirlo con
+   * "no encontramos tu pedido" le diría a quien consulta de buena fe que su número está mal. Cae
+   * por `desempaquetar`, que es quien traduce el código del servidor al mensaje de la pantalla.
+   */
+  async consultarSeguimientoPorNumero(
+    numeroPedido: string,
+    correo: string,
+  ): Promise<Seguimiento | null> {
+    const respuesta = await this.cliente.POST('/api/v1/pedidos/seguimiento', {
+      body: { numeroPedido, correo },
+    });
+    if (respuesta.response.status === 404) {
+      return null;
+    }
+    return aSeguimiento(desempaquetar(respuesta, 'no se pudo consultar el estado del pedido'));
+  }
 }

@@ -20,6 +20,7 @@ import {
   VerdictoPlazo,
 } from '../../domain/atencion.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
 
 const CLAVE_TIPO: Record<TipoSolicitud, string> = {
   PETICION: 'admin.atencion.tipos.peticion',
@@ -65,6 +66,7 @@ const CLAVE_VERDICTO: Record<VerdictoPlazo, string> = {
     TsSelect,
     TsSelectControl,
     TsMigas,
+    TsCargando,
   ],
   templateUrl: './bandeja-atencion.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

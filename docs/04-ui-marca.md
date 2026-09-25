@@ -149,8 +149,11 @@ delante. Ver `ADR-0059`.
   `rounded-completo`: hacen lo mismo y solo una es rastreable al token.
   **La migración está a medias y a propósito**: el cambio entró por los dos
   alternadores del encabezado, y `ts-boton`, `ts-tarjeta-producto`,
-  `ts-dialogo`, el hero de la portada y el enlace de salto siguen con
-  `.chaflan`. Se migran cuando se toquen, no de una sentada.
+  `ts-dialogo` y el enlace de salto siguen con `.chaflan`. Se migran cuando se
+  toquen, no de una sentada. El hero salió de esta lista el 25 de septiembre de
+  2026 sin migrarse: el carrusel que lo sustituyó **no lleva chaflán de ninguna
+  clase**, ni el del marco de la foto ni el corte de la banda. Una deuda que ya
+  no existe en una lista de pendientes envía a alguien a buscar lo que no está.
 - **El chaflán a 45 grados** en la esquina superior izquierda y la inferior
   derecha es la firma de la marca. Se aplica con la clase `.chaflan`, y `--ch`
   controla el tamaño. Va en el logo y en las piezas gráficas — banners,
@@ -247,6 +250,10 @@ cubren o para lo que no debe olvidarse:
   eso.
 - `esqueleto` — el degradado de carga con sus `@keyframes`, apagado bajo
   `prefers-reduced-motion` y bajo `[data-movimiento="reducido"]`.
+- `girando` — la vuelta del anillo de carga, con los mismos dos interruptores que
+  el esqueleto. Y por la misma razón: `styles.scss` acorta la *duración* de toda
+  animación bajo `[data-movimiento]`, y un anillo que da la vuelta en 0,01 ms es
+  un parpadeo, peor que uno quieto. Hay que apagarlo, no acelerarlo.
 - `superficie-arrastre` — las tres propiedades que hacen arrastrable el visor
   360, incluida `-webkit-user-drag`, que no tiene utilidad en Tailwind.
 
@@ -352,6 +359,38 @@ SCSS con los mismos valores.
 el idioma activo para formatear la moneda) · `ts-esqueleto` · `ts-migas` ·
 `ts-paginador` · `ts-alternador-idioma` · `ts-alternador-tema` · `ts-visor-360`.
 
+### Los dos indicadores de carga, y cuándo va cada uno
+
+Conviven a propósito desde el 25 de septiembre de 2026, cuando entró el segundo:
+
+- **`ts-esqueleto`** dice **qué** va a aparecer. Se usa donde la forma se conoce
+  de antemano: una rejilla de tarjetas, una tabla, una ficha. Diecinueve
+  pantallas.
+- **`ts-cargando`** dice que **algo está pasando ahora**. Se usa donde no hay
+  forma que anticipar: un botón que acaba de pulsarse, un párrafo de estado.
+
+Antes solo existía el primero, y lo segundo se resolvía con texto pelado
+("Cargando…") o con nada: los botones que cargan **sin cambiar de texto** —la
+mayoría de las acciones de fila del panel— solo movían su `aria-busy`, que lo
+dice todo para quien usa lector de pantalla y **nada** para quien mira la
+pantalla. Un botón ocupado se veía igual que uno en reposo.
+
+`ts-cargando` sale del "Spinner 4" de TailAdmin, el segundo de los dos botones de
+esa tarjeta, con **una diferencia deliberada**: el original parte el anillo en dos
+colores, la pista en un gris fijo y el arco en el color de marca. Aquí los dos
+salen de `currentColor` y la pista va al 25 %. El componente se pinta sobre cinco
+fondos —el grafito del botón primario, el ámbar del de acento, el rojo del de
+peligro, el transparente del secundario y el fondo de la página— y un arco de
+color fijo desaparece sobre el suyo: ámbar sobre ámbar no se ve. Heredando el
+color del texto contrasta exactamente igual que la etiqueta que tiene al lado, en
+los dos temas y sin una regla por variante. Quien quiera el ámbar lo pide con
+`clase="text-ts-acento"`, como con `ts-icono`.
+
+El giro dura `--mov-giro` (1000 ms), que entró al kit para esto. No se reutilizó
+`--mov-lenta` —los 1400 ms del brillo de carga— porque son cosas distintas: aquel
+es ambiental y este responde a una acción, y a 1400 ms el anillo se arrastra y
+parece que la aplicación se colgó.
+
 **No queda una sola línea de SCSS en el frontend**, salvo `src/styles.scss`, que
 conserva la regla global de reducción de movimiento disparada por
 `[data-movimiento="reducido"]`. Todo lo demás son utilidades mapeadas a tokens.
@@ -391,7 +430,17 @@ táctil es **la etiqueta entera** (`min-h-tactil` va en el `<label>`, medido en
 158 × 44), la caja se dibuja a 24 px con `appearance-none` y un visto de
 Lucide, y `sobreMarca` conmuta al par `sobre-marca` / `marca` —validado en
 14,64:1— porque en la franja del pie el anillo de foco normal es invisible en
-tema claro. No implementa `ControlValueAccessor`, a diferencia de `ts-campo` y
+tema claro. Esa casilla **ya no existe**: se quitó del pie el 25 de septiembre de 2026, a
+petición, y con ella se fue el único consumidor de `sobreMarca`. El componente
+sigue vivo en el resumen del checkout y en el registro, las dos sobre superficie
+clara. La consecuencia de quitarla está escrita en `layout/pie/pie.ts` y vale
+repetirla: quien **no** tenga la preferencia puesta en su sistema operativo se
+queda sin forma de pedir menos movimiento desde el sitio. La regla de
+`prefers-reduced-motion` de `tokens.css` sigue intacta y sigue apagando el
+carrusel de portada, el brillo de carga y el anillo; lo que desapareció es el
+interruptor propio.
+
+No implementa `ControlValueAccessor`, a diferencia de `ts-campo` y
 `ts-select`: su único consumidor no usa Angular Forms, y cablear un CVA que
 nadie registra sería el código especulativo que la regla de arriba evita.
 
@@ -644,11 +693,16 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
 - Jerarquía de encabezados sin saltos, un solo `h1` por página.
 - Controles del usuario en el pie: tamaño de texto, contraste alto y reducción de
   movimiento, que además respetan `prefers-reduced-motion` y
-  `prefers-color-scheme`. **Reducción de movimiento cerrada** (`layout/pie/`,
-  2026-09-04): checkbox persistido en `localStorage`, con `styles.scss`
-  repitiendo la misma regla que `tokens.css` ya aplica bajo
-  `prefers-reduced-motion`, disparada por `[data-movimiento="reducido"]`.
-  **Los otros dos, pendientes, cada uno con su propio bloqueo real:**
+  `prefers-color-scheme`. **Los tres están hoy sin construir**, y el de movimiento
+  vuelve a la lista: estuvo cerrado desde el 2026-09-04 —checkbox persistido en
+  `localStorage`, con `styles.scss` repitiendo bajo `[data-movimiento="reducido"]`
+  la misma regla que `tokens.css` ya aplica bajo `prefers-reduced-motion`— y **se
+  quitó del pie el 2026-09-25**, al rehacerlo, a petición. Quien no tenga la
+  preferencia puesta en su sistema operativo se queda sin forma de pedirla aquí;
+  la regla automática sigue intacta y los ganchos `[data-movimiento]` siguen
+  puestos, así que devolverlo es volver a poner un control que escriba el atributo
+  — y el sitio para ponerlo probablemente no sea el pie, sino junto a los otros
+  dos. **Esos dos siguen con su propio bloqueo real:**
   - **Contraste alto** necesita una paleta que `tokens.json` no define —
     no es una decisión que le toque tomar a quien programa.
   - **Tamaño de texto**: los tokens `--texto-*` de `tokens.css` están en `px`,
@@ -681,84 +735,173 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
   tenga su primer consumidor.
 - El visor 360 se opera con flechas y con botones visibles, no solo arrastrando.
 
-## La banda de portada
+## El carrusel de portada
 
 Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
-entera. Vive en `features/catalogo/presentation/portada/hero/`.
+entera de borde a borde. Vive en `features/catalogo/presentation/portada/hero/`,
+en `ts-carrusel-hero`.
 
-**Un botón por línea de negocio, los cuatro en el mismo ámbar y del mismo
-tamaño** (`ADR-0064`). El tamaño lo iguala la rejilla —`grid-cols-2`, celdas
-iguales— y no el relleno: con `flex-wrap`, cada botón tomaba el ancho de su
-etiqueta y "Ver bolsos" era la mitad de "Ver calzado deportivo". La lista y las
-clases viven en `ts-hero.ts` y son **una sola cadena para los cuatro**: cuatro
-copias son cuatro sitios donde se puede caer el `anillo-foco-sobre-acento`. El
-orden de la banda —ropa, calzado, bolsos, tecnología— no es el canónico de
-`LINEAS`: qué línea encabeza la portada lo decide el negocio, no el modelo.
+**Cuatro piezas, una por línea de negocio**, que pasan solas cada cinco segundos.
+Sustituyó el 25 de septiembre de 2026 a la banda de una sola fotografía con
+cuatro botones bajo el mismo titular: el referente es gotrendier.com.co, donde la
+imagen sangra hasta el borde de la ventana, y el del carrusel es el bloque "With
+indicators" de TailAdmin. El orden —ropa, calzado, bolsos, tecnología— no es el
+canónico de `LINEAS`: qué línea encabeza la portada lo decide el negocio, no el
+modelo.
 
-**El párrafo de apoyo dice qué se vende, no cómo se compra.** Las condiciones
-—envíos, contraentrega, medios de pago, garantía legal— las lleva la tira de
-confianza que va justo debajo, y hasta el 24 de septiembre de 2026 estaban dichas
-dos veces, palabra por palabra, en los dos sitios.
+**Sin Swiper.** El bloque de referencia está montado sobre esa librería, y no
+entra: cada dependencia nueva es deuda, y lo que hace falta de ella —cuatro
+diapositivas, unas viñetas y un temporizador— son cincuenta líneas de señales.
+Lo que sí se copia es el aspecto: viñetas tipo píldora abajo al centro, la activa
+tres veces más ancha, y el paso cada cinco segundos.
 
-**La tira son cuatro sellos en rejilla**, no tres en un `flex-wrap`: entró
-"Diversas opciones de pago" el 25 de septiembre de 2026 y el cuarto caía solo a
-una segunda línea, colgando bajo el primero. Dos columnas en teléfono y cuatro
-desde tableta, con el icono alineado a la primera línea del texto (`items-start`
-más `mt-4`) porque a dos columnas hay sellos que ocupan dos líneas. Los cuatro
-iconos son de Lucide, con el mismo trazo y el mismo tamaño: **un emoji no vale**
-aunque se pida —lo dibuja la fuente del sistema, cambia de forma y de color en
-cada plataforma, y la fila deja de leerse como una familia—.
+**El arte lo entrega el ZIP `hero-tecnosport/`**, con cada pieza en dos
+versiones: `con-texto/`, con el titular y el botón incrustados en los píxeles, y
+`limpio/`, sin ellos. Se usa `limpio/` y el texto lo pone el HTML, que es lo que
+recomienda el propio `LEEME.md` del ZIP y lo que exige la regla dura #4 — texto
+dentro de una imagen no se traduce, no lo lee un lector de pantalla, no escala y,
+en el caso del botón, parece pulsable sin serlo.
 
-**Tres tokens nuevos, y ninguno es una excepción a la regla dura #2.** El kit que
-entregó diseño el 18 de septiembre de 2026 traía un `.scss` de componente con
-treinta y tantos literales —`13px`, `52px`, `clamp(40px, 5.4vw, 72px)`,
-`rgb(255 255 255 / 62%)`—. Lo que de verdad hacía falta eran tres longitudes, y
-esas entraron por donde entran las longitudes:
+**Un solo juego de arte para los dos temas.** El ZIP trae `claro/` y `oscuro/`, y
+entre las dos carpetas solo cambia el color del lienzo: `#1B1F26` contra
+`#191E26`, dos unidades de rojo y una de verde. Servir las dos costaba caro de
+verdad —un `<img>` con `display:none` se descarga igual en Chrome, o sea el doble
+de bytes justo en la imagen del LCP— y elegir en tiempo de ejecución no se puede,
+porque el servidor no conoce el tema mientras renderiza. Solo se publica el juego
+claro; la franja que rodea al arte sí cambia de tema, porque es `bg-ts-marca`.
 
-| Token | Valor | Qué es |
+### Una utilidad donde había tres
+
+`corte-hero` y `chaflan-hero` se fueron con la banda anterior. Dibujaban a mano el
+corte a 45° de la esquina inferior derecha y el chaflán del marco de la foto, y el
+carrusel no tiene marco que chaflanar. **La firma de la marca no se perdió**: la
+traen los propios archivos, cuya tarjeta de producto ya viene cortada a 34 px en
+las dos esquinas. Un `clip-path` de cinco pares de coordenadas que nadie aplica es
+peor que ninguno, porque parece vigente al leerlo.
+
+`alto-hero` sobrevive con otro nombre y con el signo cambiado: es
+`alto-carrusel`, y es un **máximo** donde era un mínimo.
+
+| Token | Valor | Qué es hoy |
 |---|---|---|
-| `--hero-corte` | 120 px | El corte a 45° de la esquina inferior derecha de la banda |
-| `--hero-alto-min` | 620 px | El alto mínimo, usado como `min(token, 82vh)` |
-| `--chaflan-hero` | 72 px | El chaflán del marco de la foto |
+| `--hero-alto-min` | 620 px | El techo del carrusel, usado como `max(min(token, 70vh))` |
+| `--hero-corte` | 120 px | Sin consumidor desde el carrusel |
+| `--chaflan-hero` | 72 px | Sin consumidor desde el carrusel |
 
-Los tres salen de `tokens.json` (`hero_px` y `chaflan_px.hero`) y se usan desde
-tres utilidades de `tailwind.css`: `corte-hero`, `alto-hero` y `chaflan-hero`.
-No hay `.scss` de componente: `ADR-0020`.
+La diferencia entre mínimo y máximo es la que hay entre las dos piezas: la banda
+vieja era texto sobre color y necesitaba un alto que llenara la primera pantalla;
+el carrusel es una imagen de 1440 × 592 a todo el ancho, y a 1900 px de ventana su
+proporción natural pediría 780 px de alto, más que la pantalla entera de un
+portátil. Se recorta con `object-cover`, y el recorte es seguro porque el arte
+tiene margen: la tarjeta de producto ocupa de y 48 a y 544 de sus 592, así que al
+techo de 620 se pierden cuatro filas por arriba y cinco por abajo —medido en el
+navegador leyendo los píxeles, no estimado—.
 
-**El corte y el chaflán se encogen solos** con `min(token, 18vw)` y
-`min(token, 12vw)`. El kit lo resolvía con tres media queries; un `min()` hace lo
-mismo sin puntos de quiebre y sin escalones — en un teléfono de 390 px el corte
-baja a ~70 px en vez de comerse la esquina entera.
+### Dos formas, no dos tamaños
 
-### Dos cosas que solo se vieron en el navegador
+La pieza ancha deja libre la mitad izquierda para el texto. A 390 px de ventana
+esa mitad mide 175 px y el titular se vuelve una mancha, así que **en teléfono va
+la tarjeta cuadrada** de 1000 × 1000 —el mismo set de producto, sin la banda— y el
+texto debajo, no encima.
 
-**1. `chaflan-hero` no podía componerse con `chaflan`.** La idea natural era
-`class="chaflan chaflan-hero"`, con la segunda cambiando solo `--ch`. No
-funciona: `.chaflan` vive en `tokens.css`, **fuera de toda capa**, y una
-declaración sin capa le gana a cualquier utilidad de Tailwind aunque el selector
-empate. El marco salía con el chaflán de un botón, `npm run clases` daba la clase
-por buena —existe— y no hacía nada. `chaflan-hero` repite el `clip-path` entero y
-se usa sola.
+Eso se resuelve con `<picture>` y un `<source media>`, **no con
+`NgOptimizedImage`**, que `apps/web/CLAUDE.md` pide "siempre". Es la excepción que
+esa regla no contempla: `NgOptimizedImage` no admite dirección de arte, y aquí no
+son dos tamaños de la misma foto sino dos composiciones distintas. La alternativa
+—dos `<img>` y tapar uno con CSS— descarga los dos. El único literal es el `media`,
+y vive con los otros de su clase en `core/imagenes/tamanos-de-imagen.ts`, por el
+mismo motivo: lo lee el navegador antes de aplicar una sola hoja de estilos, así
+que no puede referirse a `--breakpoint-desde-movil`.
 
-**2. La banda va en `--color-marca`, no en `--color-primario`.** En tema oscuro
+El `sizes` es `100vw` en las dos formas, que es un porcentaje de la ventana y no
+un píxel: ahí no hace falta ningún permiso de la regla dura #2. Por eso desapareció
+`TAMANOS_HERO`, que existía cuando la foto ocupaba media rejilla de `--ancho-max`.
+
+### Las viñetas y el movimiento
+
+Las viñetas salen de `--color-sobre-marca` en los dos estados, y **no cambian con
+el tema** aunque vivan encima de una imagen: el arte es oscuro siempre. La
+inactiva fue `bg-ts-marca-alt` durante un rato y daba **1,38:1** contra el fondo
+del arte, por debajo del 3:1 que WCAG 1.4.11 pide de un control; al 50 % del blanco
+sube a 4,6:1 y se sigue leyendo como "apagada" frente a la activa.
+
+**El objetivo táctil va en el `<button>` y la píldora en un `<span>` hijo.** La
+píldora mide 8 px de alto y el botón era la píldora: 8 × 8 px la inactiva, por
+debajo de los 24 × 24 de WCAG 2.5.8 y muy por debajo de los 44 de la tabla de
+medidas. La excepción de espaciado de 2.5.8 tampoco salvaba —con `gap-8` los
+centros quedaban a 16 px y los círculos de 24 se solapan—. Con `size-tactil` en el
+botón y `bg-transparent`, el área pulsable son 44 px y el dibujo no engorda.
+
+**Y hay un botón de pausa**, que es lo que WCAG 2.2.2 (nivel A) exige de todo
+movimiento automático que dure más de cinco segundos: un mecanismo para pausarlo,
+detenerlo u ocultarlo. Este documento describía "se detiene con el puntero encima
+y con el foco dentro" como si bastara, y no basta: en un teléfono no hay puntero
+—y tocar una viñeta *reinicia* la cuenta en vez de detenerla— y con teclado no es
+descubrible. La pausa de la persona es una señal aparte de la del puntero y
+**gana**: con un solo booleano para las dos fuentes, sacar el ratón reanudaba lo
+que alguien acababa de pausar a propósito.
+
+**`aria-roledescription` pasa por Transloco.** Decía `"carousel"` y `"slide"` en
+inglés, literales en la plantilla. Ese atributo **se pronuncia**: en la versión
+española el lector decía "carousel". Es texto visible —para quien escucha— y la
+regla dura #4 no admite ninguno, `aria-label` incluidos.
+
+**El `<h1>` de la portada vive fuera del carrusel.** Estuvo en la primera
+diapositiva, con `<p>` en las otras tres para no tener cuatro encabezados de nivel
+uno. El razonamiento era correcto y el resultado estaba roto: esa diapositiva
+queda `inert` y `aria-hidden` en cuanto el carrusel avanza, así que a los cinco
+segundos la portada se quedaba **sin ningún encabezado de nivel uno**. Hoy es un
+`sr-only` en `portada.page.html` con `portada.titulo`, que además es estable —un
+`h1` que cambia de texto cada cinco segundos es peor que uno que no se ve—.
+
+Los cuatro hallazgos anteriores salieron de la auditoría de accesibilidad del 25
+de septiembre de 2026, con `npm run clases`, `npm run contrastes` y las pruebas en
+verde: ninguna herramienta del proyecto los veía.
+
+Son botones con `aria-current`, **no `role="tablist"` con `role="tab"`**: el patrón
+de pestañas de la APG obliga además a que cada diapositiva sea un `tabpanel`
+etiquetado por su pestaña y a mover el foco con las flechas dentro de la tira, y a
+medio implementar anuncia una estructura que no existe.
+
+Del patrón de carrusel de la APG sí se toma todo lo demás:
+`aria-roledescription="carousel"` con su nombre, un `group` por diapositiva con su
+«N de 4», `inert` en las tres que no tocan —para que su botón salga del orden de
+tabulación—, y `aria-live` en `off` mientras rota sola y `polite` cuando alguien la
+detuvo. **El movimiento se detiene con el puntero encima y con el foco dentro**, y
+con menos movimiento pedido no arranca siquiera: ahí no basta con acortar la
+animación, hay que no programar el temporizador.
+
+### La tira de confianza
+
+Los cuatro sellos van **bajo el carrusel y no dentro de cada pieza**: son ciertos
+para las cuatro líneas, así que repetirlos cuatro veces sería decir cuatro veces lo
+mismo. Son cuatro en rejilla, no tres en un `flex-wrap`: entró "Diversas opciones
+de pago" el 25 de septiembre de 2026 y el cuarto caía solo a una segunda línea,
+colgando bajo el primero. Dos columnas en teléfono y cuatro desde tableta, con el
+icono alineado a la primera línea del texto (`items-start` más `mt-4`) porque a dos
+columnas hay sellos que ocupan dos líneas. Los cuatro iconos son de Lucide, con el
+mismo trazo y el mismo tamaño: **un emoji no vale** aunque se pida —lo dibuja la
+fuente del sistema, cambia de forma y de color en cada plataforma, y la fila deja
+de leerse como una familia—.
+
+**El párrafo de apoyo de cada pieza dice qué se vende, no cómo se compra.** Las
+condiciones —envíos, contraentrega, medios de pago, garantía legal— las lleva esta
+tira, y hasta el 24 de septiembre de 2026 estaban dichas dos veces, palabra por
+palabra, en los dos sitios.
+
+### Una cosa que solo se vio en el navegador
+
+**La banda va en `--color-marca`, no en `--color-primario`.** En tema oscuro
 `primario` **es el ámbar**: la banda entera se teñía y el botón de acento
 desaparecía dentro de ella. Es exactamente lo que este documento ya decía en
 "Modo oscuro" —las franjas grandes no se vuelven ámbar— y el pie ya usaba el par
-correcto, `bg-ts-marca` con `text-ts-sobre-marca`. Ninguna prueba lo habría
-dicho.
+correcto, `bg-ts-marca` con `text-ts-sobre-marca`. Ninguna prueba lo habría dicho.
 
-### La foto
-
-1200×900, WebP con JPEG de respaldo, en `public/imagenes/portada/`. Es la única
-imagen de la portada con `priority`: al entrar ella, las cuatro tarjetas de
-novedades lo pierden — priorizar cinco imágenes es no priorizar ninguna.
-
-**Se recortó del archivo que entregó el negocio**, y el motivo vale para la
-próxima vez: el archivo era un banner terminado, con el titular, el subtítulo y un
-botón "COMPRAR AHORA" incrustados en los píxeles. Texto dentro de una imagen no se
-traduce, no lo lee un lector de pantalla, no escala en un teléfono y no es un
-encabezado para nada; el botón, además, parecía pulsable sin serlo. Se recortó la
-fotografía —la escena, sin la franja de texto— y el texto lo pone el HTML.
+(La otra que vivía aquí era por qué `chaflan-hero` no podía componerse con
+`chaflan` —`.chaflan` vive en `tokens.css`, fuera de toda capa, y le gana a
+cualquier utilidad de Tailwind aunque el selector empate—. Se queda escrita
+aunque la utilidad ya no exista: el mecanismo sigue ahí para la próxima que lo
+intente.)
 
 ### Lo que el texto puede decir
 
@@ -775,6 +918,10 @@ traía el kit se revisaron una por una contra lo que el sistema puede sostener:
 
 Lo que queda —envío cotizado, contraentrega donde esté disponible, garantía
 legal— es lo mismo que prometen los términos publicados.
+
+El copy de las cuatro piezas sale de la tabla de `hero-tecnosport/LEEME.md` y
+pasa el mismo filtro: dice qué hay en cada línea y no promete plazo, precio ni
+cobertura.
 
 ## Imágenes del catálogo
 

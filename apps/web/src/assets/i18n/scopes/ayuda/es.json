@@ -1,0 +1,184 @@
+{
+  "preguntas": {
+    "titulo": "Preguntas frecuentes",
+    "entradilla": "Lo que más nos preguntan sobre comprar, recibir y devolver.",
+    "nota": "Esta página resume nuestros términos y condiciones para que se lean rápido. Lo que obliga es el documento completo, y si algo no coincide, manda él.",
+    "ver_terminos": "Leer los términos y condiciones",
+    "grupos": [
+      {
+        "titulo": "Comprar y pagar",
+        "preguntas": [
+          {
+            "pregunta": "¿Necesito crear una cuenta para comprar?",
+            "respuesta": [
+              "No. Puedes comprar indicando únicamente tu correo y los datos de entrega.",
+              "Si prefieres crear una cuenta, eres responsable de la veracidad de tus datos y de mantener tu contraseña en reserva."
+            ]
+          },
+          {
+            "pregunta": "¿Qué medios de pago aceptan?",
+            "respuesta": [
+              "Tarjeta de crédito y débito, PSE, Nequi y Bancolombia, procesados por la pasarela de pagos Wompi; transferencia bancaria manual; y pago contraentrega, cuando esté habilitado para tu ciudad y tu pedido.",
+              "Los medios que veas al momento de pagar son los disponibles para ese pedido: no todos están habilitados para todos los pedidos.",
+              "No almacenamos datos de tarjetas: esa información se maneja íntegramente en la plataforma de la pasarela."
+            ]
+          },
+          {
+            "pregunta": "¿Al precio publicado se le suma algún impuesto o el envío?",
+            "respuesta": [
+              "El precio publicado es el valor final de cada producto y no se le suma ningún impuesto: Tecno Sport no es responsable del impuesto sobre las ventas (IVA).",
+              "El envío va aparte. Su costo depende de la ciudad de destino y del tamaño y peso de lo que compras, se calcula al momento de tu compra y te lo mostramos antes de pagar, junto con el precio de cada producto, el subtotal y el total. Si eliges recoger tu pedido en nuestro punto de Medellín, no pagas costo de envío."
+            ]
+          },
+          {
+            "pregunta": "¿Me envían factura?",
+            "respuesta": [
+              "Por cada compra te enviamos al correo que registraste un comprobante con el detalle de lo que compraste, lo que pagaste y cómo te lo entregamos. Guárdalo: es el soporte de tu compra y es lo que necesitas para reclamar la garantía.",
+              "Ese comprobante no es una factura de venta: Tecno Sport no es responsable de IVA y no está obligado a expedir factura, según el artículo 1.6.1.4.3 del Decreto 1625 de 2016."
+            ]
+          },
+          {
+            "pregunta": "¿Cómo funciona el pago contraentrega?",
+            "respuesta": [
+              "Lo habilita el sistema según la ciudad de entrega, el valor del pedido y el tipo de producto, y te lo informamos antes de que elijas el método de pago.",
+              "La transportadora cobra el total del pedido —la mercancía más el costo del envío— y solo recibe efectivo, así que ten a mano el valor exacto.",
+              "Rechazar la entrega no es lo mismo que retractarse: es una compra que no llegó a perfeccionarse, y en ese caso no hay dinero que devolver porque no se recibió. El rechazo reiterado de entregas puede llevarnos a no habilitar este método en compras posteriores."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Envíos y entregas",
+        "preguntas": [
+          {
+            "pregunta": "¿A dónde envían?",
+            "respuesta": [
+              "Despachamos a todo el territorio nacional a través de empresas de transporte.",
+              "Si no hay empresa de transporte que cubra la dirección que indicaste, te lo decimos en ese momento y podrás recoger el pedido en nuestro punto de Medellín."
+            ]
+          },
+          {
+            "pregunta": "¿Cuánto cuesta el envío?",
+            "respuesta": [
+              "Se calcula con la ciudad de destino que nos indiques y con el peso y las dimensiones de tu pedido. Te lo mostramos antes de pagar, como un valor separado del precio de los productos.",
+              "Recoger el pedido en nuestro punto de Medellín no tiene costo."
+            ]
+          },
+          {
+            "pregunta": "¿Cuánto tarda en llegar?",
+            "respuesta": [
+              "No pactamos contigo un plazo de entrega distinto del legal, así que aplica el término de treinta (30) días calendario contados desde la confirmación del pago. Si para un pedido concreto te anunciamos un plazo menor, ese plazo anunciado es el que nos obliga.",
+              "La fecha estimada que muestra la empresa de transporte al momento de la compra es una estimación suya, no un plazo distinto del anterior."
+            ]
+          },
+          {
+            "pregunta": "¿Puedo recoger el pedido en vez de que me lo envíen?",
+            "respuesta": [
+              "Sí. Eliges esa opción al comprar y no pagas costo de envío.",
+              "La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador."
+            ]
+          },
+          {
+            "pregunta": "¿Cómo sigo mi pedido?",
+            "respuesta": [
+              "Cuando despachemos tu pedido te enviaremos un correo con la empresa de transporte que lo lleva y el número de guía, junto con un enlace para consultar el estado de tu pedido cuando quieras.",
+              "El seguimiento del recorrido del paquete lo hace la empresa de transporte con ese número de guía; nosotros no lo mostramos en este sitio."
+            ]
+          },
+          {
+            "pregunta": "¿Y si mi pedido no llega dentro del plazo?",
+            "respuesta": [
+              "Puedes terminar el contrato y recuperar tu dinero, incluido el costo del envío que hayas pagado. Escríbenos y lo tramitamos."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Devoluciones, retracto y garantía",
+        "preguntas": [
+          {
+            "pregunta": "Me arrepentí de la compra. ¿Puedo devolverla?",
+            "respuesta": [
+              "Sí. Como esta es una venta a distancia, puedes retractarte dentro de los cinco (5) días hábiles siguientes a la entrega del producto, sin tener que explicar por qué.",
+              "Para ejercerlo, escríbenos dentro de ese plazo, devuelve el producto en el mismo estado en que lo recibiste y suminístranos los datos que necesitemos para el reintegro. Te devolvemos el dinero dentro de los quince (15) días calendario siguientes al día en que se cumplan esas dos condiciones, por el medio de pago que prefieras.",
+              "El costo del transporte de la devolución lo asumes tú, como lo dispone el artículo 47 de la Ley 1480 de 2011. Lo que te reintegramos es todo lo que pagaste por la compra, incluido el costo del envío que te cobramos al comprar.",
+              "El retracto no aplica a los productos confeccionados o personalizados según tus especificaciones, ni a los demás casos que excluye ese mismo artículo."
+            ]
+          },
+          {
+            "pregunta": "¿Qué cubre la garantía y por cuánto tiempo?",
+            "respuesta": [
+              "El término de la garantía legal es de un (1) año contado desde la entrega, salvo que el productor anuncie uno mayor, y en ese caso rige el mayor. Aplica a todos los productos nuevos que vendemos, equipos tecnológicos incluidos.",
+              "Si el producto falla, no sirve para lo que se ofreció o no corresponde a lo que compraste, tienes derecho a que lo reparemos, lo repongamos o te devolvamos el dinero, según el caso. Hacerla efectiva no te cuesta: la reparación y el transporte del producto para repararlo corren por nuestra cuenta.",
+              "La garantía no cubre el daño que provenga de fuerza mayor o caso fortuito, del hecho de un tercero, del uso indebido del producto —incluida la modificación no autorizada— o del incumplimiento de las instrucciones de instalación, uso o mantenimiento cuando el producto se entregó con manual en castellano. Demostrar que el daño viene de una de esas causas nos corresponde a nosotros, no a ti.",
+              "Para hacerla efectiva, escríbenos con tu número de pedido y una descripción del problema."
+            ]
+          },
+          {
+            "pregunta": "Pagué y no recibí el producto, o no es el que pedí. ¿Qué hago?",
+            "respuesta": [
+              "Eso se llama reversión del pago, y es distinta del retracto. Procede cuando fuiste víctima de fraude, cuando el producto no fue entregado, cuando no corresponde a lo que pediste o cuando resulta defectuoso.",
+              "Debes solicitarla ante nosotros y ante el emisor del medio de pago dentro de los cinco (5) días hábiles siguientes a que tengas noticia del hecho, y nosotros facilitamos el trámite."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Atención y datos personales",
+        "preguntas": [
+          {
+            "pregunta": "¿Cómo los contacto y en qué horario?",
+            "respuesta": [
+              "Por correo y por WhatsApp, todos los días de 8:00 a. m. a 9:00 p. m., hora de Colombia. El mismo horario aplica a nuestras redes sociales.",
+              "Los dos canales sirven también para radicar peticiones, quejas y reclamos."
+            ]
+          },
+          {
+            "pregunta": "¿En cuánto responden una petición, queja o reclamo?",
+            "respuesta": [
+              "En un plazo máximo de quince (15) días hábiles.",
+              "Las solicitudes sobre tus datos personales —consultas y reclamos— tienen sus propios plazos, más cortos en el caso de la consulta, y están en el numeral 12 de nuestra política de tratamiento de datos personales."
+            ]
+          },
+          {
+            "pregunta": "¿Qué hacen con mis datos personales?",
+            "respuesta": [
+              "Lo que dice nuestra política de tratamiento de datos personales: para qué los usamos, con quién los compartimos, cuánto los conservamos y cómo ejercer tus derechos. Puedes consultarla en este mismo sitio."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "contacto": {
+    "titulo": "Contáctanos",
+    "entradilla": "Estos son todos nuestros canales, con el horario en el que atendemos.",
+    "canales_titulo": "Canales de atención",
+    "whatsapp_nota": "La vía más rápida. También la usamos para coordinar las recogidas en Medellín.",
+    "correo_nota": "Para garantías, retractos y para radicar peticiones, quejas y reclamos.",
+    "telefono_nota": "En el mismo horario de atención.",
+    "plazos_titulo": "Qué esperar",
+    "plazos": [
+      "Respondemos tus peticiones, quejas y reclamos en un plazo máximo de quince (15) días hábiles.",
+      "Para reclamar la garantía, escríbenos con tu número de pedido y una descripción del problema.",
+      "Para retractarte tienes cinco (5) días hábiles desde la entrega, y basta con que nos escribas dentro de ese plazo."
+    ],
+    "vendedor_titulo": "Quién vende",
+    "punto_titulo": "Punto de recogida en Medellín",
+    "punto_nota": "Puedes elegir la recogida al comprar y no pagas costo de envío. La entrega se coordina contigo por WhatsApp o correo cuando confirmemos el pedido; no hay atención en mostrador.",
+    "enlaces_titulo": "También te puede servir",
+    "enlace_preguntas": "Preguntas frecuentes",
+    "enlace_estado": "Consultar el estado de un pedido",
+    "enlace_privacidad": "Política de tratamiento de datos personales"
+  },
+  "seo": {
+    "preguntas": {
+      "titulo": "Preguntas frecuentes",
+      "descripcion": "Envíos, plazos, medios de pago, retracto y garantía: lo que más nos preguntan sobre comprar en Tecno Sport."
+    },
+    "contacto": {
+      "titulo": "Contáctanos",
+      "descripcion": "WhatsApp, correo y teléfono de Tecno Sport, con horario de atención y plazos de respuesta."
+    }
+  }
+}

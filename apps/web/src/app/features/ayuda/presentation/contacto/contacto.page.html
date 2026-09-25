@@ -1,0 +1,118 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. Y ningún dato del negocio
+     escrito en el scope `ayuda`: el correo, el WhatsApp, el teléfono, el NIT, la dirección y el
+     horario salen de `pie.*`, que es la única copia que `npm run datos-negocio` vigila. -->
+<ng-container *transloco="let t; scope: 'ayuda'">
+  <article class="mx-auto flex max-w-lectura flex-col gap-32 px-16 py-32 desde-movil:px-24">
+    <header class="flex flex-col gap-8">
+      <h1 class="m-0 font-display text-2xl text-ts-texto">{{ t('ayuda.contacto.titulo') }}</h1>
+      <p class="m-0 text-base text-ts-texto-suave">{{ t('ayuda.contacto.entradilla') }}</p>
+    </header>
+
+    <section class="flex flex-col gap-16">
+      <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">
+        {{ t('ayuda.contacto.canales_titulo') }}
+      </h2>
+
+      <!-- Los tres canales, cada uno con qué se usa. El icono es `aria-hidden`: lo que nombra el
+           enlace es su texto. -->
+      <div class="flex items-start gap-12">
+        <ts-icono-marca [marca]="marcaWhatsapp" clase="size-24 mt-4 text-ts-texto" />
+        <div class="flex flex-col gap-4">
+          <a
+            class="anillo-foco inline-flex min-h-tactil items-center font-medio text-ts-primario"
+            [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
+            >{{ 'pie.whatsapp' | transloco }}</a
+          >
+          <p class="m-0 text-sm text-ts-texto-suave">{{ t('ayuda.contacto.whatsapp_nota') }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-12">
+        <ts-icono [icono]="iconoCorreo" clase="size-24 mt-4" />
+        <div class="flex flex-col gap-4">
+          <a
+            class="anillo-foco inline-flex min-h-tactil items-center font-medio break-all text-ts-primario"
+            [href]="'mailto:' + ('pie.correo' | transloco)"
+            >{{ 'pie.correo' | transloco }}</a
+          >
+          <p class="m-0 text-sm text-ts-texto-suave">{{ t('ayuda.contacto.correo_nota') }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-12">
+        <ts-icono [icono]="iconoTelefono" clase="size-24 mt-4" />
+        <div class="flex flex-col gap-4">
+          <!-- Aquí sí es un `tel:`, y en el pie no: esta es la página a la que se llega para
+               llamar, y un número que no se puede tocar desde un teléfono no sirve de nada. -->
+          <a
+            class="anillo-foco inline-flex min-h-tactil items-center font-medio text-ts-primario"
+            [href]="'tel:' + ('pie.telefono_e164' | transloco)"
+            >{{ 'pie.telefono' | transloco }}</a
+          >
+          <p class="m-0 text-sm text-ts-texto-suave">{{ t('ayuda.contacto.telefono_nota') }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-start gap-12">
+        <ts-icono [icono]="iconoHorario" clase="size-24 mt-4" />
+        <p class="m-0 py-12 text-base text-ts-texto">{{ 'pie.horario' | transloco }}</p>
+      </div>
+    </section>
+
+    <section class="flex flex-col gap-8">
+      <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">
+        {{ t('ayuda.contacto.plazos_titulo') }}
+      </h2>
+      <ul class="m-0 flex list-disc flex-col gap-8 pl-24 text-base leading-texto text-ts-texto">
+        @for (plazo of plazos(); track plazo) {
+          <li>{{ plazo }}</li>
+        }
+      </ul>
+    </section>
+
+    <!-- `not-italic` porque un <address> lo es por omisión del navegador, y aquí no hay Preflight
+         que lo resetee (src/tailwind.css). Es la misma identificación del vendedor que publica el
+         pie y que exige la Ley 1480; sale de las mismas claves. -->
+    <section class="flex flex-col gap-8">
+      <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">
+        {{ t('ayuda.contacto.vendedor_titulo') }}
+      </h2>
+      <address class="flex flex-col gap-4 text-base not-italic text-ts-texto">
+        <p class="m-0">{{ 'pie.nombre_comercial' | transloco }}</p>
+        <p class="m-0">{{ 'pie.nit' | transloco }}</p>
+        <p class="m-0 flex items-start gap-8">
+          <ts-icono [icono]="iconoUbicacion" clase="size-16 mt-4" />
+          <span>{{ 'pie.direccion' | transloco }}</span>
+        </p>
+      </address>
+    </section>
+
+    <section class="flex flex-col gap-8">
+      <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">
+        {{ t('ayuda.contacto.punto_titulo') }}
+      </h2>
+      <p class="m-0 text-base leading-texto text-ts-texto">{{ t('ayuda.contacto.punto_nota') }}</p>
+    </section>
+
+    <nav class="flex flex-col gap-8 border-t border-ts-borde pt-24">
+      <h2 class="m-0 font-texto text-base font-medio text-ts-texto">
+        {{ t('ayuda.contacto.enlaces_titulo') }}
+      </h2>
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+        [routerLink]="['/', idioma(), 'ayuda', 'preguntas-frecuentes']"
+        >{{ t('ayuda.contacto.enlace_preguntas') }}</a
+      >
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+        [routerLink]="['/', idioma(), 'checkout', 'estado']"
+        >{{ t('ayuda.contacto.enlace_estado') }}</a
+      >
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+        [routerLink]="['/', idioma(), 'legales', 'privacidad']"
+        >{{ t('ayuda.contacto.enlace_privacidad') }}</a
+      >
+    </nav>
+  </article>
+</ng-container>

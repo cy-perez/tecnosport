@@ -98,4 +98,28 @@ describe('TsAlternadorTema', () => {
 
     expect(await screen.findByRole('button', { name: 'Switch theme' })).toBeTruthy();
   });
+
+  /**
+   * El anillo es uno u otro, nunca los dos. Nació con las dos clases puestas —`cn` no conoce este
+   * par como grupo en conflicto, así que no descartaba la primera— y cuál ganaba lo decidía el
+   * orden en la hoja generada. Sobre la franja del pie eso es la diferencia entre un foco visible
+   * y uno invisible en tema claro, donde `--color-foco` y `--color-marca` son el mismo grafito.
+   *
+   * Que el anillo se **vea** hay que mirarlo en el navegador: `:focus-visible` depende de la
+   * modalidad y jsdom no la reproduce. Lo que una prueba sí puede fijar es que no salgan los dos.
+   */
+  it('lleva el anillo de su superficie, y solo uno', async () => {
+    const { fixture } = await renderAlternador();
+    await fixture.whenStable();
+
+    const clases = () => screen.getByRole('button').getAttribute('class') ?? '';
+    expect(clases()).toContain('anillo-foco');
+    expect(clases()).not.toContain('anillo-foco-sobre-marca');
+
+    fixture.componentRef.setInput('sobreMarca', true);
+    await fixture.whenStable();
+
+    expect(clases()).toContain('anillo-foco-sobre-marca');
+    expect(clases().split(/\s+/)).not.toContain('anillo-foco');
+  });
 });

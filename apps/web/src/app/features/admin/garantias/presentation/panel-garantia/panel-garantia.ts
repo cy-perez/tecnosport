@@ -17,6 +17,7 @@ import {
   VigenciaGarantia,
 } from '../../domain/garantia.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
 
 /** Una linea del pedido, con lo minimo para elegir sobre cual se reclama. */
 export interface LineaParaGarantia {
@@ -53,6 +54,7 @@ const CLAVE_DESENLACE: Record<DesenlaceGarantia, string> = {
     TsCampo,
     TsSelect,
     TsSelectControl,
+    TsCargando,
   ],
   templateUrl: './panel-garantia.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,7 +83,10 @@ export class PanelGarantia {
   );
 
   protected readonly formularioRadicar = new FormGroup({
-    varianteId: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),
+    varianteId: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     descripcionDelFallo: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required],

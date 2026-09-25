@@ -66,7 +66,31 @@ POST /api/v1/pagos/sistecredito/confirmacion  notificaciones de Sistecredito, SI
 POST /api/v1/envios/webhook                 eventos de seguimiento de Skydropx, firma verificada
 POST /api/v1/pedidos/{id}/reintentar-pago   PAGO_FALLIDO -> PAGO_PENDIENTE
 GET  /api/v1/pedidos/{id}/seguimiento       con token del correo, sin sesión
+POST /api/v1/pedidos/seguimiento            el mismo, por el número legible del pedido
 ```
+
+**Los dos seguimientos no son el mismo endpoint con otra llave**, y la
+diferencia es de seguridad, no de comodidad:
+
+- El de `{id}` es adonde lleva el enlace del correo. El id es un UUID v7:
+  recorrerlo no es una opción, así que no necesita techo de intentos.
+- El de número es el que sostiene el formulario de "Estado del pedido", porque
+  el comprador **nunca ve el id** — lo único que tiene es `TS-2026-000123`. Ese
+  número es secuencial y adivinable, así que lo único que protege el pedido es
+  que el correo coincida, y el endpoint va detrás de `FiltroLimiteIntentos` con
+  el presupuesto por IP más estrecho de los cuatro (diez cada diez minutos,
+  `LIMITE_SEGUIMIENTO_IP_*`). Queda un ataque en pie y está dicho en voz alta en
+  `ConsultarSeguimientoPorNumero`: quien ya conozca el correo de una persona
+  puede recorrer números. El límite lo encarece; no lo cierra.
+
+Es `POST` aunque no cree nada: el correo va en el cuerpo para que no acabe en los
+registros de acceso de Cloud Run, en el historial del navegador ni en el
+`Referer`. El de `{id}` lo lleva en la URL porque a él se llega desde un enlace y
+un `GET` no tiene cuerpo.
+
+**Los tres caminos de fallo responden lo mismo** —número mal escrito, número que
+no existe, correo que no coincide—: 404 con el mismo `detail`. Un 422 "el formato
+es TS-AAAA-NNNNNN" sería un oráculo gratis para quien prueba a ciegas.
 
 Los dos de Sistecrédito no son gemelos de los de Wompi, y conviene no leerlos
 así (`ADR-0048`):

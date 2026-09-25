@@ -12,11 +12,16 @@
 // apilamiento, que es justo lo que su propio javadoc dice que el portal existe para evitar.
 @use '@angular/cdk/overlay-prebuilt.css';
 
-// Control manual de "reducir movimiento" (docs/04-ui-marca.md, layout/pie/pie.ts):
-// misma regla exacta que tokens.css aplica automático bajo
-// `@media (prefers-reduced-motion: reduce)`, pero disparada por el atributo
-// en vez de por la preferencia del sistema — para quien no cambió su
-// preferencia de sistema operativo pero sí la quiere en este sitio.
+// Control manual de "reducir movimiento": misma regla exacta que tokens.css aplica automático
+// bajo `@media (prefers-reduced-motion: reduce)`, pero disparada por el atributo en vez de por la
+// preferencia del sistema.
+//
+// **Hoy nada del sitio escribe ese atributo**, y se queda puesta a sabiendas. La casilla del pie
+// que lo ponía se quitó el 25 de septiembre de 2026 a petición, así que quien no tenga la
+// preferencia en su sistema operativo no tiene forma de pedirla aquí. La regla no cuesta nada, la
+// leen las pruebas del carrusel y del anillo de carga, y es lo que haría falta el día que el
+// control vuelva — quizá donde de verdad le toca, junto a los otros dos controles de accesibilidad
+// que docs/04-ui-marca.md todavía debe.
 [data-movimiento='reducido'] * {
   animation-duration: 0.01ms !important;
   transition-duration: 0.01ms !important;

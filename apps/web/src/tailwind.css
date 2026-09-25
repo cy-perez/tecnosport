@@ -369,6 +369,37 @@
   animation: none;
 }
 
+/* El anillo que gira. Vive aquí y no en el `.ts` del componente por lo mismo que el brillo de
+   carga: es una primitiva del sistema —la usan los veintidós botones con estado de carga y los
+   seis párrafos de estado— y unos `@keyframes` repetidos son sitios donde desincronizarse.
+
+   La duración sale de `--mov-giro`, que entró a `tokens.json` para esto. `linear` y no una de las
+   curvas del kit: las tres son de aceleración y desaceleración, pensadas para algo que empieza y
+   termina, y aplicadas a un ciclo infinito producen un anillo que tironea una vez por vuelta. */
+@utility girando {
+  animation: girar var(--mov-giro) linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mismos dos disparadores que el esqueleto, y por la misma razón: `styles.scss` acorta la
+   *duración* de toda animación bajo `[data-movimiento]`, y un anillo que da la vuelta en 0,01 ms
+   es un parpadeo — peor que uno quieto. Hay que apagarlo, no acelerarlo. Quieto sigue diciendo lo
+   mismo: lo que informa es el texto que lo acompaña. */
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation: none;
+  }
+}
+
+[data-movimiento='reducido'] .girando {
+  animation: none;
+}
+
 /* Las tres propiedades que hacen de un elemento una superficie de arrastre.
    Van juntas porque se explican juntas, y porque una de ellas —`-webkit-user-drag`—
    no tiene utilidad en Tailwind: sin ella el puntero arrastra el fotograma como
@@ -423,58 +454,30 @@
   }
 }
 
-/* LA BANDA DE PORTADA. Tres utilidades para la única pieza del sitio que ocupa
-   la pantalla entera, y las tres apuntan a un token: la regla dura #2 no admite
-   un píxel suelto, así que el corte, el alto y el chaflán del marco viven en
-   `tokens.json` (`hero_px`, `chaflan_px.hero`) y aquí solo se usan.
+/* LA BANDA DE PORTADA. Una sola utilidad, y aquí había tres.
 
-   Por qué utilidades y no un `.scss` del componente: ADR-0020. Y por qué no un
-   valor arbitrario en la plantilla: un `clip-path` con cinco pares de
-   coordenadas dentro de un `[...]` de Tailwind es ilegible y se rompe al
-   tocarlo. */
-@utility corte-hero {
-  /* El corte a 45° de la esquina inferior derecha: la firma del isotipo usada
-     como estructura de la pieza, no como detalle de esquina.
+   `corte-hero` y `chaflan-hero` se fueron con la banda anterior: dibujaban a
+   mano el corte a 45° de la esquina inferior derecha y el chaflán del marco de
+   la foto. El carrusel que los sustituyó sangra de borde a borde y no tiene
+   marco que chaflanar, y la firma de la marca no se perdió — la traen los
+   propios archivos del ZIP, cuya tarjeta de producto ya viene cortada a 34 px
+   en las dos esquinas. Un `clip-path` de cinco pares de coordenadas que nadie
+   aplica es peor que ninguno: parece vigente al leerlo.
 
-     El `min()` con un ancho relativo es lo que lo hace responsivo sin tres media
-     queries, que es como venía del kit. En un teléfono de 390 px, 120 px de
-     corte se comen la esquina entera; con `18vw` la diagonal baja a ~70 px y
-     sigue leyéndose como la misma firma. En escritorio manda el token. */
-  --corte: min(var(--hero-corte), 18vw);
+   `alto-hero` sí sobrevive, con otro nombre y como **máximo** en vez de como
+   mínimo. La diferencia es la que hay entre las dos piezas: la banda vieja era
+   texto sobre color y necesitaba un alto que llenara la primera pantalla; el
+   carrusel es una imagen de 1440 x 592 a todo el ancho, y a 1900 px de ventana
+   su proporción natural pediría 780 px de alto — más que la pantalla entera de
+   un portátil. Aquí el token es el techo.
 
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - var(--corte)),
-    calc(100% - var(--corte)) 100%,
-    0 100%
-  );
-}
-
-@utility chaflan-hero {
-  /* El mismo corte que `.chaflan`, a la escala de una foto que ocupa media pantalla en vez de la de
-     un botón. Se repite el `clip-path` en vez de componerse con `.chaflan` cambiándole `--ch`, y no
-     es duplicación gratuita: `.chaflan` vive en `tokens.css`, **fuera de toda capa**, y una
-     declaración sin capa le gana a cualquier utilidad de Tailwind por mucho que el selector empate.
-     Componiéndolas, `--ch` volvía a `--chaflan-md` y el marco salía con el chaflán de un botón: la
-     clase existía, `npm run clases` la daba por buena, y no hacía nada. */
-  /* Mismo criterio que el corte: en un teléfono el chaflán de 72 px se come la
-     foto, así que por debajo de ~600 px de ancho manda la pantalla. */
-  --ch: min(var(--chaflan-hero), 12vw);
-  border-radius: 0;
-  clip-path: polygon(
-    var(--ch) 0,
-    100% 0,
-    100% calc(100% - var(--ch)),
-    calc(100% - var(--ch)) 100%,
-    0 100%,
-    0 var(--ch)
-  );
-}
-
-@utility alto-hero {
+   Por qué una utilidad y no un valor arbitrario en la plantilla: `min()` con una
+   coma dentro de un `[...]` de Tailwind hay que escaparlo, y lo que se gana es
+   una clase ilegible. Por qué no un `.scss` de componente: ADR-0020. */
+@utility alto-carrusel {
   /* El `min()` es lo que importa: en una pantalla baja manda la pantalla, no el
-     token. `82vh` es una proporción de viewport y no un píxel, así que no es el
-     literal que la regla dura #2 prohíbe. */
-  min-block-size: min(var(--hero-alto-min), 82vh);
+     token. `70vh` es una proporción de viewport y no un píxel, así que no es el
+     literal que la regla dura #2 prohíbe — y deja a la vista el borde de lo que
+     sigue, que es lo que invita a desplazar. */
+  max-block-size: min(var(--hero-alto-min), 70vh);
 }

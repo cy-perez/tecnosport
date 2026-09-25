@@ -13,6 +13,25 @@ public interface RepositorioPedidos {
 
   Optional<Pedido> buscarPorId(UUID id);
 
+  /**
+   * Por el número legible ({@code TS-2026-000123}) <b>y el correo a la vez</b>. El número es el
+   * único identificador del pedido que el comprador conoce: es el que lleva su comprobante y el que
+   * anuncia el correo de despacho. El id es un UUID y no aparece en nada que una persona lea.
+   *
+   * <p><b>Los dos criterios en la misma consulta, y no "busca por número y luego compara"</b>, que
+   * es como estaba y fue un hallazgo de la revisión. Comparar después obliga a reconstruir el
+   * agregado entero —líneas e historial, dos consultas más— <i>antes</i> de descubrir que el correo
+   * no coincide, así que un número que existe tardaba medible y consistentemente más que uno que
+   * no. Los dos caminos devolvían el mismo 404 con el mismo mensaje, y aun así el reloj decía cuál
+   * era cuál: quien recorre números sin conocer el correo aprende cuáles existen. Con el filtro
+   * completo en la consulta, los dos cuestan exactamente lo mismo.
+   *
+   * <p>El correo llega <b>ya normalizado</b> —recortado y en minúsculas—, como se guarda.
+   *
+   * <p>La columna del número es {@code unique} desde V6, así que devuelve como mucho uno.
+   */
+  Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado);
+
   void guardar(Pedido pedido);
 
   /**

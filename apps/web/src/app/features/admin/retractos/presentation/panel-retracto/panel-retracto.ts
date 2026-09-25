@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -17,16 +25,12 @@ import {
   VerdictoPlazo,
 } from '../../domain/retracto.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
 
 /** El plazo de reintegro se muestra en días, y esta es la única conversión. */
 const MILISEGUNDOS_POR_DIA = 86_400_000;
 
-const MEDIOS: readonly MedioReintegro[] = [
-  'TRANSFERENCIA_BANCARIA',
-  'WOMPI',
-  'EFECTIVO',
-  'OTRO',
-];
+const MEDIOS: readonly MedioReintegro[] = ['TRANSFERENCIA_BANCARIA', 'WOMPI', 'EFECTIVO', 'OTRO'];
 
 const CLAVE_MEDIO: Record<MedioReintegro, string> = {
   TRANSFERENCIA_BANCARIA: 'admin.retractos.medios.transferencia_bancaria',
@@ -67,6 +71,7 @@ const CLAVE_ESTADO: Record<SolicitudRetracto['estado'], string> = {
     TsPrecio,
     TsSelect,
     TsSelectControl,
+    TsCargando,
   ],
   templateUrl: './panel-retracto.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

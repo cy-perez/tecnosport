@@ -21,6 +21,7 @@ import co.tecnosport.api.application.envio.ResultadoCotizacion;
 import co.tecnosport.api.application.inventario.RepositorioInventario;
 import co.tecnosport.api.application.legal.RepositorioAutorizaciones;
 import co.tecnosport.api.application.pedido.ConsultarSeguimientoPedido;
+import co.tecnosport.api.application.pedido.ConsultarSeguimientoPorNumero;
 import co.tecnosport.api.application.pedido.CrearPedido;
 import co.tecnosport.api.application.pedido.ReintentarPago;
 import co.tecnosport.api.application.pedido.RepositorioPedidos;
@@ -556,6 +557,131 @@ class PedidoControladorTest {
     return pedido;
   }
 
+  /**
+   * El seguimiento por el número legible, que es el único identificador que el comprador tiene: el
+   * {@code id} es un UUID y no aparece en nada que una persona lea. Es lo que sostiene el
+   * formulario de "Estado del pedido".
+   *
+   * <p>{@code POST} aunque no cree nada: el correo va en el cuerpo y no en la URL, para que no
+   * acabe en los registros de acceso ni en el historial del navegador.
+   */
+  @Test
+  void seguimientoPorNumeroConElCorreoCorrectoDevuelveElPedido() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/seguimiento")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"numeroPedido\":\""
+                        + pedido.numeroPedido().valor()
+                        + "\",\"correo\":\"cliente@tecnosport.co\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.numeroPedido").value(pedido.numeroPedido().valor()))
+        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
+  }
+
+  /**
+   * <b>El {@code id} no sale por esta puerta</b>, y es lo que separa una fuga de lectura de una de
+   * escritura.
+   *
+   * <p>Ese UUID es la credencial de {@code POST /pagos/intentos} —que pide solo el id, sin correo y
+   * sin límite de intentos, y crea una fila de pago firmando contra la pasarela— y de {@code
+   * /pedidos/&#123;id&#125;/reintentar-pago}, que re-reserva inventario. Todo el diseño del límite
+   * se apoyaba en "el id es un UUID, recorrerlo no es una opción"; recorrer el número sí lo es, y
+   * al principio el número devolvía el id. Lo levantó la revisión de pagos.
+   *
+   * <p>El hermano que entra por {@code id} sí lo devuelve, y debe: quien abre el enlace de su
+   * correo ya lo tenía.
+   */
+  @Test
+  void seguimientoPorNumeroNoDevuelveElIdInterno() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/seguimiento")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"numeroPedido\":\""
+                        + pedido.numeroPedido().valor()
+                        + "\",\"correo\":\"cliente@tecnosport.co\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").doesNotExist());
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(pedido.id().toString()));
+  }
+
+  /**
+   * <b>La prueba que importa de este endpoint.</b> El número es secuencial y adivinable, así que lo
+   * único que protege el pedido es el correo — y un correo que no coincide tiene que responder
+   * exactamente igual que un número que no existe, o recorrer números diría cuáles existen.
+   */
+  @Test
+  void seguimientoPorNumeroNoDistingueElCorreoEquivocadoDeUnNumeroInexistente() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    String conCorreoAjeno =
+        mockMvc
+            .perform(
+                post("/api/v1/pedidos/seguimiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"numeroPedido\":\""
+                            + pedido.numeroPedido().valor()
+                            + "\",\"correo\":\"otro@tecnosport.co\"}"))
+            .andExpect(status().isNotFound())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    String conNumeroInexistente =
+        mockMvc
+            .perform(
+                post("/api/v1/pedidos/seguimiento")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"numeroPedido\":\"TS-2026-999999\",\"correo\":\"cliente@tecnosport.co\"}"))
+            .andExpect(status().isNotFound())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        json.readTree(conCorreoAjeno).get("detail").asText(),
+        json.readTree(conNumeroInexistente).get("detail").asText());
+  }
+
+  /**
+   * Un número mal escrito responde 404 y no 422: distinguirlos le diría a quien prueba a ciegas
+   * cuándo su patrón es el bueno, sin llegar a acertar un pedido.
+   */
+  @Test
+  void seguimientoPorNumeroConUnNumeroMalEscritoResponde404() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/seguimiento")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"numeroPedido\":\"hola\",\"correo\":\"cliente@tecnosport.co\"}"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void seguimientoPorNumeroSinCorreoDevuelve422() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/seguimiento")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"numeroPedido\":\"TS-2026-000001\"}"))
+        .andExpect(status().isUnprocessableContent());
+  }
+
   @Test
   void seguimientoConElCorreoCorrectoDevuelveElPedido() throws Exception {
     Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
@@ -793,6 +919,12 @@ class PedidoControladorTest {
     @Bean
     ConsultarSeguimientoPedido consultarSeguimientoPedido(RepositorioPedidos repositorioPedidos) {
       return new ConsultarSeguimientoPedido(repositorioPedidos);
+    }
+
+    @Bean
+    ConsultarSeguimientoPorNumero consultarSeguimientoPorNumero(
+        RepositorioPedidos repositorioPedidos) {
+      return new ConsultarSeguimientoPorNumero(repositorioPedidos);
     }
 
     @Bean

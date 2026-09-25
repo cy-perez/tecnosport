@@ -45,9 +45,34 @@ public class MapeadorSeguimiento {
   }
 
   public PedidoSeguimientoRespuesta aRespuesta(Pedido pedido) {
+    return aRespuesta(pedido, true);
+  }
+
+  /**
+   * El mismo seguimiento <b>sin el {@code id} interno</b>, para el camino público que entra por el
+   * número legible.
+   *
+   * <p>No es celo de más: ese UUID es la credencial de dos endpoints que sí escriben. {@code POST
+   * /api/v1/pagos/intentos} pide <b>solo</b> el {@code pedidoId} —sin correo, y sin límite de
+   * intentos— y crea una fila de pago firmando integridad contra la pasarela; {@code POST
+   * /pedidos/&#123;id&#125;/reintentar-pago} re-reserva inventario con bloqueo pesimista. Todo el
+   * diseño del límite de intentos se apoyaba en una frase que este endpoint dejó de hacer cierta:
+   * "el id es un UUID v7, recorrerlo no es una opción". Recorrer el número sí lo es, y el número
+   * devolvía el id.
+   *
+   * <p>Lo levantó la revisión de pagos, y lo que cierra es la escalada: quien adivine un número y
+   * conozca el correo sigue viendo el pedido —ese es el riesgo asumido y documentado— pero ya no
+   * puede tocarlo. El enlace del correo, que es donde el reintento tiene sentido, sí trae el id
+   * porque quien lo abre ya lo tenía.
+   */
+  public PedidoSeguimientoRespuesta aRespuestaSinIdInterno(Pedido pedido) {
+    return aRespuesta(pedido, false);
+  }
+
+  private PedidoSeguimientoRespuesta aRespuesta(Pedido pedido, boolean conIdInterno) {
     var completa = mapeadorPedido.aRespuesta(pedido);
     return new PedidoSeguimientoRespuesta(
-        completa.id(),
+        conIdInterno ? completa.id() : null,
         completa.numeroPedido(),
         completa.correo(),
         completa.contacto(),

@@ -1,0 +1,232 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
+<!-- `aria-roledescription` con su etiqueta, que es lo que convierte esta región en algo que un
+     lector de pantalla puede explicar. Sin el nombre, `roledescription` no se anuncia.
+
+     **Y va por Transloco, no escrito aquí.** Decía `"carousel"` y `"slide"` en inglés, literales en
+     la plantilla: `aria-roledescription` **se pronuncia**, así que en la versión española el lector
+     decía "carousel". Es texto visible —para quien escucha— y la regla dura #4 no admite ninguno,
+     `aria-label` incluidos. Lo levantó la auditoría de accesibilidad.
+
+     El puntero y el foco detienen la rotación, y además hay un botón de pausa: ver más abajo. -->
+<section
+  class="bg-ts-marca text-ts-sobre-marca"
+  [attr.aria-roledescription]="'portada.hero.rol_carrusel' | transloco"
+  [attr.aria-label]="'portada.hero.carrusel' | transloco"
+  (mouseenter)="detener()"
+  (mouseleave)="reanudar()"
+  (focusin)="detener()"
+  (focusout)="reanudar()"
+>
+  <!-- La ventana del carrusel. `overflow-hidden` recorta las tres piezas que no tocan; la tira de
+       dentro se corre un ancho completo por diapositiva.
+       `aria-live` vale `off` mientras rota sola y `polite` cuando alguien la detuvo: anunciar un
+       cambio que nadie pidió interrumpe la lectura de la página cada cinco segundos. -->
+  <div class="relative overflow-hidden" [attr.aria-live]="cortesia()">
+    <div
+      class="flex ease-[var(--curva-suave)] transition-transform"
+      [style.transform]="'translateX(-' + actual() * 100 + '%)'"
+      [style.transitionDuration]="'var(--mov-panel)'"
+    >
+      @for (diapositiva of diapositivas; track diapositiva.linea; let i = $index) {
+        <!-- `inert` en las que no tocan, y no solo `aria-hidden`: sin él, el botón de las otras
+             tres sigue en el orden de tabulación y el foco se va a un enlace que está fuera de la
+             pantalla. Angular lo pinta como atributo, que es como el navegador lo entiende. -->
+        <div
+          class="w-full shrink-0"
+          role="group"
+          [attr.aria-roledescription]="'portada.hero.rol_slide' | transloco"
+          [attr.aria-label]="
+            'portada.hero.slide_n' | transloco: { n: i + 1, total: diapositivas.length }
+          "
+          [attr.aria-hidden]="i === actual() ? null : 'true'"
+          [attr.inert]="i === actual() ? null : ''"
+        >
+          <div class="relative">
+            <!-- Dos archivos y dos formas, no la misma imagen escalada. La pieza ancha es
+                 1440 x 592 y deja libre la mitad izquierda para el texto; a 390 px de ventana esa
+                 mitad mide 175 px y el titular se vuelve una mancha. En teléfono va la tarjeta
+                 cuadrada —el mismo set de producto, sin la banda— y el texto debajo.
+
+                 **`<picture>` y no `NgOptimizedImage`**, que es lo que apps/web/CLAUDE.md pide
+                 "siempre", y esta es la excepción que esa regla no contempla: `NgOptimizedImage`
+                 no admite dirección de arte —no se puede poner sobre un `<img>` dentro de un
+                 `<picture>` con `<source>`— y aquí no son dos tamaños de la misma foto sino dos
+                 composiciones distintas. La alternativa era apilar dos `<img>` y tapar uno con
+                 CSS, y eso **descarga los dos**: un `<img>` con `display:none` se pide igual en
+                 Chrome, o sea el doble de bytes justo en la imagen del LCP. Con `<source media>`
+                 el navegador elige uno y descarga uno.
+
+                 `sizes="100vw"` en las dos: la imagen ocupa la ventana entera. El único literal es
+                 el `media`, que vive con los otros en `core/imagenes/tamanos-de-imagen.ts`. -->
+            <picture>
+              <source
+                [attr.media]="mediaTarjeta"
+                [srcset]="'/imagenes/portada/hero/tarjetas/' + diapositiva.tarjeta + '-1000.webp'"
+                sizes="100vw"
+                width="1000"
+                height="1000"
+              />
+              <img
+                class="alto-carrusel block h-auto w-full object-cover"
+                [src]="'/imagenes/portada/hero/ancho/' + diapositiva.ancho + '-1440.webp'"
+                [srcset]="
+                  '/imagenes/portada/hero/ancho/' +
+                  diapositiva.ancho +
+                  '-1440.webp 1440w, /imagenes/portada/hero/ancho/' +
+                  diapositiva.ancho +
+                  '-2880.webp 2880w'
+                "
+                sizes="100vw"
+                width="1440"
+                height="592"
+                [alt]="claveDe(diapositiva, 'alt') | transloco"
+                [attr.loading]="esPrimera(i) ? 'eager' : 'lazy'"
+                [attr.fetchpriority]="esPrimera(i) ? 'high' : null"
+              />
+            </picture>
+
+            <!-- El bloque de texto: debajo de la tarjeta en teléfono, encima del arte desde el
+                 primer punto de quiebre. Se alinea al contenedor de 1200 px, que es exactamente
+                 donde el arte deja el hueco: la pieza reserva de x 120 a x 680 de sus 1440, y un
+                 `max-w-contenido` centrado empieza en 120 cuando la ventana mide 1440. -->
+            <div
+              class="flex items-center px-16 py-32 desde-movil:absolute desde-movil:inset-0 desde-movil:px-24 desde-movil:py-48"
+            >
+              <div class="mx-auto w-full max-w-contenido">
+                <div class="desde-movil:w-1/2">
+                  <p
+                    class="m-0 mb-16 flex items-center gap-12 font-mono text-xs tracking-descriptor uppercase"
+                  >
+                    <!-- `sobre-marca` y no `acento`: el ámbar de esta pantalla es el botón, y
+                         `docs/04-ui-marca.md` lo admite solo como relleno con texto grafito encima
+                         — una barrita ámbar sin texto es el segundo ámbar de la pieza. -->
+                    <span class="inline-block h-4 w-24 bg-ts-sobre-marca" aria-hidden="true"></span>
+                    {{ claveDe(diapositiva, 'eyebrow') | transloco }}
+                  </p>
+
+                  <!-- Los cuatro titulares son `<p>`, ninguno es el `<h1>` de la página.
+                       Empezó siendo `<h1>` en la primera pieza y `<p>` en las otras tres, para no
+                       tener cuatro encabezados de nivel uno. El razonamiento era bueno y el
+                       resultado estaba roto: ese `<h1>` vive **dentro** de una diapositiva, y en
+                       cuanto el carrusel avanza esa diapositiva queda `inert` y `aria-hidden`, así
+                       que a los cinco segundos la portada se quedaba sin ningún encabezado de nivel
+                       uno. La prueba que lo fijaba contaba nodos del DOM y no lo veía.
+                       El `<h1>` de la portada vive ahora fuera del carrusel, en `portada.page.html`,
+                       y no cambia de texto cada cinco segundos. Lo levantó la auditoría. -->
+                  <p
+                    class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
+                  >
+                    {{ claveDe(diapositiva, 'titular') | transloco }}
+                  </p>
+
+                  <p class="m-0 mb-24 max-w-lectura text-base leading-texto">
+                    {{ claveDe(diapositiva, 'apoyo') | transloco }}
+                  </p>
+
+                  <!-- `ts-boton` con `enlace` y no un `<a>` con clases sueltas: es un enlace de
+                       verdad —se copia, se abre en pestaña nueva— y la variante `acento` ya
+                       resuelve el anillo de foco sobre ámbar, que en tema oscuro es el mismo color
+                       que `--color-foco` y sería invisible. Cuatro copias de una lista de clases
+                       son cuatro sitios donde se puede caer el anillo. -->
+                  <ts-boton
+                    variante="acento"
+                    [enlace]="['/', idioma(), 'productos']"
+                    [parametrosEnlace]="{ linea: diapositiva.linea }"
+                  >
+                    {{ claveDe(diapositiva, 'cta') | transloco }}
+                  </ts-boton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Las viñetas, con el aspecto del carrusel "With indicators" de la referencia: píldoras
+         abajo al centro, la activa más ancha. Encima del arte desde tableta —ahí sobra sitio
+         sobre el fondo de estudio— y debajo en teléfono, donde el texto ya ocupa esa franja.
+         Las flechas del teclado se escuchan **aquí** y no en la región entera: dentro de una
+         diapositiva hay un enlace, y secuestrar las flechas ahí le quitaría a quien navega con
+         teclado el desplazamiento normal de la página. -->
+    <!-- Botones sueltos con `aria-current`, y no `role="tablist"` con `role="tab"`: el patrón de
+         pestañas de la APG obliga además a que cada diapositiva sea un `tabpanel` etiquetado por
+         su pestaña y a mover el foco con las flechas dentro de la tira. A medio implementar es
+         peor que no usarlo — anuncia una estructura que no existe. Esta es la variante simple:
+         botones con nombre propio, y el activo marcado.
+
+         El color sale de `--color-sobre-marca` en los dos estados, y **no cambia con el tema**
+         aunque la viñeta viva encima de una imagen: el arte es oscuro siempre, en claro y en
+         oscuro, porque el ZIP lo entrega con el fondo de la franja de marca incrustado. La
+         inactiva fue `bg-ts-marca-alt` durante un rato y daba 1,38:1 contra el fondo del arte
+         —medido, no estimado—, por debajo del 3:1 que WCAG 1.4.11 pide de un control. Al 50 % del
+         blanco sube a ~4,5:1 y se sigue leyendo como "apagada" frente a la activa, que además es
+         tres veces más ancha. -->
+    <div
+      class="flex items-center justify-center pb-16 desde-movil:absolute desde-movil:inset-x-0 desde-movil:bottom-8 desde-movil:pb-0"
+      [attr.aria-label]="'portada.hero.indicadores' | transloco"
+      role="group"
+      (keydown)="alPulsarTecla($event)"
+    >
+      @for (diapositiva of diapositivas; track diapositiva.linea; let i = $index) {
+        <!-- **El objetivo táctil va en el botón y la píldora en un hijo.** La píldora medía 8 x 8
+             px y el botón era la píldora: por debajo de los 24 px de WCAG 2.5.8 y muy por debajo de
+             los 44 que pide `docs/04-ui-marca.md`, y la excepción de espaciado de 2.5.8 tampoco
+             salvaba —con `gap-8` los centros quedaban a 16 px y los círculos de 24 se solapan—. Con
+             `size-tactil` en el botón y `bg-transparent`, el área pulsable son 44 px y el dibujo no
+             engorda. El `gap` se fue: con 44 px de caja ya sobra separación. Lo levantó la
+             auditoría de accesibilidad. -->
+        <button
+          class="anillo-foco-sobre-marca flex size-tactil cursor-pointer items-center justify-center border-0 bg-transparent p-0"
+          type="button"
+          [attr.aria-current]="i === actual() ? 'true' : null"
+          [attr.aria-label]="claveDe(diapositiva, 'indicador') | transloco"
+          (click)="irA(i)"
+        >
+          <span
+            class="block h-8 rounded-completo transition-all ease-[var(--curva-suave)]"
+            [class.w-24]="i === actual()"
+            [class.bg-ts-sobre-marca]="i === actual()"
+            [class.w-8]="i !== actual()"
+            [class.bg-ts-sobre-marca/50]="i !== actual()"
+            [style.transitionDuration]="'var(--mov-media)'"
+          ></span>
+        </button>
+      }
+
+      <!-- **El botón de pausa, que es lo que WCAG 2.2.2 exige** de todo movimiento automático que
+           dure más de cinco segundos: un mecanismo para pausarlo, detenerlo u ocultarlo. Pararlo
+           con el puntero encima y con el foco dentro no es ese mecanismo —en un teléfono no hay
+           puntero, y tocar una viñeta *reinicia* la cuenta en vez de detenerla— y con teclado no es
+           descubrible. El documento describía lo anterior como si bastara; no bastaba.
+
+           La pausa de la persona es una señal aparte de la del puntero, y gana: con un solo
+           booleano para las dos fuentes, sacar el ratón de la región reanudaba lo que alguien
+           acababa de pausar a propósito. -->
+      <button
+        class="anillo-foco-sobre-marca ms-8 flex size-tactil cursor-pointer items-center justify-center rounded-completo border-0 bg-transparent p-0 text-ts-sobre-marca"
+        type="button"
+        [attr.aria-label]="
+          (pausadoPorLaPersona() ? 'portada.hero.reanudar' : 'portada.hero.pausar') | transloco
+        "
+        (click)="alternarPausa()"
+      >
+        <ts-icono [icono]="pausadoPorLaPersona() ? iconoReanudar : iconoPausar" clase="size-16" />
+      </button>
+    </div>
+  </div>
+
+  <!-- Los cuatro sellos de confianza: lo que el sitio sí puede prometer. Estaban dentro de la
+       banda anterior y se quedan, en una tira propia bajo el carrusel: son ciertos para las cuatro
+       líneas, así que repetirlos en cada diapositiva sería decir cuatro veces lo mismo. -->
+  <ul
+    class="m-0 mx-auto grid max-w-contenido list-none grid-cols-2 gap-16 border-t border-ts-sobre-marca px-16 py-24 text-sm desde-movil:px-24 desde-tableta:grid-cols-4"
+  >
+    @for (sello of sellosDeConfianza; track sello.clave) {
+      <li class="flex items-start gap-8">
+        <ts-icono [icono]="sello.icono" clase="size-16 mt-4" />
+        {{ sello.clave | transloco }}
+      </li>
+    }
+  </ul>
+</section>

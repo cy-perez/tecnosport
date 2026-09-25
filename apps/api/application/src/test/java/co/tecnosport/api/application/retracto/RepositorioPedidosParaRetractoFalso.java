@@ -28,6 +28,19 @@ final class RepositorioPedidosParaRetractoFalso implements RepositorioPedidos {
     return Optional.ofNullable(pedidos.get(id));
   }
 
+  /**
+   * Recorre lo guardado en vez de llevar un segundo indice: son unos pocos pedidos por prueba, y un
+   * mapa mas seria un sitio mas donde los dos pueden separarse. Los dos criterios se filtran
+   * juntos, como en la consulta de verdad.
+   */
+  @Override
+  public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
+    return pedidos.values().stream()
+        .filter(p -> p.numeroPedido().equals(numero))
+        .filter(p -> p.correo().valor().equals(correoNormalizado))
+        .findFirst();
+  }
+
   @Override
   public void guardar(Pedido pedido) {
     pedidos.put(pedido.id(), pedido);

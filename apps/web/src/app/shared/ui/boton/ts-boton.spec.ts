@@ -49,6 +49,14 @@ function boton(): HTMLButtonElement {
 })
 class AnfitrionEnlace {}
 
+// `ocupado` no está en el anfitrión de arriba a propósito: ese ya liga once entradas y añadirle
+// una duodécima señal solo para una prueba lo vuelve ilegible. Aquí va fijo en `true`.
+@Component({
+  imports: [TsBoton],
+  template: ` <ts-boton [ocupado]="true">Publicar</ts-boton> `,
+})
+class AnfitrionOcupado {}
+
 describe('TsBoton', () => {
   it('proyecta su contenido como nombre accesible', async () => {
     await render(Anfitrion);
@@ -96,6 +104,40 @@ describe('TsBoton', () => {
     await fixture.whenStable();
 
     expect(screen.getByRole('button', { name: 'Agregar al carrito' })).toBeTruthy();
+  });
+
+  /**
+   * El anillo entra **haya o no `etiquetaCargando`**, y ese es el caso que importa: en los botones
+   * que cargan sin cambiar de texto —la mayoría de las acciones de fila del panel— el `aria-busy`
+   * lo dice todo para quien usa lector de pantalla y **nada** para quien mira la pantalla. Antes de
+   * que existiera `ts-cargando`, un botón ocupado se veía exactamente igual que uno en reposo.
+   */
+  it('mientras carga pinta el anillo, con o sin etiqueta propia', async () => {
+    const { fixture } = await render(Anfitrion);
+    expect(boton().querySelector('ts-cargando')).toBeNull();
+
+    fixture.componentInstance.cargando.set(true);
+    await fixture.whenStable();
+    expect(boton().querySelector('ts-cargando')).toBeTruthy();
+
+    fixture.componentInstance.etiquetaCargando.set('Agregando…');
+    await fixture.whenStable();
+    expect(boton().querySelector('ts-cargando')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Agregando…' })).toBeTruthy();
+  });
+
+  /**
+   * `ocupado` marca el botón sin deshabilitarlo —es lo que usan las acciones de fila para no
+   * perder el foco—, así que también tiene que enseñar el anillo: si no, ese caso se queda otra vez
+   * sin señal visible.
+   */
+  it('ocupado también pinta el anillo, sin deshabilitar el control', async () => {
+    const { fixture } = await render(AnfitrionOcupado);
+    await fixture.whenStable();
+
+    expect(boton().querySelector('ts-cargando')).toBeTruthy();
+    expect(boton().disabled).toBe(false);
+    expect(boton().getAttribute('aria-busy')).toBe('true');
   });
 
   it('deshabilitado también deshabilita el control', async () => {

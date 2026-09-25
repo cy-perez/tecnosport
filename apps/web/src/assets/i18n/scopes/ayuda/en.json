@@ -1,0 +1,184 @@
+{
+  "preguntas": {
+    "titulo": "Frequently asked questions",
+    "entradilla": "What people ask us most about buying, receiving and returning.",
+    "nota": "This page is a short read of our terms and conditions. What binds is the full document, and if anything here does not match it, the document prevails.",
+    "ver_terminos": "Read the terms and conditions",
+    "grupos": [
+      {
+        "titulo": "Buying and paying",
+        "preguntas": [
+          {
+            "pregunta": "Do I need an account to buy?",
+            "respuesta": [
+              "No. You can buy by giving only your email address and your delivery details.",
+              "If you would rather create an account, you are responsible for the accuracy of your details and for keeping your password to yourself."
+            ]
+          },
+          {
+            "pregunta": "Which payment methods do you accept?",
+            "respuesta": [
+              "Credit and debit cards, PSE, Nequi and Bancolombia, processed by the Wompi payment gateway; manual bank transfer; and cash on delivery, where it is enabled for your city and your order.",
+              "The methods you see at checkout are the ones available for that order: not all of them are enabled for every order.",
+              "We do not store card details: that information is handled entirely by the gateway."
+            ]
+          },
+          {
+            "pregunta": "Is any tax or shipping added to the published price?",
+            "respuesta": [
+              "The published price is the final value of each product and no tax is added to it: Tecno Sport is not a VAT taxpayer.",
+              "Shipping is charged separately. Its cost depends on the destination city and on the size and weight of what you buy, it is calculated at the time of your purchase, and we show it to you before you pay along with the price of each product, the subtotal and the total. If you choose to pick your order up at our point in Medellín, you pay no shipping."
+            ]
+          },
+          {
+            "pregunta": "Will I get an invoice?",
+            "respuesta": [
+              "For every purchase we email you a receipt with the detail of what you bought, what you paid and how we delivered it. Keep it: it is the record of your purchase and it is what you need in order to claim the warranty.",
+              "That receipt is not a sales invoice: Tecno Sport is not a VAT taxpayer and is not required to issue one, under article 1.6.1.4.3 of Decree 1625 of 2016."
+            ]
+          },
+          {
+            "pregunta": "How does cash on delivery work?",
+            "respuesta": [
+              "The system enables it based on the delivery city, the order value and the kind of product, and we tell you before you choose a payment method.",
+              "The carrier collects the order total — the goods plus the shipping cost — and carriers only take cash, so have the exact amount ready.",
+              "Refusing delivery is not the same as withdrawing from the purchase: the sale never completed, so there is no money to return because none was received. Repeatedly refusing deliveries may lead us to stop offering this method on later purchases."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Shipping and delivery",
+        "preguntas": [
+          {
+            "pregunta": "Where do you ship?",
+            "respuesta": [
+              "We ship anywhere in Colombia through carriers.",
+              "If no carrier covers the address you gave us, we tell you right then, and you can pick your order up at our point in Medellín."
+            ]
+          },
+          {
+            "pregunta": "How much is shipping?",
+            "respuesta": [
+              "It is calculated from the destination city you give us and from the weight and dimensions of your order. We show it before you pay, as a value separate from the price of the products.",
+              "Picking your order up at our point in Medellín is free."
+            ]
+          },
+          {
+            "pregunta": "How long does delivery take?",
+            "respuesta": [
+              "We do not agree a delivery term with you other than the statutory one, so the term of thirty (30) calendar days from payment confirmation applies. If we announce a shorter term for a particular order, that announced term is the one that binds us.",
+              "The estimated date the carrier shows at the time of purchase is their estimate, not a term different from the one above."
+            ]
+          },
+          {
+            "pregunta": "Can I pick my order up instead of having it shipped?",
+            "respuesta": [
+              "Yes. You choose that option when you buy, and you pay no shipping cost.",
+              "We arrange the handover with you over WhatsApp or email once we confirm the order; there is no walk-in counter."
+            ]
+          },
+          {
+            "pregunta": "How do I track my order?",
+            "respuesta": [
+              "When we dispatch your order we email you the carrier and the tracking number, together with a link to check the status of your order whenever you want.",
+              "The parcel's journey is tracked by the carrier with that tracking number; we do not show it on this site."
+            ]
+          },
+          {
+            "pregunta": "What if my order does not arrive within the term?",
+            "respuesta": [
+              "You can terminate the contract and get your money back, including any shipping cost you paid. Write to us and we will handle it."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Returns, withdrawal and warranty",
+        "preguntas": [
+          {
+            "pregunta": "I changed my mind. Can I return it?",
+            "respuesta": [
+              "Yes. Because this is a distance sale, you may withdraw within five (5) business days of the product being delivered, without having to explain why.",
+              "To exercise it, write to us within that term, return the product in the same condition in which you received it, and give us the details we need for the refund. We return your money within fifteen (15) calendar days of the day both of those conditions are met, through the payment method you prefer.",
+              "You bear the cost of return shipping, as article 47 of Law 1480 of 2011 provides. What we refund is everything you paid for the purchase, including the shipping cost we charged you when you bought.",
+              "Withdrawal does not apply to products made or customised to your specifications, nor to the other cases that same article excludes."
+            ]
+          },
+          {
+            "pregunta": "What does the warranty cover, and for how long?",
+            "respuesta": [
+              "The statutory warranty runs for one (1) year from delivery, unless the producer announces a longer one, in which case the longer one applies. It covers every new product we sell, tech included.",
+              "If the product fails, does not do what it was offered to do, or does not match what you bought, you are entitled to have it repaired, replaced or refunded, as the case may be. Claiming it costs you nothing: the repair and the transport of the product for repair are on us.",
+              "The warranty does not cover damage arising from force majeure or a fortuitous event, from the act of a third party, from improper use of the product — including unauthorised modification — or from failure to follow the installation, use or maintenance instructions where the product was delivered with a manual in Spanish. Proving that the damage comes from one of those causes is on us, not on you.",
+              "To claim it, write to us with your order number and a description of the problem."
+            ]
+          },
+          {
+            "pregunta": "I paid and did not receive the product, or it is not the one I ordered. What now?",
+            "respuesta": [
+              "That is called payment reversal, and it is different from withdrawal. It applies when you were the victim of fraud, when the product was not delivered, when it does not match what you ordered, or when it turns out to be defective.",
+              "You must request it both from us and from the issuer of your payment method within five (5) business days of learning of the event, and we facilitate the process."
+            ]
+          }
+        ]
+      },
+      {
+        "titulo": "Support and personal data",
+        "preguntas": [
+          {
+            "pregunta": "How do I reach you, and when?",
+            "respuesta": [
+              "By email and over WhatsApp, every day from 8:00 a.m. to 9:00 p.m., Colombian time. The same hours apply to our social media.",
+              "Both channels also serve to file petitions, complaints and claims."
+            ]
+          },
+          {
+            "pregunta": "How long do you take to answer a petition, complaint or claim?",
+            "respuesta": [
+              "Fifteen (15) business days at most.",
+              "Requests about your personal data — enquiries and claims — have their own terms, shorter in the case of an enquiry, and they are in clause 12 of our personal data processing policy."
+            ]
+          },
+          {
+            "pregunta": "What do you do with my personal data?",
+            "respuesta": [
+              "What our personal data processing policy says: what we use it for, who we share it with, how long we keep it and how to exercise your rights. You can read it on this same site."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "contacto": {
+    "titulo": "Contact us",
+    "entradilla": "These are all of our channels, with the hours we are available.",
+    "canales_titulo": "Support channels",
+    "whatsapp_nota": "The fastest way. We also use it to arrange pickups in Medellín.",
+    "correo_nota": "For warranties, withdrawals, and to file petitions, complaints and claims.",
+    "telefono_nota": "During the same support hours.",
+    "plazos_titulo": "What to expect",
+    "plazos": [
+      "We answer petitions, complaints and claims within fifteen (15) business days at most.",
+      "To claim the warranty, write to us with your order number and a description of the problem.",
+      "To withdraw from a purchase you have five (5) business days from delivery, and writing to us within that term is enough."
+    ],
+    "vendedor_titulo": "Who sells",
+    "punto_titulo": "Pickup point in Medellín",
+    "punto_nota": "You can choose pickup when you buy, and you pay no shipping cost. We arrange the handover with you over WhatsApp or email once we confirm the order; there is no walk-in counter.",
+    "enlaces_titulo": "You may also need",
+    "enlace_preguntas": "Frequently asked questions",
+    "enlace_estado": "Check the status of an order",
+    "enlace_privacidad": "Personal data processing policy"
+  },
+  "seo": {
+    "preguntas": {
+      "titulo": "Frequently asked questions",
+      "descripcion": "Shipping, terms, payment methods, withdrawal and warranty: what people ask us most about buying at Tecno Sport."
+    },
+    "contacto": {
+      "titulo": "Contact us",
+      "descripcion": "Tecno Sport's WhatsApp, email and phone, with support hours and response times."
+    }
+  }
+}

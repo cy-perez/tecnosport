@@ -1,0 +1,21 @@
+<!-- `aria-hidden` y `focusable="false"`, como `ts-icono`: el anillo **no es** el anuncio de que algo
+     está cargando. Eso le toca al `aria-busy` del botón que lo contiene o al `role="status"` del
+     párrafo que lo acompaña, con su texto traducido. Un SVG que se anunciara aquí diría el estado
+     dos veces. -->
+<svg [class]="clases()" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+  <!-- La pista completa, al 25 % del color del texto. El anillo entero tiene que verse, no solo el
+       arco: sin la pista, un arco suelto girando se lee como un fragmento y no como un ciclo. -->
+  <circle cx="10" cy="10" r="8.75" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
+  <!-- El arco, un cuarto de la circunferencia. `54.98` es 2·π·8.75 y `13.74` su cuarta parte; no
+       son píxeles sino longitudes dentro del `viewBox`, que escalan con él. Extremos redondeados,
+       como los del resto de la iconografía del sistema (docs/04-ui-marca.md). -->
+  <circle
+    cx="10"
+    cy="10"
+    r="8.75"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-dasharray="13.74 41.24"
+  />
+</svg>

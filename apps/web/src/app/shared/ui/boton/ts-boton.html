@@ -3,6 +3,14 @@
      proyecta Angular no es evidente, y aquí no hace falta averiguarlo:
      `ngTemplateOutlet` instancia el mismo bloque en la rama que toque. -->
 <ng-template #contenido>
+  <!-- El anillo entra en cuanto el botón está ocupado, **haya o no `etiquetaCargando`**: es la
+       única señal visible en los diez botones que cambian de estado sin cambiar de texto. El
+       `gap-8` de la base lo separa de la etiqueta. Hereda el color del texto del botón, así que
+       contrasta igual que la etiqueta sobre cualquiera de las cinco variantes.
+       `aria-hidden` por dentro: quien anuncia el estado es el `aria-busy` del `<button>`. -->
+  @if (cargando() || ocupado()) {
+    <ts-cargando />
+  }
   @if ((cargando() || ocupado()) && etiquetaCargando()) {
     {{ etiquetaCargando() }}
   } @else {

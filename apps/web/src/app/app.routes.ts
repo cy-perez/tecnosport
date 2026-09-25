@@ -11,27 +11,37 @@ export const routes: Routes = [
       // (reutiliza sus puertos y su scope de i18n).
       {
         path: '',
-        loadChildren: () => import('./features/catalogo/catalogo.routes').then((m) => m.catalogoRoutes),
+        loadChildren: () =>
+          import('./features/catalogo/catalogo.routes').then((m) => m.catalogoRoutes),
       },
       {
         path: 'carrito',
-        loadChildren: () => import('./features/carrito/presentation/carrito.routes').then((m) => m.carritoRoutes),
+        loadChildren: () =>
+          import('./features/carrito/presentation/carrito.routes').then((m) => m.carritoRoutes),
       },
       {
         path: 'checkout',
-        loadChildren: () => import('./features/checkout/presentation/checkout.routes').then((m) => m.checkoutRoutes),
+        loadChildren: () =>
+          import('./features/checkout/presentation/checkout.routes').then((m) => m.checkoutRoutes),
       },
       {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
       },
       {
+        path: 'ayuda',
+        loadChildren: () =>
+          import('./features/ayuda/presentation/ayuda.routes').then((m) => m.ayudaRoutes),
+      },
+      {
         path: 'legales',
-        loadChildren: () => import('./features/legales/presentation/legales.routes').then((m) => m.legalesRoutes),
+        loadChildren: () =>
+          import('./features/legales/presentation/legales.routes').then((m) => m.legalesRoutes),
       },
       {
         path: 'cuenta',
-        loadChildren: () => import('./features/cuenta/presentation/cuenta.routes').then((m) => m.cuentaRoutes),
+        loadChildren: () =>
+          import('./features/cuenta/presentation/cuenta.routes').then((m) => m.cuentaRoutes),
       },
     ],
   },

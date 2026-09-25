@@ -72,3 +72,10 @@ docs/tramites/impresos/
 
 # Lista de productos
 lista-productos.txt
+
+# El ZIP con el material de origen del hero de portada: 31 MB de maestras, recortes, hojas de
+# revisión y los guiones de Python que compusieron las piezas. Lo que se versiona es el resultado
+# —las diez .webp de apps/web/public/imagenes/portada/hero/— y no el taller que las produjo. Se
+# ignora porque vive en la raíz del repositorio, que es donde lo deja quien lo genera, y un
+# `git add -A` distraído lo mete entero y para siempre.
+hero-tecnosport.zip

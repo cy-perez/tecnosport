@@ -20,7 +20,13 @@ import { TsIcono } from '../icono/ts-icono';
  * agrandarla más la volvería un cuadrado desproporcionado junto a un texto de
  * `text-sm`. Así el área efectiva supera los 44 px sin deformar el dibujo.
  *
- * **`sobreMarca` no es un capricho de tema.** El pie es una franja de
+ * **`sobreMarca` se quedó sin consumidor el 25 de septiembre de 2026**, cuando la casilla del pie
+ * se quitó a petición. El input se conserva —no es un guardián apagado sino una opción de un
+ * componente vivo, y borrarlo tiraría con él el razonamiento de abajo—, pero conviene saber que
+ * hoy solo lo ejercita su propia prueba. Las dos casillas que quedan, en el resumen del checkout y
+ * en el registro, van sobre superficie clara.
+ *
+ * **Y no es un capricho de tema.** El pie es una franja de
  * `--color-marca`, y ahí un anillo de `--color-foco` es invisible en tema
  * claro (los dos colores son `#1B1F26`) — el mismo problema que ya obligó a
  * crear `anillo-foco-sobre-marca`. Con la bandera, la casilla usa el par

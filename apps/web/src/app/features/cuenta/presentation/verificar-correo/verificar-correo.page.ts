@@ -17,6 +17,7 @@ import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.e
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
+import { TsCargando } from '../../../../shared/ui/cargando/ts-cargando';
 
 /**
  * `error` es "el enlace no sirve" y `fallo_servidor` es "no llegamos a preguntarlo". Se separan
@@ -47,7 +48,7 @@ type EstadoVerificacion = 'cargando' | 'exito' | 'error' | 'fallo_servidor' | 'l
  */
 @Component({
   selector: 'app-verificar-correo',
-  imports: [TranslocoPipe, ReactiveFormsModule, TsBoton, TsCampo],
+  imports: [TranslocoPipe, ReactiveFormsModule, TsBoton, TsCampo, TsCargando],
   templateUrl: './verificar-correo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

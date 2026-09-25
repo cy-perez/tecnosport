@@ -21,7 +21,9 @@ export class MenuLateralStore {
 
   /**
    * ¿Quien mira pidió menos movimiento? Las dos vías del proyecto: la preferencia del sistema
-   * operativo y el control del pie, que escribe `data-movimiento` en `<html>`. Quien la pide recibe
+   * operativo y el atributo `data-movimiento` de `<html>`. El atributo hoy **no lo escribe nadie**: la casilla del pie que lo ponía se quitó el 25 de
+   * septiembre de 2026. La lectura se queda porque es lo que haría falta el día que el control
+   * vuelva; `prefers-reduced-motion` sigue funcionando igual. Quien la pide recibe
    * el cambio de ancho de golpe, no una versión acelerada del mismo barrido — y aquí pesa más que
    * en el panel móvil porque la distancia es de 216 px.
    *

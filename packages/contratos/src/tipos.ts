@@ -1188,6 +1188,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pedidos/seguimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["seguimientoPorNumero"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pedidos/{id}/reintentar-pago": {
         parameters: {
             query?: never;
@@ -2054,6 +2070,11 @@ export interface components {
             /** Format: int32 */
             fotogramas?: number;
             imagenes?: components["schemas"]["ImagenRotacionRespuesta"][];
+        };
+        SeguimientoPorNumeroRequest: {
+            correo: string;
+            /** @example TS-2026-000123 */
+            numeroPedido: string;
         };
         SesionRespuesta: {
             accessToken?: string;
@@ -4246,6 +4267,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": ("TARJETA" | "PSE" | "NEQUI" | "BANCOLOMBIA" | "SISTECREDITO" | "TRANSFERENCIA_MANUAL" | "CONTRAENTREGA")[];
+                };
+            };
+        };
+    };
+    seguimientoPorNumero: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeguimientoPorNumeroRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PedidoSeguimientoRespuesta"];
                 };
             };
         };

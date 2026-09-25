@@ -29,12 +29,15 @@ export const TAMANOS_GALERIA = '(min-width: 1024px) 50vw, 100vw';
 export const TAMANOS_MINIATURA = '64px';
 
 /**
- * La banda de portada: una sola columna en móvil —el ancho de la ventana menos el `px-16` de cada
- * lado— y media rejilla desde tableta, donde `--ancho-max` topa en 1200 y quedan `px-24` a los
- * lados más un `gap-64` entre columnas: (1200 − 48 − 64) / 2 = 544.
+ * Cuándo el carrusel de portada cambia de pieza: por debajo del primer punto de quiebre va la
+ * tarjeta cuadrada, y desde ahí la pieza ancha de 1440 x 592.
  *
- * Los `vw` del tramo intermedio van por encima del ancho real, que es el lado correcto para
- * equivocarse: de menos, el navegador elegiría una variante demasiado pequeña y se vería borrosa.
+ * <p>Aquí vivía `TAMANOS_HERO` —`(min-width: 1200px) 544px, …`— porque la fotografía de portada
+ * ocupaba media rejilla de `--ancho-max`. Ya no hace falta: el carrusel sangra de borde a borde,
+ * así que su `sizes` es `100vw`, que es un porcentaje de la ventana y no un píxel suelto. Lo que sí
+ * hace falta es este `media`, y está en el mismo caso que los `sizes` de arriba: lo lee el
+ * navegador **antes** de aplicar una sola hoja de estilos, así que no puede referirse a
+ * `--breakpoint-desde-movil`. Es el mismo 640 de `tailwind.css` menos la hendidura que evita que
+ * los dos tramos se solapen en un punto; si allá cambia, aquí también.
  */
-export const TAMANOS_HERO =
-  '(min-width: 1200px) 544px, (min-width: 1024px) 46vw, calc(100vw - 32px)';
+export const MEDIA_HERO_TARJETA = '(max-width: 639.98px)';

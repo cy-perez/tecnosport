@@ -5,7 +5,10 @@
            durante la primera pintura, y una region viva que ya esta en la pagina cuando termina de
            cargar no se anuncia nunca (por especificacion, comprobado el 22 de septiembre de 2026).
            Lo que si se anuncia es el paso a `error`, que es un `role="alert"`. -->
-      <p role="status">{{ 'cuenta.verificarCorreo.cargando' | transloco }}</p>
+      <p role="status" class="flex items-center justify-center gap-8">
+        <ts-cargando />
+        {{ 'cuenta.verificarCorreo.cargando' | transloco }}
+      </p>
     }
     @case ('exito') {
       <h1 class="m-0 mb-24 font-display text-2xl">

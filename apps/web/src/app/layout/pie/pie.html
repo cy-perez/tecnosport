@@ -1,178 +1,181 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
 <footer class="mt-32 bg-ts-marca text-ts-sobre-marca">
-  <div class="mx-auto flex max-w-contenido flex-wrap items-start gap-24 px-24 py-32">
+  <div class="mx-auto max-w-contenido px-16 py-48 desde-movil:px-24">
     <img
-      class="block"
+      class="mb-32 block"
       src="assets/marca/logo/logo-mono-negativo.svg"
       width="140"
       height="30"
       [alt]="'pie.nombre_comercial' | transloco"
     />
 
-    <!-- Los enlaces llevan el objetivo táctil porque son navegación suelta,
-         no prosa. Los de la dirección (`Llamar`, `WhatsApp`, el correo) NO lo
-         llevan a propósito: van dentro de una frase, y WCAG 2.2 exime
-         explícitamente el objetivo en línea cuyo tamaño lo fija el
-         interlineado del texto que lo rodea (2.5.8, excepción "inline").
-         Estirarlos a 44 px rompería el bloque de la dirección sin ganar
-         accesibilidad. -->
-    <nav class="flex flex-wrap gap-16" [attr.aria-label]="'pie.navegacion' | transloco">
-      <!-- `anillo-foco-sobre-marca` y no `anillo-foco`: en tema claro
-           `--color-foco` y `--color-marca` son el mismo grafito, así que el
-           anillo de estos enlaces era invisible sobre el pie. Venía así del
-           SCSS, que aquí usaba `--color-foco` mientras la dirección de abajo
-           sí usaba `--color-sobre-marca`. -->
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma()]">
-        {{ 'pie.portada' | transloco }}
-      </a>
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'productos']">
-        {{ 'encabezado.catalogo' | transloco }}
-      </a>
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'carrito']">
-        {{ 'pie.carrito' | transloco }}
-      </a>
-      <!--
-        La única entrada al panel desde la vitrina. Apunta a `/admin` y no al
-        formulario: con sesión de ADMIN cae en el panel, y sin ella `adminGuard`
-        redirige al ingreso anotando el destino. Sin este enlace, el panel solo
-        se alcanzaba tecleando la ruta, que es justo lo que la regla de cierre
-        de fase de `docs/09-plan-de-arranque.md` prohíbe. Va siempre visible a
-        propósito: el enlace que solo aparece cuando ya hay sesión de ADMIN —el
-        del encabezado— no sirve para llegar a iniciarla.
-      -->
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil min-w-tactil items-center text-inherit" [routerLink]="['/', idioma(), 'admin']">
-        {{ 'pie.panel_admin' | transloco }}
-      </a>
-    </nav>
-
-    <!--
-      Los legales van en su propia lista y no mezclados con la navegación de compra: la ley pide
-      que la política de datos esté publicada y enlazada en el pie (docs/08-seguridad-legal.md), y
-      quien la busca la busca como bloque, no entre "Carrito" y "Portada".
-    -->
-    <nav class="flex flex-col gap-8" [attr.aria-label]="'pie.legales_titulo' | transloco">
-      <p class="m-0 text-xs uppercase">{{ 'pie.legales_titulo' | transloco }}</p>
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'terminos']">
-        {{ 'pie.terminos' | transloco }}
-      </a>
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'privacidad']">
-        {{ 'pie.privacidad' | transloco }}
-      </a>
-      <a class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit" [routerLink]="['/', idioma(), 'legales', 'cookies']">
-        {{ 'pie.cookies' | transloco }}
-      </a>
-    </nav>
-
-    <!--
-      Los logos salen de `marcas.generado.ts`, que produce `npm run iconos-marca` desde
-      `simple-icons` (`ADR-0026`): la librería se usa al generar y no entra en el paquete que se
-      sirve, así que no es una dependencia de producción. Antes aquí había un comentario diciendo lo
-      contrario —que poner estos logos exigiría una dependencia nueva y no valía la pena—, y siguió
-      ahí después de que se pusieran, ocho líneas más arriba de los `ts-icono-marca` que lo
-      desmienten.
-
-      `rel="me"` y no `noopener`: son perfiles propios, y `me` es lo que declara la relación de
-      identidad que `sameAs` repite en los datos estructurados. `target` no se fija: forzar pestaña
-      nueva le quita al usuario la decisión, y el aviso de que abre fuera del sitio tendría que ser
-      audible para cumplir.
-
-      WhatsApp no se repite aquí: vive abajo, en el bloque de contacto, porque ahí es una acción de
-      atención y no un perfil que se sigue.
-    -->
-    <nav class="flex flex-col gap-8" [attr.aria-label]="'pie.redes_titulo' | transloco">
-      <p class="m-0 text-xs uppercase">{{ 'pie.redes_titulo' | transloco }}</p>
-      <!-- El logo va con el nombre y no en su lugar. Es `aria-hidden`, así que un enlace de solo
-           logo se quedaría sin nombre accesible; y aunque se le pusiera un `aria-label`, un icono
-           suelto es peor objetivo de lectura para quien no reconoce el logo. -->
-      <a
-        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit"
-        rel="me"
-        [href]="'pie.facebook_url' | transloco"
-      >
-        <ts-icono-marca [marca]="marcaFacebook" clase="size-16" />
-        {{ 'pie.facebook' | transloco }}
-      </a>
-      <a
-        class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit"
-        rel="me"
-        [href]="'pie.instagram_url' | transloco"
-      >
-        <ts-icono-marca [marca]="marcaInstagram" clase="size-16" />
-        {{ 'pie.instagram' | transloco }}
-      </a>
-    </nav>
-
-    <!-- `not-italic` porque un <address> lo es por omisión del navegador, y
-         aquí no hay Preflight que lo resetee (src/tailwind.css). -->
-    <!-- Los iconos son `aria-hidden`: no añaden nada al lector de pantalla, que sigue leyendo
-         "Cra. 26C…", "Llamar", el correo y el horario. Lo que hacen es para quien mira: cinco
-         líneas de texto plano se leían como un párrafo desde que entraron el horario y las redes.
-         Van dentro de la línea, sin objetivo táctil propio, por el mismo motivo que los enlaces de
-         este bloque (WCAG 2.2, excepción "inline" de 2.5.8). -->
-    <address class="flex flex-col gap-4 text-sm not-italic">
-      <p class="m-0">{{ 'pie.nombre_comercial' | transloco }}</p>
-      <p class="m-0">{{ 'pie.nit' | transloco }}</p>
-      <p class="m-0 flex items-start gap-8">
-        <ts-icono [icono]="iconoUbicacion" clase="size-16" />
-        <span>{{ 'pie.direccion' | transloco }}</span>
-      </p>
-      <p class="m-0 flex items-center gap-8">
-        <ts-icono [icono]="iconoTelefono" clase="size-16" />
-        <span>
+    <!-- Cuatro columnas, no un `flex-wrap` de bloques sueltos: con `flex-wrap` el orden de lectura
+         dependía del ancho de la ventana, y a 1024 px la dirección se colaba entre las redes y los
+         legales. Una columna en teléfono, dos desde el primer punto de quiebre y cuatro desde
+         tableta. `items-start` para que las cuatro empiecen arriba aunque una sea más larga. -->
+    <div
+      class="grid grid-cols-1 items-start gap-32 desde-movil:grid-cols-2 desde-tableta:grid-cols-4"
+    >
+      <!-- `aria-labelledby` y no `aria-label` con el mismo texto: con las dos cosas, un lector de
+           pantalla anunciaba "El sitio, navegación" y acto seguido leía "El sitio". Apuntando al
+           `<p>` visible, el nombre queda atado a lo que se ve y se dice una sola vez. Lo levantó la
+           auditoría de accesibilidad.
+           Los enlaces llevan el objetivo táctil porque son navegación suelta, no prosa. Los de la
+           columna de contacto NO lo llevan a propósito: van dentro de una frase, y WCAG 2.2 exime
+           explícitamente el objetivo en línea cuyo tamaño lo fija el interlineado del texto que lo
+           rodea (2.5.8, excepción "inline"). Estirarlos a 44 px rompería el bloque sin ganar
+           accesibilidad.
+           `anillo-foco-sobre-marca` y no `anillo-foco`: en tema claro `--color-foco` y
+           `--color-marca` son el mismo grafito, así que el anillo normal es invisible aquí. -->
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-sitio">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-sitio">
+          {{ 'pie.sitio_titulo' | transloco }}
+        </p>
+        @for (enlace of enlacesDelSitio; track enlace.clave) {
           <a
-            class="anillo-foco-sobre-marca text-ts-sobre-marca"
-            [href]="'tel:' + ('pie.telefono_e164' | transloco)"
-            >{{ 'pie.llamar' | transloco }}</a
+            class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit no-underline hover:underline"
+            [routerLink]="rutaDe(enlace)"
           >
-          ·
-          <a
-            class="anillo-foco-sobre-marca inline-flex items-center gap-4 text-ts-sobre-marca"
-            [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
-          >
-            <ts-icono-marca [marca]="marcaWhatsapp" clase="size-16" />
-            {{ 'pie.whatsapp' | transloco }}
+            {{ enlace.clave | transloco }}
           </a>
-        </span>
-      </p>
-      <p class="m-0 flex items-center gap-8">
-        <ts-icono [icono]="iconoCorreo" clase="size-16" />
-        <a
-          class="anillo-foco-sobre-marca text-ts-sobre-marca"
-          [href]="'mailto:' + ('pie.correo' | transloco)"
-          >{{ 'pie.correo' | transloco }}</a
-        >
-      </p>
-      <!-- El horario es de los canales de atención, no de un local: aquí no se
-           visita a nadie. Por eso vive en el bloque de contacto y no como
-           openingHours en los datos estructurados, que obligaría a declarar
-           el negocio como Store y a anunciar horario de visita. -->
-      <p class="m-0 flex items-center gap-8">
-        <ts-icono [icono]="iconoHorario" clase="size-16" />
-        <span>{{ 'pie.horario' | transloco }}</span>
-      </p>
-    </address>
+        }
+      </nav>
 
-    <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco
-         normal es invisible en tema claro. Y el estado se manda, no se
-         alterna a ciegas: la casilla informa el suyo y el pie lo guarda, así
-         no hay dos verdades que puedan separarse. -->
-    <div class="flex flex-col gap-4">
-      <ts-checkbox
-        idCasilla="ts-reducir-movimiento"
-        [etiqueta]="'pie.reducir_movimiento' | transloco"
-        [marcado]="movimientoReducido()"
-        [deshabilitado]="sistemaPideReducir()"
-        [sobreMarca]="true"
-        (marcadoCambio)="fijarMovimientoReducido($event)"
-      />
-      <!-- Se dice por qué está deshabilitada en vez de dejar una casilla que no responde: la regla
-           del sistema vive en `tokens.css`, generado, y desde aquí no se puede vencer. -->
-      @if (sistemaPideReducir()) {
-        <p class="m-0 text-xs">{{ 'pie.reducir_movimiento_del_sistema' | transloco }}</p>
-      }
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-ayuda">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-ayuda">
+          {{ 'pie.ayuda_titulo' | transloco }}
+        </p>
+        @for (enlace of enlacesDeAyuda; track enlace.clave) {
+          <a
+            class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit no-underline hover:underline"
+            [routerLink]="rutaDe(enlace)"
+          >
+            {{ enlace.clave | transloco }}
+          </a>
+        }
+      </nav>
+
+      <!--
+        Los logos salen de `marcas.generado.ts`, que produce `npm run iconos-marca` desde
+        `simple-icons` (`ADR-0026`): la librería se usa al generar y no entra en el paquete que se
+        sirve, así que no es una dependencia de producción.
+
+        `rel="me"` en Facebook e Instagram y **no** en WhatsApp: son perfiles propios, y `me` es lo
+        que declara la relación de identidad que `sameAs` repite en los datos estructurados. Un
+        enlace de chat no declara identidad. `target` no se fija en ninguno: forzar pestaña nueva le
+        quita al usuario la decisión, y el aviso de que abre fuera del sitio tendría que ser audible
+        para cumplir.
+
+        El logo va con el nombre y no en su lugar. Es `aria-hidden`, así que un enlace de solo logo
+        se quedaría sin nombre accesible; y aunque se le pusiera un `aria-label`, un icono suelto es
+        peor objetivo de lectura para quien no reconoce el logo.
+      -->
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-redes">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-redes">
+          {{ 'pie.redes_titulo' | transloco }}
+        </p>
+        <a
+          class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit no-underline hover:underline"
+          [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
+        >
+          <ts-icono-marca [marca]="marcaWhatsapp" clase="size-16" />
+          {{ 'pie.whatsapp' | transloco }}
+        </a>
+        <a
+          class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit no-underline hover:underline"
+          rel="me"
+          [href]="'pie.facebook_url' | transloco"
+        >
+          <ts-icono-marca [marca]="marcaFacebook" clase="size-16" />
+          {{ 'pie.facebook' | transloco }}
+        </a>
+        <a
+          class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit no-underline hover:underline"
+          rel="me"
+          [href]="'pie.instagram_url' | transloco"
+        >
+          <ts-icono-marca [marca]="marcaInstagram" clase="size-16" />
+          {{ 'pie.instagram' | transloco }}
+        </a>
+      </nav>
+
+      <!-- `not-italic` porque un <address> lo es por omisión del navegador, y aquí no hay Preflight
+           que lo resetee (src/tailwind.css).
+           Los iconos son `aria-hidden`: no añaden nada al lector de pantalla, que sigue leyendo la
+           dirección, el número, el correo y el horario. Lo que hacen es para quien mira: cinco
+           líneas de texto plano se leían como un párrafo. -->
+      <div class="flex flex-col gap-4">
+        <p class="m-0 mb-4 font-medio text-sm">{{ 'pie.contacto_titulo' | transloco }}</p>
+        <address class="flex flex-col gap-8 text-sm not-italic">
+          <span class="flex flex-col gap-4">
+            <span>{{ 'pie.nombre_comercial' | transloco }}</span>
+            <span>{{ 'pie.nit' | transloco }}</span>
+          </span>
+          <span class="flex items-start gap-8">
+            <ts-icono [icono]="iconoUbicacion" clase="size-16 mt-4" />
+            <span>{{ 'pie.direccion' | transloco }}</span>
+          </span>
+          <!-- El número, y no un enlace que dijera "Llamar": el dato es el número. El `tel:` vive
+               en la página de contacto, que es a la que se llega para llamar. -->
+          <span class="flex items-start gap-8">
+            <ts-icono [icono]="iconoTelefono" clase="size-16 mt-4" />
+            <span>{{ 'pie.telefono' | transloco }}</span>
+          </span>
+          <span class="flex items-start gap-8">
+            <ts-icono [icono]="iconoCorreo" clase="size-16 mt-4" />
+            <a
+              class="anillo-foco-sobre-marca break-all text-ts-sobre-marca"
+              [href]="'mailto:' + ('pie.correo' | transloco)"
+              >{{ 'pie.correo' | transloco }}</a
+            >
+          </span>
+          <!-- El horario es de los canales de atención, no de un local: aquí no se visita a nadie.
+               Por eso vive en el bloque de contacto y no como `openingHours` en los datos
+               estructurados, que obligaría a declarar el negocio como `Store` y a anunciar horario
+               de visita. -->
+          <span class="flex items-start gap-8">
+            <ts-icono [icono]="iconoHorario" clase="size-16 mt-4" />
+            <span>{{ 'pie.horario' | transloco }}</span>
+          </span>
+        </address>
+      </div>
     </div>
   </div>
 
-  <p class="mx-auto my-0 max-w-contenido px-24 pb-24 text-xs">
-    {{ 'pie.copyright' | transloco: { anio: anioActual } }}
-  </p>
+  <!-- La franja final, como en el pie de referencia: el copyright, los legales separados por
+       puntos y el alternador de tema al otro extremo. `border-ts-marca-alt` y no `border-ts-borde`:
+       el borde tiene que verse sobre la franja de marca, y `--color-borde` está pensado para
+       superficies claras. -->
+  <div class="border-t border-ts-marca-alt">
+    <div
+      class="mx-auto flex max-w-contenido flex-wrap items-center gap-x-16 gap-y-8 px-16 py-16 text-xs desde-movil:px-24"
+    >
+      <p class="m-0">{{ 'pie.copyright' | transloco: { anio: anioActual } }}</p>
+
+      <nav
+        class="flex flex-wrap items-center gap-x-8"
+        [attr.aria-label]="'pie.legales_titulo' | transloco"
+      >
+        @for (enlace of enlacesLegales; track enlace.clave; let ultimo = $last) {
+          <a
+            class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-inherit no-underline hover:underline"
+            [routerLink]="rutaDe(enlace)"
+          >
+            {{ enlace.clave | transloco }}
+          </a>
+          <!-- El punto separador es decoración: va `aria-hidden` para que un lector de pantalla no
+               lea "punto medio" entre cada documento. -->
+          @if (!ultimo) {
+            <span aria-hidden="true">·</span>
+          }
+        }
+      </nav>
+
+      <!-- `ms-auto` y no `ml-auto`: el sitio es bilingüe y el día que entre un idioma que se lea de
+           derecha a izquierda, el margen lógico se voltea solo. -->
+      <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco normal es
+           invisible en tema claro porque `--color-foco` es el mismo grafito. -->
+      <ts-alternador-tema class="ms-auto" [sobreMarca]="true" />
+    </div>
+  </div>
 </footer>
