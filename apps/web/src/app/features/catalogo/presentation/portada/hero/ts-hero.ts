@@ -9,6 +9,7 @@ import {
 } from '../../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
 import { TAMANOS_HERO } from '../../../../../core/imagenes/tamanos-de-imagen';
+import { Linea } from '../../../domain/filtro-productos.model';
 import { VarianteDeImagen } from '../../../domain/producto.model';
 
 /**
@@ -23,6 +24,54 @@ const VARIANTES_HERO: readonly VarianteDeImagen[] = [
   { ancho: 480, url: '/imagenes/portada/hero-480.webp' },
   { ancho: 800, url: '/imagenes/portada/hero-800.webp' },
   { ancho: 1200, url: '/imagenes/portada/hero-1200.webp' },
+];
+
+/**
+ * Lo que comparten los cuatro botones de línea. Lo único que cambia entre ellos es el fondo.
+ *
+ * Va en una constante y no repetido en la plantilla porque `anillo-foco-sobre-acento` es
+ * obligatorio en los cuatro y cuatro copias de una lista de clases son cuatro sitios donde se
+ * puede caer una. Es el mismo criterio de `ts-boton`, que compone sus clases en el componente.
+ *
+ * `hover:brightness-110` y no un token de hover por tono: aclarar un 10 % es la respuesta al ratón
+ * que ya usa la variante `peligro` de `ts-boton`, y pedirle al kit cuatro `hover` más sería cuatro
+ * tokens para un estado que ningún otro sitio consume. El botón de portada **no tenía ninguno**
+ * hasta ahora.
+ */
+const CLASES_BOTON_LINEA =
+  'anillo-foco-sobre-acento chaflan inline-flex min-h-tactil items-center justify-center ' +
+  'px-32 font-medio text-ts-sobre-acento no-underline hover:brightness-110';
+
+/**
+ * Las cuatro líneas de negocio con su paso de la escala de ámbar, **en el orden de la banda**.
+ *
+ * No es el orden canónico de `LINEAS` —ahí tecnología va primera, por rotación— y la diferencia es
+ * deliberada: en esta banda la primera posición y el tono más saturado van juntos, y quien decide
+ * qué línea encabeza la portada es el negocio, no el modelo. El menú lateral y el filtro siguen
+ * ofreciendo las mismas cuatro en su orden.
+ *
+ * El tono es un dato de esta lista y no un cálculo: `bg-ts-acento-2` tiene que aparecer escrito
+ * tal cual en el código o Tailwind no lo genera —las clases se descubren leyendo el fuente, y una
+ * armada con plantillas de cadena no existe—. `npm run clases` es lo que vigila que las cuatro
+ * existan de verdad.
+ */
+const BOTONES_DE_LINEA: readonly { linea: Linea; clave: string; clases: string }[] = [
+  { linea: 'ROPA', clave: 'portada.hero.cta.ropa', clases: CLASES_BOTON_LINEA + ' bg-ts-acento' },
+  {
+    linea: 'CALZADO',
+    clave: 'portada.hero.cta.calzado',
+    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-2',
+  },
+  {
+    linea: 'BOLSOS',
+    clave: 'portada.hero.cta.bolsos',
+    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-3',
+  },
+  {
+    linea: 'TECNOLOGIA',
+    clave: 'portada.hero.cta.tecnologia',
+    clases: CLASES_BOTON_LINEA + ' bg-ts-acento-4',
+  },
 ];
 
 /**
@@ -68,6 +117,7 @@ export class TsHero {
   /** El prefijo de idioma de la ruta actual: las rutas del sitio lo llevan siempre. */
   readonly idioma = input.required<string>();
 
+  protected readonly botonesDeLinea = BOTONES_DE_LINEA;
   protected readonly variantesHero = VARIANTES_HERO;
   protected readonly tamanosHero = TAMANOS_HERO;
 

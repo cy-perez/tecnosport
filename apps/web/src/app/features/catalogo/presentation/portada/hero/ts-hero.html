@@ -17,20 +17,20 @@
         {{ 'portada.hero.apoyo' | transloco }}
       </p>
 
+      <!-- Un boton por linea de negocio, cada uno a la rejilla ya filtrada. El tono lo trae el
+           dato (`ts-hero.ts`) y no lo decide la plantilla: son cuatro enlaces identicos salvo por
+           su destino y su paso de la escala, y escribirlos a mano seria cuatro sitios donde se
+           puede olvidar el `anillo-foco-sobre-acento`. -->
       <div class="mb-48 flex flex-wrap gap-12">
-        <a
-          class="anillo-foco-sobre-acento chaflan inline-flex min-h-tactil items-center justify-center bg-ts-acento px-32 font-medio text-ts-sobre-acento no-underline"
-          [routerLink]="['/', idioma(), 'productos']"
-        >
-          {{ 'portada.hero.cta.principal' | transloco }}
-        </a>
-        <a
-          class="anillo-foco-sobre-marca chaflan inline-flex min-h-tactil items-center justify-center border border-ts-sobre-marca px-32 font-medio text-ts-sobre-marca no-underline"
-          [routerLink]="['/', idioma(), 'productos']"
-          [queryParams]="{ linea: 'TECNOLOGIA' }"
-        >
-          {{ 'portada.hero.cta.secundario' | transloco }}
-        </a>
+        @for (boton of botonesDeLinea; track boton.linea) {
+          <a
+            [class]="boton.clases"
+            [routerLink]="['/', idioma(), 'productos']"
+            [queryParams]="{ linea: boton.linea }"
+          >
+            {{ boton.clave | transloco }}
+          </a>
+        }
       </div>
 
       <ul
