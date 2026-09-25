@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TsCargando } from '../cargando/ts-cargando';
 import { cn } from '../cn';
 
 export type VarianteBoton = 'primario' | 'secundario' | 'texto' | 'peligro' | 'acento';
@@ -82,7 +83,7 @@ const BASE =
 
 @Component({
   selector: 'ts-boton',
-  imports: [NgTemplateOutlet, RouterLink],
+  imports: [NgTemplateOutlet, RouterLink, TsCargando],
   templateUrl: './ts-boton.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

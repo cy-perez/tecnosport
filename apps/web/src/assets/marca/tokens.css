@@ -104,6 +104,7 @@
   --mov-rapida: 120ms;
   --mov-media: 160ms;
   --mov-panel: 300ms;
+  --mov-giro: 1000ms;
   --mov-lenta: 1400ms;
   --curva-entrada: cubic-bezier(0, 0, 0.2, 1);
   --curva-salida: cubic-bezier(0.4, 0, 1, 1);

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
@@ -17,6 +25,7 @@ import {
   SolicitudReversion,
 } from '../../domain/reversion.model';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
+import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
 
 const CLAVE_CAUSAL: Record<CausalReversion, string> = {
   FRAUDE: 'admin.reversiones.causales.fraude',
@@ -53,7 +62,15 @@ const CLAVE_VERDICTO: Record<VerdictoPlazo, string> = {
  */
 @Component({
   selector: 'app-panel-reversion',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsSelect, TsSelectControl],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    TsBoton,
+    TsCampo,
+    TsSelect,
+    TsSelectControl,
+    TsCargando,
+  ],
   templateUrl: './panel-reversion.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

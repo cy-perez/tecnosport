@@ -11,8 +11,9 @@
   <!-- Una sola region viva permanente para los mensajes de estado: un `role="status"` que nace
        ya lleno dentro del `@if` no se anuncia — medido con NVDA el 22 de septiembre de 2026, ver
        `docs/06-testing.md`. Lo que cambia es el contenido, no la existencia del nodo. -->
-  <p role="status" class="m-0 text-ts-texto-suave">
+  <p role="status" class="m-0 flex items-center gap-8 text-ts-texto-suave">
     @if (consulta.isPending()) {
+      <ts-cargando />
       {{ 'admin.revision_envios.cargando' | transloco }}
     } @else if (vacia()) {
       {{ 'admin.revision_envios.vacia' | transloco }}

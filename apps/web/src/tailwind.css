@@ -369,6 +369,37 @@
   animation: none;
 }
 
+/* El anillo que gira. Vive aquí y no en el `.ts` del componente por lo mismo que el brillo de
+   carga: es una primitiva del sistema —la usan los veintidós botones con estado de carga y los
+   seis párrafos de estado— y unos `@keyframes` repetidos son sitios donde desincronizarse.
+
+   La duración sale de `--mov-giro`, que entró a `tokens.json` para esto. `linear` y no una de las
+   curvas del kit: las tres son de aceleración y desaceleración, pensadas para algo que empieza y
+   termina, y aplicadas a un ciclo infinito producen un anillo que tironea una vez por vuelta. */
+@utility girando {
+  animation: girar var(--mov-giro) linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mismos dos disparadores que el esqueleto, y por la misma razón: `styles.scss` acorta la
+   *duración* de toda animación bajo `[data-movimiento]`, y un anillo que da la vuelta en 0,01 ms
+   es un parpadeo — peor que uno quieto. Hay que apagarlo, no acelerarlo. Quieto sigue diciendo lo
+   mismo: lo que informa es el texto que lo acompaña. */
+@media (prefers-reduced-motion: reduce) {
+  .girando {
+    animation: none;
+  }
+}
+
+[data-movimiento='reducido'] .girando {
+  animation: none;
+}
+
 /* Las tres propiedades que hacen de un elemento una superficie de arrastre.
    Van juntas porque se explican juntas, y porque una de ellas —`-webkit-user-drag`—
    no tiene utilidad en Tailwind: sin ella el puntero arrastra el fotograma como

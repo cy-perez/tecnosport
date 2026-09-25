@@ -26,6 +26,7 @@ import {
   GuiaEnRevision,
   VeredictoDeEmision,
 } from '../../domain/revision-envio.model';
+import { TsCargando } from '../../../../../shared/ui/cargando/ts-cargando';
 
 const CLAVE_ESTADO_ENVIO: Record<EstadoEnvioEnRevision, string> = {
   EXCEPCION: 'admin.revision_envios.estados_envio.excepcion',
@@ -56,7 +57,7 @@ const CLAVE_ESTADO_EMISION: Record<EstadoEmisionEnRevision, string> = {
  */
 @Component({
   selector: 'app-bandeja-revision-envios',
-  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas],
+  imports: [ReactiveFormsModule, TranslocoPipe, TsBoton, TsCampo, TsMigas, TsCargando],
   templateUrl: './bandeja-revision.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

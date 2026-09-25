@@ -247,6 +247,10 @@ cubren o para lo que no debe olvidarse:
   eso.
 - `esqueleto` — el degradado de carga con sus `@keyframes`, apagado bajo
   `prefers-reduced-motion` y bajo `[data-movimiento="reducido"]`.
+- `girando` — la vuelta del anillo de carga, con los mismos dos interruptores que
+  el esqueleto. Y por la misma razón: `styles.scss` acorta la *duración* de toda
+  animación bajo `[data-movimiento]`, y un anillo que da la vuelta en 0,01 ms es
+  un parpadeo, peor que uno quieto. Hay que apagarlo, no acelerarlo.
 - `superficie-arrastre` — las tres propiedades que hacen arrastrable el visor
   360, incluida `-webkit-user-drag`, que no tiene utilidad en Tailwind.
 
@@ -351,6 +355,38 @@ SCSS con los mismos valores.
 **En `shared/` — compartidos de verdad, pero no tontos:** `ts-precio` (necesita
 el idioma activo para formatear la moneda) · `ts-esqueleto` · `ts-migas` ·
 `ts-paginador` · `ts-alternador-idioma` · `ts-alternador-tema` · `ts-visor-360`.
+
+### Los dos indicadores de carga, y cuándo va cada uno
+
+Conviven a propósito desde el 25 de septiembre de 2026, cuando entró el segundo:
+
+- **`ts-esqueleto`** dice **qué** va a aparecer. Se usa donde la forma se conoce
+  de antemano: una rejilla de tarjetas, una tabla, una ficha. Diecinueve
+  pantallas.
+- **`ts-cargando`** dice que **algo está pasando ahora**. Se usa donde no hay
+  forma que anticipar: un botón que acaba de pulsarse, un párrafo de estado.
+
+Antes solo existía el primero, y lo segundo se resolvía con texto pelado
+("Cargando…") o con nada: los botones que cargan **sin cambiar de texto** —la
+mayoría de las acciones de fila del panel— solo movían su `aria-busy`, que lo
+dice todo para quien usa lector de pantalla y **nada** para quien mira la
+pantalla. Un botón ocupado se veía igual que uno en reposo.
+
+`ts-cargando` sale del "Spinner 4" de TailAdmin, el segundo de los dos botones de
+esa tarjeta, con **una diferencia deliberada**: el original parte el anillo en dos
+colores, la pista en un gris fijo y el arco en el color de marca. Aquí los dos
+salen de `currentColor` y la pista va al 25 %. El componente se pinta sobre cinco
+fondos —el grafito del botón primario, el ámbar del de acento, el rojo del de
+peligro, el transparente del secundario y el fondo de la página— y un arco de
+color fijo desaparece sobre el suyo: ámbar sobre ámbar no se ve. Heredando el
+color del texto contrasta exactamente igual que la etiqueta que tiene al lado, en
+los dos temas y sin una regla por variante. Quien quiera el ámbar lo pide con
+`clase="text-ts-acento"`, como con `ts-icono`.
+
+El giro dura `--mov-giro` (1000 ms), que entró al kit para esto. No se reutilizó
+`--mov-lenta` —los 1400 ms del brillo de carga— porque son cosas distintas: aquel
+es ambiental y este responde a una acción, y a 1400 ms el anillo se arrastra y
+parece que la aplicación se colgó.
 
 **No queda una sola línea de SCSS en el frontend**, salvo `src/styles.scss`, que
 conserva la regla global de reducción de movimiento disparada por
