@@ -42,3 +42,24 @@ export function mensajeDeError(
   // mantener aparte una lista de las que hay.
   return texto === clave ? transloco.translate(claveGenerica) : texto;
 }
+
+/**
+ * El código con el que `FiltroLimiteIntentos` responde a un 429 (`apps/api`, `ManejadorDeErrores`
+ * no lo toca: el filtro corre antes del `DispatcherServlet` y arma el cuerpo a mano).
+ */
+const LIMITE_DE_INTENTOS_EXCEDIDO = 'LIMITE_DE_INTENTOS_EXCEDIDO';
+
+/**
+ * ¿El servidor rechazó esto por haber preguntado demasiadas veces?
+ *
+ * <p>Vale la pena distinguirlo de cualquier otro fallo en las pantallas públicas que viven detrás
+ * de un límite de intentos: "espera unos minutos" es accionable y "no se pudo completar la acción"
+ * no. Nació con el formulario de seguimiento del pedido, donde confundir el 429 con "no
+ * encontramos tu pedido" le dice a quien acaba de pagar que su compra no existe.
+ *
+ * <p>Aparte de `mensajeDeError` porque no es un mensaje: es una pregunta sobre el error, y quien
+ * la hace suele querer decidir algo más que qué frase pintar.
+ */
+export function esLimiteDeIntentos(error: unknown): boolean {
+  return error instanceof ErrorHttp && error.codigo === LIMITE_DE_INTENTOS_EXCEDIDO;
+}

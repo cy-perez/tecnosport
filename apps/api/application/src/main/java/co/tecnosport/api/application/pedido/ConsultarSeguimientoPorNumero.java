@@ -42,17 +42,22 @@ public final class ConsultarSeguimientoPorNumero {
     this.repositorioPedidos = Objects.requireNonNull(repositorioPedidos);
   }
 
+  /**
+   * Una sola consulta con los dos criterios, y no "busca por número y compara el correo después".
+   *
+   * <p>Lo segundo es lo que estaba escrito y lo levantó la revisión: comparar después obliga a
+   * reconstruir el agregado entero antes de descubrir que el correo no coincide, así que un número
+   * que existe tarda medible y consistentemente más que uno que no. Las dos respuestas eran el
+   * mismo 404 con el mismo mensaje —y hay una prueba que lo fija— pero el reloj decía cuál era
+   * cuál. Quien recorre números sin conocer el correo aprendía cuáles existen, que es justo el paso
+   * previo al ataque que este caso de uso dice frenar.
+   */
   public Pedido ejecutar(ConsultarSeguimientoPorNumeroComando comando) {
     Objects.requireNonNull(comando, "El comando no puede ser nulo.");
     NumeroPedido numero = aNumero(comando.numeroPedido());
-    Pedido pedido =
-        repositorioPedidos
-            .buscarPorNumero(numero)
-            .orElseThrow(PedidoNoEncontradoException::porSeguimiento);
-    if (!pedido.correo().valor().equals(normalizarCorreo(comando.correo()))) {
-      throw PedidoNoEncontradoException.porSeguimiento();
-    }
-    return pedido;
+    return repositorioPedidos
+        .buscarPorNumeroYCorreo(numero, normalizarCorreo(comando.correo()))
+        .orElseThrow(PedidoNoEncontradoException::porSeguimiento);
   }
 
   /**

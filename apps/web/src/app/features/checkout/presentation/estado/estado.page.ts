@@ -6,6 +6,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
+import { esLimiteDeIntentos } from '../../../../core/errores/mensaje-de-error';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
@@ -125,12 +126,21 @@ export class EstadoPage {
   });
 
   /**
-   * El formulario se pinta mientras no haya por dónde consultar, y **también** cuando lo que se
-   * consultó no existe: así quien se equivocó de número lo corrige ahí mismo, en vez de quedarse
-   * mirando un error sin salida.
+   * El formulario se queda puesto **mientras la consulta vuela** y también cuando lo consultado no
+   * existe o falló.
+   *
+   * <p>Esto decía `criteriosSeguimiento() === null || noEncontrado()`, y con eso el formulario se
+   * desmontaba justo al pulsar "Consultar": lo sustituía un esqueleto, el botón que la persona
+   * acababa de pulsar dejaba de existir —el foco se iba a `<body>`—, el `[cargando]` del botón no
+   * se llegaba a ver nunca, y con lector de pantalla no había ni un anuncio entre el envío y la
+   * respuesta. Lo levantó la auditoría de accesibilidad.
+   *
+   * <p>Ahora el esqueleto solo cubre el camino del enlace del correo, donde no hay formulario que
+   * conservar; en el del formulario, el estado lo cuenta el propio botón con su `aria-busy` y su
+   * anillo.
    */
   protected readonly pidiendoDatos = computed(
-    () => this.criteriosSeguimiento() === null || this.noEncontrado(),
+    () => this.criteriosSeguimiento()?.tipo !== 'ID' && this.pedido() === null,
   );
 
   /**
@@ -141,22 +151,97 @@ export class EstadoPage {
     () => this.consulta.isSuccess() && this.consulta.data() === null,
   );
 
+  /**
+   * Lo que se le dice a quien consultó y no obtuvo su pedido.
+   *
+   * <p>Tres casos distintos, y antes los tres acababan en el mismo sitio: la pantalla caía al
+   * `@else` final y decía <b>"No encontramos este pedido"</b> también cuando la consulta había
+   * fallado por red o por límite de intentos. Es la peor frase posible para alguien que acaba de
+   * pagar, y el javadoc del adaptador prometía una traducción que no llegaba a ninguna parte — el
+   * error de la consulta no estaba enganchado a nada. Lo levantó la revisión.
+   */
+  protected readonly mensajeDeConsulta = computed(() => {
+    if (this.error() !== null) {
+      return this.error();
+    }
+    if (this.noEncontrado()) {
+      return this.traducir()('checkout.estado.consulta.no_encontrado');
+    }
+    const fallo = this.consulta.error();
+    if (!fallo) {
+      return null;
+    }
+    const traducir = this.traducir();
+    return esLimiteDeIntentos(fallo)
+      ? traducir('checkout.estado.consulta.demasiados_intentos')
+      : traducir('checkout.estado.consulta.error_consulta');
+  });
+
+  /** El error de un campo, solo cuando ya se tocó: `ts-campo` lo pinta y pone `aria-invalid`. */
+  protected readonly errorNumero = computed(() => {
+    const control = this.form.controls.numeroPedido;
+    this.revision();
+    return control.touched && control.hasError('required')
+      ? this.traducir()('checkout.estado.consulta.numero_requerido')
+      : null;
+  });
+
+  protected readonly errorCorreo = computed(() => {
+    const control = this.form.controls.correo;
+    this.revision();
+    const traducir = this.traducir();
+    if (!control.touched) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return traducir('checkout.estado.consulta.correo_requerido');
+    }
+    return control.hasError('email') ? traducir('checkout.estado.consulta.correo_invalido') : null;
+  });
+
+  /**
+   * Un contador que se mueve en cada envío, solo para que los dos `computed` de arriba se
+   * recalculen: `FormControl.touched` no es una señal, así que sin esto `markAllAsTouched()` no
+   * repinta nada. Es la mitad que faltaba de la lección de `apps/web/CLAUDE.md` —"`markAllAsTouched()`
+   * sin un `[error]` enganchado no pinta nada; las dos mitades van juntas"— y aquí estaba puesta
+   * solo la primera.
+   */
+  private readonly revision = signal(0);
+
   protected consultarPorNumero(): void {
     this.form.markAllAsTouched();
+    this.revision.update((n) => n + 1);
     if (this.form.invalid) {
       this.error.set(this.traducir()('checkout.estado.consulta.faltan_datos'));
       return;
     }
     this.error.set(null);
     const { numeroPedido, correo } = this.form.getRawValue();
-    this.consultado.set({ numeroPedido: numeroPedido.trim(), correo: correo.trim() });
+    const criterios = { numeroPedido: numeroPedido.trim(), correo: correo.trim() };
+    // Reenviar lo mismo tiene que volver a preguntar. Con `staleTime` y la misma `queryKey`, fijar
+    // el mismo valor no dispara nada: el botón no gira, el mensaje no cambia, y quien no vio el
+    // error cree que la página se colgó.
+    const mismosDeAntes =
+      this.consultado()?.numeroPedido === criterios.numeroPedido &&
+      this.consultado()?.correo === criterios.correo;
+    if (mismosDeAntes) {
+      void this.consulta.refetch();
+      return;
+    }
+    this.consultado.set(criterios);
   }
+
+  /** Si a este pedido se llegó escribiendo el número, y no desde el enlace del correo. */
+  protected readonly vinoDelFormulario = computed(
+    () => this.criteriosSeguimiento()?.tipo === 'NUMERO',
+  );
 
   /** Vuelve al formulario en blanco, para consultar otro pedido. */
   protected otraConsulta(): void {
     this.consultado.set(null);
     this.form.reset();
     this.error.set(null);
+    this.revision.update((n) => n + 1);
   }
 
   protected readonly consulta = usarSeguimientoPedido(() => this.criteriosSeguimiento());
@@ -192,9 +277,19 @@ export class EstadoPage {
     return pedido ? this.traducir()(CLAVE_ETIQUETA_ESTADO[pedido.estado]) : '';
   });
 
+  /**
+   * El botón de reintentar necesita el `id` del pedido, y el seguimiento por número <b>no lo
+   * devuelve</b>: ese UUID es la credencial de `/pagos/intentos` y de `/reintentar-pago`, y
+   * entregarlo por una puerta que se abre adivinando un número secuencial convertiría una fuga de
+   * lectura en una de escritura (ver `MapeadorSeguimiento.aRespuestaSinIdInterno`).
+   *
+   * <p>`aSeguimiento` mapea el `id` ausente a cadena vacía, así que la comprobación es esa. Quien
+   * llegó escribiendo el número y tiene un pago fallido reintenta desde el enlace de su correo, que
+   * es donde ese botón siempre tuvo sentido.
+   */
   protected readonly puedeReintentar = computed(() => {
     const pedido = this.pedido();
-    return pedido !== null && puedeReintentarPago(pedido.estado);
+    return pedido !== null && pedido.id !== '' && puedeReintentarPago(pedido.estado);
   });
 
   protected readonly reintentando = signal(false);

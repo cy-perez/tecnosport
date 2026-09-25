@@ -1,11 +1,16 @@
 <!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
-<!-- `aria-roledescription="carousel"` con su etiqueta, que es lo que convierte esta región en algo
-     que un lector de pantalla puede explicar. Sin el nombre, `roledescription` no se anuncia.
-     El puntero y el foco detienen la rotación: la APG lo exige de todo carrusel que se mueve solo,
-     y `focusin`/`focusout` cubren el caso que el ratón no cubre —entrar con el tabulador. -->
+<!-- `aria-roledescription` con su etiqueta, que es lo que convierte esta región en algo que un
+     lector de pantalla puede explicar. Sin el nombre, `roledescription` no se anuncia.
+
+     **Y va por Transloco, no escrito aquí.** Decía `"carousel"` y `"slide"` en inglés, literales en
+     la plantilla: `aria-roledescription` **se pronuncia**, así que en la versión española el lector
+     decía "carousel". Es texto visible —para quien escucha— y la regla dura #4 no admite ninguno,
+     `aria-label` incluidos. Lo levantó la auditoría de accesibilidad.
+
+     El puntero y el foco detienen la rotación, y además hay un botón de pausa: ver más abajo. -->
 <section
   class="bg-ts-marca text-ts-sobre-marca"
-  aria-roledescription="carousel"
+  [attr.aria-roledescription]="'portada.hero.rol_carrusel' | transloco"
   [attr.aria-label]="'portada.hero.carrusel' | transloco"
   (mouseenter)="detener()"
   (mouseleave)="reanudar()"
@@ -29,7 +34,7 @@
         <div
           class="w-full shrink-0"
           role="group"
-          aria-roledescription="slide"
+          [attr.aria-roledescription]="'portada.hero.rol_slide' | transloco"
           [attr.aria-label]="
             'portada.hero.slide_n' | transloco: { n: i + 1, total: diapositivas.length }
           "
@@ -92,27 +97,27 @@
                   <p
                     class="m-0 mb-16 flex items-center gap-12 font-mono text-xs tracking-descriptor uppercase"
                   >
-                    <span class="inline-block h-4 w-24 bg-ts-acento" aria-hidden="true"></span>
+                    <!-- `sobre-marca` y no `acento`: el ámbar de esta pantalla es el botón, y
+                         `docs/04-ui-marca.md` lo admite solo como relleno con texto grafito encima
+                         — una barrita ámbar sin texto es el segundo ámbar de la pieza. -->
+                    <span class="inline-block h-4 w-24 bg-ts-sobre-marca" aria-hidden="true"></span>
                     {{ claveDe(diapositiva, 'eyebrow') | transloco }}
                   </p>
 
-                  <!-- `<h1>` solo en la primera y `<p>` en las otras tres. Cuatro `<h1>` en la
-                       misma página son cuatro encabezados de nivel uno para un lector de pantalla
-                       y para un rastreador; el titular de las otras tres es texto destacado, no la
-                       cabecera del documento. -->
-                  @if (esPrimera(i)) {
-                    <h1
-                      class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
-                    >
-                      {{ claveDe(diapositiva, 'titular') | transloco }}
-                    </h1>
-                  } @else {
-                    <p
-                      class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
-                    >
-                      {{ claveDe(diapositiva, 'titular') | transloco }}
-                    </p>
-                  }
+                  <!-- Los cuatro titulares son `<p>`, ninguno es el `<h1>` de la página.
+                       Empezó siendo `<h1>` en la primera pieza y `<p>` en las otras tres, para no
+                       tener cuatro encabezados de nivel uno. El razonamiento era bueno y el
+                       resultado estaba roto: ese `<h1>` vive **dentro** de una diapositiva, y en
+                       cuanto el carrusel avanza esa diapositiva queda `inert` y `aria-hidden`, así
+                       que a los cinco segundos la portada se quedaba sin ningún encabezado de nivel
+                       uno. La prueba que lo fijaba contaba nodos del DOM y no lo veía.
+                       El `<h1>` de la portada vive ahora fuera del carrusel, en `portada.page.html`,
+                       y no cambia de texto cada cinco segundos. Lo levantó la auditoría. -->
+                  <p
+                    class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
+                  >
+                    {{ claveDe(diapositiva, 'titular') | transloco }}
+                  </p>
 
                   <p class="m-0 mb-24 max-w-lectura text-base leading-texto">
                     {{ claveDe(diapositiva, 'apoyo') | transloco }}
@@ -158,25 +163,56 @@
          blanco sube a ~4,5:1 y se sigue leyendo como "apagada" frente a la activa, que además es
          tres veces más ancha. -->
     <div
-      class="flex justify-center gap-8 pb-24 desde-movil:absolute desde-movil:inset-x-0 desde-movil:bottom-24 desde-movil:pb-0"
+      class="flex items-center justify-center pb-16 desde-movil:absolute desde-movil:inset-x-0 desde-movil:bottom-8 desde-movil:pb-0"
       [attr.aria-label]="'portada.hero.indicadores' | transloco"
       role="group"
       (keydown)="alPulsarTecla($event)"
     >
       @for (diapositiva of diapositivas; track diapositiva.linea; let i = $index) {
+        <!-- **El objetivo táctil va en el botón y la píldora en un hijo.** La píldora medía 8 x 8
+             px y el botón era la píldora: por debajo de los 24 px de WCAG 2.5.8 y muy por debajo de
+             los 44 que pide `docs/04-ui-marca.md`, y la excepción de espaciado de 2.5.8 tampoco
+             salvaba —con `gap-8` los centros quedaban a 16 px y los círculos de 24 se solapan—. Con
+             `size-tactil` en el botón y `bg-transparent`, el área pulsable son 44 px y el dibujo no
+             engorda. El `gap` se fue: con 44 px de caja ya sobra separación. Lo levantó la
+             auditoría de accesibilidad. -->
         <button
-          class="anillo-foco-sobre-marca h-8 cursor-pointer rounded-completo border-0 p-0 transition-all ease-[var(--curva-suave)]"
-          [class.w-24]="i === actual()"
-          [class.bg-ts-sobre-marca]="i === actual()"
-          [class.w-8]="i !== actual()"
-          [class.bg-ts-sobre-marca/50]="i !== actual()"
-          [style.transitionDuration]="'var(--mov-media)'"
+          class="anillo-foco-sobre-marca flex size-tactil cursor-pointer items-center justify-center border-0 bg-transparent p-0"
           type="button"
           [attr.aria-current]="i === actual() ? 'true' : null"
           [attr.aria-label]="claveDe(diapositiva, 'indicador') | transloco"
           (click)="irA(i)"
-        ></button>
+        >
+          <span
+            class="block h-8 rounded-completo transition-all ease-[var(--curva-suave)]"
+            [class.w-24]="i === actual()"
+            [class.bg-ts-sobre-marca]="i === actual()"
+            [class.w-8]="i !== actual()"
+            [class.bg-ts-sobre-marca/50]="i !== actual()"
+            [style.transitionDuration]="'var(--mov-media)'"
+          ></span>
+        </button>
       }
+
+      <!-- **El botón de pausa, que es lo que WCAG 2.2.2 exige** de todo movimiento automático que
+           dure más de cinco segundos: un mecanismo para pausarlo, detenerlo u ocultarlo. Pararlo
+           con el puntero encima y con el foco dentro no es ese mecanismo —en un teléfono no hay
+           puntero, y tocar una viñeta *reinicia* la cuenta en vez de detenerla— y con teclado no es
+           descubrible. El documento describía lo anterior como si bastara; no bastaba.
+
+           La pausa de la persona es una señal aparte de la del puntero, y gana: con un solo
+           booleano para las dos fuentes, sacar el ratón de la región reanudaba lo que alguien
+           acababa de pausar a propósito. -->
+      <button
+        class="anillo-foco-sobre-marca ms-8 flex size-tactil cursor-pointer items-center justify-center rounded-completo border-0 bg-transparent p-0 text-ts-sobre-marca"
+        type="button"
+        [attr.aria-label]="
+          (pausadoPorLaPersona() ? 'portada.hero.reanudar' : 'portada.hero.pausar') | transloco
+        "
+        (click)="alternarPausa()"
+      >
+        <ts-icono [icono]="pausadoPorLaPersona() ? iconoReanudar : iconoPausar" clase="size-16" />
+      </button>
     </div>
   </div>
 

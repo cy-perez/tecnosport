@@ -94,14 +94,19 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
 
   /**
    * Misma reconstrucción que {@link #buscarPorId}, cambiando solo por dónde se entra. Se repite el
-   * mapeo en vez de delegar una en otra porque lo único que comparten es la cola: la búsqueda por
-   * número devuelve la entidad y a partir de ahí el camino es idéntico, así que encadenarlas
-   * ahorraría tres líneas a cambio de un salto más al leer.
+   * mapeo en vez de delegar una en otra porque lo único que comparten es la cola: la búsqueda
+   * devuelve la entidad y a partir de ahí el camino es idéntico, así que encadenarlas ahorraría
+   * tres líneas a cambio de un salto más al leer.
+   *
+   * <p><b>Los dos criterios van en el {@code where}</b>, y de eso depende que el seguimiento
+   * público no tenga un oráculo temporal: si el correo se comparara después, un número que existe
+   * costaría tres consultas —la fila, sus líneas y su historial— contra una sola de un número que
+   * no existe, y esa diferencia es medible desde fuera aunque las dos respondan el mismo 404.
    */
   @Override
-  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
+  public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
     return pedidos
-        .findByNumeroPedido(numero.valor())
+        .findByNumeroPedidoAndCorreo(numero.valor(), correoNormalizado)
         .map(
             entidad ->
                 aPedido(

@@ -40,12 +40,27 @@ function indicadores(): HTMLButtonElement[] {
   ] as HTMLButtonElement[];
 }
 
+/**
+ * Las diapositivas, seleccionadas por `[role="group"][aria-roledescription]` y **no** por el valor
+ * de ese atributo: desde que `aria-roledescription` pasa por Transloco —se pronuncia, así que la
+ * regla dura #4 aplica— su valor es "diapositiva" en español y "slide" en inglés, y un selector
+ * atado al texto se rompe al cambiar de idioma. La tira de viñetas también es `role="group"`, pero
+ * sin `roledescription`, así que el selector combinado deja fuera solo lo que debe.
+ */
+function diapositivas(): HTMLElement[] {
+  return screen
+    .getAllByRole('group', { hidden: true })
+    .filter((grupo) => grupo.hasAttribute('aria-roledescription'));
+}
+
 /** La diapositiva visible es la única sin `inert`. */
 function indiceVisible(): number {
-  const grupos = screen
-    .getAllByRole('group', { hidden: true })
-    .filter((grupo) => grupo.getAttribute('aria-roledescription') === 'slide');
-  return grupos.findIndex((grupo) => !grupo.hasAttribute('inert'));
+  return diapositivas().findIndex((grupo) => !grupo.hasAttribute('inert'));
+}
+
+/** El botón de pausa: el único de la tira cuyo nombre no es una línea de negocio. */
+function botonDePausa(): HTMLButtonElement {
+  return screen.getByRole('button', { name: /carrusel/i }) as HTMLButtonElement;
 }
 
 describe('TsCarruselHero', () => {
@@ -61,16 +76,55 @@ describe('TsCarruselHero', () => {
   });
 
   /**
-   * Cuatro `<h1>` en la misma página son cuatro encabezados de nivel uno para un lector de pantalla
-   * y para un rastreador. El titular de las otras tres es texto destacado, no la cabecera del
-   * documento — y esto es exactamente lo que se rompe si alguien "unifica" las dos ramas del `@if`.
+   * <b>Ningún titular de diapositiva es un encabezado</b>, y esto invierte lo que esta prueba
+   * afirmaba.
+   *
+   * <p>Antes el `<h1>` estaba en la primera pieza y las otras tres llevaban `<p>`, para no tener
+   * cuatro encabezados de nivel uno. El razonamiento era correcto y el resultado estaba roto: ese
+   * `<h1>` vive dentro de una diapositiva, y en cuanto el carrusel avanza esa diapositiva queda
+   * `inert` y `aria-hidden` — o sea que a los cinco segundos la portada se quedaba sin ningún
+   * encabezado de nivel uno. La prueba anterior contaba nodos del DOM y no lo veía.
+   *
+   * <p>El `<h1>` de la portada vive ahora fuera del carrusel; que exista y sea único lo comprueba
+   * `portada.page.spec.ts`, que es quien puede verlo.
    */
-  it('solo la primera pieza lleva el encabezado de la página', async () => {
+  it('ningún titular de diapositiva es un encabezado', async () => {
     await renderCarrusel();
 
-    const titulares = screen.getAllByRole('heading', { level: 1, hidden: true });
-    expect(titulares).toHaveLength(1);
-    expect(titulares[0].textContent?.trim()).toBe('Vístete para moverte');
+    expect(screen.queryAllByRole('heading', { hidden: true })).toHaveLength(0);
+  });
+
+  /**
+   * WCAG 2.2.2 (nivel A) exige un mecanismo para pausar, detener u ocultar todo movimiento
+   * automático que dure más de cinco segundos. Detenerse con el puntero encima y con el foco dentro
+   * <b>no es ese mecanismo</b>: en un teléfono no hay puntero y con teclado no es descubrible.
+   */
+  it('se puede pausar, y la pausa gana sobre el puntero', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { fixture } = await renderCarrusel();
+
+      fireEvent.click(botonDePausa());
+      await fixture.whenStable();
+      await vi.advanceTimersByTimeAsync(15000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(0);
+
+      // Entrar y salir con el puntero no puede reanudar lo que alguien pausó a propósito.
+      fireEvent.mouseEnter(diapositivas()[0].closest('section') as HTMLElement);
+      fireEvent.mouseLeave(diapositivas()[0].closest('section') as HTMLElement);
+      await vi.advanceTimersByTimeAsync(15000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(0);
+
+      fireEvent.click(botonDePausa());
+      await fixture.whenStable();
+      await vi.advanceTimersByTimeAsync(5000);
+      await fixture.whenStable();
+      expect(indiceVisible()).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   /**

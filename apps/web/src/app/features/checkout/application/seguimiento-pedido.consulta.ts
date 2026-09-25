@@ -40,12 +40,20 @@ export function usarSeguimientoPedido(criterios: () => CriteriosSeguimiento | nu
       },
       enabled: valor !== null,
       staleTime: 15_000,
-      // Sin reintento automático en el camino del formulario, y esto no es una preferencia: el
-      // endpoint por número va detrás de un límite de intentos por IP mucho más estrecho que el
-      // resto —diez cada diez minutos—, así que los reintentos por omisión de TanStack gastarían
-      // el presupuesto de quien consulta de buena fe. El camino del enlace del correo no tiene ese
-      // problema, pero tampoco necesita reintentar: si el pedido no está, no va a estar.
+      // Sin reintento automático, y esto no es una preferencia: el endpoint por número va detrás de
+      // un límite de intentos por IP mucho más estrecho que el resto —diez cada diez minutos—, así
+      // que los reintentos por omisión de TanStack gastarían el presupuesto de quien consulta de
+      // buena fe. El camino del enlace del correo no tiene ese problema, pero tampoco necesita
+      // reintentar: si el pedido no está, no va a estar.
       retry: false,
+      // **Y `retry: false` no bastaba.** El `QueryClient` del proyecto se construye sin
+      // `defaultOptions` (`core/consultas/transferencia-estado-consultas.ts`), así que seguían en
+      // `true` los tres reenganches por omisión de TanStack. Con `staleTime` de quince segundos,
+      // quien deja abierta la pantalla de estado —que es exactamente lo que hace quien espera un
+      // pedido— gastaba una consulta por cada vuelta a la pestaña y acababa contra el límite. Lo
+      // levantó la revisión; los reintentos de error eran solo un tercio del problema.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
     };
   });
 }

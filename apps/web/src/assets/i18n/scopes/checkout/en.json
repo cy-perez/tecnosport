@@ -162,7 +162,12 @@
       "buscando": "Checking…",
       "faltan_datos": "Enter the order number and the email address you used.",
       "no_encontrado": "We could not find an order with that number and that email address. Check them on your receipt; if they still do not work, write to us.",
-      "otra_consulta": "Check another order"
+      "otra_consulta": "Check another order",
+      "numero_requerido": "Enter your order number.",
+      "correo_requerido": "Enter the email address you used for the order.",
+      "correo_invalido": "That email address does not look valid.",
+      "error_consulta": "We could not check your order right now. Try again in a moment.",
+      "demasiados_intentos": "You made too many checks in a row. Wait a few minutes and try again."
     }
   },
   "transferencia": {

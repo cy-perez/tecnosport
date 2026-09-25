@@ -578,8 +578,44 @@ class PedidoControladorTest {
                         + pedido.numeroPedido().valor()
                         + "\",\"correo\":\"cliente@tecnosport.co\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(pedido.id().toString()))
-        .andExpect(jsonPath("$.numeroPedido").value(pedido.numeroPedido().valor()));
+        .andExpect(jsonPath("$.numeroPedido").value(pedido.numeroPedido().valor()))
+        .andExpect(jsonPath("$.estado").value("CONFIRMADO_CONTRAENTREGA"));
+  }
+
+  /**
+   * <b>El {@code id} no sale por esta puerta</b>, y es lo que separa una fuga de lectura de una de
+   * escritura.
+   *
+   * <p>Ese UUID es la credencial de {@code POST /pagos/intentos} —que pide solo el id, sin correo y
+   * sin límite de intentos, y crea una fila de pago firmando contra la pasarela— y de {@code
+   * /pedidos/&#123;id&#125;/reintentar-pago}, que re-reserva inventario. Todo el diseño del límite
+   * se apoyaba en "el id es un UUID, recorrerlo no es una opción"; recorrer el número sí lo es, y
+   * al principio el número devolvía el id. Lo levantó la revisión de pagos.
+   *
+   * <p>El hermano que entra por {@code id} sí lo devuelve, y debe: quien abre el enlace de su
+   * correo ya lo tenía.
+   */
+  @Test
+  void seguimientoPorNumeroNoDevuelveElIdInterno() throws Exception {
+    Pedido pedido = pedidoDePruebaContraentrega("cliente@tecnosport.co");
+
+    mockMvc
+        .perform(
+            post("/api/v1/pedidos/seguimiento")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"numeroPedido\":\""
+                        + pedido.numeroPedido().valor()
+                        + "\",\"correo\":\"cliente@tecnosport.co\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").doesNotExist());
+
+    mockMvc
+        .perform(
+            get("/api/v1/pedidos/{id}/seguimiento", pedido.id())
+                .param("correo", "cliente@tecnosport.co"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(pedido.id().toString()));
   }
 
   /**

@@ -822,6 +822,39 @@ inactiva fue `bg-ts-marca-alt` durante un rato y daba **1,38:1** contra el fondo
 del arte, por debajo del 3:1 que WCAG 1.4.11 pide de un control; al 50 % del blanco
 sube a 4,6:1 y se sigue leyendo como "apagada" frente a la activa.
 
+**El objetivo táctil va en el `<button>` y la píldora en un `<span>` hijo.** La
+píldora mide 8 px de alto y el botón era la píldora: 8 × 8 px la inactiva, por
+debajo de los 24 × 24 de WCAG 2.5.8 y muy por debajo de los 44 de la tabla de
+medidas. La excepción de espaciado de 2.5.8 tampoco salvaba —con `gap-8` los
+centros quedaban a 16 px y los círculos de 24 se solapan—. Con `size-tactil` en el
+botón y `bg-transparent`, el área pulsable son 44 px y el dibujo no engorda.
+
+**Y hay un botón de pausa**, que es lo que WCAG 2.2.2 (nivel A) exige de todo
+movimiento automático que dure más de cinco segundos: un mecanismo para pausarlo,
+detenerlo u ocultarlo. Este documento describía "se detiene con el puntero encima
+y con el foco dentro" como si bastara, y no basta: en un teléfono no hay puntero
+—y tocar una viñeta *reinicia* la cuenta en vez de detenerla— y con teclado no es
+descubrible. La pausa de la persona es una señal aparte de la del puntero y
+**gana**: con un solo booleano para las dos fuentes, sacar el ratón reanudaba lo
+que alguien acababa de pausar a propósito.
+
+**`aria-roledescription` pasa por Transloco.** Decía `"carousel"` y `"slide"` en
+inglés, literales en la plantilla. Ese atributo **se pronuncia**: en la versión
+española el lector decía "carousel". Es texto visible —para quien escucha— y la
+regla dura #4 no admite ninguno, `aria-label` incluidos.
+
+**El `<h1>` de la portada vive fuera del carrusel.** Estuvo en la primera
+diapositiva, con `<p>` en las otras tres para no tener cuatro encabezados de nivel
+uno. El razonamiento era correcto y el resultado estaba roto: esa diapositiva
+queda `inert` y `aria-hidden` en cuanto el carrusel avanza, así que a los cinco
+segundos la portada se quedaba **sin ningún encabezado de nivel uno**. Hoy es un
+`sr-only` en `portada.page.html` con `portada.titulo`, que además es estable —un
+`h1` que cambia de texto cada cinco segundos es peor que uno que no se ve—.
+
+Los cuatro hallazgos anteriores salieron de la auditoría de accesibilidad del 25
+de septiembre de 2026, con `npm run clases`, `npm run contrastes` y las pruebas en
+verde: ninguna herramienta del proyecto los veía.
+
 Son botones con `aria-current`, **no `role="tablist"` con `role="tab"`**: el patrón
 de pestañas de la APG obliga además a que cada diapositiva sea un `tabpanel`
 etiquetado por su pestaña y a mover el foco con las flechas dentro de la tira, y a

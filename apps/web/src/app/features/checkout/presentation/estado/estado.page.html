@@ -189,6 +189,16 @@
         {{ 'checkout.estado.reintentar' | transloco }}
       </ts-boton>
     }
+
+    <!-- La salida, que faltaba: con el pedido encontrado no había forma de consultar otro sin
+         editar la URL. El método y su clave existían y no los llamaba nadie. Solo aparece cuando
+         se llegó por el formulario: quien viene del enlace de su correo no tiene un formulario al
+         que volver. -->
+    @if (vinoDelFormulario()) {
+      <ts-boton variante="texto" clase="mt-16" (click)="otraConsulta()">
+        {{ 'checkout.estado.consulta.otra_consulta' | transloco }}
+      </ts-boton>
+    }
   } @else if (consulta.isPending() && !pidiendoDatos()) {
     <ts-esqueleto />
   } @else if (pidiendoDatos()) {
@@ -210,11 +220,17 @@
         [formGroup]="form"
         (submit)="$event.preventDefault(); consultarPorNumero()"
       >
+        <!-- `[error]` en los dos campos, y no solo `markAllAsTouched()` en el manejador:
+             `apps/web/CLAUDE.md` lo dice con estas palabras —"sin un `[error]` enganchado no pinta
+             nada… las dos mitades van juntas o no va ninguna"— y aquí estaba puesta solo la
+             primera. Sin esto ningún campo recibía `aria-invalid`, y un correo con formato
+             inválido daba el mismo texto genérico que un campo vacío. Lo levantó la auditoría. -->
         <ts-campo
           idCampo="seguimiento-numero"
           [label]="'checkout.estado.consulta.numero' | transloco"
           [ayuda]="'checkout.estado.consulta.numero_ayuda' | transloco"
           [obligatorio]="true"
+          [error]="errorNumero()"
           formControlName="numeroPedido"
         />
 
@@ -223,18 +239,17 @@
           tipo="email"
           [label]="'checkout.estado.consulta.correo' | transloco"
           [obligatorio]="true"
+          [error]="errorCorreo()"
           formControlName="correo"
         />
 
         <!-- Región viva permanente: un `role="alert"` que nace ya lleno dentro de un `@if` no se
-             anuncia (docs/06-testing.md). Lo que cambia es el contenido, no el nodo. -->
-        <p class="m-0 text-ts-error" role="alert">
-          @if (noEncontrado()) {
-            {{ 'checkout.estado.consulta.no_encontrado' | transloco }}
-          } @else {
-            {{ error() }}
-          }
-        </p>
+             anuncia (docs/06-testing.md). Lo que cambia es el contenido, no el nodo.
+             Distingue tres cosas que antes eran una: lo que no existe, lo que falló por red o por
+             límite de intentos, y lo que falta por escribir. Decir "no encontramos este pedido" a
+             quien acaba de chocar con el límite es la peor frase posible para alguien que acaba de
+             pagar. -->
+        <p class="m-0 text-ts-error" role="alert">{{ mensajeDeConsulta() }}</p>
 
         <ts-boton
           variante="primario"

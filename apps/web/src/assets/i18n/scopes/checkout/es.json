@@ -162,7 +162,12 @@
       "buscando": "Consultando…",
       "faltan_datos": "Escribe el número del pedido y el correo con el que lo hiciste.",
       "no_encontrado": "No encontramos un pedido con ese número y ese correo. Revísalos en tu comprobante; si siguen sin funcionar, escríbenos.",
-      "otra_consulta": "Consultar otro pedido"
+      "otra_consulta": "Consultar otro pedido",
+      "numero_requerido": "Escribe el número de tu pedido.",
+      "correo_requerido": "Escribe el correo con el que hiciste el pedido.",
+      "correo_invalido": "Ese correo no parece válido.",
+      "error_consulta": "No pudimos consultar tu pedido ahora mismo. Intenta de nuevo en un momento.",
+      "demasiados_intentos": "Hiciste muchas consultas seguidas. Espera unos minutos y vuelve a intentarlo."
     }
   },
   "transferencia": {

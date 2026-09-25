@@ -33,9 +33,12 @@
                el `<summary>` **no lleva `flex`**, y esto se vio en el navegador y no en una prueba:
                un `summary` en `display: flex` deja de ser `list-item` y Chrome le quita el
                marcador, así que las catorce preguntas se veían como catorce títulos muertos. El
-               alto mínimo táctil se consigue con el relleno, que aquí basta. -->
+               alto mínimo táctil lo pone `min-h-tactil`, que es `min-height` y no toca el
+               `display`, así que el triángulo sobrevive. Decía "el relleno basta" y era una
+               estimación: `py-12` más una línea de 18-19 px da 42-43, por debajo de los 44 que pide
+               el documento. Lo midió la auditoría de accesibilidad. -->
           <details class="border-b border-ts-borde">
-            <summary class="anillo-foco cursor-pointer py-12 font-medio text-ts-texto">
+            <summary class="anillo-foco min-h-tactil cursor-pointer py-12 font-medio text-ts-texto">
               {{ item.pregunta }}
             </summary>
             <div class="flex flex-col gap-8 pb-16">

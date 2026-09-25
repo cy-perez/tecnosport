@@ -48,7 +48,6 @@
     "correo": "contacto@tecnosport.co",
     "horario": "Todos los días, 8:00 a.m. – 9:00 p.m.",
     "copyright": "© {{anio}} Tecno Sport",
-    "navegacion": "Navegación del pie",
     "portada": "Portada",
     "carrito": "Carrito",
     "panel_admin": "Panel administrativo",
@@ -78,6 +77,10 @@
     "sin_novedades": "Todavía no hay productos publicados.",
     "hero": {
       "carrusel": "Piezas destacadas del catálogo",
+      "rol_carrusel": "carrusel",
+      "rol_slide": "diapositiva",
+      "pausar": "Pausar el carrusel",
+      "reanudar": "Reanudar el carrusel",
       "slide_n": "Pieza {{n}} de {{total}}",
       "indicadores": "Ir a una pieza del catálogo",
       "slides": {

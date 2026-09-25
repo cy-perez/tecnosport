@@ -36,12 +36,16 @@ final class RepositorioPedidosFalso implements RepositorioPedidos {
   }
 
   /**
-   * Recorre lo guardado en vez de llevar un segundo indice por numero: son unos pocos pedidos por
-   * prueba, y un mapa mas seria un sitio mas donde los dos pueden separarse.
+   * Recorre lo guardado en vez de llevar un segundo indice: son unos pocos pedidos por prueba, y un
+   * mapa mas seria un sitio mas donde los dos pueden separarse. Los dos criterios se filtran
+   * juntos, como en la consulta de verdad.
    */
   @Override
-  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
-    return pedidos.values().stream().filter(p -> p.numeroPedido().equals(numero)).findFirst();
+  public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
+    return pedidos.values().stream()
+        .filter(p -> p.numeroPedido().equals(numero))
+        .filter(p -> p.correo().valor().equals(correoNormalizado))
+        .findFirst();
   }
 
   @Override

@@ -107,17 +107,32 @@ describe('PortadaPage', () => {
   });
 
   /**
-   * El titular de la primera pieza del carrusel es el h1 de la portada, y sale de Transloco.
-   * Importa porque el arte que entregó diseño trae ese mismo titular <b>incrustado en los píxeles
-   * de la imagen</b> —la carpeta `con-texto/` del ZIP—: ahí no lo traduce nadie, no lo lee un
-   * lector de pantalla y no es un encabezado para nada. Se usa la pieza `limpio/` y el texto lo
-   * pone el HTML.
+   * <b>El `h1` vive fuera del carrusel</b>, y esto es una corrección: estaba en la primera
+   * diapositiva, que a los cinco segundos queda `inert` y `aria-hidden`, así que la portada se
+   * quedaba sin ningún encabezado de nivel uno en cuanto el carrusel avanzaba.
+   *
+   * <p>Es `sr-only` porque el titular grande que se ve cambia cada cinco segundos, y un `h1` que
+   * cambia de texto solo es peor que uno estable. Lo que nombra a esta página no es "Vístete para
+   * moverte" sino lo que la tienda vende.
    */
-  it('el titular de la banda es texto de verdad, no parte de la imagen', async () => {
-    await renderPortada();
+  it('la portada tiene un h1 estable, fuera del carrusel', async () => {
+    const { container } = await renderPortada();
 
     const titulo = screen.getByRole('heading', { level: 1 });
-    expect(titulo.textContent?.trim()).toBe('Vístete para moverte');
+    expect(titulo.textContent?.trim()).toBe('Ropa y calzado deportivo, bolsos y tecnología');
+    expect(container.querySelector('ts-carrusel-hero')?.contains(titulo)).toBe(false);
+  });
+
+  /**
+   * Y los titulares de las cuatro piezas siguen siendo texto de verdad, no píxeles: el arte que
+   * entregó diseño los trae <b>incrustados en la imagen</b> —la carpeta `con-texto/` del ZIP—, y
+   * ahí no los traduce nadie ni los lee un lector de pantalla. Se usa la pieza `limpio/`.
+   */
+  it('los titulares de las piezas son texto, no parte de la imagen', async () => {
+    await renderPortada();
+
+    expect(screen.getByText('Vístete para moverte')).toBeTruthy();
+    expect(screen.getByText('Tenis para cada ritmo')).toBeTruthy();
   });
 
   /**

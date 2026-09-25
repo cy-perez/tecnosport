@@ -16,15 +16,21 @@
     <div
       class="grid grid-cols-1 items-start gap-32 desde-movil:grid-cols-2 desde-tableta:grid-cols-4"
     >
-      <!-- Los enlaces llevan el objetivo táctil porque son navegación suelta, no prosa. Los de la
+      <!-- `aria-labelledby` y no `aria-label` con el mismo texto: con las dos cosas, un lector de
+           pantalla anunciaba "El sitio, navegación" y acto seguido leía "El sitio". Apuntando al
+           `<p>` visible, el nombre queda atado a lo que se ve y se dice una sola vez. Lo levantó la
+           auditoría de accesibilidad.
+           Los enlaces llevan el objetivo táctil porque son navegación suelta, no prosa. Los de la
            columna de contacto NO lo llevan a propósito: van dentro de una frase, y WCAG 2.2 exime
            explícitamente el objetivo en línea cuyo tamaño lo fija el interlineado del texto que lo
            rodea (2.5.8, excepción "inline"). Estirarlos a 44 px rompería el bloque sin ganar
            accesibilidad.
            `anillo-foco-sobre-marca` y no `anillo-foco`: en tema claro `--color-foco` y
            `--color-marca` son el mismo grafito, así que el anillo normal es invisible aquí. -->
-      <nav class="flex flex-col gap-4" [attr.aria-label]="'pie.sitio_titulo' | transloco">
-        <p class="m-0 mb-4 font-medio text-sm">{{ 'pie.sitio_titulo' | transloco }}</p>
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-sitio">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-sitio">
+          {{ 'pie.sitio_titulo' | transloco }}
+        </p>
         @for (enlace of enlacesDelSitio; track enlace.clave) {
           <a
             class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit no-underline hover:underline"
@@ -35,8 +41,10 @@
         }
       </nav>
 
-      <nav class="flex flex-col gap-4" [attr.aria-label]="'pie.ayuda_titulo' | transloco">
-        <p class="m-0 mb-4 font-medio text-sm">{{ 'pie.ayuda_titulo' | transloco }}</p>
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-ayuda">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-ayuda">
+          {{ 'pie.ayuda_titulo' | transloco }}
+        </p>
         @for (enlace of enlacesDeAyuda; track enlace.clave) {
           <a
             class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center text-sm text-inherit no-underline hover:underline"
@@ -62,8 +70,10 @@
         se quedaría sin nombre accesible; y aunque se le pusiera un `aria-label`, un icono suelto es
         peor objetivo de lectura para quien no reconoce el logo.
       -->
-      <nav class="flex flex-col gap-4" [attr.aria-label]="'pie.redes_titulo' | transloco">
-        <p class="m-0 mb-4 font-medio text-sm">{{ 'pie.redes_titulo' | transloco }}</p>
+      <nav class="flex flex-col gap-4" aria-labelledby="pie-columna-redes">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-redes">
+          {{ 'pie.redes_titulo' | transloco }}
+        </p>
         <a
           class="anillo-foco-sobre-marca inline-flex min-h-tactil items-center gap-8 text-sm text-inherit no-underline hover:underline"
           [href]="'https://wa.me/' + ('pie.whatsapp_numero' | transloco)"
@@ -163,7 +173,9 @@
 
       <!-- `ms-auto` y no `ml-auto`: el sitio es bilingüe y el día que entre un idioma que se lea de
            derecha a izquierda, el margen lógico se voltea solo. -->
-      <ts-alternador-tema class="ms-auto" />
+      <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco normal es
+           invisible en tema claro porque `--color-foco` es el mismo grafito. -->
+      <ts-alternador-tema class="ms-auto" [sobreMarca]="true" />
     </div>
   </div>
 </footer>

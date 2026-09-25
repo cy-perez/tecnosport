@@ -13,12 +13,7 @@
      sobre el HTML ya construido. Un nombre atado al tema saldría mintiendo del
      servidor hasta hidratar. "Cambiar el tema" es cierto en los dos estados.
      El destino lo dice el icono, que sí se puede resolver sin JavaScript. -->
-<button
-  class="anillo-foco flex size-tactil cursor-pointer items-center justify-center rounded-completo border border-ts-borde bg-ts-superficie p-0 text-ts-texto transition-colors hover:bg-ts-superficie-alt"
-  type="button"
-  [attr.aria-label]="etiqueta()"
-  (click)="alternar()"
->
+<button [class]="clases()" type="button" [attr.aria-label]="etiqueta()" (click)="alternar()">
   <!-- Los dos iconos siempre en el DOM y el CSS tapa uno, colgado del mismo
        `data-tema` que ya está puesto en `<html>`. Es el patrón que el
        encabezado ya usa para el logo positivo y el negativo, y aquí evita el

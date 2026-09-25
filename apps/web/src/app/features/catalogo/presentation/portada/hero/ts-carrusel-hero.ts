@@ -15,6 +15,8 @@ import {
   iconoEnvio,
   iconoGarantia,
   iconoMediosDePago,
+  iconoPausar,
+  iconoReanudar,
 } from '../../../../../shared/ui/icono/iconos';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
@@ -126,6 +128,8 @@ export class TsCarruselHero {
   protected readonly diapositivas = DIAPOSITIVAS;
   protected readonly sellosDeConfianza = SELLOS_DE_CONFIANZA;
   protected readonly mediaTarjeta = MEDIA_HERO_TARJETA;
+  protected readonly iconoPausar = iconoPausar;
+  protected readonly iconoReanudar = iconoReanudar;
 
   protected readonly actual = signal(0);
 
@@ -138,6 +142,22 @@ export class TsCarruselHero {
 
   /** Mientras el puntero está encima o el foco dentro, el carrusel no se mueve. */
   private readonly detenido = signal(false);
+
+  /**
+   * La pausa que pidió la persona con el botón, que es <b>una señal aparte</b> de la del puntero.
+   *
+   * <p>No es duplicación: con un solo booleano para las dos fuentes, sacar el ratón de la región
+   * llamaba a `reanudar()` y arrancaba de nuevo lo que alguien acababa de pausar a propósito. Esta
+   * gana siempre; la del puntero solo puede detener, nunca reanudar contra ella.
+   *
+   * <p>Existe porque WCAG 2.2.2 (nivel A) exige un mecanismo para pausar, detener u ocultar todo
+   * movimiento automático que dure más de cinco segundos. Detenerse con el puntero encima y con el
+   * foco dentro <b>no es ese mecanismo</b>: en un teléfono no hay puntero —y tocar una viñeta
+   * reinicia la cuenta en vez de detenerla— y con teclado no es descubrible. Lo levantó la
+   * auditoría de accesibilidad; el componente y `docs/04-ui-marca.md` describían lo anterior como
+   * si bastara.
+   */
+  protected readonly pausadoPorLaPersona = signal(false);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -153,7 +173,9 @@ export class TsCarruselHero {
    */
   protected readonly cortesia = computed(() => (this.rotando() ? 'off' : 'polite'));
 
-  protected readonly rotando = computed(() => this.puedeRotar() && !this.detenido());
+  protected readonly rotando = computed(
+    () => this.puedeRotar() && !this.detenido() && !this.pausadoPorLaPersona(),
+  );
 
   constructor() {
     afterNextRender(() => {
@@ -188,6 +210,15 @@ export class TsCarruselHero {
 
   protected reanudar(): void {
     this.detenido.set(false);
+    this.reprogramar();
+  }
+
+  /**
+   * El botón de pausa. `reprogramar()` no arranca nada si `rotando()` es falso, así que pausar
+   * apaga y reanudar vuelve a programar sin que haya que distinguir los dos casos aquí.
+   */
+  protected alternarPausa(): void {
+    this.pausadoPorLaPersona.update((pausado) => !pausado);
     this.reprogramar();
   }
 

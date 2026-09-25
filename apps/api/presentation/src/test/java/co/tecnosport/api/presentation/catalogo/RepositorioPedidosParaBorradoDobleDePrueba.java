@@ -37,7 +37,7 @@ final class RepositorioPedidosParaBorradoDobleDePrueba implements RepositorioPed
   }
 
   @Override
-  public Optional<Pedido> buscarPorNumero(NumeroPedido numero) {
+  public Optional<Pedido> buscarPorNumeroYCorreo(NumeroPedido numero, String correoNormalizado) {
     throw new UnsupportedOperationException();
   }
 

@@ -1,3 +1,15 @@
+<!-- El `<h1>` de la portada vive aquí y no dentro del carrusel, y es una corrección: estaba en la
+     primera diapositiva, que a los cinco segundos queda `inert` y `aria-hidden` — o sea que la
+     portada se quedaba sin ningún encabezado de nivel uno en cuanto el carrusel avanzaba. La
+     prueba que lo fijaba contaba nodos del DOM y no lo veía; lo levantó la auditoría de
+     accesibilidad.
+
+     `sr-only` y no visible: el titular grande que se ve es el de la pieza que toque, y ese cambia
+     cada cinco segundos. Un `<h1>` que cambia de texto solo es peor que uno estable, y el nombre
+     de la página no es "Vístete para moverte" sino lo que la tienda vende. Sale de `portada.titulo`,
+     que ya existía y es justo eso. -->
+<h1 class="sr-only">{{ 'portada.titulo' | transloco }}</h1>
+
 <ts-carrusel-hero [idioma]="idioma()" />
 
 <section class="mx-auto max-w-contenido px-16 pt-48 pb-48">

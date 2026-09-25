@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { cn } from '../ui/cn';
 import { usarTraductor } from '../../core/i18n/traductor';
 import { ServicioTema } from '../../core/tema/tema.servicio';
 import { TsIcono } from '../ui/icono/ts-icono';
@@ -33,6 +34,22 @@ import { iconoTemaClaro, iconoTemaOscuro } from '../ui/icono/iconos';
   host: { class: 'inline-flex' },
 })
 export class TsAlternadorTema {
+  /**
+   * Conmuta el anillo de foco al par `sobre-marca`, para cuando el botón se pinta sobre una franja
+   * de `--color-marca`.
+   *
+   * <p>No es un capricho de tema: en tema claro `--color-foco` y `--color-marca` son el mismo
+   * grafito (`#1B1F26`), así que con `outline-offset: 2px` el anillo se dibuja **fuera** del
+   * círculo, sobre la franja, y es literalmente invisible. Es el mismo problema que ya obligó a
+   * crear `anillo-foco-sobre-marca` para los enlaces del pie y el input `sobreMarca` de
+   * `ts-checkbox`.
+   *
+   * <p>Apareció el 25 de septiembre de 2026, cuando el alternador entró a la franja final del pie:
+   * hasta entonces solo vivía en el encabezado, sobre `--color-superficie`, donde el anillo normal
+   * es el correcto. Lo levantó la auditoría de accesibilidad.
+   */
+  readonly sobreMarca = input(false);
+
   private readonly tema = inject(ServicioTema);
 
   private readonly traducir = usarTraductor();
@@ -51,6 +68,29 @@ export class TsAlternadorTema {
 
   protected readonly iconoTemaClaro = iconoTemaClaro;
   protected readonly iconoTemaOscuro = iconoTemaOscuro;
+
+  /**
+   * El anillo es <b>uno u otro</b>, nunca los dos.
+   *
+   * <p>Esto empezó siendo `cn(BASE_CON_ANILLO_NORMAL, sobreMarca() && 'anillo-foco-sobre-marca')`,
+   * dando por hecho que `tailwind-merge` descartaría el primero. No lo hace: `anillo-foco` y
+   * `anillo-foco-sobre-marca` son utilidades propias del proyecto y `cn` no las conoce como grupo
+   * en conflicto, así que el botón salía con las dos y cuál ganaba lo decidía el orden en la hoja
+   * generada, no el orden aquí. Medido en el navegador, no supuesto: el `class` tenía las dos.
+   *
+   * <p>Con el ternario no hay nada que resolver. Registrar el grupo en `cn.ts` sería el arreglo
+   * sistémico —y es lo que `apps/web/CLAUDE.md` pide al añadir un token con nombre no numérico—
+   * pero para dos clases mutuamente excluyentes en un solo componente, elegir es más claro que
+   * enseñarle a una librería a descartar.
+   */
+  protected readonly clases = computed(() =>
+    cn(
+      'flex size-tactil cursor-pointer items-center justify-center rounded-completo ' +
+        'border border-ts-borde bg-ts-superficie p-0 text-ts-texto transition-colors ' +
+        'hover:bg-ts-superficie-alt',
+      this.sobreMarca() ? 'anillo-foco-sobre-marca' : 'anillo-foco',
+    ),
+  );
 
   protected alternar(): void {
     this.tema.alternar();

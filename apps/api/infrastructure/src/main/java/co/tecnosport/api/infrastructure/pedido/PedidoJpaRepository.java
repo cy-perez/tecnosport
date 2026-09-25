@@ -17,7 +17,7 @@ public interface PedidoJpaRepository extends JpaRepository<PedidoJpaEntity, UUID
 
   boolean existsByCorreoAndEstado(String correo, String estado);
 
-  Optional<PedidoJpaEntity> findByNumeroPedido(String numeroPedido);
+  Optional<PedidoJpaEntity> findByNumeroPedidoAndCorreo(String numeroPedido, String correo);
 
   Page<PedidoJpaEntity> findByEstado(String estado, Pageable pageable);
 

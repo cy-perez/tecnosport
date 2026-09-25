@@ -146,7 +146,10 @@ public class PedidoControlador {
     Pedido pedido =
         consultarSeguimientoPorNumero.ejecutar(
             new ConsultarSeguimientoPorNumeroComando(cuerpo.numeroPedido(), cuerpo.correo()));
-    return mapeadorSeguimiento.aRespuesta(pedido);
+    // Sin el `id`: ver el javadoc de `aRespuestaSinIdInterno`. Ese UUID es la credencial de
+    // `/pagos/intentos` y de `/pedidos/{id}/reintentar-pago`, y entregarlo por una puerta que se
+    // abre adivinando un número secuencial convierte una fuga de lectura en una de escritura.
+    return mapeadorSeguimiento.aRespuestaSinIdInterno(pedido);
   }
 
   private CrearPedidoComando aComando(CrearPedidoRequest cuerpo, String direccionIp) {

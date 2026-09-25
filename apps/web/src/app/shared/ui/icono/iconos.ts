@@ -34,6 +34,12 @@ export { Truck as iconoEnvio } from 'lucide';
 // cada una. Sin icono, las tres se leen como una lista de texto corrido y ninguna destaca.
 export { Banknote as iconoContraentrega } from 'lucide';
 export { ShieldCheck as iconoGarantia } from 'lucide';
+// Los pidió el carrusel de portada, que rota solo cada cinco segundos y por eso necesita un
+// mecanismo de pausa visible: WCAG 2.2.2 lo exige de todo movimiento automático que dure más de
+// cinco segundos, y pararlo con el puntero encima no es un mecanismo para quien entra con el dedo
+// ni para quien navega con teclado.
+export { Pause as iconoPausar } from 'lucide';
+export { Play as iconoReanudar } from 'lucide';
 // Los pidió `ts-alternador-tema`, que dibuja los dos a la vez y deja que el CSS tape uno: el icono
 // anuncia a qué tema lleva el clic, no en cuál estás. En claro se ve la luna, en oscuro el sol.
 export { Moon as iconoTemaOscuro } from 'lucide';
