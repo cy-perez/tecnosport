@@ -160,16 +160,17 @@ delante. Ver `ADR-0059`.
 - **La regla del ámbar:** `#F5B301` es una sola cosa por pantalla y solo como
   relleno con texto grafito encima. Sobre blanco da 1.85:1. Nunca como texto ni
   como ícono sobre fondo claro.
-  **Tiene una excepción, y solo una: la banda de portada** (`ADR-0063`). Ahí el
-  ámbar se despliega en cuatro pasos —`--color-acento`, `--color-acento-2`,
-  `-3` y `-4`, que el generador deriva aclarando hacia la superficie un 14 %
-  cada uno— para dar un botón a cada línea de negocio. Sigue siendo el mismo
-  ámbar: los cuatro llevan el mismo `--color-sobre-acento` encima, la escala
-  tiene exactamente cuatro pasos porque hay exactamente cuatro líneas, y aclara
-  en vez de oscurecer para no chocar con los estados de `hover`. Fuera de esa
-  banda, una sola cosa por pantalla. Se apunta aquí y no solo en el ADR porque
-  una regla cuya excepción vive en otro archivo es una regla que alguien va a
-  romper en otro sitio creyendo que también vale ahí.
+  **Y no tiene excepciones.** Tuvo una, de un día: la banda de portada desplegó
+  el ámbar en cuatro pasos —`--color-acento-2`, `-3` y `-4`, que el generador
+  deriva aclarando hacia la superficie— para dar un botón a cada línea de
+  negocio. `ADR-0064` la retiró en cuanto se vio en pantalla: el cuarto paso
+  parece un botón deshabilitado, y cuatro tonos ordenan cuatro líneas que valen
+  lo mismo. Los tres tokens siguen en el kit **sin usarse** — se deja anotado
+  aquí para que nadie los encuentre y crea que la regla cede donde no cede.
+  Cómo se usa el ámbar cuando de verdad es *la* acción de la pantalla: la
+  variante `acento` de `ts-boton`, que además cambia el anillo de foco a
+  `--color-sobre-acento` (en tema oscuro `--color-foco` es ese mismo ámbar y el
+  anillo de la base sería invisible).
 - **El logo es monocromo** y va en versión positiva y negativa; el tema decide
   cuál se ve, con `.logo-pos` y `.logo-neg`. En móvil, isotipo.
 - **Área de respeto:** un cuarto del alto del isotipo por los cuatro lados.
@@ -455,6 +456,36 @@ tema claro, y el botón "EN" aparece cuando el sitio está en español. El idiom
 además muestra el actual, marcado con `aria-current` y sin ser un control, que
 es el patrón de `ts-migas` para la página en la que ya estás.
 
+**`ts-menu-acciones` es el menú de tres puntos de una fila**, y entró con la
+lista de productos del panel el 25 de septiembre de 2026. Va sobre
+`@angular/cdk/menu` y no sobre un `@if` con un `<div absolute>` por dos motivos
+que no son de gusto: una tabla ancha vive dentro de un `overflow-x-auto`, y ahí
+un panel posicionado en la fila se corta por el borde de la caja; y el teclado
+—`role="menu"`, flechas, Escape, foco que vuelve al disparador, cierre al pulsar
+fuera— es fácil de hacer a medias y en un menú se nota justo con lector de
+pantalla.
+
+Dos cosas que conviene saber antes de tocarlo. **Las opciones llegan como dato,
+no proyectadas con `<ng-content>`**: `CdkMenu` encuentra las suyas con una
+consulta de contenido, y lo que entra por el `ng-content` de un componente de
+envoltura no es contenido suyo — el menú se habría pintado sin una sola opción
+navegable, con las flechas muertas y sin que nada fallara. Y **el CDK necesita su
+hoja de posicionamiento**, que `src/styles.scss` importa: sin ella
+`.cdk-overlay-container` es un `<div>` al final del `<body>` sin `position` ni
+`z-index`, y el panel aparece al pie del documento. `ts-dialogo` no la
+necesitaba porque se posiciona solo, y por eso nadie la había echado de menos.
+
+**Las secciones del panel son pestañas, y son navegación.** `features/admin/marco/`
+tiene el contenedor —barra arriba, `<router-outlet>` debajo— y la barra en sí.
+Se ve como el control segmentado de la referencia (riel en `superficie-alt`, la
+activa elevada en `superficie` con `shadow-sm`) pero es un `<nav>` con enlaces y
+`aria-current="page"`, **no un `role="tablist"`**: cada pestaña lleva a una URL
+distinta, y `tablist` prometería paneles que se intercambian en el sitio y un
+`tabpanel` que no existe. Cuál está activa la decide una función pura
+—`pestanaActiva`— y no un `routerLinkActive` por enlace, porque hay empates que
+`routerLinkActive` no sabe resolver: `/admin/productos/existencias` encaja con
+"Productos" y con "Existencias" a la vez. Gana la coincidencia más larga.
+
 Si un componente necesita un valor que no está en los tokens, el sistema está
 incompleto: se agrega a `tokens.json` con nombre, no se escribe un píxel suelto
 ni un valor arbitrario en la plantilla.
@@ -655,16 +686,28 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
 Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
 entera. Vive en `features/catalogo/presentation/portada/hero/`.
 
-**Un botón por línea de negocio, cada uno con su paso de la escala de ámbar.** Lo
-decide una tabla en `ts-hero.ts`, no la plantilla, y el porqué de que la regla
-del ámbar ceda justo aquí está en `ADR-0063`. El orden de la banda —ropa,
-calzado, bolsos, tecnología— no es el canónico de `LINEAS`: en la banda, la
-primera posición y el tono más saturado van juntos.
+**Un botón por línea de negocio, los cuatro en el mismo ámbar y del mismo
+tamaño** (`ADR-0064`). El tamaño lo iguala la rejilla —`grid-cols-2`, celdas
+iguales— y no el relleno: con `flex-wrap`, cada botón tomaba el ancho de su
+etiqueta y "Ver bolsos" era la mitad de "Ver calzado deportivo". La lista y las
+clases viven en `ts-hero.ts` y son **una sola cadena para los cuatro**: cuatro
+copias son cuatro sitios donde se puede caer el `anillo-foco-sobre-acento`. El
+orden de la banda —ropa, calzado, bolsos, tecnología— no es el canónico de
+`LINEAS`: qué línea encabeza la portada lo decide el negocio, no el modelo.
 
 **El párrafo de apoyo dice qué se vende, no cómo se compra.** Las condiciones
-—envío cotizado, contraentrega donde está habilitada, garantía legal— las lleva
-la tira de confianza que va justo debajo, y hasta el 24 de septiembre de 2026
-estaban dichas dos veces, palabra por palabra, en los dos sitios.
+—envíos, contraentrega, medios de pago, garantía legal— las lleva la tira de
+confianza que va justo debajo, y hasta el 24 de septiembre de 2026 estaban dichas
+dos veces, palabra por palabra, en los dos sitios.
+
+**La tira son cuatro sellos en rejilla**, no tres en un `flex-wrap`: entró
+"Diversas opciones de pago" el 25 de septiembre de 2026 y el cuarto caía solo a
+una segunda línea, colgando bajo el primero. Dos columnas en teléfono y cuatro
+desde tableta, con el icono alineado a la primera línea del texto (`items-start`
+más `mt-4`) porque a dos columnas hay sellos que ocupan dos líneas. Los cuatro
+iconos son de Lucide, con el mismo trazo y el mismo tamaño: **un emoji no vale**
+aunque se pida —lo dibuja la fuente del sistema, cambia de forma y de color en
+cada plataforma, y la fila deja de leerse como una familia—.
 
 **Tres tokens nuevos, y ninguno es una excepción a la regla dura #2.** El kit que
 entregó diseño el 18 de septiembre de 2026 traía un `.scss` de componente con
