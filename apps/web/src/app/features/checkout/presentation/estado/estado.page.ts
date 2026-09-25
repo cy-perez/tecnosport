@@ -6,6 +6,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
+import { usarFoco } from '../../../../shared/foco/foco';
 import { esLimiteDeIntentos } from '../../../../core/errores/mensaje-de-error';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
@@ -208,11 +209,24 @@ export class EstadoPage {
    */
   private readonly revision = signal(0);
 
+  private readonly enfocar = usarFoco();
+
   protected consultarPorNumero(): void {
     this.form.markAllAsTouched();
     this.revision.update((n) => n + 1);
     if (this.form.invalid) {
-      this.error.set(this.traducir()('checkout.estado.consulta.faltan_datos'));
+      // **Sin mensaje general.** Cada campo ya dice lo suyo con su `[error]`, y añadir "escribe el
+      // número y el correo" encima lo dice dos veces sin decir cuál de los dos falta. Lo que se
+      // hace en su lugar es mover el foco al primer campo con problema: así un lector de pantalla
+      // anuncia su etiqueta y su error, que es la información que el párrafo general no daba.
+      // En una pestaña oculta `requestAnimationFrame` no corre, así que esto no se puede medir ahí
+      // — se comprueba en el navegador, con la ventana delante.
+      this.error.set(null);
+      this.enfocar(() =>
+        document.getElementById(
+          this.form.controls.numeroPedido.invalid ? 'seguimiento-numero' : 'seguimiento-correo',
+        ),
+      );
       return;
     }
     this.error.set(null);

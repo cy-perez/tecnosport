@@ -160,7 +160,6 @@
       "correo": "Order email address",
       "buscar": "Check",
       "buscando": "Checking…",
-      "faltan_datos": "Enter the order number and the email address you used.",
       "no_encontrado": "We could not find an order with that number and that email address. Check them on your receipt; if they still do not work, write to us.",
       "otra_consulta": "Check another order",
       "numero_requerido": "Enter your order number.",

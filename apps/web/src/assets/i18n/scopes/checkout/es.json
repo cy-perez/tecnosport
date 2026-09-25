@@ -160,7 +160,6 @@
       "correo": "Correo del pedido",
       "buscar": "Consultar",
       "buscando": "Consultando…",
-      "faltan_datos": "Escribe el número del pedido y el correo con el que lo hiciste.",
       "no_encontrado": "No encontramos un pedido con ese número y ese correo. Revísalos en tu comprobante; si siguen sin funcionar, escríbenos.",
       "otra_consulta": "Consultar otro pedido",
       "numero_requerido": "Escribe el número de tu pedido.",
