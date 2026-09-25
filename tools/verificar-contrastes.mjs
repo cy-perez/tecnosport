@@ -77,6 +77,11 @@ const PARES = [
   // superficie, pero no sobre esta.
   ["--color-error", "--color-superficie-alt", UMBRAL_TEXTO, "plazo vencido en la fila expandida"],
   ["--color-exito", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de disponible"],
+  // La insignia de estado de la lista de productos del panel, que vive dentro de una tarjeta: verde
+  // como texto y como borde sobre `--color-superficie`. Faltaba el par — se miraba el verde sobre
+  // superficie-alt y sobre el lienzo, pero no sobre la superficie elevada, que es donde vive la
+  // unica pieza que lo usa como linea.
+  ["--color-exito", "--color-superficie", UMBRAL_TEXTO, "insignia de publicado en la lista del panel"],
   // Los cuatro acuses del panel —publicado, retirado, existencia ajustada, medida corregida—
   // pintan en verde directamente sobre el lienzo, no sobre una superficie. El guardian solo
   // miraba el verde sobre superficie-alt, asi que ese par no lo vigilaba nadie.

@@ -20,7 +20,9 @@
     "producto_sin_imagen_principal": "Este producto no tiene imagen principal, y sin ella no se puede publicar.",
     "galeria_llena": "La galería ya está llena. Quita una imagen antes de agregar otra.",
     "imagen_de_galeria_duplicada": "Esa misma imagen ya está en la galería.",
-    "imagen_de_galeria_no_encontrada": "Esa imagen ya no está en la galería."
+    "imagen_de_galeria_no_encontrada": "Esa imagen ya no está en la galería.",
+    "producto_publicado": "Está publicado: retíralo de la vitrina antes de eliminarlo.",
+    "producto_con_ventas": "Tiene ventas, así que no se puede eliminar. Retíralo de la vitrina: los pedidos, las garantías y los retractos siguen necesitándolo."
   },
   "iniciarSesion": {
     "titulo": "Panel administrativo",
@@ -180,7 +182,8 @@
       "marca": "Marca",
       "categoria": "Categoría",
       "estado": "Estado",
-      "variantes": "Variantes"
+      "variantes": "Variantes",
+      "producto": "Producto"
     },
     "estados": {
       "borrador": "Borrador",
@@ -383,7 +386,20 @@
       "confirmarRetirarAccion": "Sí, retirar",
       "retirado": "{{nombre}} salió de la vitrina.",
       "errorRetirar": "No pudimos retirar el producto. Vuelve a intentarlo."
-    }
+    },
+    "sinImagen": "Sin imagen",
+    "acciones": {
+      "menu": "Acciones de {{nombre}}",
+      "eliminar": "Eliminar"
+    },
+    "eliminar": {
+      "confirmar": "¿Eliminar «{{nombre}}» del catálogo? Esto no se puede deshacer.",
+      "loQueImplica": "Se borran también sus variantes, su inventario, sus fotos y su visor 360°. Solo se puede eliminar un producto en borrador que nunca se haya vendido.",
+      "accion": "Sí, eliminar",
+      "hecho": "{{nombre}} se eliminó del catálogo.",
+      "error": "No pudimos eliminar el producto. Vuelve a intentarlo."
+    },
+    "total": "{{total}} producto(s) en el catálogo"
   },
   "retractos": {
     "titulo": "Retracto",

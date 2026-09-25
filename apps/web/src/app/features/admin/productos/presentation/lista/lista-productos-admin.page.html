@@ -3,174 +3,193 @@
 
   <h1 class="m-0 mb-24 font-display text-2xl">{{ 'admin.productos.titulo' | transloco }}</h1>
 
-  <a
-    class="anillo-foco mb-24 inline-flex min-h-tactil items-center text-ts-primario"
-    routerLink="crear"
-    >{{ 'admin.productos.nuevo' | transloco }}</a
-  >
-
   @if (consulta.isPending()) {
     <ts-esqueleto />
   } @else if (consulta.isError()) {
     <p class="mb-16 text-ts-error" role="alert">{{ 'admin.productos.error_lista' | transloco }}</p>
-  } @else if (sinProductos()) {
-    <!-- Esta lista no tiene filtros, así que hay una sola situación posible.
-         El enlace de crear el primero ya está arriba: el mensaje lo nombra, no
-         lo repite. -->
-    <p class="text-ts-texto-suave">{{ 'admin.productos.sin_productos' | transloco }}</p>
   } @else {
-    <!-- La fila publicada cambia de estado y deja de ofrecer el botón, así que la confirmación
-         tiene que vivir fuera de ella: si no, el mensaje desaparece con el botón que lo causó. -->
-    <!-- Siempre en el DOM, aunque esté vacío: una región viva que se monta ya llena con un
+    <!-- La fila publicada cambia de estado y deja de ofrecer la misma opcion, y la fila eliminada
+         deja de existir: la confirmacion tiene que vivir fuera de ellas o el mensaje desaparece con
+         lo que lo causo. -->
+    <!-- Siempre en el DOM, aunque este vacio: una region viva que se monta ya llena con un
          `@if` es justo lo que los lectores de pantalla anuncian mal. Lo que cambia es el
          contenido, no la existencia del nodo. `tabindex="-1"` para poder devolverle el foco
-         cuando la fila que lo causó cambió de estado. -->
+         cuando la fila que lo causo cambio de estado o se fue. -->
     <p
       #avisoLista
       class="text-ts-exito"
       role="status"
       tabindex="-1"
-      [class.mb-16]="publicado() !== null || retirado() !== null"
+      [class.mb-16]="aviso() !== null"
     >
-      @if (publicado(); as nombre) {
-        {{ 'admin.productos.publicar.hecho' | transloco: { nombre: nombre } }}
-      }
-      @if (retirado(); as nombre) {
-        {{ 'admin.productos.publicar.retirado' | transloco: { nombre: nombre } }}
+      @if (aviso(); as hecho) {
+        {{ hecho.clave | transloco: { nombre: hecho.nombre } }}
       }
     </p>
 
-    <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
-         página. Siete columnas no caben en 380 px —medido: el documento se iba
-         a 650 px— y encoger una tabla de datos hasta que quepa la vuelve
-         ilegible. El desplazamiento horizontal es aceptable **dentro** de un
-         contenedor; en el `<body>` no lo es. -->
-    <div class="overflow-x-auto">
-      <table
-        class="w-full border-collapse [&_:is(th,td)]:border-b [&_:is(th,td)]:border-ts-borde [&_:is(th,td)]:px-16 [&_:is(th,td)]:py-8 [&_:is(th,td)]:text-left"
+    <!-- La tarjeta que envuelve la tabla: borde, radio y superficie propia, como el resto de las
+         listas del panel de referencia. El `overflow-hidden` es lo que hace que el borde superior
+         de la primera fila no se salga por las esquinas redondeadas. -->
+    <div class="overflow-hidden rounded-lg border border-ts-borde bg-ts-superficie">
+      <div
+        class="flex flex-wrap items-center justify-between gap-16 border-b border-ts-borde px-16 py-12"
       >
-        <thead>
-          <tr>
-            <th scope="col">{{ 'admin.productos.columnas.nombre' | transloco }}</th>
-            <th scope="col">{{ 'admin.productos.columnas.marca' | transloco }}</th>
-            <th scope="col">{{ 'admin.productos.columnas.categoria' | transloco }}</th>
-            <th scope="col">{{ 'admin.productos.columnas.estado' | transloco }}</th>
-            <th scope="col">{{ 'admin.productos.columnas.variantes' | transloco }}</th>
-            <th scope="col">
-              <span class="sr-only">{{ 'admin.productos.columnas.acciones' | transloco }}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (producto of productos(); track producto.id) {
-            <tr>
-              <td>{{ producto.nombre }}</td>
-              <td>{{ producto.marca.nombre }}</td>
-              <td>{{ producto.categoria.nombre }}</td>
-              <td>{{ etiquetaEstado(producto.estado) }}</td>
-              <td>{{ producto.totalVariantes }}</td>
-              <td>
-                <!-- `flex` y no un separador de texto: los dos enlaces se pintaban
-                   pegados ("EditarCapturar 360") porque entre dos elementos en
-                   línea sin espacio en el HTML no hay nada que separe. Estaba
-                   anotado como pendiente cosmético desde la Fase 5 y sobrevivió
-                   entero a la migración a Tailwind: ninguna prueba mira
-                   separaciones, y el CSS anterior tampoco las ponía. -->
-                <div class="flex flex-wrap gap-16">
-                  <a
-                    class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario"
-                    [routerLink]="[producto.id, 'editar']"
-                    >{{ 'admin.productos.editarEnlace' | transloco }}</a
-                  >
-                  <a
-                    class="anillo-foco inline-flex min-h-tactil min-w-tactil items-center text-ts-primario"
-                    [routerLink]="[producto.id, 'captura-360']"
-                    >{{ 'admin.productos.capturar360' | transloco }}</a
-                  >
-                  <ts-boton
-                    [attr.data-preguntar]="producto.id"
-                    variante="secundario"
-                    [expandido]="confirmando() === producto.id"
-                    [controla]="'confirmacion-' + producto.id"
-                    [etiquetaAccesible]="
-                      (producto.estado === 'BORRADOR'
-                        ? 'admin.productos.publicar.publicarProducto'
-                        : 'admin.productos.publicar.retirarProducto'
-                      ) | transloco: { nombre: producto.nombre }
-                    "
-                    (click)="preguntar(producto)"
-                  >
-                    {{
-                      (producto.estado === 'BORRADOR'
-                        ? 'admin.productos.publicar.accion'
-                        : 'admin.productos.publicar.accionRetirar'
-                      ) | transloco
-                    }}
-                  </ts-boton>
-                </div>
-              </td>
-            </tr>
+        <p class="m-0 font-medio">
+          {{ 'admin.productos.total' | transloco: { total: totalProductos() } }}
+        </p>
+        <ts-boton [enlace]="['crear']">{{ 'admin.productos.nuevo' | transloco }}</ts-boton>
+      </div>
 
-            @if (confirmando() === producto.id) {
-              <tr [id]="'confirmacion-' + producto.id">
-                <td colspan="6">
-                  <div
-                    class="flex flex-col gap-16 border border-ts-borde-control p-16"
-                    role="group"
-                    [attr.aria-labelledby]="'pregunta-' + producto.id"
-                    [attr.data-caja]="producto.id"
-                    tabindex="-1"
-                    (keydown.escape)="cancelar(producto.id)"
-                  >
-                    <p class="m-0" [id]="'pregunta-' + producto.id">
-                      {{
-                        (producto.estado === 'BORRADOR'
-                          ? 'admin.productos.publicar.confirmar'
-                          : 'admin.productos.publicar.confirmarRetirar'
-                        ) | transloco: { nombre: producto.nombre }
-                      }}
-                    </p>
-                    <!-- Lo que cada una arrastra se dice antes, no después. -->
-                    <p class="m-0 text-ts-texto-suave">
-                      {{
-                        (producto.estado === 'BORRADOR'
-                          ? 'admin.productos.publicar.loQueImplica'
-                          : 'admin.productos.publicar.loQueImplicaRetirar'
-                        ) | transloco
-                      }}
-                    </p>
-
-                    @if (error(); as mensaje) {
-                      <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
-                    }
-
-                    <div class="flex flex-wrap gap-16">
-                      @if (producto.estado === 'BORRADOR') {
-                        <ts-boton [ocupado]="publicando()" (click)="publicar(producto)">
-                          {{ 'admin.productos.publicar.confirmarAccion' | transloco }}
-                        </ts-boton>
-                      } @else {
-                        <ts-boton [ocupado]="publicando()" (click)="despublicar(producto)">
-                          {{ 'admin.productos.publicar.confirmarRetirarAccion' | transloco }}
-                        </ts-boton>
-                      }
-                      <ts-boton variante="secundario" (click)="cancelar(producto.id)">
-                        {{ 'admin.productos.publicar.cancelar' | transloco }}
-                      </ts-boton>
-                    </div>
-                  </div>
-                </td>
+      @if (sinProductos()) {
+        <!-- Esta lista no tiene filtros, asi que hay una sola situacion posible. El boton de crear
+             el primero ya esta arriba: el mensaje lo nombra, no lo repite. -->
+        <p class="m-0 px-16 py-32 text-ts-texto-suave">
+          {{ 'admin.productos.sin_productos' | transloco }}
+        </p>
+      } @else {
+        <!-- La tabla se desplaza dentro de su propia caja, no arrastrando la
+             pagina. Seis columnas no caben en 380 px —medido: el documento se iba
+             a 650 px— y encoger una tabla de datos hasta que quepa la vuelve
+             ilegible. El desplazamiento horizontal es aceptable **dentro** de un
+             contenedor; en el `<body>` no lo es. -->
+        <div class="overflow-x-auto">
+          <table
+            class="w-full border-collapse text-sm [&_td]:px-16 [&_td]:py-12 [&_th]:px-16 [&_th]:py-12 [&_:is(th,td)]:text-left"
+          >
+            <thead>
+              <tr class="border-b border-ts-borde">
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.productos.columnas.producto' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.productos.columnas.marca' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.productos.columnas.categoria' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.productos.columnas.estado' | transloco }}
+                </th>
+                <th class="font-medio text-ts-texto-suave" scope="col">
+                  {{ 'admin.productos.columnas.variantes' | transloco }}
+                </th>
+                <th scope="col">
+                  <span class="sr-only">{{ 'admin.productos.columnas.acciones' | transloco }}</span>
+                </th>
               </tr>
-            }
-          }
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              @for (producto of productos(); track producto.id) {
+                <tr class="border-b border-ts-borde last:border-b-0">
+                  <td>
+                    <div class="flex items-center gap-12">
+                      @if (producto.imagenPrincipalUrl; as url) {
+                        <!-- Sin `width`/`height`: la lista no trae las medidas reales del archivo
+                             —eso lo da el detalle— y declarar unas inventadas es peor que no
+                             declararlas. La caja la reserva el CSS, que es lo que evita el salto. -->
+                        <img
+                          class="size-48 shrink-0 rounded-md object-cover"
+                          [src]="url"
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      } @else {
+                        <!-- Un hueco con el mismo tamaño y no nada: sin el, las filas con foto y
+                             las que no la tienen dejan el nombre a dos sangrias distintas. Dice
+                             "Sin imagen" porque es informacion —un producto sin imagen principal no
+                             se puede publicar—, no decoracion. -->
+                        <span
+                          class="flex size-48 shrink-0 items-center justify-center rounded-md border border-ts-borde bg-ts-superficie-alt p-4 text-center text-xs text-ts-texto-suave"
+                          >{{ 'admin.productos.sinImagen' | transloco }}</span
+                        >
+                      }
+                      <div class="min-w-0">
+                        <p class="m-0 font-medio">{{ producto.nombre }}</p>
+                        <p class="m-0 text-xs text-ts-texto-suave">{{ producto.slug }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ producto.marca.nombre }}</td>
+                  <td>{{ producto.categoria.nombre }}</td>
+                  <td>
+                    <span [class]="clasesEstado(producto.estado)">{{
+                      etiquetaEstado(producto.estado)
+                    }}</span>
+                  </td>
+                  <td>{{ producto.totalVariantes }}</td>
+                  <td>
+                    <div class="flex justify-end" [attr.data-acciones]="producto.id">
+                      <ts-menu-acciones
+                        [etiqueta]="
+                          'admin.productos.acciones.menu' | transloco: { nombre: producto.nombre }
+                        "
+                        [acciones]="accionesDe(producto)"
+                        (elegida)="preguntar(producto, $event)"
+                      />
+                    </div>
+                  </td>
+                </tr>
+
+                @if (confirmando()?.id === producto.id) {
+                  <tr class="border-b border-ts-borde last:border-b-0">
+                    <td colspan="6">
+                      <div
+                        class="flex flex-col gap-16 rounded-md border border-ts-borde-control p-16"
+                        role="group"
+                        [attr.aria-labelledby]="'pregunta-' + producto.id"
+                        [attr.data-caja]="producto.id"
+                        tabindex="-1"
+                        (keydown.escape)="cancelar(producto.id)"
+                      >
+                        <p class="m-0" [id]="'pregunta-' + producto.id">
+                          {{ clavePregunta() | transloco: { nombre: producto.nombre } }}
+                        </p>
+                        <!-- Lo que cada una arrastra se dice antes, no despues. -->
+                        <p class="m-0 text-ts-texto-suave">
+                          {{ claveLoQueImplica() | transloco }}
+                        </p>
+
+                        @if (error(); as mensaje) {
+                          <p class="m-0 text-ts-error" role="alert">{{ mensaje }}</p>
+                        }
+
+                        <div class="flex flex-wrap gap-16">
+                          <!-- `peligro` solo para el borrado: es la unica de las tres que no tiene
+                               vuelta. Retirar de la vitrina se deshace publicando otra vez. -->
+                          <ts-boton
+                            [variante]="
+                              confirmando()?.accion === 'eliminar' ? 'peligro' : 'primario'
+                            "
+                            [ocupado]="ocupado()"
+                            (click)="confirmar(producto)"
+                          >
+                            {{ claveAccion() | transloco }}
+                          </ts-boton>
+                          <ts-boton variante="secundario" (click)="cancelar(producto.id)">
+                            {{ 'admin.productos.publicar.cancelar' | transloco }}
+                          </ts-boton>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
 
-    <ts-paginador
-      [pagina]="filtro().pagina"
-      [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
-      (paginaCambiada)="irAPagina($event)"
-    />
+    <!-- Fuera de la tarjeta, pero solo cuando hay tabla que paginar: con el catálogo vacío,
+         "Anterior" y "Siguiente" son dos botones deshabilitados debajo de "todavía no hay
+         productos", que es ruido y además dos paradas de tabulación que no llevan a ningún sitio. -->
+    @if (!sinProductos()) {
+      <ts-paginador
+        [pagina]="filtro().pagina"
+        [totalPaginas]="consulta.data()?.totalPaginas ?? 1"
+        (paginaCambiada)="irAPagina($event)"
+      />
+    }
   }
 </section>

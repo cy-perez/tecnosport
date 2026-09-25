@@ -95,6 +95,10 @@ class RepositorioProductosAdminFalso implements RepositorioProductosAdmin {
     throw new Error('no usado por esta prueba');
   }
 
+  eliminar(): Promise<void> {
+    throw new Error('no usado por esta prueba');
+  }
+
   despublicar(): Promise<ProductoAdmin> {
     throw new Error('no usado por esta prueba');
   }

@@ -44,6 +44,16 @@ export interface RepositorioProductosAdmin {
   /** Lo saca de la vitrina y lo devuelve a BORRADOR. Los pedidos en curso no se tocan. */
   despublicar(id: string): Promise<ProductoAdmin>;
 
+  /**
+   * Borra el producto entero: sus variantes, su inventario, sus imágenes y sus sets de rotación.
+   * No tiene vuelta.
+   *
+   * <p>El servidor rechaza con 409 si está publicado —hay que retirarlo primero— o si alguna de sus
+   * variantes se vendió. Las dos condiciones las decide él y no se adelantan aquí: el panel no ve
+   * los pedidos, y un producto puede venderse entre que se pinta la lista y se pulsa el botón.
+   */
+  eliminar(id: string): Promise<void>;
+
   /** Todas las activas con su medida, tengan o no: la lista de la pantalla que corrige. */
   listarMedidas(): Promise<MedidasDelCatalogo>;
 

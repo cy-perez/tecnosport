@@ -124,6 +124,13 @@ export class ProductosAdminHttpRepositorio implements RepositorioProductosAdmin 
     return aProductoAdmin(desempaquetar(respuesta, 'no se pudo despublicar el producto'));
   }
 
+  async eliminar(id: string): Promise<void> {
+    const respuesta = await this.cliente.DELETE('/api/v1/admin/productos/{id}', {
+      params: { path: { id } },
+    });
+    exigirExito(respuesta, 'no se pudo eliminar el producto');
+  }
+
   async listarMedidas(): Promise<MedidasDelCatalogo> {
     const respuesta = await this.cliente.GET('/api/v1/admin/variantes/medidas', {});
     return aMedidasDelCatalogo(desempaquetar(respuesta, 'no se pudo consultar las medidas'));

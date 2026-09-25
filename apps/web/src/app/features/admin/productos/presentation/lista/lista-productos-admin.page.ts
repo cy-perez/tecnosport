@@ -8,16 +8,18 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { mensajeDeError } from '../../../../../core/errores/mensaje-de-error';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { usarFoco } from '../../../../../shared/foco/foco';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
+import { AccionDeMenu, TsMenuAcciones } from '../../../../../shared/ui/menu/ts-menu-acciones';
 import { TsEsqueleto } from '../../../../../shared/ts-esqueleto/ts-esqueleto';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
 import { TsPaginador } from '../../../../../shared/ts-paginador/ts-paginador';
 import { usarMigasAdmin } from '../../../migas-admin';
+import { usarEliminarProducto } from '../../application/eliminar-producto.mutacion';
 import { usarListarProductosAdmin } from '../../application/listar-productos-admin.consulta';
 import {
   usarDespublicarProducto,
@@ -36,22 +38,90 @@ const CLAVE_ETIQUETA_ESTADO: Record<EstadoProducto, string> = {
 };
 
 /**
- * La lista del catálogo desde el panel, y el único sitio donde un producto pasa de BORRADOR a
- * PUBLICADO.
+ * La insignia de estado. Contorno y no relleno: el relleno de color pide un `sobre-` propio por
+ * cada estado y el sistema solo tiene los de primario, acento, marca y deshabilitado —inventar
+ * dos sería inventar color, que es lo que la regla dura #2 prohíbe—. Con el contorno, el par que
+ * hay que verificar es `--color-exito` sobre `--color-superficie`, que ya existe en esta misma
+ * pantalla (el aviso de "quedó publicado").
+ */
+const CLASES_INSIGNIA =
+  'inline-flex items-center rounded-completo border px-12 py-4 text-xs font-medio';
+
+const CLASES_INSIGNIA_ESTADO: Record<EstadoProducto, string> = {
+  BORRADOR: 'border-ts-borde text-ts-texto-suave',
+  PUBLICADO: 'border-ts-exito text-ts-exito',
+};
+
+/** Lo que el menú de una fila ofrece, y lo que cada opción arrastra al confirmarse. */
+type AccionDeFila = 'publicar' | 'retirar' | 'eliminar';
+
+/**
+ * Los tres textos de cada confirmación: la pregunta, lo que implica y el botón que la acepta.
  *
- * <p><b>Las dos transiciones preguntan antes</b>, y cada una por su motivo. Publicar deja el
- * producto a la vista de quien compra. Retirar lo saca de la vitrina: desaparece de la rejilla,
- * su enlace pasa a responder 404 y sale del sitemap en la siguiente generación — los pedidos ya
- * creados, en cambio, siguen su curso intactos.
+ * <p>Como tabla y no como tres `?:` en la plantilla: con dos acciones ya era un condicional
+ * anidado por cada línea de la caja, y con tres son nueve sitios donde emparejar mal la pregunta
+ * de una con el botón de otra. Las de publicar y retirar conservan sus claves originales —el texto
+ * no cambió— y por eso viven bajo `publicar.` aunque una de ellas retire.
+ */
+const TEXTOS_DE_CONFIRMACION: Record<
+  AccionDeFila,
+  { pregunta: string; implica: string; accion: string; hecho: string }
+> = {
+  publicar: {
+    pregunta: 'admin.productos.publicar.confirmar',
+    implica: 'admin.productos.publicar.loQueImplica',
+    accion: 'admin.productos.publicar.confirmarAccion',
+    hecho: 'admin.productos.publicar.hecho',
+  },
+  retirar: {
+    pregunta: 'admin.productos.publicar.confirmarRetirar',
+    implica: 'admin.productos.publicar.loQueImplicaRetirar',
+    accion: 'admin.productos.publicar.confirmarRetirarAccion',
+    hecho: 'admin.productos.publicar.retirado',
+  },
+  eliminar: {
+    pregunta: 'admin.productos.eliminar.confirmar',
+    implica: 'admin.productos.eliminar.loQueImplica',
+    accion: 'admin.productos.eliminar.accion',
+    hecho: 'admin.productos.eliminar.hecho',
+  },
+};
+
+/** La clave genérica del error de cada acción, cuando el código del backend no tiene traducción. */
+const CLAVE_ERROR: Record<AccionDeFila, string> = {
+  publicar: 'admin.productos.publicar.error',
+  retirar: 'admin.productos.publicar.errorRetirar',
+  eliminar: 'admin.productos.eliminar.error',
+};
+
+/**
+ * La lista del catálogo desde el panel: el único sitio donde un producto pasa de BORRADOR a
+ * PUBLICADO, y el único donde se borra.
+ *
+ * <p><b>Las tres acciones preguntan antes</b>, y cada una por su motivo. Publicar deja el producto
+ * a la vista de quien compra. Retirar lo saca de la vitrina: desaparece de la rejilla, su enlace
+ * pasa a responder 404 y sale del sitemap en la siguiente generación — los pedidos ya creados, en
+ * cambio, siguen su curso intactos. Eliminar no tiene vuelta, y por eso su botón de confirmación
+ * es el único en variante `peligro`.
  *
  * <p>La confirmación va dentro de la fila y no en un diálogo: es una pregunta de una línea, y
  * abrir un modal con trampa de foco para eso es más ceremonia que la decisión. Y es **una sola**
- * fila de confirmación para las dos acciones, porque no pueden estar abiertas a la vez: un
- * producto o está publicado o no lo está.
+ * fila de confirmación para las tres acciones, porque no pueden estar abiertas a la vez.
+ *
+ * <p><b>Las acciones viven en un menú de tres puntos</b> desde el 25 de septiembre de 2026, no
+ * sueltas en la fila. Eran dos enlaces y un botón, y con "Eliminar" habrían sido cuatro controles
+ * por fila compitiendo con el dato: en una tabla de veinte productos, ochenta paradas de tabulación
+ * antes del paginador. El menú deja una por fila. Lo que el panel **no** hace es esconder ahí la
+ * acción principal: crear un producto sigue siendo un botón a la vista, arriba de la tabla.
+ *
+ * <p>El servidor decide si un borrado se puede hacer —publicado no, con ventas tampoco— y el panel
+ * no se adelanta: no ve los pedidos, y un producto se puede vender entre que se pinta la lista y se
+ * pulsa el botón. El 409 llega con su código y `mensajeDeError` lo convierte en la instrucción que
+ * toca ("retíralo de la vitrina primero", "tiene ventas").
  */
 @Component({
   selector: 'app-lista-productos-admin',
-  imports: [RouterLink, TranslocoPipe, TsBoton, TsEsqueleto, TsMigas, TsPaginador],
+  imports: [TranslocoPipe, TsBoton, TsEsqueleto, TsMenuAcciones, TsMigas, TsPaginador],
   templateUrl: './lista-productos-admin.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -76,6 +146,8 @@ export class ListaProductosAdminPage {
     () => this.consulta.data()?.items ?? [],
   );
 
+  protected readonly totalProductos = computed(() => this.consulta.data()?.totalProductos ?? 0);
+
   /**
    * Vacía de verdad, no una página fuera de rango: `Page.getTotalPages()` da 0
    * solo cuando no hay ningún producto, y 1 cuando sí los hay pero la página
@@ -90,35 +162,88 @@ export class ListaProductosAdminPage {
     return this.traducir()(CLAVE_ETIQUETA_ESTADO[estado]);
   }
 
+  protected clasesEstado(estado: EstadoProducto): string {
+    return CLASES_INSIGNIA + ' ' + CLASES_INSIGNIA_ESTADO[estado];
+  }
+
+  /**
+   * Las cuatro opciones de una fila, en el orden en que se usan.
+   *
+   * <p>Editar y capturar llevan `enlace` y por eso el menú las pinta como `<a>`: son destinos, y
+   * abrirlos en otra pestaña es algo que quien carga catálogo hace todo el día. Las otras dos
+   * emiten y abren la confirmación.
+   *
+   * <p>La segunda cambia de identidad según el estado: publicar un borrador, retirar un publicado.
+   * Son dos acciones distintas y no una alternancia, porque lo que arrastran no es simétrico.
+   */
+  protected accionesDe(producto: ProductoAdmin): readonly AccionDeMenu[] {
+    const publicado = producto.estado === 'PUBLICADO';
+    return [
+      {
+        id: 'editar',
+        etiqueta: this.traducir()('admin.productos.editarEnlace'),
+        enlace: [producto.id, 'editar'],
+      },
+      {
+        id: publicado ? 'retirar' : 'publicar',
+        etiqueta: this.traducir()(
+          publicado ? 'admin.productos.publicar.accionRetirar' : 'admin.productos.publicar.accion',
+        ),
+      },
+      {
+        id: 'captura',
+        etiqueta: this.traducir()('admin.productos.capturar360'),
+        enlace: [producto.id, 'captura-360'],
+      },
+      {
+        id: 'eliminar',
+        etiqueta: this.traducir()('admin.productos.acciones.eliminar'),
+        destructiva: true,
+      },
+    ];
+  }
+
   private readonly enfocarDespuesDePintar = usarFoco();
   private readonly avisoLista = viewChild<ElementRef<HTMLElement>>('avisoLista');
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
 
   /**
-   * El botón que abre la confirmación de una fila. Se busca por su marca en el DOM y no con
-   * `viewChildren`, porque el botón vive dentro de `ts-boton` y lo que hay que enfocar es el
-   * `<button>` real, no el host del componente.
+   * El disparador del menú de una fila. Se busca por su marca en el DOM y no con `viewChildren`,
+   * porque el botón vive dentro de `ts-menu-acciones` y lo que hay que enfocar es el `<button>`
+   * real, no el host del componente.
    */
-  private botonDePreguntar(productoId: string): HTMLElement | null {
+  private botonDeAcciones(productoId: string): HTMLElement | null {
     return (
       this.raiz.nativeElement.querySelector<HTMLElement>(
-        `[data-preguntar="${productoId}"] button`,
+        `[data-acciones="${productoId}"] button`,
       ) ?? null
     );
   }
 
-  /** El producto con la confirmación de publicar abierta. `null` = ninguna. */
-  protected readonly confirmando = signal<string | null>(null);
+  /** La fila con una confirmación abierta, y cuál. `null` = ninguna. */
+  protected readonly confirmando = signal<{ id: string; accion: AccionDeFila } | null>(null);
   protected readonly error = signal<string | null>(null);
-  /** El nombre de lo último publicado, para confirmarlo cuando su fila ya cambió de estado. */
-  protected readonly publicado = signal<string | null>(null);
-  /** Lo mismo al retirar: la fila cambia de botón y el mensaje tiene que quedar a la vista. */
-  protected readonly retirado = signal<string | null>(null);
+  /** Lo último que se hizo, para decirlo cuando su fila ya cambió de estado o desapareció. */
+  protected readonly aviso = signal<{ clave: string; nombre: string } | null>(null);
 
-  private readonly mutacion = usarPublicarProducto();
+  protected readonly clavePregunta = computed(
+    () => TEXTOS_DE_CONFIRMACION[this.confirmando()?.accion ?? 'publicar'].pregunta,
+  );
+  protected readonly claveLoQueImplica = computed(
+    () => TEXTOS_DE_CONFIRMACION[this.confirmando()?.accion ?? 'publicar'].implica,
+  );
+  protected readonly claveAccion = computed(
+    () => TEXTOS_DE_CONFIRMACION[this.confirmando()?.accion ?? 'publicar'].accion,
+  );
+
+  private readonly mutacionPublicar = usarPublicarProducto();
   private readonly mutacionRetirar = usarDespublicarProducto();
-  protected readonly publicando = computed(
-    () => this.mutacion.isPending() || this.mutacionRetirar.isPending(),
+  private readonly mutacionEliminar = usarEliminarProducto();
+  protected readonly ocupado = computed(
+    () =>
+      this.mutacionPublicar.isPending() ||
+      this.mutacionRetirar.isPending() ||
+      this.mutacionEliminar.isPending(),
   );
 
   /** La caja de confirmación, que lleva `tabindex="-1"` para poder recibir el foco. */
@@ -127,73 +252,75 @@ export class ListaProductosAdminPage {
   }
 
   /**
-   * Al abrir, el foco entra en la caja. **Faltaba, y sin eso el `(keydown.escape)` de la caja
-   * no recibe nunca la tecla**: el foco se queda en el botón que la abrió, que vive en la fila
-   * anterior, así que Escape no cancelaba nada. `editar` sí lo hacía; estas tres copiaron la
-   * interacción y solo media vuelta del arreglo —el retorno del foco al cancelar—, que es
-   * exactamente lo que `shared/foco/foco.ts` documenta que pasó con este patrón.
+   * Al abrir, el foco entra en la caja. **Hace falta, o el `(keydown.escape)` de la caja no recibe
+   * nunca la tecla**: el foco se queda donde estaba —el botón del menú, en la fila anterior— así
+   * que Escape no cancelaría nada.
+   *
+   * <p>Las opciones con `enlace` no llegan aquí: el menú las pinta como `<a>` y navegan solas.
    */
-  protected preguntar(producto: ProductoAdmin): void {
+  protected preguntar(producto: ProductoAdmin, accion: string): void {
+    if (accion !== 'publicar' && accion !== 'retirar' && accion !== 'eliminar') {
+      return;
+    }
     this.error.set(null);
-    this.publicado.set(null);
-    this.retirado.set(null);
-    this.confirmando.set(producto.id);
+    this.aviso.set(null);
+    this.confirmando.set({ id: producto.id, accion });
     this.enfocarDespuesDePintar(() => this.cajaDe(producto.id));
   }
 
   /**
    * Cancelar destruye la fila de confirmación con el botón "Cancelar" dentro, así que el foco hay
-   * que devolverlo a mano: al botón que abrió la pregunta, que es de donde venía.
+   * que devolverlo a mano: al botón del menú que abrió la pregunta, que es de donde venía.
    */
   protected cancelar(productoId: string): void {
     this.confirmando.set(null);
-    this.enfocarDespuesDePintar(() => this.botonDePreguntar(productoId));
+    this.enfocarDespuesDePintar(() => this.botonDeAcciones(productoId));
   }
 
   /**
-   * Retirar de la vitrina. Comparte la fila de confirmación con publicar y no tiene la suya
-   * porque son la misma pregunta —"¿seguro?"— sobre la misma fila; lo que cambia es el texto, y
-   * eso lo decide la plantilla mirando el estado.
+   * Ejecuta lo que la caja abierta estaba preguntando.
+   *
+   * <p>Guarda de reentrada en vez de `[cargando]` en el botón: deshabilitar el botón que se acaba
+   * de pulsar le quita el foco y el navegador lo manda a `<body>`. El doble envío lo evita esto, y
+   * el botón dice que está ocupado con `aria-busy` sin salirse del camino.
    */
-  protected despublicar(producto: ProductoAdmin): void {
-    // Guarda de reentrada en vez de `[cargando]` en el botón: deshabilitar el botón que se acaba
-    // de pulsar le quita el foco y el navegador lo manda a `<body>`. El doble envío lo evita
-    // esto, y el botón dice que está ocupado con `aria-busy` sin salirse del camino.
-    if (this.publicando()) {
+  protected confirmar(producto: ProductoAdmin): void {
+    const pendiente = this.confirmando();
+    if (pendiente === null || pendiente.id !== producto.id || this.ocupado()) {
       return;
     }
     this.error.set(null);
-    this.mutacionRetirar.mutate(producto.id, {
-      onSuccess: () => {
-        this.confirmando.set(null);
-        this.retirado.set(producto.nombre);
-        // La fila cambió de estado y la caja de confirmación ya no existe: el foco va al aviso,
-        // que es lo único que explica lo que acaba de pasar.
-        this.enfocarDespuesDePintar(() => this.avisoLista()?.nativeElement);
-      },
-      onError: (error) =>
-        this.error.set(
-          mensajeDeError(error, this.transloco, 'admin.productos.publicar.errorRetirar'),
-        ),
-    });
+
+    const acciones: Record<AccionDeFila, () => void> = {
+      publicar: () =>
+        this.mutacionPublicar.mutate(producto.id, this.manejadores(producto, 'publicar')),
+      retirar: () =>
+        this.mutacionRetirar.mutate(producto.id, this.manejadores(producto, 'retirar')),
+      eliminar: () =>
+        this.mutacionEliminar.mutate(producto.id, this.manejadores(producto, 'eliminar')),
+    };
+    acciones[pendiente.accion]();
   }
 
-  protected publicar(producto: ProductoAdmin): void {
-    if (this.publicando()) {
-      return;
-    }
-    this.error.set(null);
-    this.mutacion.mutate(producto.id, {
+  /**
+   * Lo que pasa después, igual para las tres: se cierra la caja, se dice qué ocurrió y el foco va
+   * al aviso — que es lo único que queda explicando lo que acaba de pasar, porque la caja ya no
+   * existe y, si se eliminó, tampoco la fila.
+   *
+   * <p>El error sale de `mensajeDeError` y no de la clave genérica a secas: los dos rechazos del
+   * borrado —publicado, con ventas— llegan con su código y cada uno dice qué hacer. Sin esto, "no
+   * pudimos eliminar el producto" deja a quien opera sin saber cuál de los dos le tocó.
+   */
+  private manejadores(producto: ProductoAdmin, accion: AccionDeFila) {
+    return {
       onSuccess: () => {
         this.confirmando.set(null);
-        this.publicado.set(producto.nombre);
+        this.aviso.set({ clave: TEXTOS_DE_CONFIRMACION[accion].hecho, nombre: producto.nombre });
         this.enfocarDespuesDePintar(() => this.avisoLista()?.nativeElement);
       },
-      // El 409 de "no tiene imagen principal" es accionable y se dice: quien publica tiene que
-      // saber que le falta la foto, no que "no se pudo".
-      onError: (error) =>
-        this.error.set(mensajeDeError(error, this.transloco, 'admin.productos.publicar.error')),
-    });
+      onError: (error: unknown) =>
+        this.error.set(mensajeDeError(error, this.transloco, CLAVE_ERROR[accion])),
+    };
   }
 
   protected irAPagina(pagina: number): void {
