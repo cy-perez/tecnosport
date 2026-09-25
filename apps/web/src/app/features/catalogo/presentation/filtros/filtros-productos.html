@@ -18,24 +18,31 @@
   </ts-boton>
 </div>
 
-<!-- La búsqueda a un lado y los cuatro desplegables al otro, no siete controles
-     en una rejilla de columnas iguales. El cambio es de jerarquía, no de estilo:
-     escribir qué se busca y acotar lo que ya salió son dos gestos distintos, y
-     con todos del mismo tamaño la caja de texto no se distinguía de un filtro
-     más. Ninguno lleva etiqueta a la vista: la búsqueda la sustituye por su
-     ancla y su placeholder, y cada desplegable se explica con la opción que
-     tiene elegida —"Todas las marcas" ya dice que es el filtro de marca—. Las
+<!-- Dos bandas, no una fila. La jerarquía es la misma de siempre —escribir qué
+     se busca y acotar lo que ya salió son dos gestos distintos— pero antes se
+     expresaba poniéndolos a los dos extremos de una misma línea, y eso solo se
+     veía en escritorio: entre 640 y 1024 px la caja de búsqueda y los cuatro
+     desplegables compartían una fila que se partía por donde le cabía, así que
+     "Ordenar por" terminaba debajo de la búsqueda y "Limpiar" colgando solo.
+     Ahora la búsqueda tiene su propia banda arriba y los filtros la suya
+     debajo, y el corte entre las dos no depende de cuánto mida cada etiqueta.
+     Ninguno lleva etiqueta a la vista: la búsqueda la sustituye por su ancla y
+     su placeholder, y cada desplegable se explica con la opción que tiene
+     elegida —"Todas las marcas" ya dice que es el filtro de marca—. Las
      etiquetas siguen ahí para quien navega con lector de pantalla. -->
 <form
   id="filtros-productos"
-  class="mx-auto max-w-contenido flex-col gap-12 px-16 pb-24 desde-movil:flex desde-tableta:flex-row desde-tableta:items-center desde-tableta:justify-between"
+  class="mx-auto max-w-contenido flex-col gap-16 px-16 pb-24 desde-movil:flex"
   [class.flex]="abierto()"
   [class.hidden]="!abierto()"
   [formGroup]="form"
   (submit)="$event.preventDefault()"
 >
+  <!-- Capada a `max-w-formulario-lg` y no a todo el ancho del contenido: una
+       caja de texto de 1200 px invita a escribir una frase, y lo que se busca
+       aquí son dos o tres palabras. -->
   <ts-campo
-    class="desde-tableta:w-filtro"
+    class="w-full desde-tableta:max-w-formulario-lg"
     idCampo="filtro-texto"
     [label]="'catalogo.filtros.texto' | transloco"
     [placeholder]="'catalogo.filtros.texto_placeholder' | transloco"
@@ -45,47 +52,62 @@
     formControlName="texto"
   />
 
-  <div
-    class="flex flex-col gap-12 desde-movil:flex-row desde-movil:flex-wrap desde-movil:items-center"
-  >
-    <ts-select
-      idCampo="filtro-linea"
-      [label]="'catalogo.filtros.linea_label' | transloco"
-      [placeholder]="'catalogo.filtros.todas_lineas' | transloco"
-      [opciones]="opcionesLinea()"
-      [etiquetaOculta]="true"
-      formControlName="linea"
-    />
+  <div class="flex flex-col gap-12 desde-tableta:flex-row desde-tableta:items-center">
+    <!-- Rejilla y no `flex-wrap`: los cuatro desplegables tienen etiquetas de
+         largos muy distintos —"Relevancia" contra "Todas las categorías"— y en
+         `flex` cada uno se quedaba con el ancho de su texto, así que la fila se
+         leía como cuatro controles desparejos. `grid-cols-4` reparte la banda en
+         cuatro columnas iguales (`minmax(0, 1fr)`, que además es lo que impide
+         que un `<select>` ensanche su columna hasta su opción más larga).
+         `min-w-0` por lo mismo un nivel más arriba: desde tableta esta rejilla es un item de
+         `flex`, y el `min-width: auto` de un item no lo deja encoger por debajo de su
+         contenido. Es el mismo defecto que tenía `<main>` en `app.html`, donde se llevó por
+         delante el ancho de la página entera. -->
+    <div
+      class="grid min-w-0 grid-cols-1 gap-12 desde-movil:grid-cols-2 desde-tableta:flex-1 desde-tableta:grid-cols-4"
+    >
+      <ts-select
+        idCampo="filtro-linea"
+        [label]="'catalogo.filtros.linea_label' | transloco"
+        [placeholder]="'catalogo.filtros.todas_lineas' | transloco"
+        [opciones]="opcionesLinea()"
+        [etiquetaOculta]="true"
+        formControlName="linea"
+      />
 
-    <ts-select
-      idCampo="filtro-categoria"
-      [label]="'catalogo.filtros.categoria' | transloco"
-      [placeholder]="'catalogo.filtros.todas_categorias' | transloco"
-      [opciones]="opcionesCategoria()"
-      [etiquetaOculta]="true"
-      formControlName="categoria"
-    />
+      <ts-select
+        idCampo="filtro-categoria"
+        [label]="'catalogo.filtros.categoria' | transloco"
+        [placeholder]="'catalogo.filtros.todas_categorias' | transloco"
+        [opciones]="opcionesCategoria()"
+        [etiquetaOculta]="true"
+        formControlName="categoria"
+      />
 
-    <ts-select
-      idCampo="filtro-marca"
-      [label]="'catalogo.filtros.marca' | transloco"
-      [placeholder]="'catalogo.filtros.todas_marcas' | transloco"
-      [opciones]="opcionesMarca()"
-      [etiquetaOculta]="true"
-      formControlName="marca"
-    />
+      <ts-select
+        idCampo="filtro-marca"
+        [label]="'catalogo.filtros.marca' | transloco"
+        [placeholder]="'catalogo.filtros.todas_marcas' | transloco"
+        [opciones]="opcionesMarca()"
+        [etiquetaOculta]="true"
+        formControlName="marca"
+      />
 
-    <!-- El único de los cuatro que no nombra un atributo del producto, y por eso el único con
-         ancla: sin ella, "Relevancia" al lado de "Todas las marcas" se lee como una marca. -->
-    <ts-select
-      idCampo="filtro-orden"
-      [label]="'catalogo.filtros.orden_label' | transloco"
-      [opciones]="opcionesOrden()"
-      [icono]="iconoOrden"
-      [etiquetaOculta]="true"
-      formControlName="orden"
-    />
+      <!-- El único de los cuatro que no nombra un atributo del producto, y por eso el único con
+           ancla: sin ella, "Relevancia" al lado de "Todas las marcas" se lee como una marca. -->
+      <ts-select
+        idCampo="filtro-orden"
+        [label]="'catalogo.filtros.orden_label' | transloco"
+        [opciones]="opcionesOrden()"
+        [icono]="iconoOrden"
+        [etiquetaOculta]="true"
+        formControlName="orden"
+      />
+    </div>
 
+    <!-- Fuera de la rejilla a propósito: no es un filtro más, es lo que los
+         deshace. Dentro, ocupaba una quinta columna del mismo ancho que un
+         desplegable y se leía como uno. -->
     <ts-boton variante="texto" tipo="button" (click)="limpiar()">
       {{ 'catalogo.filtros.limpiar' | transloco }}
     </ts-boton>
