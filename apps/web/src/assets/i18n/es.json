@@ -44,11 +44,9 @@
     "telefono_e164": "+573138816711",
     "telefono": "+57 313 881 6711",
     "whatsapp_numero": "573138816711",
-    "llamar": "Llamar",
     "whatsapp": "WhatsApp",
     "correo": "contacto@tecnosport.co",
     "horario": "Todos los días, 8:00 a.m. – 9:00 p.m.",
-    "reducir_movimiento": "Reducir movimiento",
     "copyright": "© {{anio}} Tecno Sport",
     "navegacion": "Navegación del pie",
     "portada": "Portada",
@@ -63,7 +61,12 @@
     "terminos": "Términos y condiciones",
     "privacidad": "Política de datos",
     "cookies": "Cookies",
-    "reducir_movimiento_del_sistema": "Tu sistema ya pide menos movimiento, así que esta opción viene activada desde ahí."
+    "sitio_titulo": "El sitio",
+    "ayuda_titulo": "Ayuda",
+    "contacto_titulo": "Contacto",
+    "preguntas_frecuentes": "Preguntas frecuentes",
+    "estado_pedido": "Estado del pedido",
+    "contactanos": "Contáctanos"
   },
   "portada": {
     "titulo": "Ropa y calzado deportivo, bolsos y tecnología",

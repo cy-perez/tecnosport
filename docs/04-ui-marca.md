@@ -427,7 +427,17 @@ táctil es **la etiqueta entera** (`min-h-tactil` va en el `<label>`, medido en
 158 × 44), la caja se dibuja a 24 px con `appearance-none` y un visto de
 Lucide, y `sobreMarca` conmuta al par `sobre-marca` / `marca` —validado en
 14,64:1— porque en la franja del pie el anillo de foco normal es invisible en
-tema claro. No implementa `ControlValueAccessor`, a diferencia de `ts-campo` y
+tema claro. Esa casilla **ya no existe**: se quitó del pie el 25 de septiembre de 2026, a
+petición, y con ella se fue el único consumidor de `sobreMarca`. El componente
+sigue vivo en el resumen del checkout y en el registro, las dos sobre superficie
+clara. La consecuencia de quitarla está escrita en `layout/pie/pie.ts` y vale
+repetirla: quien **no** tenga la preferencia puesta en su sistema operativo se
+queda sin forma de pedir menos movimiento desde el sitio. La regla de
+`prefers-reduced-motion` de `tokens.css` sigue intacta y sigue apagando el
+carrusel de portada, el brillo de carga y el anillo; lo que desapareció es el
+interruptor propio.
+
+No implementa `ControlValueAccessor`, a diferencia de `ts-campo` y
 `ts-select`: su único consumidor no usa Angular Forms, y cablear un CVA que
 nadie registra sería el código especulativo que la regla de arriba evita.
 
@@ -680,11 +690,16 @@ y enlaces. Si todo se tiñe de ámbar, muere la regla de una sola cosa por panta
 - Jerarquía de encabezados sin saltos, un solo `h1` por página.
 - Controles del usuario en el pie: tamaño de texto, contraste alto y reducción de
   movimiento, que además respetan `prefers-reduced-motion` y
-  `prefers-color-scheme`. **Reducción de movimiento cerrada** (`layout/pie/`,
-  2026-09-04): checkbox persistido en `localStorage`, con `styles.scss`
-  repitiendo la misma regla que `tokens.css` ya aplica bajo
-  `prefers-reduced-motion`, disparada por `[data-movimiento="reducido"]`.
-  **Los otros dos, pendientes, cada uno con su propio bloqueo real:**
+  `prefers-color-scheme`. **Los tres están hoy sin construir**, y el de movimiento
+  vuelve a la lista: estuvo cerrado desde el 2026-09-04 —checkbox persistido en
+  `localStorage`, con `styles.scss` repitiendo bajo `[data-movimiento="reducido"]`
+  la misma regla que `tokens.css` ya aplica bajo `prefers-reduced-motion`— y **se
+  quitó del pie el 2026-09-25**, al rehacerlo, a petición. Quien no tenga la
+  preferencia puesta en su sistema operativo se queda sin forma de pedirla aquí;
+  la regla automática sigue intacta y los ganchos `[data-movimiento]` siguen
+  puestos, así que devolverlo es volver a poner un control que escriba el atributo
+  — y el sitio para ponerlo probablemente no sea el pie, sino junto a los otros
+  dos. **Esos dos siguen con su propio bloqueo real:**
   - **Contraste alto** necesita una paleta que `tokens.json` no define —
     no es una decisión que le toque tomar a quien programa.
   - **Tamaño de texto**: los tokens `--texto-*` de `tokens.css` están en `px`,
