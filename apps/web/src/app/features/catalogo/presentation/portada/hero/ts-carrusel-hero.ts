@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   afterNextRender,
   computed,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import type { IconNode } from 'lucide';
@@ -20,7 +22,7 @@ import {
 } from '../../../../../shared/ui/icono/iconos';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
-import { MEDIA_HERO_TARJETA } from '../../../../../core/imagenes/tamanos-de-imagen';
+import { MEDIA_HERO_VERTICAL } from '../../../../../core/imagenes/tamanos-de-imagen';
 import { Linea } from '../../../domain/filtro-productos.model';
 
 /**
@@ -34,11 +36,40 @@ interface DiapositivaHero {
   readonly clave: string;
   readonly linea: Linea;
   readonly ancho: string;
-  readonly tarjeta: string;
+  readonly vertical: string;
 }
 
-/** Cada cuánto pasa sola. Cinco segundos es lo que hace el carrusel de referencia. */
-const MS_AUTOPLAY = 5000;
+/**
+ * Cada cuánto pasa sola.
+ *
+ * <p>Fueron cinco segundos, que es lo que hace el carrusel de referencia; son cuatro desde el 25 de
+ * septiembre de 2026, a petición del negocio. <b>El botón de pausa no se va con el segundo que se
+ * quitó</b>: WCAG 2.2.2 habla de movimiento automático que <i>dure</i> más de cinco segundos, y el
+ * de un carrusel que rota solo no termina nunca — lo que dura cuatro segundos es cada paso.
+ */
+const MS_AUTOPLAY = 4000;
+
+/**
+ * Cuánto hay que arrastrar para que el carrusel pase de pieza: la sexta parte del ancho visible.
+ *
+ * <p>Una fracción y no un número de píxeles, porque el gesto se hace con el pulgar sobre una pieza
+ * que mide lo que mida la ventana: 60 px en un teléfono de 390 son un empujón deliberado, y en un
+ * monitor de 2560 son un temblor de la mano.
+ */
+const FRACCION_ARRASTRE = 1 / 6;
+
+/**
+ * A partir de cuántos píxeles el arrastre decide su eje, y qué pasa mientras no lo ha decidido.
+ *
+ * <p>Sin esto, el carrusel se queda con cualquier gesto que empiece encima de él: alguien que baja
+ * la página con el pulgar apoyado en la foto ve la diapositiva temblar de lado. `touch-action:
+ * pan-y` le deja el eje vertical al navegador, pero el horizontal sigue siendo nuestro y hay que
+ * devolverlo cuando quien mira estaba desplazando y no pasando de pieza.
+ */
+const PX_PARA_DECIDIR_EJE = 8;
+
+/** Lo que frena el arrastre cuando no hay pieza que descubrir: se mueve, pero cuesta el triple. */
+const FRENO_EN_EL_BORDE = 3;
 
 /**
  * Las cuatro piezas, <b>en el orden de la portada</b>, que no es el orden canónico de `LINEAS`.
@@ -47,25 +78,29 @@ const MS_AUTOPLAY = 5000;
  * encabeza la portada lo decide el negocio, no el modelo. El menú lateral y el filtro siguen
  * ofreciendo las mismas cuatro en su orden.
  *
- * <p><b>Un solo juego de arte para los dos temas</b>, y esto se apartó de lo que el ZIP entrega.
- * `hero-tecnosport/` trae `claro/` y `oscuro/`, y la única diferencia entre las dos carpetas es el
- * color del fondo del lienzo: `#1B1F26` contra `#191E26`, dos unidades de rojo y una de verde. Es
- * invisible, y servir las dos costaba caro de verdad: un `<img>` con `display:none` se descarga
- * igual en Chrome, así que la pareja claro/oscuro duplicaba los bytes del LCP de la portada; y
- * elegir en tiempo de ejecución no se puede, porque el servidor no conoce el tema mientras
- * renderiza —`conTemaAplicado` inyecta `data-tema` por reemplazo de cadena sobre el HTML ya
- * construido— así que la primera pintura saldría en claro y saltaría al hidratar, justo sobre la
- * imagen más grande del sitio. La franja que rodea al arte sí cambia de tema: es `bg-ts-marca`.
+ * <p><b>Fotografía a sangre, y no el arte de estudio que hubo hasta el 25 de septiembre de 2026.</b>
+ * Aquel lienzo grafito llevaba el producto recortado a la derecha y dejaba libre la mitad izquierda
+ * para que el texto cayera sobre color plano; el de ahora es la fotografía entera, y el texto va
+ * encima de ella. Lo que hacía el lienzo —garantizar el contraste— lo hace ahora un velo degradado,
+ * y eso se mide: ver `docs/04-ui-marca.md`.
+ *
+ * <p><b>Un solo juego de arte para los dos temas</b>, que ya valía para el arte anterior y vale más
+ * para una fotografía: no hay dos versiones que elegir. Servirlas costaría caro —un `<img>` con
+ * `display:none` se descarga igual en Chrome, así que la pareja claro/oscuro duplicaría los bytes
+ * del LCP de la portada— y elegir en tiempo de ejecución no se puede, porque el servidor no conoce
+ * el tema mientras renderiza: `conTemaAplicado` inyecta `data-tema` por reemplazo de cadena sobre el
+ * HTML ya construido, así que la primera pintura saldría en claro y saltaría al hidratar, justo
+ * sobre la imagen más grande del sitio. El velo sí cambia de tema, porque sale de `--color-marca`.
  */
 const DIAPOSITIVAS: readonly DiapositivaHero[] = [
-  { clave: 'ropa', linea: 'ROPA', ancho: 'hero-ropa', tarjeta: 'tarjeta-ropa' },
-  { clave: 'calzado', linea: 'CALZADO', ancho: 'hero-calzado', tarjeta: 'tarjeta-calzado' },
-  { clave: 'bolsos', linea: 'BOLSOS', ancho: 'hero-bolsos', tarjeta: 'tarjeta-bolsos' },
+  { clave: 'ropa', linea: 'ROPA', ancho: 'hero-ropa', vertical: 'vertical-ropa' },
+  { clave: 'calzado', linea: 'CALZADO', ancho: 'hero-calzado', vertical: 'vertical-calzado' },
+  { clave: 'bolsos', linea: 'BOLSOS', ancho: 'hero-bolsos', vertical: 'vertical-bolsos' },
   {
     clave: 'tecnologia',
     linea: 'TECNOLOGIA',
     ancho: 'hero-tecnologia',
-    tarjeta: 'tarjeta-tecnologia',
+    vertical: 'vertical-tecnologia',
   },
 ];
 
@@ -96,16 +131,31 @@ const SELLOS_DE_CONFIANZA: readonly { clave: string; icono: IconNode }[] = [
  * <p>El carrusel "With indicators" de TailAdmin que sirve de referencia visual está montado sobre
  * Swiper. No entra: cada librería nueva es deuda, y lo que hace falta de ella —cuatro diapositivas,
  * unas viñetas y un temporizador— son las cincuenta líneas de abajo. Lo que sí se copia es el
- * aspecto: viñetas tipo píldora abajo al centro, la activa más ancha, y el paso solo cada cinco
- * segundos.
+ * aspecto: viñetas tipo píldora abajo al centro, la activa más ancha.
+ *
+ * <h2>Se pasa también con el dedo</h2>
+ *
+ * <p>Arrastrar de lado pasa a la siguiente pieza o a la anterior, y la tira <b>sigue el dedo</b>
+ * mientras dura el gesto en vez de esperar a que se levante: un carrusel que no se mueve hasta que
+ * sueltas no parece arrastrable, parece roto.
+ *
+ * <p>Tres cosas que no son gratis y que el visor 360 ya había pagado una vez —de ahí sale el
+ * patrón—: `touch-action: pan-y` deja el desplazamiento vertical de la página al navegador, el
+ * temporizador se apaga mientras el dedo está encima y se reprograma al soltar, y un arrastre que
+ * termina sobre el botón de la diapositiva <b>no puede activarlo</b>. Ese último es el que muerde:
+ * sin la guarda, empezar el gesto encima del botón pasaba de pieza y navegaba a la vez.
  *
  * <h2>El texto va en HTML, no en los píxeles</h2>
  *
- * <p>El ZIP entrega cada pieza en dos versiones, `con-texto/` y `limpio/`. Se usa `limpio/` y el
- * titular, el apoyo y el botón los pone esta plantilla, que es lo que su propio `LEEME.md`
- * recomienda y lo que la regla dura #4 exige: texto dentro de una imagen no se traduce, no lo lee
- * un lector de pantalla, no escala y —en el caso del botón— parece pulsable sin serlo. Es la misma
- * decisión que ya se había tomado con la fotografía anterior.
+ * <p>El titular, el apoyo y el botón los pone esta plantilla y nunca la imagen, que es lo que exige
+ * la regla dura #4: texto dentro de una imagen no se traduce, no lo lee un lector de pantalla, no
+ * escala y —en el caso del botón— parece pulsable sin serlo.
+ *
+ * <p>Sobre fotografía eso cuesta un velo. El arte de estudio anterior reservaba media pieza de
+ * color plano y el contraste venía dado; una fotografía de calle tiene sol, cemento claro y, en dos
+ * de las cuatro, fondo casi blanco. El velo degradado de `--color-marca` y el halo de las letras
+ * están medidos sobre los píxeles del compuesto, no puestos a ojo: `docs/04-ui-marca.md` lleva las
+ * cifras y el guion que las saca.
  *
  * <h2>Accesibilidad</h2>
  *
@@ -127,11 +177,25 @@ export class TsCarruselHero {
 
   protected readonly diapositivas = DIAPOSITIVAS;
   protected readonly sellosDeConfianza = SELLOS_DE_CONFIANZA;
-  protected readonly mediaTarjeta = MEDIA_HERO_TARJETA;
+  protected readonly mediaVertical = MEDIA_HERO_VERTICAL;
   protected readonly iconoPausar = iconoPausar;
   protected readonly iconoReanudar = iconoReanudar;
 
+  /** La ventana que recorta la tira. Recibe los gestos y es la que mide el ancho de una pieza. */
+  private readonly ventana = viewChild.required<ElementRef<HTMLElement>>('ventana');
+
   protected readonly actual = signal(0);
+
+  /**
+   * Los píxeles que la tira lleva corridos por el dedo, cero cuando nadie la toca.
+   *
+   * <p>Es una señal y no una variable porque la plantilla la pinta en cada movimiento: el
+   * `transform` de la tira es la posición de la diapositiva más esto.
+   */
+  protected readonly corrimiento = signal(0);
+
+  /** Si hay un dedo (o un ratón) arrastrando ahora mismo. Apaga la transición: la tira va pegada. */
+  protected readonly arrastrando = signal(false);
 
   /**
    * Si el temporizador puede correr. Arranca en `false` y solo lo enciende `afterNextRender`: en el
@@ -163,6 +227,30 @@ export class TsCarruselHero {
 
   private temporizador: ReturnType<typeof setInterval> | null = null;
 
+  /** Dónde empezó el gesto y cuánto medía la pieza entonces, para leer el arrastre en fracciones. */
+  private inicioX = 0;
+  private inicioY = 0;
+  private anchoAlIniciar = 0;
+
+  /**
+   * El eje del gesto, que se decide en los primeros píxeles y ya no cambia.
+   *
+   * <p>`indeciso` es el estado de verdad y no un valor de relleno: hasta que el dedo no se mueve lo
+   * bastante, nadie sabe si esto es pasar de pieza o desplazar la página, y adivinarlo en el primer
+   * `pointermove` acierta la mitad de las veces.
+   */
+  private eje: 'indeciso' | 'horizontal' | 'vertical' = 'indeciso';
+
+  /**
+   * Si el gesto que acaba de terminar movió algo, para que el clic que viene detrás no cuente.
+   *
+   * <p>El navegador dispara un `click` al levantar el dedo aunque entre medias haya habido un
+   * arrastre de media pantalla, y debajo del dedo suele haber un enlace: el botón de la diapositiva
+   * ocupa un buen trozo de la pieza. Sin esta bandera, deslizar empezando encima del botón pasa de
+   * pieza y además navega.
+   */
+  private huboArrastre = false;
+
   /**
    * `aria-live` vale `polite` solo cuando el carrusel está quieto.
    *
@@ -179,6 +267,7 @@ export class TsCarruselHero {
 
   constructor() {
     afterNextRender(() => {
+      this.vigilarElClicDeUnArrastre();
       if (this.sistemaPideMenosMovimiento()) {
         return;
       }
@@ -242,6 +331,112 @@ export class TsCarruselHero {
   }
 
   /**
+   * Empieza el arrastre. Apaga el temporizador —no `detener()`, que es la pausa del puntero y la
+   * reanudaría al salir— y toma la medida de la pieza, que es contra la que se compara el gesto.
+   */
+  protected iniciarArrastre(evento: PointerEvent): void {
+    this.inicioX = evento.clientX;
+    this.inicioY = evento.clientY;
+    this.anchoAlIniciar = this.ventana().nativeElement.getBoundingClientRect().width;
+    this.eje = 'indeciso';
+    this.huboArrastre = false;
+    this.arrastrando.set(true);
+    this.apagar();
+  }
+
+  protected mover(evento: PointerEvent): void {
+    if (!this.arrastrando()) {
+      return;
+    }
+    const dx = evento.clientX - this.inicioX;
+    const dy = evento.clientY - this.inicioY;
+
+    if (this.eje === 'indeciso') {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < PX_PARA_DECIDIR_EJE) {
+        return;
+      }
+      this.eje = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+      if (this.eje === 'vertical') {
+        // Quien empezó a desplazar la página no está pasando de pieza: se suelta el gesto entero y
+        // el navegador sigue con lo suyo.
+        //
+        // Y **se vuelve a programar el temporizador**, que se apagó al empezar el gesto: sin esta
+        // línea, bajar la página una vez con el pulgar apoyado en la fotografía dejaba el carrusel
+        // quieto para siempre. El `pointerup` que viene detrás ya no entra —`arrastrando()` es
+        // falso— así que este es el único sitio donde se puede encender de nuevo.
+        this.soltar(evento);
+        this.reprogramar();
+        return;
+      }
+      // **La captura se toma aquí y no en el `pointerdown`, y esto costó encontrarlo.**
+      //
+      // Capturar el puntero redirige a este elemento todos los eventos que quedan de ese puntero,
+      // y en Chrome eso incluye el `click`. Tomándola al empezar, un clic normal sobre el botón de
+      // la diapositiva salía así —leído en el navegador, con los eventos registrados—:
+      //
+      //     pointerdown  destino=A      el clic empieza en el enlace
+      //     pointerup    destino=DIV    lo desvía la captura
+      //     click        destino=DIV    el <a> nunca se entera
+      //
+      // O sea que el botón principal de la portada dejaba de navegar con un clic. Aquí, con el eje
+      // ya decidido, solo captura lo que de verdad es un arrastre — y el `click` que ese arrastre
+      // deja detrás sí queremos que llegue al contenedor, que es donde lo descarta la guarda.
+      //
+      // jsdom no implementa la captura, así que **esto no lo atrapa ninguna prueba**: sin ella el
+      // arrastre sigue funcionando mientras el dedo no se salga de la ventana, que es el caso de
+      // una prueba. Por eso se llama de forma opcional y por eso está anotado en
+      // `apps/web/CLAUDE.md`.
+      this.ventana().nativeElement.setPointerCapture?.(evento.pointerId);
+    }
+
+    this.huboArrastre = true;
+    this.corrimiento.set(this.conFrenoEnElBorde(dx));
+  }
+
+  /**
+   * El gesto deja de ser nuestro: la tira vuelve a su sitio y <b>no se decide nada</b>.
+   *
+   * <p>Un `pointercancel` no es un dedo que se levanta, es el sistema diciendo que ese puntero ya
+   * no cuenta —el navegador empezó un arrastre nativo, entró una llamada, el gesto pasó a ser un
+   * zoom—. Tratarlo como un final tenía un defecto medido en el navegador: al arrastrar empezando
+   * <b>encima del botón</b>, Chrome arranca el arrastre nativo de un enlace y manda `pointercancel`
+   * con coordenadas que no son las del dedo, así que el carrusel saltaba a la pieza contraria a la
+   * que pedía el gesto. Con esto, en el peor caso no pasa nada, que es lo correcto cuando no
+   * sabemos qué pedía.
+   */
+  protected cancelarArrastre(evento: PointerEvent): void {
+    if (!this.arrastrando()) {
+      return;
+    }
+    this.soltar(evento);
+    this.reprogramar();
+  }
+
+  /**
+   * Levanta el dedo: si el gesto pasó del umbral, cambia de pieza; si no, la tira vuelve a su
+   * sitio. En los dos casos la cuenta atrás arranca de cero, igual que al pulsar una viñeta.
+   */
+  protected terminarArrastre(evento: PointerEvent): void {
+    if (!this.arrastrando()) {
+      return;
+    }
+    const recorrido = evento.clientX - this.inicioX;
+    this.soltar(evento);
+
+    if (
+      this.eje === 'horizontal' &&
+      Math.abs(recorrido) > this.anchoAlIniciar * FRACCION_ARRASTRE
+    ) {
+      if (recorrido < 0) {
+        this.siguiente();
+      } else {
+        this.anterior();
+      }
+    }
+    this.reprogramar();
+  }
+
+  /**
    * La pieza que se muestra primero es la única con `fetchpriority="high"`; las otras tres van
    * `lazy`. Priorizar cuatro imágenes es no priorizar ninguna (apps/web/CLAUDE.md, NG02955).
    */
@@ -269,6 +464,51 @@ export class TsCarruselHero {
     const delSistema = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const delSitio = document.documentElement.getAttribute('data-movimiento') === 'reducido';
     return delSistema || delSitio;
+  }
+
+  /** Deja la tira quieta y suelta la captura del puntero. No decide nada: solo cierra el gesto. */
+  private soltar(evento: PointerEvent): void {
+    this.arrastrando.set(false);
+    this.corrimiento.set(0);
+    const ventana = this.ventana().nativeElement;
+    if (ventana.hasPointerCapture?.(evento.pointerId)) {
+      ventana.releasePointerCapture(evento.pointerId);
+    }
+  }
+
+  /**
+   * En los extremos de la tira no hay pieza que descubrir, así que el dedo arrastra un hueco.
+   *
+   * <p>Frenarlo a un tercio es lo que hace un carrusel nativo: se mueve lo justo para que el gesto
+   * se sienta atendido, y no tanto como para enseñar una franja vacía. Al soltar sí da la vuelta
+   * —`siguiente()` y `anterior()` son circulares—, y por eso esto es un freno y no un tope.
+   */
+  private conFrenoEnElBorde(dx: number): number {
+    const enElBorde =
+      (this.actual() === 0 && dx > 0) || (this.actual() === this.diapositivas.length - 1 && dx < 0);
+    return enElBorde ? dx / FRENO_EN_EL_BORDE : dx;
+  }
+
+  /**
+   * El clic que sigue a un arrastre no cuenta.
+   *
+   * <p>Va en fase de captura y con `addEventListener` a mano porque las dos cosas hacen falta: un
+   * `(click)` de la plantilla escucha en fase de burbuja, o sea <b>después</b> de que el enlace de
+   * la diapositiva haya hecho lo suyo, y Angular no sabe declarar un oyente de captura en una
+   * plantilla. Para cuando nos llegara el evento, el router ya estaría navegando.
+   */
+  private vigilarElClicDeUnArrastre(): void {
+    const ventana = this.ventana().nativeElement;
+    const alHacerClic = (evento: Event): void => {
+      if (!this.huboArrastre) {
+        return;
+      }
+      this.huboArrastre = false;
+      evento.preventDefault();
+      evento.stopPropagation();
+    };
+    ventana.addEventListener('click', alHacerClic, true);
+    this.destroyRef.onDestroy(() => ventana.removeEventListener('click', alHacerClic, true));
   }
 
   /**

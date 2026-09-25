@@ -29,8 +29,12 @@ export const TAMANOS_GALERIA = '(min-width: 1024px) 50vw, 100vw';
 export const TAMANOS_MINIATURA = '64px';
 
 /**
- * Cuándo el carrusel de portada cambia de pieza: por debajo del primer punto de quiebre va la
- * tarjeta cuadrada, y desde ahí la pieza ancha de 1440 x 592.
+ * Cuándo el carrusel de portada cambia de pieza: por debajo del primer punto de quiebre va el
+ * recorte vertical de 1000 x 1250, y desde ahí el ancho de 1440 x 592.
+ *
+ * <p>Se llamó `MEDIA_HERO_TARJETA` mientras la pieza de teléfono fue una tarjeta cuadrada con el
+ * texto debajo. Desde el 25 de septiembre de 2026 el texto va encima de la fotografía también en
+ * teléfono, y un cuadrado no da de sí para los dos: el recorte es 4:5 y el nombre lo dice.
  *
  * <p>Aquí vivía `TAMANOS_HERO` —`(min-width: 1200px) 544px, …`— porque la fotografía de portada
  * ocupaba media rejilla de `--ancho-max`. Ya no hace falta: el carrusel sangra de borde a borde,
@@ -40,4 +44,4 @@ export const TAMANOS_MINIATURA = '64px';
  * `--breakpoint-desde-movil`. Es el mismo 640 de `tailwind.css` menos la hendidura que evita que
  * los dos tramos se solapen en un punto; si allá cambia, aquí también.
  */
-export const MEDIA_HERO_TARJETA = '(max-width: 639.98px)';
+export const MEDIA_HERO_VERTICAL = '(max-width: 639.98px)';
