@@ -3,6 +3,8 @@ package co.tecnosport.api.presentation.catalogo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -17,6 +19,7 @@ import co.tecnosport.api.application.catalogo.ConfirmarImagenPrincipal;
 import co.tecnosport.api.application.catalogo.CrearProducto;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
+import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ProductosPaginados;
 import co.tecnosport.api.application.catalogo.PublicarProducto;
@@ -28,6 +31,7 @@ import co.tecnosport.api.application.catalogo.RepositorioProductos;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenDeGaleria;
 import co.tecnosport.api.application.catalogo.SolicitarSubidaDeImagenPrincipal;
 import co.tecnosport.api.application.catalogo.VerProductoAdmin;
+import co.tecnosport.api.application.pedido.RepositorioPedidos;
 import co.tecnosport.api.domain.catalogo.Categoria;
 import co.tecnosport.api.domain.catalogo.EstadoProducto;
 import co.tecnosport.api.domain.catalogo.ImagenProducto;
@@ -35,9 +39,13 @@ import co.tecnosport.api.domain.catalogo.LineaCatalogo;
 import co.tecnosport.api.domain.catalogo.Marca;
 import co.tecnosport.api.domain.catalogo.Producto;
 import co.tecnosport.api.domain.catalogo.TipoImagen;
+import co.tecnosport.api.domain.catalogo.Variante;
 import co.tecnosport.api.domain.catalogo.VarianteDeImagen;
+import co.tecnosport.api.domain.compartido.Dinero;
 import co.tecnosport.api.domain.compartido.HashContenido;
+import co.tecnosport.api.domain.compartido.Sku;
 import co.tecnosport.api.domain.compartido.Slug;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,6 +71,7 @@ class AdminProductoControladorTest {
   @Autowired private RepositorioMarcasDobleDePrueba repositorioMarcas;
   @Autowired private RepositorioCategoriasDobleDePrueba repositorioCategorias;
   @Autowired private AlmacenDeImagenesDobleDePrueba almacenDeImagenes;
+  @Autowired private RepositorioPedidosParaBorradoDobleDePrueba repositorioPedidos;
 
   // El bean del doble es un singleton compartido por Spring entre los métodos de esta clase de
   // prueba: sin esto, un producto sembrado por una prueba (p. ej. con slug "morral-urbano") queda
@@ -71,6 +80,7 @@ class AdminProductoControladorTest {
   void limpiarRepositorio() {
     repositorio.limpiar();
     almacenDeImagenes.limpiar();
+    repositorioPedidos.limpiar();
   }
 
   @Test
@@ -667,6 +677,71 @@ class AdminProductoControladorTest {
         .andExpect(jsonPath("$.estado").value("BORRADOR"));
   }
 
+  /**
+   * El borrado de verdad, y lo que lo distingue del vecino de arriba: ahí el {@code DELETE} es
+   * sobre {@code /publicacion} y el producto se queda; aquí es sobre el producto y no se queda
+   * nada. {@code 204} sin cuerpo: devolver lo que acaba de dejar de existir invita a guardarlo.
+   */
+  @Test
+  void eliminarBorraElProductoYResponde204() throws Exception {
+    Producto producto = productoEnBorrador();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + producto.id()))
+        .andExpect(status().isNoContent());
+
+    assertEquals(List.of(producto.id()), repositorio.productosEliminados);
+  }
+
+  /** Publicado no se borra: primero se retira de la vitrina. */
+  @Test
+  void eliminarUnProductoPublicadoResponde409() throws Exception {
+    Producto producto = productoConImagen();
+    producto.publicar();
+    repositorio.conProductos(producto);
+
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + producto.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PRODUCTO_PUBLICADO"));
+
+    assertTrue(repositorio.productosEliminados.isEmpty());
+  }
+
+  /**
+   * Y con ventas no se borra ni siquiera retirado: la garantía y el retracto siguen buscando el
+   * producto a partir del id de la variante vendida.
+   */
+  @Test
+  void eliminarUnProductoConVentasResponde409() throws Exception {
+    Producto producto = productoEnBorrador();
+    producto.agregarVariante(
+        Variante.crear(
+            new Sku("SKU-VENDIDO"),
+            Dinero.deCop(120_000),
+            new BigDecimal("0.00"),
+            null,
+            null,
+            List.of()));
+    repositorio.conProductos(producto);
+    repositorioPedidos.hayVentas = true;
+
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + producto.id()))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.codigo").value("PRODUCTO_CON_VENTAS"));
+
+    assertTrue(repositorio.productosEliminados.isEmpty());
+  }
+
+  @Test
+  void eliminarUnProductoQueNoExisteResponde404() throws Exception {
+    mockMvc
+        .perform(delete("/api/v1/admin/productos/" + UUID.randomUUID()))
+        .andExpect(status().isNotFound());
+  }
+
   @TestConfiguration
   static class Configuracion {
 
@@ -783,6 +858,19 @@ class AdminProductoControladorTest {
     @Bean
     DespublicarProducto despublicarProducto(RepositorioProductos repositorioProductos) {
       return new DespublicarProducto(repositorioProductos);
+    }
+
+    @Bean
+    RepositorioPedidosParaBorradoDobleDePrueba repositorioPedidos() {
+      return new RepositorioPedidosParaBorradoDobleDePrueba();
+    }
+
+    @Bean
+    EliminarProducto eliminarProducto(
+        RepositorioProductos repositorioProductos,
+        RepositorioPedidos repositorioPedidos,
+        AlmacenDeImagenes almacenDeImagenes) {
+      return new EliminarProducto(repositorioProductos, repositorioPedidos, almacenDeImagenes);
     }
 
     @Bean

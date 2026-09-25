@@ -510,4 +510,55 @@ public class RepositorioProductosJpa implements RepositorioProductos {
     }
     return String.valueOf(valor);
   }
+
+  /**
+   * La cascada del borrado de un producto, escrita.
+   *
+   * <p>SQL y no {@code deleteAll} de JPA: son siete tablas en un orden que importa, y expresarlo
+   * con repositorios de Spring Data obligaría a traerse las variantes, los inventarios y las
+   * imágenes a memoria para borrarlas una por una. Lo que aquí se lee de arriba abajo —de la hoja
+   * más profunda a la raíz— serían cuatro consultas y tres bucles.
+   *
+   * <p>Dos tablas <b>no</b> aparecen y no es olvido: {@code variante_imagen} la borra la base con
+   * el {@code on delete cascade} de la V60, y {@code linea_carrito} se queda con sus filas
+   * apuntando a variantes que ya no existen, que es lo que su propia V3 decidió al no ponerle
+   * foránea — el checkout ya sabe rechazar una línea que no puede reservar.
+   *
+   * <p>{@code @Transactional} por lo mismo que {@code guardarImagenPrincipal}: sin él cada
+   * sentencia confirma la suya, y un fallo en la cuarta deja un producto sin variantes pero con
+   * fila, que {@code MapeadorCatalogo} sí sabe leer y el panel enseña como un producto vacío.
+   */
+  @Transactional
+  @Override
+  public void eliminar(UUID productoId) {
+    MapSqlParameterSource parametros = new MapSqlParameterSource("productoId", productoId);
+
+    jdbc.update(
+        """
+        delete from movimiento_inventario
+        where inventario_id in (
+          select i.id from inventario i
+          join variante v on v.id = i.variante_id
+          where v.producto_id = :productoId
+        )
+        """,
+        parametros);
+    jdbc.update(
+        """
+        delete from inventario
+        where variante_id in (select id from variante where producto_id = :productoId)
+        """,
+        parametros);
+    jdbc.update(
+        """
+        delete from variante_atributo_valor
+        where variante_id in (select id from variante where producto_id = :productoId)
+        """,
+        parametros);
+    // Antes que `set_rotacion`: un fotograma apunta a su set, y el set no se puede ir primero.
+    jdbc.update("delete from imagen_producto where producto_id = :productoId", parametros);
+    jdbc.update("delete from set_rotacion where producto_id = :productoId", parametros);
+    jdbc.update("delete from variante where producto_id = :productoId", parametros);
+    jdbc.update("delete from producto where id = :productoId", parametros);
+  }
 }

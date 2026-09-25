@@ -10,6 +10,7 @@ import co.tecnosport.api.application.catalogo.CrearProductoComando;
 import co.tecnosport.api.application.catalogo.DespublicarProducto;
 import co.tecnosport.api.application.catalogo.EditarProducto;
 import co.tecnosport.api.application.catalogo.EditarProductoComando;
+import co.tecnosport.api.application.catalogo.EliminarProducto;
 import co.tecnosport.api.application.catalogo.ImagenDeGaleriaQuitada;
 import co.tecnosport.api.application.catalogo.ListarProductosAdmin;
 import co.tecnosport.api.application.catalogo.ListarProductosAdminComando;
@@ -85,6 +86,7 @@ public class AdminProductoControlador {
   private final ReordenarGaleria reordenarGaleria;
   private final PublicarProducto publicarProducto;
   private final DespublicarProducto despublicarProducto;
+  private final EliminarProducto eliminarProducto;
   private final MapeadorRespuestasProductoAdmin mapeador;
 
   public AdminProductoControlador(
@@ -100,6 +102,7 @@ public class AdminProductoControlador {
       ReordenarGaleria reordenarGaleria,
       PublicarProducto publicarProducto,
       DespublicarProducto despublicarProducto,
+      EliminarProducto eliminarProducto,
       MapeadorRespuestasProductoAdmin mapeador) {
     this.listarProductosAdmin = Objects.requireNonNull(listarProductosAdmin);
     this.crearProducto = Objects.requireNonNull(crearProducto);
@@ -115,6 +118,7 @@ public class AdminProductoControlador {
     this.reordenarGaleria = Objects.requireNonNull(reordenarGaleria);
     this.publicarProducto = Objects.requireNonNull(publicarProducto);
     this.despublicarProducto = Objects.requireNonNull(despublicarProducto);
+    this.eliminarProducto = Objects.requireNonNull(eliminarProducto);
     this.mapeador = Objects.requireNonNull(mapeador);
   }
 
@@ -179,6 +183,27 @@ public class AdminProductoControlador {
     Producto producto = despublicarProducto.ejecutar(id);
     log.warn("Producto retirado de la vitrina: {}", id);
     return mapeador.aRespuesta(producto);
+  }
+
+  /**
+   * Borra el producto entero, con sus variantes, su inventario y sus fotos. Sin vuelta.
+   *
+   * <p>{@code DELETE} sobre el recurso y no sobre un subrecurso, a diferencia del vecino de arriba:
+   * ahí se borra la publicación y el producto se queda; aquí se borra el producto.
+   *
+   * <p>{@code 204} y no el producto borrado en el cuerpo: devolver la representación de algo que
+   * acaba de dejar de existir invita a que el cliente la guarde. Los dos rechazos —publicado, con
+   * ventas— son {@code 409}: lo que mandaron es válido y lo que lo impide es el estado del
+   * catálogo, que se puede cambiar (ver {@code ManejadorDeErrores}).
+   *
+   * <p>{@code warn} con el conteo de objetos borrados del bucket: es la única huella que queda de
+   * lo que había ahí.
+   */
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void eliminar(@PathVariable("id") UUID id) {
+    int objetosBorrados = eliminarProducto.ejecutar(id);
+    log.warn("Producto eliminado: {} ({} objetos borrados del bucket)", id, objetosBorrados);
   }
 
   @PostMapping("/{id}/imagen-principal/url-subida")

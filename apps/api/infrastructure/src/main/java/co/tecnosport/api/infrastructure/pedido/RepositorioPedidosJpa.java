@@ -345,4 +345,10 @@ public class RepositorioPedidosJpa implements RepositorioPedidos {
     return new HistorialPedidoJpaEntity(
         h.id(), pedidoId, h.estado().name(), h.fecha(), h.actor(), h.motivo());
   }
+
+  @Override
+  public boolean hayLineasDeAlgunaVariante(Collection<UUID> varianteIds) {
+    // Sin variantes no hay nada que preguntar, y además un `in ()` vacío no es SQL válido.
+    return !varianteIds.isEmpty() && lineas.existsByVarianteIdIn(varianteIds);
+  }
 }

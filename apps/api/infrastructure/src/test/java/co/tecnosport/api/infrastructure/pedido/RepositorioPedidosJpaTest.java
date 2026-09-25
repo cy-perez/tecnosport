@@ -102,6 +102,47 @@ class RepositorioPedidosJpaTest {
   }
 
   /**
+   * Lo que pregunta el borrado de un producto del catálogo: si alguna de sus variantes se vendió.
+   *
+   * <p>Hace falta contra Postgres y no basta un doble porque la consulta es un {@code in} sobre una
+   * columna <b>sin llave foránea</b> ({@code linea_pedido.variante_id}, V4): no hay integridad
+   * referencial que la respalde, así que lo único que dice si el {@code where} está bien escrito es
+   * ejecutarlo. Y con dos variantes, una vendida y otra no, porque una consulta sin el {@code
+   * where} también pasaría una prueba que solo sembrara el caso positivo.
+   */
+  @Test
+  void hayLineasDeAlgunaVarianteDistingueLaVendidaDeLaQueNoSeVendio() {
+    LineaPedido vendida = linea();
+    Pedido pedido =
+        Pedido.crear(
+            NumeroPedido.de(2026, 900),
+            null,
+            new CorreoElectronico("cliente@tecnosport.co"),
+            List.of(vendida),
+            TipoEntrega.ENVIO_A_DOMICILIO,
+            DIRECCION_MEDELLIN,
+            MetodoPago.NEQUI,
+            "cliente@tecnosport.co",
+            Instant.now(),
+            null);
+    repositorio.guardar(pedido);
+    UUID nuncaVendida = UUID.randomUUID();
+
+    assertThat(repositorio.hayLineasDeAlgunaVariante(List.of(vendida.varianteId()))).isTrue();
+    assertThat(repositorio.hayLineasDeAlgunaVariante(List.of(nuncaVendida))).isFalse();
+    // Con las dos juntas basta una para que sea que sí: es el producto de varias tallas del que
+    // solo se vendió una.
+    assertThat(repositorio.hayLineasDeAlgunaVariante(List.of(nuncaVendida, vendida.varianteId())))
+        .isTrue();
+  }
+
+  /** La lista vacía no llega al {@code in ()}, que Postgres no acepta. */
+  @Test
+  void hayLineasDeAlgunaVarianteConLaListaVaciaEsFalso() {
+    assertThat(repositorio.hayLineasDeAlgunaVariante(List.of())).isFalse();
+  }
+
+  /**
    * La tarifa congelada tiene que volver entera de la base, no solo su monto: el identificador es
    * con lo que se emitirá la guía, y la transportadora y el plazo son lo que el comprador vio al
    * comprar. Las siete columnas van juntas o no van (check de V33).

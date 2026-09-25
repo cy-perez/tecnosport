@@ -9,6 +9,8 @@ import co.tecnosport.api.application.catalogo.CategoriaConProductosException;
 import co.tecnosport.api.application.catalogo.CategoriaNoEsHojaException;
 import co.tecnosport.api.application.catalogo.CategoriaSlugYaExisteException;
 import co.tecnosport.api.application.catalogo.CicloDeCategoriasException;
+import co.tecnosport.api.application.catalogo.ProductoConVentasException;
+import co.tecnosport.api.application.catalogo.ProductoPublicadoException;
 import co.tecnosport.api.application.catalogo.ProfundidadDeCategoriaExcedidaException;
 import co.tecnosport.api.application.compartido.LimiteDeIntentosExcedidoException;
 import co.tecnosport.api.application.envio.AcuseNoAplicableException;
@@ -103,6 +105,11 @@ class CodigosDeCableTest {
               "METODO_DE_PAGO_NO_ES_TRANSFERENCIA_MANUAL"),
           Map.entry(PedidoSinEntregarException.class, "PEDIDO_SIN_ENTREGAR"),
           Map.entry(ProductoSinImagenPrincipalException.class, "PRODUCTO_SIN_IMAGEN_PRINCIPAL"),
+          // Los dos rechazos del borrado de un producto: el panel los traduce a "retíralo primero"
+          // y a "tiene ventas, retíralo en vez de borrarlo", que son instrucciones distintas. Con
+          // el mensaje genérico, quien borra no sabe cuál de las dos le toca.
+          Map.entry(ProductoPublicadoException.class, "PRODUCTO_PUBLICADO"),
+          Map.entry(ProductoConVentasException.class, "PRODUCTO_CON_VENTAS"),
           Map.entry(ReintegroRequeridoException.class, "REINTEGRO_REQUERIDO"),
           Map.entry(RetractoYaRadicadoException.class, "RETRACTO_YA_RADICADO"),
           Map.entry(TransicionDeEstadoInvalidaException.class, "TRANSICION_DE_ESTADO_INVALIDA"),

@@ -77,6 +77,7 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
     this.ultimoPaqueteGrabado = null;
     this.sinMedir = List.of();
     this.skusEnUso.clear();
+    this.productosEliminados.clear();
   }
 
   void conVariantesActivas(VarianteActiva... variantes) {
@@ -193,5 +194,14 @@ class RepositorioProductosDobleDePrueba implements RepositorioProductos {
   @Override
   public List<VarianteActiva> variantesActivas() {
     return activas;
+  }
+
+  /** Los ids que se pidió borrar, para poder afirmar que un rechazo no borró nada. */
+  final List<UUID> productosEliminados = new java.util.ArrayList<>();
+
+  @Override
+  public void eliminar(UUID productoId) {
+    this.productosEliminados.add(productoId);
+    this.productos = this.productos.stream().filter(p -> !p.id().equals(productoId)).toList();
   }
 }
