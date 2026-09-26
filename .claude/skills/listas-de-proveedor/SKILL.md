@@ -1,6 +1,6 @@
 ---
 name: listas-de-proveedor
-description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; entrega un ZIP con una carpeta por producto y un Excel comparativo de precios y ganancia. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
+description: Convierte las listas de productos que mandan los proveedores por WhatsApp —con viñetas de emojis, precios acotados tipo $1.850 y colores marcados con corazones— en productos listos para publicar, filtrando usados y categorías que no se venden, estandarizando títulos, investigando el precio promedio del mercado colombiano, redactando la descripción y traduciendo los emojis de color a colores reales; entrega un ZIP con una carpeta por producto y un Excel comparativo de precios y ganancia; las fotos de los productos quedan fuera del alcance: no las busca, no las descarga y no las retoca. Úsala siempre que llegue una lista o listado de proveedor, mayorista o distribuidor; cuando alguien diga "procesa esta lista", "la lista de hoy", "lista de gama alta", "listado de variedad", "pasa esto a productos", "sube estos equipos a la tienda" o "cuánto me gano con estos productos"; o cuando pegue un texto con equipos, capacidades y precios aunque no lo llame lista. Covers WhatsApp supplier price list parsing, ecommerce catalog preparation, Colombian market price research and margin comparison.
 ---
 
 # Listas de proveedor → catálogo
@@ -13,7 +13,7 @@ un color que no existe, vender por debajo del costo).
 Esta skill separa dos trabajos: **lo mecánico lo hace un script** (leer la lista,
 clasificar, extraer capacidades, precios y colores) y **lo que exige criterio lo
 haces tú** (confirmar nombres comerciales, investigar precios de mercado, redactar
-descripciones, conseguir fotos con derechos). El script nunca inventa: lo que no
+descripciones). El script nunca inventa: lo que no
 reconoce lo marca en `revisar` para que quede a la vista.
 
 ## Reglas de negocio
@@ -128,26 +128,32 @@ lista:
     Esta regla vale aunque el producto tenga buen margen: no se negocia un
     riesgo de incendio contra un punto de rentabilidad.
 
-16. **Una foto por debajo del estándar se retoca igual, al máximo que dé la
-    fuente.** El estándar de estudio encuadra el producto a 1700 px y buena
-    parte del material de Icecat no llega: en la lista del 12/09/2026 fueron 68
-    de 105 fotos, con casos de 342×431. Ninguna se deja sin retocar por eso. La
-    El `REPETIR` por ampliación deja de ser una compuerta y pasa a ser un
-    registro: queda en las hojas de revisión y alimenta el pedido al proveedor,
-    pero el producto se publica con lo que hay y la foto se reemplaza cuando
-    llegue una mejor. Un producto sin foto no vende; uno con una foto regular,
-    sí.
-    **No hay que topar resoluciones a mano**: `fotos-estudio-degradado` ya elige
-    el lienzo según la fuente (400 a 2000 px) y emite solo las variantes de ese
-    ancho hacia abajo.
-    Para que la regla se cumpliera de verdad hubo que mover el umbral de esa otra
-    skill: `ampliacion_repetir` pasó de 2.0 a **3.0** el 19/09/2026, con el
-    porqué escrito en su propio `SKILL.md`. Con 2.0 se retenían once fotos de 105
-    y siete productos quedaban con menos de cuatro; con 3.0 entran las de hasta
-    3× y siguen fuera las de 3,22× a 4,41×, que se ven mal de verdad.
-    El corte sigue existiendo, y eso es a propósito: `marcar.py --aprobar` no
-    levanta un `REPETIR`, así que lo que queda retenido va al pedido de fotos al
-    proveedor y no al catálogo. Ver `referencias/imagenes.md`.
+16. **Las fotos de los productos no las hace esta skill** (decisión del
+    negocio, 25/09/2026). No se buscan, no se descargan y no se retocan. Lo que
+    se entrega es la lectura de la lista, el precio de mercado, la descripción
+    y el comparativo; el material visual se consigue y se procesa aparte.
+    Hasta el 24/09/2026 el flujo bajaba las fotos de Open Icecat, las filtraba
+    y las mandaba a `fotos-estudio-degradado`. La regla que estaba escrita aquí
+    —«una foto por debajo del estándar se retoca igual»— existía justamente
+    porque el material casi nunca alcanzaba: de las 105 fotos de la corrida del
+    19/09/2026, 68 no llegaban al encuadre de 1700 px, con casos de 342×431, y
+    las que pasaban de 3× de ampliación quedaban retenidas y terminaban en el
+    pedido al proveedor de todas formas.
+    **Lo que se entrega no finge que las fotos existen**: sin `--imagenes` el
+    ZIP sale solo con las fichas y no lleva ningún `FOTOS-PENDIENTES.md`. Un
+    aviso repetido en cada producto, siempre, no es información.
+    Cuando haya un lote de fotos —del proveedor o propias— se retoca a mano con
+    `fotos-estudio-degradado`, que sigue siendo la única dueña del estilo del
+    catálogo, y se vuelve a correr el paso 5 con `--imagenes`. Está en el
+    apéndice «Si algún día hay fotos», y no se ofrece si no lo piden.
+    Los scripts no se borraron. `preparar_fotos.py` y `filtrar_fotos.py` siguen
+    en `scripts/`, y `referencias/imagenes.md` conserva el estándar completo,
+    por la misma razón por la que `cargadores` y `power_bank` siguen vivos en el
+    parser: volver atrás tiene que ser reponer dos pasos, no reescribirlos.
+    **Icecat no se va con las fotos.** `icecat_local.py` pasa al paso 4, que es
+    donde de verdad hacía falta: de ahí sale la ficha técnica oficial en español
+    que alimenta la descripción —34 fichas en la última corrida—. Lo único suyo
+    que deja de usarse es el `fotos/urls-icecat.csv` que lista enlaces de fotos.
 
 17. **Los cargadores y las power bank no se publican** (decisión del negocio,
     24/09/2026). Es la misma regla que ya había sacado a los cables y a los
@@ -180,21 +186,19 @@ de `scripts/parsear_lista.py`.
 Cambia un paso, no el resto:
 
 - **En Claude Code**, los scripts corren en el computador de la persona y tienen
-  internet completo. Icecat y la descarga de fotos se ejecutan aquí mismo, de
-  corrido, sin pasarle nada al usuario. Las credenciales salen de las variables
-  de entorno `ICECAT_USER` e `ICECAT_PASSWORD` de su shell; si faltan, pídeselas
-  con `setx` o con un `.env` que no se suba al repositorio, nunca en el chat.
-- **En claude.ai**, el entorno solo alcanza unos pocos dominios. Ahí los pasos de
-  Icecat y de descarga se preparan y se le entregan a la persona para que los
-  corra en su equipo, como describe `referencias/imagenes.md`.
+  internet completo. Icecat se ejecuta aquí mismo, de corrido, sin pasarle nada
+  al usuario. Las credenciales salen de las variables de entorno `ICECAT_USER` e
+  `ICECAT_PASSWORD` de su shell; si faltan, pídeselas con `setx` o con un `.env`
+  que no se suba al repositorio, nunca en el chat.
+- **En claude.ai**, el entorno solo alcanza unos pocos dominios. Ahí el paso de
+  Icecat se prepara y se le entrega a la persona para que lo corra en su equipo.
 
-Comprueba cuál es el caso antes del paso 5: si un `curl` o una descarga a un
-dominio externo funciona, estás en Claude Code.
+Comprueba cuál es el caso antes del paso 4: si un `curl` a un dominio externo
+funciona, estás en Claude Code.
 
 En Claude Code conviene trabajar sobre una carpeta del proyecto, por ejemplo
 `catalogo/`, y mantener fuera del control de versiones lo pesado y lo generado:
-el índice de Icecat pesa 290 MB, las fotos crudas y los entregables tampoco van
-al repositorio.
+el índice de Icecat pesa 290 MB y los entregables tampoco van al repositorio.
 
 ## Flujo
 
@@ -271,7 +275,8 @@ Para cada producto incluido, en una sola pasada de búsquedas:
 
 #### Cómo se corre el paso 4
 
-Tres scripts, en este orden. Ninguno decide por su cuenta lo que exige criterio.
+Cuatro scripts, en este orden. Ninguno decide por su cuenta lo que exige
+criterio.
 
 ```bash
 # 1. Cosecha de precios: Éxito, Olímpica y Jumbo por su catálogo VTEX.
@@ -286,12 +291,24 @@ python3 scripts/asignar_precios.py catalogo/productos.json \
     --alkosto catalogo/alkosto-vitrina.json \
     --descartar catalogo/precios-descartados.json
 
-# 4. Descripciones y metadatos: la estructura la arma el script, la prosa la
+# 4. Ficha técnica oficial de Open Icecat, que es de donde salen las
+#    especificaciones. Detalle del emparejamiento en fichas-tecnicas.md.
+python3 scripts/icecat_local.py diagnostico --icecat-id 12345678
+python3 scripts/icecat_local.py indice --productos catalogo/productos.json
+python3 scripts/icecat_local.py buscar --productos catalogo/productos.json
+python3 scripts/icecat_local.py traer  --solo-confirmados \
+    --salida-contenido catalogo/icecat/fichas
+
+# 5. Descripciones y metadatos: la estructura la arma el script, la prosa la
 #    escribes tú en catalogo/prosa.json. Ver descripciones.md.
 python3 scripts/redactar_fichas.py catalogo/productos.json \
     --prosa catalogo/prosa.json \
     --icecat catalogo/icecat/fichas --mi catalogo/mi-fichas.json
 ```
+
+`traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos. Es un
+sobrante de cuando la skill las bajaba (regla 16): nadie lo lee, y no hay que
+darle curso.
 
 `asignar_precios.py` **reevalúa el corpus cada vez que corre**, así que apretar
 una regla de emparejamiento en `precios.py` limpia lo que ya está en disco sin
@@ -311,136 +328,67 @@ proveedor establecen, y una nota que diga qué falta y que se le pidió al
 proveedor. En la corrida del 19/09/2026 fueron 16 de 96, sobre todo Apple, JBL y
 marcas que no publican ficha para Colombia.
 
-### 5. Fotos
-
-Cuatro por producto, estándar y orden en `referencias/imagenes.md`.
-
-Desde el entorno de ejecución no se pueden descargar imágenes de sitios
-arbitrarios. La descarga se prepara aquí y se ejecuta en el computador de la
-persona:
-
-```bash
-python3 scripts/preparar_fotos.py productos.json --salida fotos/
-```
-
-Eso genera `urls.csv`, un `descargar.py` sin dependencias y un instructivo. La
-persona pega los enlaces, corre el descargador en su equipo y sube la carpeta
-`crudas/`.
-
-**Lo descargado se filtra antes de retocar.** El catálogo de un fabricante no
-trae solo fotos, y las que trae no siempre sirven para una ficha:
-
-```bash
-python3 scripts/filtrar_fotos.py crudas/               # aplica
-python3 scripts/filtrar_fotos.py crudas/ --diagnostico # solo mide y explica
-```
-
-Descarta dos cosas y deja lo descartado en `descartadas/<id>/` con un
-`motivos.json`, para poder recuperar una foto rechazada por error:
-
-1. **Lo que no es una foto**: pictogramas de característica, logos y etiquetas
-   de eficiencia energética. Se reconocen por el modo del archivo —una foto
-   llega en color verdadero, un pictograma en escala de grises o en paleta—.
-   En una corrida real eran 18 de 146.
-2. **Las fotos donde el producto sale cortado**, midiendo cuánto producto toca
-   cada borde. Son tomas de detalle o de estilo de vida: legítimas en la página
-   del fabricante, inservibles en una ficha donde el cliente quiere ver el
-   equipo completo.
-
-Si un producto queda con menos de cuatro, el script lo dice y esas fotos entran
-al pedido al proveedor. **Quedarse con dos fotos buenas es mejor que completar
-cuatro con un pictograma.**
-
-Si la persona ya tiene fotos del proveedor o propias, se salta directo al filtro.
-
-Las fotos salen por dos vías y el flujo las separa desde el principio:
-
-1. **Catálogo abierto de Icecat**, con `scripts/icecat_local.py` (`indice`,
-   `buscar`, `traer`). Cubre las marcas grandes, obliga a citar la fuente en cada
-   ficha y es lo único que se descarga automáticamente.
-2. **El proveedor**, para todo lo demás. `scripts/preparar_fotos.py` descuenta lo
-   que Icecat resolvió y escribe `pedido-al-proveedor.txt`, listo para enviar.
-
-Un producto que Icecat solo tiene en su catálogo de pago no es un error: pasa al
-grupo del proveedor y se sigue. Detalle y cobertura medida en
-`referencias/imagenes.md`.
-
-**No propongas las salas de prensa como fuente.** Las condiciones de Apple
-Newsroom y Samsung Mobile Press autorizan uso editorial o personal, no publicar el
-producto en una tienda. Lo que sirve es el paquete del proveedor, el portal de
-partners si la tienda es revendedor autorizado, o fotos propias.
-
-### 6. Retocar con `fotos-estudio-degradado`
-
-**Esta skill no retoca imágenes.** Todas las fotos del ecommerce pasan por
-`fotos-estudio-degradado`, que es la que define el estilo del catálogo: fondo
-blanco, producto al 85 % del lienzo, sombra de contacto —que es la que le pone el
-resplandor alrededor—, maestra JPEG y AVIF web. Que el estilo lo decida un solo lugar es justamente el punto: si cada
-skill recortara a su manera, el catálogo dejaría de verse parejo.
-
-```bash
-python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar.py" \
-    catalogo/fotos/crudas -o catalogo/fotos/estudio --variantes --segundo-plano
-```
-
-**No hace falta pasarle `--por-producto`.** Esa skill agrupa sola en cuanto las
-fotos le llegan en subcarpetas, y `descargar.py` siempre las deja así
-(`crudas/<producto>/`). La salida queda:
-
-```
-estudio/
-└── <producto>/
-    ├── maestra/<producto>-01.jpg    la mejor versión de cada toma
-    ├── 1200/<producto>-01.avif      un subdirectorio por ancho real
-    └── 800/…  480/…
-```
-
-Esa forma es exactamente la que consume el paso 7, así que **no hay que
-reacomodar nada en el medio**. Tampoco hay que topar resoluciones: el lienzo se
-elige según lo que da cada original —400, 480, 800, 1200 o 2000 px— y solo se
-emiten las variantes de ese ancho hacia abajo. Una foto de 400 px sale en `400/`
-y nada más.
-
-Tarda entre 5 y 20 segundos por foto, así que con un lote de catálogo va en
-segundo plano. Lee su `SKILL.md` antes: tiene su propio flujo de revisión y hay
-que mirar las hojas `revision-*.jpg` antes de dar el lote por bueno.
-
-#### Lo que va a pasar con fotos de Icecat, y qué hacer
-
-- **La mitad larga no llega a los 1700 px** que pide el encuadre: en la corrida
-  del 19/09/2026 fueron 68 de 105, con casos de 342×431. Se retocan igual
-  (regla 16) y salen marcadas `REVISAR` por ampliación.
-- **Lo que pase de 3× de ampliación se retiene y no escribe archivo.** Es una
-  compuerta dura: `marcar.py --aprobar` responde «está en REPETIR y eso no se
-  aprueba a ojo». No la rodees. Esas fotos van al pedido al proveedor, y si el
-  negocio quiere moverla otra vez, el umbral es `ampliacion_repetir` en el
-  `config.json` de esa skill —con el porqué del valor actual escrito ahí mismo—.
-- **Producto cortado.** `filtrar_fotos.py` ya lo quitó antes, así que si vuelve a
-  aparecer aquí es que el encuadre quedó justo al límite.
-
-### 7. Armar entregables
+### 5. Armar entregables
 
 ```bash
 python3 scripts/construir_entregables.py catalogo/productos.json \
-    --imagenes catalogo/fotos/estudio --salida catalogo/entregables
+    --salida catalogo/entregables
 ```
 
-`--imagenes` apunta **directo a la salida del retoque**: el script entiende la
-forma `<producto>/maestra/` y toma de ahí las fotos para el ZIP. Produce:
+Produce:
 
-- `catalogo-<fecha>.zip` — una carpeta por producto con sus fotos y un `.txt` con
-  título, metadatos y descripción. Los que tienen menos de cuatro fotos llevan
-  además un `FOTOS-PENDIENTES.md`.
+- `catalogo-<fecha>.zip` — una carpeta por producto con un `.txt` que lleva el
+  título, los metadatos, los colores, los supuestos que se aplicaron al leer la
+  lista, los pendientes y la descripción.
 - `comparativo-<fecha>.xlsx` — hoja **Comparativo** con las cuatro columnas
   pedidas (título, precio de lista, promedio del mercado, ganancia), más hojas de
   **Detalle** (margen %, colores, fuentes, pendientes) y **Descartados**.
 
-### 8. Entregar
+El ZIP sale sin fotos y sin ningún `FOTOS-PENDIENTES.md`: es lo esperado
+(regla 16), no un entregable a medias. `--imagenes` sigue existiendo para el
+caso del apéndice.
+
+### 6. Entregar
 
 Preséntale los dos archivos y, en dos o tres líneas, lo que necesita saber:
 productos listos, productos que quedaron con pendientes y cualquier caso donde el
 promedio del mercado esté por debajo del precio de lista. Ese caso significa que a
 ese precio se pierde plata: márcalo, no lo publiques callado.
+
+## Si algún día hay fotos
+
+No es parte del flujo y no se ofrece sin que lo pidan. Cuando llegue el paquete
+de imágenes del proveedor, o se fotografíe el producto:
+
+1. Se retocan con `fotos-estudio-degradado`, que es la dueña del estilo del
+   catálogo —fondo blanco, producto al 85 % del lienzo, sombra de contacto,
+   maestra JPEG y AVIF web—. Agrupa sola si las fotos le llegan en subcarpetas
+   `crudas/<producto>/`, y entrega justo la forma que consume el ZIP. Lee su
+   `SKILL.md` antes: tiene su propio flujo de revisión.
+2. Se vuelve a correr el paso 5 con `--imagenes` apuntando a su salida.
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/../fotos-estudio-degradado/scripts/procesar.py" \
+    catalogo/fotos/crudas -o catalogo/fotos/estudio --variantes --segundo-plano
+
+python3 scripts/construir_entregables.py catalogo/productos.json \
+    --imagenes catalogo/fotos/estudio --salida catalogo/entregables
+```
+
+Con la bandera puesta vuelve el comportamiento de antes: el script lee
+`<producto>/maestra/`, mete hasta cuatro fotos por producto y escribe un
+`FOTOS-PENDIENTES.md` en los que no llegan a cuatro.
+
+Lo que se retiró del flujo sigue en `scripts/` por si el negocio vuelve sobre la
+decisión: `preparar_fotos.py` (arma `urls.csv`, un descargador sin dependencias
+y el pedido al proveedor) y `filtrar_fotos.py` (quita pictogramas, logos y las
+tomas donde el producto sale cortado). El estándar completo —cuántas fotos, en
+qué orden, con qué encuadre— está en `referencias/imagenes.md`.
+
+**No propongas las salas de prensa como fuente.** Las condiciones de Apple
+Newsroom y Samsung Mobile Press autorizan uso editorial o personal, no publicar
+el producto en una tienda. Lo que sirve es el paquete del proveedor, el portal
+de partners si la tienda es revendedor autorizado, o fotos propias.
 
 ## Lo que el parser ya resuelve solo
 
@@ -549,11 +497,11 @@ colores es un producto con cuatro variantes.
 scripts/parsear_lista.py          paso 2  lista.txt → productos.json + revision.md
 scripts/precios.py                paso 4  cosecha precios VTEX de Éxito, Olímpica y Jumbo
 scripts/asignar_precios.py        paso 4  decide el precio de mercado y el margen
+scripts/icecat_local.py           paso 4  trae la ficha técnica oficial de Open Icecat
 scripts/redactar_fichas.py        paso 4  prosa + ficha oficial → descripción y metadatos
-scripts/icecat_local.py           paso 5  trae fichas e imágenes de Open Icecat
-scripts/preparar_fotos.py         paso 5  arma urls.csv, el descargador y el pedido al proveedor
-scripts/filtrar_fotos.py          paso 5  quita pictogramas y fotos con el producto cortado
-scripts/construir_entregables.py  paso 7  productos.json + fotos de estudio → ZIP + Excel
+scripts/construir_entregables.py  paso 5  productos.json → ZIP + Excel
+scripts/preparar_fotos.py         FUERA DEL FLUJO desde el 25/09/2026: regla 16
+scripts/filtrar_fotos.py          FUERA DEL FLUJO desde el 25/09/2026: regla 16
 scripts/organizar_imagenes.py     FUERA DEL FLUJO desde el 19/09/2026: ver la nota de abajo
 referencias/formato-de-listas.md  anatomía de los mensajes de proveedor
 referencias/titulos.md            fórmula de títulos y nombres ya confirmados
@@ -561,16 +509,15 @@ referencias/descripciones.md      estructura de la descripción y metadatos
 referencias/fichas-tecnicas.md    de dónde sale la ficha oficial de cada marca
 referencias/precios.md            método de investigación de precios
 referencias/colores.md            emojis → colores publicables
-referencias/imagenes.md           estándar de fotos y origen de las imágenes
+referencias/imagenes.md           estándar de fotos; fuera del flujo, ver la regla 16
 plantillas/producto.txt           plantilla del archivo de cada producto
 plantillas/env.ejemplo            plantilla de credenciales de Icecat
 ```
 
 `organizar_imagenes.py` reordenaba la salida plana del retoque en una carpeta por
 producto. Ya no hace falta: `fotos-estudio-degradado` agrupa sola cuando las
-fotos le llegan en subcarpetas —que es siempre en este flujo— y entrega
-justamente esa forma. El script espera `maestras/` y `escritorio/`, que solo
-aparecen si se fuerza `--plano`, así que **contra la salida normal no hace
-nada**. Se deja en el repositorio por si alguna vez se procesa un lote plano a
+fotos le llegan en subcarpetas —que es como se le pasan— y entrega justamente
+esa forma. El script espera `maestras/` y `escritorio/`, que solo aparecen si
+se fuerza `--plano`, así que **contra la salida normal no hace nada**. Se deja en el repositorio por si alguna vez se procesa un lote plano a
 mano; no lo metas de vuelta en el flujo sin comprobar antes qué forma tiene la
 salida.

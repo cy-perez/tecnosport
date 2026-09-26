@@ -3,15 +3,20 @@
 Arma los entregables finales a partir de productos.json ya enriquecido.
 
 Uso:
-    python3 construir_entregables.py productos.json --imagenes imagenes/ --salida entregables/
+    python3 construir_entregables.py productos.json --salida entregables/
 
 Espera que cada producto de productos.json ya tenga:
     titulo, descripcion, precio_proveedor_cop, precio_mercado_cop,
     colores_oficiales, fuentes_precio
 
 Produce:
-    entregables/catalogo-<fecha>.zip       una carpeta por producto con fotos + .txt
+    entregables/catalogo-<fecha>.zip       una carpeta por producto con su .txt
     entregables/comparativo-<fecha>.xlsx   título / precio lista / precio mercado / ganancia
+
+Las fotos quedaron fuera del flujo de la skill (regla 16). `--imagenes` sigue
+existiendo para el caso en que ya haya un lote retocado a mano con
+`fotos-estudio-degradado`: sin la bandera el ZIP sale solo con las fichas y no
+se emite ningún FOTOS-PENDIENTES.md.
 """
 
 import argparse
@@ -86,12 +91,19 @@ def construir(datos: dict, dir_imagenes: Path, salida: Path):
         carpeta.mkdir(parents=True, exist_ok=True)
         (carpeta / f"{p['id']}.txt").write_text(ficha_txt(p), encoding="utf-8")
 
-        origen = dir_imagenes / p["id"] if dir_imagenes else None
+        # Las fotos salieron del flujo (regla 16). Sin `--imagenes` no hay nada
+        # que copiar y tampoco tiene sentido avisar que faltan: faltarían en
+        # todos los productos, siempre. Con la bandera puesta —apuntando a un
+        # lote ya retocado a mano— el comportamiento es el de antes.
+        if not dir_imagenes:
+            continue
+
+        origen = dir_imagenes / p["id"]
         todas = []
-        if origen and origen.is_dir():
+        if origen.is_dir():
             # `fotos-estudio-degradado` agrupa por producto y separa por ancho
             # (`<producto>/maestra/`, `1200/`, `800/`…) en cuanto las fotos le
-            # llegan en subcarpetas, que es siempre en este flujo. Para el ZIP
+            # llegan en subcarpetas, que es como sale de ella. Para el ZIP
             # se lleva la maestra, que es la mejor versión de cada toma.
             maestra = origen / "maestra"
             if maestra.is_dir():
@@ -210,7 +222,9 @@ def escribir_excel(datos: dict, ruta: Path, fecha: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("productos")
-    ap.add_argument("--imagenes", default=None)
+    ap.add_argument("--imagenes", default=None,
+                    help="carpeta de un lote ya retocado con fotos-estudio-degradado; "
+                         "sin ella el ZIP sale solo con las fichas")
     ap.add_argument("--salida", default="entregables")
     args = ap.parse_args()
 

@@ -209,14 +209,19 @@ catálogo ajeno, no: lo que hace falta es fidelidad, no interpretación.
 
 ## Quién consume esta salida: `listas-de-proveedor`
 
-El catálogo se surte sobre todo de esa skill, que baja fotos de Open Icecat y del
-proveedor y las manda aquí. Conviene saber qué espera de esta salida, porque la
-interfaz ya se rompió una vez sin que nadie lo notara.
+El catálogo se surte sobre todo de esa skill. **Desde el 25/09/2026 el traspaso
+es a mano**: esa skill dejó de buscar, descargar y retocar fotos —su regla 16—
+y entrega solo las fichas y el comparativo. Cuando llega un lote de fotos, del
+proveedor o propias, se procesa aquí y allá se vuelve a armar el ZIP con
+`--imagenes`. La interfaz entre las dos no cambió, y conviene conocerla porque
+ya se rompió una vez sin que nadie lo notara.
 
-**Lo que le llega a esta skill.** Una carpeta `crudas/<producto>/<producto>-NN.jpg`,
-ya filtrada: `filtrar_fotos.py` quitó antes los pictogramas, los logos y las
-tomas donde el producto sale cortado. Como vienen en subcarpetas, **el modo por
-producto se activa solo** y no hace falta pasar `--por-producto`.
+**Lo que le llega a esta skill.** Una carpeta `crudas/<producto>/<producto>-NN.jpg`.
+Si el lote pasó por `filtrar_fotos.py` —que sigue en esa skill, fuera de su
+flujo— ya viene sin pictogramas, sin logos y sin las tomas donde el producto
+sale cortado; si no pasó, ese descarte hay que hacerlo a ojo antes de procesar.
+Como vienen en subcarpetas, **el modo por producto se activa solo** y no hace
+falta pasar `--por-producto`.
 
 **Lo que se lleva de vuelta.** La forma agrupada, tal cual:
 
@@ -231,11 +236,14 @@ vacío sin fallar.** Hubo un `organizar_imagenes.py` que reacomodaba la salida
 plana; quedó fuera del flujo el 19/09/2026 justamente porque esta skill ya
 entrega la forma buena, y estuvo un tiempo sin hacer nada sin que se notara.
 
-**Lo que esa skill decidió sobre el material pobre.** Su regla 16 dice que una
-foto por debajo del estándar se publica igual, al máximo que dé la fuente,
-porque un producto sin foto no vende. De ahí sale el valor de
-`ampliacion_repetir`, que está en 3.0 y no en 2.0; el porqué está unas secciones
-más abajo. Dos cosas que esa regla **no** pide y conviene no concederle:
+**Lo que esa skill decidió sobre el material pobre.** Su regla 16 decía, hasta
+el 24/09/2026, que una foto por debajo del estándar se publica igual, al máximo
+que dé la fuente, porque un producto sin foto no vende. De ahí salió el valor
+de `ampliacion_repetir`, que está en 3.0 y no en 2.0; el porqué está unas
+secciones más abajo. Esa regla hoy dice otra cosa —que las fotos no son asunto
+de esa skill—, pero el umbral se queda donde está: lo sostiene la calidad del
+material de catálogo, no quién lo baje. Dos cosas que conviene no conceder
+igual:
 
 - No hay que topar anchos a mano: esta skill ya elige el lienzo según la fuente
   y solo emite las variantes de ese ancho hacia abajo.
