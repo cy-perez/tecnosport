@@ -21,7 +21,8 @@ import org.springframework.context.annotation.Configuration;
   PropiedadesLimiteAuth.class,
   PropiedadesLimitePedidos.class,
   PropiedadesLimiteCotizacion.class,
-  PropiedadesLimiteSeguimiento.class
+  PropiedadesLimiteSeguimiento.class,
+  PropiedadesLimiteSugerencias.class
 })
 public class ConfiguracionLimiteIntentos {
 
@@ -128,6 +129,31 @@ public class ConfiguracionLimiteIntentos {
                 propiedades.ipMaximo(),
                 Duration.ofMinutes(propiedades.ipMinutos())));
     registro.addUrlPatterns("/api/v1/pedidos/seguimiento");
+    return registro;
+  }
+
+  /**
+   * El buzón de sugerencias. Es el único endpoint público que <b>escribe una fila y encola un
+   * correo sin ninguna sesión detrás</b>, o sea la forma clásica de un formulario de spam. El uso
+   * legítimo es minúsculo —alguien escribe una sugerencia, rara vez dos seguidas— así que un tope
+   * bajo no le estorba a nadie real.
+   *
+   * <p>Ruta exacta, como todas las de este archivo: un patrón exacto no cubre subrutas, y ese
+   * descuido ya dejó dos endpoints sin límite.
+   */
+  @Bean
+  public FilterRegistrationBean<FiltroLimiteIntentos> filtroLimiteIntentosSugerencias(
+      LimitadorDeIntentos limitadorDeIntentos,
+      Reloj reloj,
+      PropiedadesLimiteSugerencias propiedades) {
+    FilterRegistrationBean<FiltroLimiteIntentos> registro =
+        new FilterRegistrationBean<>(
+            new FiltroLimiteIntentos(
+                limitadorDeIntentos,
+                reloj,
+                propiedades.ipMaximo(),
+                Duration.ofMinutes(propiedades.ipMinutos())));
+    registro.addUrlPatterns("/api/v1/sugerencias");
     return registro;
   }
 }

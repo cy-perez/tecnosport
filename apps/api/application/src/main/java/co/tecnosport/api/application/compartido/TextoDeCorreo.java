@@ -75,7 +75,10 @@ public enum TextoDeCorreo {
   USUARIO_VERIFICACION_ASUNTO("usuario.verificacion.asunto"),
   USUARIO_VERIFICACION_CUERPO("usuario.verificacion.cuerpo"),
   USUARIO_RECUPERACION_ASUNTO("usuario.recuperacion.asunto"),
-  USUARIO_RECUPERACION_CUERPO("usuario.recuperacion.cuerpo");
+  USUARIO_RECUPERACION_CUERPO("usuario.recuperacion.cuerpo"),
+  SUGERENCIA_ASUNTO("sugerencia.asunto"),
+  SUGERENCIA_CUERPO("sugerencia.cuerpo"),
+  SUGERENCIA_ANONIMA("sugerencia.anonima");
 
   private final String clave;
 

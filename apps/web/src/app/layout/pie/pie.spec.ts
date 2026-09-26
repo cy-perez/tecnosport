@@ -19,6 +19,54 @@ async function renderPie() {
 }
 
 describe('Pie', () => {
+  /**
+   * La columna de medios de pago. Lo que esta prueba protege no es el adorno sino <b>qué se
+   * promete</b>: la lista tiene que ser la del checkout, y Addi tiene que seguir diciendo
+   * "próximamente" mientras `MetodoPago` no lo tenga —`V61__sin_addi.sql` lo quitó a propósito—.
+   * Anunciar como disponible un medio que el checkout no ofrece es lo que la Ley 1480 llama
+   * información engañosa.
+   */
+  it('publica los medios de pago del checkout, y Addi como próximo', async () => {
+    await renderPie();
+
+    expect(screen.getByText(es.pie.pagos.titulo)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.tarjeta)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.pse)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.nequi)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.bancolombia)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.sistecredito)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.contraentrega)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.addi)).toBeTruthy();
+    expect(es.pie.pagos.addi.toLowerCase()).toContain('próximamente');
+    expect(en.pie.pagos.addi.toLowerCase()).toContain('coming soon');
+  });
+
+  /**
+   * Los logos son decorativos: el nombre lo dice el texto de al lado, igual que en la columna de
+   * redes. Un `alt` con la marca dentro los convertiría en una segunda copia del mismo nombre para
+   * quien escucha.
+   */
+  it('los logos de pago son decorativos, no el nombre del medio', async () => {
+    const { container } = await renderPie();
+
+    const logos = [...container.querySelectorAll('img')].filter((img) =>
+      (img.getAttribute('src') ?? '').includes('assets/pagos/'),
+    );
+    expect(logos.length).toBe(7);
+    expect(logos.every((img) => img.getAttribute('alt') === '')).toBe(true);
+  });
+
+  /**
+   * El buzón va en "El sitio" y **no** entre los enlaces de ayuda: cerca de "Contáctanos"
+   * invitaría a mandar por ahí un reclamo, que tiene plazo legal y en el buzón no corre.
+   */
+  it('enlaza el buzón de sugerencias desde la columna del sitio', async () => {
+    await renderPie();
+
+    const enlace = screen.getByRole('link', { name: es.pie.sugerencias });
+    expect(enlace.getAttribute('href')).toBe('/es/ayuda/sugerencias');
+  });
+
   it('muestra el nombre comercial y el NIT, sin sigla societaria', async () => {
     await renderPie();
 

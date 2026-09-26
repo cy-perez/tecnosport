@@ -9,12 +9,18 @@
       [alt]="'pie.nombre_comercial' | transloco"
     />
 
-    <!-- Cuatro columnas, no un `flex-wrap` de bloques sueltos: con `flex-wrap` el orden de lectura
+    <!-- Cinco columnas, no un `flex-wrap` de bloques sueltos: con `flex-wrap` el orden de lectura
          dependía del ancho de la ventana, y a 1024 px la dirección se colaba entre las redes y los
-         legales. Una columna en teléfono, dos desde el primer punto de quiebre y cuatro desde
-         tableta. `items-start` para que las cuatro empiecen arriba aunque una sea más larga. -->
+         legales. Una columna en teléfono, dos desde el primer punto de quiebre, tres desde tableta
+         y cinco desde escritorio. `items-start` para que todas empiecen arriba aunque una sea más
+         larga.
+
+         **Tres en tableta y no cinco**, que es donde entró "Medios de pago" el 26 de septiembre de
+         2026: a 1024 px, con el riel del menú lateral descontado, cinco columnas dejan cada una por
+         debajo de 160 px y "Tarjeta de crédito y débito" parte en tres líneas. Con tres caben, y la
+         quinta baja a una segunda fila. -->
     <div
-      class="grid grid-cols-1 items-start gap-32 desde-movil:grid-cols-2 desde-tableta:grid-cols-4"
+      class="grid grid-cols-1 items-start gap-32 desde-movil:grid-cols-2 desde-tableta:grid-cols-3 desde-escritorio:grid-cols-5"
     >
       <!-- `aria-labelledby` y no `aria-label` con el mismo texto: con las dos cosas, un lector de
            pantalla anunciaba "El sitio, navegación" y acto seguido leía "El sitio". Apuntando al
@@ -98,6 +104,69 @@
           {{ 'pie.instagram' | transloco }}
         </a>
       </nav>
+
+      <!--
+        Los medios de pago que el checkout ofrece de verdad, y solo esos. Entró el 26 de septiembre
+        de 2026.
+
+        **Los logos van sobre una pastilla clara y no sueltos sobre la franja.** No es estética: de
+        los siete archivos, tres son negro puro o casi —Addi, BBVA y Bancolombia— y sobre
+        `--color-marca`, que es grafito en los dos temas, simplemente no se verían. Los otros cuatro
+        traen sus colores de marca (el magenta de Nequi, el rojo de Daviplata, el azul de PSE y de
+        Sistecrédito), y un logo de marca no se recolorea para que quepa en una paleta ajena: se le
+        da el fondo sobre el que su dueño lo diseñó.
+
+        **La pastilla es `bg-ts-sobre-marca` y no `bg-ts-superficie`**, y eso se corrigió mirándolo
+        en el navegador. `superficie` es blanco en claro pero **gris oscuro elevado en tema
+        oscuro**, así que los tres logos negros seguían sin verse exactamente donde el problema era
+        peor — la pastilla no arreglaba nada, solo lo disimulaba a medias en un tema. `sobre-marca`
+        es blanco en claro y casi blanco en oscuro: es el token de "lo que se pinta encima de la
+        franja de marca", que es literalmente lo que son estas pastillas. Es de los casos que la
+        regla dura #8 nombra: las pruebas no ven un color, y en jsdom las dos clases son igual de
+        correctas.
+
+        La caja del logo es la misma para los siete —`max-h-24 max-w-full` dentro de una pastilla de
+        64x32— aunque los archivos midan desde 50x41 hasta 519x206: contener dentro de una caja fija
+        es lo único que los alinea sin deformar ninguno. El que peor lo lleva es Sistecrédito, que
+        es un logotipo de 200x26: contenido por el ancho queda en unos 6 px de alto y se lee mal. Se
+        acepta a sabiendas —el nombre lo dice el texto de al lado, que es el que nombra la fila—
+        porque la alternativa es una pastilla el doble de ancha para los siete, y con ella una
+        columna en la que "Tarjeta de crédito y débito" se parte en tres líneas.
+
+        **Dos no llevan logo**, y no es un olvido: "Tarjeta de crédito y débito" no es una marca
+        —son Visa, Mastercard y las demás, que el checkout no distingue— y la contraentrega tampoco.
+        Los dos van con su icono de trazo, como el resto del sitio.
+
+        El logo es `alt=""` —decorativo— porque el nombre ya lo dice el texto de al lado, igual que
+        en la columna de redes. No son enlaces: un medio de pago no es un destino.
+
+        **Addi dice "próximamente" y no está disponible.** `MetodoPago` lo tuvo y lo quitó a
+        propósito (`V61__sin_addi.sql`, 22 de septiembre de 2026): anunciarlo como disponible cuando
+        el checkout no lo ofrece es exactamente lo que la Ley 1480 llama información engañosa.
+      -->
+      <div class="flex flex-col gap-8">
+        <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-pagos">
+          {{ 'pie.pagos.titulo' | transloco }}
+        </p>
+        <ul class="m-0 flex list-none flex-col gap-8 p-0" aria-labelledby="pie-columna-pagos">
+          @for (medio of mediosDePago; track medio.clave) {
+            <li class="flex items-center gap-8 text-sm">
+              @if (medio.logo) {
+                <span
+                  class="inline-flex h-32 w-64 shrink-0 items-center justify-center rounded-sm bg-ts-sobre-marca"
+                >
+                  <img class="max-h-24 max-w-full object-contain" [src]="medio.logo" alt="" />
+                </span>
+              } @else if (medio.icono) {
+                <span class="inline-flex h-32 w-64 shrink-0 items-center justify-center">
+                  <ts-icono [icono]="medio.icono" clase="size-16" />
+                </span>
+              }
+              <span>{{ medio.clave | transloco }}</span>
+            </li>
+          }
+        </ul>
+      </div>
 
       <!-- `not-italic` porque un <address> lo es por omisión del navegador, y aquí no hay Preflight
            que lo resetee (src/tailwind.css).

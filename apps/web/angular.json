@@ -39,6 +39,11 @@
                 "glob": "marca/logo/**/*",
                 "input": "src/assets",
                 "output": "assets"
+              },
+              {
+                "glob": "pagos/**/*",
+                "input": "src/assets",
+                "output": "assets"
               }
             ],
             "styles": [

@@ -52,13 +52,27 @@ const TIEMPO_MAXIMO_DE_SALIDA_MS = 400;
   // El `relative` que ancla el panel desplegable va en el `<header>` de la
   // plantilla, no aquí: el landmark es el elemento, no el host del componente.
   //
+  // **`sticky` va aquí y no en el `<header>` de la plantilla**, y no es indiferente: `app-root` es
+  // una rejilla de tres filas (`grid-rows-[auto_1fr_auto]`) y el item de la primera fila es este
+  // host. Un `sticky` puesto en el `<header>` de dentro se pega contra el bloque contenedor que le
+  // toca —el host, que mide exactamente lo que mide el `<header>`—, así que no tendría un solo
+  // píxel de recorrido y se quedaría quieto. Pegado al item de la rejilla, el recorrido es toda la
+  // altura de `app-root`, que es `min-h-screen` y crece con el contenido.
+  //
+  // `z-30` y no más alto: el menú lateral y el velo del diálogo son `z-40`, y el diálogo `z-50`.
+  // El encabezado tiene que quedar por debajo de los tres — un panel de menú o un diálogo que
+  // aparecieran *detrás* de la barra serían peor que no tener barra fija. Y por encima de todo lo
+  // demás, que es lo que `sticky` sin `z-index` no garantiza: el contenido que pasa por debajo
+  // crea sus propios contextos de apilamiento (la tira del carrusel, las tarjetas con sombra) y
+  // sin `z-index` explícito algunos ganan por orden de documento.
+  //
   // Escape se escucha en el host y no en un `div` de la plantilla: un `div`
   // con manejador tendría que ser enfocable para ser operable —lo exige
   // `interactive-supports-focus` y tiene razón—, y hacer enfocable un
   // contenedor que no es un control es peor que no tenerlo. En el host, el
   // evento llega por burbujeo desde cualquier hijo, que es exactamente lo que
   // hace falta: el foco está en el botón o dentro del panel.
-  host: { class: 'block', '(keydown.escape)': 'cerrarMenu()' },
+  host: { class: 'sticky top-0 z-30 block', '(keydown.escape)': 'cerrarMenu()' },
 })
 export class Encabezado {
   private readonly documento = inject(DOCUMENT);

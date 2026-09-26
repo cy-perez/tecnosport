@@ -320,17 +320,4 @@
     </div>
   </div>
 
-  <!-- Los cuatro sellos de confianza: lo que el sitio sí puede prometer. Estaban dentro de la
-       banda anterior y se quedan, en una tira propia bajo el carrusel: son ciertos para las cuatro
-       líneas, así que repetirlos en cada diapositiva sería decir cuatro veces lo mismo. -->
-  <ul
-    class="m-0 mx-auto grid max-w-contenido list-none grid-cols-2 gap-16 border-t border-ts-sobre-marca px-16 py-24 text-sm desde-movil:px-24 desde-tableta:grid-cols-4"
-  >
-    @for (sello of sellosDeConfianza; track sello.clave) {
-      <li class="flex items-start gap-8">
-        <ts-icono [icono]="sello.icono" clase="size-16 mt-4" />
-        {{ sello.clave | transloco }}
-      </li>
-    }
-  </ul>
 </section>

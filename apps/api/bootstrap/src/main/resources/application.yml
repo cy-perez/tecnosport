@@ -443,6 +443,18 @@ tecnosport:
       ip-minutos: ${LIMITE_PEDIDOS_IP_MINUTOS:60}
       cuenta-maximo: ${LIMITE_PEDIDOS_CUENTA_MAXIMO:15}
       cuenta-minutos: ${LIMITE_PEDIDOS_CUENTA_MINUTOS:60}
+    # El buzon de sugerencias es el unico endpoint publico que escribe una fila y encola un correo
+    # sin sesion detras. Escribir una sugerencia es algo que se hace una vez, no quince: cinco por
+    # hora desde la misma IP le sobran a cualquiera real. El tope por correo es aun mas estrecho, y
+    # protege otra cosa -- que nadie use el buzon con el correo de otra persona.
+    sugerencias:
+      ip-maximo: ${LIMITE_SUGERENCIAS_IP_MAXIMO:5}
+      ip-minutos: ${LIMITE_SUGERENCIAS_IP_MINUTOS:60}
+      cuenta-maximo: ${LIMITE_SUGERENCIAS_CUENTA_MAXIMO:3}
+      cuenta-minutos: ${LIMITE_SUGERENCIAS_CUENTA_MINUTOS:60}
+  sugerencias:
+    # El mismo correo del negocio que los avisos de envio, y por lo mismo: no es un secreto.
+    destinatario: ${SUGERENCIAS_DESTINATARIO:contacto@tecnosport.co}
 
 springdoc:
   api-docs:

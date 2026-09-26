@@ -40,7 +40,7 @@
   "pie": {
     "nombre_comercial": "Tecno Sport",
     "nit": "NIT 1054994043-9",
-    "direccion": "Cra. 26C # 38B-31, Medellín, Antioquia",
+    "direccion": "Cra. 26C # 38B-31, Medellín",
     "telefono_e164": "+573138816711",
     "telefono": "+57 313 881 6711",
     "whatsapp_numero": "573138816711",
@@ -51,6 +51,18 @@
     "portada": "Portada",
     "carrito": "Carrito",
     "panel_admin": "Panel administrativo",
+    "pagos": {
+      "titulo": "Medios de pago",
+      "tarjeta": "Tarjeta de crédito y débito",
+      "pse": "PSE",
+      "nequi": "Nequi",
+      "bancolombia": "Bancolombia",
+      "daviplata": "Daviplata (transferencia)",
+      "bbva": "BBVA (transferencia)",
+      "sistecredito": "Sistecrédito (a cuotas)",
+      "contraentrega": "Contraentrega (efectivo)",
+      "addi": "Addi (próximamente)"
+    },
     "redes_titulo": "Redes",
     "facebook": "Facebook",
     "facebook_url": "https://www.facebook.com/tecnosport.co",
@@ -65,7 +77,8 @@
     "contacto_titulo": "Contacto",
     "preguntas_frecuentes": "Preguntas frecuentes",
     "estado_pedido": "Estado del pedido",
-    "contactanos": "Contáctanos"
+    "contactanos": "Contáctanos",
+    "sugerencias": "Buzón de sugerencias"
   },
   "portada": {
     "titulo": "Ropa y calzado deportivo, bolsos y tecnología",
@@ -116,14 +129,31 @@
           "indicador": "Tecnología",
           "alt": "Unos audífonos, un celular, un reloj inteligente y un portátil sobre un escritorio blanco"
         }
+      }
+    },
+    "confianza": {
+      "titulo": "Por qué comprar en Tecno Sport",
+      "envio": {
+        "titulo": "Envíos a todo el país",
+        "apoyo": "el costo se calcula y te lo mostramos antes de pagar"
       },
-      "confianza": {
-        "envio": "Envíos a todo el país",
-        "contraentrega": "Opción de pago contraentrega",
-        "pago": "Diversas opciones de pago",
-        "garantia": "Garantía legal en todo"
+      "contraentrega": {
+        "titulo": "Opción de pago contraentrega",
+        "apoyo": "en efectivo, donde esté habilitado para tu ciudad"
+      },
+      "pago": {
+        "titulo": "Diversos medios de pago",
+        "apoyo": "tarjeta, PSE, Nequi, Bancolombia, transferencia y cuotas"
+      },
+      "garantia": {
+        "titulo": "Garantía legal en todo",
+        "apoyo": "y cinco días hábiles para retractarte de tu compra"
       }
     }
+  },
+  "whatsapp": {
+    "etiqueta": "Escríbenos por WhatsApp",
+    "mensaje": "Hola, quiero información sobre un producto de Tecno Sport."
   },
   "paginador": {
     "navegacion": "Paginación",

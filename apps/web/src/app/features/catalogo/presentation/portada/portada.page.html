@@ -12,6 +12,37 @@
 
 <ts-carrusel-hero [idioma]="idioma()" />
 
+<!-- Los cuatro sellos de confianza: lo que el sitio sí puede prometer, y solo eso. Vivieron dentro
+     de `ts-carrusel-hero` hasta el 26 de septiembre de 2026, en una tira sobre la franja de marca;
+     desde hoy son tarjetas sobre el lienzo claro, con la forma de la página de referencia: icono
+     grande centrado arriba, el titular en negrita y una línea de apoyo debajo.
+
+     **La línea de apoyo no inventa nada.** Las cuatro salen de lo que el sitio ya publica en sus
+     preguntas frecuentes y en sus términos —el envío se cotiza y se enseña antes de pagar, la
+     contraentrega la habilita el sistema por ciudad y es solo en efectivo, los medios de pago son
+     los que el checkout ofrece, y el retracto es de cinco días hábiles—. Una promesa nueva aquí
+     sería una promesa que ningún documento respalda.
+
+     `<ul>` y no cuatro `<div>`: son cuatro cosas del mismo tipo, y un lector de pantalla anuncia
+     "lista de cuatro elementos" antes de leerlas. El `<h2>` es `sr-only` porque la sección necesita
+     nombre accesible y el titular visible sería ruido: las tarjetas se explican solas mirando. -->
+<section class="mx-auto max-w-contenido px-16 pt-48">
+  <h2 class="sr-only">{{ 'portada.confianza.titulo' | transloco }}</h2>
+  <ul
+    class="m-0 grid list-none grid-cols-1 gap-16 p-0 desde-movil:grid-cols-2 desde-tableta:grid-cols-4"
+  >
+    @for (sello of sellosDeConfianza; track sello.titulo) {
+      <li
+        class="flex flex-col items-center gap-12 rounded-lg border border-ts-borde bg-ts-superficie p-24 text-center"
+      >
+        <ts-icono [icono]="sello.icono" clase="size-32" />
+        <p class="m-0 font-medio text-sm text-ts-texto">{{ sello.titulo | transloco }}</p>
+        <p class="m-0 text-sm text-ts-texto-suave">{{ sello.apoyo | transloco }}</p>
+      </li>
+    }
+  </ul>
+</section>
+
 <section class="mx-auto max-w-contenido px-16 pt-48 pb-48">
   <!-- Aquí había un `@if (lineas().length)`: sin líneas con productos no se pintaba ni el título.
        Desde el 24 de septiembre de 2026 las líneas son las cuatro del negocio y no las que hoy
@@ -29,9 +60,19 @@
            noto. `docs/04-ui-marca.md` lo dice sin rodeos: el ambar es relleno con texto grafito
            encima, nunca linea ni icono sobre fondo claro. `--color-primario` es grafito en claro y
            ambar en oscuro, que es lo que este borde necesita en cada tema. -->
+    <!-- **`bg-ts-primario-suave` y no `superficie`**, que es el relleno tenue de marca que se pidió
+           el 26 de septiembre de 2026. El token ya existía y hace justo esto: en tema claro es el
+           grafito de marca aclarado casi hasta el gris (#E8E9E9) y en oscuro el ámbar apagado
+           (#2E2914), así que cada tema pone su propio tinte de marca sin una regla aparte.
+
+           **No es ámbar, y no puede serlo.** `ADR-0063` probó rellenar estas baldosas con la escala
+           `--color-acento-2/3/4` y `ADR-0064` lo revirtió al día siguiente: el tono más claro se
+           leía como un botón deshabilitado, y cuatro tonos ordenan cuatro líneas que valen lo
+           mismo. La regla del ámbar —una sola cosa por pantalla— volvió a quedar sin excepciones,
+           y esta pantalla ya gasta la suya en los botones del carrusel. -->
     @for (linea of lineas; track linea) {
       <a
-        class="anillo-foco chaflan border border-ts-borde bg-ts-superficie p-24 text-ts-texto no-underline hover:border-ts-primario"
+        class="anillo-foco chaflan border border-ts-borde bg-ts-primario-suave p-24 text-ts-texto no-underline hover:border-ts-primario"
         [routerLink]="['/', idioma(), 'productos']"
         [queryParams]="{ linea }"
       >

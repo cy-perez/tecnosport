@@ -40,7 +40,7 @@
   "pie": {
     "nombre_comercial": "Tecno Sport",
     "nit": "NIT 1054994043-9",
-    "direccion": "Cra. 26C # 38B-31, Medellín, Antioquia, Colombia",
+    "direccion": "Cra. 26C # 38B-31, Medellín, Colombia",
     "telefono_e164": "+573138816711",
     "telefono": "+57 313 881 6711",
     "whatsapp_numero": "573138816711",
@@ -51,6 +51,18 @@
     "portada": "Home",
     "carrito": "Cart",
     "panel_admin": "Admin panel",
+    "pagos": {
+      "titulo": "Ways to pay",
+      "tarjeta": "Credit and debit card",
+      "pse": "PSE",
+      "nequi": "Nequi",
+      "bancolombia": "Bancolombia",
+      "daviplata": "Daviplata (bank transfer)",
+      "bbva": "BBVA (bank transfer)",
+      "sistecredito": "Sistecrédito (instalments)",
+      "contraentrega": "Cash on delivery",
+      "addi": "Addi (coming soon)"
+    },
     "redes_titulo": "Social",
     "facebook": "Facebook",
     "facebook_url": "https://www.facebook.com/tecnosport.co",
@@ -65,7 +77,8 @@
     "contacto_titulo": "Contact",
     "preguntas_frecuentes": "Frequently asked questions",
     "estado_pedido": "Order status",
-    "contactanos": "Contact us"
+    "contactanos": "Contact us",
+    "sugerencias": "Suggestion box"
   },
   "portada": {
     "titulo": "Sportswear, footwear, bags and tech",
@@ -116,14 +129,31 @@
           "indicador": "Technology",
           "alt": "Headphones, a phone, a smartwatch and a laptop on a white desk"
         }
+      }
+    },
+    "confianza": {
+      "titulo": "Why buy at Tecno Sport",
+      "envio": {
+        "titulo": "Shipping across the country",
+        "apoyo": "we work out the cost and show it to you before you pay"
       },
-      "confianza": {
-        "envio": "Shipping across the country",
-        "contraentrega": "Cash on delivery available",
-        "pago": "Several ways to pay",
-        "garantia": "Statutory warranty on everything"
+      "contraentrega": {
+        "titulo": "Cash on delivery available",
+        "apoyo": "in cash, where it is enabled for your city"
+      },
+      "pago": {
+        "titulo": "Several ways to pay",
+        "apoyo": "card, PSE, Nequi, Bancolombia, bank transfer and instalments"
+      },
+      "garantia": {
+        "titulo": "Statutory warranty on everything",
+        "apoyo": "and five business days to change your mind"
       }
     }
+  },
+  "whatsapp": {
+    "etiqueta": "Message us on WhatsApp",
+    "mensaje": "Hi, I would like information about a Tecno Sport product."
   },
   "paginador": {
     "navegacion": "Pagination",

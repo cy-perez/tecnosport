@@ -432,13 +432,16 @@ describe('TsCarruselHero', () => {
     }
   });
 
-  it('enseña los cuatro sellos de confianza', async () => {
+  /**
+   * Los sellos se fueron a `portada.page.html` el 26 de septiembre de 2026, y esto lo fija: el
+   * carrusel habla de sus cuatro piezas y no de las promesas de la tienda. Sin esta prueba, volver
+   * a meterlos aquí no rompe nada —y entonces salen dos veces en la misma pantalla—.
+   */
+  it('no pinta los sellos de confianza: eso es de la portada', async () => {
     await renderCarrusel();
 
-    expect(screen.getByText('Envíos a todo el país')).toBeTruthy();
-    expect(screen.getByText('Opción de pago contraentrega')).toBeTruthy();
-    expect(screen.getByText('Diversas opciones de pago')).toBeTruthy();
-    expect(screen.getByText('Garantía legal en todo')).toBeTruthy();
+    expect(screen.queryByText('Envíos a todo el país')).toBeNull();
+    expect(screen.queryByText('Garantía legal en todo')).toBeNull();
   });
 
   /**

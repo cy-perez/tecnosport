@@ -53,6 +53,12 @@ const PARES = [
   ["--color-texto", "--color-fondo", UMBRAL_TEXTO, "texto sobre el lienzo"],
   ["--color-texto", "--color-superficie", UMBRAL_TEXTO, "texto sobre tarjeta"],
   ["--color-texto", "--color-superficie-alt", UMBRAL_TEXTO, "texto sobre superficie elevada"],
+  // Las baldosas de linea de la portada, que desde el 26 de septiembre de 2026 llevan
+  // relleno tenue de marca en vez de la superficie blanca. El par faltaba: `primario-suave`
+  // es un gris casi neutro en claro y un ambar apagado en oscuro, o sea dos colores muy
+  // distintos bajo el mismo nombre, y nadie vigilaba que el texto siguiera leyendose sobre
+  // los dos.
+  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "baldosas de linea de la portada"],
   ["--color-texto-suave", "--color-fondo", UMBRAL_TEXTO, "texto secundario sobre el lienzo"],
   ["--color-texto-suave", "--color-superficie", UMBRAL_TEXTO, "marca y SKU en la tarjeta"],
   ["--color-texto-suave", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de agotado"],
