@@ -122,4 +122,49 @@ describe('TsAlternadorTema', () => {
     expect(clases()).toContain('anillo-foco-sobre-marca');
     expect(clases().split(/\s+/)).not.toContain('anillo-foco');
   });
+
+  /**
+   * Las dos formas del control: el chip con borde y fondo claro del encabezado, y el icono desnudo
+   * de la franja del pie, que es el que pinta el pie de referencia de Preline.
+   *
+   * <p>Lo que la prueba fija no es el aspecto —eso se mira en el navegador— sino que la forma plana
+   * **no** se lleva por delante el objetivo táctil. Es la tentación obvia al copiar la referencia,
+   * donde el botón mide los 16 px del icono: 44 px es el mínimo de la tabla de medidas, y la
+   * excepción "inline" de WCAG 2.5.8 no cubre un botón suelto.
+   */
+  it('plano quita el borde y el fondo, y conserva el objetivo táctil', async () => {
+    const { fixture } = await renderAlternador();
+    await fixture.whenStable();
+
+    const clases = () => (screen.getByRole('button').getAttribute('class') ?? '').split(/\s+/);
+    expect(clases()).toContain('border');
+    expect(clases()).toContain('bg-ts-superficie');
+    expect(clases()).toContain('size-tactil');
+
+    fixture.componentRef.setInput('plano', true);
+    await fixture.whenStable();
+
+    expect(clases()).toContain('border-0');
+    expect(clases()).not.toContain('border');
+    expect(clases()).toContain('bg-transparent');
+    expect(clases()).not.toContain('bg-ts-superficie');
+    expect(clases()).toContain('size-tactil');
+  });
+
+  // El icono baja a 16 px con la forma plana, como el `size-4` de la referencia y como los demás
+  // iconos del pie. `cn` tiene que descartar el `size-24` por omisión de `ts-icono`, no sumarlo:
+  // con los dos puestos, cuál gana lo decide el orden en la hoja generada.
+  it('plano baja los iconos a 16 px', async () => {
+    const { fixture } = await renderAlternador();
+    fixture.componentRef.setInput('plano', true);
+    await fixture.whenStable();
+
+    const iconos = Array.from(fixture.nativeElement.querySelectorAll('svg'));
+    expect(iconos).toHaveLength(2);
+    for (const icono of iconos) {
+      const clases = ((icono as SVGElement).getAttribute('class') ?? '').split(/\s+/);
+      expect(clases).toContain('size-16');
+      expect(clases).not.toContain('size-24');
+    }
+  });
 });

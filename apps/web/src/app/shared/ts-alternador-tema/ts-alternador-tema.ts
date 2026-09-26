@@ -6,6 +6,24 @@ import { TsIcono } from '../ui/icono/ts-icono';
 import { iconoTemaClaro, iconoTemaOscuro } from '../ui/icono/iconos';
 
 /**
+ * Lo común a las dos formas. El radio va en las dos: en la plana no hay borde que redondear, pero
+ * es el que le da su forma al anillo de foco.
+ */
+const BASE =
+  'flex size-tactil cursor-pointer items-center justify-center rounded-completo p-0 transition-colors';
+
+/** El chip del encabezado, la forma que empareja este botón con `ts-alternador-idioma`. */
+const CHIP = 'border border-ts-borde bg-ts-superficie text-ts-texto hover:bg-ts-superficie-alt';
+
+/**
+ * El icono desnudo de la franja del pie. El hover es un cambio de color, como en la referencia,
+ * pero al revés: allá la base está apagada y el hover la sube a color pleno; aquí la base ya es
+ * `sobre-marca` a plena fuerza —igual que el copyright y los legales de su fila— y no hay un token
+ * apagado sobre marca que inventar, así que el hover baja al 70 %.
+ */
+const PLANO = 'border-0 bg-transparent text-inherit hover:text-ts-sobre-marca/70';
+
+/**
  * El botón que alterna claro y oscuro. La cookie y la escritura de `data-tema`
  * son de `ServicioTema` (`core/tema/`): un componente de `shared/` no decide la
  * política de persistencia del sitio.
@@ -50,6 +68,24 @@ export class TsAlternadorTema {
    */
   readonly sobreMarca = input(false);
 
+  /**
+   * Quita el borde, el fondo claro y el hover de fondo, y deja el icono desnudo heredando el color
+   * de la superficie que lo contiene. Es la forma que el pie de referencia de Preline —"Footer with
+   * Newsletter Signup and Link Columns"— le da al alternador: un icono suelto en la franja final,
+   * no un chip.
+   *
+   * <p><b>La caja de 44 px no se va con la bandera.</b> El icono baja a 16 px, como el `size-4` de
+   * la referencia y como los demás iconos del pie, pero el botón sigue midiendo `size-tactil`: un
+   * objetivo de 16 px incumple WCAG 2.5.8, y la excepción "inline" —la que el pie invoca para los
+   * enlaces que van dentro de una frase, cuyo tamaño lo fija el interlineado— no cubre un botón
+   * suelto. Cambia lo que se ve, no lo que se pulsa. Es el mismo patrón que la flecha del carrusel
+   * del hero, que ya era un icono desnudo sobre `--color-marca`.
+   *
+   * <p>El encabezado no la pasa: allí el chip con borde es lo que empareja este botón con
+   * `ts-alternador-idioma`, que va a su lado.
+   */
+  readonly plano = input(false);
+
   private readonly tema = inject(ServicioTema);
 
   private readonly traducir = usarTraductor();
@@ -85,12 +121,19 @@ export class TsAlternadorTema {
    */
   protected readonly clases = computed(() =>
     cn(
-      'flex size-tactil cursor-pointer items-center justify-center rounded-completo ' +
-        'border border-ts-borde bg-ts-superficie p-0 text-ts-texto transition-colors ' +
-        'hover:bg-ts-superficie-alt',
+      BASE,
+      this.plano() ? PLANO : CHIP,
       this.sobreMarca() ? 'anillo-foco-sobre-marca' : 'anillo-foco',
     ),
   );
+
+  /**
+   * 16 px en la forma plana; los 24 px por omisión de `ts-icono` en el chip del encabezado.
+   *
+   * <p>Va aquí y no como un segundo input de tamaño porque no es una medida que se elija: es la
+   * que la forma plana necesita para leerse en una franja de texto pequeño.
+   */
+  protected readonly claseIcono = computed(() => (this.plano() ? 'size-16' : ''));
 
   protected alternar(): void {
     this.tema.alternar();
