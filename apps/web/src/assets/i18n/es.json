@@ -116,12 +116,25 @@
           "indicador": "Tecnología",
           "alt": "Unos audífonos, un celular, un reloj inteligente y un portátil sobre un escritorio blanco"
         }
+      }
+    },
+    "confianza": {
+      "titulo": "Por qué comprar en Tecno Sport",
+      "envio": {
+        "titulo": "Envíos a todo el país",
+        "apoyo": "el costo se calcula y te lo mostramos antes de pagar"
       },
-      "confianza": {
-        "envio": "Envíos a todo el país",
-        "contraentrega": "Opción de pago contraentrega",
-        "pago": "Diversas opciones de pago",
-        "garantia": "Garantía legal en todo"
+      "contraentrega": {
+        "titulo": "Opción de pago contraentrega",
+        "apoyo": "en efectivo, donde esté habilitado para tu ciudad"
+      },
+      "pago": {
+        "titulo": "Diversos medios de pago",
+        "apoyo": "tarjeta, PSE, Nequi, Bancolombia, transferencia y cuotas"
+      },
+      "garantia": {
+        "titulo": "Garantía legal en todo",
+        "apoyo": "y cinco días hábiles para retractarte de tu compra"
       }
     }
   },

@@ -116,12 +116,25 @@
           "indicador": "Technology",
           "alt": "Headphones, a phone, a smartwatch and a laptop on a white desk"
         }
+      }
+    },
+    "confianza": {
+      "titulo": "Why buy at Tecno Sport",
+      "envio": {
+        "titulo": "Shipping across the country",
+        "apoyo": "we work out the cost and show it to you before you pay"
       },
-      "confianza": {
-        "envio": "Shipping across the country",
-        "contraentrega": "Cash on delivery available",
-        "pago": "Several ways to pay",
-        "garantia": "Statutory warranty on everything"
+      "contraentrega": {
+        "titulo": "Cash on delivery available",
+        "apoyo": "in cash, where it is enabled for your city"
+      },
+      "pago": {
+        "titulo": "Several ways to pay",
+        "apoyo": "card, PSE, Nequi, Bancolombia, bank transfer and instalments"
+      },
+      "garantia": {
+        "titulo": "Statutory warranty on everything",
+        "apoyo": "and five business days to change your mind"
       }
     }
   },

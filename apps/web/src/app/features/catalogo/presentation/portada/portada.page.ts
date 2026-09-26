@@ -1,19 +1,74 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
+import type { IconNode } from 'lucide';
 import { usarTraductor } from '../../../../core/i18n/traductor';
 import { organizacionJsonLd, sitioWebJsonLd } from '../../../../core/seo/datos-estructurados';
 import { origenPublico } from '../../../../core/seo/origen-publico';
 import { usarDatosEstructurados } from '../../../../core/seo/usar-metadatos';
 import { TsEsqueleto } from '../../../../shared/ts-esqueleto/ts-esqueleto';
+import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
+import {
+  iconoContraentrega,
+  iconoEnvio,
+  iconoGarantia,
+  iconoMediosDePago,
+} from '../../../../shared/ui/icono/iconos';
 import { TsTarjetaProducto } from '../tarjeta-producto/ts-tarjeta-producto';
 import { TsCarruselHero } from './hero/ts-carrusel-hero';
 import { usarBusquedaProductos } from '../../application/buscar-productos.consulta';
 import { FILTRO_NOVEDADES, LINEAS } from '../../domain/filtro-productos.model';
 
+/**
+ * Un sello de confianza: su icono y las dos claves de su texto.
+ *
+ * <p>Vienen de `ts-carrusel-hero`, donde vivieron hasta el 26 de septiembre de 2026 con una sola
+ * clave cada uno. Ahora son dos —titular y línea de apoyo— porque esa es la forma de la página
+ * de referencia y porque el titular solo no decía lo suficiente: "Envíos a todo el país" no
+ * aclara quién paga el envío, y quien lo lee se lo imagina.
+ *
+ * <p>Van como dato y no escritos cuatro veces en la plantilla por lo de siempre: cuatro copias de
+ * la misma lista de clases son cuatro sitios donde se puede desalinear una.
+ */
+interface SelloDeConfianza {
+  readonly titulo: string;
+  readonly apoyo: string;
+  readonly icono: IconNode;
+}
+
+/**
+ * Los cuatro sellos: lo que el sitio sí puede prometer.
+ *
+ * <p>El orden es el del recorrido de compra —cómo llega, cómo se paga, con qué se paga, qué pasa
+ * después— y no un ranking. Los cuatro se pintan iguales por la misma razón que los cuatro
+ * botones del carrusel (`ADR-0064`): cuatro cosas que valen lo mismo no llevan jerarquía.
+ */
+const SELLOS_DE_CONFIANZA: readonly SelloDeConfianza[] = [
+  {
+    titulo: 'portada.confianza.envio.titulo',
+    apoyo: 'portada.confianza.envio.apoyo',
+    icono: iconoEnvio,
+  },
+  {
+    titulo: 'portada.confianza.contraentrega.titulo',
+    apoyo: 'portada.confianza.contraentrega.apoyo',
+    icono: iconoContraentrega,
+  },
+  {
+    titulo: 'portada.confianza.pago.titulo',
+    apoyo: 'portada.confianza.pago.apoyo',
+    icono: iconoMediosDePago,
+  },
+  {
+    titulo: 'portada.confianza.garantia.titulo',
+    apoyo: 'portada.confianza.garantia.apoyo',
+    icono: iconoGarantia,
+  },
+];
+
 @Component({
   selector: 'app-portada',
-  imports: [TranslocoPipe, RouterLink, TsCarruselHero, TsTarjetaProducto, TsEsqueleto],
+  imports: [TranslocoPipe, RouterLink, TsCarruselHero, TsTarjetaProducto, TsEsqueleto, TsIcono],
   templateUrl: './portada.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,6 +90,8 @@ export class PortadaPage {
    * porque hoy no hay tenis cargados dice que el negocio no vende tenis.
    */
   protected readonly lineas = LINEAS;
+
+  protected readonly sellosDeConfianza = SELLOS_DE_CONFIANZA;
 
   protected readonly marcadoresDeCarga = [1, 2, 3, 4];
 

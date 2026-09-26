@@ -206,6 +206,27 @@ describe('PortadaPage', () => {
     expect(screen.getByRole('link', { name: 'Bolsos' })).toBeTruthy();
   });
 
+  /**
+   * Los cuatro sellos, con su titular y su línea de apoyo. Se comprueban los dos textos y no solo
+   * el titular: la línea de apoyo es la mitad que de verdad promete algo —quién paga el envío,
+   * en qué se paga la contraentrega— y una tarjeta que pierda el `apoyo` sigue viéndose bien.
+   *
+   * Por texto y no por clase: jsdom no resuelve Tailwind, así que cómo se ven las tarjetas se mira
+   * en el navegador. Lo que esto fija es que están y qué dicen.
+   */
+  it('enseña los cuatro sellos de confianza con su línea de apoyo', async () => {
+    await renderPortada(new RepositorioProductosFalso(), []);
+
+    expect(screen.getByText('Envíos a todo el país')).toBeTruthy();
+    expect(screen.getByText('el costo se calcula y te lo mostramos antes de pagar')).toBeTruthy();
+    expect(screen.getByText('Opción de pago contraentrega')).toBeTruthy();
+    expect(screen.getByText('Diversos medios de pago')).toBeTruthy();
+    expect(screen.getByText('Garantía legal en todo')).toBeTruthy();
+    expect(
+      screen.getByText('y cinco días hábiles para retractarte de tu compra'),
+    ).toBeTruthy();
+  });
+
   it('la sección de líneas se pinta incluso con el catálogo vacío', async () => {
     await renderPortada(new RepositorioProductosFalso(), []);
 

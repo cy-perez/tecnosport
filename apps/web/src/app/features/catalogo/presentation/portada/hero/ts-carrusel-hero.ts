@@ -11,15 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import type { IconNode } from 'lucide';
-import {
-  iconoContraentrega,
-  iconoEnvio,
-  iconoGarantia,
-  iconoMediosDePago,
-  iconoPausar,
-  iconoReanudar,
-} from '../../../../../shared/ui/icono/iconos';
+import { iconoPausar, iconoReanudar } from '../../../../../shared/ui/icono/iconos';
 import { TsBoton } from '../../../../../shared/ui/boton/ts-boton';
 import { TsIcono } from '../../../../../shared/ui/icono/ts-icono';
 import { MEDIA_HERO_VERTICAL } from '../../../../../core/imagenes/tamanos-de-imagen';
@@ -105,20 +97,6 @@ const DIAPOSITIVAS: readonly DiapositivaHero[] = [
 ];
 
 /**
- * Los cuatro sellos de confianza: lo que el sitio sí puede prometer.
- *
- * <p>Vienen tal cual de la banda anterior. Van como dato y no escritos cuatro veces en la
- * plantilla porque cuatro copias de `flex items-start gap-8` con su `size-16` son cuatro sitios
- * donde se puede desalinear uno.
- */
-const SELLOS_DE_CONFIANZA: readonly { clave: string; icono: IconNode }[] = [
-  { clave: 'portada.hero.confianza.envio', icono: iconoEnvio },
-  { clave: 'portada.hero.confianza.contraentrega', icono: iconoContraentrega },
-  { clave: 'portada.hero.confianza.pago', icono: iconoMediosDePago },
-  { clave: 'portada.hero.confianza.garantia', icono: iconoGarantia },
-];
-
-/**
  * El carrusel de portada: cuatro piezas a todo el ancho de la ventana, una por línea de negocio.
  *
  * <p>Sustituye a `TsHero`, que era una sola fotografía dentro de la rejilla de 1200 px. Lo que
@@ -157,6 +135,16 @@ const SELLOS_DE_CONFIANZA: readonly { clave: string; icono: IconNode }[] = [
  * están medidos sobre los píxeles del compuesto, no puestos a ojo: `docs/04-ui-marca.md` lleva las
  * cifras y el guion que las saca.
  *
+ * <h2>Los sellos de confianza se fueron a la portada</h2>
+ *
+ * <p>La tira de cuatro sellos —envío, contraentrega, medios de pago y garantía— colgó de aquí
+ * hasta el 26 de septiembre de 2026, pegada al borde inferior del carrusel y sobre la franja de
+ * marca. Vive ahora en `portada.page.html`, como tarjetas sobre el lienzo claro. <b>No es un
+ * traslado de adorno</b>: los sellos no hablan del carrusel ni de ninguna de sus cuatro piezas,
+ * hablan de la tienda, y estaban aquí solo porque aquí estaba la banda de la que salieron. Un
+ * componente que se llama "carrusel" y pinta además las promesas del negocio es un componente con
+ * dos motivos para cambiar.
+ *
  * <h2>Accesibilidad</h2>
  *
  * <p>Patrón de carrusel de la APG: `aria-roledescription="carousel"` en la región, un `group` por
@@ -176,7 +164,6 @@ export class TsCarruselHero {
   readonly idioma = input.required<string>();
 
   protected readonly diapositivas = DIAPOSITIVAS;
-  protected readonly sellosDeConfianza = SELLOS_DE_CONFIANZA;
   protected readonly mediaVertical = MEDIA_HERO_VERTICAL;
   protected readonly iconoPausar = iconoPausar;
   protected readonly iconoReanudar = iconoReanudar;
