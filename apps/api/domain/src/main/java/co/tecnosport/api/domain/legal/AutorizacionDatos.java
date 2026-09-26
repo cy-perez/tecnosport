@@ -109,6 +109,31 @@ public final class AutorizacionDatos {
   }
 
   /**
+   * En el buzón de sugerencias nunca hay cuenta detrás —no hace falta para escribir—, así que no
+   * recibe id de usuario: es la diferencia real con {@link #enCheckout}, donde el id es opcional
+   * porque a veces lo hay.
+   *
+   * <p>Que esta fábrica se llame ya significa que quien escribió dejó su correo. Una sugerencia
+   * anónima no trata dato personal ninguno y no llega hasta aquí.
+   */
+  public static AutorizacionDatos enSugerencia(
+      boolean autoriza,
+      CorreoElectronico correo,
+      String versionPolitica,
+      String direccionIp,
+      Instant ahora) {
+    exigirAutorizacion(autoriza);
+    return new AutorizacionDatos(
+        GeneradorIdentificador.nuevo(),
+        correo,
+        null,
+        versionPolitica,
+        direccionIp,
+        OrigenAutorizacion.SUGERENCIA,
+        ahora);
+  }
+
+  /**
    * Único punto donde se decide si hay autorización. Lo llaman las dos fábricas —para que sea
    * imposible construir una constancia que no represente un sí real— y también, antes que nada, el
    * caso de uso que va a recoger la autorización.

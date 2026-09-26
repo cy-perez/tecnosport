@@ -758,6 +758,20 @@
         },
         "type" : "object"
       },
+      "EnviarSugerenciaRequest" : {
+        "properties" : {
+          "autorizaDatos" : {
+            "type" : "boolean"
+          },
+          "correo" : {
+            "type" : "string"
+          },
+          "mensaje" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "EnvioPublicoRespuesta" : {
         "properties" : {
           "despachadoEn" : {
@@ -5638,6 +5652,29 @@
         },
         "tags" : [
           "salud-controlador"
+        ]
+      }
+    },
+    "/api/v1/sugerencias" : {
+      "post" : {
+        "operationId" : "enviar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EnviarSugerenciaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [
+          "sugerencias-controlador"
         ]
       }
     }
