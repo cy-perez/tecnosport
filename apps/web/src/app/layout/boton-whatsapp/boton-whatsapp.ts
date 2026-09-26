@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { usarTraductor } from '../../core/i18n/traductor';
 import { TsIconoMarca } from '../../shared/ui/icono/ts-icono-marca';
 import { marcaWhatsapp } from '../../shared/ui/icono/marcas.generado';
 
@@ -40,23 +41,32 @@ import { marcaWhatsapp } from '../../shared/ui/icono/marcas.generado';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BotonWhatsapp {
-  private readonly transloco = inject(TranslocoService);
+  private readonly traducir = usarTraductor();
 
   protected readonly marcaWhatsapp = marcaWhatsapp;
 
   /**
    * `https://wa.me/<número>?text=<mensaje>`.
    *
-   * <p>Un `computed` y no un campo: el mensaje se traduce, así que cambia al cambiar de idioma, y
-   * `activeLang` es una señal. Un campo calculado en el constructor se quedaría con el idioma con
-   * el que arrancó la aplicación — el mismo defecto que `apps/web/CLAUDE.md` describe para
-   * `translate()` dentro de un inicializador.
+   * <p><b>`usarTraductor()` y no `transloco.translate()` a secas</b>, y esto se corrigió mirando el
+   * enlace en el navegador: salía `https://wa.me/pie.whatsapp_numero?text=whatsapp.mensaje`, o sea
+   * las claves crudas. Es exactamente la trampa que `apps/web/CLAUDE.md` describe —`translate()` no
+   * lee ninguna señal, así que el `computed` se evalúa una vez y no se recalcula jamás— y leer
+   * `activeLang()` no la esquiva: el idioma no cambia cuando el paquete de traducciones <b>termina
+   * de cargar</b>, que es justo el instante que falta. Este botón vive en `app.html`, fuera de toda
+   * ruta, así que no hay `resolve` que precargue nada antes de crearlo.
+   *
+   * <p>Las pruebas no lo veían, y eso también está escrito: `TranslocoTestingModule` con
+   * `preloadLangs: true` entrega las traducciones de forma síncrona, así que el `computed` viejo
+   * acertaba en la primera evaluación. Se mira en el navegador o no se mira.
+   *
+   * <p>`usarTraductor()` cuelga de `events$`, que emite al cargar un paquete y al cambiar de
+   * idioma, que son los dos momentos en los que este enlace tiene que rehacerse.
    */
   protected readonly enlace = computed(() => {
-    // Se lee para que el `computed` dependa de él: `translate()` no lee ninguna señal por su cuenta.
-    this.transloco.activeLang();
-    const numero = this.transloco.translate('pie.whatsapp_numero');
-    const mensaje = this.transloco.translate('whatsapp.mensaje');
+    const traducir = this.traducir();
+    const numero = traducir('pie.whatsapp_numero');
+    const mensaje = traducir('whatsapp.mensaje');
     return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
   });
 }

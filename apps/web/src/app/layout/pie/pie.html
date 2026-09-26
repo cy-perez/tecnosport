@@ -114,15 +114,24 @@
         `--color-marca`, que es grafito en los dos temas, simplemente no se verían. Los otros cuatro
         traen sus colores de marca (el magenta de Nequi, el rojo de Daviplata, el azul de PSE y de
         Sistecrédito), y un logo de marca no se recolorea para que quepa en una paleta ajena: se le
-        da el fondo sobre el que su dueño lo diseñó. Por eso la pastilla es `bg-ts-superficie`, que
-        es blanco en claro y el gris elevado en oscuro, y por eso no se intenta un `oscuro:`
-        invirtiendo nada.
+        da el fondo sobre el que su dueño lo diseñó.
 
-        La caja del logo es la misma para los siete —`h-16 w-48` con `object-contain`— aunque los
-        archivos midan desde 50x41 hasta 519x206: contener dentro de una caja fija es lo único que
-        los alinea sin deformar ninguno. El que peor lo lleva es Sistecrédito, que es un logotipo
-        de 200x26 y queda bajito dentro de la caja; se acepta, porque la alternativa es una fila con
-        siete alturas distintas.
+        **La pastilla es `bg-ts-sobre-marca` y no `bg-ts-superficie`**, y eso se corrigió mirándolo
+        en el navegador. `superficie` es blanco en claro pero **gris oscuro elevado en tema
+        oscuro**, así que los tres logos negros seguían sin verse exactamente donde el problema era
+        peor — la pastilla no arreglaba nada, solo lo disimulaba a medias en un tema. `sobre-marca`
+        es blanco en claro y casi blanco en oscuro: es el token de "lo que se pinta encima de la
+        franja de marca", que es literalmente lo que son estas pastillas. Es de los casos que la
+        regla dura #8 nombra: las pruebas no ven un color, y en jsdom las dos clases son igual de
+        correctas.
+
+        La caja del logo es la misma para los siete —`max-h-24 max-w-full` dentro de una pastilla de
+        64x32— aunque los archivos midan desde 50x41 hasta 519x206: contener dentro de una caja fija
+        es lo único que los alinea sin deformar ninguno. El que peor lo lleva es Sistecrédito, que
+        es un logotipo de 200x26: contenido por el ancho queda en unos 6 px de alto y se lee mal. Se
+        acepta a sabiendas —el nombre lo dice el texto de al lado, que es el que nombra la fila—
+        porque la alternativa es una pastilla el doble de ancha para los siete, y con ella una
+        columna en la que "Tarjeta de crédito y débito" se parte en tres líneas.
 
         **Dos no llevan logo**, y no es un olvido: "Tarjeta de crédito y débito" no es una marca
         —son Visa, Mastercard y las demás, que el checkout no distingue— y la contraentrega tampoco.
@@ -144,12 +153,12 @@
             <li class="flex items-center gap-8 text-sm">
               @if (medio.logo) {
                 <span
-                  class="inline-flex h-24 w-64 shrink-0 items-center justify-center rounded-sm bg-ts-superficie px-4"
+                  class="inline-flex h-32 w-64 shrink-0 items-center justify-center rounded-sm bg-ts-sobre-marca"
                 >
-                  <img class="h-16 w-48 object-contain" [src]="medio.logo" alt="" />
+                  <img class="max-h-24 max-w-full object-contain" [src]="medio.logo" alt="" />
                 </span>
               } @else if (medio.icono) {
-                <span class="inline-flex h-24 w-64 shrink-0 items-center justify-center">
+                <span class="inline-flex h-32 w-64 shrink-0 items-center justify-center">
                   <ts-icono [icono]="medio.icono" clase="size-16" />
                 </span>
               }
