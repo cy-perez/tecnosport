@@ -150,6 +150,10 @@
       }
     }
   },
+  "whatsapp": {
+    "etiqueta": "Message us on WhatsApp",
+    "mensaje": "Hi, I would like information about a Tecno Sport product."
+  },
   "paginador": {
     "navegacion": "Pagination",
     "anterior": "Previous",

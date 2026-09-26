@@ -1,0 +1,60 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
+<!-- El envoltorio existe para el halo, no por gusto. El halo tiene que pintarse **detrás** del
+     botón, y un hijo del propio `<a>` no puede: dentro de un contexto de apilamiento, un hijo con
+     `z-index` negativo se pinta encima del fondo del elemento que lo crea, no debajo. Como hermano
+     anterior, con el `<a>` en `relative`, queda donde tiene que quedar sin un solo `z-index`.
+
+     `end-24 bottom-24` y no `right`: el sitio se sirve en español y en inglés hoy, pero las
+     propiedades lógicas son lo que ya usa el resto del proyecto (`start-0`, `border-e`, `ms-auto`)
+     y cuestan lo mismo. -->
+<div class="fixed end-24 bottom-24 z-30 inline-flex">
+  <!-- El latido. `--color-marca-alt` y **no** ámbar, que era lo primero que pedía el cuerpo: el
+       ámbar es el color señal del kit y la regla es que sea una sola cosa por pantalla
+       (`docs/04-ui-marca.md`, `ADR-0064`). Un halo ámbar latiendo en **todas** las pantallas del
+       sitio se lleva esa única señal a un elemento que no es la acción principal de ninguna de
+       ellas, y en la portada competiría de frente con los cuatro botones del carrusel.
+
+       `marca-alt` resuelve además lo que el grafito solo no resuelve: es #3B3E44 en claro y
+       #393E44 en oscuro, así que se ve **más oscuro** que el lienzo claro (#F5F6F8) y **más claro**
+       que el oscuro (#0E1217). Es el mismo color con el que el botón se ilumina al pasar por
+       encima, de modo que el halo se lee como el propio botón respirando y no como una segunda
+       cosa de otro color.
+
+       `pointer-events-none` porque crece por encima del botón durante el ciclo: sin eso, el halo
+       se comería los clics justo en la mitad de su recorrido. -->
+  <span
+    class="latido pointer-events-none absolute inset-0 rounded-completo bg-ts-marca-alt"
+    aria-hidden="true"
+  ></span>
+
+  <!-- `group` para que la etiqueta se abra con el puntero encima y con el foco dentro. No lleva
+       `aria-label`: **el nombre accesible es el texto de al lado**, que está siempre en el árbol de
+       accesibilidad —se colapsa con `grid-template-columns`, no con `display:none`— y dice a dónde
+       lleva el enlace. Un `aria-label` encima lo pisaría y sería una segunda copia del mismo texto.
+
+       `anillo-foco-sobre-marca` y no `anillo-foco`: el botón es `--color-marca`, y en tema claro
+       `--color-foco` es ese mismo grafito, así que el anillo normal sería invisible. -->
+  <a
+    class="group anillo-foco-sobre-marca relative inline-flex min-h-tactil min-w-tactil items-center justify-center gap-8 rounded-completo bg-ts-marca p-12 text-ts-sobre-marca no-underline shadow-lg transition-colors ease-[var(--curva-suave)] hover:bg-ts-marca-alt"
+    [style.transitionDuration]="'var(--mov-media)'"
+    [href]="enlace()"
+  >
+    <ts-icono-marca [marca]="marcaWhatsapp" clase="size-24" />
+    <!-- La etiqueta se abre de 0fr a 1fr y no de `max-w-0` a un ancho: un ancho concreto sería un
+         píxel suelto (regla dura #2) y además habría que adivinarlo para los dos idiomas, donde el
+         texto no mide lo mismo. Con la rejilla, el ancho de destino lo calcula el navegador a
+         partir del propio texto.
+
+         `whitespace-nowrap` para que no parta en dos líneas mientras se abre, y `min-w-0` en el
+         hijo porque un item de rejilla no baja por debajo de su min-content sin él — el mismo
+         motivo por el que `<main>` lo lleva en `app.html`. -->
+    <span
+      class="grid grid-cols-[0fr] overflow-hidden transition-[grid-template-columns] ease-[var(--curva-suave)] group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr]"
+      [style.transitionDuration]="'var(--mov-media)'"
+    >
+      <span class="min-w-0 overflow-hidden text-sm whitespace-nowrap">{{
+        'whatsapp.etiqueta' | transloco
+      }}</span>
+    </span>
+  </a>
+</div>

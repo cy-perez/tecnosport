@@ -52,8 +52,14 @@
              sin duplicar la acción para una barra aparte. `-mx-16 px-16` lo saca al ancho de la
              sección para que el fondo cubra de borde a borde; desde tableta todo se anula y queda
              como estaba, porque ahí cabe sin desplazarse. -->
+        <!-- `ps-16 pe-64` en vez de `px-16`, y es por el botón flotante de WhatsApp: desde el 26 de
+             septiembre de 2026 hay un círculo de 48 px a 24 px del borde inferior derecho, o sea
+             ocupando los 72 px de la esquina en la que esta barra también vive mientras está
+             pegada. Los 64 px de relleno al final son el sitio que se le reserva para que no tape
+             nada de lo que haya en esta fila. Desde tableta se anula con todo lo demás
+             (`desde-tableta:px-0`), porque ahí la barra ya no se pega. -->
         <div
-          class="sticky bottom-0 z-10 -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo px-16 py-12 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
+          class="sticky bottom-0 z-10 -mx-16 my-16 flex flex-wrap items-center gap-16 border-t border-ts-borde bg-ts-fondo py-12 ps-16 pe-64 desde-tableta:static desde-tableta:mx-0 desde-tableta:border-0 desde-tableta:px-0 desde-tableta:py-0"
         >
           @if (varianteActiva(); as variante) {
             <ts-precio [valor]="variante.precio.valor" [moneda]="variante.precio.moneda" />

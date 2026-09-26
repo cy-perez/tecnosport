@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { BotonWhatsapp } from './layout/boton-whatsapp/boton-whatsapp';
 import { Encabezado } from './layout/encabezado/encabezado';
 import { MenuLateral } from './layout/menu-lateral/menu-lateral';
 import { MenuLateralStore } from './layout/menu-lateral/menu-lateral.store';
 import { Pie } from './layout/pie/pie';
 
 @Component({
-  imports: [RouterOutlet, TranslocoPipe, Encabezado, MenuLateral, Pie],
+  imports: [RouterOutlet, TranslocoPipe, BotonWhatsapp, Encabezado, MenuLateral, Pie],
   selector: 'app-root',
   templateUrl: './app.html',
   // Tres filas: encabezado, contenido y pie. El contenido se estira (`1fr`)

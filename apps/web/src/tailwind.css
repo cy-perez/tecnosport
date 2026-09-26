@@ -369,6 +369,53 @@
   animation: none;
 }
 
+/* El halo que late bajo el botón flotante de WhatsApp. Vive aquí y no en el `.ts` del componente
+   por lo mismo que el brillo de carga y el anillo que gira: unos `@keyframes` en un componente son
+   unos `@keyframes` que el siguiente que los necesite va a duplicar.
+
+   `--mov-lenta` (1,4 s) y no una de las duraciones de transición: es la escala pensada para lo
+   ambiental que se repite, la misma que usa el brillo de carga. Un ciclo más corto deja de parecer
+   una respiración y empieza a parecer una alarma.
+
+   `--curva-salida` porque el halo solo sale: arranca pegado al botón y se va. Las curvas de entrada
+   y suave están pensadas para algo que llega, y aplicadas aquí el halo sale despacio y desaparece
+   de golpe.
+
+   El color lo pone quien lo usa (`bg-ts-marca-alt` en el botón): esta utilidad solo anima. */
+@utility latido {
+  animation: latido var(--mov-lenta) var(--curva-salida) infinite;
+}
+
+@keyframes latido {
+  from {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  to {
+    transform: scale(1.75);
+    opacity: 0;
+  }
+}
+
+/* Los mismos dos disparadores que el esqueleto y el anillo, y por la misma razón: `styles.scss`
+   acorta la *duración* de toda animación bajo `[data-movimiento]`, y un halo que hace el ciclo
+   entero en 0,01 ms es un parpadeo permanente —mucho peor que uno quieto—. Hay que apagarlo.
+
+   Apagado no queda un círculo gris encima del botón: sin animación el halo se queda en su estado
+   base, que es `scale(1)` y opacidad 1 sobre el mismo sitio que ocupa el botón —así que lo taparía.
+   Por eso se le quita también la opacidad: quieto es invisible, que es lo correcto. */
+@media (prefers-reduced-motion: reduce) {
+  .latido {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+[data-movimiento='reducido'] .latido {
+  animation: none;
+  opacity: 0;
+}
+
 /* El anillo que gira. Vive aquí y no en el `.ts` del componente por lo mismo que el brillo de
    carga: es una primitiva del sistema —la usan los veintidós botones con estado de carga y los
    seis párrafos de estado— y unos `@keyframes` repetidos son sitios donde desincronizarse.
