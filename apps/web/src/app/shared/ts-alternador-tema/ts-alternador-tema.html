@@ -20,6 +20,6 @@
        parpadeo que tendría un icono atado a una señal. Se ve la luna cuando el
        clic lleva a oscuro, y el sol cuando lleva a claro. `ts-icono` va con
        `aria-hidden`, así que ninguno de los dos toca el nombre del botón. -->
-  <ts-icono class="oscuro:hidden" [icono]="iconoTemaOscuro" />
-  <ts-icono class="hidden oscuro:inline-block" [icono]="iconoTemaClaro" />
+  <ts-icono class="oscuro:hidden" [icono]="iconoTemaOscuro" [clase]="claseIcono()" />
+  <ts-icono class="hidden oscuro:inline-block" [icono]="iconoTemaClaro" [clase]="claseIcono()" />
 </button>

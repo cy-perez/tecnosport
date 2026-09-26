@@ -143,7 +143,8 @@
   </div>
 
   <!-- La franja final, como en el pie de referencia: el copyright, los legales separados por
-       puntos y el alternador de tema al otro extremo. `border-ts-marca-alt` y no `border-ts-borde`:
+       puntos y el alternador de tema cerrando la fila, tras otro punto.
+       `border-ts-marca-alt` y no `border-ts-borde`:
        el borde tiene que verse sobre la franja de marca, y `--color-borde` está pensado para
        superficies claras. -->
   <div class="border-t border-ts-marca-alt">
@@ -171,11 +172,26 @@
         }
       </nav>
 
-      <!-- `ms-auto` y no `ml-auto`: el sitio es bilingüe y el día que entre un idioma que se lea de
-           derecha a izquierda, el margen lógico se voltea solo. -->
-      <!-- `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco normal es
+      <!-- El alternador cierra la fila, como en el pie de referencia: un punto y el icono. No va
+           pegado al extremo derecho — tuvo `ms-auto` hasta el 25 de septiembre de 2026, y la
+           referencia no lo empuja a ningún lado.
+           Fuera del `<nav>` de los legales a propósito: cambiar el tema no es navegación legal, así
+           que no tiene por qué contar para el nombre de ese grupo. Por eso trae su propio punto
+           separador, `aria-hidden` como los de dentro.
+           `gap-x-8` en el envoltorio, y no es decoración: la caja de 44 px del botón empieza 14 px
+           antes del icono, así que sin hueco el borde derecho del punto cae **justo** sobre el
+           borde de la caja y el anillo de foco —2 px de trazo a 2 px de distancia— le pasa por
+           encima y se lo come. Con 8 px el anillo lo libra por 4. Se vio en el navegador, con el
+           foco puesto: en jsdom no hay anillo que dibujar.
+           `plano`: sobre esta franja el alternador es el icono desnudo de la referencia, sin el
+           borde ni el fondo claro del chip que sí lleva en el encabezado. Los 44 px del objetivo
+           táctil siguen debajo, invisibles.
+           `sobreMarca`: esta franja es `--color-marca`, donde el anillo de foco normal es
            invisible en tema claro porque `--color-foco` es el mismo grafito. -->
-      <ts-alternador-tema class="ms-auto" [sobreMarca]="true" />
+      <div class="flex items-center gap-x-8">
+        <span aria-hidden="true">·</span>
+        <ts-alternador-tema [plano]="true" [sobreMarca]="true" />
+      </div>
     </div>
   </div>
 </footer>

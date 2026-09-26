@@ -484,6 +484,18 @@ pista de `rounded-md` con la pastilla del activo encima, que es el control
 segmentado de la plantilla de referencia. El idioma perdió el borde y el
 `border-l` que separaba los segmentos: esa forma no los lleva.
 
+**El del tema tiene una segunda forma, plana, y solo el pie la usa.** Desde el
+25 de septiembre de 2026 el input `plano` le quita el borde, el fondo claro y el
+hover de fondo, y lo deja en el icono desnudo que hereda el color de la franja:
+es lo que pinta el pie de referencia de Preline —icono a 16 px y un cambio de
+color al pasar el ratón, en vez de un chip—. Lo que **no** se va es la caja de
+44 px, que sigue debajo, invisible: un objetivo de 16 px incumple 2.5.8, y la
+excepción "inline" solo cubre el enlace cuyo tamaño lo fija el interlineado del
+texto que lo rodea, que no es el caso de un botón suelto. Mismo patrón que la
+flecha del carrusel del hero, que ya era un icono desnudo sobre `--color-marca`.
+El encabezado no pasa la bandera: allí el chip con borde es lo que empareja el
+botón con el del idioma, que va a su lado.
+
 **Lo único de la referencia que no se copió es el relleno de 2 px** que deja la
 pastilla flotando dentro de la pista. Allá la pista mide 40 px y los segmentos
 36; aquí la pista mide los 44 del objetivo táctil, así que ese relleno saldría
