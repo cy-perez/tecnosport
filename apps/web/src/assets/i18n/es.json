@@ -40,7 +40,7 @@
   "pie": {
     "nombre_comercial": "Tecno Sport",
     "nit": "NIT 1054994043-9",
-    "direccion": "Cra. 26C # 38B-31, Medellín, Antioquia",
+    "direccion": "Cra. 26C # 38B-31, Medellín",
     "telefono_e164": "+573138816711",
     "telefono": "+57 313 881 6711",
     "whatsapp_numero": "573138816711",
@@ -51,6 +51,18 @@
     "portada": "Portada",
     "carrito": "Carrito",
     "panel_admin": "Panel administrativo",
+    "pagos": {
+      "titulo": "Medios de pago",
+      "tarjeta": "Tarjeta de crédito y débito",
+      "pse": "PSE",
+      "nequi": "Nequi",
+      "bancolombia": "Bancolombia",
+      "daviplata": "Daviplata (transferencia)",
+      "bbva": "BBVA (transferencia)",
+      "sistecredito": "Sistecrédito (a cuotas)",
+      "contraentrega": "Contraentrega (efectivo)",
+      "addi": "Addi (próximamente)"
+    },
     "redes_titulo": "Redes",
     "facebook": "Facebook",
     "facebook_url": "https://www.facebook.com/tecnosport.co",
