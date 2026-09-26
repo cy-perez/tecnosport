@@ -64,7 +64,7 @@ class ArbolDeCategoriasTest {
                   "parlantes"),
           "ROPA", List.of("ropa-dama", "ropa-caballero"),
           "CALZADO", List.of("calzado-dama", "calzado-caballero", "calzado-unisex"),
-          "BOLSOS", List.of("bolsos-dama"));
+          "BOLSOS", List.of("bolsos-dama", "bolsos-caballero"));
 
   /** El segundo nivel, por el slug de su padre. Lo que no aparece aquí es una hoja. */
   private static final Map<String, List<String>> SEGUNDO_NIVEL =
@@ -88,9 +88,11 @@ class ArbolDeCategoriasTest {
                   "ropa-caballero-pantalonetas"),
           "bolsos-dama",
               List.of(
-                  "bolsos-dama-bolsos-de-mano",
-                  "bolsos-dama-manos-libres",
-                  "bolsos-dama-morrales"));
+                  "bolsos-dama-bolsos-de-mano", "bolsos-dama-manos-libres", "bolsos-dama-morrales"),
+          // `V64`, 26 de septiembre de 2026. Una rama con una sola hoja no es un error: es el
+          // surtido que hay. El morral de caballero no cuelga de Dama porque un morral de hombre
+          // no es una subcategoria de la rama de mujer.
+          "bolsos-caballero", List.of("bolsos-caballero-morrales"));
 
   @Test
   void cadaLineaTieneExactamenteSusCategoriasDePrimerNivel() {
