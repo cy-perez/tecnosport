@@ -238,8 +238,9 @@ Meterlo en la regla convertiría un diseño decidido en un aviso permanente.
 
 ## APIs del navegador
 
-`getUserMedia`, `DeviceOrientationEvent`, `Canvas`, `PointerEvent` y `Wake Lock`
-se usan solo en `captura360` y siempre detrás de:
+`getUserMedia`, `DeviceOrientationEvent`, `Canvas` y `Wake Lock` se usan solo en
+`captura360` —`PointerEvent` también en el visor 360 y en el carrusel de portada,
+para arrastrar— y siempre detrás de:
 
 1. Guardia de plataforma, porque no existen en el servidor.
 2. Verificación de disponibilidad real.
@@ -247,6 +248,27 @@ se usan solo en `captura360` y siempre detrás de:
 4. **Un camino degradado cuando el permiso se niega o la API no existe.**
 
 Detalle en `docs/10-captura-360.md`.
+
+### La captura de puntero se toma cuando el gesto se confirma, no al empezar
+
+`setPointerCapture` redirige a ese elemento **todos** los eventos que le quedan a
+ese puntero, y en Chrome eso incluye el `click`. Un arrastre que captura en el
+`pointerdown` se come el clic de lo que haya debajo:
+
+    pointerdown  destino=A      el clic empieza en el enlace
+    pointerup    destino=DIV    lo desvía la captura
+    click        destino=DIV    el <a> nunca se entera
+
+Eso dejó sin navegar el botón principal de la portada, y **jsdom no lo ve**: no
+implementa la captura de puntero, así que en las pruebas el arrastre funciona
+igual con captura y sin ella. Se mira en el navegador, registrando los eventos.
+
+Del mismo día y de la misma superficie: **un `pointercancel` aborta el gesto, no
+lo termina**. Arrastrar empezando sobre un `<a>` hace que Chrome arranque su
+arrastre nativo de enlaces y mande `pointercancel` con coordenadas que no son las
+del dedo; tratarlo como un final hacía saltar el carrusel al lado contrario. Y por
+eso `superficie-arrastre` aplica `-webkit-user-drag: none` también a lo de dentro:
+la propiedad no se hereda y lo que la gente agarra es el contenido.
 
 ## Notas de SSR con TanStack Query
 

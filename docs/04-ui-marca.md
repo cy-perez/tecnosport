@@ -741,7 +741,8 @@ Lo primero que ve quien llega, y la única pieza del sitio que ocupa la pantalla
 entera de borde a borde. Vive en `features/catalogo/presentation/portada/hero/`,
 en `ts-carrusel-hero`.
 
-**Cuatro piezas, una por línea de negocio**, que pasan solas cada cinco segundos.
+**Cuatro piezas, una por línea de negocio**, que pasan solas cada cuatro segundos
+—fueron cinco hasta el 25 de septiembre de 2026— y **también con el dedo**.
 Sustituyó el 25 de septiembre de 2026 a la banda de una sola fotografía con
 cuatro botones bajo el mismo titular: el referente es gotrendier.com.co, donde la
 imagen sangra hasta el borde de la ventana, y el del carrusel es el bloque "With
@@ -753,22 +754,105 @@ modelo.
 entra: cada dependencia nueva es deuda, y lo que hace falta de ella —cuatro
 diapositivas, unas viñetas y un temporizador— son cincuenta líneas de señales.
 Lo que sí se copia es el aspecto: viñetas tipo píldora abajo al centro, la activa
-tres veces más ancha, y el paso cada cinco segundos.
+tres veces más ancha.
 
-**El arte lo entrega el ZIP `hero-tecnosport/`**, con cada pieza en dos
-versiones: `con-texto/`, con el titular y el botón incrustados en los píxeles, y
-`limpio/`, sin ellos. Se usa `limpio/` y el texto lo pone el HTML, que es lo que
-recomienda el propio `LEEME.md` del ZIP y lo que exige la regla dura #4 — texto
-dentro de una imagen no se traduce, no lo lee un lector de pantalla, no escala y,
-en el caso del botón, parece pulsable sin serlo.
+### Se pasa también con el dedo
 
-**Un solo juego de arte para los dos temas.** El ZIP trae `claro/` y `oscuro/`, y
-entre las dos carpetas solo cambia el color del lienzo: `#1B1F26` contra
-`#191E26`, dos unidades de rojo y una de verde. Servir las dos costaba caro de
-verdad —un `<img>` con `display:none` se descarga igual en Chrome, o sea el doble
-de bytes justo en la imagen del LCP— y elegir en tiempo de ejecución no se puede,
-porque el servidor no conoce el tema mientras renderiza. Solo se publica el juego
-claro; la franja que rodea al arte sí cambia de tema, porque es `bg-ts-marca`.
+Arrastrar de lado pasa a la siguiente pieza o a la anterior, con el umbral en la
+sexta parte del ancho visible —una fracción y no unos píxeles: el mismo gesto se
+hace sobre una pieza de 390 px y sobre una de 2560—. La tira **sigue el dedo**
+mientras dura el gesto; uno que no se mueve hasta que sueltas no parece
+arrastrable, parece roto. En los extremos, donde no hay pieza que descubrir, el
+arrastre se frena a un tercio: se mueve lo justo para sentirse atendido sin
+enseñar una franja vacía.
+
+El patrón sale del visor 360, que ya lo había pagado una vez, y **tres cosas de
+las que cuesta acordarse**: `touch-action: pan-y` deja el eje vertical al
+navegador —o deslizar aquí secuestra el scroll de la página—, el temporizador se
+apaga mientras el dedo está encima y se reprograma al soltar, y un arrastre que
+termina sobre el botón de la diapositiva no puede activarlo.
+
+Esa última es una guarda de clic en fase de captura: un `(click)` de plantilla
+escucha en burbuja, o sea después de que el enlace haya navegado. Y hay dos
+defectos que **solo aparecieron en el navegador**, los dos por cómo trata Chrome
+un puntero capturado y un enlace:
+
+- **La captura se toma cuando el gesto se confirma horizontal, no en el
+  `pointerdown`.** Capturar el puntero redirige a ese elemento todo lo que queda
+  de él, `click` incluido: con la captura al empezar, un clic normal sobre el
+  botón de la diapositiva salía `pointerdown` en el `<a>` y `pointerup` y `click`
+  en el `<div>`, así que **el botón principal de la portada no navegaba**.
+- **Un `pointercancel` aborta el gesto sin decidir nada.** Al arrastrar empezando
+  encima del botón —que es un `<a>`— Chrome arranca su arrastre nativo de enlaces
+  y manda `pointercancel` con coordenadas que no son las del dedo; tratándolo como
+  un final, el carrusel saltaba a la pieza **contraria** a la que pedía la mano.
+  Además `superficie-arrastre` pasó a aplicar `-webkit-user-drag: none` también a
+  lo de dentro, que es lo que hace que ahí el gesto sí funcione.
+
+Ninguno de los dos lo ve jsdom, que no implementa la captura de puntero. Lo que sí
+queda fijado por una prueba es el `pointercancel`, porque el evento sí se puede
+disparar a mano.
+
+**El arte es fotografía a sangre desde el 25 de septiembre de 2026**, y antes de
+ese día era otra cosa: un lienzo grafito con el producto recortado a la derecha y
+la mitad izquierda libre para que el texto cayera sobre color plano. Hoy la
+fotografía ocupa la pieza entera y el texto va encima de ella.
+
+Las cuatro fotografías originales no se versionan —12 MB de archivos de 5.000 a
+8.000 px— con el mismo criterio que el ZIP del arte anterior: se versiona el
+resultado, las doce `.webp` de `apps/web/public/imagenes/portada/hero/`, y el
+**encuadre**, que es la decisión y vive en `tools/recortar-hero.py`. Ahí está por
+qué el recorte ancho de calzado va pegado arriba —centrado le corta el tenis, que
+vive en el tercio superior— y por qué el de bolsos baja un poco, para no cortarle
+la base al bolso.
+
+**El texto lo pone el HTML, nunca los píxeles**, que es lo que exige la regla dura
+#4: texto dentro de una imagen no se traduce, no lo lee un lector de pantalla, no
+escala y, en el caso del botón, parece pulsable sin serlo.
+
+**Un solo juego de arte para los dos temas**, que ya valía para el arte de estudio
+y vale más para una fotografía: no hay dos versiones entre las que elegir. Servir
+dos costaría caro —un `<img>` con `display:none` se descarga igual en Chrome, o
+sea el doble de bytes justo en la imagen del LCP— y elegir en tiempo de ejecución
+no se puede, porque el servidor no conoce el tema mientras renderiza. Lo que sí
+cambia de tema es el velo, porque sale de `--color-marca`.
+
+### El velo y el halo, que son lo que hace legible el texto
+
+Una fotografía no promete contraste. La de bolsos tiene fondo lila casi blanco y
+la de tecnología es un escritorio blanco: texto blanco encima, sin nada de por
+medio, da **1,1:1**. Van dos capas, y cada una hace algo distinto.
+
+**El velo** es un degradado de `--color-marca` sobre la fotografía: opaco al 92 %
+en el borde, 70 % a la mitad y transparente al 95 %. De abajo arriba en teléfono
+—donde el texto se apoya en el borde inferior— y de izquierda a derecha desde el
+primer punto de quiebre, donde ocupa la mitad izquierda. Muere antes de llegar a
+la otra mitad a propósito: el tenis, el bolso y los audífonos se ven limpios.
+
+**El halo** (`halo-texto` en `src/tailwind.css`) son dos sombras de texto del
+mismo grafito, una de 4 px al 85 % que dibuja el borde de la letra y otra de 16 px
+al 55 % que la despega del fondo. Es oscuro y no claro, aunque "halo" suene a
+claro: con letras casi blancas, un resplandor claro no se distingue de la propia
+letra y solo emborrona lo que hay detrás. Lo que separa las letras del grano, las
+barandas y el sol de una fotografía de calle es el grafito alrededor.
+
+**Los números están medidos, no elegidos.** El guion compone el velo sobre los
+píxeles de cada recorte y calcula el contraste del texto contra el resultado, en
+la zona donde el texto cae de verdad y con el par de tema oscuro, que es el peor
+—`#EDF0F4` sobre `#191E26`—:
+
+| Pieza | Escritorio | Teléfono |
+|---|---|---|
+| ropa | 6,42:1 | 6,13:1 |
+| calzado | 6,24:1 | 7,17:1 |
+| bolsos | **5,69:1** | 6,56:1 |
+| tecnología | 6,14:1 | 6,13:1 |
+
+El mínimo es 4,5:1 (WCAG 1.4.3) y la peor esquina de las cuatro es la de bolsos.
+**El velo no se puede suavizar sin volver a medir**: se probó a 85 % / 55 % y
+bolsos cae a 3,55:1, por debajo del mínimo. `npm run contrastes` no lo vigila
+—compara pares de tokens, y aquí uno de los dos lados es una fotografía—, así que
+el día que se cambie una foto hay que repetir la medición.
 
 ### Una utilidad donde había tres
 
@@ -792,17 +876,25 @@ La diferencia entre mínimo y máximo es la que hay entre las dos piezas: la ban
 vieja era texto sobre color y necesitaba un alto que llenara la primera pantalla;
 el carrusel es una imagen de 1440 × 592 a todo el ancho, y a 1900 px de ventana su
 proporción natural pediría 780 px de alto, más que la pantalla entera de un
-portátil. Se recorta con `object-cover`, y el recorte es seguro porque el arte
-tiene margen: la tarjeta de producto ocupa de y 48 a y 544 de sus 592, así que al
-techo de 620 se pierden cuatro filas por arriba y cinco por abajo —medido en el
-navegador leyendo los píxeles, no estimado—.
+portátil. Se recorta con `object-cover`, y por eso el encuadre de cada fotografía
+tiene que aguantar perder otro tanto por arriba y por abajo: el recorte que
+`tools/recortar-hero.py` publica no es el que se ve en una pantalla ancha.
+
+Vale también para la pieza vertical de teléfono, aunque ahí casi nunca manda: 4:5
+a 390 px de ventana son 487 px de alto, por debajo del techo. Quien lo nota es un
+teléfono bajo —a 667 px de alto, el `70vh` recorta veinte píxeles—.
 
 ### Dos formas, no dos tamaños
 
-La pieza ancha deja libre la mitad izquierda para el texto. A 390 px de ventana
-esa mitad mide 175 px y el titular se vuelve una mancha, así que **en teléfono va
-la tarjeta cuadrada** de 1000 × 1000 —el mismo set de producto, sin la banda— y el
-texto debajo, no encima.
+La pieza ancha es 2,43:1. A 390 px de ventana esa proporción mide 160 px de alto y
+no cabe nada encima, así que **en teléfono va un recorte vertical 4:5** de la misma
+fotografía, de 1000 × 1250, con el texto apoyado abajo. Fue una tarjeta cuadrada
+mientras el texto iba debajo de la imagen; desde que va encima, un cuadrado no da
+de sí para la foto y el texto a la vez.
+
+Los encuadres verticales no son los anchos recortados: se eligen aparte y por la
+misma razón que los anchos. El de calzado deja el tenis arriba y el piso del
+muelle vacío abajo, que es donde cae el texto.
 
 Eso se resuelve con `<picture>` y un `<source media>`, **no con
 `NgOptimizedImage`**, que `apps/web/CLAUDE.md` pide "siempre". Es la excepción que
@@ -819,11 +911,23 @@ un píxel: ahí no hace falta ningún permiso de la regla dura #2. Por eso desap
 
 ### Las viñetas y el movimiento
 
-Las viñetas salen de `--color-sobre-marca` en los dos estados, y **no cambian con
-el tema** aunque vivan encima de una imagen: el arte es oscuro siempre. La
-inactiva fue `bg-ts-marca-alt` durante un rato y daba **1,38:1** contra el fondo
-del arte, por debajo del 3:1 que WCAG 1.4.11 pide de un control; al 50 % del blanco
-sube a 4,6:1 y se sigue leyendo como "apagada" frente a la activa.
+**La tira de viñetas va debajo de la fotografía, no encima**, y eso cambió con el
+arte. Flotaba sobre el lienzo de estudio desde el primer punto de quiebre, y podía:
+aquel arte era grafito de borde a borde, así que la viñeta apagada —blanco al 50 %—
+daba 4,6:1 contra él en cualquier punto donde cayera. Una fotografía no promete
+nada de eso, y el velo deja limpia justo la mitad por donde pasa el centro de la
+tira: sobre el escritorio blanco de la pieza de tecnología, esa misma viñeta cae a
+**1,1:1** y desaparece.
+
+Se bajó a la franja de marca, que ya existe y ya está medida, en vez de ponerle un
+fondo oscuro propio: eso último es inventarle una superficie a un control para
+tapar un problema que volverá con la siguiente foto clara. Ahí el 3:1 de WCAG
+1.4.11 no depende de qué fotografía se publicó.
+
+Las viñetas salen de `--color-sobre-marca` en los dos estados. La inactiva fue
+`bg-ts-marca-alt` durante un rato y daba **1,38:1** contra el fondo, por debajo del
+3:1; al 50 % del blanco sube a 4,6:1 y se sigue leyendo como "apagada" frente a la
+activa.
 
 **El objetivo táctil va en el `<button>` y la píldora en un `<span>` hijo.** La
 píldora mide 8 px de alto y el botón era la píldora: 8 × 8 px la inactiva, por
@@ -834,7 +938,9 @@ botón y `bg-transparent`, el área pulsable son 44 px y el dibujo no engorda.
 
 **Y hay un botón de pausa**, que es lo que WCAG 2.2.2 (nivel A) exige de todo
 movimiento automático que dure más de cinco segundos: un mecanismo para pausarlo,
-detenerlo u ocultarlo. Este documento describía "se detiene con el puntero encima
+detenerlo u ocultarlo. **No se fue con el segundo que se le quitó al paso**: lo
+que el criterio mide es cuánto dura el movimiento, y el de un carrusel que rota
+solo no termina nunca; los cuatro segundos son lo que dura cada paso. Este documento describía "se detiene con el puntero encima
 y con el foco dentro" como si bastara, y no basta: en un teléfono no hay puntero
 —y tocar una viñeta *reinicia* la cuenta en vez de detenerla— y con teclado no es
 descubrible. La pausa de la persona es una señal aparte de la del puntero y
@@ -849,14 +955,34 @@ regla dura #4 no admite ninguno, `aria-label` incluidos.
 **El `<h1>` de la portada vive fuera del carrusel.** Estuvo en la primera
 diapositiva, con `<p>` en las otras tres para no tener cuatro encabezados de nivel
 uno. El razonamiento era correcto y el resultado estaba roto: esa diapositiva
-queda `inert` y `aria-hidden` en cuanto el carrusel avanza, así que a los cinco
+queda `inert` y `aria-hidden` en cuanto el carrusel avanza, así que a los pocos
 segundos la portada se quedaba **sin ningún encabezado de nivel uno**. Hoy es un
 `sr-only` en `portada.page.html` con `portada.titulo`, que además es estable —un
-`h1` que cambia de texto cada cinco segundos es peor que uno que no se ve—.
+`h1` que cambia de texto solo es peor que uno que no se ve—.
 
 Los cuatro hallazgos anteriores salieron de la auditoría de accesibilidad del 25
 de septiembre de 2026, con `npm run clases`, `npm run contrastes` y las pruebas en
 verde: ninguna herramienta del proyecto los veía.
+
+### Los cuatro botones miden lo mismo
+
+`min-w-[20ch]` en el `ts-boton` de la diapositiva. Sin él cada uno mide lo que mide
+su texto —de 61,6 px "Ver ropa" a 158,8 px "Ver calzado deportivo"— y el botón
+baila de ancho cada cuatro segundos en el mismo punto de la pantalla, que es justo
+donde está la mano de quien va a pulsarlo.
+
+El número sale de medir los ocho rótulos en el navegador, los cuatro de cada
+idioma, y **el más ancho no es el español**: "Browse sports footwear" pide 18,2ch.
+Los 20ch dejan margen, y ese margen tiene un destinatario concreto: mientras la
+tipografía de marca no ha cargado (`ADR-0059`) el texto se pinta con el respaldo
+del sistema, y ahí el mismo rótulo pasa a pedir 19,3ch — no porque crezca, sino
+porque encoge el `ch`, que es el ancho del "0" de la fuente que esté puesta.
+
+`ch` y no píxeles: es la escapatoria que la regla dura #2 admite y que ya usan
+`min-w-[12ch]` en el visor 360 y `min-w-[2ch]` en la línea del carrito. Y se
+comprueba leyendo el ancho pintado, no calculándolo: un `<span>` de prueba con la
+misma declaración `font` daba 8,89 px por carácter donde el elemento de verdad
+resuelve 9,6.
 
 Son botones con `aria-current`, **no `role="tablist"` con `role="tab"`**: el patrón
 de pestañas de la APG obliga además a que cada diapositiva sea un `tabpanel`

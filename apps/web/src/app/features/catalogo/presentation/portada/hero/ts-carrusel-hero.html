@@ -20,12 +20,37 @@
   <!-- La ventana del carrusel. `overflow-hidden` recorta las tres piezas que no tocan; la tira de
        dentro se corre un ancho completo por diapositiva.
        `aria-live` vale `off` mientras rota sola y `polite` cuando alguien la detuvo: anunciar un
-       cambio que nadie pidió interrumpe la lectura de la página cada cinco segundos. -->
-  <div class="relative overflow-hidden" [attr.aria-live]="cortesia()">
+       cambio que nadie pidió interrumpe la lectura de la página cada cuatro segundos.
+
+       **Y es la superficie del gesto.** `superficie-arrastre` son las tres propiedades que ya
+       necesitó el visor 360 y que se explican juntas: `touch-action: pan-y` —el eje vertical sigue
+       siendo del navegador, o deslizar aquí secuestraría el scroll de la página—, `user-select` y
+       `-webkit-user-drag`, sin las cuales el puntero arrastra la fotografía como si fuera un enlace.
+
+       Los cuatro manejadores van aquí y no en cada diapositiva: la que está fuera de pantalla lleva
+       `inert` y no recibe eventos, así que colgarlos de la pieza dejaría el gesto a medias justo
+       cuando la tira se está moviendo. -->
+  <div
+    #ventana
+    class="superficie-arrastre relative overflow-hidden"
+    [attr.aria-live]="cortesia()"
+    (pointerdown)="iniciarArrastre($event)"
+    (pointermove)="mover($event)"
+    (pointerup)="terminarArrastre($event)"
+    (pointercancel)="cancelarArrastre($event)"
+  >
+    <!-- El `transform` lleva dos sumandos: la posición de la diapositiva, en porcentaje del ancho, y
+         lo que el dedo lleva corrido, en píxeles. Por eso es un `calc()` y no un `translateX` a
+         secas — mezcla dos unidades que solo el navegador sabe resolver.
+
+         La transición se apaga mientras se arrastra, y ese `0ms` es la ausencia de una duración, no
+         una duración elegida a ojo: con los 300 ms de `--mov-panel` puestos, la tira persigue al
+         dedo un tercio de segundo por detrás y el gesto se siente roto. Es el mismo criterio con el
+         que `--spacing-0` no está en `tokens.json`. -->
     <div
       class="flex ease-[var(--curva-suave)] transition-transform"
-      [style.transform]="'translateX(-' + actual() * 100 + '%)'"
-      [style.transitionDuration]="'var(--mov-panel)'"
+      [style.transform]="'translateX(calc(' + actual() * -100 + '% + ' + corrimiento() + 'px))'"
+      [style.transitionDuration]="arrastrando() ? '0ms' : 'var(--mov-panel)'"
     >
       @for (diapositiva of diapositivas; track diapositiva.linea; let i = $index) {
         <!-- `inert` en las que no tocan, y no solo `aria-hidden`: sin él, el botón de las otras
@@ -43,9 +68,10 @@
         >
           <div class="relative">
             <!-- Dos archivos y dos formas, no la misma imagen escalada. La pieza ancha es
-                 1440 x 592 y deja libre la mitad izquierda para el texto; a 390 px de ventana esa
-                 mitad mide 175 px y el titular se vuelve una mancha. En teléfono va la tarjeta
-                 cuadrada —el mismo set de producto, sin la banda— y el texto debajo.
+                 1440 x 592; a 390 px de ventana esa misma proporción mide 160 px de alto y no cabe
+                 nada encima, así que en teléfono va un recorte vertical 4:5 de la misma fotografía.
+                 Fue una tarjeta cuadrada mientras el texto iba debajo; desde que va encima, un
+                 cuadrado no da de sí para la foto y el texto a la vez.
 
                  **`<picture>` y no `NgOptimizedImage`**, que es lo que apps/web/CLAUDE.md pide
                  "siempre", y esta es la excepción que esa regla no contempla: `NgOptimizedImage`
@@ -60,11 +86,11 @@
                  el `media`, que vive con los otros en `core/imagenes/tamanos-de-imagen.ts`. -->
             <picture>
               <source
-                [attr.media]="mediaTarjeta"
-                [srcset]="'/imagenes/portada/hero/tarjetas/' + diapositiva.tarjeta + '-1000.webp'"
+                [attr.media]="mediaVertical"
+                [srcset]="'/imagenes/portada/hero/vertical/' + diapositiva.vertical + '-1000.webp'"
                 sizes="100vw"
                 width="1000"
-                height="1000"
+                height="1250"
               />
               <img
                 class="alto-carrusel block h-auto w-full object-cover"
@@ -85,51 +111,119 @@
               />
             </picture>
 
-            <!-- El bloque de texto: debajo de la tarjeta en teléfono, encima del arte desde el
-                 primer punto de quiebre. Se alinea al contenedor de 1200 px, que es exactamente
-                 donde el arte deja el hueco: la pieza reserva de x 120 a x 680 de sus 1440, y un
-                 `max-w-contenido` centrado empieza en 120 cuando la ventana mide 1440. -->
+            <!-- **El velo, que es lo que hace legible el texto sobre una fotografía.**
+
+                 El arte de estudio anterior traía media pieza de color plano y el contraste venía
+                 dado. Una fotografía no: la de bolsos tiene fondo lila casi blanco y la de
+                 tecnología es un escritorio blanco. Sin velo, el blanco sobre blanco da 1,1:1.
+
+                 Los números **están medidos sobre los píxeles del compuesto**, no elegidos a ojo —el
+                 guion vive en `docs/04-ui-marca.md`—: con 92 % en el borde, 70 % a la mitad y
+                 transparente al 95 %, la peor esquina de las cuatro fotografías da 5,69:1 contra el
+                 4,5:1 que pide WCAG 1.4.3. Bajarlo a 85 % / 55 % deja bolsos en 3,55:1, o sea por
+                 debajo. No es un adorno que se pueda suavizar sin volver a medir.
+
+                 Cambia de dirección con la forma, porque el texto también: de abajo arriba en
+                 teléfono, donde el texto se apoya en el borde inferior, y de izquierda a derecha
+                 desde el primer punto de quiebre, donde ocupa la mitad izquierda. El degradado muere
+                 antes de la otra mitad, así que el tenis, el bolso y los audífonos se ven limpios.
+
+                 `--color-marca` y no un negro: es el grafito de la marca, y cambia con el tema como
+                 todo lo demás. -->
             <div
-              class="flex items-center px-16 py-32 desde-movil:absolute desde-movil:inset-0 desde-movil:px-24 desde-movil:py-48"
+              class="absolute inset-0 bg-linear-to-t from-ts-marca/95 via-ts-marca/72 via-50% to-transparent to-95% desde-movil:bg-linear-to-r desde-movil:from-ts-marca/92 desde-movil:via-ts-marca/70"
+              aria-hidden="true"
+            ></div>
+
+            <!-- El bloque de texto, encima de la fotografía en las dos formas. Abajo en teléfono
+                 —el recorte vertical deja sitio libre ahí a propósito: el piso del muelle, el
+                 cemento, la mesa— y centrado a la izquierda desde el primer punto de quiebre.
+                 Se alinea al contenedor de 1200 px, como el resto de la página. -->
+            <div
+              class="absolute inset-0 flex items-end px-16 py-32 desde-movil:items-center desde-movil:px-24 desde-movil:py-48"
             >
               <div class="mx-auto w-full max-w-contenido">
                 <div class="desde-movil:w-1/2">
-                  <p
-                    class="m-0 mb-16 flex items-center gap-12 font-mono text-xs tracking-descriptor uppercase"
-                  >
-                    <!-- `sobre-marca` y no `acento`: el ámbar de esta pantalla es el botón, y
-                         `docs/04-ui-marca.md` lo admite solo como relleno con texto grafito encima
-                         — una barrita ámbar sin texto es el segundo ámbar de la pieza. -->
-                    <span class="inline-block h-4 w-24 bg-ts-sobre-marca" aria-hidden="true"></span>
-                    {{ claveDe(diapositiva, 'eyebrow') | transloco }}
-                  </p>
+                  <!-- **El halo, que es la segunda mitad de la legibilidad.** El velo sube el
+                       contraste de la zona entera; el halo dibuja el borde de cada letra, que es
+                       otra cosa: una fotografía tiene grano, ramas, barandas y sol, y sobre ese
+                       ruido un titular fino se deshilacha aunque la medida del contraste salga bien.
 
-                  <!-- Los cuatro titulares son `<p>`, ninguno es el `<h1>` de la página.
-                       Empezó siendo `<h1>` en la primera pieza y `<p>` en las otras tres, para no
-                       tener cuatro encabezados de nivel uno. El razonamiento era bueno y el
-                       resultado estaba roto: ese `<h1>` vive **dentro** de una diapositiva, y en
-                       cuanto el carrusel avanza esa diapositiva queda `inert` y `aria-hidden`, así
-                       que a los cinco segundos la portada se quedaba sin ningún encabezado de nivel
-                       uno. La prueba que lo fijaba contaba nodos del DOM y no lo veía.
-                       El `<h1>` de la portada vive ahora fuera del carrusel, en `portada.page.html`,
-                       y no cambia de texto cada cinco segundos. Lo levantó la auditoría. -->
-                  <p
-                    class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
-                  >
-                    {{ claveDe(diapositiva, 'titular') | transloco }}
-                  </p>
+                       Es una sombra oscura y difusa, no un resplandor claro. Con letras casi blancas
+                       un halo claro no se ve contra la letra y sí emborrona lo que hay detrás; lo
+                       que las separa del ruido de la foto es el grafito de la marca alrededor. Sale
+                       de `--color-marca` y sus radios de `--esp-*`, como todo (regla dura #2).
 
-                  <p class="m-0 mb-24 max-w-lectura text-base leading-texto">
-                    {{ claveDe(diapositiva, 'apoyo') | transloco }}
-                  </p>
+                       Va aquí y no en el `<div>` de fuera a propósito: el botón queda fuera de este
+                       envoltorio porque tiene su propio relleno ámbar y texto grafito, y heredar el
+                       halo le pondría una sombra oscura a un texto oscuro. -->
+                  <div class="halo-texto">
+                    <p
+                      class="m-0 mb-16 flex items-center gap-12 font-mono text-xs tracking-descriptor uppercase"
+                    >
+                      <!-- `sobre-marca` y no `acento`: el ámbar de esta pantalla es el botón, y
+                           `docs/04-ui-marca.md` lo admite solo como relleno con texto grafito
+                           encima — una barrita ámbar sin texto es el segundo ámbar de la pieza. -->
+                      <span
+                        class="inline-block h-4 w-24 bg-ts-sobre-marca"
+                        aria-hidden="true"
+                      ></span>
+                      {{ claveDe(diapositiva, 'eyebrow') | transloco }}
+                    </p>
+
+                    <!-- Los cuatro titulares son `<p>`, ninguno es el `<h1>` de la página.
+                         Empezó siendo `<h1>` en la primera pieza y `<p>` en las otras tres, para no
+                         tener cuatro encabezados de nivel uno. El razonamiento era bueno y el
+                         resultado estaba roto: ese `<h1>` vive **dentro** de una diapositiva, y en
+                         cuanto el carrusel avanza esa diapositiva queda `inert` y `aria-hidden`, así
+                         que a los cuatro segundos la portada se quedaba sin ningún encabezado de
+                         nivel uno. La prueba que lo fijaba contaba nodos del DOM y no lo veía.
+                         El `<h1>` de la portada vive ahora fuera del carrusel, en
+                         `portada.page.html`, y no cambia de texto solo. Lo levantó la auditoría. -->
+                    <p
+                      class="m-0 mb-16 font-display text-2xl leading-titulares desde-tableta:text-3xl"
+                    >
+                      {{ claveDe(diapositiva, 'titular') | transloco }}
+                    </p>
+
+                    <p class="m-0 mb-24 max-w-lectura text-base leading-texto">
+                      {{ claveDe(diapositiva, 'apoyo') | transloco }}
+                    </p>
+                  </div>
 
                   <!-- `ts-boton` con `enlace` y no un `<a>` con clases sueltas: es un enlace de
                        verdad —se copia, se abre en pestaña nueva— y la variante `acento` ya
                        resuelve el anillo de foco sobre ámbar, que en tema oscuro es el mismo color
                        que `--color-foco` y sería invisible. Cuatro copias de una lista de clases
-                       son cuatro sitios donde se puede caer el anillo. -->
+                       son cuatro sitios donde se puede caer el anillo.
+
+                       **Los cuatro botones miden lo mismo**, y por eso hay un mínimo: sin él cada
+                       uno mide lo que mide su texto —de 61,6 px "Ver ropa" a 158,8 px "Ver calzado
+                       deportivo"— y el botón baila de ancho cada cuatro segundos en el mismo punto
+                       de la pantalla, que es justo donde está la mano de quien va a pulsarlo.
+
+                       El número sale de medir los ocho textos en el navegador, los cuatro de cada
+                       idioma, y **el más ancho no es el español**: "Browse sports footwear" pide
+                       18,2ch y "Ver calzado deportivo" 16,5ch. Con 20ch los cuatro quedan en 192 px
+                       y ninguno desborda.
+
+                       El margen que sobra tiene un destinatario concreto, y es la razón de que no
+                       sean 19ch: **mientras la tipografía de marca no ha cargado** el texto se pinta
+                       con el respaldo del sistema, y ahí el mismo rótulo pasa a pedir 19,3ch. No
+                       porque crezca —mide casi lo mismo, 171,7 px contra 174,5— sino porque encoge
+                       el `ch`, que es el ancho del "0" de la fuente que esté puesta. `ADR-0059` dice
+                       que la marca no hace esperar al texto, así que ese primer pintado existe de
+                       verdad y un mínimo apretado descuadraría la fila justo ahí.
+
+                       `ch` y no píxeles a propósito: es el ancho de un carácter de la propia fuente
+                       del botón, así que esto sigue midiendo lo que tiene que medir si alguien
+                       amplía el texto. Es la misma escapatoria de la regla dura #2 que ya usan
+                       `min-w-[12ch]` en el visor 360 y `min-w-[2ch]` en la línea del carrito: lo que
+                       la regla prohíbe es el píxel suelto. -->
+
                   <ts-boton
                     variante="acento"
+                    clase="min-w-[20ch]"
                     [enlace]="['/', idioma(), 'productos']"
                     [parametrosEnlace]="{ linea: diapositiva.linea }"
                   >
@@ -155,15 +249,25 @@
          peor que no usarlo — anuncia una estructura que no existe. Esta es la variante simple:
          botones con nombre propio, y el activo marcado.
 
-         El color sale de `--color-sobre-marca` en los dos estados, y **no cambia con el tema**
-         aunque la viñeta viva encima de una imagen: el arte es oscuro siempre, en claro y en
-         oscuro, porque el ZIP lo entrega con el fondo de la franja de marca incrustado. La
-         inactiva fue `bg-ts-marca-alt` durante un rato y daba 1,38:1 contra el fondo del arte
-         —medido, no estimado—, por debajo del 3:1 que WCAG 1.4.11 pide de un control. Al 50 % del
-         blanco sube a ~4,5:1 y se sigue leyendo como "apagada" frente a la activa, que además es
-         tres veces más ancha. -->
+         **La tira va debajo de la fotografía, no encima, y eso cambió el 25 de septiembre de 2026**
+         al pasar del arte de estudio a la fotografía a sangre. Flotaba sobre el arte desde el primer
+         punto de quiebre, y podía: aquel lienzo era grafito de borde a borde, así que la viñeta
+         apagada —blanco al 50 %— daba 4,5:1 contra él en cualquier punto donde cayera. Una
+         fotografía no promete nada de eso. El velo cubre la mitad del texto y deja la otra limpia a
+         propósito, que es justo por donde pasa el centro de la tira: sobre el escritorio blanco de
+         la pieza de tecnología, esa misma viñeta cae a 1,1:1 y **deja de verse**.
+
+         Se resolvió bajándola a la franja de marca, que ya existe y ya está medida, en vez de
+         ponerle un fondo oscuro propio: eso último es inventarle una superficie a un control para
+         tapar un problema que la fotografía va a volver a traer con la siguiente foto clara. Aquí el
+         3:1 de WCAG 1.4.11 no depende de qué se subió al catálogo.
+
+         El color sale de `--color-sobre-marca` en los dos estados. La inactiva fue `bg-ts-marca-alt`
+         durante un rato y daba 1,38:1 contra el fondo —medido, no estimado—; al 50 % del blanco
+         sube a ~4,5:1 y se sigue leyendo como "apagada" frente a la activa, que además es tres
+         veces más ancha. -->
     <div
-      class="flex items-center justify-center pb-16 desde-movil:absolute desde-movil:inset-x-0 desde-movil:bottom-8 desde-movil:pb-0"
+      class="flex items-center justify-center py-8"
       [attr.aria-label]="'portada.hero.indicadores' | transloco"
       role="group"
       (keydown)="alPulsarTecla($event)"

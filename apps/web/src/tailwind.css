@@ -409,6 +409,21 @@
   touch-action: pan-y;
   user-select: none;
   -webkit-user-drag: none;
+
+  /* Y también en lo que hay dentro, porque `-webkit-user-drag` no se hereda y
+     lo que la gente agarra es el contenido, no el contenedor.
+     Se añadió el 25 de septiembre de 2026 con el arrastre del carrusel de
+     portada, y lo pidió un defecto medido en el navegador: arrastrar empezando
+     encima del botón de la diapositiva —que es un `<a>`— hacía que Chrome
+     iniciara el arrastre nativo de un enlace, y ese arrastre **mata el gesto**
+     con un `pointercancel`. El carrusel ya no lo interpreta como un final (ver
+     `cancelarArrastre`), así que sin esta línea el gesto no haría daño; lo que
+     esta línea añade es que ahí sí funcione. El visor 360 tenía el mismo hueco
+     latente: su `-webkit-user-drag` estaba en el marco y el fotograma es un
+     hijo. */
+  & * {
+    -webkit-user-drag: none;
+  }
 }
 
 /* Los mínimos de columna de las rejillas que se reparten solas
@@ -471,9 +486,40 @@
    su proporción natural pediría 780 px de alto — más que la pantalla entera de
    un portátil. Aquí el token es el techo.
 
+   Vale también para la pieza vertical de teléfono, aunque ahí casi nunca manda:
+   4:5 a 390 px de ventana son 487 px de alto, por debajo del techo. Quien lo
+   nota es un teléfono bajo —a 667 px de alto, el `70vh` recorta veinte píxeles—
+   y ese recorte no estorba: deja a la vista el borde de lo que sigue.
+
    Por qué una utilidad y no un valor arbitrario en la plantilla: `min()` con una
    coma dentro de un `[...]` de Tailwind hay que escaparlo, y lo que se gana es
    una clase ilegible. Por qué no un `.scss` de componente: ADR-0020. */
+/* EL HALO DEL TEXTO DEL CARRUSEL. Nació con la fotografía a sangre del 25
+   de septiembre de 2026 y no existía antes: el arte de estudio ponía el texto
+   sobre color plano, donde un halo no pinta nada.
+
+   Son dos sombras y cada una hace algo distinto. La de 4 px dibuja el borde de
+   la letra —es la que impide que un titular fino se deshilache sobre el grano,
+   las barandas y el sol de una fotografía de calle— y la de 16 px es el
+   apagado suave alrededor, la que separa el bloque entero del ruido de atrás.
+   Con una sola: a 4 px el texto flota sobre la foto, a 16 px las letras se
+   emborronan sin ganar borde.
+
+   **Oscuro, no claro.** El texto de esta pieza es casi blanco, así que un halo
+   claro no se distingue de la propia letra y lo único que hace es emborronar lo
+   que hay detrás. Lo que despega las letras de la fotografía es el grafito de
+   la marca alrededor de ellas.
+
+   Sale entero de tokens —`--color-marca` y la escala de espacio— porque la
+   regla dura #2 no admite ni un color ni un píxel literal. El `color-mix` es
+   la forma de pedirle transparencia a un token que no la tiene; `--color-marca`
+   es opaco y una sombra opaca de 16 px es una mancha, no un halo. */
+@utility halo-texto {
+  text-shadow:
+    0 0 var(--esp-4) color-mix(in srgb, var(--color-marca) 85%, transparent),
+    0 0 var(--esp-16) color-mix(in srgb, var(--color-marca) 55%, transparent);
+}
+
 @utility alto-carrusel {
   /* El `min()` es lo que importa: en una pantalla baja manda la pantalla, no el
      token. `70vh` es una proporción de viewport y no un píxel, así que no es el

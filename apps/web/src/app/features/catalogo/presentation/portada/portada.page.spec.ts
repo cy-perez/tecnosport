@@ -163,7 +163,9 @@ describe('PortadaPage', () => {
 
     const conPrioridad = container.querySelectorAll('img[fetchpriority="high"]');
     expect(conPrioridad).toHaveLength(1);
-    expect(conPrioridad[0].getAttribute('alt')).toContain('prendas deportivas');
+    // Por el archivo y no por el `alt`, que es texto y cambia cuando cambia la fotografía: lo que
+    // esta prueba afirma es *cuál* de las cuatro piezas va priorizada, no cómo se describe.
+    expect(conPrioridad[0].getAttribute('src')).toContain('hero-ropa');
   });
 
   it('cada línea de negocio lleva al catálogo ya filtrado', async () => {
