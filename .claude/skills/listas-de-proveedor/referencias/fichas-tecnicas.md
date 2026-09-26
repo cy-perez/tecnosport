@@ -98,8 +98,12 @@ Recorta desde `Comprar ahora` hasta el pie de página (`Suscríbete`, `Síguenos
 
 ## Open Icecat: bueno para lo que cubre, y hay que saber qué cubre
 
-`scripts/icecat_local.py` trae fichas completas en español y las fotos en la
-misma pasada. Cubrió 34 de 98 productos en la misma corrida.
+`scripts/icecat_local.py` trae fichas completas en español. Cubrió 34 de 98
+productos en la misma corrida.
+
+Traía también los enlaces de las fotos, y esa parte ya no se usa: las fotos
+salieron del flujo el 25/09/2026 (regla 16 del `SKILL.md`). Lo que se conserva
+de este paso es la ficha.
 
 ### Cobertura real
 
@@ -110,12 +114,12 @@ Medida dos veces, con listas parecidas y resultado parecido:
 | Productos de la lista | 98 | 96 |
 | Resueltos por `mi.com/co` | 39 | 38 |
 | Fichas traídas de Open Icecat | 34 | 34 |
-| Productos con sus 4 fotos de Icecat | — | 23 |
 | Sin ficha de ninguna de las dos | — | 16 |
 
 La proporción se repite: **Icecat cubre un tercio largo y Xiaomi otro tercio**,
-y queda un resto que solo resuelve el proveedor. No es un fallo del paso; es la
-razon de que `preparar_fotos.py` descuente lo resuelto y arme el pedido.
+y queda un resto que solo resuelve el proveedor. No es un fallo del paso: a ese
+resto se le escribe una descripción corta con lo que el nombre comercial
+establece y una nota de qué falta, y el dato se le pide al proveedor.
 
 ### Cobertura por marca (medida el 15/09/2026)
 
@@ -130,7 +134,7 @@ fabricante o el proveedor.
 
 Como Xiaomi es la marca más grande de estas listas, **Icecat nunca va a cubrir
 la mitad del catálogo**. Eso no es un fallo del paso: es la razón por la que
-`preparar_fotos.py` descuenta lo resuelto y arma el pedido al proveedor.
+`mi.com/co` y el proveedor son fuentes de primera, no de respaldo.
 
 ### Las cuatro trampas del emparejamiento
 
@@ -192,11 +196,10 @@ que una persona la revise.
 - `indice` baja 291 MB y deja un CSV de ~338 MB. `buscar` lo carga entero en
   memoria: **tarda varios minutos y usa cerca de 3 GB**. No es que se haya
   colgado.
-- `traer` limita a unas cuatro fotos por producto, que es el estándar de
-  `imagenes.md`. Un producto con una sola foto en Icecat queda incompleto y pasa
-  al pedido al proveedor.
-- `preparar_fotos.py` busca lo ya resuelto en `fotos/urls-icecat.csv` **relativo
-  al directorio actual**. Si el catálogo vive en `catalogo/`, hay que pasarle
+- `traer` escribe además un `fotos/urls-icecat.csv` con enlaces de fotos. Es un
+  sobrante de cuando la skill las bajaba: nadie lo lee. Si algún día vuelven las
+  fotos, ojo con que `preparar_fotos.py` lo busca **relativo al directorio
+  actual**, así que con el catálogo en `catalogo/` hay que pasarle
   `--cubiertos catalogo/fotos/urls-icecat.csv` o reportará que no resolvió nada.
 
 ---
@@ -215,7 +218,7 @@ vigente**, en `/co/<modelo>/specs/`. Fuera de eso:
 - La ficha del iPhone suele cubrir **el modelo y su Plus en la misma página**:
   separar los datos antes de publicar.
 
-Para Apple, entonces, lo normal es pedirle la ficha y las fotos al proveedor.
+Para Apple, entonces, lo normal es pedirle la ficha al proveedor.
 
 ---
 

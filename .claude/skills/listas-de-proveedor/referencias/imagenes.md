@@ -1,5 +1,13 @@
 # Estándar de fotos
 
+> **Fuera del flujo desde el 25/09/2026.** La skill ya no busca, no descarga y
+> no retoca fotos: ver la regla 16 del `SKILL.md`. Este documento se conserva
+> entero —el estándar, la cobertura medida y el reparto de trabajo— porque
+> sigue siendo la referencia de cómo tiene que verse una foto del catálogo, y
+> porque volver atrás debe ser reponer dos pasos y no reescribirlos. Lo que
+> describe de aquí en adelante **no se ejecuta solo**: se hace a mano cuando
+> llega un lote de fotos, como cuenta el apéndice «Si algún día hay fotos».
+
 ## Especificación
 
 Lo produce la skill `fotos-estudio-degradado`; aquí queda anotado para saber qué
