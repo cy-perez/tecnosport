@@ -32,11 +32,22 @@ interface EnlaceDelPie {
   readonly clave: string;
 }
 
-/** Primera columna: por dónde se anda el sitio. */
+/**
+ * Primera columna: por dónde se anda el sitio.
+ *
+ * <p>El buzón de sugerencias entró aquí el 26 de septiembre de 2026, y no en la columna de ayuda,
+ * que es donde a primera vista encajaría. La diferencia es real: los tres de "Ayuda" resuelven algo
+ * que alguien necesita <b>ahora</b> —una duda, un pedido en camino, un problema con una compra— y
+ * el buzón no resuelve nada de quien escribe. Puesto entre ellos, y sobre todo cerca de
+ * "Contáctanos", invitaría a mandar por ahí un reclamo —que tiene plazo legal y no corre en el
+ * buzón—, que es justo el error que la pantalla del buzón existe para evitar. Aquí se lee como lo
+ * que es: una parte más del sitio.
+ */
 const ENLACES_DEL_SITIO: readonly EnlaceDelPie[] = [
   { segmentos: [], clave: 'pie.portada' },
   { segmentos: ['productos'], clave: 'encabezado.catalogo' },
   { segmentos: ['carrito'], clave: 'pie.carrito' },
+  { segmentos: ['ayuda', 'sugerencias'], clave: 'pie.sugerencias' },
   // La única entrada al panel desde la vitrina. Apunta a `/admin` y no al formulario: con sesión de
   // ADMIN cae en el panel, y sin ella `adminGuard` redirige al ingreso anotando el destino. Va
   // siempre visible a propósito — el enlace del encabezado solo aparece cuando ya hay sesión, así

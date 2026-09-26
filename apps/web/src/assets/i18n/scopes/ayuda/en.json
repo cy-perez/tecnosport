@@ -171,6 +171,36 @@
     "enlace_estado": "Check the status of an order",
     "enlace_privacidad": "Personal data processing policy"
   },
+  "sugerencias": {
+    "titulo": "Suggestion box",
+    "entradilla": "Got an idea that would make the shop better? Write it here. We read every one.",
+    "aviso_titulo": "This is not for complaints",
+    "aviso": "If you need a warranty claim, to withdraw from a purchase, to file a complaint or to exercise your rights over your personal data, write to us through our support channels: those requests are logged with a date and have response deadlines that do not run here.",
+    "aviso_enlace": "Go to Contact us",
+    "mensaje_label": "Your suggestion",
+    "mensaje_placeholder": "Tell us what you would improve…",
+    "mensaje_ayuda": "The more specific the better: what you were doing and what you expected to happen.",
+    "restantes": "{{restantes}} characters left",
+    "correo_label": "Your email (optional)",
+    "correo_ayuda": "Only if you want a reply. Leave it blank and your suggestion still reaches us, with no data of yours kept.",
+    "autoriza_datos": "I authorise Tecno Sport to use my email to reply to this suggestion.",
+    "ver_politica": "Read the data protection policy",
+    "enviar": "Send suggestion",
+    "enviando": "Sending…",
+    "errores": {
+      "mensaje_requerido": "Write your suggestion before sending it.",
+      "correo_invalido": "Enter a valid email, or leave it blank.",
+      "autorizacion_requerida": "If you leave us your email, we need your authorisation to use it."
+    },
+    "error_generico": "We could not send your message. Please try again in a moment.",
+    "error_limite": "We have already had several messages from here. Try again later.",
+    "exito_titulo": "Thank you, we got it",
+    "exito_con_correo": "We will read it and, if there is anything to answer, we will write to the email you left us.",
+    "exito_anonimo": "We read every one. You did not leave an email, so we cannot reply, but it still helps us.",
+    "otra": "Write another",
+    "enlaces_titulo": "You may also want",
+    "enlace_preguntas": "Frequently asked questions"
+  },
   "seo": {
     "preguntas": {
       "titulo": "Frequently asked questions",
@@ -179,6 +209,10 @@
     "contacto": {
       "titulo": "Contact us",
       "descripcion": "Tecno Sport's WhatsApp, email and phone, with support hours and response times."
+    },
+    "sugerencias": {
+      "titulo": "Suggestion box",
+      "descripcion": "Tell us what you would improve about the shop. We read every suggestion; complaints and warranty claims go through our support channels."
     }
   }
 }

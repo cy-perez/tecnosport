@@ -171,6 +171,36 @@
     "enlace_estado": "Consultar el estado de un pedido",
     "enlace_privacidad": "Política de tratamiento de datos personales"
   },
+  "sugerencias": {
+    "titulo": "Buzón de sugerencias",
+    "entradilla": "¿Se te ocurre algo que haría mejor la tienda? Escríbenoslo aquí. Lo leemos todo.",
+    "aviso_titulo": "Esto no es para reclamos",
+    "aviso": "Si necesitas la garantía de un producto, retractarte de una compra, poner una queja o ejercer tus derechos sobre tus datos personales, escríbenos por los canales de atención: esas solicitudes se radican con fecha y tienen plazos de respuesta que aquí no corren.",
+    "aviso_enlace": "Ir a Contáctanos",
+    "mensaje_label": "Tu sugerencia",
+    "mensaje_placeholder": "Cuéntanos qué mejorarías…",
+    "mensaje_ayuda": "Entre más concreto, mejor: qué estabas haciendo y qué esperabas que pasara.",
+    "restantes": "Te quedan {{restantes}} caracteres",
+    "correo_label": "Tu correo (opcional)",
+    "correo_ayuda": "Solo si quieres que te respondamos. Si lo dejas en blanco, tu sugerencia llega igual y no guardamos ningún dato tuyo.",
+    "autoriza_datos": "Autorizo que Tecno Sport trate mi correo para responder esta sugerencia.",
+    "ver_politica": "Leer la política de tratamiento de datos",
+    "enviar": "Enviar sugerencia",
+    "enviando": "Enviando…",
+    "errores": {
+      "mensaje_requerido": "Escribe tu sugerencia antes de enviarla.",
+      "correo_invalido": "Escribe un correo válido, o déjalo en blanco.",
+      "autorizacion_requerida": "Si nos dejas tu correo, necesitamos tu autorización para usarlo."
+    },
+    "error_generico": "No pudimos enviar tu mensaje. Inténtalo de nuevo en un momento.",
+    "error_limite": "Ya recibimos varios mensajes desde aquí. Inténtalo de nuevo más tarde.",
+    "exito_titulo": "Gracias, la recibimos",
+    "exito_con_correo": "La leemos y, si hay algo que contestar, te escribimos al correo que nos dejaste.",
+    "exito_anonimo": "La leemos toda. Como no nos dejaste un correo, no podremos responderte, pero nos sirve igual.",
+    "otra": "Escribir otra",
+    "enlaces_titulo": "También te puede servir",
+    "enlace_preguntas": "Preguntas frecuentes"
+  },
   "seo": {
     "preguntas": {
       "titulo": "Preguntas frecuentes",
@@ -179,6 +209,10 @@
     "contacto": {
       "titulo": "Contáctanos",
       "descripcion": "WhatsApp, correo y teléfono de Tecno Sport, con horario de atención y plazos de respuesta."
+    },
+    "sugerencias": {
+      "titulo": "Buzón de sugerencias",
+      "descripcion": "Cuéntanos qué mejorarías de la tienda. Las sugerencias se leen todas; los reclamos y las garantías van por los canales de atención."
     }
   }
 }

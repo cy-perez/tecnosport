@@ -1,0 +1,48 @@
+<div class="flex flex-col gap-4">
+  <!-- Mismo reparto que `ts-campo`, y a propósito: el asterisco va **fuera** del `<label>` porque
+       dentro se cuela en su `textContent` y `getByLabelText('Tu mensaje')` deja de encontrar el
+       control. Quien de verdad anuncia que es obligatorio es el `aria-required`. -->
+  <div class="flex items-baseline gap-4">
+    <label [class]="clasesEtiqueta" [for]="idCampo()">{{ label() }}</label>
+    @if (obligatorio()) {
+      <span class="text-ts-texto-suave" aria-hidden="true">*</span>
+    }
+  </div>
+  @if (ayuda(); as textoDeAyuda) {
+    <p [class]="clasesAyuda" [id]="idCampo() + '-ayuda'">{{ textoDeAyuda }}</p>
+  }
+  <!-- `rows` es un atributo del elemento y no una clase: es cuántas líneas caben, que es
+       contenido, y el alto real lo decide el navegador con el interlineado del texto. Un
+       `h-[...]` en píxeles sería además un literal prohibido por la regla dura #2.
+
+       `resize-y` y no `resize-none`: dejar a alguien estirar la caja para releer lo que escribió
+       es lo mínimo en un campo largo. Solo en vertical, porque en horizontal se sale de la
+       columna.
+
+       `min-h-tactil` viene de `CLASES_CONTROL` y aquí no hace nada —cuatro filas miden bastante
+       más— pero se deja: el día que alguien ponga `rows="1"` sigue cumpliendo el objetivo. -->
+  <textarea
+    [class]="clasesControl"
+    [id]="idCampo()"
+    [rows]="filas()"
+    [attr.placeholder]="placeholder()"
+    [attr.maxlength]="maximo()"
+    [value]="valorMostrado()"
+    [disabled]="deshabilitado()"
+    [attr.aria-required]="obligatorio() ? 'true' : null"
+    [attr.aria-invalid]="error() ? 'true' : null"
+    [attr.aria-describedby]="descripcion()"
+    (input)="manejarEntrada($any($event.target).value)"
+    (blur)="manejarSalida()"
+  ></textarea>
+  <!-- El contador. `aria-live="polite"` y no `off`: quien no ve la caja tiene que poder enterarse
+       de que se está quedando sin sitio, y `polite` lo dice cuando hace una pausa en vez de
+       interrumpir cada tecla. Va atado al control por `aria-describedby`, como la ayuda y el
+       error. -->
+  @if (maximo(); as tope) {
+    <p class="m-0 text-sm text-ts-texto-suave" [id]="idCampo() + '-contador'" aria-live="polite">
+      {{ contador() }}
+    </p>
+  }
+  <p [class]="clasesError" [id]="idCampo() + '-error'" role="alert">{{ error() }}</p>
+</div>

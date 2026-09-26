@@ -1,0 +1,131 @@
+<!-- Ni una cadena escrita aquí: todo pasa por Transloco, regla dura #4. -->
+<ng-container *transloco="let t; scope: 'ayuda'">
+  <article class="mx-auto flex max-w-lectura flex-col gap-32 px-16 py-32 desde-movil:px-24">
+    <header class="flex flex-col gap-8">
+      <h1 class="m-0 font-display text-2xl text-ts-texto">{{ t('ayuda.sugerencias.titulo') }}</h1>
+      <p class="m-0 text-base text-ts-texto-suave">{{ t('ayuda.sugerencias.entradilla') }}</p>
+    </header>
+
+    <!-- **Arriba del formulario y con su enlace, no en letra pequeña debajo.** Una garantía, un
+         retracto, un reclamo o un derecho de datos personales tienen un plazo legal corriendo desde
+         que llegan, y llegan por el canal que los términos anuncian. Un buzón que se traga un
+         reclamo es peor que no tener buzón.
+
+         `bg-ts-superficie-alt` y no un color de aviso: no es una alerta —no ha pasado nada malo—,
+         es una indicación de a dónde ir. El ámbar, además, está reservado (`ADR-0064`). -->
+    <aside class="flex flex-col gap-8 rounded-lg bg-ts-superficie-alt p-24">
+      <h2 class="m-0 font-texto text-base font-medio text-ts-texto">
+        {{ t('ayuda.sugerencias.aviso_titulo') }}
+      </h2>
+      <p class="m-0 text-sm leading-texto text-ts-texto">{{ t('ayuda.sugerencias.aviso') }}</p>
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-primario"
+        [routerLink]="['/', idioma(), 'ayuda', 'contacto']"
+        >{{ t('ayuda.sugerencias.aviso_enlace') }}</a
+      >
+    </aside>
+
+    @if (enviado()) {
+      <!-- `role="status"` y no `alert`: es el desenlace de algo que la persona acaba de pedir, no
+           una interrupción. Nace ya montado dentro de la rama, que es el caso en el que
+           `docs/06-testing.md` anotó que NVDA calla... por eso lo que de verdad lo anuncia es que
+           el foco no se queda flotando: el botón "Escribir otra" es lo primero que hay después. -->
+      <section class="flex flex-col gap-16" role="status">
+        <h2 class="m-0 font-texto text-lg font-medio text-ts-texto">
+          {{ t('ayuda.sugerencias.exito_titulo') }}
+        </h2>
+        <p class="m-0 text-base leading-texto text-ts-texto">
+          {{
+            enviadoConCorreo()
+              ? t('ayuda.sugerencias.exito_con_correo')
+              : t('ayuda.sugerencias.exito_anonimo')
+          }}
+        </p>
+        <ts-boton variante="secundario" (click)="escribirOtra()">
+          {{ t('ayuda.sugerencias.otra') }}
+        </ts-boton>
+      </section>
+    } @else {
+      <form
+        class="flex flex-col gap-16"
+        [formGroup]="form"
+        (submit)="$event.preventDefault(); enviar()"
+      >
+        <!-- La etiqueta se ve, no va en `sr-only`: es un formulario con un campo largo y uno
+             opcional, no las tres cajas evidentes de "entrar". Lo dice `ts-campo` en su propio
+             javadoc. -->
+        <ts-area-texto
+          idCampo="sugerencia-mensaje"
+          [label]="t('ayuda.sugerencias.mensaje_label')"
+          [placeholder]="t('ayuda.sugerencias.mensaje_placeholder')"
+          [ayuda]="t('ayuda.sugerencias.mensaje_ayuda')"
+          [obligatorio]="true"
+          [maximo]="maximoCaracteres"
+          [textoContador]="textoContador()"
+          [error]="errorMensaje()"
+          formControlName="mensaje"
+        />
+
+        <ts-campo
+          idCampo="sugerencia-correo"
+          tipo="email"
+          [label]="t('ayuda.sugerencias.correo_label')"
+          [ayuda]="t('ayuda.sugerencias.correo_ayuda')"
+          [icono]="iconoCorreo"
+          [error]="errorCorreo()"
+          formControlName="correo"
+        />
+
+        <!-- La casilla aparece **solo cuando hay correo escrito**, y no deshabilitada ni siempre
+             visible: sin correo no hay ningún dato personal que autorizar, así que enseñar una
+             casilla de habeas data ahí sería pedir permiso para algo que no ocurre.
+
+             El enlace a la política va al lado y no dentro del `<label>`, como en el registro: un
+             enlace dentro de la etiqueta se pelea con el objetivo de clic de la casilla. -->
+        @if (pideAutorizacion()) {
+          <div class="flex flex-col gap-4">
+            <ts-checkbox
+              idCasilla="sugerencia-autoriza-datos"
+              [etiqueta]="t('ayuda.sugerencias.autoriza_datos')"
+              [marcado]="form.controls.autorizaDatos.value"
+              (marcadoCambio)="form.controls.autorizaDatos.setValue($event)"
+            />
+            <a
+              class="anillo-foco inline-flex min-h-tactil items-center text-sm text-ts-primario"
+              [routerLink]="['/', idioma(), 'legales', 'privacidad']"
+              >{{ t('ayuda.sugerencias.ver_politica') }}</a
+            >
+            <p class="m-0 text-sm text-ts-error" role="alert">{{ errorAutorizacion() }}</p>
+          </div>
+        }
+
+        <p class="m-0 text-ts-error" role="alert">{{ error() }}</p>
+
+        <ts-boton
+          variante="primario"
+          tipo="submit"
+          [cargando]="enviando()"
+          [etiquetaCargando]="t('ayuda.sugerencias.enviando')"
+        >
+          {{ t('ayuda.sugerencias.enviar') }}
+        </ts-boton>
+      </form>
+    }
+
+    <nav class="flex flex-col gap-8 border-t border-ts-borde pt-24">
+      <h2 class="m-0 font-texto text-base font-medio text-ts-texto">
+        {{ t('ayuda.sugerencias.enlaces_titulo') }}
+      </h2>
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+        [routerLink]="['/', idioma(), 'ayuda', 'preguntas-frecuentes']"
+        >{{ t('ayuda.sugerencias.enlace_preguntas') }}</a
+      >
+      <a
+        class="anillo-foco inline-flex min-h-tactil items-center text-ts-primario"
+        [routerLink]="['/', idioma(), 'legales', 'privacidad']"
+        >{{ 'pie.privacidad' | transloco }}</a
+      >
+    </nav>
+  </article>
+</ng-container>
