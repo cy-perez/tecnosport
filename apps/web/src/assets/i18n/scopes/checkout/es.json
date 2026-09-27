@@ -31,7 +31,11 @@
       "autorizacion_requerida": "Tienes que autorizar el tratamiento de datos para continuar.",
       "nombre_requerido": "Escribe el nombre de quien recibe.",
       "telefono_requerido": "El teléfono es obligatorio.",
-      "telefono_invalido": "Escribe un teléfono válido, solo números."
+      "telefono_invalido": "Escribe un teléfono válido, solo números.",
+      "nombre_invalido": "Escribe un nombre válido: letras, sin números ni símbolos.",
+      "nombre_largo": "El nombre no puede pasar de 120 caracteres.",
+      "direccion_invalida": "Escribe una dirección válida. Se admiten letras, números y los signos # - . , ° / ( ).",
+      "barrio_invalido": "Escribe un barrio válido: letras y números, sin símbolos."
     },
     "autoriza_datos": "Autorizo el tratamiento de mis datos personales para procesar y entregar este pedido.",
     "ver_politica": "Leer la política de tratamiento de datos",

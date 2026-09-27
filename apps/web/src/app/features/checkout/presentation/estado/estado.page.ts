@@ -3,6 +3,7 @@ import { iconoEnvio, iconoUbicacion } from '../../../../shared/ui/icono/iconos';
 import { TsIcono } from '../../../../shared/ui/icono/ts-icono';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { correoValido } from '../../../../shared/formularios/validadores';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
@@ -96,7 +97,7 @@ export class EstadoPage {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     numeroPedido: ['', [Validators.required]],
-    correo: ['', [Validators.required, Validators.email]],
+    correo: ['', [Validators.required, correoValido]],
   });
 
   /**
@@ -197,7 +198,9 @@ export class EstadoPage {
     if (control.hasError('required')) {
       return traducir('checkout.estado.consulta.correo_requerido');
     }
-    return control.hasError('email') ? traducir('checkout.estado.consulta.correo_invalido') : null;
+    return control.hasError('correoInvalido')
+      ? traducir('checkout.estado.consulta.correo_invalido')
+      : null;
   });
 
   /**

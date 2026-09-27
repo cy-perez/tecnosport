@@ -31,7 +31,11 @@
       "autorizacion_requerida": "You must authorise the processing of your data to continue.",
       "nombre_requerido": "Enter the recipient's name.",
       "telefono_requerido": "Phone is required.",
-      "telefono_invalido": "Enter a valid phone number, digits only."
+      "telefono_invalido": "Enter a valid phone number, digits only.",
+      "nombre_invalido": "Enter a valid name: letters only, no digits or symbols.",
+      "nombre_largo": "The name can't be longer than 120 characters.",
+      "direccion_invalida": "Enter a valid address. Letters, digits and the signs # - . , ° / ( ) are allowed.",
+      "barrio_invalido": "Enter a valid neighbourhood: letters and digits, no symbols."
     },
     "autoriza_datos": "I authorise the processing of my personal data to process and deliver this order.",
     "ver_politica": "Read the personal data policy",

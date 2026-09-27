@@ -40,7 +40,8 @@
       "clave_requerida": "Escribe una clave.",
       "confirmar_requerida": "Repite la clave.",
       "autorizacion_requerida": "Para crear la cuenta hay que autorizar el tratamiento de los datos."
-    }
+    },
+    "error_demasiados_intentos": "Demasiados intentos seguidos. Espera unos minutos y vuelve a probar."
   },
   "verificarCorreo": {
     "titulo": "Verificando tu correo",
@@ -91,5 +92,8 @@
       "clave_requerida": "Escribe la clave nueva.",
       "confirmar_requerida": "Repite la clave nueva."
     }
+  },
+  "errores": {
+    "correo_electronico_invalido": "Ese correo no tiene una forma válida. Revísalo y vuelve a intentarlo."
   }
 }

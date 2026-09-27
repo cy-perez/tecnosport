@@ -7,6 +7,8 @@ import en from '../../../../../assets/i18n/en.json';
 import es from '../../../../../assets/i18n/es.json';
 import enCuenta from '../../../../../assets/i18n/scopes/cuenta/en.json';
 import esCuenta from '../../../../../assets/i18n/scopes/cuenta/es.json';
+import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
+import { ErrorHttp } from '../../../../core/http/respuesta-http';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA, RepositorioCuenta } from '../../domain/repositorio-cuenta.puerto';
 import { RegistroClientePage } from './registro-cliente.page';
@@ -14,7 +16,14 @@ import { RegistroClientePage } from './registro-cliente.page';
 class RepositorioCuentaFalso implements RepositorioCuenta {
   llamadasRegistrar: { correo: string; clave: string; autorizaDatos: boolean }[] = [];
 
-  constructor(private errorAlRegistrar: 'correo-registrado' | 'generico' | null = null) {}
+  constructor(
+    private errorAlRegistrar:
+      | 'correo-registrado'
+      | 'generico'
+      | 'codigo-correo-invalido'
+      | 'demasiados-intentos'
+      | null = null,
+  ) {}
 
   /** Lo que de verdad importa comprobar: que la autorización viaja, y no que el servidor la
    * suponga. Un `true` por omisión en el cliente sería una autorización inventada. */
@@ -29,6 +38,15 @@ class RepositorioCuentaFalso implements RepositorioCuenta {
     }
     if (this.errorAlRegistrar === 'generico') {
       throw new Error('falló');
+    }
+    // Lo que de verdad devuelve el backend cuando el correo no tiene forma: un 422 con su
+    // `codigo` en el `ProblemDetail`. El doble lanzaba un `Error` pelado, que es justo por lo que
+    // nadie notó que la página tiraba ese código a la basura.
+    if (this.errorAlRegistrar === 'codigo-correo-invalido') {
+      throw new ErrorHttp(422, 'no se pudo crear la cuenta', 'CORREO_ELECTRONICO_INVALIDO');
+    }
+    if (this.errorAlRegistrar === 'demasiados-intentos') {
+      throw new DemasiadosIntentosError();
     }
   }
 
@@ -126,6 +144,82 @@ describe('RegistroClientePage', () => {
     await llenarYEnviar();
 
     expect(await screen.findByText('No se pudo crear la cuenta. Intenta de nuevo.')).toBeTruthy();
+  });
+
+  /**
+   * El defecto que trajo esta tanda: el `errorCorreo()` solo sabía decir "escribe tu correo", así
+   * que un correo con forma inválida dejaba el formulario `INVALID` y la pantalla **muda**. Se
+   * pulsaba "Crear cuenta" y no pasaba nada: ni mensaje, ni avance, ni petición.
+   */
+  it.each([['1234'], ['@#$%'], ['juan'], ['juan@correo']])(
+    'con el correo "%s" dice que la forma no sirve, en vez de quedarse mudo',
+    async (correo) => {
+      const repositorio = new RepositorioCuentaFalso();
+      await renderPagina(repositorio);
+
+      fireEvent.input(screen.getByLabelText('Correo electrónico'), { target: { value: correo } });
+      fireEvent.input(screen.getByLabelText('Clave'), { target: { value: 'clave-segura' } });
+      fireEvent.input(screen.getByLabelText('Confirmar clave'), {
+        target: { value: 'clave-segura' },
+      });
+      fireEvent.click(screen.getByLabelText(ETIQUETA_AUTORIZACION));
+      fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+      expect(await screen.findByText('Ese correo no tiene una forma válida.')).toBeTruthy();
+      expect(repositorio.llamadasRegistrar).toEqual([]);
+    },
+  );
+
+  /**
+   * `juan@correo` merece prueba propia: es la franja que `Validators.email` daba por buena y
+   * `CorreoElectronico.java` rechaza, o sea la que llegaba hasta el servidor y volvía como el
+   * mensaje genérico. Ahora ni sale de aquí.
+   */
+  it('el dominio sin punto no llega al servidor', async () => {
+    const repositorio = new RepositorioCuentaFalso();
+    await renderPagina(repositorio);
+
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'juan@correo' },
+    });
+    fireEvent.input(screen.getByLabelText('Clave'), { target: { value: 'clave-segura' } });
+    fireEvent.input(screen.getByLabelText('Confirmar clave'), {
+      target: { value: 'clave-segura' },
+    });
+    fireEvent.click(screen.getByLabelText(ETIQUETA_AUTORIZACION));
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    expect(await screen.findByText('Ese correo no tiene una forma válida.')).toBeTruthy();
+    expect(repositorio.llamadasRegistrar).toEqual([]);
+  });
+
+  /**
+   * Y si aun así el servidor rechaza el correo —otro cliente, otra regla—, se dice **por qué**.
+   * Antes ese 422 se leía "No se pudo crear la cuenta. Intenta de nuevo.", que no dice qué
+   * corregir y manda a repetir lo que va a fallar igual.
+   */
+  it('un 422 por el formato del correo dice cuál es el problema, no el genérico', async () => {
+    await renderPagina(new RepositorioCuentaFalso('codigo-correo-invalido'));
+
+    await llenarYEnviar();
+
+    expect(
+      await screen.findByText(
+        'Ese correo no tiene una forma válida. Revísalo y vuelve a intentarlo.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('el límite de intentos se distingue de una caída del servidor', async () => {
+    await renderPagina(new RepositorioCuentaFalso('demasiados-intentos'));
+
+    await llenarYEnviar();
+
+    expect(
+      await screen.findByText(
+        'Demasiados intentos seguidos. Espera unos minutos y vuelve a probar.',
+      ),
+    ).toBeTruthy();
   });
 
   it('con claves que no coinciden, muestra el error de confirmación', async () => {

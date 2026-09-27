@@ -9,12 +9,15 @@ import {
   Validators,
 } from '@angular/forms';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { mensajeDeError } from '../../../../core/errores/mensaje-de-error';
+import { correoValido } from '../../../../shared/formularios/validadores';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsPaginaFormulario } from '../../../../shared/ui/pagina-formulario/ts-pagina-formulario';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { iconoClave, iconoCorreo } from '../../../../shared/ui/icono/iconos';
 import { RouterLink } from '@angular/router';
+import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { CorreoYaRegistradoError } from '../../domain/cuenta.errores';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 
@@ -56,9 +59,12 @@ export class RegistroClientePage {
 
   protected readonly form = new FormGroup(
     {
+      // `correoValido` y no `Validators.email`: aquel acepta `juan@correo` —sin punto— y el
+      // servidor no (`CorreoElectronico.java`), así que esa franja de correos pasaba el formulario
+      // y volvía como un 422 genérico dos segundos después.
       correo: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.email],
+        validators: [Validators.required, correoValido],
       }),
       clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
       confirmarClave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -112,15 +118,25 @@ export class RegistroClientePage {
       : null;
   });
 
+  /**
+   * Vacío e inválido son dos cosas y hacen falta dos mensajes. Esto solo miraba `required`, así que
+   * un correo con forma inválida dejaba el formulario en `INVALID` —`enviar()` marcaba todo como
+   * tocado y volvía— **sin pintar nada**: se pulsaba "Crear cuenta" y no pasaba absolutamente nada,
+   * ni mensaje, ni avance. La clave del texto ya existía en los JSON desde el principio y no la
+   * usaba nadie.
+   */
   private readonly tickCorreo = toSignal(this.form.controls.correo.events, {
     initialValue: null,
   });
   protected readonly errorCorreo = computed(() => {
     this.tickCorreo();
     const control = this.form.controls.correo;
-    return control.touched && control.hasError('required')
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return control.hasError('required')
       ? this.transloco.translate('cuenta.registro.errores.correo_requerido')
-      : null;
+      : this.transloco.translate('cuenta.registro.errores.correo_invalido');
   });
 
   /**
@@ -163,8 +179,19 @@ export class RegistroClientePage {
     } catch (error) {
       if (error instanceof CorreoYaRegistradoError) {
         this.error.set(this.transloco.translate('cuenta.registro.error_correo_registrado'));
+      } else if (error instanceof DemasiadosIntentosError) {
+        // El registro lleva techo por IP y por correo (`ConfiguracionLimiteIntentos`), y sin esta
+        // rama el 429 se leía igual que una caída: "no se pudo crear la cuenta, intenta de nuevo",
+        // que manda a reintentar justo lo único que garantiza otro 429. Las otras cuatro pantallas
+        // de cuenta ya lo distinguían; esta no.
+        this.error.set(this.transloco.translate('cuenta.registro.error_demasiados_intentos'));
       } else {
-        this.error.set(this.transloco.translate('cuenta.registro.error_generico'));
+        // Por `mensajeDeError` y no por el genérico a secas: el backend manda un `codigo` en el
+        // `ProblemDetail` y aquí se tiraba a la basura. Un 422 por el formato del correo o por la
+        // autorización que no llegó se leía igual que una caída del servidor —"No se pudo crear la
+        // cuenta. Intenta de nuevo."—, que no dice qué corregir y manda a repetir lo que va a
+        // fallar igual. Un código sin traducir sigue cayendo al genérico, que es lo correcto.
+        this.error.set(mensajeDeError(error, this.transloco, 'cuenta.registro.error_generico'));
       }
     } finally {
       this.enviando.set(false);

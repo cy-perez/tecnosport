@@ -681,6 +681,138 @@ describe('ResumenPage', () => {
     expect(checkout.datosEntrega()).toBeNull();
   });
 
+  /**
+   * Los campos que escribe una persona no tenían ninguna regla de contenido: el nombre de quien
+   * recibe, la dirección y el barrio aceptaban "@#$%" y eso terminaba impreso en la guía de la
+   * transportadora, con un destinatario por el que el mensajero no puede preguntar.
+   */
+  it.each([
+    [
+      'Nombre de quien recibe',
+      '@#$%',
+      'Escribe un nombre válido: letras, sin números ni símbolos.',
+    ],
+    [
+      'Nombre de quien recibe',
+      'Ana 123',
+      'Escribe un nombre válido: letras, sin números ni símbolos.',
+    ],
+    [
+      'Dirección',
+      '@#$%',
+      'Escribe una dirección válida. Se admiten letras, números y los signos # - . , ° / ( ).',
+    ],
+    ['Barrio (opcional)', '<b>Laureles</b>', 'Escribe un barrio válido: letras y números, sin símbolos.'],
+  ])('%s con "%s" no pasa y dice por qué', async (etiqueta, valor, mensaje) => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    llenarContacto();
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.input(screen.getByLabelText(etiqueta), { target: { value: valor } });
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText(mensaje)).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * `Validators.email` aceptaba el dominio sin punto y `CorreoElectronico.java` no, así que este
+   * correo pasaba el formulario y el pedido moría con un 422 dos pantallas más allá.
+   */
+  it('un correo sin punto en el dominio no pasa de aquí', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    llenarContacto();
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    expect(await screen.findByText('Escribe un correo válido.')).toBeTruthy();
+    expect(checkout.datosEntrega()).toBeNull();
+  });
+
+  /**
+   * El barrio se valida y **sigue sin exigirse**: la regla nueva no puede convertir en obligatorio
+   * un campo que `Direccion.java` decidió dejar opcional.
+   */
+  it('el barrio vacío sigue dejando continuar', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    llenarContacto();
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
+    expect(checkout.datosEntrega()?.direccion?.barrio).toBeNull();
+  });
+
+  /**
+   * El barrio inválido vive dentro del `fieldset` que desaparece al elegir el retiro en punto. Sin
+   * apagar su validador, «Continuar» se quedaba sin hacer nada y sin nada que señalar — el mismo
+   * defecto que esta tanda vino a arreglar, entrando por la puerta de atrás.
+   */
+  it('al cambiar a retiro en punto, un barrio inválido ya no bloquea nada', async () => {
+    sembrarCarritoId('carrito-1');
+    sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
+    const { fixture } = await renderResumen(
+      new RepositorioCarritoFalso(CARRITO_CON_LINEAS),
+      new RepositorioEnviosFalso(COTIZACION),
+    );
+    await screen.findByText('Morral urbano');
+    const checkout = fixture.debugElement.injector.get(CheckoutStore);
+
+    llenarContacto();
+    fireEvent.input(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'compra@ejemplo.co' },
+    });
+    await llenarDireccionEnMedellin();
+    fireEvent.input(screen.getByLabelText('Barrio (opcional)'), { target: { value: '@#$%' } });
+    fireEvent.change(screen.getByLabelText('Tipo de entrega'), {
+      target: { value: 'RETIRO_EN_PUNTO' },
+    });
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await vi.waitFor(() => expect(checkout.datosEntrega()).not.toBeNull());
+    expect(checkout.datosEntrega()?.direccion).toBeNull();
+  });
+
   it('con datos válidos, guarda el borrador con la dirección resuelta', async () => {
     sembrarCarritoId('carrito-1');
     sembrarSnapshotLinea(snapshotDePrueba('variante-1'));
