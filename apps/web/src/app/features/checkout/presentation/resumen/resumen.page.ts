@@ -14,6 +14,12 @@ import { filter, firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../core/i18n/traductor';
+import {
+  correoValido,
+  nombreDeBarrio,
+  nombreDePersona,
+  textoDeDireccion,
+} from '../../../../shared/formularios/validadores';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
 import { TsCheckbox } from '../../../../shared/ui/checkbox/ts-checkbox';
 import { TsCampo } from '../../../../shared/ui/campo/ts-campo';
@@ -108,15 +114,17 @@ export class ResumenPage {
     // que una letra llegue hasta allá.
     nombre: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(120)],
+      validators: [Validators.required, Validators.maxLength(120), nombreDePersona],
     }),
     telefono: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.pattern(/^\+?[0-9 ()\-.]{7,20}$/)],
     }),
+    // `correoValido` y no `Validators.email`, que acepta `juan@correo` —sin punto— y el servidor
+    // no (`CorreoElectronico.java`): esa franja llegaba hasta el pedido y volvía como un 422.
     correo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: [Validators.required, correoValido],
     }),
     tipoEntrega: new FormControl<TipoEntrega>('ENVIO_A_DOMICILIO', { nonNullable: true }),
     direccion: new FormGroup({
@@ -124,8 +132,11 @@ export class ResumenPage {
       codigoDaneCiudad: new FormControl('', { nonNullable: true }),
       direccion: new FormControl('', { nonNullable: true }),
       indicaciones: new FormControl('', { nonNullable: true }),
-      // Sin validador: se pide y no se exige. Un campo obligatorio que alguien no sabe llenar
-      // se rellena con cualquier cosa, y eso impreso en una guia es peor que vacio.
+      // Sigue sin exigirse: se pide y no se exige. Un campo obligatorio que alguien no sabe llenar
+      // se rellena con cualquier cosa, y eso impreso en una guia es peor que vacio. Lo que sí se
+      // exige es que lo escrito **pueda** imprimirse; los validadores de los dos van en el
+      // `effect()` del constructor, con los demás campos de la dirección, porque se apagan cuando
+      // la entrega es un retiro en punto.
       barrio: new FormControl('', { nonNullable: true }),
     }),
     // requiredTrue, y arranca en false: la casilla nunca puede venir premarcada — sin acción del
@@ -168,13 +179,24 @@ export class ResumenPage {
     })),
   );
 
+  /**
+   * Tres motivos y tres mensajes. Esto decía "Escribe el nombre de quien recibe" para cualquier
+   * invalidez, así que quien escribía `@#$%` —que el campo aceptaba sin chistar hasta ahora— o un
+   * nombre de 300 caracteres leía que no había escrito nada, mirando lo que acababa de escribir.
+   */
   private readonly tickNombre = toSignal(this.form.controls.nombre.events, { initialValue: null });
   protected readonly errorNombre = computed(() => {
     this.tickNombre();
     const control = this.form.controls.nombre;
-    return control.touched && control.invalid
-      ? this.transloco.translate('checkout.resumen.errores.nombre_requerido')
-      : null;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return this.transloco.translate('checkout.resumen.errores.nombre_requerido');
+    }
+    return control.hasError('maxlength')
+      ? this.transloco.translate('checkout.resumen.errores.nombre_largo')
+      : this.transloco.translate('checkout.resumen.errores.nombre_invalido');
   });
 
   private readonly tickTelefono = toSignal(this.form.controls.telefono.events, {
@@ -256,8 +278,26 @@ export class ResumenPage {
   protected readonly errorDireccion = computed(() => {
     this.tickDireccion();
     const control = this.form.controls.direccion.controls.direccion;
-    return control.touched && control.invalid
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    return control.hasError('required')
       ? this.transloco.translate('checkout.resumen.errores.direccion_requerida')
+      : this.transloco.translate('checkout.resumen.errores.direccion_invalida');
+  });
+
+  /**
+   * El barrio es el único de los tres que puede estar vacío y estar bien, así que aquí no hay
+   * rama de "requerido": o está bien escrito, o no se puede imprimir en una guía.
+   */
+  private readonly tickBarrio = toSignal(this.form.controls.direccion.controls.barrio.events, {
+    initialValue: null,
+  });
+  protected readonly errorBarrio = computed(() => {
+    this.tickBarrio();
+    const control = this.form.controls.direccion.controls.barrio;
+    return control.touched && control.invalid
+      ? this.transloco.translate('checkout.resumen.errores.barrio_invalido')
       : null;
   });
 
@@ -458,15 +498,22 @@ export class ResumenPage {
 
     // Retiro en punto no lleva dirección (`Pedido.java`): los campos solo son
     // obligatorios cuando el tipo de entrega los exige.
+    //
+    // El barrio entra en este apagado aunque no sea obligatorio nunca, y hace falta que entre: su
+    // `fieldset` desaparece con el retiro en punto, y un control inválido dentro de una región que
+    // no está en pantalla deja «Continuar» sin hacer nada y sin nada que señalar. Es exactamente el
+    // defecto que esta pantalla vino a arreglar, así que no se introduce por la puerta de atrás.
     effect(() => {
       const necesitaDireccion = this.requiereDireccion();
       const controles = this.form.controls.direccion.controls;
-      for (const control of [
-        controles.codigoDaneDepartamento,
-        controles.codigoDaneCiudad,
-        controles.direccion,
-      ]) {
-        control.setValidators(necesitaDireccion ? [Validators.required] : []);
+      const validadores = new Map([
+        [controles.codigoDaneDepartamento, [Validators.required]],
+        [controles.codigoDaneCiudad, [Validators.required]],
+        [controles.direccion, [Validators.required, textoDeDireccion]],
+        [controles.barrio, [nombreDeBarrio]],
+      ]);
+      for (const [control, suyos] of validadores) {
+        control.setValidators(necesitaDireccion ? suyos : []);
         control.updateValueAndValidity({ emitEvent: false });
       }
     });

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { correoValido } from '../../../../shared/formularios/validadores';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
@@ -40,7 +41,7 @@ export class IniciarSesionClientePage {
   protected readonly form = new FormGroup({
     correo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: [Validators.required, correoValido],
     }),
     clave: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });

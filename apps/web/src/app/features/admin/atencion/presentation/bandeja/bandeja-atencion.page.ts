@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { correoValido } from '../../../../../shared/formularios/validadores';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { usarTraductor } from '../../../../../core/i18n/traductor';
 import { TsMigas } from '../../../../../shared/ts-migas/ts-migas';
@@ -92,7 +93,7 @@ export class BandejaAtencionPage {
     tipo: new FormControl<string>('PETICION', { nonNullable: true }),
     correo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: [Validators.required, correoValido],
     }),
     asunto: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     recibidaEn: new FormControl('', { nonNullable: true }),

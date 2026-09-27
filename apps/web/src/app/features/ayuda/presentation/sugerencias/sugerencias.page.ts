@@ -8,6 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { correoValido } from '../../../../shared/formularios/validadores';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
@@ -105,9 +106,10 @@ export class SugerenciasPage {
         nonNullable: true,
         validators: [Validators.required, Validators.maxLength(MAXIMO_CARACTERES_SUGERENCIA)],
       }),
-      // Sin `required`: el correo es opcional a propósito. `email` sí, para no mandar al servidor
-      // algo que va a rechazar por formato.
-      correo: new FormControl('', { nonNullable: true, validators: [Validators.email] }),
+      // Sin `required`: el correo es opcional a propósito. El formato sí se exige, para no mandar
+      // al servidor algo que va a rechazar — y con la misma expresión que usa él
+      // (`CorreoElectronico.java`), que es lo que `Validators.email` no hacía.
+      correo: new FormControl('', { nonNullable: true, validators: [correoValido] }),
       autorizaDatos: new FormControl(false, { nonNullable: true }),
     },
     { validators: autorizacionSoloConCorreo },
@@ -144,7 +146,7 @@ export class SugerenciasPage {
   protected readonly errorCorreo = computed(() => {
     this.tickCorreo();
     const control = this.form.controls.correo;
-    return control.touched && control.hasError('email')
+    return control.touched && control.hasError('correoInvalido')
       ? this.traducir()('ayuda.sugerencias.errores.correo_invalido')
       : null;
   });

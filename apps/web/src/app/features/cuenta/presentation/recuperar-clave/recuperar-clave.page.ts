@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DemasiadosIntentosError } from '../../../../core/autenticacion/sesion.errores';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { correoValido } from '../../../../shared/formularios/validadores';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { REPOSITORIO_CUENTA } from '../../domain/repositorio-cuenta.puerto';
 import { TsBoton } from '../../../../shared/ui/boton/ts-boton';
@@ -31,7 +32,7 @@ export class RecuperarClavePage {
   protected readonly form = new FormGroup({
     correo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.email],
+      validators: [Validators.required, correoValido],
     }),
   });
 

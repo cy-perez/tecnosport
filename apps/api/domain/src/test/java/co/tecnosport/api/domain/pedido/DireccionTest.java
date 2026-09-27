@@ -52,6 +52,48 @@ class DireccionTest {
     assertEquals("Casa azul", direccion.indicaciones());
   }
 
+  private static Direccion conDireccion(String direccion) {
+    return new Direccion("05", "Antioquia", "05001", "Medellín", direccion, null, "Boston");
+  }
+
+  /**
+   * Una dirección colombiana necesita dígitos y almohadilla, así que "solo letras" habría prohibido
+   * la dirección entera. Lo que se prohíbe es lo que no puede formar parte de una.
+   */
+  @Test
+  void acepta_lo_que_de_verdad_escribe_un_comprador() {
+    assertEquals("Cra 43A #7-50 Apto 902", conDireccion("Cra 43A #7-50 Apto 902").direccion());
+    assertEquals(
+        "Calle 10 Sur / Vereda El Salado",
+        conDireccion("Calle 10 Sur / Vereda El Salado").direccion());
+    assertEquals(
+        "Km 3 vía Las Palmas, casa 4°", conDireccion("Km 3 vía Las Palmas, casa 4°").direccion());
+  }
+
+  @Test
+  void rechaza_una_direccion_con_simbolos_que_no_se_pueden_imprimir() {
+    assertThrows(ExcepcionDeDominio.class, () -> conDireccion("@#$%"));
+    assertThrows(ExcepcionDeDominio.class, () -> conDireccion("<script>alert(1)</script>"));
+  }
+
+  /** "43-25" no dice a dónde ir: hace falta al menos una letra. */
+  @Test
+  void rechaza_una_direccion_sin_una_sola_letra() {
+    assertThrows(ExcepcionDeDominio.class, () -> conDireccion("43-25"));
+  }
+
+  /**
+   * El barrio sigue sin exigirse —vacío pasa, y eso lo cubren las pruebas de arriba—, pero lo que
+   * se escriba tiene que poder imprimirse. Los dígitos sí: "20 de Julio" es un barrio.
+   */
+  @Test
+  void el_barrio_opcional_tambien_tiene_forma() {
+    assertEquals(Optional.of("20 de Julio"), conBarrio("20 de Julio").barrioDeclarado());
+    assertEquals(Optional.of("Belén (Rincón)"), conBarrio("Belén (Rincón)").barrioDeclarado());
+    assertThrows(ExcepcionDeDominio.class, () -> conBarrio("@#$%"));
+    assertThrows(ExcepcionDeDominio.class, () -> conBarrio("<b>Laureles</b>"));
+  }
+
   /** Lo que sí sigue siendo obligatorio: sin esto no se puede cotizar ni imprimir una guía. */
   @Test
   void lo_que_identifica_el_destino_sigue_siendo_obligatorio() {

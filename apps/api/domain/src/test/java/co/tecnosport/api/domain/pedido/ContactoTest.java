@@ -26,6 +26,37 @@ class ContactoTest {
     assertThrows(ExcepcionDeDominio.class, () -> new Contacto("  ", "3138816711"));
   }
 
+  /**
+   * El nombre va impreso en la guía y es por el que el mensajero pregunta en la puerta, así que
+   * "@#$%" no es un dato feo sino una entrega que no se puede hacer. El formulario web ya lo
+   * rechaza; esto es lo que protege a la app móvil de la fase 2 y a cualquier otro cliente.
+   */
+  @Test
+  void rechazaNombreConSimbolos() {
+    assertThrows(ExcepcionDeDominio.class, () -> new Contacto("@#$%", "3138816711"));
+    assertThrows(ExcepcionDeDominio.class, () -> new Contacto("<script>", "3138816711"));
+  }
+
+  @Test
+  void rechazaNombreConDigitos() {
+    assertThrows(ExcepcionDeDominio.class, () -> new Contacto("Ana 123", "3138816711"));
+  }
+
+  /** Una letra suelta no es un nombre: es lo que se escribe para saltarse un campo obligatorio. */
+  @Test
+  void rechazaNombreDeUnaSolaLetra() {
+    assertThrows(ExcepcionDeDominio.class, () -> new Contacto("a", "3138816711"));
+  }
+
+  /** Lo que sí son nombres, y que una regla de "solo letras" a secas habría roto. */
+  @Test
+  void aceptaApostrofoGuionPuntoYTildes() {
+    assertEquals("María D'Angelo", new Contacto("María D'Angelo", "3138816711").nombre());
+    assertEquals("Ruiz-Mejía", new Contacto("Ruiz-Mejía", "3138816711").nombre());
+    assertEquals("J. Gómez", new Contacto("J. Gómez", "3138816711").nombre());
+    assertEquals("Ñungo Çelik", new Contacto("Ñungo Çelik", "3138816711").nombre());
+  }
+
   @Test
   void rechazaTelefonoConLetras() {
     assertThrows(ExcepcionDeDominio.class, () -> new Contacto("Ana", "313 ABC 6711"));
