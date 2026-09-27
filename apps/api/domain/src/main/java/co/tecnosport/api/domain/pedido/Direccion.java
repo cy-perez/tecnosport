@@ -25,10 +25,10 @@ public record Direccion(
     String barrio) {
 
   /**
-   * Los dos campos que escribe una persona a mano —la dirección y el barrio— llevan además un
-   * juego de caracteres, y el formulario web no es quien los protege: el servidor no confía en el
-   * cliente (CLAUDE.md, regla 7), y la app móvil de la fase 2 entra por esta misma puerta. Lo que
-   * llega aquí termina impreso en una guía de transporte.
+   * Los dos campos que escribe una persona a mano —la dirección y el barrio— llevan además un juego
+   * de caracteres, y el formulario web no es quien los protege: el servidor no confía en el cliente
+   * (CLAUDE.md, regla 7), y la app móvil de la fase 2 entra por esta misma puerta. Lo que llega
+   * aquí termina impreso en una guía de transporte.
    *
    * <p>El departamento, la ciudad y sus códigos no lo llevan a propósito: no se escriben, se eligen
    * de la DIVIPOLA, y validarles la forma sería validar nuestra propia tabla.

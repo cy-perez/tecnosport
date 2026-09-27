@@ -57,8 +57,8 @@ class DireccionTest {
   }
 
   /**
-   * Una dirección colombiana necesita dígitos y almohadilla, así que "solo letras" habría
-   * prohibido la dirección entera. Lo que se prohíbe es lo que no puede formar parte de una.
+   * Una dirección colombiana necesita dígitos y almohadilla, así que "solo letras" habría prohibido
+   * la dirección entera. Lo que se prohíbe es lo que no puede formar parte de una.
    */
   @Test
   void acepta_lo_que_de_verdad_escribe_un_comprador() {
