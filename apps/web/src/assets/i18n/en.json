@@ -53,14 +53,16 @@
     "panel_admin": "Admin panel",
     "pagos": {
       "titulo": "Ways to pay",
-      "tarjeta": "Credit and debit card",
+      "visa": "Visa (credit and debit)",
+      "mastercard": "Mastercard (credit and debit)",
+      "american_express": "American Express (credit and debit)",
       "pse": "PSE",
       "nequi": "Nequi",
       "bancolombia": "Bancolombia",
       "daviplata": "Daviplata (bank transfer)",
       "bbva": "BBVA (bank transfer)",
       "sistecredito": "Sistecrédito (instalments)",
-      "contraentrega": "Cash on delivery",
+      "contraentrega": "Pay on delivery",
       "addi": "Addi (coming soon)"
     },
     "redes_titulo": "Social",
