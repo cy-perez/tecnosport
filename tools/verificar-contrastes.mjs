@@ -53,12 +53,11 @@ const PARES = [
   ["--color-texto", "--color-fondo", UMBRAL_TEXTO, "texto sobre el lienzo"],
   ["--color-texto", "--color-superficie", UMBRAL_TEXTO, "texto sobre tarjeta"],
   ["--color-texto", "--color-superficie-alt", UMBRAL_TEXTO, "texto sobre superficie elevada"],
-  // Las baldosas de linea de la portada, que desde el 26 de septiembre de 2026 llevan
-  // relleno tenue de marca en vez de la superficie blanca. El par faltaba: `primario-suave`
-  // es un gris casi neutro en claro y un ambar apagado en oscuro, o sea dos colores muy
-  // distintos bajo el mismo nombre, y nadie vigilaba que el texto siguiera leyendose sobre
-  // los dos.
-  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "baldosas de linea de la portada"],
+  // `primario-suave` lleno las baldosas de linea entre el 26 y el 28 de septiembre de 2026, y su
+  // par sigue aqui aunque hoy no lo pinte nadie: es el unico token del kit que cambia de familia
+  // con el tema —gris casi neutro en claro, ambar apagado en oscuro— y el dia que vuelva a usarse
+  // lo va a hacer sin que nadie se acuerde de comprobar que el texto encima se lee.
+  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "relleno tenue de marca (sin uso hoy)"],
   ["--color-texto-suave", "--color-fondo", UMBRAL_TEXTO, "texto secundario sobre el lienzo"],
   ["--color-texto-suave", "--color-superficie", UMBRAL_TEXTO, "marca y SKU en la tarjeta"],
   ["--color-texto-suave", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de agotado"],
@@ -67,14 +66,17 @@ const PARES = [
   ["--color-primario", "--color-superficie", UMBRAL_TEXTO, "botón secundario y enlaces"],
   ["--color-primario", "--color-fondo", UMBRAL_TEXTO, "enlaces sobre el lienzo"],
   ["--color-sobre-acento", "--color-acento", UMBRAL_TEXTO, "CTA ámbar y contador del carrito"],
-  // Los tres pasos de la escala de ámbar de la banda de portada (`ADR-0063`). Van con el mismo
-  // `sobre-acento` que el tono 1 y no con uno propio, así que lo que hay que vigilar es justo eso:
-  // que el grafito siga alcanzando en el tono más claro. Aclarar solo puede subir el contraste
-  // contra un texto oscuro, pero el día que la escala cambie de dirección el guardián lo dirá aquí
-  // en vez de en el navegador.
-  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "botón de línea, tono 2"],
-  ["--color-sobre-acento", "--color-acento-3", UMBRAL_TEXTO, "botón de línea, tono 3"],
-  ["--color-sobre-acento", "--color-acento-4", UMBRAL_TEXTO, "botón de línea, tono 4"],
+  // Los cuatro pasos de la escala de ámbar. Van con el mismo `sobre-acento` que el tono 1 y no con
+  // uno propio, así que lo que hay que vigilar es justo eso: que el grafito siga alcanzando en el
+  // tono más claro. Aclarar solo puede subir el contraste contra un texto oscuro, pero el día que
+  // la escala cambie de dirección el guardián lo dirá aquí en vez de en el navegador.
+  // **Hoy solo se pinta el tono 5**, que es el relleno de las baldosas de línea desde `ADR-0065`;
+  // el 2, el 3 y el 4 quedaron sin uso al revertirse `ADR-0063` y se siguen vigilando porque el
+  // generador los deriva igual y el día que vuelvan nadie va a mirar esto.
+  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "escala de ámbar, tono 2 (sin uso hoy)"],
+  ["--color-sobre-acento", "--color-acento-3", UMBRAL_TEXTO, "escala de ámbar, tono 3 (sin uso hoy)"],
+  ["--color-sobre-acento", "--color-acento-4", UMBRAL_TEXTO, "escala de ámbar, tono 4 (sin uso hoy)"],
+  ["--color-sobre-acento", "--color-acento-5", UMBRAL_TEXTO, "texto de las baldosas de línea"],
   ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie, franjas de marca y pista del visor 360"],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],
@@ -95,10 +97,15 @@ const PARES = [
   // El borde de las cajas de confirmacion en linea, que es lo unico que las separa de la fila de
   // arriba. `--color-borde` da 1,19:1 sobre el lienzo y era invisible.
   ["--color-borde-control", "--color-fondo", UMBRAL_GRANDE, "borde de una caja de confirmacion"],
-  // El borde de hover de las baldosas de la portada. Llevaba `--color-acento`, que sobre blanco da
-  // 1,85:1 y contra `--color-borde` salta 1,44:1: en tema claro no habia afordancia de hover
-  // ninguna. El guardian no lo veia porque no existia ningun par de `acento` como linea.
-  ["--color-primario", "--color-borde", UMBRAL_GRANDE, "borde de hover de las baldosas de linea"],
+  // El borde de hover de las baldosas de la portada, contra su propio relleno — que es lo que hay
+  // que mirar desde `ADR-0065`, porque la baldosa ya no es del color del lienzo. Fue
+  // `primario` contra `borde` mientras el relleno era `primario-suave`, y ese par se quedo al reves
+  // en tema oscuro sin que nadie lo viera: `primario` es ambar ahi, asi que el hover sobre un
+  // relleno amarillo *borraba* el borde en lugar de marcarlo. `sobre-acento` es grafito en los dos
+  // temas. El borde en reposo es `acento` sobre `acento-5` y NO se declara aqui a proposito: 1,5:1,
+  // es un filo decorativo y no una afordancia, y declararlo seria pedirle al guardian que falle por
+  // algo que nadie tiene que poder leer.
+  ["--color-sobre-acento", "--color-acento-5", UMBRAL_GRANDE, "borde de hover de las baldosas de linea"],
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],
   ["--color-sobre-primario", "--color-exito", UMBRAL_TEXTO, "aviso de éxito de la captura"],

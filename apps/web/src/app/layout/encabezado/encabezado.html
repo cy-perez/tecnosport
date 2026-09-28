@@ -38,7 +38,16 @@
          Eje 2, el tema: el logo es monocromo y tiene versión positiva y
          negativa. Antes eran dos reglas con `:host-context([data-tema])` en el
          SCSS; ahora es el variant `oscuro:`, que se cuelga del mismo atributo.
-         Cada elemento resuelve un solo eje: así se lee. -->
+         Cada elemento resuelve un solo eje: así se lee.
+
+         **El horizontal pasó de 160 a 200 px de ancho el 28 de septiembre de
+         2026, con el alto quieto en 34.** Los dos son atributos y no estilos, así
+         que la regla dura #2 no aplica: son la relación de aspecto que evita el
+         salto de maquetación, no una medida de diseño. Y no deforman, porque el
+         archivo tiene su propio `viewBox` —858,7 × 120— y se contiene dentro de
+         la caja: con 160 el logo se dibujaba a 160 × 22,4 dentro de un hueco de
+         34 de alto, o sea con aire arriba y abajo; con 200 pasa a 200 × 28 y
+         llena mejor la barra. El máximo antes de tocar el borde serían 243. -->
       <span class="block desde-movil:hidden">
         <img
           class="block oscuro:hidden"
@@ -59,14 +68,14 @@
         <img
           class="block oscuro:hidden"
           src="assets/marca/logo/logo-horizontal.svg"
-          width="160"
+          width="200"
           height="34"
           alt=""
         />
         <img
           class="hidden oscuro:block"
           src="assets/marca/logo/logo-mono-negativo.svg"
-          width="160"
+          width="200"
           height="34"
           alt=""
         />

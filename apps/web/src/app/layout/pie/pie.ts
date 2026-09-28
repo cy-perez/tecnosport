@@ -118,6 +118,11 @@ interface MedioDePago {
    * 200×26 a 1000×305— que con 24 px de alto tienen muchísimo ancho, y este es un cuadrado de
    * 512×512 con dos manos y una caja dentro. A la misma altura le queda una fracción del área y se
    * vuelve una mancha; se miró en el navegador a 24, 32, 40, 64 y 96 px.
+   *
+   * <p><b>Fue `h-48` hasta el 28 de septiembre de 2026 y bajó a `h-32`.</b> A 48 px pesaba el doble
+   * que cualquier logotipo de la fila y se leía como un icono de otra familia más que como un medio
+   * de pago entre once. A 32 queda a la par visual de Daviplata —que contenido en la caja se dibuja
+   * a 24 de alto por unos 29 de ancho— sin caer en los 24 donde el símbolo se vuelve mancha.
    */
   readonly clase?: string;
 }
@@ -160,7 +165,7 @@ const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
     clave: 'pie.pagos.contraentrega',
     logo: logoContraentrega,
     nombreALaVista: true,
-    clase: 'h-48',
+    clase: 'h-32',
   },
 ];
 

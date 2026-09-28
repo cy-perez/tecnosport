@@ -131,15 +131,23 @@ describe('TsAlternadorTema', () => {
    * **no** se lleva por delante el objetivo táctil. Es la tentación obvia al copiar la referencia,
    * donde el botón mide los 16 px del icono: 44 px es el mínimo de la tabla de medidas, y la
    * excepción "inline" de WCAG 2.5.8 no cubre un botón suelto.
+   *
+   * <p><b>Y desde el 28 de septiembre de 2026 fija además que las dos formas NO miden lo mismo</b>,
+   * que es lo contrario de lo que había: el chip del encabezado bajó a `size-compacto` (35 px) y el
+   * icono desnudo del pie se quedó en `size-tactil` (44). Lo que esta prueba protege es justamente
+   * el segundo: la excepción se pidió para la barra, y lo fácil al tocar `BASE` es arrastrar al
+   * pie con ella. Sobre la norma, porque estuvo mal escrito aquí: el mínimo de WCAG 2.2 AA (2.5.8)
+   * es 24×24 y los 35 lo pasan con margen; los 44 son AAA (2.5.5) y decisión del proyecto.
    */
-  it('plano quita el borde y el fondo, y conserva el objetivo táctil', async () => {
+  it('plano quita el borde y el fondo, y cada forma conserva su tamaño', async () => {
     const { fixture } = await renderAlternador();
     await fixture.whenStable();
 
     const clases = () => (screen.getByRole('button').getAttribute('class') ?? '').split(/\s+/);
     expect(clases()).toContain('border');
     expect(clases()).toContain('bg-ts-superficie');
-    expect(clases()).toContain('size-tactil');
+    expect(clases()).toContain('size-compacto');
+    expect(clases()).not.toContain('size-tactil');
 
     fixture.componentRef.setInput('plano', true);
     await fixture.whenStable();
@@ -149,6 +157,7 @@ describe('TsAlternadorTema', () => {
     expect(clases()).toContain('bg-transparent');
     expect(clases()).not.toContain('bg-ts-superficie');
     expect(clases()).toContain('size-tactil');
+    expect(clases()).not.toContain('size-compacto');
   });
 
   // El icono baja a 16 px con la forma plana, como el `size-4` de la referencia y como los demás

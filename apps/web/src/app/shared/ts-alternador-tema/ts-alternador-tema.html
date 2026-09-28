@@ -2,9 +2,11 @@
      septiembre de 2026, cuando el sistema declaraba "radio 0 en todo": ese día
      el chaflán se reservó a la marca y la interfaz pasó a redondear
      (`ADR-0060`). `rounded-completo` son los 9999 px de `--radio-completo`, que
-     en una caja cuadrada de 44 px es exactamente un círculo — el radio se
-     detiene solo en la mitad del lado, así que no hay que calcular 22.
-     `size-tactil` son los 44 px del objetivo táctil de la tabla de medidas.
+     en una caja cuadrada es exactamente un círculo — el radio se detiene solo
+     en la mitad del lado, así que vale igual a 35 que a 44 y no hay nada que
+     calcular.
+     El lado lo decide `tamano()`: `size-compacto` (35 px) en el chip del
+     encabezado y `size-tactil` (44) en el icono desnudo del pie.
 
      El nombre del botón es fijo y dice la acción, no el destino. La tentación
      era nombrarlo "Activar modo oscuro" y voltearlo con el tema, pero el
@@ -20,6 +22,15 @@
        parpadeo que tendría un icono atado a una señal. Se ve la luna cuando el
        clic lleva a oscuro, y el sol cuando lleva a claro. `ts-icono` va con
        `aria-hidden`, así que ninguno de los dos toca el nombre del botón. -->
-  <ts-icono class="oscuro:hidden" [icono]="iconoTemaOscuro" [clase]="claseIcono()" />
-  <ts-icono class="hidden oscuro:inline-block" [icono]="iconoTemaClaro" [clase]="claseIcono()" />
+  <!-- **`flex` en el host, y no es adorno: sin él el icono no está centrado.**
+       El host de `ts-icono` es `display: inline` por omisión, así que su caja no
+       es el SVG: es una línea de texto con el SVG —que es `inline-block`—
+       apoyado en la línea base y el hueco del descendente debajo. Centrar esa
+       caja en el botón deja el dibujo un par de píxeles por encima del centro
+       real del círculo, que es lo que se veía como un icono "desenfocado".
+       Con `flex` la caja del host es exactamente el SVG y el centrado del
+       botón funciona. Medido en el navegador: en jsdom no hay caja de línea
+       que medir. -->
+  <ts-icono class="flex oscuro:hidden" [icono]="iconoTemaOscuro" [clase]="claseIcono()" />
+  <ts-icono class="hidden oscuro:flex" [icono]="iconoTemaClaro" [clase]="claseIcono()" />
 </button>

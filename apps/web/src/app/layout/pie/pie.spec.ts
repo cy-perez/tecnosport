@@ -96,23 +96,35 @@ describe('Pie', () => {
   });
 
   /**
-   * <b>Ningún logo trae color propio</b>, que es lo que sostiene que se vean sobre la franja de
-   * marca. El generador ya lo verifica al escribir `logos-pago.generado.ts`, y esto lo vuelve a
-   * mirar sobre lo que de verdad se pinta: un `fill` o un `stroke` con un hex se vería de su color
-   * en una franja grafito, y los tres logos negros no se verían en absoluto —que es justo el
-   * problema que la pastilla tapaba antes—.
+   * <b>Solo Mastercard trae color propio</b>, y lo que sostiene la regla es la lista, no el cero.
+   * El generador ya lo verifica al escribir `logos-pago.generado.ts`, y esto lo vuelve a mirar
+   * sobre lo que de verdad se pinta: un `fill` o un `stroke` con un hex se vería de su color en una
+   * franja grafito, y los tres logos negros no se verían en absoluto —que es justo el problema que
+   * la pastilla tapaba antes—.
+   *
+   * <p><b>La excepción entró el 28 de septiembre de 2026 y está medida</b>: el dibujo de Mastercard
+   * son dos círculos que se solapan, y aplanarlo a un color lo deja en dos manchas con el logotipo
+   * de encima borrado. Se miró en el navegador antes de decidirlo. Lo que esta prueba vigila es que
+   * la excepción siga siendo <i>una</i>: el día que un segundo logo se cuele a color, el nombre que
+   * sobre aquí lo dice.
    *
    * <p>No sustituye a mirarlo en el navegador, y no puede: en jsdom un color es una cadena más, y
    * lo que un `currentColor` resuelve en cada tema no se sabe aquí (regla dura #8).
    */
-  it('ningún logo de pago lleva color propio', async () => {
+  it('solo Mastercard lleva color propio, y el resto hereda currentColor', async () => {
     const { container } = await renderPie();
 
-    const conColor = [...container.querySelectorAll('ts-logo-pago [fill], ts-logo-pago [stroke]')]
-      .flatMap((nodo) => [nodo.getAttribute('fill'), nodo.getAttribute('stroke')])
-      .filter((valor): valor is string => valor !== null && valor !== 'currentColor');
+    const conColor = [...container.querySelectorAll('ts-logo-pago')]
+      .filter(
+        (logo) =>
+          [...logo.querySelectorAll('[fill], [stroke]')]
+            .flatMap((nodo) => [nodo.getAttribute('fill'), nodo.getAttribute('stroke')])
+            .filter((valor): valor is string => valor !== null && valor !== 'currentColor').length >
+          0,
+      )
+      .map((logo) => logo.parentElement?.querySelector('.sr-only')?.textContent?.trim() ?? '');
 
-    expect(conColor).toEqual([]);
+    expect(conColor).toEqual([es.pie.pagos.mastercard]);
   });
 
   /**

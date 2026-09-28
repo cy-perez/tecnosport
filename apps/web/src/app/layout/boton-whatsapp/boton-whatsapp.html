@@ -35,11 +35,27 @@
        `anillo-foco-sobre-marca` y no `anillo-foco`: el botón es `--color-marca`, y en tema claro
        `--color-foco` es ese mismo grafito, así que el anillo normal sería invisible. -->
   <a
-    class="group anillo-foco-sobre-marca relative inline-flex min-h-tactil min-w-tactil items-center justify-center gap-8 rounded-completo bg-ts-marca p-12 text-ts-sobre-marca no-underline shadow-lg transition-colors ease-[var(--curva-suave)] hover:bg-ts-marca-alt"
+    class="group anillo-foco-sobre-marca relative inline-flex min-h-tactil min-w-tactil items-center justify-center rounded-completo bg-ts-marca p-12 text-ts-sobre-marca no-underline shadow-lg transition-colors ease-[var(--curva-suave)] hover:bg-ts-marca-alt"
     [style.transitionDuration]="'var(--mov-media)'"
     [href]="enlace()"
   >
-    <ts-icono-marca [marca]="marcaWhatsapp" clase="size-24" />
+    <!-- **El hueco entre el glifo y la etiqueta ya no es `gap-8` del enlace, y
+         ese cambio es el que centra el botón.** Un `gap` se reserva aunque el
+         hermano mida cero, así que con la etiqueta cerrada el contenido medía
+         24 + 8 + 0 y el glifo quedaba 4 px a la izquierda del centro del
+         círculo — el botón se veía desenfocado sin que nada estuviera torcido.
+         Ahora el hueco es un `ps-8` **dentro** de la etiqueta, que vive en la
+         rejilla de `0fr` con `overflow-hidden`: cerrada se recorta con ella y
+         no ocupa nada; abierta empuja igual que antes.
+
+         **`flex` en el host de `ts-icono-marca`**, por lo mismo que en el
+         alternador de tema: el host es `display: inline` por omisión, así que
+         su caja es una línea de texto con el SVG apoyado en la línea base y el
+         descendente debajo, y centrarla deja el dibujo un par de píxeles alto.
+         Los dos desvíos —el horizontal y el vertical— se veían como un solo
+         "no está centrado". Medidos en el navegador; en jsdom no hay caja de
+         línea ni `gap` que medir. -->
+    <ts-icono-marca class="flex" [marca]="marcaWhatsapp" clase="size-24" />
     <!-- La etiqueta se abre de 0fr a 1fr y no de `max-w-0` a un ancho: un ancho concreto sería un
          píxel suelto (regla dura #2) y además habría que adivinarlo para los dos idiomas, donde el
          texto no mide lo mismo. Con la rejilla, el ancho de destino lo calcula el navegador a
@@ -52,9 +68,15 @@
       class="grid grid-cols-[0fr] overflow-hidden transition-[grid-template-columns] ease-[var(--curva-suave)] group-hover:grid-cols-[1fr] group-focus-visible:grid-cols-[1fr]"
       [style.transitionDuration]="'var(--mov-media)'"
     >
-      <span class="min-w-0 overflow-hidden text-sm whitespace-nowrap">{{
-        'whatsapp.etiqueta' | transloco
-      }}</span>
+      <!-- **Tres capas y no dos, y la de en medio es la que recorta.** El hueco de 8 px va en la
+           capa de dentro: puesto en esta —la que lleva `min-w-0 overflow-hidden`— no se recorta,
+           porque el relleno es parte de la caja que recorta y no de lo que recorta, así que la
+           pista de la rejilla se quedaba en 8 px en vez de 0 y el glifo seguía 4 px a la
+           izquierda del centro. Medido en el navegador: 68 px de enlace con el icono centrado en
+           1843 contra un centro real en 1847. -->
+      <span class="min-w-0 overflow-hidden">
+        <span class="block ps-8 text-sm whitespace-nowrap">{{ 'whatsapp.etiqueta' | transloco }}</span>
+      </span>
     </span>
   </a>
 </div>

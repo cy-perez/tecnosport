@@ -8,9 +8,13 @@ import { iconoTemaClaro, iconoTemaOscuro } from '../ui/icono/iconos';
 /**
  * Lo común a las dos formas. El radio va en las dos: en la plana no hay borde que redondear, pero
  * es el que le da su forma al anillo de foco.
+ *
+ * <p><b>El tamaño no está aquí porque no es el mismo en las dos</b>, y eso es deliberado: el chip
+ * del encabezado mide `size-compacto` (35) y el icono desnudo del pie `size-tactil` (44). Ver
+ * `tamano()`.
  */
 const BASE =
-  'flex size-tactil cursor-pointer items-center justify-center rounded-completo p-0 transition-colors';
+  'flex cursor-pointer items-center justify-center rounded-completo p-0 transition-colors';
 
 /** El chip del encabezado, la forma que empareja este botón con `ts-alternador-idioma`. */
 const CHIP = 'border border-ts-borde bg-ts-superficie text-ts-texto hover:bg-ts-superficie-alt';
@@ -122,10 +126,29 @@ export class TsAlternadorTema {
   protected readonly clases = computed(() =>
     cn(
       BASE,
+      this.tamano(),
       this.plano() ? PLANO : CHIP,
       this.sobreMarca() ? 'anillo-foco-sobre-marca' : 'anillo-foco',
     ),
   );
+
+  /**
+   * 35 px en el chip del encabezado, 44 en el icono desnudo del pie.
+   *
+   * <p><b>Va colgado de `plano` y no de un input de tamaño propio</b>, que fue lo primero que
+   * escribí y es peor: un tamaño suelto invita a que cualquiera encoja el botón donde le convenga,
+   * y aquí la medida no se elige, la decide dónde vive. Las dos formas son exactamente dos.
+   *
+   * <p><b>Por qué 35 y no 44 en la barra.</b> Se pidió el 28 de septiembre de 2026: en un
+   * encabezado de 72 px de alto, dos chips de 44 pesaban más que el carrito, que es la acción de la
+   * barra. Baja lo que se pulsa, no solo lo que se ve —a diferencia de `plano`, donde los 44
+   * siguen debajo del icono de 16—, así que conviene tener escrito qué norma se toca y cuál no:
+   * <b>el mínimo de WCAG 2.2 AA (2.5.8) es 24×24</b>, y 35 lo pasa con margen. Los 44 son el nivel
+   * AAA (2.5.5) y la tabla de medidas de `docs/04-ui-marca.md`, que es una decisión del proyecto.
+   * Se relaja aquí y en ningún otro sitio: el del pie, los enlaces y el botón del menú siguen en
+   * `tactil`.
+   */
+  private readonly tamano = computed(() => (this.plano() ? 'size-tactil' : 'size-compacto'));
 
   /**
    * 16 px en la forma plana; los 24 px por omisión de `ts-icono` en el chip del encabezado.
