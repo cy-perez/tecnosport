@@ -14,10 +14,16 @@
 // archivo—. En línea heredan `--color-sobre-marca` igual que Facebook, Instagram y WhatsApp, y
 // sirven sobre cualquier fondo.
 //
-// **Hay dos fuentes y no una**, y está en `ORIGENES`: las tres franquicias de tarjeta salen de
-// `simple-icons` pinneada, igual que las redes en `generar-iconos-marca.mjs`; los ocho medios
-// colombianos no están en ninguna librería y viven en `apps/web/logos-pago/`, en el repo y sin
-// servirse.
+// **Hay dos fuentes y no una**, y está en `ORIGENES`: Visa sale de `simple-icons` pinneada, igual
+// que las redes en `generar-iconos-marca.mjs`; los demás no están en ninguna librería —o están en
+// una versión que aquí no sirve— y viven en `apps/web/logos-pago/`, en el repo y sin servirse.
+//
+// **Y hay un logo que no es monocromo**, que es la excepción que `aColor` sostiene. Mastercard
+// entró el 28 de septiembre de 2026 con el dibujo de los dos círculos, y ese aplanado a un color
+// **se destruye**: los círculos se funden en dos manchas solapadas y el logotipo encima desaparece.
+// Se miró en el navegador antes de escribir esto. No es un capricho de marca: es que el dibujo
+// *significa* con el color, y un logo que no se reconoce no cumple lo único que hace en el pie, que
+// es decir con qué se puede pagar.
 //
 // Lo que este tool aporta sobre copiar los paths a mano son los tres guardianes, y los tres
 // nacieron de un fallo real de esta misma tarde: **quitar los rellenos y fallar si queda un color**
@@ -38,9 +44,16 @@ const DESTINO = join(RAIZ, "apps/web/src/app/shared/ui/icono/logos-pago.generado
  * De dónde sale cada archivo.
  *
  * <p>`propio` es `apps/web/logos-pago/`: los medios colombianos, que no están en ninguna librería y
- * por eso viven en el repo. `simple-icons` son las tres franquicias de tarjeta, que sí están y se
- * leen pinneadas de `node_modules` igual que hace `generar-iconos-marca.mjs` con las redes — la
- * librería es `devDependency`, se usa al generar y no entra en el paquete que se sirve.
+ * por eso viven en el repo, más Mastercard y American Express desde el 28 de septiembre de 2026.
+ * `simple-icons` es hoy solo Visa, que se lee pinneada de `node_modules` igual que hace
+ * `generar-iconos-marca.mjs` con las redes — la librería es `devDependency`, se usa al generar y no
+ * entra en el paquete que se sirve.
+ *
+ * <p><b>Las otras dos franquicias salieron de `simple-icons` el mismo día que entraron.</b> Allí
+ * son glifos de 24×24 de una sola silueta, y eso vale para una red social pero no para estas dos:
+ * Mastercard se queda sin los dos círculos, que es donde está toda su identidad, y American Express
+ * se queda sin la silueta que envuelve cada palabra. Los archivos que las reemplazan traen el
+ * dibujo completo.
  *
  * <p>Copiarlas al repo habría sido más corto y peor: una copia vendorizada de un logo que su
  * mantenedor actualiza cuando la marca se rediseña es una copia que envejece sin que nadie se
@@ -76,13 +89,14 @@ const LOGOS = [
     constante: "logoMastercard",
     archivo: "mastercard.svg",
     titulo: "Mastercard",
-    origen: "simple-icons",
+    origen: "propio",
+    aColor: true,
   },
   {
     constante: "logoAmericanExpress",
     archivo: "americanexpress.svg",
     titulo: "American Express",
-    origen: "simple-icons",
+    origen: "propio",
   },
   { constante: "logoPse", archivo: "pse.svg", titulo: "PSE", origen: "propio" },
   { constante: "logoNequi", archivo: "nequi.svg", titulo: "Nequi", origen: "propio" },
@@ -213,6 +227,11 @@ function redondear(archivo, d) {
  * El guardián del color. Un hex que sobreviva al aplanado es un logo que se va a ver de su color
  * sobre la franja de marca —o, si era una placa, una mancha que se come al de al lado— y es
  * exactamente la clase de fallo que ninguna prueba ve: en jsdom un color es una cadena más.
+ *
+ * <p><b>No corre sobre los logos con `aColor`</b>, que es lo único que los distingue de los demás:
+ * ahí el color no es un descuido, es el dibujo. La excepción se declara por logo y no se deduce del
+ * archivo, igual que `PLACAS_DE_FONDO`: un logo que empieza a colarse a color sin que nadie lo
+ * decida es justo lo que este guardián existe para impedir.
  */
 function sinColor(archivo, atributo, valor) {
   if (/#[0-9a-fA-F]{3,8}|rgb\(|hsl\(|url\(#/.test(valor)) {
@@ -223,7 +242,7 @@ function sinColor(archivo, atributo, valor) {
   }
 }
 
-function extraer({ archivo, origen }) {
+function extraer({ archivo, origen, aColor = false }) {
   const svg = readFileSync(join(ORIGENES[origen], archivo), "utf8");
   const vista = svg.match(/viewBox="([^"]+)"/)?.[1];
   if (!vista) {
@@ -262,6 +281,11 @@ function extraer({ archivo, origen }) {
 
     const trazo = {
       d: redondear(archivo, d),
+      // **El color propio solo existe para un logo a color, y ahí es obligatorio en cada path.**
+      // Dejar uno sin relleno lo haría heredar el `currentColor` del `<svg>` del componente, o sea
+      // blanco sobre la franja del pie: en Mastercard eso borraría el contorno del logotipo, que
+      // viene sin `fill` declarado porque el negro por omisión de SVG ya era el que tocaba.
+      relleno: aColor ? "#000000" : null,
       reglaDeRelleno: null,
       reglaDeRecorte: null,
       trazo: null,
@@ -270,9 +294,16 @@ function extraer({ archivo, origen }) {
     };
 
     for (const [, nombre, valor] of atributos) {
-      // El relleno se va entero: el `<svg>` del componente pone `fill="currentColor"` y el `path`
-      // lo hereda. Así el logo sigue el color del texto en los dos temas, que es todo el punto.
-      if (nombre === "d" || nombre === "fill") {
+      if (nombre === "d") {
+        continue;
+      }
+      // En un logo monocromo el relleno se va entero: el `<svg>` del componente pone
+      // `fill="currentColor"` y el `path` lo hereda, que es lo que le deja seguir al color del
+      // texto en los dos temas. En uno a color se conserva tal cual viene del archivo.
+      if (nombre === "fill") {
+        if (aColor) {
+          trazo.relleno = valor;
+        }
         continue;
       }
       const campo = ATRIBUTOS_DE_TRAZO[nombre];
@@ -287,8 +318,10 @@ function extraer({ archivo, origen }) {
       // trazador de bitmap sin el cual el logo adelgaza. Quitándolo, el trazo caería al valor por
       // omisión —ninguno— y el dibujo cambiaría de peso; en `currentColor` sigue al texto igual que
       // el relleno.
-      const limpio = nombre === "stroke" ? "currentColor" : valor;
-      sinColor(archivo, nombre, limpio);
+      const limpio = nombre === "stroke" && !aColor ? "currentColor" : valor;
+      if (!aColor) {
+        sinColor(archivo, nombre, limpio);
+      }
       trazo[campo] = limpio;
     }
 
@@ -321,8 +354,9 @@ const valor = (v) => (v === null ? "null" : `'${v.replace(/'/g, "\\'")}'`);
 
 const contenido = `// GENERADO por tools/generar-logos-pago.mjs — no editar a mano.
 //
-// Los logos de los medios de pago, monocromos: sin un solo relleno propio, para que hereden el
-// \`currentColor\` de quien los dibuja. Los pinta \`ts-logo-pago\`.
+// Los logos de los medios de pago. Diez son monocromos —sin un solo relleno propio, para que
+// hereden el \`currentColor\` de quien los dibuja— y Mastercard no, porque su dibujo significa con
+// el color: aplanado se queda en dos manchas solapadas. Los pinta \`ts-logo-pago\`.
 //
 // **No están en caja de 24 como los de \`marcas.generado.ts\`.** Van de 50×41 a 1000×305, cada uno
 // con su relación de aspecto, y por eso cada uno trae su \`vista\`: escalarlos a una caja común
@@ -346,10 +380,15 @@ const contenido = `// GENERADO por tools/generar-logos-pago.mjs — no editar a 
  * Un trazo del dibujo. Todo lo que no sea \`d\` va en \`null\` cuando el archivo no lo trae, y el
  * componente lo ata con \`[attr.*]\`, que quita el atributo cuando el valor es nulo.
  *
- * \`trazo\` es \`'currentColor'\` o nada: el color propio no sobrevive al generador.
+ * \`relleno\` es \`null\` en los diez logos monocromos, y ahí pinta el \`fill="currentColor"\` del
+ * \`<svg>\`. Solo Mastercard lo trae, porque su dibujo significa con el color.
+ *
+ * \`trazo\` es \`'currentColor'\` o nada: en un logo monocromo el color propio no sobrevive al
+ * generador.
  */
 export interface TrazoDeLogo {
   readonly d: string;
+  readonly relleno: string | null;
   readonly reglaDeRelleno: string | null;
   readonly reglaDeRecorte: string | null;
   readonly trazo: string | null;
@@ -380,6 +419,7 @@ ${logos
             // El `d` va en una línea por larga que sea: partido, Prettier lo vuelve a juntar y el
             // generado queda sucio nada más escribirlo.
             `      d: ${valor(t.d)},\n` +
+            `      relleno: ${valor(t.relleno)},\n` +
             `      reglaDeRelleno: ${valor(t.reglaDeRelleno)},\n` +
             `      reglaDeRecorte: ${valor(t.reglaDeRecorte)},\n` +
             `      trazo: ${valor(t.trazo)},\n` +

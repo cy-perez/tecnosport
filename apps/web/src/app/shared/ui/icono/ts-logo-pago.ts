@@ -3,7 +3,14 @@ import { cn } from '../cn';
 import type { LogoPago } from './logos-pago.generado';
 
 /**
- * Dibuja el logo de un medio de pago (Visa, PSE, Nequi…) como SVG en línea y monocromo.
+ * Dibuja el logo de un medio de pago (Visa, PSE, Nequi…) como SVG en línea.
+ *
+ * <p><b>Diez de los once son monocromos y uno no.</b> El `fill="currentColor"` del `<svg>` es quien
+ * pinta, salvo donde un trazo trae su `relleno`, que lo pisa con `[attr.fill]`. Hoy solo lo trae
+ * Mastercard: su dibujo son dos círculos que se solapan, y aplanado a un color se queda en dos
+ * manchas con el logotipo encima borrado — se miró en el navegador el 28 de septiembre de 2026, que
+ * es donde se ve, porque en jsdom un color es una cadena más. La excepción se declara logo a logo
+ * en el generador, no se deduce del archivo.
  *
  * **Es un tercer componente, y no un modo de `ts-icono-marca`, por la caja.** Aquel asume
  * `viewBox="0 0 24 24"` y hasta lo verifica al generar, porque así distribuye `simple-icons` y
@@ -32,8 +39,10 @@ import type { LogoPago } from './logos-pago.generado';
  * `currentColor`. Hornear el blanco en el archivo habría atado los siete a fondo oscuro; así siguen
  * al texto y sirven también sobre una superficie clara.
  *
- * <p>El precio es real y conviene tenerlo escrito: ~41 kB de datos de trazado que antes eran
- * archivos estáticos cacheables y ahora viajan en el paquete. El generador los redondea a un
+ * <p>El precio es real y conviene tenerlo escrito: ~50 kB de datos de trazado que antes eran
+ * archivos estáticos cacheables y ahora viajan en el paquete. Fueron ~41 hasta que Mastercard y
+ * American Express dejaron `simple-icons` por el dibujo completo: aquellos glifos de 24×24 pesaban
+ * 0,7 kB cada uno y estos 7,5 y 5,7. El generador los redondea a un
  * decimal por eso, y `logos-pago.generado.ts` no crece salvo que se agregue un medio de pago.
  *
  * Los datos salen de `logos-pago.generado.ts`, que produce `npm run logos-pago` desde
@@ -54,6 +63,7 @@ import type { LogoPago } from './logos-pago.generado';
         @for (trazo of logo().trazos; track $index) {
           <svg:path
             [attr.d]="trazo.d"
+            [attr.fill]="trazo.relleno"
             [attr.fill-rule]="trazo.reglaDeRelleno"
             [attr.clip-rule]="trazo.reglaDeRecorte"
             [attr.stroke]="trazo.trazo"
