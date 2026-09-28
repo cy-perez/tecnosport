@@ -254,6 +254,22 @@
      independiente: es una resta. */
   --spacing-menu-asoma: calc(var(--ancho-menu-lateral) - var(--ancho-menu-riel));
 
+  /* La caja de un logo de medio de pago cuando la compartida de `w-64` se le
+     queda corta. Va a `--spacing-*` por lo mismo que los del menú: hace falta
+     `w-`, no `max-w-`. Y es un token con nombre y no un escalón nuevo de la
+     escala de espacio a propósito —que era la otra salida—: 80 px entre 64 y
+     96 rompe la progresión de la escala, que de 32 en adelante va multiplicando
+     por 1,5, y meter ahí un `p-80` y un `gap-80` que nadie pidió es cambiar el
+     sistema entero por un logo. Como `--ancho-menu-riel`, que tampoco está en
+     la escala porque no es un espacio: es cuánto mide una cosa concreta.
+
+     Hoy solo lo usa Bancolombia, que es el logotipo más apaisado de los diez
+     —174×23 una vez ceñido, o sea 7,6:1— y por eso el único al que la caja de
+     64 le limita por el ancho: en `w-64` se dibuja a 63,7×8,2 px y en `w-96` a
+     95,6×12,3, sin nada en medio. Aquí son 79,6×10,2. Medidos en el navegador
+     el 28 de septiembre de 2026. */
+  --spacing-logo-pago: var(--ancho-logo-pago);
+
   /* RADIO — la escala del kit, no la de Tailwind. `sm` (6px) es el segmento de
      dentro de un grupo; `md` (8px) el control suelto, que es el caso común;
      `lg` (12px) la superficie que contiene controles. `completo` son 9999px y

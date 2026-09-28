@@ -77,6 +77,18 @@ describe('cn con los nombres de token del proyecto', () => {
     expect(cn('min-h-tactil', 'min-h-0')).toBe('min-h-0');
   });
 
+  /**
+   * Los anchos con nombre que se piden con `w-` y no con `max-w-`. Sin registrarlos, `w-logo-pago`
+   * no competía con el `w-64` que trae la base de `ts-logo-pago` y sobrevivían los dos: gana el
+   * orden del CSS compilado y no quien llama, que es justo lo que `cn` existe para evitar. Y no
+   * falla nada —las dos clases existen—, así que sin esta prueba se descubre mirando el logo.
+   */
+  it('un ancho con nombre compite con uno de la escala, y entre sí', () => {
+    expect(cn('w-64', 'w-logo-pago')).toBe('w-logo-pago');
+    expect(cn('w-logo-pago', 'w-64')).toBe('w-64');
+    expect(cn('w-menu-riel', 'w-menu-lateral')).toBe('w-menu-lateral');
+  });
+
   // Lo que ya funcionaba sin configurar, fijado para que la configuración
   // nueva no lo rompa.
   it('dos radios compiten entre sí, también el de la píldora', () => {
