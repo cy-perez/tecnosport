@@ -48,16 +48,39 @@ function contraste(a, b) {
   return (x + 0.05) / (y + 0.05);
 }
 
-// Cada par es [frente, fondo, umbral, dónde se usa].
+// Cada par es [frente, fondo, umbral, dónde se usa, y opcionalmente el tema donde aplica].
+//
+// **El quinto campo es "claro" u "oscuro", y sin él el par se comprueba en los dos.** Eso último
+// es lo normal y lo correcto: casi todas las combinaciones del sitio son las mismas en los dos
+// temas, y comprobarlas dos veces atrapa el caso en que un token cambia de familia al voltear.
+//
+// Hizo falta el 28 de septiembre de 2026, cuando las baldosas de línea de la portada pasaron a
+// tener **relleno distinto en cada tema** (`ADR-0065`): gris tenue de marca en claro, ámbar en
+// oscuro. Sin alcance, un par como `borde-control` sobre `primario-suave` —que es el contorno de
+// esas baldosas en claro, y pasa por 0,06— hace fallar la corrida en oscuro por una combinación
+// que ahí no se pinta en ninguna pantalla. La salida NO es dejar el par sin declarar: es decir en
+// qué tema vale.
+//
+// Úsalo solo cuando la combinación de verdad no existe en el otro tema, no para callar un fallo.
 const PARES = [
   ["--color-texto", "--color-fondo", UMBRAL_TEXTO, "texto sobre el lienzo"],
   ["--color-texto", "--color-superficie", UMBRAL_TEXTO, "texto sobre tarjeta"],
   ["--color-texto", "--color-superficie-alt", UMBRAL_TEXTO, "texto sobre superficie elevada"],
-  // `primario-suave` lleno las baldosas de linea entre el 26 y el 28 de septiembre de 2026, y su
-  // par sigue aqui aunque hoy no lo pinte nadie: es el unico token del kit que cambia de familia
-  // con el tema —gris casi neutro en claro, ambar apagado en oscuro— y el dia que vuelva a usarse
-  // lo va a hacer sin que nadie se acuerde de comprobar que el texto encima se lee.
-  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "relleno tenue de marca (sin uso hoy)"],
+  // **Las baldosas de linea de la portada no son del mismo color en los dos temas** desde
+  // `ADR-0065`: gris tenue de marca en claro, ambar en oscuro. De ahi el quinto campo.
+  ["--color-texto", "--color-primario-suave", UMBRAL_TEXTO, "texto de las baldosas de linea", "claro"],
+  // **El contorno de esas baldosas NO se declara aqui, y no es un olvido.** Va `borde-control` a
+  // media opacidad, que sobre el relleno da 1,66:1: por debajo de los 3:1 que pide WCAG 1.4.11
+  // para lo que identifica un componente. Esta tabla no sabe expresar una opacidad, asi que el
+  // par no cabria aunque se quisiera — pero sobre todo, declararlo con el color pleno diria que
+  // se pinta algo que no se pinta.
+  //
+  // La excepcion se tomo a sabiendas el 28 de septiembre de 2026 y esta razonada en `ADR-0065`:
+  // a pleno color el contorno cumple por 0,06 y se vio demasiado duro; la otra via que cumple es
+  // que el RELLENO identifique la baldosa, y eso pide un gris medio que deja de ser el relleno
+  // tenue de marca. Lo que la sostiene es que son enlaces de un `<nav>` con su texto visible, no
+  // controles sin etiqueta. Si alguna vez dejan de serlo, el par vuelve aqui.
+  ["--color-sobre-acento", "--color-primario-suave", UMBRAL_GRANDE, "borde de hover de las baldosas", "claro"],
   ["--color-texto-suave", "--color-fondo", UMBRAL_TEXTO, "texto secundario sobre el lienzo"],
   ["--color-texto-suave", "--color-superficie", UMBRAL_TEXTO, "marca y SKU en la tarjeta"],
   ["--color-texto-suave", "--color-superficie-alt", UMBRAL_TEXTO, "etiqueta de agotado"],
@@ -66,17 +89,20 @@ const PARES = [
   ["--color-primario", "--color-superficie", UMBRAL_TEXTO, "botón secundario y enlaces"],
   ["--color-primario", "--color-fondo", UMBRAL_TEXTO, "enlaces sobre el lienzo"],
   ["--color-sobre-acento", "--color-acento", UMBRAL_TEXTO, "CTA ámbar y contador del carrito"],
-  // Los cuatro pasos de la escala de ámbar. Van con el mismo `sobre-acento` que el tono 1 y no con
+  // Los tres pasos de la escala de ámbar. Van con el mismo `sobre-acento` que el tono 1 y no con
   // uno propio, así que lo que hay que vigilar es justo eso: que el grafito siga alcanzando en el
   // tono más claro. Aclarar solo puede subir el contraste contra un texto oscuro, pero el día que
   // la escala cambie de dirección el guardián lo dirá aquí en vez de en el navegador.
-  // **Hoy solo se pinta el tono 5**, que es el relleno de las baldosas de línea desde `ADR-0065`;
-  // el 2, el 3 y el 4 quedaron sin uso al revertirse `ADR-0063` y se siguen vigilando porque el
-  // generador los deriva igual y el día que vuelvan nadie va a mirar esto.
-  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "escala de ámbar, tono 2 (sin uso hoy)"],
+  // **Hoy solo se pinta el tono 2**, y solo en tema oscuro: es el relleno de las baldosas de línea
+  // desde `ADR-0065`, un paso por debajo del ámbar pleno del carrusel. El 3 y el 4 quedaron sin
+  // uso al revertirse `ADR-0063` y se siguen vigilando porque el generador los deriva igual y el
+  // día que vuelvan nadie va a mirar esto.
+  // En oscuro un solo par cubre el texto y el borde de hover: los dos son `sobre-acento` sobre el
+  // relleno ambar. El borde en reposo no se declara a proposito —`acento` sobre `acento-2` da
+  // 1,09:1— porque ahi el relleno ya separa la baldosa del lienzo y la afordancia es el hover.
+  ["--color-sobre-acento", "--color-acento-2", UMBRAL_TEXTO, "texto y hover de las baldosas", "oscuro"],
   ["--color-sobre-acento", "--color-acento-3", UMBRAL_TEXTO, "escala de ámbar, tono 3 (sin uso hoy)"],
   ["--color-sobre-acento", "--color-acento-4", UMBRAL_TEXTO, "escala de ámbar, tono 4 (sin uso hoy)"],
-  ["--color-sobre-acento", "--color-acento-5", UMBRAL_TEXTO, "texto de las baldosas de línea"],
   ["--color-sobre-marca", "--color-marca", UMBRAL_TEXTO, "pie, franjas de marca y pista del visor 360"],
   ["--color-error", "--color-fondo", UMBRAL_TEXTO, "mensajes de error"],
   ["--color-error", "--color-superficie", UMBRAL_TEXTO, "error dentro de un formulario"],
@@ -97,15 +123,12 @@ const PARES = [
   // El borde de las cajas de confirmacion en linea, que es lo unico que las separa de la fila de
   // arriba. `--color-borde` da 1,19:1 sobre el lienzo y era invisible.
   ["--color-borde-control", "--color-fondo", UMBRAL_GRANDE, "borde de una caja de confirmacion"],
-  // El borde de hover de las baldosas de la portada, contra su propio relleno — que es lo que hay
-  // que mirar desde `ADR-0065`, porque la baldosa ya no es del color del lienzo. Fue
-  // `primario` contra `borde` mientras el relleno era `primario-suave`, y ese par se quedo al reves
-  // en tema oscuro sin que nadie lo viera: `primario` es ambar ahi, asi que el hover sobre un
-  // relleno amarillo *borraba* el borde en lugar de marcarlo. `sobre-acento` es grafito en los dos
-  // temas. El borde en reposo es `acento` sobre `acento-5` y NO se declara aqui a proposito: 1,5:1,
-  // es un filo decorativo y no una afordancia, y declararlo seria pedirle al guardian que falle por
-  // algo que nadie tiene que poder leer.
-  ["--color-sobre-acento", "--color-acento-5", UMBRAL_GRANDE, "borde de hover de las baldosas de linea"],
+  // El borde de hover de las baldosas de la portada va con los dos pares de arriba, no aparte: en
+  // claro `sobre-acento` es el mismo #14171C que `--color-texto`, y en oscuro es literalmente el
+  // par declarado. Lo que **si** se fue de aqui es el par viejo, `primario` contra `borde`, y vale
+  // la pena saber por que: describia el hover mientras la baldosa era del color del lienzo, y
+  // ademas estaba al reves en tema oscuro sin que nadie lo viera — `primario` es ambar ahi, asi
+  // que sobre un relleno ambar el hover *borraba* el borde en lugar de marcarlo.
   ["--color-aviso", "--color-fondo", UMBRAL_TEXTO, "plazo de la transferencia"],
   ["--color-sobre-primario", "--color-error", UMBRAL_TEXTO, "botón de peligro y aviso bloqueante"],
   ["--color-sobre-primario", "--color-exito", UMBRAL_TEXTO, "aviso de éxito de la captura"],
@@ -121,7 +144,8 @@ const PARES = [
 let fallos = 0;
 for (const [nombre, tema] of [["claro", claro], ["oscuro", oscuro]]) {
   console.log(`\n== tema ${nombre} ==`);
-  for (const [frente, fondo, umbral, donde] of PARES) {
+  for (const [frente, fondo, umbral, donde, soloEnTema] of PARES) {
+    if (soloEnTema && soloEnTema !== nombre) continue;
     const a = tema[frente];
     const b = tema[fondo];
     if (!a || !b || !a.startsWith("#") || !b.startsWith("#")) continue;

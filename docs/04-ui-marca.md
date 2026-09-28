@@ -163,23 +163,28 @@ delante. Ver `ADR-0059`.
 - **La regla del ámbar:** `#F5B301` es una sola cosa por pantalla y solo como
   relleno con texto grafito encima. Sobre blanco da 1.85:1. Nunca como texto ni
   como ícono sobre fondo claro.
-  **Tiene exactamente una excepción, y está escrita.** Las baldosas de "Nuestras
-  líneas" de la portada se rellenan con `--color-acento-5` —el ámbar aclarado
-  cinco pasos hacia la superficie, `#FBDE8F`— desde el 28 de septiembre de 2026
-  (`ADR-0065`).
-  Lo que la sostiene es que **no es el color señal, es el color señal rebajado**:
-  la portada sigue teniendo una sola cosa en ámbar pleno, los botones del
-  carrusel, y las baldosas quedan por debajo por saturación. Si algún día aparece
-  una tercera superficie ámbar en la misma pantalla, esto ya no se sostiene y hay
-  que revisar la regla entera, no añadir un cuarto tono.
+  **Y la regla es de fondo claro, que es lo que la excepción aprovecha.** El
+  motivo de arriba —1,85:1 sobre blanco— no existe sobre el lienzo oscuro, donde
+  el ámbar da 10,14:1 y donde `tokens.json` dice desde el principio que es el
+  ámbar el que manda como color de marca. Por eso las baldosas de "Nuestras
+  líneas" de la portada se rellenan con `--color-acento-2` **solo en tema
+  oscuro** —un paso por debajo del ámbar pleno del carrusel— y en tema claro se
+  quedan grises, con `--color-primario-suave` (`ADR-0065`, 28 de septiembre de
+  2026). En claro la regla no cede en nada.
+  Dentro del tema oscuro la jerarquía entre el carrusel y las baldosas se
+  sostiene por saturación. Si algún día aparece una tercera superficie ámbar en
+  esa pantalla, eso ya no alcanza y hay que revisar la regla entera.
   Antes hubo otra excepción, de un día: la banda de portada desplegó el ámbar en
   cuatro pasos —`--color-acento-2`, `-3` y `-4`— para dar un botón a cada línea
   de negocio. `ADR-0064` la retiró en cuanto se vio en pantalla: el cuarto paso
   parece un botón deshabilitado, y cuatro tonos ordenan cuatro líneas que valen
-  lo mismo. **El `-2`, el `-3` y el `-4` siguen en el kit sin usarse** — se deja
-  anotado aquí para que nadie los encuentre y crea que la regla cede más de lo
-  que cede. La rampa la deriva el generador en pasos del 14 %: un tono nuevo se
-  pide al kit, nunca se escribe a mano.
+  lo mismo. **El `-2` y el `-4` siguen en el kit sin usarse** — se deja anotado
+  aquí para que nadie los encuentre y crea que la regla cede más de lo que cede.
+  La rampa la deriva el generador en pasos del 14 %, y **son tres**: hubo un
+  cuarto durante unas horas y se retiró al no usarlo nadie. Un tono nuevo se pide
+  al kit y nunca se escribe a mano, pero antes conviene preguntarse si la rampa
+  que ya existe no llegaba: a más pasos, la superficie deja de parecerse al
+  ámbar de la casa.
   **Sobre el ámbar, el texto es `--color-sobre-acento` y no `--color-texto`**, y
   eso vale también para el tono rebajado: los cuatro pasos de la escala valen lo
   mismo en los dos temas, mientras que `--color-texto` se va a casi blanco en

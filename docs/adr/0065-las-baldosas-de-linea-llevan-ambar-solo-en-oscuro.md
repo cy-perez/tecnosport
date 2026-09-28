@@ -1,4 +1,4 @@
-# ADR-0065 — Las baldosas de línea vuelven al ámbar, en un solo tono suave
+# ADR-0065 — Las baldosas de línea llevan ámbar solo en tema oscuro
 
 **Fecha:** 2026-09-28
 **Estado:** aceptado. Modifica a `ADR-0064` en lo que toca a las **baldosas de
@@ -7,7 +7,7 @@ principalmente, no se toca y sigue con un solo `--color-acento`.
 
 ## Contexto
 
-Esta es la tercera vuelta de la misma decisión en cinco días, así que lo primero
+Esta es la cuarta vuelta de la misma decisión en cinco días, así que lo primero
 es dejar claro qué es cada cosa, porque `ADR-0063` y `ADR-0064` hablan de dos
 superficies distintas de la misma pantalla y es fácil confundirlas:
 
@@ -19,7 +19,9 @@ superficies distintas de la misma pantalla y es fácil confundirlas:
   `--color-primario-suave`. **Esto es lo que cambia aquí.**
 
 El 28 de septiembre de 2026 se pidió que las baldosas llevaran "un amarillo
-similar al de la sección del carrusel, pero de un tono más suave".
+similar al de la sección del carrusel, pero de un tono más suave" y, tras verlo
+en pantalla, que ese ámbar quedara **solo en tema oscuro**, con el gris de vuelta
+en claro.
 
 De los dos argumentos con los que `ADR-0064` sacó el ámbar de aquí, **uno deja de
 aplicar y el otro se asume a sabiendas**:
@@ -28,51 +30,97 @@ aplicar y el otro se asume a sabiendas**:
   jerarquías"** eran, los dos, problemas de la *escala*: de que hubiera cuatro
   tonos para cuatro cosas que valen lo mismo. Con un solo tono para las cuatro no
   hay paso apagado ni degradado que ordene nada.
-- **"El ámbar es una sola cosa por pantalla"** sigue siendo cierto, y la portada
-  ya gasta la suya en los botones del carrusel. Esta es la excepción real y no
-  se disimula.
+- **"El ámbar es una sola cosa por pantalla"** sigue siendo cierto **en tema
+  claro**, y la portada ya gasta la suya en los botones del carrusel. Ese es
+  justamente el argumento que sobrevivió a las cuatro vueltas, y el que acabó
+  decidiendo que la excepción solo valga en oscuro.
 
 ## Decisión
 
-**Las cuatro baldosas van en `--color-acento-5`, el mismo para las cuatro.**
+**Las baldosas se rellenan con `--color-primario-suave` en tema claro y con
+`--color-acento-2` en tema oscuro.** Es decir: en claro se quedan como las dejó
+`ADR-0064`, y la excepción del ámbar **existe solo en oscuro**.
 
-`acento-5` es el ámbar de marca aclarado cinco pasos hacia la superficie
-(`#FBDE8F` contra el `#F5B301` del carrusel). Lo que sostiene la excepción de
-arriba es justamente eso: no es el color señal, es el color señal rebajado, así
-que la jerarquía entre el carrusel y las baldosas se mantiene por saturación en
-vez de por tono. Quien mira la portada sigue viendo **una** cosa ámbar plena —los
-botones del hero— y una superficie tintada debajo.
+Esa asimetría no es un apaño, y es lo único que hay que entender de este ADR:
+**la regla del ámbar nace de un problema de fondo claro.** `docs/04-ui-marca.md`
+la enuncia con su motivo al lado — el ámbar sobre blanco da 1,85:1, así que solo
+sirve como relleno con grafito encima, y de ahí "una sola cosa por pantalla",
+que en la portada ya se llevan los botones del carrusel. Sobre el lienzo oscuro
+ese problema **no existe**: `--color-acento` da 10,14:1 contra `--color-fondo`,
+y `tokens.json` lleva escrito desde el principio que en modo oscuro el grafito
+deja de funcionar como color de marca y manda el ámbar. La excepción vive
+exactamente donde la regla no aprieta.
 
-**El tono 5 no existía y se pidió al kit, que es donde se piden los colores.**
-La primera versión de este cambio usó `acento-4`, el más claro que había, y al
-verlo en pantalla se pidió bajarlo un paso más. La salida no es escribir un
-amarillo a mano —la regla dura #2 lo prohíbe y con razón: un HEX suelto no se
-recalcula el día que cambie el ámbar de marca— sino alargar la rampa que
-`generador/kit_ui.py` ya derivaba, que va en pasos del 14 % hacia la superficie.
-Cambiar `--color-acento` sigue recalculando los cinco.
+`acento-2` y no otro: un paso por debajo del color señal, el último antes de él.
+Sigue estando por debajo del ámbar pleno del carrusel, así que dentro del tema
+oscuro la jerarquía entre las dos superficies se mantiene por saturación.
 
-Con eso, la escala deja de significar lo que significaba: nació como "un tono
-por línea de negocio" y hoy es simplemente la rampa de un mismo ámbar, donde
-quien la usa elige cuánto quiere bajar la señal. El 2, el 3 y el 4 siguen
-derivándose y sin pintar nada.
+### Cómo se llegó aquí, porque importa
+
+Cuatro vueltas sobre la misma superficie en cinco días:
+
+| | decisión | qué falló |
+|---|---|---|
+| `ADR-0063` | un tono de ámbar por línea | el tono más claro parecía deshabilitado; cuatro tonos jerarquizan cuatro cosas iguales |
+| `ADR-0064` | gris tenue de marca, los dos temas | nada; se pidió volver al ámbar |
+| este, 1.ª versión | `acento-4`, luego un `acento-5` nuevo, luego `acento-3`, los dos temas | en claro competía con el carrusel, que es donde la regla del ámbar sí aprieta |
+| este, definitivo | gris en claro, `acento-2` en oscuro | — |
+
+De ahí dos cosas que quedan en el repositorio:
+
+- **El quinto paso de la escala se retiró del kit.** Se había añadido para tener
+  el amarillo más suave posible y dejó de hacer falta. Un paso derivado que no
+  pinta nada es una invitación a usarlo. El 3 y el 4 se quedan porque son de
+  `ADR-0063` y `ADR-0064` decidió conservarlos a propósito.
+- **El color sale de `tokens.json`, nunca de un hex a mano** (regla dura #2), y
+  eso no lo cambió ninguna de las vueltas.
 
 ## Consecuencias
 
-- **El texto pasa de `--color-texto` a `--color-sobre-acento`, y no es cosmética:
-  sin eso la baldosa no se lee en tema oscuro.** Los cinco tokens de la escala
-  ámbar valen lo mismo en los dos temas, mientras que `--color-texto` se va a
-  casi blanco en oscuro. `sobre-acento` es grafito siempre y ya estaba vigilado
-  por `npm run contrastes` (13,64:1).
+- **Voltean tres cosas, no una.** El relleno cambia con el tema, así que el texto
+  y el borde tienen que cambiar con él: `text-ts-texto` se lee sobre el gris
+  (14,77:1) pero se iría a casi blanco sobre el amarillo, de ahí
+  `oscuro:text-ts-sobre-acento` (10,53:1).
 
-- **El borde cambia de par, y el que había estaba al revés en tema oscuro sin que
-  nadie lo hubiera visto.** Con `primario-suave` de relleno, el reposo era
-  `--color-borde` y el hover `--color-primario`. Sobre el amarillo nuevo eso da:
-  reposo 1,2:1 en claro (invisible) y 9,6:1 en oscuro (un marco negro), y hover
-  grafito en claro (fuerte) pero ámbar en oscuro (1,5:1). Es decir, **en tema
-  oscuro pasar el puntero habría borrado el borde en vez de marcarlo**. Ahora el
-  reposo es `--color-acento` —un filo apenas más hondo que el relleno, decoración
-  deliberada, y por eso *no* se declara como par vigilado— y el hover
-  `--color-sobre-acento`, grafito en los dos temas, que es la afordancia.
+- **El contorno en claro es `--color-borde-control` a media opacidad, y no es
+  decoración: es lo que hace que se lean como botones.** Con `--color-borde`
+  daban 1,06:1 sobre su propio relleno —o sea, nada— y cuatro rectángulos grises
+  sin contorno se leen como etiquetas y no como algo que se pulsa. Al 50 % da
+  **1,66:1**. En oscuro no hace falta contorno —el relleno ámbar ya separa la
+  baldosa del lienzo— y el borde se queda invisible a propósito (1,09:1).
+
+- **Ese 1,66 incumple WCAG 1.4.11, que pide 3:1, y se decidió a sabiendas.** Hay
+  exactamente dos formas de cumplirlo y las dos se maquetaron y se miraron el
+  28 de septiembre de 2026:
+
+  | | cómo cumple | por qué se descartó |
+  |---|---|---|
+  | `borde-control` a pleno color | el borde, 3,06:1 | pasa por 0,06 y se ve duro para lo que es el fondo de una sección |
+  | relleno gris medio `#828488` | el relleno, 3,46:1 contra el lienzo | deja de ser el relleno tenue de marca: cuatro bloques pesados |
+
+  Lo que sostiene la excepción es **qué son estas baldosas**: enlaces dentro de
+  un `<nav>`, con su texto visible y su propio nombre accesible, no controles sin
+  etiqueta cuya única pista sea el recuadro. El criterio apunta a lo segundo. El
+  día que dejen de ser enlaces con texto, esto hay que revisarlo.
+
+  Queda **sin declarar** en `npm run contrastes`, con su porqué escrito ahí
+  mismo: la tabla no sabe expresar una opacidad, y declarar el color pleno diría
+  que se pinta algo que no se pinta.
+
+- **El hover pasa a `--color-sobre-acento`, y eso corrige un defecto que ya
+  estaba en producción.** Era `--color-primario`, que es grafito en claro pero
+  **ámbar en oscuro**. Mientras el relleno fue gris no se notó; sobre un relleno
+  ámbar el hover habría *borrado* el borde en vez de marcarlo (1,09:1).
+  `sobre-acento` es grafito en los dos temas y no necesita variante.
+
+- **`npm run contrastes` aprendió a declarar el tema de un par, y este cambio es
+  quien lo obligó.** El guardián evaluaba cada par en claro y en oscuro, lo cual
+  es correcto mientras una combinación exista en los dos; con una superficie que
+  cambia de familia al voltear, hace fallar la corrida por combinaciones que no
+  se pintan en ninguna pantalla — `sobre-acento` sobre `primario-suave` da 1,23:1
+  en oscuro, donde la baldosa es ámbar. Ahora un par lleva un quinto campo
+  opcional, `"claro"` u `"oscuro"`, y **sin él se sigue comprobando en los dos**,
+  que es lo normal y lo que atrapa a un token que cambia de familia sin avisar.
 
 - **El anillo de foco se queda en `anillo-foco` y no pasa a
   `anillo-foco-sobre-acento`**, que es lo que sí hacen `ts-boton` en su variante
@@ -93,4 +141,4 @@ derivándose y sin pintar nada.
   las baldosas tienen que convivir con una tercera superficie ámbar, la regla de
   "una sola cosa por pantalla" ya no va a poder sostener la diferencia por
   saturación. En ese momento hay que revisar la regla entera, no alargar la rampa
-  con un sexto paso.
+  con un cuarto paso — que es exactamente lo que se intentó aquí y se deshizo.
