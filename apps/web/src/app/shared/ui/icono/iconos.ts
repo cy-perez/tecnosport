@@ -44,11 +44,12 @@ export { Play as iconoReanudar } from 'lucide';
 // anuncia a qué tema lleva el clic, no en cuál estás. En claro se ve la luna, en oscuro el sol.
 export { Moon as iconoTemaOscuro } from 'lucide';
 export { Sun as iconoTemaClaro } from 'lucide';
-// Los pidió el menú lateral: recogido solo caben iconos, así que cada rama de primer nivel
-// necesita el suyo — sin ellos el riel es una columna de cuadrados vacíos. El chevron es el que
-// dice si una rama está desplegada, y gira con la misma curva que el panel.
-export { LayoutGrid as iconoCatalogo } from 'lucide';
-export { LayoutDashboard as iconoPanel } from 'lucide';
+// **Las ramas de primer nivel del menú lateral tuvieron icono y ya no.** Eran un `LayoutGrid`
+// —cuatro cuadritos— para el catálogo y un `LayoutDashboard` para el panel, y existían porque con
+// el menú recogido se creía que solo cabían iconos. Sí cabe el nombre: se pidió el 28 de
+// septiembre de 2026 —un pictograma abstracto no dice qué hay detrás— y el riel ahora lee
+// "Catálogo" y "Panel". El porqué de que quepa está en `menu-lateral.html`.
+// El chevron se queda: dice si una rama está desplegada, y gira con la misma curva que el panel.
 export { ChevronDown as iconoChevron } from 'lucide';
 // Lo pidió el botón que fija el menú lateral abierto. `PanelLeft` y no una chincheta: el icono
 // tiene que decir qué queda fijo —el panel de la izquierda—, no con qué se sujeta.

@@ -180,6 +180,38 @@ describe('MenuLateral', () => {
     expect(panel().className).toContain('w-menu-riel');
   });
 
+  /**
+   * <b>Las ramas de primer nivel se leen por su nombre, no por un pictograma.</b> Tenían icono
+   * —`LayoutGrid` el catálogo, `LayoutDashboard` el panel— porque se creía que con el menú
+   * recogido solo cabían iconos; sí cabe el nombre, y se pidió el 28 de septiembre de 2026.
+   *
+   * <p>Lo que esta prueba fija es que <b>no vuelva un icono a ocupar ese sitio</b>: el chevron sí
+   * se queda —dice si la rama está desplegada— así que no vale contar los `ts-icono` del botón,
+   * hay que mirar que el único que quede sea el que gira.
+   *
+   * <p><b>Que quepa no lo sabe jsdom</b>, donde nada mide: los 47,5 px del texto contra los 56 que
+   * deja el riel salen del navegador (regla dura #8). Aquí se cuida la otra mitad, la que sí
+   * puede romperse en silencio al editar la plantilla.
+   */
+  it('una rama de primer nivel se nombra con texto y sin icono propio', async () => {
+    await renderMenu();
+
+    for (const nombre of ['Catálogo']) {
+      const boton = botonDe(nombre);
+      expect(boton.textContent?.trim()).toBe(nombre);
+
+      // El chevron y nada más: si vuelve un icono de rama, aquí hay dos.
+      expect(boton.querySelectorAll('ts-icono').length).toBe(1);
+
+      // Y el nombre no se esconde con el menú recogido, que es justo lo que hacía antes.
+      const etiqueta = [...boton.querySelectorAll('span')].find(
+        (x) => x.textContent?.trim() === nombre,
+      );
+      expect(etiqueta?.className).not.toContain('opacity-0');
+      expect(etiqueta?.className).not.toContain('sr-only');
+    }
+  });
+
   it('cada grupo se anuncia como un disclosure y apunta a su región', async () => {
     await renderMenu();
 

@@ -18,7 +18,7 @@ import {
 } from '../../features/catalogo/domain/arbol-categorias';
 import { Categoria } from '../../features/catalogo/domain/producto.model';
 import { REPOSITORIO_CATEGORIAS } from '../../features/catalogo/domain/repositorio-categorias.puerto';
-import { iconoCatalogo, iconoChevron, iconoFijar, iconoPanel } from '../../shared/ui/icono/iconos';
+import { iconoChevron, iconoFijar } from '../../shared/ui/icono/iconos';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { MenuLateralStore } from './menu-lateral.store';
 
@@ -84,8 +84,6 @@ export class MenuLateral {
 
   protected readonly idiomaActual = this.transloco.activeLang;
 
-  protected readonly iconoCatalogo = iconoCatalogo;
-  protected readonly iconoPanel = iconoPanel;
   protected readonly iconoChevron = iconoChevron;
   protected readonly iconoFijar = iconoFijar;
 

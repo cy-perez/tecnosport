@@ -218,7 +218,9 @@ delante. Ver `ADR-0059`.
 | Radio de la interfaz | 6 / 8 / 12 px y píldora | `--radio-*` |
 
 El menú lateral entró el 24 de septiembre de 2026 (`ADR-0062`). Los 72 px del riel
-son el objetivo táctil más 14 a cada lado —es lo único que se ve recogido— y los
+son el objetivo táctil más 14 a cada lado —es lo único que se ve recogido, y desde
+el 28 de septiembre lo que se ve ahí es el **nombre** de la rama y no un icono: en
+`--texto-xs` y con `px-8` caben los 47,5 px de "Catálogo" en los 56 útiles— y los
 288 el ancho donde cabe la etiqueta más larga del árbol sin partirse; 288 y no 290
 porque es múltiplo de 4, como el resto de la rejilla. La transición entre los dos
 dura `--mov-panel` (300 ms), que es una duración nueva para lo que recorre mucha
