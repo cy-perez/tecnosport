@@ -121,13 +121,13 @@ interface MedioDePago {
    * de alto —más que Visa, que es la franquicia que la gente busca primero— y a Sistecrédito en
    * 7,7. El tamaño lo estaba decidiendo el encuadre del archivo.
    *
-   * <p><b>Lo que se baja es el alto, y el ancho casi nunca se toca</b>: nueve de los diez reservan
-   * `w-64`, y esa columna de 64 px más el `gap-x-16` es lo único que sostiene las dos columnas del
-   * `flex-wrap`, a 0 y a 80 px. El décimo es Bancolombia, que lo toca porque no le queda otra —ver
-   * más abajo— y por eso es el único que rompe esa rejilla. Todo, alto y ancho, sale de un token:
-   * nunca un píxel suelto (regla dura #2).
+   * <p><b>El ancho no se toca: los diez reservan `w-64`.</b> Esa columna de 64 px más el `gap-x-16`
+   * es lo único que sostiene la rejilla del `flex-wrap` —dos columnas en escritorio, tres en
+   * tableta, cuatro en teléfono— y basta con que uno mida distinto para que corra a sus vecinos de
+   * fila. Lo que se baja es el alto, y siempre a un escalón de la escala de espacio: nunca un píxel
+   * suelto (regla dura #2).
    *
-   * <p>Las seis excepciones de hoy, todas del 28 de septiembre de 2026 y todas medidas en el
+   * <p>Las cinco excepciones de hoy, todas del 28 de septiembre de 2026 y todas medidas en el
    * navegador, nunca a ojo:
    *
    * <ul>
@@ -136,35 +136,28 @@ interface MedioDePago {
    *       apaisados como la caja, así que la llenaban de lado a lado. Quedan en 43,8×16 y 40,3×16.
    *   <li><b>Nequi</b>, <b>BBVA</b> y <b>Addi</b>, `h-12`. Los tres se dibujaban entre 19 y 23 px de
    *       alto. Quedan en 38×12, 39,3×12 y 31,5×12.
-   *   <li><b>Bancolombia</b>, `w-logo-pago`. El único que pide <b>ancho</b>, y el único que pide un
-   *       token con nombre en vez de un escalón de la escala: ver abajo.
    * </ul>
    *
-   * <h3>Bancolombia, y por qué su escalón está en el ancho</h3>
+   * <h3>Bancolombia no tiene excepción, y tuvo dos</h3>
    *
-   * <p>Llevaba `h-32 w-96` por la razón equivocada: en la caja común su letra medía 4,0 px contra
-   * los 6,2 de Sistecrédito, y la culpa no era de la caja sino de su archivo, que declaraba un
-   * lienzo de 217×61 con el logotipo metido en `22 19 174 23` —un tercio del alto en aire—.
-   * Ceñido el `viewBox` en el generador, esa compensación sobra: **una caja a medida para tapar un
-   * lienzo mal recortado es una excepción que no sabe lo que está arreglando.**
+   * <p>Llevó `h-32 w-96` por la razón equivocada: en la caja común su letra medía 4,0 px contra los
+   * 6,2 de Sistecrédito, y la culpa no era de la caja sino de su archivo, que declaraba un lienzo
+   * de 217×61 con el logotipo metido en `22 19 174 23` —un tercio del alto en aire—. Ceñido el
+   * `viewBox` en el generador, esa compensación sobra: **una caja a medida para tapar un lienzo mal
+   * recortado es una excepción que no sabe lo que está arreglando.**
    *
-   * <p>Lo que queda es un tamaño pedido a propósito, y va en `w-` y no en `h-` porque **en este
-   * logo el `h-` no hace nada**. Ceñido, su relación es 174×23, o sea 7,6:1, la más apaisada de los
-   * diez: dentro de una caja de 64 de ancho el dibujo topa con el ancho mucho antes que con el
-   * alto, así que `h-24`, `h-32` y `h-48` dan los mismos 63,7×8,2 px. Medido en el navegador, los
-   * tres.
+   * <p>Después llevó `w-logo-pago`, 80 px, porque a 63,7×8,2 se veía pequeño —y el ancho es la
+   * única palanca que le sirve: ceñido es 7,6:1, el más apaisado de los diez, así que dentro de una
+   * caja de 64 de ancho topa con el ancho mucho antes que con el alto y `h-24`, `h-32` y `h-48` dan
+   * los mismos píxeles—. También se quitó, y por lo que costó: **medido a 390 px, esos 16 px de
+   * más corrían a sus dos vecinos de fila** —Daviplata a 176 en vez de 160, BBVA a 256 en vez de
+   * 240— y el teléfono es donde más logos caben por renglón, o sea donde más se nota. En
+   * escritorio no pasaba nada porque cae en la columna derecha, y por eso el defecto no apareció
+   * hasta mirarlo en el ancho de un teléfono.
    *
-   * <p><b>Y va en un token con nombre porque en la escala no hay nada en medio.</b> De 64 el
-   * siguiente escalón es 96 —y es el último—, que deja el logo en 95,6×12,3 px: demasiado. Los
-   * 80 de `--ancho-logo-pago` lo dejan en 79,6×10,2. La otra salida era meter un 80 en
-   * `espaciado_px`, y se descartó: rompía la progresión de la escala —de 32 en adelante va ×1,5—
-   * y regalaba un `p-80` y un `gap-80` que nadie pidió. El precedente es `--ancho-menu-riel`, 72 px,
-   * que tampoco está en la escala por lo mismo.
-   *
-   * <p><b>Es el único que rompe la columna de 64</b>, y cabe porque cae en la columna derecha: 80 +
-   * 80 = 160 sobre los 214 px que mide la columna del pie en escritorio. Si algún día cambia el
-   * orden de la lista y le toca la izquierda, empuja a su vecina; es un precio conocido, no un
-   * descuido.
+   * <p>Queda en la caja de todos, a 63,7×8,2 px, que es del tamaño de Sistecrédito —el otro
+   * logotipo largo— y no del de sus vecinos cuadrados. **Eso es lo que cuesta una rejilla que
+   * alinea: el ancho reservado manda sobre el tamaño de cada dibujo.**
    */
   readonly clase?: string;
 }
@@ -198,7 +191,7 @@ const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
   { clave: 'pie.pagos.american_express', logo: logoAmericanExpress, clase: 'h-16' },
   { clave: 'pie.pagos.pse', logo: logoPse, clase: 'h-16' },
   { clave: 'pie.pagos.nequi', logo: logoNequi, clase: 'h-12' },
-  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia, clase: 'w-logo-pago' },
+  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia },
   { clave: 'pie.pagos.daviplata', logo: logoDaviplata },
   { clave: 'pie.pagos.bbva', logo: logoBbva, clase: 'h-12' },
   { clave: 'pie.pagos.sistecredito', logo: logoSistecredito },
