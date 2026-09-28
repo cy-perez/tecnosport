@@ -124,16 +124,31 @@
         `--color-sobre-marca` igual que Facebook, Instagram y WhatsApp, y valdrían también sobre una
         superficie clara. El porqué largo, y lo que cuesta en peso, están en `ts-logo-pago`.
 
-        **Ninguno lleva nombre a la vista salvo el último.** Los logos se explican solos, y once
-        nombres repitiendo lo que el dibujo dice era ruido; por eso fluyen en una rejilla que
-        envuelve en vez de ir uno por renglón. La contraentrega es la excepción y va al final, que
-        es donde una excepción estorba menos: su símbolo es el único cuadrado y detallado —dos manos
-        y una caja en 512x512— y a 24 px de alto se vuelve una mancha, así que lleva `h-48` y su
-        nombre al lado. Medido en el navegador a 24, 32, 40, 64 y 96 px.
+        **Quien tiene logo no lleva nombre a la vista.** Los logos se explican solos, y once nombres
+        repitiendo lo que el dibujo dice era ruido; por eso fluyen en una rejilla que envuelve en vez
+        de ir uno por renglón. La contraentrega es la excepción y va al final, que es donde una
+        excepción estorba menos: **es la única sin logo**, así que su nombre es lo único que tiene.
+        Tuvo símbolo propio —dos manos y una caja en 512×512— unas horas del 28 de septiembre de
+        2026, con el nombre al lado, y se quitó a pedido; el archivo se fue con él, que es la regla
+        del generador.
+
+        No hace falta una bandera que diga cuál enseña el nombre: **se deduce de si hay logo**, y
+        así las dos mitades no pueden desincronizarse.
 
         Lo que **no** se fue con el texto es el nombre accesible. El logo es `aria-hidden` —igual
-        que en la columna de redes— así que sin el `sr-only` de al lado esta columna quedaría muda:
-        once elementos de lista vacíos bajo el título. Va con su prueba.
+        que en la columna de redes— así que sin el `sr-only` de al lado esta columna quedaría casi
+        muda: nueve elementos de lista vacíos bajo el título y un décimo que sí se lee. Va con su
+        prueba.
+
+        **Los logos van pegados al borde izquierdo de su caja, no centrados, y no hay excepciones.**
+        Una lista se lee por su borde izquierdo y ese borde era un zigzag: cada dibujo se apartaba la
+        mitad de lo que le sobraba en la caja de 64 px —Visa 14, Daviplata 17,4, Mastercard 12,
+        BBVA 0—. Lo resuelve el `preserveAspectRatio` de `ts-logo-pago`, salvo en Bancolombia, cuyo
+        aire vivía dentro del archivo y hubo que ceñir en el generador.
+
+        Daviplata estuvo centrado unos minutos ese mismo día —es el dibujo más cuadrado y a ras deja
+        el hueco más grande de la columna a su derecha— y se descartó: un borde recto con un hueco
+        se lee mejor que un borde con una sangría sin regla.
 
         **Las tres franquicias son las que Wompi acepta, no las que existen**: Visa, Mastercard y
         American Express, nacionales e internacionales, según su documentación y su centro de
@@ -160,11 +175,11 @@
         >
           @for (medio of mediosDePago; track medio.clave) {
             <li class="flex items-center gap-8 text-sm">
-              <ts-logo-pago [logo]="medio.logo" [clase]="medio.clase ?? ''" />
-              @if (medio.nombreALaVista) {
-                <span>{{ medio.clave | transloco }}</span>
-              } @else {
+              @if (medio.logo; as logo) {
+                <ts-logo-pago [logo]="logo" [clase]="medio.clase ?? ''" />
                 <span class="sr-only">{{ medio.clave | transloco }}</span>
+              } @else {
+                <span>{{ medio.clave | transloco }}</span>
               }
             </li>
           }

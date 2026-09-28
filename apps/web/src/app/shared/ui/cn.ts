@@ -30,6 +30,9 @@ const PESOS = ['regular', 'medio', 'fuerte'];
 const INTERLINEADOS = ['titulares', 'texto'];
 const ANCHOS = ['contenido', 'formulario', 'formulario-lg', 'filtro'];
 
+/** Anchos con nombre que se piden con `w-`, no con `max-w-`. */
+const ANCHOS_FIJOS = ['menu-riel', 'menu-lateral', 'menu-asoma', 'logo-pago'];
+
 const fusionar = extendTailwindMerge({
   // `radius` es una **escala de tema**, no un grupo de clases, y por eso va
   // aquí y no abajo: declarándola así, `rounded-completo` compite con
@@ -48,6 +51,10 @@ const fusionar = extendTailwindMerge({
       leading: [{ leading: INTERLINEADOS }],
       'max-w': [{ 'max-w': ANCHOS }],
       'min-h': [{ 'min-h': ['tactil'] }],
+      // Sin esto, `w-logo-pago` no compite con el `w-64` que trae la base de
+      // `ts-logo-pago` y sobreviven las dos: gana el orden del CSS compilado y
+      // no quien llama, que es justo lo que `cn` existe para evitar.
+      w: [{ w: ANCHOS_FIJOS }],
     },
   },
 });
