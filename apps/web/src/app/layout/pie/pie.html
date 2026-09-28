@@ -109,60 +109,63 @@
         Los medios de pago que el checkout ofrece de verdad, y solo esos. Entró el 26 de septiembre
         de 2026.
 
-        **Los logos van sobre una pastilla clara y no sueltos sobre la franja.** No es estética: de
-        los siete archivos, tres son negro puro o casi —Addi, BBVA y Bancolombia— y sobre
-        `--color-marca`, que es grafito en los dos temas, simplemente no se verían. Los otros cuatro
-        traen sus colores de marca (el magenta de Nequi, el rojo de Daviplata, el azul de PSE y de
-        Sistecrédito), y un logo de marca no se recolorea para que quepa en una paleta ajena: se le
-        da el fondo sobre el que su dueño lo diseñó.
+        **Los logos van desnudos sobre la franja, en blanco, como los de las redes.** Estuvieron
+        sobre una pastilla clara hasta el 28 de septiembre de 2026, y la pastilla no era estética:
+        eran archivos a todo color, y tres son negro puro o casi —Addi, BBVA y Bancolombia— que
+        sobre `--color-marca`, grafito en los dos temas, no se veían. El argumento para dejarlos así
+        era que un logo de marca no se recolorea para que quepa en una paleta ajena. Sigue siendo
+        cierto en general, y aun así se cambió: **todas estas marcas publican versión monocroma**,
+        así que esto es el uso que su dueño previó para un fondo oscuro, no una licencia que nos
+        tomamos. Lo que se pierde es reconocimiento —el magenta de Nequi encuentra el ojo antes que
+        cualquier palabra— y lo que se gana es una columna que se lee como las otras cuatro.
 
-        **La pastilla es `bg-ts-sobre-marca` y no `bg-ts-superficie`**, y eso se corrigió mirándolo
-        en el navegador. `superficie` es blanco en claro pero **gris oscuro elevado en tema
-        oscuro**, así que los tres logos negros seguían sin verse exactamente donde el problema era
-        peor — la pastilla no arreglaba nada, solo lo disimulaba a medias en un tema. `sobre-marca`
-        es blanco en claro y casi blanco en oscuro: es el token de "lo que se pinta encima de la
-        franja de marca", que es literalmente lo que son estas pastillas. Es de los casos que la
-        regla dura #8 nombra: las pruebas no ven un color, y en jsdom las dos clases son igual de
-        correctas.
+        **Los archivos dejaron de servirse.** Un `<img>` es opaco al CSS de la página y no puede
+        heredar `currentColor`, así que todos pasaron a SVG en línea: ahora siguen a
+        `--color-sobre-marca` igual que Facebook, Instagram y WhatsApp, y valdrían también sobre una
+        superficie clara. El porqué largo, y lo que cuesta en peso, están en `ts-logo-pago`.
 
-        La caja del logo es la misma para los siete —`max-h-24 max-w-full` dentro de una pastilla de
-        64x32— aunque los archivos midan desde 50x41 hasta 519x206: contener dentro de una caja fija
-        es lo único que los alinea sin deformar ninguno. El que peor lo lleva es Sistecrédito, que
-        es un logotipo de 200x26: contenido por el ancho queda en unos 6 px de alto y se lee mal. Se
-        acepta a sabiendas —el nombre lo dice el texto de al lado, que es el que nombra la fila—
-        porque la alternativa es una pastilla el doble de ancha para los siete, y con ella una
-        columna en la que "Tarjeta de crédito y débito" se parte en tres líneas.
+        **Ninguno lleva nombre a la vista salvo el último.** Los logos se explican solos, y once
+        nombres repitiendo lo que el dibujo dice era ruido; por eso fluyen en una rejilla que
+        envuelve en vez de ir uno por renglón. La contraentrega es la excepción y va al final, que
+        es donde una excepción estorba menos: su símbolo es el único cuadrado y detallado —dos manos
+        y una caja en 512x512— y a 24 px de alto se vuelve una mancha, así que lleva `h-48` y su
+        nombre al lado. Medido en el navegador a 24, 32, 40, 64 y 96 px.
 
-        **Dos no llevan logo**, y no es un olvido: "Tarjeta de crédito y débito" no es una marca
-        —son Visa, Mastercard y las demás, que el checkout no distingue— y la contraentrega tampoco.
-        Los dos van con su icono de trazo, como el resto del sitio.
+        Lo que **no** se fue con el texto es el nombre accesible. El logo es `aria-hidden` —igual
+        que en la columna de redes— así que sin el `sr-only` de al lado esta columna quedaría muda:
+        once elementos de lista vacíos bajo el título. Va con su prueba.
 
-        El logo es `alt=""` —decorativo— porque el nombre ya lo dice el texto de al lado, igual que
-        en la columna de redes. No son enlaces: un medio de pago no es un destino.
+        **Las tres franquicias son las que Wompi acepta, no las que existen**: Visa, Mastercard y
+        American Express, nacionales e internacionales, según su documentación y su centro de
+        soporte, consultados el 28 de septiembre de 2026. Diners Club no aparece en ninguna de las
+        dos. Hasta ese día aquí había un icono genérico que decía "Tarjeta de crédito y débito" sin
+        decir cuáles. Salen de `simple-icons`, pinneadas, como las redes.
 
-        **Addi dice "próximamente" y no está disponible.** `MetodoPago` lo tuvo y lo quitó a
-        propósito (`V61__sin_addi.sql`, 22 de septiembre de 2026): anunciarlo como disponible cuando
-        el checkout no lo ofrece es exactamente lo que la Ley 1480 llama información engañosa.
+        No son enlaces: un medio de pago no es un destino.
+
+        **Addi ya no dice "próximamente" a la vista, y es una decisión tomada a sabiendas.**
+        `MetodoPago` lo tuvo y lo quitó a propósito (`V61__sin_addi.sql`, 22 de septiembre de 2026),
+        y el checkout no lo ofrece. Su nombre accesible sí sigue diciéndolo, porque sale de la misma
+        clave `pie.pagos.addi`: quien escucha se entera, quien mira no. Si esto se revisa alguna vez,
+        el motivo es que anunciar un medio de pago que no existe es lo que la Ley 1480 llama
+        información engañosa — y las dos salidas son sacarlo del pie o marcarlo a la vista.
       -->
       <div class="flex flex-col gap-8">
         <p class="m-0 mb-4 font-medio text-sm" id="pie-columna-pagos">
           {{ 'pie.pagos.titulo' | transloco }}
         </p>
-        <ul class="m-0 flex list-none flex-col gap-8 p-0" aria-labelledby="pie-columna-pagos">
+        <ul
+          class="m-0 flex list-none flex-wrap items-center gap-x-16 gap-y-8 p-0"
+          aria-labelledby="pie-columna-pagos"
+        >
           @for (medio of mediosDePago; track medio.clave) {
             <li class="flex items-center gap-8 text-sm">
-              @if (medio.logo) {
-                <span
-                  class="inline-flex h-32 w-64 shrink-0 items-center justify-center rounded-sm bg-ts-sobre-marca"
-                >
-                  <img class="max-h-24 max-w-full object-contain" [src]="medio.logo" alt="" />
-                </span>
-              } @else if (medio.icono) {
-                <span class="inline-flex h-32 w-64 shrink-0 items-center justify-center">
-                  <ts-icono [icono]="medio.icono" clase="size-16" />
-                </span>
+              <ts-logo-pago [logo]="medio.logo" [clase]="medio.clase ?? ''" />
+              @if (medio.nombreALaVista) {
+                <span>{{ medio.clave | transloco }}</span>
+              } @else {
+                <span class="sr-only">{{ medio.clave | transloco }}</span>
               }
-              <span>{{ medio.clave | transloco }}</span>
             </li>
           }
         </ul>

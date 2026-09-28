@@ -53,14 +53,16 @@
     "panel_admin": "Panel administrativo",
     "pagos": {
       "titulo": "Medios de pago",
-      "tarjeta": "Tarjeta de crédito y débito",
+      "visa": "Visa (crédito y débito)",
+      "mastercard": "Mastercard (crédito y débito)",
+      "american_express": "American Express (crédito y débito)",
       "pse": "PSE",
       "nequi": "Nequi",
       "bancolombia": "Bancolombia",
       "daviplata": "Daviplata (transferencia)",
       "bbva": "BBVA (transferencia)",
       "sistecredito": "Sistecrédito (a cuotas)",
-      "contraentrega": "Contraentrega (efectivo)",
+      "contraentrega": "Pago contraentrega",
       "addi": "Addi (próximamente)"
     },
     "redes_titulo": "Redes",

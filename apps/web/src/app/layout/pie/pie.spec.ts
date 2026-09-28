@@ -30,7 +30,9 @@ describe('Pie', () => {
     await renderPie();
 
     expect(screen.getByText(es.pie.pagos.titulo)).toBeTruthy();
-    expect(screen.getByText(es.pie.pagos.tarjeta)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.visa)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.mastercard)).toBeTruthy();
+    expect(screen.getByText(es.pie.pagos.american_express)).toBeTruthy();
     expect(screen.getByText(es.pie.pagos.pse)).toBeTruthy();
     expect(screen.getByText(es.pie.pagos.nequi)).toBeTruthy();
     expect(screen.getByText(es.pie.pagos.bancolombia)).toBeTruthy();
@@ -43,17 +45,95 @@ describe('Pie', () => {
 
   /**
    * Los logos son decorativos: el nombre lo dice el texto de al lado, igual que en la columna de
-   * redes. Un `alt` con la marca dentro los convertiría en una segunda copia del mismo nombre para
-   * quien escucha.
+   * redes. Un nombre accesible con la marca dentro los convertiría en una segunda copia del mismo
+   * nombre para quien escucha.
+   *
+   * <p>Eran siete `<img>` de `assets/pagos/` hasta el 28 de septiembre de 2026, y desde entonces
+   * son SVG en línea —`ts-logo-pago`— porque un `<img>` no hereda `currentColor` y los logos
+   * pasaron a monocromo. Lo que la prueba cuida es lo de siempre: que sigan siendo siete y que
+   * ninguno hable.
    */
   it('los logos de pago son decorativos, no el nombre del medio', async () => {
     const { container } = await renderPie();
 
-    const logos = [...container.querySelectorAll('img')].filter((img) =>
-      (img.getAttribute('src') ?? '').includes('assets/pagos/'),
+    const logos = [...container.querySelectorAll('ts-logo-pago svg')];
+    expect(logos.length).toBe(11);
+    expect(logos.every((svg) => svg.getAttribute('aria-hidden') === 'true')).toBe(true);
+    expect(logos.every((svg) => svg.getAttribute('focusable') === 'false')).toBe(true);
+  });
+
+  /**
+   * <b>Quitar el texto de la vista no puede dejar la columna muda.</b> Desde el 28 de septiembre de
+   * 2026 los medios con logo van sin nombre visible —el logo se explica solo— y el logo es
+   * `aria-hidden`, así que sin el `sr-only` de al lado quien escucha no oiría absolutamente nada:
+   * ocho elementos de lista vacíos bajo el título "Medios de pago".
+   *
+   * <p>Esta prueba es la que sostiene esa mitad. Y de paso sostiene lo de Addi: su nombre accesible
+   * sigue diciendo "próximamente" aunque el texto ya no se vea.
+   */
+  it('cada logo sin texto visible conserva su nombre para el lector de pantalla', async () => {
+    const { container } = await renderPie();
+
+    const nombres = [...container.querySelectorAll('ts-logo-pago')].map(
+      (logo) => logo.parentElement?.querySelector('.sr-only')?.textContent?.trim() ?? '',
     );
-    expect(logos.length).toBe(7);
-    expect(logos.every((img) => img.getAttribute('alt') === '')).toBe(true);
+
+    expect(nombres).toEqual([
+      es.pie.pagos.visa,
+      es.pie.pagos.mastercard,
+      es.pie.pagos.american_express,
+      es.pie.pagos.pse,
+      es.pie.pagos.nequi,
+      es.pie.pagos.bancolombia,
+      es.pie.pagos.daviplata,
+      es.pie.pagos.bbva,
+      es.pie.pagos.sistecredito,
+      es.pie.pagos.addi,
+      // La contraentrega va al final y es la única con el nombre a la vista, así que su `span` no
+      // es `sr-only` y aquí sale vacío. Lo comprueba la prueba de abajo, que es donde toca.
+      '',
+    ]);
+  });
+
+  /**
+   * <b>Ningún logo trae color propio</b>, que es lo que sostiene que se vean sobre la franja de
+   * marca. El generador ya lo verifica al escribir `logos-pago.generado.ts`, y esto lo vuelve a
+   * mirar sobre lo que de verdad se pinta: un `fill` o un `stroke` con un hex se vería de su color
+   * en una franja grafito, y los tres logos negros no se verían en absoluto —que es justo el
+   * problema que la pastilla tapaba antes—.
+   *
+   * <p>No sustituye a mirarlo en el navegador, y no puede: en jsdom un color es una cadena más, y
+   * lo que un `currentColor` resuelve en cada tema no se sabe aquí (regla dura #8).
+   */
+  it('ningún logo de pago lleva color propio', async () => {
+    const { container } = await renderPie();
+
+    const conColor = [...container.querySelectorAll('ts-logo-pago [fill], ts-logo-pago [stroke]')]
+      .flatMap((nodo) => [nodo.getAttribute('fill'), nodo.getAttribute('stroke')])
+      .filter((valor): valor is string => valor !== null && valor !== 'currentColor');
+
+    expect(conColor).toEqual([]);
+  });
+
+  /**
+   * <b>La contraentrega es la única con el nombre a la vista, y va al final.</b> Su símbolo es el
+   * único cuadrado y detallado de los once —dos manos y una caja en 512x512— y a la altura de fila
+   * de los logotipos anchos se vuelve una mancha; con el nombre al lado no tiene que cargar solo
+   * con el significado.
+   *
+   * <p>Lo que la prueba cuida es que siga siendo <b>la única</b>: el día que alguien le devuelva el
+   * texto a otra, la columna vuelve a ser la lista de nombres que se quitó a propósito.
+   */
+  it('solo la contraentrega lleva su nombre a la vista, y va de última', async () => {
+    const { container } = await renderPie();
+
+    const alaVista = [...container.querySelectorAll('ts-logo-pago')]
+      .map((logo) => logo.parentElement)
+      .filter((fila) => fila?.querySelector('span:not(.sr-only)'));
+
+    expect(alaVista.length).toBe(1);
+    expect(alaVista[0]?.textContent?.trim()).toBe(es.pie.pagos.contraentrega);
+    expect(alaVista[0]).toBe(container.querySelectorAll('ts-logo-pago')[10]?.parentElement);
   });
 
   /**

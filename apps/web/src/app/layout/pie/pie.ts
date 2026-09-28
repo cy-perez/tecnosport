@@ -1,15 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { IconNode } from 'lucide';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TsAlternadorTema } from '../../shared/ts-alternador-tema/ts-alternador-tema';
 import { TsIcono } from '../../shared/ui/icono/ts-icono';
 import { TsIconoMarca } from '../../shared/ui/icono/ts-icono-marca';
 import {
-  iconoContraentrega,
   iconoCorreo,
   iconoHorario,
-  iconoMediosDePago,
   iconoTelefono,
   iconoUbicacion,
 } from '../../shared/ui/icono/iconos';
@@ -18,6 +15,21 @@ import {
   marcaInstagram,
   marcaWhatsapp,
 } from '../../shared/ui/icono/marcas.generado';
+import type { LogoPago } from '../../shared/ui/icono/logos-pago.generado';
+import {
+  logoAddi,
+  logoAmericanExpress,
+  logoBancolombia,
+  logoBbva,
+  logoContraentrega,
+  logoDaviplata,
+  logoMastercard,
+  logoNequi,
+  logoPse,
+  logoSistecredito,
+  logoVisa,
+} from '../../shared/ui/icono/logos-pago.generado';
+import { TsLogoPago } from '../../shared/ui/icono/ts-logo-pago';
 
 /**
  * Un destino del pie: los segmentos que van después del idioma, y la clave de su etiqueta.
@@ -77,31 +89,56 @@ const ENLACES_LEGALES: readonly EnlaceDelPie[] = [
 ];
 
 /**
- * Un medio de pago del pie: su etiqueta y con qué se dibuja.
+ * Un medio de pago del pie: su etiqueta y el logo con que se dibuja.
  *
- * <p><b>Uno de los dos campos de dibujo está siempre en `null`</b>, y son dos y no uno porque los
- * dos lenguajes gráficos no se mezclan: un logo de marca es un archivo a todo color con su propia
- * relación de aspecto, y un icono de trazo es un `IconNode` de Lucide que hereda `currentColor`.
- * Meterlos en el mismo campo obligaría a distinguirlos en la plantilla por la forma del valor, que
- * es justo la clase de acoplamiento silencioso que este proyecto ya pagó una vez con las variantes
- * de imagen.
+ * <p><b>El logo ya no es opcional</b>, y eso es lo que queda de una simplificación. Hubo un segundo
+ * campo, `icono`, para los dos que no tenían marca propia —la tarjeta genérica y la contraentrega—
+ * con la regla de que uno de los dos estaba siempre en `null`. El 28 de septiembre de 2026 los dos
+ * consiguieron dibujo propio: la contraentrega su símbolo, y la tarjeta se abrió en las tres
+ * franquicias que Wompi acepta de verdad. Sin ningún caso que lo use, el campo era una rama muerta
+ * y una invitación a volver a mezclar dos lenguajes gráficos en una lista.
  *
- * <p>Los archivos viven en `src/assets/pagos/` y los copia el build (`angular.json`), no
- * `copiar-marca.mjs`: no son del kit de marca de Tecno Sport, son marcas de terceros que el negocio
- * usa para decir con qué se le puede pagar.
+ * <p>Los logos salen de `logos-pago.generado.ts`, que produce `npm run logos-pago`. El porqué de
+ * que vayan en línea y no como archivos servidos está en `ts-logo-pago`.
  */
 interface MedioDePago {
   readonly clave: string;
-  readonly logo: string | null;
-  readonly icono: IconNode | null;
+  readonly logo: LogoPago;
+
+  /**
+   * Enseña el nombre al lado del logo en vez de dejarlo solo para el lector de pantalla. Lo lleva
+   * únicamente la contraentrega, y va como dato y no como un caso en la plantilla porque es la
+   * excepción de una regla, no una segunda regla.
+   */
+  readonly nombreALaVista?: boolean;
+
+  /**
+   * Alto distinto del de la fila, cuando el dibujo no aguanta el de todos. También solo la
+   * contraentrega, y por un motivo que se puede medir: los otros diez son logotipos anchos —de
+   * 200×26 a 1000×305— que con 24 px de alto tienen muchísimo ancho, y este es un cuadrado de
+   * 512×512 con dos manos y una caja dentro. A la misma altura le queda una fracción del área y se
+   * vuelve una mancha; se miró en el navegador a 24, 32, 40, 64 y 96 px.
+   */
+  readonly clase?: string;
 }
 
 /**
  * Con qué se puede pagar, en el orden en que la gente los busca.
  *
  * <p><b>Es la lista del checkout, no una lista de deseos.</b> Sale de `MetodoPago` del backend
- * —tarjeta, PSE, Nequi, Bancolombia, Sistecrédito, transferencia manual y contraentrega— más Addi,
- * que se marca "próximamente" porque todavía no está integrado.
+ * —tarjeta, PSE, Nequi, Bancolombia, Sistecrédito, transferencia manual y contraentrega— más Addi.
+ *
+ * <p><b>`TARJETA` se abre en las tres franquicias que Wompi acepta</b>: Visa, Mastercard y American
+ * Express, nacionales e internacionales, según la documentación de Wompi y su centro de soporte,
+ * consultados el 28 de septiembre de 2026. Diners Club no aparece en ninguna de las dos y por eso
+ * no está. Antes había un icono genérico que decía "Tarjeta de crédito y débito" sin decir cuáles.
+ * <b>Esta lista se queda vieja en silencio si se cambia de pasarela</b>, y publicar una franquicia
+ * que el cobro rechaza es información engañosa igual que anunciar un medio que no existe.
+ *
+ * <p><b>Addi sigue aquí y ya no dice "próximamente" a la vista.</b> `MetodoPago` lo tuvo y lo quitó
+ * a propósito (`V61__sin_addi.sql`), así que el checkout no lo ofrece; su nombre accesible sí
+ * conserva el aviso, porque sale de la misma clave. Decisión tomada a sabiendas el 28 de septiembre
+ * de 2026, con el riesgo de la Ley 1480 sobre la mesa.
  *
  * <p>Daviplata y BBVA aparecen como transferencia y no como botones de pago: son las cuentas a las
  * que se transfiere. <b>Hoy el checkout enseña una sola cuenta</b>, la que configuren
@@ -109,15 +146,22 @@ interface MedioDePago {
  * entre las tres; el día que el backend soporte varias cuentas, esto ya las nombra.
  */
 const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
-  { clave: 'pie.pagos.tarjeta', logo: null, icono: iconoMediosDePago },
-  { clave: 'pie.pagos.pse', logo: 'assets/pagos/pse.svg', icono: null },
-  { clave: 'pie.pagos.nequi', logo: 'assets/pagos/nequi.svg', icono: null },
-  { clave: 'pie.pagos.bancolombia', logo: 'assets/pagos/bancolombia.svg', icono: null },
-  { clave: 'pie.pagos.daviplata', logo: 'assets/pagos/daviplata.svg', icono: null },
-  { clave: 'pie.pagos.bbva', logo: 'assets/pagos/bbva.svg', icono: null },
-  { clave: 'pie.pagos.sistecredito', logo: 'assets/pagos/sistecredito.svg', icono: null },
-  { clave: 'pie.pagos.contraentrega', logo: null, icono: iconoContraentrega },
-  { clave: 'pie.pagos.addi', logo: 'assets/pagos/addi.svg', icono: null },
+  { clave: 'pie.pagos.visa', logo: logoVisa },
+  { clave: 'pie.pagos.mastercard', logo: logoMastercard },
+  { clave: 'pie.pagos.american_express', logo: logoAmericanExpress },
+  { clave: 'pie.pagos.pse', logo: logoPse },
+  { clave: 'pie.pagos.nequi', logo: logoNequi },
+  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia },
+  { clave: 'pie.pagos.daviplata', logo: logoDaviplata },
+  { clave: 'pie.pagos.bbva', logo: logoBbva },
+  { clave: 'pie.pagos.sistecredito', logo: logoSistecredito },
+  { clave: 'pie.pagos.addi', logo: logoAddi },
+  {
+    clave: 'pie.pagos.contraentrega',
+    logo: logoContraentrega,
+    nombreALaVista: true,
+    clase: 'h-48',
+  },
 ];
 
 /**
@@ -162,7 +206,7 @@ const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
  */
 @Component({
   selector: 'app-pie',
-  imports: [TranslocoPipe, RouterLink, TsAlternadorTema, TsIcono, TsIconoMarca],
+  imports: [TranslocoPipe, RouterLink, TsAlternadorTema, TsIcono, TsIconoMarca, TsLogoPago],
   templateUrl: './pie.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
