@@ -42,7 +42,6 @@
     [ngTemplateOutlet]="grupo"
     [ngTemplateOutletContext]="{
       clave: 'catalogo',
-      icono: iconoCatalogo,
       etiqueta: 'encabezado.catalogo' | transloco,
       contenido: contenidoCatalogo,
     }"
@@ -54,7 +53,6 @@
       [ngTemplateOutlet]="grupo"
       [ngTemplateOutletContext]="{
         clave: 'panel',
-        icono: iconoPanel,
         etiqueta: 'encabezado.panel' | transloco,
         contenido: contenidoPanel,
       }"
@@ -65,33 +63,39 @@
 <!-- Un grupo de primer nivel: el botón que lo pliega y la región que pliega.
      `aria-expanded` y `aria-controls` son lo que lo convierte en un *disclosure* anunciable; sin
      ellos es un botón que un lector de pantalla no puede explicar. -->
-<ng-template
-  #grupo
-  let-clave="clave"
-  let-icono="icono"
-  let-etiqueta="etiqueta"
-  let-contenido="contenido"
->
+<ng-template #grupo let-clave="clave" let-etiqueta="etiqueta" let-contenido="contenido">
+  <!-- **El nombre de la rama se lee siempre, también con el menú recogido, y eso sustituyó al
+       icono.** Hasta el 28 de septiembre de 2026 el riel enseñaba un `LayoutGrid` —cuatro
+       cuadritos— para el catálogo y un `LayoutDashboard` para el panel, y la etiqueta se
+       desvanecía. Se pidió quitarlos: un pictograma abstracto no dice qué hay detrás, y estas
+       son las dos únicas ramas del sitio, no una barra de doce iconos donde el espacio manda.
+
+       **Por qué antes no cabía y ahora sí.** El primer intento fue dejar la etiqueta visible sin
+       más, y a 72 px "Catálogo" asomaba cortada —"Cat"— porque el botón lleva `px-24`: de los 72
+       del riel solo quedaban 48 útiles para un texto de 55,4. Con `px-8` quedan 56, y en
+       `--texto-xs` el texto mide 47,5. Medido en el navegador, no calculado.
+
+       El padding y el tamaño cambian con el estado, y el texto **no** se desvanece nunca: quien
+       usa lector de pantalla tiene que oír "Catálogo" esté el panel desplegado o no, y un
+       `display: none` lo sacaría además del orden de tabulación — que es lo que haría el menú
+       inservible con teclado. Eso no cambió; lo que cambió es que ahora también se ve. -->
   <button
-    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-16 border-0 bg-transparent px-24 text-start font-texto text-sm text-ts-texto hover:bg-ts-superficie-alt"
+    class="anillo-foco flex min-h-tactil w-menu-lateral shrink-0 cursor-pointer items-center gap-16 border-0 bg-transparent text-start font-texto text-ts-texto transition-[padding] ease-[var(--curva-suave)] hover:bg-ts-superficie-alt"
     type="button"
+    [class.px-24]="desplegado()"
+    [class.px-8]="!desplegado()"
     [attr.aria-expanded]="estaAbierto(clave)"
     [attr.aria-controls]="'menu-grupo-' + clave"
+    [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
     (click)="alternar(clave)"
   >
-    <!-- El icono no encoge: es lo único que se ve con el menú recogido. -->
-    <span class="shrink-0"><ts-icono [icono]="icono" /></span>
-    <!-- La etiqueta y el chevron **se quedan en el DOM** con el menú recogido, y lo que los tapa es
-         la opacidad y no un `hidden`: quien usa lector de pantalla tiene que oír "Catálogo" esté el
-         panel desplegado o no, y un `display: none` lo sacaría también del orden de tabulación,
-         que es justo lo que haría el menú inservible con teclado.
-
-         Y es opacidad y no solo el recorte del riel, que fue el primer intento: a 72 px de ancho,
-         "Catálogo" y "Ver todo el catálogo" asomaban cortados a mitad de palabra —"Cat", "Ver"— y
-         el riel se leía como una columna rota, no como una de iconos. Medido en el navegador. -->
-    <span class="grow truncate transition-opacity" [class.opacity-0]="!desplegado()">{{
-      etiqueta
-    }}</span>
+    <span
+      class="grow truncate transition-[font-size] ease-[var(--curva-suave)]"
+      [class.text-sm]="desplegado()"
+      [class.text-xs]="!desplegado()"
+      [style.transitionDuration]="sinMovimiento() ? '0ms' : 'var(--mov-panel)'"
+      >{{ etiqueta }}</span
+    >
     <span
       class="shrink-0 transition-[transform,opacity] ease-[var(--curva-suave)]"
       [class.rotate-180]="estaAbierto(clave)"

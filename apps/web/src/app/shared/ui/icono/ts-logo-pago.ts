@@ -101,11 +101,11 @@ export class TsLogoPago {
    * logotipo de 200×26 que contenido por el ancho queda en unos 8 px de alto; se acepta a sabiendas
    * porque la alternativa es un hueco el doble de ancho para los diez.
    *
-   * <p>**Quien necesita otra caja la pide por `clase`**, y en el pie lo hacen seis: American Express
-   * y PSE a `h-16`, Nequi, BBVA y Addi a `h-12`, y Bancolombia a `w-logo-pago` —el único que pide
-   * <b>ancho</b>, porque es tan apaisado que el alto no le hace nada—. El porqué de cada uno vive
-   * donde se decide, que es la tabla `MEDIOS_DE_PAGO` de `pie.ts`, y no aquí: este componente no
-   * sabe qué logo es importante.
+   * <p>**Quien necesita otro alto lo pide por `clase`**, y en el pie lo hacen cinco: American
+   * Express y PSE a `h-16`, Nequi, BBVA y Addi a `h-12`. **El ancho no lo cambia ninguno**, y eso
+   * no es casualidad: los `w-64` idénticos son lo que alinea la rejilla del pie, y el que se sale
+   * corre a sus vecinos de fila. El porqué de cada uno vive donde se decide, que es la tabla
+   * `MEDIOS_DE_PAGO` de `pie.ts`, y no aquí: este componente no sabe qué logo es importante.
    */
   protected readonly clases = computed(() => cn('inline-block shrink-0 h-24 w-64', this.clase()));
 }

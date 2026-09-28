@@ -10,7 +10,8 @@
 
 La referencia pedida es el menú de `angular-demo.tailadmin.com`: un riel de iconos pegado a la
 izquierda que se ensancha al acercar el puntero y se recoge al retirarlo, con las ramas plegables
-dentro.
+dentro. (De ese riel se copió todo menos los iconos — ver "El riel lleva nombres, no iconos" más
+abajo.)
 
 ## Decisión
 
@@ -23,6 +24,31 @@ Dentro, dos grupos plegables —Catálogo y Panel— y, bajo Catálogo, las cuat
 grupo es un *disclosure* con `aria-expanded` y `aria-controls`, y pliega animando
 `grid-template-rows` de `0fr` a `1fr`: la rejilla resuelve sola la altura del contenido, así que la
 transición es exacta con dos categorías o con trece, sin adivinar un `max-height`.
+
+### El riel lleva nombres, no iconos
+
+**Cambiado el 28 de septiembre de 2026, a pedido del dueño.** Las dos ramas de primer nivel se
+dibujaban recogidas con un pictograma —`LayoutGrid` el catálogo, `LayoutDashboard` el panel— y la
+etiqueta se desvanecía con `opacity-0`. Ahora el riel escribe "Catálogo" y "Panel", y los iconos se
+fueron.
+
+El motivo es el de siempre con un pictograma abstracto: cuatro cuadritos no dicen qué hay detrás.
+La referencia los usa porque tiene doce entradas y el espacio manda; aquí son **dos**, y con dos el
+espacio no es el problema.
+
+**Por qué antes se creía que no cabía.** El primer intento, el mismo día que nació el menú, fue
+dejar la etiqueta visible sin tocar nada más, y a 72 px "Catálogo" asomaba cortada —"Cat"—: el
+botón lleva `px-24`, así que de los 72 del riel solo quedaban 48 útiles para un texto de 55,4. La
+conclusión de entonces —"recogido solo caben iconos"— medía el padding, no el texto. Con `px-8`
+quedan 56, y en `--texto-xs` el nombre mide 47,5. **Las tres cifras salen del navegador**, que es
+donde se mide un texto (regla dura #8): en jsdom nada tiene ancho.
+
+El padding y el tamaño cambian con el estado, con la misma `--mov-panel` que el ancho. Lo que **no**
+cambió es que el nombre esté siempre en el DOM y nunca en `display: none`: sacarlo lo sacaría
+también del orden de tabulación. Antes estaba y no se veía; ahora además se ve.
+
+El chevron se queda —dice si la rama está desplegada— y el botón de fijar también conserva el
+suyo: es una acción, no un destino.
 
 ### Fijarlo es otra cosa que desplegarlo
 
