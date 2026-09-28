@@ -20,6 +20,15 @@
        parpadeo que tendría un icono atado a una señal. Se ve la luna cuando el
        clic lleva a oscuro, y el sol cuando lleva a claro. `ts-icono` va con
        `aria-hidden`, así que ninguno de los dos toca el nombre del botón. -->
-  <ts-icono class="oscuro:hidden" [icono]="iconoTemaOscuro" [clase]="claseIcono()" />
-  <ts-icono class="hidden oscuro:inline-block" [icono]="iconoTemaClaro" [clase]="claseIcono()" />
+  <!-- **`flex` en el host, y no es adorno: sin él el icono no está centrado.**
+       El host de `ts-icono` es `display: inline` por omisión, así que su caja no
+       es el SVG: es una línea de texto con el SVG —que es `inline-block`—
+       apoyado en la línea base y el hueco del descendente debajo. Centrar esa
+       caja en el botón deja el dibujo un par de píxeles por encima del centro
+       real del círculo, que es lo que se veía como un icono "desenfocado".
+       Con `flex` la caja del host es exactamente el SVG y el centrado del
+       botón funciona. Medido en el navegador: en jsdom no hay caja de línea
+       que medir. -->
+  <ts-icono class="flex oscuro:hidden" [icono]="iconoTemaOscuro" [clase]="claseIcono()" />
+  <ts-icono class="hidden oscuro:flex" [icono]="iconoTemaClaro" [clase]="claseIcono()" />
 </button>
