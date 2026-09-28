@@ -219,11 +219,19 @@
   --spacing-64: var(--esp-64);
   --spacing-96: var(--esp-96);
 
-  /* Objetivo táctil (WCAG 2.2 AA, 2.5.8) e insignia del contador del carrito.
-     Fueron huecos del kit hasta que se pidieron: ahora salen de `tokens.json`
-     como cualquier otra medida, y aquí solo se les cuelga una utilidad. */
+  /* Objetivo táctil, insignia del contador del carrito y el control compacto
+     del encabezado. Fueron huecos del kit hasta que se pidieron: ahora salen de
+     `tokens.json` como cualquier otra medida, y aquí solo se les cuelga una
+     utilidad.
+     `compacto` son 35 px y lo llevan **solo** los dos alternadores de la barra
+     —idioma y tema—, no un control cualquiera que quiera ser pequeño: el
+     porqué, y por qué el del pie se queda en `tactil`, están en `tokens.json`.
+     Sobre la norma, que aquí estuvo mal escrita hasta el 28 de septiembre de
+     2026: el mínimo de WCAG 2.2 AA (2.5.8) es 24×24, no 44 — los 44 son AAA
+     (2.5.5) y una decisión de este proyecto. 35 pasa AA con margen. */
   --spacing-tactil: var(--control-tactil);
   --spacing-insignia: var(--control-insignia);
+  --spacing-compacto: var(--control-compacto);
 
   /* Los dos anchos del menú lateral. Van a `--spacing-*` y no a `--container-*`
      porque lo que hace falta es `w-` y `ps-`, no `max-w-`: el riel reserva su

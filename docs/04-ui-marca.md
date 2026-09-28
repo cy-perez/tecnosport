@@ -189,6 +189,7 @@ delante. Ver `ADR-0059`.
 | Logo en el header | 34 y 30 px | `--header-alto-logo*` |
 | Menú lateral recogido y desplegado | 72 y 288 px | `--ancho-menu-*` |
 | Objetivo táctil mínimo | 44 x 44 px | `--control-tactil` |
+| Alternadores del encabezado | 35 x 35 px | `--control-compacto` |
 | Insignia del contador | 20 x 20 px | `--control-insignia` |
 | Radio de la interfaz | 6 / 8 / 12 px y píldora | `--radio-*` |
 
@@ -203,6 +204,22 @@ El objetivo táctil fue durante un tiempo el único valor de esta tabla sin toke
 el SCSS lo escribía como `min-height: 44px` literal en cada control. Se pidió al
 kit y hoy sale de `tokens.json` como cualquier otra medida; en la interfaz se usa
 con `min-h-tactil`.
+
+**Y conviene tener claro de dónde salen esos 44, porque aquí y en el código
+estuvo mal escrito hasta el 28 de septiembre de 2026.** Se citaba como "el mínimo
+de WCAG 2.2 AA (2.5.8)", y no lo es: el mínimo de 2.5.8, que es AA, son **24 x 24
+px**; los 44 son el criterio 2.5.5, que es AAA. Los 44 de esta tabla son, por
+tanto, una decisión de este proyecto —una buena— y no una obligación legal ni de
+norma. Importa saberlo para poder discutir una excepción sin creer que se está
+incumpliendo algo.
+
+**La única excepción son los dos alternadores del encabezado** —idioma y tema—,
+que miden 35 desde esa misma fecha: en una barra de 72 px de alto, dos chips de
+44 pesaban más que el carrito, que es la acción de la barra. 35 sigue por encima
+del mínimo AA con margen. **No se extiende a nada más**: el alternador del pie,
+los enlaces, el botón del menú y las acciones de fila siguen en `--control-tactil`,
+y `--control-compacto` no es "el tamaño pequeño" disponible para quien lo
+necesite. Si aparece un tercer candidato, se discute aquí antes.
 
 Tipografía: Archivo en titulares, IBM Plex Sans en texto e interfaz, IBM Plex
 Mono en precios y referencias, con cifras tabulares para que las columnas alineen
