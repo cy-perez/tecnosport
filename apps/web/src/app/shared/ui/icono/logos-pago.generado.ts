@@ -52,7 +52,7 @@ export interface LogoPago {
 
 export const logoVisa: LogoPago = {
   titulo: 'Visa',
-  vista: '0 0 24 24',
+  vista: '0 4 24 16',
   transformacion: null,
   trazos: [
     {

@@ -113,11 +113,32 @@ interface MedioDePago {
   readonly nombreALaVista?: boolean;
 
   /**
-   * Alto distinto del de la fila, cuando el dibujo no aguanta el de todos. También solo la
-   * contraentrega, y por un motivo que se puede medir: los otros diez son logotipos anchos —de
-   * 200×26 a 1000×305— que con 24 px de alto tienen muchísimo ancho, y este es un cuadrado de
-   * 512×512 con dos manos y una caja dentro. A la misma altura le queda una fracción del área y se
-   * vuelve una mancha; se miró en el navegador a 24, 32, 40, 64 y 96 px.
+   * Caja distinta de la de la fila, cuando el dibujo no aguanta la de todos.
+   *
+   * <p><b>La caja compartida no iguala lo que se ve, iguala lo que se reserva.</b> Cada logo se
+   * contiene dentro de ella, así que lo que acaba midiendo su dibujo depende de cuánto lienzo
+   * vacío traiga su propio archivo y de qué tan grande esté puesto el logotipo dentro. Medido en el
+   * navegador el 28 de septiembre de 2026, la altura de equis de la fila iba de 4,0 px
+   * (Bancolombia) a 6,2 (Sistecrédito) sin que nadie lo hubiera decidido. De ahí las tres
+   * excepciones, y las tres salen de una medición y no del ojo:
+   *
+   * <ul>
+   *   <li><b>La contraentrega</b>, `h-32`. Es el único cuadrado —512×512, dos manos y una caja— y
+   *       a la altura de la fila le queda una fracción del área de un logotipo ancho. Fue `h-48`
+   *       hasta que pesó el doble que sus vecinos.
+   *   <li><b>Bancolombia</b>, `h-32 w-96`. Su archivo pone el logotipo muy pequeño dentro de su
+   *       propio lienzo —173 de 217 de ancho, 22 de 61 de alto— así que en la caja común su letra
+   *       medía 4,0 px contra los 6,2 de Sistecrédito. <b>Hacen falta las dos medidas</b>: solo con
+   *       `w-96` la caja pasa a ser más apaisada que el dibujo y el límite se muda al alto, que
+   *       seguía en 24 — la letra se quedaba en 5,35. Con las dos, 6,02.
+   *   <li><b>Addi</b>, `h-16`. Al revés que los anteriores: su archivo va ceñido, así que en la
+   *       caja común se dibujaba a 22,6 px de alto contra los 19,1 de BBVA, y era el logo más
+   *       grande de la columna sin ser el más importante. Un paso de la escala por debajo lo deja
+   *       en 15,1.
+   * </ul>
+   *
+   * <p>Va como dato y no como un caso en la plantilla porque son excepciones de una regla, no una
+   * segunda regla.
    *
    * <p><b>Fue `h-48` hasta el 28 de septiembre de 2026 y bajó a `h-32`.</b> A 48 px pesaba el doble
    * que cualquier logotipo de la fila y se leía como un icono de otra familia más que como un medio
@@ -156,11 +177,11 @@ const MEDIOS_DE_PAGO: readonly MedioDePago[] = [
   { clave: 'pie.pagos.american_express', logo: logoAmericanExpress },
   { clave: 'pie.pagos.pse', logo: logoPse },
   { clave: 'pie.pagos.nequi', logo: logoNequi },
-  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia },
+  { clave: 'pie.pagos.bancolombia', logo: logoBancolombia, clase: 'h-32 w-96' },
   { clave: 'pie.pagos.daviplata', logo: logoDaviplata },
   { clave: 'pie.pagos.bbva', logo: logoBbva },
   { clave: 'pie.pagos.sistecredito', logo: logoSistecredito },
-  { clave: 'pie.pagos.addi', logo: logoAddi },
+  { clave: 'pie.pagos.addi', logo: logoAddi, clase: 'h-16' },
   {
     clave: 'pie.pagos.contraentrega',
     logo: logoContraentrega,
