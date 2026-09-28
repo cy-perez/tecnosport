@@ -84,7 +84,13 @@ const ORIGENES = {
  * anunciar un medio que no existe.
  */
 const LOGOS = [
-  { constante: "logoVisa", archivo: "visa.svg", titulo: "Visa", origen: "simple-icons" },
+  {
+    constante: "logoVisa",
+    archivo: "visa.svg",
+    titulo: "Visa",
+    origen: "simple-icons",
+    vista: "0 4 24 16",
+  },
   {
     constante: "logoMastercard",
     archivo: "mastercard.svg",
@@ -122,6 +128,29 @@ const LOGOS = [
   },
   { constante: "logoAddi", archivo: "addi.svg", titulo: "Addi", origen: "propio" },
 ];
+
+/**
+ * Cuándo se declara `vista` en `LOGOS` y por qué no es lo normal.
+ *
+ * <p>Lo normal es que el `viewBox` salga del archivo: es el dueño del logo quien decide cuánto aire
+ * lleva alrededor. La anulación existe para un caso concreto y hoy solo la usa Visa.
+ *
+ * <p><b>`simple-icons` dibuja todos sus iconos en un cuadrado de 24×24</b>, porque su caso de uso
+ * es un glifo cuadrado. El logotipo de Visa es apaisado, así que dentro de ese cuadrado ocupa los
+ * 24 de ancho y <b>7,8 de alto</b> — el resto es lienzo. Metido en la caja compartida del pie, que
+ * contiene el dibujo, eso lo dejaba a 24×7,8 px cuando sus vecinos se dibujan a 19-24 de alto: el
+ * logo más pequeño de la fila con diferencia, y no por decisión de nadie.
+ *
+ * <p><b>`0 4 24 16` se queda con la mitad del aire, no con nada.</b> Ceñirlo del todo —`0 8 24 8`—
+ * lo manda al otro extremo: pasa a 64×20,8 px y se convierte en el logotipo más grande de la
+ * columna, por delante de Sistecrédito y de BBVA. La mitad lo sube a 36×11,6, que es un aumento
+ * y no un vuelco. Los tres se miraron en el navegador, uno al lado del otro y dentro de la fila.
+ *
+ * <p>No se resuelve moviendo el archivo a `apps/web/logos-pago/` como se hizo con Mastercard y
+ * American Express: aquellos cambiaban de <b>dibujo</b> —les faltaban los círculos y la silueta—,
+ * y a este no le falta nada. Vendorizarlo por un encuadre sería perder la actualización de la
+ * librería a cambio de cuatro números que se pueden escribir aquí.
+ */
 
 /**
  * Los `path` que hay que tirar antes de aplanar, por archivo y por el relleno con que vienen.
@@ -242,12 +271,13 @@ function sinColor(archivo, atributo, valor) {
   }
 }
 
-function extraer({ archivo, origen, aColor = false }) {
+function extraer({ archivo, origen, aColor = false, vista: vistaDeclarada = null }) {
   const svg = readFileSync(join(ORIGENES[origen], archivo), "utf8");
-  const vista = svg.match(/viewBox="([^"]+)"/)?.[1];
-  if (!vista) {
+  const vistaDelArchivo = svg.match(/viewBox="([^"]+)"/)?.[1];
+  if (!vistaDelArchivo) {
     throw new Error(`${archivo}: sin viewBox. Sin él no se puede dibujar a escala.`);
   }
+  const vista = vistaDeclarada ?? vistaDelArchivo;
 
   // Los dos trazados de bitmap —Addi y BBVA— meten sus paths en un `<g transform>` que los coloca y
   // los voltea. La transformación sube al logo entero: un solo grupo por archivo, comprobado.

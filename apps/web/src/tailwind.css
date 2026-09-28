@@ -138,20 +138,20 @@
   --color-ts-sobre-acento: var(--color-sobre-acento);
 
   /* La escala de ámbar: el mismo acento aclarado hacia la superficie en pasos
-     del 14 %. No son colores nuevos y no tienen `sobre-` propio: todos llevan
-     el mismo grafito encima, que es justo lo que los mantiene siendo el ámbar
-     y no cuatro amarillos.
-     Nacieron con tres pasos para dar un tono a cada línea de negocio en la
-     banda de portada (`ADR-0063`), que `ADR-0064` revirtió al día siguiente. El
-     quinto entró el 28 de septiembre de 2026 con `ADR-0065`: **es el único que
-     pinta algo hoy** —el relleno de las baldosas de "Nuestras líneas"— y el 2,
-     el 3 y el 4 siguen derivándose sin usarse. Que existan no es permiso para
-     usarlos: la regla del ámbar sigue siendo una sola cosa por pantalla, y la
-     excepción está escrita en `docs/04-ui-marca.md`. */
+     del 14 %. No son colores nuevos y no tienen `sobre-` propio: los tres
+     llevan el mismo grafito encima, que es justo lo que los mantiene siendo el
+     ámbar y no tres amarillos.
+     Nacieron para dar un tono a cada línea de negocio en la banda de portada
+     (`ADR-0063`), que `ADR-0064` revirtió al día siguiente. Desde `ADR-0065`
+     **el único que pinta algo es el 2, y solo en tema oscuro**: el relleno de
+     las baldosas de "Nuestras líneas", un paso por debajo del ámbar pleno del
+     carrusel. En tema claro esas baldosas son grises (`primario-suave`), porque
+     la regla del ámbar nace de un problema de fondo claro que en oscuro no
+     existe — el porqué entero está en `ADR-0065`. El 3 y el 4 siguen
+     derivándose sin usarse, y que existan no es permiso para usarlos. */
   --color-ts-acento-2: var(--color-acento-2);
   --color-ts-acento-3: var(--color-acento-3);
   --color-ts-acento-4: var(--color-acento-4);
-  --color-ts-acento-5: var(--color-acento-5);
 
   --color-ts-marca: var(--color-marca);
   --color-ts-marca-alt: var(--color-marca-alt);
