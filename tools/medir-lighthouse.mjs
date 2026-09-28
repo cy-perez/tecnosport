@@ -25,6 +25,30 @@
 // quita ese artefacto, porque **solo suma**: una mediana de tres con dos muestras cobradas es una
 // muestra cobrada. Y comparar dos corridas que cayeron en modos distintos no compara dos builds.
 //
+// ## Y hay un SEGUNDO artefacto bimodal, este sin aviso: el LCP de la ficha
+//
+// Encontrado el 28 de septiembre de 2026 y **no** lo detecta nada de este archivo, así que hay que
+// mirarlo a mano. El LCP de la ficha se reparte entre dos valores —unos 2,9 s y unos 4,2 s— sin que
+// medie ningún cambio de código. Cuatro corridas de builds distintos, todas con las tipografías en
+// el mismo modo:
+//
+//   post-ajustes-visuales   lcp = [4567, 4169, 2914]
+//   tipografias-despues-2   lcp = [4109, 3934, 2680]
+//   hoy-base                lcp = [4426, 3125, 2679]
+//
+// Por qué importa: con tres muestras, **cuál de los dos valores gana la mediana es un sorteo**, y
+// el salto entre ellos es de 1,26 s. Eso alcanza para que `medir-pareja.mjs` cante
+// `consistente: 2/2 en el mismo sentido` sin que haya ninguna diferencia entre los dos builds —
+// pasó exactamente así ese día, con una "mejora" de −1263 y −1258 ms en la ficha que no existía.
+//
+// A diferencia del de las tipografías, este no tiene todavía una causa medida ni una columna que lo
+// delate. **La defensa mientras tanto es mirar las muestras**, no la mediana: si las de la ficha se
+// reparten entre ~2,9 y ~4,2 en cualquiera de las dos corridas, su LCP no dice nada. El
+// `resumen.json` de cada etiqueta las trae todas.
+//
+// Si alguien lo persigue, el sitio por donde empezar es el mismo que en el otro: qué recurso de la
+// ficha termina a veces antes y a veces después del pintado que Lighthouse toma por LCP.
+//
 // Cada corrida puede guardarse con nombre, y dos corridas guardadas se comparan sin volver a
 // medir — con la banda de sus propias muestras al lado, que es lo que distingue una mejora de la
 // máquina teniendo un mal rato:
